@@ -1,5 +1,14 @@
 # Değişiklik Günlüğü
 
+## v0.2.1 — 20 Ağustos 2026
+**Gerçek logo**
+
+- Nizam Soft logosu uygulamaya geçti, geçici SVG çizim kaldırıldı
+- Açılış ekranı: tam logo (N + Studio)
+- Giriş ve yan menü: sadece N — küçük boyutta net kalsın diye
+- Telefon ve masaüstü ikonları özgün kare logodan üretildi
+- Logolar repoya gömüldü, çevrimdışı da görünüyor
+
 ## v0.2.0 — 20 Ağustos 2026
 **Adım 1 · Supabase ve Giriş**
 

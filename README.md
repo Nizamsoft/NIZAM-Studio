@@ -31,7 +31,7 @@ python3 -m http.server 8080
 | Aşama | İçerik | Durum |
 |---|---|---|
 | Adım 0 | İskelet, tema, açılış, menü | ✅ |
-| Adım 1 | Supabase kurulumu ve giriş | — |
+| Adım 1 | Supabase kurulumu ve giriş | ✅ |
 | Adım 2 | Projeler, modül ve sayfa ağacı | — |
 | Adım 3 | Görevler, durumlar, atama | — |
 | Adım 4 | Prompt motoru ve kimlik dosyası | — |
