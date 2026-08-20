@@ -1,5 +1,14 @@
 # Değişiklik Günlüğü
 
+## v0.9.4 — 21 Ağustos 2026
+**Alt çubuk kapandı, ölçüm ekranı kaldırıldı**
+
+Alttaki siyah şerit sorunu çözüldü. Son engel şuydu: Safari'de eski sürüm
+açık kaldığı için "Ana Ekrana Ekle" o eski sayfanın ayarlarını kopyalıyordu.
+Safari yenilendikten sonra yeniden eklenince düzeldi.
+
+- Ayarlar'daki geçici **Ekran ölçüleri** ekranı kaldırıldı
+
 ## v0.9.3 — 21 Ağustos 2026
 **Tarayıcıda alt pay kaldırıldı**
 
