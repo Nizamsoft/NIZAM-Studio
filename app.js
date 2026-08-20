@@ -37,28 +37,65 @@ const ACIK_STANDART = new Set();
 
 /* ---------- İkonlar ---------- */
 
+/* İkonlar iki katmanlı: altta soluk dolgu, üstte ince çizgi.
+   Koyu zeminde tek çizgi silinip gidiyordu; dolgu her simgeye gövde veriyor.
+   `d` = dolgu şekli (kapalı), `c` = çizgi. Sade işaretler (ok, artı, tik)
+   tek katman kalır — onlar simge değil, yön gösterir. */
+
 const ICON = {
-  folder:  '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>',
-  check:   '<path d="M9 11l3 3 8-8"></path><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"></path>',
-  info:    '<circle cx="12" cy="12" r="9"></circle><path d="M12 11v5M12 7.5v.01"></path>',
-  uyari:   '<path d="M12 4l9 16H3z"></path><path d="M12 10v4M12 17.5v.01"></path>',
+  folder: {
+    d: '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>',
+    c: '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>',
+  },
+  check: {
+    d: '<rect x="4" y="4" width="16" height="16" rx="3"></rect>',
+    c: '<path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"></path><path d="M9 11l3 3 8-8"></path>',
+  },
+  info: {
+    d: '<circle cx="12" cy="12" r="9"></circle>',
+    c: '<circle cx="12" cy="12" r="9"></circle><path d="M12 11v5M12 7.5v.01"></path>',
+  },
+  uyari: {
+    d: '<path d="M12 4l9 16H3z"></path>',
+    c: '<path d="M12 4l9 16H3z"></path><path d="M12 10v4M12 17.5v.01"></path>',
+  },
+  cop: {
+    d: '<path d="M6 7h12l-1 13H7z"></path>',
+    c: '<path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13"></path>',
+  },
+  kalem: {
+    d: '<path d="M4 20h4L20 8l-4-4L4 16z"></path>',
+    c: '<path d="M4 20h4L20 8l-4-4L4 16z"></path>',
+  },
+  kova: {
+    d: '<circle cx="12" cy="12" r="9"></circle>',
+    c: '<circle cx="12" cy="12" r="9"></circle><path d="M12 8v8M8 12h8"></path>',
+  },
+  katman: {
+    d: '<path d="M20 7l-8-4-8 4 8 4z"></path>',
+    c: '<path d="M20 7l-8-4-8 4 8 4z"></path><path d="M4 12l8 4 8-4M4 17l8 4 8-4"></path>',
+  },
+  kisi: {
+    d: '<circle cx="12" cy="8" r="4"></circle><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1z"></path>',
+    c: '<circle cx="12" cy="8" r="4"></circle><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"></path>',
+  },
+  kopya: {
+    d: '<rect x="9" y="9" width="12" height="12" rx="2"></rect>',
+    c: '<rect x="9" y="9" width="12" height="12" rx="2"></rect><path d="M5 15V5a2 2 0 0 1 2-2h10"></path>',
+  },
+
+  /* tek katman işaretler */
   chevron: '<path d="M9 6l6 6-6 6"></path>',
   arti:    '<path d="M12 5v14M5 12h14"></path>',
-  cop:     '<path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13"></path>',
-  kalem:   '<path d="M4 20h4L20 8l-4-4L4 16z"></path>',
-  kova:    '<circle cx="12" cy="12" r="9"></circle><path d="M12 8v8M8 12h8"></path>',
-  katman:  '<path d="M20 7l-8-4-8 4 8 4z"></path><path d="M4 12l8 4 8-4M4 17l8 4 8-4"></path>',
   tik:     '<path d="M5 12l5 5L20 7"></path>',
   kapat:   '<path d="M6 6l12 12M18 6L6 18"></path>',
-  kisi:    '<circle cx="12" cy="8" r="4"></circle><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"></path>',
-  kopya:   '<rect x="9" y="9" width="12" height="12" rx="2"></rect><path d="M5 15V5a2 2 0 0 1 2-2h10"></path>',
-  nokta:   '<circle cx="5" cy="12" r="1.6"></circle><circle cx="12" cy="12" r="1.6"></circle><circle cx="19" cy="12" r="1.6"></circle>',
-  arsiv:   '<rect x="3" y="4" width="18" height="4" rx="1"></rect><path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8M10 13h4"></path>',
-  boya:    '<path d="M4 14l8-10 8 10-8 6z"></path><path d="M18 17a2 2 0 1 0 4 0c0-1.1-2-3-2-3s-2 1.9-2 3z"></path>',
 };
 
-function svg(yol, boy = 16) {
-  return `<svg viewBox="0 0 24 24" style="width:${boy}px;height:${boy}px">${yol}</svg>`;
+function svg(ikon, boy = 16) {
+  const cift  = ikon && typeof ikon === 'object';
+  const dolgu = cift ? `<g class="dolgu">${ikon.d}</g>` : '';
+  const cizgi = cift ? ikon.c : ikon;
+  return `<svg viewBox="0 0 24 24" style="width:${boy}px;height:${boy}px">${dolgu}${cizgi}</svg>`;
 }
 
 /* ==========================================================================
@@ -216,7 +253,7 @@ const VIEWS = {
 
     return `
       <div class="note" style="margin-bottom:16px">
-        <svg viewBox="0 0 24 24">${ICON.info}</svg>
+        ${svg(ICON.info, 15)}
         <span>Bir görev bu standartlardan birine dokunuyorsa, tarifi promptun içine
         kendiliğinden yapıştırılır. Aynı şeyi her seferinde yazmazsın.</span>
       </div>
@@ -448,7 +485,7 @@ function stat(label, num, note, cls = '', i = 0) {
 
 function empty(icon, title, text, butonYazi = null, eylem = null) {
   return `<div class="empty">
-    <div class="empty-icon"><svg viewBox="0 0 24 24">${icon}</svg></div>
+    <div class="empty-icon">${svg(icon, 24)}</div>
     <h3>${title}</h3>
     <p>${text}</p>
     ${butonYazi ? `<button class="btn btn-primary" data-eylem="${eylem}" type="button" style="margin-top:16px">
@@ -459,7 +496,7 @@ function empty(icon, title, text, butonYazi = null, eylem = null) {
 function hataKutusu(mesaj) {
   return `<div class="card">
     <div class="empty">
-      <div class="empty-icon uyari"><svg viewBox="0 0 24 24">${ICON.uyari}</svg></div>
+      <div class="empty-icon uyari">${svg(ICON.uyari, 24)}</div>
       <h3>Veri yüklenemedi</h3>
       <p>${esc(mesaj)}</p>
       <button class="btn btn-ghost" data-eylem="tazele" type="button" style="margin-top:16px">Tekrar dene</button>
@@ -475,7 +512,7 @@ function iskeletler(n) {
 
 function stageNote(text) {
   return `<div class="section"><div class="note">
-    <svg viewBox="0 0 24 24">${ICON.info}</svg><span>${text}</span>
+    ${svg(ICON.info, 15)}<span>${text}</span>
   </div></div>`;
 }
 
@@ -842,7 +879,7 @@ function sihirbazAdim4() {
     <p class="modal-s">Seçtiklerin sayfalarıyla birlikte kurulur.</p>
     <div class="mod-grid">${kutular}</div>
     <div class="note note-kucuk">
-      <svg viewBox="0 0 24 24">${ICON.info}</svg>
+      ${svg(ICON.info, 15)}
       <span>Her projeye ayrıca bir <b>${GENEL_MODUL}</b> kovası eklenir — modüle bağlanamayan işler oraya düşer.</span>
     </div>`;
 }

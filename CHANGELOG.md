@@ -1,5 +1,20 @@
 # Değişiklik Günlüğü
 
+## v0.6.0 — 20 Ağustos 2026
+**Aşama 1 · Görsel dil**
+
+- **Sıcak grafit palet.** Zemin ve yüzeyler nötr griden sıcağa kaydırıldı; metalik grafit
+  kimliği duruyor ama "soğuk mağara" hissi gitti. Metin kontrastı yükseltildi
+- **Tek renk kaynağı.** CSS'e dağılmış 116 sabit renk temizlendi; artık her renk tek bir
+  token bloğunda. Bir rengi değiştirmek için tek yer var
+- **Yazı tipi repoya gömüldü.** Space Grotesk artık dışarıdan çekilmiyor — çevrimdışında da
+  geliyor, açılışta yazılar sıçramıyor. Toplam 24 KB
+- Gövde yazısı sistem fontuna geçti: daha hızlı, cihazın kendi yazısı kadar tanıdık
+- Küçük büyük-harf etiketler 800 ağırlığa çıktı, başlıklar sıkılaştı
+- **Çift katman ikonlar.** Her simgenin altına soluk dolgu kondu. Tek çizgi ikonlar koyu
+  zeminde siliniyordu; artık her biri kendi ağırlığını taşıyor. Ok, artı ve tik gibi sade
+  işaretler tek katman kaldı — onlar simge değil, yön gösterir
+
 ## v0.5.3 — 20 Ağustos 2026
 **Alt boşluk kesin çözüldü**
 
