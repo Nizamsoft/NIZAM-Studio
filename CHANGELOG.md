@@ -1,5 +1,22 @@
 # Değişiklik Günlüğü
 
+## v0.4.0 — 20 Ağustos 2026
+**Adım 3 · Görevler, durumlar ve atama**
+
+- `tasks` ve `task_events` tabloları — görev numarası `NS-101`'den başlayıp otomatik artıyor
+- Dört durum: Yapılacak → Geliştiriliyor → Kontrolde → Tamamlandı
+- **Revize ayrı durum değil:** Kontrolde'den not yazarak Geliştiriliyor'a geri düşürülüyor
+- Görev kartı: durum şeridi, atanan, öncelik, açıklama ve tüm hareket geçmişi
+- Revize notları kartta kırmızı kutuda duruyor — ne istendiği unutulmuyor
+- Görev sayfaya bağlanır; olmazsa modüle, o da olmazsa Proje Geneli kovasına
+- Ağaçta sayfaya tıklayınca görevleri açılıyor, oradan yeni görev eklenebiliyor
+- "Bana Atananlar" gerçek listeye döndü — durum filtreleri ve sayaçlarla
+- Panel ve yan menü sayaçları görevlerden besleniyor
+- **İlerleme yüzdeleri canlandı:** sayfa → modül → proje, hepsi bitmiş görev oranından
+- Geliştirici yalnızca kendine atanan görevleri ve o projeleri görüyor
+- Veritabanı tetikleyicisi geliştiriciyi koruyor: kendi görevini "Tamamlandı" yapamaz,
+  başkasının görevine dokunamaz, önceliği veya atamayı değiştiremez
+
 ## v0.3.0 — 20 Ağustos 2026
 **Adım 2 · Projeler, modüller ve sayfalar**
 

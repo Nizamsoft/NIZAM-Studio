@@ -1,6 +1,6 @@
 /* ==========================================================================
    NIZAM | Studio — Uygulama
-   Adım 2: projeler, modül ve sayfa ağacı, Yeni Proje sihirbazı.
+   Adım 3: görevler, dört durum, atama ve revize akışı.
    ========================================================================== */
 
 'use strict';
@@ -13,7 +13,7 @@ const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
 const ROUTES = {
   panel:       { title: 'Panel',              sub: () => todayLabel() },
   projeler:    { title: 'Projeler',           sub: () => projelerAltBaslik() },
-  gorevler:    { title: 'Bana Atananlar',     sub: () => 'Açık işlerin' },
+  gorevler:    { title: 'Bana Atananlar',     sub: () => gorevlerAltBaslik() },
   standartlar: { title: 'Nizam Standartları', sub: () => 'Ortak bileşen kütüphanesi' },
   ayarlar:     { title: 'Ayarlar',            sub: () => APP.version + ' · ' + APP.stage },
 };
@@ -28,8 +28,10 @@ function rota() {
 
 /* ---------- Durum ---------- */
 
-let YUKLENIYOR    = false;
-const ACIK_MODUL  = new Set();
+let YUKLENIYOR     = false;
+let GOREV_FILTRE   = '';
+const ACIK_MODUL   = new Set();
+const ACIK_SAYFA   = new Set();
 
 /* ---------- İkonlar ---------- */
 
@@ -45,6 +47,9 @@ const ICON = {
   kova:    '<circle cx="12" cy="12" r="9"></circle><path d="M12 8v8M8 12h8"></path>',
   katman:  '<path d="M20 7l-8-4-8 4 8 4z"></path><path d="M4 12l8 4 8-4M4 17l8 4 8-4"></path>',
   tik:     '<path d="M5 12l5 5L20 7"></path>',
+  kapat:   '<path d="M6 6l12 12M18 6L6 18"></path>',
+  kisi:    '<circle cx="12" cy="8" r="4"></circle><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"></path>',
+  kopya:   '<rect x="9" y="9" width="12" height="12" rx="2"></rect><path d="M5 15V5a2 2 0 0 1 2-2h10"></path>',
 };
 
 function svg(yol, boy = 16) {
@@ -63,16 +68,18 @@ const VIEWS = {
     if (YUKLENIYOR) return iskeletler(4);
     if (DB.hata)    return hataKutusu(DB.hata);
 
-    const p     = DB.projeler;
-    const dev   = p.filter(x => x.durum === 'gelistiriliyor').length;
-    const kont  = p.filter(x => x.durum === 'kontrolde').length;
+    const p    = DB.projeler;
+    const dev  = DB.gorevleri({ durum: 'gelistiriliyor' }).length;
+    const kont = DB.gorevleri({ durum: 'kontrolde' }).length;
+    const bugun = DB.gorevleri({ durum: 'tamamlandi' })
+      .filter(g => (g.guncellendi || '').slice(0, 10) === bugunTarih()).length;
 
     return `
       <div class="stat-grid">
         ${stat('Aktif Proje', p.length, p.length ? 'devam ediyor' : 'henüz proje yok')}
         ${stat('Geliştiriliyor', dev, dev ? 'kodlanıyor' : 'açık iş yok', 'c-dev')}
         ${stat('Kontrolde', kont, kont ? 'onayını bekliyor' : 'onayını bekleyen yok', 'c-check')}
-        ${stat('Bugün Biten', 0, 'gün yeni başladı', 'c-done')}
+        ${stat('Bugün Biten', bugun, bugun ? 'onaylandı' : 'gün yeni başladı', 'c-done')}
       </div>
 
       <div class="section">
@@ -151,13 +158,35 @@ const VIEWS = {
 
   /* ---------- Diğerleri ---------- */
 
-  gorevler: () => `
-    <div class="card">
-      ${empty(ICON.check, 'Sana atanmış iş yok',
-        'Bir görev sana atandığında burada projesi, sayfası ve promptu ile birlikte listelenecek.')}
-    </div>
-    ${stageNote('Görevler ve atama Adım 3\'te gelecek.')}
-  `,
+  gorevler: () => {
+    if (YUKLENIYOR) return iskeletler(4);
+    if (DB.hata)    return hataKutusu(DB.hata);
+
+    const benim = AUTH.user ? DB.gorevleri({ kisi: AUTH.user.id }) : [];
+    const acik  = benim.filter(g => g.durum !== 'tamamlandi');
+
+    if (!benim.length) {
+      return `<div class="card">${empty(ICON.check, 'Sana atanmış iş yok',
+        'Bir görev sana atandığında burada projesi, sayfası ve promptu ile birlikte listelenecek.')}</div>`;
+    }
+
+    const listelenen = GOREV_FILTRE
+      ? benim.filter(g => g.durum === GOREV_FILTRE)
+      : acik;
+
+    const say = d => benim.filter(g => g.durum === d).length;
+
+    return `
+      <div class="filtre">
+        ${filtreDugmesi('', 'Açık işler', acik.length)}
+        ${DURUMLAR.map(d => filtreDugmesi(d.anahtar, d.ad, say(d.anahtar))).join('')}
+      </div>
+
+      ${listelenen.length
+        ? `<div class="card liste">${listelenen.map(gorevKarti).join('')}</div>`
+        : `<div class="card">${empty(ICON.check, 'Bu bölümde iş yok', 'Başka bir filtre dene.')}</div>`}
+    `;
+  },
 
   standartlar: () => `
     <div class="card">
@@ -281,17 +310,9 @@ function modulKarti(m) {
 
       ${acik ? `
         <div class="sayfalar">
-          ${sayfalar.map(sf => `
-            <div class="sayfa">
-              <span class="sayfa-nokta" style="background:var(--st-todo)"></span>
-              <span class="sayfa-ad">${esc(sf.ad)}</span>
-              <span class="sayfa-say mono">0/0</span>
-              ${AUTH.yonetici ? `<button class="mini-btn" data-eylem="sayfa-sil" data-id="${sf.id}"
-                 data-ad="${esc(sf.ad)}" type="button" aria-label="Sayfayı sil">${svg(ICON.cop, 14)}</button>` : ''}
-            </div>`).join('')}
+          ${m.genel ? kovaGorevleri(m) : ''}
+          ${sayfalar.map(sf => sayfaSatiri(sf)).join('')}
 
-          ${!sayfalar.length && m.genel
-            ? `<div class="sayfa-bos">Bu kova sayfa tutmaz — doğrudan görev alır.</div>` : ''}
           ${!sayfalar.length && !m.genel
             ? `<div class="sayfa-bos">Henüz sayfa yok.</div>` : ''}
 
@@ -309,6 +330,85 @@ function modulKarti(m) {
             </div>` : ''}
         </div>` : ''}
     </div>`;
+}
+
+/* Bir sayfa satırı ve — açıksa — altındaki görevler */
+function sayfaSatiri(sf) {
+  const s     = DB.sayfaSayim(sf.id);
+  const acik  = ACIK_SAYFA.has(sf.id);
+  const gorevler = DB.gorevleri({ sayfa: sf.id });
+
+  return `
+    <div class="sayfa ${acik ? 'acik' : ''}" data-eylem="sayfa-ac" data-id="${sf.id}" role="button" tabindex="0">
+      <span class="sayfa-chev">${svg(ICON.chevron, 12)}</span>
+      <span class="sayfa-nokta" style="background:${sayfaRengi(gorevler)}"></span>
+      <span class="sayfa-ad">${esc(sf.ad)}</span>
+      <span class="sayfa-say mono">${s.bitmis}/${s.gorev}</span>
+      ${AUTH.yonetici ? `<button class="mini-btn" data-eylem="sayfa-sil" data-id="${sf.id}"
+         data-ad="${esc(sf.ad)}" type="button" aria-label="Sayfayı sil">${svg(ICON.cop, 14)}</button>` : ''}
+    </div>
+    ${acik ? `
+      ${gorevler.map(g => gorevSatiri(g)).join('')}
+      ${!gorevler.length ? `<div class="gorev-bos">Bu sayfada görev yok.</div>` : ''}
+      ${AUTH.yonetici ? `
+        <div class="gorev-ekle" data-eylem="gorev-ekle" data-sayfa="${sf.id}" data-modul="${sf.modul_id}"
+             role="button" tabindex="0">${svg(ICON.arti, 13)}<span>Görev ekle</span></div>` : ''}
+    ` : ''}`;
+}
+
+/* "Proje Geneli" kovası — sayfası yok, doğrudan görev alır */
+function kovaGorevleri(m) {
+  const gorevler = DB.gorevleri({ modul: m.id });
+  return `
+    ${gorevler.map(g => gorevSatiri(g)).join('')}
+    ${!gorevler.length ? `<div class="gorev-bos">Bu kova sayfa tutmaz — modüle bağlanamayan işler buraya düşer.</div>` : ''}
+    ${AUTH.yonetici ? `
+      <div class="gorev-ekle" data-eylem="gorev-ekle" data-modul="${m.id}" role="button" tabindex="0">
+        ${svg(ICON.arti, 13)}<span>Görev ekle</span></div>` : ''}`;
+}
+
+/* Ağaç içindeki tek satırlık görev */
+function gorevSatiri(g) {
+  return `
+    <div class="gorev" data-eylem="gorev-ac" data-id="${g.id}" role="button" tabindex="0">
+      <span class="gorev-no mono">${gorevNo(g)}</span>
+      <span class="gorev-baslik">${esc(g.baslik)}</span>
+      ${g.oncelik === 'acil' ? '<span class="acil">Acil</span>' : ''}
+      ${g.atanan ? avatar(g.atanan) : ''}
+      ${durumRozeti(g.durum)}
+    </div>`;
+}
+
+/* Bana Atananlar listesindeki geniş görev satırı */
+function gorevKarti(g) {
+  return `
+    <div class="gsatir" data-eylem="gorev-ac" data-id="${g.id}" role="button" tabindex="0">
+      <span class="gsol" style="background:var(--st-${DURUM_SINIF[g.durum]})"></span>
+      <span class="gorta">
+        <span class="gust">
+          <span class="gorev-no mono">${gorevNo(g)}</span>
+          <span class="gbaslik">${esc(g.baslik)}</span>
+          ${g.oncelik === 'acil' ? '<span class="acil">Acil</span>' : ''}
+        </span>
+        <span class="gyol">${gorevYolu(g)}</span>
+      </span>
+      ${durumRozeti(g.durum)}
+    </div>`;
+}
+
+function durumRozeti(d) {
+  return `<span class="durum d-${DURUM_SINIF[d]}"><i></i>${DURUM_GOREV_ADI[d]}</span>`;
+}
+
+function avatar(kisiId, boy = '') {
+  const ad = DB.kisiAdi(kisiId);
+  return `<span class="gav ${boy}" title="${esc(ad)}"
+    style="background:${kisiRengi(kisiId)}">${esc(basHarf(ad))}</span>`;
+}
+
+function filtreDugmesi(deger, ad, sayi) {
+  return `<button class="f ${GOREV_FILTRE === deger ? 'on' : ''}" data-eylem="filtre"
+    data-deger="${deger}" type="button">${ad}<em class="mono">${sayi}</em></button>`;
 }
 
 function ozKutu(label, num, sub) {
@@ -434,8 +534,8 @@ function ustEylemYaz(key, detay, id) {
 
   if (detay) {
     btn.classList.remove('hidden');
-    btn.querySelector('span').textContent = 'Modül Ekle';
-    btn.dataset.eylem = 'modul-ekle';
+    btn.querySelector('span').textContent = 'Yeni Görev';
+    btn.dataset.eylem = 'gorev-ekle';
     btn.dataset.proje = id;
   } else if (key === 'panel' || key === 'projeler') {
     btn.classList.remove('hidden');
@@ -457,6 +557,23 @@ function ustEylemGizle(btn) {
 function sayaclariYaz() {
   const pr = $('[data-count="projeler"]');
   if (pr) pr.textContent = DB.projeler.length;
+
+  const gv = $('[data-count="gorevler"]');
+  if (gv) {
+    const acik = AUTH.user
+      ? DB.gorevleri({ kisi: AUTH.user.id }).filter(g => g.durum !== 'tamamlandi').length
+      : 0;
+    gv.textContent = acik;
+  }
+}
+
+function gorevlerAltBaslik() {
+  if (YUKLENIYOR || !AUTH.user) return 'Açık işlerin';
+  const benim = DB.gorevleri({ kisi: AUTH.user.id });
+  const acik  = benim.filter(g => g.durum !== 'tamamlandi').length;
+  const acil  = benim.filter(g => g.oncelik === 'acil' && g.durum !== 'tamamlandi').length;
+  if (!benim.length) return 'Açık işlerin';
+  return `${acik} açık iş` + (acil ? ` · ${acil} acil` : '');
 }
 
 function projelerAltBaslik() {
@@ -675,12 +792,12 @@ async function sihirbazKaydet() {
    MODAL
    ========================================================================== */
 
-function modalAc(html, bagla) {
+function modalAc(html, bagla, ekSinif = '') {
   modalKapat();
 
   const perde = document.createElement('div');
   perde.className = 'modal-perde';
-  perde.innerHTML = `<div class="modal-kutu" role="dialog" aria-modal="true">${html}</div>`;
+  perde.innerHTML = `<div class="modal-kutu ${ekSinif}" role="dialog" aria-modal="true">${html}</div>`;
   document.body.appendChild(perde);
 
   perde.addEventListener('mousedown', e => { if (e.target === perde) modalKapat(); });
@@ -744,6 +861,380 @@ function onaySor({ baslik, mesaj, buton = 'Sil' }) {
 }
 
 /* ==========================================================================
+   GÖREV KARTI
+   ========================================================================== */
+
+function gorevKartiAc(id) {
+  const g = DB.gorev(id);
+  if (!g) { toast('Görev bulunamadı.'); return; }
+  modalAc(gorevKartiHtml(g), kutu => gorevKartiBagla(kutu, g.id), 'genis');
+}
+
+function gorevKartiHtml(g) {
+  const benim   = AUTH.user && g.atanan === AUTH.user.id;
+  const yon     = AUTH.yonetici;
+  const sira    = DURUM_SIRA.indexOf(g.durum);
+  const hareket = DB.hareketleri(g.id);
+
+  const serit = DURUMLAR.map((d, i) => {
+    const gecti = i < sira, simdi = i === sira;
+    const tiklanir = yon;
+    return `<button class="st ${gecti ? 'gecti' : ''} ${simdi ? 'simdi ' + d.sinif : ''}"
+      ${tiklanir ? `data-gk="durum" data-deger="${d.anahtar}"` : 'disabled'}
+      type="button">${d.ad}</button>`;
+  }).join('');
+
+  return `
+    <div class="gk-ust">
+      <span class="gk-no mono">${gorevNo(g)}</span>
+      ${g.oncelik === 'acil' ? '<span class="acil">Acil</span>' : ''}
+      <button class="gk-x" data-gk="kapat" type="button" aria-label="Kapat">${svg(ICON.kapat, 15)}</button>
+    </div>
+
+    <h3 class="gk-baslik">${esc(g.baslik)}</h3>
+    <p class="gk-yol">${gorevYolu(g)}</p>
+
+    <div class="serit">${serit}</div>
+    <p class="serit-not">${seritNotu(g, benim, yon)}</p>
+
+    <div class="gk-meta">
+      <div class="mi">
+        <span class="mil">Atanan</span>
+        <span class="miv">
+          ${g.atanan ? avatar(g.atanan, 'kucuk') : ''}${esc(DB.kisiAdi(g.atanan))}
+          ${yon ? `<button class="mini-link" data-gk="ata" type="button">değiştir</button>` : ''}
+        </span>
+      </div>
+      <div class="mi">
+        <span class="mil">Öncelik</span>
+        <span class="miv">
+          ${g.oncelik === 'acil' ? '<span class="acil">Acil</span>' : 'Normal'}
+          ${yon ? `<button class="mini-link" data-gk="oncelik" type="button">değiştir</button>` : ''}
+        </span>
+      </div>
+    </div>
+
+    ${g.aciklama ? `
+      <div class="gk-blok">
+        <span class="gk-cap">Ne yapılacak</span>
+        <div class="gk-aciklama">${esc(g.aciklama)}</div>
+      </div>` : ''}
+
+    ${hareket.length ? `
+      <div class="gk-blok">
+        <span class="gk-cap">Hareketler</span>
+        <div class="iz">${hareket.map((h, i) => hareketSatiri(h, i === hareket.length - 1)).join('')}</div>
+      </div>` : ''}
+
+    <div class="modal-alt">${gorevButonlari(g, benim, yon)}</div>`;
+}
+
+function seritNotu(g, benim, yon) {
+  if (g.durum === 'kontrolde' && yon)    return 'Onayla ya da not yazarak geliştiriciye geri gönder.';
+  if (g.durum === 'kontrolde')           return 'Yöneticinin onayı bekleniyor.';
+  if (g.durum === 'gelistiriliyor' && benim) return 'Bitirince "Kontrole Gönder" de — onaya düşer.';
+  if (g.durum === 'yapilacak' && benim)  return 'Başladığında işaretle ki ekip görsün.';
+  if (g.durum === 'tamamlandi')          return 'Bu iş onaylandı ve kapandı.';
+  return 'Görev henüz başlamadı.';
+}
+
+function hareketSatiri(h, sonMu) {
+  const renk = { revize: 'var(--red)', kontrole: 'var(--st-check)',
+                 onaylandi: 'var(--st-done)', baslandi: 'var(--st-dev)' }[h.tip] || '#3a3f45';
+  return `
+    <div class="izs">
+      <span class="izn"><span class="izd" style="background:${renk}"></span>${sonMu ? '' : '<span class="izl"></span>'}</span>
+      <span class="izy">
+        ${esc(DB.kisiAdi(h.kim))} ${HAREKET_ADI[h.tip] || h.tip}
+        ${h.notu ? `<span class="revize">${esc(h.notu)}</span>` : ''}
+        <em>${tarihYaz(h.olusturuldu)}</em>
+      </span>
+    </div>`;
+}
+
+function gorevButonlari(g, benim, yon) {
+  const prompt = `<button class="btn" data-gk="prompt" type="button">
+    ${svg(ICON.kopya, 15)}<span>Prompt Kopyala</span></button>`;
+
+  if (g.durum === 'kontrolde' && yon) {
+    return `<button class="btn btn-red" data-gk="revize" type="button"><span>Revize İste</span></button>
+            <button class="btn btn-onay" data-gk="onayla" type="button"><span>Onayla</span></button>`;
+  }
+  if (g.durum === 'yapilacak' && (benim || yon)) {
+    return prompt + `<button class="btn btn-primary" data-gk="basla" type="button"><span>Başla</span></button>`;
+  }
+  if (g.durum === 'gelistiriliyor' && (benim || yon)) {
+    return prompt + `<button class="btn btn-primary" data-gk="kontrole" type="button"><span>Kontrole Gönder</span></button>`;
+  }
+  if (yon) {
+    return prompt + `<button class="btn btn-red" data-gk="sil" type="button"><span>Görevi Sil</span></button>`;
+  }
+  return prompt;
+}
+
+function gorevKartiBagla(kutu, id) {
+  $$('[data-gk]', kutu).forEach(el => {
+    el.addEventListener('click', () => gorevEylemi(el.dataset.gk, id, el.dataset.deger));
+  });
+}
+
+async function gorevEylemi(tip, id, deger) {
+  const g = DB.gorev(id);
+  if (!g && tip !== 'kapat') { modalKapat(); return; }
+
+  if (tip === 'kapat')  return modalKapat();
+  if (tip === 'prompt') return toast('Prompt motoru Adım 4\'te gelecek.');
+
+  if (tip === 'basla')    return gorevDurum(id, 'gelistiriliyor');
+  if (tip === 'kontrole') return gorevDurum(id, 'kontrolde');
+  if (tip === 'onayla')   return gorevDurum(id, 'tamamlandi');
+  if (tip === 'durum')    return gorevDurum(id, deger);
+
+  if (tip === 'revize') {
+    const notu = await metinSor({
+      baslik: 'Neyi düzeltsin?',
+      aciklama: 'Not geliştiriciye gider, görev Geliştiriliyor\'a düşer.',
+      yerTutucu: 'Örn. Tarih aralığı seçilince liste yenilenmiyor.',
+      buton: 'Geri Gönder',
+    });
+    if (!notu) { gorevKartiAc(id); return; }
+    return gorevDurum(id, 'gelistiriliyor', notu);
+  }
+
+  if (tip === 'ata') {
+    const kisiId = await kisiSor(g.atanan);
+    if (kisiId === undefined) { gorevKartiAc(id); return; }
+    try {
+      await DB.gorevGuncelle(id, { atanan: kisiId });
+      if (kisiId) await DB.hareketEkle(id, 'atandi', DB.kisiAdi(kisiId));
+      sonrasi(id, 'Atama güncellendi.');
+    } catch (e) { toast(e.message); }
+    return;
+  }
+
+  if (tip === 'oncelik') {
+    try {
+      await DB.gorevGuncelle(id, { oncelik: g.oncelik === 'acil' ? 'normal' : 'acil' });
+      sonrasi(id, g.oncelik === 'acil' ? 'Öncelik normale alındı.' : 'Acil olarak işaretlendi.');
+    } catch (e) { toast(e.message); }
+    return;
+  }
+
+  if (tip === 'sil') {
+    const ok = await onaySor({
+      baslik: 'Görev silinsin mi?',
+      mesaj: `${gorevNo(g)} — "${g.baslik}" kalıcı olarak silinecek.`,
+    });
+    if (!ok) { gorevKartiAc(id); return; }
+    try {
+      await DB.gorevSil(id);
+      modalKapat(); sayaclariYaz(); render(); toast('Görev silindi.');
+    } catch (e) { toast(e.message); }
+  }
+}
+
+async function gorevDurum(id, durum, notu = '') {
+  try {
+    await DB.durumDegistir(id, durum, notu);
+    sonrasi(id, durum === 'tamamlandi' ? 'Onaylandı.' :
+                durum === 'kontrolde'  ? 'Kontrole gönderildi.' : 'Durum güncellendi.');
+  } catch (e) {
+    toast(e.message);
+    gorevKartiAc(id);
+  }
+}
+
+/* Bir işlemden sonra: arka planı yenile, kartı taze veriyle tekrar aç */
+function sonrasi(id, mesaj) {
+  sayaclariYaz();
+  render();
+  if (DB.gorev(id)) gorevKartiAc(id); else modalKapat();
+  if (mesaj) toast(mesaj);
+}
+
+/* ==========================================================================
+   YENİ GÖREV
+   ========================================================================== */
+
+const YENI = { proje: null, modul: null, sayfa: null, oncelik: 'normal', atanan: null, kaydediyor: false };
+
+function yeniGorevAc({ proje, modul, sayfa }) {
+  Object.assign(YENI, {
+    proje: proje || null, modul: modul || null, sayfa: sayfa || null,
+    oncelik: 'normal', atanan: null, kaydediyor: false,
+  });
+
+  if (!YENI.proje && YENI.modul) {
+    const m = DB.moduller.find(x => x.id === YENI.modul);
+    if (m) YENI.proje = m.proje_id;
+  }
+  if (!YENI.proje) { toast('Önce bir proje aç.'); return; }
+
+  modalAc(yeniGorevHtml(), yeniGorevBagla, 'genis');
+}
+
+function yeniGorevHtml() {
+  const moduller = DB.modulleri(YENI.proje);
+  const sayfalar = YENI.modul ? DB.sayfalari(YENI.modul) : [];
+  const proje    = DB.proje(YENI.proje);
+
+  return `
+    <h3 class="modal-h">Yeni görev</h3>
+    <p class="modal-s">${esc(proje ? proje.firma : '')} · nereye bağlanacağını seç.</p>
+
+    <label class="field">
+      <span>Başlık</span>
+      <input type="text" id="yg-baslik" placeholder="Örn. Stok hareketlerine tarih filtresi"
+             autocomplete="off" maxlength="120">
+    </label>
+
+    <label class="field">
+      <span>Ne yapılacak</span>
+      <textarea id="yg-aciklama" rows="3"
+        placeholder="Kısa ve net yaz. Bu metin Adım 4'te AI promptuna girecek."></textarea>
+    </label>
+
+    <div class="field">
+      <span>Modül</span>
+      <div class="secenek-serit">
+        ${moduller.map(m => `<button class="ss ${YENI.modul === m.id ? 'sec' : ''}"
+          data-yg="modul" data-deger="${m.id}" type="button">${esc(m.ad)}</button>`).join('')}
+      </div>
+    </div>
+
+    ${YENI.modul && sayfalar.length ? `
+      <div class="field">
+        <span>Sayfa <em class="ipucu">boş bırakırsan modüle bağlanır</em></span>
+        <div class="secenek-serit">
+          ${sayfalar.map(sf => `<button class="ss ${YENI.sayfa === sf.id ? 'sec' : ''}"
+            data-yg="sayfa" data-deger="${sf.id}" type="button">${esc(sf.ad)}</button>`).join('')}
+        </div>
+      </div>` : ''}
+
+    <div class="gk-meta">
+      <div class="field" style="margin:0">
+        <span>Atanan</span>
+        <div class="secenek-serit">
+          ${DB.kisiler.map(k => `<button class="ss ${YENI.atanan === k.id ? 'sec' : ''}"
+            data-yg="atanan" data-deger="${k.id}" type="button">${esc(k.ad || 'Kişi')}</button>`).join('')
+            || '<span class="ipucu">Kişi listesi boş.</span>'}
+        </div>
+      </div>
+      <div class="field" style="margin:0">
+        <span>Öncelik</span>
+        <div class="secenek-serit">
+          <button class="ss ${YENI.oncelik === 'normal' ? 'sec' : ''}" data-yg="oncelik" data-deger="normal" type="button">Normal</button>
+          <button class="ss acil-ss ${YENI.oncelik === 'acil' ? 'sec' : ''}" data-yg="oncelik" data-deger="acil" type="button">Acil</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-alt">
+      <button class="btn btn-ghost" data-yg="kapat" type="button">Vazgeç</button>
+      <button class="btn btn-primary" data-yg="kaydet" type="button"><span>Görevi Oluştur</span></button>
+    </div>`;
+}
+
+function yeniGorevBagla(kutu) {
+  const baslik = $('#yg-baslik', kutu);
+  if (baslik) setTimeout(() => baslik.focus(), 40);
+
+  $$('[data-yg]', kutu).forEach(el => {
+    el.addEventListener('click', () => {
+      const t = el.dataset.yg, d = el.dataset.deger;
+
+      if (t === 'kapat')  return modalKapat();
+      if (t === 'kaydet') return yeniGorevKaydet();
+
+      /* metin alanları yeniden çizimde kaybolmasın */
+      YENI._baslik   = $('#yg-baslik', kutu).value;
+      YENI._aciklama = $('#yg-aciklama', kutu).value;
+
+      if (t === 'modul')   { YENI.modul = d; YENI.sayfa = null; }
+      if (t === 'sayfa')   { YENI.sayfa = YENI.sayfa === d ? null : d; }
+      if (t === 'atanan')  { YENI.atanan = YENI.atanan === d ? null : d; }
+      if (t === 'oncelik') { YENI.oncelik = d; }
+
+      yeniGorevCiz();
+    });
+  });
+
+  if (YENI._baslik)   baslik.value = YENI._baslik;
+  if (YENI._aciklama) $('#yg-aciklama', kutu).value = YENI._aciklama;
+}
+
+function yeniGorevCiz() {
+  const kutu = $('.modal-kutu');
+  if (!kutu) return;
+  kutu.innerHTML = yeniGorevHtml();
+  yeniGorevBagla(kutu);
+}
+
+async function yeniGorevKaydet() {
+  if (YENI.kaydediyor) return;
+
+  const baslik   = $('#yg-baslik').value.trim();
+  const aciklama = $('#yg-aciklama').value.trim();
+
+  if (!baslik) { toast('Görev başlığı yaz.'); $('#yg-baslik').focus(); return; }
+  if (!YENI.modul) { toast('Bir modül seç.'); return; }
+
+  YENI.kaydediyor = true;
+  const btn = $('[data-yg="kaydet"] span');
+  if (btn) btn.textContent = 'Oluşturuluyor…';
+
+  try {
+    await DB.gorevOlustur({
+      proje_id: YENI.proje,
+      modul_id: YENI.modul,
+      sayfa_id: YENI.sayfa,
+      baslik, aciklama,
+      oncelik: YENI.oncelik,
+      atanan: YENI.atanan,
+    });
+    YENI._baslik = YENI._aciklama = '';
+    if (YENI.sayfa) ACIK_SAYFA.add(YENI.sayfa);
+    if (YENI.modul) ACIK_MODUL.add(YENI.modul);
+    modalKapat(); sayaclariYaz(); render(); toast('Görev oluşturuldu.');
+  } catch (e) {
+    toast(e.message);
+    if (btn) btn.textContent = 'Görevi Oluştur';
+  } finally {
+    YENI.kaydediyor = false;
+  }
+}
+
+/* Kişi seçtiren küçük pencere. Vazgeçilirse undefined döner. */
+function kisiSor(mevcut) {
+  return new Promise(resolve => {
+    const liste = DB.kisiler.map(k => `
+      <button class="sc ${mevcut === k.id ? 'sec' : ''}" data-k="${k.id}" type="button">
+        <span class="sc-yazi"><span class="sc-ad">${esc(k.ad || 'Kişi')}</span>
+        <span class="sc-alt">${k.rol === 'yonetici' ? 'Yönetici' : 'Geliştirici'}</span></span>
+        <span class="tik">${mevcut === k.id ? svg(ICON.tik, 13) : ''}</span>
+      </button>`).join('');
+
+    modalAc(`
+      <h3 class="modal-h">Kime atansın?</h3>
+      <p class="modal-s">Kişiler Supabase panelinden eklenir.</p>
+      <div class="secim">
+        ${liste || '<span class="ipucu">Kişi listesi boş.</span>'}
+        <button class="sc" data-k="" type="button">
+          <span class="sc-yazi"><span class="sc-ad">Kimseye atama</span>
+          <span class="sc-alt">Havuzda bekletir</span></span><span class="tik"></span>
+        </button>
+      </div>
+      <div class="modal-alt">
+        <button class="btn btn-ghost" data-k-iptal="1" type="button">Vazgeç</button>
+      </div>`, kutu => {
+      $$('[data-k]', kutu).forEach(el =>
+        el.addEventListener('click', () => { modalKapat(); resolve(el.dataset.k || null); }));
+      $('[data-k-iptal]', kutu).addEventListener('click', () => { modalKapat(); resolve(undefined); });
+    });
+  });
+}
+
+/* ==========================================================================
    EYLEMLER
    ========================================================================== */
 
@@ -761,8 +1252,26 @@ async function eylemCalistir(el) {
     return render();
   }
 
+  if (e === 'sayfa-ac') {
+    ACIK_SAYFA.has(id) ? ACIK_SAYFA.delete(id) : ACIK_SAYFA.add(id);
+    return render();
+  }
+
+  if (e === 'gorev-ac')   return gorevKartiAc(id);
+
+  if (e === 'gorev-ekle') return yeniGorevAc({
+    proje: el.dataset.proje || rota().id,
+    modul: el.dataset.modul,
+    sayfa: el.dataset.sayfa,
+  });
+
+  if (e === 'filtre') {
+    GOREV_FILTRE = el.dataset.deger;
+    return render();
+  }
+
   if (e === 'modul-ekle') {
-    const projeId = el.dataset.proje || rota().id;
+    const projeId = el.dataset.proje || el.dataset.id || rota().id;
     const ad = await metinSor({
       baslik: 'Yeni modül',
       aciklama: 'Hazır bir modül adı yazarsan sayfaları da kurulur.',
@@ -846,6 +1355,54 @@ function durumSinif(d) {
   return { gelistiriliyor: 'dev', kontrolde: 'check', tamamlandi: 'done' }[d] || '';
 }
 
+function gorevNo(g) { return TASK_PREFIX + '-' + g.no; }
+
+/* Görevin ağaçtaki yeri: Proje › Modül › Sayfa */
+function gorevYolu(g) {
+  const proje = DB.proje(g.proje_id);
+  const modul = g.modul_id ? DB.moduller.find(m => m.id === g.modul_id) : null;
+  const sayfa = g.sayfa_id ? DB.sayfalar.find(s => s.id === g.sayfa_id) : null;
+
+  const parcalar = [
+    proje ? `<b>${esc(proje.firma)}</b>` : 'Proje',
+    modul ? esc(modul.ad) : null,
+    sayfa ? esc(sayfa.ad) : null,
+  ].filter(Boolean);
+
+  return parcalar.join(' › ');
+}
+
+/* Sayfa noktasının rengi: en geride kalan görevin durumu */
+function sayfaRengi(gorevler) {
+  if (!gorevler.length) return 'var(--st-todo)';
+  for (const d of DURUM_SIRA) {
+    if (gorevler.some(g => g.durum === d)) return `var(--st-${DURUM_SINIF[d]})`;
+  }
+  return 'var(--st-todo)';
+}
+
+/* Kişi rengi — kimliğinden türetilir, hep aynı kalır */
+function kisiRengi(id) {
+  const paletler = ['#3a5f8a', '#6b4a86', '#7a5a2e', '#2f6f4f', '#7a3a4a', '#3f5a6b'];
+  let t = 0;
+  String(id || '').split('').forEach(c => { t = (t + c.charCodeAt(0)) % 997; });
+  return paletler[t % paletler.length];
+}
+
+function bugunTarih() {
+  const d = new Date();
+  const p = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+}
+
+function tarihYaz(iso) {
+  if (!iso) return '';
+  const a = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+  const d = new Date(iso);
+  const p = n => String(n).padStart(2, '0');
+  return `${d.getDate()} ${a[d.getMonth()]} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
 function todayLabel() {
   const g = ['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi'];
   const a = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
@@ -893,8 +1450,10 @@ async function girisGonder(e) {
 async function signOut() {
   await AUTH.signOut();
   DB.projeler = []; DB.moduller = []; DB.sayfalar = [];
+  DB.gorevler = []; DB.hareketler = []; DB.kisiler = [];
   DB.yuklendi = false; DB.hata = null;
-  ACIK_MODUL.clear();
+  ACIK_MODUL.clear(); ACIK_SAYFA.clear();
+  GOREV_FILTRE = '';
   modalKapat();
 
   $('#app').classList.add('hidden');

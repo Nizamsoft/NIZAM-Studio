@@ -11,6 +11,9 @@ const DB = {
   projeler: [],
   moduller: [],
   sayfalar: [],
+  gorevler: [],
+  hareketler: [],
+  kisiler: [],
 
   yuklendi: false,
   hata: null,
@@ -22,24 +25,31 @@ const DB = {
 
     if (!AUTH.bagli) {                      // demo modu — veri yok
       this.projeler = []; this.moduller = []; this.sayfalar = [];
+      this.gorevler = []; this.hareketler = []; this.kisiler = [];
       this.yuklendi = true;
       return;
     }
 
     try {
-      const [p, m, s] = await Promise.all([
+      const [p, m, s, g, h, k] = await Promise.all([
         AUTH.db.from('projects').select('*').eq('arsiv', false).order('sira').order('olusturuldu'),
         AUTH.db.from('modules').select('*').order('sira'),
         AUTH.db.from('pages').select('*').order('sira'),
+        AUTH.db.from('tasks').select('*').order('no', { ascending: false }),
+        AUTH.db.from('task_events').select('*').order('olusturuldu'),
+        AUTH.db.from('profiles').select('id, ad, rol, aktif'),
       ]);
 
-      const ilkHata = p.error || m.error || s.error;
+      const ilkHata = p.error || m.error || s.error || g.error || h.error;
       if (ilkHata) throw ilkHata;
 
-      this.projeler = p.data || [];
-      this.moduller = m.data || [];
-      this.sayfalar = s.data || [];
-      this.yuklendi = true;
+      this.projeler   = p.data || [];
+      this.moduller   = m.data || [];
+      this.sayfalar   = s.data || [];
+      this.gorevler   = g.data || [];
+      this.hareketler = h.data || [];
+      this.kisiler    = (k.data || []).filter(x => x.aktif);
+      this.yuklendi   = true;
     } catch (e) {
       this.hata = veriHatasi(e);
       this.yuklendi = false;
@@ -51,32 +61,58 @@ const DB = {
   modulleri(pid)   { return this.moduller.filter(m => m.proje_id === pid).sort(siraya); },
   sayfalari(mid)   { return this.sayfalar.filter(s => s.modul_id === mid).sort(siraya); },
 
-  /* Bir projenin sayıları. Görevler Adım 3'te gelecek — şimdilik sıfır.
-     Yüzde her zaman hesaplanır, asla elle girilmez. */
+  gorevleri(sec = {}) {
+    return this.gorevler.filter(g =>
+      (sec.proje ? g.proje_id === sec.proje : true) &&
+      (sec.modul ? g.modul_id === sec.modul : true) &&
+      (sec.sayfa ? g.sayfa_id === sec.sayfa : true) &&
+      (sec.kisi  ? g.atanan   === sec.kisi  : true) &&
+      (sec.durum ? g.durum    === sec.durum : true)
+    );
+  },
+
+  gorev(id)     { return this.gorevler.find(g => g.id === id) || null; },
+  hareketleri(gid) { return this.hareketler.filter(h => h.gorev_id === gid); },
+
+  /* Yüzde her zaman hesaplanır, asla elle girilmez. */
+  ilerleme(gorevler) {
+    const bitmis = gorevler.filter(g => g.durum === 'tamamlandi').length;
+    return {
+      gorev: gorevler.length,
+      bitmis,
+      yuzde: gorevler.length ? Math.round(bitmis / gorevler.length * 100) : 0,
+    };
+  },
+
+  /* Bir projenin sayıları */
   sayim(pid) {
     const moduller = this.modulleri(pid);
     const modulIds = moduller.map(m => m.id);
-    const sayfa    = this.sayfalar.filter(s => modulIds.includes(s.modul_id)).length;
-
-    const gorev = 0, bitmis = 0;
-    return {
-      modul:  moduller.filter(m => !m.genel).length,
-      sayfa,
-      gorev,
-      bitmis,
-      yuzde: gorev ? Math.round(bitmis / gorev * 100) : 0,
-    };
+    return Object.assign({
+      modul: moduller.filter(m => !m.genel).length,
+      sayfa: this.sayfalar.filter(s => modulIds.includes(s.modul_id)).length,
+    }, this.ilerleme(this.gorevleri({ proje: pid })));
   },
 
   /* Modül sayıları — detay ekranındaki satırlar için */
   modulSayim(mid) {
-    const gorev = 0, bitmis = 0;
-    return {
-      sayfa: this.sayfalari(mid).length,
-      gorev,
-      bitmis,
-      yuzde: gorev ? Math.round(bitmis / gorev * 100) : 0,
-    };
+    return Object.assign(
+      { sayfa: this.sayfalari(mid).length },
+      this.ilerleme(this.gorevleri({ modul: mid })));
+  },
+
+  sayfaSayim(sid) { return this.ilerleme(this.gorevleri({ sayfa: sid })); },
+
+  kisi(id) {
+    if (!id) return null;
+    return this.kisiler.find(k => k.id === id) || null;
+  },
+
+  kisiAdi(id) {
+    const k = this.kisi(id);
+    if (k && k.ad) return k.ad;
+    if (id && AUTH.user && id === AUTH.user.id) return AUTH.ad;
+    return id ? 'Bilinmeyen' : 'Atanmadı';
   },
 
   /* ---------- Yazma ---------- */
@@ -177,6 +213,69 @@ const DB = {
     await this.yukle();
   },
 
+  /* ---------- Görevler ---------- */
+
+  async gorevOlustur({ proje_id, modul_id, sayfa_id, baslik, aciklama, oncelik, atanan }) {
+    yazmaKontrol();
+
+    const { data, error } = await AUTH.db.from('tasks').insert({
+      proje_id,
+      modul_id: modul_id || null,
+      sayfa_id: sayfa_id || null,
+      baslik: baslik.trim(),
+      aciklama: (aciklama || '').trim(),
+      oncelik: oncelik || 'normal',
+      atanan: atanan || null,
+      olusturan: AUTH.user.id,
+    }).select().single();
+    if (error) throw new Error(veriHatasi(error));
+
+    await this.hareketEkle(data.id, 'olusturuldu');
+    if (atanan) await this.hareketEkle(data.id, 'atandi', DB.kisiAdi(atanan));
+
+    await this.yukle();
+    return data.id;
+  },
+
+  async gorevGuncelle(id, alanlar) {
+    const { error } = await AUTH.db.from('tasks').update(alanlar).eq('id', id);
+    if (error) throw new Error(veriHatasi(error));
+    await this.yukle();
+  },
+
+  /* Durum değişimi hep buradan geçer; hareket kaydı kendiliğinden düşer. */
+  async durumDegistir(id, yeniDurum, notu = '') {
+    const gorev = this.gorev(id);
+    if (!gorev) throw new Error('Görev bulunamadı.');
+
+    const tip = {
+      gelistiriliyor: gorev.durum === 'kontrolde' ? 'revize' : 'baslandi',
+      kontrolde:      'kontrole',
+      tamamlandi:     'onaylandi',
+      yapilacak:      'geri',
+    }[yeniDurum];
+
+    const { error } = await AUTH.db.from('tasks').update({ durum: yeniDurum }).eq('id', id);
+    if (error) throw new Error(veriHatasi(error));
+
+    await this.hareketEkle(id, tip, notu);
+    await this.yukle();
+  },
+
+  async hareketEkle(gorevId, tip, notu = '') {
+    const { error } = await AUTH.db.from('task_events').insert({
+      gorev_id: gorevId, tip, notu, kim: AUTH.user ? AUTH.user.id : null,
+    });
+    if (error) throw new Error(veriHatasi(error));
+  },
+
+  async gorevSil(id) {
+    yazmaKontrol();
+    const { error } = await AUTH.db.from('tasks').delete().eq('id', id);
+    if (error) throw new Error(veriHatasi(error));
+    await this.yukle();
+  },
+
   async adDegistir(tablo, id, ad) {
     yazmaKontrol();
     const { error } = await AUTH.db.from(tablo).update({ ad: ad.trim() }).eq('id', id);
@@ -208,6 +307,10 @@ function veriHatasi(err) {
     return 'Sunucuya ulaşılamadı. İnternet bağlantını kontrol et.';
   if (m.includes('duplicate key'))
     return 'Bu kayıt zaten var.';
+  if (m.includes('bu görev sana atanmamış'))
+    return 'Bu görev sana atanmamış.';
+  if (m.includes('yalnızca yönetici'))
+    return 'Bu durumu yalnızca yönetici verebilir.';
 
   return 'Veri işlemi başarısız oldu. Tekrar dene.';
 }

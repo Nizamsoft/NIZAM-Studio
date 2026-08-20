@@ -7,9 +7,9 @@ const APP = {
   name:     'NIZAM | Studio',
   short:    'NIZAM Studio',
   owner:    'Nizam Soft',
-  version:  'v0.3.0',
+  version:  'v0.4.0',
   build:    '2026-08-20',
-  stage:    'Adım 2 — Projeler',
+  stage:    'Adım 3 — Görevler',
 };
 
 /* Supabase bağlantısı.
@@ -61,3 +61,31 @@ const GENEL_MODUL = 'Proje Geneli';
 const PLATFORM_ADI = { web: 'Web', mobil: 'Mobil', ikisi: 'Web · Mobil' };
 const VERI_ADI     = { sifirdan: 'Sıfırdan veritabanı', mevcut: 'Mevcut veritabanı', excel: "Excel'den taşınacak" };
 const DURUM_ADI    = { yeni: 'Yeni', gelistiriliyor: 'Geliştiriliyor', kontrolde: 'Kontrolde', tamamlandi: 'Tamamlandı' };
+
+/* ==========================================================================
+   Görev durumları — dört tane, sırayla ilerler.
+   "Kontrolde" yöneticinin onayını bekliyor demektir.
+   Revize ayrı bir durum değil: Kontrolde'den Geliştiriliyor'a geri düşme.
+   ========================================================================== */
+
+const DURUMLAR = [
+  { anahtar: 'yapilacak',      ad: 'Yapılacak',      sinif: 'todo'  },
+  { anahtar: 'gelistiriliyor', ad: 'Geliştiriliyor', sinif: 'dev'   },
+  { anahtar: 'kontrolde',      ad: 'Kontrolde',      sinif: 'check' },
+  { anahtar: 'tamamlandi',     ad: 'Tamamlandı',     sinif: 'done'  },
+];
+
+const DURUM_SIRA = DURUMLAR.map(d => d.anahtar);
+const DURUM_GOREV_ADI = Object.fromEntries(DURUMLAR.map(d => [d.anahtar, d.ad]));
+const DURUM_SINIF = Object.fromEntries(DURUMLAR.map(d => [d.anahtar, d.sinif]));
+
+/* Hareket geçmişinde gösterilen cümleler */
+const HAREKET_ADI = {
+  olusturuldu: 'görevi oluşturdu',
+  atandi:      'görevi atadı',
+  baslandi:    'geliştirmeye başladı',
+  kontrole:    'kontrole gönderdi',
+  revize:      'revize istedi',
+  onaylandi:   'görevi onayladı',
+  geri:        'görevi geri aldı',
+};
