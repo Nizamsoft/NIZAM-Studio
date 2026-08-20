@@ -1,6 +1,6 @@
 /* ==========================================================================
    NIZAM | Studio — Uygulama
-   Adım 0: iskelet. Veri katmanı yok; ekranlar boş durum gösterir.
+   Adım 1: giriş Supabase'e bağlı. Veri katmanı Adım 2'de gelecek.
    ========================================================================== */
 
 'use strict';
@@ -85,6 +85,17 @@ const VIEWS = {
 
   ayarlar: () => `
     <div class="section" style="margin-top:0">
+      <span class="label">Hesap</span>
+      <div class="card">
+        <div class="row-list">
+          ${infoRow('Ad', AUTH.ad)}
+          ${infoRow('E-posta', AUTH.mail, true)}
+          ${infoRow('Rol', AUTH.rolAdi)}
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
       <span class="label">Uygulama</span>
       <div class="card">
         <div class="row-list">
@@ -100,7 +111,7 @@ const VIEWS = {
       <span class="label">Bağlantılar</span>
       <div class="card">
         <div class="row-list">
-          ${connRow('Supabase', SUPABASE.url ? 'Bağlı' : 'Bağlı değil', !!SUPABASE.url)}
+          ${connRow('Supabase', AUTH.bagli ? 'Bağlı' : 'Demo modu', AUTH.bagli)}
           ${connRow('GitHub', 'Bağlı değil', false)}
         </div>
       </div>
@@ -111,7 +122,7 @@ const VIEWS = {
       <div class="card">
         <div class="row-list">
           ${stepRow('Adım 0', 'İskelet, tema, açılış, menü', true)}
-          ${stepRow('Adım 1', 'Supabase kurulumu ve giriş', false)}
+          ${stepRow('Adım 1', 'Supabase kurulumu ve giriş', true)}
           ${stepRow('Adım 2', 'Projeler, modül ve sayfa ağacı', false)}
           ${stepRow('Adım 3', 'Görevler, durumlar, atama', false)}
           ${stepRow('Adım 4', 'Prompt motoru ve kimlik dosyası', false)}
@@ -235,25 +246,62 @@ function toast(msg) {
   toastTimer = setTimeout(() => t.classList.add('hidden'), 2600);
 }
 
-/* ---------- Oturum (Adım 1'de Supabase'e bağlanacak) ---------- */
+/* ---------- Oturum ---------- */
 
-const SESSION_KEY = 'ns.session';
+/* Giriş formu: doğrulama AUTH içinde, burada sadece ekran yönetimi var. */
+async function girisGonder(e) {
+  e.preventDefault();
 
-function signIn() {
-  try { localStorage.setItem(SESSION_KEY, '1'); } catch (e) {}
+  const buton = $('#login-form button[type=submit]');
+  const yazi  = buton.querySelector('span') || buton;
+  const eski  = yazi.textContent;
+
+  hataGizle();
+  buton.disabled = true;
+  yazi.textContent = 'Giriş yapılıyor…';
+
+  try {
+    await AUTH.signIn($('#login-mail').value, $('#login-pass').value);
+    $('#login-pass').value = '';
+    uygulamayiAc();
+  } catch (err) {
+    hataGoster(err.message);
+    $('#login-pass').select();
+  } finally {
+    buton.disabled = false;
+    yazi.textContent = eski;
+  }
+}
+
+async function signOut() {
+  await AUTH.signOut();
+  $('#app').classList.add('hidden');
+  $('#login').classList.remove('hidden');
+  hataGizle();
+  $('#login-mail').value = '';
+  $('#login-pass').value = '';
+}
+
+function uygulamayiAc() {
   $('#login').classList.add('hidden');
   $('#app').classList.remove('hidden');
+  kullaniciYaz();
   render();
 }
 
-function signOut() {
-  try { localStorage.removeItem(SESSION_KEY); } catch (e) {}
-  $('#app').classList.add('hidden');
-  $('#login').classList.remove('hidden');
+function hataGoster(mesaj) {
+  const kutu = $('#login-error');
+  kutu.textContent = mesaj;
+  kutu.classList.remove('hidden');
 }
 
-function hasSession() {
-  try { return localStorage.getItem(SESSION_KEY) === '1'; } catch (e) { return false; }
+function hataGizle() { $('#login-error').classList.add('hidden'); }
+
+/* Yan menüdeki kullanıcı kutusuna gerçek bilgiyi yazar. */
+function kullaniciYaz() {
+  $('#user-chip .avatar').textContent    = AUTH.basHarfler;
+  $('#user-chip .user-name').textContent = AUTH.ad;
+  $('#user-chip .user-role').textContent = AUTH.rolAdi;
 }
 
 /* ---------- Açılış ---------- */
@@ -264,7 +312,7 @@ function runLoader() {
   const steps = [
     [20,  'Tema yükleniyor…'],
     [45,  'Arayüz hazırlanıyor…'],
-    [70,  'Bağlantılar denetleniyor…'],
+    [70,  'Oturum denetleniyor…'],
     [100, 'Hazır'],
   ];
 
@@ -282,17 +330,20 @@ function runLoader() {
 }
 
 async function boot() {
-  await runLoader();
+  AUTH.init();
+
+  /* Açılış animasyonu ile oturum kontrolü aynı anda yürür. */
+  const [, oturumVar] = await Promise.all([runLoader(), AUTH.restore()]);
 
   const loader = $('#loader');
   loader.classList.add('fade-out');
   setTimeout(() => loader.remove(), 400);
 
-  if (hasSession()) {
-    $('#app').classList.remove('hidden');
-    render();
+  if (oturumVar) {
+    uygulamayiAc();
   } else {
     $('#login').classList.remove('hidden');
+    $('#login-mail').focus();
   }
 }
 
@@ -305,10 +356,9 @@ window.addEventListener('hashchange', () => {
 document.addEventListener('DOMContentLoaded', () => {
   document.title = APP.name;
 
-  $('#login-form').addEventListener('submit', e => {
-    e.preventDefault();
-    signIn();
-  });
+  $('#login-form').addEventListener('submit', girisGonder);
+  $('#login-mail').addEventListener('input', hataGizle);
+  $('#login-pass').addEventListener('input', hataGizle);
 
   $('#topbar-action').addEventListener('click', () => {
     toast('Proje sihirbazı Adım 2\'de gelecek.');

@@ -2,9 +2,10 @@
    Ağ öncelikli: geliştirme sırasında eski dosya takılıp kalmaz.
    Ağ yoksa önbellekten döner. */
 
-const CACHE = 'nizam-studio-v0.1.0';
+const CACHE = 'nizam-studio-v0.2.0';
 const SHELL = [
-  './', './index.html', './style.css', './app.js', './config.js',
+  './', './index.html', './style.css', './app.js', './config.js', './auth.js',
+  './vendor/supabase.js',
   './manifest.webmanifest', './icon-192.png', './icon-512.png'
 ];
 

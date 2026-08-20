@@ -159,6 +159,15 @@ button { font-family: inherit; color: inherit; }
   letter-spacing: 3px; text-transform: uppercase; color: var(--ink-dim); font-weight: 600;
 }
 .login-note { margin: 14px 0 0; text-align: center; font-size: 11px; color: var(--ink-dim); }
+.login-error {
+  margin: 0 0 14px; padding: 10px 12px;
+  background: var(--red-soft);
+  border: 1px solid rgba(229,52,42,.32);
+  border-radius: var(--radius-sm);
+  font-size: 12.5px; color: #f08a83; text-align: center;
+  animation: riseIn .22s var(--ease) both;
+}
+.btn[disabled] { opacity: .6; pointer-events: none; }
 
 .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
 .field > span { font-size: 11.5px; color: var(--ink-faint); font-weight: 500; }

@@ -17,7 +17,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
-<link rel="stylesheet" href="style.css?v=0.1.0">
+<link rel="stylesheet" href="style.css?v=0.2.0">
 </head>
 <body>
 
@@ -63,8 +63,10 @@
       <input type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password">
     </label>
 
-    <button class="btn btn-primary btn-block" type="submit">Giriş Yap</button>
-    <p class="login-note">Adım 0 — giriş sistemi henüz bağlı değil, doğrudan girilir.</p>
+    <p class="login-error hidden" id="login-error" role="alert"></p>
+
+    <button class="btn btn-primary btn-block" type="submit"><span>Giriş Yap</span></button>
+    <p class="login-note">Hesabı olmayan giremez. Erişim için yöneticine başvur.</p>
   </form>
 </div>
 
@@ -161,7 +163,9 @@
 
 <div id="toast" class="hidden"></div>
 
-<script src="config.js?v=0.1.0"></script>
-<script src="app.js?v=0.1.0"></script>
+<script src="vendor/supabase.js?v=2.112.3"></script>
+<script src="config.js?v=0.2.0"></script>
+<script src="auth.js?v=0.2.0"></script>
+<script src="app.js?v=0.2.0"></script>
 </body>
 </html>
