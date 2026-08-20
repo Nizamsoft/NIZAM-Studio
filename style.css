@@ -1286,7 +1286,9 @@ html { background: var(--bg); }
 
   #tabbar {
     display: flex; flex-shrink: 0;
-    padding: 8px 8px max(10px, env(safe-area-inset-bottom, 0px));
+    /* Güvenli alan payının yarısı: sekmeler dibe yaklaşır ama ana ekran
+       çizgisiyle çakışmaz. Payı olmayan cihazlarda en az 10px kalır. */
+    padding: 6px 8px max(10px, calc(env(safe-area-inset-bottom, 0px) / 2));
     background: var(--rail); border-top: 1px solid var(--line-3);
   }
   .tab {

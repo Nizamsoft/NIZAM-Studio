@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## v0.7.1 — 20 Ağustos 2026
+
+- Alt sekme çubuğu telefonun güvenli alan payı yüzünden gereğinden yukarıda duruyordu.
+  Pay yarıya indirildi: sekmeler dibe yaklaştı, ana ekran çizgisiyle çakışma olmuyor
+
 ## v0.7.0 — 20 Ağustos 2026
 **Aşama 3 · Mimari ve özellikler**
 
