@@ -607,7 +607,7 @@ function standartKarti(st, i = 0) {
 
       ${acik ? `
         <div class="standart-govde">
-          ${st.tarif ? esc(st.tarif) : '<em class="ipucu">Tarif henüz yazılmadı.</em>'}
+          <p class="standart-tarif">${st.tarif ? esc(st.tarif) : '<em class="ipucu">Tarif henüz yazılmadı.</em>'}</p>
           ${AUTH.yonetici ? `
             <div class="modul-araclar" style="padding-left:0;margin-top:12px">
               <button class="mini-link" data-eylem="standart-duzenle" data-id="${st.id}" type="button">

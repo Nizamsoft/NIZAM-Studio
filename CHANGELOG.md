@@ -1,5 +1,15 @@
 # Değişiklik Günlüğü
 
+## v0.9.7 — 21 Ağustos 2026
+**Standart tarif metni düzeldi**
+
+Tarif metni `pre-wrap` ile yazıldığı için şablondaki girintiler de metne
+karışıyordu: ilk satır sağa kayıyor, sonda kocaman bir boşluk kalıyordu.
+
+- Tarif kendi kutusuna alındı; satır sonları korunuyor, girintiler karışmıyor
+- Metnin altındaki boşluk gitti
+- Grup içindeki kartlarda "kullanılmadı" yazısı mobilde gizlendi — özete yer açıldı
+
 ## v0.9.6 — 21 Ağustos 2026
 **Standartlar gruplandı**
 

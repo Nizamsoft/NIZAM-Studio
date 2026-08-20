@@ -889,9 +889,12 @@ svg .dolgu > * { fill: currentColor; fill-opacity: .22; }
 
 .standart-govde {
   border-top: 1px solid var(--line-3); background: var(--yuva);
-  padding: 14px 16px 14px 41px;
-  font-size: 12.5px; color: var(--ink-soft); line-height: 1.7; white-space: pre-wrap;
+  padding: 14px 16px 12px 41px;
+  font-size: 12.5px; color: var(--ink-soft); line-height: 1.7;
 }
+/* Tarif kendi kutusunda: satır sonları korunur ama şablondaki girintiler
+   metne karışmaz. Eskiden pre-wrap kabın kendisindeydi, ilk satır kayıyordu. */
+.standart-tarif { margin: 0; white-space: pre-wrap; }
 
 /* göreve bağlı standart etiketleri */
 .std-etiketler { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
@@ -1284,6 +1287,8 @@ html { background: var(--bg); }
   .gorev-no { display: none; }
   .gk-meta { grid-template-columns: 1fr; }
   .standart-govde { padding-left: 16px; }
+  /* Grup içinde kart daralıyor; kullanım yazısı özete yer bırakmıyordu. */
+  .standart-grup .kullanim { display: none; }
   .kod { font-size: 11px; max-height: 40vh; }
   .proje-arac .btn { flex: 1; min-width: 0; }
   .serit .st { font-size: 9.5px; padding: 8px 2px; }
