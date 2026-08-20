@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü
 
+## v0.7.2 — 20 Ağustos 2026
+
+- **Alt sekme çubuğu yüzen kart oldu:** kenarlardan boşluklu, yuvarlak köşeli, gölgeli.
+  Aktif sekme markanın kırmızısını taşıyan dolu kutu içinde
+- Proje kartındaki "…" düğmesinin ikonu tanımlı değildi, boş kırmızı kutu görünüyordu — eklendi
+- Dokunmatik cihazlarda :hover parmağı kaldırınca üzerinde kalıyordu; artık yalnızca
+  gerçek fare varken çalışıyor
+
 ## v0.7.1 — 20 Ağustos 2026
 
 - Alt sekme çubuğu telefonun güvenli alan payı yüzünden gereğinden yukarıda duruyordu.

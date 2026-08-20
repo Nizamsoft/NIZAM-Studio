@@ -93,6 +93,11 @@ const ICON = {
     c: '<path d="M4 7h16M4 17h16"></path><circle cx="9" cy="7" r="2.7"></circle><circle cx="15" cy="17" r="2.7"></circle>',
   },
 
+  nokta: {
+    d: '<circle cx="5" cy="12" r="1.9"></circle><circle cx="12" cy="12" r="1.9"></circle><circle cx="19" cy="12" r="1.9"></circle>',
+    c: '<circle cx="5" cy="12" r="1.9"></circle><circle cx="12" cy="12" r="1.9"></circle><circle cx="19" cy="12" r="1.9"></circle>',
+  },
+
   /* tek katman işaretler */
   chevron: '<path d="M9 6l6 6-6 6"></path>',
   arti:    '<path d="M12 5v14M5 12h14"></path>',

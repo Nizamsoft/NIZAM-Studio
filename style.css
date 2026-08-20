@@ -1129,33 +1129,36 @@ html { background: var(--bg); }
   color: var(--ink-dim); letter-spacing: .2px;
 }
 
-/* --- Alt sekme çubuğu: degrade + üstte vurgu saç teli --- */
+/* --- Alt sekme çubuğu: ekrandan ayrık, yüzen kart --- */
 @media (max-width: 900px) {
   #tabbar {
-    position: relative;
-    background: linear-gradient(180deg, var(--rail-ust), var(--rail));
-    box-shadow: 0 -10px 26px -20px rgba(0, 0, 0, .95);
+    margin: 0 12px 12px;
+    padding: 7px 7px max(7px, calc(env(safe-area-inset-bottom, 0px) / 2));
+    border: 1px solid var(--line); border-radius: 20px;
+    background: linear-gradient(180deg, var(--surface-2), var(--rail));
+    box-shadow: 0 14px 34px -14px rgba(0, 0, 0, .95), inset 0 1px 0 var(--isik);
+    overflow: hidden;
   }
-  #tabbar::before {
-    content: ''; position: absolute; inset: 0 0 auto 0; height: 1px;
-    background: linear-gradient(90deg, transparent, var(--red-cizgi) 22%, var(--red-cizgi) 78%, transparent);
-  }
+
   .tab {
-    position: relative; gap: 4px; min-height: var(--dokunma);
+    position: relative; gap: 4px; border-radius: 14px;
+    min-height: var(--dokunma);
     transition: color .18s ease;
   }
-  /* aktif sekme: altına yükselen dolu kabarcık */
+
+  /* aktif sekme: markanın rengini taşıyan dolu kutu */
   .tab::before {
-    content: ''; position: absolute; top: 2px; left: 50%; width: 46px; height: 30px;
-    margin-left: -23px; border-radius: 10px;
-    background: linear-gradient(180deg, var(--surface-3), var(--surface-2));
-    box-shadow: inset 0 1px 0 var(--isik), 0 0 0 1px var(--line-3);
-    opacity: 0; transform: translateY(4px) scale(.9);
-    transition: opacity .22s var(--ease), transform .28s var(--yay);
+    content: ''; position: absolute; inset: 0; border-radius: 14px;
+    background: var(--red-soft); box-shadow: inset 0 0 0 1px var(--red-cizgi);
+    opacity: 0; transform: scale(.88);
+    transition: opacity .2s ease, transform .3s var(--yay);
   }
   .tab > * { position: relative; }
   .tab.active::before { opacity: 1; transform: none; }
-  .tab.active svg { filter: drop-shadow(0 0 8px var(--red-cizgi)); }
+  .tab.active,
+  .tab.active span      { color: var(--red-ink); }
+  .tab.active svg       { stroke: var(--red); }
+  .tab.active .dolgu    { fill: var(--red); opacity: .3; }
 }
 
 /* --- Modal: bulanık perde + yaylanarak açılma --- */
@@ -1233,6 +1236,18 @@ html { background: var(--bg); }
 /* --- Sayfa geçişi biraz kısaldı --- */
 @keyframes viewIn { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: none; } }
 .view.swap { animation: viewIn .24s var(--ease) both; }
+
+/* Dokunmatikte :hover parmağı kaldırınca üzerinde kalıyor ve düğmeler
+   basılı gibi görünüyordu. Hover yalnızca gerçek fare varken çalışsın. */
+@media (hover: none) {
+  .mini-btn:hover, .mini-link:hover, .btn:hover, .f:hover, .ss:hover,
+  .proje:hover, .sayfa:hover, .gorev:hover, .gsatir:hover,
+  .modul-bas:hover, .standart-bas:hover, .nav-item:hover, .user-tile:hover,
+  .sayfa-ekle:hover, .gorev-ekle:hover, .sc:hover, .mod:hover, .renk:hover {
+    background: inherit; border-color: inherit; color: inherit; transform: none;
+  }
+  .mini-btn:hover { background: none; color: var(--ink-dim); }
+}
 /* ==========================================================================
    MOBİL
    ========================================================================== */
