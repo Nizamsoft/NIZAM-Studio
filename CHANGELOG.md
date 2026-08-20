@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.9.8 — 21 Ağustos 2026
+**Grup içi alfabetik sıra**
+
+- Bir grubun altındaki standartlar artık ada göre sıralanıyor
+- Sıralama Türkçe: ç, ğ, ı, ö, ş, ü kendi yerlerinde
+
 ## v0.9.7 — 21 Ağustos 2026
 **Standart tarif metni düzeldi**
 

@@ -398,7 +398,8 @@ const DB = {
     };
 
     return [...kova.entries()]
-      .map(([ad, liste]) => ({ ad, liste }))
+      /* Grup içi alfabetik — Türkçe sıraya göre (ç, ğ, ı, ö, ş, ü yerli yerinde). */
+      .map(([ad, liste]) => ({ ad, liste: liste.slice().sort((x, y) => x.ad.localeCompare(y.ad, 'tr')) }))
       .sort((a, b) => sirala(a.ad) - sirala(b.ad) || a.ad.localeCompare(b.ad, 'tr'));
   },
 
