@@ -120,17 +120,25 @@ html {
   -webkit-text-size-adjust: 100%;
 }
 body {
-  /* Üç yükseklik var: küçük (inset:0 bunu veriyordu, ~65px kısa),
-     büyük (lvh, ekranın dışına taşıyordu) ve dinamik. Doğrusu ortadaki:
-     dvh, o an gerçekten görünen alandır. */
   position: fixed;
   top: 0; left: 0; right: 0;
   height: 100%;
+  /* Tarayıcıda dvh doğrudur: adres çubuğu açılıp kapandıkça değişir. */
   height: 100dvh;
   overflow: hidden;
   overscroll-behavior: none;
   background: var(--bg);
 }
+
+/* Uygulama kipinde dvh YANLIŞ: iPhone 15'te 793 veriyor, oysa ekran 852.
+   Aradaki 59 piksel (durum çubuğu payı) altta boş kalıp html zeminini
+   gösteriyordu — aylardır kovaladığımız "siyah şerit" buydu.
+   lvh ekranın tamamıdır; uygulama kipinde küçülen bir çubuk olmadığı için
+   doğru ölçü odur. */
+@media (display-mode: standalone) {
+  body { height: 100lvh; height: 100vh; }
+}
+html.uygulama body { height: 100lvh; height: 100vh; }
 
 body {
   margin: 0;
@@ -1250,7 +1258,7 @@ html { background: var(--bg); }
   #topbar .btn { width: 44px; height: 44px; padding: 0; }
 
   /* Alt pay çubuk kadar: içerik cam çubuğun altından akıp geçsin. */
-  .view { padding: 16px 16px 72px; }
+  .view { padding: 16px 16px calc(64px + env(safe-area-inset-bottom, 0px)); }
 
   .stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .stat-num { font-size: 26px; }
@@ -1309,15 +1317,17 @@ html { background: var(--bg); }
   #tabbar {
     display: flex;
     position: absolute; left: 0; right: 0; bottom: 0; z-index: 20;
-    padding: 4px 6px 0;
+    /* Zemin ekranın gerçek dibine kadar iner; alt pay ana ekran çizgisinin
+       payıdır, çubuğun DIŞINDA değil İÇİNDE — yazılar çizgiyle çakışmaz. */
+    padding: 4px 6px env(safe-area-inset-bottom, 0px);
     margin: 0; border-radius: 0;
     /* Üstü neredeyse saydam (arkadaki liste gözükür), dibi opak --cerceve.
        Dip rengi sayfanın dışındaki şeritle aynı: çubuk ekranın dibine kadar
        kesintisiz uzanıyormuş gibi okunur. */
     background: linear-gradient(180deg,
       rgba(15, 14, 13, .06) 0%,
-      rgba(23, 22, 20, .55) 58%,
-      var(--cerceve) 100%);
+      rgba(23, 22, 20, .42) 58%,
+      rgba(23, 22, 20, .58) 100%);
     backdrop-filter: blur(14px) saturate(150%);
     -webkit-backdrop-filter: blur(14px) saturate(150%);
     border-top: 1px solid rgba(255, 255, 255, .06);

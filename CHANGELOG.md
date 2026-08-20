@@ -1,5 +1,28 @@
 # Değişiklik Günlüğü
 
+## v0.9.1 — 21 Ağustos 2026
+**Siyah şeridin gerçek sebebi: uygulama ekranın tamamını kaplamıyormuş**
+
+Ölçümler baştan beri elimizdeydi ama yanlış okumuşum:
+
+| | |
+|---|---|
+| `100lvh` (ekranın tamamı) | 852 |
+| `100dvh` (kullandığımız) | 793 |
+| Fark | **59 piksel** |
+
+Uygulama kipinde `dvh` durum çubuğu payını düşüyor. `body` 793 pikselde
+bitiyordu, kalan 59 piksel `html` zeminiydi — o siyah şerit buydu.
+Ölçüm ekranı "altta kalan 0" diyordu çünkü `innerHeight` de aynı yanlış
+793'ü veriyor; ekranın gerçek boyu 852.
+
+- Uygulama kipinde `body` yüksekliği `100vh`/`100lvh` oldu — ekranın tamamı
+- Tarayıcıda `100dvh` kaldı (adres çubuğu açılıp kapanıyor, orada doğrusu o)
+- Alt çubuğun zemini artık ekranın gerçek dibine iniyor
+- Ana ekran çizgisi payı çubuğun **içine** alındı: zemin dibe uzanıyor,
+  yazılar çizgiyle çakışmıyor
+- İçerik çubuğun altından ekranın en dibine kadar akıyor
+
 ## v0.9.0 — 21 Ağustos 2026
 **Alttaki siyah şeridin sebebi bulundu**
 
