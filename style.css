@@ -1129,26 +1129,31 @@ html { background: var(--bg); }
   color: var(--ink-dim); letter-spacing: .2px;
 }
 
-/* --- Alt sekme çubuğu: ekrandan ayrık, yüzen kart --- */
+/* --- Alt sekme çubuğu ---
+   Uygulama kutusunun içinde değil, EKRANIN kendisine çivili duruyor.
+   Böylece kutu ne kadar yüksek olursa olsun çubuk her zaman en dipte kalır. --- */
 @media (max-width: 900px) {
   #tabbar {
-    margin: 0 12px 12px;
-    padding: 7px 7px max(7px, calc(env(safe-area-inset-bottom, 0px) / 2));
-    border: 1px solid var(--line); border-radius: 20px;
-    background: linear-gradient(180deg, var(--surface-2), var(--rail));
-    box-shadow: 0 14px 34px -14px rgba(0, 0, 0, .95), inset 0 1px 0 var(--isik);
-    overflow: hidden;
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 50;
+    margin: 0; border-radius: 0;
+    border-top: 1px solid var(--line-2);
+    background: linear-gradient(180deg, var(--rail-ust), var(--rail));
+    box-shadow: 0 -14px 30px -24px rgba(0, 0, 0, .95);
+    padding: 7px 6px max(6px, env(safe-area-inset-bottom, 0px));
   }
 
+  /* İçerik çubuğun altında kalmasın */
+  .view { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
+
   .tab {
-    position: relative; gap: 4px; border-radius: 14px;
+    position: relative; gap: 4px; border-radius: 13px;
     min-height: var(--dokunma);
     transition: color .18s ease;
   }
 
   /* aktif sekme: markanın rengini taşıyan dolu kutu */
   .tab::before {
-    content: ''; position: absolute; inset: 0; border-radius: 14px;
+    content: ''; position: absolute; inset: 0; border-radius: 13px;
     background: var(--red-soft); box-shadow: inset 0 0 0 1px var(--red-cizgi);
     opacity: 0; transform: scale(.88);
     transition: opacity .2s ease, transform .3s var(--yay);
@@ -1156,9 +1161,9 @@ html { background: var(--bg); }
   .tab > * { position: relative; }
   .tab.active::before { opacity: 1; transform: none; }
   .tab.active,
-  .tab.active span      { color: var(--red-ink); }
-  .tab.active svg       { stroke: var(--red); }
-  .tab.active .dolgu    { fill: var(--red); opacity: .3; }
+  .tab.active span   { color: var(--red-ink); }
+  .tab.active svg    { stroke: var(--red); }
+  .tab.active .dolgu { fill: var(--red); opacity: .3; }
 }
 
 /* --- Modal: bulanık perde + yaylanarak açılma --- */

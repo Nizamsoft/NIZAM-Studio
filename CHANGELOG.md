@@ -1,5 +1,12 @@
 # Değişiklik Günlüğü
 
+## v0.7.3 — 20 Ağustos 2026
+
+- **Alt sekme çubuğu ekranın dibine çivilendi.** Sorun boşluk ayarı değilmiş: çubuk
+  uygulamanın kutusunun içindeydi ve o kutu bazı telefonlarda ekranın gerçek dibine
+  ulaşmıyordu. Artık çubuk ekranın kendisine sabit — kutu ne olursa olsun en dipte kalıyor
+- Tam genişlik, kenar boşluğu yok; içerik alanına çubuk kadar alt pay verildi
+
 ## v0.7.2 — 20 Ağustos 2026
 
 - **Alt sekme çubuğu yüzen kart oldu:** kenarlardan boşluklu, yuvarlak köşeli, gölgeli.
