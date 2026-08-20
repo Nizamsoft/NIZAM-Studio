@@ -245,7 +245,7 @@ const VIEWS = {
           ${stepRow('Adım 0', 'İskelet, tema, açılış, menü', true)}
           ${stepRow('Adım 1', 'Supabase kurulumu ve giriş', true)}
           ${stepRow('Adım 2', 'Projeler, modül ve sayfa ağacı', true)}
-          ${stepRow('Adım 3', 'Görevler, durumlar, atama', false)}
+          ${stepRow('Adım 3', 'Görevler, durumlar, atama', true)}
           ${stepRow('Adım 4', 'Prompt motoru ve kimlik dosyası', false)}
           ${stepRow('Adım 5', 'GitHub okuma ve sürüm notları', false)}
         </div>
