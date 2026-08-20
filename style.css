@@ -1252,7 +1252,7 @@ html { background: var(--bg); }
   #topbar .btn { width: 44px; height: 44px; padding: 0; }
 
   /* Alt pay çubuk kadar: içerik cam çubuğun altından akıp geçsin. */
-  .view { padding: 16px 16px calc(64px + env(safe-area-inset-bottom, 0px)); }
+  .view { padding: 16px 16px 64px; }
 
   .stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .stat-num { font-size: 26px; }
@@ -1311,13 +1311,10 @@ html { background: var(--bg); }
   #tabbar {
     display: flex;
     position: absolute; left: 0; right: 0; bottom: 0; z-index: 20;
-    /* Zemin ekranın gerçek dibine kadar iner; alt pay ana ekran çizgisinin
-       payıdır, çubuğun DIŞINDA değil İÇİNDE — yazılar çizgiyle çakışmaz. */
-    padding: 4px 6px env(safe-area-inset-bottom, 0px);
+    /* Tarayıcıda alt pay yok: Safari'nin kendi çubuğu zaten orada duruyor. */
+    padding: 4px 6px 0;
     margin: 0; border-radius: 0;
-    /* Üstü neredeyse saydam (arkadaki liste gözükür), dibi opak --cerceve.
-       Dip rengi sayfanın dışındaki şeritle aynı: çubuk ekranın dibine kadar
-       kesintisiz uzanıyormuş gibi okunur. */
+    /* Buzlu cam: üstü neredeyse saydam, dibe doğru hafifçe koyulaşır. */
     background: linear-gradient(180deg,
       rgba(15, 14, 13, .06) 0%,
       rgba(23, 22, 20, .42) 58%,
@@ -1331,6 +1328,15 @@ html { background: var(--bg); }
   @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
     #tabbar { background: linear-gradient(180deg, var(--surface-2), var(--cerceve)); }
   }
+
+  /* Yalnızca uygulama kipinde: ana ekran çizgisinin payı çubuğun İÇİNE alınır.
+     Zemin ekranın dibine iner, yazılar çizgiyle çakışmaz. */
+  @media (display-mode: standalone) {
+    #tabbar { padding-bottom: env(safe-area-inset-bottom, 0px); }
+    .view   { padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
+  }
+  html.uygulama #tabbar { padding-bottom: env(safe-area-inset-bottom, 0px); }
+  html.uygulama .view   { padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
 
   .tab {
     display: flex; flex-direction: column; align-items: center; justify-content: center;

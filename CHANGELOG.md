@@ -1,5 +1,15 @@
 # Değişiklik Günlüğü
 
+## v0.9.3 — 21 Ağustos 2026
+**Tarayıcıda alt pay kaldırıldı**
+
+Ana ekran çizgisi payı Safari'de de uygulanıyordu; oysa orada Safari'nin
+kendi adres çubuğu zaten o alanda duruyor. İki pay üst üste binince
+çubuğun altında boş bir bant kalıyordu.
+
+- Alt pay artık yalnızca uygulama kipinde veriliyor
+- Tarayıcıda çubuk doğrudan Safari çubuğunun üstüne oturuyor
+
 ## v0.9.2 — 21 Ağustos 2026
 **Şeridin sebebi bulundu: iOS durum çubuğu ayarı**
 
