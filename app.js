@@ -828,8 +828,7 @@ function sihirbazAdim1() {
        style="${renkStil(k)}" type="button" aria-label="${k}"></button>`).join('');
 
   return `
-    <h3 class="modal-h">Hangi firma için?</h3>
-    <p class="modal-s">Proje kimliğini belirleyelim.</p>
+    ${modalBaslik(ICON.folder, 'Hangi firma için?', 'Proje kimliğini belirleyelim.')}
     <label class="field">
       <span>Firma adı</span>
       <input type="text" id="sb-firma" value="${esc(SIHIRBAZ.firma)}" placeholder="Örn. Aydın Yapı"
@@ -848,8 +847,7 @@ function sihirbazAdim2() {
     ['ikisi', 'İkisi birden', 'Web + mobil, ortak veri'],
   ];
   return `
-    <h3 class="modal-h">Nerede kullanılacak?</h3>
-    <p class="modal-s">Bu, üretilecek sayfaları belirler.</p>
+    ${modalBaslik(ICON.katman, 'Nerede kullanılacak?', 'Bu, üretilecek sayfaları belirler.')}
     <div class="secim">${secenekler.map(([d, ad, alt]) =>
       secimSatiri('platform', d, ad, alt, SIHIRBAZ.platform === d)).join('')}</div>`;
 }
@@ -861,8 +859,7 @@ function sihirbazAdim3() {
     ['excel',    "Excel'den taşınacak",   'Hazır tablolar aktarılır'],
   ];
   return `
-    <h3 class="modal-h">Veritabanı durumu</h3>
-    <p class="modal-s">Mevcut bir sistem var mı?</p>
+    ${modalBaslik(ICON.katman, 'Veritabanı durumu', 'Mevcut bir sistem var mı?')}
     <div class="secim">${secenekler.map(([d, ad, alt]) =>
       secimSatiri('veri', d, ad, alt, SIHIRBAZ.veri === d)).join('')}</div>`;
 }
@@ -875,8 +872,7 @@ function sihirbazAdim4() {
   }).join('');
 
   return `
-    <h3 class="modal-h">Hangi modüller olacak?</h3>
-    <p class="modal-s">Seçtiklerin sayfalarıyla birlikte kurulur.</p>
+    ${modalBaslik(ICON.katman, 'Hangi modüller olacak?', 'Seçtiklerin sayfalarıyla birlikte kurulur.')}
     <div class="mod-grid">${kutular}</div>
     <div class="note note-kucuk">
       ${svg(ICON.info, 15)}
@@ -960,7 +956,7 @@ async function sihirbazKaydet() {
     location.hash = '#/projeler/' + id;
     render();
   } catch (e) {
-    toast(e.message);
+    toast(e.message, 'hata');
     if (btn) btn.textContent = 'Projeyi Oluştur';
   } finally {
     SIHIRBAZ.kaydediyor = false;
@@ -970,6 +966,17 @@ async function sihirbazKaydet() {
 /* ==========================================================================
    MODAL
    ========================================================================== */
+
+/* Modal başlığı: solda vurgu rozeti, sağda başlık ve tek satır açıklama. */
+function modalBaslik(ikon, baslik, alt = '') {
+  return `<div class="modal-bas">
+    <span class="modal-rozet">${svg(ikon, 17)}</span>
+    <span class="modal-bas-yazi">
+      <span class="modal-h">${esc(baslik)}</span>
+      ${alt ? `<span class="modal-s">${esc(alt)}</span>` : ''}
+    </span>
+  </div>`;
+}
 
 function modalAc(html, bagla, ekSinif = '') {
   modalKapat();
@@ -998,8 +1005,7 @@ function kacTusu(e) { if (e.key === 'Escape') modalKapat(); }
 function metinSor({ baslik, aciklama, deger = '', yerTutucu = '', buton = 'Kaydet' }) {
   return new Promise(resolve => {
     modalAc(`
-      <h3 class="modal-h">${esc(baslik)}</h3>
-      ${aciklama ? `<p class="modal-s">${esc(aciklama)}</p>` : ''}
+      ${modalBaslik(ICON.kalem, baslik, aciklama || '')}
       <label class="field">
         <input type="text" id="modal-metin" value="${esc(deger)}" placeholder="${esc(yerTutucu)}"
                autocomplete="off" maxlength="80">
@@ -1026,8 +1032,11 @@ function metinSor({ baslik, aciklama, deger = '', yerTutucu = '', buton = 'Kayde
 function onaySor({ baslik, mesaj, buton = 'Sil' }) {
   return new Promise(resolve => {
     modalAc(`
-      <h3 class="modal-h">${esc(baslik)}</h3>
-      <p class="modal-s">${esc(mesaj)}</p>
+      <div class="onay">
+        <span class="onay-ikon">${svg(ICON.uyari, 22)}</span>
+        <p class="onay-soru">${esc(baslik)}</p>
+        <p class="onay-alt">${esc(mesaj)}</p>
+      </div>
       <div class="modal-alt">
         <button class="btn btn-ghost" data-m="hayir" type="button">Vazgeç</button>
         <button class="btn btn-tehlike" data-m="evet" type="button"><span>${esc(buton)}</span></button>
@@ -1035,7 +1044,7 @@ function onaySor({ baslik, mesaj, buton = 'Sil' }) {
       const bitir = v => { modalKapat(); resolve(v); };
       $('[data-m="hayir"]', kutu).addEventListener('click', () => bitir(false));
       $('[data-m="evet"]',  kutu).addEventListener('click', () => bitir(true));
-    });
+    }, 'kucuk');
   });
 }
 
@@ -1191,7 +1200,7 @@ async function gorevEylemi(tip, id, deger) {
     try {
       await DB.gorevStandartYaz(id, secilen);
       sonrasi(id, 'Standartlar güncellendi.');
-    } catch (e) { toast(e.message); gorevKartiAc(id); }
+    } catch (e) { toast(e.message, 'hata'); gorevKartiAc(id); }
     return;
   }
 
@@ -1218,7 +1227,7 @@ async function gorevEylemi(tip, id, deger) {
       await DB.gorevGuncelle(id, { atanan: kisiId });
       if (kisiId) await DB.hareketEkle(id, 'atandi', DB.kisiAdi(kisiId));
       sonrasi(id, 'Atama güncellendi.');
-    } catch (e) { toast(e.message); }
+    } catch (e) { toast(e.message, 'hata'); }
     return;
   }
 
@@ -1226,7 +1235,7 @@ async function gorevEylemi(tip, id, deger) {
     try {
       await DB.gorevGuncelle(id, { oncelik: g.oncelik === 'acil' ? 'normal' : 'acil' });
       sonrasi(id, g.oncelik === 'acil' ? 'Öncelik normale alındı.' : 'Acil olarak işaretlendi.');
-    } catch (e) { toast(e.message); }
+    } catch (e) { toast(e.message, 'hata'); }
     return;
   }
 
@@ -1238,8 +1247,8 @@ async function gorevEylemi(tip, id, deger) {
     if (!ok) { gorevKartiAc(id); return; }
     try {
       await DB.gorevSil(id);
-      modalKapat(); sayaclariYaz(); render(); toast('Görev silindi.');
-    } catch (e) { toast(e.message); }
+      modalKapat(); sayaclariYaz(); render(); toast('Görev silindi.', 'basari');
+    } catch (e) { toast(e.message, 'hata'); }
   }
 }
 
@@ -1249,7 +1258,7 @@ async function gorevDurum(id, durum, notu = '') {
     sonrasi(id, durum === 'tamamlandi' ? 'Onaylandı.' :
                 durum === 'kontrolde'  ? 'Kontrole gönderildi.' : 'Durum güncellendi.');
   } catch (e) {
-    toast(e.message);
+    toast(e.message, 'hata');
     gorevKartiAc(id);
   }
 }
@@ -1290,8 +1299,7 @@ function yeniGorevHtml() {
   const proje    = DB.proje(YENI.proje);
 
   return `
-    <h3 class="modal-h">Yeni görev</h3>
-    <p class="modal-s">${esc(proje ? proje.firma : '')} · nereye bağlanacağını seç.</p>
+    ${modalBaslik(ICON.check, 'Yeni görev', (proje ? proje.firma : '') + ' · nereye bağlanacağını seç.')}
 
     <label class="field">
       <span>Başlık</span>
@@ -1420,9 +1428,9 @@ async function yeniGorevKaydet() {
     YENI._baslik = YENI._aciklama = '';
     if (YENI.sayfa) ACIK_SAYFA.add(YENI.sayfa);
     if (YENI.modul) ACIK_MODUL.add(YENI.modul);
-    modalKapat(); sayaclariYaz(); render(); toast('Görev oluşturuldu.');
+    modalKapat(); sayaclariYaz(); render(); toast('Görev oluşturuldu.', 'basari');
   } catch (e) {
-    toast(e.message);
+    toast(e.message, 'hata');
     if (btn) btn.textContent = 'Görevi Oluştur';
   } finally {
     YENI.kaydediyor = false;
@@ -1440,8 +1448,7 @@ function kisiSor(mevcut) {
       </button>`).join('');
 
     modalAc(`
-      <h3 class="modal-h">Kime atansın?</h3>
-      <p class="modal-s">Kişiler Supabase panelinden eklenir.</p>
+      ${modalBaslik(ICON.kisi, 'Kime atansın?', 'Kişiler Supabase panelinden eklenir.')}
       <div class="secim">
         ${liste || '<span class="ipucu">Kişi listesi boş.</span>'}
         <button class="sc" data-k="" type="button">
@@ -1465,8 +1472,7 @@ function kisiSor(mevcut) {
 
 function metinPenceresi({ baslik, aciklama, metin, dosya, geri }) {
   modalAc(`
-    <h3 class="modal-h">${esc(baslik)}</h3>
-    <p class="modal-s">${esc(aciklama)}</p>
+    ${modalBaslik(ICON.kopya, baslik, aciklama)}
     <pre class="kod">${esc(metin)}</pre>
     <div class="modal-alt">
       <button class="btn btn-ghost" data-mp="kapat" type="button">${geri ? 'Geri' : 'Kapat'}</button>
@@ -1507,8 +1513,7 @@ function standartSor(mevcut) {
     let secili = mevcut.slice();
 
     const ciz = () => `
-      <h3 class="modal-h">Hangi standartlar kullanılacak?</h3>
-      <p class="modal-s">Tiklediklerinin tarifi promptun içine girer.</p>
+      ${modalBaslik(ICON.katman, 'Hangi standartlar kullanılacak?', 'Tiklediklerinin tarifi promptun içine girer.')}
       <div class="mod-grid">
         ${DB.standartlar.map(st => `
           <button class="mod ${secili.includes(st.id) ? 'sec' : ''}" data-st="${st.id}" type="button">
@@ -1542,8 +1547,7 @@ function standartDuzenle(id) {
   const st = id ? DB.standart(id) : null;
 
   modalAc(`
-    <h3 class="modal-h">${st ? 'Standardı düzenle' : 'Yeni standart'}</h3>
-    <p class="modal-s">Tarif prompta olduğu gibi girer — net ve emir kipinde yaz.</p>
+    ${modalBaslik(ICON.katman, st ? 'Standardı düzenle' : 'Yeni standart', 'Tarif prompta olduğu gibi girer — net ve emir kipinde yaz.')}
 
     <label class="field">
       <span>Ad</span>
@@ -1585,7 +1589,7 @@ function standartDuzenle(id) {
         render();
         toast(id ? 'Standart güncellendi.' : 'Standart eklendi.');
       } catch (e) {
-        toast(e.message);
+        toast(e.message, 'hata');
         btn.textContent = 'Kaydet';
       }
     });
@@ -1624,7 +1628,7 @@ function secenekSor(baslik, secenekler) {
 function renkSor(mevcut) {
   return new Promise(resolve => {
     modalAc(`
-      <h3 class="modal-h">Proje rengi</h3>
+      ${modalBaslik(ICON.folder, 'Proje rengi')}
       <p class="modal-s">Listede ve proje başlığında bu renk kullanılır.</p>
       <div class="renkler renkler-buyuk">
         ${Object.keys(PROJE_RENK).map(k => `
@@ -1852,7 +1856,7 @@ async function isYap(fn, basariMesaji) {
     render();
     if (basariMesaji) toast(basariMesaji);
   } catch (err) {
-    toast(err.message);
+    toast(err.message, 'hata');
   }
 }
 
@@ -1961,10 +1965,12 @@ function todayLabel() {
 }
 
 let toastTimer = null;
-function toast(msg) {
+
+/* tip: 'bilgi' | 'basari' | 'hata' | 'uyari' */
+function toast(msg, tip = 'bilgi') {
   const t = $('#toast');
   t.textContent = msg;
-  t.classList.remove('hidden');
+  t.className = 't-' + tip;
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => t.classList.add('hidden'), 2800);
 }
@@ -2030,9 +2036,12 @@ function hataGoster(mesaj) {
 function hataGizle() { $('#login-error').classList.add('hidden'); }
 
 function kullaniciYaz() {
-  $('#user-chip .avatar').textContent    = AUTH.basHarfler;
-  $('#user-chip .user-name').textContent = AUTH.ad;
-  $('#user-chip .user-role').textContent = AUTH.rolAdi;
+  $$('#user-chip .avatar, #user-tile .avatar').forEach(e => e.textContent = AUTH.basHarfler);
+  $$('#user-chip .user-name, #user-tile .user-name').forEach(e => e.textContent = AUTH.ad);
+  $$('#user-chip .user-role, #user-tile .user-role').forEach(e => e.textContent = AUTH.rolAdi);
+
+  const surum = $('#rail-surum');
+  if (surum) surum.textContent = APP.version + ' · ' + APP.stage;
 }
 
 /* ==========================================================================
@@ -2125,7 +2134,8 @@ document.addEventListener('DOMContentLoaded', () => {
   egilmeyiBagla();
 
   $('#search').addEventListener('click', () => toast('Arama Adım 5\'te gelecek.'));
-  $('#user-chip').addEventListener('click', () => { location.hash = '#/ayarlar'; });
+  $$('#user-chip, #user-tile').forEach(el =>
+    el.addEventListener('click', () => { location.hash = '#/ayarlar'; }));
 
   boot();
 });

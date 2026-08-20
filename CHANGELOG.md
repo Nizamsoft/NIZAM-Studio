@@ -1,5 +1,21 @@
 # Değişiklik Günlüğü
 
+## v0.6.1 — 20 Ağustos 2026
+**Aşama 2 · Kabuk, pencereler, hareket**
+
+- **Üst panele hesap kutusu geldi.** Mobilde yan menü olmadığı için kim olarak girdiğin
+  hiç görünmüyordu; artık sağ üstte vurgu halkalı avatar duruyor, dokununca Ayarlar açılıyor
+- Üst panel yapışkan oldu, altına yumuşak bir gölge kondu
+- **Alt sekme çubuğu premium:** degrade zemin, üstte ince kırmızı saç teli, aktif sekmenin
+  altında yaylanarak yükselen kabarcık ve ikonda hafif parıltı
+- Yan menünün altına sürüm satırı eklendi
+- **Pencereler yaylanarak açılıyor**, perde bulanıklaştı, üstlerinde vurgu saç teli var
+- **Pencere başlıklarına rozet geldi** — solda ikonlu kutu, sağda başlık ve tek satır açıklama
+- **Onay kutusu küçüldü:** başlık çubuğu kalktı, ortada uyarı ikonu ve kısa soru kaldı
+- **Toast'lar türlendi:** başarı yeşil, hata kırmızı, uyarı sarı kenarlı
+- Dokunmatik cihazlarda tüm dokunma hedefleri 44 piksele çıkarıldı
+- Sayfa geçişi 0.24 saniyeye indi
+
 ## v0.6.0 — 20 Ağustos 2026
 **Aşama 1 · Görsel dil**
 

@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="NIZAM Studio">
 
-<link rel="stylesheet" href="style.css?v=0.6.0">
+<link rel="stylesheet" href="style.css?v=0.6.1">
 </head>
 <body>
 
@@ -91,6 +91,8 @@
 
     <div class="spacer"></div>
 
+    <div class="rail-surum" id="rail-surum">—</div>
+
     <button class="user-chip" id="user-chip" type="button">
       <span class="avatar">NA</span>
       <span class="user-text">
@@ -114,6 +116,13 @@
         <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.6-3.6"></path></svg>
         <span>Proje, sayfa veya görev ara…</span>
       </div>
+      <button class="user-tile" id="user-tile" type="button" aria-label="Hesap">
+        <span class="avatar">NA</span>
+        <span class="user-text only-desktop">
+          <span class="user-name">Nizam</span>
+          <span class="user-role">Yönetici</span>
+        </span>
+      </button>
       <button class="btn btn-primary" id="topbar-action" type="button">
         <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"></path></svg>
         <span>Yeni Proje</span>
@@ -146,10 +155,10 @@
 <div id="toast" class="hidden"></div>
 
 <script src="vendor/supabase.js?v=2.112.3"></script>
-<script src="config.js?v=0.6.0"></script>
-<script src="auth.js?v=0.6.0"></script>
-<script src="data.js?v=0.6.0"></script>
-<script src="prompt.js?v=0.6.0"></script>
-<script src="app.js?v=0.6.0"></script>
+<script src="config.js?v=0.6.1"></script>
+<script src="auth.js?v=0.6.1"></script>
+<script src="data.js?v=0.6.1"></script>
+<script src="prompt.js?v=0.6.1"></script>
+<script src="app.js?v=0.6.1"></script>
 </body>
 </html>
