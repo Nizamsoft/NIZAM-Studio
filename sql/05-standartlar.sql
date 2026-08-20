@@ -77,7 +77,7 @@ insert into public.standards (ad, ozet, tarif, sira) values
 (
   'Menü',
   'Masaüstü sidebar · mobil alt sekme',
-  'Masaüstünde solda sabit bir yan menü bulunur: üstte logo ve marka, ortada bölüm bağlantıları, altta kullanıcı kutusu. Aktif bölüm, sol kenarında ince bir kırmızı şeritle belirtilir. Mobilde yan menü gizlenir, yerine ekranın altında en fazla dört sekmeli bir çubuk gelir. Aynı bölüm iki yerde birden gösterilmez.',
+  'Masaüstünde solda sabit bir yan menü bulunur: üstte logo ve marka, ortada bölüm bağlantıları, altta kullanıcı kutusu. Aktif bölüm, sol kenarında ince bir kırmızı şeritle belirtilir. Mobilde yan menü gizlenir; yerini alt sekme çubuğu alır — kuralları Alt Sekme Çubuğu standardındadır. Aynı bölüm iki yerde birden gösterilmez.',
   3
 ),
 (
@@ -109,5 +109,12 @@ insert into public.standards (ad, ozet, tarif, sira) values
   'Görsel ve belge yükleme',
   'Yükleme alanı hem tıklanabilir hem sürükle-bırak kabul eder. Yüklenmeden önce dosya türü ve boyutu denetlenir; sınır aşılırsa Türkçe uyarı verilir. Görseller küçük önizleme ile listelenir, belgeler simge ve dosya adı ile. Her satırda silme düğmesi bulunur. Yükleme sırasında ilerleme çubuğu görünür ve iptal edilebilir.',
   8
+),
+(
+  'Alt Sekme Çubuğu',
+  'Arayüz',
+  'Mobil · buzlu cam · ekranın dibine yapışık',
+  '900 pikselin altındaki ekranlarda yan menü gizlenir, yerine ekranın altında bir sekme çubuğu gelir; sekme sayısı beşi geçmez. Çubuk yerleşimin parçası değildir, içeriğin üstünde durur ve sayfa altından akıp geçer — bu yüzden sayfa içeriğine çubuk yüksekliği kadar alt pay verilir, son satır çubuğun altında kalmaz. Zemin buzlu camdır: yarı saydam bir katman ve arkasını bulanıklaştıran bir süzgeç; tarayıcı bunu desteklemiyorsa düz koyu zemine düşülür. Her sekmede üstte simge, altında küçük bir yazı bulunur; aktif sekmenin arkasında yumuşak kırmızı bir hap belirir, yazısı ve simgesi kırmızıya döner. Kırmızı bu ekranda yalnızca aktif sekmede kullanılır. Çubuk ekranın fiziksel dibine oturur: ana ekran çizgisinin payı çubuğun dışına değil içine verilir, tarayıcıda ise hiç verilmez çünkü tarayıcının kendi çubuğu zaten oradadır. iOS''ta uygulama kipinde durum çubuğu ayarı black olmalıdır; black-translucent sayfayı ekranın tepesine yapıştırıp altta erişilemeyen bir boşluk bırakır.',
+  9
 )
 on conflict (ad) do nothing;

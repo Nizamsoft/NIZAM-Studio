@@ -1,5 +1,18 @@
 # Değişiklik Günlüğü
 
+## v0.9.10 — 21 Ağustos 2026
+**Yeni standart: Alt Sekme Çubuğu**
+
+Studio'da yazdığımız alt sekme çubuğu kurala çevrildi — kodundan okunarak,
+tahminle değil.
+
+- `Alt Sekme Çubuğu` standardı eklendi (Arayüz grubu)
+- `Menü` standardından çakışan cümle çıkarıldı ("en fazla dört sekmeli" —
+  artık beş sekme var ve kural kendi standardında duruyor)
+- Sıfırdan kurulum dosyaları (`05-standartlar.sql`, `kurulum.sql`) da güncellendi
+
+> Kurulum: `sql/07-alt-sekme.sql` dosyasını Supabase'de bir kez çalıştır.
+
 ## v0.9.9 — 21 Ağustos 2026
 **Grup adları da alfabetik**
 
