@@ -24,7 +24,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="NIZAM Studio">
 
-<link rel="stylesheet" href="style.css?v=0.10.1">
+<link rel="stylesheet" href="style.css?v=0.10.2">
 </head>
 <body>
 
@@ -122,11 +122,25 @@
 <!-- Alt sekme simgelerinin kabartma gradyanları. Görünmez, yalnızca tanım taşır. -->
 <svg width="0" height="0" aria-hidden="true" style="position:absolute">
   <defs>
-    <linearGradient id="tab-metal" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#f2eeeb"></stop><stop offset="1" stop-color="#9b938c"></stop>
+    <!-- Üst yüz: tepede parlak, dibe doğru koyulaşır -->
+    <linearGradient id="yuz-metal" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fdfbfa"></stop>
+      <stop offset=".55" stop-color="#cdc5bf"></stop>
+      <stop offset="1" stop-color="#948b85"></stop>
     </linearGradient>
-    <linearGradient id="tab-kirmizi" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#ffffff"></stop><stop offset="1" stop-color="#ffd8d4"></stop>
+    <!-- Kalınlık (yan yüz): her zaman koyu, hacmi o veriyor -->
+    <linearGradient id="yan-metal" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4a423d"></stop>
+      <stop offset="1" stop-color="#241f1c"></stop>
+    </linearGradient>
+    <linearGradient id="yuz-kirmizi" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"></stop>
+      <stop offset=".55" stop-color="#ffe3e0"></stop>
+      <stop offset="1" stop-color="#ffb8b1"></stop>
+    </linearGradient>
+    <linearGradient id="yan-kirmizi" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#932018"></stop>
+      <stop offset="1" stop-color="#5a110c"></stop>
     </linearGradient>
   </defs>
 </svg>
@@ -134,11 +148,11 @@
 <div id="toast" class="hidden"></div>
 
 <script src="vendor/supabase.js?v=2.112.3"></script>
-<script src="config.js?v=0.10.1"></script>
-<script src="auth.js?v=0.10.1"></script>
-<script src="data.js?v=0.10.1"></script>
-<script src="guncelle.js?v=0.10.1"></script>
-<script src="prompt.js?v=0.10.1"></script>
-<script src="app.js?v=0.10.1"></script>
+<script src="config.js?v=0.10.2"></script>
+<script src="auth.js?v=0.10.2"></script>
+<script src="data.js?v=0.10.2"></script>
+<script src="guncelle.js?v=0.10.2"></script>
+<script src="prompt.js?v=0.10.2"></script>
+<script src="app.js?v=0.10.2"></script>
 </body>
 </html>

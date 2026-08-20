@@ -497,9 +497,34 @@ svg .dolgu > * { fill: currentColor; fill-opacity: .22; }
   background: radial-gradient(closest-side, rgba(255, 255, 255, .085), transparent 70%);
   pointer-events: none;
 }
+/* Dış çerçeve kartın kendi renginde ve ışıklı. */
 .stat::after {
   content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .045);
+  box-shadow: inset 0 0 0 1px var(--k-cizgi, rgba(255, 255, 255, .07));
+}
+.stat {
+  border-color: transparent;
+  outline: 1px solid var(--k-cizgi, transparent); outline-offset: -1px;
+}
+.stat.k-dev   { --k-renk: 216, 166, 63; }
+.stat.k-check { --k-renk: 107, 147, 232; }
+.stat.k-done  { --k-renk: 69, 163, 123; }
+.stat.k-metal { --k-renk: 214, 208, 205; }
+.stat[class*="k-"] {
+  --k-cizgi: rgba(var(--k-renk), .34);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .10),
+              inset 0 -1px 0 rgba(0, 0, 0, .45),
+              0 0 0 1px rgba(var(--k-renk), .10),
+              0 8px 24px -16px rgba(var(--k-renk), .55),
+              0 10px 22px -14px rgba(0, 0, 0, .95);
+}
+.stat[class*="k-"]:hover {
+  --k-cizgi: rgba(var(--k-renk), .58);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .13),
+              inset 0 -1px 0 rgba(0, 0, 0, .45),
+              0 0 0 1px rgba(var(--k-renk), .18),
+              0 10px 30px -14px rgba(var(--k-renk), .8),
+              0 16px 30px -16px rgba(0, 0, 0, .95);
 }
 .stat:hover {
   transform: translate3d(0, -2px, 0);
@@ -1340,10 +1365,21 @@ html { background: var(--bg); }
   background: linear-gradient(180deg, var(--surface-2), var(--kart-alt));
   border: 1px solid var(--line);
   box-shadow: 0 18px 40px -14px rgba(0, 0, 0, .85), inset 0 1px 0 var(--isik);
-  opacity: 0; transform: translateY(-8px) scale(.94); transform-origin: top right;
-  transition: opacity .16s ease, transform .24s var(--yay);
+  transform-origin: top right;
+  /* Kayarak açılır: yukarıdan aşağı sıyrılır, kapanırken geri toplanır.
+     clip-path perdeyi indirir, translate hafif kaydırma hissini verir. */
+  opacity: 0;
+  transform: translateY(-10px);
+  clip-path: inset(0 0 100% 0 round 16px);
+  transition: opacity .18s ease,
+              transform .34s var(--yay),
+              clip-path .34s var(--ease);
 }
-.hesap-menu.acik { opacity: 1; transform: none; }
+.hesap-menu.acik {
+  opacity: 1;
+  transform: none;
+  clip-path: inset(0 0 0 0 round 16px);
+}
 
 .hm-bas { display: flex; align-items: center; gap: 11px; padding: 8px 8px 12px; }
 .hm-bas .foto { width: 38px; height: 38px; }
@@ -1527,14 +1563,17 @@ html { background: var(--bg); }
                 0 3px 6px -3px rgba(0, 0, 0, .85);
     transition: background .2s ease, box-shadow .25s var(--ease);
   }
-  /* İki katman birlikte: altta parlak metal dolgu, üstte açık çizgi.
-     Dolguyu tek başına bırakınca tik ve kaydırıcı gibi ayrıntılar kayboluyordu. */
-  .tab svg {
-    width: 17px; height: 17px;
-    stroke: #efeae6; stroke-width: 1.8;
-    filter: drop-shadow(0 1px 1px rgba(0, 0, 0, .75));
-  }
-  .tab .dolgu > * { fill: url(#tab-metal); fill-opacity: .5; }
+  /* Hacimli simgeler: yan yüz kalınlık, üst yüz gradyan, ışık kırılma. */
+  .tab .i3 { width: 19px; height: 19px; stroke: none; overflow: visible;
+             filter: drop-shadow(0 1.5px 1.5px rgba(0, 0, 0, .8)); }
+  .tab .i3 * { stroke: none; }
+  .tab .i3 .yan   { fill: url(#yan-metal); }
+  .tab .i3 .yuz   { fill: url(#yuz-metal); }
+  .tab .i3 .kapak { fill: #8b827c; }
+  .tab .i3 .ray   { fill: #6f665f; }
+  .tab .i3 .isik  { fill: #fff; opacity: .5; }
+  .tab .i3 .oyuk  { fill: none; stroke: #35302c; stroke-width: 2.4;
+                    stroke-linecap: round; stroke-linejoin: round; }
 
   .tab.active .tab-kut {
     background: linear-gradient(180deg, var(--red-acik), var(--red-koyu));
@@ -1542,8 +1581,11 @@ html { background: var(--bg); }
                 inset 0 -1px 0 rgba(0, 0, 0, .3),
                 0 4px 12px -4px rgba(229, 52, 42, .85);
   }
-  .tab.active svg { stroke: #fff; }
-  .tab.active .dolgu > * { fill: url(#tab-kirmizi); fill-opacity: .65; }
+  .tab.active .i3 .yan   { fill: url(#yan-kirmizi); }
+  .tab.active .i3 .yuz   { fill: url(#yuz-kirmizi); }
+  .tab.active .i3 .kapak { fill: #f09a92; }
+  .tab.active .i3 .ray   { fill: #d3766e; }
+  .tab.active .i3 .oyuk  { stroke: #a52a21; }
   .tab.active, .tab.active span { color: var(--red-ink); font-weight: 600; }
 
   /* Ortadaki artı: çubuğun üstüne taşar, sekme değil eylemdir. */

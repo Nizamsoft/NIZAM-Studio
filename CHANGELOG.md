@@ -1,5 +1,21 @@
 # Değişiklik Günlüğü
 
+## v0.10.2 — 21 Ağustos 2026
+**Hacimli simgeler, renkli çerçeveler, kayarak açılan menü**
+
+**Alt çubuk simgeleri yeniden çizildi.** Artık çizgi simge değil, üç katmanlı
+hacimli çizim: altta 1,6 piksel aşağı kaymış koyu kalınlık, üstte tepesi
+parlak dibi koyu gradyanlı yüz, en üstte ince beyaz kırılma çizgisi.
+Klasörün kapağı ile gövdesi ayrı düzlemde, görev levhasındaki tik oyulmuş,
+ayar düğmeleri raylarının üstünde duruyor.
+
+**Özet kartlarının çerçevesi kendi rengini aldı** ve ışıyor —
+Geliştiriliyor sarı, Kontrolde mavi, Bugün Biten yeşil, Aktif Proje metal.
+Üstüne gelince çerçeve parlıyor.
+
+**Hesap menüsü kayarak açılıyor.** Perde yukarıdan aşağı sıyrılıyor,
+kapanırken geri toplanıyor.
+
 ## v0.10.1 — 21 Ağustos 2026
 **Kabuk düzeltmeleri**
 
