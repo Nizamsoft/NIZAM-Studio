@@ -2050,8 +2050,22 @@ window.addEventListener('hashchange', () => {
   if (!$('#app').classList.contains('hidden')) { modalKapat(); render(); }
 });
 
+/* Telefon tarayıcılarında ekran yüksekliği değişkendir: adres çubuğu açılıp kapanır,
+   klavye çıkar. Gerçek yüksekliği ölçüp CSS'e veriyoruz ki altta boşluk kalmasın. */
+function ekraniOlc() {
+  document.documentElement.style.setProperty('--ekran', window.innerHeight + 'px');
+}
+
+window.addEventListener('resize', ekraniOlc, { passive: true });
+window.addEventListener('orientationchange', () => setTimeout(ekraniOlc, 120), { passive: true });
+if (window.visualViewport) {
+  window.visualViewport.addEventListener('resize', ekraniOlc, { passive: true });
+}
+ekraniOlc();
+
 document.addEventListener('DOMContentLoaded', () => {
   document.title = APP.name;
+  ekraniOlc();
 
   $('#login-form').addEventListener('submit', girisGonder);
   $('#login-mail').addEventListener('input', hataGizle);

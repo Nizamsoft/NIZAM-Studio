@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü
 
+## v0.5.3 — 20 Ağustos 2026
+**Alt boşluk kesin çözüldü**
+
+- Ekran yüksekliği artık tahmin edilmiyor, gerçekten ölçülüyor. Adres çubuğu açılıp
+  kapansa, klavye çıksa, telefon yan çevrilse bile uygulama ekrana tam oturuyor
+- Alt menü ekranın en dibine yaslandı — altında hiç boşluk kalmıyor
+- Alt menünün güvenli alan payı gereğinden fazlaydı, kısaltıldı
+
 ## v0.5.2 — 20 Ağustos 2026
 **Alttaki beyaz boşluk kapandı**
 
