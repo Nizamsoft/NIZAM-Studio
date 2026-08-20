@@ -1139,7 +1139,9 @@ html { background: var(--bg); }
     border-top: 1px solid var(--line-2);
     background: linear-gradient(180deg, var(--rail-ust), var(--rail));
     box-shadow: 0 -14px 30px -24px rgba(0, 0, 0, .95);
-    padding: 7px 6px max(6px, env(safe-area-inset-bottom, 0px));
+    /* YouTube ve benzerleri güvenli alanın tamamını kullanmaz, yarısına yakınını
+       kullanır. Tamamı kullanılınca yazılar dipten 45px yukarıda kalıyordu. */
+    padding: 7px 6px max(6px, calc(env(safe-area-inset-bottom, 0px) * .45));
   }
 
   /* İçerik çubuğun altında kalmasın */

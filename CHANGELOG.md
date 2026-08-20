@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.7.5 — 20 Ağustos 2026
+
+- Alt çubuk zaten ekranın dibindeymiş; asıl fark çubuğun kendi iç alt boşluğuydu.
+  Güvenli alan payının tamamı yerine yarısına yakını kullanılıyor — yazılar dipten
+  45 piksel yukarıdaydı, artık YouTube'daki gibi ~22 piksel
+
 ## v0.7.4 — 20 Ağustos 2026
 
 - Alt sekme çubuğu bazı telefonlarda hâlâ dibe oturmuyordu. Artık uygulama açılışta
