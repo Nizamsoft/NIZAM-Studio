@@ -2242,8 +2242,21 @@ window.addEventListener('hashchange', () => {
   if (!$('#app').classList.contains('hidden')) { modalHepsiniKapat(); render(); }
 });
 
+/* Ana ekrandan mı, tarayıcı sekmesinden mi açıldı? Alt çubuğun payı buna göre
+   değişiyor: tarayıcının kendi çubuğu varsa biz ayrıca pay bırakmıyoruz. */
+function acilisBicimi() {
+  const uygulama =
+    (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) ||
+    window.navigator.standalone === true;
+  document.documentElement.classList.toggle('tarayici', !uygulama);
+  document.documentElement.classList.toggle('uygulama', !!uygulama);
+}
+
+acilisBicimi();
+
 document.addEventListener('DOMContentLoaded', () => {
   document.title = APP.name;
+  acilisBicimi();
 
   $('#login-form').addEventListener('submit', girisGonder);
   $('#login-mail').addEventListener('input', hataGizle);

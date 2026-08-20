@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü
 
+## v0.7.7 — 20 Ağustos 2026
+
+- Alt çubuğun güvenli alan payı üstten sınırlandı (en fazla 20px). Bazı kurulumlarda
+  iOS, tarayıcı çubuğu kadar pay bildiriyor ve çubuk havada kalıyordu
+- Tarayıcı sekmesinde açıldığında pay tamamen kalkıyor — tarayıcının kendi alt çubuğu
+  zaten boşluk bırakıyor, ikisi üst üste binmiyor
+- Uygulama artık ana ekrandan mı tarayıcıdan mı açıldığını biliyor
+
 ## v0.7.6 — 20 Ağustos 2026
 **Alt çubuk sorunu kökünden çözüldü**
 

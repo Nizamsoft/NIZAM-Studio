@@ -1302,7 +1302,10 @@ html { background: var(--bg); }
     box-shadow: 0 -14px 30px -24px rgba(0, 0, 0, .95);
     box-sizing: border-box;
     padding-top: 7px;
-    padding-bottom: env(safe-area-inset-bottom, 0px);
+    /* Alt pay güvenli alandan gelir ama ÜSTTEN SINIRLI. Bazı kurulumlarda iOS
+       tarayıcı çubuğu kadar pay bildiriyor ve çubuk havada kalıyordu. 20px,
+       ana ekran çizgisinin üstünde kalmaya yeter. */
+    padding-bottom: min(env(safe-area-inset-bottom, 0px), 20px);
     padding-left:  max(6px, env(safe-area-inset-left, 0px));
     padding-right: max(6px, env(safe-area-inset-right, 0px));
   }
@@ -1326,4 +1329,10 @@ html { background: var(--bg); }
   .tab.active span   { color: var(--red-ink); }
   .tab.active svg    { stroke: var(--red); }
   .tab.active .dolgu { fill: var(--red); opacity: .3; }
+}
+
+/* Tarayıcı sekmesinde açıldığında tarayıcının kendi alt çubuğu zaten pay
+   bırakıyor; bizimki de pay bırakırsa çift boşluk oluyor. */
+@media (max-width: 900px) {
+  html.tarayici #tabbar { padding-bottom: 6px; }
 }
