@@ -116,13 +116,8 @@ html {
   -webkit-text-size-adjust: 100%;
 }
 body {
-  /* inset: 0 bazı iOS kurulumlarında fiziksel ekranın tamamını kapsamıyor,
-     kutu dipten ~60px kısa kalıyordu. lvh "büyük görünüm" yüksekliğidir:
-     tarayıcı çubukları gizliyken ekranın tamamı. vh eski cihazlarda yedek. */
-  position: fixed;
-  top: 0; left: 0; right: 0;
-  height: 100vh;
-  height: 100lvh;
+  /* Yükseklik inset: 0'dan gelir. */
+  position: fixed; inset: 0;
   overflow: hidden;
   overscroll-behavior: none;
   background: var(--bg);
@@ -297,7 +292,7 @@ button { font-family: inherit; color: inherit; }
    UYGULAMA İSKELETİ
    ========================================================================== */
 
-#app { display: flex; height: 100%; animation: fadeIn .35s ease both; }
+#app { display: flex; height: 100%; min-height: 0; animation: fadeIn .35s ease both; }
 
 #sidebar {
   display: flex; flex-direction: column;
@@ -352,7 +347,9 @@ button { font-family: inherit; color: inherit; }
 .user-name { font-size: 12px; font-weight: 600; }
 .user-role { font-size: 10px; color: var(--ink-dim); }
 
-#main { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+/* min-height: 0 olmadan dikey flex çocuğu içeriğinden küçülemez;
+   içerik uzayınca alt çubuğu ekranın dışına iter. Sorunun kökü buydu. */
+#main { display: flex; flex-direction: column; flex: 1; min-width: 0; min-height: 0; }
 
 #topbar {
   display: flex; align-items: center; gap: 14px;

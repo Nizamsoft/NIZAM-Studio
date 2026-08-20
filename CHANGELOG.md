@@ -1,5 +1,15 @@
 # Değişiklik Günlüğü
 
+## v0.8.3 — 21 Ağustos 2026
+**Alt çubuk sorununun asıl sebebi bulundu**
+
+- Sorun ekran yüksekliğinde, güvenli alanda ya da telefonda değilmiş. İçerik alanı
+  dikey dizilimde kendi içeriğinden küçülemiyordu (`min-height: 0` eksikti); içerik
+  uzadıkça alt çubuğu aşağı, ekranın dışına itiyordu
+- `min-height: 0` eklendi. Çubuk artık içerik ne kadar uzun olursa olsun ekranın
+  dibinde sabit duruyor
+- Kutu yüksekliği tekrar `inset: 0`'a alındı — `lvh` bazı cihazlarda taşırıyordu
+
 ## v0.8.2 — 20 Ağustos 2026
 
 - Uygulamanın kutusu bazı iOS kurulumlarında fiziksel ekranın tamamını kapsamıyor,
