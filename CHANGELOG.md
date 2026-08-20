@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.8.2 — 20 Ağustos 2026
+
+- Uygulamanın kutusu bazı iOS kurulumlarında fiziksel ekranın tamamını kapsamıyor,
+  dipten ~60 piksel kısa kalıyordu. Kutu artık "büyük görünüm" yüksekliğine (`lvh`)
+  sabitlendi — tarayıcı çubukları gizliyken ekranın tamamı
+
 ## v0.8.1 — 20 Ağustos 2026
 **Alt çubuk sıfırdan yazıldı**
 

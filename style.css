@@ -116,9 +116,13 @@ html {
   -webkit-text-size-adjust: 100%;
 }
 body {
-  /* Yükseklik inset: 0'dan gelir. window.innerHeight ile yükseklik sürmek iOS
-     standalone'da alt güvenli alanı dışarıda bırakıyor, uygulama dibe inmiyordu. */
-  position: fixed; inset: 0;
+  /* inset: 0 bazı iOS kurulumlarında fiziksel ekranın tamamını kapsamıyor,
+     kutu dipten ~60px kısa kalıyordu. lvh "büyük görünüm" yüksekliğidir:
+     tarayıcı çubukları gizliyken ekranın tamamı. vh eski cihazlarda yedek. */
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 100vh;
+  height: 100lvh;
   overflow: hidden;
   overscroll-behavior: none;
   background: var(--bg);
