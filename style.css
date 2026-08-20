@@ -113,6 +113,17 @@
 
 /* Uygulama ekrana çivilenir: sayfa hiç kaymaz, altta beyaz boşluk kalmaz.
    Kaydırma yalnızca içerik alanının kendi içinde olur. */
+/* Uzun basınca iOS'un "Kopyala / Araştır / Çeviri" menüsü çıkıyordu.
+   Uygulama arayüzü seçilemez; yalnızca yazılan ve kopyalanan yerler seçilebilir. */
+#app, #login, #tabbar, #topbar {
+  -webkit-user-select: none; user-select: none;
+  -webkit-touch-callout: none;
+}
+input, textarea, .kod, .secilebilir, .secilebilir * {
+  -webkit-user-select: text; user-select: text;
+  -webkit-touch-callout: default;
+}
+
 html {
   height: 100%;
   overscroll-behavior: none;
@@ -537,7 +548,18 @@ svg .dolgu > * { fill: currentColor; fill-opacity: .22; }
 .stat-num.c-check   { text-shadow: 0 0 20px rgba(107, 147, 232, .40); }
 .stat-num.c-done    { text-shadow: 0 0 20px rgba(69, 163, 123, .40); }
 .stat-num.c-dev     { text-shadow: 0 0 20px rgba(216, 166, 63, .40); }
-.stat-label { font-size: 10px; letter-spacing: 1.4px; text-transform: uppercase; color: var(--ink-faint); font-weight: 600; }
+.stat-label { font-size: 10px; letter-spacing: 1.4px; text-transform: uppercase; color: var(--ink-faint); font-weight: 600; padding-right: 34px; }
+
+/* Kartın sağ üstündeki simge — kartın kendi renginde. */
+.stat-ikon {
+  position: absolute; top: 12px; right: 12px; z-index: 1;
+  display: flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; border-radius: 9px;
+  color: rgb(var(--k-renk, 214, 208, 205));
+  background: rgba(var(--k-renk, 214, 208, 205), .10);
+  box-shadow: inset 0 0 0 1px rgba(var(--k-renk, 214, 208, 205), .22);
+}
+.stat-ikon svg { width: 16px; height: 16px; }
 .stat-num { font-family: var(--yazi-baslik); font-size: 30px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
 .stat-note { font-size: 11px; color: var(--ink-faint); }
 .stat-num.c-check { color: var(--st-check-t); }
@@ -1548,23 +1570,31 @@ html { background: var(--bg); }
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     gap: 4px; flex: 1; position: relative;
     /* Alt pay bilerek çok küçük: yazı ekranın dibine otursun. */
-    padding: 6px 0 3px;
+    padding: 5px 0 3px;
     color: var(--ink-dim); font-size: 10px;
   }
   .tab span { line-height: 1; white-space: nowrap; }
 
   /* Simgeler kabartma kutularda: üstten ışık, alttan gölge. */
   .tab-kut {
+    position: relative; overflow: hidden;
     display: flex; align-items: center; justify-content: center;
-    width: 29px; height: 29px; border-radius: 10px;
+    width: 34px; height: 34px; border-radius: 12px;
     background: linear-gradient(180deg, var(--surface-3), var(--kart-alt));
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .15),
-                inset 0 -1px 0 rgba(0, 0, 0, .5),
-                0 3px 6px -3px rgba(0, 0, 0, .85);
-    transition: background .2s ease, box-shadow .25s var(--ease);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .18),
+                inset 0 -1px 0 rgba(0, 0, 0, .55),
+                0 4px 8px -3px rgba(0, 0, 0, .9);
+    transition: background .2s ease, box-shadow .25s var(--ease), transform .3s var(--yay);
   }
+  /* Kutunun üst yarısına düşen ışık — cam gibi parlasın. */
+  .tab-kut::after {
+    content: ''; position: absolute; left: 0; right: 0; top: 0; height: 52%;
+    background: linear-gradient(180deg, rgba(255, 255, 255, .12), transparent);
+    pointer-events: none;
+  }
+  .tab:active .tab-kut { transform: scale(.92); }
   /* Hacimli simgeler: yan yüz kalınlık, üst yüz gradyan, ışık kırılma. */
-  .tab .i3 { width: 19px; height: 19px; stroke: none; overflow: visible;
+  .tab .i3 { width: 22px; height: 22px; stroke: none; overflow: visible;
              filter: drop-shadow(0 1.5px 1.5px rgba(0, 0, 0, .8)); }
   .tab .i3 * { stroke: none; }
   .tab .i3 .yan   { fill: url(#yan-metal); }

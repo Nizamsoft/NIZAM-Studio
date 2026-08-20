@@ -1,5 +1,18 @@
 # Değişiklik Günlüğü
 
+## v0.10.3 — 21 Ağustos 2026
+**Metin seçimi kapatıldı, simgeler büyüdü**
+
+- **Uzun basınca çıkan "Kopyala / Araştır / Çeviri" menüsü gitti.** Arayüzün
+  yazıları artık seçilemiyor; yalnızca yazdığın alanlar ve kopyalanmak için
+  duran kod blokları seçilebilir kaldı
+- Hesap menüsü **kapanırken de** animasyonlu. Kutu geçiş bitmeden siliniyordu
+  (200 ms silme, 340 ms geçiş) — kapanış hiç görünmüyordu
+- Özet kartlarına simge geldi: klasör · kalem · onay kutusu · tik.
+  Her biri kartın kendi renginde
+- Alt çubuk simgeleri büyüdü: kutu 29 → 34, simge 19 → 22 piksel.
+  Kutuların üst yarısına cam parlaması, basınca hafif içeri çökme eklendi
+
 ## v0.10.2 — 21 Ağustos 2026
 **Hacimli simgeler, renkli çerçeveler, kayarak açılan menü**
 

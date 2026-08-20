@@ -223,10 +223,10 @@ const VIEWS = {
 
     return `
       <div class="stat-grid">
-        ${stat('Aktif Proje', p.length, p.length ? 'devam ediyor' : 'henüz proje yok', '', 0)}
-        ${stat('Geliştiriliyor', dev, dev ? 'kodlanıyor' : 'açık iş yok', 'c-dev', 1)}
-        ${stat('Kontrolde', kont, kont ? 'onayını bekliyor' : 'onayını bekleyen yok', 'c-check', 2)}
-        ${stat('Bugün Biten', bugun, bugun ? 'onaylandı' : 'gün yeni başladı', 'c-done', 3)}
+        ${stat('Aktif Proje', p.length, p.length ? 'devam ediyor' : 'henüz proje yok', '', 0, 'folder')}
+        ${stat('Geliştiriliyor', dev, dev ? 'kodlanıyor' : 'açık iş yok', 'c-dev', 1, 'kalem')}
+        ${stat('Kontrolde', kont, kont ? 'onayını bekliyor' : 'onayını bekleyen yok', 'c-check', 2, 'check')}
+        ${stat('Bugün Biten', bugun, bugun ? 'onaylandı' : 'gün yeni başladı', 'c-done', 3, 'tik')}
       </div>
 
       <div class="section">
@@ -634,8 +634,9 @@ function ozKutu(label, num, sub, i = 0) {
   </div>`;
 }
 
-function stat(label, num, note, cls = '', i = 0) {
+function stat(label, num, note, cls = '', i = 0, ikon = null) {
   return `<div class="card stat ${cls ? 'k-' + cls.replace('c-', '') : 'k-metal'}" style="--i:${i}">
+    ${ikon ? `<span class="stat-ikon">${svg(ICON[ikon], 16)}</span>` : ''}
     <span class="stat-label">${label}</span>
     <span class="stat-num ${cls}" data-sayac="${num}">${num}</span>
     <span class="stat-note">${note}</span>
@@ -1855,7 +1856,9 @@ function standartSor(mevcut) {
 /* Fotoğrafın hemen altında açılan küçük menü.
    Alttan sayfa değil: göz nereye baktıysa oradan açılsın. */
 function hesapMenusu() {
-  if ($('#hesap-menu')) { hesapMenusuKapat(); return; }
+  const acik = $('#hesap-menu');
+  if (acik && acik.classList.contains('acik')) { hesapMenusuKapat(); return; }
+  if (acik) acik.remove();
 
   const destekYazi = DESTEK.tip === 'wa' ? 'WhatsApp' : DESTEK.deger;
 
@@ -1920,7 +1923,8 @@ function hesapMenusuKapat() {
   document.removeEventListener('keydown', escBasinca);
   if (!el) return;
   el.classList.remove('acik');
-  setTimeout(() => el.remove(), 200);
+  /* Geçiş 340 ms; daha erken silersek kapanış animasyonu görünmüyordu. */
+  setTimeout(() => el.remove(), 380);
 }
 
 /* Standart içe aktarma penceresi. Yapıştır → önizle → yaz.
