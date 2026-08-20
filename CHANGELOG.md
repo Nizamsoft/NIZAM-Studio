@@ -1,5 +1,15 @@
 # Değişiklik Günlüğü
 
+## v0.8.1 — 20 Ağustos 2026
+**Alt çubuk sıfırdan yazıldı**
+
+- Eski alt çubuk kodunun tamamı silindi, temiz baştan yazıldı
+- **Alt boşluk sıfır.** Çubukta hiçbir güvenli alan payı yok; ekranın en dibine yapışıyor.
+  Telefonun ne bildirdiğinin bir önemi kalmadı
+- Çubuk uygulama sütununun son çocuğu; sabit konum, JS ölçüm, piksel toplama yok
+- Aktif sekme markanın kırmızısıyla dolu kutu içinde
+- Masaüstünde çubuk gizli, yan menü çalışıyor
+
 ## v0.7.7 — 20 Ağustos 2026
 
 - Alt çubuğun güvenli alan payı üstten sınırlandı (en fazla 20px). Bazı kurulumlarda
