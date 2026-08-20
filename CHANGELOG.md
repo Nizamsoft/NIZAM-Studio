@@ -1,5 +1,21 @@
 # Değişiklik Günlüğü
 
+## v0.10.4 — 21 Ağustos 2026
+**Dokunma davranışı düzeltildi**
+
+Sekmeye basıp parmağını sürükleyince iOS bağlantıyı "taşınabilir" sayıyor,
+başlık + adres balonunu gösteriyor ve arkadaki sayfayı karartıyordu.
+Karartma dokunma tepkisi değil, sürükleme perdesiymiş.
+
+- Bağlantı, görsel ve kartlarda sürükleme kapatıldı
+  (`-webkit-user-drag: none` + `draggable="false"`)
+- `-webkit-touch-callout: none` ve `touch-action: manipulation` tüm
+  dokunulabilir öğelere verildi
+- **Dokunma tepkisi karartma değil, hafif küçülme** oldu. Zemini
+  koyulaştırmak koyu temada "sönüyor" gibi okunuyordu
+- Dokunmatikte kalıcı odak halkası kaldırıldı — parmakla basınca kartın
+  çevresinde beyaz çerçeve kalıyordu
+
 ## v0.10.3 — 21 Ağustos 2026
 **Metin seçimi kapatıldı, simgeler büyüdü**
 

@@ -111,6 +111,15 @@
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
+/* Bir bağlantıya basıp parmağını sürükleyince iOS onu "taşınabilir" sayıp
+   başlık + adres balonu gösteriyor, arkadaki sayfayı da karartıyordu.
+   Sürüklemeyi kapatınca o davranış tümüyle kalkıyor. */
+a, img, button, [role="button"], .card, .tab, .proje, .gorev, .gsatir, .modul-bas, .standart-bas {
+  -webkit-user-drag: none;
+  -webkit-touch-callout: none;
+  touch-action: manipulation;
+}
+
 /* Uygulama ekrana çivilenir: sayfa hiç kaymaz, altta beyaz boşluk kalmaz.
    Kaydırma yalnızca içerik alanının kendi içinde olur. */
 /* Uzun basınca iOS'un "Kopyala / Araştır / Çeviri" menüsü çıkıyordu.
@@ -1368,6 +1377,11 @@ html { background: var(--bg); }
 
 /* Dokunmatikte :hover parmağı kaldırınca üzerinde kalıyor ve düğmeler
    basılı gibi görünüyordu. Hover yalnızca gerçek fare varken çalışsın. */
+/* Dokunmatikte klavye yok; parmakla basınca kalan halka yalnızca kir yapıyor. */
+@media (hover: none) {
+  :focus, :focus-visible { outline: none !important; }
+}
+
 @media (hover: none) {
   .mini-btn:hover, .mini-link:hover, .btn:hover, .f:hover, .ss:hover,
   .proje:hover, .sayfa:hover, .gorev:hover, .gsatir:hover,
@@ -1376,6 +1390,15 @@ html { background: var(--bg); }
     background: inherit; border-color: inherit; color: inherit; transform: none;
   }
   .mini-btn:hover { background: none; color: var(--ink-dim); }
+
+  /* Dokunma tepkisi karartma değil, hafif küçülme olsun.
+     Zemini koyulaştırmak koyu temada "sönüyor" gibi okunuyordu. */
+  .proje:active, .gorev:active, .gsatir:active, .sayfa:active,
+  .modul-bas:active, .standart-bas:active, .row[data-hs]:active, .hm-sat:active {
+    background: inherit;
+    transform: scale(.985);
+    transition: transform .1s var(--ease);
+  }
 }
 /* Hesap sayfası ------------------------------------------------------------ */
 

@@ -997,14 +997,14 @@ function menuyuCiz() {
   const gorunur = MENU.filter(m => !m.sadeceYonetici || AUTH.yonetici);
 
   $('#sidebar .nav').innerHTML = gorunur.map(m => `
-    <a class="nav-item" href="#/${m.id}" data-route="${m.id}">
+    <a class="nav-item" href="#/${m.id}" data-route="${m.id}" draggable="false">
       ${svg(ICON[m.ikon], 18)}
       <span>${esc(m.ad)}</span>
       ${m.sayac ? `<em class="nav-count" data-count="${m.sayac}">0</em>` : ''}
     </a>`).join('');
 
   const sekmeler = gorunur.filter(m => m.tab).map(m => `
-    <a class="tab" href="#/${m.id}" data-route="${m.id}">
+    <a class="tab" href="#/${m.id}" data-route="${m.id}" draggable="false">
       <span class="tab-kut">${svg3d(m.ikon, 19)}</span>
       <span>${esc(m.tabAd || m.ad)}</span>
     </a>`);
