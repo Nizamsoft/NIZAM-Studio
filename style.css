@@ -776,6 +776,57 @@ button { font-family: inherit; color: inherit; }
 .field textarea::placeholder { color: #4a4f56; }
 .field textarea:focus { outline: none; border-color: #4a4f56; background: var(--surface-3); }
 
+
+/* ==========================================================================
+   STANDARTLAR
+   ========================================================================== */
+
+.standart { margin-bottom: 9px; overflow: hidden; }
+.standart-bas {
+  display: flex; align-items: center; gap: 11px; padding: 13px 15px; cursor: pointer;
+  transition: background .16s ease;
+}
+.standart-bas:hover { background: var(--surface-2); }
+.standart-bas:focus-visible { outline: 2px solid var(--metal-1); outline-offset: -2px; }
+.standart-bas .chev { display: flex; color: var(--ink-dim); flex-shrink: 0; transition: transform .2s var(--ease); }
+.standart-bas.acik .chev { transform: rotate(90deg); }
+.standart-bas svg { fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+.kullanim { font-size: 10.5px; color: var(--ink-dim); flex-shrink: 0; margin-left: auto; }
+
+.standart-govde {
+  border-top: 1px solid var(--line-3); background: #141619;
+  padding: 14px 16px 14px 41px;
+  font-size: 12.5px; color: var(--ink-soft); line-height: 1.7; white-space: pre-wrap;
+}
+
+/* göreve bağlı standart etiketleri */
+.std-etiketler { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.std-etiket {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 11.5px; padding: 5px 10px; border-radius: 999px;
+  background: var(--surface-2); border: 1px solid var(--line); color: var(--ink-soft);
+}
+.std-etiket.ekle { cursor: pointer; color: var(--ink-dim); font-family: inherit; }
+.std-etiket.ekle:hover { border-color: #343941; color: var(--ink-soft); }
+.std-etiket svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ==========================================================================
+   METİN PENCERESİ (prompt · kimlik dosyası)
+   ========================================================================== */
+
+.kod {
+  margin: 0; padding: 14px 15px; max-height: 46vh; overflow: auto;
+  background: #101215; border: 1px solid var(--line); border-radius: var(--radius-sm);
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 11.5px; line-height: 1.75; color: #b9bfc6;
+  white-space: pre-wrap; word-break: break-word;
+  -webkit-user-select: text; user-select: text;
+}
+
+.proje-arac { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px; }
+.proje-arac .btn { max-width: 100%; }
+.proje-arac .btn span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
 /* ==========================================================================
    MOBİL
    ========================================================================== */
@@ -812,6 +863,9 @@ button { font-family: inherit; color: inherit; }
   .sayfa-chev { margin-left: -17px; }
   .gorev-no { display: none; }
   .gk-meta { grid-template-columns: 1fr; }
+  .standart-govde { padding-left: 16px; }
+  .kod { font-size: 11px; max-height: 40vh; }
+  .proje-arac .btn { flex: 1; min-width: 0; }
   .serit .st { font-size: 9.5px; padding: 8px 2px; }
   .modal-perde { align-items: flex-end; padding: 0; }
   .modal-kutu {

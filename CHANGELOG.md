@@ -1,5 +1,24 @@
 # Değişiklik Günlüğü
 
+## v0.5.0 — 20 Ağustos 2026
+**Adım 4 · Prompt motoru ve kimlik dosyası**
+
+- **"Prompt Kopyala" çalışıyor.** Görev kartından tek tıkla hazır metin panoya gider;
+  geliştirici Claude'a yapıştırır, tek kelime yazmaz
+- Promptun içinde: proje bilgisi, depo adresi, görevin ağaçtaki yeri, ne yapılacağı,
+  bağlı standartların tam tarifi ve kurallar
+- Kurallar promptta açıkça yazıyor: commit mesajına `[NS-142]` yaz, `NIZAM.md` dosyasını
+  güncelle, tasarım dilini bozma, yalnızca bu görevi yap
+- **`NIZAM.md` üreticisi** — proje detayından "Kimlik Dosyası". Modüller, sayfalar,
+  kullanılan standartlar, devam eden işler ve son güncelleme tek dosyada.
+  Kopyalanır ya da indirilir, müşteri deposunun köküne konur
+- **Standartlar ekranı gerçek oldu.** Sekiz hazır tarif kuruluyor; açılır, düzenlenir,
+  yenisi eklenir, kaldırılır
+- Görev oluştururken standartlar tikleniyor — tiklenenin tarifi prompta kendiliğinden giriyor
+- Görev kartında bağlı standartlar etiket olarak görünüyor, sonradan değiştirilebiliyor
+- Projeye **depo adresi** alanı eklendi; prompt hangi depoda çalışılacağını söylüyor
+- Eskimiş "Adım 3'te gelecek" notları temizlendi
+
 ## v0.4.0 — 20 Ağustos 2026
 **Adım 3 · Görevler, durumlar ve atama**
 

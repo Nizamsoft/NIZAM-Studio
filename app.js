@@ -1,6 +1,6 @@
 /* ==========================================================================
    NIZAM | Studio — Uygulama
-   Adım 3: görevler, dört durum, atama ve revize akışı.
+   Adım 4: prompt motoru, Nizam Standartları ve proje kimlik dosyası.
    ========================================================================== */
 
 'use strict';
@@ -14,7 +14,7 @@ const ROUTES = {
   panel:       { title: 'Panel',              sub: () => todayLabel() },
   projeler:    { title: 'Projeler',           sub: () => projelerAltBaslik() },
   gorevler:    { title: 'Bana Atananlar',     sub: () => gorevlerAltBaslik() },
-  standartlar: { title: 'Nizam Standartları', sub: () => 'Ortak bileşen kütüphanesi' },
+  standartlar: { title: 'Nizam Standartları', sub: () => standartAltBaslik() },
   ayarlar:     { title: 'Ayarlar',            sub: () => APP.version + ' · ' + APP.stage },
 };
 
@@ -30,8 +30,9 @@ function rota() {
 
 let YUKLENIYOR     = false;
 let GOREV_FILTRE   = '';
-const ACIK_MODUL   = new Set();
-const ACIK_SAYFA   = new Set();
+const ACIK_MODUL    = new Set();
+const ACIK_SAYFA    = new Set();
+const ACIK_STANDART = new Set();
 
 /* ---------- İkonlar ---------- */
 
@@ -144,6 +145,15 @@ const VIEWS = {
         </div>
       </div>
 
+      <div class="proje-arac">
+        <button class="btn btn-ghost" data-eylem="kimlik" data-proje="${proje.id}" type="button">
+          ${svg(ICON.kopya, 15)}<span>Kimlik Dosyası</span>
+        </button>
+        <button class="btn btn-ghost" data-eylem="repo" data-proje="${proje.id}" type="button">
+          ${svg(ICON.katman, 15)}<span>${proje.repo ? esc(proje.repo) : 'Depo adresi ekle'}</span>
+        </button>
+      </div>
+
       <span class="label">Modüller ve sayfalar</span>
       ${moduller.map(m => modulKarti(m)).join('')}
 
@@ -190,21 +200,25 @@ const VIEWS = {
     `;
   },
 
-  standartlar: () => `
-    <div class="card">
-      <div class="row-list">
-        ${stdRow('Açılış Ekranı', 'Nizam Standard 1 · Minimal · Animasyonsuz')}
-        ${stdRow('Login', 'Standard · Split Screen · Minimal')}
-        ${stdRow('Menü', 'Sidebar · Floating Sidebar · Üst Menü')}
-        ${stdRow('Ayarlar', 'Nizam Standard Settings')}
-        ${stdRow('Bildirim Merkezi', 'Uygulama içi bildirim listesi')}
-        ${stdRow('Excel / PDF Çıktı', 'Tablo dışa aktarma')}
-        ${stdRow('Tarih Filtresi', 'Gün · Hafta · Ay · Aralık')}
-        ${stdRow('Dosya Yükleme', 'Görsel ve belge yükleme')}
+  standartlar: () => {
+    if (YUKLENIYOR) return iskeletler(4);
+    if (DB.hata)    return hataKutusu(DB.hata);
+
+    if (!DB.standartlar.length) {
+      return `<div class="card">${empty(ICON.katman, 'Standart yok',
+        'sql/05-standartlar.sql dosyasını Supabase\'de çalıştırırsan sekiz hazır standart kurulur.',
+        AUTH.yonetici ? 'Yeni Standart' : null, 'standart-ekle')}</div>`;
+    }
+
+    return `
+      <div class="note" style="margin-bottom:16px">
+        <svg viewBox="0 0 24 24">${ICON.info}</svg>
+        <span>Bir görev bu standartlardan birine dokunuyorsa, tarifi promptun içine
+        kendiliğinden yapıştırılır. Aynı şeyi her seferinde yazmazsın.</span>
       </div>
-    </div>
-    ${stageNote('Standartlar yazılı tarif olarak tutulacak ve prompta otomatik eklenecek.')}
-  `,
+      ${DB.standartlar.map(standartKarti).join('')}
+    `;
+  },
 
   ayarlar: () => `
     <div class="section" style="margin-top:0">
@@ -248,7 +262,7 @@ const VIEWS = {
           ${stepRow('Adım 1', 'Supabase kurulumu ve giriş', true)}
           ${stepRow('Adım 2', 'Projeler, modül ve sayfa ağacı', true)}
           ${stepRow('Adım 3', 'Görevler, durumlar, atama', true)}
-          ${stepRow('Adım 4', 'Prompt motoru ve kimlik dosyası', false)}
+          ${stepRow('Adım 4', 'Prompt motoru ve kimlik dosyası', true)}
           ${stepRow('Adım 5', 'GitHub okuma ve sürüm notları', false)}
         </div>
       </div>
@@ -462,11 +476,37 @@ function stageNote(text) {
   </div></div>`;
 }
 
-function stdRow(title, sub) {
-  return `<div class="row">
-    <div class="row-main"><span class="row-title">${title}</span><span class="row-sub">${sub}</span></div>
-    <span class="pill">Planlandı</span>
-  </div>`;
+function standartKarti(st) {
+  const acik = ACIK_STANDART.has(st.id);
+  const kac  = DB.standartKullanimi(st.id);
+
+  return `
+    <div class="card standart">
+      <div class="standart-bas ${acik ? 'acik' : ''}" data-eylem="standart-ac" data-id="${st.id}"
+           role="button" tabindex="0">
+        <span class="chev">${svg(ICON.chevron, 15)}</span>
+        <span class="modul-ikon">${svg(ICON.katman, 16)}</span>
+        <span class="modul-yazi">
+          <span class="modul-ad">${esc(st.ad)}</span>
+          <span class="modul-alt">${esc(st.ozet)}</span>
+        </span>
+        <span class="kullanim mono">${kac ? kac + ' projede' : 'kullanılmadı'}</span>
+      </div>
+
+      ${acik ? `
+        <div class="standart-govde">
+          ${st.tarif ? esc(st.tarif) : '<em class="ipucu">Tarif henüz yazılmadı.</em>'}
+          ${AUTH.yonetici ? `
+            <div class="modul-araclar" style="padding-left:0;margin-top:12px">
+              <button class="mini-link" data-eylem="standart-duzenle" data-id="${st.id}" type="button">
+                ${svg(ICON.kalem, 13)} Düzenle</button>
+              <button class="mini-link" data-eylem="standart-kopyala" data-id="${st.id}" type="button">
+                ${svg(ICON.kopya, 13)} Tarifi kopyala</button>
+              <button class="mini-link tehlike" data-eylem="standart-sil" data-id="${st.id}"
+                      data-ad="${esc(st.ad)}" type="button">${svg(ICON.cop, 13)} Kaldır</button>
+            </div>` : ''}
+        </div>` : ''}
+    </div>`;
 }
 
 function infoRow(k, v, mono = false) {
@@ -539,6 +579,11 @@ function ustEylemYaz(key, detay, id) {
     btn.querySelector('span').textContent = 'Yeni Görev';
     btn.dataset.eylem = 'gorev-ekle';
     btn.dataset.proje = id;
+  } else if (key === 'standartlar') {
+    btn.classList.remove('hidden');
+    btn.querySelector('span').textContent = 'Yeni Standart';
+    btn.dataset.eylem = 'standart-ekle';
+    delete btn.dataset.proje;
   } else if (key === 'panel' || key === 'projeler') {
     btn.classList.remove('hidden');
     btn.querySelector('span').textContent = 'Yeni Proje';
@@ -567,6 +612,12 @@ function sayaclariYaz() {
       : 0;
     gv.textContent = acik;
   }
+}
+
+function standartAltBaslik() {
+  if (YUKLENIYOR) return 'yükleniyor…';
+  const n = DB.standartlar.length;
+  return n ? `${n} tarif · prompta kendiliğinden eklenir` : 'Ortak bileşen kütüphanesi';
 }
 
 function gorevlerAltBaslik() {
@@ -922,6 +973,18 @@ function gorevKartiHtml(g) {
         <div class="gk-aciklama">${esc(g.aciklama)}</div>
       </div>` : ''}
 
+    <div class="gk-blok">
+      <span class="gk-cap">Nizam Standartları</span>
+      ${DB.gorevinStandartlari(g.id).length
+        ? `<div class="std-etiketler">${DB.gorevinStandartlari(g.id)
+            .map(st => `<span class="std-etiket">${esc(st.ad)}</span>`).join('')}
+           ${yon ? `<button class="std-etiket ekle" data-gk="standart" type="button">${svg(ICON.kalem, 12)} değiştir</button>` : ''}</div>`
+        : `<div class="std-etiketler">
+             <span class="ipucu">Bu göreve standart bağlanmamış.</span>
+             ${yon ? `<button class="std-etiket ekle" data-gk="standart" type="button">${svg(ICON.arti, 12)} ekle</button>` : ''}
+           </div>`}
+    </div>
+
     ${hareket.length ? `
       <div class="gk-blok">
         <span class="gk-cap">Hareketler</span>
@@ -985,7 +1048,26 @@ async function gorevEylemi(tip, id, deger) {
   if (!g && tip !== 'kapat') { modalKapat(); return; }
 
   if (tip === 'kapat')  return modalKapat();
-  if (tip === 'prompt') return toast('Prompt motoru Adım 4\'te gelecek.');
+
+  if (tip === 'prompt') {
+    return metinPenceresi({
+      baslik: 'Hazır prompt',
+      aciklama: 'Kopyala, Claude Code\'a yapıştır. Başka bir şey yazmana gerek yok.',
+      metin: PROMPT.gorev(id),
+      dosya: null,
+      geri: () => gorevKartiAc(id),
+    });
+  }
+
+  if (tip === 'standart') {
+    const secilen = await standartSor(DB.gorevinStandartlari(id).map(x => x.id));
+    if (!secilen) { gorevKartiAc(id); return; }
+    try {
+      await DB.gorevStandartYaz(id, secilen);
+      sonrasi(id, 'Standartlar güncellendi.');
+    } catch (e) { toast(e.message); gorevKartiAc(id); }
+    return;
+  }
 
   if (tip === 'basla')    return gorevDurum(id, 'gelistiriliyor');
   if (tip === 'kontrole') return gorevDurum(id, 'kontrolde');
@@ -1058,12 +1140,13 @@ function sonrasi(id, mesaj) {
    YENİ GÖREV
    ========================================================================== */
 
-const YENI = { proje: null, modul: null, sayfa: null, oncelik: 'normal', atanan: null, kaydediyor: false };
+const YENI = { proje: null, modul: null, sayfa: null, oncelik: 'normal',
+               atanan: null, standartlar: [], kaydediyor: false };
 
 function yeniGorevAc({ proje, modul, sayfa }) {
   Object.assign(YENI, {
     proje: proje || null, modul: modul || null, sayfa: sayfa || null,
-    oncelik: 'normal', atanan: null, kaydediyor: false,
+    oncelik: 'normal', atanan: null, standartlar: [], kaydediyor: false,
   });
 
   if (!YENI.proje && YENI.modul) {
@@ -1113,6 +1196,15 @@ function yeniGorevHtml() {
         </div>
       </div>` : ''}
 
+    ${DB.standartlar.length ? `
+      <div class="field">
+        <span>Nizam Standartları <em class="ipucu">tikledigin standardın tarifi prompta girer</em></span>
+        <div class="secenek-serit">
+          ${DB.standartlar.map(st => `<button class="ss ${YENI.standartlar.includes(st.id) ? 'sec' : ''}"
+            data-yg="standart" data-deger="${st.id}" type="button">${esc(st.ad)}</button>`).join('')}
+        </div>
+      </div>` : ''}
+
     <div class="gk-meta">
       <div class="field" style="margin:0">
         <span>Atanan</span>
@@ -1156,6 +1248,10 @@ function yeniGorevBagla(kutu) {
       if (t === 'sayfa')   { YENI.sayfa = YENI.sayfa === d ? null : d; }
       if (t === 'atanan')  { YENI.atanan = YENI.atanan === d ? null : d; }
       if (t === 'oncelik') { YENI.oncelik = d; }
+      if (t === 'standart') {
+        const i = YENI.standartlar.indexOf(d);
+        i === -1 ? YENI.standartlar.push(d) : YENI.standartlar.splice(i, 1);
+      }
 
       yeniGorevCiz();
     });
@@ -1193,6 +1289,7 @@ async function yeniGorevKaydet() {
       baslik, aciklama,
       oncelik: YENI.oncelik,
       atanan: YENI.atanan,
+      standartlar: YENI.standartlar,
     });
     YENI._baslik = YENI._aciklama = '';
     if (YENI.sayfa) ACIK_SAYFA.add(YENI.sayfa);
@@ -1237,6 +1334,139 @@ function kisiSor(mevcut) {
 }
 
 /* ==========================================================================
+   METİN PENCERESİ — prompt ve kimlik dosyası
+   ========================================================================== */
+
+function metinPenceresi({ baslik, aciklama, metin, dosya, geri }) {
+  modalAc(`
+    <h3 class="modal-h">${esc(baslik)}</h3>
+    <p class="modal-s">${esc(aciklama)}</p>
+    <pre class="kod">${esc(metin)}</pre>
+    <div class="modal-alt">
+      <button class="btn btn-ghost" data-mp="kapat" type="button">${geri ? 'Geri' : 'Kapat'}</button>
+      ${dosya ? `<button class="btn btn-ghost" data-mp="indir" type="button">İndir</button>` : ''}
+      <button class="btn btn-primary" data-mp="kopyala" type="button"><span>Panoya Kopyala</span></button>
+    </div>`, kutu => {
+    $('[data-mp="kapat"]', kutu).addEventListener('click', () => {
+      modalKapat();
+      if (geri) geri();
+    });
+
+    const indir = $('[data-mp="indir"]', kutu);
+    if (indir) indir.addEventListener('click', () => {
+      dosyaIndir(dosya, metin);
+      toast(dosya + ' indirildi.');
+    });
+
+    $('[data-mp="kopyala"]', kutu).addEventListener('click', async () => {
+      const yazi = $('[data-mp="kopyala"] span', kutu);
+      const ok = await panoyaKopyala(metin);
+      if (ok) {
+        yazi.textContent = 'Kopyalandı ✓';
+        setTimeout(() => { if (yazi.isConnected) yazi.textContent = 'Panoya Kopyala'; }, 1800);
+      } else {
+        toast('Kopyalanamadı. Metni seçip elle kopyala.');
+      }
+    });
+  }, 'genis');
+}
+
+/* ==========================================================================
+   STANDARTLAR
+   ========================================================================== */
+
+/* Göreve standart bağlarken açılan tik listesi. Vazgeçilirse null döner. */
+function standartSor(mevcut) {
+  return new Promise(resolve => {
+    let secili = mevcut.slice();
+
+    const ciz = () => `
+      <h3 class="modal-h">Hangi standartlar kullanılacak?</h3>
+      <p class="modal-s">Tiklediklerinin tarifi promptun içine girer.</p>
+      <div class="mod-grid">
+        ${DB.standartlar.map(st => `
+          <button class="mod ${secili.includes(st.id) ? 'sec' : ''}" data-st="${st.id}" type="button">
+            <span>${esc(st.ad)}</span>
+            <span class="tik">${secili.includes(st.id) ? svg(ICON.tik, 13) : ''}</span>
+          </button>`).join('')}
+      </div>
+      <div class="modal-alt">
+        <button class="btn btn-ghost" data-st-iptal="1" type="button">Vazgeç</button>
+        <button class="btn btn-primary" data-st-tamam="1" type="button"><span>Kaydet</span></button>
+      </div>`;
+
+    const bagla = kutu => {
+      $$('[data-st]', kutu).forEach(el => el.addEventListener('click', () => {
+        const id = el.dataset.st;
+        const i = secili.indexOf(id);
+        i === -1 ? secili.push(id) : secili.splice(i, 1);
+        kutu.innerHTML = ciz();
+        bagla(kutu);
+      }));
+      $('[data-st-iptal]', kutu).addEventListener('click', () => { modalKapat(); resolve(null); });
+      $('[data-st-tamam]', kutu).addEventListener('click', () => { modalKapat(); resolve(secili); });
+    };
+
+    modalAc(ciz(), bagla, 'genis');
+  });
+}
+
+/* Standart yazma / düzenleme penceresi */
+function standartDuzenle(id) {
+  const st = id ? DB.standart(id) : null;
+
+  modalAc(`
+    <h3 class="modal-h">${st ? 'Standardı düzenle' : 'Yeni standart'}</h3>
+    <p class="modal-s">Tarif prompta olduğu gibi girer — net ve emir kipinde yaz.</p>
+
+    <label class="field">
+      <span>Ad</span>
+      <input type="text" id="sd-ad" value="${esc(st ? st.ad : '')}"
+             placeholder="Örn. Tarih Filtresi" maxlength="60" autocomplete="off">
+    </label>
+    <label class="field">
+      <span>Kısa özet <em class="ipucu">listede görünür</em></span>
+      <input type="text" id="sd-ozet" value="${esc(st ? st.ozet : '')}"
+             placeholder="Örn. Gün · Hafta · Ay · Aralık" maxlength="90" autocomplete="off">
+    </label>
+    <label class="field">
+      <span>Tarif <em class="ipucu">prompta giren metin</em></span>
+      <textarea id="sd-tarif" rows="7"
+        placeholder="Dört seçenek sunulur: Gün, Hafta, Ay ve Aralık…">${esc(st ? st.tarif : '')}</textarea>
+    </label>
+
+    <div class="modal-alt">
+      <button class="btn btn-ghost" data-sd="iptal" type="button">Vazgeç</button>
+      <button class="btn btn-primary" data-sd="kaydet" type="button"><span>Kaydet</span></button>
+    </div>`, kutu => {
+    setTimeout(() => $('#sd-ad', kutu).focus(), 40);
+
+    $('[data-sd="iptal"]', kutu).addEventListener('click', modalKapat);
+    $('[data-sd="kaydet"]', kutu).addEventListener('click', async () => {
+      const ad    = $('#sd-ad', kutu).value.trim();
+      const ozet  = $('#sd-ozet', kutu).value.trim();
+      const tarif = $('#sd-tarif', kutu).value.trim();
+
+      if (!ad)    { toast('Standardın adını yaz.'); return; }
+      if (!tarif) { toast('Tarifi yaz — prompta bu metin giriyor.'); return; }
+
+      const btn = $('[data-sd="kaydet"] span', kutu);
+      btn.textContent = 'Kaydediliyor…';
+      try {
+        await DB.standartKaydet(id, { ad, ozet, tarif });
+        modalKapat();
+        if (id) ACIK_STANDART.add(id);
+        render();
+        toast(id ? 'Standart güncellendi.' : 'Standart eklendi.');
+      } catch (e) {
+        toast(e.message);
+        btn.textContent = 'Kaydet';
+      }
+    });
+  }, 'genis');
+}
+
+/* ==========================================================================
    EYLEMLER
    ========================================================================== */
 
@@ -1270,6 +1500,58 @@ async function eylemCalistir(el) {
   if (e === 'filtre') {
     GOREV_FILTRE = el.dataset.deger;
     return render();
+  }
+
+  if (e === 'standart-ac') {
+    ACIK_STANDART.has(id) ? ACIK_STANDART.delete(id) : ACIK_STANDART.add(id);
+    return render();
+  }
+
+  if (e === 'standart-ekle')    return standartDuzenle(null);
+  if (e === 'standart-duzenle') return standartDuzenle(id);
+
+  if (e === 'standart-kopyala') {
+    const st = DB.standart(id);
+    if (!st) return;
+    const ok = await panoyaKopyala(`### ${st.ad}\n${st.tarif}`);
+    return toast(ok ? 'Tarif kopyalandı.' : 'Kopyalanamadı.');
+  }
+
+  if (e === 'standart-sil') {
+    const ok = await onaySor({
+      baslik: 'Standart kaldırılsın mı?',
+      mesaj: `"${el.dataset.ad}" listeden kalkar. Bağlı görevlerdeki kayıt bozulmaz.`,
+      buton: 'Kaldır',
+    });
+    if (!ok) return;
+    return isYap(() => DB.standartSil(id), 'Standart kaldırıldı.');
+  }
+
+  if (e === 'kimlik') {
+    const projeId = el.dataset.proje || rota().id;
+    const proje = DB.proje(projeId);
+    if (!proje) return;
+    return metinPenceresi({
+      baslik: 'NIZAM.md',
+      aciklama: 'Müşteri deposunun köküne konur. AI projeyi buradan tanır.',
+      metin: PROMPT.kimlik(projeId),
+      dosya: 'NIZAM.md',
+    });
+  }
+
+  if (e === 'repo') {
+    const projeId = el.dataset.proje || rota().id;
+    const proje = DB.proje(projeId);
+    if (!proje) return;
+    const adres = await metinSor({
+      baslik: 'Depo adresi',
+      aciklama: 'Prompt hangi depoda çalışılacağını buradan söyler.',
+      deger: proje.repo || '',
+      yerTutucu: 'github.com/nizamsoft/musteri-projesi',
+      buton: 'Kaydet',
+    });
+    if (adres === null) return;
+    return isYap(() => DB.projeGuncelle(projeId, { repo: adres }), 'Depo adresi kaydedildi.');
   }
 
   if (e === 'modul-ekle') {
@@ -1454,7 +1736,8 @@ async function signOut() {
   DB.projeler = []; DB.moduller = []; DB.sayfalar = [];
   DB.gorevler = []; DB.hareketler = []; DB.kisiler = [];
   DB.yuklendi = false; DB.hata = null;
-  ACIK_MODUL.clear(); ACIK_SAYFA.clear();
+  DB.standartlar = []; DB.gorevStandart = [];
+  ACIK_MODUL.clear(); ACIK_SAYFA.clear(); ACIK_STANDART.clear();
   GOREV_FILTRE = '';
   modalKapat();
 

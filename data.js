@@ -14,6 +14,8 @@ const DB = {
   gorevler: [],
   hareketler: [],
   kisiler: [],
+  standartlar: [],
+  gorevStandart: [],
 
   yuklendi: false,
   hata: null,
@@ -26,21 +28,24 @@ const DB = {
     if (!AUTH.bagli) {                      // demo modu — veri yok
       this.projeler = []; this.moduller = []; this.sayfalar = [];
       this.gorevler = []; this.hareketler = []; this.kisiler = [];
+      this.standartlar = []; this.gorevStandart = [];
       this.yuklendi = true;
       return;
     }
 
     try {
-      const [p, m, s, g, h, k] = await Promise.all([
+      const [p, m, s, g, h, k, st, gs] = await Promise.all([
         AUTH.db.from('projects').select('*').eq('arsiv', false).order('sira').order('olusturuldu'),
         AUTH.db.from('modules').select('*').order('sira'),
         AUTH.db.from('pages').select('*').order('sira'),
         AUTH.db.from('tasks').select('*').order('no', { ascending: false }),
         AUTH.db.from('task_events').select('*').order('olusturuldu'),
         AUTH.db.from('profiles').select('id, ad, rol, aktif'),
+        AUTH.db.from('standards').select('*').eq('aktif', true).order('sira'),
+        AUTH.db.from('task_standards').select('*'),
       ]);
 
-      const ilkHata = p.error || m.error || s.error || g.error || h.error;
+      const ilkHata = p.error || m.error || s.error || g.error || h.error || st.error || gs.error;
       if (ilkHata) throw ilkHata;
 
       this.projeler   = p.data || [];
@@ -48,8 +53,10 @@ const DB = {
       this.sayfalar   = s.data || [];
       this.gorevler   = g.data || [];
       this.hareketler = h.data || [];
-      this.kisiler    = (k.data || []).filter(x => x.aktif);
-      this.yuklendi   = true;
+      this.kisiler      = (k.data || []).filter(x => x.aktif);
+      this.standartlar  = st.data || [];
+      this.gorevStandart = gs.data || [];
+      this.yuklendi     = true;
     } catch (e) {
       this.hata = veriHatasi(e);
       this.yuklendi = false;
@@ -102,6 +109,28 @@ const DB = {
   },
 
   sayfaSayim(sid) { return this.ilerleme(this.gorevleri({ sayfa: sid })); },
+
+  standart(id) { return this.standartlar.find(s => s.id === id) || null; },
+
+  /* Bir göreve bağlı standartlar — prompt bunları içine alır */
+  gorevinStandartlari(gorevId) {
+    return this.gorevStandart
+      .filter(x => x.gorev_id === gorevId)
+      .map(x => this.standart(x.standart_id))
+      .filter(Boolean)
+      .sort(function (a, b) { return a.sira - b.sira; });
+  },
+
+  /* Bir standart kaç projede kullanılıyor */
+  standartKullanimi(standartId) {
+    const gorevIds = this.gorevStandart.filter(x => x.standart_id === standartId).map(x => x.gorev_id);
+    const projeler = new Set();
+    gorevIds.forEach(gid => {
+      const g = this.gorev(gid);
+      if (g) projeler.add(g.proje_id);
+    });
+    return projeler.size;
+  },
 
   kisi(id) {
     if (!id) return null;
@@ -215,7 +244,7 @@ const DB = {
 
   /* ---------- Görevler ---------- */
 
-  async gorevOlustur({ proje_id, modul_id, sayfa_id, baslik, aciklama, oncelik, atanan }) {
+  async gorevOlustur({ proje_id, modul_id, sayfa_id, baslik, aciklama, oncelik, atanan, standartlar }) {
     yazmaKontrol();
 
     const { data, error } = await AUTH.db.from('tasks').insert({
@@ -229,6 +258,12 @@ const DB = {
       olusturan: AUTH.user.id,
     }).select().single();
     if (error) throw new Error(veriHatasi(error));
+
+    if (standartlar && standartlar.length) {
+      const kayitlar = standartlar.map(sid => ({ gorev_id: data.id, standart_id: sid }));
+      const { error: sHata } = await AUTH.db.from('task_standards').insert(kayitlar);
+      if (sHata) throw new Error(veriHatasi(sHata));
+    }
 
     await this.hareketEkle(data.id, 'olusturuldu');
     if (atanan) await this.hareketEkle(data.id, 'atandi', DB.kisiAdi(atanan));
@@ -267,6 +302,38 @@ const DB = {
       gorev_id: gorevId, tip, notu, kim: AUTH.user ? AUTH.user.id : null,
     });
     if (error) throw new Error(veriHatasi(error));
+  },
+
+  /* Bir görevin standart bağlarını topluca yaz */
+  async gorevStandartYaz(gorevId, standartIdler) {
+    yazmaKontrol();
+
+    const sil = await AUTH.db.from('task_standards').delete().eq('gorev_id', gorevId);
+    if (sil.error) throw new Error(veriHatasi(sil.error));
+
+    if (standartIdler.length) {
+      const kayitlar = standartIdler.map(sid => ({ gorev_id: gorevId, standart_id: sid }));
+      const { error } = await AUTH.db.from('task_standards').insert(kayitlar);
+      if (error) throw new Error(veriHatasi(error));
+    }
+    await this.yukle();
+  },
+
+  async standartKaydet(id, alanlar) {
+    yazmaKontrol();
+    const q = id
+      ? AUTH.db.from('standards').update(alanlar).eq('id', id)
+      : AUTH.db.from('standards').insert(Object.assign({ sira: this.standartlar.length + 1 }, alanlar));
+    const { error } = await q;
+    if (error) throw new Error(veriHatasi(error));
+    await this.yukle();
+  },
+
+  async standartSil(id) {
+    yazmaKontrol();
+    const { error } = await AUTH.db.from('standards').update({ aktif: false }).eq('id', id);
+    if (error) throw new Error(veriHatasi(error));
+    await this.yukle();
   },
 
   async gorevSil(id) {

@@ -1,0 +1,197 @@
+/* ==========================================================================
+   NIZAM | Studio — Prompt motoru
+   İki metin üretir:
+     1) Görev promptu — geliştirici kopyalar, AI'a yapıştırır
+     2) NIZAM.md      — müşteri deposundaki proje kimlik dosyası
+   Tek kural: geliştirici hiçbir şey yazmasın, yalnızca yapıştırsın.
+   ========================================================================== */
+
+'use strict';
+
+const PROMPT = {
+
+  /* ---------- Görev promptu ---------- */
+
+  gorev(gorevId) {
+    const g = DB.gorev(gorevId);
+    if (!g) return '';
+
+    const proje = DB.proje(g.proje_id);
+    const modul = g.modul_id ? DB.moduller.find(m => m.id === g.modul_id) : null;
+    const sayfa = g.sayfa_id ? DB.sayfalar.find(s => s.id === g.sayfa_id) : null;
+    const stdlar = DB.gorevinStandartlari(gorevId);
+    const no = TASK_PREFIX + '-' + g.no;
+
+    const s = [];
+
+    s.push('# NIZAM Studio — Geliştirme Görevi', '');
+
+    s.push('## Proje');
+    s.push(hiza('Firma', proje ? proje.firma : '—'));
+    s.push(hiza('Platform', PLATFORM_ADI[proje && proje.platform] || '—'));
+    s.push(hiza('Veritabanı', VERI_ADI[proje && proje.veri] || '—'));
+    if (proje && proje.repo) s.push(hiza('Depo', proje.repo));
+    s.push('');
+
+    s.push('Deponun kökünde `NIZAM.md` adında bir kimlik dosyası var.');
+    s.push('İşe başlamadan önce oku — projenin mevcut sayfaları, kullanılan');
+    s.push('bileşenler ve alınmış kararlar orada yazıyor.');
+    s.push('');
+
+    s.push(`## Görev — ${no}`);
+    s.push(hiza('Başlık', g.baslik));
+    s.push(hiza('Yeri', yerYaz(modul, sayfa)));
+    if (g.oncelik === 'acil') s.push(hiza('Öncelik', 'ACİL'));
+    s.push('');
+
+    if (g.aciklama) {
+      s.push('Ne yapılacak:');
+      s.push(g.aciklama.trim());
+      s.push('');
+    }
+
+    if (stdlar.length) {
+      s.push(stdlar.length === 1 ? '## Kullanılacak Nizam Standardı' : '## Kullanılacak Nizam Standartları');
+      stdlar.forEach(st => {
+        s.push('');
+        s.push(`### ${st.ad}`);
+        s.push(st.tarif || st.ozet);
+      });
+      s.push('');
+    }
+
+    s.push('## Kurallar');
+    s.push(`1. Commit mesajının başına \`[${no}]\` yaz. Studio bu etiketi arayıp`);
+    s.push('   görevi kendiliğinden "Kontrolde"ye çekiyor.');
+    s.push('2. İş bitince `NIZAM.md` dosyasını güncelle — eklediğin sayfa, özellik');
+    s.push('   ve aldığın kararlar oraya yazılsın.');
+    s.push('3. Mevcut tasarım dilini bozma: yeni renk, yeni yazı tipi, yeni bileşen');
+    s.push('   düzeni getirme.');
+    s.push('4. Yalnızca bu görevi yap. Aklına gelen başka iyileştirmeleri yapma,');
+    s.push('   not olarak yaz.');
+    s.push('5. Bitince değişikliği GitHub\'a gönder.');
+
+    return s.join('\n');
+  },
+
+  /* ---------- Proje kimlik dosyası ---------- */
+
+  kimlik(projeId) {
+    const proje = DB.proje(projeId);
+    if (!proje) return '';
+
+    const moduller = DB.modulleri(projeId);
+    const gorevler = DB.gorevleri({ proje: projeId });
+    const s = [];
+
+    s.push(`# ${proje.firma} — Proje Kimliği`, '');
+    s.push('> Bu dosyayı NIZAM Studio üretti.');
+    s.push('> Her iş sonrası güncellenmesi geliştirmeyi yapan AI\'ın görevidir.');
+    s.push('');
+
+    s.push('## Genel');
+    s.push(hiza('Platform', PLATFORM_ADI[proje.platform] || '—'));
+    s.push(hiza('Veritabanı', VERI_ADI[proje.veri] || '—'));
+    s.push(hiza('Ana renk', (PROJE_RENK[proje.renk] || PROJE_RENK.metal)[0]));
+    if (proje.repo) s.push(hiza('Depo', proje.repo));
+    s.push('');
+
+    s.push('## Modüller ve sayfalar');
+    moduller.forEach(m => {
+      const sayfalar = DB.sayfalari(m.id);
+      s.push('');
+      s.push(`### ${m.ad}`);
+
+      if (m.genel) {
+        s.push('Modüle bağlanmayan işler bu kovaya düşer.');
+        return;
+      }
+      if (!sayfalar.length) { s.push('_Henüz sayfa tanımlanmadı._'); return; }
+
+      sayfalar.forEach(sf => {
+        const bitmis = DB.gorevleri({ sayfa: sf.id })
+          .filter(g => g.durum === 'tamamlandi')
+          .map(g => g.baslik);
+        s.push(`- ${sf.ad}${bitmis.length ? ' — ' + bitmis.join(', ') : ''}`);
+      });
+    });
+    s.push('');
+
+    const kullanilan = new Set();
+    gorevler.forEach(g => DB.gorevinStandartlari(g.id).forEach(st => kullanilan.add(st.ad)));
+    if (kullanilan.size) {
+      s.push('## Kullanılan Nizam Standartları');
+      Array.from(kullanilan).sort().forEach(ad => s.push(`- ${ad}`));
+      s.push('');
+    }
+
+    const acik = gorevler.filter(g => g.durum !== 'tamamlandi');
+    if (acik.length) {
+      s.push('## Devam eden işler');
+      acik.forEach(g => s.push(`- [${TASK_PREFIX}-${g.no}] ${g.baslik} — ${DURUM_GOREV_ADI[g.durum]}`));
+      s.push('');
+    }
+
+    s.push('## Kararlar');
+    s.push('_Buraya projeye özel kalıcı kararlar yazılır. Örnek:_');
+    s.push('_"Kayıtlar silinmez, pasife alınır." · "Fiyatlar KDV hariç tutulur."_');
+    s.push('');
+
+    const son = gorevler
+      .filter(g => g.durum === 'tamamlandi')
+      .sort((a, b) => (b.guncellendi || '').localeCompare(a.guncellendi || ''))[0];
+
+    s.push('## Son güncelleme');
+    s.push(son ? `${gunYaz(son.guncellendi)} · ${TASK_PREFIX}-${son.no}` : gunYaz(new Date().toISOString()));
+
+    return s.join('\n');
+  },
+};
+
+/* ---------- Yardımcılar ---------- */
+
+function hiza(etiket, deger) {
+  return (etiket + '          ').slice(0, 11) + ': ' + deger;
+}
+
+function yerYaz(modul, sayfa) {
+  if (modul && sayfa) return `${modul.ad} modülü › ${sayfa.ad} sayfası`;
+  if (modul)          return `${modul.ad} modülü`;
+  return 'Proje geneli';
+}
+
+function gunYaz(iso) {
+  const a = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+  const d = new Date(iso);
+  return `${d.getDate()} ${a[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+/* Panoya kopyala — eski tarayıcılarda da çalışsın diye iki yol */
+async function panoyaKopyala(metin) {
+  try {
+    await navigator.clipboard.writeText(metin);
+    return true;
+  } catch (e) {
+    try {
+      const alan = document.createElement('textarea');
+      alan.value = metin;
+      alan.style.position = 'fixed';
+      alan.style.opacity = '0';
+      document.body.appendChild(alan);
+      alan.select();
+      const ok = document.execCommand('copy');
+      alan.remove();
+      return ok;
+    } catch (e2) { return false; }
+  }
+}
+
+/* Metni dosya olarak indir */
+function dosyaIndir(adi, metin) {
+  const bag = new Blob([metin], { type: 'text/markdown;charset=utf-8' });
+  const url = URL.createObjectURL(bag);
+  const a = document.createElement('a');
+  a.href = url; a.download = adi;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
