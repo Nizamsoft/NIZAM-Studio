@@ -1,5 +1,18 @@
 # Değişiklik Günlüğü
 
+## v0.10.1 — 21 Ağustos 2026
+**Kabuk düzeltmeleri**
+
+- Üst çubukta artık **NIZAM | Studio** yazıyor (ayraç kırmızı, girişteki gibi)
+- Fotoğrafa basınca alttan sayfa değil, **fotoğrafın altında küçük menü**
+  açılıyor; sağ üst köşeden büyüyerek geliyor, oraya küçülerek gidiyor.
+  Dışarı basınca, Esc'e basınca ya da ekran değişince kapanıyor
+- Panel'deki "GitHub bağlantısı Adım 5'te gelecek" uyarısı kaldırıldı
+- Özet kartları kabartma oldu: üstten ışık, altta gölge, sol üstten sızan
+  parlaklık; rakamlar kendi renginde hafifçe parlıyor
+- **Görevler ve Ayarlar'da ortadaki artı kayboluyordu** — artık her ekranda
+  duruyor. Kendine ait eylemi olmayan ekranlarda en sık işi yapıyor: Yeni Proje
+
 ## v0.10.0 — 21 Ağustos 2026
 **Yeni kabuk: üst çubuk, alt çubuk, zemin**
 

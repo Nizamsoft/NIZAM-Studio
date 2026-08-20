@@ -165,7 +165,6 @@ const VIEWS = {
                AUTH.yonetici ? 'Yeni Proje' : null, 'sihirbaz')}</div>`}
       </div>
 
-      ${stageNote('GitHub bağlantısı Adım 5\'te gelecek — commit etiketini görüp görevi kendiliğinden Kontrolde\'ye çekecek.')}
     `;
   },
 
@@ -759,6 +758,7 @@ function render() {
     baslik.textContent = ROUTES[key].kisa || ROUTES[key].title;
   }
 
+  hesapMenusuKapat();
   ustEylemYaz(key, detay, id);
   artiYaz(key, detay, id);
   $('#btn-back').classList.toggle('hidden', !detay);
@@ -793,6 +793,8 @@ function ustEylemYaz(key, detay, id) {
 
   if (!AUTH.yonetici || YUKLENIYOR || DB.hata) { ustEylemGizle(btn); return; }
 
+  btn.classList.remove('hidden');
+
   if (detay) {
     btn.classList.remove('hidden');
     btn.querySelector('span').textContent = 'Yeni Görev';
@@ -803,13 +805,12 @@ function ustEylemYaz(key, detay, id) {
     btn.querySelector('span').textContent = 'Yeni Standart';
     btn.dataset.eylem = 'standart-ekle';
     delete btn.dataset.proje;
-  } else if (key === 'panel' || key === 'projeler') {
-    btn.classList.remove('hidden');
+  } else {
+    /* Görevler ve Ayarlar'da da artı dursun — kaybolmasın.
+       Bu ekranlarda kendine ait bir eylem yok, en sık işi yapar: yeni proje. */
     btn.querySelector('span').textContent = 'Yeni Proje';
     btn.dataset.eylem = 'sihirbaz';
     delete btn.dataset.proje;
-  } else {
-    ustEylemGizle(btn);
   }
 }
 
@@ -1778,52 +1779,75 @@ function standartSor(mevcut) {
   });
 }
 
-/* Kullanıcı kutusuna basınca açılan sayfa: bildirimler, destek, çıkış. */
-function hesapPenceresi() {
+/* Fotoğrafın hemen altında açılan küçük menü.
+   Alttan sayfa değil: göz nereye baktıysa oradan açılsın. */
+function hesapMenusu() {
+  if ($('#hesap-menu')) { hesapMenusuKapat(); return; }
+
   const destekYazi = DESTEK.tip === 'wa' ? 'WhatsApp' : DESTEK.deger;
 
-  modalAc(`
-    <div class="hesap-bas">
-      <span class="foto buyuk"><b>${esc(AUTH.basHarfler)}</b></span>
-      <span class="hesap-bilgi">
+  const el = document.createElement('div');
+  el.id = 'hesap-menu';
+  el.className = 'hesap-menu';
+  el.innerHTML = `
+    <div class="hm-bas">
+      <span class="foto"><b>${esc(AUTH.basHarfler)}</b></span>
+      <span class="hm-bilgi">
         <b>${esc(AUTH.ad)}</b>
-        <i>${esc(AUTH.rolAdi)} · ${esc(AUTH.mail)}</i>
+        <i>${esc(AUTH.rolAdi)}</i>
       </span>
     </div>
+    <button class="hm-sat" data-hs="bildirim" type="button">
+      <span class="sat-ikon">${svg(ICON.zil, 16)}</span>
+      <span class="hm-ad">Bildirimler</span>
+      <span class="hm-deger">Adım 5'te</span>
+    </button>
+    <button class="hm-sat" data-hs="destek" type="button">
+      <span class="sat-ikon">${svg(ICON.destek, 16)}</span>
+      <span class="hm-ad">Destek</span>
+      <span class="hm-deger">${esc(destekYazi)}</span>
+    </button>
+    <button class="hm-sat tehlike-satir" data-hs="cikis" type="button">
+      <span class="sat-ikon">${svg(ICON.cikis, 16)}</span>
+      <span class="hm-ad">Çıkış yap</span>
+    </button>`;
 
-    <div class="card"><div class="row-list">
-      <div class="row" data-hs="bildirim" role="button" tabindex="0">
-        <span class="sat-ikon">${svg(ICON.zil, 17)}</span>
-        <div class="row-main"><span class="row-title">Bildirimler</span></div>
-        <span class="row-val">Adım 5'te</span>
-      </div>
-      <div class="row" data-hs="destek" role="button" tabindex="0">
-        <span class="sat-ikon">${svg(ICON.destek, 17)}</span>
-        <div class="row-main"><span class="row-title">Destek</span></div>
-        <span class="row-val">${esc(destekYazi)}</span>
-      </div>
-      <div class="row tehlike-satir" data-hs="cikis" role="button" tabindex="0">
-        <span class="sat-ikon">${svg(ICON.cikis, 17)}</span>
-        <div class="row-main"><span class="row-title">Çıkış yap</span></div>
-      </div>
-    </div></div>
+  $('#topbar').appendChild(el);
+  /* Bir kare bekle ki geçiş oynasın; sınıfı hemen eklersek animasyon atlanır. */
+  requestAnimationFrame(() => el.classList.add('acik'));
 
-    <div class="modal-alt">
-      <button class="btn btn-ghost" data-hs="kapat" type="button">Kapat</button>
-    </div>`, kutu => {
-    const bas = e => $(`[data-hs="${e}"]`, kutu);
+  $('[data-hs="bildirim"]', el).addEventListener('click', () => {
+    hesapMenusuKapat();
+    toast('Bildirimler Adım 5\'te gelecek.');
+  });
+  $('[data-hs="destek"]', el).addEventListener('click', () => {
+    hesapMenusuKapat();
+    const yer = DESTEK.tip === 'wa'
+      ? 'https://wa.me/' + String(DESTEK.deger).replace(/\D/g, '')
+      : 'mailto:' + DESTEK.deger;
+    window.open(yer, '_blank');
+  });
+  $('[data-hs="cikis"]', el).addEventListener('click', () => { hesapMenusuKapat(); signOut(); });
 
-    bas('kapat').addEventListener('click', modalKapat);
-    bas('bildirim').addEventListener('click', () =>
-      toast('Bildirimler Adım 5\'te gelecek.'));
-    bas('destek').addEventListener('click', () => {
-      const yer = DESTEK.tip === 'wa'
-        ? 'https://wa.me/' + String(DESTEK.deger).replace(/\D/g, '')
-        : 'mailto:' + DESTEK.deger;
-      window.open(yer, '_blank');
-    });
-    bas('cikis').addEventListener('click', () => { modalKapat(); signOut(); });
-  }, 'kucuk');
+  setTimeout(() => {
+    document.addEventListener('click', disariBasinca);
+    document.addEventListener('keydown', escBasinca);
+  }, 0);
+}
+
+function disariBasinca(e) {
+  if (e.target.closest('#hesap-menu') || e.target.closest('#user-tile')) return;
+  hesapMenusuKapat();
+}
+function escBasinca(e) { if (e.key === 'Escape') hesapMenusuKapat(); }
+
+function hesapMenusuKapat() {
+  const el = $('#hesap-menu');
+  document.removeEventListener('click', disariBasinca);
+  document.removeEventListener('keydown', escBasinca);
+  if (!el) return;
+  el.classList.remove('acik');
+  setTimeout(() => el.remove(), 200);
 }
 
 /* Standart içe aktarma penceresi. Yapıştır → önizle → yaz.
@@ -2610,7 +2634,7 @@ document.addEventListener('DOMContentLoaded', () => {
   egilmeyiBagla();
 
   $$('#user-chip, #user-tile').forEach(el =>
-    el.addEventListener('click', hesapPenceresi));
+    el.addEventListener('click', hesapMenusu));
 
   boot();
 });

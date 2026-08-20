@@ -7,7 +7,7 @@ const APP = {
   name:     'NIZAM | Studio',
   short:    'NIZAM Studio',
   owner:    'Nizam Soft',
-  version: 'v0.10.0',
+  version: 'v0.10.1',
   build:    '2026-08-20',
   stage: 'Adım 4 · Yeni kabuk',
 };
@@ -22,9 +22,6 @@ const SUPABASE = {
 };
 
 /* Görev numarası öneki — commit mesajlarında bu etiket aranır: [NS-142] */
-/* Üst çubukta görünen firma adı. */
-const FIRMA = 'Nizam Soft';
-
 /* Kullanıcı sayfasındaki Destek satırı nereye gidecek.
    tip: 'wa' (WhatsApp) | 'mail'  ·  deger: numara ya da e-posta */
 const DESTEK = { tip: 'mail', deger: 'nizamsoft@icloud.com' };
