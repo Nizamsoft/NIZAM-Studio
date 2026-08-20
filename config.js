@@ -7,7 +7,7 @@ const APP = {
   name:     'NIZAM | Studio',
   short:    'NIZAM Studio',
   owner:    'Nizam Soft',
-  version:  'v0.6.1',
+  version:  'v0.7.0',
   build:    '2026-08-20',
   stage:    'Adım 4 · Tema yenilendi',
 };
@@ -89,3 +89,17 @@ const HAREKET_ADI = {
   onaylandi:   'görevi onayladı',
   geri:        'görevi geri aldı',
 };
+
+/* ==========================================================================
+   Menü — HTML'e gömülü değil, veri.
+   Yeni bir bölüm eklemek için buraya bir satır yazmak yeter;
+   yan menü ve mobil sekme çubuğu kendiliğinden oluşur.
+   ========================================================================== */
+
+const MENU = [
+  { id: 'panel',       ad: 'Panel',              ikon: 'panel',  tab: true },
+  { id: 'projeler',    ad: 'Projeler',           ikon: 'folder', tab: true,  sayac: 'projeler' },
+  { id: 'gorevler',    ad: 'Bana Atananlar',     ikon: 'check',  tab: true,  sayac: 'gorevler', tabAd: 'Görevler' },
+  { id: 'standartlar', ad: 'Nizam Standartları', ikon: 'katman',             tabAd: 'Standart' },
+  { id: 'ayarlar',     ad: 'Ayarlar',            ikon: 'ayar',   tab: true },
+];

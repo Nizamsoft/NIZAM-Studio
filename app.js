@@ -84,6 +84,15 @@ const ICON = {
     c: '<rect x="9" y="9" width="12" height="12" rx="2"></rect><path d="M5 15V5a2 2 0 0 1 2-2h10"></path>',
   },
 
+  panel: {
+    d: '<rect x="3" y="3" width="7" height="7" rx="1.8"></rect><rect x="14" y="3" width="7" height="7" rx="1.8"></rect><rect x="3" y="14" width="7" height="7" rx="1.8"></rect><rect x="14" y="14" width="7" height="7" rx="1.8"></rect>',
+    c: '<rect x="3" y="3" width="7" height="7" rx="1.8"></rect><rect x="14" y="3" width="7" height="7" rx="1.8"></rect><rect x="3" y="14" width="7" height="7" rx="1.8"></rect><rect x="14" y="14" width="7" height="7" rx="1.8"></rect>',
+  },
+  ayar: {
+    d: '<circle cx="9" cy="7" r="2.7"></circle><circle cx="15" cy="17" r="2.7"></circle>',
+    c: '<path d="M4 7h16M4 17h16"></path><circle cx="9" cy="7" r="2.7"></circle><circle cx="15" cy="17" r="2.7"></circle>',
+  },
+
   /* tek katman işaretler */
   chevron: '<path d="M9 6l6 6-6 6"></path>',
   arti:    '<path d="M12 5v14M5 12h14"></path>',
@@ -305,6 +314,35 @@ const VIEWS = {
           ${stepRow('Adım 3', 'Görevler, durumlar, atama', true)}
           ${stepRow('Adım 4', 'Prompt motoru ve kimlik dosyası', true)}
           ${stepRow('Adım 5', 'GitHub okuma ve sürüm notları', false)}
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <span class="label">Bakım</span>
+      <div class="card">
+        <div class="row-list">
+          <div class="row">
+            <div class="row-main">
+              <span class="row-title">Güncellemeleri denetle</span>
+              <span class="row-sub">Yeni sürüm varsa kendini yeniler</span>
+            </div>
+            <button class="btn btn-ghost" data-eylem="guncelle" type="button">Denetle</button>
+          </div>
+          <div class="row">
+            <div class="row-main">
+              <span class="row-title">Yedek al</span>
+              <span class="row-sub">Tüm projeler, görevler ve standartlar tek dosyada</span>
+            </div>
+            <button class="btn btn-ghost" data-eylem="yedek-al" type="button">İndir</button>
+          </div>
+          <div class="row">
+            <div class="row-main">
+              <span class="row-title">Yedeği incele</span>
+              <span class="row-sub">Dosyanın içinde ne var, geri yüklemeden gösterir</span>
+            </div>
+            <button class="btn btn-ghost" data-eylem="yedek-oku" type="button">Dosya seç</button>
+          </div>
         </div>
       </div>
     </div>
@@ -727,6 +765,24 @@ function egilmeyiBagla() {
   view.addEventListener('pointerleave', () => { sifirla(sonKart); sonKart = null; }, { passive: true });
 }
 
+/* Yan menü ve mobil sekme çubuğu MENU listesinden üretilir. */
+function menuyuCiz() {
+  const gorunur = MENU.filter(m => !m.sadeceYonetici || AUTH.yonetici);
+
+  $('#sidebar .nav').innerHTML = gorunur.map(m => `
+    <a class="nav-item" href="#/${m.id}" data-route="${m.id}">
+      ${svg(ICON[m.ikon], 18)}
+      <span>${esc(m.ad)}</span>
+      ${m.sayac ? `<em class="nav-count" data-count="${m.sayac}">0</em>` : ''}
+    </a>`).join('');
+
+  $('#tabbar').innerHTML = gorunur.filter(m => m.tab).map(m => `
+    <a class="tab" href="#/${m.id}" data-route="${m.id}">
+      ${svg(ICON[m.ikon], 20)}
+      <span>${esc(m.tabAd || m.ad)}</span>
+    </a>`).join('');
+}
+
 function sayaclariYaz() {
   const pr = $('[data-count="projeler"]');
   if (pr) pr.textContent = DB.projeler.length;
@@ -793,6 +849,7 @@ const SIHIRBAZ = {
 };
 
 function sihirbaziAc() {
+  modalHepsiniKapat();
   Object.assign(SIHIRBAZ, {
     adim: 1, firma: '', renk: 'yesil', platform: 'ikisi',
     veri: 'sifirdan', moduller: [], kaydediyor: false,
@@ -978,11 +1035,14 @@ function modalBaslik(ikon, baslik, alt = '') {
   </div>`;
 }
 
+/* Pencereler üst üste açılabilir. Onay kutusu görev kartının üstünde belirir,
+   kapanınca kart yerinde durur. En üstteki pencere kapanır, hepsi değil. */
 function modalAc(html, bagla, ekSinif = '') {
-  modalKapat();
+  const kat = $$('.modal-perde').length;
 
   const perde = document.createElement('div');
   perde.className = 'modal-perde';
+  perde.style.zIndex = String(600 + kat * 10);
   perde.innerHTML = `<div class="modal-kutu ${ekSinif}" role="dialog" aria-modal="true">${html}</div>`;
   document.body.appendChild(perde);
 
@@ -993,9 +1053,17 @@ function modalAc(html, bagla, ekSinif = '') {
   return perde;
 }
 
+/* En üstteki pencereyi kapatır. */
 function modalKapat() {
-  const p = $('.modal-perde');
-  if (p) p.remove();
+  const hepsi = $$('.modal-perde');
+  const son = hepsi[hepsi.length - 1];
+  if (son) son.remove();
+  if (hepsi.length <= 1) document.removeEventListener('keydown', kacTusu);
+}
+
+/* Bütün pencereleri kapatır — ekran değişince ya da yeni bir akış başlarken. */
+function modalHepsiniKapat() {
+  $$('.modal-perde').forEach(p => p.remove());
   document.removeEventListener('keydown', kacTusu);
 }
 
@@ -1053,6 +1121,7 @@ function onaySor({ baslik, mesaj, buton = 'Sil' }) {
    ========================================================================== */
 
 function gorevKartiAc(id) {
+  modalHepsiniKapat();
   const g = DB.gorev(id);
   if (!g) { toast('Görev bulunamadı.'); return; }
   modalAc(gorevKartiHtml(g), kutu => gorevKartiBagla(kutu, g.id), 'genis');
@@ -1279,6 +1348,7 @@ const YENI = { proje: null, modul: null, sayfa: null, oncelik: 'normal',
                atanan: null, standartlar: [], kaydediyor: false };
 
 function yeniGorevAc({ proje, modul, sayfa }) {
+  modalHepsiniKapat();
   Object.assign(YENI, {
     proje: proje || null, modul: modul || null, sayfa: sayfa || null,
     oncelik: 'normal', atanan: null, standartlar: [], kaydediyor: false,
@@ -1544,6 +1614,7 @@ function standartSor(mevcut) {
 
 /* Standart yazma / düzenleme penceresi */
 function standartDuzenle(id) {
+  modalHepsiniKapat();
   const st = id ? DB.standart(id) : null;
 
   modalAc(`
@@ -1685,6 +1756,16 @@ async function eylemCalistir(el) {
     ACIK_STANDART.has(id) ? ACIK_STANDART.delete(id) : ACIK_STANDART.add(id);
     return render();
   }
+
+  if (e === 'guncelle') return GUNCELLEME.elleDenetle();
+
+  if (e === 'yedek-al') {
+    const ad = 'nizam-studio-yedek-' + bugunTarih() + '.json';
+    dosyaIndir(ad, DB.yedekAl());
+    return toast(ad + ' indirildi.', 'basari');
+  }
+
+  if (e === 'yedek-oku') return yedekSec();
 
   if (e === 'standart-ekle')    return standartDuzenle(null);
   if (e === 'standart-duzenle') return standartDuzenle(id);
@@ -1860,6 +1941,52 @@ async function isYap(fn, basariMesaji) {
   }
 }
 
+/* Yedek dosyasını okur ve içinde ne olduğunu gösterir. Geri yükleme yapmaz —
+   üzerine yazmak veriyi silmek demek; onu ayrıca ve bilerek yapmak gerekir. */
+function yedekSec() {
+  const alan = document.createElement('input');
+  alan.type = 'file';
+  alan.accept = 'application/json,.json';
+
+  alan.addEventListener('change', () => {
+    const dosya = alan.files && alan.files[0];
+    if (!dosya) return;
+
+    const okuyucu = new FileReader();
+    okuyucu.onload = () => {
+      let bilgi;
+      try { bilgi = DB.yedekOku(String(okuyucu.result)); }
+      catch (err) { toast(err.message, 'hata'); return; }
+
+      const satir = (ad, n) => `<div class="row"><div class="row-main">
+        <span class="row-title">${ad}</span></div><span class="row-val mono">${n}</span></div>`;
+
+      modalAc(`
+        ${modalBaslik(ICON.kopya, 'Yedek dosyası', bilgi.surum + ' · ' + tarihYaz(bilgi.tarih))}
+        <div class="card"><div class="row-list">
+          ${satir('Proje', bilgi.sayim.projeler)}
+          ${satir('Modül', bilgi.sayim.moduller)}
+          ${satir('Sayfa', bilgi.sayim.sayfalar)}
+          ${satir('Görev', bilgi.sayim.gorevler)}
+          ${satir('Standart', bilgi.sayim.standartlar)}
+        </div></div>
+        <div class="note note-kucuk">
+          ${svg(ICON.info, 14)}
+          <span>Dosya sağlam görünüyor. Geri yükleme henüz açık değil — üzerine yazmak
+          mevcut veriyi siler, bunu bilerek yapmak gerekir.</span>
+        </div>
+        <div class="modal-alt">
+          <button class="btn btn-primary" data-y="kapat" type="button"><span>Tamam</span></button>
+        </div>`, kutu => {
+        $('[data-y="kapat"]', kutu).addEventListener('click', modalKapat);
+      });
+    };
+    okuyucu.readAsText(dosya);
+  });
+
+  alan.click();
+}
+
 /* ==========================================================================
    YARDIMCILAR
    ========================================================================== */
@@ -2010,8 +2137,9 @@ async function signOut() {
   DB.yuklendi = false; DB.hata = null;
   DB.standartlar = []; DB.gorevStandart = [];
   ACIK_MODUL.clear(); ACIK_SAYFA.clear(); ACIK_STANDART.clear();
+  DB.canliDur();
   GOREV_FILTRE = '';
-  modalKapat();
+  modalHepsiniKapat();
 
   $('#app').classList.add('hidden');
   $('#login').classList.remove('hidden');
@@ -2023,8 +2151,16 @@ async function signOut() {
 async function uygulamayiAc() {
   $('#login').classList.add('hidden');
   $('#app').classList.remove('hidden');
+  menuyuCiz();
   kullaniciYaz();
   await veriTazele();
+
+  /* Başka biri bir şey değiştirdiğinde ekran kendiliğinden tazelensin */
+  DB.canliBasla(async () => {
+    try { await DB.yukle(); } catch (e) { return; }
+    sayaclariYaz();
+    if (!$('.modal-perde')) render();
+  });
 }
 
 function hataGoster(mesaj) {
@@ -2072,6 +2208,11 @@ function runLoader() {
 }
 
 async function boot() {
+  eskileriTemizle();
+
+  /* Sunucuda daha yeni sürüm varsa burada kendini yeniler ve geri dönmez */
+  if (await GUNCELLEME.acilistaDenetle()) return;
+
   AUTH.init();
 
   const [, oturumVar] = await Promise.all([runLoader(), AUTH.restore()]);
@@ -2093,7 +2234,7 @@ async function boot() {
    ========================================================================== */
 
 window.addEventListener('hashchange', () => {
-  if (!$('#app').classList.contains('hidden')) { modalKapat(); render(); }
+  if (!$('#app').classList.contains('hidden')) { modalHepsiniKapat(); render(); }
 });
 
 /* Telefon tarayıcılarında ekran yüksekliği değişkendir: adres çubuğu açılıp kapanır,

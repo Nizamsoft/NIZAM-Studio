@@ -32,6 +32,11 @@ Yeni bir Supabase projesinde tek adım:
 `sql/kurulum.sql` dosyasının tamamını SQL Editor'e yapıştır ve çalıştır.
 Tekrar çalıştırmak zarar vermez.
 
+## Bakım
+
+Ayarlar → Bakım bölümünden güncelleme denetlenir ve JSON yedek alınır.
+Uygulama açılışta yeni sürümü kendisi bulup yeniler.
+
 ## Durum
 
 | Aşama | İçerik | Durum |

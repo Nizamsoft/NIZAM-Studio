@@ -20,6 +20,69 @@ const DB = {
   yuklendi: false,
   hata: null,
 
+  /* ---------- Canlı bağlantı ----------
+     Başka biri bir şey değiştirdiğinde ekran kendiliğinden tazelenir.
+     Peş peşe gelen değişiklikler tek tazelemede toplanır ki boşuna yüklenmesin. */
+
+  kanal: null,
+  _tazeleZaman: null,
+
+  canliBasla(tazele) {
+    if (!AUTH.bagli || this.kanal) return;
+
+    const tetikle = () => {
+      clearTimeout(this._tazeleZaman);
+      this._tazeleZaman = setTimeout(tazele, 350);
+    };
+
+    try {
+      this.kanal = AUTH.db.channel('studio')
+        .on('postgres_changes', { event: '*', schema: 'public' }, tetikle)
+        .subscribe();
+    } catch (e) {
+      this.kanal = null;   /* realtime yoksa uygulama yine çalışır */
+    }
+  },
+
+  canliDur() {
+    clearTimeout(this._tazeleZaman);
+    if (!this.kanal) return;
+    try { AUTH.db.removeChannel(this.kanal); } catch (e) {}
+    this.kanal = null;
+  },
+
+  /* ---------- Yedekleme ----------
+     Tek kaynak: aşağıdaki liste. Yeni tablo eklenince buraya bir satır eklenir. */
+
+  KOLEKSIYONLAR: ['projeler', 'moduller', 'sayfalar', 'gorevler', 'hareketler', 'standartlar', 'gorevStandart'],
+
+  yedekAl() {
+    const veri = {};
+    this.KOLEKSIYONLAR.forEach(k => { veri[k] = this[k]; });
+    return JSON.stringify({
+      imza: 'nizam-studio-yedek',
+      surum: APP.version,
+      tarih: new Date().toISOString(),
+      veri,
+    }, null, 2);
+  },
+
+  /* Yedeği okur ve doğrular. Yazma yapmaz — ne olduğunu söyler. */
+  yedekOku(metin) {
+    let paket;
+    try { paket = JSON.parse(metin); }
+    catch (e) { throw new Error('Dosya okunamadı. Geçerli bir yedek dosyası değil.'); }
+
+    if (!paket || paket.imza !== 'nizam-studio-yedek')
+      throw new Error('Bu dosya NIZAM Studio yedeği değil.');
+    if (!paket.veri)
+      throw new Error('Yedek boş görünüyor.');
+
+    const sayim = {};
+    this.KOLEKSIYONLAR.forEach(k => { sayim[k] = (paket.veri[k] || []).length; });
+    return { surum: paket.surum, tarih: paket.tarih, sayim };
+  },
+
   /* ---------- Okuma ---------- */
 
   async yukle() {

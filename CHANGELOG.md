@@ -1,5 +1,23 @@
 # Değişiklik Günlüğü
 
+## v0.7.0 — 20 Ağustos 2026
+**Aşama 3 · Mimari ve özellikler**
+
+- **Otomatik güncelleme.** Uygulama açılırken sunucudaki sürümü denetliyor; yeni sürüm varsa
+  önbelleği ve servis çalışanını temizleyip kendini yeniliyor. "Kapat-aç, bir daha kapat-aç"
+  derdi bitti. Ayarlar → Bakım'dan elle de denetlenebiliyor
+- **Canlı bağlantı.** Başka biri bir görevi ilerlettiğinde ya da yeni proje kurduğunda
+  ekran kendiliğinden tazeleniyor. Peş peşe gelen değişiklikler tek tazelemede toplanıyor
+- **Üst üste pencere.** Onay kutusu görev kartının üstünde beliriyor; kapanınca kart
+  yerinde duruyor. Önceden alttaki pencere siliniyordu
+- **Yedek alma.** Tüm projeler, modüller, sayfalar, görevler ve standartlar tek JSON
+  dosyasına iniyor. Seçilen dosya imzasıyla doğrulanıp içindekiler gösteriliyor
+- **Menü artık veri.** Yan menü ve mobil sekme çubuğu tek bir listeden üretiliyor;
+  yeni bölüm eklemek için tek satır yetiyor
+- Link paylaşımı için OG etiketleri eklendi
+- Eski sürümlerden kalan yerel anahtarlar açılışta temizleniyor
+- Ayarlar ikonu güneşe benziyordu, sürgü simgesiyle değiştirildi
+
 ## v0.6.1 — 20 Ağustos 2026
 **Aşama 2 · Kabuk, pencereler, hareket**
 
