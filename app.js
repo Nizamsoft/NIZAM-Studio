@@ -91,7 +91,7 @@ const VIEWS = {
                AUTH.yonetici ? 'Yeni Proje' : null, 'sihirbaz')}</div>`}
       </div>
 
-      ${stageNote('Görevler ve ilerleme yüzdeleri Adım 3\'te canlanacak.')}
+      ${stageNote('Hazır prompt üretimi Adım 4\'te gelecek.')}
     `;
   },
 
@@ -140,7 +140,7 @@ const VIEWS = {
         <div class="card oz">
           <span class="oz-label">Görev</span>
           <span class="oz-num">${s.bitmis}<em>/${s.gorev}</em></span>
-          <span class="oz-sub">Adım 3'te gelecek</span>
+          <span class="oz-sub">${s.gorev - s.bitmis} açık iş</span>
         </div>
       </div>
 
@@ -152,7 +152,9 @@ const VIEWS = {
           ${svg(ICON.arti, 15)}<span>Modül Ekle</span>
         </button>` : ''}
 
-      ${stageNote('Sayfalara görev bağlamak Adım 3\'te açılacak.')}
+      ${moduller.length < 2
+        ? stageNote('Bu projede henüz modül yok. "Modül Ekle" ile bir modül kurduğunda sayfaları da birlikte gelir.')
+        : stageNote('Sayfaya tıkla, görevleri açılsın. Hazır prompt üretimi Adım 4\'te gelecek.')}
     `;
   },
 
@@ -1557,7 +1559,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   $('#btn-back').addEventListener('click', () => { location.hash = '#/projeler'; });
 
-  $('#search').addEventListener('click', () => toast('Arama Adım 3\'te gelecek.'));
+  $('#search').addEventListener('click', () => toast('Arama Adım 5\'te gelecek.'));
   $('#user-chip').addEventListener('click', () => { location.hash = '#/ayarlar'; });
 
   boot();
