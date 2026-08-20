@@ -1337,11 +1337,13 @@ html { background: var(--bg); }
 
   /* Dokunma tepkisi karartma değil, hafif küçülme.
      Zemini koyulaştırmak koyu temada "sönüyor" gibi okunuyordu. */
+  /* SADECE küçülme. "border-color: inherit" burada duruyordu ve kartın
+     çerçevesini üst kutunun renginden alıyordu — o da metin rengi olduğu için
+     basınca çevresinde beyaz bir çizgi beliriyordu. */
   .proje:active, .gorev:active, .gsatir:active, .sayfa:active,
   .modul-bas:active, .standart-bas:active, .row[data-hs]:active, .hm-sat:active,
   .btn:active, .mini-btn:active, .mini-link:active, .ss:active, .mod:active,
   .sc:active, .renk:active, .nav-item:active, .sayfa-ekle:active, .gorev-ekle:active {
-    background: inherit; border-color: inherit; color: inherit;
     transform: scale(.985);
     transition: transform .1s var(--ease);
   }

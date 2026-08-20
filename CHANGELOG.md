@@ -1,5 +1,19 @@
 # Değişiklik Günlüğü
 
+## v0.10.6 — 21 Ağustos 2026
+**Basınca çıkan beyaz çerçeve gitti**
+
+Karta basınca çevresinde keskin beyaz bir çizgi beliriyordu.
+
+Sebep: dokunma kuralında `border-color: inherit` duruyordu. Bu, kartın
+çerçevesini üstündeki kutudan miras alıyor; o kutunun çerçeve rengi
+tanımlı olmadığı için varsayılana, yani **metin rengine** düşüyordu.
+Metin rengi de neredeyse beyaz. Aynı satırdaki `background: inherit` de
+kartın altın parıltısını basılıyken siliyordu.
+
+Bu iki satır eski hover yamasından kalmıştı; vurgu kuralları fareye
+taşınınca işlevleri kalmamıştı. Silindi — geriye yalnızca hafif küçülme kaldı.
+
 ## v0.10.5 — 21 Ağustos 2026
 **Yapışkan vurgu bitti**
 
