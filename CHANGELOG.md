@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.8.5 — 21 Ağustos 2026
+
+- Ayarlar → Bakım'a **Ekran ölçüleri** eklendi. Cihazın gerçek sayılarını gösteriyor:
+  görünüm yükseklikleri, güvenli alan payları, alt çubuğun tam konumu ve altta kalan
+  boşluk. Alt çubuk sorununu uzaktan tahminle değil ölçerek çözmek için
+
 ## v0.8.4 — 21 Ağustos 2026
 
 - Uygulama kutusu artık dinamik görünüm yüksekliğinde (`dvh`). `inset: 0` küçük görünümü

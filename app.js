@@ -336,6 +336,13 @@ const VIEWS = {
           </div>
           <div class="row">
             <div class="row-main">
+              <span class="row-title">Ekran ölçüleri</span>
+              <span class="row-sub">Cihazın gerçek sayıları — sorun ararken gerekiyor</span>
+            </div>
+            <button class="btn btn-ghost" data-eylem="olcum" type="button">Göster</button>
+          </div>
+          <div class="row">
+            <div class="row-main">
               <span class="row-title">Yedek al</span>
               <span class="row-sub">Tüm projeler, görevler ve standartlar tek dosyada</span>
             </div>
@@ -1772,6 +1779,8 @@ async function eylemCalistir(el) {
 
   if (e === 'yedek-oku') return yedekSec();
 
+  if (e === 'olcum') return olcumPenceresi();
+
   if (e === 'standart-ekle')    return standartDuzenle(null);
   if (e === 'standart-duzenle') return standartDuzenle(id);
 
@@ -1990,6 +1999,68 @@ function yedekSec() {
   });
 
   alan.click();
+}
+
+/* Cihazın gerçek ekran sayılarını gösterir. Uzaktan tahmin yürütmek yerine
+   ölçüp bakmak için. Sorun çözülünce kaldırılabilir. */
+function olcumPenceresi() {
+  const sonda = document.createElement('div');
+  sonda.style.cssText = 'position:fixed;left:-9999px;top:0;width:1px;visibility:hidden';
+  document.body.appendChild(sonda);
+
+  const olc = deger => {
+    sonda.style.height = deger;
+    const h = sonda.getBoundingClientRect().height;
+    return Math.round(h * 100) / 100;
+  };
+
+  const svh = olc('100svh'), lvh = olc('100lvh'), dvh = olc('100dvh'), yuzde = olc('100%');
+
+  sonda.style.height = 'auto';
+  sonda.style.paddingBottom = 'env(safe-area-inset-bottom, 0px)';
+  sonda.style.paddingTop = 'env(safe-area-inset-top, 0px)';
+  const st = getComputedStyle(sonda);
+  const altPay = st.paddingBottom, ustPay = st.paddingTop;
+  sonda.remove();
+
+  const cubuk = $('#tabbar');
+  const c = cubuk ? cubuk.getBoundingClientRect() : null;
+  const gorunur = cubuk ? getComputedStyle(cubuk).display !== 'none' : false;
+  const gg = window.visualViewport;
+
+  const satir = (ad, deger, vurgu) => `<div class="row">
+    <div class="row-main"><span class="row-title">${ad}</span></div>
+    <span class="row-val mono" ${vurgu ? 'style="color:var(--red-ink)"' : ''}>${deger}</span>
+  </div>`;
+
+  modalAc(`
+    ${modalBaslik(ICON.info, 'Ekran ölçüleri', 'Bu sayıların ekran görüntüsünü gönder')}
+    <div class="card"><div class="row-list">
+      ${satir('window.innerHeight', window.innerHeight)}
+      ${satir('screen.height', window.screen ? window.screen.height : '—')}
+      ${satir('100svh (küçük)', svh)}
+      ${satir('100lvh (büyük)', lvh)}
+      ${satir('100dvh (dinamik)', dvh)}
+      ${satir('100% (kutu)', yuzde)}
+      ${satir('safe-area üst', ustPay)}
+      ${satir('safe-area alt', altPay, true)}
+      ${satir('visualViewport', gg ? Math.round(gg.height) + ' / ' + Math.round(gg.offsetTop) : '—')}
+      ${satir('çubuk görünür', gorunur ? 'evet' : 'hayır')}
+      ${satir('çubuk üst', c ? Math.round(c.top) : '—')}
+      ${satir('çubuk alt', c ? Math.round(c.bottom) : '—', true)}
+      ${satir('çubuk yükseklik', c ? Math.round(c.height) : '—')}
+      ${satir('ALTTA KALAN', c ? Math.round(window.innerHeight - c.bottom) : '—', true)}
+      ${satir('body yükseklik', Math.round(document.body.getBoundingClientRect().height))}
+      ${satir('#app yükseklik', Math.round($('#app').getBoundingClientRect().height))}
+      ${satir('uygulama modu', document.documentElement.classList.contains('uygulama') ? 'ana ekran' : 'tarayıcı')}
+      ${satir('piksel oranı', window.devicePixelRatio)}
+      ${satir('sürüm', APP.version)}
+    </div></div>
+    <div class="modal-alt">
+      <button class="btn btn-primary" data-o="kapat" type="button"><span>Kapat</span></button>
+    </div>`, kutu => {
+    $('[data-o="kapat"]', kutu).addEventListener('click', modalKapat);
+  }, 'genis');
 }
 
 /* ==========================================================================
