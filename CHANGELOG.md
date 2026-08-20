@@ -1,5 +1,14 @@
 # Değişiklik Günlüğü
 
+## v0.9.5 — 21 Ağustos 2026
+**Standartlar alt çubuğa eklendi**
+
+Nizam Standartları sayfası yalnızca masaüstü menüsündeydi; telefonda
+ulaşmanın yolu yoktu.
+
+- Alt çubuk 5 sekme oldu: Panel · Projeler · Görevler · Standart · Ayarlar
+- 320 piksel genişliğe kadar yazılar taşmadan sığıyor
+
 ## v0.9.4 — 21 Ağustos 2026
 **Alt çubuk kapandı, ölçüm ekranı kaldırıldı**
 
