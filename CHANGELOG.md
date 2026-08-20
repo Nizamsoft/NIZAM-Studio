@@ -1,5 +1,26 @@
 # Değişiklik Günlüğü
 
+## v0.9.2 — 21 Ağustos 2026
+**Şeridin sebebi bulundu: iOS durum çubuğu ayarı**
+
+v0.9.1'deki `lvh` denemesi çubuğu ekranın altına taşırdı — yani görünen alan
+gerçekten 793. Sorun yükseklikte değil, **sayfanın ekranda nereye oturduğunda**.
+
+`apple-mobile-web-app-status-bar-style: black-translucent` sayfayı ekranın
+tepesine (0'dan başlayarak) yapıştırıyordu. Sayfa 793 piksel olduğu için
+altta 59 piksel işletim sistemine ait boşluk kalıyordu — siyah şerit buydu.
+
+`black` ile sayfa durum çubuğunun altından başlar ve **ekranın gerçek dibine**
+kadar iner. Boşluk yukarı, durum çubuğunun olduğu yere taşınır — orası zaten
+saat ve pil ile dolu, göze batmaz.
+
+- `apple-mobile-web-app-status-bar-style` → `black`
+- v0.9.1'deki `100lvh` denemesi geri alındı, `100dvh`'ye dönüldü
+- Alt çubuk artık ekranın fiziksel dibinde; içerik altından en dibe akıyor
+
+> Not: iOS bu ayarı uygulama ana ekrana eklenirken okur.
+> **Uygulamayı ana ekrandan silip yeniden eklemek gerekiyor.**
+
 ## v0.9.1 — 21 Ağustos 2026
 **Siyah şeridin gerçek sebebi: uygulama ekranın tamamını kaplamıyormuş**
 

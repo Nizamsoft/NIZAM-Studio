@@ -130,15 +130,9 @@ body {
   background: var(--bg);
 }
 
-/* Uygulama kipinde dvh YANLIŞ: iPhone 15'te 793 veriyor, oysa ekran 852.
-   Aradaki 59 piksel (durum çubuğu payı) altta boş kalıp html zeminini
-   gösteriyordu — aylardır kovaladığımız "siyah şerit" buydu.
-   lvh ekranın tamamıdır; uygulama kipinde küçülen bir çubuk olmadığı için
-   doğru ölçü odur. */
-@media (display-mode: standalone) {
-  body { height: 100lvh; height: 100vh; }
-}
-html.uygulama body { height: 100lvh; height: 100vh; }
+/* lvh denendi ve çubuk ekranın altına taştı: görünen alan gerçekten 793.
+   Sorun yükseklikte değil, sayfanın ekranda nereye oturduğundaydı —
+   çözüm index.html'deki durum çubuğu ayarında. */
 
 body {
   margin: 0;
