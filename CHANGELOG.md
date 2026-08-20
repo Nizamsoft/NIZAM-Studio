@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü
 
+## v0.5.2 — 20 Ağustos 2026
+**Alttaki beyaz boşluk kapandı**
+
+- Uygulama artık ekrana çivili: sayfanın kendisi hiç kaymıyor, kaydırma yalnızca
+  içerik alanının içinde oluyor. Altta beyaz alan kalmıyor
+- Sayfanın en arkası da koyu renge boyandı — hiçbir açık kalırsa bile beyaz görünmez
+- Tarayıcı çubuğu ve telefon durum çubuğu rengi yeni zemine göre güncellendi
+
 ## v0.5.1 — 20 Ağustos 2026
 **Tema yenilendi · Derin Metal + Renkli Kimlik**
 
