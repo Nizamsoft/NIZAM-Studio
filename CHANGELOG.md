@@ -1,5 +1,23 @@
 # Değişiklik Günlüğü
 
+## v0.9.0 — 21 Ağustos 2026
+**Alttaki siyah şeridin sebebi bulundu**
+
+Saydam çubuk sayesinde görüldü: en alttaki koyu şerit sayfanın *dışında*.
+iOS uygulama kipinde ana ekran çizgisi bölgesini işletim sistemi kendi boyuyor,
+oraya CSS ulaşamıyor. Şeridin rengi eski temadan kalma soğuk `#0d0f12` idi;
+sıcak grafit zeminin yanında siyah bir bant gibi duruyordu.
+
+- Yeni `--cerceve` (#171614) rengi eklendi — şerit ile çubuğun dibi artık aynı renk
+- `manifest.webmanifest` içindeki `background_color` ve `theme_color` güncellendi
+- `index.html` içindeki `theme-color` güncellendi
+- `html` zemini çerçeve rengine alındı (sayfanın dışında kalan her yer)
+- Çubuğun zemini üstte saydam, dipte opak çerçeve rengine bağlanıyor —
+  çubuk ekranın dibine kesintisiz uzanıyormuş gibi görünüyor
+
+> Not: iOS manifest'i uygulama ana ekrana eklenirken saklar. Rengin değişmesi
+> için uygulamayı ana ekrandan silip yeniden eklemek gerekebilir.
+
 ## v0.8.9 — 21 Ağustos 2026
 **Alt çubuk iyice saydamlaştı**
 

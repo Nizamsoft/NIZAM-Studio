@@ -23,6 +23,9 @@
 
   /* --- Yüzeyler: sıcak grafit merdiveni --- */
   --bg:             #0f0e0d;
+  /* iOS uygulama kipinde sayfanın DIŞINDA kalan şerit (ana ekran çizgisi bölgesi)
+     bu renkle boyanır. Alt çubuğun bittiği renkle aynı: ikisi tek parça görünsün. */
+  --cerceve:        #171614;
   --bg-ust:         #1b1918;
   --rail:           #12100f;
   --rail-ust:       #191715;
@@ -113,7 +116,7 @@
 html {
   height: 100%;
   overscroll-behavior: none;
-  background: var(--bg);
+  background: var(--cerceve);
   -webkit-text-size-adjust: 100%;
 }
 body {
@@ -1308,8 +1311,13 @@ html { background: var(--bg); }
     position: absolute; left: 0; right: 0; bottom: 0; z-index: 20;
     padding: 4px 6px 0;
     margin: 0; border-radius: 0;
-    /* Neredeyse saydam: arkadaki liste okunacak kadar gözüksün. */
-    background: linear-gradient(180deg, rgba(15, 14, 13, .10), rgba(15, 14, 13, .30));
+    /* Üstü neredeyse saydam (arkadaki liste gözükür), dibi opak --cerceve.
+       Dip rengi sayfanın dışındaki şeritle aynı: çubuk ekranın dibine kadar
+       kesintisiz uzanıyormuş gibi okunur. */
+    background: linear-gradient(180deg,
+      rgba(15, 14, 13, .06) 0%,
+      rgba(23, 22, 20, .55) 58%,
+      var(--cerceve) 100%);
     backdrop-filter: blur(14px) saturate(150%);
     -webkit-backdrop-filter: blur(14px) saturate(150%);
     border-top: 1px solid rgba(255, 255, 255, .06);
@@ -1317,7 +1325,7 @@ html { background: var(--bg); }
   }
   /* Cam desteklenmiyorsa düz koyu zemin. */
   @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-    #tabbar { background: linear-gradient(180deg, var(--surface-2), var(--bg)); }
+    #tabbar { background: linear-gradient(180deg, var(--surface-2), var(--cerceve)); }
   }
 
   .tab {
