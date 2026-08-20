@@ -112,6 +112,7 @@
    Kaydırma yalnızca içerik alanının kendi içinde olur. */
 html {
   height: 100%;
+  overscroll-behavior: none;
   background: var(--bg);
   -webkit-text-size-adjust: 100%;
 }
