@@ -7,7 +7,7 @@ const APP = {
   name:     'NIZAM | Studio',
   short:    'NIZAM Studio',
   owner:    'Nizam Soft',
-  version: 'v0.9.8',
+  version: 'v0.9.9',
   build:    '2026-08-20',
   stage: 'Adım 4 · Standartlar gruplandı',
 };
@@ -55,8 +55,8 @@ const MODUL_SABLON = [
 ];
 
 /* Her projede kendiliğinden açılan kova */
-/* Standart grupları — sıralama buradaki sıradır.
-   Listede olmayan bir grup adı yazılırsa sona eklenir, engellenmez. */
+/* Standart grupları — yalnızca düzenleme penceresindeki hazır öneriler.
+   Ekranda sıralama alfabetiktir, buradaki sıra değil. Yeni ad yazılabilir. */
 const STANDART_GRUPLARI = ['Arayüz', 'Veri & Çıktı', 'Bildirim', 'Yedekleme', 'Güvenlik'];
 const VARSAYILAN_GRUP = 'Arayüz';
 

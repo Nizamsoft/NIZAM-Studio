@@ -392,15 +392,13 @@ const DB = {
       kova.get(g).push(st);
     });
 
-    const sirala = ad => {
-      const i = STANDART_GRUPLARI.indexOf(ad);
-      return i === -1 ? STANDART_GRUPLARI.length : i;
-    };
+    /* Hem gruplar hem grup içi alfabetik — Türkçe sıraya göre
+       (ç, ğ, ı, ö, ş, ü yerli yerinde). */
+    const tr = (x, y) => x.localeCompare(y, 'tr');
 
     return [...kova.entries()]
-      /* Grup içi alfabetik — Türkçe sıraya göre (ç, ğ, ı, ö, ş, ü yerli yerinde). */
-      .map(([ad, liste]) => ({ ad, liste: liste.slice().sort((x, y) => x.ad.localeCompare(y.ad, 'tr')) }))
-      .sort((a, b) => sirala(a.ad) - sirala(b.ad) || a.ad.localeCompare(b.ad, 'tr'));
+      .map(([ad, liste]) => ({ ad, liste: liste.slice().sort((x, y) => tr(x.ad, y.ad)) }))
+      .sort((a, b) => tr(a.ad, b.ad));
   },
 
   async standartKaydet(id, alanlar) {

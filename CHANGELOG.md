@@ -1,5 +1,12 @@
 # Değişiklik Günlüğü
 
+## v0.9.9 — 21 Ağustos 2026
+**Grup adları da alfabetik**
+
+- Gruplar artık sabit sırayla değil, ada göre sıralanıyor
+- `config.js`'teki grup listesi yalnızca düzenleme penceresindeki hazır
+  öneriler için duruyor; sıralamayı etkilemiyor
+
 ## v0.9.8 — 21 Ağustos 2026
 **Grup içi alfabetik sıra**
 
