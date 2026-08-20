@@ -1,5 +1,29 @@
 # Değişiklik Günlüğü
 
+## v0.5.1 — 20 Ağustos 2026
+**Tema yenilendi · Derin Metal + Renkli Kimlik**
+
+- Kartlar artık metal levha gibi: üstten ince ışık çizgisi, dikey gradyan, gerçek gölge
+- **Her proje kendi rengini taşıyor** — kart üst kenarı, iç ton, ilerleme çubuğu ve rozet.
+  Proje detayına girince üst çubuk da o renge boyanıyor, modül ikonları o rengi alıyor
+- Zemin ve yazı kontrastı artırıldı; "karanlık mağara" hissi kalktı
+- **3B eğilme:** fareyle kartın üzerine gelince hafifçe eğiliyor ve ışık imleci izliyor.
+  Yalnızca gerçek fare varken çalışır, dokunmatikte hiç devreye girmez
+- Ekran değişince kartlar sırayla süzülerek geliyor, ilerleme çubukları doluyor,
+  sayılar sıfırdan sayarak yerine oturuyor
+- Aynı ekranda bir şey açıp kapatınca hareket tekrarlanmıyor — sadece ekran değişiminde
+- Tüm hareket yalnızca `transform` ve `opacity` ile yapıldı; ölçü ve gölge animasyonu yok
+- `prefers-reduced-motion` seçili cihazlarda tüm hareket kapanıyor
+
+**Düzeltmeler**
+
+- Mobilde parmakla yakınlaştırma kapatıldı, ekran tam oturuyor
+- Yükseklik `100dvh`'ye çevrildi — altta boşluk kalmıyor
+- **Proje silinebiliyor:** kartta "…" → Adı değiştir · Rengi değiştir · Depo adresi · Arşive kaldır
+- **Modül silinebiliyor:** modül satırında "…" → Adı değiştir · Modülü sil
+- Mobilde uzun modül adları taşmıyor
+- Eskimiş adım notları güncellendi
+
 ## v0.5.0 — 20 Ağustos 2026
 **Adım 4 · Prompt motoru ve kimlik dosyası**
 

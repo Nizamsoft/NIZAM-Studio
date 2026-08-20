@@ -30,6 +30,7 @@ function rota() {
 
 let YUKLENIYOR     = false;
 let GOREV_FILTRE   = '';
+let SON_EKRAN      = '';
 const ACIK_MODUL    = new Set();
 const ACIK_SAYFA    = new Set();
 const ACIK_STANDART = new Set();
@@ -51,6 +52,9 @@ const ICON = {
   kapat:   '<path d="M6 6l12 12M18 6L6 18"></path>',
   kisi:    '<circle cx="12" cy="8" r="4"></circle><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"></path>',
   kopya:   '<rect x="9" y="9" width="12" height="12" rx="2"></rect><path d="M5 15V5a2 2 0 0 1 2-2h10"></path>',
+  nokta:   '<circle cx="5" cy="12" r="1.6"></circle><circle cx="12" cy="12" r="1.6"></circle><circle cx="19" cy="12" r="1.6"></circle>',
+  arsiv:   '<rect x="3" y="4" width="18" height="4" rx="1"></rect><path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8M10 13h4"></path>',
+  boya:    '<path d="M4 14l8-10 8 10-8 6z"></path><path d="M18 17a2 2 0 1 0 4 0c0-1.1-2-3-2-3s-2 1.9-2 3z"></path>',
 };
 
 function svg(yol, boy = 16) {
@@ -77,10 +81,10 @@ const VIEWS = {
 
     return `
       <div class="stat-grid">
-        ${stat('Aktif Proje', p.length, p.length ? 'devam ediyor' : 'henüz proje yok')}
-        ${stat('Geliştiriliyor', dev, dev ? 'kodlanıyor' : 'açık iş yok', 'c-dev')}
-        ${stat('Kontrolde', kont, kont ? 'onayını bekliyor' : 'onayını bekleyen yok', 'c-check')}
-        ${stat('Bugün Biten', bugun, bugun ? 'onaylandı' : 'gün yeni başladı', 'c-done')}
+        ${stat('Aktif Proje', p.length, p.length ? 'devam ediyor' : 'henüz proje yok', '', 0)}
+        ${stat('Geliştiriliyor', dev, dev ? 'kodlanıyor' : 'açık iş yok', 'c-dev', 1)}
+        ${stat('Kontrolde', kont, kont ? 'onayını bekliyor' : 'onayını bekleyen yok', 'c-check', 2)}
+        ${stat('Bugün Biten', bugun, bugun ? 'onaylandı' : 'gün yeni başladı', 'c-done', 3)}
       </div>
 
       <div class="section">
@@ -92,7 +96,7 @@ const VIEWS = {
                AUTH.yonetici ? 'Yeni Proje' : null, 'sihirbaz')}</div>`}
       </div>
 
-      ${stageNote('Hazır prompt üretimi Adım 4\'te gelecek.')}
+      ${stageNote('GitHub bağlantısı Adım 5\'te gelecek — commit etiketini görüp görevi kendiliğinden Kontrolde\'ye çekecek.')}
     `;
   },
 
@@ -131,14 +135,14 @@ const VIEWS = {
 
     return `
       <div class="ozet-grid">
-        <div class="card oz">
+        <div class="card oz" style="--i:0">
           <span class="oz-label">İlerleme</span>
-          <span class="oz-num">%${s.yuzde}</span>
+          <span class="oz-num" data-sayac="${s.yuzde}" data-on="%">%${s.yuzde}</span>
           <div class="bar" style="margin-top:9px"><i style="width:${s.yuzde}%"></i></div>
         </div>
-        ${ozKutu('Modül', s.modul, '+ Proje Geneli')}
-        ${ozKutu('Sayfa', s.sayfa, 'tanımlı ekran')}
-        <div class="card oz">
+        ${ozKutu('Modül', s.modul, '+ Proje Geneli', 1)}
+        ${ozKutu('Sayfa', s.sayfa, 'tanımlı ekran', 2)}
+        <div class="card oz" style="--i:3">
           <span class="oz-label">Görev</span>
           <span class="oz-num">${s.bitmis}<em>/${s.gorev}</em></span>
           <span class="oz-sub">${s.gorev - s.bitmis} açık iş</span>
@@ -155,7 +159,7 @@ const VIEWS = {
       </div>
 
       <span class="label">Modüller ve sayfalar</span>
-      ${moduller.map(m => modulKarti(m)).join('')}
+      ${moduller.map(modulKarti).join('')}
 
       ${AUTH.yonetici ? `
         <button class="btn btn-ghost btn-wide" data-eylem="modul-ekle" data-proje="${proje.id}" type="button">
@@ -164,7 +168,7 @@ const VIEWS = {
 
       ${moduller.length < 2
         ? stageNote('Bu projede henüz modül yok. "Modül Ekle" ile bir modül kurduğunda sayfaları da birlikte gelir.')
-        : stageNote('Sayfaya tıkla, görevleri açılsın. Hazır prompt üretimi Adım 4\'te gelecek.')}
+        : stageNote('Sayfaya tıkla, görevleri açılsın. Görev kartındaki "Prompt Kopyala" hazır metni panoya alır.')}
     `;
   },
 
@@ -278,10 +282,12 @@ const VIEWS = {
    PARÇA ÜRETİCİLER
    ========================================================================== */
 
-function projeKarti(p) {
+function projeKarti(p, i = 0) {
   const s = DB.sayim(p.id);
   return `
-    <div class="card proje" data-eylem="proje-ac" data-id="${p.id}" role="button" tabindex="0">
+    <div class="card proje tilt" data-eylem="proje-ac" data-id="${p.id}" role="button" tabindex="0"
+         style="${renkDegiskenleri(p.renk)};--i:${i}">
+      <span class="parlama"></span>
       <div class="proje-ust">
         <span class="proje-rozet" style="${renkStil(p.renk)}">${esc(basHarf(p.firma))}</span>
         <span class="proje-ad-kutu">
@@ -292,23 +298,25 @@ function projeKarti(p) {
       </div>
       <div class="proje-orta">
         <div class="bar"><i style="width:${s.yuzde}%"></i></div>
-        <span class="proje-pct mono">%${s.yuzde}</span>
+        <span class="proje-pct mono" data-sayac="${s.yuzde}" data-on="%">%${s.yuzde}</span>
       </div>
       <div class="proje-alt">
         <span><b class="mono">${s.modul}</b> modül</span>
         <span><b class="mono">${s.sayfa}</b> sayfa</span>
         <span><b class="mono">${s.bitmis}/${s.gorev}</b> görev</span>
+        ${AUTH.yonetici ? `<button class="mini-btn proje-menu" data-eylem="proje-menu" data-id="${p.id}"
+          type="button" aria-label="Proje seçenekleri">${svg(ICON.nokta, 15)}</button>` : ''}
       </div>
     </div>`;
 }
 
-function modulKarti(m) {
+function modulKarti(m, i = 0) {
   const s     = DB.modulSayim(m.id);
   const acik  = ACIK_MODUL.has(m.id);
   const sayfalar = DB.sayfalari(m.id);
 
   return `
-    <div class="card modul ${m.genel ? 'modul-genel' : ''}">
+    <div class="card modul ${m.genel ? 'modul-genel' : ''}" style="--i:${i}">
       <div class="modul-bas ${acik ? 'acik' : ''}" data-eylem="modul-ac" data-id="${m.id}" role="button" tabindex="0">
         <span class="chev">${svg(ICON.chevron, 15)}</span>
         <span class="modul-ikon">${svg(m.genel ? ICON.kova : ICON.katman, 16)}</span>
@@ -322,6 +330,8 @@ function modulKarti(m) {
           <span class="bar"><i style="width:${s.yuzde}%"></i></span>
           <span class="modul-pct mono">%${s.yuzde}</span>
         </span>
+        ${AUTH.yonetici && !m.genel ? `<button class="mini-btn" data-eylem="modul-menu" data-id="${m.id}"
+          data-ad="${esc(m.ad)}" type="button" aria-label="Modül seçenekleri">${svg(ICON.nokta, 15)}</button>` : ''}
       </div>
 
       ${acik ? `
@@ -337,13 +347,6 @@ function modulKarti(m) {
               ${svg(ICON.arti, 14)}<span>Sayfa ekle</span>
             </div>` : ''}
 
-          ${AUTH.yonetici && !m.genel ? `
-            <div class="modul-araclar">
-              <button class="mini-link" data-eylem="modul-ad" data-id="${m.id}" data-ad="${esc(m.ad)}" type="button">
-                ${svg(ICON.kalem, 13)} Adı değiştir</button>
-              <button class="mini-link tehlike" data-eylem="modul-sil" data-id="${m.id}" data-ad="${esc(m.ad)}" type="button">
-                ${svg(ICON.cop, 13)} Modülü sil</button>
-            </div>` : ''}
         </div>` : ''}
     </div>`;
 }
@@ -396,9 +399,9 @@ function gorevSatiri(g) {
 }
 
 /* Bana Atananlar listesindeki geniş görev satırı */
-function gorevKarti(g) {
+function gorevKarti(g, i = 0) {
   return `
-    <div class="gsatir" data-eylem="gorev-ac" data-id="${g.id}" role="button" tabindex="0">
+    <div class="gsatir" data-eylem="gorev-ac" data-id="${g.id}" role="button" tabindex="0" style="--i:${i}">
       <span class="gsol" style="background:var(--st-${DURUM_SINIF[g.durum]})"></span>
       <span class="gorta">
         <span class="gust">
@@ -427,18 +430,18 @@ function filtreDugmesi(deger, ad, sayi) {
     data-deger="${deger}" type="button">${ad}<em class="mono">${sayi}</em></button>`;
 }
 
-function ozKutu(label, num, sub) {
-  return `<div class="card oz">
+function ozKutu(label, num, sub, i = 0) {
+  return `<div class="card oz" style="--i:${i}">
     <span class="oz-label">${label}</span>
-    <span class="oz-num">${num}</span>
+    <span class="oz-num" data-sayac="${num}">${num}</span>
     <span class="oz-sub">${sub}</span>
   </div>`;
 }
 
-function stat(label, num, note, cls = '') {
-  return `<div class="card stat">
+function stat(label, num, note, cls = '', i = 0) {
+  return `<div class="card stat" style="--i:${i}">
     <span class="stat-label">${label}</span>
-    <span class="stat-num ${cls}">${num}</span>
+    <span class="stat-num ${cls}" data-sayac="${num}">${num}</span>
     <span class="stat-note">${note}</span>
   </div>`;
 }
@@ -476,12 +479,12 @@ function stageNote(text) {
   </div></div>`;
 }
 
-function standartKarti(st) {
+function standartKarti(st, i = 0) {
   const acik = ACIK_STANDART.has(st.id);
   const kac  = DB.standartKullanimi(st.id);
 
   return `
-    <div class="card standart">
+    <div class="card standart" style="--i:${i}">
       <div class="standart-bas ${acik ? 'acik' : ''}" data-eylem="standart-ac" data-id="${st.id}"
            role="button" tabindex="0">
         <span class="chev">${svg(ICON.chevron, 15)}</span>
@@ -554,13 +557,24 @@ function render() {
 
   ustEylemYaz(key, detay, id);
   $('#btn-back').classList.toggle('hidden', !detay);
+  projeRengiYay(detay ? DB.proje(id) : null);
+
+  /* Aynı ekranda kalıp bir şeyi açıp kapatınca her şey yeniden uçuşmasın:
+     giriş hareketi yalnızca gerçekten başka bir ekrana geçince oynar. */
+  const izi   = key + '/' + (id || '');
+  const gecis = izi !== SON_EKRAN;
+  SON_EKRAN = izi;
 
   const view = $('#view');
   view.innerHTML = detay ? VIEWS.projeDetay(id) : VIEWS[key]();
   view.scrollTop = 0;
   view.classList.remove('swap');
-  void view.offsetWidth;
-  view.classList.add('swap');
+
+  if (gecis) {
+    void view.offsetWidth;
+    view.classList.add('swap');
+    sayaclariCanlandir(view);
+  }
 
   $$('[data-route]').forEach(el => el.classList.toggle('active', el.dataset.route === key));
 
@@ -599,6 +613,81 @@ function ustEylemGizle(btn) {
   btn.classList.add('hidden');
   delete btn.dataset.eylem;
   delete btn.dataset.proje;
+}
+
+/* Açık projenin rengini uygulamanın tamamına verir: üst çubuk, modül ikonları… */
+function projeRengiYay(proje) {
+  const kok = $('#app');
+  if (!kok) return;
+
+  if (!proje) {
+    ['--p1', '--p2', '--pl', '--pg', '--pk'].forEach(d => kok.style.removeProperty(d));
+    return;
+  }
+  renkDegiskenleri(proje.renk).split(';').forEach(par => {
+    const [ad, deger] = par.split(':');
+    kok.style.setProperty(ad, deger);
+  });
+}
+
+/* Sayılar sıfırdan hedefe sayarak gelir — yalnızca ekran değişiminde */
+function sayaclariCanlandir(kok) {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+  $$('[data-sayac]', kok).forEach(el => {
+    const hedef = Number(el.dataset.sayac);
+    if (!hedef || hedef > 9999) return;
+
+    const on   = el.dataset.on || '';
+    const sure = 620;
+    const bas  = performance.now();
+
+    const adim = t => {
+      const o = Math.min(1, (t - bas) / sure);
+      const e = 1 - Math.pow(1 - o, 3);
+      el.textContent = on + Math.round(hedef * e);
+      if (o < 1) requestAnimationFrame(adim);
+    };
+    el.textContent = on + '0';
+    requestAnimationFrame(adim);
+  });
+}
+
+/* Fareyle kartların hafifçe eğilmesi. Yalnızca gerçek fare varken çalışır,
+   dokunmatikte hiç devreye girmez. Tek bir kare isteği kullanır. */
+function egilmeyiBagla() {
+  const view = $('#view');
+  if (!view) return;
+
+  const fareVar = () => window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+  let sonKart = null, bekleyen = null;
+
+  const sifirla = kart => {
+    if (!kart) return;
+    kart.style.removeProperty('--rx');
+    kart.style.removeProperty('--ry');
+  };
+
+  view.addEventListener('pointermove', e => {
+    if (!fareVar()) return;
+
+    const kart = e.target.closest('.tilt');
+    if (kart !== sonKart) { sifirla(sonKart); sonKart = kart; }
+    if (!kart) return;
+
+    if (bekleyen) cancelAnimationFrame(bekleyen);
+    bekleyen = requestAnimationFrame(() => {
+      const r = kart.getBoundingClientRect();
+      const x = (e.clientX - r.left) / r.width  - .5;
+      const y = (e.clientY - r.top)  / r.height - .5;
+      kart.style.setProperty('--rx', (-y * 5).toFixed(2) + 'deg');
+      kart.style.setProperty('--ry', ( x * 6).toFixed(2) + 'deg');
+      kart.style.setProperty('--mx', ((x + .5) * 100).toFixed(1) + '%');
+      kart.style.setProperty('--my', ((y + .5) * 100).toFixed(1) + '%');
+    });
+  }, { passive: true });
+
+  view.addEventListener('pointerleave', () => { sifirla(sonKart); sonKart = null; }, { passive: true });
 }
 
 function sayaclariYaz() {
@@ -1467,6 +1556,55 @@ function standartDuzenle(id) {
 }
 
 /* ==========================================================================
+   SEÇENEK PENCERESİ
+   ========================================================================== */
+
+/* Küçük bir eylem listesi gösterir. Vazgeçilirse null döner.
+   Açılır menü yerine pencere: mobilde parmakla da rahat kullanılır. */
+function secenekSor(baslik, secenekler) {
+  return new Promise(resolve => {
+    modalAc(`
+      <h3 class="modal-h">${esc(baslik)}</h3>
+      <div class="secim" style="margin-top:16px">
+        ${secenekler.map(o => `
+          <button class="sc ${o.tehlike ? 'tehlikeli' : ''}" data-o="${o.anahtar}" type="button">
+            <span class="sc-ikon">${svg(o.ikon, 16)}</span>
+            <span class="sc-yazi"><span class="sc-ad">${esc(o.ad)}</span>
+            ${o.alt ? `<span class="sc-alt">${esc(o.alt)}</span>` : ''}</span>
+          </button>`).join('')}
+      </div>
+      <div class="modal-alt">
+        <button class="btn btn-ghost" data-o-iptal="1" type="button">Vazgeç</button>
+      </div>`, kutu => {
+      $$('[data-o]', kutu).forEach(el =>
+        el.addEventListener('click', () => { modalKapat(); resolve(el.dataset.o); }));
+      $('[data-o-iptal]', kutu).addEventListener('click', () => { modalKapat(); resolve(null); });
+    });
+  });
+}
+
+/* Proje rengi seçtiren pencere */
+function renkSor(mevcut) {
+  return new Promise(resolve => {
+    modalAc(`
+      <h3 class="modal-h">Proje rengi</h3>
+      <p class="modal-s">Listede ve proje başlığında bu renk kullanılır.</p>
+      <div class="renkler renkler-buyuk">
+        ${Object.keys(PROJE_RENK).map(k => `
+          <button class="renk ${mevcut === k ? 'sec' : ''}" data-r="${k}"
+                  style="${renkStil(k)}" type="button" aria-label="${k}"></button>`).join('')}
+      </div>
+      <div class="modal-alt">
+        <button class="btn btn-ghost" data-r-iptal="1" type="button">Vazgeç</button>
+      </div>`, kutu => {
+      $$('[data-r]', kutu).forEach(el =>
+        el.addEventListener('click', () => { modalKapat(); resolve(el.dataset.r); }));
+      $('[data-r-iptal]', kutu).addEventListener('click', () => { modalKapat(); resolve(null); });
+    });
+  });
+}
+
+/* ==========================================================================
    EYLEMLER
    ========================================================================== */
 
@@ -1554,6 +1692,74 @@ async function eylemCalistir(el) {
     return isYap(() => DB.projeGuncelle(projeId, { repo: adres }), 'Depo adresi kaydedildi.');
   }
 
+  if (e === 'proje-menu') {
+    const proje = DB.proje(id);
+    if (!proje) return;
+
+    const sec = await secenekSor(proje.firma, [
+      { anahtar: 'ad',    ad: 'Adı değiştir',   ikon: ICON.kalem },
+      { anahtar: 'renk',  ad: 'Rengi değiştir', ikon: ICON.boya },
+      { anahtar: 'repo',  ad: 'Depo adresi',    ikon: ICON.katman, alt: proje.repo || 'henüz eklenmedi' },
+      { anahtar: 'arsiv', ad: 'Arşive kaldır',  ikon: ICON.arsiv, alt: 'Listeden çıkar, veriyi silmez', tehlike: true },
+    ]);
+    if (!sec) return;
+
+    if (sec === 'ad') {
+      const ad = await metinSor({ baslik: 'Firma adı', deger: proje.firma, buton: 'Kaydet' });
+      if (!ad || ad === proje.firma) return;
+      return isYap(() => DB.projeGuncelle(id, { firma: ad }), 'Ad güncellendi.');
+    }
+
+    if (sec === 'renk') {
+      const renk = await renkSor(proje.renk);
+      if (!renk || renk === proje.renk) return;
+      return isYap(() => DB.projeGuncelle(id, { renk }), 'Renk güncellendi.');
+    }
+
+    if (sec === 'repo') {
+      const adres = await metinSor({
+        baslik: 'Depo adresi', aciklama: 'Prompt hangi depoda çalışılacağını buradan söyler.',
+        deger: proje.repo || '', yerTutucu: 'github.com/nizamsoft/musteri-projesi', buton: 'Kaydet',
+      });
+      if (adres === null) return;
+      return isYap(() => DB.projeGuncelle(id, { repo: adres }), 'Depo adresi kaydedildi.');
+    }
+
+    if (sec === 'arsiv') {
+      const ok = await onaySor({
+        baslik: 'Proje arşive kaldırılsın mı?',
+        mesaj: `"${proje.firma}" listeden çıkar. Modülleri, sayfaları ve görevleri silinmez — geri getirilebilir.`,
+        buton: 'Arşive kaldır',
+      });
+      if (!ok) return;
+      if (rota().id === id) location.hash = '#/projeler';
+      return isYap(() => DB.projeArsivle(id), 'Proje arşive kaldırıldı.');
+    }
+    return;
+  }
+
+  if (e === 'modul-menu') {
+    const sec = await secenekSor(el.dataset.ad, [
+      { anahtar: 'ad',  ad: 'Adı değiştir', ikon: ICON.kalem },
+      { anahtar: 'sil', ad: 'Modülü sil',   ikon: ICON.cop, alt: 'Sayfaları da gider', tehlike: true },
+    ]);
+    if (!sec) return;
+
+    if (sec === 'ad') {
+      const ad = await metinSor({ baslik: 'Modül adı', deger: el.dataset.ad, buton: 'Kaydet' });
+      if (!ad || ad === el.dataset.ad) return;
+      return isYap(() => DB.adDegistir('modules', id, ad), 'Ad güncellendi.');
+    }
+
+    const ok = await onaySor({
+      baslik: 'Modül silinsin mi?',
+      mesaj: `"${el.dataset.ad}" modülü ve içindeki tüm sayfalar silinecek. Bu işlem geri alınamaz.`,
+    });
+    if (!ok) return;
+    ACIK_MODUL.delete(id);
+    return isYap(() => DB.modulSil(id), 'Modül silindi.');
+  }
+
   if (e === 'modul-ekle') {
     const projeId = el.dataset.proje || el.dataset.id || rota().id;
     const ad = await metinSor({
@@ -1633,6 +1839,29 @@ function basHarf(ad) {
 function renkStil(anahtar) {
   const r = PROJE_RENK[anahtar] || PROJE_RENK.metal;
   return `background:linear-gradient(140deg, ${r[0]}, ${r[1]})`;
+}
+
+function hexRgb(h) {
+  const t = String(h).replace('#', '');
+  return [0, 2, 4].map(i => parseInt(t.slice(i, i + 2), 16));
+}
+
+/* Rengi beyaza doğru açar — ilerleme çubuğunun parlak ucu için */
+function acikla(hex, oran) {
+  const [r, g, b] = hexRgb(hex);
+  const k = v => Math.round(v + (255 - v) * oran);
+  return `rgb(${k(r)},${k(g)},${k(b)})`;
+}
+
+function saydam(hex, a) {
+  const [r, g, b] = hexRgb(hex);
+  return `rgba(${r},${g},${b},${a})`;
+}
+
+/* Bir projenin renk değişkenleri. Kartın ve üst çubuğun rengi buradan gelir. */
+function renkDegiskenleri(anahtar) {
+  const [k, d] = PROJE_RENK[anahtar] || PROJE_RENK.metal;
+  return `--p1:${k};--p2:${d};--pl:${acikla(k, .38)};--pg:${saydam(k, .15)};--pk:${saydam(k, .45)}`;
 }
 
 function durumSinif(d) {
@@ -1841,6 +2070,8 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   $('#btn-back').addEventListener('click', () => { location.hash = '#/projeler'; });
+
+  egilmeyiBagla();
 
   $('#search').addEventListener('click', () => toast('Arama Adım 5\'te gelecek.'));
   $('#user-chip').addEventListener('click', () => { location.hash = '#/ayarlar'; });

@@ -7,9 +7,9 @@ const APP = {
   name:     'NIZAM | Studio',
   short:    'NIZAM Studio',
   owner:    'Nizam Soft',
-  version:  'v0.5.0',
+  version:  'v0.5.1',
   build:    '2026-08-20',
-  stage:    'Adım 4 — Prompt',
+  stage:    'Adım 4 · Tema yenilendi',
 };
 
 /* Supabase bağlantısı.
