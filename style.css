@@ -1235,7 +1235,7 @@ html { background: var(--bg); }
   #sidebar { display: none; }
   .only-desktop { display: none !important; }
 
-  #app { flex-direction: column; }
+  #app { flex-direction: column; position: relative; }
   #main { flex: 1; min-height: 0; }
 
   #topbar {
@@ -1246,7 +1246,8 @@ html { background: var(--bg); }
   #topbar .btn span { display: none; }
   #topbar .btn { width: 44px; height: 44px; padding: 0; }
 
-  .view { padding: 16px 16px 24px; }
+  /* Alt pay çubuk kadar: içerik cam çubuğun altından akıp geçsin. */
+  .view { padding: 16px 16px 72px; }
 
   .stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .stat-num { font-size: 26px; }
@@ -1301,16 +1302,22 @@ html { background: var(--bg); }
    ========================================================================== */
 
 @media (max-width: 900px) {
+  /* Buzlu cam çubuk: içeriğin üstünde durur, arkasındakini bulanıklaştırır. */
   #tabbar {
-    display: flex; flex: 0 0 auto;
+    display: flex;
+    position: absolute; left: 0; right: 0; bottom: 0; z-index: 20;
     padding: 4px 6px 0;
     margin: 0; border-radius: 0;
-    /* Zemin sayfadan belirgin biçimde açık: çubuğun nerede bittiği görünsün.
-       Aynı renk olunca alttaki güvenli alan "boşluk" gibi okunuyordu. */
-    background: linear-gradient(180deg, var(--surface-3), var(--surface-2));
-    border-top: 1px solid var(--line-parlak);
-    box-shadow: 0 -1px 0 var(--isik), 0 -16px 34px -26px rgba(0, 0, 0, .95);
+    background: linear-gradient(180deg, rgba(37, 34, 32, .62), rgba(15, 14, 13, .78));
+    backdrop-filter: blur(22px) saturate(160%);
+    -webkit-backdrop-filter: blur(22px) saturate(160%);
+    border-top: 1px solid rgba(255, 255, 255, .09);
+    box-shadow: 0 -1px 0 var(--isik);
     box-sizing: border-box;
+  }
+  /* Cam desteklenmiyorsa düz koyu zemin. */
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    #tabbar { background: linear-gradient(180deg, var(--surface-2), var(--bg)); }
   }
 
   .tab {

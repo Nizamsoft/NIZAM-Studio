@@ -1,5 +1,16 @@
 # Değişiklik Günlüğü
 
+## v0.8.8 — 21 Ağustos 2026
+**Alt çubuk buzlu cam oldu**
+
+Çubuk artık içeriğin üstünde duruyor ve arkasındakini bulanıklaştırıyor.
+Liste çubuğun altından akıp geçiyor.
+
+- Yarı saydam zemin + `blur(22px)` cam etkisi
+- Çubuk yerleşimden çıkarıldı, içeriğin üstüne alındı (ekranın dibinde kalmaya devam ediyor)
+- Sayfalara çubuk kadar alt pay verildi, son satır çubuğun altında kalmıyor
+- Cam desteklenmeyen tarayıcıda düz koyu zemine düşüyor
+
 ## v0.8.7 — 21 Ağustos 2026
 **Alt çubuk daha da aşağı indi**
 
