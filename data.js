@@ -411,6 +411,29 @@ const DB = {
     await this.yukle();
   },
 
+  /* Yapıştırılan kayıtları yazar. Aynı adda standart varsa üzerine yazar,
+     yoksa ekler. Tek tek gider ki hangisinin patladığı belli olsun. */
+  async standartlarIceAktar(kayitlar) {
+    yazmaKontrol();
+    let eklenen = 0, guncellenen = 0;
+
+    for (const k of kayitlar) {
+      const mevcut = this.standartlar.find(st => st.ad === k.ad);
+      const alanlar = { ad: k.ad, grup: k.grup, ozet: k.ozet, tarif: k.tarif };
+
+      const { error } = mevcut
+        ? await AUTH.db.from('standards').update(alanlar).eq('id', mevcut.id)
+        : await AUTH.db.from('standards')
+            .insert(Object.assign({ sira: this.standartlar.length + eklenen + 1 }, alanlar));
+
+      if (error) throw new Error(`"${k.ad}" yazılamadı — ${veriHatasi(error)}`);
+      mevcut ? guncellenen++ : eklenen++;
+    }
+
+    await this.yukle();
+    return { eklenen, guncellenen };
+  },
+
   async standartSil(id) {
     yazmaKontrol();
     const { error } = await AUTH.db.from('standards').update({ aktif: false }).eq('id', id);

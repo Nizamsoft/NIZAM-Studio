@@ -85,6 +85,11 @@ const ICON = {
     d: '<rect x="9" y="9" width="12" height="12" rx="2"></rect>',
     c: '<rect x="9" y="9" width="12" height="12" rx="2"></rect><path d="M5 15V5a2 2 0 0 1 2-2h10"></path>',
   },
+  /* İçe aktar: kutuya inen ok */
+  ice: {
+    d: '<path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"></path>',
+    c: '<path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3M12 4v10M8 10l4 4 4-4"></path>',
+  },
 
   panel: {
     d: '<rect x="3" y="3" width="7" height="7" rx="1.8"></rect><rect x="14" y="3" width="7" height="7" rx="1.8"></rect><rect x="3" y="14" width="7" height="7" rx="1.8"></rect><rect x="14" y="14" width="7" height="7" rx="1.8"></rect>',
@@ -262,17 +267,28 @@ const VIEWS = {
     if (DB.hata)    return hataKutusu(DB.hata);
 
     if (!DB.standartlar.length) {
-      return `<div class="card">${empty(ICON.katman, 'Standart yok',
-        'sql/05-standartlar.sql dosyasını Supabase\'de çalıştırırsan sekiz hazır standart kurulur.',
-        AUTH.yonetici ? 'Yeni Standart' : null, 'standart-ekle')}</div>`;
+      return `
+        <div class="card">${empty(ICON.katman, 'Standart yok',
+          'sql/05-standartlar.sql dosyasını Supabase\'de çalıştırırsan sekiz hazır standart kurulur.',
+          AUTH.yonetici ? 'Yeni Standart' : null, 'standart-ekle')}</div>
+        ${AUTH.yonetici ? `
+          <div class="standart-arac">
+            <button class="mini-link" data-eylem="standart-ice-aktar" type="button">
+              ${svg(ICON.ice, 13)} Hazır blok yapıştır</button>
+          </div>` : ''}`;
     }
 
     return `
-      <div class="note" style="margin-bottom:16px">
+      <div class="note" style="margin-bottom:12px">
         ${svg(ICON.info, 15)}
         <span>Bir görev bu standartlardan birine dokunuyorsa, tarifi promptun içine
         kendiliğinden yapıştırılır. Aynı şeyi her seferinde yazmazsın.</span>
       </div>
+      ${AUTH.yonetici ? `
+        <div class="standart-arac">
+          <button class="mini-link" data-eylem="standart-ice-aktar" type="button">
+            ${svg(ICON.ice, 13)} Hazır blok yapıştır</button>
+        </div>` : ''}
       ${DB.standartGruplari().map(grupKarti).join('')}
     `;
   },
@@ -559,6 +575,64 @@ function stageNote(text) {
   return `<div class="section"><div class="note">
     ${svg(ICON.info, 15)}<span>${text}</span>
   </div></div>`;
+}
+
+/* Yapıştırılan metni standart kayıtlarına çevirir.
+
+   Beklenen biçim (Tarif satırı çok satırlı olabilir):
+
+     Ad: Alt Sekme Çubuğu
+     Grup: Arayüz
+     Özet: Mobil · buzlu cam
+     Tarif: 900 pikselin altındaki ekranlarda...
+
+   Birden fazla standart alt alta yapıştırılabilir; her yeni "Ad:" satırı
+   yeni bir kaydı başlatır. Araya "---" konabilir, zorunlu değil. */
+function standartCozumle(metin) {
+  const ANAHTAR = {
+    ad: 'ad', grup: 'grup',
+    'özet': 'ozet', ozet: 'ozet',
+    tarif: 'tarif', 'açıklama': 'tarif', aciklama: 'tarif',
+  };
+
+  const kayitlar = [];
+  const hatalar  = [];
+  let simdiki = null;
+  let sonAlan = null;
+
+  const kapat = () => {
+    if (!simdiki) return;
+    ['ad', 'grup', 'ozet', 'tarif'].forEach(a => { simdiki[a] = (simdiki[a] || '').trim(); });
+    if (!simdiki.ad)         hatalar.push('Adı olmayan bir blok atlandı.');
+    else if (!simdiki.tarif) hatalar.push(`"${simdiki.ad}" için tarif yok, atlandı.`);
+    else {
+      if (!simdiki.grup) simdiki.grup = VARSAYILAN_GRUP;
+      kayitlar.push(simdiki);
+    }
+    simdiki = null; sonAlan = null;
+  };
+
+  String(metin || '').split(/\r?\n/).forEach(satir => {
+    if (/^\s*-{3,}\s*$/.test(satir)) { kapat(); return; }
+
+    const es = satir.match(/^\s*([A-Za-zÇĞİÖŞÜçğıöşü]+)\s*:\s*([\s\S]*)$/);
+    const alan = es ? ANAHTAR[es[1].toLocaleLowerCase('tr')] : null;
+
+    if (alan === 'ad') kapat();
+
+    if (alan) {
+      if (!simdiki) simdiki = { ad: '', grup: '', ozet: '', tarif: '' };
+      simdiki[alan] = es[2];
+      sonAlan = alan;
+      return;
+    }
+
+    /* Anahtar yoksa satır, son alanın devamıdır — çok satırlı tarifler böyle çalışır. */
+    if (simdiki && sonAlan) simdiki[sonAlan] += '\n' + satir;
+  });
+
+  kapat();
+  return { kayitlar, hatalar };
 }
 
 /* Düzenleme penceresindeki grup önerileri: sabit liste + veride geçen adlar. */
@@ -1650,6 +1724,104 @@ function standartSor(mevcut) {
   });
 }
 
+/* Standart içe aktarma penceresi. Yapıştır → önizle → yaz.
+   Supabase'e elle girmeye gerek kalmasın diye. */
+function standartIceAktar() {
+  modalHepsiniKapat();
+
+  const ORNEK =
+    'Ad: Alt Sekme Çubuğu\n' +
+    'Grup: Arayüz\n' +
+    'Özet: Mobil · buzlu cam · ekranın dibine yapışık\n' +
+    'Tarif: 900 pikselin altındaki ekranlarda yan menü gizlenir…';
+
+  modalAc(`
+    ${modalBaslik(ICON.ice, 'Standart içe aktar', 'Hazır bloğu yapıştır — dört alanı kendisi ayırır.')}
+
+    <label class="field">
+      <span>Yapıştır <em class="ipucu">birden fazla standardı alt alta koyabilirsin</em></span>
+      <textarea id="ia-metin" rows="9" spellcheck="false"
+                placeholder="${esc(ORNEK)}"></textarea>
+    </label>
+
+    <div id="ia-onizleme"></div>
+
+    <div class="modal-alt">
+      <button class="btn btn-ghost" data-ia="iptal" type="button">Vazgeç</button>
+      <button class="btn btn-primary" data-ia="aktar" type="button" disabled><span>Aktar</span></button>
+    </div>`, kutu => {
+    const alan   = $('#ia-metin', kutu);
+    const on     = $('#ia-onizleme', kutu);
+    const dugme  = $('[data-ia="aktar"]', kutu);
+    let cozum = { kayitlar: [], hatalar: [] };
+
+    const tazele = () => {
+      cozum = standartCozumle(alan.value);
+      const { kayitlar, hatalar } = cozum;
+
+      if (!alan.value.trim()) { on.innerHTML = ''; dugme.disabled = true; return; }
+
+      if (!kayitlar.length) {
+        on.innerHTML = `<div class="note uyari">${svg(ICON.uyari, 15)}
+          <span>Hiçbir standart okunamadı. Her blok <b>Ad:</b> ile başlamalı ve
+          <b>Tarif:</b> içermeli.</span></div>`;
+        dugme.disabled = true;
+        return;
+      }
+
+      const yeni  = kayitlar.filter(k => !DB.standartlar.some(st => st.ad === k.ad));
+      const eskik = kayitlar.length - yeni.length;
+
+      on.innerHTML = `
+        <span class="label">Okunanlar</span>
+        <div class="card"><div class="row-list">
+          ${kayitlar.map(k => {
+            const varMi = DB.standartlar.some(st => st.ad === k.ad);
+            return `<div class="row">
+              <div class="row-main">
+                <span class="row-title">${esc(k.ad)}</span>
+                <span class="row-sub">${esc(k.grup)} · ${k.tarif.length} karakter</span>
+              </div>
+              <span class="row-val ${varMi ? 'uyari-yazi' : ''}">${varMi ? 'üzerine yazılacak' : 'yeni'}</span>
+            </div>`;
+          }).join('')}
+        </div></div>
+        ${eskik ? `<div class="note uyari" style="margin-top:10px">${svg(ICON.uyari, 15)}
+          <span>${eskik} standardın mevcut tarifi silinip yenisiyle değişecek.</span></div>` : ''}
+        ${hatalar.length ? `<div class="note" style="margin-top:10px">${svg(ICON.info, 15)}
+          <span>${hatalar.map(esc).join(' ')}</span></div>` : ''}`;
+
+      dugme.disabled = false;
+    };
+
+    alan.addEventListener('input', tazele);
+    setTimeout(() => alan.focus(), 40);
+
+    $('[data-ia="iptal"]', kutu).addEventListener('click', modalKapat);
+
+    dugme.addEventListener('click', async () => {
+      if (!cozum.kayitlar.length) return;
+      const yazi = $('[data-ia="aktar"] span', kutu);
+      yazi.textContent = 'Yazılıyor…';
+      dugme.disabled = true;
+      try {
+        const { eklenen, guncellenen } = await DB.standartlarIceAktar(cozum.kayitlar);
+        modalKapat();
+        ACIK_GRUP = cozum.kayitlar[0].grup;
+        render();
+        const parca = [];
+        if (eklenen)     parca.push(`${eklenen} yeni`);
+        if (guncellenen) parca.push(`${guncellenen} güncellendi`);
+        toast(parca.join(' · ') + '.', 'basari');
+      } catch (h) {
+        yazi.textContent = 'Aktar';
+        dugme.disabled = false;
+        toast(h.message, 'hata');
+      }
+    });
+  }, 'genis');
+}
+
 /* Standart yazma / düzenleme penceresi */
 function standartDuzenle(id) {
   modalHepsiniKapat();
@@ -1800,6 +1972,8 @@ async function eylemCalistir(el) {
     GOREV_FILTRE = el.dataset.deger;
     return render();
   }
+
+  if (e === 'standart-ice-aktar') return standartIceAktar();
 
   if (e === 'standart-grup-ac') {
     const ad = el.dataset.ad;

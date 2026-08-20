@@ -1,5 +1,26 @@
 # Değişiklik Günlüğü
 
+## v0.9.11 — 21 Ağustos 2026
+**Standart içe aktarma**
+
+Artık standart eklemek için Supabase'e girmeye gerek yok. Standartlar
+ekranındaki **Hazır blok yapıştır** düğmesi hazır metni okuyup kaydediyor.
+
+Beklenen biçim:
+
+```
+Ad: Alt Sekme Çubuğu
+Grup: Arayüz
+Özet: Mobil · buzlu cam · ekranın dibine yapışık
+Tarif: 900 pikselin altındaki ekranlarda...
+```
+
+- Birden fazla standart alt alta yapıştırılabilir; her yeni `Ad:` yeni kayıt
+- Tarif çok satırlı olabilir — anahtar taşımayan satırlar tarifin devamıdır
+- `Grup` yazılmazsa `Arayüz` kabul edilir
+- Yazmadan önce önizleme: hangisi yeni, hangisinin üzerine yazılacak
+- Adı ya da tarifi olmayan blok atlanır, sebebi yazılır
+
 ## v0.9.10 — 21 Ağustos 2026
 **Yeni standart: Alt Sekme Çubuğu**
 

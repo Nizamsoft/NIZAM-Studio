@@ -1235,6 +1235,10 @@ html { background: var(--bg); }
 }
 /* Standart grupları -------------------------------------------------------- */
 
+.standart-arac { display: flex; justify-content: flex-end; margin-bottom: 12px; }
+.note.uyari svg { color: var(--st-dev); }
+.row-val.uyari-yazi { color: var(--st-dev); }
+
 .standart-grup .grup-govde { padding: 4px 10px 10px; border-top: 1px solid var(--line-3); }
 .standart-grup .grup-govde .standart { margin: 8px 0 0; background: var(--surface-2); }
 .standart-grup .grup-govde .standart:first-child { margin-top: 8px; }
