@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.7.4 — 20 Ağustos 2026
+
+- Alt sekme çubuğu bazı telefonlarda hâlâ dibe oturmuyordu. Artık uygulama açılışta
+  ve her ekran değişiminde kalan boşluğu ölçüp çubuğu tam o kadar aşağı kaydırıyor —
+  sebebi ne olursa olsun kendini düzeltiyor
+
 ## v0.7.3 — 20 Ağustos 2026
 
 - **Alt sekme çubuğu ekranın dibine çivilendi.** Sorun boşluk ayarı değilmiş: çubuk
