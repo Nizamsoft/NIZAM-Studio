@@ -657,7 +657,6 @@ function render() {
   }
 
   $$('[data-route]').forEach(el => el.classList.toggle('active', el.dataset.route === key));
-  cubuguDibeYasla();
 
   const logout = $('#btn-logout');
   if (logout) logout.addEventListener('click', signOut);
@@ -2243,45 +2242,8 @@ window.addEventListener('hashchange', () => {
   if (!$('#app').classList.contains('hidden')) { modalHepsiniKapat(); render(); }
 });
 
-/* Telefon tarayıcılarında ekran yüksekliği değişkendir: adres çubuğu açılıp kapanır,
-   klavye çıkar. Gerçek yüksekliği ölçüp CSS'e veriyoruz ki altta boşluk kalmasın. */
-function ekraniOlc() {
-  document.documentElement.style.setProperty('--ekran', window.innerHeight + 'px');
-  cubuguDibeYasla();
-}
-
-/* Alt sekme çubuğu bazı telefonlarda ekranın dibine tam oturmuyor: tarayıcı
-   görünür alanı olduğundan kısa bildiriyor. Sebebini tahmin etmek yerine
-   boşluğu ölçüp çubuğu tam o kadar aşağı kaydırıyoruz. */
-function cubuguDibeYasla() {
-  const cubuk = $('#tabbar');
-  if (!cubuk) return;
-
-  cubuk.style.transform = '';
-  if (getComputedStyle(cubuk).display === 'none') return;
-
-  requestAnimationFrame(() => {
-    const alt = cubuk.getBoundingClientRect().bottom;
-
-    /* Ekranın gerçek dibi: görünür alan, yoksa pencere yüksekliği */
-    const gg = window.visualViewport;
-    const dip = gg ? gg.height + gg.offsetTop : window.innerHeight;
-
-    const fark = Math.round(dip - alt);
-    if (fark > 0 && fark < 400) cubuk.style.transform = `translateY(${fark}px)`;
-  });
-}
-
-window.addEventListener('resize', ekraniOlc, { passive: true });
-window.addEventListener('orientationchange', () => setTimeout(ekraniOlc, 120), { passive: true });
-if (window.visualViewport) {
-  window.visualViewport.addEventListener('resize', ekraniOlc, { passive: true });
-}
-ekraniOlc();
-
 document.addEventListener('DOMContentLoaded', () => {
   document.title = APP.name;
-  ekraniOlc();
 
   $('#login-form').addEventListener('submit', girisGonder);
   $('#login-mail').addEventListener('input', hataGizle);

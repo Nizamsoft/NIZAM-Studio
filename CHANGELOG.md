@@ -1,5 +1,21 @@
 # Değişiklik Günlüğü
 
+## v0.7.6 — 20 Ağustos 2026
+**Alt çubuk sorunu kökünden çözüldü**
+
+Üç ayrı hata üst üste binmişti:
+
+- **Yükseklik `window.innerHeight`'tan sürülüyordu.** iOS'ta bu değer alt güvenli alanı
+  dışarıda bırakıyor; uygulama fiziksel ekrandan kısa kalıyordu. Kaldırıldı, yükseklik
+  artık `inset: 0`'dan geliyor
+- **Stil dosyasında daha aşağıda eski bir kural yenisini eziyordu.** Güvenli alan payını
+  yarıya indiren satır oradan geliyormuş. Temizlendi, çubuk kuralı tek yerde toplandı
+- **Çubuk `position: fixed`'di.** Artık uygulama sütununun son çocuğu; safe-area hesabını
+  tarayıcı yapıyor, hiçbir yerde piksel toplanmıyor
+- Güvenli alan payı yarım değil tam kullanılıyor — yazılar ana ekran çizgisinin üstünde
+  kalıyor, çubuğun zemini fiziksel dibe kadar iniyor
+- Çalışma anında boşluk ölçüp düzelten geçici yama kaldırıldı; artık gerekmiyor
+
 ## v0.7.5 — 20 Ağustos 2026
 
 - Alt çubuk zaten ekranın dibindeymiş; asıl fark çubuğun kendi iç alt boşluğuydu.
