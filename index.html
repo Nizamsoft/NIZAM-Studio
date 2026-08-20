@@ -24,7 +24,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="NIZAM Studio">
 
-<link rel="stylesheet" href="style.css?v=0.9.11">
+<link rel="stylesheet" href="style.css?v=0.10.0">
 </head>
 <body>
 
@@ -94,25 +94,22 @@
       <button class="icon-btn hidden" id="btn-back" type="button" aria-label="Geri">
         <svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"></path></svg>
       </button>
-      <div class="topbar-title">
-        <h1 id="page-title">Panel</h1>
-        <p id="page-sub">—</p>
+      <span class="logo-kutu"><img src="logo-n.png" alt="" width="24" height="24"></span>
+      <div class="marka">
+        <b id="firma-adi">Nizam Soft</b>
+        <i id="page-title">Panel</i>
       </div>
       <div class="spacer"></div>
-      <div class="search only-desktop" id="search">
-        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.6-3.6"></path></svg>
-        <span>Proje, sayfa veya görev ara…</span>
-      </div>
-      <button class="user-tile" id="user-tile" type="button" aria-label="Hesap">
-        <span class="avatar">NA</span>
-        <span class="user-text only-desktop">
-          <span class="user-name">Nizam</span>
-          <span class="user-role">Yönetici</span>
-        </span>
-      </button>
-      <button class="btn btn-primary" id="topbar-action" type="button">
+      <button class="btn btn-primary only-desktop" id="topbar-action" type="button">
         <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"></path></svg>
         <span>Yeni Proje</span>
+      </button>
+      <button class="hesap" id="user-tile" type="button" aria-label="Hesap">
+        <span class="hesap-yazi">
+          <span class="user-role">Yönetici</span>
+          <span class="user-name">Nizam</span>
+        </span>
+        <span class="foto"><b class="avatar">NA</b><em class="nokta hidden">0</em></span>
       </button>
     </header>
 
@@ -122,14 +119,26 @@
   <nav id="tabbar"></nav>
 </div>
 
+<!-- Alt sekme simgelerinin kabartma gradyanları. Görünmez, yalnızca tanım taşır. -->
+<svg width="0" height="0" aria-hidden="true" style="position:absolute">
+  <defs>
+    <linearGradient id="tab-metal" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f2eeeb"></stop><stop offset="1" stop-color="#9b938c"></stop>
+    </linearGradient>
+    <linearGradient id="tab-kirmizi" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"></stop><stop offset="1" stop-color="#ffd8d4"></stop>
+    </linearGradient>
+  </defs>
+</svg>
+
 <div id="toast" class="hidden"></div>
 
 <script src="vendor/supabase.js?v=2.112.3"></script>
-<script src="config.js?v=0.9.11"></script>
-<script src="auth.js?v=0.9.11"></script>
-<script src="data.js?v=0.9.11"></script>
-<script src="guncelle.js?v=0.9.11"></script>
-<script src="prompt.js?v=0.9.11"></script>
-<script src="app.js?v=0.9.11"></script>
+<script src="config.js?v=0.10.0"></script>
+<script src="auth.js?v=0.10.0"></script>
+<script src="data.js?v=0.10.0"></script>
+<script src="guncelle.js?v=0.10.0"></script>
+<script src="prompt.js?v=0.10.0"></script>
+<script src="app.js?v=0.10.0"></script>
 </body>
 </html>

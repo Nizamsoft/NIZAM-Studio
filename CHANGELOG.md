@@ -1,5 +1,39 @@
 # Değişiklik Günlüğü
 
+## v0.10.0 — 21 Ağustos 2026
+**Yeni kabuk: üst çubuk, alt çubuk, zemin**
+
+**Zemin açıldı.** "Çok kara" hissi gitsin diye tüm renk merdiveni bir kademe
+yukarı alındı — yalnız arka plan değil, kartlar ve çizgiler de. Yoksa kartlar
+zeminle aynı tona düşer, kutular kaybolurdu. Sıcak grafit tonu korundu.
+
+| | Eski | Yeni |
+|---|---|---|
+| Zemin | `#0f0e0d` | `#171614` |
+| Kart | `#252220` | `#2d2a27` |
+| Çizgi | `#37322f` | `#3c3734` |
+
+**Üst çubuk yeniden kuruldu.** Solda logo kutusu, yanında firma adı, altında
+bulunduğun sayfanın adı (altın). Sağda tek hap: rol · ad soyad · fotoğraf.
+Zemin buzlu cam, alt kenarda soldan sağa sönen kırmızı çizgi.
+
+**Kullanıcı hapına basınca** alttan sayfa açılıyor: Bildirimler · Destek ·
+Çıkış yap. Okunmamış bildirim varsa fotoğrafın köşesinde rozet çıkar.
+
+**Alt çubuk dört sekmeye indi**, ortasına yükselen kırmızı **+** geldi.
+Artı sekme değil eylem: bulunduğun ekrana göre Yeni Proje / Yeni Görev /
+Yeni Standart açar. Simgeler kabartma kutulara alındı — üstten ışık,
+alttan gölge, parlak metal dolgu.
+
+**Standartlar Ayarlar'ın içine taşındı** — alt çubukta yer açmak için.
+
+- Arama kutusu kaldırıldı (çalışmıyordu, Adım 5'e kalmıştı)
+- Baş harf kutuları kırmızıdan metale çevrildi; kırmızı yine dört yerde
+- Firma adı ve destek adresi `config.js` içinde: `FIRMA`, `DESTEK`
+
+> Profil fotoğrafı henüz yüklenemiyor, baş harfler görünüyor.
+> Gerçek fotoğraf için Supabase'de dosya deposu kurulması gerekiyor.
+
 ## v0.9.11 — 21 Ağustos 2026
 **Standart içe aktarma**
 

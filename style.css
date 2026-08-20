@@ -22,27 +22,27 @@
   --metal-2:        #d6d0cd;
 
   /* --- Yüzeyler: sıcak grafit merdiveni --- */
-  --bg:             #0f0e0d;
+  --bg:             #171614;
   /* iOS uygulama kipinde sayfanın DIŞINDA kalan şerit (ana ekran çizgisi bölgesi)
      bu renkle boyanır. Alt çubuğun bittiği renkle aynı: ikisi tek parça görünsün. */
-  --cerceve:        #171614;
-  --bg-ust:         #1b1918;
-  --rail:           #12100f;
-  --rail-ust:       #191715;
-  --kod-bg:         #100f0e;
-  --yuva-2:         #141312;
-  --yuva:           #191715;
-  --kart-alt:       #1a1817;
-  --surface:        #1f1d1b;
-  --kart-ust:       #252220;
-  --surface-2:      #252220;
-  --surface-3:      #2e2b28;
+  --cerceve:        #1f1d1b;
+  --bg-ust:         #232120;
+  --rail:           #1a1817;
+  --rail-ust:       #211f1d;
+  --kod-bg:         #181614;
+  --yuva-2:         #1c1b19;
+  --yuva:           #211f1d;
+  --kart-alt:       #222020;
+  --surface:        #272523;
+  --kart-ust:       #2d2a27;
+  --surface-2:      #2d2a27;
+  --surface-3:      #363330;
 
   /* --- Çizgiler --- */
-  --line-3:         #292624;
-  --line-2:         #312d2b;
-  --line:           #37322f;
-  --line-parlak:    #443e3a;
+  --line-3:         #2f2c2a;
+  --line-2:         #373331;
+  --line:           #3c3734;
+  --line-parlak:    #4a4440;
   --line-parlak-2:  #4f4844;
 
   /* --- Metin --- */
@@ -348,11 +348,14 @@ button { font-family: inherit; color: inherit; }
   transition: background .16s ease;
 }
 .user-chip:hover { background: var(--surface-3); }
+/* Baş harf kutusu metal — kırmızı yalnızca logo, ana buton, aktif sekme
+   ve "Acil"de kullanılır; avatar beşinci yer olmasın. */
 .avatar {
   display: flex; align-items: center; justify-content: center;
   width: 30px; height: 30px; flex-shrink: 0; border-radius: 8px;
-  background: linear-gradient(140deg, var(--red), var(--red-derin));
-  color: #fff; font-size: 11px; font-weight: 700;
+  background: linear-gradient(150deg, #7a716a, #39332f);
+  color: #f2efec; font-size: 11px; font-weight: 700;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .18);
 }
 .user-text { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
 .user-name { font-size: 12px; font-weight: 600; }
@@ -367,9 +370,71 @@ button { font-family: inherit; color: inherit; }
   height: 64px; flex-shrink: 0; padding: 0 24px;
   border-bottom: 1px solid var(--line-3);
 }
-.topbar-title { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.topbar-title h1 { font-size: 19px; font-weight: 600; }
-.topbar-title p { margin: 0; font-size: 11px; color: var(--ink-faint); }
+/* Solda logo kutusu, yanında firma adı, altında bulunduğun sayfanın adı. */
+.logo-kutu {
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  width: 40px; height: 40px; border-radius: 12px;
+  background: linear-gradient(180deg, var(--surface-2), var(--kart-alt));
+  border: 1px solid var(--line);
+  box-shadow: inset 0 1px 0 var(--isik), 0 4px 10px -6px #000;
+}
+.logo-kutu img { width: 24px; height: 24px; object-fit: contain; }
+
+.marka { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.marka b {
+  font-family: var(--yazi-baslik); font-size: 14.5px; font-weight: 700;
+  color: var(--ink-strong); letter-spacing: -.015em; white-space: nowrap;
+}
+.marka i {
+  font-style: normal; font-family: var(--yazi-baslik);
+  font-size: 9.5px; font-weight: 600; letter-spacing: .16em;
+  text-transform: uppercase; color: var(--st-dev); white-space: nowrap;
+}
+
+/* Sağdaki hesap hapı: rol, ad soyad, fotoğraf. Basınca hesap sayfası açılır. */
+.hesap {
+  display: flex; align-items: center; gap: 9px; flex-shrink: 0;
+  padding: 4px 6px 4px 12px; border-radius: 999px;
+  background: linear-gradient(180deg, var(--surface-2), var(--kart-alt));
+  border: 1px solid var(--line); color: var(--ink); cursor: pointer;
+  box-shadow: inset 0 1px 0 var(--isik);
+  transition: border-color .16s ease, transform .12s var(--ease);
+}
+.hesap:hover  { border-color: var(--line-parlak); }
+.hesap:active { transform: scale(.97); }
+.hesap-yazi { display: flex; flex-direction: column; align-items: flex-end; min-width: 0; }
+.hesap .user-role {
+  font-size: 8.5px; font-weight: 600; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--ink-dim);
+}
+.hesap .user-name {
+  font-family: var(--yazi-baslik); font-size: 12px; font-weight: 700;
+  color: var(--ink); line-height: 1.2; white-space: nowrap;
+}
+
+.foto {
+  position: relative; flex-shrink: 0; width: 34px; height: 34px; border-radius: 999px;
+  background: linear-gradient(150deg, #7a716a, #39332f);
+  box-shadow: 0 0 0 1px var(--line-parlak), inset 0 1px 0 rgba(255, 255, 255, .18);
+}
+/* Fotoğrafın içindeki baş harfler — eski kırmızı avatar kutusunu geçersiz kılar. */
+.foto > b {
+  position: absolute; inset: 0; width: auto; height: auto; border-radius: inherit;
+  display: flex; align-items: center; justify-content: center;
+  background: none; box-shadow: none;
+  font-family: var(--yazi-baslik); font-weight: 700; font-size: 12px; color: #f2efec;
+}
+.foto.buyuk { width: 48px; height: 48px; }
+.foto.buyuk > b { font-size: 16px; }
+
+/* Okunmamış bildirim sayısı — kırmızının beşinci yeri değil, uyarı rozeti. */
+.nokta {
+  position: absolute; top: -3px; right: -3px; min-width: 17px; height: 17px; padding: 0 4px;
+  border-radius: 999px; font-size: 9.5px; font-weight: 700; font-style: normal; color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(160deg, var(--red-acik), var(--red-koyu));
+  box-shadow: 0 2px 6px -2px rgba(229, 52, 42, .9), 0 0 0 2px var(--surface-2);
+}
 
 .search {
   display: flex; align-items: center; gap: 8px;
@@ -950,16 +1015,7 @@ html { background: var(--bg); }
 
 /* ---------- Üst çubuk: açık projenin rengini taşır ---------- */
 
-#topbar {
-  background: linear-gradient(112deg, var(--pg, transparent), transparent 58%), rgba(20,23,28,.72);
-  backdrop-filter: blur(8px);
-  position: relative;
-}
-#topbar::after {
-  content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 1px;
-  background: linear-gradient(90deg, var(--p1, transparent), transparent 55%);
-  opacity: .75;
-}
+#topbar { position: relative; }
 
 /* ---------- Ana buton ---------- */
 
@@ -1099,7 +1155,7 @@ html { background: var(--bg); }
 .durum   { box-shadow: inset 0 1px 0 rgba(255,255,255,.05); }
 .pill    { box-shadow: inset 0 1px 0 rgba(255,255,255,.05); }
 .acil    { box-shadow: 0 4px 12px -4px rgba(229,52,42,.6), inset 0 1px 0 rgba(255,255,255,.25); }
-.avatar  { box-shadow: 0 6px 14px -8px rgba(229,52,42,.7), inset 0 1px 0 rgba(255,255,255,.2); }
+.avatar  { box-shadow: 0 5px 12px -8px #000, inset 0 1px 0 rgba(255,255,255,.2); }
 .gav     { box-shadow: inset 0 1px 0 rgba(255,255,255,.18); }
 
 /* ---------- Sayfa ve görev satırları ---------- */
@@ -1116,8 +1172,18 @@ html { background: var(--bg); }
 /* --- Üst panel: yapışkan, safe-area duyarlı --- */
 #topbar {
   position: sticky; top: 0; z-index: 40;
-  background: linear-gradient(180deg, var(--rail-ust), var(--rail));
-  box-shadow: 0 1px 0 var(--line-3), 0 10px 24px -22px rgba(0, 0, 0, .9);
+  background: linear-gradient(180deg,
+    color-mix(in srgb, var(--bg-ust) 92%, transparent),
+    color-mix(in srgb, var(--bg) 66%, transparent));
+  backdrop-filter: blur(18px) saturate(150%);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  border-bottom: 0;
+}
+/* Alt kenardaki kırmızı çizgi soldan başlar, sağa doğru söner. */
+#topbar::after {
+  content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 1.5px;
+  background: linear-gradient(90deg, var(--red), rgba(229, 52, 42, .15) 46%, transparent 78%);
+  opacity: .9;
 }
 
 /* Üst paneldeki hesap kutusu — mobilde yan menü olmadığı için kim olduğun buradan görünür */
@@ -1133,7 +1199,7 @@ html { background: var(--bg); }
 .user-tile:hover  { border-color: var(--line-parlak); }
 .user-tile:active { transform: scale(.97); }
 .user-tile .avatar {
-  box-shadow: 0 0 0 2px var(--rail), 0 0 0 3px var(--red-cizgi);
+  box-shadow: 0 0 0 2px var(--rail), 0 0 0 3px var(--line-parlak);
 }
 
 /* --- Yan menü altındaki sürüm satırı --- */
@@ -1233,6 +1299,24 @@ html { background: var(--bg); }
   }
   .mini-btn:hover { background: none; color: var(--ink-dim); }
 }
+/* Hesap sayfası ------------------------------------------------------------ */
+
+.hesap-bas { display: flex; align-items: center; gap: 13px; padding: 2px 2px 16px; }
+.hesap-bilgi { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.hesap-bilgi b { font-family: var(--yazi-baslik); font-size: 16px; font-weight: 700; color: var(--ink-strong); }
+.hesap-bilgi i { font-style: normal; font-size: 11.5px; color: var(--ink-dim); }
+.sat-ikon {
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  width: 32px; height: 32px; margin-right: 12px; border-radius: 10px;
+  color: var(--ink-soft);
+  background: linear-gradient(180deg, var(--surface-2), var(--kart-alt));
+  border: 1px solid var(--line-3);
+}
+.sat-ikon svg { width: 17px; height: 17px; }
+.row.tehlike-satir .row-title { color: var(--red-ink); }
+.row[data-hs] { cursor: pointer; }
+.row[data-hs]:active { background: var(--surface-2); }
+
 /* Standart grupları -------------------------------------------------------- */
 
 .standart-arac { display: flex; justify-content: flex-end; margin-bottom: 12px; }
@@ -1256,6 +1340,11 @@ html { background: var(--bg); }
 
 .only-mobile { display: none; }
 
+/* Masaüstünde yan menüde zaten logo var; üstte ikincisi gereksiz. */
+@media (min-width: 901px) {
+  #topbar .logo-kutu { display: none; }
+}
+
 @media (max-width: 900px) {
   #sidebar { display: none; }
   .only-desktop { display: none !important; }
@@ -1264,10 +1353,9 @@ html { background: var(--bg); }
   #main { flex: 1; min-height: 0; }
 
   #topbar {
-    height: auto; padding: calc(14px + env(safe-area-inset-top, 0px)) 16px 12px;
-    gap: 12px;
+    height: auto; padding: calc(8px + env(safe-area-inset-top, 0px)) 13px 11px;
+    gap: 9px;
   }
-  .topbar-title h1 { font-size: 18px; }
   #topbar .btn span { display: none; }
   #topbar .btn { width: 44px; height: 44px; padding: 0; }
 
@@ -1314,7 +1402,6 @@ html { background: var(--bg); }
 @media (max-width: 900px) {
   .tilt:hover { transform: none; }
   .parlama { display: none; }
-  #topbar { backdrop-filter: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1338,9 +1425,9 @@ html { background: var(--bg); }
     margin: 0; border-radius: 0;
     /* Buzlu cam: üstü neredeyse saydam, dibe doğru hafifçe koyulaşır. */
     background: linear-gradient(180deg,
-      rgba(15, 14, 13, .06) 0%,
-      rgba(23, 22, 20, .42) 58%,
-      rgba(23, 22, 20, .58) 100%);
+      color-mix(in srgb, var(--bg) 6%, transparent) 0%,
+      color-mix(in srgb, var(--surface-2) 52%, transparent) 55%,
+      color-mix(in srgb, var(--surface-2) 72%, transparent) 100%);
     backdrop-filter: blur(14px) saturate(150%);
     -webkit-backdrop-filter: blur(14px) saturate(150%);
     border-top: 1px solid rgba(255, 255, 255, .06);
@@ -1362,24 +1449,58 @@ html { background: var(--bg); }
 
   .tab {
     display: flex; flex-direction: column; align-items: center; justify-content: center;
-    gap: 3px; flex: 1; position: relative;
+    gap: 4px; flex: 1; position: relative;
     /* Alt pay bilerek çok küçük: yazı ekranın dibine otursun. */
-    padding: 6px 0 3px; border-radius: 12px;
-    color: var(--ink-dim); font-size: 10.5px;
+    padding: 6px 0 3px;
+    color: var(--ink-dim); font-size: 10px;
   }
-  /* Satır kutusunun yazının altında bıraktığı boşluğu siler. */
-  .tab span { line-height: 1; }
-  .tab svg { width: 20px; height: 20px; }
+  .tab span { line-height: 1; white-space: nowrap; }
 
-  .tab::before {
-    content: ''; position: absolute; inset: 0; border-radius: 12px;
-    background: var(--red-soft); box-shadow: inset 0 0 0 1px var(--red-cizgi);
-    opacity: 0; transform: scale(.88);
-    transition: opacity .2s ease, transform .3s var(--yay);
+  /* Simgeler kabartma kutularda: üstten ışık, alttan gölge. */
+  .tab-kut {
+    display: flex; align-items: center; justify-content: center;
+    width: 29px; height: 29px; border-radius: 10px;
+    background: linear-gradient(180deg, var(--surface-3), var(--kart-alt));
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .15),
+                inset 0 -1px 0 rgba(0, 0, 0, .5),
+                0 3px 6px -3px rgba(0, 0, 0, .85);
+    transition: background .2s ease, box-shadow .25s var(--ease);
   }
-  .tab > * { position: relative; }
-  .tab.active::before { opacity: 1; transform: none; }
+  /* İki katman birlikte: altta parlak metal dolgu, üstte açık çizgi.
+     Dolguyu tek başına bırakınca tik ve kaydırıcı gibi ayrıntılar kayboluyordu. */
+  .tab svg {
+    width: 17px; height: 17px;
+    stroke: #efeae6; stroke-width: 1.8;
+    filter: drop-shadow(0 1px 1px rgba(0, 0, 0, .75));
+  }
+  .tab .dolgu > * { fill: url(#tab-metal); fill-opacity: .5; }
+
+  .tab.active .tab-kut {
+    background: linear-gradient(180deg, var(--red-acik), var(--red-koyu));
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .35),
+                inset 0 -1px 0 rgba(0, 0, 0, .3),
+                0 4px 12px -4px rgba(229, 52, 42, .85);
+  }
+  .tab.active svg { stroke: #fff; }
+  .tab.active .dolgu > * { fill: url(#tab-kirmizi); fill-opacity: .65; }
   .tab.active, .tab.active span { color: var(--red-ink); font-weight: 600; }
-  .tab.active svg    { stroke: var(--red); }
-  .tab.active .dolgu { fill: var(--red); opacity: .3; }
+
+  /* Ortadaki artı: çubuğun üstüne taşar, sekme değil eylemdir. */
+  .tab-arti { flex: 0 0 72px; display: flex; justify-content: center; align-items: flex-start; }
+  .arti-btn {
+    width: 50px; height: 50px; border-radius: 999px; margin-top: -15px;
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+    background: linear-gradient(160deg, var(--red-acik), var(--red-koyu));
+    border: 0; padding: 0;
+    /* Koyu halka yok: cam çubuğun üstünde çember gibi okunuyordu.
+       Ayrışmayı yalnızca kırmızının kendi ışığı sağlıyor. */
+    box-shadow: 0 10px 24px -8px rgba(229, 52, 42, .9),
+                inset 0 1px 0 rgba(255, 255, 255, .32);
+    transition: transform .16s var(--yay);
+  }
+  .arti-btn svg { width: 22px; height: 22px; fill: none; stroke: #fff; stroke-width: 2.4; stroke-linecap: round; }
+  .arti-btn:active { transform: scale(.92); }
+  .arti-btn.hidden { display: none; }
+  /* Artı gizliyse yuvası da daralsın, sekmeler ortaya kaysın. */
+  .tab-arti:has(.arti-btn.hidden) { flex: 0 0 0; }
 }

@@ -7,9 +7,9 @@ const APP = {
   name:     'NIZAM | Studio',
   short:    'NIZAM Studio',
   owner:    'Nizam Soft',
-  version: 'v0.9.11',
+  version: 'v0.10.0',
   build:    '2026-08-20',
-  stage: 'Adım 4 · Standartlar gruplandı',
+  stage: 'Adım 4 · Yeni kabuk',
 };
 
 /* Supabase bağlantısı.
@@ -22,6 +22,13 @@ const SUPABASE = {
 };
 
 /* Görev numarası öneki — commit mesajlarında bu etiket aranır: [NS-142] */
+/* Üst çubukta görünen firma adı. */
+const FIRMA = 'Nizam Soft';
+
+/* Kullanıcı sayfasındaki Destek satırı nereye gidecek.
+   tip: 'wa' (WhatsApp) | 'mail'  ·  deger: numara ya da e-posta */
+const DESTEK = { tip: 'mail', deger: 'nizamsoft@icloud.com' };
+
 const TASK_PREFIX = 'NS';
 
 /* ==========================================================================
@@ -105,6 +112,7 @@ const MENU = [
   { id: 'panel',       ad: 'Panel',              ikon: 'panel',  tab: true },
   { id: 'projeler',    ad: 'Projeler',           ikon: 'folder', tab: true,  sayac: 'projeler' },
   { id: 'gorevler',    ad: 'Bana Atananlar',     ikon: 'check',  tab: true,  sayac: 'gorevler', tabAd: 'Görevler' },
-  { id: 'standartlar', ad: 'Nizam Standartları', ikon: 'katman', tab: true,  tabAd: 'Standart' },
+  /* Standartlar alt çubukta değil — Ayarlar'ın içinden açılıyor. */
+  { id: 'standartlar', ad: 'Nizam Standartları', ikon: 'katman' },
   { id: 'ayarlar',     ad: 'Ayarlar',            ikon: 'ayar',   tab: true },
 ];

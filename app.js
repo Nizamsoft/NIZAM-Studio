@@ -10,12 +10,13 @@ const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
 
 /* ---------- Rotalar ---------- */
 
+/* kisa = üst çubukta firma adının altında görünen ad. */
 const ROUTES = {
-  panel:       { title: 'Panel',              sub: () => todayLabel() },
-  projeler:    { title: 'Projeler',           sub: () => projelerAltBaslik() },
-  gorevler:    { title: 'Bana Atananlar',     sub: () => gorevlerAltBaslik() },
-  standartlar: { title: 'Nizam Standartları', sub: () => standartAltBaslik() },
-  ayarlar:     { title: 'Ayarlar',            sub: () => APP.version + ' · ' + APP.stage },
+  panel:       { title: 'Panel',              kisa: 'Panel',       sub: () => todayLabel() },
+  projeler:    { title: 'Projeler',           kisa: 'Projeler',    sub: () => projelerAltBaslik() },
+  gorevler:    { title: 'Bana Atananlar',     kisa: 'Görevler',    sub: () => gorevlerAltBaslik() },
+  standartlar: { title: 'Nizam Standartları', kisa: 'Standartlar', sub: () => standartAltBaslik() },
+  ayarlar:     { title: 'Ayarlar',            kisa: 'Ayarlar',     sub: () => APP.version + ' · ' + APP.stage },
 };
 
 const DEFAULT_ROUTE = 'panel';
@@ -85,6 +86,16 @@ const ICON = {
     d: '<rect x="9" y="9" width="12" height="12" rx="2"></rect>',
     c: '<rect x="9" y="9" width="12" height="12" rx="2"></rect><path d="M5 15V5a2 2 0 0 1 2-2h10"></path>',
   },
+  zil: {
+    d: '<path d="M12 3a6 6 0 0 0-6 6v3.6L4.5 15a1 1 0 0 0 .9 1.5h13.2a1 1 0 0 0 .9-1.5L18 12.6V9a6 6 0 0 0-6-6z"></path>',
+    c: '<path d="M12 3a6 6 0 0 0-6 6v3.6L4.5 15a1 1 0 0 0 .9 1.5h13.2a1 1 0 0 0 .9-1.5L18 12.6V9a6 6 0 0 0-6-6zM9.8 19.5a2.4 2.4 0 0 0 4.4 0"></path>',
+  },
+  destek: {
+    d: '<path d="M4 14.5h2.2a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H5.2a1.2 1.2 0 0 1-1.2-1.2zM20 14.5h-2.2a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h1a1.2 1.2 0 0 0 1.2-1.2z"></path>',
+    c: '<path d="M4 15.5v-3a8 8 0 0 1 16 0v3M4 14.5h2.2a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H5.2a1.2 1.2 0 0 1-1.2-1.2zM20 14.5h-2.2a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h1a1.2 1.2 0 0 0 1.2-1.2z"></path>',
+  },
+  cikis: '<path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 16l4-4-4-4M14 12H3"></path>',
+
   /* İçe aktar: kutuya inen ok */
   ice: {
     d: '<path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"></path>',
@@ -313,6 +324,21 @@ const VIEWS = {
           ${infoRow('Sürüm', APP.version, true)}
           ${infoRow('Aşama', APP.stage)}
           ${infoRow('Derleme', APP.build, true)}
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <span class="label">Kütüphane</span>
+      <div class="card">
+        <div class="row-list">
+          <div class="row" data-eylem="standartlara" role="button" tabindex="0">
+            <div class="row-main">
+              <span class="row-title">Nizam Standartları</span>
+              <span class="row-sub">${DB.standartlar.length} tarif · prompta kendiliğinden eklenir</span>
+            </div>
+            <span class="row-val">${svg(ICON.chevron, 15)}</span>
+          </div>
         </div>
       </div>
     </div>
@@ -724,21 +750,17 @@ function render() {
   const { key, id } = rota();
   const detay = key === 'projeler' && id;
 
+  /* Üstte iki satır: firma adı sabit, altında bulunduğun sayfanın adı. */
   const baslik = $('#page-title');
-  const alt    = $('#page-sub');
-
   if (detay) {
     const p = DB.proje(id);
     baslik.textContent = p ? p.firma : 'Proje';
-    alt.textContent    = p
-      ? `${PLATFORM_ADI[p.platform] || ''} · ${VERI_ADI[p.veri] || ''}`
-      : 'Bulunamadı';
   } else {
-    baslik.textContent = ROUTES[key].title;
-    alt.textContent    = ROUTES[key].sub();
+    baslik.textContent = ROUTES[key].kisa || ROUTES[key].title;
   }
 
   ustEylemYaz(key, detay, id);
+  artiYaz(key, detay, id);
   $('#btn-back').classList.toggle('hidden', !detay);
   projeRengiYay(detay ? DB.proje(id) : null);
 
@@ -789,6 +811,28 @@ function ustEylemYaz(key, detay, id) {
   } else {
     ustEylemGizle(btn);
   }
+}
+
+/* Alt çubuğun ortasındaki artı, üstteki ana butonla aynı işi yapar.
+   Masaüstünde üstteki buton, mobilde bu görünür. */
+function artiYaz(key, detay, id) {
+  const btn = $('#arti');
+  if (!btn) return;
+  const ust = $('#topbar-action');
+
+  if (ust.classList.contains('hidden')) {
+    btn.classList.add('hidden');
+    delete btn.dataset.eylem;
+    delete btn.dataset.proje;
+    btn.removeAttribute('title');
+    return;
+  }
+
+  btn.classList.remove('hidden');
+  btn.dataset.eylem = ust.dataset.eylem;
+  btn.title = ust.querySelector('span').textContent;
+  if (ust.dataset.proje) btn.dataset.proje = ust.dataset.proje;
+  else delete btn.dataset.proje;
 }
 
 /* Gizlerken eylemi de sil — görünmeyen buton eski işi taşımasın. */
@@ -884,11 +928,21 @@ function menuyuCiz() {
       ${m.sayac ? `<em class="nav-count" data-count="${m.sayac}">0</em>` : ''}
     </a>`).join('');
 
-  $('#tabbar').innerHTML = gorunur.filter(m => m.tab).map(m => `
+  const sekmeler = gorunur.filter(m => m.tab).map(m => `
     <a class="tab" href="#/${m.id}" data-route="${m.id}">
-      ${svg(ICON[m.ikon], 20)}
+      <span class="tab-kut">${svg(ICON[m.ikon], 17)}</span>
       <span>${esc(m.tabAd || m.ad)}</span>
-    </a>`).join('');
+    </a>`);
+
+  /* Ortadaki artı sekme değil, eylem. Çift sayıda sekmede tam ortaya oturur. */
+  sekmeler.splice(Math.floor(sekmeler.length / 2), 0, `
+    <div class="tab-arti">
+      <button id="arti" class="arti-btn hidden" type="button" aria-label="Yeni">
+        <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"></path></svg>
+      </button>
+    </div>`);
+
+  $('#tabbar').innerHTML = sekmeler.join('');
 }
 
 function sayaclariYaz() {
@@ -1724,6 +1778,54 @@ function standartSor(mevcut) {
   });
 }
 
+/* Kullanıcı kutusuna basınca açılan sayfa: bildirimler, destek, çıkış. */
+function hesapPenceresi() {
+  const destekYazi = DESTEK.tip === 'wa' ? 'WhatsApp' : DESTEK.deger;
+
+  modalAc(`
+    <div class="hesap-bas">
+      <span class="foto buyuk"><b>${esc(AUTH.basHarfler)}</b></span>
+      <span class="hesap-bilgi">
+        <b>${esc(AUTH.ad)}</b>
+        <i>${esc(AUTH.rolAdi)} · ${esc(AUTH.mail)}</i>
+      </span>
+    </div>
+
+    <div class="card"><div class="row-list">
+      <div class="row" data-hs="bildirim" role="button" tabindex="0">
+        <span class="sat-ikon">${svg(ICON.zil, 17)}</span>
+        <div class="row-main"><span class="row-title">Bildirimler</span></div>
+        <span class="row-val">Adım 5'te</span>
+      </div>
+      <div class="row" data-hs="destek" role="button" tabindex="0">
+        <span class="sat-ikon">${svg(ICON.destek, 17)}</span>
+        <div class="row-main"><span class="row-title">Destek</span></div>
+        <span class="row-val">${esc(destekYazi)}</span>
+      </div>
+      <div class="row tehlike-satir" data-hs="cikis" role="button" tabindex="0">
+        <span class="sat-ikon">${svg(ICON.cikis, 17)}</span>
+        <div class="row-main"><span class="row-title">Çıkış yap</span></div>
+      </div>
+    </div></div>
+
+    <div class="modal-alt">
+      <button class="btn btn-ghost" data-hs="kapat" type="button">Kapat</button>
+    </div>`, kutu => {
+    const bas = e => $(`[data-hs="${e}"]`, kutu);
+
+    bas('kapat').addEventListener('click', modalKapat);
+    bas('bildirim').addEventListener('click', () =>
+      toast('Bildirimler Adım 5\'te gelecek.'));
+    bas('destek').addEventListener('click', () => {
+      const yer = DESTEK.tip === 'wa'
+        ? 'https://wa.me/' + String(DESTEK.deger).replace(/\D/g, '')
+        : 'mailto:' + DESTEK.deger;
+      window.open(yer, '_blank');
+    });
+    bas('cikis').addEventListener('click', () => { modalKapat(); signOut(); });
+  }, 'kucuk');
+}
+
 /* Standart içe aktarma penceresi. Yapıştır → önizle → yaz.
    Supabase'e elle girmeye gerek kalmasın diye. */
 function standartIceAktar() {
@@ -1972,6 +2074,8 @@ async function eylemCalistir(el) {
     GOREV_FILTRE = el.dataset.deger;
     return render();
   }
+
+  if (e === 'standartlara') { location.hash = '#/standartlar'; return; }
 
   if (e === 'standart-ice-aktar') return standartIceAktar();
 
@@ -2505,9 +2609,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   egilmeyiBagla();
 
-  $('#search').addEventListener('click', () => toast('Arama Adım 5\'te gelecek.'));
   $$('#user-chip, #user-tile').forEach(el =>
-    el.addEventListener('click', () => { location.hash = '#/ayarlar'; }));
+    el.addEventListener('click', hesapPenceresi));
 
   boot();
 });
