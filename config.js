@@ -7,9 +7,9 @@ const APP = {
   name:     'NIZAM | Studio',
   short:    'NIZAM Studio',
   owner:    'Nizam Soft',
-  version: 'v0.9.5',
+  version: 'v0.9.6',
   build:    '2026-08-20',
-  stage:    'Adım 4 · Tema yenilendi',
+  stage: 'Adım 4 · Standartlar gruplandı',
 };
 
 /* Supabase bağlantısı.
@@ -55,6 +55,11 @@ const MODUL_SABLON = [
 ];
 
 /* Her projede kendiliğinden açılan kova */
+/* Standart grupları — sıralama buradaki sıradır.
+   Listede olmayan bir grup adı yazılırsa sona eklenir, engellenmez. */
+const STANDART_GRUPLARI = ['Arayüz', 'Veri & Çıktı', 'Bildirim', 'Yedekleme', 'Güvenlik'];
+const VARSAYILAN_GRUP = 'Arayüz';
+
 const GENEL_MODUL = 'Proje Geneli';
 
 /* Etiket karşılıkları */

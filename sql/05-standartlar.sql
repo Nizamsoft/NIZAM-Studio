@@ -12,6 +12,7 @@
 create table if not exists public.standards (
   id          uuid primary key default gen_random_uuid(),
   ad          text        not null unique,
+  grup        text        not null default 'Arayüz',
   ozet        text        not null default '',
   tarif       text        not null default '',
   sira        int         not null default 0,

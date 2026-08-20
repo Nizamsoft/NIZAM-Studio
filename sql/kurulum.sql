@@ -342,6 +342,7 @@ create policy "yonetici tum profilleri okur" on public.profiles for select
 create table if not exists public.standards (
   id          uuid primary key default gen_random_uuid(),
   ad          text        not null unique,
+  grup        text        not null default 'Arayüz',
   ozet        text        not null default '',
   tarif       text        not null default '',
   sira        int         not null default 0,
@@ -440,3 +441,14 @@ insert into public.standards (ad, ozet, tarif, sira) values
   8
 )
 on conflict (ad) do nothing;
+
+
+-- Eski kurulumlar için: grup alanı sonradan eklendi ------------------------
+alter table public.standards
+  add column if not exists grup text not null default 'Arayüz';
+
+update public.standards set grup = 'Veri & Çıktı'
+ where grup = 'Arayüz' and ad in ('Excel / PDF Çıktı', 'Tarih Filtresi', 'Dosya Yükleme');
+
+update public.standards set grup = 'Bildirim'
+ where grup = 'Arayüz' and ad in ('Bildirim Merkezi');

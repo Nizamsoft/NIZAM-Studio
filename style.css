@@ -1230,6 +1230,19 @@ html { background: var(--bg); }
   }
   .mini-btn:hover { background: none; color: var(--ink-dim); }
 }
+/* Standart grupları -------------------------------------------------------- */
+
+.standart-grup .grup-govde { padding: 4px 10px 10px; border-top: 1px solid var(--line-3); }
+.standart-grup .grup-govde .standart { margin: 8px 0 0; background: var(--surface-2); }
+.standart-grup .grup-govde .standart:first-child { margin-top: 8px; }
+/* Pencerelerdeki grup başlığı (görev açarken, standart seçerken) */
+.grup-etiket {
+  display: block; margin: 12px 0 6px;
+  font-size: 10px; font-weight: 600; letter-spacing: .09em; text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.field > .grup-etiket:first-of-type { margin-top: 6px; }
+
 /* ==========================================================================
    MOBİL
    ========================================================================== */

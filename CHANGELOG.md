@@ -1,5 +1,25 @@
 # Değişiklik Günlüğü
 
+## v0.9.6 — 21 Ağustos 2026
+**Standartlar gruplandı**
+
+Sekiz standart düz liste halindeydi; artık başlıklar altında toplanıyor.
+
+| Grup | Standartlar |
+|---|---|
+| Arayüz | Açılış Ekranı · Login · Menü · Ayarlar |
+| Veri & Çıktı | Excel / PDF Çıktı · Tarih Filtresi · Dosya Yükleme |
+| Bildirim | Bildirim Merkezi |
+
+- Gruplar başta kapalı gelir; birini açınca diğeri kapanır
+- Standart düzenleme penceresine **Grup** alanı eklendi — hazır adlardan
+  seçilebilir ya da yeni bir ad yazılabilir
+- Görev açarken ve standart seçerken de listeler gruplu görünür
+- Boş grup listelenmez; `Yedekleme` ve `Güvenlik` öneri olarak duruyor,
+  ilk standart eklenince listede belirir
+
+> Kurulum: `sql/06-gruplar.sql` dosyasını Supabase'de bir kez çalıştır.
+
 ## v0.9.5 — 21 Ağustos 2026
 **Standartlar alt çubuğa eklendi**
 

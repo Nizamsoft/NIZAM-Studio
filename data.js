@@ -382,6 +382,26 @@ const DB = {
     await this.yukle();
   },
 
+  /* Standartları gruplara böler. Sıra config.js'teki STANDART_GRUPLARI'dır;
+     orada olmayan bir grup adı sona eklenir. Boş gruplar listelenmez. */
+  standartGruplari() {
+    const kova = new Map();
+    this.standartlar.forEach(st => {
+      const g = (st.grup || VARSAYILAN_GRUP).trim() || VARSAYILAN_GRUP;
+      if (!kova.has(g)) kova.set(g, []);
+      kova.get(g).push(st);
+    });
+
+    const sirala = ad => {
+      const i = STANDART_GRUPLARI.indexOf(ad);
+      return i === -1 ? STANDART_GRUPLARI.length : i;
+    };
+
+    return [...kova.entries()]
+      .map(([ad, liste]) => ({ ad, liste }))
+      .sort((a, b) => sirala(a.ad) - sirala(b.ad) || a.ad.localeCompare(b.ad, 'tr'));
+  },
+
   async standartKaydet(id, alanlar) {
     yazmaKontrol();
     const q = id

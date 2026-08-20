@@ -34,6 +34,8 @@ let SON_EKRAN      = '';
 const ACIK_MODUL    = new Set();
 const ACIK_SAYFA    = new Set();
 const ACIK_STANDART = new Set();
+/* Gruplar akordeon: aynı anda yalnızca biri açık kalır. */
+let ACIK_GRUP = null;
 
 /* ---------- İkonlar ---------- */
 
@@ -271,7 +273,7 @@ const VIEWS = {
         <span>Bir görev bu standartlardan birine dokunuyorsa, tarifi promptun içine
         kendiliğinden yapıştırılır. Aynı şeyi her seferinde yazmazsın.</span>
       </div>
-      ${DB.standartlar.map(standartKarti).join('')}
+      ${DB.standartGruplari().map(grupKarti).join('')}
     `;
   },
 
@@ -557,6 +559,33 @@ function stageNote(text) {
   return `<div class="section"><div class="note">
     ${svg(ICON.info, 15)}<span>${text}</span>
   </div></div>`;
+}
+
+/* Düzenleme penceresindeki grup önerileri: sabit liste + veride geçen adlar. */
+function grupSecenekleri() {
+  const varOlan = DB.standartlar.map(st => (st.grup || '').trim()).filter(Boolean);
+  return [...new Set([...STANDART_GRUPLARI, ...varOlan])];
+}
+
+/* Bir standart grubu. Başlığa basınca açılır; başka bir grup açılınca kapanır. */
+function grupKarti(g, i = 0) {
+  const acik = ACIK_GRUP === g.ad;
+  const kac  = g.liste.length;
+
+  return `
+    <div class="card modul standart-grup" style="--i:${i}">
+      <div class="modul-bas ${acik ? 'acik' : ''}" data-eylem="standart-grup-ac" data-ad="${esc(g.ad)}"
+           role="button" tabindex="0" aria-expanded="${acik}">
+        <span class="chev">${svg(ICON.chevron, 15)}</span>
+        <span class="modul-ikon">${svg(ICON.katman, 16)}</span>
+        <span class="modul-yazi">
+          <span class="modul-ad">${esc(g.ad)}</span>
+          <span class="modul-alt">${kac} standart</span>
+        </span>
+      </div>
+
+      ${acik ? `<div class="grup-govde">${g.liste.map(standartKarti).join('')}</div>` : ''}
+    </div>`;
 }
 
 function standartKarti(st, i = 0) {
@@ -1408,10 +1437,12 @@ function yeniGorevHtml() {
     ${DB.standartlar.length ? `
       <div class="field">
         <span>Nizam Standartları <em class="ipucu">tikledigin standardın tarifi prompta girer</em></span>
-        <div class="secenek-serit">
-          ${DB.standartlar.map(st => `<button class="ss ${YENI.standartlar.includes(st.id) ? 'sec' : ''}"
-            data-yg="standart" data-deger="${st.id}" type="button">${esc(st.ad)}</button>`).join('')}
-        </div>
+        ${DB.standartGruplari().map(g => `
+          <span class="grup-etiket">${esc(g.ad)}</span>
+          <div class="secenek-serit">
+            ${g.liste.map(st => `<button class="ss ${YENI.standartlar.includes(st.id) ? 'sec' : ''}"
+              data-yg="standart" data-deger="${st.id}" type="button">${esc(st.ad)}</button>`).join('')}
+          </div>`).join('')}
       </div>` : ''}
 
     <div class="gk-meta">
@@ -1589,13 +1620,15 @@ function standartSor(mevcut) {
 
     const ciz = () => `
       ${modalBaslik(ICON.katman, 'Hangi standartlar kullanılacak?', 'Tiklediklerinin tarifi promptun içine girer.')}
-      <div class="mod-grid">
-        ${DB.standartlar.map(st => `
-          <button class="mod ${secili.includes(st.id) ? 'sec' : ''}" data-st="${st.id}" type="button">
-            <span>${esc(st.ad)}</span>
-            <span class="tik">${secili.includes(st.id) ? svg(ICON.tik, 13) : ''}</span>
-          </button>`).join('')}
-      </div>
+      ${DB.standartGruplari().map(g => `
+        <span class="grup-etiket">${esc(g.ad)}</span>
+        <div class="mod-grid">
+          ${g.liste.map(st => `
+            <button class="mod ${secili.includes(st.id) ? 'sec' : ''}" data-st="${st.id}" type="button">
+              <span>${esc(st.ad)}</span>
+              <span class="tik">${secili.includes(st.id) ? svg(ICON.tik, 13) : ''}</span>
+            </button>`).join('')}
+        </div>`).join('')}
       <div class="modal-alt">
         <button class="btn btn-ghost" data-st-iptal="1" type="button">Vazgeç</button>
         <button class="btn btn-primary" data-st-tamam="1" type="button"><span>Kaydet</span></button>
@@ -1631,6 +1664,15 @@ function standartDuzenle(id) {
              placeholder="Örn. Tarih Filtresi" maxlength="60" autocomplete="off">
     </label>
     <label class="field">
+      <span>Grup <em class="ipucu">listede hangi başlığın altında duracak</em></span>
+      <input type="text" id="sd-grup" list="sd-gruplar" maxlength="40" autocomplete="off"
+             value="${esc(st ? (st.grup || VARSAYILAN_GRUP) : VARSAYILAN_GRUP)}"
+             placeholder="Örn. Arayüz">
+      <datalist id="sd-gruplar">
+        ${grupSecenekleri().map(g => `<option value="${esc(g)}"></option>`).join('')}
+      </datalist>
+    </label>
+    <label class="field">
       <span>Kısa özet <em class="ipucu">listede görünür</em></span>
       <input type="text" id="sd-ozet" value="${esc(st ? st.ozet : '')}"
              placeholder="Örn. Gün · Hafta · Ay · Aralık" maxlength="90" autocomplete="off">
@@ -1650,6 +1692,7 @@ function standartDuzenle(id) {
     $('[data-sd="iptal"]', kutu).addEventListener('click', modalKapat);
     $('[data-sd="kaydet"]', kutu).addEventListener('click', async () => {
       const ad    = $('#sd-ad', kutu).value.trim();
+      const grup  = $('#sd-grup', kutu).value.trim() || VARSAYILAN_GRUP;
       const ozet  = $('#sd-ozet', kutu).value.trim();
       const tarif = $('#sd-tarif', kutu).value.trim();
 
@@ -1659,8 +1702,9 @@ function standartDuzenle(id) {
       const btn = $('[data-sd="kaydet"] span', kutu);
       btn.textContent = 'Kaydediliyor…';
       try {
-        await DB.standartKaydet(id, { ad, ozet, tarif });
+        await DB.standartKaydet(id, { ad, grup, ozet, tarif });
         modalKapat();
+        ACIK_GRUP = grup;
         if (id) ACIK_STANDART.add(id);
         render();
         toast(id ? 'Standart güncellendi.' : 'Standart eklendi.');
@@ -1754,6 +1798,14 @@ async function eylemCalistir(el) {
 
   if (e === 'filtre') {
     GOREV_FILTRE = el.dataset.deger;
+    return render();
+  }
+
+  if (e === 'standart-grup-ac') {
+    const ad = el.dataset.ad;
+    /* Akordeon: açık olana basınca kapanır, başkasına basınca öteki kapanır. */
+    ACIK_GRUP = ACIK_GRUP === ad ? null : ad;
+    ACIK_STANDART.clear();
     return render();
   }
 
