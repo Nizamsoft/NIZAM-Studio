@@ -26,6 +26,12 @@ python3 -m http.server 8080
 # tarayıcıda: http://localhost:8080
 ```
 
+## Veritabanı kurulumu
+
+Yeni bir Supabase projesinde tek adım:
+`sql/kurulum.sql` dosyasının tamamını SQL Editor'e yapıştır ve çalıştır.
+Tekrar çalıştırmak zarar vermez.
+
 ## Durum
 
 | Aşama | İçerik | Durum |
