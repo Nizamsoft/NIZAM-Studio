@@ -1,5 +1,14 @@
 # Değişiklik Günlüğü
 
+## v0.8.7 — 21 Ağustos 2026
+**Alt çubuk daha da aşağı indi**
+
+Yazıların altında kalan pay silindi — sekme adları artık ekranın dibine oturuyor.
+
+- Çubuk yüksekliği 61 → 47,5 piksel
+- Sekme alt payı 8 → 3 piksel, satır kutusunun bıraktığı fazlalık kaldırıldı
+- Simge ile yazı arasındaki aralık 4 → 3 piksel
+
 ## v0.8.6 — 21 Ağustos 2026
 **Alt çubuk: ölçüm sonucu ve görünürlük**
 

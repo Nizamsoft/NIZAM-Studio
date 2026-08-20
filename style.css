@@ -1303,7 +1303,7 @@ html { background: var(--bg); }
 @media (max-width: 900px) {
   #tabbar {
     display: flex; flex: 0 0 auto;
-    padding: 6px 6px 0;
+    padding: 4px 6px 0;
     margin: 0; border-radius: 0;
     /* Zemin sayfadan belirgin biçimde açık: çubuğun nerede bittiği görünsün.
        Aynı renk olunca alttaki güvenli alan "boşluk" gibi okunuyordu. */
@@ -1315,10 +1315,13 @@ html { background: var(--bg); }
 
   .tab {
     display: flex; flex-direction: column; align-items: center; justify-content: center;
-    gap: 4px; flex: 1; position: relative;
-    padding: 7px 0 8px; border-radius: 12px;
+    gap: 3px; flex: 1; position: relative;
+    /* Alt pay bilerek çok küçük: yazı ekranın dibine otursun. */
+    padding: 6px 0 3px; border-radius: 12px;
     color: var(--ink-dim); font-size: 10.5px;
   }
+  /* Satır kutusunun yazının altında bıraktığı boşluğu siler. */
+  .tab span { line-height: 1; }
   .tab svg { width: 20px; height: 20px; }
 
   .tab::before {
