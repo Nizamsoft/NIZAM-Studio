@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.8.4 — 21 Ağustos 2026
+
+- Uygulama kutusu artık dinamik görünüm yüksekliğinde (`dvh`). `inset: 0` küçük görünümü
+  veriyordu (çubuk yukarıda kalıyordu), `lvh` büyük görünümü veriyordu (çubuk ekranın
+  altına taşıyordu). Doğrusu ikisinin ortasındaki dinamik yükseklikmiş
+
 ## v0.8.3 — 21 Ağustos 2026
 **Alt çubuk sorununun asıl sebebi bulundu**
 
