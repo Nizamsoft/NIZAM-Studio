@@ -1,5 +1,14 @@
 # Değişiklik Günlüğü
 
+## v0.8.9 — 21 Ağustos 2026
+**Alt çubuk iyice saydamlaştı**
+
+Arkasındaki liste artık net biçimde gözüküyor.
+
+- Zemin koyuluğu %62–78'den %10–30'a indi
+- Bulanıklık 22 → 14 piksel, arkadaki içerik seçilebiliyor
+- Üst çizgi silikleştirildi
+
 ## v0.8.8 — 21 Ağustos 2026
 **Alt çubuk buzlu cam oldu**
 

@@ -1308,11 +1308,11 @@ html { background: var(--bg); }
     position: absolute; left: 0; right: 0; bottom: 0; z-index: 20;
     padding: 4px 6px 0;
     margin: 0; border-radius: 0;
-    background: linear-gradient(180deg, rgba(37, 34, 32, .62), rgba(15, 14, 13, .78));
-    backdrop-filter: blur(22px) saturate(160%);
-    -webkit-backdrop-filter: blur(22px) saturate(160%);
-    border-top: 1px solid rgba(255, 255, 255, .09);
-    box-shadow: 0 -1px 0 var(--isik);
+    /* Neredeyse saydam: arkadaki liste okunacak kadar gözüksün. */
+    background: linear-gradient(180deg, rgba(15, 14, 13, .10), rgba(15, 14, 13, .30));
+    backdrop-filter: blur(14px) saturate(150%);
+    -webkit-backdrop-filter: blur(14px) saturate(150%);
+    border-top: 1px solid rgba(255, 255, 255, .06);
     box-sizing: border-box;
   }
   /* Cam desteklenmiyorsa düz koyu zemin. */
