@@ -1,5 +1,16 @@
 # Değişiklik Günlüğü
 
+## v0.8.6 — 21 Ağustos 2026
+**Alt çubuk: ölçüm sonucu ve görünürlük**
+
+Cihaz ölçümü yerleşimin zaten doğru olduğunu gösterdi: iPhone 15'te ekran 852,
+üst durum çubuğu 59, uygulamaya verilen alan 793 ve çubuğun altında **0 piksel**
+boşluk var. Görülen "boşluk" çubuğun kendi zemininin sayfa zeminiyle aynı renkte
+olmasından kaynaklanıyormuş — çubuğun nerede bittiği anlaşılmıyordu.
+
+- Çubuğun zemini belirgin biçimde açıldı, üst kenarına ışık çizgisi eklendi
+- Artık çubuğun ekranın dibine kadar indiği gözle görülüyor
+
 ## v0.8.5 — 21 Ağustos 2026
 
 - Ayarlar → Bakım'a **Ekran ölçüleri** eklendi. Cihazın gerçek sayılarını gösteriyor:

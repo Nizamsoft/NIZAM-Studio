@@ -1305,9 +1305,11 @@ html { background: var(--bg); }
     display: flex; flex: 0 0 auto;
     padding: 6px 6px 0;
     margin: 0; border-radius: 0;
-    border-top: 1px solid var(--line-2);
-    background: linear-gradient(180deg, var(--rail-ust), var(--rail));
-    box-shadow: 0 -14px 30px -24px rgba(0, 0, 0, .95);
+    /* Zemin sayfadan belirgin biçimde açık: çubuğun nerede bittiği görünsün.
+       Aynı renk olunca alttaki güvenli alan "boşluk" gibi okunuyordu. */
+    background: linear-gradient(180deg, var(--surface-3), var(--surface-2));
+    border-top: 1px solid var(--line-parlak);
+    box-shadow: 0 -1px 0 var(--isik), 0 -16px 34px -26px rgba(0, 0, 0, .95);
     box-sizing: border-box;
   }
 
