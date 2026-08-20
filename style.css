@@ -173,7 +173,6 @@ h1, h2, h3, .brand-name, .loader-name, .num {
 }
 
 a { color: var(--red); text-decoration: none; }
-a:hover { color: var(--red-ink); }
 button { font-family: inherit; color: inherit; }
 .hidden { display: none !important; }
 .spacer { flex: 1; }
@@ -302,12 +301,10 @@ button { font-family: inherit; color: inherit; }
   font-size: 12.5px; font-weight: 500; cursor: pointer;
   transition: background .16s ease, transform .12s var(--ease), border-color .16s ease;
 }
-.btn:hover { background: var(--surface-3); }
 .btn:active { transform: scale(.97); }
 .btn svg { width: 15px; height: 15px; }
 
 .btn-primary { background: var(--red); color: #fff; font-weight: 600; border-color: var(--red); }
-.btn-primary:hover { background: var(--red-parlak); }
 .btn-ghost { background: var(--surface-2); border-color: var(--line); color: var(--ink-soft); }
 .btn-block { width: 100%; height: 46px; font-size: 14.5px; }
 
@@ -346,7 +343,6 @@ button { font-family: inherit; color: inherit; }
   color: var(--ink-soft); font-size: 13px;
   transition: background .16s ease, color .16s ease;
 }
-.nav-item:hover { background: var(--surface-2); color: var(--ink); }
 .nav-item svg { width: 18px; height: 18px; flex-shrink: 0; }
 .nav-item.active {
   background: var(--surface-3); color: var(--ink-strong); font-weight: 600;
@@ -367,7 +363,6 @@ button { font-family: inherit; color: inherit; }
   background: var(--surface-2); border: 1px solid var(--bar-bos); cursor: pointer;
   transition: background .16s ease;
 }
-.user-chip:hover { background: var(--surface-3); }
 /* Baş harf kutusu metal — kırmızı yalnızca logo, ana buton, aktif sekme
    ve "Acil"de kullanılır; avatar beşinci yer olmasın. */
 .avatar {
@@ -420,7 +415,6 @@ button { font-family: inherit; color: inherit; }
   box-shadow: inset 0 1px 0 var(--isik);
   transition: border-color .16s ease, transform .12s var(--ease);
 }
-.hesap:hover  { border-color: var(--line-parlak); }
 .hesap:active { transform: scale(.97); }
 .hesap-yazi { display: flex; flex-direction: column; align-items: flex-end; min-width: 0; }
 .hesap .user-role {
@@ -538,20 +532,6 @@ svg .dolgu > * { fill: currentColor; fill-opacity: .22; }
               0 8px 24px -16px rgba(var(--k-renk), .55),
               0 10px 22px -14px rgba(0, 0, 0, .95);
 }
-.stat[class*="k-"]:hover {
-  --k-cizgi: rgba(var(--k-renk), .58);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .13),
-              inset 0 -1px 0 rgba(0, 0, 0, .45),
-              0 0 0 1px rgba(var(--k-renk), .18),
-              0 10px 30px -14px rgba(var(--k-renk), .8),
-              0 16px 30px -16px rgba(0, 0, 0, .95);
-}
-.stat:hover {
-  transform: translate3d(0, -2px, 0);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .13),
-              inset 0 -1px 0 rgba(0, 0, 0, .45),
-              0 16px 30px -16px rgba(0, 0, 0, .95);
-}
 /* Rakam kendi renginde hafifçe parlasın. */
 .stat-num           { text-shadow: 0 0 22px rgba(255, 255, 255, .12); }
 .stat-num.c-check   { text-shadow: 0 0 20px rgba(107, 147, 232, .40); }
@@ -657,7 +637,6 @@ svg .dolgu > * { fill: currentColor; fill-opacity: .22; }
   cursor: pointer;
   transition: background .16s ease, border-color .16s ease, transform .12s var(--ease);
 }
-.proje:hover  { background: var(--surface-2); border-color: var(--line-parlak); }
 .proje:active { transform: scale(.99); }
 .proje:focus-visible { outline: 2px solid var(--metal-1); outline-offset: 2px; }
 
@@ -703,7 +682,6 @@ svg .dolgu > * { fill: currentColor; fill-opacity: .22; }
   display: flex; align-items: center; gap: 11px; padding: 13px 15px; cursor: pointer;
   transition: background .16s ease;
 }
-.modul-bas:hover { background: var(--surface-2); }
 .modul-bas:focus-visible { outline: 2px solid var(--metal-1); outline-offset: -2px; }
 .modul-bas .chev { display: flex; color: var(--ink-dim); flex-shrink: 0; transition: transform .2s var(--ease); }
 .modul-bas.acik .chev { transform: rotate(90deg); }
@@ -726,7 +704,6 @@ svg .dolgu > * { fill: currentColor; fill-opacity: .22; }
   padding: 10px 15px 10px 41px; border-bottom: 1px solid var(--line-3);
 }
 .sayfa:last-child { border-bottom: 0; }
-.sayfa:hover { background: var(--surface-2); }
 .sayfa-nokta { width: 6px; height: 6px; border-radius: 999px; flex-shrink: 0; }
 .sayfa-ad { font-size: 12.5px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sayfa-say { font-size: 11px; color: var(--ink-dim); margin-left: auto; }
@@ -737,7 +714,6 @@ svg .dolgu > * { fill: currentColor; fill-opacity: .22; }
   padding: 11px 15px 11px 41px; color: var(--ink-dim); font-size: 12px; cursor: pointer;
   border-top: 1px solid var(--line-3);
 }
-.sayfa-ekle:hover { color: var(--ink-soft); background: var(--surface-2); }
 
 .modul-araclar { display: flex; gap: 6px; padding: 9px 15px 11px 38px; border-top: 1px solid var(--line-3); }
 .mini-link {
@@ -745,15 +721,12 @@ svg .dolgu > * { fill: currentColor; fill-opacity: .22; }
   background: none; border: 0; padding: 5px 7px; border-radius: 7px;
   color: var(--ink-dim); font-family: inherit; font-size: 11.5px; cursor: pointer;
 }
-.mini-link:hover { background: var(--surface-3); color: var(--ink-soft); }
-.mini-link.tehlike:hover { color: var(--red-ink); background: var(--red-soft); }
 
 .mini-btn {
   display: flex; align-items: center; justify-content: center;
   width: 28px; height: 28px; flex-shrink: 0; margin-left: 4px;
   background: none; border: 0; border-radius: 7px; color: var(--ink-dim); cursor: pointer;
 }
-.mini-btn:hover { background: var(--red-soft); color: var(--red-ink); }
 
 .btn-wide { width: 100%; justify-content: center; height: 44px; margin-top: 4px; }
 
@@ -791,7 +764,6 @@ svg .dolgu > * { fill: currentColor; fill-opacity: .22; }
 .modal-alt .btn { flex: 1; justify-content: center; height: 42px; font-size: 13.5px; }
 
 .btn-tehlike { background: var(--red); border-color: var(--red); color: #fff; font-weight: 600; }
-.btn-tehlike:hover { background: var(--red-parlak); }
 
 /* sihirbaz adım çizgisi */
 .steps { display: flex; align-items: center; gap: 7px; margin-bottom: 20px; }
@@ -805,7 +777,6 @@ svg .dolgu > * { fill: currentColor; fill-opacity: .22; }
   width: 34px; height: 34px; border-radius: 10px; border: 2px solid transparent;
   cursor: pointer; padding: 0; transition: transform .12s var(--ease);
 }
-.renk:hover { transform: scale(1.06); }
 .renk.sec { border-color: var(--ink); box-shadow: 0 0 0 3px var(--surface), 0 0 0 4px var(--metal-1); }
 
 /* büyük seçim satırları */
@@ -817,7 +788,6 @@ svg .dolgu > * { fill: currentColor; fill-opacity: .22; }
   color: var(--ink); font-family: inherit; cursor: pointer;
   transition: border-color .16s ease, background .16s ease;
 }
-.sc:hover { border-color: var(--line-parlak); }
 .sc-yazi { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1; }
 .sc-ad  { font-size: 13.5px; font-weight: 600; }
 .sc-alt { font-size: 11.5px; color: var(--ink-faint); }
@@ -839,7 +809,6 @@ svg .dolgu > * { fill: currentColor; fill-opacity: .22; }
   color: var(--ink); font-family: inherit; font-size: 13px; cursor: pointer;
   transition: border-color .16s ease, background .16s ease;
 }
-.mod:hover { border-color: var(--line-parlak); }
 .mod span:first-child { flex: 1; text-align: left; }
 .mod.sec { border-color: var(--red); background: var(--red-soft); }
 
@@ -894,7 +863,6 @@ svg .dolgu > * { fill: currentColor; fill-opacity: .22; }
   padding: 10px 15px 10px 62px; border-bottom: 1px solid var(--line-3);
   cursor: pointer; background: var(--yuva-2);
 }
-.gorev:hover { background: var(--surface-2); }
 .gorev-no { font-size: 11px; color: var(--ink-dim); flex-shrink: 0; width: 54px; }
 .gorev-baslik { font-size: 12.5px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .gorev-bos { padding: 12px 15px 12px 62px; font-size: 12px; color: var(--ink-dim); background: var(--yuva-2); }
@@ -903,7 +871,6 @@ svg .dolgu > * { fill: currentColor; fill-opacity: .22; }
   padding: 10px 15px 10px 62px; color: var(--ink-dim); font-size: 12px;
   border-bottom: 1px solid var(--line-3);
 }
-.gorev-ekle:hover { color: var(--ink-soft); background: var(--surface-2); }
 
 /* Bana Atananlar listesi */
 .filtre { display: flex; gap: 7px; margin-bottom: 14px; flex-wrap: wrap; }
@@ -912,7 +879,6 @@ svg .dolgu > * { fill: currentColor; fill-opacity: .22; }
   background: var(--surface-2); color: var(--ink-soft);
   font-family: inherit; font-size: 12px; cursor: pointer;
 }
-.f:hover { border-color: var(--line-parlak); }
 .f.on { background: var(--surface-3); color: var(--ink); border-color: var(--line-parlak-2); font-weight: 600; }
 .f em { font-style: normal; color: var(--ink-dim); margin-left: 6px; font-size: 11px; }
 
@@ -922,7 +888,6 @@ svg .dolgu > * { fill: currentColor; fill-opacity: .22; }
   border-bottom: 1px solid var(--line-3); cursor: pointer;
 }
 .gsatir:last-child { border-bottom: 0; }
-.gsatir:hover { background: var(--surface-2); }
 .gsol { width: 4px; align-self: stretch; border-radius: 999px; flex-shrink: 0; }
 .gorta { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1; }
 .gust { display: flex; align-items: center; gap: 9px; min-width: 0; }
@@ -946,7 +911,6 @@ svg .dolgu > * { fill: currentColor; fill-opacity: .22; }
   background: var(--surface-2); border: 1px solid var(--line); color: var(--ink-dim);
   display: flex; align-items: center; justify-content: center; cursor: pointer;
 }
-.gk-x:hover { background: var(--surface-3); color: var(--ink-soft); }
 
 .gk-baslik { font-size: 17px; font-weight: 600; line-height: 1.35; margin: 0; }
 .gk-yol { font-size: 11.5px; color: var(--ink-faint); margin: 5px 0 0; }
@@ -960,7 +924,6 @@ svg .dolgu > * { fill: currentColor; fill-opacity: .22; }
   transition: background .16s ease, color .16s ease, border-color .16s ease;
 }
 .serit .st[disabled] { cursor: default; }
-.serit .st:not([disabled]):hover { border-color: var(--line-parlak-2); color: var(--ink-soft); }
 .serit .st.gecti { color: var(--ink-soft); background: var(--surface-3); }
 .serit .st.simdi { font-weight: 700; }
 .serit .st.simdi.todo  { color: var(--ink);          border-color: var(--line-parlak-2); background: var(--surface-3); }
@@ -996,9 +959,7 @@ svg .dolgu > * { fill: currentColor; fill-opacity: .22; }
 }
 
 .btn-onay { background: var(--st-done); border-color: var(--st-done); color: #fff; font-weight: 600; }
-.btn-onay:hover { background: var(--st-done-parlak); }
 .btn-red { background: var(--surface-2); border-color: var(--red-cizgi); color: var(--red-ink); }
-.btn-red:hover { background: var(--red-soft); }
 
 /* seçenek şeritleri (yeni görev penceresi) */
 .secenek-serit { display: flex; gap: 6px; flex-wrap: wrap; }
@@ -1007,7 +968,6 @@ svg .dolgu > * { fill: currentColor; fill-opacity: .22; }
   background: var(--surface-2); color: var(--ink-soft);
   font-family: inherit; font-size: 12px; cursor: pointer;
 }
-.ss:hover { border-color: var(--line-parlak); }
 .ss.sec { background: var(--surface-3); color: var(--ink); border-color: var(--metal-1); font-weight: 600; }
 .ss.acil-ss.sec { background: var(--red-soft); color: var(--red-ink-soft); border-color: var(--red-cizgi); }
 
@@ -1033,7 +993,6 @@ svg .dolgu > * { fill: currentColor; fill-opacity: .22; }
   display: flex; align-items: center; gap: 11px; padding: 13px 15px; cursor: pointer;
   transition: background .16s ease;
 }
-.standart-bas:hover { background: var(--surface-2); }
 .standart-bas:focus-visible { outline: 2px solid var(--metal-1); outline-offset: -2px; }
 .standart-bas .chev { display: flex; color: var(--ink-dim); flex-shrink: 0; transition: transform .2s var(--ease); }
 .standart-bas.acik .chev { transform: rotate(90deg); }
@@ -1056,7 +1015,6 @@ svg .dolgu > * { fill: currentColor; fill-opacity: .22; }
   background: var(--surface-2); border: 1px solid var(--line); color: var(--ink-soft);
 }
 .std-etiket.ekle { cursor: pointer; color: var(--ink-dim); font-family: inherit; }
-.std-etiket.ekle:hover { border-color: var(--line-parlak); color: var(--ink-soft); }
 
 /* ==========================================================================
    METİN PENCERESİ (prompt · kimlik dosyası)
@@ -1110,7 +1068,6 @@ html { background: var(--bg); }
   background: linear-gradient(180deg, var(--red-parlak), var(--red));
   box-shadow: 0 8px 20px -8px rgba(229,52,42,.55), inset 0 1px 0 rgba(255,255,255,.22);
 }
-.btn-primary:hover { background: linear-gradient(180deg, var(--red-acik), var(--red)); }
 .btn-ghost { background: linear-gradient(180deg, var(--surface-2), var(--kart-alt)); box-shadow: inset 0 1px 0 var(--isik); }
 
 /* ---------- İlerleme çubuğu ---------- */
@@ -1133,10 +1090,6 @@ html { background: var(--bg); }
   content: ""; position: absolute; top: 0; left: 0; right: 0; height: 2px;
   background: linear-gradient(90deg, var(--p1), transparent 68%);
 }
-.proje:hover { background:
-    linear-gradient(152deg, var(--pg), transparent 42%),
-    linear-gradient(180deg, var(--kart-ust), var(--kart-alt));
-  border-color: var(--line-parlak); }
 
 .proje-rozet {
   background: linear-gradient(140deg, var(--p1), var(--p2));
@@ -1176,13 +1129,14 @@ html { background: var(--bg); }
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .tilt:hover {
+  .modul-ikon { transition: transform .25s var(--ease); }
+  @media (hover: hover) {
+.tilt:hover {
     transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) translate3d(0, -3px, 0);
   }
-  .tilt:hover .parlama { opacity: 1; }
-  .modul-bas:hover .modul-ikon,
-  .standart-bas:hover .modul-ikon { transform: translate3d(0,-1px,0); }
-  .modul-ikon { transition: transform .25s var(--ease); }
+.tilt:hover .parlama { opacity: 1; }
+.modul-bas:hover .modul-ikon, .standart-bas:hover .modul-ikon { transform: translate3d(0,-1px,0); }
+  }
 }
 
 /* ---------- Giriş hareketleri (yalnızca ekran değişince) ---------- */
@@ -1233,7 +1187,6 @@ html { background: var(--bg); }
   box-shadow: inset 0 1px 0 var(--isik);
 }
 .sc.tehlikeli .sc-ikon { background: var(--red-soft); color: var(--red-ink); }
-.sc.tehlikeli:hover { border-color: var(--red-cizgi); }
 .renkler-buyuk { gap: 11px; }
 .renkler-buyuk .renk { width: 42px; height: 42px; border-radius: 13px; }
 
@@ -1283,7 +1236,6 @@ html { background: var(--bg); }
   box-shadow: inset 0 1px 0 var(--isik);
   transition: border-color .16s ease, transform .12s var(--ease);
 }
-.user-tile:hover  { border-color: var(--line-parlak); }
 .user-tile:active { transform: scale(.97); }
 .user-tile .avatar {
   box-shadow: 0 0 0 2px var(--rail), 0 0 0 3px var(--line-parlak);
@@ -1365,8 +1317,7 @@ html { background: var(--bg); }
   .sayfa, .modul-bas, .gorev, .gsatir, .standart-bas, .sayfa-ekle, .gorev-ekle {
     min-height: var(--dokunma);
   }
-  .mini-btn, .mini-link { min-width: 38px; min-height: 38px; }
-}
+  .mini-btn, .mini-link { min-width: 38px; min-height: 38px; }}
 
 /* --- Sayfa geçişi biraz kısaldı --- */
 @keyframes viewIn { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: none; } }
@@ -1378,28 +1329,24 @@ html { background: var(--bg); }
 /* Dokunmatikte :hover parmağı kaldırınca üzerinde kalıyor ve düğmeler
    basılı gibi görünüyordu. Hover yalnızca gerçek fare varken çalışsın. */
 /* Dokunmatikte klavye yok; parmakla basınca kalan halka yalnızca kir yapıyor. */
+/* Dokunmatik cihaz: imleç yok, klavye yok.
+   Hover kuralları artık "hover: hover" içinde, buraya hiç düşmüyor. */
 @media (hover: none) {
+  /* Parmakla basınca kalan odak halkası yalnızca kir yapıyor. */
   :focus, :focus-visible { outline: none !important; }
-}
 
-@media (hover: none) {
-  .mini-btn:hover, .mini-link:hover, .btn:hover, .f:hover, .ss:hover,
-  .proje:hover, .sayfa:hover, .gorev:hover, .gsatir:hover,
-  .modul-bas:hover, .standart-bas:hover, .nav-item:hover, .user-tile:hover,
-  .sayfa-ekle:hover, .gorev-ekle:hover, .sc:hover, .mod:hover, .renk:hover {
-    background: inherit; border-color: inherit; color: inherit; transform: none;
-  }
-  .mini-btn:hover { background: none; color: var(--ink-dim); }
-
-  /* Dokunma tepkisi karartma değil, hafif küçülme olsun.
+  /* Dokunma tepkisi karartma değil, hafif küçülme.
      Zemini koyulaştırmak koyu temada "sönüyor" gibi okunuyordu. */
   .proje:active, .gorev:active, .gsatir:active, .sayfa:active,
-  .modul-bas:active, .standart-bas:active, .row[data-hs]:active, .hm-sat:active {
-    background: inherit;
+  .modul-bas:active, .standart-bas:active, .row[data-hs]:active, .hm-sat:active,
+  .btn:active, .mini-btn:active, .mini-link:active, .ss:active, .mod:active,
+  .sc:active, .renk:active, .nav-item:active, .sayfa-ekle:active, .gorev-ekle:active {
+    background: inherit; border-color: inherit; color: inherit;
     transform: scale(.985);
     transition: transform .1s var(--ease);
   }
 }
+
 /* Hesap sayfası ------------------------------------------------------------ */
 
 /* Fotoğrafın altından açılan küçük menü. Kaynağı sağ üst köşe:
@@ -1441,7 +1388,6 @@ html { background: var(--bg); }
   transition: background .14s ease;
 }
 .hm-sat:first-of-type { border-top: 0; }
-.hm-sat:hover  { background: var(--surface-3); }
 .hm-sat:active { background: var(--surface-3); }
 .hm-sat .sat-ikon { width: 30px; height: 30px; margin-right: 10px; }
 .hm-ad { flex: 1; min-width: 0; }
@@ -1484,8 +1430,7 @@ html { background: var(--bg); }
 
 /* Masaüstünde yan menüde zaten logo var; üstte ikincisi gereksiz. */
 @media (min-width: 901px) {
-  #topbar .logo-kutu { display: none; }
-}
+  #topbar .logo-kutu { display: none; }}
 
 @media (max-width: 900px) {
   #sidebar { display: none; }
@@ -1542,14 +1487,15 @@ html { background: var(--bg); }
 }
 
 @media (max-width: 900px) {
-  .tilt:hover { transform: none; }
   .parlama { display: none; }
+  @media (hover: hover) {
+.tilt:hover { transform: none; }
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
-  .tilt { transform: none !important; }
-}
+  .tilt { transform: none !important; }}
 
 /* ==========================================================================
    ALT SEKME ÇUBUĞU
@@ -1577,15 +1523,13 @@ html { background: var(--bg); }
   }
   /* Cam desteklenmiyorsa düz koyu zemin. */
   @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-    #tabbar { background: linear-gradient(180deg, var(--surface-2), var(--cerceve)); }
-  }
+    #tabbar { background: linear-gradient(180deg, var(--surface-2), var(--cerceve)); }}
 
   /* Yalnızca uygulama kipinde: ana ekran çizgisinin payı çubuğun İÇİNE alınır.
      Zemin ekranın dibine iner, yazılar çizgiyle çakışmaz. */
   @media (display-mode: standalone) {
     #tabbar { padding-bottom: env(safe-area-inset-bottom, 0px); }
-    .view   { padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
-  }
+    .view   { padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }}
   html.uygulama #tabbar { padding-bottom: env(safe-area-inset-bottom, 0px); }
   html.uygulama .view   { padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
 
@@ -1658,5 +1602,63 @@ html { background: var(--bg); }
   .arti-btn:active { transform: scale(.92); }
   .arti-btn.hidden { display: none; }
   /* Artı gizliyse yuvası da daralsın, sekmeler ortaya kaysın. */
-  .tab-arti:has(.arti-btn.hidden) { flex: 0 0 0; }
+  .tab-arti:has(.arti-btn.hidden) { flex: 0 0 0; }}
+
+/* ==========================================================================
+   VURGU (HOVER) — YALNIZCA FARE VARSA
+   Dokunmatikte imleç yok; parmakla basınca hover kuralı tetiklenip
+   ekranda takılı kalıyordu. Hepsi tek yerde toplandı.
+   ========================================================================== */
+
+@media (hover: hover) {
+a:hover { color: var(--red-ink); }
+.btn:hover { background: var(--surface-3); }
+.btn-primary:hover { background: var(--red-parlak); }
+.nav-item:hover { background: var(--surface-2); color: var(--ink); }
+.user-chip:hover { background: var(--surface-3); }
+.hesap:hover { border-color: var(--line-parlak); }
+.stat[class*="k-"]:hover {
+  --k-cizgi: rgba(var(--k-renk), .58);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .13),
+              inset 0 -1px 0 rgba(0, 0, 0, .45),
+              0 0 0 1px rgba(var(--k-renk), .18),
+              0 10px 30px -14px rgba(var(--k-renk), .8),
+              0 16px 30px -16px rgba(0, 0, 0, .95);
+}
+.stat:hover {
+  transform: translate3d(0, -2px, 0);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .13),
+              inset 0 -1px 0 rgba(0, 0, 0, .45),
+              0 16px 30px -16px rgba(0, 0, 0, .95);
+}
+.proje:hover { background: var(--surface-2); border-color: var(--line-parlak); }
+.modul-bas:hover { background: var(--surface-2); }
+.sayfa:hover { background: var(--surface-2); }
+.sayfa-ekle:hover { color: var(--ink-soft); background: var(--surface-2); }
+.mini-link:hover { background: var(--surface-3); color: var(--ink-soft); }
+.mini-link.tehlike:hover { color: var(--red-ink); background: var(--red-soft); }
+.mini-btn:hover { background: var(--red-soft); color: var(--red-ink); }
+.btn-tehlike:hover { background: var(--red-parlak); }
+.renk:hover { transform: scale(1.06); }
+.sc:hover { border-color: var(--line-parlak); }
+.mod:hover { border-color: var(--line-parlak); }
+.gorev:hover { background: var(--surface-2); }
+.gorev-ekle:hover { color: var(--ink-soft); background: var(--surface-2); }
+.f:hover { border-color: var(--line-parlak); }
+.gsatir:hover { background: var(--surface-2); }
+.gk-x:hover { background: var(--surface-3); color: var(--ink-soft); }
+.serit .st:not([disabled]):hover { border-color: var(--line-parlak-2); color: var(--ink-soft); }
+.btn-onay:hover { background: var(--st-done-parlak); }
+.btn-red:hover { background: var(--red-soft); }
+.ss:hover { border-color: var(--line-parlak); }
+.standart-bas:hover { background: var(--surface-2); }
+.std-etiket.ekle:hover { border-color: var(--line-parlak); color: var(--ink-soft); }
+.btn-primary:hover { background: linear-gradient(180deg, var(--red-acik), var(--red)); }
+.proje:hover { background:
+    linear-gradient(152deg, var(--pg), transparent 42%),
+    linear-gradient(180deg, var(--kart-ust), var(--kart-alt));
+  border-color: var(--line-parlak); }
+.sc.tehlikeli:hover { border-color: var(--red-cizgi); }
+.user-tile:hover { border-color: var(--line-parlak); }
+.hm-sat:hover { background: var(--surface-3); }
 }

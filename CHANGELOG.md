@@ -1,5 +1,23 @@
 # Değişiklik Günlüğü
 
+## v0.10.5 — 21 Ağustos 2026
+**Yapışkan vurgu bitti**
+
+Dokununca öğeler "fare üzerine gelmiş" gibi renk değiştirip o renkte
+kalıyordu. Sebep: dokunmatikte parmak kalkınca tarayıcı `:hover` durumunu
+öğenin üzerinde bırakıyor.
+
+Tek tek düzeltmek yerine **stil dosyasındaki bütün vurgu kuralları toplandı**
+ve `@media (hover: hover)` içine alındı — yani yalnızca gerçek imleç varsa
+çalışıyorlar. Dokunmatik cihaza artık hiç düşmüyorlar.
+
+- 35 vurgu kuralı taşındı; dosyanın sonunda tek bir bölümde toplandı
+- Eski "dokunmatikte hover'ı geri al" yaması gereksiz kaldı, silindi
+- Dokunma tepkisi (hafif küçülme) tüm düğme ve satırlara yayıldı
+
+Doğrulandı: masaüstünde proje kartının kenarı üzerine gelince açılıyor
+(`#3c3734` → `#4a4440`), mobilde hiç değişmiyor.
+
 ## v0.10.4 — 21 Ağustos 2026
 **Dokunma davranışı düzeltildi**
 
