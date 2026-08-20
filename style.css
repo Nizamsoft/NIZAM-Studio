@@ -390,6 +390,215 @@ button { font-family: inherit; color: inherit; }
   animation: riseIn .3s var(--ease) both;
 }
 
+
+/* ==========================================================================
+   PROJE KARTLARI
+   ========================================================================== */
+
+.proje-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(268px, 1fr)); gap: 13px; }
+
+.proje {
+  padding: 16px 16px 14px;
+  display: flex; flex-direction: column; gap: 12px;
+  cursor: pointer;
+  transition: background .16s ease, border-color .16s ease, transform .12s var(--ease);
+}
+.proje:hover  { background: var(--surface-2); border-color: #2e323a; }
+.proje:active { transform: scale(.99); }
+.proje:focus-visible { outline: 2px solid var(--metal-1); outline-offset: 2px; }
+
+.proje-ust { display: flex; align-items: flex-start; gap: 11px; }
+.proje-rozet {
+  width: 34px; height: 34px; border-radius: 10px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-family: "Space Grotesk", system-ui; font-weight: 700; font-size: 12.5px; color: #fff;
+}
+.proje-ad-kutu { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1; }
+.proje-ad {
+  font-family: "Space Grotesk", system-ui; font-size: 14.5px; font-weight: 600;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.proje-meta { font-size: 11.5px; color: var(--ink-faint); }
+
+.proje-orta { display: flex; align-items: center; gap: 10px; }
+.proje-orta .bar { flex: 1; }
+.proje-pct { font-size: 11.5px; color: var(--ink-soft); min-width: 34px; text-align: right; }
+
+.proje-alt {
+  display: flex; gap: 14px; flex-wrap: wrap;
+  font-size: 11px; color: var(--ink-dim);
+  border-top: 1px solid var(--line-3); padding-top: 11px;
+}
+.proje-alt b { color: var(--ink-soft); font-weight: 600; }
+
+/* ==========================================================================
+   PROJE DETAYI
+   ========================================================================== */
+
+.ozet-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 20px; }
+.oz { padding: 14px 15px; display: flex; flex-direction: column; }
+.oz-label { font-size: 9.5px; letter-spacing: 2px; text-transform: uppercase; color: var(--ink-dim); font-weight: 600; }
+.oz-num { font-family: "Space Grotesk", system-ui; font-size: 26px; font-weight: 700; margin-top: 5px; line-height: 1; }
+.oz-num em { font-style: normal; color: var(--ink-dim); font-size: 17px; }
+.oz-sub { font-size: 11px; color: var(--ink-faint); margin-top: 4px; }
+
+.modul { margin-bottom: 9px; overflow: hidden; }
+.modul-genel { background: linear-gradient(180deg, #191c20, var(--surface)); border-color: #2c3038; }
+
+.modul-bas {
+  display: flex; align-items: center; gap: 11px; padding: 13px 15px; cursor: pointer;
+  transition: background .16s ease;
+}
+.modul-bas:hover { background: var(--surface-2); }
+.modul-bas:focus-visible { outline: 2px solid var(--metal-1); outline-offset: -2px; }
+.modul-bas .chev { display: flex; color: var(--ink-dim); flex-shrink: 0; transition: transform .2s var(--ease); }
+.modul-bas.acik .chev { transform: rotate(90deg); }
+.modul-bas svg { fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+
+.modul-ikon {
+  width: 30px; height: 30px; border-radius: 8px; flex-shrink: 0;
+  background: var(--surface-3); color: var(--ink-soft);
+  display: flex; align-items: center; justify-content: center;
+}
+.modul-yazi { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1; }
+.modul-ad { font-size: 13.5px; font-weight: 600; }
+.modul-alt { font-size: 11px; color: var(--ink-faint); }
+.modul-bar { display: flex; align-items: center; gap: 9px; width: 130px; flex-shrink: 0; }
+.modul-bar .bar { flex: 1; }
+.modul-pct { font-size: 11px; color: var(--ink-soft); width: 32px; text-align: right; }
+
+.sayfalar { border-top: 1px solid var(--line-3); background: #141619; }
+.sayfa {
+  display: flex; align-items: center; gap: 11px;
+  padding: 10px 15px 10px 41px; border-bottom: 1px solid var(--line-3);
+}
+.sayfa:last-child { border-bottom: 0; }
+.sayfa:hover { background: var(--surface-2); }
+.sayfa-nokta { width: 6px; height: 6px; border-radius: 999px; flex-shrink: 0; }
+.sayfa-ad { font-size: 12.5px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sayfa-say { font-size: 11px; color: var(--ink-dim); margin-left: auto; }
+.sayfa-bos { padding: 13px 15px 13px 41px; font-size: 12px; color: var(--ink-dim); }
+
+.sayfa-ekle {
+  display: flex; align-items: center; gap: 9px;
+  padding: 11px 15px 11px 41px; color: var(--ink-dim); font-size: 12px; cursor: pointer;
+  border-top: 1px solid var(--line-3);
+}
+.sayfa-ekle:hover { color: var(--ink-soft); background: var(--surface-2); }
+.sayfa-ekle svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+
+.modul-araclar { display: flex; gap: 6px; padding: 9px 15px 11px 38px; border-top: 1px solid var(--line-3); }
+.mini-link {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: none; border: 0; padding: 5px 7px; border-radius: 7px;
+  color: var(--ink-dim); font-family: inherit; font-size: 11.5px; cursor: pointer;
+}
+.mini-link:hover { background: var(--surface-3); color: var(--ink-soft); }
+.mini-link.tehlike:hover { color: #e5675e; background: var(--red-soft); }
+.mini-link svg { fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+
+.mini-btn {
+  display: flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; flex-shrink: 0; margin-left: 4px;
+  background: none; border: 0; border-radius: 7px; color: var(--ink-dim); cursor: pointer;
+}
+.mini-btn:hover { background: var(--red-soft); color: #e5675e; }
+.mini-btn svg { fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+
+.btn-wide { width: 100%; justify-content: center; height: 44px; margin-top: 4px; }
+
+/* ==========================================================================
+   İSKELET (yükleniyor)
+   ========================================================================== */
+
+.iskelet { padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.i-satir { height: 11px; border-radius: 6px; background: linear-gradient(90deg, #1d2025, #24272c, #1d2025);
+  background-size: 200% 100%; animation: kayan 1.4s linear infinite; }
+.i-satir.k { width: 55%; height: 15px; }
+.i-satir.o { width: 75%; }
+@keyframes kayan { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+
+/* ==========================================================================
+   MODAL
+   ========================================================================== */
+
+.modal-perde {
+  position: fixed; inset: 0; z-index: 600;
+  display: flex; align-items: center; justify-content: center; padding: 20px;
+  background: rgba(6,7,9,.72); backdrop-filter: blur(3px);
+  animation: fadeIn .18s ease both;
+}
+.modal-kutu {
+  width: 100%; max-width: 420px; max-height: calc(100vh - 40px); overflow-y: auto;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg);
+  padding: 22px 22px 18px;
+  box-shadow: 0 26px 60px -22px rgba(0,0,0,.8);
+  animation: riseIn .26s var(--ease) both;
+}
+.modal-h { font-size: 17px; font-weight: 600; margin: 0; }
+.modal-s { font-size: 12.5px; color: var(--ink-faint); margin: 4px 0 18px; }
+.modal-alt { display: flex; gap: 10px; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--line-2); }
+.modal-alt .btn { flex: 1; justify-content: center; height: 42px; font-size: 13.5px; }
+
+.btn-tehlike { background: var(--red); border-color: var(--red); color: #fff; font-weight: 600; }
+.btn-tehlike:hover { background: #f0483e; }
+
+/* sihirbaz adım çizgisi */
+.steps { display: flex; align-items: center; gap: 7px; margin-bottom: 20px; }
+.steps .sd { height: 4px; border-radius: 999px; background: #24272c; flex: 1; transition: background .25s ease; }
+.steps .sd.on  { background: linear-gradient(90deg, var(--metal-1), var(--metal-2)); }
+.steps .sd.cur { background: var(--red); }
+
+/* renk seçimi */
+.renkler { display: flex; gap: 9px; flex-wrap: wrap; }
+.renk {
+  width: 34px; height: 34px; border-radius: 10px; border: 2px solid transparent;
+  cursor: pointer; padding: 0; transition: transform .12s var(--ease);
+}
+.renk:hover { transform: scale(1.06); }
+.renk.sec { border-color: var(--ink); box-shadow: 0 0 0 3px var(--surface), 0 0 0 4px var(--metal-1); }
+
+/* büyük seçim satırları */
+.secim { display: grid; gap: 9px; }
+.sc {
+  display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
+  border: 1px solid var(--line); background: var(--surface-2);
+  border-radius: var(--radius-sm); padding: 13px 14px;
+  color: var(--ink); font-family: inherit; cursor: pointer;
+  transition: border-color .16s ease, background .16s ease;
+}
+.sc:hover { border-color: #343941; }
+.sc-yazi { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1; }
+.sc-ad  { font-size: 13.5px; font-weight: 600; }
+.sc-alt { font-size: 11.5px; color: var(--ink-faint); }
+.sc.sec { border-color: var(--red); background: var(--red-soft); }
+
+.tik {
+  width: 20px; height: 20px; border-radius: 6px; flex-shrink: 0;
+  border: 1.5px solid var(--line); display: flex; align-items: center; justify-content: center;
+}
+.sc.sec .tik, .mod.sec .tik { background: var(--red); border-color: var(--red); }
+.tik svg { fill: none; stroke: #fff; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+
+/* modül tikleri */
+.mod-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.mod {
+  display: flex; align-items: center; gap: 10px;
+  border: 1px solid var(--line); background: var(--surface-2);
+  border-radius: var(--radius-sm); padding: 11px 12px;
+  color: var(--ink); font-family: inherit; font-size: 13px; cursor: pointer;
+  transition: border-color .16s ease, background .16s ease;
+}
+.mod:hover { border-color: #343941; }
+.mod span:first-child { flex: 1; text-align: left; }
+.mod.sec { border-color: var(--red); background: var(--red-soft); }
+
+.note-kucuk { margin-top: 14px; font-size: 11.5px; }
+.note-kucuk b { color: var(--ink-soft); font-weight: 600; }
+
+.empty-icon.uyari svg { stroke: #e5675e; }
+.empty .btn { align-self: center; }
+
 /* ==========================================================================
    MOBİL
    ========================================================================== */
@@ -416,6 +625,18 @@ button { font-family: inherit; color: inherit; }
   .stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .stat-num { font-size: 26px; }
 
+  .proje-grid { grid-template-columns: 1fr; }
+  .ozet-grid  { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .modul-bar  { width: 84px; }
+  .modul-pct  { display: none; }
+  .modal-perde { align-items: flex-end; padding: 0; }
+  .modal-kutu {
+    max-width: none; border-radius: 18px 18px 0 0; border-bottom: 0;
+    padding-bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+    max-height: 92vh;
+  }
+  #topbar .btn[id="topbar-action"] span { display: none; }
+
   #tabbar {
     display: flex; flex-shrink: 0;
     padding: 8px 8px calc(14px + env(safe-area-inset-bottom, 0px));
@@ -429,10 +650,6 @@ button { font-family: inherit; color: inherit; }
   .tab svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
   .tab.active { color: var(--ink-strong); font-weight: 600; }
   .tab.active svg { stroke: var(--red); stroke-width: 1.95; }
-}
-
-@media (min-width: 901px) {
-  #btn-back { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {

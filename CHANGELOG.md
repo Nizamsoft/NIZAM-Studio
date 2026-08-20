@@ -1,5 +1,22 @@
 # Değişiklik Günlüğü
 
+## v0.3.0 — 20 Ağustos 2026
+**Adım 2 · Projeler, modüller ve sayfalar**
+
+- Üç yeni tablo: `projects`, `modules`, `pages` — hepsi satır güvenliği (RLS) altında
+- Okuma Studio'ya kabul edilen herkese açık, yazma yalnızca yöneticiye
+- **Yeni Proje sihirbazı** — 4 adım, tek yazı alanı (firma adı), gerisi tıklama
+  - Firma + proje rengi · Platform · Veritabanı durumu · Modüller
+- Seçilen modüller şablon sayfalarıyla birlikte tek seferde kurulur
+- Her projede otomatik **Proje Geneli** kovası açılır, silinemez
+- Projeler ekranı: renk rozeti, durum, ilerleme çubuğu, modül/sayfa/görev sayıları
+- Proje detayı: 4 özet kutusu + açılır modül ağacı, altında sayfalar
+- Modül ekleme/silme/adlandırma, sayfa ekleme/silme
+- Panel gerçek proje sayılarını gösteriyor, yan menüde proje sayacı canlı
+- Yükleniyor iskeleti, hata ekranı ve "Tekrar dene" düğmesi
+- Mobilde pencereler alttan açılan sayfa olarak geliyor
+- İlerleme yüzdesi her yerde hesaplanıyor — görevler Adım 3'te bağlanacak
+
 ## v0.2.1 — 20 Ağustos 2026
 **Gerçek logo**
 
