@@ -1534,7 +1534,7 @@ html { background: var(--bg); }
   #topbar .btn { width: 44px; height: 44px; padding: 0; }
 
   /* Alt pay çubuk kadar: içerik cam çubuğun altından akıp geçsin. */
-  .view { padding: 16px 16px 64px; }
+  .view { padding: 16px 16px 96px; }
 
   .stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .stat-num { font-size: 26px; }
@@ -1585,111 +1585,78 @@ html { background: var(--bg); }
   .tilt { transform: none !important; }}
 
 /* ==========================================================================
-   ALT SEKME ÇUBUĞU
-   Uygulama sütununun son çocuğu. Alt boşluk SIFIR — hiçbir güvenli alan payı
-   eklenmiyor, çubuk ekranın en dibine yapışıyor.
+   ALT SEKME ÇUBUĞU — yüzen cam hap
+   Ekranın dibine yapışmaz; kenarlardan boşluk bırakıp havada durur.
+   Simgeler kendi kutusunda değil: kap camın kendisi.
    ========================================================================== */
 
 @media (max-width: 900px) {
-  /* Buzlu cam çubuk: içeriğin üstünde durur, arkasındakini bulanıklaştırır. */
   #tabbar {
-    display: flex;
+    display: flex; align-items: center;
     position: absolute; left: 0; right: 0; bottom: 0; z-index: 20;
-    /* Tarayıcıda alt pay yok: Safari'nin kendi çubuğu zaten orada duruyor. */
-    padding: 4px 6px 0;
-    margin: 0; border-radius: 0;
-    /* Buzlu cam: üstü neredeyse saydam, dibe doğru hafifçe koyulaşır. */
-    background: linear-gradient(180deg,
-      color-mix(in srgb, var(--bg) 6%, transparent) 0%,
-      color-mix(in srgb, var(--surface-2) 52%, transparent) 55%,
-      color-mix(in srgb, var(--surface-2) 72%, transparent) 100%);
-    backdrop-filter: blur(14px) saturate(150%);
-    -webkit-backdrop-filter: blur(14px) saturate(150%);
-    border-top: 1px solid rgba(255, 255, 255, .06);
+    margin: 0 14px 14px;
+    padding: 6px; border-radius: 26px;
+    background: rgba(255, 255, 255, .055);
+    backdrop-filter: blur(34px) saturate(190%);
+    -webkit-backdrop-filter: blur(34px) saturate(190%);
+    /* Üstte ışık kırılması, altta gölge, çevrede ince cam kenar. */
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .22),
+                inset 0 -1px 0 rgba(0, 0, 0, .35),
+                0 0 0 1px rgba(255, 255, 255, .09),
+                0 22px 44px -20px rgba(0, 0, 0, .95);
     box-sizing: border-box;
   }
-  /* Cam desteklenmiyorsa düz koyu zemin. */
+  /* Cam desteklenmiyorsa düz zemin — okunaklılık bozulmasın. */
   @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-    #tabbar { background: linear-gradient(180deg, var(--surface-2), var(--cerceve)); }}
+    #tabbar { background: var(--surface-2); }
+  }
 
-  /* Yalnızca uygulama kipinde: ana ekran çizgisinin payı çubuğun İÇİNE alınır.
-     Zemin ekranın dibine iner, yazılar çizgiyle çakışmaz. */
+  /* Uygulama kipinde ana ekran çizgisinin üstünde dursun. */
   @media (display-mode: standalone) {
-    #tabbar { padding-bottom: env(safe-area-inset-bottom, 0px); }
-    .view   { padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }}
-  html.uygulama #tabbar { padding-bottom: env(safe-area-inset-bottom, 0px); }
-  html.uygulama .view   { padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
+    #tabbar { margin-bottom: max(14px, calc(env(safe-area-inset-bottom, 0px) - 8px)); }
+    .view   { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
+  }
+  html.uygulama #tabbar { margin-bottom: max(14px, calc(env(safe-area-inset-bottom, 0px) - 8px)); }
+  html.uygulama .view   { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
 
   .tab {
     display: flex; flex-direction: column; align-items: center; justify-content: center;
-    gap: 4px; flex: 1; position: relative;
-    /* Alt pay bilerek çok küçük: yazı ekranın dibine otursun. */
-    padding: 5px 0 3px;
+    gap: 5px; flex: 1; position: relative;
+    padding: 8px 0; border-radius: 20px;
     color: var(--ink-dim); font-size: 10px;
   }
-  .tab span { line-height: 1; white-space: nowrap; }
+  .tab span { line-height: 1; white-space: nowrap; position: relative; z-index: 2; }
+  .tab svg  { width: 23px; height: 23px; position: relative; z-index: 2; }
 
-  /* Simgeler kabartma kutularda: üstten ışık, alttan gölge. */
-  .tab-kut {
-    position: relative; overflow: hidden;
-    display: flex; align-items: center; justify-content: center;
-    width: 34px; height: 34px; border-radius: 12px;
-    background: linear-gradient(180deg, var(--surface-3), var(--kart-alt));
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .18),
-                inset 0 -1px 0 rgba(0, 0, 0, .55),
-                0 4px 8px -3px rgba(0, 0, 0, .9);
-    transition: background .2s ease, box-shadow .25s var(--ease), transform .3s var(--yay);
+  /* Aktif sekmenin arkasında cam kabarcık. */
+  .tab::before {
+    content: ''; position: absolute; inset: 2px; border-radius: 19px; z-index: 1;
+    background: linear-gradient(180deg, rgba(255, 255, 255, .20), rgba(255, 255, 255, .06));
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .40), 0 6px 14px -8px rgba(0, 0, 0, .9);
+    opacity: 0; transform: scale(.88);
+    transition: opacity .2s ease, transform .32s var(--yay);
   }
-  /* Kutunun üst yarısına düşen ışık — cam gibi parlasın. */
-  .tab-kut::after {
-    content: ''; position: absolute; left: 0; right: 0; top: 0; height: 52%;
-    background: linear-gradient(180deg, rgba(255, 255, 255, .12), transparent);
-    pointer-events: none;
-  }
-  .tab:active .tab-kut { transform: scale(.92); }
-  /* Hacimli simgeler: yan yüz kalınlık, üst yüz gradyan, ışık kırılma. */
-  .tab .i3 { width: 22px; height: 22px; stroke: none; overflow: visible;
-             filter: drop-shadow(0 1.5px 1.5px rgba(0, 0, 0, .8)); }
-  .tab .i3 * { stroke: none; }
-  .tab .i3 .yan   { fill: url(#yan-metal); }
-  .tab .i3 .yuz   { fill: url(#yuz-metal); }
-  .tab .i3 .kapak { fill: #8b827c; }
-  .tab .i3 .ray   { fill: #6f665f; }
-  .tab .i3 .isik  { fill: #fff; opacity: .5; }
-  .tab .i3 .oyuk  { fill: none; stroke: #35302c; stroke-width: 2.4;
-                    stroke-linecap: round; stroke-linejoin: round; }
+  .tab.active::before { opacity: 1; transform: none; }
+  .tab.active, .tab.active span { color: #fff; }
+  .tab.active span { font-weight: 600; }
+  .tab.active svg  { stroke: var(--red-acik); }
+  .tab.active .dolgu > * { fill: var(--red-acik); fill-opacity: .30; }
 
-  .tab.active .tab-kut {
-    background: linear-gradient(180deg, var(--red-acik), var(--red-koyu));
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .35),
-                inset 0 -1px 0 rgba(0, 0, 0, .3),
-                0 4px 12px -4px rgba(229, 52, 42, .85);
-  }
-  .tab.active .i3 .yan   { fill: url(#yan-kirmizi); }
-  .tab.active .i3 .yuz   { fill: url(#yuz-kirmizi); }
-  .tab.active .i3 .kapak { fill: #f09a92; }
-  .tab.active .i3 .ray   { fill: #d3766e; }
-  .tab.active .i3 .oyuk  { stroke: #a52a21; }
-  .tab.active, .tab.active span { color: var(--red-ink); font-weight: 600; }
-
-  /* Ortadaki artı: çubuğun üstüne taşar, sekme değil eylemdir. */
-  .tab-arti { flex: 0 0 72px; display: flex; justify-content: center; align-items: flex-start; }
+  /* Ortadaki artı hapın içinde, kendi ışığıyla ayrışıyor. */
+  .tab-arti { flex: 0 0 62px; display: flex; justify-content: center; align-items: center; }
   .arti-btn {
-    width: 50px; height: 50px; border-radius: 999px; margin-top: -15px;
+    width: 48px; height: 48px; border-radius: 999px; border: 0; padding: 0;
     display: flex; align-items: center; justify-content: center; cursor: pointer;
     background: linear-gradient(160deg, var(--red-acik), var(--red-koyu));
-    border: 0; padding: 0;
-    /* Koyu halka yok: cam çubuğun üstünde çember gibi okunuyordu.
-       Ayrışmayı yalnızca kırmızının kendi ışığı sağlıyor. */
-    box-shadow: 0 10px 24px -8px rgba(229, 52, 42, .9),
-                inset 0 1px 0 rgba(255, 255, 255, .32);
+    box-shadow: 0 8px 20px -6px rgba(229, 52, 42, .9),
+                inset 0 1px 0 rgba(255, 255, 255, .35);
     transition: transform .16s var(--yay);
   }
-  .arti-btn svg { width: 22px; height: 22px; fill: none; stroke: #fff; stroke-width: 2.4; stroke-linecap: round; }
+  .arti-btn svg { width: 22px; height: 22px; fill: none; stroke: #fff; stroke-width: 2.5; stroke-linecap: round; }
   .arti-btn:active { transform: scale(.92); }
   .arti-btn.hidden { display: none; }
-  /* Artı gizliyse yuvası da daralsın, sekmeler ortaya kaysın. */
-  .tab-arti:has(.arti-btn.hidden) { flex: 0 0 0; }}
+  .tab-arti:has(.arti-btn.hidden) { flex: 0 0 0; }
+}
 
 /* ==========================================================================
    VURGU (HOVER) — YALNIZCA FARE VARSA

@@ -131,79 +131,6 @@ function svg(ikon, boy = 16) {
   return `<svg viewBox="0 0 24 24" style="width:${boy}px;height:${boy}px">${dolgu}${cizgi}</svg>`;
 }
 
-/* Alt sekmelerin hacimli simgeleri.
-
-   Her simge üç katman:
-     yan  — 1,6 piksel aşağı kaydırılmış koyu kopya, kalınlığı o verir
-     yuz  — tepesi parlak, dibi koyu gradyanlı üst yüz
-     isik — üst kenardaki ince beyaz kırılma
-
-   Çizgi simgelerden ayrı tutuldu: menüde ve kartlarda hâlâ ICON kullanılıyor,
-   bu set yalnızca alt çubuğa ait. */
-const IKON3D = {
-  panel: kat(
-    '<rect x="3.2" y="3" width="7.4" height="7.4" rx="2.3"/>' +
-    '<rect x="13.4" y="3" width="7.4" height="7.4" rx="2.3"/>' +
-    '<rect x="3.2" y="13.2" width="7.4" height="7.4" rx="2.3"/>' +
-    '<rect x="13.4" y="13.2" width="7.4" height="7.4" rx="2.3"/>',
-    '<rect x="4.5" y="4.1" width="4.8" height="1.5" rx=".75"/>' +
-    '<rect x="14.7" y="4.1" width="4.8" height="1.5" rx=".75"/>'
-  ),
-
-  /* Klasör: arkada kapak, önde daha açık gövde — ikisi ayrı düzlem. */
-  folder:
-    '<g class="yan" transform="translate(0,1.6)">' +
-      '<path d="M2.4 7a2 2 0 0 1 2-2h4.3l2.1 2.2h8.8a2 2 0 0 1 2 2v8.4a2 2 0 0 1-2 2H4.4a2 2 0 0 1-2-2z"/>' +
-    '</g>' +
-    '<path class="kapak" d="M2.4 7a2 2 0 0 1 2-2h4.3l2.1 2.2h8.8a2 2 0 0 1 2 2v2.4H2.4z"/>' +
-    '<path class="yuz" d="M2.4 10.4h19.2v7.2a2 2 0 0 1-2 2H4.4a2 2 0 0 1-2-2z"/>' +
-    '<path class="isik" d="M3.4 10.9h17.2v1.1H3.4z"/>',
-
-  /* Görevler: kabartma levha, üstünde oyulmuş tik. */
-  check:
-    '<g class="yan" transform="translate(0,1.6)">' +
-      '<rect x="3.2" y="3.2" width="17.6" height="17.6" rx="5"/>' +
-    '</g>' +
-    '<rect class="yuz" x="3.2" y="3.2" width="17.6" height="17.6" rx="5"/>' +
-    '<path class="oyuk" d="M7.8 12.3l3 3 5.4-5.8"/>' +
-    '<path class="isik" d="M6.2 4.6h11.6a3 3 0 0 1 2.2 1H4a3 3 0 0 1 2.2-1z"/>',
-
-  /* Ayarlar: iki ray, üstlerinde hacimli düğmeler. */
-  ayar:
-    '<g class="yan" transform="translate(0,1.6)">' +
-      '<rect x="3" y="6.1" width="18" height="2.6" rx="1.3"/>' +
-      '<rect x="3" y="15.3" width="18" height="2.6" rx="1.3"/>' +
-      '<circle cx="15.6" cy="7.4" r="3.5"/>' +
-      '<circle cx="8.4" cy="16.6" r="3.5"/>' +
-    '</g>' +
-    '<rect class="ray" x="3" y="6.1" width="18" height="2.6" rx="1.3"/>' +
-    '<rect class="ray" x="3" y="15.3" width="18" height="2.6" rx="1.3"/>' +
-    '<circle class="yuz" cx="15.6" cy="7.4" r="3.5"/>' +
-    '<circle class="yuz" cx="8.4" cy="16.6" r="3.5"/>' +
-    '<path class="isik" d="M13.4 5.9a3.5 3.5 0 0 1 4.4 0 3.5 3.5 0 0 0-4.4 0zM6.2 15.1a3.5 3.5 0 0 1 4.4 0 3.5 3.5 0 0 0-4.4 0z"/>',
-
-  katman:
-    '<g class="yan" transform="translate(0,1.6)">' +
-      '<path d="M12 2.6l9.4 4.9-9.4 4.9-9.4-4.9z"/>' +
-    '</g>' +
-    '<path class="ray" d="M12 8.4l9.4 4.9-9.4 4.9-9.4-4.9z"/>' +
-    '<path class="yuz" d="M12 2.6l9.4 4.9-9.4 4.9-9.4-4.9z"/>' +
-    '<path class="isik" d="M12 3.9l6.9 3.6-1.6.8L12 5.6 6.7 8.3l-1.6-.8z"/>',
-};
-
-/* Aynı şekli iki kez basar: altta koyu kalınlık, üstte parlak yüz. */
-function kat(sekiller, isik = '') {
-  return `<g class="yan" transform="translate(0,1.6)">${sekiller}</g>` +
-         `<g class="yuz">${sekiller}</g>` +
-         (isik ? `<g class="isik">${isik}</g>` : '');
-}
-
-function svg3d(ad, boy = 19) {
-  const i = IKON3D[ad];
-  if (!i) return svg(ICON[ad], boy);
-  return `<svg class="i3" viewBox="0 0 24 24" style="width:${boy}px;height:${boy}px">${i}</svg>`;
-}
-
 /* ==========================================================================
    GÖRÜNÜMLER
    ========================================================================== */
@@ -1080,7 +1007,7 @@ function menuyuCiz() {
 
   const sekmeler = gorunur.filter(m => m.tab).map(m => `
     <a class="tab" href="#/${m.id}" data-route="${m.id}" draggable="false">
-      <span class="tab-kut">${svg3d(m.ikon, 19)}</span>
+      ${svg(ICON[m.ikon], 23)}
       <span>${esc(m.tabAd || m.ad)}</span>
     </a>`);
 

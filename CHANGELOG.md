@@ -1,5 +1,23 @@
 # Değişiklik Günlüğü
 
+## v0.13.0 — 21 Ağustos 2026
+**Alt çubuk: yüzen cam hap**
+
+Kabartma simge kutuları kaldırıldı. Modern cam dilinde simge kendi kutusunda
+durmaz — kap camın kendisidir. Kutular varken çubuk oyuncak gibi duruyordu.
+
+- Çubuk ekranın dibine yapışmıyor: kenarlardan 14 piksel boşluk bırakıp
+  havada duruyor, köşeleri 26 piksel yuvarlak
+- Zemin `blur(34px) saturate(190%)` — arkasından içerik geçiyor
+- Üst kenarda ışık kırılması, altta gölge, çevrede ince cam kenar
+- Aktif sekmenin arkasında **cam kabarcık** beliriyor; yaylanarak geliyor
+- Simgeler artık çıplak çizgi, 23 piksel. Aktif olanın çizgisi kırmızı,
+  yazısı beyaz
+- Uygulama kipinde hap ana ekran çizgisinin üstünde duruyor
+- Cam desteklenmeyen tarayıcıda düz zemine düşüyor
+
+Üç katmanlı 3D simge seti ve ona ait gradyanlar tümüyle silindi.
+
 ## v0.12.0 — 21 Ağustos 2026
 **Ekip yönetimi**
 
