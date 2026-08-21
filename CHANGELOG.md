@@ -1,5 +1,32 @@
 # Değişiklik Günlüğü
 
+## v0.18.0 — 21 Ağustos 2026
+**Açılış hızlandı, veri telefonda saklanıyor**
+
+**1 · Açılış çubuğu artık gerçekten bekliyor.** Eskiden animasyon oynuyor,
+bitince veri inmeye başlıyordu — o süre boşa gidiyordu. Şimdi veri animasyon
+sürerken iniyor. Bağlantı kötüyse üç saniyede bırakıyor, kalanı uygulama
+açıkken tamamlanıyor.
+
+**2 · Projeler ve sayılar telefonda saklanıyor.** İkinci açılıştan itibaren
+ekran anında doluyor; taze veri arkadan gelip yerine geçiyor.
+
+Ne saklanıyor: proje adı, renk, platform, palet, ilerleme sayıları.
+**Ne saklanmıyor:** yetkili kişi adı, telefonu, e-postası, görev başlıkları,
+notlar. Telefon başkasının eline geçse müşteri verisi orada durmuyor.
+Kayıt 313 bayt — ölçtüm.
+
+**3 · Başkası bir şey değiştirince yalnızca o tablo yenileniyor.** Canlı
+bağlantı hangi tablonun değiştiğini söylüyor; aynı anda gelen değişiklikler
+birleştirilip tek seferde tazeleniyor. Görev güncellemesi artık on tablo
+değil, iki tablo çekiyor.
+
+**4 · Uygulamaya geri dönünce sessiz tazeleme.** Telefon uygulamayı arka
+planda dondurunca canlı bağlantı kopuyor ve aradaki değişiklikler kaçıyordu.
+En fazla dakikada bir çalışıyor.
+
+**5 · Çıkışta saklanan veri siliniyor.**
+
 ## v0.17.4 — 21 Ağustos 2026
 **Proje kalıcı olarak silinebiliyor**
 

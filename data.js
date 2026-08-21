@@ -19,6 +19,8 @@ const DB = {
   sektorler: [],
   /* Logolar private kovada; adres her oturumda yeniden üretilir. */
   logoAdres: {},
+  sayimOnbellek: null,
+  panelOnbellek: null,
   standartlar: [],
   gorevStandart: [],
 
@@ -32,12 +34,30 @@ const DB = {
   kanal: null,
   _tazeleZaman: null,
 
+  /* Supabase tablo adı → bizim liste adımız. */
+  TABLO_ADI: {
+    projects: 'projeler', modules: 'moduller', pages: 'sayfalar',
+    tasks: 'gorevler', task_events: 'hareketler', profiles: 'kisiler',
+    standards: 'standartlar', task_standards: 'gorevStandart',
+    module_templates: 'sablonlar', sectors: 'sektorler',
+  },
+
   canliBasla(tazele) {
     if (!AUTH.bagli || this.kanal) return;
 
-    const tetikle = () => {
+    /* Değişen tabloları biriktirip tek seferde yeniliyoruz. Eskiden her
+       değişiklikte on tablo birden çekiliyordu. */
+    const bekleyen = new Set();
+
+    const tetikle = olay => {
+      const ad = this.TABLO_ADI[olay && olay.table];
+      if (ad) bekleyen.add(ad);
       clearTimeout(this._tazeleZaman);
-      this._tazeleZaman = setTimeout(tazele, 350);
+      this._tazeleZaman = setTimeout(() => {
+        const adlar = [...bekleyen];
+        bekleyen.clear();
+        tazele(adlar);
+      }, 350);
     };
 
     try {
@@ -86,6 +106,62 @@ const DB = {
     const sayim = {};
     this.KOLEKSIYONLAR.forEach(k => { sayim[k] = (paket.veri[k] || []).length; });
     return { surum: paket.surum, tarih: paket.tarih, sayim };
+  },
+
+  /* ---------- Tarayıcı önbelleği ----------
+     Yalnızca projeler ve sayılar saklanıyor. Görev başlıkları, yetkili kişi
+     bilgileri ve notlar cihaza yazılmıyor — telefon başkasının eline geçerse
+     müşteri verisi orada durmasın. */
+
+  ONBELLEK_ANAHTAR: 'ns.onbellek',
+
+  onbellekYaz() {
+    if (!this.yuklendi) return;
+    try {
+      const sayim = {};
+      this.projeler.forEach(p => { sayim[p.id] = this.sayim(p.id); });
+
+      const bugun = bugunTarih();
+      const paket = {
+        surum: APP.version,
+        zaman: Date.now(),
+        /* Hassas alanlar bilerek dışarıda: yetkili, telefon, eposta. */
+        projeler: this.projeler.map(p => ({
+          id: p.id, firma: p.firma, renk: p.renk, platform: p.platform,
+          veri: p.veri, sira: p.sira, arsiv: p.arsiv, logo: p.logo,
+          palet: p.palet || null, durum: p.durum,
+        })),
+        sayim,
+        panel: {
+          proje: this.projeler.length,
+          dev:   this.gorevleri({ durum: 'gelistiriliyor' }).length,
+          kont:  this.gorevleri({ durum: 'kontrolde' }).length,
+          bugun: this.gorevleri({ durum: 'tamamlandi' })
+                   .filter(g => (g.guncellendi || '').slice(0, 10) === bugun).length,
+        },
+      };
+      localStorage.setItem(this.ONBELLEK_ANAHTAR, JSON.stringify(paket));
+    } catch (e) { /* yer yoksa sessizce vazgeç */ }
+  },
+
+  onbellekOku() {
+    try {
+      const ham = localStorage.getItem(this.ONBELLEK_ANAHTAR);
+      if (!ham) return false;
+      const paket = JSON.parse(ham);
+      if (!paket || paket.surum !== APP.version || !paket.projeler) return false;
+
+      this.projeler      = paket.projeler;
+      this.sayimOnbellek = paket.sayim || {};
+      this.panelOnbellek = paket.panel || null;
+      return true;
+    } catch (e) { return false; }
+  },
+
+  onbellekSil() {
+    this.sayimOnbellek = null;
+    this.panelOnbellek = null;
+    try { localStorage.removeItem(this.ONBELLEK_ANAHTAR); } catch (e) {}
   },
 
   /* ---------- Okuma ---------- */
@@ -147,6 +223,7 @@ const DB = {
     adlar.forEach((ad, i) => this.yerlestir(ad, sonuclar[i]));
 
     if (adlar.includes('projeler')) await this.logolariTazele();
+    this.onbellekYaz();
   },
 
   async yukle() {
@@ -176,6 +253,7 @@ const DB = {
 
       this.yuklendi = true;
       await this.logolariTazele();
+      this.onbellekYaz();
     } catch (e) {
       this.hata = veriHatasi(e) + (e && e.tablo ? ` (${e.tablo})` : '');
       this.yuklendi = false;
@@ -213,6 +291,10 @@ const DB = {
 
   /* Bir projenin sayıları */
   sayim(pid) {
+    /* Veri henüz inmediyse önbellekteki sayıları göster — ekran boş kalmasın. */
+    if (!this.yuklendi && this.sayimOnbellek && this.sayimOnbellek[pid]) {
+      return this.sayimOnbellek[pid];
+    }
     const moduller = this.modulleri(pid);
     const modulIds = moduller.map(m => m.id);
     return Object.assign({

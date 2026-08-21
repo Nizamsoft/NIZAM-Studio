@@ -151,10 +151,12 @@ const VIEWS = {
     if (YUKLENIYOR) return iskeletler(4);
     if (DB.hata)    return hataKutusu(DB.hata);
 
-    const p    = DB.projeler;
-    const dev  = DB.gorevleri({ durum: 'gelistiriliyor' }).length;
-    const kont = DB.gorevleri({ durum: 'kontrolde' }).length;
-    const bugun = DB.gorevleri({ durum: 'tamamlandi' })
+    const p  = DB.projeler;
+    const on = (!DB.yuklendi && DB.panelOnbellek) ? DB.panelOnbellek : null;
+
+    const dev  = on ? on.dev  : DB.gorevleri({ durum: 'gelistiriliyor' }).length;
+    const kont = on ? on.kont : DB.gorevleri({ durum: 'kontrolde' }).length;
+    const bugun = on ? on.bugun : DB.gorevleri({ durum: 'tamamlandi' })
       .filter(g => (g.guncellendi || '').slice(0, 10) === bugunTarih()).length;
 
     const ilerleme = DB.ilerleme(DB.gorevler);
@@ -3895,6 +3897,8 @@ async function signOut() {
   DB.standartlar = []; DB.gorevStandart = [];
   ACIK_MODUL.clear(); ACIK_SAYFA.clear(); ACIK_STANDART.clear();
   DB.canliDur();
+  DB.onbellekSil();
+  document.removeEventListener('visibilitychange', geriDonunce);
   clearInterval(LOGO_ZAMANLAYICI);
   GOREV_FILTRE = '';
   modalHepsiniKapat();
@@ -3919,7 +3923,9 @@ async function uygulamayiAc() {
   $('#app').classList.remove('hidden');
   menuyuCiz();
   kullaniciYaz();
-  await veriTazele();
+  /* Açılışta zaten indi; ikinci kez çekmiyoruz. */
+  if (DB.yuklendi) { sayaclariYaz(); render(); }
+  else await veriTazele();
 
   /* Logo adresleri bir saat geçerli. Uygulama uzun süre açık kalırsa
      yarım saatte bir yenile ki logolar kaybolmasın. */
@@ -3930,11 +3936,31 @@ async function uygulamayiAc() {
   }, 30 * 60 * 1000);
 
   /* Başka biri bir şey değiştirdiğinde ekran kendiliğinden tazelensin */
-  DB.canliBasla(async () => {
-    try { await DB.yukle(); } catch (e) { return; }
+  DB.canliBasla(async adlar => {
+    try {
+      if (adlar && adlar.length) await DB.tazele(...adlar);
+      else await DB.yukle();
+    } catch (e) { return; }
     sayaclariYaz();
-    if (!$('.modal-perde')) render();
+    if (!$('.modal-perde') && !$('#sihirbaz')) render();
   });
+
+  /* Telefon uygulamayı arka planda dondurunca canlı bağlantı kopuyor ve
+     aradaki değişiklikler kaçıyor. Geri dönünce sessizce tazele. */
+  document.removeEventListener('visibilitychange', geriDonunce);
+  document.addEventListener('visibilitychange', geriDonunce);
+}
+
+/* Uygulamaya geri dönüldüğünde sessiz tazeleme — en fazla dakikada bir. */
+let SON_TAZELEME = 0;
+async function geriDonunce() {
+  if (document.hidden || !AUTH.bagli) return;
+  if (Date.now() - SON_TAZELEME < 60 * 1000) return;
+  SON_TAZELEME = Date.now();
+
+  try { await DB.yukle(); } catch (e) { return; }
+  sayaclariYaz();
+  if (!$('.modal-perde') && !$('#sihirbaz')) render();
 }
 
 function hataGoster(mesaj) {
@@ -3975,26 +4001,40 @@ function kullaniciYaz() {
    AÇILIŞ
    ========================================================================== */
 
-function runLoader() {
+/* Açılış çubuğu. Veri sözü verilirse son adımda onu bekler — çubuk gerçekten
+   bir şey beklemiş olur. Veri erken gelirse animasyon yine de tamamlanır. */
+function runLoader(veri) {
   const fill = $('.loader-fill');
   const msg  = $('.loader-msg');
+  if (!fill || !msg) return Promise.resolve();
   const steps = [
-    [20,  'Tema yükleniyor…'],
-    [45,  'Arayüz hazırlanıyor…'],
-    [70,  'Oturum denetleniyor…'],
-    [100, 'Hazır'],
+    [25, 'Tema yükleniyor…'],
+    [50, 'Oturum denetleniyor…'],
+    [80, veri ? 'Projeler geliyor…' : 'Arayüz hazırlanıyor…'],
   ];
 
-  let i = 0;
   return new Promise(resolve => {
-    const tick = () => {
-      if (i >= steps.length) { resolve(); return; }
-      const [pct, text] = steps[i++];
-      fill.style.width = pct + '%';
-      msg.textContent  = text;
-      setTimeout(tick, 210);
+    let i = 0;
+    const tick = async () => {
+      if (i < steps.length) {
+        const [pct, text] = steps[i++];
+        fill.style.width = pct + '%';
+        msg.textContent  = text;
+        setTimeout(tick, 190);
+        return;
+      }
+
+      if (veri) {
+        msg.textContent = 'Projeler geliyor…';
+        /* Bağlantı kötüyse açılışta takılıp kalmayalım: üç saniyeden fazla
+           bekletmiyoruz, kalanı uygulama açıkken tamamlanır. */
+        await Promise.race([veri, new Promise(r => setTimeout(r, 3000))]);
+      }
+      fill.style.width = '100%';
+      msg.textContent  = 'Hazır';
+      setTimeout(resolve, 160);
     };
-    setTimeout(tick, 260);
+    setTimeout(tick, 220);
   });
 }
 
@@ -4006,7 +4046,17 @@ async function boot() {
 
   AUTH.init();
 
-  const [, oturumVar] = await Promise.all([runLoader(), AUTH.restore()]);
+  const oturumVar = await AUTH.restore();
+
+  /* Veri, açılış animasyonu oynarken iniyor. Eskiden animasyon bitince
+     başlıyordu; o süre boşa gidiyordu. */
+  let veri = null;
+  if (oturumVar) {
+    DB.onbellekOku();                 /* varsa kayıtlı sayılarla ekran hemen dolsun */
+    veri = DB.yukle().catch(() => {}); /* hata varsa uygulama yine açılsın */
+  }
+
+  await runLoader(veri);
 
   const loader = $('#loader');
   loader.classList.add('fade-out');
