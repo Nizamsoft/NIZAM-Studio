@@ -40,6 +40,8 @@ const ACIK_STANDART = new Set();
 /* Gruplar akordeon: aynı anda yalnızca biri açık kalır. */
 let ACIK_GRUP = null;
 let ACIK_SABLON = null;
+/* Projeler ekranındaki bölümler. Varsayılanı kod belirler, kullanıcı değiştirir. */
+const ACIK_PROJE_BOLUM = {};
 
 /* ---------- İkonlar ---------- */
 
@@ -188,10 +190,36 @@ const VIEWS = {
         AUTH.yonetici ? 'Yeni Proje' : null, 'sihirbaz')}</div>`;
     }
 
-    return `
-      <span class="label">Devam eden</span>
-      <div class="proje-grid">${DB.projeler.map(projeKarti).join('')}</div>
-    `;
+    /* Üç kova: ilerlemeye göre. Yüzde elle girilmiyor, görevlerden hesaplanıyor. */
+    const kova = { calisilan: [], baslanmamis: [], tamamlanan: [] };
+    DB.projeler.forEach(p => {
+      const y = DB.sayim(p.id).yuzde;
+      if (y >= 100)     kova.tamamlanan.push(p);
+      else if (y > 0)   kova.calisilan.push(p);
+      else              kova.baslanmamis.push(p);
+    });
+
+    const bolum = (anahtar, ad, liste, varsayilanAcik) => {
+      if (!liste.length) return '';
+      const acik = ACIK_PROJE_BOLUM[anahtar] === undefined
+        ? varsayilanAcik
+        : ACIK_PROJE_BOLUM[anahtar];
+
+      return `
+        <div class="pgrup">
+          <button class="pgrup-bas ${acik ? 'acik' : ''}" data-eylem="proje-bolum"
+                  data-ad="${anahtar}" type="button" aria-expanded="${acik}">
+            <span class="chev">${svg(ICON.chevron, 15)}</span>
+            <span class="pgrup-ad">${ad}</span>
+            <span class="pgrup-say">${liste.length}</span>
+          </button>
+          ${acik ? `<div class="proje-grid">${liste.map(projeKarti).join('')}</div>` : ''}
+        </div>`;
+    };
+
+    return bolum('calisilan',   'Üstünde çalışılan', kova.calisilan,   true)
+         + bolum('baslanmamis', 'Başlanmamış',       kova.baslanmamis, false)
+         + bolum('tamamlanan',  'Tamamlanan',        kova.tamamlanan,  false);
   },
 
   /* ---------- Proje detayı ---------- */
@@ -475,6 +503,31 @@ const VIEWS = {
    PARÇA ÜRETİCİLER
    ========================================================================== */
 
+/* Logolar private kovadan geliyor; indirmesi bir saniye sürebiliyor.
+   Zemine doğrudan basmak yerine önce arka planda indirip sonra gösteriyoruz —
+   arada dönen gösterge duruyor, kutu boş kalmıyor.
+
+   Adres bir saatlik imzalıdır; süresi dolmuşsa indirme patlar ve baş harfe
+   düşeriz, kırık resim simgesi çıkmaz. */
+function logolariGoster() {
+  $$('[data-logo]').forEach(el => {
+    const adres = el.dataset.logo;
+    delete el.dataset.logo;
+
+    const resim = new Image();
+    resim.onload = () => {
+      el.style.backgroundImage = `url('${adres}')`;
+      el.classList.remove('yukleniyor');
+      el.classList.add('dolu');
+    };
+    resim.onerror = () => {
+      el.classList.remove('yukleniyor');
+      el.classList.add('yuklenemedi');
+    };
+    resim.src = adres;
+  });
+}
+
 /* Ekranın tepesi: logo, firma adı, platform ve tek ilerleme çubuğu.
    Dört ayrı istatistik kartının yerini aldı — rakamlar zaten durakların içinde. */
 function projeKunyesi(p) {
@@ -483,9 +536,10 @@ function projeKunyesi(p) {
 
   return `
     <div class="kunye">
-      <span class="kunye-logo ${adres ? 'dolu' : ''}"
-            ${adres ? `style="background-image:url('${esc(adres)}')"` : ''}>
-        ${adres ? '' : esc(basHarf(p.firma))}
+      <span class="kunye-logo ${adres ? 'yukleniyor' : ''}"
+            ${adres ? `data-logo="${esc(adres)}"` : ''}>
+        <span class="logo-harf">${esc(basHarf(p.firma))}</span>
+        ${adres ? '<span class="donen"></span>' : ''}
       </span>
       <span class="kunye-yazi">
         <h2>${esc(p.firma)}</h2>
@@ -609,11 +663,12 @@ function markaDuragi(p) {
 
   return `
     <div class="satir">Logo
-      <span class="mk-logo ${adres ? 'dolu' : ''}"
-            ${adres ? `style="background-image:url('${esc(adres)}')"` : ''}
+      <span class="mk-logo ${adres ? 'yukleniyor' : ''}"
+            ${adres ? `data-logo="${esc(adres)}"` : ''}
             data-eylem="${AUTH.yonetici ? 'logo-yukle' : ''}" data-proje="${p.id}"
             ${AUTH.yonetici ? 'role="button" tabindex="0"' : ''}>
-        ${adres ? '' : svg(ICON.folder, 16)}
+        <span class="logo-harf">${svg(ICON.folder, 16)}</span>
+        ${adres ? '<span class="donen"></span>' : ''}
       </span>
     </div>
     <div class="satir">Tema
@@ -1061,6 +1116,8 @@ function render() {
   }
 
   $$('[data-route]').forEach(el => el.classList.toggle('active', el.dataset.route === key));
+
+  logolariGoster();
 
   const logout = $('#btn-logout');
   if (logout) logout.addEventListener('click', signOut);
@@ -3105,6 +3162,13 @@ async function eylemCalistir(el) {
   }
 
   if (e === 'modul-ekle') return modulEkleAc(el.dataset.proje || el.dataset.id || rota().id);
+
+  if (e === 'proje-bolum') {
+    const ad = el.dataset.ad;
+    const suan = el.classList.contains('acik');
+    ACIK_PROJE_BOLUM[ad] = !suan;
+    return render();
+  }
 
   if (e === 'sablon-ac') {
     const ad = el.dataset.ad;

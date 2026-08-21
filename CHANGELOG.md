@@ -1,5 +1,27 @@
 # Değişiklik Günlüğü
 
+## v0.16.1 — 21 Ağustos 2026
+**Projeler açılır bölümlere ayrıldı · logo yüklenirken gösterge**
+
+**Projeler ekranı üç bölüm oldu:**
+
+| Bölüm | Açılışta |
+|---|---|
+| Üstünde çalışılan | **açık** |
+| Başlanmamış | kapalı |
+| Tamamlanan | kapalı |
+
+Ayrım yüzdeden geliyor, elle girilmiyor: %0 başlanmamış, %100 tamamlanan,
+arası üstünde çalışılan. Boş bölüm hiç görünmüyor. Açıp kapattığın oturum
+boyunca hatırlanıyor.
+
+**Logo yüklenirken dönen gösterge.** Logolar private kovada olduğu için
+indirmesi bir saniye sürebiliyordu, o sırada kutu boş kalıyordu. Artık resim
+önce arka planda indiriliyor, bitince yerine konuyor; arada dönen halka duruyor.
+
+Adres bir saatlik imzalı; süresi dolmuşsa indirme patlıyor ve kırık resim
+simgesi yerine kesik çerçeveli baş harf kalıyor.
+
 ## v0.16.0 — 21 Ağustos 2026
 **Proje ekranı bir yola dönüştü**
 

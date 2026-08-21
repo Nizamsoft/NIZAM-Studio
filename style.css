@@ -1368,6 +1368,27 @@ html { background: var(--bg); }
 .onay-satir b { display: block; font-size: 13px; font-weight: 600; color: var(--ink); }
 .onay-satir i { display: block; font-style: normal; font-size: 11px; color: var(--ink-dim); margin-top: 2px; }
 
+/* Projeler ekranı — açılır bölümler ----------------------------------------- */
+
+.pgrup { margin-bottom: 14px; }
+.pgrup-bas {
+  display: flex; align-items: center; gap: 10px; width: 100%;
+  padding: 10px 12px; margin-bottom: 10px; border: 0; border-radius: 12px; cursor: pointer;
+  background: linear-gradient(180deg, var(--surface-3), var(--kart-alt));
+  color: var(--ink); font-family: inherit; text-align: left;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .12), inset 0 0 0 1px var(--line-3);
+}
+.pgrup-bas .chev { display: flex; color: var(--ink-dim); flex-shrink: 0;
+  transition: transform .2s var(--ease); }
+.pgrup-bas.acik .chev { transform: rotate(90deg); }
+.pgrup-ad { flex: 1; font-size: 12.5px; font-weight: 600; letter-spacing: .02em; }
+.pgrup-say {
+  min-width: 22px; padding: 2px 8px; border-radius: 999px; text-align: center;
+  background: var(--yuva); color: var(--ink-dim);
+  font-family: var(--yazi-kod); font-size: 10.5px; font-weight: 700;
+  box-shadow: inset 0 0 0 1px var(--line-3);
+}
+
 /* Proje künyesi ------------------------------------------------------------- */
 
 .kunye { display: flex; align-items: center; gap: 13px; margin-bottom: 12px; }
@@ -1380,6 +1401,25 @@ html { background: var(--bg); }
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .12), 0 6px 14px -8px #000;
 }
 .kunye-logo.dolu { background-color: #fff; }
+.kunye-logo.dolu .logo-harf, .mk-logo.dolu .logo-harf { display: none; }
+/* Yüklenirken baş harf sönükleşir, üstünde dönen gösterge durur. */
+.kunye-logo.yukleniyor .logo-harf, .mk-logo.yukleniyor .logo-harf { opacity: .25; }
+
+.logo-harf { display: flex; align-items: center; justify-content: center; }
+
+/* Dönen gösterge — tek bir kenarı renkli halka, sürekli döner. */
+.donen {
+  position: absolute; width: 20px; height: 20px; border-radius: 999px;
+  border: 2px solid var(--line-parlak);
+  border-top-color: var(--ink-soft);
+  animation: donuyor .7s linear infinite;
+}
+@keyframes donuyor { to { transform: rotate(360deg); } }
+
+.kunye-logo, .mk-logo { position: relative; }
+.mk-logo .donen { width: 16px; height: 16px; border-width: 1.6px; }
+/* Adres süresi dolmuşsa kırık resim yerine kesik çerçeve kalır. */
+.yuklenemedi { border: 1px dashed var(--line-parlak) !important; }
 .kunye-yazi { flex: 1; min-width: 0; }
 .kunye-yazi h2 {
   font-family: var(--yazi-baslik); font-size: 19px; font-weight: 700;
