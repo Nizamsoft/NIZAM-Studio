@@ -1,5 +1,18 @@
 # Değişiklik Günlüğü
 
+## v0.18.1 — 21 Ağustos 2026
+**Firma bilgileri sonradan düzenlenebiliyor**
+
+SQL çalıştırılmadan önce kurulan projelerde sihirbazda girilen sektör,
+yetkili kişi ve tarih bilgileri kaydedilememişti — o sütunlar henüz yoktu.
+O projeleri silip yeniden kurmaya gerek yok.
+
+- 1. durakta **Bilgileri düzenle** düğmesi var
+- Sektör, yetkili kişi, telefon, e-posta, dil, para birimi, başlangıç ve
+  teslim tarihi buradan girilir
+- Yalnız eski projeler için değil: yetkili kişi ayrılır, teslim tarihi kayar —
+  bunlar zaten değişen bilgiler
+
 ## v0.18.0 — 21 Ağustos 2026
 **Açılış hızlandı, veri telefonda saklanıyor**
 

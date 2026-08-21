@@ -697,6 +697,8 @@ function firmaDuragi(p) {
       ? `<b class="mono">${esc(p.repo)}</b>`
       : '<b class="eksik">eklenmedi</b>'}</div>
     <div class="durak-arac">
+      ${AUTH.yonetici ? `<button class="mini-kabart" data-eylem="firma-duzenle" data-proje="${p.id}" type="button">
+        ${svg(ICON.kalem, 13)} Bilgileri düzenle</button>` : ''}
       <button class="mini-kabart" data-eylem="kimlik" data-proje="${p.id}" type="button">
         ${svg(ICON.kopya, 13)} Kimlik Dosyası</button>
       ${AUTH.yonetici ? `<button class="mini-kabart" data-eylem="repo" data-proje="${p.id}" type="button">
@@ -2771,6 +2773,111 @@ function sablonDuzenle(id) {
   });
 }
 
+/* Firma bilgilerini sonradan düzenleme.
+   Sihirbazda girilen bilgiler ilk kurulumda kaybolmuş olabilir (sütunlar
+   sonradan eklendi) ya da zamanla değişir — yetkili kişi ayrılır, tarih kayar. */
+function firmaDuzenle(projeId) {
+  modalHepsiniKapat();
+  const p = DB.proje(projeId);
+  if (!p) return;
+
+  let sektor = p.sektor || '';
+  let dil    = p.dil  || 'tr';
+  let para   = p.para || 'TRY';
+
+  const serit = (tur, liste, secili) => `
+    <div class="secenek-serit">
+      ${liste.map(x => `<button class="ss ${secili === x.kod ? 'sec' : ''}"
+        data-fd="${tur}" data-deger="${x.kod}" type="button">${esc(x.ad)}</button>`).join('')}
+    </div>`;
+
+  modalAc(`
+    ${modalBaslik(ICON.folder, 'Firma bilgileri', 'Bu bilgiler promptlara ve kimlik dosyasına girer.')}
+
+    <div class="field">
+      <span>Sektör <em class="ipucu">modül önerisini belirler</em></span>
+      <div class="pullar">
+        ${DB.sektorler.map(x => `<button class="pul ${sektor === x.ad ? 'sec' : ''}"
+           data-fd="sektor" data-deger="${esc(x.ad)}" type="button">${esc(x.ad)}</button>`).join('')}
+      </div>
+      ${DB.sektorler.length ? '' : '<p class="ipucu" style="margin-top:8px">Sektör listesi boş — Ayarlar → Sektörler\'den ekleyebilirsin.</p>'}
+    </div>
+
+    <label class="field">
+      <span>Yetkili kişi</span>
+      <input type="text" id="fd-yetkili" value="${esc(p.yetkili || '')}"
+             placeholder="Örn. Mehmet Yılmaz" maxlength="60" autocomplete="off">
+    </label>
+    <label class="field">
+      <span>Telefon</span>
+      <input type="tel" id="fd-telefon" value="${esc(p.telefon || '')}"
+             placeholder="0532 000 00 00" maxlength="24" autocomplete="off">
+    </label>
+    <label class="field">
+      <span>E-posta</span>
+      <input type="email" id="fd-eposta" value="${esc(p.eposta || '')}"
+             placeholder="ornek@firma.com" maxlength="80"
+             autocomplete="off" autocapitalize="off" spellcheck="false">
+    </label>
+
+    <div class="field"><span>Dil</span>${serit('dil', DIL_SECENEK, dil)}</div>
+    <div class="field"><span>Para birimi</span>${serit('para', PARA_SECENEK, para)}</div>
+
+    <label class="field">
+      <span>Başlangıç</span>
+      <input type="date" id="fd-baslangic" value="${esc(p.baslangic || '')}">
+    </label>
+    <label class="field">
+      <span>Teslim hedefi <em class="ipucu">isteğe bağlı</em></span>
+      <input type="date" id="fd-teslim" value="${esc(p.teslim || '')}">
+    </label>
+
+    <div class="modal-alt">
+      <button class="btn btn-ghost" data-fd="iptal" type="button">Vazgeç</button>
+      <button class="btn btn-primary" data-fd="kaydet" type="button"><span>Kaydet</span></button>
+    </div>`, kutu => {
+    $$('[data-fd]', kutu).forEach(el => el.addEventListener('click', () => {
+      const t = el.dataset.fd;
+      const d = el.dataset.deger;
+      if (t === 'iptal' || t === 'kaydet') return;
+
+      if (t === 'sektor') sektor = sektor === d ? '' : d;
+      if (t === 'dil')    dil = d;
+      if (t === 'para')   para = d;
+
+      $$(`[data-fd="${t}"]`, kutu).forEach(x => x.classList.toggle('sec',
+        t === 'sektor' ? x.dataset.deger === sektor : x === el));
+    }));
+
+    $('[data-fd="iptal"]', kutu).addEventListener('click', modalKapat);
+
+    $('[data-fd="kaydet"]', kutu).addEventListener('click', async () => {
+      const al = id => $('#' + id, kutu).value.trim();
+      const alanlar = {
+        sektor:    sektor || null,
+        yetkili:   al('fd-yetkili') || null,
+        telefon:   al('fd-telefon') || null,
+        eposta:    al('fd-eposta') || null,
+        dil, para,
+        baslangic: al('fd-baslangic') || null,
+        teslim:    al('fd-teslim') || null,
+      };
+
+      const yazi = $('[data-fd="kaydet"] span', kutu);
+      yazi.textContent = 'Kaydediliyor…';
+      try {
+        await DB.projeGuncelle(projeId, alanlar);
+        modalKapat();
+        render();
+        toast('Bilgiler güncellendi.', 'basari');
+      } catch (h) {
+        yazi.textContent = 'Kaydet';
+        toast(h.message, 'hata');
+      }
+    });
+  }, 'genis');
+}
+
 /* ==========================================================================
    MARKA — logo ve palet
    ========================================================================== */
@@ -3386,6 +3493,8 @@ async function eylemCalistir(el) {
       () => DB.paletKaydet(pr.id, Object.assign({}, pr.palet || {}, { tema: el.dataset.deger })),
       el.dataset.deger + ' tema seçildi.');
   }
+
+  if (e === 'firma-duzenle') return firmaDuzenle(el.dataset.proje);
 
   if (e === 'logo-yukle')    return logoSec(el.dataset.proje);
   if (e === 'palet-prompt')  return paletPromptu(el.dataset.proje);
