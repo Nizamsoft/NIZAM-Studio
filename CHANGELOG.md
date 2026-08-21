@@ -1,5 +1,21 @@
 # Değişiklik Günlüğü
 
+## v0.15.2 — 21 Ağustos 2026
+**Tema seçimi: koyu ya da açık**
+
+Marka promptu her müşteri için "koyu tema" istiyordu. Bu bir varsayımdı ve
+yanlıştı — tema müşteriye göre değişir.
+
+- Marka bölümüne **Koyu / Açık** seçimi geldi
+- Prompt seçime göre yazılıyor. Açık temada kurallar tersine dönüyor:
+  zemin açık, kartlar daha açık (çoğu zaman beyaz), çizgi zeminden koyu,
+  metin koyu
+- Açık temada vurgu rengi için ayrı uyarı var: **beyaz yazı taşıyacak kadar
+  koyu olmalı**, yoksa düğme okunmaz
+- Tema palete kaydediliyor; görev promptunda ve NIZAM.md'de yazıyor
+- Elle düzenlemede de değiştirilebiliyor
+- Her iki temada da en silik metin tonunun 4.5:1 kontrastı geçmesi isteniyor
+
 ## v0.15.1 — 21 Ağustos 2026
 **Bekleyen SQL'ler tek dosyada toplandı**
 

@@ -7,7 +7,7 @@ const APP = {
   name:     'NIZAM | Studio',
   short:    'NIZAM Studio',
   owner:    'Nizam Soft',
-  version: 'v0.15.1',
+  version: 'v0.15.2',
   build:    '2026-08-20',
   stage: 'Adım 4 · Modül şablonları',
 };
@@ -66,6 +66,7 @@ const VARSAYILAN_GRUP = 'Arayüz';
 
 /* Marka paletinin alanları — hem prompt hem içe aktarma bu sırayı kullanır. */
 const PALET_ALAN = [
+  { anahtar: 'tema',    ad: 'Tema',             ornek: 'Koyu', secim: ['Koyu', 'Açık'] },
   { anahtar: 'bg',      ad: 'Arka plan',        ornek: '#0f0e0d', renk: true },
   { anahtar: 'yuzey',   ad: 'Yüzey',            ornek: '#1f1d1b', renk: true },
   { anahtar: 'cizgi',   ad: 'Çizgi',            ornek: '#37322f', renk: true },

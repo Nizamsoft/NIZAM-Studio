@@ -10,6 +10,12 @@
 
 const PROMPT = {
 
+  /* Projenin teması açık mı? Varsayılan koyu. */
+  temaAcik(proje) {
+    const t = proje && proje.palet && proje.palet.tema;
+    return /a[çc][ıi]k|light/i.test(String(t || ''));
+  },
+
   /* Paleti hem görev promptuna hem NIZAM.md'ye aynı biçimde basar. */
   paletBlogu(proje) {
     const pl = proje && proje.palet;
@@ -32,27 +38,44 @@ const PROMPT = {
     const p = DB.proje(projeId);
     if (!p) return '';
 
+    const acik = PROMPT.temaAcik(p);
+    const tema = acik ? 'açık' : 'koyu';
+
     const s = [];
     s.push('# Marka Paleti İsteği', '');
     s.push(`Ekteki logo **${p.firma}** firmasına ait.`);
     s.push('Bu firma için bir yazılım arayüzü tasarlayacağız.');
     s.push('');
     s.push('Logoyu incele: hangi renkler baskın, ton sıcak mı soğuk mu,');
-    s.push('kurumsal mı canlı mı. Buradan bir **koyu tema** paleti çıkar.');
+    s.push(`kurumsal mı canlı mı. Buradan bir **${tema} tema** paleti çıkar.`);
     s.push('');
     s.push('## Kurallar');
-    s.push('- Koyu tema. Arka plan en koyu, yüzey bir tık açık, çizgi ondan açık.');
-    s.push('- Metin üç tonda: ana, soft, silik. Üçü de arka planda okunabilsin.');
-    s.push('- Vurgu rengi logodan gelsin ve **az kullanılsın** — yalnızca ana buton,');
-    s.push('  aktif menü ve acil işaretinde.');
+
+    if (acik) {
+      s.push('- Açık tema. Arka plan yumuşak bir açık ton; yüzey (kartlar) ondan');
+      s.push('  daha açık, çoğu zaman beyaz. Çizgi zeminden bir tık koyu.');
+      s.push('- Metin üç tonda ve koyu: ana en koyu, soft orta, silik en açık.');
+      s.push('  Üçü de açık zeminde okunabilsin — en siliği bile 4.5:1 kontrastı geçsin.');
+      s.push('- Vurgu rengi logodan gelsin ama açık zeminde **beyaz yazı taşıyacak');
+      s.push('  kadar koyu** olsun. Açık kalırsa düğme okunmaz.');
+    } else {
+      s.push('- Koyu tema. Arka plan en koyu, yüzey bir tık açık, çizgi ondan açık.');
+      s.push('- Metin üç tonda: ana en açık, soft orta, silik en koyu.');
+      s.push('  Üçü de koyu zeminde okunabilsin — en siliği bile 4.5:1 kontrastı geçsin.');
+      s.push('- Vurgu rengi logodan gelsin ve koyu zeminde parlasın.');
+    }
+
+    s.push('- Vurgu **az kullanılır** — yalnızca ana buton, aktif menü ve acil işareti.');
     s.push('- Renkleri 6 haneli onaltılık kodla yaz (#0f0e0d gibi).');
-    s.push('- Yazı tipleri ücretsiz ve web\'de kullanılabilir olsun.');
+    s.push('- Yazı tipleri ücretsiz, web\'de kullanılabilir ve Türkçe karakterleri tam olsun.');
     s.push('');
     s.push('## Cevabı tam olarak bu biçimde ver');
     s.push('Başka açıklama yazma, yalnızca bu satırları döndür:');
     s.push('');
     s.push('```');
-    PALET_ALAN.forEach(a => s.push(`${a.ad}: ${a.ornek}`));
+    PALET_ALAN.forEach(a => {
+      s.push(`${a.ad}: ${a.anahtar === 'tema' ? (acik ? 'Açık' : 'Koyu') : a.ornek}`);
+    });
     s.push('```');
 
     return s.join('\n');

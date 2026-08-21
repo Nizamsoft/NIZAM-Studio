@@ -1371,6 +1371,9 @@ html { background: var(--bg); }
 /* Marka: logo ve palet ------------------------------------------------------ */
 
 .marka-kart { padding: 14px; margin-bottom: 16px; }
+.tema-secim { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+.tema-ad { font-size: 12.5px; color: var(--ink-soft); flex-shrink: 0; }
+.tema-secim .secenek-serit { flex: 1; }
 .mk-ust { display: flex; align-items: center; gap: 13px; }
 .mk-logo {
   display: flex; align-items: center; justify-content: center; flex-shrink: 0;

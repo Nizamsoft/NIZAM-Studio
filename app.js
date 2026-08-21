@@ -520,6 +520,7 @@ const VIEWS = {
 function markaKarti(p) {
   const adres = DB.logoAdres[p.id];
   const pl = p.palet || null;
+  const acikTema = PROMPT.temaAcik(p);
 
   const kutular = PALET_ALAN.filter(a => a.renk).map(a => {
     const renk = pl && pl[a.anahtar];
@@ -530,6 +531,16 @@ function markaKarti(p) {
   return `
     <span class="label">Marka</span>
     <div class="card marka-kart">
+      <div class="tema-secim">
+        <span class="tema-ad">Tema</span>
+        <div class="secenek-serit">
+          <button class="ss ${acikTema ? '' : 'sec'}" data-eylem="tema-sec" data-proje="${p.id}"
+                  data-deger="Koyu" type="button" ${AUTH.yonetici ? '' : 'disabled'}>Koyu</button>
+          <button class="ss ${acikTema ? 'sec' : ''}" data-eylem="tema-sec" data-proje="${p.id}"
+                  data-deger="Açık" type="button" ${AUTH.yonetici ? '' : 'disabled'}>Açık</button>
+        </div>
+      </div>
+
       <div class="mk-ust">
         <span class="mk-logo ${adres ? 'dolu' : ''}"
               ${adres ? `style="background-image:url('${esc(adres)}')"` : ''}
@@ -583,7 +594,11 @@ function paletCozumle(metin) {
     let deger = es[2].replace(/^`|`$/g, '').trim();
     const alan = PALET_ALAN.find(a => a.anahtar === k);
 
-    if (alan.renk) {
+    if (alan.secim) {
+      const uy = alan.secim.find(x => x.toLocaleLowerCase('tr') === deger.toLocaleLowerCase('tr'));
+      if (!uy) { hatalar.push(`"${alan.ad}" ${alan.secim.join(' ya da ')} olmalı.`); return; }
+      deger = uy;
+    } else if (alan.renk) {
       const renk = deger.match(/#[0-9a-fA-F]{6}\b/);
       if (!renk) { hatalar.push(`"${alan.ad}" bir renk kodu değil: ${deger}`); return; }
       deger = renk[0].toLowerCase();
@@ -2370,7 +2385,14 @@ function paletDuzenle(projeId) {
   modalAc(`
     ${modalBaslik(ICON.kalem, 'Paleti düzenle', 'Beğenmediğin rengi değiştir.')}
 
-    ${PALET_ALAN.map(a => a.renk ? `
+    ${PALET_ALAN.map(a => a.secim ? `
+      <div class="field">
+        <span>${esc(a.ad)}</span>
+        <div class="secenek-serit">
+          ${a.secim.map(d => `<button class="ss ${(pl[a.anahtar] || a.ornek) === d ? 'sec' : ''}"
+             data-ps="${a.anahtar}" data-deger="${esc(d)}" type="button">${esc(d)}</button>`).join('')}
+        </div>
+      </div>` : a.renk ? `
       <div class="palet-satir">
         <span class="palet-ad">${esc(a.ad)}</span>
         <input type="color" class="palet-sec" data-p="${a.anahtar}"
@@ -2388,6 +2410,15 @@ function paletDuzenle(projeId) {
       <button class="btn btn-ghost" data-pd="iptal" type="button">Vazgeç</button>
       <button class="btn btn-primary" data-pd="kaydet" type="button"><span>Kaydet</span></button>
     </div>`, kutu => {
+    /* Seçmeli alanlar (tema) */
+    const secilen = {};
+    PALET_ALAN.filter(a => a.secim).forEach(a => { secilen[a.anahtar] = pl[a.anahtar] || a.ornek; });
+    $$('[data-ps]', kutu).forEach(b => b.addEventListener('click', () => {
+      const k = b.dataset.ps;
+      secilen[k] = b.dataset.deger;
+      $$(`[data-ps="${k}"]`, kutu).forEach(x => x.classList.toggle('sec', x === b));
+    }));
+
     /* Renk seçici ile kod kutusu birbirini takip etsin. */
     $$('.palet-sec', kutu).forEach(sec => {
       const kod = $(`[data-pk="${sec.dataset.p}"]`, kutu);
@@ -2401,6 +2432,7 @@ function paletDuzenle(projeId) {
     $('[data-pd="kaydet"]', kutu).addEventListener('click', async () => {
       const yeni = {};
       PALET_ALAN.forEach(a => {
+        if (a.secim) { yeni[a.anahtar] = secilen[a.anahtar]; return; }
         const el = a.renk ? $(`[data-pk="${a.anahtar}"]`, kutu) : $(`[data-p="${a.anahtar}"]`, kutu);
         const d = (el.value || '').trim();
         if (d) yeni[a.anahtar] = a.renk ? d.toLowerCase() : d;
@@ -2827,6 +2859,15 @@ async function eylemCalistir(el) {
   if (e === 'filtre') {
     GOREV_FILTRE = el.dataset.deger;
     return render();
+  }
+
+  if (e === 'tema-sec') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    if (PROMPT.temaAcik(pr) === (el.dataset.deger === 'Açık')) return;
+    return isYap(
+      () => DB.paletKaydet(pr.id, Object.assign({}, pr.palet || {}, { tema: el.dataset.deger })),
+      el.dataset.deger + ' tema seçildi.');
   }
 
   if (e === 'logo-yukle')    return logoSec(el.dataset.proje);
