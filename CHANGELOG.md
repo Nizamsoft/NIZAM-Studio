@@ -1,5 +1,20 @@
 # Değişiklik Günlüğü
 
+## v0.17.4 — 21 Ağustos 2026
+**Proje kalıcı olarak silinebiliyor**
+
+Deneme için açtığın projeler arşivde birikiyordu. Artık proje menüsünde
+arşivin altında **Projeyi sil** var.
+
+- Modülleri, sayfaları, görevleri ve hareket geçmişi birlikte gidiyor
+- **Logo dosyası da kovadan siliniyor** — yetim dosya kalmıyor
+- Onay ekranı ne kaybedileceğini sayıyla yazıyor: "1 modül, 1 sayfa, 1 görev"
+  ve arşiv seçeneğini hatırlatıyor
+- Logo silinemezse proje yine siliniyor; yarım kalmış bir silme olmuyor
+
+Arşiv duruyor — veriyi korumak istediğinde o, tamamen kurtulmak istediğinde
+silme.
+
 ## v0.17.3 — 21 Ağustos 2026
 **"Veri yüklenemedi" hatası düzeltildi**
 

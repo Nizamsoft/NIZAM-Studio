@@ -3497,6 +3497,7 @@ async function eylemCalistir(el) {
       { anahtar: 'renk',  ad: 'Rengi değiştir', ikon: ICON.boya },
       { anahtar: 'repo',  ad: 'Depo adresi',    ikon: ICON.katman, alt: proje.repo || 'henüz eklenmedi' },
       { anahtar: 'arsiv', ad: 'Arşive kaldır',  ikon: ICON.arsiv, alt: 'Listeden çıkar, veriyi silmez', tehlike: true },
+      { anahtar: 'sil',   ad: 'Projeyi sil',    ikon: ICON.cop,   alt: 'Her şeyi siler, geri gelmez', tehlike: true },
     ]);
     if (!sec) return;
 
@@ -3530,6 +3531,26 @@ async function eylemCalistir(el) {
       if (!ok) return;
       if (rota().id === id) location.hash = '#/projeler';
       return isYap(() => DB.projeArsivle(id), 'Proje arşive kaldırıldı.');
+    }
+
+    if (sec === 'sil') {
+      const s = DB.sayim(id);
+      const kayip = [
+        s.modul ? s.modul + ' modül' : '',
+        s.sayfa ? s.sayfa + ' sayfa' : '',
+        s.gorev ? s.gorev + ' görev' : '',
+      ].filter(Boolean).join(', ');
+
+      const ok = await onaySor({
+        baslik: 'Proje tamamen silinsin mi?',
+        mesaj: `"${proje.firma}"${kayip ? ` ve içindeki ${kayip}` : ''} silinecek. `
+             + 'Logosu da gidecek. Bu işlem geri alınamaz. '
+             + 'Sadece listeden kaldırmak istiyorsan "Arşive kaldır" kullan.',
+        buton: 'Kalıcı olarak sil',
+      });
+      if (!ok) return;
+      if (rota().id === id) location.hash = '#/projeler';
+      return isYap(() => DB.projeSil(id), 'Proje silindi.');
     }
     return;
   }

@@ -328,6 +328,24 @@ const DB = {
     await this.tazele('projeler');
   },
 
+  /* Kalıcı silme. Modüller, sayfalar, görevler ve hareketler veritabanındaki
+     bağlantı kuralları sayesinde birlikte gider. Logo dosyası kovada kalmasın
+     diye önce o siliniyor. */
+  async projeSil(id) {
+    yazmaKontrol();
+    const p = this.proje(id);
+
+    if (p && p.logo) {
+      /* Dosya silinemezse proje yine silinsin — yetim bir logo dert değil. */
+      try { await AUTH.db.storage.from('logolar').remove([p.logo]); } catch (e) {}
+    }
+
+    const { error } = await AUTH.db.from('projects').delete().eq('id', id);
+    if (error) throw new Error(veriHatasi(error));
+    await this.tazele('projeler', 'moduller', 'sayfalar', 'gorevler', 'hareketler');
+    await this.logolariTazele(true);
+  },
+
   async modulEkle(projeId, ad, sayfalar = []) {
     yazmaKontrol();
     const sira = this.modulleri(projeId).length;
