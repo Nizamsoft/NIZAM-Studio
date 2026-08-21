@@ -1,5 +1,33 @@
 # Değişiklik Günlüğü
 
+## v0.16.0 — 21 Ağustos 2026
+**Proje ekranı bir yola dönüştü**
+
+Dört istatistik kartı, iki buton, bir marka kartı, sonra modüller — hepsi aynı
+ağırlıktaydı, göz nereye bakacağını bilmiyordu. Artık proje **beş duraklı bir
+yol**: Firma bilgileri → Tasarımı belirleme → Yapıyı kurma → Geliştirme → Sürüm.
+
+**Üst kısım** — dört kart yerine tek künye: logo, firma adı, platform ve ince
+bir ilerleme çubuğu. Rakamlar zaten durakların içinde yazıyor.
+
+**Duraklar numaralı.** Biten yeşil, şimdiki kırmızı ve ışıklı, bekleyen gri.
+Aralarındaki çizgi kesikli — yol sürüyor ama zorunlu bir sıra değil.
+
+**Durum veriden okunuyor**, elle girilmiyor:
+- Tasarım — palet varsa tamam
+- Yapı — modül kurulduysa tamam
+- Geliştirme — tüm görevler bittiyse tamam
+
+**Kutular kabartma + şerit vurgu.** Üstten ışık, alttan gölge; sol kenarda
+durağın durumunun rengi. Satır ayraçları düz çizgi değil oyuk çizgi —
+kabartma yüzeyin hacmiyle uyumlu.
+
+- Kimlik Dosyası ve Depo düğmeleri 1. durağın içine girdi
+- Marka kartı 2. durak oldu
+- Modüller 3. durağın altında; içeride ilerleme çubuğu gizlendi, adlara yer açıldı
+- Görev sayıları 4. durakta
+- 5. durak Adım 5'e hazır bekliyor
+
 ## v0.15.2 — 21 Ağustos 2026
 **Tema seçimi: koyu ya da açık**
 

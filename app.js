@@ -206,48 +206,7 @@ const VIEWS = {
         'Silinmiş veya arşive alınmış olabilir.', 'Projelere dön', 'projelere')}</div>`;
     }
 
-    const s        = DB.sayim(id);
-    const moduller = DB.modulleri(id);
-
-    return `
-      <div class="ozet-grid">
-        <div class="card oz" style="--i:0">
-          <span class="oz-label">İlerleme</span>
-          <span class="oz-num" data-sayac="${s.yuzde}" data-on="%">%${s.yuzde}</span>
-          <div class="bar" style="margin-top:9px"><i style="width:${s.yuzde}%"></i></div>
-        </div>
-        ${ozKutu('Modül', s.modul, '+ Proje Geneli', 1)}
-        ${ozKutu('Sayfa', s.sayfa, 'tanımlı ekran', 2)}
-        <div class="card oz" style="--i:3">
-          <span class="oz-label">Görev</span>
-          <span class="oz-num">${s.bitmis}<em>/${s.gorev}</em></span>
-          <span class="oz-sub">${s.gorev - s.bitmis} açık iş</span>
-        </div>
-      </div>
-
-      <div class="proje-arac">
-        <button class="btn btn-ghost" data-eylem="kimlik" data-proje="${proje.id}" type="button">
-          ${svg(ICON.kopya, 15)}<span>Kimlik Dosyası</span>
-        </button>
-        <button class="btn btn-ghost" data-eylem="repo" data-proje="${proje.id}" type="button">
-          ${svg(ICON.katman, 15)}<span>${proje.repo ? esc(proje.repo) : 'Depo adresi ekle'}</span>
-        </button>
-      </div>
-
-      ${markaKarti(proje)}
-
-      <span class="label">Modüller ve sayfalar</span>
-      ${moduller.map(modulKarti).join('')}
-
-      ${AUTH.yonetici ? `
-        <button class="btn btn-ghost btn-wide" data-eylem="modul-ekle" data-proje="${proje.id}" type="button">
-          ${svg(ICON.arti, 15)}<span>Modül Ekle</span>
-        </button>` : ''}
-
-      ${moduller.length < 2
-        ? stageNote('Bu projede henüz modül yok. "Modül Ekle" ile bir modül kurduğunda sayfaları da birlikte gelir.')
-        : stageNote('Sayfaya tıkla, görevleri açılsın. Görev kartındaki "Prompt Kopyala" hazır metni panoya alır.')}
-    `;
+    return projeKunyesi(proje) + projeYolu(proje);
   },
 
   /* ---------- Diğerleri ---------- */
@@ -516,8 +475,128 @@ const VIEWS = {
    PARÇA ÜRETİCİLER
    ========================================================================== */
 
-/* Projenin marka bölümü: logo, palet, prompt üretme ve içe aktarma. */
-function markaKarti(p) {
+/* Ekranın tepesi: logo, firma adı, platform ve tek ilerleme çubuğu.
+   Dört ayrı istatistik kartının yerini aldı — rakamlar zaten durakların içinde. */
+function projeKunyesi(p) {
+  const s = DB.sayim(p.id);
+  const adres = DB.logoAdres[p.id];
+
+  return `
+    <div class="kunye">
+      <span class="kunye-logo ${adres ? 'dolu' : ''}"
+            ${adres ? `style="background-image:url('${esc(adres)}')"` : ''}>
+        ${adres ? '' : esc(basHarf(p.firma))}
+      </span>
+      <span class="kunye-yazi">
+        <h2>${esc(p.firma)}</h2>
+        <p>${PLATFORM_ADI[p.platform] || p.platform} · ${VERI_ADI[p.veri] || p.veri}</p>
+      </span>
+      <span class="kunye-pct mono">%${s.yuzde}</span>
+    </div>
+    <div class="kunye-bar"><i style="width:${s.yuzde}%"></i></div>`;
+}
+
+/* Projenin beş durağı. Durum veriden okunur, elle girilmez. */
+function projeDuraklari(p) {
+  const s        = DB.sayim(p.id);
+  const moduller = DB.modulleri(p.id);
+  const gercek   = moduller.filter(m => m.ad !== GENEL_MODUL).length;
+  const paletVar = !!(p.palet && p.palet.bg);
+
+  return [
+    {
+      ad: 'Firma bilgileri',
+      bitti: true,
+      ozet: `${PLATFORM_ADI[p.platform] || '—'} · ${VERI_ADI[p.veri] || '—'}`,
+      icerik: firmaDuragi(p),
+    },
+    {
+      ad: 'Tasarımı belirleme',
+      bitti: paletVar,
+      ozet: paletVar
+        ? 'Logo ve palet hazır.'
+        : 'Logoyu yükle, promptu kopyala, dönen paleti yapıştır.',
+      icerik: markaDuragi(p),
+    },
+    {
+      ad: 'Yapıyı kurma',
+      bitti: gercek > 0,
+      ozet: gercek
+        ? `${gercek} modül · ${s.sayfa} sayfa`
+        : 'Henüz modül yok. Modül kurduğunda sayfaları da birlikte gelir.',
+      icerik: yapiDuragi(p, moduller),
+    },
+    {
+      ad: 'Geliştirme',
+      bitti: s.gorev > 0 && s.bitmis === s.gorev,
+      ozet: s.gorev
+        ? `${s.bitmis}/${s.gorev} görev bitti`
+        : 'Sayfalara görev açtığında burada ilerleme görünecek.',
+      icerik: s.gorev ? `
+        <div class="satir">Açık iş <b>${s.gorev - s.bitmis}</b></div>
+        <div class="satir">Tamamlanan <b>${s.bitmis}</b></div>` : '',
+    },
+    {
+      ad: 'Sürüm',
+      bitti: false,
+      kilitli: true,
+      ozet: 'GitHub bağlanınca commit\'ler buraya düşecek.',
+      icerik: '',
+    },
+  ];
+}
+
+function projeYolu(p) {
+  const duraklar = projeDuraklari(p);
+  /* Şimdiki durak: bitmemiş ilk durak. Kilitli olan sıraya girmez. */
+  const simdi = duraklar.findIndex(d => !d.bitti && !d.kilitli);
+
+  return `<div class="yol">${duraklar.map((d, i) => {
+    const durum = d.bitti ? 'bitti' : (i === simdi ? 'simdi' : 'bekliyor');
+    const etiket = d.bitti ? 'tamam' : (i === simdi ? 'şimdi burada' : 'bekliyor');
+
+    return `
+      <div class="durak ${durum}">
+        <span class="durak-no">${i + 1}</span>
+        <div class="durak-bas">
+          <h3>${esc(d.ad)}</h3>
+          <em>${etiket}</em>
+        </div>
+        <p>${d.ozet}</p>
+        ${d.icerik ? `<div class="durak-ic">${d.icerik}</div>` : ''}
+      </div>`;
+  }).join('')}</div>`;
+}
+
+/* 1 · Firma bilgileri */
+function firmaDuragi(p) {
+  return `
+    <div class="satir">Platform <b>${PLATFORM_ADI[p.platform] || '—'}</b></div>
+    <div class="satir">Veri <b>${VERI_ADI[p.veri] || '—'}</b></div>
+    <div class="satir">Depo ${p.repo
+      ? `<b class="mono">${esc(p.repo)}</b>`
+      : '<b class="eksik">eklenmedi</b>'}</div>
+    <div class="durak-arac">
+      <button class="mini-kabart" data-eylem="kimlik" data-proje="${p.id}" type="button">
+        ${svg(ICON.kopya, 13)} Kimlik Dosyası</button>
+      ${AUTH.yonetici ? `<button class="mini-kabart" data-eylem="repo" data-proje="${p.id}" type="button">
+        ${svg(ICON.katman, 13)} ${p.repo ? 'Depoyu değiştir' : 'Depo adresi ekle'}</button>` : ''}
+    </div>`;
+}
+
+/* 3 · Yapıyı kurma */
+function yapiDuragi(p, moduller) {
+  return `
+    ${moduller.length ? `<div class="durak-moduller">${moduller.map(modulKarti).join('')}</div>` : ''}
+    ${AUTH.yonetici ? `
+      <div class="durak-arac">
+        <button class="mini-kabart" data-eylem="modul-ekle" data-proje="${p.id}" type="button">
+          ${svg(ICON.arti, 13)} Modül Ekle</button>
+      </div>` : ''}`;
+}
+
+/* 2 · Tasarımı belirleme — eski marka kartının durak içi hali. */
+function markaDuragi(p) {
   const adres = DB.logoAdres[p.id];
   const pl = p.palet || null;
   const acikTema = PROMPT.temaAcik(p);
@@ -529,51 +608,35 @@ function markaKarti(p) {
   }).join('');
 
   return `
-    <span class="label">Marka</span>
-    <div class="card marka-kart">
-      <div class="tema-secim">
-        <span class="tema-ad">Tema</span>
-        <div class="secenek-serit">
-          <button class="ss ${acikTema ? '' : 'sec'}" data-eylem="tema-sec" data-proje="${p.id}"
-                  data-deger="Koyu" type="button" ${AUTH.yonetici ? '' : 'disabled'}>Koyu</button>
-          <button class="ss ${acikTema ? 'sec' : ''}" data-eylem="tema-sec" data-proje="${p.id}"
-                  data-deger="Açık" type="button" ${AUTH.yonetici ? '' : 'disabled'}>Açık</button>
-        </div>
-      </div>
+    <div class="satir">Logo
+      <span class="mk-logo ${adres ? 'dolu' : ''}"
+            ${adres ? `style="background-image:url('${esc(adres)}')"` : ''}
+            data-eylem="${AUTH.yonetici ? 'logo-yukle' : ''}" data-proje="${p.id}"
+            ${AUTH.yonetici ? 'role="button" tabindex="0"' : ''}>
+        ${adres ? '' : svg(ICON.folder, 16)}
+      </span>
+    </div>
+    <div class="satir">Tema
+      <span class="secenek-serit ufak">
+        <button class="ss ${acikTema ? '' : 'sec'}" data-eylem="tema-sec" data-proje="${p.id}"
+                data-deger="Koyu" type="button" ${AUTH.yonetici ? '' : 'disabled'}>Koyu</button>
+        <button class="ss ${acikTema ? 'sec' : ''}" data-eylem="tema-sec" data-proje="${p.id}"
+                data-deger="Açık" type="button" ${AUTH.yonetici ? '' : 'disabled'}>Açık</button>
+      </span>
+    </div>
+    <div class="satir">Renkler <span class="palet-serit">${kutular}</span></div>
+    ${pl ? `<div class="satir">Yazı tipi <b>${esc(pl.baslik || '—')} · ${esc(pl.govde || '—')}</b></div>
+            ${pl.ton ? `<div class="satir">Ton <b>${esc(pl.ton)}</b></div>` : ''}` : ''}
 
-      <div class="mk-ust">
-        <span class="mk-logo ${adres ? 'dolu' : ''}"
-              ${adres ? `style="background-image:url('${esc(adres)}')"` : ''}
-              data-eylem="${AUTH.yonetici ? 'logo-yukle' : ''}" data-proje="${p.id}"
-              ${AUTH.yonetici ? 'role="button" tabindex="0"' : ''}>
-          ${adres ? '' : svg(ICON.folder, 20)}
-        </span>
-        <span class="mk-yazi">
-          <b>${adres ? 'Firma logosu' : 'Logo yok'}</b>
-          <i>${adres
-              ? (AUTH.yonetici ? 'Değiştirmek için dokun' : 'Yüklenmiş')
-              : (AUTH.yonetici ? 'Yüklemek için dokun · en fazla 4 MB' : 'Yönetici yükleyecek')}</i>
-        </span>
-      </div>
-
-      ${pl ? `
-        <div class="palet-serit">${kutular}</div>
-        <div class="palet-not">
-          <b>${esc(pl.baslik || '—')}</b> · ${esc(pl.govde || '—')}${pl.ton ? ` · ${esc(pl.ton)}` : ''}
-        </div>` : `
-        <p class="mk-bos">Palet yok. Logoyu yükle, promptu kopyala, Claude'a logoyla
-        birlikte ver; dönen cevabı buraya yapıştır.</p>`}
-
-      ${AUTH.yonetici ? `
-        <div class="modul-araclar" style="padding-left:0">
-          <button class="mini-link" data-eylem="palet-prompt" data-proje="${p.id}" type="button">
-            ${svg(ICON.kopya, 13)} Prompt kopyala</button>
-          <button class="mini-link" data-eylem="palet-aktar" data-proje="${p.id}" type="button">
-            ${svg(ICON.ice, 13)} Paleti yapıştır</button>
-          ${pl ? `<button class="mini-link" data-eylem="palet-duzenle" data-proje="${p.id}" type="button">
-            ${svg(ICON.kalem, 13)} Elle düzenle</button>` : ''}
-        </div>` : ''}
-    </div>`;
+    ${AUTH.yonetici ? `
+      <div class="durak-arac">
+        <button class="mini-kabart" data-eylem="palet-prompt" data-proje="${p.id}" type="button">
+          ${svg(ICON.kopya, 13)} Prompt kopyala</button>
+        <button class="mini-kabart" data-eylem="palet-aktar" data-proje="${p.id}" type="button">
+          ${svg(ICON.ice, 13)} Paleti yapıştır</button>
+        ${pl ? `<button class="mini-kabart" data-eylem="palet-duzenle" data-proje="${p.id}" type="button">
+          ${svg(ICON.kalem, 13)} Elle düzenle</button>` : ''}
+      </div>` : ''}`;
 }
 
 /* Yapıştırılan paleti okur. Biçim: "Arka plan: #0f0e0d" satırları. */
