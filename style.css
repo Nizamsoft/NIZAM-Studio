@@ -1368,6 +1368,117 @@ html { background: var(--bg); }
 .onay-satir b { display: block; font-size: 13px; font-weight: 600; color: var(--ink); }
 .onay-satir i { display: block; font-style: normal; font-size: 11px; color: var(--ink-dim); margin-top: 2px; }
 
+/* Sihirbaz — tam ekran ------------------------------------------------------ */
+
+.sihirbaz {
+  position: fixed; inset: 0; z-index: 300;
+  display: flex; flex-direction: column;
+  background: var(--bg);
+  opacity: 0; transform: translateY(14px);
+  transition: opacity .2s ease, transform .26s var(--ease);
+}
+.sihirbaz.acik { opacity: 1; transform: none; }
+
+.sh-tepe {
+  display: flex; align-items: center; gap: 12px; flex-shrink: 0;
+  padding: calc(14px + env(safe-area-inset-top, 0px)) 16px 0;
+}
+.sh-kapat {
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  width: 36px; height: 36px; border-radius: 11px; cursor: pointer;
+  background: var(--surface-2); border: 1px solid var(--line); color: var(--ink-soft);
+}
+.sh-kapat svg { width: 15px; height: 15px; }
+.sh-ad { flex: 1; font-family: var(--yazi-baslik); font-size: 14px; font-weight: 700; color: var(--ink-strong); }
+.sh-say {
+  font-size: 11.5px; color: var(--ink-dim); flex-shrink: 0;
+  padding: 4px 10px; border-radius: 999px;
+  background: var(--surface-2); border: 1px solid var(--line-3);
+}
+
+.sh-sayfa { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 0 16px; }
+
+.sh-serit { display: flex; gap: 5px; padding: 14px 0 20px; flex-shrink: 0; }
+.sh-serit i { flex: 1; height: 3px; border-radius: 2px; background: var(--surface-3); }
+.sh-serit i.ok { background: linear-gradient(90deg, #5cbf92, #3f9871); }
+.sh-serit i.simdi {
+  background: linear-gradient(90deg, var(--red-acik), var(--red-koyu));
+  box-shadow: 0 0 10px -2px rgba(229, 52, 42, .8);
+}
+
+.sh-icerik { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding-bottom: 12px; }
+
+.sh-bas { display: flex; align-items: flex-start; gap: 13px; margin-bottom: 22px; }
+.sh-rozet {
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  width: 46px; height: 46px; border-radius: 15px;
+  background: var(--red-soft); box-shadow: inset 0 0 0 1px var(--red-cizgi); color: var(--red-ink);
+}
+.sh-bas h2 {
+  font-family: var(--yazi-baslik); font-size: 22px; font-weight: 700;
+  color: var(--ink-strong); letter-spacing: -.015em;
+}
+.sh-bas p { font-size: 11.5px; color: var(--ink-dim); margin-top: 3px; line-height: 1.5; }
+
+/* Düğmeler dipte sabit — içerik uzayınca kaymıyorlar. */
+.sh-dip {
+  display: flex; gap: 10px; flex-shrink: 0;
+  padding: 14px 0 calc(20px + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--line-3);
+}
+.sh-dip .btn { flex: 1; height: 46px; font-size: 14px; }
+
+/* Sektör pulları */
+.pullar { display: flex; flex-wrap: wrap; gap: 7px; }
+.pul {
+  padding: 9px 13px; border-radius: 11px; cursor: pointer; font-family: inherit;
+  background: var(--yuva); border: 1px solid var(--line); color: var(--ink-soft); font-size: 12.5px;
+}
+.pul.sec { background: var(--red-soft); border-color: var(--red-cizgi); color: var(--red-ink); font-weight: 600; }
+.pul.yeni { border-style: dashed; color: var(--ink-dim); display: inline-flex; align-items: center; gap: 6px; }
+.pul:active { transform: scale(.97); }
+
+/* Çok seçimlik modül satırı */
+.sec-satir {
+  display: flex; align-items: center; gap: 12px; cursor: pointer;
+  padding: 13px 14px; border-radius: 13px;
+  background: var(--yuva); border: 1px solid var(--line);
+}
+.sec-satir.sec { background: var(--red-soft); border-color: var(--red-cizgi); }
+.sec-yazi { min-width: 0; }
+.sec-yazi b { display: block; font-size: 13.5px; font-weight: 600; color: var(--ink); }
+.sec-yazi i { display: block; font-style: normal; font-size: 11px; color: var(--ink-dim); margin-top: 1px; }
+.sec-satir .onerildi {
+  margin-left: auto; flex-shrink: 0;
+  font-size: 9.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--st-dev-t); background: var(--dev-soft);
+  border: 1px solid var(--dev-cizgi); padding: 3px 7px; border-radius: 999px;
+}
+.sec-satir .kare {
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  width: 20px; height: 20px; border-radius: 6px; margin-left: auto;
+  box-shadow: inset 0 0 0 1.6px var(--line-parlak);
+}
+.sec-satir .onerildi + .kare { margin-left: 0; }
+.sec-satir.sec .kare { background: var(--red); box-shadow: none; color: #fff; }
+
+/* Özet kutusu — durak kutularıyla aynı dil */
+.ozet-kutu {
+  position: relative; overflow: hidden; border-radius: 15px; padding: 4px 14px 4px 17px;
+  background: linear-gradient(180deg, var(--surface-3), var(--kart-alt));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .16), inset 0 -1px 0 rgba(0, 0, 0, .55);
+}
+.ozet-kutu::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+  background: linear-gradient(180deg, #5cbf92, #2f7a58);
+}
+.ozet-kutu .os { display: flex; align-items: center; gap: 12px; padding: 10px 0; font-size: 12.5px; color: var(--ink-soft); }
+.ozet-kutu .os + .os { border-top: 1px solid rgba(0, 0, 0, .35); box-shadow: 0 -1px 0 rgba(255, 255, 255, .035); }
+.ozet-kutu .os b { margin-left: auto; color: var(--ink); font-weight: 600; font-size: 12px; text-align: right; }
+
+.mk-logo.buyuk { width: 56px; height: 56px; border-radius: 15px; margin-left: 0; }
+.mk-logo.buyuk svg { width: 20px; height: 20px; }
+
 /* Projeler ekranı — açılır bölümler ----------------------------------------- */
 
 .pgrup { margin-bottom: 14px; }
@@ -1418,7 +1529,20 @@ html { background: var(--bg); }
 /* Güvenlik ağı: gösterge bir şekilde silinemezse bile görünmesin. */
 .dolu .donen, .yuklenemedi .donen { display: none; }
 
-.kunye-logo, .mk-logo { position: relative; }
+.kunye-logo, /* Logo satırı: solda kutu, yanında iki satır yazı. */
+.mk-ust { display: flex; align-items: center; gap: 13px; }
+.mk-yazi { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.mk-yazi b {
+  font-size: 13px; font-weight: 600; color: var(--ink);
+  text-transform: none; letter-spacing: 0;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.mk-yazi i {
+  font-style: normal; font-size: 11px; color: var(--ink-dim);
+  text-transform: none; letter-spacing: 0;
+}
+
+.mk-logo { position: relative; }
 .mk-logo .donen { width: 16px; height: 16px; border-width: 1.6px; }
 /* Adres süresi dolmuşsa kırık resim yerine kesik çerçeve kalır. */
 .yuklenemedi { border: 1px dashed var(--line-parlak) !important; }

@@ -1,5 +1,33 @@
 # Değişiklik Günlüğü
 
+## v0.17.0 — 21 Ağustos 2026
+**Yeni proje sihirbazı — tam ekran, altı adım**
+
+Sihirbaz alt sayfadan **tam ekrana** taşındı. Üstte ✕, ortada başlık, sağda
+adım sayacı; altında altı parçalı şerit. Düğmeler ekranın dibinde sabit.
+
+| Adım | Ne soruyor |
+|---|---|
+| 1 · Firma | Ad, **sektör**, logo, renk |
+| 2 · Yetkili kişi | **Ad, telefon, e-posta** |
+| 3 · Ne yapılacak | Platform + veritabanı (eskiden iki ayrı adımdı) |
+| 4 · Dil, para, takvim | **Dil, para birimi, başlangıç, teslim** |
+| 5 · Bölümler | Modül seçimi — sektöre göre önden işaretli |
+| 6 · Özet | Kurmadan önce son bakış |
+
+**Sektör iş yapıyor.** Restoran seçince Sipariş, Stok ve Cari önden
+işaretleniyor ve üstlerinde "önerildi" yazıyor. Sektör listesi düzenlenebilir:
+**Ayarlar → Sektörler**, ya da sihirbazın içinden **+ Yeni sektör**.
+
+**Yetkili kişi bilgisi prompta girmiyor.** Ekranda da yazıyor: müşterinin
+telefonu Claude'a gitmez, müşteri deposuna yazılmaz.
+
+**Yeni alanlar proje ekranında** 1. durakta görünüyor. Boş olanlar satır
+açmıyor.
+
+> SQL çalıştırılmadan da sihirbaz çalışır: olmayan sütunlar sessizce düşürülür,
+> proje yine kurulur. `sql/13-sektor.sql` çalıştırılınca alanlar dolmaya başlar.
+
 ## v0.16.7 — 21 Ağustos 2026
 **Silinen şablonlar geri geliyordu · fotoğraf daha da erken iniyor**
 

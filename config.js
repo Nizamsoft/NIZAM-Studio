@@ -7,9 +7,9 @@ const APP = {
   name:     'NIZAM | Studio',
   short:    'NIZAM Studio',
   owner:    'Nizam Soft',
-  version: 'v0.16.7',
+  version: 'v0.17.0',
   build:    '2026-08-20',
-  stage: 'Adım 4 · Proje yolu',
+  stage: 'Adım 4 · Yeni sihirbaz',
 };
 
 /* Supabase bağlantısı.
@@ -50,6 +50,20 @@ const PROJE_RENK = {
 
 
 /* Her projede kendiliğinden açılan kova */
+/* Sihirbazdaki dil ve para birimi seçenekleri. */
+const DIL_SECENEK  = [
+  { kod: 'tr', ad: 'Türkçe' },
+  { kod: 'en', ad: 'İngilizce' },
+  { kod: 'ar', ad: 'Arapça' },
+  { kod: 'de', ad: 'Almanca' },
+];
+const PARA_SECENEK = [
+  { kod: 'TRY', ad: '₺ TRY' },
+  { kod: 'USD', ad: '$ USD' },
+  { kod: 'EUR', ad: '€ EUR' },
+  { kod: 'GBP', ad: '£ GBP' },
+];
+
 /* Standart grupları — yalnızca düzenleme penceresindeki hazır öneriler.
    Ekranda sıralama alfabetiktir, buradaki sıra değil. Yeni ad yazılabilir. */
 const STANDART_GRUPLARI = ['Arayüz', 'Veri & Çıktı', 'Bildirim', 'Yedekleme', 'Güvenlik'];
@@ -116,6 +130,7 @@ const MENU = [
   { id: 'projeler',    ad: 'Projeler',           ikon: 'folder', tab: true,  sayac: 'projeler' },
   { id: 'gorevler',    ad: 'Bana Atananlar',     ikon: 'check',  tab: true,  sayac: 'gorevler', tabAd: 'Görevler' },
   /* Standartlar alt çubukta değil — Ayarlar'ın içinden açılıyor. */
+  { id: 'sektorler',   ad: 'Sektörler',          ikon: 'folder', sadeceYonetici: true },
   { id: 'sablonlar',   ad: 'Modül Şablonları',   ikon: 'katman', sadeceYonetici: true },
   { id: 'standartlar', ad: 'Nizam Standartları', ikon: 'katman' },
   { id: 'ekip',        ad: 'Ekip',               ikon: 'kisi', sadeceYonetici: true },

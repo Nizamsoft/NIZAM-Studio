@@ -16,6 +16,7 @@ const DB = {
   kisiler: [],
   kisilerHepsi: [],
   sablonlar: [],
+  sektorler: [],
   /* Logolar private kovada; adres her oturumda yeniden üretilir. */
   logoAdres: {},
   standartlar: [],
@@ -95,14 +96,14 @@ const DB = {
     if (!AUTH.bagli) {                      // demo modu — veri yok
       this.projeler = []; this.moduller = []; this.sayfalar = [];
       this.gorevler = []; this.hareketler = []; this.kisiler = []; this.kisilerHepsi = [];
-      this.sablonlar = [];
+      this.sablonlar = []; this.sektorler = [];
       this.standartlar = []; this.gorevStandart = [];
       this.yuklendi = true;
       return;
     }
 
     try {
-      const [p, m, s, g, h, k, st, gs, ms] = await Promise.all([
+      const [p, m, s, g, h, k, st, gs, ms, sk] = await Promise.all([
         AUTH.db.from('projects').select('*').eq('arsiv', false).order('sira').order('olusturuldu'),
         AUTH.db.from('modules').select('*').order('sira'),
         AUTH.db.from('pages').select('*').order('sira'),
@@ -112,6 +113,7 @@ const DB = {
         AUTH.db.from('standards').select('*').eq('aktif', true).order('sira'),
         AUTH.db.from('task_standards').select('*'),
         AUTH.db.from('module_templates').select('*').eq('aktif', true).order('sira'),
+        AUTH.db.from('sectors').select('*').eq('aktif', true).order('sira'),
       ]);
 
       const ilkHata = p.error || m.error || s.error || g.error || h.error || st.error || gs.error;
@@ -131,6 +133,8 @@ const DB = {
       this.gorevStandart = gs.data || [];
       /* Tablo henüz kurulmamışsa hata verme — koddaki hazır liste devreye girer. */
       this.sablonlar     = (ms && !ms.error && ms.data) ? ms.data : [];
+      /* sectors tablosu henüz kurulmamışsa hata verme — liste boş kalır. */
+      this.sektorler     = (sk && !sk.error && sk.data) ? sk.data : [];
       this.yuklendi     = true;
       await this.logolariTazele();
     } catch (e) {
@@ -224,15 +228,22 @@ const DB = {
 
   /* Sihirbazın sonucu. Proje + Proje Geneli kovası + seçilen modüller
      ve şablon sayfaları tek seferde kurulur. */
-  async projeOlustur({ firma, renk, platform, veri, moduller }) {
+  async projeOlustur({ firma, renk, platform, veri, moduller, ek }) {
     yazmaKontrol();
 
-    const { data: proje, error } = await AUTH.db
-      .from('projects')
-      .insert({ firma: firma.trim(), renk, platform, veri, olusturan: AUTH.user.id })
-      .select()
-      .single();
-    if (error) throw new Error(veriHatasi(error));
+    const temel = { firma: firma.trim(), renk, platform, veri, olusturan: AUTH.user.id };
+
+    /* Yeni alanlar (sektör, yetkili, dil, tarihler) ancak SQL çalıştırıldıktan
+       sonra var. Sütun yoksa Supabase hata verir; o durumda alanları düşürüp
+       projeyi yine de kuruyoruz — sihirbaz SQL beklemek zorunda kalmasın. */
+    let proje = null, error = null;
+    for (const govde of [Object.assign({}, temel, ek || {}), temel]) {
+      const sonuc = await AUTH.db.from('projects').insert(govde).select().single();
+      if (!sonuc.error) { proje = sonuc.data; error = null; break; }
+      error = sonuc.error;
+      if (!/column .* does not exist|Could not find the/i.test(error.message || '')) break;
+    }
+    if (!proje) throw new Error(veriHatasi(error));
 
     /* Proje Geneli her zaman ilk sırada ve silinemez */
     const modulKayitlari = [{ proje_id: proje.id, ad: GENEL_MODUL, genel: true, sira: 0 }];
@@ -419,6 +430,25 @@ const DB = {
      şablonlar bir sonraki açılışta geri geliyordu. */
   modulSablonlari() {
     return this.sablonlar;
+  },
+
+  async sektorKaydet(id, alanlar) {
+    yazmaKontrol();
+    const q = id
+      ? AUTH.db.from('sectors').update(alanlar).eq('id', id)
+      : AUTH.db.from('sectors')
+          .insert(Object.assign({ sira: this.sektorler.length + 1 }, alanlar));
+    const { data, error } = await q.select('id');
+    if (error) throw new Error(sektorHatasi(error));
+    if (!data || !data.length) throw new Error(sektorHatasi({}));
+    await this.yukle();
+  },
+
+  async sektorSil(id) {
+    yazmaKontrol();
+    const { error } = await AUTH.db.from('sectors').update({ aktif: false }).eq('id', id);
+    if (error) throw new Error(sektorHatasi(error));
+    await this.yukle();
   },
 
   async sablonKaydet(id, alanlar) {
@@ -666,6 +696,15 @@ function yazmaKontrol() {
 }
 
 /* Depo hatalarını Türkçeye çevirir — çıplak İngilizce mesaj gösterme. */
+/* sectors tablosu henüz kurulmamışsa açık söyle. */
+function sektorHatasi(e) {
+  const m = (e && e.message) || '';
+  if (/relation .*sectors.* does not exist|Could not find the table/i.test(m)) {
+    return 'Sektör listesi için sql/13-sektor.sql dosyasını Supabase\'de çalıştır.';
+  }
+  return veriHatasi(e);
+}
+
 function depoHatasi(e, kova = 'avatarlar') {
   const m = (e && e.message) || '';
   const sql = kova === 'logolar' ? 'sql/11-marka.sql' : 'sql/09-foto.sql';

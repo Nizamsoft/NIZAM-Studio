@@ -17,6 +17,7 @@ const ROUTES = {
   gorevler:    { title: 'Bana Atananlar',     kisa: 'Görevler',    sub: () => gorevlerAltBaslik() },
   standartlar: { title: 'Nizam Standartları', kisa: 'Standartlar', sub: () => standartAltBaslik() },
   sablonlar:   { title: 'Modül Şablonları',   kisa: 'Şablonlar',   sub: () => sablonAltBaslik() },
+  sektorler:   { title: 'Sektörler',           kisa: 'Sektörler',   sub: () => sektorAltBaslik() },
   ekip:        { title: 'Ekip',               kisa: 'Ekip',        sub: () => ekipAltBaslik() },
   ayarlar:     { title: 'Ayarlar',            kisa: 'Ayarlar',     sub: () => APP.version + ' · ' + APP.stage },
 };
@@ -302,6 +303,35 @@ const VIEWS = {
     `;
   },
 
+  /* ---------- Sektörler ---------- */
+
+  sektorler: () => {
+    if (YUKLENIYOR) return iskeletler(3);
+    if (DB.hata)    return hataKutusu(DB.hata);
+
+    const liste = DB.sektorler;
+
+    return `
+      <div class="note" style="margin-bottom:12px">
+        ${svg(ICON.info, 15)}
+        <span>Sektör, yeni proje kurarken hangi modüllerin önden işaretleneceğini
+        belirler. Sonradan değiştirmen kurulmuş projeleri etkilemez.</span>
+      </div>
+
+      ${AUTH.yonetici ? `
+        <div class="standart-arac">
+          <button class="mini-link" data-eylem="sektor-ekle" type="button">
+            ${svg(ICON.arti, 13)} Yeni Sektör</button>
+        </div>` : ''}
+
+      ${liste.length
+        ? `<div class="card liste">${liste.map(sektorSatiri).join('')}</div>`
+        : `<div class="card">${empty(ICON.folder, 'Sektör yok',
+            'Sektör eklersen sihirbazda çıkar ve modülleri önden işaretler.',
+            AUTH.yonetici ? 'Yeni Sektör' : null, 'sektor-ekle')}</div>`}
+    `;
+  },
+
   /* ---------- Modül şablonları ---------- */
 
   sablonlar: () => {
@@ -418,6 +448,13 @@ const VIEWS = {
       <span class="label">Kütüphane</span>
       <div class="card">
         <div class="row-list">
+          <div class="row" data-eylem="sektorlere" role="button" tabindex="0">
+            <div class="row-main">
+              <span class="row-title">Sektörler</span>
+              <span class="row-sub">${sektorAltBaslik()} · modül önerisini belirler</span>
+            </div>
+            <span class="row-val">${svg(ICON.chevron, 15)}</span>
+          </div>
           <div class="row" data-eylem="sablonlara" role="button" tabindex="0">
             <div class="row-main">
               <span class="row-title">Modül Şablonları</span>
@@ -544,7 +581,8 @@ function projeKunyesi(p) {
       </span>
       <span class="kunye-yazi">
         <h2>${esc(p.firma)}</h2>
-        <p>${PLATFORM_ADI[p.platform] || p.platform} · ${VERI_ADI[p.veri] || p.veri}</p>
+        <p>${[p.sektor, PLATFORM_ADI[p.platform] || p.platform, VERI_ADI[p.veri] || p.veri]
+              .filter(Boolean).map(esc).join(' · ')}</p>
       </span>
       <span class="kunye-pct mono">%${s.yuzde}</span>
     </div>
@@ -562,7 +600,8 @@ function projeDuraklari(p) {
     {
       ad: 'Firma bilgileri',
       bitti: true,
-      ozet: `${PLATFORM_ADI[p.platform] || '—'} · ${VERI_ADI[p.veri] || '—'}`,
+      ozet: [p.sektor, PLATFORM_ADI[p.platform] || '—', VERI_ADI[p.veri] || '—']
+        .filter(Boolean).join(' · '),
       icerik: firmaDuragi(p),
     },
     {
@@ -633,9 +672,23 @@ function projeYolu(p) {
 
 /* 1 · Firma bilgileri */
 function firmaDuragi(p) {
+  const dil  = (DIL_SECENEK.find(x => x.kod === p.dil) || {}).ad;
+  const para = (PARA_SECENEK.find(x => x.kod === p.para) || {}).ad;
+  const yetkili = [p.yetkili, p.telefon].filter(Boolean).join(' · ');
+  const takvim = [p.baslangic, p.teslim].filter(Boolean).map(gunYaz).join(' → ');
+
+  /* Boş alan satır açmıyor — SQL çalıştırılmadıysa ekran eskisi gibi kalıyor. */
+  const varsa = (ad, deger, sinif = '') => deger
+    ? `<div class="satir">${ad} <b class="${sinif}">${esc(deger)}</b></div>` : '';
+
   return `
     <div class="satir">Platform <b>${PLATFORM_ADI[p.platform] || '—'}</b></div>
     <div class="satir">Veri <b>${VERI_ADI[p.veri] || '—'}</b></div>
+    ${varsa('Sektör', p.sektor)}
+    ${varsa('Yetkili', yetkili)}
+    ${varsa('E-posta', p.eposta, 'mono')}
+    ${dil || para ? `<div class="satir">Dil / Para <b>${esc([dil, para].filter(Boolean).join(' · '))}</b></div>` : ''}
+    ${varsa('Takvim', takvim)}
     <div class="satir">Depo ${p.repo
       ? `<b class="mono">${esc(p.repo)}</b>`
       : '<b class="eksik">eklenmedi</b>'}</div>
@@ -1304,6 +1357,24 @@ function sayaclariYaz() {
   }
 }
 
+function sektorAltBaslik() {
+  if (YUKLENIYOR) return 'yükleniyor…';
+  return DB.sektorler.length + ' sektör';
+}
+
+function sektorSatiri(x, i = 0) {
+  const m = x.moduller || [];
+  return `
+    <div class="row" style="--i:${i}" data-eylem="sektor-duzenle" data-id="${x.id}"
+         role="button" tabindex="0">
+      <div class="row-main">
+        <span class="row-title">${esc(x.ad)}</span>
+        <span class="row-sub">${m.length ? m.join(' · ') : 'modül önerisi yok'}</span>
+      </div>
+      <span class="row-val">${svg(ICON.chevron, 15)}</span>
+    </div>`;
+}
+
 function sablonAltBaslik() {
   if (YUKLENIYOR) return 'yükleniyor…';
   const n = DB.modulSablonlari().length;
@@ -1418,70 +1489,144 @@ async function veriTazele() {
 const SIHIRBAZ = {
   adim: 1,
   firma: '',
+  sektor: '',
+  renk: 'yesil',
   /* Logo dosyası bellekte tutuluyor; proje kurulduktan sonra yükleniyor,
      çünkü dosya adı projenin kimliği. */
   logo: null,
   logoOnizleme: '',
-  renk: 'yesil',
+  yetkili: '',
+  telefon: '',
+  eposta: '',
   platform: 'ikisi',
   veri: 'sifirdan',
+  dil: 'tr',
+  para: 'TRY',
+  baslangic: '',
+  teslim: '',
   moduller: [],
   kaydediyor: false,
 };
 
+const SIHIRBAZ_ADIM = 6;
+
 function sihirbaziAc() {
   modalHepsiniKapat();
   Object.assign(SIHIRBAZ, {
-    adim: 1, firma: '', renk: 'yesil', platform: 'ikisi',
-    veri: 'sifirdan', moduller: [], kaydediyor: false,
+    adim: 1, firma: '', sektor: '', renk: 'yesil',
     logo: null, logoOnizleme: '',
+    yetkili: '', telefon: '', eposta: '',
+    platform: 'ikisi', veri: 'sifirdan',
+    dil: 'tr', para: 'TRY',
+    baslangic: bugunTarih(), teslim: '',
+    moduller: [], kaydediyor: false,
   });
-  modalAc(sihirbazHtml(), sihirbazBagla);
+  sihirbazAc();
+}
+
+/* Sihirbaz tam ekran: alt sayfa değil, kendi ekranı. Uzun formu adımlara
+   böldüğümüz için her adım kısa; ekranın dibinde düğmeler sabit duruyor. */
+function sihirbazAc() {
+  const el = document.createElement('div');
+  el.id = 'sihirbaz';
+  el.className = 'sihirbaz';
+  document.body.appendChild(el);
+  sihirbazCiz();
+}
+
+function sihirbazKapat() {
+  const el = $('#sihirbaz');
+  if (!el) return;
+  if (SIHIRBAZ.logoOnizleme) URL.revokeObjectURL(SIHIRBAZ.logoOnizleme);
+  SIHIRBAZ.logo = null;
+  SIHIRBAZ.logoOnizleme = '';
+  el.classList.remove('acik');
+  setTimeout(() => el.remove(), 260);
+}
+
+function sihirbazCiz() {
+  const el = $('#sihirbaz');
+  if (!el) return;
+  el.innerHTML = sihirbazHtml();
+  sihirbazBagla(el);
+  requestAnimationFrame(() => el.classList.add('acik'));
 }
 
 function sihirbazHtml() {
-  const a = SIHIRBAZ.adim;
+  const a   = SIHIRBAZ.adim;
+  const son = a === SIHIRBAZ_ADIM;
 
-  const cizgiler = [1, 2, 3, 4].map(i =>
-    `<span class="sd ${i < a ? 'on' : ''} ${i === a ? 'cur' : ''}"></span>`).join('');
-
-  const govde = [sihirbazAdim1, sihirbazAdim2, sihirbazAdim3, sihirbazAdim4][a - 1]();
-  const son   = a === 4;
+  const govde = [
+    sihirbazFirma, sihirbazYetkili, sihirbazUrun,
+    sihirbazAyar, sihirbazModul, sihirbazOzet,
+  ][a - 1]();
 
   return `
-    <div class="steps">${cizgiler}</div>
-    ${govde}
-    <div class="modal-alt">
-      <button class="btn btn-ghost" data-sb="${a === 1 ? 'kapat' : 'geri'}" type="button">
-        ${a === 1 ? 'Vazgeç' : 'Geri'}
+    <div class="sh-tepe">
+      <button class="sh-kapat" data-sb="kapat" type="button" aria-label="Kapat">
+        ${svg(ICON.kapat, 15)}
       </button>
-      <button class="btn btn-primary" data-sb="${son ? 'kaydet' : 'ileri'}" type="button">
-        <span>${son ? 'Projeyi Oluştur' : 'Devam'}</span>
-      </button>
+      <span class="sh-ad">Yeni Proje</span>
+      <span class="sh-say mono">${a} / ${SIHIRBAZ_ADIM}</span>
+    </div>
+
+    <div class="sh-sayfa">
+      <div class="sh-serit">
+        ${Array.from({ length: SIHIRBAZ_ADIM }, (_, i) =>
+          `<i class="${i < a - 1 ? 'ok' : i === a - 1 ? 'simdi' : ''}"></i>`).join('')}
+      </div>
+
+      <div class="sh-icerik">${govde}</div>
+
+      <div class="sh-dip">
+        <button class="btn btn-ghost" data-sb="${a === 1 ? 'kapat' : 'geri'}" type="button">
+          ${a === 1 ? 'Vazgeç' : 'Geri'}
+        </button>
+        <button class="btn btn-primary" data-sb="${son ? 'kaydet' : 'ileri'}" type="button">
+          <span>${son ? 'Projeyi Oluştur' : 'Devam'}</span>
+        </button>
+      </div>
     </div>`;
 }
 
-function sihirbazAdim1() {
+function shBaslik(ikon, baslik, alt) {
+  return `
+    <div class="sh-bas">
+      <span class="sh-rozet">${svg(ikon, 22)}</span>
+      <span><h2>${esc(baslik)}</h2><p>${alt}</p></span>
+    </div>`;
+}
+
+/* 1 · Firma */
+function sihirbazFirma() {
+  const sektorler = DB.sektorler;
   const renkler = Object.keys(PROJE_RENK).map(k =>
     `<button class="renk ${SIHIRBAZ.renk === k ? 'sec' : ''}" data-sb="renk" data-deger="${k}"
        style="${renkStil(k)}" type="button" aria-label="${k}"></button>`).join('');
 
-  return `
-    ${modalBaslik(ICON.folder, 'Hangi firma için?', 'Proje kimliğini belirleyelim.')}
+  return shBaslik(ICON.folder, 'Firma', 'Projenin kimliği. Bir kez girilir, her işe taşınır.') + `
     <label class="field">
       <span>Firma adı</span>
-      <input type="text" id="sb-firma" value="${esc(SIHIRBAZ.firma)}" placeholder="Örn. Aydın Yapı"
-             autocomplete="off" maxlength="60">
+      <input type="text" id="sb-firma" value="${esc(SIHIRBAZ.firma)}"
+             placeholder="Örn. Aydın Yapı" autocomplete="off" maxlength="60">
     </label>
+
     <div class="field">
-      <span>Proje rengi</span>
-      <div class="renkler">${renkler}</div>
+      <span>Sektör <em class="ipucu">modül önerisini belirler</em></span>
+      <div class="pullar">
+        ${sektorler.map(x => `<button class="pul ${SIHIRBAZ.sektor === x.ad ? 'sec' : ''}"
+           data-sb="sektor" data-deger="${esc(x.ad)}" type="button">${esc(x.ad)}</button>`).join('')}
+        ${AUTH.yonetici ? `<button class="pul yeni" data-sb="sektor-ekle" type="button">
+          ${svg(ICON.arti, 12)} Yeni sektör</button>` : ''}
+      </div>
+      ${sektorler.length ? '' : `<p class="ipucu" style="margin-top:8px">
+        Sektör listesi boş. "Yeni sektör" ile ekleyebilir ya da bu adımı boş geçebilirsin.</p>`}
     </div>
 
     <div class="field">
-      <span>Firma logosu <em class="ipucu">isteğe bağlı</em></span>
+      <span>Logo <em class="ipucu">isteğe bağlı</em></span>
       <div class="mk-ust">
-        <span class="mk-logo ${SIHIRBAZ.logoOnizleme ? 'dolu' : ''}"
+        <span class="mk-logo buyuk ${SIHIRBAZ.logoOnizleme ? 'dolu' : ''}"
               ${SIHIRBAZ.logoOnizleme ? `style="background-image:url('${SIHIRBAZ.logoOnizleme}')"` : ''}
               data-sb="logo" role="button" tabindex="0">
           ${SIHIRBAZ.logoOnizleme ? '' : svg(ICON.folder, 20)}
@@ -1491,49 +1636,165 @@ function sihirbazAdim1() {
           <i>${SIHIRBAZ.logo ? 'Değiştirmek için dokun' : 'Renk paletini bundan üreteceğiz'}</i>
         </span>
       </div>
+    </div>
+
+    <div class="field">
+      <span>Proje rengi</span>
+      <div class="renkler">${renkler}</div>
     </div>`;
 }
 
-function sihirbazAdim2() {
-  const secenekler = [
+/* 2 · Yetkili kişi */
+function sihirbazYetkili() {
+  return shBaslik(ICON.kisi, 'Yetkili kişi', 'İş sırasında soru çıkarsa kime soracağını bilelim.') + `
+    <label class="field">
+      <span>Ad soyad</span>
+      <input type="text" id="sb-yetkili" value="${esc(SIHIRBAZ.yetkili)}"
+             placeholder="Örn. Mehmet Yılmaz" autocomplete="off" maxlength="60">
+    </label>
+    <label class="field">
+      <span>Telefon</span>
+      <input type="tel" id="sb-telefon" value="${esc(SIHIRBAZ.telefon)}"
+             placeholder="0532 000 00 00" autocomplete="off" maxlength="24">
+    </label>
+    <label class="field">
+      <span>E-posta <em class="ipucu">isteğe bağlı</em></span>
+      <input type="email" id="sb-eposta" value="${esc(SIHIRBAZ.eposta)}"
+             placeholder="ornek@firma.com" autocomplete="off"
+             autocapitalize="off" spellcheck="false" maxlength="80">
+    </label>
+
+    <div class="note note-kucuk">
+      ${svg(ICON.info, 15)}
+      <span>Bu bilgiler yalnızca senin görebileceğin yerde durur.
+      Prompta girmez, müşteri deposuna yazılmaz.</span>
+    </div>`;
+}
+
+/* 3 · Ürün */
+function sihirbazUrun() {
+  const platform = [
     ['web',   'Web',          'Tarayıcıda çalışır'],
     ['mobil', 'Mobil',        'Telefon uygulaması'],
     ['ikisi', 'İkisi birden', 'Web + mobil, ortak veri'],
   ];
-  return `
-    ${modalBaslik(ICON.katman, 'Nerede kullanılacak?', 'Bu, üretilecek sayfaları belirler.')}
-    <div class="secim">${secenekler.map(([d, ad, alt]) =>
-      secimSatiri('platform', d, ad, alt, SIHIRBAZ.platform === d)).join('')}</div>`;
-}
-
-function sihirbazAdim3() {
-  const secenekler = [
-    ['sifirdan', 'Sıfırdan kurulacak',    'Yeni Supabase veritabanı'],
-    ['mevcut',   'Mevcut veritabanı var', 'Bağlantı bilgisi sonra girilir'],
-    ['excel',    "Excel'den taşınacak",   'Hazır tablolar aktarılır'],
+  const veri = [
+    ['sifirdan', 'Sıfırdan kurulacak',        'Şemayı biz tasarlayacağız'],
+    ['bagli',    'Hazır bir yere bağlanacak', 'Müşterinin sistemi var'],
   ];
-  return `
-    ${modalBaslik(ICON.katman, 'Veritabanı durumu', 'Mevcut bir sistem var mı?')}
-    <div class="secim">${secenekler.map(([d, ad, alt]) =>
-      secimSatiri('veri', d, ad, alt, SIHIRBAZ.veri === d)).join('')}</div>`;
-}
 
-function sihirbazAdim4() {
-  const kutular = DB.modulSablonlari().map(m => {
-    const secili = SIHIRBAZ.moduller.includes(m.ad);
-    return `<button class="mod ${secili ? 'sec' : ''}" data-sb="modul" data-deger="${esc(m.ad)}" type="button">
-      <span>${esc(m.ad)}</span><span class="tik">${secili ? svg(ICON.tik, 13) : ''}</span></button>`;
-  }).join('');
-
-  return `
-    ${modalBaslik(ICON.katman, 'Hangi modüller olacak?', 'Seçtiklerin sayfalarıyla birlikte kurulur.')}
-    <div class="mod-grid">${kutular}</div>
-    <div class="note note-kucuk">
-      ${svg(ICON.info, 15)}
-      <span>Her projeye ayrıca bir <b>${GENEL_MODUL}</b> kovası eklenir — modüle bağlanamayan işler oraya düşer.</span>
+  return shBaslik(ICON.katman, 'Ne yapılacak?', 'Bu iki cevap üretilecek sayfaları belirler.') + `
+    <div class="field">
+      <span>Nerede kullanılacak</span>
+      <div class="secim">${platform.map(([d, ad, alt]) =>
+        secimSatiri('platform', d, ad, alt, SIHIRBAZ.platform === d)).join('')}</div>
+    </div>
+    <div class="field">
+      <span>Veritabanı</span>
+      <div class="secim">${veri.map(([d, ad, alt]) =>
+        secimSatiri('veri', d, ad, alt, SIHIRBAZ.veri === d)).join('')}</div>
     </div>`;
 }
 
+/* 4 · Dil, para, takvim */
+function sihirbazAyar() {
+  const serit = (tur, liste, secili) => `
+    <div class="secenek-serit">
+      ${liste.map(x => `<button class="ss ${secili === x.kod ? 'sec' : ''}"
+        data-sb="${tur}" data-deger="${x.kod}" type="button">${esc(x.ad)}</button>`).join('')}
+    </div>`;
+
+  return shBaslik(ICON.ayar, 'Dil, para ve takvim',
+    'Tarih biçimi, kuruş ayracı ve gecikme uyarısı buradan.') + `
+    <div class="field">
+      <span>Dil</span>
+      ${serit('dil', DIL_SECENEK, SIHIRBAZ.dil)}
+    </div>
+    <div class="field">
+      <span>Para birimi</span>
+      ${serit('para', PARA_SECENEK, SIHIRBAZ.para)}
+    </div>
+    <label class="field">
+      <span>Başlangıç</span>
+      <input type="date" id="sb-baslangic" value="${esc(SIHIRBAZ.baslangic)}">
+    </label>
+    <label class="field">
+      <span>Teslim hedefi <em class="ipucu">isteğe bağlı</em></span>
+      <input type="date" id="sb-teslim" value="${esc(SIHIRBAZ.teslim)}">
+    </label>
+
+    <div class="note note-kucuk">
+      ${svg(ICON.info, 15)}
+      <span>Teslim tarihi girersen Panel'de <b>geciken projeler</b> ayrı gösterilir.
+      Boş bırakırsan yalnızca yüzde görünür.</span>
+    </div>`;
+}
+
+/* 5 · Modüller */
+function sihirbazModul() {
+  const sablonlar = DB.modulSablonlari();
+  const sektor = DB.sektorler.find(x => x.ad === SIHIRBAZ.sektor);
+  const onerilen = (sektor && sektor.moduller) || [];
+
+  const alt = onerilen.length
+    ? `${esc(SIHIRBAZ.sektor)} seçtiğin için bazıları önden işaretlendi.`
+    : 'Seçtiklerin sayfalarıyla birlikte kurulur.';
+
+  return shBaslik(ICON.katman, 'Hangi bölümler olacak?', alt) + `
+    ${sablonlar.length ? `<div class="secim">${sablonlar.map(m => {
+      const secili = SIHIRBAZ.moduller.includes(m.ad);
+      const oneri  = onerilen.includes(m.ad);
+      return `
+        <div class="satir sec-satir ${secili ? 'sec' : ''}" data-sb="modul" data-deger="${esc(m.ad)}"
+             role="button" tabindex="0">
+          <span class="sec-yazi">
+            <b>${esc(m.ad)}</b>
+            <i>${(m.sayfalar || []).length} sayfa</i>
+          </span>
+          ${oneri ? '<span class="onerildi">önerildi</span>' : ''}
+          <span class="kare">${secili ? svg(ICON.tik, 12) : ''}</span>
+        </div>`;
+    }).join('')}</div>` : `
+      <div class="card">${empty(ICON.katman, 'Şablon yok',
+        'Ayarlar → Modül Şablonları\'ndan ekleyebilirsin. Boş geçersen proje yalnızca Proje Geneli ile kurulur.')}</div>`}
+
+    <div class="note note-kucuk">
+      ${svg(ICON.info, 15)}
+      <span>Her projeye ayrıca bir <b>Proje Geneli</b> kovası eklenir —
+      modüle bağlanamayan işler oraya düşer.</span>
+    </div>`;
+}
+
+/* 6 · Özet */
+function sihirbazOzet() {
+  const sablonlar = DB.modulSablonlari();
+  const sayfa = SIHIRBAZ.moduller.reduce((t, ad) => {
+    const m = sablonlar.find(x => x.ad === ad);
+    return t + ((m && m.sayfalar || []).length);
+  }, 0);
+
+  const dil  = (DIL_SECENEK.find(x => x.kod === SIHIRBAZ.dil) || {}).ad || '—';
+  const para = (PARA_SECENEK.find(x => x.kod === SIHIRBAZ.para) || {}).ad || '—';
+
+  const satir = (ad, deger) => deger
+    ? `<div class="os">${ad} <b>${esc(deger)}</b></div>` : '';
+
+  return shBaslik(ICON.tik, 'Her şey doğru mu?',
+    'Onaylarsan proje modülleri ve sayfalarıyla kurulur.') + `
+    <div class="ozet-kutu">
+      ${satir('Firma', SIHIRBAZ.firma || '—')}
+      ${satir('Sektör', SIHIRBAZ.sektor)}
+      ${satir('Yetkili', [SIHIRBAZ.yetkili, SIHIRBAZ.telefon].filter(Boolean).join(' · '))}
+      ${satir('Platform', PLATFORM_ADI[SIHIRBAZ.platform])}
+      ${satir('Veri', VERI_ADI[SIHIRBAZ.veri])}
+      ${satir('Dil / Para', dil + ' · ' + para)}
+      ${satir('Takvim', [SIHIRBAZ.baslangic, SIHIRBAZ.teslim].filter(Boolean).map(gunYaz).join(' → '))}
+      ${satir('Bölümler', SIHIRBAZ.moduller.join(' · ') || 'yok')}
+      ${satir('Kurulacak', sayfa ? sayfa + ' sayfa' : 'yalnızca Proje Geneli')}
+    </div>`;
+}
+
+/* Tek seçimlik satır — platform ve veritabanı adımlarında kullanılıyor. */
 function secimSatiri(alan, deger, ad, alt, secili) {
   return `<button class="sc ${secili ? 'sec' : ''}" data-sb="${alan}" data-deger="${deger}" type="button">
     <span class="sc-yazi"><span class="sc-ad">${ad}</span><span class="sc-alt">${alt}</span></span>
@@ -1542,27 +1803,43 @@ function secimSatiri(alan, deger, ad, alt, secili) {
 }
 
 function sihirbazBagla(kutu) {
-  const firma = $('#sb-firma', kutu);
-  if (firma) {
-    firma.addEventListener('input', e => { SIHIRBAZ.firma = e.target.value; });
-    setTimeout(() => firma.focus(), 40);
-    firma.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); sihirbazIleri(); } });
-  }
+  const yaz = () => {
+    const al = id => { const e = $('#' + id, kutu); return e ? e.value : null; };
+    if (al('sb-firma')     !== null) SIHIRBAZ.firma     = al('sb-firma');
+    if (al('sb-yetkili')   !== null) SIHIRBAZ.yetkili   = al('sb-yetkili');
+    if (al('sb-telefon')   !== null) SIHIRBAZ.telefon   = al('sb-telefon');
+    if (al('sb-eposta')    !== null) SIHIRBAZ.eposta    = al('sb-eposta');
+    if (al('sb-baslangic') !== null) SIHIRBAZ.baslangic = al('sb-baslangic');
+    if (al('sb-teslim')    !== null) SIHIRBAZ.teslim    = al('sb-teslim');
+  };
+
+  const ilk = $('#sb-firma', kutu) || $('#sb-yetkili', kutu);
+  if (ilk) setTimeout(() => ilk.focus(), 60);
 
   $$('[data-sb]', kutu).forEach(el => {
-    el.addEventListener('click', () => {
-      const t = el.dataset.sb, d = el.dataset.deger;
+    el.addEventListener('click', async () => {
+      const t = el.dataset.sb;
+      const d = el.dataset.deger;
 
-      if (t === 'kapat')  return modalKapat();
-      if (t === 'geri')   { SIHIRBAZ.adim--; return sihirbazCiz(); }
-      if (t === 'ileri')  return sihirbazIleri();
-      if (t === 'kaydet') return sihirbazKaydet();
+      if (t === 'kapat') return sihirbazKapat();
+      if (t === 'geri')  { yaz(); SIHIRBAZ.adim--; return sihirbazCiz(); }
+      if (t === 'ileri') { yaz(); if (!sihirbazDenetle()) return; SIHIRBAZ.adim++; return sihirbazCiz(); }
+      if (t === 'kaydet') { yaz(); return sihirbazKaydet(); }
+      if (t === 'logo')   return sihirbazLogoSec();
+      if (t === 'sektor-ekle') { yaz(); return sihirbazSektorEkle(); }
 
-      if (t === 'logo') { sihirbazLogoSec(); return; }
-
+      yaz();
       if (t === 'renk')     SIHIRBAZ.renk = d;
       if (t === 'platform') SIHIRBAZ.platform = d;
       if (t === 'veri')     SIHIRBAZ.veri = d;
+      if (t === 'dil')      SIHIRBAZ.dil = d;
+      if (t === 'para')     SIHIRBAZ.para = d;
+      if (t === 'sektor') {
+        SIHIRBAZ.sektor = SIHIRBAZ.sektor === d ? '' : d;
+        /* Sektör değişince önerilen modülleri işaretle — dokunulmamışsa. */
+        const s = DB.sektorler.find(x => x.ad === SIHIRBAZ.sektor);
+        SIHIRBAZ.moduller = (s && s.moduller) ? s.moduller.slice() : [];
+      }
       if (t === 'modul') {
         const i = SIHIRBAZ.moduller.indexOf(d);
         i === -1 ? SIHIRBAZ.moduller.push(d) : SIHIRBAZ.moduller.splice(i, 1);
@@ -1572,7 +1849,15 @@ function sihirbazBagla(kutu) {
   });
 }
 
-/* Sihirbazda logo seçimi: dosya bellekte kalıyor, önizlemesi hemen gösteriliyor. */
+/* Adım geçilebilir mi? Yalnızca gerçekten şart olanı soruyoruz. */
+function sihirbazDenetle() {
+  if (SIHIRBAZ.adim === 1 && !SIHIRBAZ.firma.trim()) {
+    toast('Firma adını yaz.');
+    return false;
+  }
+  return true;
+}
+
 function sihirbazLogoSec() {
   const alan = document.createElement('input');
   alan.type = 'file';
@@ -1595,21 +1880,24 @@ function sihirbazLogoSec() {
   alan.click();
 }
 
-function sihirbazCiz() {
-  const kutu = $('.modal-kutu');
-  if (!kutu) return;
-  kutu.innerHTML = sihirbazHtml();
-  sihirbazBagla(kutu);
-}
+/* Sihirbazın içinden sektör eklemek: listeye girer ve seçili olur. */
+async function sihirbazSektorEkle() {
+  const ad = await metinSor({
+    baslik: 'Yeni sektör',
+    aciklama: 'Listeye eklenir; bundan sonraki projelerde de çıkar.',
+    yerTutucu: 'Örn. Restoran',
+    buton: 'Ekle',
+  });
+  if (!ad) return;
 
-function sihirbazIleri() {
-  if (SIHIRBAZ.adim === 1 && !SIHIRBAZ.firma.trim()) {
-    toast('Firma adını yaz.');
-    const f = $('#sb-firma'); if (f) f.focus();
-    return;
+  try {
+    await DB.sektorKaydet(null, { ad: ad.trim(), moduller: SIHIRBAZ.moduller.slice() });
+    SIHIRBAZ.sektor = ad.trim();
+    sihirbazCiz();
+    toast(ad.trim() + ' eklendi.', 'basari');
+  } catch (h) {
+    toast(h.message, 'hata');
   }
-  SIHIRBAZ.adim++;
-  sihirbazCiz();
 }
 
 async function sihirbazKaydet() {
@@ -1620,13 +1908,25 @@ async function sihirbazKaydet() {
   if (btn) btn.textContent = 'Kuruluyor…';
 
   try {
-    const moduller = SIHIRBAZ.moduller.map(ad => DB.modulSablonlari().find(m => m.ad === ad));
+    const sablonlar = DB.modulSablonlari();
+    const moduller = SIHIRBAZ.moduller.map(ad => sablonlar.find(m => m.ad === ad)).filter(Boolean);
+
     const id = await DB.projeOlustur({
       firma: SIHIRBAZ.firma,
       renk: SIHIRBAZ.renk,
       platform: SIHIRBAZ.platform,
       veri: SIHIRBAZ.veri,
       moduller,
+      ek: {
+        sektor:    SIHIRBAZ.sektor || null,
+        yetkili:   SIHIRBAZ.yetkili.trim() || null,
+        telefon:   SIHIRBAZ.telefon.trim() || null,
+        eposta:    SIHIRBAZ.eposta.trim() || null,
+        dil:       SIHIRBAZ.dil,
+        para:      SIHIRBAZ.para,
+        baslangic: SIHIRBAZ.baslangic || null,
+        teslim:    SIHIRBAZ.teslim || null,
+      },
     });
 
     /* Logo ancak proje kurulduktan sonra yüklenebilir: dosya adı projenin
@@ -1636,11 +1936,7 @@ async function sihirbazKaydet() {
       catch (h) { toast('Proje kuruldu ama logo yüklenemedi — ' + h.message, 'uyari'); }
     }
 
-    if (SIHIRBAZ.logoOnizleme) URL.revokeObjectURL(SIHIRBAZ.logoOnizleme);
-    SIHIRBAZ.logo = null;
-    SIHIRBAZ.logoOnizleme = '';
-
-    modalKapat();
+    sihirbazKapat();
     sayaclariYaz();
     toast(SIHIRBAZ.firma.trim() + ' kuruldu.');
     location.hash = '#/projeler/' + id;
@@ -2326,6 +2622,94 @@ function modulEkleAc(projeId) {
       }
     });
   });
+}
+
+/* Sektör: ad ve o sektörde önden işaretlenecek modüller. */
+function sektorDuzenle(id) {
+  modalHepsiniKapat();
+  const x = id ? DB.sektorler.find(s => s.id === id) : null;
+  let secili = (x && x.moduller) ? x.moduller.slice() : [];
+
+  const sablonlar = DB.modulSablonlari();
+
+  modalAc(`
+    ${modalBaslik(ICON.folder, x ? 'Sektörü düzenle' : 'Yeni sektör',
+      'Bu sektör seçilince aşağıdaki modüller önden işaretlenir.')}
+
+    <label class="field">
+      <span>Sektör adı</span>
+      <input type="text" id="sk-ad" value="${esc(x ? x.ad : '')}"
+             placeholder="Örn. Restoran" maxlength="40" autocomplete="off">
+    </label>
+
+    <div class="field">
+      <span>Önerilen modüller <em class="ipucu">isteğe bağlı</em></span>
+      ${sablonlar.length ? `<div class="secim" id="sk-moduller">
+        ${sablonlar.map(m => `
+          <div class="satir sec-satir ${secili.includes(m.ad) ? 'sec' : ''}"
+               data-skm="${esc(m.ad)}" role="button" tabindex="0">
+            <span class="sec-yazi"><b>${esc(m.ad)}</b><i>${(m.sayfalar || []).length} sayfa</i></span>
+            <span class="kare">${secili.includes(m.ad) ? svg(ICON.tik, 12) : ''}</span>
+          </div>`).join('')}
+      </div>` : '<p class="ipucu">Önce Modül Şablonları\'ndan modül ekle.</p>'}
+    </div>
+
+    <div class="modal-alt">
+      ${x ? `<button class="btn btn-ghost tehlike" data-sk="sil" type="button">Kaldır</button>` : ''}
+      <button class="btn btn-ghost" data-sk="iptal" type="button">Vazgeç</button>
+      <button class="btn btn-primary" data-sk="kaydet" type="button"><span>Kaydet</span></button>
+    </div>`, kutu => {
+    setTimeout(() => $('#sk-ad', kutu).focus(), 40);
+
+    const ciz = () => {
+      $$('[data-skm]', kutu).forEach(el => {
+        const var_ = secili.includes(el.dataset.skm);
+        el.classList.toggle('sec', var_);
+        $('.kare', el).innerHTML = var_ ? svg(ICON.tik, 12) : '';
+      });
+    };
+
+    $$('[data-skm]', kutu).forEach(el => el.addEventListener('click', () => {
+      const ad = el.dataset.skm;
+      const i = secili.indexOf(ad);
+      i === -1 ? secili.push(ad) : secili.splice(i, 1);
+      ciz();
+    }));
+
+    $('[data-sk="iptal"]', kutu).addEventListener('click', modalKapat);
+
+    const silDug = $('[data-sk="sil"]', kutu);
+    if (silDug) silDug.addEventListener('click', async () => {
+      const ok = await onaySor({
+        baslik: 'Sektör kaldırılsın mı?',
+        mesaj: `"${x.ad}" listeden çıkacak. Bu sektörle kurulmuş projelere dokunulmaz.`,
+      });
+      if (!ok) return;
+      try {
+        await DB.sektorSil(x.id);
+        modalKapat();
+        render();
+        toast('Sektör kaldırıldı.', 'basari');
+      } catch (h) { toast(h.message, 'hata'); }
+    });
+
+    $('[data-sk="kaydet"]', kutu).addEventListener('click', async () => {
+      const ad = $('#sk-ad', kutu).value.trim();
+      if (!ad) { toast('Sektör adını yaz.'); return; }
+
+      const yazi = $('[data-sk="kaydet"] span', kutu);
+      yazi.textContent = 'Kaydediliyor…';
+      try {
+        await DB.sektorKaydet(id, { ad, moduller: secili });
+        modalKapat();
+        render();
+        toast(id ? 'Sektör güncellendi.' : 'Sektör eklendi.', 'basari');
+      } catch (h) {
+        yazi.textContent = 'Kaydet';
+        toast(h.message, 'hata');
+      }
+    });
+  }, 'genis');
 }
 
 /* Şablon yazma / düzenleme. */
@@ -3190,6 +3574,10 @@ async function eylemCalistir(el) {
     ACIK_SABLON = ACIK_SABLON === ad ? null : ad;
     return render();
   }
+
+  if (e === 'sektorlere')     { location.hash = '#/sektorler'; return; }
+  if (e === 'sektor-ekle')    return sektorDuzenle(null);
+  if (e === 'sektor-duzenle') return sektorDuzenle(id);
 
   if (e === 'sablonlara')     { location.hash = '#/sablonlar'; return; }
   if (e === 'sablon-ekle')    return sablonDuzenle(null);
