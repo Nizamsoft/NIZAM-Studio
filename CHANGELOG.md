@@ -1,5 +1,17 @@
 # Değişiklik Günlüğü
 
+## v0.16.4 — 21 Ağustos 2026
+**Yükleme göstergesi silinmiyordu**
+
+Logo gelince göstergenin arkasına geçiyordu ama gösterge duruyordu —
+resmin üstünde dönmeye devam ediyordu.
+
+- Gösterge iş bitince DOM'dan çıkarılıyor. Yalnızca gizlemek yetmiyor;
+  gizli bir öğe animasyonu arkada döndürmeye devam eder
+- Güvenlik ağı olarak CSS'te de gizlendi
+- Hem başarılı yüklemede hem bozuk adreste denendi: ikisinde de gösterge
+  geriye kalmıyor
+
 ## v0.16.3 — 21 Ağustos 2026
 **Yeni uygulama simgesi**
 

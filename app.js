@@ -516,16 +516,21 @@ function logolariGoster() {
     const adres = el.dataset.logo;
     delete el.dataset.logo;
 
+    /* Gösterge işi bitince DOM'dan çıkarılıyor; yalnızca gizlemek yetmez,
+       animasyon arkada dönmeye devam eder. */
+    const bitir = sinif => {
+      el.classList.remove('yukleniyor');
+      el.classList.add(sinif);
+      const gosterge = $('.donen', el);
+      if (gosterge) gosterge.remove();
+    };
+
     const resim = new Image();
     resim.onload = () => {
       el.style.backgroundImage = `url('${adres}')`;
-      el.classList.remove('yukleniyor');
-      el.classList.add('dolu');
+      bitir('dolu');
     };
-    resim.onerror = () => {
-      el.classList.remove('yukleniyor');
-      el.classList.add('yuklenemedi');
-    };
+    resim.onerror = () => bitir('yuklenemedi');
     resim.src = adres;
   });
 }

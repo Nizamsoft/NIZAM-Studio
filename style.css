@@ -1415,6 +1415,8 @@ html { background: var(--bg); }
   animation: donuyor .7s linear infinite;
 }
 @keyframes donuyor { to { transform: rotate(360deg); } }
+/* Güvenlik ağı: gösterge bir şekilde silinemezse bile görünmesin. */
+.dolu .donen, .yuklenemedi .donen { display: none; }
 
 .kunye-logo, .mk-logo { position: relative; }
 .mk-logo .donen { width: 16px; height: 16px; border-width: 1.6px; }
