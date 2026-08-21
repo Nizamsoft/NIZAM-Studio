@@ -15,6 +15,8 @@ const DB = {
   hareketler: [],
   kisiler: [],
   kisilerHepsi: [],
+  /* Logolar private kovada; adres her oturumda yeniden üretilir. */
+  logoAdres: {},
   standartlar: [],
   gorevStandart: [],
 
@@ -125,6 +127,7 @@ const DB = {
       this.standartlar  = st.data || [];
       this.gorevStandart = gs.data || [];
       this.yuklendi     = true;
+      await this.logolariTazele();
     } catch (e) {
       this.hata = veriHatasi(e);
       this.yuklendi = false;
@@ -518,6 +521,65 @@ const DB = {
     await this.yukle();
   },
 
+  /* ---------- Firma logosu ve paleti ---------- */
+
+  /* Private kovada dosyanın kendisi adresle açılmaz; her oturum için
+     süreli (imzalı) adres üretiliyor. Hepsi tek çağrıda alınıyor. */
+  async logolariTazele() {
+    this.logoAdres = {};
+    if (!AUTH.db) return;
+
+    const yollar = this.projeler.map(p => p.logo).filter(Boolean);
+    if (!yollar.length) return;
+
+    const { data, error } = await AUTH.db.storage
+      .from('logolar').createSignedUrls(yollar, 3600);
+    if (error || !data) return;
+
+    data.forEach(x => {
+      if (!x.signedUrl) return;
+      const p = this.projeler.find(pr => pr.logo === x.path);
+      if (p) this.logoAdres[p.id] = x.signedUrl;
+    });
+  },
+
+  async logoYukle(projeId, dosya) {
+    yazmaKontrol();
+    if (!/^image\//.test(dosya.type)) throw new Error('Yalnızca resim yükleyebilirsin.');
+    if (dosya.size > 4 * 1024 * 1024) throw new Error('Dosya 4 MB\'ı geçmesin.');
+
+    const uzanti = (dosya.name.split('.').pop() || 'png').toLowerCase().slice(0, 5);
+    const yol = projeId + '.' + uzanti;
+
+    const yukle = await AUTH.db.storage.from('logolar')
+      .upload(yol, dosya, { upsert: true, contentType: dosya.type });
+    if (yukle.error) throw new Error(depoHatasi(yukle.error, 'logolar'));
+
+    const { error } = await AUTH.db.from('projects').update({ logo: yol }).eq('id', projeId);
+    if (error) throw new Error(veriHatasi(error));
+    await this.yukle();
+  },
+
+  async logoSil(projeId) {
+    yazmaKontrol();
+    const p = this.proje(projeId);
+    if (p && p.logo) await AUTH.db.storage.from('logolar').remove([p.logo]);
+    const { error } = await AUTH.db.from('projects').update({ logo: null }).eq('id', projeId);
+    if (error) throw new Error(veriHatasi(error));
+    await this.yukle();
+  },
+
+  async paletKaydet(projeId, palet) {
+    yazmaKontrol();
+    const { data, error } = await AUTH.db
+      .from('projects').update({ palet }).eq('id', projeId).select('id');
+    if (error) throw new Error(veriHatasi(error));
+    if (!data || !data.length) {
+      throw new Error('Palet yazılamadı — sql/11-marka.sql çalıştırılmamış olabilir.');
+    }
+    await this.yukle();
+  },
+
   async fotoSil() {
     if (!AUTH.db || !AUTH.user) throw new Error('Oturum yok.');
     const sonuc = await AUTH.db.from('profiles')
@@ -561,10 +623,11 @@ function yazmaKontrol() {
 }
 
 /* Depo hatalarını Türkçeye çevirir — çıplak İngilizce mesaj gösterme. */
-function depoHatasi(e) {
+function depoHatasi(e, kova = 'avatarlar') {
   const m = (e && e.message) || '';
-  if (/bucket not found/i.test(m))                 return 'avatarlar kovası yok — Supabase → Storage\'den oluştur.';
-  if (/policy|row-level|not authorized/i.test(m))  return 'Yükleme izni yok — sql/09-foto.sql dosyasını çalıştır.';
+  const sql = kova === 'logolar' ? 'sql/11-marka.sql' : 'sql/09-foto.sql';
+  if (/bucket not found/i.test(m))                 return kova + ' kovası yok — Supabase → Storage\'den oluştur.';
+  if (/policy|row-level|not authorized/i.test(m))  return 'Yükleme izni yok — ' + sql + ' dosyasını çalıştır.';
   if (/payload too large|exceeded/i.test(m))       return 'Dosya çok büyük.';
   return m || 'Fotoğraf yüklenemedi.';
 }

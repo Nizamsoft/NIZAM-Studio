@@ -1,5 +1,33 @@
 # Değişiklik Günlüğü
 
+## v0.14.0 — 21 Ağustos 2026
+**Firma logosu ve renk paleti**
+
+Her projenin artık bir markası var: logo ve ondan türetilmiş renk paleti.
+
+**Logo**
+- Proje sihirbazının ilk adımında seçiliyor; proje kurulunca yükleniyor
+- Proje ekranındaki Marka bölümünden sonradan da eklenip değiştirilebiliyor
+- **Private kovada duruyor.** Adresi bilen bile açamaz; uygulama her oturumda
+  giriş yapmış kullanıcıya bir saatlik imzalı adres üretiyor
+- Yükleme yalnızca yöneticiye açık, okuma giriş yapmış herkese
+
+**Palet**
+- **Prompt kopyala** — Studio bir metin üretiyor; logoyla birlikte Claude'a
+  veriyorsun, Claude koyu tema paleti öneriyor
+- **Paleti yapıştır** — dönen bloğu yapıştırıyorsun, Studio okuyup kaydediyor.
+  Yazmadan önce hangi satırın okunduğunu gösteriyor
+- **Elle düzenle** — beğenmediğin rengi renk seçiciden değiştiriyorsun
+- Palet on alan: arka plan, yüzey, çizgi, üç metin tonu, vurgu, iki yazı tipi
+  ve bir cümlelik ton tarifi
+
+**Palet nereye gidiyor**
+- O projenin **her görev promptuna** giriyor — Claude renk tahmin etmiyor
+- **NIZAM.md** kimlik dosyasına giriyor
+
+> Kurulum: Supabase → Storage → **logolar** adında kova aç (**Public
+> KAPALI**), sonra `sql/11-marka.sql` çalıştır.
+
 ## v0.13.1 — 21 Ağustos 2026
 **Hesap menüsü üst çubuğun parçası oldu**
 

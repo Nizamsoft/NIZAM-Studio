@@ -7,9 +7,9 @@ const APP = {
   name:     'NIZAM | Studio',
   short:    'NIZAM Studio',
   owner:    'Nizam Soft',
-  version: 'v0.13.1',
+  version: 'v0.14.0',
   build:    '2026-08-20',
-  stage: 'Adım 4 · Cam alt çubuk',
+  stage: 'Adım 4 · Marka ve palet',
 };
 
 /* Supabase bağlantısı.
@@ -63,6 +63,20 @@ const MODUL_SABLON = [
    Ekranda sıralama alfabetiktir, buradaki sıra değil. Yeni ad yazılabilir. */
 const STANDART_GRUPLARI = ['Arayüz', 'Veri & Çıktı', 'Bildirim', 'Yedekleme', 'Güvenlik'];
 const VARSAYILAN_GRUP = 'Arayüz';
+
+/* Marka paletinin alanları — hem prompt hem içe aktarma bu sırayı kullanır. */
+const PALET_ALAN = [
+  { anahtar: 'bg',      ad: 'Arka plan',        ornek: '#0f0e0d', renk: true },
+  { anahtar: 'yuzey',   ad: 'Yüzey',            ornek: '#1f1d1b', renk: true },
+  { anahtar: 'cizgi',   ad: 'Çizgi',            ornek: '#37322f', renk: true },
+  { anahtar: 'metin',   ad: 'Metin',            ornek: '#eceae9', renk: true },
+  { anahtar: 'metin2',  ad: 'Metin soft',       ornek: '#b8b2ad', renk: true },
+  { anahtar: 'metin3',  ad: 'Metin silik',      ornek: '#7c746e', renk: true },
+  { anahtar: 'vurgu',   ad: 'Vurgu',            ornek: '#e5342a', renk: true },
+  { anahtar: 'baslik',  ad: 'Başlık yazı tipi', ornek: 'Space Grotesk' },
+  { anahtar: 'govde',   ad: 'Metin yazı tipi',  ornek: 'IBM Plex Sans' },
+  { anahtar: 'ton',     ad: 'Ton',              ornek: 'sıcak, kurumsal, sade' },
+];
 
 const GENEL_MODUL = 'Proje Geneli';
 

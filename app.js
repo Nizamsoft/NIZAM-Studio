@@ -232,6 +232,8 @@ const VIEWS = {
         </button>
       </div>
 
+      ${markaKarti(proje)}
+
       <span class="label">Modüller ve sayfalar</span>
       ${moduller.map(modulKarti).join('')}
 
@@ -469,6 +471,85 @@ const VIEWS = {
 /* ==========================================================================
    PARÇA ÜRETİCİLER
    ========================================================================== */
+
+/* Projenin marka bölümü: logo, palet, prompt üretme ve içe aktarma. */
+function markaKarti(p) {
+  const adres = DB.logoAdres[p.id];
+  const pl = p.palet || null;
+
+  const kutular = PALET_ALAN.filter(a => a.renk).map(a => {
+    const renk = pl && pl[a.anahtar];
+    return `<span class="palet-kutu ${renk ? '' : 'bos'}"
+                  style="${renk ? `background:${esc(renk)}` : ''}" title="${esc(a.ad)}"></span>`;
+  }).join('');
+
+  return `
+    <span class="label">Marka</span>
+    <div class="card marka-kart">
+      <div class="mk-ust">
+        <span class="mk-logo ${adres ? 'dolu' : ''}"
+              ${adres ? `style="background-image:url('${esc(adres)}')"` : ''}
+              data-eylem="${AUTH.yonetici ? 'logo-yukle' : ''}" data-proje="${p.id}"
+              ${AUTH.yonetici ? 'role="button" tabindex="0"' : ''}>
+          ${adres ? '' : svg(ICON.folder, 20)}
+        </span>
+        <span class="mk-yazi">
+          <b>${adres ? 'Firma logosu' : 'Logo yok'}</b>
+          <i>${adres
+              ? (AUTH.yonetici ? 'Değiştirmek için dokun' : 'Yüklenmiş')
+              : (AUTH.yonetici ? 'Yüklemek için dokun · en fazla 4 MB' : 'Yönetici yükleyecek')}</i>
+        </span>
+      </div>
+
+      ${pl ? `
+        <div class="palet-serit">${kutular}</div>
+        <div class="palet-not">
+          <b>${esc(pl.baslik || '—')}</b> · ${esc(pl.govde || '—')}${pl.ton ? ` · ${esc(pl.ton)}` : ''}
+        </div>` : `
+        <p class="mk-bos">Palet yok. Logoyu yükle, promptu kopyala, Claude'a logoyla
+        birlikte ver; dönen cevabı buraya yapıştır.</p>`}
+
+      ${AUTH.yonetici ? `
+        <div class="modul-araclar" style="padding-left:0">
+          <button class="mini-link" data-eylem="palet-prompt" data-proje="${p.id}" type="button">
+            ${svg(ICON.kopya, 13)} Prompt kopyala</button>
+          <button class="mini-link" data-eylem="palet-aktar" data-proje="${p.id}" type="button">
+            ${svg(ICON.ice, 13)} Paleti yapıştır</button>
+          ${pl ? `<button class="mini-link" data-eylem="palet-duzenle" data-proje="${p.id}" type="button">
+            ${svg(ICON.kalem, 13)} Elle düzenle</button>` : ''}
+        </div>` : ''}
+    </div>`;
+}
+
+/* Yapıştırılan paleti okur. Biçim: "Arka plan: #0f0e0d" satırları. */
+function paletCozumle(metin) {
+  const anahtar = {};
+  PALET_ALAN.forEach(a => { anahtar[a.ad.toLocaleLowerCase('tr')] = a.anahtar; });
+
+  const palet = {};
+  const hatalar = [];
+
+  String(metin || '').split(/\r?\n/).forEach(satir => {
+    const es = satir.match(/^\s*\*{0,2}([A-Za-zÇĞİÖŞÜçğıöşü\s/&]+?)\*{0,2}\s*:\s*(.+?)\s*$/);
+    if (!es) return;
+
+    const k = anahtar[es[1].trim().toLocaleLowerCase('tr')];
+    if (!k) return;
+
+    let deger = es[2].replace(/^`|`$/g, '').trim();
+    const alan = PALET_ALAN.find(a => a.anahtar === k);
+
+    if (alan.renk) {
+      const renk = deger.match(/#[0-9a-fA-F]{6}\b/);
+      if (!renk) { hatalar.push(`"${alan.ad}" bir renk kodu değil: ${deger}`); return; }
+      deger = renk[0].toLowerCase();
+    }
+    palet[k] = deger;
+  });
+
+  const eksik = PALET_ALAN.filter(a => !palet[a.anahtar]).map(a => a.ad);
+  return { palet, eksik, hatalar };
+}
 
 function projeKarti(p, i = 0) {
   const s = DB.sayim(p.id);
@@ -1107,6 +1188,10 @@ async function veriTazele() {
 const SIHIRBAZ = {
   adim: 1,
   firma: '',
+  /* Logo dosyası bellekte tutuluyor; proje kurulduktan sonra yükleniyor,
+     çünkü dosya adı projenin kimliği. */
+  logo: null,
+  logoOnizleme: '',
   renk: 'yesil',
   platform: 'ikisi',
   veri: 'sifirdan',
@@ -1119,6 +1204,7 @@ function sihirbaziAc() {
   Object.assign(SIHIRBAZ, {
     adim: 1, firma: '', renk: 'yesil', platform: 'ikisi',
     veri: 'sifirdan', moduller: [], kaydediyor: false,
+    logo: null, logoOnizleme: '',
   });
   modalAc(sihirbazHtml(), sihirbazBagla);
 }
@@ -1160,6 +1246,21 @@ function sihirbazAdim1() {
     <div class="field">
       <span>Proje rengi</span>
       <div class="renkler">${renkler}</div>
+    </div>
+
+    <div class="field">
+      <span>Firma logosu <em class="ipucu">isteğe bağlı</em></span>
+      <div class="mk-ust">
+        <span class="mk-logo ${SIHIRBAZ.logoOnizleme ? 'dolu' : ''}"
+              ${SIHIRBAZ.logoOnizleme ? `style="background-image:url('${SIHIRBAZ.logoOnizleme}')"` : ''}
+              data-sb="logo" role="button" tabindex="0">
+          ${SIHIRBAZ.logoOnizleme ? '' : svg(ICON.folder, 20)}
+        </span>
+        <span class="mk-yazi">
+          <b>${SIHIRBAZ.logo ? esc(SIHIRBAZ.logo.name) : 'Logo seç'}</b>
+          <i>${SIHIRBAZ.logo ? 'Değiştirmek için dokun' : 'Renk paletini bundan üreteceğiz'}</i>
+        </span>
+      </div>
     </div>`;
 }
 
@@ -1227,6 +1328,8 @@ function sihirbazBagla(kutu) {
       if (t === 'ileri')  return sihirbazIleri();
       if (t === 'kaydet') return sihirbazKaydet();
 
+      if (t === 'logo') { sihirbazLogoSec(); return; }
+
       if (t === 'renk')     SIHIRBAZ.renk = d;
       if (t === 'platform') SIHIRBAZ.platform = d;
       if (t === 'veri')     SIHIRBAZ.veri = d;
@@ -1237,6 +1340,29 @@ function sihirbazBagla(kutu) {
       sihirbazCiz();
     });
   });
+}
+
+/* Sihirbazda logo seçimi: dosya bellekte kalıyor, önizlemesi hemen gösteriliyor. */
+function sihirbazLogoSec() {
+  const alan = document.createElement('input');
+  alan.type = 'file';
+  alan.accept = 'image/*';
+  alan.style.display = 'none';
+  document.body.appendChild(alan);
+
+  alan.addEventListener('change', () => {
+    const dosya = alan.files && alan.files[0];
+    alan.remove();
+    if (!dosya) return;
+    if (dosya.size > 4 * 1024 * 1024) { toast('Dosya 4 MB\'ı geçmesin.', 'hata'); return; }
+
+    if (SIHIRBAZ.logoOnizleme) URL.revokeObjectURL(SIHIRBAZ.logoOnizleme);
+    SIHIRBAZ.logo = dosya;
+    SIHIRBAZ.logoOnizleme = URL.createObjectURL(dosya);
+    sihirbazCiz();
+  });
+
+  alan.click();
 }
 
 function sihirbazCiz() {
@@ -1272,6 +1398,17 @@ async function sihirbazKaydet() {
       veri: SIHIRBAZ.veri,
       moduller,
     });
+
+    /* Logo ancak proje kurulduktan sonra yüklenebilir: dosya adı projenin
+       kimliği. Yükleme patlarsa proje yine duruyor, logo sonradan eklenir. */
+    if (SIHIRBAZ.logo) {
+      try { await DB.logoYukle(id, SIHIRBAZ.logo); }
+      catch (h) { toast('Proje kuruldu ama logo yüklenemedi — ' + h.message, 'uyari'); }
+    }
+
+    if (SIHIRBAZ.logoOnizleme) URL.revokeObjectURL(SIHIRBAZ.logoOnizleme);
+    SIHIRBAZ.logo = null;
+    SIHIRBAZ.logoOnizleme = '';
 
     modalKapat();
     sayaclariYaz();
@@ -1883,6 +2020,188 @@ function standartSor(mevcut) {
 }
 
 /* ==========================================================================
+   MARKA — logo ve palet
+   ========================================================================== */
+
+function logoSec(projeId) {
+  const alan = document.createElement('input');
+  alan.type = 'file';
+  alan.accept = 'image/*';
+  alan.style.display = 'none';
+  document.body.appendChild(alan);
+
+  alan.addEventListener('change', async () => {
+    const dosya = alan.files && alan.files[0];
+    alan.remove();
+    if (!dosya) return;
+
+    toast('Logo yükleniyor…');
+    try {
+      await DB.logoYukle(projeId, dosya);
+      render();
+      toast('Logo yüklendi.', 'basari');
+    } catch (h) { toast(h.message, 'hata'); }
+  });
+
+  alan.click();
+}
+
+/* Promptu panoya alır ve ne yapılacağını yazar. */
+function paletPromptu(projeId) {
+  const p = DB.proje(projeId);
+  if (!p) return;
+
+  metinPenceresi({
+    baslik: 'Marka Paleti Promptu',
+    aciklama: 'Kopyala, Claude\'a logoyla birlikte yapıştır.',
+    metin: PROMPT.marka(projeId),
+  });
+}
+
+/* Claude'un döndürdüğü bloğu okur ve projeye yazar. */
+function paletAktar(projeId) {
+  modalHepsiniKapat();
+  const p = DB.proje(projeId);
+  if (!p) return;
+
+  const ORNEK = PALET_ALAN.map(a => `${a.ad}: ${a.ornek}`).join('\n');
+
+  modalAc(`
+    ${modalBaslik(ICON.ice, 'Paleti yapıştır', 'Claude\'un döndürdüğü bloğu olduğu gibi yapıştır.')}
+
+    <label class="field">
+      <span>Yapıştır</span>
+      <textarea id="pa-metin" rows="11" spellcheck="false" placeholder="${esc(ORNEK)}"></textarea>
+    </label>
+
+    <div id="pa-onizleme"></div>
+
+    <div class="modal-alt">
+      <button class="btn btn-ghost" data-pa="iptal" type="button">Vazgeç</button>
+      <button class="btn btn-primary" data-pa="kaydet" type="button" disabled><span>Kaydet</span></button>
+    </div>`, kutu => {
+    const alan  = $('#pa-metin', kutu);
+    const on    = $('#pa-onizleme', kutu);
+    const dugme = $('[data-pa="kaydet"]', kutu);
+    let cozum = { palet: {}, eksik: [], hatalar: [] };
+
+    const tazele = () => {
+      cozum = paletCozumle(alan.value);
+      const say = Object.keys(cozum.palet).length;
+
+      if (!alan.value.trim()) { on.innerHTML = ''; dugme.disabled = true; return; }
+
+      if (!say) {
+        on.innerHTML = `<div class="note uyari">${svg(ICON.uyari, 15)}
+          <span>Hiçbir satır okunamadı. Her satır <b>Alan: değer</b> biçiminde olmalı.</span></div>`;
+        dugme.disabled = true;
+        return;
+      }
+
+      on.innerHTML = `
+        <span class="label">Okunanlar</span>
+        <div class="card"><div class="row-list">
+          ${PALET_ALAN.map(a => {
+            const d = cozum.palet[a.anahtar];
+            return `<div class="row">
+              <div class="row-main"><span class="row-title">${esc(a.ad)}</span></div>
+              <span class="row-val ${d ? '' : 'uyari-yazi'}">
+                ${d && a.renk ? `<span class="palet-kutu ufak" style="background:${esc(d)}"></span>` : ''}
+                ${d ? esc(d) : 'okunamadı'}
+              </span>
+            </div>`;
+          }).join('')}
+        </div></div>
+        ${cozum.hatalar.length ? `<div class="note uyari" style="margin-top:10px">${svg(ICON.uyari, 15)}
+          <span>${cozum.hatalar.map(esc).join(' ')}</span></div>` : ''}`;
+
+      dugme.disabled = false;
+    };
+
+    alan.addEventListener('input', tazele);
+    setTimeout(() => alan.focus(), 40);
+    $('[data-pa="iptal"]', kutu).addEventListener('click', modalKapat);
+
+    dugme.addEventListener('click', async () => {
+      const yazi = $('[data-pa="kaydet"] span', kutu);
+      yazi.textContent = 'Yazılıyor…';
+      dugme.disabled = true;
+      try {
+        await DB.paletKaydet(projeId, Object.assign({}, p.palet || {}, cozum.palet));
+        modalKapat();
+        render();
+        toast('Palet kaydedildi.', 'basari');
+      } catch (h) {
+        yazi.textContent = 'Kaydet';
+        dugme.disabled = false;
+        toast(h.message, 'hata');
+      }
+    });
+  }, 'genis');
+}
+
+/* Elle düzenleme: renkler için renk seçici, yazı tipleri için metin. */
+function paletDuzenle(projeId) {
+  modalHepsiniKapat();
+  const p = DB.proje(projeId);
+  if (!p) return;
+  const pl = p.palet || {};
+
+  modalAc(`
+    ${modalBaslik(ICON.kalem, 'Paleti düzenle', 'Beğenmediğin rengi değiştir.')}
+
+    ${PALET_ALAN.map(a => a.renk ? `
+      <div class="palet-satir">
+        <span class="palet-ad">${esc(a.ad)}</span>
+        <input type="color" class="palet-sec" data-p="${a.anahtar}"
+               value="${esc(pl[a.anahtar] || a.ornek)}">
+        <input type="text" class="palet-kod mono" data-pk="${a.anahtar}"
+               value="${esc(pl[a.anahtar] || a.ornek)}" maxlength="7" spellcheck="false">
+      </div>` : `
+      <label class="field">
+        <span>${esc(a.ad)}</span>
+        <input type="text" data-p="${a.anahtar}" value="${esc(pl[a.anahtar] || '')}"
+               placeholder="${esc(a.ornek)}" maxlength="60" autocomplete="off">
+      </label>`).join('')}
+
+    <div class="modal-alt">
+      <button class="btn btn-ghost" data-pd="iptal" type="button">Vazgeç</button>
+      <button class="btn btn-primary" data-pd="kaydet" type="button"><span>Kaydet</span></button>
+    </div>`, kutu => {
+    /* Renk seçici ile kod kutusu birbirini takip etsin. */
+    $$('.palet-sec', kutu).forEach(sec => {
+      const kod = $(`[data-pk="${sec.dataset.p}"]`, kutu);
+      sec.addEventListener('input', () => { kod.value = sec.value; });
+      kod.addEventListener('input', () => {
+        if (/^#[0-9a-fA-F]{6}$/.test(kod.value)) sec.value = kod.value;
+      });
+    });
+
+    $('[data-pd="iptal"]', kutu).addEventListener('click', modalKapat);
+    $('[data-pd="kaydet"]', kutu).addEventListener('click', async () => {
+      const yeni = {};
+      PALET_ALAN.forEach(a => {
+        const el = a.renk ? $(`[data-pk="${a.anahtar}"]`, kutu) : $(`[data-p="${a.anahtar}"]`, kutu);
+        const d = (el.value || '').trim();
+        if (d) yeni[a.anahtar] = a.renk ? d.toLowerCase() : d;
+      });
+
+      const yazi = $('[data-pd="kaydet"] span', kutu);
+      yazi.textContent = 'Kaydediliyor…';
+      try {
+        await DB.paletKaydet(projeId, yeni);
+        modalKapat();
+        render();
+        toast('Palet güncellendi.', 'basari');
+      } catch (h) {
+        yazi.textContent = 'Kaydet';
+        toast(h.message, 'hata');
+      }
+    });
+  }, 'genis');
+}
+
+/* ==========================================================================
    EKİP
    ========================================================================== */
 
@@ -2289,6 +2608,11 @@ async function eylemCalistir(el) {
     GOREV_FILTRE = el.dataset.deger;
     return render();
   }
+
+  if (e === 'logo-yukle')    return logoSec(el.dataset.proje);
+  if (e === 'palet-prompt')  return paletPromptu(el.dataset.proje);
+  if (e === 'palet-aktar')   return paletAktar(el.dataset.proje);
+  if (e === 'palet-duzenle') return paletDuzenle(el.dataset.proje);
 
   if (e === 'ekibe') { location.hash = '#/ekip'; return; }
   if (e === 'kullanici-ekle') return kullaniciEkleAc();

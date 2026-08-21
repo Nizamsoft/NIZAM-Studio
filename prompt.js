@@ -10,6 +10,54 @@
 
 const PROMPT = {
 
+  /* Paleti hem görev promptuna hem NIZAM.md'ye aynı biçimde basar. */
+  paletBlogu(proje) {
+    const pl = proje && proje.palet;
+    if (!pl) return '';
+
+    const s = ['## Renk ve Tipografi'];
+    s.push('Bu proje için belirlenmiş palet. Renk tahmin etme, buradakileri kullan.');
+    s.push('');
+    PALET_ALAN.forEach(a => { if (pl[a.anahtar]) s.push(hiza(a.ad, pl[a.anahtar])); });
+    s.push('');
+    s.push('Vurgu rengi az kullanılır: ana buton, aktif menü ve acil işareti.');
+    return s.join('\n');
+  },
+
+  /* ---------- Marka promptu ----------
+     Logoyu Studio gönderemez; kullanıcı bu metni kopyalayıp logoyla birlikte
+     yapıştırır. Dönen cevap Studio'ya geri yapıştırılır. */
+
+  marka(projeId) {
+    const p = DB.proje(projeId);
+    if (!p) return '';
+
+    const s = [];
+    s.push('# Marka Paleti İsteği', '');
+    s.push(`Ekteki logo **${p.firma}** firmasına ait.`);
+    s.push('Bu firma için bir yazılım arayüzü tasarlayacağız.');
+    s.push('');
+    s.push('Logoyu incele: hangi renkler baskın, ton sıcak mı soğuk mu,');
+    s.push('kurumsal mı canlı mı. Buradan bir **koyu tema** paleti çıkar.');
+    s.push('');
+    s.push('## Kurallar');
+    s.push('- Koyu tema. Arka plan en koyu, yüzey bir tık açık, çizgi ondan açık.');
+    s.push('- Metin üç tonda: ana, soft, silik. Üçü de arka planda okunabilsin.');
+    s.push('- Vurgu rengi logodan gelsin ve **az kullanılsın** — yalnızca ana buton,');
+    s.push('  aktif menü ve acil işaretinde.');
+    s.push('- Renkleri 6 haneli onaltılık kodla yaz (#0f0e0d gibi).');
+    s.push('- Yazı tipleri ücretsiz ve web\'de kullanılabilir olsun.');
+    s.push('');
+    s.push('## Cevabı tam olarak bu biçimde ver');
+    s.push('Başka açıklama yazma, yalnızca bu satırları döndür:');
+    s.push('');
+    s.push('```');
+    PALET_ALAN.forEach(a => s.push(`${a.ad}: ${a.ornek}`));
+    s.push('```');
+
+    return s.join('\n');
+  },
+
   /* ---------- Görev promptu ---------- */
 
   gorev(gorevId) {
@@ -32,6 +80,9 @@ const PROMPT = {
     s.push(hiza('Veritabanı', VERI_ADI[proje && proje.veri] || '—'));
     if (proje && proje.repo) s.push(hiza('Depo', proje.repo));
     s.push('');
+
+    const paletMetni = PROMPT.paletBlogu(proje);
+    if (paletMetni) { s.push(paletMetni); s.push(''); }
 
     s.push('Deponun kökünde `NIZAM.md` adında bir kimlik dosyası var.');
     s.push('İşe başlamadan önce oku — projenin mevcut sayfaları, kullanılan');
@@ -95,6 +146,9 @@ const PROMPT = {
     s.push(hiza('Ana renk', (PROJE_RENK[proje.renk] || PROJE_RENK.metal)[0]));
     if (proje.repo) s.push(hiza('Depo', proje.repo));
     s.push('');
+
+    const paletMetni = PROMPT.paletBlogu(proje);
+    if (paletMetni) { s.push(paletMetni); s.push(''); }
 
     s.push('## Modüller ve sayfalar');
     moduller.forEach(m => {
