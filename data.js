@@ -90,7 +90,70 @@ const DB = {
 
   /* ---------- Okuma ---------- */
 
+  /* Her tablo için tek bir okuyucu. Böylece bir satır değiştiğinde yalnızca
+     ilgili tabloyu tazeleyebiliyoruz — on tabloyu birden çekmek yerine. */
+  OKUYUCULAR: {
+    projeler:     db => db.from('projects').select('*').eq('arsiv', false).order('sira').order('olusturuldu'),
+    moduller:     db => db.from('modules').select('*').order('sira'),
+    sayfalar:     db => db.from('pages').select('*').order('sira'),
+    gorevler:     db => db.from('tasks').select('*').order('no', { ascending: false }),
+    /* Hareketler sınırsız büyüyor; ekranda yalnızca son olaylar gösteriliyor.
+       Tamamını çekmek her açılışta gereksiz yük. */
+    hareketler:   db => db.from('task_events')
+                          .select('id, gorev_id, tur, notu, kisi, olusturuldu')
+                          .order('olusturuldu', { ascending: false })
+                          .limit(400),
+    kisiler:      db => db.from('profiles').select('id, ad, rol, aktif, foto'),
+    standartlar:  db => db.from('standards').select('*').eq('aktif', true).order('sira'),
+    gorevStandart:db => db.from('task_standards').select('gorev_id, standart_id'),
+    sablonlar:    db => db.from('module_templates').select('*').eq('aktif', true).order('sira'),
+    sektorler:    db => db.from('sectors').select('*').eq('aktif', true).order('sira'),
+  },
+
+  /* Tablosu henüz kurulmamış olabilecekler — hata verme, boş bırak. */
+  ISTEGE_BAGLI: ['sablonlar', 'sektorler'],
+
+  yerlestir(ad, sonuc) {
+    if (sonuc.error) {
+      if (this.ISTEGE_BAGLI.includes(ad)) { this[ad] = []; return; }
+      throw sonuc.error;
+    }
+    const veri = sonuc.data || [];
+
+    if (ad === 'hareketler') {
+      /* Sondan çektik, ekranda eskiden yeniye gösteriliyor. */
+      this.hareketler = veri.slice().reverse();
+      return;
+    }
+    if (ad === 'kisiler') {
+      this.kisilerHepsi = veri.slice()
+        .sort((a, b) => String(a.ad || '').localeCompare(String(b.ad || ''), 'tr'));
+      this.kisiler = this.kisilerHepsi.filter(x => x.aktif);
+      return;
+    }
+    this[ad] = veri;
+  },
+
+  /* Yalnızca adı verilen tabloları yeniler.
+     Bir görevin durumu değiştiğinde on tabloyu birden çekmenin anlamı yok. */
+  async tazele(...adlar) {
+    if (!AUTH.bagli || !adlar.length) return;
+
+    const sonuclar = await Promise.all(adlar.map(ad => this.OKUYUCULAR[ad](AUTH.db)));
+    adlar.forEach((ad, i) => this.yerlestir(ad, sonuclar[i]));
+
+    if (adlar.includes('projeler')) await this.logolariTazele();
+  },
+
   async yukle() {
+    /* Aynı anda birden çok yükleme istenirse tek istek yapılır.
+       Canlı bağlantı ile kullanıcı işlemi çakışınca iki tur dönüyordu. */
+    if (this._yukleniyor) return this._yukleniyor;
+    this._yukleniyor = this._yukle().finally(() => { this._yukleniyor = null; });
+    return this._yukleniyor;
+  },
+
+  async _yukle() {
     this.hata = null;
 
     if (!AUTH.bagli) {                      // demo modu — veri yok
@@ -103,39 +166,11 @@ const DB = {
     }
 
     try {
-      const [p, m, s, g, h, k, st, gs, ms, sk] = await Promise.all([
-        AUTH.db.from('projects').select('*').eq('arsiv', false).order('sira').order('olusturuldu'),
-        AUTH.db.from('modules').select('*').order('sira'),
-        AUTH.db.from('pages').select('*').order('sira'),
-        AUTH.db.from('tasks').select('*').order('no', { ascending: false }),
-        AUTH.db.from('task_events').select('*').order('olusturuldu'),
-        AUTH.db.from('profiles').select('id, ad, rol, aktif, foto'),
-        AUTH.db.from('standards').select('*').eq('aktif', true).order('sira'),
-        AUTH.db.from('task_standards').select('*'),
-        AUTH.db.from('module_templates').select('*').eq('aktif', true).order('sira'),
-        AUTH.db.from('sectors').select('*').eq('aktif', true).order('sira'),
-      ]);
+      const adlar = Object.keys(this.OKUYUCULAR);
+      const sonuclar = await Promise.all(adlar.map(ad => this.OKUYUCULAR[ad](AUTH.db)));
+      adlar.forEach((ad, i) => this.yerlestir(ad, sonuclar[i]));
 
-      const ilkHata = p.error || m.error || s.error || g.error || h.error || st.error || gs.error;
-      if (ilkHata) throw ilkHata;
-
-      this.projeler   = p.data || [];
-      this.moduller   = m.data || [];
-      this.sayfalar   = s.data || [];
-      this.gorevler   = g.data || [];
-      this.hareketler = h.data || [];
-      /* kisiler = görev atanabilecekler (yalnız aktif).
-         kisilerHepsi = ekip ekranı için pasifler dâhil herkes. */
-      this.kisilerHepsi = (k.data || []).slice()
-        .sort((a, b) => String(a.ad || '').localeCompare(String(b.ad || ''), 'tr'));
-      this.kisiler      = this.kisilerHepsi.filter(x => x.aktif);
-      this.standartlar  = st.data || [];
-      this.gorevStandart = gs.data || [];
-      /* Tablo henüz kurulmamışsa hata verme — koddaki hazır liste devreye girer. */
-      this.sablonlar     = (ms && !ms.error && ms.data) ? ms.data : [];
-      /* sectors tablosu henüz kurulmamışsa hata verme — liste boş kalır. */
-      this.sektorler     = (sk && !sk.error && sk.data) ? sk.data : [];
-      this.yuklendi     = true;
+      this.yuklendi = true;
       await this.logolariTazele();
     } catch (e) {
       this.hata = veriHatasi(e);
@@ -143,6 +178,7 @@ const DB = {
       throw new Error(this.hata);
     }
   },
+
 
   proje(id)        { return this.projeler.find(p => p.id === id) || null; },
   modulleri(pid)   { return this.moduller.filter(m => m.proje_id === pid).sort(siraya); },
@@ -269,7 +305,7 @@ const DB = {
       if (sHata) throw new Error(veriHatasi(sHata));
     }
 
-    await this.yukle();
+    await this.tazele('projeler', 'moduller', 'sayfalar');
     return proje.id;
   },
 
@@ -277,7 +313,7 @@ const DB = {
     yazmaKontrol();
     const { error } = await AUTH.db.from('projects').update(alanlar).eq('id', id);
     if (error) throw new Error(veriHatasi(error));
-    await this.yukle();
+    await this.tazele('projeler');
   },
 
   /* Silmiyoruz, arşive alıyoruz — geçmiş kaybolmasın */
@@ -285,7 +321,7 @@ const DB = {
     yazmaKontrol();
     const { error } = await AUTH.db.from('projects').update({ arsiv: true }).eq('id', id);
     if (error) throw new Error(veriHatasi(error));
-    await this.yukle();
+    await this.tazele('projeler');
   },
 
   async modulEkle(projeId, ad, sayfalar = []) {
@@ -302,7 +338,7 @@ const DB = {
       if (sHata) throw new Error(veriHatasi(sHata));
     }
 
-    await this.yukle();
+    await this.tazele('moduller', 'sayfalar');
     return data.id;
   },
 
@@ -310,7 +346,7 @@ const DB = {
     yazmaKontrol();
     const { error } = await AUTH.db.from('modules').delete().eq('id', id);
     if (error) throw new Error(veriHatasi(error));
-    await this.yukle();
+    await this.tazele('moduller', 'sayfalar', 'gorevler');
   },
 
   async sayfaEkle(modulId, ad) {
@@ -319,14 +355,14 @@ const DB = {
     const { error } = await AUTH.db
       .from('pages').insert({ modul_id: modulId, ad: ad.trim(), sira });
     if (error) throw new Error(veriHatasi(error));
-    await this.yukle();
+    await this.tazele('sayfalar');
   },
 
   async sayfaSil(id) {
     yazmaKontrol();
     const { error } = await AUTH.db.from('pages').delete().eq('id', id);
     if (error) throw new Error(veriHatasi(error));
-    await this.yukle();
+    await this.tazele('sayfalar', 'gorevler');
   },
 
   /* ---------- Görevler ---------- */
@@ -355,14 +391,14 @@ const DB = {
     await this.hareketEkle(data.id, 'olusturuldu');
     if (atanan) await this.hareketEkle(data.id, 'atandi', DB.kisiAdi(atanan));
 
-    await this.yukle();
+    await this.tazele('gorevler', 'gorevStandart', 'hareketler');
     return data.id;
   },
 
   async gorevGuncelle(id, alanlar) {
     const { error } = await AUTH.db.from('tasks').update(alanlar).eq('id', id);
     if (error) throw new Error(veriHatasi(error));
-    await this.yukle();
+    await this.tazele('gorevler');
   },
 
   /* Durum değişimi hep buradan geçer; hareket kaydı kendiliğinden düşer. */
@@ -381,7 +417,7 @@ const DB = {
     if (error) throw new Error(veriHatasi(error));
 
     await this.hareketEkle(id, tip, notu);
-    await this.yukle();
+    await this.tazele('gorevler', 'hareketler');
   },
 
   async hareketEkle(gorevId, tip, notu = '') {
@@ -403,7 +439,7 @@ const DB = {
       const { error } = await AUTH.db.from('task_standards').insert(kayitlar);
       if (error) throw new Error(veriHatasi(error));
     }
-    await this.yukle();
+    await this.tazele('gorevStandart');
   },
 
   /* Standartları gruplara böler. Sıra config.js'teki STANDART_GRUPLARI'dır;
@@ -441,14 +477,14 @@ const DB = {
     const { data, error } = await q.select('id');
     if (error) throw new Error(sektorHatasi(error));
     if (!data || !data.length) throw new Error(sektorHatasi({}));
-    await this.yukle();
+    await this.tazele('sektorler');
   },
 
   async sektorSil(id) {
     yazmaKontrol();
     const { error } = await AUTH.db.from('sectors').update({ aktif: false }).eq('id', id);
     if (error) throw new Error(sektorHatasi(error));
-    await this.yukle();
+    await this.tazele('sektorler');
   },
 
   async sablonKaydet(id, alanlar) {
@@ -459,14 +495,14 @@ const DB = {
           .insert(Object.assign({ sira: this.sablonlar.length + 1 }, alanlar));
     const { error } = await q;
     if (error) throw new Error(veriHatasi(error));
-    await this.yukle();
+    await this.tazele('sablonlar');
   },
 
   async sablonSil(id) {
     yazmaKontrol();
     const { error } = await AUTH.db.from('module_templates').update({ aktif: false }).eq('id', id);
     if (error) throw new Error(veriHatasi(error));
-    await this.yukle();
+    await this.tazele('sablonlar');
   },
 
   async standartKaydet(id, alanlar) {
@@ -476,7 +512,7 @@ const DB = {
       : AUTH.db.from('standards').insert(Object.assign({ sira: this.standartlar.length + 1 }, alanlar));
     const { error } = await q;
     if (error) throw new Error(veriHatasi(error));
-    await this.yukle();
+    await this.tazele('standartlar');
   },
 
   /* Yapıştırılan kayıtları yazar. Aynı adda standart varsa üzerine yazar,
@@ -498,7 +534,7 @@ const DB = {
       mevcut ? guncellenen++ : eklenen++;
     }
 
-    await this.yukle();
+    await this.tazele('standartlar');
     return { eklenen, guncellenen };
   },
 
@@ -557,7 +593,7 @@ const DB = {
     if (!data || !data.length) {
       throw new Error('Değişiklik yazılamadı — sql/10-ekip.sql çalıştırılmamış olabilir.');
     }
-    await this.yukle();
+    await this.tazele('kisiler');
   },
 
   /* Kullanıcı açma sunucuda yapılır: gizli anahtar tarayıcıya konamaz. */
@@ -578,19 +614,30 @@ const DB = {
     }
     if (data && data.hata) throw new Error(data.hata);
 
-    await this.yukle();
+    await this.tazele('kisiler');
   },
 
   /* ---------- Firma logosu ve paleti ---------- */
 
   /* Private kovada dosyanın kendisi adresle açılmaz; her oturum için
      süreli (imzalı) adres üretiliyor. Hepsi tek çağrıda alınıyor. */
-  async logolariTazele() {
-    this.logoAdres = {};
-    if (!AUTH.db) return;
+  /* İmzalı adresler bir saat geçerli. Her yazma işleminden sonra yeniden
+     üretmenin anlamı yok — logo listesi değişmediyse ve adresler tazeyse
+     dokunmuyoruz. 45 dakikayı geçince kendiliğinden yenileniyor. */
+  async logolariTazele(zorla = false) {
+    if (!AUTH.db) { this.logoAdres = {}; return; }
 
     const yollar = this.projeler.map(p => p.logo).filter(Boolean);
-    if (!yollar.length) { this.resimleriIsit(); return; }
+    const anahtar = yollar.slice().sort().join('|');
+    const yas = Date.now() - (this._logoZaman || 0);
+
+    if (!zorla && anahtar === this._logoAnahtar && yas < 45 * 60 * 1000) return;
+
+    this._logoAnahtar = anahtar;
+    this._logoZaman = Date.now();
+    this.logoAdres = {};
+
+    if (!yollar.length) return;
 
     const { data, error } = await AUTH.db.storage
       .from('logolar').createSignedUrls(yollar, 3600);
@@ -629,7 +676,9 @@ const DB = {
 
     const { error } = await AUTH.db.from('projects').update({ logo: yol }).eq('id', projeId);
     if (error) throw new Error(veriHatasi(error));
-    await this.yukle();
+    /* Dosya adı aynı kalabilir; adresi zorla yenile yoksa eski resim görünür. */
+    await this.tazele('projeler');
+    await this.logolariTazele(true);
   },
 
   async logoSil(projeId) {
@@ -638,7 +687,7 @@ const DB = {
     if (p && p.logo) await AUTH.db.storage.from('logolar').remove([p.logo]);
     const { error } = await AUTH.db.from('projects').update({ logo: null }).eq('id', projeId);
     if (error) throw new Error(veriHatasi(error));
-    await this.yukle();
+    await this.tazele('projeler');
   },
 
   async paletKaydet(projeId, palet) {
@@ -649,7 +698,7 @@ const DB = {
     if (!data || !data.length) {
       throw new Error('Palet yazılamadı — sql/11-marka.sql çalıştırılmamış olabilir.');
     }
-    await this.yukle();
+    await this.tazele('projeler');
   },
 
   async fotoSil() {
@@ -664,21 +713,21 @@ const DB = {
     yazmaKontrol();
     const { error } = await AUTH.db.from('standards').update({ aktif: false }).eq('id', id);
     if (error) throw new Error(veriHatasi(error));
-    await this.yukle();
+    await this.tazele('standartlar', 'gorevStandart');
   },
 
   async gorevSil(id) {
     yazmaKontrol();
     const { error } = await AUTH.db.from('tasks').delete().eq('id', id);
     if (error) throw new Error(veriHatasi(error));
-    await this.yukle();
+    await this.tazele('gorevler', 'gorevStandart', 'hareketler');
   },
 
   async adDegistir(tablo, id, ad) {
     yazmaKontrol();
     const { error } = await AUTH.db.from(tablo).update({ ad: ad.trim() }).eq('id', id);
     if (error) throw new Error(veriHatasi(error));
-    await this.yukle();
+    await this.tazele('projeler', 'moduller', 'sayfalar', 'gorevler');
   },
 };
 

@@ -1,5 +1,39 @@
 # Değişiklik Günlüğü
 
+## v0.17.2 — 21 Ağustos 2026
+**Veri katmanı baştan yazıldı — çok daha hızlı**
+
+Ağırlığın sebebi buydu: **tek bir satır değişince on tablo birden çekiliyordu.**
+Görev durumunu değiştirmek, palet kaydetmek, ad düzeltmek — hepsi bütün
+veritabanını yeniden indiriyordu. Kodda 25 yerde böyleydi.
+
+**Artık yalnızca ilgili tablo tazeleniyor.**
+
+| İşlem | Önce | Şimdi |
+|---|---|---|
+| Görev durumu değiştir | 12 sorgu | **4** |
+| Palet kaydet | 11 sorgu | **2** |
+| Aynı anda üç yenileme | 30 sorgu | **10** |
+
+**Dört ayrı iyileştirme:**
+
+**1 · Tablo başına okuyucu.** Her tablonun tek bir okuma tanımı var; hangi
+tabloların tazeleneceği işlem başına belirtiliyor.
+
+**2 · Hareket geçmişi sınırlandı.** `task_events` sınırsız büyüyor ve tamamı
+çekiliyordu. Artık son 400 olay geliyor — ekranda zaten o kadarı gösteriliyor.
+
+**3 · Çakışan yüklemeler birleşti.** Canlı bağlantı ile kendi işlemin aynı ana
+denk gelince iki tur dönüyordu. Aynı anda gelen istekler tek isteğe iniyor.
+
+**4 · Logo adresleri önbelleğe alındı.** İmzalı adres bir saat geçerli; her
+yazma işleminden sonra yeniden üretiliyordu. Liste değişmediyse ve adres
+tazeyse dokunulmuyor. 45 dakikayı geçince kendiliğinden yenileniyor —
+uygulamayı uzun süre açık bırakınca logoların kaybolması da böylece bitti.
+
+Ayrıca yarım saatte bir sessiz yenileme kuruldu; uygulama gün boyu açık
+kalsa da logolar düşmüyor.
+
 ## v0.17.1 — 21 Ağustos 2026
 **Profil fotoğrafı logolarla aynı yoldan geçiyor**
 

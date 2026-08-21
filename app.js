@@ -41,6 +41,7 @@ const ACIK_STANDART = new Set();
 /* Gruplar akordeon: aynı anda yalnızca biri açık kalır. */
 let ACIK_GRUP = null;
 let ACIK_SABLON = null;
+let LOGO_ZAMANLAYICI = null;
 /* Projeler ekranındaki bölümler. Varsayılanı kod belirler, kullanıcı değiştirir. */
 const ACIK_PROJE_BOLUM = {};
 /* Proje içindeki duraklar. Anahtar: projeId:sıra */
@@ -3873,6 +3874,7 @@ async function signOut() {
   DB.standartlar = []; DB.gorevStandart = [];
   ACIK_MODUL.clear(); ACIK_SAYFA.clear(); ACIK_STANDART.clear();
   DB.canliDur();
+  clearInterval(LOGO_ZAMANLAYICI);
   GOREV_FILTRE = '';
   modalHepsiniKapat();
 
@@ -3897,6 +3899,14 @@ async function uygulamayiAc() {
   menuyuCiz();
   kullaniciYaz();
   await veriTazele();
+
+  /* Logo adresleri bir saat geçerli. Uygulama uzun süre açık kalırsa
+     yarım saatte bir yenile ki logolar kaybolmasın. */
+  clearInterval(LOGO_ZAMANLAYICI);
+  LOGO_ZAMANLAYICI = setInterval(async () => {
+    try { await DB.logolariTazele(true); } catch (e) { return; }
+    if (!$('.modal-perde')) render();
+  }, 30 * 60 * 1000);
 
   /* Başka biri bir şey değiştirdiğinde ekran kendiliğinden tazelensin */
   DB.canliBasla(async () => {
