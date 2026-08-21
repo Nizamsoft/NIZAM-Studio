@@ -7,7 +7,7 @@ const APP = {
   name:     'NIZAM | Studio',
   short:    'NIZAM Studio',
   owner:    'Nizam Soft',
-  version: 'v0.16.6',
+  version: 'v0.16.7',
   build:    '2026-08-20',
   stage: 'Adım 4 · Proje yolu',
 };
@@ -48,15 +48,6 @@ const PROJE_RENK = {
    "Diğer" seçilirse ad sorulur, sayfası boş açılır.
    ========================================================================== */
 
-const MODUL_SABLON = [
-  { ad: 'Stok',     sayfalar: ['Ürün Listesi', 'Ürün Kartı', 'Stok Hareketleri', 'Depo Transferi', 'Sayım'] },
-  { ad: 'Cari',     sayfalar: ['Cari Listesi', 'Cari Kartı', 'Cari Hareketler', 'Bakiye Raporu'] },
-  { ad: 'Fatura',   sayfalar: ['Fatura Listesi', 'Fatura Oluştur', 'Fatura Detayı', 'İade', 'Tahsilat'] },
-  { ad: 'Personel', sayfalar: ['Personel Listesi', 'Personel Kartı', 'İzin Takibi', 'Puantaj'] },
-  { ad: 'Rapor',    sayfalar: ['Genel Bakış', 'Satış Raporu', 'Stok Raporu', 'Dışa Aktarım'] },
-  { ad: 'Sipariş',  sayfalar: ['Sipariş Listesi', 'Sipariş Oluştur', 'Sipariş Detayı', 'Sevkiyat'] },
-  { ad: 'Üretim',   sayfalar: ['İş Emri Listesi', 'İş Emri Kartı', 'Reçete', 'Üretim Raporu'] },
-];
 
 /* Her projede kendiliğinden açılan kova */
 /* Standart grupları — yalnızca düzenleme penceresindeki hazır öneriler.

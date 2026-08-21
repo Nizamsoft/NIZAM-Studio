@@ -414,10 +414,11 @@ const DB = {
       .sort((a, b) => tr(a.ad, b.ad));
   },
 
-  /* Modül şablonları: veritabanı boşsa koddaki hazır liste kullanılır.
-     Böylece sql/12 çalıştırılmadan da sihirbaz çalışmaya devam eder. */
+  /* Modül şablonları yalnızca veritabanından gelir.
+     Eskiden liste boşalınca koddaki hazır listeye düşüyordu; sildiğin
+     şablonlar bir sonraki açılışta geri geliyordu. */
   modulSablonlari() {
-    return this.sablonlar.length ? this.sablonlar : MODUL_SABLON;
+    return this.sablonlar;
   },
 
   async sablonKaydet(id, alanlar) {

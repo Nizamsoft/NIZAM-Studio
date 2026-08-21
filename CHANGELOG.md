@@ -1,5 +1,21 @@
 # Değişiklik Günlüğü
 
+## v0.16.7 — 21 Ağustos 2026
+**Silinen şablonlar geri geliyordu · fotoğraf daha da erken iniyor**
+
+**Silinen şablonlar geri geliyordu.** Liste boşalınca uygulama koddaki hazır
+listeye düşüyordu — sildiğin yedi modül bir sonraki açılışta geri geliyordu.
+Koddaki liste tümüyle kaldırıldı; şablonlar artık yalnızca veritabanından
+gelir. Sildiğin silinmiş kalır, hepsini silersen liste boş durur.
+
+**Profil fotoğrafı açılışın ilk anında iniyor.** Önceki sürümde oturum
+okunduktan sonra başlıyordu; oturum okuma ağdan geldiği için indirmeye az
+zaman kalıyordu. Artık fotoğrafın adresi tarayıcıda saklanıyor ve **açılışın
+49. milisaniyesinde** indirme başlıyor — animasyon daha ilk karesinde.
+
+- Çıkış yapınca saklanan adres siliniyor; başkası girerse önceki kişinin
+  fotoğrafını beklemez
+
 ## v0.16.6 — 21 Ağustos 2026
 **Profil fotoğrafı geç geliyordu**
 

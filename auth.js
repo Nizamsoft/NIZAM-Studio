@@ -115,6 +115,14 @@ const AUTH = {
     if (sonuc.error || !sonuc.data) return null;
 
     this.profile = sonuc.data;
+
+    /* Fotoğrafın adresini yanına yazıyoruz. Bir sonraki açılışta oturum
+       okunmadan önce, daha ilk milisaniyede indirmeye başlayabilelim diye. */
+    try {
+      if (this.profile.foto) localStorage.setItem('ns.foto', this.profile.foto);
+      else localStorage.removeItem('ns.foto');
+    } catch (e) {}
+
     return this.profile;
   },
 

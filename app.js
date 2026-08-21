@@ -309,7 +309,6 @@ const VIEWS = {
     if (DB.hata)    return hataKutusu(DB.hata);
 
     const liste = DB.modulSablonlari();
-    const veritabani = DB.sablonlar.length > 0;
 
     return `
       <div class="note" style="margin-bottom:12px">
@@ -318,21 +317,16 @@ const VIEWS = {
         Buradaki değişiklik kurulmuş projeleri etkilemez.</span>
       </div>
 
-      ${veritabani ? '' : `<div class="note uyari" style="margin-bottom:12px">
-        ${svg(ICON.uyari, 15)}
-        <span>Bu liste henüz koddan geliyor, düzenlenemez.
-        <b>sql/12-modul-sablon.sql</b> dosyasını Supabase'de çalıştır.</span>
-      </div>`}
-
-      ${AUTH.yonetici && veritabani ? `
+      ${AUTH.yonetici ? `
         <div class="standart-arac">
           <button class="mini-link" data-eylem="sablon-ekle" type="button">
             ${svg(ICON.arti, 13)} Yeni Şablon</button>
         </div>` : ''}
 
       ${liste.length
-        ? liste.map((m, i) => sablonKarti(m, i, veritabani)).join('')
-        : `<div class="card">${empty(ICON.katman, 'Şablon yok', 'İlk modül şablonunu ekle.',
+        ? liste.map((m, i) => sablonKarti(m, i)).join('')
+        : `<div class="card">${empty(ICON.katman, 'Şablon yok',
+            'Sildiklerin geri gelmez. Yeni bir şablon eklersen burada durur.',
             AUTH.yonetici ? 'Yeni Şablon' : null, 'sablon-ekle')}</div>`}
     `;
   },
@@ -1318,7 +1312,7 @@ function sablonAltBaslik() {
 }
 
 /* Bir modül şablonu. Açılınca sayfaları listelenir. */
-function sablonKarti(m, i = 0, duzenlenebilir = true) {
+function sablonKarti(m, i = 0) {
   const anahtar = m.id || m.ad;
   const acik = ACIK_SABLON === anahtar;
   const sayfalar = m.sayfalar || [];
@@ -1342,7 +1336,7 @@ function sablonKarti(m, i = 0, duzenlenebilir = true) {
                 <span class="sayfa-ad">${esc(sf)}</span></div>`).join('')
             : '<div class="sayfa"><span class="sayfa-ad ipucu">Sayfa tanımlı değil.</span></div>'}
         </div>
-        ${AUTH.yonetici && duzenlenebilir ? `
+        ${AUTH.yonetici ? `
           <div class="modul-araclar">
             <button class="mini-link" data-eylem="sablon-duzenle" data-id="${m.id}" type="button">
               ${svg(ICON.kalem, 13)} Düzenle</button>
@@ -3484,6 +3478,8 @@ async function girisGonder(e) {
 
 async function signOut() {
   await AUTH.signOut();
+  /* Başkası girecekse önceki kişinin fotoğrafı beklemesin. */
+  try { localStorage.removeItem('ns.foto'); } catch (e) {}
   DB.projeler = []; DB.moduller = []; DB.sayfalar = [];
   DB.gorevler = []; DB.hareketler = []; DB.kisiler = [];
   DB.yuklendi = false; DB.hata = null;
@@ -3586,6 +3582,14 @@ function runLoader() {
 }
 
 async function boot() {
+  /* En baştaki iş: geçen açılıştan hatırladığımız profil fotoğrafını
+     indirmeye başla. Açılış animasyonu sürerken arka planda iniyor,
+     uygulama açıldığında hazır oluyor. */
+  try {
+    const eskiFoto = localStorage.getItem('ns.foto');
+    if (eskiFoto) new Image().src = eskiFoto;
+  } catch (e) {}
+
   eskileriTemizle();
 
   /* Sunucuda daha yeni sürüm varsa burada kendini yeniler ve geri dönmez */
