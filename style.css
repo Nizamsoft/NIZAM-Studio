@@ -1357,6 +1357,17 @@ html { background: var(--bg); }
   }
 }
 
+/* Onay satırı (kutucuk + açıklama) ------------------------------------------ */
+
+.onay-satir {
+  display: flex; align-items: flex-start; gap: 11px; cursor: pointer;
+  padding: 12px; margin-bottom: 4px; border-radius: 12px;
+  background: var(--yuva); border: 1px solid var(--line-3);
+}
+.onay-satir input { width: 19px; height: 19px; margin-top: 1px; flex-shrink: 0; accent-color: var(--red); }
+.onay-satir b { display: block; font-size: 13px; font-weight: 600; color: var(--ink); }
+.onay-satir i { display: block; font-style: normal; font-size: 11px; color: var(--ink-dim); margin-top: 2px; }
+
 /* Marka: logo ve palet ------------------------------------------------------ */
 
 .marka-kart { padding: 14px; margin-bottom: 16px; }

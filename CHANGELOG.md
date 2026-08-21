@@ -1,5 +1,27 @@
 # Değişiklik Günlüğü
 
+## v0.15.0 — 21 Ağustos 2026
+**Modül şablonları düzenlenebilir oldu**
+
+Yedi modül (Stok, Cari, Fatura, Personel, Rapor, Sipariş, Üretim) kodda sabitti.
+Artık veritabanında; Ayarlar'dan ekleniyor, düzenleniyor, kaldırılıyor.
+
+- **Ayarlar → Kütüphane → Modül Şablonları** — her şablon açılıp sayfaları
+  görülüyor; ad ve sayfalar değiştirilebiliyor
+- Sihirbaz listeyi artık veritabanından okuyor
+- **Modül Ekle penceresi yenilendi:** ad, sayfalar (alt alta) ve
+  **"Nizam varsayılanlarına ekle"** kutucuğu. İşaretlersen kütüphaneye de girer
+- Ad bilinen bir şablonla eşleşirse sayfalar kendiliğinden doluyor,
+  üstünde oynayabiliyorsun
+
+**Kurulmuş projelere dokunulmuyor.** Şablon bir kalıp; ondan kurulan modül
+artık projenin malı. Şablonu silmek ya da değiştirmek eski projeleri etkilemez.
+
+Tablo henüz kurulmamışsa uygulama koddaki hazır listeye düşüyor ve ekranda
+ne yapılması gerektiğini yazıyor.
+
+> Kurulum: `sql/12-modul-sablon.sql` dosyasını Supabase'de bir kez çalıştır.
+
 ## v0.14.0 — 21 Ağustos 2026
 **Firma logosu ve renk paleti**
 

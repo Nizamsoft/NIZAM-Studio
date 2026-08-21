@@ -15,6 +15,7 @@ const DB = {
   hareketler: [],
   kisiler: [],
   kisilerHepsi: [],
+  sablonlar: [],
   /* Logolar private kovada; adres her oturumda yeniden üretilir. */
   logoAdres: {},
   standartlar: [],
@@ -94,13 +95,14 @@ const DB = {
     if (!AUTH.bagli) {                      // demo modu — veri yok
       this.projeler = []; this.moduller = []; this.sayfalar = [];
       this.gorevler = []; this.hareketler = []; this.kisiler = []; this.kisilerHepsi = [];
+      this.sablonlar = [];
       this.standartlar = []; this.gorevStandart = [];
       this.yuklendi = true;
       return;
     }
 
     try {
-      const [p, m, s, g, h, k, st, gs] = await Promise.all([
+      const [p, m, s, g, h, k, st, gs, ms] = await Promise.all([
         AUTH.db.from('projects').select('*').eq('arsiv', false).order('sira').order('olusturuldu'),
         AUTH.db.from('modules').select('*').order('sira'),
         AUTH.db.from('pages').select('*').order('sira'),
@@ -109,6 +111,7 @@ const DB = {
         AUTH.db.from('profiles').select('id, ad, rol, aktif, foto'),
         AUTH.db.from('standards').select('*').eq('aktif', true).order('sira'),
         AUTH.db.from('task_standards').select('*'),
+        AUTH.db.from('module_templates').select('*').eq('aktif', true).order('sira'),
       ]);
 
       const ilkHata = p.error || m.error || s.error || g.error || h.error || st.error || gs.error;
@@ -126,6 +129,8 @@ const DB = {
       this.kisiler      = this.kisilerHepsi.filter(x => x.aktif);
       this.standartlar  = st.data || [];
       this.gorevStandart = gs.data || [];
+      /* Tablo henüz kurulmamışsa hata verme — koddaki hazır liste devreye girer. */
+      this.sablonlar     = (ms && !ms.error && ms.data) ? ms.data : [];
       this.yuklendi     = true;
       await this.logolariTazele();
     } catch (e) {
@@ -407,6 +412,30 @@ const DB = {
     return [...kova.entries()]
       .map(([ad, liste]) => ({ ad, liste: liste.slice().sort((x, y) => tr(x.ad, y.ad)) }))
       .sort((a, b) => tr(a.ad, b.ad));
+  },
+
+  /* Modül şablonları: veritabanı boşsa koddaki hazır liste kullanılır.
+     Böylece sql/12 çalıştırılmadan da sihirbaz çalışmaya devam eder. */
+  modulSablonlari() {
+    return this.sablonlar.length ? this.sablonlar : MODUL_SABLON;
+  },
+
+  async sablonKaydet(id, alanlar) {
+    yazmaKontrol();
+    const q = id
+      ? AUTH.db.from('module_templates').update(alanlar).eq('id', id)
+      : AUTH.db.from('module_templates')
+          .insert(Object.assign({ sira: this.sablonlar.length + 1 }, alanlar));
+    const { error } = await q;
+    if (error) throw new Error(veriHatasi(error));
+    await this.yukle();
+  },
+
+  async sablonSil(id) {
+    yazmaKontrol();
+    const { error } = await AUTH.db.from('module_templates').update({ aktif: false }).eq('id', id);
+    if (error) throw new Error(veriHatasi(error));
+    await this.yukle();
   },
 
   async standartKaydet(id, alanlar) {

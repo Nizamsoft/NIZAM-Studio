@@ -16,6 +16,7 @@ const ROUTES = {
   projeler:    { title: 'Projeler',           kisa: 'Projeler',    sub: () => projelerAltBaslik() },
   gorevler:    { title: 'Bana Atananlar',     kisa: 'Görevler',    sub: () => gorevlerAltBaslik() },
   standartlar: { title: 'Nizam Standartları', kisa: 'Standartlar', sub: () => standartAltBaslik() },
+  sablonlar:   { title: 'Modül Şablonları',   kisa: 'Şablonlar',   sub: () => sablonAltBaslik() },
   ekip:        { title: 'Ekip',               kisa: 'Ekip',        sub: () => ekipAltBaslik() },
   ayarlar:     { title: 'Ayarlar',            kisa: 'Ayarlar',     sub: () => APP.version + ' · ' + APP.stage },
 };
@@ -38,6 +39,7 @@ const ACIK_SAYFA    = new Set();
 const ACIK_STANDART = new Set();
 /* Gruplar akordeon: aynı anda yalnızca biri açık kalır. */
 let ACIK_GRUP = null;
+let ACIK_SABLON = null;
 
 /* ---------- İkonlar ---------- */
 
@@ -311,6 +313,41 @@ const VIEWS = {
     `;
   },
 
+  /* ---------- Modül şablonları ---------- */
+
+  sablonlar: () => {
+    if (YUKLENIYOR) return iskeletler(3);
+    if (DB.hata)    return hataKutusu(DB.hata);
+
+    const liste = DB.modulSablonlari();
+    const veritabani = DB.sablonlar.length > 0;
+
+    return `
+      <div class="note" style="margin-bottom:12px">
+        ${svg(ICON.info, 15)}
+        <span>Yeni proje kurarken ve modül eklerken bu liste çıkar.
+        Buradaki değişiklik kurulmuş projeleri etkilemez.</span>
+      </div>
+
+      ${veritabani ? '' : `<div class="note uyari" style="margin-bottom:12px">
+        ${svg(ICON.uyari, 15)}
+        <span>Bu liste henüz koddan geliyor, düzenlenemez.
+        <b>sql/12-modul-sablon.sql</b> dosyasını Supabase'de çalıştır.</span>
+      </div>`}
+
+      ${AUTH.yonetici && veritabani ? `
+        <div class="standart-arac">
+          <button class="mini-link" data-eylem="sablon-ekle" type="button">
+            ${svg(ICON.arti, 13)} Yeni Şablon</button>
+        </div>` : ''}
+
+      ${liste.length
+        ? liste.map((m, i) => sablonKarti(m, i, veritabani)).join('')
+        : `<div class="card">${empty(ICON.katman, 'Şablon yok', 'İlk modül şablonunu ekle.',
+            AUTH.yonetici ? 'Yeni Şablon' : null, 'sablon-ekle')}</div>`}
+    `;
+  },
+
   /* ---------- Ekip ---------- */
 
   ekip: () => {
@@ -398,6 +435,13 @@ const VIEWS = {
       <span class="label">Kütüphane</span>
       <div class="card">
         <div class="row-list">
+          <div class="row" data-eylem="sablonlara" role="button" tabindex="0">
+            <div class="row-main">
+              <span class="row-title">Modül Şablonları</span>
+              <span class="row-sub">${sablonAltBaslik()} · yeni projelerde çıkan hazır modüller</span>
+            </div>
+            <span class="row-val">${svg(ICON.chevron, 15)}</span>
+          </div>
           <div class="row" data-eylem="standartlara" role="button" tabindex="0">
             <div class="row-main">
               <span class="row-title">Nizam Standartları</span>
@@ -1116,6 +1160,48 @@ function sayaclariYaz() {
   }
 }
 
+function sablonAltBaslik() {
+  if (YUKLENIYOR) return 'yükleniyor…';
+  const n = DB.modulSablonlari().length;
+  const sf = DB.modulSablonlari().reduce((t, m) => t + (m.sayfalar || []).length, 0);
+  return `${n} modül · ${sf} sayfa`;
+}
+
+/* Bir modül şablonu. Açılınca sayfaları listelenir. */
+function sablonKarti(m, i = 0, duzenlenebilir = true) {
+  const anahtar = m.id || m.ad;
+  const acik = ACIK_SABLON === anahtar;
+  const sayfalar = m.sayfalar || [];
+
+  return `
+    <div class="card modul" style="--i:${i}">
+      <div class="modul-bas ${acik ? 'acik' : ''}" data-eylem="sablon-ac" data-ad="${esc(anahtar)}"
+           role="button" tabindex="0" aria-expanded="${acik}">
+        <span class="chev">${svg(ICON.chevron, 15)}</span>
+        <span class="modul-ikon">${svg(ICON.katman, 16)}</span>
+        <span class="modul-yazi">
+          <span class="modul-ad">${esc(m.ad)}</span>
+          <span class="modul-alt">${sayfalar.length} sayfa</span>
+        </span>
+      </div>
+
+      ${acik ? `
+        <div class="sayfalar">
+          ${sayfalar.length
+            ? sayfalar.map(sf => `<div class="sayfa">${svg(ICON.nokta || ICON.chevron, 13)}
+                <span class="sayfa-ad">${esc(sf)}</span></div>`).join('')
+            : '<div class="sayfa"><span class="sayfa-ad ipucu">Sayfa tanımlı değil.</span></div>'}
+        </div>
+        ${AUTH.yonetici && duzenlenebilir ? `
+          <div class="modul-araclar">
+            <button class="mini-link" data-eylem="sablon-duzenle" data-id="${m.id}" type="button">
+              ${svg(ICON.kalem, 13)} Düzenle</button>
+            <button class="mini-link tehlike" data-eylem="sablon-sil" data-id="${m.id}"
+                    data-ad="${esc(m.ad)}" type="button">${svg(ICON.cop, 13)} Kaldır</button>
+          </div>` : ''}` : ''}
+    </div>`;
+}
+
 function ekipAltBaslik() {
   if (YUKLENIYOR) return 'yükleniyor…';
   const t = DB.kisilerHepsi.length;
@@ -1289,7 +1375,7 @@ function sihirbazAdim3() {
 }
 
 function sihirbazAdim4() {
-  const kutular = MODUL_SABLON.map(m => {
+  const kutular = DB.modulSablonlari().map(m => {
     const secili = SIHIRBAZ.moduller.includes(m.ad);
     return `<button class="mod ${secili ? 'sec' : ''}" data-sb="modul" data-deger="${esc(m.ad)}" type="button">
       <span>${esc(m.ad)}</span><span class="tik">${secili ? svg(ICON.tik, 13) : ''}</span></button>`;
@@ -1390,7 +1476,7 @@ async function sihirbazKaydet() {
   if (btn) btn.textContent = 'Kuruluyor…';
 
   try {
-    const moduller = SIHIRBAZ.moduller.map(ad => MODUL_SABLON.find(m => m.ad === ad));
+    const moduller = SIHIRBAZ.moduller.map(ad => DB.modulSablonlari().find(m => m.ad === ad));
     const id = await DB.projeOlustur({
       firma: SIHIRBAZ.firma,
       renk: SIHIRBAZ.renk,
@@ -2016,6 +2102,140 @@ function standartSor(mevcut) {
     };
 
     modalAc(ciz(), bagla, 'genis');
+  });
+}
+
+/* ==========================================================================
+   MODÜL ŞABLONLARI
+   ========================================================================== */
+
+/* Projeye modül eklerken: ad, sayfalar ve istersen kütüphaneye de kaydet. */
+function modulEkleAc(projeId) {
+  modalHepsiniKapat();
+
+  modalAc(`
+    ${modalBaslik(ICON.katman, 'Yeni modül', 'Hazır bir şablon adı yazarsan sayfaları kendiliğinden dolar.')}
+
+    <label class="field">
+      <span>Modül adı</span>
+      <input type="text" id="me-ad" placeholder="Örn. Sipariş" maxlength="60" autocomplete="off" list="me-sablonlar">
+      <datalist id="me-sablonlar">
+        ${DB.modulSablonlari().map(m => `<option value="${esc(m.ad)}"></option>`).join('')}
+      </datalist>
+    </label>
+
+    <label class="field">
+      <span>Sayfalar <em class="ipucu">her satıra bir sayfa</em></span>
+      <textarea id="me-sayfalar" rows="6" spellcheck="false"
+                placeholder="Sipariş Listesi&#10;Sipariş Oluştur&#10;Sipariş Detayı"></textarea>
+    </label>
+
+    <label class="onay-satir">
+      <input type="checkbox" id="me-sablon">
+      <span>
+        <b>Nizam varsayılanlarına ekle</b>
+        <i>Bundan sonraki projelerde hazır seçenek olarak çıksın</i>
+      </span>
+    </label>
+
+    <div class="modal-alt">
+      <button class="btn btn-ghost" data-me="iptal" type="button">Vazgeç</button>
+      <button class="btn btn-primary" data-me="ekle" type="button"><span>Ekle</span></button>
+    </div>`, kutu => {
+    const adAlan = $('#me-ad', kutu);
+    const sfAlan = $('#me-sayfalar', kutu);
+
+    /* Ad bilinen bir şablonla eşleşirse sayfaları doldur — üstünde oynayabilir. */
+    adAlan.addEventListener('input', () => {
+      if (sfAlan.dataset.elle === '1') return;
+      const s = DB.modulSablonlari().find(m =>
+        m.ad.toLocaleLowerCase('tr') === adAlan.value.trim().toLocaleLowerCase('tr'));
+      sfAlan.value = s ? (s.sayfalar || []).join('\n') : '';
+    });
+    sfAlan.addEventListener('input', () => { sfAlan.dataset.elle = '1'; });
+
+    setTimeout(() => adAlan.focus(), 40);
+    $('[data-me="iptal"]', kutu).addEventListener('click', modalKapat);
+
+    $('[data-me="ekle"]', kutu).addEventListener('click', async () => {
+      const ad = adAlan.value.trim();
+      if (!ad) { toast('Modül adı yaz.'); return; }
+
+      const sayfalar = sfAlan.value.split(/\r?\n/).map(x => x.trim()).filter(Boolean);
+      const kutuphaneye = $('#me-sablon', kutu).checked;
+
+      const yazi = $('[data-me="ekle"] span', kutu);
+      yazi.textContent = 'Ekleniyor…';
+      try {
+        await DB.modulEkle(projeId, ad, sayfalar);
+        if (kutuphaneye) {
+          const varOlan = DB.sablonlar.find(m =>
+            m.ad.toLocaleLowerCase('tr') === ad.toLocaleLowerCase('tr'));
+          await DB.sablonKaydet(varOlan ? varOlan.id : null, { ad, sayfalar });
+        }
+        modalKapat();
+        render();
+        toast(kutuphaneye ? ad + ' eklendi ve varsayılanlara kaydedildi.' : ad + ' eklendi.', 'basari');
+      } catch (h) {
+        yazi.textContent = 'Ekle';
+        toast(h.message, 'hata');
+      }
+    });
+  });
+}
+
+/* Şablon yazma / düzenleme. */
+function sablonDuzenle(id) {
+  modalHepsiniKapat();
+  const m = id ? DB.sablonlar.find(x => x.id === id) : null;
+
+  modalAc(`
+    ${modalBaslik(ICON.katman, m ? 'Şablonu düzenle' : 'Yeni şablon',
+      'Sihirbazda ve modül eklerken bu liste çıkar.')}
+
+    <label class="field">
+      <span>Modül adı</span>
+      <input type="text" id="sd-mad" value="${esc(m ? m.ad : '')}"
+             placeholder="Örn. Sipariş" maxlength="60" autocomplete="off">
+    </label>
+
+    <label class="field">
+      <span>Sayfalar <em class="ipucu">her satıra bir sayfa</em></span>
+      <textarea id="sd-msayfalar" rows="8" spellcheck="false"
+        placeholder="Sipariş Listesi&#10;Sipariş Oluştur">${esc(m ? (m.sayfalar || []).join('\n') : '')}</textarea>
+    </label>
+
+    <div class="note note-kucuk">
+      ${svg(ICON.info, 15)}
+      <span>Şablonu değiştirmek kurulmuş projeleri etkilemez. Yalnızca bundan
+      sonraki kurulumlar bu hali alır.</span>
+    </div>
+
+    <div class="modal-alt">
+      <button class="btn btn-ghost" data-sd="iptal" type="button">Vazgeç</button>
+      <button class="btn btn-primary" data-sd="kaydet" type="button"><span>Kaydet</span></button>
+    </div>`, kutu => {
+    setTimeout(() => $('#sd-mad', kutu).focus(), 40);
+    $('[data-sd="iptal"]', kutu).addEventListener('click', modalKapat);
+
+    $('[data-sd="kaydet"]', kutu).addEventListener('click', async () => {
+      const ad = $('#sd-mad', kutu).value.trim();
+      const sayfalar = $('#sd-msayfalar', kutu).value.split(/\r?\n/).map(x => x.trim()).filter(Boolean);
+
+      if (!ad) { toast('Modül adı yaz.'); return; }
+
+      const yazi = $('[data-sd="kaydet"] span', kutu);
+      yazi.textContent = 'Kaydediliyor…';
+      try {
+        await DB.sablonKaydet(id, { ad, sayfalar });
+        modalKapat();
+        render();
+        toast(id ? 'Şablon güncellendi.' : 'Şablon eklendi.', 'basari');
+      } catch (h) {
+        yazi.textContent = 'Kaydet';
+        toast(h.message, 'hata');
+      }
+    });
   });
 }
 
@@ -2780,19 +3000,25 @@ async function eylemCalistir(el) {
     return isYap(() => DB.modulSil(id), 'Modül silindi.');
   }
 
-  if (e === 'modul-ekle') {
-    const projeId = el.dataset.proje || el.dataset.id || rota().id;
-    const ad = await metinSor({
-      baslik: 'Yeni modül',
-      aciklama: 'Hazır bir modül adı yazarsan sayfaları da kurulur.',
-      yerTutucu: 'Örn. Sipariş',
-      buton: 'Ekle',
-    });
-    if (!ad) return;
+  if (e === 'modul-ekle') return modulEkleAc(el.dataset.proje || el.dataset.id || rota().id);
 
-    const sablon = MODUL_SABLON.find(m => m.ad.toLocaleLowerCase('tr') === ad.toLocaleLowerCase('tr'));
-    return isYap(() => DB.modulEkle(projeId, sablon ? sablon.ad : ad, sablon ? sablon.sayfalar : []),
-      sablon ? `${sablon.ad} modülü sayfalarıyla eklendi.` : 'Modül eklendi.');
+  if (e === 'sablon-ac') {
+    const ad = el.dataset.ad;
+    ACIK_SABLON = ACIK_SABLON === ad ? null : ad;
+    return render();
+  }
+
+  if (e === 'sablonlara')     { location.hash = '#/sablonlar'; return; }
+  if (e === 'sablon-ekle')    return sablonDuzenle(null);
+  if (e === 'sablon-duzenle') return sablonDuzenle(id);
+  if (e === 'sablon-sil') {
+    const ok = await onaySor({
+      baslik: 'Şablon kaldırılsın mı?',
+      mesaj: `"${el.dataset.ad}" şablonu listeden çıkacak. Bu şablondan kurulmuş
+              projelerdeki modüllere dokunulmaz.`,
+    });
+    if (!ok) return;
+    return isYap(() => DB.sablonSil(id), 'Şablon kaldırıldı.');
   }
 
   if (e === 'modul-ad') {
