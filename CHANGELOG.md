@@ -1,5 +1,20 @@
 # Değişiklik Günlüğü
 
+## v0.11.0 — 21 Ağustos 2026
+**Panel karşılaması**
+
+Panel dört kart + bir listeden ibaretti; tepesine soluk aldıran bir bölüm geldi.
+
+- **İlerleme halkası** — metal gradyan, ortasında **profil fotoğrafı**,
+  alt kenarında yüzde rozeti. Yüzde elle girilmez: bitmiş görev / toplam görev
+- **Selamlama** saate göre değişiyor — Günaydın · İyi günler · İyi akşamlar ·
+  İyi geceler. Yanında ad soyad
+- Altında tarih ve tek satır özet: kaç proje, kaç açık iş
+- **Zemin süsü** — üst solda soluk kırmızı hâle, sağda metal hâle,
+  sağ altta çok soluk N filigranı. Yalnızca Panel'de görünüyor
+- **Ad Soyad artık düzenlenebilir** — Ayarlar → Hesap. Karşılamada ve üst
+  çubukta bu ad görünüyor
+
 ## v0.10.6 — 21 Ağustos 2026
 **Basınca çıkan beyaz çerçeve gitti**
 

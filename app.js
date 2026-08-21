@@ -221,7 +221,12 @@ const VIEWS = {
     const bugun = DB.gorevleri({ durum: 'tamamlandi' })
       .filter(g => (g.guncellendi || '').slice(0, 10) === bugunTarih()).length;
 
+    const ilerleme = DB.ilerleme(DB.gorevler);
+    const acik = dev + kont;
+
     return `
+      ${karsilama(ilerleme, p.length, acik)}
+
       <div class="stat-grid">
         ${stat('Aktif Proje', p.length, p.length ? 'devam ediyor' : 'henüz proje yok', '', 0, 'folder')}
         ${stat('Geliştiriliyor', dev, dev ? 'kodlanıyor' : 'açık iş yok', 'c-dev', 1, 'kalem')}
@@ -381,7 +386,13 @@ const VIEWS = {
       <span class="label">Hesap</span>
       <div class="card">
         <div class="row-list">
-          ${infoRow('Ad', AUTH.ad)}
+          <div class="row" data-eylem="ad-degistir" role="button" tabindex="0">
+            <div class="row-main">
+              <span class="row-title">Ad Soyad</span>
+              <span class="row-sub">Karşılamada ve üst çubukta bu ad görünür</span>
+            </div>
+            <span class="row-val">${esc(AUTH.ad)} ${svg(ICON.kalem, 13)}</span>
+          </div>
           ${infoRow('E-posta', AUTH.mail, true)}
           ${infoRow('Rol', AUTH.rolAdi)}
         </div>
@@ -833,6 +844,8 @@ function render() {
   }
 
   hesapMenusuKapat();
+  /* Zemin süsü yalnızca Panel'de. */
+  $('#main').classList.toggle('susulu', key === 'panel' && !detay);
   ustEylemYaz(key, detay, id);
   artiYaz(key, detay, id);
   $('#btn-back').classList.toggle('hidden', !detay);
@@ -2176,6 +2189,23 @@ async function eylemCalistir(el) {
     return render();
   }
 
+  if (e === 'ad-degistir') {
+    const ad = await metinSor({
+      baslik: 'Ad Soyad',
+      aciklama: 'Karşılama ekranında ve üst çubukta bu ad görünür.',
+      deger: AUTH.ad,
+      yerTutucu: 'Örn. Nizam Güllü',
+    });
+    if (!ad) return;
+    try {
+      await DB.adKaydet(ad.trim());
+      kullaniciYaz();
+      render();
+      toast('Ad güncellendi.', 'basari');
+    } catch (h) { toast(h.message, 'hata'); }
+    return;
+  }
+
   if (e === 'standartlara') { location.hash = '#/standartlar'; return; }
 
   if (e === 'standart-ice-aktar') return standartIceAktar();
@@ -2519,6 +2549,43 @@ function tarihYaz(iso) {
   const d = new Date(iso);
   const p = n => String(n).padStart(2, '0');
   return `${d.getDate()} ${a[d.getMonth()]} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
+/* Panelin tepesi: ilerleme halkasının içinde profil fotoğrafı,
+   altında saate göre selam ve tek satır özet. */
+function karsilama(ilerleme, projeSayi, acikIs) {
+  const r = 66, cevre = 2 * Math.PI * r;
+  const bos = cevre * (1 - ilerleme.yuzde / 100);
+
+  const ozet = [
+    projeSayi ? `<b>${projeSayi} proje</b>` : 'henüz proje yok',
+    acikIs ? `<b>${acikIs} açık iş</b>` : 'açık iş yok',
+  ].join(' · ');
+
+  return `
+    <div class="karsilama">
+      <div class="halka">
+        <svg viewBox="0 0 150 150" aria-hidden="true">
+          <circle class="halka-iz"   cx="75" cy="75" r="${r}"></circle>
+          <circle class="halka-dolu" cx="75" cy="75" r="${r}"
+                  stroke-dasharray="${cevre.toFixed(1)}" stroke-dashoffset="${bos.toFixed(1)}"></circle>
+        </svg>
+        <span class="halka-foto"><b>${esc(AUTH.basHarfler)}</b></span>
+        <span class="halka-rozet">%${ilerleme.yuzde}</span>
+      </div>
+      <h2 class="selam">${esc(selamla())}, ${esc(AUTH.ad)}</h2>
+      <p class="selam-alt">${esc(todayLabel())} · ${ozet}</p>
+    </div>`;
+}
+
+/* Saate göre selam. */
+function selamla() {
+  const s = new Date().getHours();
+  if (s < 5)  return 'İyi geceler';
+  if (s < 11) return 'Günaydın';
+  if (s < 18) return 'İyi günler';
+  if (s < 22) return 'İyi akşamlar';
+  return 'İyi geceler';
 }
 
 function todayLabel() {

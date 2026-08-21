@@ -24,7 +24,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="NIZAM Studio">
 
-<link rel="stylesheet" href="style.css?v=0.10.6">
+<link rel="stylesheet" href="style.css?v=0.11.0">
 </head>
 <body>
 
@@ -113,6 +113,14 @@
       </button>
     </header>
 
+    <!-- Panelin zemin süsü: iki soluk hâle ve dev filigran. Yalnızca Panel'de
+         görünür, içeriğin arkasında durur, dokunmayı engellemez. -->
+    <div id="zemin-sus" aria-hidden="true">
+      <span class="hale-kirmizi"></span>
+      <span class="hale-metal"></span>
+      <img class="filigran" src="logo-n.png" alt="" width="190" height="206" draggable="false">
+    </div>
+
     <main id="view" class="view"></main>
   </div>
 
@@ -138,6 +146,12 @@
       <stop offset=".55" stop-color="#ffe3e0"></stop>
       <stop offset="1" stop-color="#ffb8b1"></stop>
     </linearGradient>
+    <!-- Panel ilerleme halkası -->
+    <linearGradient id="halka-metal" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f4f0ed"></stop>
+      <stop offset=".5" stop-color="#c2bab4"></stop>
+      <stop offset="1" stop-color="#7a716a"></stop>
+    </linearGradient>
     <linearGradient id="yan-kirmizi" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" stop-color="#932018"></stop>
       <stop offset="1" stop-color="#5a110c"></stop>
@@ -148,11 +162,11 @@
 <div id="toast" class="hidden"></div>
 
 <script src="vendor/supabase.js?v=2.112.3"></script>
-<script src="config.js?v=0.10.6"></script>
-<script src="auth.js?v=0.10.6"></script>
-<script src="data.js?v=0.10.6"></script>
-<script src="guncelle.js?v=0.10.6"></script>
-<script src="prompt.js?v=0.10.6"></script>
-<script src="app.js?v=0.10.6"></script>
+<script src="config.js?v=0.11.0"></script>
+<script src="auth.js?v=0.11.0"></script>
+<script src="data.js?v=0.11.0"></script>
+<script src="guncelle.js?v=0.11.0"></script>
+<script src="prompt.js?v=0.11.0"></script>
+<script src="app.js?v=0.11.0"></script>
 </body>
 </html>

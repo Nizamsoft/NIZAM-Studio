@@ -434,6 +434,14 @@ const DB = {
     return { eklenen, guncellenen };
   },
 
+  /* Kullanıcı kendi adını değiştirebilir. Rol değişmez — o yöneticinin işi. */
+  async adKaydet(ad) {
+    if (!AUTH.db || !AUTH.user) throw new Error('Oturum yok.');
+    const { error } = await AUTH.db.from('profiles').update({ ad }).eq('id', AUTH.user.id);
+    if (error) throw new Error(veriHatasi(error));
+    await AUTH.profilOku();
+  },
+
   async standartSil(id) {
     yazmaKontrol();
     const { error } = await AUTH.db.from('standards').update({ aktif: false }).eq('id', id);
