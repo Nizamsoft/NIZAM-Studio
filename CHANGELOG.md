@@ -1,5 +1,18 @@
 # Değişiklik Günlüğü
 
+## v0.11.1 — 21 Ağustos 2026
+**Ad kaydolmuyordu**
+
+"Ad güncellendi" yazıyor ama ad değişmiyordu. Sebep: `profiles` tablosunda
+yalnızca okuma kuralı vardı, güncelleme kuralı yoktu. Supabase bu durumda
+hata vermiyor — sessizce hiçbir satıra dokunmuyor.
+
+- `sql/08-profil-ad.sql` eklendi: kullanıcı kendi adını değiştirebilir
+- Rol ve aktiflik uygulamadan değiştirilemez (tetikleyici ile kilitli);
+  Supabase panelinden yine değiştirilebiliyor
+- Uygulama artık **kaç satır güncellendiğini sayıyor**. Sıfırsa "kaydedildi"
+  demiyor, ne yapılması gerektiğini yazıyor
+
 ## v0.11.0 — 21 Ağustos 2026
 **Panel karşılaması**
 

@@ -437,8 +437,17 @@ const DB = {
   /* Kullanıcı kendi adını değiştirebilir. Rol değişmez — o yöneticinin işi. */
   async adKaydet(ad) {
     if (!AUTH.db || !AUTH.user) throw new Error('Oturum yok.');
-    const { error } = await AUTH.db.from('profiles').update({ ad }).eq('id', AUTH.user.id);
+
+    /* .select() şart: güncelleme kuralı yoksa Supabase hata vermez, sessizce
+       hiçbir satıra dokunmaz. Dönen satırı saymazsak "kaydedildi" der ve
+       hiçbir şey değişmez. */
+    const { data, error } = await AUTH.db
+      .from('profiles').update({ ad }).eq('id', AUTH.user.id).select('ad');
+
     if (error) throw new Error(veriHatasi(error));
+    if (!data || !data.length) {
+      throw new Error('Ad yazılamadı — sql/08-profil-ad.sql dosyasını Supabase\'de çalıştır.');
+    }
     await AUTH.profilOku();
   },
 
