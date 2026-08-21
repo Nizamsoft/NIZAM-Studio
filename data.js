@@ -609,11 +609,10 @@ const DB = {
      Projeye girildiğinde indirme beklenmez, logo anında görünür.
      Beklemiyoruz: indirme sürerken uygulama açılmaya devam ediyor. */
   resimleriIsit() {
-    const adresler = Object.values(this.logoAdres);
-    if (AUTH.foto) adresler.push(AUTH.foto);
-    this.kisilerHepsi.forEach(k => { if (k.foto) adresler.push(k.foto); });
-
-    adresler.forEach(adres => { new Image().src = adres; });
+    /* Yalnızca proje logoları. Ekip fotoğrafları da eklenince tarayıcının
+       eşzamanlı indirme sırası doluyor ve senin kendi fotoğrafın arkada
+       kalıyordu — ekip fotoğrafları zaten Ekip ekranında yükleniyor. */
+    Object.values(this.logoAdres).forEach(adres => { new Image().src = adres; });
   },
 
   async logoYukle(projeId, dosya) {

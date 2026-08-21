@@ -559,7 +559,8 @@ function logolariGoster() {
     const resim = new Image();
     resim.onload = () => {
       el.style.backgroundImage = `url('${adres}')`;
-      bitir('dolu');
+      /* Avatarda baş harfleri gizleyen sınıf ayrı — ikisini de veriyoruz. */
+      bitir(el.classList.contains('foto') ? 'resimli' : 'dolu');
     };
     resim.onerror = () => bitir('yuklenemedi');
     resim.src = adres;
@@ -3866,8 +3867,6 @@ async function girisGonder(e) {
 
 async function signOut() {
   await AUTH.signOut();
-  /* Başkası girecekse önceki kişinin fotoğrafı beklemesin. */
-  try { localStorage.removeItem('ns.foto'); } catch (e) {}
   DB.projeler = []; DB.moduller = []; DB.sayfalar = [];
   DB.gorevler = []; DB.hareketler = []; DB.kisiler = [];
   DB.yuklendi = false; DB.hata = null;
@@ -3916,27 +3915,26 @@ function hataGoster(mesaj) {
 function hataGizle() { $('#login-error').classList.add('hidden'); }
 
 function kullaniciYaz() {
-  /* Fotoğraf hazır olmadan baş harfleri gizlemiyoruz — yoksa resim gelene
-     kadar boş bir daire duruyor. Önce indirilir, sonra yerine konur. */
+  /* Fotoğraf logolarla aynı yoldan geçiyor: logolariGoster() indirir,
+     bitince yerine koyar. Tek mekanizma, tek davranış. */
   $$('#user-tile .foto, #user-chip .foto').forEach(el => {
     if (!AUTH.foto) {
       el.style.backgroundImage = '';
-      el.classList.remove('resimli');
+      el.classList.remove('resimli', 'yukleniyor');
       return;
     }
-    if (el.dataset.foto === AUTH.foto) return;   /* aynı resim, tekrar yükleme */
+    if (el.dataset.hazir === AUTH.foto) return;   /* aynı resim, tekrar indirme */
 
-    const resim = new Image();
-    resim.onload = () => {
-      el.dataset.foto = AUTH.foto;
-      el.style.backgroundImage = `url('${AUTH.foto}')`;
-      el.classList.add('resimli');
-    };
-    resim.src = AUTH.foto;
+    el.dataset.hazir = AUTH.foto;
+    el.dataset.logo = AUTH.foto;
+    el.classList.add('yukleniyor');
+    if (!$('.donen', el)) el.insertAdjacentHTML('beforeend', '<span class="donen"></span>');
   });
   $$('#user-chip .avatar, #user-tile .avatar').forEach(e => e.textContent = AUTH.basHarfler);
   $$('#user-chip .user-name, #user-tile .user-name').forEach(e => e.textContent = AUTH.ad);
   $$('#user-chip .user-role, #user-tile .user-role').forEach(e => e.textContent = AUTH.rolAdi);
+
+  logolariGoster();
 
   const surum = $('#rail-surum');
   if (surum) surum.textContent = APP.version + ' · ' + APP.stage;
@@ -3970,14 +3968,6 @@ function runLoader() {
 }
 
 async function boot() {
-  /* En baştaki iş: geçen açılıştan hatırladığımız profil fotoğrafını
-     indirmeye başla. Açılış animasyonu sürerken arka planda iniyor,
-     uygulama açıldığında hazır oluyor. */
-  try {
-    const eskiFoto = localStorage.getItem('ns.foto');
-    if (eskiFoto) new Image().src = eskiFoto;
-  } catch (e) {}
-
   eskileriTemizle();
 
   /* Sunucuda daha yeni sürüm varsa burada kendini yeniler ve geri dönmez */
@@ -3985,14 +3975,7 @@ async function boot() {
 
   AUTH.init();
 
-  /* Oturum okunur okunmaz kendi fotoğrafını indirmeye başla. Açılış
-     animasyonu sürerken iniyor, uygulama açıldığında hazır oluyor. */
-  const oturum = AUTH.restore().then(v => {
-    if (AUTH.foto) new Image().src = AUTH.foto;
-    return v;
-  });
-
-  const [, oturumVar] = await Promise.all([runLoader(), oturum]);
+  const [, oturumVar] = await Promise.all([runLoader(), AUTH.restore()]);
 
   const loader = $('#loader');
   loader.classList.add('fade-out');

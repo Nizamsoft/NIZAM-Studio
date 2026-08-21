@@ -1,5 +1,24 @@
 # Değişiklik Günlüğü
 
+## v0.17.1 — 21 Ağustos 2026
+**Profil fotoğrafı logolarla aynı yoldan geçiyor**
+
+Fotoğraf için ayrı bir yol kurmuştum; iyileştirmek isterken yavaşlattım.
+Şimdi logolarla **tek mekanizma** kullanıyor: aynı indirme, aynı gösterge,
+aynı hata davranışı.
+
+Kaldırılanlar — üçü de yavaşlatıyordu:
+
+- **Tarayıcıda saklanan adres.** Fotoğrafı değiştirdiğinde adres de değişiyor;
+  açılışta *eski* adresi indirip boşa harcıyordu
+- **Açılışta ekip fotoğraflarının hepsini indirme.** Tarayıcının eşzamanlı
+  indirme sırası doluyor, senin kendi fotoğrafın arkada kalıyordu.
+  Ekip fotoğrafları zaten Ekip ekranında yükleniyor
+- **İkinci bir ön-indirme.** Aynı resim iki yerden isteniyordu
+
+Fotoğraf artık yüklenirken baş harflerin üstünde dönen gösterge duruyor —
+logolarda olduğu gibi.
+
 ## v0.17.0 — 21 Ağustos 2026
 **Yeni proje sihirbazı — tam ekran, altı adım**
 

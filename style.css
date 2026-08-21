@@ -1527,7 +1527,9 @@ html { background: var(--bg); }
 }
 @keyframes donuyor { to { transform: rotate(360deg); } }
 /* Güvenlik ağı: gösterge bir şekilde silinemezse bile görünmesin. */
-.dolu .donen, .yuklenemedi .donen { display: none; }
+.dolu .donen, .resimli .donen, .yuklenemedi .donen { display: none; }
+/* Avatar yüklenirken baş harfler durur, gösterge üstünde döner. */
+.foto.yukleniyor > b { opacity: .3; }
 
 .kunye-logo, /* Logo satırı: solda kutu, yanında iki satır yazı. */
 .mk-ust { display: flex; align-items: center; gap: 13px; }
