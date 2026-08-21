@@ -1,5 +1,21 @@
 # Değişiklik Günlüğü
 
+## v0.16.6 — 21 Ağustos 2026
+**Profil fotoğrafı geç geliyordu**
+
+İki ayrı sorun vardı:
+
+**1 · Baş harfler erken gizleniyordu.** Fotoğraf adresi yazılır yazılmaz
+"resim var" işareti konuyordu; resim henüz inmemişken baş harfler kayboluyor,
+geriye boş bir daire kalıyordu. Artık resim indikten *sonra* yerine konuyor —
+o ana kadar baş harfler duruyor.
+
+**2 · İndirme geç başlıyordu.** Fotoğraf ancak uygulama açıldıktan sonra
+indirilmeye başlıyordu. Artık oturum okunur okunmaz başlıyor: açılış
+animasyonu sürerken arka planda iniyor.
+
+- Aynı resim ikinci kez indirilmiyor
+
 ## v0.16.5 — 21 Ağustos 2026
 **Resimler açılışta indiriliyor**
 

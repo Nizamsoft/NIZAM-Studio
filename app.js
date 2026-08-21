@@ -3532,10 +3532,23 @@ function hataGoster(mesaj) {
 function hataGizle() { $('#login-error').classList.add('hidden'); }
 
 function kullaniciYaz() {
-  /* Fotoğraf varsa baş harfleri gizle, kutuya resmi bas. */
+  /* Fotoğraf hazır olmadan baş harfleri gizlemiyoruz — yoksa resim gelene
+     kadar boş bir daire duruyor. Önce indirilir, sonra yerine konur. */
   $$('#user-tile .foto, #user-chip .foto').forEach(el => {
-    el.style.backgroundImage = AUTH.foto ? `url('${AUTH.foto}')` : '';
-    el.classList.toggle('resimli', !!AUTH.foto);
+    if (!AUTH.foto) {
+      el.style.backgroundImage = '';
+      el.classList.remove('resimli');
+      return;
+    }
+    if (el.dataset.foto === AUTH.foto) return;   /* aynı resim, tekrar yükleme */
+
+    const resim = new Image();
+    resim.onload = () => {
+      el.dataset.foto = AUTH.foto;
+      el.style.backgroundImage = `url('${AUTH.foto}')`;
+      el.classList.add('resimli');
+    };
+    resim.src = AUTH.foto;
   });
   $$('#user-chip .avatar, #user-tile .avatar').forEach(e => e.textContent = AUTH.basHarfler);
   $$('#user-chip .user-name, #user-tile .user-name').forEach(e => e.textContent = AUTH.ad);
@@ -3580,7 +3593,14 @@ async function boot() {
 
   AUTH.init();
 
-  const [, oturumVar] = await Promise.all([runLoader(), AUTH.restore()]);
+  /* Oturum okunur okunmaz kendi fotoğrafını indirmeye başla. Açılış
+     animasyonu sürerken iniyor, uygulama açıldığında hazır oluyor. */
+  const oturum = AUTH.restore().then(v => {
+    if (AUTH.foto) new Image().src = AUTH.foto;
+    return v;
+  });
+
+  const [, oturumVar] = await Promise.all([runLoader(), oturum]);
 
   const loader = $('#loader');
   loader.classList.add('fade-out');
