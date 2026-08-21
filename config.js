@@ -7,9 +7,9 @@ const APP = {
   name:     'NIZAM | Studio',
   short:    'NIZAM Studio',
   owner:    'Nizam Soft',
-  version: 'v0.11.2',
+  version: 'v0.12.0',
   build:    '2026-08-20',
-  stage: 'Adım 4 · Panel yenilendi',
+  stage: 'Adım 4 · Ekip yönetimi',
 };
 
 /* Supabase bağlantısı.
@@ -111,5 +111,6 @@ const MENU = [
   { id: 'gorevler',    ad: 'Bana Atananlar',     ikon: 'check',  tab: true,  sayac: 'gorevler', tabAd: 'Görevler' },
   /* Standartlar alt çubukta değil — Ayarlar'ın içinden açılıyor. */
   { id: 'standartlar', ad: 'Nizam Standartları', ikon: 'katman' },
+  { id: 'ekip',        ad: 'Ekip',               ikon: 'kisi', sadeceYonetici: true },
   { id: 'ayarlar',     ad: 'Ayarlar',            ikon: 'ayar',   tab: true },
 ];

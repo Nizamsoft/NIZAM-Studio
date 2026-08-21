@@ -16,6 +16,7 @@ const ROUTES = {
   projeler:    { title: 'Projeler',           kisa: 'Projeler',    sub: () => projelerAltBaslik() },
   gorevler:    { title: 'Bana Atananlar',     kisa: 'Görevler',    sub: () => gorevlerAltBaslik() },
   standartlar: { title: 'Nizam Standartları', kisa: 'Standartlar', sub: () => standartAltBaslik() },
+  ekip:        { title: 'Ekip',               kisa: 'Ekip',        sub: () => ekipAltBaslik() },
   ayarlar:     { title: 'Ayarlar',            kisa: 'Ayarlar',     sub: () => APP.version + ' · ' + APP.stage },
 };
 
@@ -381,6 +382,36 @@ const VIEWS = {
     `;
   },
 
+  /* ---------- Ekip ---------- */
+
+  ekip: () => {
+    if (YUKLENIYOR) return iskeletler(3);
+    if (DB.hata)    return hataKutusu(DB.hata);
+    if (!AUTH.yonetici) {
+      return `<div class="card">${empty(ICON.kisi, 'Bu ekran yöneticiye ait',
+        'Ekip yönetimini yalnızca yönetici görebilir.')}</div>`;
+    }
+
+    const liste = DB.kisilerHepsi;
+
+    return `
+      <div class="note" style="margin-bottom:12px">
+        ${svg(ICON.info, 15)}
+        <span>Yeni kullanıcı açtığında geçici şifreyi kendin belirlersin.
+        Kişi girdikten sonra Ayarlar'dan adını ve fotoğrafını değiştirebilir.</span>
+      </div>
+
+      <div class="standart-arac">
+        <button class="mini-link" data-eylem="kullanici-ekle" type="button">
+          ${svg(ICON.arti, 13)} Yeni Kullanıcı</button>
+      </div>
+
+      ${liste.length
+        ? `<div class="card liste">${liste.map(kisiSatiri).join('')}</div>`
+        : `<div class="card">${empty(ICON.kisi, 'Kimse yok', 'İlk kullanıcıyı ekle.')}</div>`}
+    `;
+  },
+
   ayarlar: () => `
     <div class="section" style="margin-top:0">
       <span class="label">Hesap</span>
@@ -417,6 +448,22 @@ const VIEWS = {
         </div>
       </div>
     </div>
+
+    ${AUTH.yonetici ? `
+      <div class="section">
+        <span class="label">Ekip</span>
+        <div class="card">
+          <div class="row-list">
+            <div class="row" data-eylem="ekibe" role="button" tabindex="0">
+              <div class="row-main">
+                <span class="row-title">Ekip Yönetimi</span>
+                <span class="row-sub">${ekipAltBaslik()} · kullanıcı ekle, rol ve erişim ver</span>
+              </div>
+              <span class="row-val">${svg(ICON.chevron, 15)}</span>
+            </div>
+          </div>
+        </div>
+      </div>` : ''}
 
     <div class="section">
       <span class="label">Kütüphane</span>
@@ -1059,6 +1106,33 @@ function sayaclariYaz() {
       : 0;
     gv.textContent = acik;
   }
+}
+
+function ekipAltBaslik() {
+  if (YUKLENIYOR) return 'yükleniyor…';
+  const t = DB.kisilerHepsi.length;
+  const p = DB.kisilerHepsi.filter(k => !k.aktif).length;
+  return p ? `${t} kişi · ${p} pasif` : `${t} kişi`;
+}
+
+/* Ekip listesindeki bir satır. Kendi satırında rol ve aktiflik kilitli —
+   son yönetici kendini geliştirici yapıp sistemi kilitleyemesin. */
+function kisiSatiri(k, i = 0) {
+  const ben  = AUTH.user && k.id === AUTH.user.id;
+  const foto = k.foto
+    ? `<span class="foto kucuk resimli" style="background-image:url('${esc(k.foto)}')"></span>`
+    : `<span class="foto kucuk"><b>${esc(basHarf(k.ad || '?'))}</b></span>`;
+
+  return `
+    <div class="row kisi-satir ${k.aktif ? '' : 'pasif'}" style="--i:${i}"
+         data-eylem="kisi-duzenle" data-id="${k.id}" role="button" tabindex="0">
+      ${foto}
+      <div class="row-main">
+        <span class="row-title">${esc(k.ad || '—')}${ben ? ' <em class="ipucu">(sen)</em>' : ''}</span>
+        <span class="row-sub">${k.rol === 'yonetici' ? 'Yönetici' : 'Geliştirici'}${k.aktif ? '' : ' · pasif'}</span>
+      </div>
+      <span class="row-val">${svg(ICON.chevron, 15)}</span>
+    </div>`;
 }
 
 function standartAltBaslik() {
@@ -1881,6 +1955,162 @@ function standartSor(mevcut) {
   });
 }
 
+/* ==========================================================================
+   EKİP
+   ========================================================================== */
+
+/* Yeni kullanıcı penceresi. Şifreyi yönetici belirler, kişiye kendisi iletir. */
+function kullaniciEkleAc() {
+  modalHepsiniKapat();
+
+  modalAc(`
+    ${modalBaslik(ICON.kisi, 'Yeni Kullanıcı', 'Geçici şifreyi sen belirle, kişiye ilet. Girdikten sonra değiştirebilir.')}
+
+    <label class="field">
+      <span>Ad Soyad</span>
+      <input type="text" id="ke-ad" placeholder="Örn. Ahmet Yılmaz" maxlength="60" autocomplete="off">
+    </label>
+    <label class="field">
+      <span>E-posta</span>
+      <input type="email" id="ke-mail" placeholder="ad@firma.com" autocomplete="off"
+             autocapitalize="off" spellcheck="false">
+    </label>
+    <label class="field">
+      <span>Geçici şifre <em class="ipucu">en az 8 karakter</em></span>
+      <input type="text" id="ke-sifre" placeholder="Örn. Nizam2026!" autocomplete="off"
+             autocapitalize="off" spellcheck="false">
+    </label>
+    <div class="field">
+      <span>Rol</span>
+      <div class="secenek-serit">
+        <button class="ss sec" data-rol="gelistirici" type="button">Geliştirici</button>
+        <button class="ss" data-rol="yonetici" type="button">Yönetici</button>
+      </div>
+    </div>
+
+    <div class="note note-kucuk">
+      ${svg(ICON.info, 15)}
+      <span><b>Geliştirici</b> yalnızca kendine atanan görevleri görür.
+      <b>Yönetici</b> her şeyi görür ve onaylar.</span>
+    </div>
+
+    <div class="modal-alt">
+      <button class="btn btn-ghost" data-ke="iptal" type="button">Vazgeç</button>
+      <button class="btn btn-primary" data-ke="kaydet" type="button"><span>Kullanıcıyı Aç</span></button>
+    </div>`, kutu => {
+    let rol = 'gelistirici';
+
+    $$('[data-rol]', kutu).forEach(b => b.addEventListener('click', () => {
+      rol = b.dataset.rol;
+      $$('[data-rol]', kutu).forEach(x => x.classList.toggle('sec', x === b));
+    }));
+
+    setTimeout(() => $('#ke-ad', kutu).focus(), 40);
+    $('[data-ke="iptal"]', kutu).addEventListener('click', modalKapat);
+
+    $('[data-ke="kaydet"]', kutu).addEventListener('click', async () => {
+      const ad    = $('#ke-ad', kutu).value.trim();
+      const mail  = $('#ke-mail', kutu).value.trim().toLowerCase();
+      const sifre = $('#ke-sifre', kutu).value;
+
+      if (ad.length < 2)   { toast('Ad soyad yaz.'); return; }
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(mail)) { toast('Geçerli bir e-posta yaz.'); return; }
+      if (sifre.length < 8) { toast('Şifre en az 8 karakter olmalı.'); return; }
+
+      const yazi = $('[data-ke="kaydet"] span', kutu);
+      yazi.textContent = 'Açılıyor…';
+      try {
+        await DB.kullaniciEkle({ mail, ad, rol, sifre });
+        modalKapat();
+        render();
+        toast(ad + ' eklendi.', 'basari');
+      } catch (h) {
+        yazi.textContent = 'Kullanıcıyı Aç';
+        toast(h.message, 'hata');
+      }
+    });
+  });
+}
+
+/* Bir kişiyi düzenler: ad, rol, aktiflik. Kendi satırında rol ve aktiflik
+   kapalı — son yönetici kendini kilitleyemesin. */
+function kisiDuzenle(id) {
+  const k = DB.kisilerHepsi.find(x => x.id === id);
+  if (!k) return;
+  const ben = AUTH.user && k.id === AUTH.user.id;
+
+  modalHepsiniKapat();
+  modalAc(`
+    ${modalBaslik(ICON.kisi, esc(k.ad || 'Kişi'), ben ? 'Kendi rolünü ve erişimini değiştiremezsin.' : 'Ad, rol ve erişim.')}
+
+    <label class="field">
+      <span>Ad Soyad</span>
+      <input type="text" id="kd-ad" value="${esc(k.ad || '')}" maxlength="60" autocomplete="off">
+    </label>
+
+    <div class="field">
+      <span>Rol</span>
+      <div class="secenek-serit">
+        <button class="ss ${k.rol === 'gelistirici' ? 'sec' : ''}" data-rol="gelistirici"
+                type="button" ${ben ? 'disabled' : ''}>Geliştirici</button>
+        <button class="ss ${k.rol === 'yonetici' ? 'sec' : ''}" data-rol="yonetici"
+                type="button" ${ben ? 'disabled' : ''}>Yönetici</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <span>Erişim</span>
+      <div class="secenek-serit">
+        <button class="ss ${k.aktif ? 'sec' : ''}" data-aktif="1" type="button" ${ben ? 'disabled' : ''}>Aktif</button>
+        <button class="ss ${k.aktif ? '' : 'sec'}" data-aktif="0" type="button" ${ben ? 'disabled' : ''}>Pasif</button>
+      </div>
+    </div>
+
+    <div class="note note-kucuk">
+      ${svg(ICON.info, 15)}
+      <span>Pasif kullanıcı giriş yapamaz ve hiçbir veriye ulaşamaz. Kaydı silinmez.</span>
+    </div>
+
+    <div class="modal-alt">
+      <button class="btn btn-ghost" data-kd="iptal" type="button">Vazgeç</button>
+      <button class="btn btn-primary" data-kd="kaydet" type="button"><span>Kaydet</span></button>
+    </div>`, kutu => {
+    let rol = k.rol, aktif = k.aktif;
+
+    $$('[data-rol]', kutu).forEach(b => b.addEventListener('click', () => {
+      if (ben) return;
+      rol = b.dataset.rol;
+      $$('[data-rol]', kutu).forEach(x => x.classList.toggle('sec', x === b));
+    }));
+    $$('[data-aktif]', kutu).forEach(b => b.addEventListener('click', () => {
+      if (ben) return;
+      aktif = b.dataset.aktif === '1';
+      $$('[data-aktif]', kutu).forEach(x => x.classList.toggle('sec', x === b));
+    }));
+
+    $('[data-kd="iptal"]', kutu).addEventListener('click', modalKapat);
+    $('[data-kd="kaydet"]', kutu).addEventListener('click', async () => {
+      const ad = $('#kd-ad', kutu).value.trim();
+      if (ad.length < 2) { toast('Ad soyad yaz.'); return; }
+
+      const alanlar = ben ? { ad } : { ad, rol, aktif };
+      const yazi = $('[data-kd="kaydet"] span', kutu);
+      yazi.textContent = 'Kaydediliyor…';
+      try {
+        await DB.kisiKaydet(k.id, alanlar);
+        if (ben) await AUTH.profilOku();
+        modalKapat();
+        kullaniciYaz();
+        render();
+        toast('Kaydedildi.', 'basari');
+      } catch (h) {
+        yazi.textContent = 'Kaydet';
+        toast(h.message, 'hata');
+      }
+    });
+  });
+}
+
 /* Telefondan resim seçtirir, yükler. Gizli bir dosya alanı kullanılıyor:
    görünür bir <input type="file"> tasarımı bozuyor. */
 function fotoSec() {
@@ -2231,6 +2461,10 @@ async function eylemCalistir(el) {
     GOREV_FILTRE = el.dataset.deger;
     return render();
   }
+
+  if (e === 'ekibe') { location.hash = '#/ekip'; return; }
+  if (e === 'kullanici-ekle') return kullaniciEkleAc();
+  if (e === 'kisi-duzenle')   return kisiDuzenle(id);
 
   if (e === 'foto-degistir') return fotoSec();
 
@@ -2700,6 +2934,14 @@ async function signOut() {
 }
 
 async function uygulamayiAc() {
+  if (AUTH.pasif) {
+    await AUTH.signOut();
+    $('#app').classList.add('hidden');
+    $('#login').classList.remove('hidden');
+    hataGoster('Erişimin kapatılmış. Yöneticiye başvur.');
+    return;
+  }
+
   $('#login').classList.add('hidden');
   $('#app').classList.remove('hidden');
   menuyuCiz();

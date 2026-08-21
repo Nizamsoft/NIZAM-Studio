@@ -14,6 +14,7 @@ const DB = {
   gorevler: [],
   hareketler: [],
   kisiler: [],
+  kisilerHepsi: [],
   standartlar: [],
   gorevStandart: [],
 
@@ -90,7 +91,7 @@ const DB = {
 
     if (!AUTH.bagli) {                      // demo modu — veri yok
       this.projeler = []; this.moduller = []; this.sayfalar = [];
-      this.gorevler = []; this.hareketler = []; this.kisiler = [];
+      this.gorevler = []; this.hareketler = []; this.kisiler = []; this.kisilerHepsi = [];
       this.standartlar = []; this.gorevStandart = [];
       this.yuklendi = true;
       return;
@@ -103,7 +104,7 @@ const DB = {
         AUTH.db.from('pages').select('*').order('sira'),
         AUTH.db.from('tasks').select('*').order('no', { ascending: false }),
         AUTH.db.from('task_events').select('*').order('olusturuldu'),
-        AUTH.db.from('profiles').select('id, ad, rol, aktif'),
+        AUTH.db.from('profiles').select('id, ad, rol, aktif, foto'),
         AUTH.db.from('standards').select('*').eq('aktif', true).order('sira'),
         AUTH.db.from('task_standards').select('*'),
       ]);
@@ -116,7 +117,11 @@ const DB = {
       this.sayfalar   = s.data || [];
       this.gorevler   = g.data || [];
       this.hareketler = h.data || [];
-      this.kisiler      = (k.data || []).filter(x => x.aktif);
+      /* kisiler = görev atanabilecekler (yalnız aktif).
+         kisilerHepsi = ekip ekranı için pasifler dâhil herkes. */
+      this.kisilerHepsi = (k.data || []).slice()
+        .sort((a, b) => String(a.ad || '').localeCompare(String(b.ad || ''), 'tr'));
+      this.kisiler      = this.kisilerHepsi.filter(x => x.aktif);
       this.standartlar  = st.data || [];
       this.gorevStandart = gs.data || [];
       this.yuklendi     = true;
@@ -477,6 +482,40 @@ const DB = {
       throw new Error('Adres profile yazılamadı — sql/08-profil-ad.sql çalıştırılmamış olabilir.');
     }
     await AUTH.profilOku();
+  },
+
+  /* Ekip: bir kişinin adını, rolünü, aktifliğini değiştirir.
+     Neyin değişebileceğine veritabanındaki kilit karar veriyor. */
+  async kisiKaydet(id, alanlar) {
+    yazmaKontrol();
+    const { data, error } = await AUTH.db
+      .from('profiles').update(alanlar).eq('id', id).select('id');
+    if (error) throw new Error(veriHatasi(error));
+    if (!data || !data.length) {
+      throw new Error('Değişiklik yazılamadı — sql/10-ekip.sql çalıştırılmamış olabilir.');
+    }
+    await this.yukle();
+  },
+
+  /* Kullanıcı açma sunucuda yapılır: gizli anahtar tarayıcıya konamaz. */
+  async kullaniciEkle({ mail, ad, rol, sifre }) {
+    yazmaKontrol();
+    const { data, error } = await AUTH.db.functions.invoke('kullanici-ekle', {
+      body: { mail, ad, rol, sifre },
+    });
+
+    if (error) {
+      /* Fonksiyonun kendi Türkçe mesajı gövdede geliyor; onu göstermeye çalış. */
+      let mesaj = '';
+      try { mesaj = (await error.context.json()).hata; } catch (_) {}
+      if (!mesaj && /Failed to send|fetch/i.test(error.message || '')) {
+        mesaj = 'kullanici-ekle fonksiyonu bulunamadı — Supabase → Edge Functions\'dan kur.';
+      }
+      throw new Error(mesaj || error.message || 'Kullanıcı açılamadı.');
+    }
+    if (data && data.hata) throw new Error(data.hata);
+
+    await this.yukle();
   },
 
   async fotoSil() {

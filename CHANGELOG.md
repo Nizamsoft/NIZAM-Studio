@@ -1,5 +1,31 @@
 # Değişiklik Günlüğü
 
+## v0.12.0 — 21 Ağustos 2026
+**Ekip yönetimi**
+
+Yönetici artık kullanıcıları uygulamadan açıyor; Supabase'e girmiyor.
+
+- **Ayarlar → Ekip** — tüm kullanıcılar tek listede: fotoğraf, ad, rol, erişim
+- **Yeni Kullanıcı** — ad soyad, e-posta, geçici şifre, rol. Şifreyi yönetici
+  belirler ve kişiye iletir; kişi girdikten sonra kendi adını ve fotoğrafını
+  değiştirebilir
+- Kişiye dokununca ad, rol ve erişim düzenlenir
+- **Pasif kullanıcı giriş yapamaz.** Kaydı silinmez, yalnızca kapanır
+
+**Güvenlik**
+
+Kullanıcı açmak "service role" anahtarı ister; o anahtar tüm kuralları atlar
+ve tarayıcıya konamaz. Bu yüzden iş sunucuda yapılıyor: `kullanici-ekle`
+adında bir Edge Function. Fonksiyon önce isteği yapanın gerçekten yönetici
+olduğunu doğruluyor, sonra kullanıcıyı açıyor.
+
+Kimse kendi rolünü değiştiremiyor — son yöneticinin kendini geliştirici yapıp
+sistemi kilitlemesi engellendi. Bu kural veritabanında, arayüzde değil.
+
+> Kurulum: `sql/10-ekip.sql` çalıştır, sonra Supabase → Edge Functions →
+> Deploy a new function → via editor → ad `kullanici-ekle` →
+> `supabase/functions/kullanici-ekle/index.ts` içeriğini yapıştır → Deploy.
+
 ## v0.11.2 — 21 Ağustos 2026
 **Profil fotoğrafı**
 

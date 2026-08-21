@@ -134,6 +134,10 @@ const AUTH = {
 
   get foto() { return (this.profile && this.profile.foto) || ''; },
 
+  /* Pasif kullanıcı hiçbir veriye ulaşamaz (rolum() null döner);
+     ekranı boş bırakmak yerine açıkça geri çeviriyoruz. */
+  get pasif() { return !!(this.profile && this.profile.aktif === false); },
+
   get mail() { return (this.user && this.user.email) || '—'; },
 
   /* Ad soyaddan avatar baş harfleri: "Nizam Aydın" -> "NA" */
