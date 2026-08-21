@@ -1,5 +1,19 @@
 # Değişiklik Günlüğü
 
+## v0.16.5 — 21 Ağustos 2026
+**Resimler açılışta indiriliyor**
+
+Logo ve fotoğraflar ancak o ekrana girilince indirilmeye başlıyordu; ilk
+girişte bir saniye gösterge dönüyordu.
+
+Artık uygulama açılırken hepsi arka planda indiriliyor ve tarayıcının
+önbelleğine giriyor: proje logoları, senin fotoğrafın, ekipteki herkesin
+fotoğrafı.
+
+- İndirme beklenmiyor — uygulama açılmaya devam ediyor, resimler arkadan geliyor
+- Ölçtüm: projeye girince logo **1 saniye yerine 75 milisaniyede** görünüyor
+- Gösterge yine duruyor; yalnızca ısınmamış bir resim olursa çıkacak
+
 ## v0.16.4 — 21 Ağustos 2026
 **Yükleme göstergesi silinmiyordu**
 

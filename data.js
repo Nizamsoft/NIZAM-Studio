@@ -559,7 +559,7 @@ const DB = {
     if (!AUTH.db) return;
 
     const yollar = this.projeler.map(p => p.logo).filter(Boolean);
-    if (!yollar.length) return;
+    if (!yollar.length) { this.resimleriIsit(); return; }
 
     const { data, error } = await AUTH.db.storage
       .from('logolar').createSignedUrls(yollar, 3600);
@@ -570,6 +570,19 @@ const DB = {
       const p = this.projeler.find(pr => pr.logo === x.path);
       if (p) this.logoAdres[p.id] = x.signedUrl;
     });
+
+    this.resimleriIsit();
+  },
+
+  /* Resimleri açılışta arka planda indirir — tarayıcının önbelleğine girsinler.
+     Projeye girildiğinde indirme beklenmez, logo anında görünür.
+     Beklemiyoruz: indirme sürerken uygulama açılmaya devam ediyor. */
+  resimleriIsit() {
+    const adresler = Object.values(this.logoAdres);
+    if (AUTH.foto) adresler.push(AUTH.foto);
+    this.kisilerHepsi.forEach(k => { if (k.foto) adresler.push(k.foto); });
+
+    adresler.forEach(adres => { new Image().src = adres; });
   },
 
   async logoYukle(projeId, dosya) {
