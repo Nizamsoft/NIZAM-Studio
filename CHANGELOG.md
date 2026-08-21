@@ -1,5 +1,16 @@
 # Değişiklik Günlüğü
 
+## v0.16.3 — 21 Ağustos 2026
+**Yeni uygulama simgesi**
+
+- **N yukarı çekildi ve büyütüldü** — simgenin yarısından fazlasını kaplıyor
+- "Studio" kırmızıydı ve zemindeki kırmızı parıltının içinde eriyordu.
+  Artık **beyaz**, Archivo 700, harf araları açık — küçük boyutta da okunuyor
+- N ile yazı arasında iki ucu sönen ince kırmızı çizgi
+- Zemin aynı karbon dokusu; ışıklar N'nin yeni yerine göre kaydırıldı
+- **icon-180.png** eklendi: iOS ana ekran simgesi 180 piksel ister,
+  192 verilince yeniden ölçekleyip yumuşatıyordu
+
 ## v0.16.2 — 21 Ağustos 2026
 **Proje durakları açılıp kapanıyor**
 
