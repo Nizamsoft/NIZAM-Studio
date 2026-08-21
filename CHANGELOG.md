@@ -1,5 +1,20 @@
 # Değişiklik Günlüğü
 
+## v0.13.1 — 21 Ağustos 2026
+**Hesap menüsü üst çubuğun parçası oldu**
+
+Ayrı bir kart olarak açılıyordu, ekranın yarısını kaplıyordu. Artık üst çubuk
+aşağı doğru uzuyor; satırlar onun içinde. Kırmızı çizgi de panelin dibine
+iniyor, çubuk tek parça görünüyor.
+
+**Neden takılmıyor:** panel içeriği aşağı itmiyor, üstüne biniyor. İtseydi her
+karede sayfanın yerleşimi baştan hesaplanırdı. Böyle yalnızca kaydırma, kırpma
+ve saydamlık oynuyor — üçü de ekran kartında yapılıyor.
+
+- Açılırken perde yukarıdan aşağı sıyrılıyor, kapanırken geri toplanıyor
+- Satırlar arasında ince ayraç var, kart yok
+- Eski açılır menünün kuralları tümüyle silindi
+
 ## v0.13.0 — 21 Ağustos 2026
 **Alt çubuk: yüzen cam hap**
 
