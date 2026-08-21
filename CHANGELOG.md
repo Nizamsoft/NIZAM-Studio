@@ -1,5 +1,16 @@
 # Değişiklik Günlüğü
 
+## v0.16.2 — 21 Ağustos 2026
+**Proje durakları açılıp kapanıyor**
+
+Beş durak da tek ekrana sığmıyordu. Artık her durak açılır kapanır.
+
+- Varsayılan: **yalnızca üstünde çalışılan durak açık**. Bitmiş ve
+  bekleyen duraklar kapalı
+- Başlıkta ok işareti var, açıkken 90 derece dönüyor
+- Açtığın durak oturum boyunca açık kalıyor
+- İçeriği olmayan durak (henüz görev yok gibi) tıklanabilir görünmüyor
+
 ## v0.16.1 — 21 Ağustos 2026
 **Projeler açılır bölümlere ayrıldı · logo yüklenirken gösterge**
 

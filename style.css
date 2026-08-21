@@ -1468,6 +1468,12 @@ html { background: var(--bg); }
 }
 
 .durak-bas { display: flex; align-items: baseline; gap: 9px; }
+.durak-bas.acilir { cursor: pointer; }
+.durak-chev {
+  display: flex; align-self: center; margin-left: auto; color: var(--ink-dim);
+  transition: transform .2s var(--ease);
+}
+.durak.genis .durak-chev { transform: rotate(90deg); }
 .durak-bas h3 { font-family: var(--yazi-baslik); font-size: 15px; font-weight: 700; color: var(--ink); }
 .durak.bekliyor .durak-bas h3 { color: var(--ink-dim); }
 .durak.simdi .durak-bas h3 { color: var(--ink-strong); }

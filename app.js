@@ -42,6 +42,8 @@ let ACIK_GRUP = null;
 let ACIK_SABLON = null;
 /* Projeler ekranındaki bölümler. Varsayılanı kod belirler, kullanıcı değiştirir. */
 const ACIK_PROJE_BOLUM = {};
+/* Proje içindeki duraklar. Anahtar: projeId:sıra */
+const ACIK_DURAK = {};
 
 /* ---------- İkonlar ---------- */
 
@@ -609,15 +611,23 @@ function projeYolu(p) {
     const durum = d.bitti ? 'bitti' : (i === simdi ? 'simdi' : 'bekliyor');
     const etiket = d.bitti ? 'tamam' : (i === simdi ? 'şimdi burada' : 'bekliyor');
 
+    /* Varsayılan: yalnızca üstünde çalışılan durak açık.
+       Bitmiş ve bekleyenler kapalı — ekran kalabalık olmasın. */
+    const anahtar = p.id + ':' + i;
+    const acik = ACIK_DURAK[anahtar] === undefined ? (i === simdi) : ACIK_DURAK[anahtar];
+    const acilir = !!d.icerik;
+
     return `
-      <div class="durak ${durum}">
+      <div class="durak ${durum} ${acik ? 'genis' : ''}">
         <span class="durak-no">${i + 1}</span>
-        <div class="durak-bas">
+        <div class="durak-bas ${acilir ? 'acilir' : ''}"
+             ${acilir ? `data-eylem="durak-ac" data-ad="${esc(anahtar)}" role="button" tabindex="0"` : ''}>
           <h3>${esc(d.ad)}</h3>
           <em>${etiket}</em>
+          ${acilir ? `<span class="durak-chev">${svg(ICON.chevron, 14)}</span>` : ''}
         </div>
         <p>${d.ozet}</p>
-        ${d.icerik ? `<div class="durak-ic">${d.icerik}</div>` : ''}
+        ${acilir && acik ? `<div class="durak-ic">${d.icerik}</div>` : ''}
       </div>`;
   }).join('')}</div>`;
 }
@@ -3162,6 +3172,12 @@ async function eylemCalistir(el) {
   }
 
   if (e === 'modul-ekle') return modulEkleAc(el.dataset.proje || el.dataset.id || rota().id);
+
+  if (e === 'durak-ac') {
+    const ad = el.dataset.ad;
+    ACIK_DURAK[ad] = !el.closest('.durak').classList.contains('genis');
+    return render();
+  }
 
   if (e === 'proje-bolum') {
     const ad = el.dataset.ad;
