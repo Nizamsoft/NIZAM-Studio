@@ -428,9 +428,15 @@ button { font-family: inherit; color: inherit; }
 
 .foto {
   position: relative; flex-shrink: 0; width: 34px; height: 34px; border-radius: 999px;
-  background: linear-gradient(150deg, #7a716a, #39332f);
+  background-color: #4b443f;
+  background-image: linear-gradient(150deg, #7a716a, #39332f);
+  background-size: cover; background-position: center;
   box-shadow: 0 0 0 1px var(--line-parlak), inset 0 1px 0 rgba(255, 255, 255, .18);
 }
+/* Resim yüklenince baş harfler gizlenir, iç ışık resmi bozmasın diye sönükleşir. */
+.foto.resimli > b { display: none; }
+.foto.resimli { box-shadow: 0 0 0 1px var(--line-parlak); }
+.foto.kucuk { width: 30px; height: 30px; }
 /* Fotoğrafın içindeki baş harfler — eski kırmızı avatar kutusunu geçersiz kılar. */
 .foto > b {
   position: absolute; inset: 0; width: auto; height: auto; border-radius: inherit;
@@ -1366,7 +1372,9 @@ html { background: var(--bg); }
 .halka-foto {
   position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
   width: 104px; height: 104px; border-radius: 999px; overflow: hidden;
-  background: linear-gradient(150deg, #7a716a, #39332f);
+  background-color: #4b443f;
+  background-image: linear-gradient(150deg, #7a716a, #39332f);
+  background-size: cover; background-position: center;
   box-shadow: 0 0 0 1px var(--line-parlak),
               0 0 0 6px var(--bg),
               inset 0 2px 0 rgba(255, 255, 255, .16),

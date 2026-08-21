@@ -386,6 +386,13 @@ const VIEWS = {
       <span class="label">Hesap</span>
       <div class="card">
         <div class="row-list">
+          <div class="row" data-eylem="foto-degistir" role="button" tabindex="0">
+            <div class="row-main">
+              <span class="row-title">Fotoğraf</span>
+              <span class="row-sub">${AUTH.foto ? 'Değiştirmek için dokun' : 'Yüklemek için dokun · en fazla 4 MB'}</span>
+            </div>
+            <span class="row-val">${fotoKutu('kucuk')}</span>
+          </div>
           <div class="row" data-eylem="ad-degistir" role="button" tabindex="0">
             <div class="row-main">
               <span class="row-title">Ad Soyad</span>
@@ -803,6 +810,14 @@ function standartKarti(st, i = 0) {
             </div>` : ''}
         </div>` : ''}
     </div>`;
+}
+
+/* Fotoğraf kutusu. Yüklenmiş fotoğraf varsa onu, yoksa baş harfleri gösterir. */
+function fotoKutu(sinif = '') {
+  const adres = AUTH.foto;
+  return `<span class="foto ${sinif}"${adres ? ` style="background-image:url('${esc(adres)}')"` : ''}>
+    ${adres ? '' : `<b>${esc(AUTH.basHarfler)}</b>`}
+  </span>`;
 }
 
 function infoRow(k, v, mono = false) {
@@ -1866,6 +1881,34 @@ function standartSor(mevcut) {
   });
 }
 
+/* Telefondan resim seçtirir, yükler. Gizli bir dosya alanı kullanılıyor:
+   görünür bir <input type="file"> tasarımı bozuyor. */
+function fotoSec() {
+  const alan = document.createElement('input');
+  alan.type = 'file';
+  alan.accept = 'image/*';
+  alan.style.display = 'none';
+  document.body.appendChild(alan);
+
+  alan.addEventListener('change', async () => {
+    const dosya = alan.files && alan.files[0];
+    alan.remove();
+    if (!dosya) return;
+
+    toast('Fotoğraf yükleniyor…');
+    try {
+      await DB.fotoYukle(dosya);
+      kullaniciYaz();
+      render();
+      toast('Fotoğraf güncellendi.', 'basari');
+    } catch (h) {
+      toast(h.message, 'hata');
+    }
+  });
+
+  alan.click();
+}
+
 /* Fotoğrafın hemen altında açılan küçük menü.
    Alttan sayfa değil: göz nereye baktıysa oradan açılsın. */
 function hesapMenusu() {
@@ -1880,7 +1923,7 @@ function hesapMenusu() {
   el.className = 'hesap-menu';
   el.innerHTML = `
     <div class="hm-bas">
-      <span class="foto"><b>${esc(AUTH.basHarfler)}</b></span>
+      ${fotoKutu()}
       <span class="hm-bilgi">
         <b>${esc(AUTH.ad)}</b>
         <i>${esc(AUTH.rolAdi)}</i>
@@ -2188,6 +2231,8 @@ async function eylemCalistir(el) {
     GOREV_FILTRE = el.dataset.deger;
     return render();
   }
+
+  if (e === 'foto-degistir') return fotoSec();
 
   if (e === 'ad-degistir') {
     const ad = await metinSor({
@@ -2570,7 +2615,9 @@ function karsilama(ilerleme, projeSayi, acikIs) {
           <circle class="halka-dolu" cx="75" cy="75" r="${r}"
                   stroke-dasharray="${cevre.toFixed(1)}" stroke-dashoffset="${bos.toFixed(1)}"></circle>
         </svg>
-        <span class="halka-foto"><b>${esc(AUTH.basHarfler)}</b></span>
+        ${AUTH.foto
+          ? `<span class="halka-foto" style="background-image:url('${esc(AUTH.foto)}')"></span>`
+          : `<span class="halka-foto"><b>${esc(AUTH.basHarfler)}</b></span>`}
         <span class="halka-rozet">%${ilerleme.yuzde}</span>
       </div>
       <h2 class="selam">${esc(selamla())}, ${esc(AUTH.ad)}</h2>
@@ -2676,6 +2723,11 @@ function hataGoster(mesaj) {
 function hataGizle() { $('#login-error').classList.add('hidden'); }
 
 function kullaniciYaz() {
+  /* Fotoğraf varsa baş harfleri gizle, kutuya resmi bas. */
+  $$('#user-tile .foto, #user-chip .foto').forEach(el => {
+    el.style.backgroundImage = AUTH.foto ? `url('${AUTH.foto}')` : '';
+    el.classList.toggle('resimli', !!AUTH.foto);
+  });
   $$('#user-chip .avatar, #user-tile .avatar').forEach(e => e.textContent = AUTH.basHarfler);
   $$('#user-chip .user-name, #user-tile .user-name').forEach(e => e.textContent = AUTH.ad);
   $$('#user-chip .user-role, #user-tile .user-role').forEach(e => e.textContent = AUTH.rolAdi);

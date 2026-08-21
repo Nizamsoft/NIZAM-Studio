@@ -105,7 +105,7 @@ const AUTH = {
     try {
       sonuc = await this.db
         .from('profiles')
-        .select('ad, rol, aktif')
+        .select('ad, rol, aktif, foto')
         .eq('id', this.user.id)
         .maybeSingle();
     } catch (e) {
@@ -131,6 +131,8 @@ const AUTH = {
   get rolAdi() { return this.rol === 'yonetici' ? 'Yönetici' : 'Geliştirici'; },
 
   get yonetici() { return this.rol === 'yonetici'; },
+
+  get foto() { return (this.profile && this.profile.foto) || ''; },
 
   get mail() { return (this.user && this.user.email) || '—'; },
 

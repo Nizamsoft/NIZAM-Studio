@@ -1,5 +1,20 @@
 # Değişiklik Günlüğü
 
+## v0.11.2 — 21 Ağustos 2026
+**Profil fotoğrafı**
+
+- Ayarlar → Hesap → **Fotoğraf** satırından telefondan resim seçilip yükleniyor
+- Fotoğraf; karşılama halkasının içinde, üst çubuktaki hapta ve hesap
+  menüsünde görünüyor. Yoksa baş harfler kalıyor
+- Dosya adı kullanıcının kimliği — kimse başkasının fotoğrafının üstüne yazamaz
+- En fazla 4 MB, yalnızca resim. Aşarsa Türkçe uyarı
+- Yeni fotoğraf yüklenince adresin sonuna zaman damgası ekleniyor; tarayıcı
+  eskisini önbellekten göstermiyor
+- Depo hataları Türkçeye çevriliyor (kova yok / izin yok / dosya büyük)
+
+> Kurulum: önce Supabase → Storage → **avatarlar** adında **public** kova aç,
+> sonra `sql/09-foto.sql` dosyasını çalıştır.
+
 ## v0.11.1 — 21 Ağustos 2026
 **Ad kaydolmuyordu**
 

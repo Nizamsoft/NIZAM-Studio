@@ -451,6 +451,42 @@ const DB = {
     await AUTH.profilOku();
   },
 
+  /* Fotoğrafı kovaya koyar, adresini profile yazar.
+     Dosya adı kullanıcının kimliği — kural bunu şart koşuyor, kimse
+     başkasının fotoğrafının üstüne yazamıyor. */
+  async fotoYukle(dosya) {
+    if (!AUTH.db || !AUTH.user) throw new Error('Oturum yok.');
+    if (!/^image\//.test(dosya.type)) throw new Error('Yalnızca resim yükleyebilirsin.');
+    if (dosya.size > 4 * 1024 * 1024) throw new Error('Dosya 4 MB\'ı geçmesin.');
+
+    const uzanti = (dosya.name.split('.').pop() || 'jpg').toLowerCase().slice(0, 5);
+    const yol = AUTH.user.id + '.' + uzanti;
+
+    const yukle = await AUTH.db.storage.from('avatarlar')
+      .upload(yol, dosya, { upsert: true, contentType: dosya.type });
+    if (yukle.error) throw new Error(depoHatasi(yukle.error));
+
+    const { data } = AUTH.db.storage.from('avatarlar').getPublicUrl(yol);
+    /* Tarayıcı eski fotoğrafı önbellekte tutmasın diye zaman damgası ekleniyor. */
+    const adres = data.publicUrl + '?t=' + Date.now();
+
+    const sonuc = await AUTH.db.from('profiles')
+      .update({ foto: adres }).eq('id', AUTH.user.id).select('foto');
+    if (sonuc.error) throw new Error(veriHatasi(sonuc.error));
+    if (!sonuc.data || !sonuc.data.length) {
+      throw new Error('Adres profile yazılamadı — sql/08-profil-ad.sql çalıştırılmamış olabilir.');
+    }
+    await AUTH.profilOku();
+  },
+
+  async fotoSil() {
+    if (!AUTH.db || !AUTH.user) throw new Error('Oturum yok.');
+    const sonuc = await AUTH.db.from('profiles')
+      .update({ foto: null }).eq('id', AUTH.user.id).select('id');
+    if (sonuc.error) throw new Error(veriHatasi(sonuc.error));
+    await AUTH.profilOku();
+  },
+
   async standartSil(id) {
     yazmaKontrol();
     const { error } = await AUTH.db.from('standards').update({ aktif: false }).eq('id', id);
@@ -483,6 +519,15 @@ function siraya(a, b) {
 function yazmaKontrol() {
   if (!AUTH.bagli)    throw new Error('Demo modunda kayıt yapılamaz.');
   if (!AUTH.yonetici) throw new Error('Bu işlem için yönetici olman gerekiyor.');
+}
+
+/* Depo hatalarını Türkçeye çevirir — çıplak İngilizce mesaj gösterme. */
+function depoHatasi(e) {
+  const m = (e && e.message) || '';
+  if (/bucket not found/i.test(m))                 return 'avatarlar kovası yok — Supabase → Storage\'den oluştur.';
+  if (/policy|row-level|not authorized/i.test(m))  return 'Yükleme izni yok — sql/09-foto.sql dosyasını çalıştır.';
+  if (/payload too large|exceeded/i.test(m))       return 'Dosya çok büyük.';
+  return m || 'Fotoğraf yüklenemedi.';
 }
 
 function veriHatasi(err) {
