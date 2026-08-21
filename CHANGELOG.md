@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü
 
+## v0.15.1 — 21 Ağustos 2026
+**Bekleyen SQL'ler tek dosyada toplandı**
+
+`sql/guncelleme.sql` — 08'den 12'ye kadar beş dosya tek yerde, doğru sırada.
+Bir kez yapıştırmak yeterli. İki kez çalıştırsan da bozulmaz.
+
+Ayrı dosyalar duruyor; kaynağı görmek isteyen oradan bakar.
+
 ## v0.15.0 — 21 Ağustos 2026
 **Modül şablonları düzenlenebilir oldu**
 
