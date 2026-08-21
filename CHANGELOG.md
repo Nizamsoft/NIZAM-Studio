@@ -1,5 +1,17 @@
 # Değişiklik Günlüğü
 
+## v0.17.3 — 21 Ağustos 2026
+**"Veri yüklenemedi" hatası düzeltildi**
+
+v0.17.2'de hareket tablosunun sütun adlarını yanlış yazdım: gerçekte `tip`
+ve `kim`, ben `tur` ve `kisi` yazmışım. O sorgu patlayınca bütün veri
+yüklenemiyordu.
+
+- Hareket ve kişi sorguları artık sütun adı saymıyor; sonradan eklenen bir
+  alan olmadığında sorgu patlamıyor
+- **Hata mesajı hangi tablodan geldiğini yazıyor.** Önceki mesaj her durumda
+  "sql/03-projeler.sql çalıştır" diyordu; sebep başkayken yanlış yere bakılıyordu
+
 ## v0.17.2 — 21 Ağustos 2026
 **Veri katmanı baştan yazıldı — çok daha hızlı**
 

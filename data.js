@@ -99,11 +99,12 @@ const DB = {
     gorevler:     db => db.from('tasks').select('*').order('no', { ascending: false }),
     /* Hareketler sınırsız büyüyor; ekranda yalnızca son olaylar gösteriliyor.
        Tamamını çekmek her açılışta gereksiz yük. */
-    hareketler:   db => db.from('task_events')
-                          .select('id, gorev_id, tur, notu, kisi, olusturuldu')
+    hareketler:   db => db.from('task_events').select('*')
                           .order('olusturuldu', { ascending: false })
                           .limit(400),
-    kisiler:      db => db.from('profiles').select('id, ad, rol, aktif, foto'),
+    /* Sütun adı yazmıyoruz: foto gibi sonradan eklenen bir alan yoksa
+       sorgu patlıyor ve bütün veri düşüyordu. */
+    kisiler:      db => db.from('profiles').select('*'),
     standartlar:  db => db.from('standards').select('*').eq('aktif', true).order('sira'),
     gorevStandart:db => db.from('task_standards').select('gorev_id, standart_id'),
     sablonlar:    db => db.from('module_templates').select('*').eq('aktif', true).order('sira'),
@@ -116,6 +117,9 @@ const DB = {
   yerlestir(ad, sonuc) {
     if (sonuc.error) {
       if (this.ISTEGE_BAGLI.includes(ad)) { this[ad] = []; return; }
+      /* Hangi tablonun patladığı hataya yazılıyor; yoksa "tablolar kurulmamış"
+         gibi genel bir mesaj çıkıyor ve sebep aranırken vakit kaybediliyor. */
+      sonuc.error.tablo = ad;
       throw sonuc.error;
     }
     const veri = sonuc.data || [];
@@ -173,7 +177,7 @@ const DB = {
       this.yuklendi = true;
       await this.logolariTazele();
     } catch (e) {
-      this.hata = veriHatasi(e);
+      this.hata = veriHatasi(e) + (e && e.tablo ? ` (${e.tablo})` : '');
       this.yuklendi = false;
       throw new Error(this.hata);
     }
