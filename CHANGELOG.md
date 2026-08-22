@@ -1,5 +1,33 @@
 # Değişiklik Günlüğü
 
+## v0.27.0 — 22 Ağustos 2026
+**27 kararın hepsi önizlemede görünüyor**
+
+Eskiden bazı kararların önizlemede karşılığı yoktu: arama yalnız "Üstte
+sabit" seçilince görünüyordu, filtre panelleri hiç çizilmiyordu, sayfa
+listesi ve detay ekranının önizlemesi yoktu.
+
+Eklenenler: açılmış arama çubuğu · inen filtre paneli · alttan yarım sayfa ·
+**Sayfa listesi** ekranı (yan liste, üst sekme, açılır seçici, kart
+ızgarası) · **Detay** ekranı (sekmeli, tek akış, sol özet, katlanır) ·
+yarı kaydırılmış silme satırı · silme onay penceresi · açılmış aç-kapa
+satırı · üst çubukta ve alt çubukta ana eylem düğmesi.
+
+**Yoğunluk** artık liste ve formu aynı karede gösteriyor — "Karma" ancak
+böyle anlaşılıyor.
+
+**Düğme kararları** form ekranına taşındı; panel ekranında düğme yoktu,
+seçim değişse de görünmüyordu.
+
+Bir adımda iki örtü çakışırsa (filtre paneli + silme onayı) yalnız o adımın
+örtüsü açılıyor.
+
+### Sessiz bir hata düzeldi
+İçinde artı geçen seçenek adları — "Sayaç + büyük grafik", "Logo + arama",
+"Simge + yazı + düğme", "Alt + orta +" — okunurken parçalanıyor ve hiçbir
+seçeneğe uymadığı için sessizce varsayılana düşüyordu. Yani seçtiğiniz şey
+ne önizlemeye ne de prompta giriyordu. On seçenek bundan etkileniyordu.
+
 ## v0.26.1 — 22 Ağustos 2026
 **Karşılaştırma, sıfırlama, kırpılmayan önizleme**
 

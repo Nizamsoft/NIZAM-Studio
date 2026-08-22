@@ -7,9 +7,9 @@ const APP = {
   name:     'NIZAM | Studio',
   short:    'NIZAM Studio',
   owner:    'Nizam Soft',
-  version: 'v0.26.1',
+  version: 'v0.27.0',
   build:    '2026-08-20',
-  stage: 'Adım 4 · Tek karar tek ekran',
+  stage: 'Adım 4 · 27 kararın hepsi görünür',
 };
 
 /* Supabase bağlantısı.
@@ -126,7 +126,7 @@ const TASARIM_ALAN = [
   },
   {
     anahtar: 'yogunluk', ad: 'Yoğunluk', alt: 'Bir ekrana kaç satır sığsın.',
-    varsayilan: 'Normal', ekran: 'panel',
+    varsayilan: 'Normal', ekran: 'yogunluk',
     secim: [
       { ad: 'Sıkışık',     tarif: 'Satır 34px, kart içi boşluk 10px. Çok kayıtlı ekranlar için.' },
       { ad: 'Normal',      tarif: 'Satır 44px, kart içi boşluk 14px.' },
@@ -170,7 +170,7 @@ const TASARIM_ALAN = [
   },
   {
     anahtar: 'dugme', ad: 'Düğme', alt: 'Ana buton nasıl dursun?',
-    varsayilan: 'Dolu', ekran: 'panel',
+    varsayilan: 'Dolu', ekran: 'form',
     secim: [
       { ad: 'Dolu',    tarif: 'Ana buton vurgu rengiyle dolu, yazı beyaz/koyu kontrast.' },
       { ad: 'Çizgili', tarif: 'Saydam zemin, vurgu renginde çerçeve ve yazı.' },
@@ -181,7 +181,7 @@ const TASARIM_ALAN = [
   },
   {
     anahtar: 'dugmeek', ad: 'Düğmeye ekle', alt: 'Ana butonun üstüne binen kurallar.',
-    varsayilan: '', coklu: true, bos: true, ekran: 'panel',
+    varsayilan: '', coklu: true, bos: true, ekran: 'form',
     secim: [
       { ad: 'Yazı',   tarif: 'İkincil eylemler çerçevesiz, yalnız vurgu renginde yazı olur.' },
       { ad: 'İkonlu', tarif: 'Her düğmede solda 16px simge, sağında yazı; arada 8px boşluk.' },
@@ -227,7 +227,7 @@ const YERLESIM_ALAN = [
   },
   {
     anahtar: 'sayfalistesi', ad: 'Sayfa listesi', alt: 'Bir modülün sayfaları nasıl listelensin?',
-    varsayilan: 'Üst sekme', ekran: 'panel',
+    varsayilan: 'Üst sekme', ekran: 'sayfalar',
     secim: [
       { ad: 'Yan liste',     tarif: 'Modül seçilince solda o modülün sayfaları listelenir.', tel: ['yanInce', 'liste'] },
       { ad: 'Üst sekme',     tarif: 'Modülün sayfaları üstte yatay sekme olur.', tel: ['sekme', 'liste'] },
@@ -279,7 +279,7 @@ const YERLESIM_ALAN = [
   },
   {
     anahtar: 'detay', ad: 'Detay ekranı', alt: 'Bir kaydın kendi sayfası nasıl kurulsun?',
-    varsayilan: 'Katlanır bölümler', ekran: 'liste',
+    varsayilan: 'Katlanır bölümler', ekran: 'detay',
     secim: [
       { ad: 'Sekmeli',            tarif: 'Bilgi · Hareketler · Belgeler gibi sekmeler.', tel: ['ust', 'sekme', 'blok'] },
       { ad: 'Tek uzun akış',      tarif: 'Her şey alt alta tek sayfada; kaydırarak gezilir.', tel: ['ust', 'akis'] },
@@ -319,7 +319,7 @@ const YERLESIM_ALAN = [
   },
   {
     anahtar: 'genislik', ad: 'Genişlik', alt: 'Masaüstünde içerik ne kadar yayılsın?',
-    varsayilan: 'Ortada sınırlı', ekran: 'panel',
+    varsayilan: 'Ortada sınırlı', ekran: 'panel', genis: true,
     secim: [
       { ad: 'Tam genişlik',   tarif: 'İçerik ekranın tamamını kullanır. Geniş tablolar için.', tel: ['blokTam'] },
       { ad: 'Ortada sınırlı', tarif: 'En fazla 1200px, ortalanır. Uzun satırlar okunaklı kalır.', tel: ['blokOrta'] },
@@ -414,7 +414,7 @@ const TASARIM_ADIM = [
   const obek = YERLESIM_ALAN.includes(a) ? 'Yerleşim'
              : TASARIM_ALAN.includes(a)  ? 'Biçim' : 'Durumlar';
   return { anahtar: k, ad: a.ad, alan: a, ekran: a.ekran || 'panel',
-           cihaz: a.cihaz, obek, aciklama: a.alt };
+           cihaz: a.cihaz, genis: a.genis, obek, aciklama: a.alt };
 })).concat([
   { anahtar: 'ozet', ad: 'Özet', tur: 'ozet', ekran: 'panel', obek: 'Bitiş',
     aciklama: 'Verilen bütün kararlar. Prompta bu yazılacak.' },
@@ -424,7 +424,12 @@ const TASARIM_ADIM = [
    Tek seçimliler tek elemanlı; hiç seçilmemişse varsayılan. */
 function bicimSecim(palet, alan) {
   const d = (palet || {})[alan.anahtar];
-  const dizi = Array.isArray(d) ? d : (d ? String(d).split(/\s*[+,]\s*/) : []);
+  /* Tek seçimlide bölmüyoruz: "Sayaç + büyük grafik" gibi adlar artı içeriyor
+     ve bölünürse hiçbir seçeneğe uymayıp varsayılana düşüyordu. */
+  const dizi = Array.isArray(d) ? d
+    : !d ? []
+    : alan.coklu ? String(d).split(/\s*[+,]\s*/)
+    : [String(d)];
   const gecerli = dizi.filter(x => alan.secim.some(y => y.ad === x));
   if (!gecerli.length) return alan.bos ? [] : [alan.varsayilan];
   return alan.coklu ? gecerli : [gecerli[0]];
