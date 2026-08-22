@@ -43,7 +43,14 @@ const PROMPT = {
     const ozel = TEKNIK_ALAN.filter(a => pl[a.anahtar]);
     if (ozel.length) {
       s.push('', '### Bu projeye özel');
-      ozel.forEach(a => s.push(`- **${a.ad}:** ${pl[a.anahtar]}`));
+      ozel.forEach(a => {
+        if (a.tur !== 'katman') { s.push(`- **${a.ad}:** ${pl[a.anahtar]}`); return; }
+        const r = rolListesi(pl[a.anahtar]);
+        s.push(`- **${a.ad}:** ${r.length} katman, en alttan en üste:`);
+        r.forEach((ad, i) => s.push(`  ${i + 1}. ${ad}`));
+        s.push('  - Üstteki katman, alttakinin gördüğü her şeyi görür.');
+        s.push('  - Yetki veritabanı kurallarıyla (RLS) uygulanır, yalnız arayüzde gizlemekle değil.');
+      });
     }
     const eksik = TEKNIK_ALAN.filter(a => !pl[a.anahtar]);
     if (eksik.length) {

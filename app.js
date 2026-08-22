@@ -674,11 +674,82 @@ function firmaSayfasi(p, d) {
         ${svg(ICON.ayar, 15)} Teknik bilgileri düzenle</button>` : '');
 }
 
+/* ---------- Rol merdiveni ----------
+   En altta en dar yetki, en üstte en geniş. Sayıyı değiştirince adlar
+   korunur; azaltınca üsttekiler düşer, artırınca örnek adla gelir. */
+function rolMerdiveni(roller, onek) {
+  const liste = rolListesi(roller);
+  const n = liste.length || 2;
+  return `
+    <div class="rol-kat" data-rol-onek="${onek}">
+      <div class="secenek-serit ufak rol-sayi">
+        ${[2, 3, 4, 5].map(k => `
+          <button class="ss ${k === n ? 'sec' : ''}" type="button"
+                  data-rol-sayi="${k}">${k} katman</button>`).join('')}
+      </div>
+      <div class="rol-liste">
+        ${Array.from({ length: n }, (_, i) => {
+          const sira = n - 1 - i;                      /* üstten alta çiz */
+          const ad = liste[sira] || (ROL_ORNEK[n] || [])[sira] || '';
+          return `
+            <label class="rol-satir">
+              <span class="rol-no">${sira + 1}</span>
+              <input type="text" data-rol="${sira}" value="${esc(ad)}"
+                     placeholder="${esc((ROL_ORNEK[n] || [])[sira] || 'Rol adı')}"
+                     maxlength="40" autocomplete="off">
+              ${sira === n - 1 ? '<em>en geniş yetki</em>'
+                : sira === 0 ? '<em>en dar yetki</em>' : ''}
+            </label>`;
+        }).join('')}
+      </div>
+      <i class="rol-not">Üstteki katman, alttakinin gördüğü her şeyi görür.</i>
+    </div>`;
+}
+
+/* Merdiveni canlı tut: sayı değişince yeniden çiz, adları koru. */
+function rolBagla(kutu) {
+  const kat = $('.rol-kat', kutu);
+  if (!kat) return;
+  kat.addEventListener('click', ev => {
+    const b = ev.target.closest('[data-rol-sayi]');
+    if (!b) return;
+    const n = Number(b.dataset.rol_sayi || b.dataset.rolSayi);
+    const simdi = rolOku(kutu);
+    const ornek = ROL_ORNEK[n] || [];
+    /* Elle yazılmadıysa doğrudan yeni örneğe geç; yazıldıysa adları koru ve
+       eksik satırları kullanılmamış örnek adlarıyla doldur. */
+    const eskiOrnek = ROL_ORNEK[simdi.length] || [];
+    const dokunulmus = simdi.some((x, i) => x !== eskiOrnek[i]);
+    const yeni = [];
+    for (let i = 0; i < n; i++) {
+      let ad = dokunulmus ? (simdi[i] || '') : (ornek[i] || '');
+      if (!ad || yeni.includes(ad)) ad = ornek.find(x => !yeni.includes(x) && !simdi.includes(x)) || '';
+      yeni.push(ad);
+    }
+    kat.outerHTML = rolMerdiveni(yeni, kat.dataset.rolOnek);
+    rolBagla(kutu);
+  });
+}
+
+function rolOku(kutu) {
+  return $$('[data-rol]', kutu)
+    .sort((a, b) => Number(a.dataset.rol) - Number(b.dataset.rol))
+    .map(x => x.value.trim())
+    .filter(Boolean);
+}
+
 /* Projeye özel teknik alanlar. Standart olanlar sorulmaz — onlar prompta
    doğrudan yazılıyor, burada yalnız projeye göre değişenler duruyor. */
 function teknikBolumu(p) {
   const pl = p.palet || {};
-  return `<div class="satirlar">${TEKNIK_ALAN.map(a => `
+  const roller = rolListesi(pl.roller);
+  return (roller.length ? `
+    <div class="rol-goster">${roller.slice().reverse().map((r, i) => `
+      <span class="rg"><b>${roller.length - i}</b>${esc(r)}
+        ${i === 0 ? '<u>en geniş</u>' : i === roller.length - 1 ? '<u>en dar</u>' : ''}</span>`).join('')}
+    </div>` : `
+    <div class="satirlar"><div class="sr">Roller <b class="eksik">belirlenmedi</b></div></div>`)
+    + `<div class="satirlar">${TEKNIK_ALAN.filter(a => a.tur !== 'katman').map(a => `
     <div class="sr">${esc(a.ad)}
       ${pl[a.anahtar] ? `<b>${esc(pl[a.anahtar])}</b>`
                       : '<b class="eksik">belirlenmedi</b>'}</div>`).join('')}
@@ -697,7 +768,11 @@ function teknikDuzenle(projeId) {
 
   modalAc(`
     ${modalBaslik(ICON.ayar, 'Teknik bilgiler', 'Bu projeye özel olanlar.')}
-    ${TEKNIK_ALAN.map(a => `
+    ${TEKNIK_ALAN.map(a => a.tur === 'katman' ? `
+      <div class="field">
+        <span>${esc(a.ad)} <i class="ipucu">${esc(a.alt)}</i></span>
+        ${rolMerdiveni(pl[a.anahtar], 'tk')}
+      </div>` : `
       <label class="field">
         <span>${esc(a.ad)} <i class="ipucu">${esc(a.alt)}</i></span>
         <input type="text" data-tk="${a.anahtar}" value="${esc(pl[a.anahtar] || '')}"
@@ -707,6 +782,7 @@ function teknikDuzenle(projeId) {
       <button class="btn btn-ghost" data-tk-i="iptal" type="button">Vazgeç</button>
       <button class="btn btn-primary" data-tk-i="kaydet" type="button"><span>Kaydet</span></button>
     </div>`, kutu => {
+    rolBagla(kutu);
     $('[data-tk-i="iptal"]', kutu).addEventListener('click', modalKapat);
     $('[data-tk-i="kaydet"]', kutu).addEventListener('click', async () => {
       const yeni = Object.assign({}, pl);
@@ -714,6 +790,8 @@ function teknikDuzenle(projeId) {
         const v = el.value.trim();
         if (v) yeni[el.dataset.tk] = v; else delete yeni[el.dataset.tk];
       });
+      const roller = rolOku(kutu);
+      if (roller.length) yeni.roller = roller; else delete yeni.roller;
       const yazi = $('[data-tk-i="kaydet"] span', kutu);
       yazi.textContent = 'Yazılıyor…';
       try {
@@ -3025,7 +3103,7 @@ const SIHIRBAZ = {
   veri: 'sifirdan',
   dil: 'tr',
   para: 'TRY',
-  roller: '',
+  roller: ['Personel', 'Yönetici'],
   baslangic: '',
   teslim: '',
   moduller: [],
@@ -3230,11 +3308,10 @@ function sihirbazAyar() {
 
   return shBaslik(ICON.ayar, 'Roller ve takvim',
     'Dil Türkçe, para ₺ TRY — standart. Burada roller ve tarihler var.') + `
-    <label class="field">
-      <span>Roller <em class="ipucu">virgülle ayır</em></span>
-      <input type="text" id="sb-roller" value="${esc(SIHIRBAZ.roller || '')}"
-             placeholder="Yönetici, Personel" maxlength="200" autocomplete="off">
-    </label>
+    <div class="field">
+      <span>Roller <em class="ipucu">en alttan en üste</em></span>
+      ${rolMerdiveni(SIHIRBAZ.roller, 'sb')}
+    </div>
     <label class="field">
       <span>Başlangıç</span>
       <input type="date" id="sb-baslangic" value="${esc(SIHIRBAZ.baslangic)}">
@@ -3331,10 +3408,12 @@ function sihirbazBagla(kutu) {
     if (al('sb-yetkili')   !== null) SIHIRBAZ.yetkili   = al('sb-yetkili');
     if (al('sb-telefon')   !== null) SIHIRBAZ.telefon   = al('sb-telefon');
     if (al('sb-eposta')    !== null) SIHIRBAZ.eposta    = al('sb-eposta');
-    if (al('sb-roller')    !== null) SIHIRBAZ.roller    = al('sb-roller');
+    if ($('.rol-kat', kutu))         SIHIRBAZ.roller    = rolOku(kutu);
     if (al('sb-baslangic') !== null) SIHIRBAZ.baslangic = al('sb-baslangic');
     if (al('sb-teslim')    !== null) SIHIRBAZ.teslim    = al('sb-teslim');
   };
+
+  rolBagla(kutu);
 
   const ilk = $('#sb-firma', kutu) || $('#sb-yetkili', kutu);
   if (ilk) setTimeout(() => ilk.focus(), 60);
@@ -3453,8 +3532,8 @@ async function sihirbazKaydet() {
     });
 
     /* Roller tasarım kararlarıyla aynı yerde saklanıyor; ayrı sütun gerekmez. */
-    if (SIHIRBAZ.roller.trim()) {
-      try { await DB.paletKaydet(id, { roller: SIHIRBAZ.roller.trim() }); }
+    if (rolListesi(SIHIRBAZ.roller).length) {
+      try { await DB.paletKaydet(id, { roller: rolListesi(SIHIRBAZ.roller) }); }
       catch (h) { /* kritik değil, Firma durağından sonra girilebilir */ }
     }
 

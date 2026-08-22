@@ -1,5 +1,24 @@
 # Değişiklik Günlüğü
 
+## v0.33.0 — 22 Ağustos 2026
+**Roller katmanlı oldu**
+
+Virgüllü liste kalktı. Roller artık merdiven: **2, 3, 4 ya da 5 katman**
+seçiliyor, her katmanın adı ayrı satırda, en altta en dar yetki en üstte
+en geniş.
+
+Örnek dört katman: Personel · Amir · Yönetici · İşveren.
+
+Katman sayısını değiştirince yazdığın adlar korunuyor; eklenen satırlar
+kullanılmamış örnek adlarla doluyor. Elle hiç dokunmadıysan doğrudan yeni
+örneğe geçiyor.
+
+Sıra önemli çünkü kod bunu kullanıyor: prompta "üstteki katman, alttakinin
+gördüğü her şeyi görür" ve "yetki veritabanı kurallarıyla uygulanır, yalnız
+arayüzde gizlemekle değil" diye giriyor.
+
+Merdiven hem sihirbazın 4. adımında hem Firma bilgileri → Teknik'te.
+
 ## v0.32.1 — 22 Ağustos 2026
 **Dört düzeltme**
 

@@ -7,9 +7,9 @@ const APP = {
   name:     'NIZAM | Studio',
   short:    'NIZAM Studio',
   owner:    'Nizam Soft',
-  version: 'v0.32.1',
+  version: 'v0.33.0',
   build:    '2026-08-20',
-  stage: 'Adım 4 · Teknik standart',
+  stage: 'Adım 4 · Rol katmanları',
 };
 
 /* Supabase bağlantısı.
@@ -732,8 +732,9 @@ const TEKNIK_STANDART = [
 /* Projeye özel teknik alanlar — sihirbazda ve Firma durağında sorulur.
    Projenin `palet` alanında saklanır; ayrı sütun gerekmez. */
 const TEKNIK_ALAN = [
-  { anahtar: 'roller', ad: 'Roller', ornek: 'Yönetici, Personel',
-    alt: 'Kaç rol var ve kim neyi görebilir? Veritabanı güvenlik kuralları buna göre yazılır.' },
+  { anahtar: 'roller', ad: 'Roller', tur: 'katman', ornek: 'Personel · Amir · Yönetici',
+    alt: 'Kaç katman var ve en alttan en üste hangi sırayla? Üstteki, alttakinin '
+       + 'gördüğü her şeyi görür. Veritabanı güvenlik kuralları buna göre yazılır.' },
   { anahtar: 'terim', ad: 'Terminoloji', ornek: 'cari → müşteri, hakediş → ödeme',
     alt: 'Müşterinin kendi sözcükleri. Yanlış sözcük kullanıcıyı yabancılaştırır.' },
   { anahtar: 'kayitNo', ad: 'Kayıt numarası', ornek: 'F-20418 · yıl başında sıfırlanır',
@@ -741,6 +742,22 @@ const TEKNIK_ALAN = [
   { anahtar: 'alanAdi', ad: 'Alan adı', ornek: 'kubban.nizamsoft.com',
     alt: 'Müşteri hangi adresten girecek? Yayın ayarı ve PWA manifesti buna bağlı.' },
 ];
+
+/* Rol katmanları: en alttan en üste. Üstteki, alttakinin yetkilerini de alır.
+   Virgüllü liste yerine merdiven — çünkü yetki sırası kodu belirliyor. */
+const ROL_ORNEK = {
+  2: ['Personel', 'Yönetici'],
+  3: ['Personel', 'Amir', 'Yönetici'],
+  4: ['Personel', 'Amir', 'Yönetici', 'İşveren'],
+  5: ['Personel', 'Amir', 'Müdür', 'Yönetici', 'İşveren'],
+};
+
+/* Kayıtlı değeri her zaman diziye çevirir. */
+function rolListesi(deger) {
+  if (Array.isArray(deger)) return deger.filter(Boolean);
+  if (!deger) return [];
+  return String(deger).split(/\s*[·,>→]\s*/).map(x => x.trim()).filter(Boolean);
+}
 
 /* ---- Kurulum aşamaları ----
    AI'ın hepsini bir seferde yazması işi çöpe atıyor: yanlış giden bir şey
