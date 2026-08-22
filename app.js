@@ -86,6 +86,10 @@ const ICON = {
     d: '<path d="M20 7l-8-4-8 4 8 4z"></path>',
     c: '<path d="M20 7l-8-4-8 4 8 4z"></path><path d="M4 12l8 4 8-4M4 17l8 4 8-4"></path>',
   },
+  goz: {
+    d: '<path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6-10-6-10-6z"></path>',
+    c: '<path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6-10-6-10-6z"></path><circle cx="12" cy="12" r="3"></circle>',
+  },
   kisi: {
     d: '<circle cx="12" cy="8" r="4"></circle><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1z"></path>',
     c: '<circle cx="12" cy="8" r="4"></circle><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"></path>',
@@ -738,6 +742,10 @@ function tasarimSayfasi(p, d) {
   const acikTema = PROMPT.temaAcik(p);
   const adres = DB.logoAdres[p.id];
 
+  /* Palet gelmişse tema kilitli: renkler o temaya göre üretildi, sonradan
+     çevirince uymuyor. Değiştirmek isteyen yeni palet alır. */
+  const kilit = !!pl;
+
   const serit = pl
     ? `<div class="palet-tam">${PALET_ALAN.filter(a => a.renk).map(a => {
         const renk = pl[a.anahtar] || '#333';
@@ -748,6 +756,21 @@ function tasarimSayfasi(p, d) {
         dönen cevabı buraya yapıştır.</span></div>`;
 
   return sayfaHero(p, d)
+    + onizlemeDugmesi(p)
+
+    + bolumBas('Tema') + `
+      <div class="tema-secim ${kilit ? 'kilitli' : ''}">
+        <span class="secenek-serit">
+          ${['Koyu', 'Açık'].map(t => `
+            <button class="ss ${acikTema === (t === 'Açık') ? 'sec' : ''}"
+                    data-eylem="tema-sec" data-proje="${p.id}" data-deger="${esc(t)}" type="button"
+                    ${AUTH.yonetici && !kilit ? '' : 'disabled'}>${t}</button>`).join('')}
+        </span>
+        <i>${kilit
+          ? 'Palet bu temaya göre üretildi. Değiştirmek için logoyu tekrar yükleyip yeni palet al.'
+          : 'Önce temayı seç — prompt buna göre palet üretecek.'}</i>
+      </div>`
+
     + bolumBas('Logo') + `
       <div class="logo-bolum">
         <span class="mk-logo buyuk ${adres ? 'yukleniyor' : ''}"
@@ -763,26 +786,19 @@ function tasarimSayfasi(p, d) {
                              : (adres ? 'Yüklenmiş' : 'Yönetici yükleyecek')}</i>
         </span>
       </div>`
+
     + bolumBas('Palet') + serit
     + (pl ? `
       <div class="tip">
         <div><b>Başlık</b><u style="font-family:var(--yazi-baslik);font-weight:700">${esc(pl.baslik || '—')}</u></div>
         <div><b>Metin</b><u>${esc(pl.govde || '—')}</u></div>
       </div>` : '')
-    + onizlemeKutusu(p)
+    + (pl && pl.ton
+        ? bolumBas('Karakter') + `<div class="satirlar"><div class="sr">Ton <b>${esc(pl.ton)}</b></div></div>`
+        : '')
+
     + tasarimSecimi(p)
-    + bolumBas('Ton') + `
-      <div class="satirlar">
-        <div class="sr">Tema
-          <span class="secenek-serit ufak">
-            <button class="ss ${acikTema ? '' : 'sec'}" data-eylem="tema-sec" data-proje="${p.id}"
-                    data-deger="Koyu" type="button" ${AUTH.yonetici ? '' : 'disabled'}>Koyu</button>
-            <button class="ss ${acikTema ? 'sec' : ''}" data-eylem="tema-sec" data-proje="${p.id}"
-                    data-deger="Açık" type="button" ${AUTH.yonetici ? '' : 'disabled'}>Açık</button>
-          </span>
-        </div>
-        ${pl && pl.ton ? `<div class="sr">Karakter <b>${esc(pl.ton)}</b></div>` : ''}
-      </div>`
+
     + (AUTH.yonetici ? `
       <button class="sayfa-dug ikincil" data-eylem="palet-prompt" data-proje="${p.id}" type="button">
         ${svg(ICON.kopya, 15)} Prompt kopyala</button>
@@ -853,21 +869,62 @@ function orneklem(p) {
             ['K-1039 · Elif Şahin', '15 Ağu · onaylandı', '6.400,00']] };
 }
 
-/* Önizlemenin dış kabuğu — başlık, cihaz geçişi ve çizim alanı. */
-function onizlemeKutusu(p) {
-  return bolumBas('Önizleme') + `
-    <div class="onk">
-      <div class="onk-bas">
-        <b>Nasıl görünecek</b>
-        <span class="cihaz">
-          ${['web', 'telefon'].map(c => `
-            <button class="${ONIZLEME_CIHAZ === c ? 'on' : ''}" type="button"
-                    data-eylem="onizleme-cihaz" data-deger="${c}" data-proje="${p.id}"
-            >${c === 'web' ? 'Web' : 'Telefon'}</button>`).join('')}
-        </span>
-      </div>
-      <div class="onk-goz" id="onizleme-goz">${onizlemeIc(p, p.palet)}</div>
-    </div>`;
+/* Sayfada yalnız bir düğme duruyor — yapışkan, nereye kaydırırsan orada.
+   Büyük bir blok tepede otursa raflara yer kalmıyordu. */
+function onizlemeDugmesi(p) {
+  return `
+    <button class="onz-dug" type="button" data-eylem="onizleme-ac" data-proje="${p.id}">
+      ${svg(ICON.goz, 16)}
+      <b>Önizleme</b>
+      <i>Seçimler bir arada nasıl duruyor?</i>
+      ${svg(ICON.chevron, 14)}
+    </button>`;
+}
+
+/* Tam ekran önizleme. Kapanınca sayfada kaldığın yere dönüyorsun. */
+function onizlemeAc(projeId) {
+  const p = DB.proje(projeId);
+  if (!p) return;
+
+  const el = document.createElement('div');
+  el.id = 'onizleme';
+  el.className = 'onz';
+  el.innerHTML = `
+    <div class="onz-tepe">
+      <button class="sh-kapat" type="button" data-onz="kapat">${svg(ICON.kapat, 15)}</button>
+      <span class="onz-ad">Önizleme<u>${esc(p.firma)}</u></span>
+      <span class="cihaz">
+        ${['web', 'telefon'].map(c => `
+          <button class="${ONIZLEME_CIHAZ === c ? 'on' : ''}" type="button"
+                  data-onz="cihaz" data-deger="${c}">${c === 'web' ? 'Web' : 'Telefon'}</button>`).join('')}
+      </span>
+    </div>
+    <div class="onz-goz" id="onizleme-goz">${onizlemeIc(p, p.palet)}</div>`;
+
+  document.body.appendChild(el);
+  logolariGoster();
+  document.addEventListener('keydown', onizlemeKac);
+  requestAnimationFrame(() => el.classList.add('acik'));
+
+  el.addEventListener('click', ev => {
+    const b = ev.target.closest('[data-onz]');
+    if (!b) return;
+    if (b.dataset.onz === 'kapat') return onizlemeKapat();
+    if (ONIZLEME_CIHAZ === b.dataset.deger) return;
+    ONIZLEME_CIHAZ = b.dataset.deger;
+    $$('.cihaz button', el).forEach(x => x.classList.toggle('on', x === b));
+    onizlemeTazele(p, p.palet);
+  });
+}
+
+function onizlemeKac(ev) { if (ev.key === 'Escape') onizlemeKapat(); }
+
+function onizlemeKapat() {
+  const el = $('#onizleme');
+  if (!el) return;
+  document.removeEventListener('keydown', onizlemeKac);
+  el.classList.remove('acik');
+  setTimeout(() => el.remove(), 240);
 }
 
 /* Asıl çizim. `pl` dışarıdan geliyor: bir seçeneğe dokunulduğunda kayıt
@@ -4065,6 +4122,7 @@ async function eylemCalistir(el) {
   if (e === 'tema-sec') {
     const pr = DB.proje(el.dataset.proje);
     if (!pr) return;
+    if (pr.palet) { toast('Palet bu temaya göre üretildi. Yeni palet al.', 'hata'); return; }
     if (PROMPT.temaAcik(pr) === (el.dataset.deger === 'Açık')) return;
     return isYap(
       () => DB.paletKaydet(pr.id, Object.assign({}, pr.palet || {}, { tema: el.dataset.deger })),
@@ -4111,14 +4169,7 @@ async function eylemCalistir(el) {
     return;
   }
 
-  if (e === 'onizleme-cihaz') {
-    if (ONIZLEME_CIHAZ === el.dataset.deger) return;
-    ONIZLEME_CIHAZ = el.dataset.deger;
-    $$('.onk-bas .cihaz button').forEach(b => b.classList.toggle('on', b === el));
-    const pr = DB.proje(el.dataset.proje);
-    if (pr) onizlemeTazele(pr, pr.palet);
-    return;
-  }
+  if (e === 'onizleme-ac') return onizlemeAc(el.dataset.proje);
 
   if (e === 'yetkili-kopyala') {
     const pr = DB.proje(el.dataset.proje);
@@ -4680,7 +4731,7 @@ async function uygulamayiAc() {
       else await DB.yukle();
     } catch (e) { return; }
     sayaclariYaz();
-    if (!$('.modal-perde') && !$('#sihirbaz')) render();
+    if (!$('.modal-perde') && !$('#sihirbaz') && !$('#onizleme')) render();
   });
 
   /* Telefon uygulamayı arka planda dondurunca canlı bağlantı kopuyor ve

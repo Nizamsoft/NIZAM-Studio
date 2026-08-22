@@ -1,5 +1,24 @@
 # Değişiklik Günlüğü
 
+## v0.23.0 — 22 Ağustos 2026
+**Önizleme düğme oldu, tema kilitlendi**
+
+Önizleme artık sayfanın ortasında duran büyük bir blok değil. Hero'nun
+hemen altında **yapışkan bir düğme** var: nereye kaydırırsan kaydır tepede
+kalıyor. Basınca önizleme tam ekran açılıyor, kapatınca kaldığın yere
+dönüyorsun. Rafların ortasındayken her seferinde yukarı çıkma derdi bitti.
+
+Tam ekranda Web / Telefon geçişi duruyor; Esc ya da çarpı kapatıyor.
+
+**Tema artık palet geldikten sonra değiştirilemiyor.** Palet o temaya göre
+üretiliyor — sonradan Koyu'dan Açık'a çevirmek renkleri değiştirmediği için
+boşa bir açıp kapama oluyordu. Değiştirmek isteyen logoyu tekrar yükleyip
+yeni palet alıyor. Kilitliyken nedeni de yazıyor.
+
+**Tema yukarı taşındı.** Artık sayfanın ilk kararı: Tema → Logo → Palet →
+Karakter → biçim rafları. Sıra doğru olunca geri dönüp değiştirme ihtiyacı
+zaten kalmıyor.
+
 ## v0.22.0 — 22 Ağustos 2026
 **Seçimlerin nasıl duracağını uygulamanın içinden görüyorsun**
 

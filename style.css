@@ -468,8 +468,8 @@ button { font-family: inherit; color: inherit; }
 .search svg { width: 15px; height: 15px; color: var(--ink-dim); }
 
 .view {
-  --yan: 24px;
-  flex: 1; min-height: 0; padding: 20px var(--yan) 32px;
+  --yan: 24px; --ust: 20px;
+  flex: 1; min-height: 0; padding: var(--ust) var(--yan) 32px;
   overflow-y: auto; overscroll-behavior: contain;
 }
 .view.swap { animation: viewIn .28s var(--ease) both; }
@@ -2086,7 +2086,7 @@ a.durak:active { transform: scale(.99); transition: transform .1s var(--ease); }
   #topbar .btn { width: 44px; height: 44px; padding: 0; }
 
   /* Alt pay çubuk kadar: içerik cam çubuğun altından akıp geçsin. */
-  .view { --yan: 16px; padding: 16px var(--yan) 96px; }
+  .view { --yan: 16px; --ust: 16px; padding: var(--ust) var(--yan) 96px; }
 
   .stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .stat-num { font-size: 26px; }
@@ -2399,36 +2399,77 @@ a.durak:active { transform: scale(.99); transition: transform .1s var(--ease); }
    renkleri buraya sızmaz: gösterdiğimiz şey müşterinin uygulaması.
    ========================================================================== */
 
-.onk { border: 1px solid var(--line-2); border-radius: 16px; overflow: hidden;
-       background: var(--yuva-2); }
+/* Yapışkan önizleme düğmesi — nereye kaydırırsan orada. */
+.onz-dug {
+  position: sticky; top: 0; z-index: 6;
+  display: flex; align-items: center; gap: 10px; width: 100%;
+  margin: 4px calc(var(--yan) * -1) 4px; padding: 11px var(--yan);
+  width: calc(100% + var(--yan) * 2);
+  border: 0; border-bottom: 1px solid var(--line-3);
+  background: var(--bg); box-shadow: 0 10px 14px -12px #000;
+  color: var(--ink); font-family: inherit; text-align: left; cursor: pointer;
+}
+/* Yapışınca üstteki iç boşluktan içerik sızmasın. */
+.onz-dug::before {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 100%;
+  height: var(--ust); background: var(--bg);
+}
+.onz-dug b { font-family: var(--yazi-baslik); font-size: 13px; flex-shrink: 0; }
+.onz-dug i { flex: 1; min-width: 0; font-style: normal; font-size: 11px; color: var(--ink-dim);
+             overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.onz-dug > svg:first-child { flex-shrink: 0; color: var(--metal-2); }
+.onz-dug > svg:last-child  { flex-shrink: 0; color: var(--ink-faint); }
 
-.onk-bas {
-  display: flex; align-items: center; gap: 9px; padding: 10px 13px;
-  border-bottom: 1px solid var(--line-3); background: var(--yuva);
+/* Tam ekran önizleme */
+.onz {
+  position: fixed; inset: 0; z-index: 300;
+  display: flex; flex-direction: column; background: var(--bg);
+  opacity: 0; transform: translateY(14px);
+  transition: opacity .2s ease, transform .24s var(--ease);
 }
-.onk-bas b { font-size: 11.5px; font-family: var(--yazi-baslik); letter-spacing: .3px; }
-.onk-bas .cihaz {
-  margin-left: auto; display: flex; gap: 3px; padding: 3px;
-  background: var(--yuva-2); border: 1px solid var(--line-3); border-radius: 999px;
+.onz.acik { opacity: 1; transform: none; }
+.onz-tepe {
+  display: flex; align-items: center; gap: 12px; flex-shrink: 0;
+  padding: calc(14px + env(safe-area-inset-top, 0px)) 16px 14px;
+  border-bottom: 1px solid var(--line-3);
 }
-.onk-bas .cihaz button {
-  font-family: inherit; font-size: 10.5px; padding: 4px 12px; border: 0;
-  border-radius: 999px; background: transparent; color: var(--ink-dim); cursor: pointer;
-}
-.onk-bas .cihaz button.on { background: var(--surface-3); color: var(--ink); font-weight: 600; }
-
-/* Dama zemin: içerideki arka planın gerçekten uygulamanın rengi olduğu belli olsun. */
-.onk-goz {
-  padding: 14px; display: grid; place-items: center;
+.onz-ad { flex: 1; min-width: 0; font-family: var(--yazi-baslik); font-size: 14px;
+          font-weight: 700; color: var(--ink-strong); }
+.onz-ad u { display: block; text-decoration: none; font-family: var(--yazi-govde);
+            font-size: 11px; font-weight: 400; color: var(--ink-dim); margin-top: 1px;
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.onz-goz {
+  flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
+  padding: 18px 16px calc(24px + env(safe-area-inset-bottom, 0px));
+  display: flex; flex-direction: column; align-items: center;
   background: repeating-conic-gradient(#1a1918 0 25%, #171614 0 50%) 0 0 / 16px 16px;
 }
+.onz-goz > .o-app { max-width: 520px; }
+
+.cihaz {
+  display: flex; gap: 3px; padding: 3px; flex-shrink: 0;
+  background: var(--yuva-2); border: 1px solid var(--line-3); border-radius: 999px;
+}
+.cihaz button {
+  font-family: inherit; font-size: 10.5px; padding: 5px 12px; border: 0;
+  border-radius: 999px; background: transparent; color: var(--ink-dim); cursor: pointer;
+}
+.cihaz button.on { background: var(--surface-3); color: var(--ink); font-weight: 600; }
+
 .onk-not {
-  display: flex; align-items: center; gap: 7px; margin-top: 13px;
+  display: flex; align-items: center; gap: 7px; margin-top: 14px;
   padding: 6px 12px 6px 10px; border-radius: 999px;
   border: 1px solid var(--line-3); background: var(--yuva);
   font-size: 10.5px; line-height: 1.4; color: var(--ink-dim);
 }
-.onk-not svg { flex: 0 0 auto; margin-top: 1px; color: var(--ink-faint); }
+.onk-not svg { flex: 0 0 auto; color: var(--ink-faint); }
+
+/* Tema seçimi — kilitliyken neden kilitli olduğu yazar. */
+.tema-secim .secenek-serit { margin-bottom: 8px; }
+.tema-secim i { display: block; font-style: normal; font-size: 11px;
+                line-height: 1.5; color: var(--ink-dim); }
+.tema-secim.kilitli .ss { opacity: .55; }
+.tema-secim.kilitli .ss.sec { opacity: 1; }
 
 /* ---------- Sahte uygulama ---------- */
 .o-app {
