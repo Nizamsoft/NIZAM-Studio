@@ -2906,7 +2906,9 @@ ekran planı.
 
 /* Önizleme: kalan boşluğun tamamını alır, içindeki uygulama sığacak kadar küçülür. */
 .onz-satir {
-  flex: 1 1 auto; min-height: 170px; position: relative; margin: 11px 0;
+  /* Yer daralınca önce önizleme küçülsün (içindeki uygulama zaten ölçekleniyor),
+     seçenek rafı en son. Bu yüzden büzülme katsayısı yüksek. */
+  flex: 1 8 auto; min-height: 170px; position: relative; margin: 11px 0;
   border: 1px solid var(--line-2); border-radius: 16px; overflow: hidden;
   background: var(--yuva-2);
 }
@@ -2930,7 +2932,11 @@ ekran planı.
 }
 .tumSifir svg { flex: 0 0 auto; }
 
-.akis-alt { flex: 0 0 auto; }
+/* Alt blok esnesin: sabit kalınca uzun adımlarda Geri/İleri satırı kutunun
+   dışına, alt çubuğun altına taşıyordu. Taşan kısım rafın içinde kayar. */
+.akis-alt { flex: 0 1 auto; min-height: 0; display: flex; flex-direction: column; }
+.akis-alt > .raf { flex: 0 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+.akis-alt > .adim-gez { flex: 0 0 auto; }
 .adim-bas { display: flex; align-items: baseline; gap: 10px; margin-bottom: 9px; }
 .ab-yazi { flex: 1; min-width: 0; }
 .adim-bas b { display: block; font-family: var(--yazi-baslik); font-size: 17px;
@@ -3518,3 +3524,66 @@ a:hover { color: var(--red-ink); }
   color: color-mix(in srgb, var(--o-bg) 68%, var(--o-metin));
 }
 .o-app.ocd-koyu .o-yanMenu i.a { background: color-mix(in srgb, var(--o-bg) 22%, transparent); }
+
+/* ==========================================================================
+   SONRADAN EKLENEN KARAR ROZETİ
+   Kırmızı değil: kırmızı logo, ana düğme, aktif menü ve "Acil" için ayrıldı.
+   ========================================================================== */
+
+.yeni-rozet {
+  margin-left: 8px; flex: 0 0 auto;
+  font-family: var(--yazi-kod); font-size: 9px; font-weight: 600;
+  letter-spacing: .06em; text-transform: uppercase;
+  padding: 3px 7px; border-radius: 999px;
+  color: #cfe0ff; background: color-mix(in srgb, #5b8def 26%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, #5b8def 55%, transparent);
+}
+
+.as-yeni {
+  flex: 0 0 auto; margin-left: auto;
+  font-family: var(--yazi-kod); font-size: 10px; font-weight: 600;
+  padding: 5px 9px; border-radius: 999px; cursor: pointer;
+  color: #cfe0ff; background: color-mix(in srgb, #5b8def 22%, transparent);
+  border: 1px solid color-mix(in srgb, #5b8def 50%, transparent);
+  animation: yeniNabiz 2.4s ease-in-out infinite;
+}
+.as-yeni:active { transform: scale(.96); }
+.as-obek .as-yeni + .ab-kararlar { margin-left: 8px; }
+
+.ab-yeni {
+  flex: 0 0 auto; align-self: flex-start; margin-left: 8px; cursor: pointer;
+  white-space: nowrap;
+  font-family: var(--yazi-kod); font-size: 9.5px; font-weight: 600;
+  letter-spacing: .05em; padding: 4px 8px; border-radius: 999px;
+  color: #cfe0ff; background: color-mix(in srgb, #5b8def 22%, transparent);
+  border: 1px solid color-mix(in srgb, #5b8def 50%, transparent);
+}
+.ab-yeni:active { transform: scale(.96); }
+
+/* Nokta şeridinde: sonradan eklenen adım parlar. */
+.as-noktalar button.yeni i {
+  background: #5b8def;
+  box-shadow: 0 0 0 3px color-mix(in srgb, #5b8def 26%, transparent);
+  animation: yeniNabiz 2.4s ease-in-out infinite;
+}
+
+@keyframes yeniNabiz {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: .58; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .as-yeni, .as-noktalar button.yeni i { animation: none; }
+}
+
+/* Kısa ekranlarda (664px ve altı) akış tek ekrana sığmıyordu: seçenek
+   kartının adı kesiliyordu. Kart küçülür, önizleme zaten ölçekleniyor. */
+@media (max-height: 700px) {
+  .onz-satir { min-height: 132px; margin: 8px 0; }
+  .bsc { width: 88px; padding: 7px; }
+  .bsc.sifir { width: 62px; }
+  .bon { height: 50px; }
+  .bsc-ad { margin-top: 6px; font-size: 10px; }
+  .adim-bas { margin-bottom: 8px; }
+  .ab-yazi i { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical;
+               overflow: hidden; }
+}

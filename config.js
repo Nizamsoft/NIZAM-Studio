@@ -7,7 +7,7 @@ const APP = {
   name:     'NIZAM | Studio',
   short:    'NIZAM Studio',
   owner:    'Nizam Soft',
-  version: 'v0.35.0',
+  version: 'v0.36.0',
   build:    '2026-08-20',
   stage: 'Adım 4 · Prompt yalnız palet',
 };
@@ -271,7 +271,7 @@ const YERLESIM_ALAN = [
     ],
   },
   {
-    anahtar: 'cubukDoku', ad: 'Çubuk ve panel dokusu',
+    anahtar: 'cubukDoku', ad: 'Çubuk ve panel dokusu', eklendi: 'v0.35.0',
     alt: 'Üst çubuk, alt sekme, yan menü ve sayfa paneli neye benzesin?',
     varsayilan: 'Dolu zemin', ekran: 'panel',
     secim: [
@@ -843,6 +843,29 @@ const KURULUM_ADIM = [
 
 /* Bir alanın seçili değerleri — her zaman dizi döner.
    Tek seçimliler tek elemanlı; hiç seçilmemişse varsayılan. */
+/* ---- Sonradan eklenen kararlar ----
+   Yeni bir karar eklendiğinde eski projeler onu fark etmiyordu: 51 adımın
+   içinde kayboluyordu. Karara `eklendi` damgası, projeye de görülen sürüm
+   yazılıyor; ikisi karşılaştırılıp rozet çıkarılıyor. */
+
+function surumSayi(s) {
+  return String(s || 'v0').replace(/^v/, '').split('.')
+    .map(n => parseInt(n, 10) || 0)
+    .reduce((t, n) => t * 1000 + n, 0);
+}
+
+/* Bu proje için henüz görülmemiş yeni kararlar.
+   Yeni açılan projede boş döner: kurulurken görülen sürüm damgalanıyor. */
+function yeniKararlar(palet) {
+  const pl  = palet || {};
+  const tab = surumSayi(pl.gorulenSurum);
+  const gor = Array.isArray(pl.gorulenler) ? pl.gorulenler : [];
+  return TUM_TASARIM.filter(a => a.eklendi
+    && surumSayi(a.eklendi) > tab
+    && !pl[a.anahtar]
+    && gor.indexOf(a.anahtar) < 0);
+}
+
 function bicimSecim(palet, alan) {
   const d = (palet || {})[alan.anahtar];
   /* Tek seçimlide bölmüyoruz: "Sayaç + büyük grafik" gibi adlar artı içeriyor

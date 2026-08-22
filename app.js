@@ -940,8 +940,14 @@ function tasarimSayfasi(p, d) {
     <div class="akis-alt">
       <div class="adim-bas">
         <div class="ab-yazi"><b>${esc(adim.ad)}</b><i>${esc(adim.aciklama)}</i></div>
-        <span class="ab-tur">${adim.alan
-          ? (adim.alan.coklu ? 'birkaçı' : 'tek seçim') : ''}</span>
+        ${yeniKararlar(p.palet).some(a => a.anahtar === adim.anahtar)
+          /* Başlığın içine koyunca satır kırılıp alt satırı aşağı itiyordu:
+             kendi sütununda duruyor. */
+          ? `<button class="ab-yeni" type="button" data-eylem="karar-goruldu"
+                     data-proje="${p.id}" data-alan="${adim.anahtar}"
+                     title="Sonradan eklendi. Rozeti kaldırmak için dokun.">YENİ</button>`
+          : `<span class="ab-tur">${adim.alan
+              ? (adim.alan.coklu ? 'birkaçı' : 'tek seçim') : ''}</span>`}
       </div>
       ${govde}
       ${gez}
@@ -952,6 +958,7 @@ function tasarimSayfasi(p, d) {
 /* Üstteki şerit: öbek adı, sayaç, Kararlar düğmesi ve ilerleme noktaları. */
 function adimSeridi(p, no, adim) {
   /* Noktalar öbek öbek ayrılır: hangi bölümdesin ve kaç bölüm kaldı görünür. */
+  const yeniler = yeniKararlar(p.palet).map(a => a.anahtar);
   const obekler = [];
   TASARIM_ADIM.forEach((a, i) => {
     const son = obekler[obekler.length - 1];
@@ -965,13 +972,18 @@ function adimSeridi(p, no, adim) {
       <div class="as-obek">
         <span class="as-rozet">${suObek + 1}</span>
         <span class="as-ad"><b>${esc(adim.obek)}</b><i>${esc(adim.obekNot || '')}</i></span>
+        ${yeniler.length && !yeniler.includes(adim.anahtar) ? `
+          <button class="as-yeni" type="button" data-eylem="yeni-karar-git"
+                  data-proje="${p.id}"
+                  title="Sonradan eklenen kararlara git">${yeniler.length} yeni</button>` : ''}
         <button class="ab-kararlar" type="button" data-eylem="kararlar" data-proje="${p.id}">
           ${svg(ICON.katman, 14)}</button>
       </div>
       <div class="as-noktalar">${obekler.map((o, oi) => `
         <span class="as-grup ${oi === suObek ? 'suan' : oi < suObek ? 'gecti' : ''}"
               style="flex:${o.satir.length}">${o.satir.map(i => `
-          <button class="${i === no ? 'on' : i < no ? 'gecti' : ''}" type="button"
+          <button class="${i === no ? 'on' : i < no ? 'gecti' : ''}${
+                    yeniler.includes(TASARIM_ADIM[i].anahtar) ? ' yeni' : ''}" type="button"
                   data-eylem="tasarim-adim" data-proje="${p.id}" data-deger="${i}"
                   title="${esc(TASARIM_ADIM[i].ad)}"><i></i></button>`).join('')}</span>`).join('')}
       </div>
@@ -1829,8 +1841,10 @@ function onizlemeSigdir() {
     const a = app.getBoundingClientRect();
     if (!a.height || !k.height) return;
     /* Bir yere kadar küçültürüz; altına inince okunmaz olur, o zaman
-       sayfanın azıcık kaymasına izin veririz. */
-    const oran = Math.max(.5, Math.min(1, (k.height - 18) / a.height, (k.width - 18) / a.width));
+       sayfanın azıcık kaymasına izin veririz. Kısa ekranda taban daha
+       düşük: kırpılmış bir çubuk, küçük çubuktan kötüdür. */
+    const taban = innerHeight <= 700 ? .4 : .5;
+    const oran = Math.max(taban, Math.min(1, (k.height - 18) / a.height, (k.width - 18) / a.width));
     if (oran < .999) app.style.transform = `scale(${oran.toFixed(3)})`;
   });
 }
@@ -2245,6 +2259,7 @@ function projeDuraklari(p) {
     {
       ad: 'Tasarımı belirleme',
       bitti: paletVar,
+      rozet: yeniKararlar(p.palet).length,
       ozet: paletVar
         ? 'Logo ve palet hazır.'
         : 'Logoyu yükle, promptu kopyala, dönen paleti yapıştır.',
@@ -2289,6 +2304,7 @@ function projeYolu(p) {
         <div class="durak-bas">
           <h3>${esc(d.ad)}</h3>
           <em>${etiket}</em>
+          ${d.rozet ? `<span class="yeni-rozet">${d.rozet} yeni</span>` : ''}
           <span class="durak-chev">${svg(ICON.chevron, 14)}</span>
         </div>
         <p>${d.ozet}</p>
@@ -3594,11 +3610,13 @@ async function sihirbazKaydet() {
       },
     });
 
-    /* Roller tasarım kararlarıyla aynı yerde saklanıyor; ayrı sütun gerekmez. */
-    if (rolListesi(SIHIRBAZ.roller).length) {
-      try { await DB.paletKaydet(id, { roller: rolListesi(SIHIRBAZ.roller) }); }
-      catch (h) { /* kritik değil, Firma durağından sonra girilebilir */ }
-    }
+    /* Roller tasarım kararlarıyla aynı yerde saklanıyor; ayrı sütun gerekmez.
+       Görülen sürüm de burada damgalanıyor: yeni proje bugünün kararlarıyla
+       kuruluyor, "yeni karar" rozeti yalnız eski projelerde çıksın. */
+    try {
+      await DB.paletKaydet(id, Object.assign({ gorulenSurum: APP.version },
+        rolListesi(SIHIRBAZ.roller).length ? { roller: rolListesi(SIHIRBAZ.roller) } : {}));
+    } catch (h) { /* kritik değil, Firma durağından sonra girilebilir */ }
 
     /* Logo ancak proje kurulduktan sonra yüklenebilir: dosya adı projenin
        kimliği. Yükleme patlarsa proje yine duruyor, logo sonradan eklenir. */
@@ -5200,6 +5218,33 @@ async function eylemCalistir(el) {
       onizlemeTazele(pr, pr.palet);
       toast(err.message, 'hata');
     }
+    return;
+  }
+
+  /* Sonradan eklenen karara atla. */
+  if (e === 'yeni-karar-git') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const ilk = yeniKararlar(pr.palet)[0];
+    if (!ilk) return;
+    const yer = TASARIM_ADIM.findIndex(a => a.anahtar === ilk.anahtar);
+    if (yer < 0) return;
+    TASARIM_YER[pr.id] = yer;
+    render();
+    return;
+  }
+
+  /* "Gördüm" — seçim yapmadan rozeti kaldırır. */
+  if (e === 'karar-goruldu') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const pl  = pr.palet || {};
+    const gor = (Array.isArray(pl.gorulenler) ? pl.gorulenler : [])
+      .concat(el.dataset.alan);
+    el.remove();
+    try {
+      await DB.paletKaydet(pr.id, Object.assign({}, pl, { gorulenler: gor }));
+    } catch (err) { toast(err.message, 'hata'); render(); }
     return;
   }
 

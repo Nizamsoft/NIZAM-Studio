@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## v0.36.0
+- Sonradan eklenen tasarım kararları artık kayboluyor değil: proje duraklarında "1 yeni" rozeti, akış şeridinde "n yeni" çipi (dokununca o adıma atlar), adım başlığında YENİ etiketi. Seçim yapılınca ya da YENİ'ye dokununca söner. Yeni açılan projelerde çıkmaz.
+- Kısa ekranlarda (664px ve altı) akış tek ekrana sığmıyordu: seçenek kartının adı kesiliyor, Geri/İleri satırı alt çubuğun altına giriyordu. Kartlar küçüldü, önizleme daha çok ölçekleniyor.
+
 ## v0.35.0
 - Yeni tasarım kararı: **Çubuk ve panel dokusu** — dolu zemin · buzlu cam · çizgiyle ayrık · yüzen hap · koyu kontrast. Üst çubuk, alt sekme, yan menü ve sayfa panelinin hepsine iner. Kararlar 49, akış 51 adım.
 - Teknik standarda sabit kural: masaüstünde alt sekme çubuğu yok, 900px üstünde gezinme solda panele döner.
