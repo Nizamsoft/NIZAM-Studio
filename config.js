@@ -7,9 +7,9 @@ const APP = {
   name:     'NIZAM | Studio',
   short:    'NIZAM Studio',
   owner:    'Nizam Soft',
-  version: 'v0.30.1',
+  version: 'v0.31.0',
   build:    '2026-08-20',
-  stage: 'Adım 4 · Prompt sağlamlaştırma',
+  stage: 'Adım 4 · Hep açık tema',
 };
 
 /* Supabase bağlantısı.
@@ -71,15 +71,14 @@ const VARSAYILAN_GRUP = 'Arayüz';
 
 /* Marka paletinin alanları — hem prompt hem içe aktarma bu sırayı kullanır. */
 const PALET_ALAN = [
-  { anahtar: 'tema',    ad: 'Tema',             ornek: 'Koyu', secim: ['Koyu', 'Açık'] },
-  { anahtar: 'bg',      ad: 'Arka plan',        ornek: '#0f0e0d', renk: true },
-  { anahtar: 'yuzey',   ad: 'Yüzey',            ornek: '#1f1d1b', renk: true },
-  { anahtar: 'cizgi',   ad: 'Çizgi',            ornek: '#37322f', renk: true },
-  { anahtar: 'metin',   ad: 'Metin',            ornek: '#eceae9', renk: true },
-  { anahtar: 'metin2',  ad: 'Metin soft',       ornek: '#b8b2ad', renk: true },
-  { anahtar: 'metin3',  ad: 'Metin silik',      ornek: '#7c746e', renk: true },
-  { anahtar: 'vurgu',   ad: 'Vurgu',            ornek: '#e5342a', renk: true },
-  { anahtar: 'vurgu2',  ad: 'Vurgu koyu',       ornek: '#b8221a', renk: true,
+  { anahtar: 'bg',      ad: 'Arka plan',        ornek: '#f4f2f0', renk: true },
+  { anahtar: 'yuzey',   ad: 'Yüzey',            ornek: '#ffffff', renk: true },
+  { anahtar: 'cizgi',   ad: 'Çizgi',            ornek: '#e2ddd9', renk: true },
+  { anahtar: 'metin',   ad: 'Metin',            ornek: '#1d1a18', renk: true },
+  { anahtar: 'metin2',  ad: 'Metin soft',       ornek: '#5f5852', renk: true },
+  { anahtar: 'metin3',  ad: 'Metin silik',      ornek: '#8d857e', renk: true },
+  { anahtar: 'vurgu',   ad: 'Vurgu',            ornek: '#8a6d12', renk: true },
+  { anahtar: 'vurgu2',  ad: 'Vurgu koyu',       ornek: '#6b5410', renk: true,
     not: 'Üzerine gelince ve basılınca kullanılır. Vurgudan bir tık koyu.' },
   { anahtar: 'basari',  ad: 'Başarı',           ornek: '#3d9970', renk: true },
   { anahtar: 'uyari',   ad: 'Uyarı',            ornek: '#d0a13c', renk: true },
@@ -89,19 +88,6 @@ const PALET_ALAN = [
   { anahtar: 'govde',   ad: 'Metin yazı tipi',  ornek: 'IBM Plex Sans' },
   { anahtar: 'simgeKit',ad: 'Simge seti',       ornek: 'Lucide' },
   { anahtar: 'ton',     ad: 'Ton',              ornek: 'sıcak, kurumsal, sade' },
-];
-
-/* İkinci tema — yalnız "Tema değiştirme" Sabit değilse istenir.
-   Kullanıcı temayı çevirebilecekse iki paletin de tanımlı olması gerekir. */
-const PALET_ALAN_2 = [
-  { anahtar: 'bg2',     ad: 'Arka plan 2',  ornek: '#f4f2f0', renk: true, ikinci: true },
-  { anahtar: 'yuzey2',  ad: 'Yüzey 2',      ornek: '#ffffff', renk: true, ikinci: true },
-  { anahtar: 'cizgi2',  ad: 'Çizgi 2',      ornek: '#e2ddd9', renk: true, ikinci: true },
-  { anahtar: 'metinA',  ad: 'Metin 2',      ornek: '#1d1a18', renk: true, ikinci: true },
-  { anahtar: 'metinB',  ad: 'Metin soft 2', ornek: '#5f5852', renk: true, ikinci: true },
-  { anahtar: 'metinC',  ad: 'Metin silik 2',ornek: '#8d857e', renk: true, ikinci: true },
-  { anahtar: 'vurguA',  ad: 'Vurgu 2',      ornek: '#8a6d12', renk: true, ikinci: true,
-    not: 'Açık zeminde beyaz yazı taşıyacak kadar koyu olmalı.' },
 ];
 
 /* Birlikte olmayacak seçimler. Prompt bunları yasaklar, Studio yapıştırınca
@@ -636,15 +622,6 @@ const SISTEM_ALAN = [
     ],
   },
   {
-    anahtar: 'temadegis', ad: 'Tema değiştirme', alt: 'Kullanıcı temayı değiştirebilsin mi?',
-    varsayilan: 'Sabit', ekran: 'ayarlar',
-    secim: [
-      { ad: 'Sabit',          tarif: 'Tek tema; kullanıcı değiştiremez.', tel: ['grupluListe'] },
-      { ad: 'Kullanıcı seçer',tarif: 'Kullanıcı menüsünde ya da Ayarlar\'da koyu-açık geçişi.', tel: ['temaAnahtar', 'grupluListe'] },
-      { ad: 'Sistemi izler',  tarif: 'Cihazın temasına uyar; ayrıca elle de değiştirilebilir.', tel: ['temaIki', 'grupluListe'] },
-    ],
-  },
-  {
     anahtar: 'yedek', ad: 'Yedek ve kayıt geçmişi', alt: 'Veri güvenliği ve iz sürme.',
     varsayilan: 'Yedek al / yükle', ekran: 'ayarlar',
     secim: [
@@ -694,13 +671,13 @@ const AKIS_OBEK = [
     alanlar: ['gecis', 'dokunma', 'secimVurgu', 'acilma', 'bekleme',
               'listeGirisi', 'sayiHareketi', 'hareketMiktari'] },
   { ad: 'Sistem', not: 'Güncelleme, tema ve yedek — uygulamanın kendi bakımı.',
-    alanlar: ['guncelleme', 'temadegis', 'yedek'] },
+    alanlar: ['guncelleme', 'yedek'] },
 ];
 
 const TASARIM_ADIM = [
-  { anahtar: 'tema',  ad: 'Tema',  tur: 'tema',  ekran: 'panel', obek: 'Başlangıç',
+  { anahtar: 'tema',  ad: 'Başlangıç', tur: 'tema', ekran: 'panel', obek: 'Başlangıç',
     obekNot: 'Rengin ve yazının kaynağı. Kodda ilk yazılan satırlar.',
-    aciklama: 'Önce bunu seç — palet buna göre üretilecek.' },
+    aciklama: 'Tema sabit: açık. Baştan başlamak istersen buradan sıfırla.' },
   { anahtar: 'logo',  ad: 'Logo',  tur: 'logo',  ekran: 'panel', obek: 'Başlangıç',
     obekNot: 'Rengin ve yazının kaynağı. Kodda ilk yazılan satırlar.',
     aciklama: 'Paletin kaynağı. Bu olmadan prompt anlamsız.' },

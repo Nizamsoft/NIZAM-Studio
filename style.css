@@ -2465,6 +2465,13 @@ a.durak:active { transform: scale(.99); transition: transform .1s var(--ease); }
 .onk-not svg { flex: 0 0 auto; color: var(--ink-faint); }
 
 /* Tema seçimi — kilitliyken neden kilitli olduğu yazar. */
+.baslangic-not { padding: 13px 15px; border-radius: 13px;
+                 border: 1px solid var(--line-2); background: var(--yuva); }
+.baslangic-not b { display: block; font-family: var(--yazi-baslik); font-size: 13px;
+                   color: var(--ink); margin-bottom: 4px; }
+.baslangic-not i { display: block; font-style: normal; font-size: 11.5px;
+                   line-height: 1.55; color: var(--ink-dim); }
+
 .tema-secim .secenek-serit { margin-bottom: 8px; }
 .tema-secim i { display: block; font-style: normal; font-size: 11px;
                 line-height: 1.5; color: var(--ink-dim); }

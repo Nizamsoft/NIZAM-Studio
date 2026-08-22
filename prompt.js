@@ -11,10 +11,8 @@
 const PROMPT = {
 
   /* Projenin teması açık mı? Varsayılan koyu. */
-  temaAcik(proje) {
-    const t = proje && proje.palet && proje.palet.tema;
-    return /a[çc][ıi]k|light/i.test(String(t || ''));
-  },
+  /* Müşteri uygulamaları hep açık tema. Studio'nun kendi teması ayrı. */
+  temaAcik() { return true; },
 
   /* Paleti hem görev promptuna hem NIZAM.md'ye aynı biçimde basar. */
   paletBlogu(proje) {
@@ -89,8 +87,6 @@ const PROMPT = {
     const p = DB.proje(projeId);
     if (!p) return '';
 
-    const acik = PROMPT.temaAcik(p);
-    const tema = acik ? 'açık' : 'koyu';
     const s = [];
 
     s.push('# Marka ve Arayüz Kararları', '');
@@ -108,7 +104,7 @@ const PROMPT = {
     s.push(hiza('Veritabanı', VERI_ADI[p.veri] || '—'));
     if (p.dil)  s.push(hiza('Arayüz dili', (DIL_SECENEK.find(x => x.kod === p.dil) || {}).ad || p.dil));
     if (p.para) s.push(hiza('Para birimi', (PARA_SECENEK.find(x => x.kod === p.para) || {}).ad || p.para));
-    s.push(hiza('Tema', acik ? 'Açık' : 'Koyu'));
+    s.push(hiza('Tema', 'Açık — bütün projelerimiz açık tema'));
     s.push('');
     s.push('Bu bilgiler kararların dayanağı. Sahada telefonla kullanılan bir iş ile');
     s.push('masa başında çok kayıtla çalışılan bir iş aynı yerleşimi kaldırmaz.');
@@ -135,17 +131,12 @@ const PROMPT = {
 
     /* ---- Palet kuralları ---- */
     s.push('## Palet kuralları');
-    if (acik) {
-      s.push('- Açık tema. Arka plan yumuşak bir açık ton; yüzey ondan daha açık,');
-      s.push('  çoğu zaman beyaz. Çizgi zeminden bir tık koyu.');
-      s.push('- Metin üç tonda ve koyu: ana en koyu, soft orta, silik en açık.');
-      s.push('- Vurgu logodan gelsin ama açık zeminde **beyaz yazı taşıyacak kadar');
-      s.push('  koyu** olsun. Açık kalırsa düğme okunmaz.');
-    } else {
-      s.push('- Koyu tema. Arka plan en koyu, yüzey bir tık açık, çizgi ondan açık.');
-      s.push('- Metin üç tonda: ana en açık, soft orta, silik en koyu.');
-      s.push('- Vurgu logodan gelsin ve koyu zeminde parlasın.');
-    }
+    s.push('- **Açık tema.** Koyu tema üretme, sorma da — bütün projelerimiz açık.');
+    s.push('- Arka plan yumuşak bir açık ton; yüzey ondan daha açık, çoğu zaman');
+    s.push('  beyaz. Çizgi zeminden bir tık koyu.');
+    s.push('- Metin üç tonda ve koyu: ana en koyu, soft orta, silik en açık.');
+    s.push('- Vurgu logodan gelsin ama açık zeminde **beyaz yazı taşıyacak kadar');
+    s.push('  koyu** olsun. Açık kalırsa düğme okunmaz.');
     s.push('- Üç metin tonu da zeminde okunabilsin — en siliği bile **4.5:1** geçsin.');
     s.push('- Vurgu **az kullanılır**: ana buton, aktif menü, acil işareti. Başka yerde yok.');
     s.push('- Vurgu koyu = vurgunun üzerine gelince ve basılınca kullanılacak tonu.');
@@ -189,13 +180,6 @@ const PROMPT = {
     });
     s.push('');
 
-    /* ---- İkinci tema ---- */
-    s.push('## İkinci tema (koşullu)');
-    s.push('"Tema değiştirme" için **Sabit** dışında bir şey seçersen kullanıcı temayı');
-    s.push(`çevirebilecek demektir. O zaman ${acik ? 'koyu' : 'açık'} temanın renklerini de ver:`);
-    s.push('cevabın sonuna aşağıdaki 7 satırı ekle. Sabit seçersen bu satırları hiç yazma.');
-    s.push('');
-
     /* ---- Cevap biçimi ---- */
     s.push('## Cevap');
     s.push('Denetimleri yaptıktan sonra **yalnızca** aşağıdaki satırları döndür.');
@@ -205,17 +189,8 @@ const PROMPT = {
     s.push('> doldur. Buradaki hiçbir değeri olduğu gibi kopyalama.');
     s.push('');
     s.push('```');
-    PALET_ALAN.forEach(a => {
-      if (a.anahtar === 'tema') { s.push(`Tema: ${acik ? 'Açık' : 'Koyu'}`); return; }
-      s.push(`${a.ad}: ${a.renk ? '#______' : '___'}`);
-    });
+    PALET_ALAN.forEach(a => s.push(`${a.ad}: ${a.renk ? '#______' : '___'}`));
     TUM_TASARIM.forEach(a => s.push(`${a.ad}: ___`));
-    s.push('```');
-    s.push('');
-    s.push('Tema değiştirme Sabit değilse ek olarak:');
-    s.push('');
-    s.push('```');
-    PALET_ALAN_2.forEach(a => s.push(`${a.ad}: #______`));
     s.push('```');
 
     return s.join('\n');

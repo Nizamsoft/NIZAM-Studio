@@ -761,19 +761,11 @@ function tasarimSayfasi(p, d) {
   let govde, gez;
 
   if (adim.tur === 'tema') {
-    const acikTema = PROMPT.temaAcik(p);
-    const kilit = !!pl;
     govde = `
-      <div class="tema-secim ${kilit ? 'kilitli' : ''}">
-        <span class="secenek-serit">
-          ${['Koyu', 'Açık'].map(t => `
-            <button class="ss ${acikTema === (t === 'Açık') ? 'sec' : ''}"
-                    data-eylem="tema-sec" data-proje="${p.id}" data-deger="${esc(t)}" type="button"
-                    ${yon && !kilit ? '' : 'disabled'}>${t}</button>`).join('')}
-        </span>
-        <i>${kilit
-          ? 'Palet bu temaya göre üretildi. Değiştirmek için logoyu tekrar yükleyip yeni palet al.'
-          : 'Koyu tema göz yormaz, açık tema baskıya ve aydınlık ofise uygundur.'}</i>
+      <div class="baslangic-not">
+        <b>Açık tema</b>
+        <i>Bütün projelerimiz açık tema. Palet buna göre üretilecek —
+        arka plan yumuşak açık, yüzey beyaza yakın, metin koyu.</i>
       </div>`
       + (yon ? `
         <button class="tumSifir" type="button" data-eylem="tasarim-tum-sifirla" data-proje="${p.id}">
@@ -1074,7 +1066,7 @@ function orneklem(p) {
    beklenmeden yeni palet ile yeniden çiziliyor. */
 function onizlemeIc(p, pl) {
   pl = pl || {};
-  const acik = PROMPT.temaAcik({ palet: pl });
+
   const v    = orneklem(p);
   const tel  = ONIZLEME_CIHAZ === 'telefon';
   const ekr  = ONIZLEME_EKRAN;
@@ -1082,11 +1074,9 @@ function onizlemeIc(p, pl) {
      kapanır. İki örtü aynı anda açılırsa hangi kararı verdiğin kaybolur. */
   const odak = ONIZLEME_ADIM;
 
-  const varsayilan = acik
-    ? { bg: '#f4f2f0', yuzey: '#ffffff', cizgi: '#e2ddd9', metin: '#1d1a18',
-        metin2: '#5f5852', metin3: '#8d857e' }
-    : { bg: '#0f0e0d', yuzey: '#1f1d1b', cizgi: '#37322f', metin: '#eceae9',
-        metin2: '#b8b2ad', metin3: '#7c746e' };
+  /* Müşteri uygulamaları hep açık tema. */
+  const varsayilan = { bg: '#f4f2f0', yuzey: '#ffffff', cizgi: '#e2ddd9',
+                       metin: '#1d1a18', metin2: '#5f5852', metin3: '#8d857e' };
   const r = k => pl[k] || varsayilan[k];
   const vurgu = pl.vurgu || (PROJE_RENK[p.renk] || PROJE_RENK.metal)[0];
 
@@ -1411,8 +1401,6 @@ function onizlemeIc(p, pl) {
   const ayarListe = `<div class="o-kutu o-tbl">
     ${ayarSatir('Dil', 'Türkçe')}${ayarSatir('Para birimi', '₺ TRY')}
     ${ayarSatir('Bildirimler', 'Açık')}${ayarSatir('Yedekleme', 'Günlük')}</div>`;
-  const temaSatiri = bic.temadegis[0] === 'Sabit' ? ''
-    : ayarSatir('Tema', bic.temadegis[0] === 'Sistemi izler' ? 'Sistem' : 'Koyu');
   const destekSatiri = bic.destek[0] === 'Ayarlar içinde' ? ayarSatir('İstek ve öneri', '›') : '';
   const hesapSatiri = bic.kullanicimenu[0] === 'Ayarlar içinde' ? ayarSatir('Hesabım', 'Kerem G.') : '';
   const gc = bic.guncelleme[0];
@@ -1434,7 +1422,7 @@ function onizlemeIc(p, pl) {
 
   const ayarGrup = acikBolum + `
     <div class="o-grupBas">Genel</div>
-    <div class="o-kutu o-tbl">${ayarSatir('Dil', 'Türkçe')}${ayarSatir('Para birimi', '₺ TRY')}${temaSatiri}</div>
+    <div class="o-kutu o-tbl">${ayarSatir('Dil', 'Türkçe')}${ayarSatir('Para birimi', '₺ TRY')}</div>
     <div class="o-grupBas">Bildirim</div>
     <div class="o-kutu o-tbl">${ayarSatir('E-posta', 'Açık')}${destekSatiri}${hesapSatiri}</div>
     ${sistemBolumu}`;
@@ -1598,8 +1586,8 @@ function onizlemeIc(p, pl) {
     `--o-bg:${r('bg')}`, `--o-yuzey:${r('yuzey')}`, `--o-cizgi:${r('cizgi')}`,
     `--o-metin:${r('metin')}`, `--o-metin2:${r('metin2')}`, `--o-metin3:${r('metin3')}`,
     `--o-vurgu:${vurgu}`, `--o-vurgu-soft:${saydam(hexMi(vurgu) ? vurgu : '#888888', .14)}`,
-    `--o-vurgu-ink:${acik ? vurgu : acikla(hexMi(vurgu) ? vurgu : '#888888', .3)}`,
-    `--o-uzeri:${acik ? '#ffffff' : '#14120f'}`,
+    `--o-vurgu-ink:${vurgu}`,
+    `--o-uzeri:#ffffff`,
     `--o-r:${koseler[0]}`, `--o-rb:${koseler[1]}`,
     `--o-satir:${yog[0]}`, `--o-pad:${yog[1]}`,
     `--o-baslik:${pl.baslik ? `'${pl.baslik.replace(/'/g, '')}', ` : ''}var(--yazi-baslik)`,
@@ -2136,7 +2124,7 @@ function adSadelestir(x) {
 }
 
 function paletCozumle(metin) {
-  const tumu = PALET_ALAN.concat(PALET_ALAN_2, TUM_TASARIM.map(a => ({
+  const tumu = PALET_ALAN.concat(TUM_TASARIM.map(a => ({
     anahtar: a.anahtar, ad: a.ad, secim: a.secim.map(x => x.ad), coklu: a.coklu, bos: a.bos,
   })));
 
@@ -2236,11 +2224,6 @@ function paletDenetle(pl, gelen) {
     }
   });
 
-  /* 4 · İkinci tema gerekli mi */
-  const td = bicimSecim(pl, TUM_TASARIM.find(x => x.anahtar === 'temadegis'));
-  if ((!gelen || gelen.includes('temadegis')) && td[0] && td[0] !== 'Sabit' && !pl.bg2) {
-    u.push(`Tema değiştirme "${td[0]}" seçilmiş ama ikinci temanın renkleri gelmemiş.`);
-  }
   return u;
 }
 
@@ -4444,7 +4427,7 @@ function paletAktar(projeId) {
       on.innerHTML = `
         <span class="label">Okunanlar</span>
         <div class="card"><div class="row-list">
-          ${PALET_ALAN.concat(cozum.palet.bg2 ? PALET_ALAN_2 : [], TUM_TASARIM).map(a => {
+          ${PALET_ALAN.concat(TUM_TASARIM).map(a => {
             const d = cozum.palet[a.anahtar];
             return `<div class="row">
               <div class="row-main"><span class="row-title">${esc(a.ad)}</span></div>
@@ -4972,16 +4955,6 @@ async function eylemCalistir(el) {
   if (e === 'filtre') {
     GOREV_FILTRE = el.dataset.deger;
     return render();
-  }
-
-  if (e === 'tema-sec') {
-    const pr = DB.proje(el.dataset.proje);
-    if (!pr) return;
-    if (pr.palet) { toast('Palet bu temaya göre üretildi. Yeni palet al.', 'hata'); return; }
-    if (PROMPT.temaAcik(pr) === (el.dataset.deger === 'Açık')) return;
-    return isYap(
-      () => DB.paletKaydet(pr.id, Object.assign({}, pr.palet || {}, { tema: el.dataset.deger })),
-      el.dataset.deger + ' tema seçildi.');
   }
 
   if (e === 'tasarim-sec') {

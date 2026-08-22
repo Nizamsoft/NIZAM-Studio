@@ -1,5 +1,23 @@
 # Değişiklik Günlüğü
 
+## v0.31.0 — 22 Ağustos 2026
+**Müşteri uygulamaları hep açık tema**
+
+Koyu-açık seçimi kalktı. Bütün projelerimiz açık tema; sorulacak bir şey
+yok, karar zaten verilmiş.
+
+- **Tema adımı** "Başlangıç" oldu: açık temayı açıklıyor ve "Tüm tasarımı
+  sıfırla" düğmesini taşıyor.
+- **"Tema değiştirme" kararı kalktı** — tek tema varken anlamsızdı.
+- **İkinci tema bloğu kalktı.** Prompt artık ikinci palet istemiyor,
+  Studio da eksik diye uyarmıyor.
+- Palet örnekleri ve önizleme varsayılanları açık temaya çevrildi.
+- Prompt tek satırla açık: "Koyu tema üretme, sorma da."
+
+48 karar, 52 adım.
+
+Studio'nun kendi teması koyu kalıyor — o ayrı.
+
 ## v0.30.1 — 22 Ağustos 2026
 **Kodlama beş aşamaya bölündü**
 
