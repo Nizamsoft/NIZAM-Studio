@@ -814,7 +814,11 @@ function tasarimSayfasi(p, d) {
 
   return adimSeridi(p, no)
     + onizlemeSatiri(p, adim)
-    + `<div class="adim-bas"><b>${esc(adim.ad)}</b><i>${esc(adim.aciklama)}</i></div>`
+    + `<div class="adim-bas">
+        <div class="ab-yazi"><b>${esc(adim.ad)}</b><i>${esc(adim.aciklama)}</i></div>
+        <button class="ab-kararlar" type="button" data-eylem="kararlar" data-proje="${p.id}">
+          ${svg(ICON.katman, 14)} Kararlar</button>
+      </div>`
     + govde
     + adimGezinme(p, no);
 }
@@ -859,6 +863,55 @@ function paletSeridi(pl) {
       <div><b>Başlık</b><u style="font-family:var(--yazi-baslik);font-weight:700">${esc(pl.baslik || '—')}</u></div>
       <div><b>Metin</b><u>${esc(pl.govde || '—')}</u></div>
     </div>`;
+}
+
+/* Verdiğin bütün kararlar, adımdan çıkmadan. Satıra dokunursan o adıma gider. */
+function kararlarAc(projeId) {
+  const p = DB.proje(projeId);
+  if (!p) return;
+  const pl = p.palet || {};
+
+  const govde = TASARIM_ADIM.map((adim, i) => {
+    const alanlar = adimAlanlari(adim);
+    if (!alanlar.length) return '';
+    return `
+      <button class="kr-adim" type="button" data-kr="${i}">
+        <span class="kr-ust"><b>${esc(adim.ad)}</b><em>${i + 1}</em></span>
+        ${alanlar.map(a => `
+          <span class="kr-sat">${esc(a.ad)}<u>${esc(bicimSecim(pl, a).join(' + '))}</u></span>`).join('')}
+      </button>`;
+  }).join('');
+
+  const el = document.createElement('div');
+  el.id = 'kararlar';
+  el.className = 'onz krp';
+  el.innerHTML = `
+    <div class="onz-tepe">
+      <button class="sh-kapat" type="button" data-kr="kapat">${svg(ICON.kapat, 15)}</button>
+      <span class="onz-ad">Kararlar<u>${TUM_TASARIM.length} başlık · ${esc(p.firma)}</u></span>
+    </div>
+    <div class="kr-govde">${govde}</div>`;
+
+  document.body.appendChild(el);
+  requestAnimationFrame(() => el.classList.add('acik'));
+
+  el.addEventListener('click', ev => {
+    const b = ev.target.closest('[data-kr]');
+    if (!b) return;
+    const d = b.dataset.kr;
+    kararlarKapat();
+    if (d === 'kapat') return;
+    TASARIM_YER[p.id] = Number(d);
+    render();
+    $('#view').scrollTop = 0;
+  });
+}
+
+function kararlarKapat() {
+  const el = $('#kararlar');
+  if (!el) return;
+  el.classList.remove('acik');
+  setTimeout(() => el.remove(), 240);
 }
 
 /* Son adım: bütün kararlar tek listede. */
@@ -1022,7 +1075,7 @@ function rafiGorunureAl(el) {
   view.scrollTop += ust - alt;
 }
 
-function onizlemeKac(ev) { if (ev.key === 'Escape') onizlemeKapat(); }
+function onizlemeKac(ev) { if (ev.key === 'Escape') { onizlemeKapat(); kararlarKapat(); } }
 
 function onizlemeKapat() {
   const el = $('#onizleme');
@@ -4582,6 +4635,7 @@ async function eylemCalistir(el) {
     return;
   }
 
+  if (e === 'kararlar')    return kararlarAc(el.dataset.proje);
   if (e === 'onizleme-ac') return onizlemeAc(el.dataset.proje);
 
   if (e === 'yetkili-kopyala') {

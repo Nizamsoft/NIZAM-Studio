@@ -1,5 +1,15 @@
 # Değişiklik Günlüğü
 
+## v0.25.1 — 22 Ağustos 2026
+**Kararlar düğmesi**
+
+Adım başlığının yanına "Kararlar" geldi. Basınca verilmiş 24 kararın hepsi
+tek listede açılıyor — adımdan çıkmadan. "Ne yapmıştım ya" diye geri gidip
+bakmak gerekmiyor.
+
+Bir satıra dokunursan o adıma gidiyor. Geri gitmek yine serbest; sadece
+artık hatırlamak için gitmek gerekmiyor.
+
 ## v0.25.0 — 22 Ağustos 2026
 **Tasarım durağı akışa döndü: 15 adım**
 
