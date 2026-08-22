@@ -1,5 +1,17 @@
 # Değişiklik Günlüğü
 
+## v0.27.1 — 22 Ağustos 2026
+**Önizleme çizim düzeltmeleri**
+
+Dashboard grafiği tek bir çapraz şerit olarak çiziliyordu; artık gerçek bir
+çizgi grafik: alan dolgusu, ızgara çizgileri, taban çizgisi.
+
+Alt çubuktaki ortadaki düğme boş bir yuvarlaktı — artık artı işareti ve
+zemine oturan halkası var.
+
+"Dokulu" kart dokusu açık temada fazla belirgindi, inceltildi. Bildirim
+kartının gölgesi güçlendirildi; içeriğin üstünde durduğu belli oluyor.
+
 ## v0.27.0 — 22 Ağustos 2026
 **27 kararın hepsi önizlemede görünüyor**
 

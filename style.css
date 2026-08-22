@@ -2531,8 +2531,8 @@ a.durak:active { transform: scale(.99); transition: transform .1s var(--ease); }
 .ok-degrade .o-kutu { background: linear-gradient(180deg,
                         color-mix(in srgb, var(--o-yuzey) 80%, var(--o-metin)), var(--o-yuzey)); }
 .ok-doku    .o-kutu { background-image: repeating-linear-gradient(45deg,
-                        color-mix(in srgb, var(--o-metin) 4%, transparent) 0 1px,
-                        transparent 1px 3px); }
+                        color-mix(in srgb, var(--o-metin) 2.5%, transparent) 0 1px,
+                        transparent 1px 4px); }
 .o-kesik    .o-kutu { border-radius: 0;
   clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px); }
 
@@ -2686,9 +2686,16 @@ ekran planı.
          background: color-mix(in srgb, var(--o-yuzey) 60%, var(--o-bg)); }
 .o-nav span { flex: 1; text-align: center; padding: 7px 0; font-size: 9px; color: var(--o-metin3); }
 .o-nav span.a { color: var(--o-vurgu-ink); }
-.o-nav.arti em { position: absolute; left: 50%; top: -9px; width: 22px; height: 22px;
-                 margin-left: -11px; border-radius: 50%; background: var(--o-vurgu);
-                 box-shadow: 0 4px 10px -4px #000; }
+.o-nav.arti em { position: absolute; left: 50%; top: -11px; width: 24px; height: 24px;
+                 margin-left: -12px; border-radius: 50%; background: var(--o-vurgu);
+                 border: 3px solid var(--o-bg); box-sizing: content-box;
+                 box-shadow: 0 4px 10px -5px #000; }
+.o-nav.arti em::before, .o-nav.arti em::after {
+  content: ""; position: absolute; left: 50%; top: 50%; background: var(--o-uzeri);
+  transform: translate(-50%, -50%); border-radius: 1px;
+}
+.o-nav.arti em::before { width: 11px; height: 2px; }
+.o-nav.arti em::after  { width: 2px; height: 11px; }
 .o-nav.arti span:nth-child(2) { margin-right: 24px; }
 
 .o-yanMenu { flex: 0 0 62px; padding: 9px 8px; display: flex; flex-direction: column; gap: 4px;
@@ -2725,11 +2732,24 @@ ekran planı.
 
 .o-izgara { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .o-buyuk { padding: 10px; }
-.o-grafik { display: block; height: 74px; border-radius: 6px;
+.o-grafik { display: block; height: 74px; border-radius: 6px; position: relative;
   background:
-    linear-gradient(180deg, transparent 0 96%, var(--o-cizgi) 96%),
-    linear-gradient(72deg, transparent 46%, var(--o-vurgu) 46% 49%, transparent 49%),
-    color-mix(in srgb, var(--o-metin) 4%, transparent); }
+    repeating-linear-gradient(90deg, transparent 0 15px,
+      color-mix(in srgb, var(--o-metin) 5%, transparent) 15px 16px),
+    linear-gradient(180deg, transparent 0 97%, var(--o-cizgi) 97%),
+    color-mix(in srgb, var(--o-metin) 3%, transparent); }
+.o-grafik::before {
+  content: ""; position: absolute; inset: 8px 6px 3px;
+  background: var(--o-vurgu); opacity: .9;
+  clip-path: polygon(0 78%, 16% 56%, 32% 66%, 48% 30%, 64% 44%, 80% 14%, 100% 26%,
+                     100% 30%, 80% 18%, 64% 48%, 48% 34%, 32% 70%, 16% 60%, 0 82%);
+}
+.o-grafik::after {
+  content: ""; position: absolute; inset: 8px 6px 3px;
+  background: linear-gradient(180deg,
+    color-mix(in srgb, var(--o-vurgu) 22%, transparent), transparent);
+  clip-path: polygon(0 80%, 16% 58%, 32% 68%, 48% 32%, 64% 46%, 80% 16%, 100% 28%, 100% 100%, 0 100%);
+}
 
 .o-sayfano { display: flex; justify-content: center; gap: 6px; margin-top: 9px; }
 .o-sayfano span { width: 20px; height: 20px; border-radius: var(--o-rb); font-size: 9.5px;
@@ -2801,8 +2821,8 @@ ekran planı.
                  background: var(--o-vurgu-soft); }
 .o-toast { position: absolute; padding: 7px 12px; border-radius: var(--o-r);
            font-size: 9.5px; background: var(--o-yuzey); color: var(--o-metin);
-           box-shadow: 0 10px 18px -10px #000, inset 0 0 0 1px var(--o-cizgi); }
-.o-toast.alt { left: 12px; right: 12px; bottom: 10px; }
+           box-shadow: 0 14px 22px -10px rgba(0, 0, 0, .55), inset 0 0 0 1px var(--o-cizgi); }
+.o-toast.alt { left: 12px; right: 12px; bottom: 8px; padding: 6px 11px; font-size: 9px; }
 .o-toast.sag { right: 10px; top: 10px; }
 .o-geriSerit { display: flex; align-items: center; margin-top: 9px; padding: 8px 12px;
                 border-radius: var(--o-r); font-size: 9.5px; color: var(--o-metin);
