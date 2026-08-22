@@ -908,7 +908,7 @@ function tasarimSayfasi(p, d) {
                      : 'Prompt logosuz anlamsız — yüklemek için dokun.'}</i>
         </span>
       </div>`
-      + (pl ? paletSeridi(pl) : `
+      + (PALET_ALAN.some(a => a.renk && pl && pl[a.anahtar]) ? paletSeridi(pl) : `
       <div class="bos-kutu">${svg(ICON.katman, 18)}
         <span>Promptu kopyala, Claude'a logoyla birlikte ver; dönen cevabı yapıştır.
         ${TUM_TASARIM.length} tasarım kararı birden dolar. Tema açık, sorulmaz.</span></div>`)

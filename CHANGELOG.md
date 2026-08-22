@@ -1,5 +1,14 @@
 # Değişiklik Günlüğü
 
+## v0.33.2 — 22 Ağustos 2026
+**İki düzeltme**
+
+- **Logo satırı sola hizalandı.** `.mk-logo` eski büyük sürümden kalan
+  `margin-left: auto` yüzünden sağa itiliyor, satır ortada duruyordu.
+- **Palet kutusu görünmüyordu.** Projede tasarım kararı varsa palet nesnesi
+  dolu sayılıyor, rengi olmasa da "palet var" gibi davranıyordu; ne şerit ne
+  de açıklama kutusu çıkıyordu. Artık renk var mı diye bakılıyor.
+
 ## v0.33.1 — 22 Ağustos 2026
 **Terminoloji kalktı, kayıt numarası standart oldu**
 

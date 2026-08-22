@@ -2470,7 +2470,8 @@ a.durak:active { transform: scale(.99); transition: transform .1s var(--ease); }
 
 /* Tema seçimi — kilitliyken neden kilitli olduğu yazar. */
 .logo-bolum.ince { padding: 11px 13px; gap: 11px; margin-bottom: 10px; }
-.logo-bolum.ince .mk-logo { width: 40px; height: 40px; border-radius: 12px; }
+.logo-bolum.ince .mk-logo { width: 40px; height: 40px; border-radius: 12px;
+                            margin-left: 0; }
 
 .baslangic-not { padding: 13px 15px; border-radius: 13px;
                  border: 1px solid var(--line-2); background: var(--yuva); }
