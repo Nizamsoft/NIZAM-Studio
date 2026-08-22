@@ -2245,6 +2245,16 @@ a.durak:active { transform: scale(.99); transition: transform .1s var(--ease); }
   transition: border-color .16s var(--ease), background .16s var(--ease);
 }
 .bsc:disabled { cursor: default; opacity: .75; }
+
+/* Sıfırla — seçenek değil eylem, o yüzden kesik çerçeve ve tik rozeti yok. */
+.bsc.sifir {
+  width: 72px; background: transparent;
+  border-style: dashed; border-color: var(--line-2);
+}
+.bsc.sifir .bon { background: transparent; }
+.bsc.sifir:disabled { opacity: .34; }
+.on-sifir { flex: 1; display: grid; place-items: center; color: var(--ink-faint); }
+.bsc.sifir:not(:disabled) .on-sifir { color: var(--ink-soft); }
 .bsc-ad {
   display: block; margin-top: 8px; text-align: center;
   font-size: 11px; color: var(--ink-soft);

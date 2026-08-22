@@ -1,5 +1,17 @@
 # Değişiklik Günlüğü
 
+## v0.23.1 — 22 Ağustos 2026
+**Her rafın başında Sıfırla**
+
+Yedi başlığın her birinin ilk kartı artık **Sıfırla**. O başlığı varsayılan
+hâline döndürüyor — Kart'ı Yükseltilmiş'e, Köşe'yi Yuvarlak'a, Tablo'yu
+Zebra'ya. Çoklu başlıklarda ne kadar seçim yapmış olursan ol tek kartta
+toparlanıyor.
+
+Seçenek değil eylem olduğu için görünümü de farklı: kesik çerçeve, tik
+rozeti yok. Zaten varsayılandaysan sönük duruyor ve tıklanmıyor — boşa
+dokunma olmuyor.
+
 ## v0.23.0 — 22 Ağustos 2026
 **Önizleme düğme oldu, tema kilitlendi**
 

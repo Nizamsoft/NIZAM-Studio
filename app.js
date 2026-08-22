@@ -86,6 +86,10 @@ const ICON = {
     d: '<path d="M20 7l-8-4-8 4 8 4z"></path>',
     c: '<path d="M20 7l-8-4-8 4 8 4z"></path><path d="M4 12l8 4 8-4M4 17l8 4 8-4"></path>',
   },
+  geriAl: {
+    d: '',
+    c: '<path d="M3.5 9.5A9 9 0 1 1 3 13.2"></path><path d="M3 4.5v5h5"></path>',
+  },
   goz: {
     d: '<path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6-10-6-10-6z"></path>',
     c: '<path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6-10-6-10-6z"></path><circle cx="12" cy="12" r="3"></circle>',
@@ -1080,7 +1084,14 @@ function tasarimSecimi(p) {
     return bolumBas(a.ad)
       + `<div class="raf-alt">${esc(a.alt)}${
            a.coklu ? ' <b class="coklu-not">Birkaçı birden seçilebilir</b>' : ''}</div>
-         <div class="raf" data-coklu="${a.coklu ? 1 : 0}">${a.secim.map(x => `
+         <div class="raf" data-coklu="${a.coklu ? 1 : 0}">
+           <button class="bsc sifir" type="button"
+                   data-eylem="tasarim-sifirla" data-proje="${p.id}" data-alan="${a.anahtar}"
+                   ${AUTH.yonetici && !bicimAyni(secili, a) ? '' : 'disabled'}
+                   title="${esc(a.ad)} başlığını ${esc(a.varsayilan)} hâline döndürür">
+             <span class="bon"><span class="on-sifir">${svg(ICON.geriAl, 20)}</span></span>
+             <span class="bsc-ad">Sıfırla</span>
+           </button>${a.secim.map(x => `
            <button class="bsc ${secili.includes(x.ad) ? 'on' : ''}" type="button"
                    data-eylem="tasarim-sec" data-proje="${p.id}"
                    data-alan="${a.anahtar}" data-deger="${esc(x.ad)}"
@@ -1089,6 +1100,11 @@ function tasarimSecimi(p) {
              <span class="bsc-ad">${esc(x.ad)}</span>
            </button>`).join('')}</div>`;
   }).join('');
+}
+
+/* Seçim varsayılanla aynı mı? Aynıysa sıfırlanacak bir şey yok. */
+function bicimAyni(secili, alan) {
+  return secili.length === 1 && secili[0] === alan.varsayilan;
 }
 
 /* Tek bir seçeneğin küçük çizimi. Yalnız görsel — veri taşımaz. */
@@ -4153,8 +4169,12 @@ async function eylemCalistir(el) {
 
     /* Beklemeden işaretle: raf anında tepki versin. Yeniden çizmiyoruz,
        yoksa sayfa tepeye fırlar. Yazma tutmazsa eski işaretler geri gelir. */
-    const isaretle = liste => $$('.bsc', raf).forEach(b =>
-      b.classList.toggle('on', liste.includes(b.dataset.deger)));
+    const isaretle = liste => {
+      $$('.bsc', raf).forEach(b => {
+        if (b.classList.contains('sifir')) { b.disabled = !AUTH.yonetici || bicimAyni(liste, al); return; }
+        b.classList.toggle('on', liste.includes(b.dataset.deger));
+      });
+    };
     isaretle(Array.isArray(yeni) ? yeni : [yeni]);
     const gecici = Object.assign({}, pr.palet || {}, { [al.anahtar]: yeni });
     onizlemeTazele(pr, gecici);
@@ -4163,6 +4183,32 @@ async function eylemCalistir(el) {
       await DB.paletKaydet(pr.id, Object.assign({}, pr.palet || {}, { [al.anahtar]: yeni }));
     } catch (err) {
       isaretle(eski);
+      onizlemeTazele(pr, pr.palet);
+      toast(err.message, 'hata');
+    }
+    return;
+  }
+
+  if (e === 'tasarim-sifirla') {
+    const pr = DB.proje(el.dataset.proje);
+    const al = TASARIM_ALAN.find(a => a.anahtar === el.dataset.alan);
+    if (!pr || !al) return;
+
+    const raf  = el.parentElement;
+    const eski = bicimSecim(pr.palet, al);
+    if (bicimAyni(eski, al)) return;
+
+    const deger = al.coklu ? [al.varsayilan] : al.varsayilan;
+    $$('.bsc', raf).forEach(b => b.classList.toggle('on', b.dataset.deger === al.varsayilan));
+    el.disabled = true;
+    onizlemeTazele(pr, Object.assign({}, pr.palet || {}, { [al.anahtar]: deger }));
+
+    try {
+      await DB.paletKaydet(pr.id, Object.assign({}, pr.palet || {}, { [al.anahtar]: deger }));
+      toast(al.ad + ' sıfırlandı.');
+    } catch (err) {
+      $$('.bsc', raf).forEach(b => b.classList.toggle('on', eski.includes(b.dataset.deger)));
+      el.disabled = false;
       onizlemeTazele(pr, pr.palet);
       toast(err.message, 'hata');
     }
