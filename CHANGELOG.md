@@ -1,5 +1,14 @@
 # Değişiklik Günlüğü
 
+## v0.34.1 — 22 Ağustos 2026
+**Yapıştırma penceresinde 48 "okunamadı" satırı kalktı**
+
+Prompt artık arayüz kararlarını istemiyor ama pencere hâlâ 48 kararı
+listeleyip hepsine "okunamadı" yazıyordu — hata gibi görünüyordu.
+
+Artık yalnız istenen 15 palet satırı listeleniyor. Cevapta arayüz kararı da
+varsa o da görünür; yoksa hiç yazılmaz.
+
 ## v0.34.0 — 22 Ağustos 2026
 **Prompt yalnız paleti üretiyor, kararlar bizde**
 

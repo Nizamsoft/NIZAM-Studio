@@ -4604,7 +4604,7 @@ function paletAktar(projeId) {
       on.innerHTML = `
         <span class="label">Okunanlar</span>
         <div class="card"><div class="row-list">
-          ${PALET_ALAN.concat(TUM_TASARIM).map(a => {
+          ${PALET_ALAN.concat(TUM_TASARIM.filter(a => cozum.palet[a.anahtar] !== undefined)).map(a => {
             const d = cozum.palet[a.anahtar];
             return `<div class="row">
               <div class="row-main"><span class="row-title">${esc(a.ad)}</span></div>
