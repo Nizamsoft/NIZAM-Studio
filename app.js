@@ -769,6 +769,7 @@ function tasarimSayfasi(p, d) {
         <div><b>Başlık</b><u style="font-family:var(--yazi-baslik);font-weight:700">${esc(pl.baslik || '—')}</u></div>
         <div><b>Metin</b><u>${esc(pl.govde || '—')}</u></div>
       </div>` : '')
+    + onizlemeKutusu(p)
     + tasarimSecimi(p)
     + bolumBas('Ton') + `
       <div class="satirlar">
@@ -789,6 +790,226 @@ function tasarimSayfasi(p, d) {
         ${svg(ICON.ice, 15)} Paleti yapıştır</button>
       ${pl ? `<button class="sayfa-dug" data-eylem="palet-duzenle" data-proje="${p.id}" type="button">
         ${svg(ICON.kalem, 15)} Elle düzenle</button>` : ''}` : '');
+}
+
+/* ---------- Önizleme: seçimlerin bir arada nasıl durduğu ----------
+   Sahte bir müşteri uygulaması. Projenin kendi paleti, kendi logosu ve
+   yedi biçim kararıyla çiziliyor. Veri uydurma değil, örnek — boş kutulara
+   bakıp hayal etmek zor oluyor. */
+
+let ONIZLEME_CIHAZ = 'web';
+
+/* Sektöre göre örnek veri. Eşleşme yoksa nötr bir kayıt listesi. */
+function orneklem(p) {
+  const sk = (p.sektor || '').toLocaleLowerCase('tr');
+  const bul = par => par.some(x => sk.includes(x));
+
+  if (bul(['restoran', 'kafe', 'cafe', 'lokanta', 'yeme'])) return {
+    stat: [['Bugün', '42'], ['Ciro', '18.400']], baslik: 'Son siparişler',
+    sutun: ['Masa', 'Tutar'], dugme: ['Sipariş ekle', 'Rapor'],
+    satir: [['Masa 4 · Ali Demir', '12:40 · 6 ürün', '1.240,00'],
+            ['Masa 7 · Paket', '12:31 · 2 ürün', '380,50'],
+            ['Masa 2 · Selin K.', '12:18 · 9 ürün', '2.190,00'],
+            ['Masa 9 · Paket', '12:02 · 3 ürün', '640,00']] };
+
+  if (bul(['inşaat', 'insaat', 'yapı', 'yapi', 'müteahhit'])) return {
+    stat: [['Aktif şantiye', '7'], ['Hakediş', '1,2M']], baslik: 'Son hakedişler',
+    sutun: ['Şantiye', 'Tutar'], dugme: ['Hakediş ekle', 'Rapor'],
+    satir: [['Bahçelievler · No 12', '18 Ağu · onaylandı', '412.000'],
+            ['Yenimahalle · No 8', '14 Ağu · beklemede', '186.500'],
+            ['Ostim Depo · No 3', '09 Ağu · onaylandı', '298.750'],
+            ['Sincan Blok B · No 5', '02 Ağu · onaylandı', '74.200']] };
+
+  if (bul(['market', 'perakende', 'mağaza', 'magaza', 'ticaret', 'toptan'])) return {
+    stat: [['Bugün satış', '318'], ['Ciro', '54.900']], baslik: 'Son satışlar',
+    sutun: ['Fiş', 'Tutar'], dugme: ['Satış ekle', 'Rapor'],
+    satir: [['F-20418 · Kasa 2', '13:04 · 11 kalem', '842,90'],
+            ['F-20417 · Kasa 1', '12:58 · 3 kalem', '176,40'],
+            ['F-20416 · Kasa 3', '12:51 · 24 kalem', '1.930,00'],
+            ['F-20415 · Kasa 1', '12:44 · 6 kalem', '388,25']] };
+
+  if (bul(['otel', 'konaklama', 'pansiyon', 'turizm'])) return {
+    stat: [['Dolu oda', '86'], ['Doluluk', '%74']], baslik: 'Bugünkü girişler',
+    sutun: ['Oda', 'Tutar'], dugme: ['Rezervasyon', 'Rapor'],
+    satir: [['304 · Ali Demir', '3 gece · 2 kişi', '9.600,00'],
+            ['211 · Selin Kaya', '1 gece · 1 kişi', '2.400,00'],
+            ['518 · M. Yılmaz', '5 gece · 2 kişi', '16.000,00'],
+            ['102 · E. Şahin', '2 gece · 3 kişi', '7.200,00']] };
+
+  if (bul(['sağlık', 'saglik', 'klinik', 'hastane', 'diş', 'dis', 'doktor'])) return {
+    stat: [['Bugün randevu', '31'], ['Bekleyen', '4']], baslik: 'Bugünkü randevular',
+    sutun: ['Hasta', 'Saat'], dugme: ['Randevu ekle', 'Rapor'],
+    satir: [['Ali Demir', 'Kontrol · Dr. Kaya', '09:30'],
+            ['Selin Kaya', 'İlk muayene · Dr. Ak', '10:15'],
+            ['Mehmet Yılmaz', 'Kontrol · Dr. Kaya', '11:00'],
+            ['Elif Şahin', 'Dolgu · Dr. Ak', '11:45']] };
+
+  return {
+    stat: [['Bu ay', '128'], ['Bekleyen', '9']], baslik: 'Son kayıtlar',
+    sutun: ['Kayıt', 'Tutar'], dugme: ['Yeni kayıt', 'Rapor'],
+    satir: [['K-1042 · Ali Demir', '18 Ağu · onaylandı', '12.400,00'],
+            ['K-1041 · Selin Kaya', '17 Ağu · beklemede', '3.805,00'],
+            ['K-1040 · M. Yılmaz', '16 Ağu · onaylandı', '21.900,00'],
+            ['K-1039 · Elif Şahin', '15 Ağu · onaylandı', '6.400,00']] };
+}
+
+/* Önizlemenin dış kabuğu — başlık, cihaz geçişi ve çizim alanı. */
+function onizlemeKutusu(p) {
+  return bolumBas('Önizleme') + `
+    <div class="onk">
+      <div class="onk-bas">
+        <b>Nasıl görünecek</b>
+        <span class="cihaz">
+          ${['web', 'telefon'].map(c => `
+            <button class="${ONIZLEME_CIHAZ === c ? 'on' : ''}" type="button"
+                    data-eylem="onizleme-cihaz" data-deger="${c}" data-proje="${p.id}"
+            >${c === 'web' ? 'Web' : 'Telefon'}</button>`).join('')}
+        </span>
+      </div>
+      <div class="onk-goz" id="onizleme-goz">${onizlemeIc(p, p.palet)}</div>
+    </div>`;
+}
+
+/* Asıl çizim. `pl` dışarıdan geliyor: bir seçeneğe dokunulduğunda kayıt
+   beklenmeden yeni palet ile yeniden çiziliyor. */
+function onizlemeIc(p, pl) {
+  pl = pl || {};
+  const acik = PROMPT.temaAcik({ palet: pl });
+  const v    = orneklem(p);
+  const tel  = ONIZLEME_CIHAZ === 'telefon';
+
+  const varsayilan = acik
+    ? { bg: '#f4f2f0', yuzey: '#ffffff', cizgi: '#e2ddd9', metin: '#1d1a18',
+        metin2: '#5f5852', metin3: '#8d857e' }
+    : { bg: '#0f0e0d', yuzey: '#1f1d1b', cizgi: '#37322f', metin: '#eceae9',
+        metin2: '#b8b2ad', metin3: '#7c746e' };
+  const r = k => pl[k] || varsayilan[k];
+  const vurgu = pl.vurgu || (PROJE_RENK[p.renk] || PROJE_RENK.metal)[0];
+
+  /* Biçim kararları */
+  const bic = {};
+  TASARIM_ALAN.forEach(a => { bic[a.anahtar] = bicimSecim(pl, a); });
+
+  const koseler = {
+    'Keskin': ['0', '0'], 'Hafif': ['6px', '6px'], 'Yuvarlak': ['14px', '12px'],
+    'Hap': ['18px', '999px'], 'Kesik': ['0', '0'],
+    'Yaprak': ['16px 0 16px 0', '14px 0 14px 0'], 'Kaş': ['14px 14px 0 0', '12px 12px 0 0'],
+  }[bic.kose[0]] || ['14px', '12px'];
+
+  const yog = {
+    'Sıkışık': ['34px', '10px'], 'Normal': ['44px', '14px'], 'Ferah': ['56px', '20px'],
+    'Karma': ['34px', '18px'], 'Nefesli': ['36px', '14px'], 'Kart dizisi': ['44px', '12px'],
+  }[bic.yogunluk[0]] || ['44px', '14px'];
+
+  const sinif = ['o-app']
+    .concat(bic.kart.map(x => 'ok-' + ({ 'Düz': 'duz', 'Yükseltilmiş': 'yuksek', 'Çizgili': 'cizgi',
+      'Buzlu cam': 'cam', 'Şerit vurgu': 'serit', 'Kağıt': 'kagit', 'Oyulmuş': 'oyuk',
+      'Işıklı kenar': 'isik', 'Degrade': 'degrade', 'Dokulu': 'doku' }[x])))
+    .concat(bic.tablo.map(x => 'ot-' + ({ 'Çizgisiz': 'yok', 'Zebra': 'zebra', 'Yatay çizgi': 'yatay',
+      'Tam ızgara': 'izgara', 'Kartlı satır': 'kartli', 'Gruplu': 'gruplu',
+      'Rakam hizalı': 'rakam', 'Vurgulu sütun': 'vurgulu' }[x])))
+    .concat(bic.kose[0] === 'Kesik' ? ['o-kesik'] : [])
+    .concat(bic.yogunluk[0] === 'Nefesli' ? ['o-nefesli'] : [])
+    .concat(tel ? ['o-tel', 'om-' + ({ 'Karta dönüş': 'kart', 'Yana kaydır': 'kaydir',
+      'Sütun gizle': 'gizle', 'Aç-kapa satır': 'ackapa', 'İki satır': 'iki',
+      'Tam ekran': 'tam' }[bic.tablomobil[0]])] : [])
+    .join(' ');
+
+  /* Düğme: ilk dolu-tipi ana butonu belirler, "Yazı" ikinciyi, "İkonlu" simge ekler. */
+  const dg    = bic.dugme;
+  const ana   = ['Dolu', 'Gölgeli', 'Degrade', 'Çizgili', 'Yumuşak'].find(x => dg.includes(x)) || 'Dolu';
+  const anaS  = { 'Dolu': 'od-dolu', 'Gölgeli': 'od-golge', 'Degrade': 'od-degrade',
+                  'Çizgili': 'od-cizgi', 'Yumuşak': 'od-yumusak' }[ana];
+  const ikinci = dg.includes('Yazı') ? 'od-yazi' : 'od-ikincil';
+  const tik = dg.includes('İkonlu')
+    ? '<svg viewBox="0 0 24 24" class="od-ik"><path d="M12 5v14M5 12h14"/></svg>' : '';
+
+  /* Simge: biçim ilk seçenekten, "Zeminli" üstüne biner. */
+  const smAd = ['Çizgi', 'Dolu', 'İki katman', 'Kalın çizgi', 'Elle çizim']
+    .find(x => bic.simge.includes(x)) || 'Çizgi';
+  const smS = 'os-' + { 'Çizgi': 'cizgi', 'Dolu': 'dolu', 'İki katman': 'katman',
+                        'Kalın çizgi': 'kalin', 'Elle çizim': 'elle' }[smAd]
+            + (bic.simge.includes('Zeminli') ? ' os-zemin' : '');
+  const ikonlar = (smAd === 'Dolu'
+    ? ['<path d="M3 10.5 12 4l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/>',
+       '<path fill-rule="evenodd" d="M11 3.6a7.4 7.4 0 1 0 4.3 13.4l3.4 3.4a1.5 1.5 0 0 0 2.1-2.1l-3.4-3.4A7.4 7.4 0 0 0 11 3.6zm0 3a4.4 4.4 0 1 1 0 8.8 4.4 4.4 0 0 1 0-8.8z"/>',
+       '<circle cx="12" cy="8" r="4"/><path d="M4 20.6c.8-4.5 4-6.4 8-6.4s7.2 1.9 8 6.4z"/>']
+    : ['<path d="M3 10.5 12 4l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/>',
+       '<circle cx="11" cy="11" r="6.4"/><path d="M16 16l4.5 4.5"/>',
+       '<circle cx="12" cy="8" r="3.5"/><path d="M4.5 20c1-4 4-5.6 7.5-5.6S18.5 16 19.5 20"/>'])
+    .slice(0, tel ? 2 : 3)
+    .map(d => `<svg viewBox="0 0 24 24">${d}</svg>`).join('');
+
+  const adres = DB.logoAdres[p.id];
+  const logo = adres
+    ? `<span class="o-logo dolu" data-logo="${esc(adres)}"></span>`
+    : `<span class="o-logo" style="background:linear-gradient(160deg,${esc(vurgu)},${
+        esc(saydam(vurgu, .55))})">${esc(basHarf(p.firma))}</span>`;
+
+  /* Tablo gövdesi — telefonda "Karta dönüş" ve "İki satır" ayrı çiziliyor. */
+  const kartaDonus = tel && ['Karta dönüş', 'Tam ekran'].includes(bic.tablomobil[0]);
+  const govde = kartaDonus
+    ? `<div class="o-kartlar">${v.satir.slice(0, 3).map(x => `
+        <div class="o-kutu o-kk">
+          <div class="o-kk-ust"><b>${esc(x[0])}</b><u>${esc(x[2])}</u></div>
+          <i>${esc(x[1])}</i>
+        </div>`).join('')}</div>`
+    : `<div class="o-kutu o-tbl">
+        <div class="o-r o-h"><span>${esc(v.sutun[0])}</span><u>${esc(v.sutun[1])}</u></div>
+        ${v.satir.map(x => `<div class="o-r"><span>${esc(x[0])}${
+          tel && bic.tablomobil[0] === 'İki satır' ? `<i>${esc(x[1])}</i>` : ''
+        }</span><u>${esc(x[2])}</u></div>`).join('')}
+      </div>`;
+
+  const stil = [
+    `--o-bg:${r('bg')}`, `--o-yuzey:${r('yuzey')}`, `--o-cizgi:${r('cizgi')}`,
+    `--o-metin:${r('metin')}`, `--o-metin2:${r('metin2')}`, `--o-metin3:${r('metin3')}`,
+    `--o-vurgu:${vurgu}`, `--o-vurgu-soft:${saydam(hexMi(vurgu) ? vurgu : '#888888', .14)}`,
+    `--o-vurgu-ink:${acik ? vurgu : acikla(hexMi(vurgu) ? vurgu : '#888888', .3)}`,
+    `--o-uzeri:${acik ? '#ffffff' : '#14120f'}`,
+    `--o-r:${koseler[0]}`, `--o-rb:${koseler[1]}`,
+    `--o-satir:${yog[0]}`, `--o-pad:${yog[1]}`,
+    `--o-baslik:${pl.baslik ? `'${pl.baslik.replace(/'/g, '')}', ` : ''}var(--yazi-baslik)`,
+    `--o-govde:${pl.govde ? `'${pl.govde.replace(/'/g, '')}', ` : ''}var(--yazi-govde)`,
+  ].join(';');
+
+  return `<div class="${sinif}${tel ? '' : ''}" style="${esc(stil)}">
+    <div class="o-ust">${logo}<b>${esc(p.firma)}</b><span class="o-ik ${smS}">${ikonlar}</span></div>
+    <div class="o-gov">
+      <div class="o-ikili">${v.stat.map(x => `
+        <div class="o-kutu o-stat"><i>${esc(x[0])}</i><b>${esc(x[1])}</b></div>`).join('')}</div>
+      <div class="o-tblbas">${esc(v.baslik)}</div>
+      ${govde}
+      <div class="o-dugmeler">
+        <span class="o-dg ${anaS}">${tik}${esc(v.dugme[0])}</span>
+        <span class="o-dg ${ikinci}">${esc(v.dugme[1])}</span>
+      </div>
+    </div>
+  </div>
+  ${onizlemeNotu(bic, tel)}`;
+}
+
+/* Durağan görüntüde anlaşılmayan davranış kararları için tek satır ipucu. */
+function onizlemeNotu(bic, tel) {
+  const not = [];
+  if (!tel && bic.tablomobil[0]) not.push(`Telefonda: ${bic.tablomobil[0].toLocaleLowerCase('tr')}`);
+  if (tel && bic.tablomobil[0] === 'Aç-kapa satır') not.push('Satıra dokununca kalan sütunlar altında açılır');
+  if (tel && bic.tablomobil[0] === 'Tam ekran') not.push('Kayıttan kayda yatay kaydırarak geçilir');
+  if (tel && bic.tablomobil[0] === 'Yana kaydır') not.push('Tablo yatay kaydırılır, ilk sütun yapışık kalır');
+  if (bic.yogunluk[0] === 'Karma') not.push('Formlar ve detay sayfaları bundan daha ferah olur');
+  if (bic.tablo.includes('Gruplu')) not.push('Satırlar tarih ya da kategoriye göre öbeklenir');
+  if (!not.length) return '';
+  return `<div class="onk-not">${svg(ICON.info, 13)}<span>${esc(not.join(' · '))}</span></div>`;
+}
+
+function hexMi(x) { return /^#[0-9a-f]{6}$/i.test(String(x || '')); }
+
+/* Seçim değişince: kayıt beklemeden yeniden çiz. */
+function onizlemeTazele(p, pl) {
+  const goz = $('#onizleme-goz');
+  if (!goz) return;
+  goz.innerHTML = onizlemeIc(p, pl);
+  logolariGoster();
 }
 
 /* ---------- Arayüz biçimi: görselli seçim rafları ----------
@@ -3877,13 +4098,25 @@ async function eylemCalistir(el) {
     const isaretle = liste => $$('.bsc', raf).forEach(b =>
       b.classList.toggle('on', liste.includes(b.dataset.deger)));
     isaretle(Array.isArray(yeni) ? yeni : [yeni]);
+    const gecici = Object.assign({}, pr.palet || {}, { [al.anahtar]: yeni });
+    onizlemeTazele(pr, gecici);
 
     try {
       await DB.paletKaydet(pr.id, Object.assign({}, pr.palet || {}, { [al.anahtar]: yeni }));
     } catch (err) {
       isaretle(eski);
+      onizlemeTazele(pr, pr.palet);
       toast(err.message, 'hata');
     }
+    return;
+  }
+
+  if (e === 'onizleme-cihaz') {
+    if (ONIZLEME_CIHAZ === el.dataset.deger) return;
+    ONIZLEME_CIHAZ = el.dataset.deger;
+    $$('.onk-bas .cihaz button').forEach(b => b.classList.toggle('on', b === el));
+    const pr = DB.proje(el.dataset.proje);
+    if (pr) onizlemeTazele(pr, pr.palet);
     return;
   }
 

@@ -1,5 +1,29 @@
 # Değişiklik Günlüğü
 
+## v0.22.0 — 22 Ağustos 2026
+**Seçimlerin nasıl duracağını uygulamanın içinden görüyorsun**
+
+Tasarımı belirleme durağına, seçim raflarının hemen üstüne bir **önizleme**
+girdi: sahte bir müşteri uygulaması. Projenin kendi paleti, kendi logosu ve
+yedi biçim kararıyla çiziliyor. Aşağıda bir seçeneğe dokunduğun anda —
+kaydı beklemeden — yeniden çiziliyor.
+
+**Web / Telefon geçişi** var. "Karta dönüş", "İki satır", "Yana kaydır"
+gibi kararlar ancak telefon kipinde görünür hâle geliyor.
+
+**Örnek veriler sektöre göre.** Restoranda "Masa 4 · Ali Demir", inşaatta
+"Bahçelievler · Hakediş No 12", otelde oda, klinikte randevu. Boş kutulara
+bakıp hayal etmek zor oluyordu.
+
+Durağan görüntüde anlaşılmayan davranış kararları için altta tek satır
+ipucu çıkıyor: "Satıra dokununca kalan sütunlar altında açılır" gibi.
+
+Önizlemenin içine Studio'nun kendi renkleri sızmıyor — gösterdiğimiz şey
+müşterinin uygulaması, arka plan bilerek dama deseni.
+
+Ayrıca: tablo ızgara çizgisi satır boyunca uzuyor, kartlı satır kipinde
+başlık zemini kalkıyor.
+
 ## v0.21.0 — 22 Ağustos 2026
 **Biçimler karışabiliyor, tarz sayısı 26'dan 50'ye çıktı**
 
