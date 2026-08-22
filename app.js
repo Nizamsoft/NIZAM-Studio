@@ -792,16 +792,18 @@ function tasarimSayfasi(p, d) {
 }
 
 /* ---------- Arayüz biçimi: görselli seçim rafları ----------
-   Her seçenek gerçek bir küçük çizim. Yazıyı okuyup hayal etmek gerekmez. */
+   Her seçenek gerçek bir küçük çizim. Yazıyı okuyup hayal etmek gerekmez.
+   Çoklu alanlarda birkaçı birden seçilebilir; en az biri hep açık kalır. */
 
 function tasarimSecimi(p) {
   const pl = p.palet || {};
   return TASARIM_ALAN.map(a => {
-    const secili = pl[a.anahtar] || a.varsayilan;
+    const secili = bicimSecim(pl, a);
     return bolumBas(a.ad)
-      + `<div class="raf-alt">${esc(a.alt)}</div>
-         <div class="raf">${a.secim.map(x => `
-           <button class="bsc ${x.ad === secili ? 'on' : ''}" type="button"
+      + `<div class="raf-alt">${esc(a.alt)}${
+           a.coklu ? ' <b class="coklu-not">Birkaçı birden seçilebilir</b>' : ''}</div>
+         <div class="raf" data-coklu="${a.coklu ? 1 : 0}">${a.secim.map(x => `
+           <button class="bsc ${secili.includes(x.ad) ? 'on' : ''}" type="button"
                    data-eylem="tasarim-sec" data-proje="${p.id}"
                    data-alan="${a.anahtar}" data-deger="${esc(x.ad)}"
                    ${AUTH.yonetici ? '' : 'disabled'} title="${esc(x.tarif)}">
@@ -816,49 +818,101 @@ function tasarimOnizleme(alan, ad) {
   const satirlar = '<i class="ln b o"></i><i class="ln u"></i><i class="ln k"></i>';
 
   if (alan === 'kart') {
-    const sinif = { 'Düz': 'duz', 'Yükseltilmiş': 'yuksek', 'Çizgili': 'cizgi',
-                    'Buzlu cam': 'cam', 'Şerit vurgu': 'serit', 'Kağıt': 'kagit' }[ad];
+    const sinif = {
+      'Düz': 'duz', 'Yükseltilmiş': 'yuksek', 'Çizgili': 'cizgi', 'Buzlu cam': 'cam',
+      'Şerit vurgu': 'serit', 'Kağıt': 'kagit', 'Oyulmuş': 'oyuk', 'Işıklı kenar': 'isik',
+      'Degrade': 'degrade', 'Dokulu': 'doku',
+    }[ad];
     return `<span class="on-kart k-${sinif}">${satirlar}</span>`;
   }
 
   if (alan === 'kose') {
-    const r = { 'Keskin': '0', 'Hafif': '5px', 'Yuvarlak': '12px', 'Hap': '999px' }[ad];
-    return `<span class="on-kose" style="border-radius:${r}"></span>`;
+    const b = {
+      'Keskin':   'border-radius:0',
+      'Hafif':    'border-radius:5px',
+      'Yuvarlak': 'border-radius:12px',
+      'Hap':      'border-radius:999px',
+      'Kesik':    'clip-path:polygon(13px 0,100% 0,100% calc(100% - 13px),calc(100% - 13px) 100%,0 100%,0 13px)',
+      'Yaprak':   'border-radius:16px 0 16px 0',
+      'Kaş':      'border-radius:13px 13px 0 0',
+    }[ad];
+    return `<span class="on-kose" style="${b}"></span>`;
   }
 
   if (alan === 'yogunluk') {
+    if (ad === 'Karma') {
+      return `<span class="on-yog karma">
+        <em style="gap:3px"><i></i><i></i><i></i></em>
+        <em style="gap:9px"><i></i><i></i></em></span>`;
+    }
+    if (ad === 'Nefesli') {
+      return `<span class="on-yog" style="gap:13px">
+        <em style="gap:3px"><i></i><i></i></em>
+        <em style="gap:3px"><i></i><i></i></em></span>`;
+    }
+    if (ad === 'Kart dizisi') return `<span class="on-kd">${'<i><u></u></i>'.repeat(3)}</span>`;
     const [say, ara] = { 'Sıkışık': [5, 3], 'Normal': [4, 7], 'Ferah': [3, 12] }[ad];
     return `<span class="on-yog" style="gap:${ara}px">${'<i></i>'.repeat(say)}</span>`;
   }
 
   if (alan === 'tablo') {
+    const h3 = '<i></i><i></i><i></i>';
+    if (ad === 'Kartlı satır') return `<span class="on-tb kartli">${
+      `<u class="r">${h3}</u>`.repeat(4)}</span>`;
+    if (ad === 'Gruplu') return `<span class="on-tb gruplu">
+      <u class="g"><i></i></u><u class="r">${h3}</u><u class="r">${h3}</u>
+      <u class="g"><i></i></u><u class="r">${h3}</u></span>`;
+    if (ad === 'Rakam hizalı') {
+      const r = '<i></i><i></i><i class="rakam"></i>';
+      return `<span class="on-tb t-yatay"><u class="h">${r}</u>${
+        `<u class="r">${r}</u>`.repeat(4)}</span>`;
+    }
+    if (ad === 'Vurgulu sütun') {
+      const r = '<i class="ilk"></i><i></i><i></i>';
+      return `<span class="on-tb t-yatay vurgulu"><u class="h">${r}</u>${
+        `<u class="r">${r}</u>`.repeat(4)}</span>`;
+    }
     const sinif = { 'Çizgisiz': '', 'Zebra': 't-zebra',
                     'Yatay çizgi': 't-yatay', 'Tam ızgara': 't-izgara' }[ad];
-    const hucre = '<i></i><i></i><i></i>';
-    return `<span class="on-tb ${sinif}"><u class="h">${hucre}</u>${
-      `<u class="r">${hucre}</u>`.repeat(4)}</span>`;
+    return `<span class="on-tb ${sinif}"><u class="h">${h3}</u>${
+      `<u class="r">${h3}</u>`.repeat(4)}</span>`;
   }
 
   if (alan === 'tablomobil') {
     if (ad === 'Karta dönüş') return `<span class="on-mk">${'<i></i>'.repeat(4)}</span>`;
     if (ad === 'Yana kaydır') {
-      const hucre = '<i></i><i></i><i></i><i></i>';
-      return `<span class="on-tb t-yatay tasan"><u class="h">${hucre}</u>${
-        `<u class="r">${hucre}</u>`.repeat(4)}</span>`;
+      const h4 = '<i></i><i></i><i></i><i></i>';
+      return `<span class="on-tb t-yatay tasan"><u class="h">${h4}</u>${
+        `<u class="r">${h4}</u>`.repeat(4)}</span>`;
     }
-    const hucre = '<i></i><i class="dar"></i>';
-    return `<span class="on-tb t-yatay"><u class="h">${hucre}</u>${
-      `<u class="r">${hucre}</u>`.repeat(4)}</span>`;
+    if (ad === 'Sütun gizle') {
+      const r = '<i></i><i class="dar"></i>';
+      return `<span class="on-tb t-yatay"><u class="h">${r}</u>${
+        `<u class="r">${r}</u>`.repeat(4)}</span>`;
+    }
+    if (ad === 'Aç-kapa satır') {
+      return `<span class="on-ak"><i></i><i></i><u></u><i></i></span>`;
+    }
+    if (ad === 'İki satır') {
+      return `<span class="on-is">${'<em><i></i><b></b></em>'.repeat(3)}</span>`;
+    }
+    return `<span class="on-te"><i></i><u></u><i></i></span>`;
   }
 
   if (alan === 'dugme') {
-    const sinif = { 'Dolu': 'd-dolu', 'Çizgili': 'd-cizgi', 'Yumuşak': 'd-yumusak' }[ad];
+    if (ad === 'İkonlu') {
+      return `<span class="on-dg"><em class="d-dolu ikonlu">
+        <svg viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg>Kaydet</em></span>`;
+    }
+    const sinif = { 'Dolu': 'd-dolu', 'Çizgili': 'd-cizgi', 'Yumuşak': 'd-yumusak',
+                    'Gölgeli': 'd-golge', 'Degrade': 'd-degrade', 'Yazı': 'd-yazi' }[ad];
     return `<span class="on-dg"><em class="${sinif}">Kaydet</em></span>`;
   }
 
   /* simge — üç örnek: ev, kişi, arama. Dolu set kendi kapalı biçimlerini
      kullanır; kontur biçimini doldurmak çirkin sonuç veriyor. */
-  const sinif = { 'Çizgi': 'cizgi', 'Dolu': 'dolu', 'İki katman': 'katman' }[ad];
+  const sinif = { 'Çizgi': 'cizgi', 'Dolu': 'dolu', 'İki katman': 'katman',
+                  'Kalın çizgi': 'kalin', 'Zeminli': 'zemin', 'Elle çizim': 'elle' }[ad];
   const kontur = [
     '<path d="M3 10.5 12 4l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/>',
     '<circle cx="12" cy="8" r="3.5"/><path d="M4.5 20c1-4 4-5.6 7.5-5.6S18.5 16 19.5 20"/>',
@@ -869,8 +923,11 @@ function tasarimOnizleme(alan, ad) {
     '<circle cx="12" cy="8" r="4"/><path d="M4 20.6c.8-4.5 4-6.4 8-6.4s7.2 1.9 8 6.4z"/>',
     '<path fill-rule="evenodd" d="M11 3.6a7.4 7.4 0 1 0 4.3 13.4l3.4 3.4a1.5 1.5 0 0 0 2.1-2.1l-3.4-3.4A7.4 7.4 0 0 0 11 3.6zm0 3a4.4 4.4 0 1 1 0 8.8 4.4 4.4 0 0 1 0-8.8z"/>',
   ];
-  const yol = (sinif === 'dolu' ? dolgulu : kontur)
-    .map(d => `<svg viewBox="0 0 24 24">${d}</svg>`).join('');
+  /* Elle çizim: aynı yollar, hafifçe eğik. Titreklik oradan geliyor. */
+  const egim = ['rotate(-6 12 12)', 'rotate(4 12 12)', 'rotate(-3 12 12)'];
+  const yol = (sinif === 'dolu' ? dolgulu : kontur).map((d, i) =>
+    `<svg viewBox="0 0 24 24">${sinif === 'elle' ? `<g transform="${egim[i]}">${d}</g>` : d}</svg>`
+  ).join('');
   return `<span class="on-sm sm-${sinif}">${yol}</span>`;
 }
 
@@ -1035,7 +1092,7 @@ function projeYolu(p) {
 function paletCozumle(metin) {
   /* Palet alanları + arayüz biçimi alanları tek listede okunur. */
   const tumu = PALET_ALAN.concat(TASARIM_ALAN.map(a => ({
-    anahtar: a.anahtar, ad: a.ad, secim: a.secim.map(x => x.ad), bicim: true,
+    anahtar: a.anahtar, ad: a.ad, secim: a.secim.map(x => x.ad), coklu: a.coklu,
   })));
 
   const anahtar = {};
@@ -1055,14 +1112,22 @@ function paletCozumle(metin) {
     const alan = tumu.find(a => a.anahtar === k);
 
     if (alan.secim) {
-      const uy = alan.secim.find(x => x.toLocaleLowerCase('tr') === deger.toLocaleLowerCase('tr'));
-      if (!uy) {
-        hatalar.push(alan.secim.length > 3
-          ? `"${alan.ad}" listedeki adlardan biri olmalı, "${deger}" değil.`
-          : `"${alan.ad}" ${alan.secim.join(' ya da ')} olmalı.`);
-        return;
+      /* Çoklu alanlarda "Buzlu cam + Şerit vurgu" gelebilir. */
+      const parca = alan.coklu ? deger.split(/\s*[+,]\s*/) : [deger];
+      const okunan = [];
+      for (const par of parca) {
+        const uy = alan.secim.find(x => x.toLocaleLowerCase('tr') === par.toLocaleLowerCase('tr'));
+        if (!uy) {
+          hatalar.push(alan.secim.length > 3
+            ? `"${alan.ad}" listedeki adlardan biri olmalı, "${par}" değil.`
+            : `"${alan.ad}" ${alan.secim.join(' ya da ')} olmalı.`);
+          continue;
+        }
+        if (!okunan.includes(uy)) okunan.push(uy);
       }
-      deger = uy;
+      if (!okunan.length) return;
+      palet[k] = alan.coklu ? okunan : okunan[0];
+      return;
     } else if (alan.renk) {
       const renk = deger.match(/#[0-9a-fA-F]{6}\b/);
       if (!renk) { hatalar.push(`"${alan.ad}" bir renk kodu değil: ${deger}`); return; }
@@ -3257,7 +3322,7 @@ function paletAktar(projeId) {
               <div class="row-main"><span class="row-title">${esc(a.ad)}</span></div>
               <span class="row-val ${d ? '' : 'uyari-yazi'}">
                 ${d && a.renk ? `<span class="palet-kutu ufak" style="background:${esc(d)}"></span>` : ''}
-                ${d ? esc(d) : 'okunamadı'}
+                ${d ? esc(Array.isArray(d) ? d.join(' + ') : d) : 'okunamadı'}
               </span>
             </div>`;
           }).join('')}
@@ -3789,18 +3854,34 @@ async function eylemCalistir(el) {
     const pr = DB.proje(el.dataset.proje);
     const al = TASARIM_ALAN.find(a => a.anahtar === el.dataset.alan);
     if (!pr || !al) return;
+
     const deger = el.dataset.deger;
-    if ((pr.palet && pr.palet[al.anahtar] || al.varsayilan) === deger) return;
-    /* Beklemeden işaretle: raf anında tepki versin. Yeniden çizmiyoruz,
-       yoksa sayfa tepeye fırlar. Yazma tutmazsa eski işaret geri gelir. */
     const raf   = el.parentElement;
-    const eskiB = $('.bsc.on', raf);
-    $$('.bsc', raf).forEach(b => b.classList.toggle('on', b === el));
+    const eski  = bicimSecim(pr.palet, al);
+
+    let yeni;
+    if (!al.coklu) {
+      if (eski[0] === deger) return;
+      yeni = deger;
+    } else if (eski.includes(deger)) {
+      /* Son seçeneği söktürmüyoruz: boş bir başlık AI'ı tahmine iter. */
+      if (eski.length === 1) { toast('En az bir seçenek açık kalmalı.'); return; }
+      yeni = eski.filter(x => x !== deger);
+    } else {
+      /* Sıra listedeki sıra olsun — "Şerit + Cam" ile "Cam + Şerit" aynı şey. */
+      yeni = al.secim.filter(x => eski.includes(x.ad) || x.ad === deger).map(x => x.ad);
+    }
+
+    /* Beklemeden işaretle: raf anında tepki versin. Yeniden çizmiyoruz,
+       yoksa sayfa tepeye fırlar. Yazma tutmazsa eski işaretler geri gelir. */
+    const isaretle = liste => $$('.bsc', raf).forEach(b =>
+      b.classList.toggle('on', liste.includes(b.dataset.deger)));
+    isaretle(Array.isArray(yeni) ? yeni : [yeni]);
+
     try {
-      await DB.paletKaydet(pr.id, Object.assign({}, pr.palet || {}, { [al.anahtar]: deger }));
+      await DB.paletKaydet(pr.id, Object.assign({}, pr.palet || {}, { [al.anahtar]: yeni }));
     } catch (err) {
-      el.classList.remove('on');
-      if (eskiB) eskiB.classList.add('on');
+      isaretle(eski);
       toast(err.message, 'hata');
     }
     return;

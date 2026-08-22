@@ -37,9 +37,13 @@ const PROMPT = {
     s.push('Bu kararlar alınmış. Kendi biçimini uydurma, aşağıdakileri uygula.');
     s.push('');
     TASARIM_ALAN.forEach(a => {
-      const ad = pl[a.anahtar] || a.varsayilan;
-      const sc = a.secim.find(x => x.ad === ad) || a.secim[0];
-      s.push(`- **${a.ad}: ${sc.ad}** — ${sc.tarif}`);
+      const adlar = bicimSecim(pl, a);
+      s.push(`- **${a.ad}: ${adlar.join(' + ')}**`);
+      adlar.forEach(ad => {
+        const sc = a.secim.find(x => x.ad === ad);
+        if (sc) s.push(`  - ${sc.ad}: ${sc.tarif}`);
+      });
+      if (adlar.length > 1) s.push('  - Bu seçenekler birleşerek uygulanır, biri diğerini iptal etmez.');
     });
     return s.join('\n');
   },
@@ -85,13 +89,19 @@ const PROMPT = {
     s.push('');
     s.push('');
     s.push('## Arayüz biçimi');
-    s.push('Renklerin yanında arayüzün biçimine de karar ver. Her başlık için');
-    s.push('**yalnızca listedeki adlardan birini** seç — yeni ad uydurma.');
+    s.push('Renklerin yanında arayüzün biçimine de karar ver. **Yalnızca listedeki');
+    s.push('adları** kullan — yeni ad uydurma.');
     s.push('Seçimini markanın karakterine göre yap: kurumsal ve yoğun bir iş');
     s.push('yazılımı ile sıcak, müşteriye dönük bir uygulama aynı biçimi almaz.');
     s.push('');
+    s.push('Başlıkların bir kısmında **birden fazla seçebilirsin**; artı ile ayır');
+    s.push('(örnek: `Buzlu cam + Şerit vurgu`). Seçtiklerin birleşerek uygulanır,');
+    s.push('o yüzden yalnızca gerçekten bir arada duran şeyleri birleştir —');
+    s.push('birbirini iptal edenleri değil. Gerekmiyorsa tek seçenek bırak.');
+    s.push('Diğer başlıklarda tek bir ad ver.');
+    s.push('');
     TASARIM_ALAN.forEach(a => {
-      s.push(`**${a.ad}** — ${a.alt}`);
+      s.push(`**${a.ad}** — ${a.alt}${a.coklu ? ' _(birden fazla seçilebilir)_' : ' _(tek seçim)_'}`);
       a.secim.forEach(x => s.push(`- ${x.ad}: ${x.tarif}`));
       s.push('');
     });

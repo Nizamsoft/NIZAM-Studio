@@ -2223,6 +2223,11 @@ a.durak:active { transform: scale(.99); transition: transform .1s var(--ease); }
    ========================================================================== */
 
 .raf-alt { font-size: 11.5px; color: var(--ink-dim); line-height: 1.5; margin: -5px 0 10px; }
+.coklu-not {
+  display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 999px;
+  background: var(--yuva); border: 1px solid var(--line-3);
+  font-size: 9.5px; font-weight: 600; letter-spacing: .3px; color: var(--ink-faint);
+}
 
 .raf {
   display: flex; gap: 10px; overflow-x: auto; overflow-y: hidden;
@@ -2276,14 +2281,31 @@ a.durak:active { transform: scale(.99); transition: transform .1s var(--ease); }
             backdrop-filter: blur(6px); }
 .k-serit  { background: var(--surface); border-left: 3px solid var(--p1, var(--metal-2)); }
 .k-kagit  { background: var(--surface); border-radius: 3px; box-shadow: 3px 3px 0 var(--yuva); }
+.k-oyuk   { background: var(--yuva); box-shadow: 0 2px 5px rgba(0, 0, 0, .55) inset,
+                                                 0 -1px 0 rgba(255, 255, 255, .07) inset; }
+.k-isik   { background: var(--surface); border: 1px solid var(--p1, var(--metal-2));
+            box-shadow: 0 0 12px -3px var(--p1, var(--metal-2)); }
+.k-degrade{ background: linear-gradient(180deg, var(--surface-3), var(--yuva)); }
+.k-doku   { background: var(--surface);
+            background-image: repeating-linear-gradient(45deg,
+              rgba(255, 255, 255, .045) 0 1px, transparent 1px 3px); }
 .bsc:has(.k-cam) .bon { background: linear-gradient(135deg, var(--surface-3), var(--yuva-2)); }
 
 /* Köşe -------------------------------------------------------------------- */
-.on-kose { flex: 1; background: var(--surface); border: 1px solid var(--line-parlak); }
+.on-kose { flex: 1; background: var(--surface-3);
+            box-shadow: inset 0 0 0 1px var(--line-parlak); }
 
 /* Yoğunluk ---------------------------------------------------------------- */
 .on-yog { flex: 1; display: flex; flex-direction: column; justify-content: center; }
 .on-yog i { display: block; height: 8px; border-radius: 3px; background: var(--surface); }
+.on-yog em { display: flex; flex-direction: column; }
+.on-yog.karma em:last-child i { height: 11px; }
+
+.on-kd { flex: 1; display: flex; flex-direction: column; gap: 6px; justify-content: center; }
+.on-kd i { display: block; height: 14px; border-radius: 6px; background: var(--surface);
+           padding: 4px 5px; }
+.on-kd u { display: block; height: 4px; width: 60%; border-radius: 2px;
+           background: var(--line-parlak); }
 
 /* Tablo ------------------------------------------------------------------- */
 .bsc:has(.on-tb) .bon { padding: 0; }
@@ -2299,6 +2321,34 @@ a.durak:active { transform: scale(.99); transition: transform .1s var(--ease); }
 .t-yatay .r, .t-izgara .r { border-top: 1px solid var(--line-parlak); }
 .t-izgara i + i { box-shadow: -5px 0 0 -4px var(--line-parlak); }
 
+.on-tb.kartli { gap: 5px; padding: 8px 7px; justify-content: center; }
+.on-tb.kartli .r { height: 11px; border-radius: 4px; background: var(--surface); }
+
+.on-tb.gruplu .g { height: 10px; padding: 0 5px; }
+.on-tb.gruplu .g i { flex: 0 0 26px; height: 3px; background: var(--metal-1); margin: 0; }
+.on-tb.gruplu .r { height: 10px; }
+
+.on-tb i.rakam { flex: 0 0 20px; background: var(--metal-2); opacity: .55; }
+.on-tb .h i.rakam { opacity: 1; }
+.on-tb.vurgulu i.ilk { background: var(--metal-2); opacity: .8;
+                       box-shadow: 6px 0 0 -5px var(--line-parlak); }
+
+/* Tablo · telefonda — aç-kapa, iki satır, tam ekran */
+.on-ak { flex: 1; display: flex; flex-direction: column; gap: 4px; justify-content: center; }
+.on-ak i { display: block; height: 8px; border-radius: 3px; background: var(--surface); }
+.on-ak u { display: block; height: 16px; border-radius: 4px; background: var(--surface-3);
+           border-left: 2px solid var(--metal-1); }
+
+.on-is { flex: 1; display: flex; flex-direction: column; gap: 7px; justify-content: center; }
+.on-is em { display: flex; flex-direction: column; gap: 3px; }
+.on-is i { display: block; height: 5px; width: 70%; border-radius: 2px; background: var(--metal-1); }
+.on-is b { display: block; height: 3px; width: 45%; border-radius: 2px; background: var(--line-2); }
+
+.on-te { flex: 1; display: flex; align-items: center; gap: 4px; }
+.on-te i { flex: 0 0 6px; align-self: stretch; margin: 6px 0; border-radius: 3px;
+           background: var(--yuva); }
+.on-te u { flex: 1; align-self: stretch; border-radius: 6px; background: var(--surface); }
+
 /* Tablo · telefonda — karta dönüş */
 .on-mk { flex: 1; display: flex; flex-direction: column; gap: 4px; justify-content: center; }
 .on-mk i { display: block; height: 11px; border-radius: 5px; background: var(--surface); }
@@ -2312,6 +2362,14 @@ a.durak:active { transform: scale(.99); transition: transform .1s var(--ease); }
 .d-dolu    { background: var(--red); color: #fff; border-radius: 8px; }
 .d-cizgi   { border: 1px solid var(--red); color: var(--red-ink); border-radius: 8px; }
 .d-yumusak { background: var(--red-soft); color: var(--red-ink-soft); border-radius: 999px; }
+.d-golge   { background: var(--red); color: #fff; border-radius: 8px;
+             box-shadow: 0 6px 12px -4px var(--red); }
+.d-degrade { background: linear-gradient(135deg, var(--red-parlak), var(--red-koyu));
+             color: #fff; border-radius: 8px; }
+.d-yazi    { color: var(--red-ink); padding: 5px 6px; }
+.d-dolu.ikonlu { display: inline-flex; align-items: center; gap: 6px; }
+.d-dolu.ikonlu svg { width: 10px; height: 10px; fill: none; stroke: #fff;
+                     stroke-width: 3.4; stroke-linecap: round; stroke-linejoin: round; }
 
 /* Simge ------------------------------------------------------------------- */
 .on-sm { flex: 1; display: flex; align-items: center; justify-content: center; gap: 9px; }
@@ -2321,6 +2379,17 @@ a.durak:active { transform: scale(.99); transition: transform .1s var(--ease); }
 .sm-dolu   svg { fill: var(--ink-soft); stroke: none; }
 .sm-katman svg { fill: rgba(214, 208, 205, .26); stroke: var(--metal-2); stroke-width: 1.5;
                  stroke-linecap: round; stroke-linejoin: round; }
+.sm-kalin  svg { fill: none; stroke: var(--metal-2); stroke-width: 2.6;
+                 stroke-linecap: round; stroke-linejoin: round; }
+.sm-elle   svg { fill: none; stroke: var(--metal-2); stroke-width: 1.9;
+                 stroke-linecap: round; stroke-linejoin: round;
+                 stroke-dasharray: 26 1.4; }
+.sm-elle   svg:nth-child(2) { width: 21px; height: 21px; }
+.sm-zemin      { gap: 5px; }
+.sm-zemin svg  { fill: none; stroke: var(--metal-2); stroke-width: 1.7;
+                 stroke-linecap: round; stroke-linejoin: round;
+                 width: 22px; height: 22px; padding: 3px; border-radius: 50%;
+                 background: color-mix(in srgb, var(--p1, var(--metal-2)) 16%, transparent); }
 
 
 @media (hover: hover) {

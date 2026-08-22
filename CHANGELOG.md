@@ -1,5 +1,34 @@
 # Değişiklik Günlüğü
 
+## v0.21.0 — 22 Ağustos 2026
+**Biçimler karışabiliyor, tarz sayısı 26'dan 50'ye çıktı**
+
+**Dört başlıkta birden fazla seçenek işaretlenebiliyor** — Kart, Tablo,
+Düğme ve Simge. Seçtiklerin birbirini iptal etmiyor, birleşiyor:
+"Buzlu cam + Şerit vurgu" camlı bir kart demek, kenarında vurgu şeridiyle.
+Başlığın yanında küçük bir rozet hangilerinin karışabildiğini söylüyor.
+En az bir seçenek hep açık kalıyor; boş bir başlık AI'ı tahmine iter.
+
+Köşe, Yoğunluk ve Tablo·telefonda tek seçim kaldı — bir kutunun tek bir
+köşe yarıçapı, bir satırın tek bir yüksekliği olur.
+
+**Yirmi dört yeni tarz.** Hepsi birbirinden ayrı, aynı şeyin ince ayarı değil:
+
+- **Kart** +4 — Oyulmuş (zemine gömülü) · Işıklı kenar · Degrade · Dokulu
+- **Köşe** +3 — Kesik (pahlı) · Yaprak (çapraz) · Kaş (üstü yuvarlak)
+- **Yoğunluk** +3 — Karma · Nefesli · Kart dizisi
+- **Tablo** +4 — Kartlı satır · Gruplu · Rakam hizalı · Vurgulu sütun
+- **Tablo telefonda** +3 — Aç-kapa satır · İki satır · Tam ekran
+- **Düğme** +4 — Gölgeli · Degrade · Yazı · İkonlu
+- **Simge** +3 — Kalın çizgi · Zeminli · Elle çizim
+
+Marka promptu hangi başlıkta karışım yapılabileceğini söylüyor ve cevabı
+artı işaretiyle istiyor. Yapıştırma penceresi `Kart: Buzlu cam + Şerit
+vurgu` ve `Tablo: Zebra, Rakam hizalı` biçimlerinin ikisini de okuyor.
+
+Görev promptunda karışımlar tek satırda toplanıp altına her parçanın
+tarifi yazılıyor.
+
 ## v0.20.0 — 22 Ağustos 2026
 **Tasarım artık renkten ibaret değil**
 
