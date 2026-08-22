@@ -818,6 +818,12 @@ function tasarimSayfasi(p, d) {
    bakıp hayal etmek zor oluyor. */
 
 let ONIZLEME_CIHAZ = 'web';
+let ONIZLEME_EKRAN = 'panel';
+
+const ONIZLEME_EKRANLAR = [
+  ['panel', 'Panel'], ['liste', 'Liste'], ['form', 'Form'],
+  ['ayarlar', 'Ayarlar'], ['bos', 'Boş'], ['yukleme', 'Yükleme'],
+];
 
 /* Sektöre göre örnek veri. Eşleşme yoksa nötr bir kayıt listesi. */
 function orneklem(p) {
@@ -903,6 +909,9 @@ function onizlemeAc(projeId) {
                   data-onz="cihaz" data-deger="${c}">${c === 'web' ? 'Web' : 'Telefon'}</button>`).join('')}
       </span>
     </div>
+    <div class="onz-ekran">${ONIZLEME_EKRANLAR.map(([k, ad]) => `
+      <button class="${ONIZLEME_EKRAN === k ? 'on' : ''}" type="button"
+              data-onz="ekran" data-deger="${k}">${ad}</button>`).join('')}</div>
     <div class="onz-goz" id="onizleme-goz">${onizlemeIc(p, p.palet)}</div>`;
 
   document.body.appendChild(el);
@@ -917,6 +926,14 @@ function onizlemeAc(projeId) {
     const b = ev.target.closest('[data-onz]');
     if (!b) return;
     if (b.dataset.onz === 'kapat') return onizlemeKapat();
+
+    if (b.dataset.onz === 'ekran') {
+      if (ONIZLEME_EKRAN === b.dataset.deger) return;
+      ONIZLEME_EKRAN = b.dataset.deger;
+      $$('.onz-ekran button', el).forEach(x => x.classList.toggle('on', x === b));
+      return onizlemeTazele(p, p.palet);
+    }
+
     if (ONIZLEME_CIHAZ === b.dataset.deger) return;
     ONIZLEME_CIHAZ = b.dataset.deger;
     $$('.cihaz button', el).forEach(x => x.classList.toggle('on', x === b));
@@ -966,6 +983,7 @@ function onizlemeIc(p, pl) {
   const acik = PROMPT.temaAcik({ palet: pl });
   const v    = orneklem(p);
   const tel  = ONIZLEME_CIHAZ === 'telefon';
+  const ekr  = ONIZLEME_EKRAN;
 
   const varsayilan = acik
     ? { bg: '#f4f2f0', yuzey: '#ffffff', cizgi: '#e2ddd9', metin: '#1d1a18',
@@ -975,9 +993,8 @@ function onizlemeIc(p, pl) {
   const r = k => pl[k] || varsayilan[k];
   const vurgu = pl.vurgu || (PROJE_RENK[p.renk] || PROJE_RENK.metal)[0];
 
-  /* Biçim kararları */
   const bic = {};
-  TASARIM_ALAN.forEach(a => { bic[a.anahtar] = bicimSecim(pl, a); });
+  TUM_TASARIM.forEach(a => { bic[a.anahtar] = bicimSecim(pl, a); });
 
   const koseler = {
     'Keskin': ['0', '0'], 'Hafif': ['6px', '6px'], 'Yuvarlak': ['14px', '12px'],
@@ -999,19 +1016,22 @@ function onizlemeIc(p, pl) {
       'Rakam hizalı': 'rakam', 'Vurgulu sütun': 'vurgulu' }[x])))
     .concat(bic.kose[0] === 'Kesik' ? ['o-kesik'] : [])
     .concat(bic.yogunluk[0] === 'Nefesli' ? ['o-nefesli'] : [])
+    .concat('oe-' + ekr)
     .concat(tel ? ['o-tel', 'om-' + ({ 'Karta dönüş': 'kart', 'Yana kaydır': 'kaydir',
       'Sütun gizle': 'gizle', 'Aç-kapa satır': 'ackapa', 'İki satır': 'iki',
-      'Tam ekran': 'tam' }[bic.tablomobil[0]])] : [])
+      'Tam ekran': 'tam' }[bic.tablomobil[0]])] : ['o-genis-' +
+      ({ 'Tam genişlik': 'tam', 'Ortada sınırlı': 'orta', 'Sol hizalı': 'sol' }[bic.genislik[0]])])
     .join(' ');
 
   /* Düğme: ilk dolu-tipi ana butonu belirler, "Yazı" ikinciyi, "İkonlu" simge ekler. */
-  const dg    = bic.dugme;
-  const ana   = ['Dolu', 'Gölgeli', 'Degrade', 'Çizgili', 'Yumuşak'].find(x => dg.includes(x)) || 'Dolu';
-  const anaS  = { 'Dolu': 'od-dolu', 'Gölgeli': 'od-golge', 'Degrade': 'od-degrade',
-                  'Çizgili': 'od-cizgi', 'Yumuşak': 'od-yumusak' }[ana];
+  const dg   = bic.dugme;
+  const ana  = ['Dolu', 'Gölgeli', 'Degrade', 'Çizgili', 'Yumuşak'].find(x => dg.includes(x)) || 'Dolu';
+  const anaS = { 'Dolu': 'od-dolu', 'Gölgeli': 'od-golge', 'Degrade': 'od-degrade',
+                 'Çizgili': 'od-cizgi', 'Yumuşak': 'od-yumusak' }[ana];
   const ikinci = dg.includes('Yazı') ? 'od-yazi' : 'od-ikincil';
   const tik = dg.includes('İkonlu')
     ? '<svg viewBox="0 0 24 24" class="od-ik"><path d="M12 5v14M5 12h14"/></svg>' : '';
+  const anaDugme = (yazi) => `<span class="o-dg ${anaS}">${tik}${esc(yazi)}</span>`;
 
   /* Simge: biçim ilk seçenekten, "Zeminli" üstüne biner. */
   const smAd = ['Çizgi', 'Dolu', 'İki katman', 'Kalın çizgi', 'Elle çizim']
@@ -1019,15 +1039,17 @@ function onizlemeIc(p, pl) {
   const smS = 'os-' + { 'Çizgi': 'cizgi', 'Dolu': 'dolu', 'İki katman': 'katman',
                         'Kalın çizgi': 'kalin', 'Elle çizim': 'elle' }[smAd]
             + (bic.simge.includes('Zeminli') ? ' os-zemin' : '');
-  const ikonlar = (smAd === 'Dolu'
-    ? ['<path d="M3 10.5 12 4l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/>',
-       '<path fill-rule="evenodd" d="M11 3.6a7.4 7.4 0 1 0 4.3 13.4l3.4 3.4a1.5 1.5 0 0 0 2.1-2.1l-3.4-3.4A7.4 7.4 0 0 0 11 3.6zm0 3a4.4 4.4 0 1 1 0 8.8 4.4 4.4 0 0 1 0-8.8z"/>',
-       '<circle cx="12" cy="8" r="4"/><path d="M4 20.6c.8-4.5 4-6.4 8-6.4s7.2 1.9 8 6.4z"/>']
-    : ['<path d="M3 10.5 12 4l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/>',
-       '<circle cx="11" cy="11" r="6.4"/><path d="M16 16l4.5 4.5"/>',
-       '<circle cx="12" cy="8" r="3.5"/><path d="M4.5 20c1-4 4-5.6 7.5-5.6S18.5 16 19.5 20"/>'])
-    .slice(0, tel ? 2 : 3)
-    .map(d => `<svg viewBox="0 0 24 24">${d}</svg>`).join('');
+  const YOL = {
+    ev:  ['<path d="M3 10.5 12 4l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/>',
+          '<path d="M3 10.5 12 4l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/>'],
+    ara: ['<circle cx="11" cy="11" r="6.4"/><path d="M16 16l4.5 4.5"/>',
+          '<path fill-rule="evenodd" d="M11 3.6a7.4 7.4 0 1 0 4.3 13.4l3.4 3.4a1.5 1.5 0 0 0 2.1-2.1l-3.4-3.4A7.4 7.4 0 0 0 11 3.6zm0 3a4.4 4.4 0 1 1 0 8.8 4.4 4.4 0 0 1 0-8.8z"/>'],
+    kisi:['<circle cx="12" cy="8" r="3.5"/><path d="M4.5 20c1-4 4-5.6 7.5-5.6S18.5 16 19.5 20"/>',
+          '<circle cx="12" cy="8" r="4"/><path d="M4 20.6c.8-4.5 4-6.4 8-6.4s7.2 1.9 8 6.4z"/>'],
+    ayar:['<circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/>',
+          '<circle cx="12" cy="12" r="4"/><path d="M12 2h0M12 22h0"/>'],
+  };
+  const ik = ad => `<svg viewBox="0 0 24 24">${YOL[ad][smAd === 'Dolu' ? 1 : 0]}</svg>`;
 
   const adres = DB.logoAdres[p.id];
   const logo = adres
@@ -1035,20 +1057,173 @@ function onizlemeIc(p, pl) {
     : `<span class="o-logo" style="background:linear-gradient(160deg,${esc(vurgu)},${
         esc(saydam(vurgu, .55))})">${esc(basHarf(p.firma))}</span>`;
 
-  /* Tablo gövdesi — telefonda "Karta dönüş" ve "İki satır" ayrı çiziliyor. */
-  const kartaDonus = tel && ['Karta dönüş', 'Tam ekran'].includes(bic.tablomobil[0]);
-  const govde = kartaDonus
-    ? `<div class="o-kartlar">${v.satir.slice(0, 3).map(x => `
-        <div class="o-kutu o-kk">
-          <div class="o-kk-ust"><b>${esc(x[0])}</b><u>${esc(x[2])}</u></div>
-          <i>${esc(x[1])}</i>
-        </div>`).join('')}</div>`
-    : `<div class="o-kutu o-tbl">
-        <div class="o-r o-h"><span>${esc(v.sutun[0])}</span><u>${esc(v.sutun[1])}</u></div>
-        ${v.satir.map(x => `<div class="o-r"><span>${esc(x[0])}${
-          tel && bic.tablomobil[0] === 'İki satır' ? `<i>${esc(x[1])}</i>` : ''
-        }</span><u>${esc(x[2])}</u></div>`).join('')}
-      </div>`;
+  /* ---- Üst çubuk ---- */
+  const ekranAdi = { panel: 'Panel', liste: v.baslik, form: v.dugme[0],
+                     ayarlar: 'Ayarlar', bos: v.baslik, yukleme: v.baslik }[ekr];
+  const ucSec = bic.ustcubuk[0];
+  const menuli = bic.gezinme[0] === 'Açılır yan menü';
+  const yatayMenu = bic.gezinme[0] === 'Üst menü';
+  const ustCubuk = ucSec === 'Yok' ? '' : `
+    <div class="o-ust">
+      ${menuli ? '<span class="o-ham"></span>' : logo}
+      <b>${esc(ekranAdi)}</b>
+      ${ucSec === 'Logo + arama' ? '<span class="o-ustAra">Ara…</span>' : ''}
+      ${yatayMenu ? `<span class="o-yatay">${['Panel', 'Kayıt', 'Rapor'].map((x, i) =>
+        `<i class="${i ? '' : 'a'}">${x}</i>`).join('')}</span>` : ''}
+      ${ucSec === 'Eylemli' ? `<span class="o-ustDug ${anaS}">${esc(v.dugme[0])}</span>`
+        : `<span class="o-ik ${smS}">${ik('ara')}${tel ? '' : ik('kisi')}</span>`}
+    </div>
+    ${ucSec === 'Sekmeli' ? `<div class="o-sekme">${['Tümü', 'Bekleyen', 'Kapalı']
+        .map((x, i) => `<i class="${i ? '' : 'a'}">${x}</i>`).join('')}</div>` : ''}`;
+
+  /* ---- Gezinme ---- */
+  const gz = bic.gezinme[0];
+  const altSekme = ['Alt sekme', 'Alt + orta +'].includes(gz);
+  const yanMenu  = gz === 'Sabit yan menü';
+  const gezinme = !altSekme ? '' : `
+    <div class="o-nav${gz === 'Alt + orta +' ? ' arti' : ''}">
+      ${['Panel', 'Kayıt', 'Rapor', 'Ayar'].map((x, i) =>
+        `<span class="${i ? '' : 'a'}">${x}</span>`).join('')}
+      ${gz === 'Alt + orta +' ? '<em></em>' : ''}
+    </div>`;
+
+  /* ---- Ekran gövdeleri ---- */
+  const kart = (ic, ek = '') => `<div class="o-kutu ${ek}">${ic}</div>`;
+  const statlar = `<div class="o-ikili">${v.stat.map(x =>
+    kart(`<i>${esc(x[0])}</i><b>${esc(x[1])}</b>`, 'o-stat')).join('')}</div>`;
+
+  const tabloKutusu = (satirSayi = 4) => {
+    const kartaDonus = tel && ['Karta dönüş', 'Tam ekran'].includes(bic.tablomobil[0]);
+    if (kartaDonus) return `<div class="o-kartlar">${v.satir.slice(0, 3).map(x =>
+      kart(`<div class="o-kk-ust"><b>${esc(x[0])}</b><u>${esc(x[2])}</u></div><i>${esc(x[1])}</i>`, 'o-kk')
+    ).join('')}</div>`;
+    return `<div class="o-kutu o-tbl">
+      <div class="o-r o-h"><span>${esc(v.sutun[0])}</span><u>${esc(v.sutun[1])}</u></div>
+      ${v.satir.slice(0, satirSayi).map(x => `<div class="o-r"><span>${esc(x[0])}${
+        tel && bic.tablomobil[0] === 'İki satır' ? `<i>${esc(x[1])}</i>` : ''
+      }</span><u>${esc(x[2])}</u></div>`).join('')}
+    </div>`;
+  };
+
+  const aramaSatiri = bic.arama[0] === 'Üstte sabit'
+    ? `<div class="o-arama"><span>Ara…</span>${
+        bic.filtre[0] === 'Açılır panel' ? '<em>Filtre ▾</em>' : ''}</div>` : '';
+  const cipler = bic.filtre[0] === 'Üstte çip sırası'
+    ? `<div class="o-cip">${['Tümü', 'Bugün', 'Bu ay', 'Bekleyen'].map((x, i) =>
+        `<span class="${i ? '' : 'a'}">${x}</span>`).join('')}</div>` : '';
+
+  const listeSonu = {
+    'Sayfa numarası':     `<div class="o-sayfano">${[1, 2, 3].map((n, i) =>
+                            `<span class="${i ? '' : 'a'}">${n}</span>`).join('')}</div>`,
+    'Daha fazla düğmesi': `<div class="o-dugmeler tek"><span class="o-dg ${ikinci} tam">Daha fazla</span></div>`,
+    'Sonsuz kaydırma':    '<div class="o-sonsuz"><i></i></div>',
+  }[bic.listesonu[0]] || '';
+
+  const listeGovde = `
+    ${bic.tablosayfa.includes('Özet kartları') ? statlar : ''}
+    ${bic.tablosayfa.includes('Sekmeli liste') ? `<div class="o-sekme ic">${
+      ['Bekleyen', 'Onaylı', 'Kapalı'].map((x, i) => `<i class="${i ? '' : 'a'}">${x}</i>`).join('')}</div>` : ''}
+    ${aramaSatiri}${cipler}
+    <div class="o-tblbas">${esc(v.baslik)}</div>
+    <div class="o-ikiBolme">
+      ${bic.tablosayfa.includes('Solda filtre') || bic.filtre[0] === 'Yan panel'
+        ? `<div class="o-yanFiltre">${['Durum', 'Tarih', 'Tutar'].map(x =>
+            `<i>${x}</i>`).join('')}</div>` : ''}
+      <div class="o-akan">${tabloKutusu()}${listeSonu}</div>
+      ${bic.tablosayfa.includes('Sağda detay')
+        ? `<div class="o-detayBolme">${kart(
+            `<b>${esc(v.satir[0][0])}</b><i>${esc(v.satir[0][1])}</i><u>${esc(v.satir[0][2])}</u>`, 'o-dk')}</div>` : ''}
+    </div>`;
+
+  const panelGovde = {
+    'Sayaç + büyük grafik': statlar + kart('<span class="o-grafik"></span>', 'o-buyuk'),
+    '2×2 ızgara': `<div class="o-izgara">${['Sipariş', 'Ciro', 'Ürün', 'İptal'].map((x, i) =>
+      kart(`<i>${x}</i><b>${['42', '18.400', '316', '3'][i]}</b>`, 'o-stat')).join('')}</div>`,
+    'Sol büyük + sağ kolon': `<div class="o-ikiBolme">
+      <div class="o-akan">${kart('<span class="o-grafik"></span>', 'o-buyuk')}</div>
+      <div class="o-sagKolon">${v.stat.map(x =>
+        kart(`<i>${esc(x[0])}</i><b>${esc(x[1])}</b>`, 'o-stat')).join('')}</div></div>`,
+    'Sayaç + son hareketler': statlar
+      + `<div class="o-tblbas">${esc(v.baslik)}</div>` + tabloKutusu(),
+  }[bic.dashboard[0]] || statlar;
+
+  const formAlan = (etiket, boy = '') =>
+    `<label class="o-alan"><i>${etiket}</i><span style="${boy}"></span></label>`;
+  const formIc = `${formAlan(v.sutun[0].toLocaleUpperCase('tr'))}
+    ${formAlan('TARİH')}${formAlan('NOT', 'height:34px')}`;
+  const formDugmeleri = `<div class="o-dugmeler">${anaDugme('Kaydet')}
+    <span class="o-dg ${ikinci}">Vazgeç</span></div>`;
+
+  const vg = bic.verigirisi;
+  const formGovde =
+    vg.includes('Sağdan çekmece') ? `<div class="o-arka">${tabloKutusu(3)}</div>
+        <div class="o-cekmece${tel ? ' alttan' : ''}">
+          <div class="o-cekBas"><b>${esc(v.dugme[0])}</b><u>✕</u></div>
+          ${formIc}${formDugmeleri}</div>`
+    : vg.includes('Ortada pencere') ? `<div class="o-arka">${tabloKutusu(3)}</div>
+        <div class="o-perde"></div><div class="o-pencere">
+          <div class="o-cekBas"><b>${esc(v.dugme[0])}</b><u>✕</u></div>
+          ${formIc}${formDugmeleri}</div>`
+    : vg.includes('Satırda düzenleme') ? `${tabloKutusu(4)}
+        <div class="o-ipucu">Hücreye dokunup yerinde değiştirirsin</div>`
+    : vg.includes('Adım adım sihirbaz') ? `<div class="o-adim">${[1, 2, 3, 4].map((n, i) =>
+          `<i class="${i < 2 ? 'a' : ''}"></i>`).join('')}</div>
+        <div class="o-tblbas">Adım 2 · Bilgiler</div>${formIc}${formDugmeleri}`
+    : `${formIc}${formDugmeleri}`;
+
+  const ayarSatir = (ad, deger) => `<div class="o-r"><span>${ad}</span><u>${deger}</u></div>`;
+  const ayarListe = `<div class="o-kutu o-tbl">
+    ${ayarSatir('Dil', 'Türkçe')}${ayarSatir('Para birimi', '₺ TRY')}
+    ${ayarSatir('Bildirimler', 'Açık')}${ayarSatir('Yedekleme', 'Günlük')}</div>`;
+  const ayarGrup = `
+    <div class="o-grupBas">Genel</div>
+    <div class="o-kutu o-tbl">${ayarSatir('Dil', 'Türkçe')}${ayarSatir('Para birimi', '₺ TRY')}</div>
+    <div class="o-grupBas">Bildirim</div>
+    <div class="o-kutu o-tbl">${ayarSatir('E-posta', 'Açık')}${ayarSatir('Anlık', 'Kapalı')}</div>`;
+  const ayarGovde = {
+    'Tek liste':     ayarListe,
+    'Gruplu liste':  ayarGrup,
+    'Sol sekmeli':   `<div class="o-ikiBolme"><div class="o-yanFiltre">${
+      ['Genel', 'Bildirim', 'Güvenlik'].map((x, i) => `<i class="${i ? '' : 'a'}">${x}</i>`).join('')
+      }</div><div class="o-akan">${ayarListe}</div></div>`,
+    'Arama + gruplu': `<div class="o-arama"><span>Ayarlarda ara…</span></div>${ayarGrup}`,
+  }[bic.ayarlar[0]] || ayarGrup;
+
+  const bosGovde = {
+    'Sade yazı':            '<div class="o-bos"><i>Henüz kayıt yok.</i></div>',
+    'Simge + yazı':         `<div class="o-bos"><span class="o-bosSimge ${smS}">${ik('ev')}</span>
+                              <i>Henüz kayıt yok.</i></div>`,
+    'Simge + yazı + düğme': `<div class="o-bos"><span class="o-bosSimge ${smS}">${ik('ev')}</span>
+                              <i>İlk kaydını ekle, buradan takip et.</i>${anaDugme(v.dugme[0])}</div>`,
+    'Çizim':                `<div class="o-bos"><span class="o-bosCizim"></span>
+                              <i>Burası şimdilik boş.</i></div>`,
+  }[bic.bosdurum[0]] || '';
+
+  const yuklemeGovde = {
+    'Dönen çark':      '<div class="o-bos"><span class="o-cark"></span></div>',
+    'İskelet':         `<div class="o-iskelet">${'<i></i>'.repeat(5)}</div>`,
+    'İlerleme çubuğu': `<div class="o-ilerleme"><i></i></div>${tabloKutusu(3)}`,
+  }[bic.yukleme[0]] || '';
+
+  const govde = { panel: panelGovde, liste: listeGovde, form: formGovde,
+                  ayarlar: ayarGovde, bos: bosGovde, yukleme: yuklemeGovde }[ekr] || panelGovde;
+
+  /* ---- Ekran üstü katmanlar ---- */
+  const bildirim = ekr === 'panel' ? {
+    'Üstte şerit':    '<div class="o-bildirimUst">3 sipariş onay bekliyor</div>',
+    'Alttan kart':    '<div class="o-toast alt">Kaydedildi</div>',
+    'Sağ üstte':      '<div class="o-toast sag">Kaydedildi</div>',
+    'Ortada pencere': '<div class="o-perde"></div><div class="o-pencere kucuk"><b>Uyarı</b>'
+                      + `<i>3 sipariş onay bekliyor.</i>${anaDugme('Tamam')}</div>`,
+  }[bic.bildirim[0]] || '' : '';
+
+  const silme = ekr === 'liste' && bic.onaysil[0] === 'Geri al şeridi'
+    ? '<div class="o-geriSerit">Kayıt silindi<em>Geri al</em></div>' : '';
+
+  const fab = ekr === 'liste' && bic.anaeylem[0] === 'Sağ altta yüzen'
+    ? `<span class="o-fab" style="background:${esc(vurgu)}">+</span>` : '';
+  const sonDugme = ekr === 'liste' && bic.anaeylem[0] === 'Sayfa sonunda'
+    ? `<div class="o-dugmeler tek">${anaDugme(v.dugme[0])}</div>` : '';
 
   const stil = [
     `--o-bg:${r('bg')}`, `--o-yuzey:${r('yuzey')}`, `--o-cizgi:${r('cizgi')}`,
@@ -1062,33 +1237,43 @@ function onizlemeIc(p, pl) {
     `--o-govde:${pl.govde ? `'${pl.govde.replace(/'/g, '')}', ` : ''}var(--yazi-govde)`,
   ].join(';');
 
-  return `<div class="${sinif}${tel ? '' : ''}" style="${esc(stil)}">
-    <div class="o-ust">${logo}<b>${esc(p.firma)}</b><span class="o-ik ${smS}">${ikonlar}</span></div>
-    <div class="o-gov">
-      <div class="o-ikili">${v.stat.map(x => `
-        <div class="o-kutu o-stat"><i>${esc(x[0])}</i><b>${esc(x[1])}</b></div>`).join('')}</div>
-      <div class="o-tblbas">${esc(v.baslik)}</div>
-      ${govde}
-      <div class="o-dugmeler">
-        <span class="o-dg ${anaS}">${tik}${esc(v.dugme[0])}</span>
-        <span class="o-dg ${ikinci}">${esc(v.dugme[1])}</span>
-      </div>
+  return `<div class="${sinif}" style="${esc(stil)}">
+    ${ustCubuk}
+    <div class="o-alt2">
+      ${yanMenu ? `<div class="o-yanMenu">${['Panel', 'Kayıt', 'Rapor', 'Ayar'].map((x, i) =>
+        `<i class="${i ? '' : 'a'}">${x}</i>`).join('')}</div>` : ''}
+      <div class="o-gov">${govde}${silme}${sonDugme}${bildirim}${fab}</div>
     </div>
+    ${gezinme}
   </div>
-  ${onizlemeNotu(bic, tel)}`;
+  ${onizlemeNotu(bic, tel, ekr)}`;
 }
 
-/* Durağan görüntüde anlaşılmayan davranış kararları için tek satır ipucu. */
-function onizlemeNotu(bic, tel) {
+function onizlemeNotu(bic, tel, ekr) {
   const not = [];
-  if (!tel && bic.tablomobil[0]) not.push(`Telefonda: ${bic.tablomobil[0].toLocaleLowerCase('tr')}`);
-  if (tel && bic.tablomobil[0] === 'Aç-kapa satır') not.push('Satıra dokununca kalan sütunlar altında açılır');
-  if (tel && bic.tablomobil[0] === 'Tam ekran') not.push('Kayıttan kayda yatay kaydırarak geçilir');
-  if (tel && bic.tablomobil[0] === 'Yana kaydır') not.push('Tablo yatay kaydırılır, ilk sütun yapışık kalır');
-  if (bic.yogunluk[0] === 'Karma') not.push('Formlar ve detay sayfaları bundan daha ferah olur');
-  if (bic.tablo.includes('Gruplu')) not.push('Satırlar tarih ya da kategoriye göre öbeklenir');
+  if (ekr === 'liste' && !tel) not.push(`Telefonda: ${bic.tablomobil[0].toLocaleLowerCase('tr')}`);
+  if (ekr === 'liste' && tel && bic.tablomobil[0] === 'Aç-kapa satır')
+    not.push('Satıra dokununca kalan sütunlar altında açılır');
+  if (ekr === 'liste' && tel && bic.tablomobil[0] === 'Tam ekran')
+    not.push('Kayıttan kayda yatay kaydırarak geçilir');
+  if (ekr === 'liste' && bic.onaysil[0] === 'Kaydırarak sil')
+    not.push('Satırı yana kaydırınca sil düğmesi çıkar');
+  if (ekr === 'liste' && bic.onaysil[0] === 'Pencere ile onay')
+    not.push('Silmeden önce onay penceresi çıkar');
+  if (ekr === 'liste' && bic.arama[0] === 'Simgeden açılan')
+    not.push('Arama büyüteç simgesinden açılır');
+  if (ekr === 'liste' && bic.filtre[0] === 'Alttan sayfa')
+    not.push('Filtreler alttan yarım sayfa olarak açılır');
+  if (ekr === 'liste' && bic.tablo.includes('Gruplu'))
+    not.push('Satırlar tarih ya da kategoriye göre öbeklenir');
+  if (ekr === 'panel' && bic.yogunluk[0] === 'Karma')
+    not.push('Form ve detay sayfaları bundan daha ferah olur');
+  if (ekr === 'ayarlar' && bic.detay[0])
+    not.push(`Kayıt detayı: ${bic.detay[0].toLocaleLowerCase('tr')}`);
+  if (bic.gezinme[0] === 'Açılır yan menü')
+    not.push('Menü hamburger simgesinden soldan kayarak açılır');
   if (!not.length) return '';
-  return `<div class="onk-not">${svg(ICON.info, 13)}<span>${esc(not.join(' · '))}</span></div>`;
+  return `<div class="onk-not">${svg(ICON.info, 13)}<span>${esc(not.slice(0, 2).join(' · '))}</span></div>`;
 }
 
 function hexMi(x) { return /^#[0-9a-f]{6}$/i.test(String(x || '')); }
@@ -1105,9 +1290,20 @@ function onizlemeTazele(p, pl) {
    Her seçenek gerçek bir küçük çizim. Yazıyı okuyup hayal etmek gerekmez.
    Çoklu alanlarda birkaçı birden seçilebilir; en az biri hep açık kalır. */
 
+let TASARIM_SEKME = 'bicim';
+
 function tasarimSecimi(p) {
+  const grup = TASARIM_GRUP.find(g => g.anahtar === TASARIM_SEKME) || TASARIM_GRUP[0];
   const pl = p.palet || {};
-  return TASARIM_ALAN.map(a => {
+
+  const sekmeler = `
+    <div class="tsek">${TASARIM_GRUP.map(g => `
+      <button class="${g.anahtar === grup.anahtar ? 'on' : ''}" type="button"
+              data-eylem="tasarim-sekme" data-deger="${g.anahtar}" data-proje="${p.id}">
+        ${esc(g.ad)}<em>${g.alanlar.length}</em>
+      </button>`).join('')}</div>`;
+
+  return sekmeler + grup.alanlar.map(a => {
     const secili = bicimSecim(pl, a);
     return bolumBas(a.ad)
       + `<div class="raf-alt">${esc(a.alt)}${
@@ -1136,7 +1332,91 @@ function bicimAyni(secili, alan) {
 }
 
 /* Tek bir seçeneğin küçük çizimi. Yalnız görsel — veri taşımaz. */
+/* ---- Tel çizim: yerleşim ve durum seçeneklerinin küçük iskeleti ----
+   Yüzey çizimleriyle karışmasın diye bilerek başka bir dil: kutu değil,
+   ekranın planı. Her seçenek config'te bir parça listesi veriyor. */
+
+const TEL_PARCA = {
+  /* akış parçaları — alt alta dizilir */
+  ust:          '<u class="w-ust"><i style="width:46%"></i></u>',
+  ustAra:       '<u class="w-ust"><i style="width:12%"></i><i class="w-ara"></i><i style="width:12%"></i></u>',
+  ustEylem:     '<u class="w-ust"><i style="width:40%"></i><i class="w-dug"></i></u>',
+  ustMenu:      '<u class="w-ust"><i class="w-ham"></i><i style="width:40%"></i></u>',
+  ustMenuYatay: '<u class="w-ust"><i style="width:18%"></i><i style="width:18%"></i><i style="width:18%"></i></u>',
+  ustSecici:    '<u class="w-ust"><i style="width:46%"></i><i class="w-ok"></i></u>',
+  sekme:        '<u class="w-sekme"><i class="a"></i><i></i><i></i></u>',
+  adim:         '<u class="w-adim"><i class="a"></i><i class="a"></i><i></i><i></i></u>',
+  ara:          '<u class="w-satir"></u>',
+  cip:          '<u class="w-cip"><i class="a"></i><i></i><i></i><i></i></u>',
+  ilerleme:     '<u class="w-ilerleme"><i></i></u>',
+  seritUst:     '<u class="w-serit"></u>',
+  alt:          '<u class="w-alt"><i></i><i></i><i></i><i></i></u>',
+  altArti:      '<u class="w-alt"><i></i><i></i><i class="bos"></i><i></i><i></i></u><span class="w-fab alt"></span>',
+  sonDugme:     '<u class="w-sonDug"></u>',
+  sayfaNo:      '<u class="w-sayfa"><i class="a"></i><i></i><i></i></u>',
+
+  /* gövde parçaları — kalan yeri paylaşır */
+  blok:       '<u class="w-govde"><i class="w-blk"></i></u>',
+  blokTam:    '<u class="w-govde"><i class="w-blk"></i></u>',
+  blokOrta:   '<u class="w-govde"><i class="w-bos"></i><i class="w-blk" style="flex:3"></i><i class="w-bos"></i></u>',
+  blokSol:    '<u class="w-govde"><i class="w-blk" style="flex:3"></i><i class="w-bos" style="flex:2"></i></u>',
+  liste:      '<u class="w-govde"><i class="w-liste"><b></b><b></b><b></b><b></b></i></u>',
+  listeDuzen: '<u class="w-govde"><i class="w-liste"><b></b><b class="duzen"></b><b></b><b></b></i></u>',
+  listeKaydir:'<u class="w-govde"><i class="w-liste"><b></b><b class="kaydir"></b><b></b><b></b></i></u>',
+  grupluListe:'<u class="w-govde"><i class="w-liste grup"><b class="bas"></b><b></b><b></b><b class="bas"></b><b></b></i></u>',
+  izgara:     '<u class="w-govde"><i class="w-izgara"><b></b><b></b><b></b><b></b></i></u>',
+  grafik:     '<u class="w-govde"><i class="w-grafik"></i></u>',
+  ikiliKolon: '<u class="w-govde"><i class="w-grafik" style="flex:2"></i><i class="w-liste"><b></b><b></b><b></b></i></u>',
+  form:       '<u class="w-govde"><i class="w-form"><b></b><b></b><b></b></i></u>',
+  akis:       '<u class="w-govde"><i class="w-liste"><b style="flex:2"></b><b style="flex:3"></b><b style="flex:2"></b></i></u>',
+  katlanir:   '<u class="w-govde"><i class="w-liste katlanir"><b class="bas"></b><b class="acik"></b><b class="bas"></b><b class="bas"></b></i></u>',
+  kart2:      '<u class="w-kart2"><i></i><i></i></u>',
+  solPanel:   '<u class="w-govde"><i class="w-panel"></i><i class="w-liste"><b></b><b></b><b></b><b></b></i></u>',
+  yan:        '<u class="w-govde"><i class="w-yan"></i><i class="w-blk"></i></u>',
+  yanInce:    '<u class="w-govde"><i class="w-panel ince"></i><i class="w-liste"><b></b><b></b><b></b></i></u>',
+
+  /* boş ve bekleme durumları */
+  bosYazi:  '<u class="w-govde bos"><i class="w-cizgi"></i></u>',
+  bosSimge: '<u class="w-govde bos"><i class="w-halka"></i><i class="w-cizgi"></i></u>',
+  bosDugme: '<u class="w-govde bos"><i class="w-halka"></i><i class="w-cizgi"></i><i class="w-minidug"></i></u>',
+  bosCizim: '<u class="w-govde bos"><i class="w-cizim"></i><i class="w-cizgi"></i></u>',
+  cark:     '<u class="w-govde bos"><i class="w-cark"></i></u>',
+  iskelet:  '<u class="w-govde"><i class="w-liste iskelet"><b></b><b></b><b></b><b></b></i></u>',
+
+  /* üstte yüzenler */
+  sagPanel: { son: '<i class="w-sagPanel"></i>' },
+  cekmece:  { ustu: '<span class="w-cekmece"></span>' },
+  pencere:  { ustu: '<span class="w-pencere"></span>' },
+  fab:      { ustu: '<span class="w-fab"></span>' },
+  altSayfa: { ustu: '<span class="w-altSayfa"></span>' },
+  seritAlt: { ustu: '<span class="w-seritAlt"></span>' },
+  geriAl:   { ustu: '<span class="w-seritAlt geri"></span>' },
+  sagUst:   { ustu: '<span class="w-sagUst"></span>' },
+  sonsuz:   { ustu: '<span class="w-sonsuz"></span>' },
+};
+
+function telCizim(parcalar) {
+  const akis = [];
+  const ustu = [];
+  parcalar.forEach(ad => {
+    const p = TEL_PARCA[ad];
+    if (!p) return;
+    if (typeof p === 'string') { akis.push(p); return; }
+    if (p.ustu) ustu.push(p.ustu);
+    /* Sağ bölme, son gövdenin içine girer. */
+    if (p.son && akis.length) {
+      akis[akis.length - 1] = akis[akis.length - 1].replace(/<\/u>$/, p.son + '</u>');
+    }
+  });
+  return `<span class="tel-wf">${akis.join('')}${ustu.join('')}</span>`;
+}
+
 function tasarimOnizleme(alan, ad) {
+  /* Yerleşim ve durum seçenekleri tel çizimle anlatılır. */
+  const bilgi = TUM_TASARIM.find(a => a.anahtar === alan);
+  const sec = bilgi && bilgi.secim.find(x => x.ad === ad);
+  if (sec && sec.tel) return telCizim(sec.tel);
+
   const satirlar = '<i class="ln b o"></i><i class="ln u"></i><i class="ln k"></i>';
 
   if (alan === 'kart') {
@@ -1413,7 +1693,7 @@ function projeYolu(p) {
 /* Yapıştırılan paleti okur. Biçim: "Arka plan: #0f0e0d" satırları. */
 function paletCozumle(metin) {
   /* Palet alanları + arayüz biçimi alanları tek listede okunur. */
-  const tumu = PALET_ALAN.concat(TASARIM_ALAN.map(a => ({
+  const tumu = PALET_ALAN.concat(TUM_TASARIM.map(a => ({
     anahtar: a.anahtar, ad: a.ad, secim: a.secim.map(x => x.ad), coklu: a.coklu,
   })));
 
@@ -3638,7 +3918,7 @@ function paletAktar(projeId) {
       on.innerHTML = `
         <span class="label">Okunanlar</span>
         <div class="card"><div class="row-list">
-          ${PALET_ALAN.concat(TASARIM_ALAN).map(a => {
+          ${PALET_ALAN.concat(TUM_TASARIM).map(a => {
             const d = cozum.palet[a.anahtar];
             return `<div class="row">
               <div class="row-main"><span class="row-title">${esc(a.ad)}</span></div>
@@ -4175,7 +4455,7 @@ async function eylemCalistir(el) {
 
   if (e === 'tasarim-sec') {
     const pr = DB.proje(el.dataset.proje);
-    const al = TASARIM_ALAN.find(a => a.anahtar === el.dataset.alan);
+    const al = TUM_TASARIM.find(a => a.anahtar === el.dataset.alan);
     if (!pr || !al) return;
 
     const deger = el.dataset.deger;
@@ -4219,7 +4499,7 @@ async function eylemCalistir(el) {
 
   if (e === 'tasarim-sifirla') {
     const pr = DB.proje(el.dataset.proje);
-    const al = TASARIM_ALAN.find(a => a.anahtar === el.dataset.alan);
+    const al = TUM_TASARIM.find(a => a.anahtar === el.dataset.alan);
     if (!pr || !al) return;
 
     const raf  = el.parentElement;
@@ -4240,6 +4520,17 @@ async function eylemCalistir(el) {
       onizlemeTazele(pr, pr.palet);
       toast(err.message, 'hata');
     }
+    return;
+  }
+
+  if (e === 'tasarim-sekme') {
+    if (TASARIM_SEKME === el.dataset.deger) return;
+    TASARIM_SEKME = el.dataset.deger;
+    const yer = el.closest('.tsek').getBoundingClientRect().top;
+    render();
+    /* Sekme düğmesi parmağın altında kalsın, sayfa zıplamasın. */
+    const yeni = $('.tsek');
+    if (yeni) $('#view').scrollTop += yeni.getBoundingClientRect().top - yer;
     return;
   }
 

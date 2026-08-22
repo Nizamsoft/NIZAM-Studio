@@ -1,5 +1,32 @@
 # Değişiklik Günlüğü
 
+## v0.24.0 — 22 Ağustos 2026
+**Tasarım kararları 7'den 24'e çıktı: Biçim · Yerleşim · Durumlar**
+
+Şimdiye kadarki yedi karar **yüzey** kararıydı — bir kutunun nasıl
+göründüğü. İki öbek daha eklendi:
+
+**Yerleşim (12)** — ekranın iskeleti. Üst çubuk · Gezinme · Sayfa listesi ·
+Tablolu sayfa · Dashboard · Veri girişi · Ayarlar · Detay ekranı · Ana
+eylem yeri · Arama · Filtre · Genişlik.
+
+**Durumlar (5)** — ekran doluyken değil, boşken ve beklerken. Boş durum ·
+Yükleme · Bildirim · Onay & silme · Liste sonu. En çok atlanan yer burası.
+
+Tasarım durağının başına üç sekme geldi. Toplam **118 seçenek**; yerleşim
+ve durum seçenekleri kutu değil **tel çizim** — ekranın planı, yüzey
+çizimleriyle karışmasın diye ayrı bir dil.
+
+**Önizlemeye altı ekran girdi:** Panel · Liste · Form · Ayarlar · Boş ·
+Yükleme. Yerleşim kararları ancak farklı ekranlarda görünür hâle geliyor.
+Panel'de dashboard yerleşimini, Liste'de filtre/arama/sayfalama/ana eylem
+yerini, Form'da veri giriş biçimini, Ayarlar'da ayar düzenini görüyorsun.
+Üst çubuk, gezinme ve genişlik hepsinde ortak.
+
+Marka promptu 24 kararı birden soruyor ve seçimini iki şeye dayandırıyor:
+logodan gelen marka karakteri, projeden gelen sektör ve platform. Görev
+promptu ile NIZAM.md üç başlık altında yazıyor.
+
 ## v0.23.2 — 22 Ağustos 2026
 **Önizleme tam ekran değil, yukarıdan inen panel**
 

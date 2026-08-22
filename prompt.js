@@ -33,17 +33,20 @@ const PROMPT = {
   /* Arayüz biçimi — görev promptuna ve NIZAM.md'ye aynı biçimde girer. */
   tasarimBlogu(proje) {
     const pl = (proje && proje.palet) || {};
-    const s = ['## Arayüz Biçimi'];
-    s.push('Bu kararlar alınmış. Kendi biçimini uydurma, aşağıdakileri uygula.');
-    s.push('');
-    TASARIM_ALAN.forEach(a => {
-      const adlar = bicimSecim(pl, a);
-      s.push(`- **${a.ad}: ${adlar.join(' + ')}**`);
-      adlar.forEach(ad => {
-        const sc = a.secim.find(x => x.ad === ad);
-        if (sc) s.push(`  - ${sc.ad}: ${sc.tarif}`);
+    const s = ['## Arayüz Kararları'];
+    s.push('Bunlar alınmış kararlar. Kendi biçimini uydurma, aşağıdakileri uygula.');
+
+    TASARIM_GRUP.forEach(g => {
+      s.push('', `### ${g.ad}`);
+      g.alanlar.forEach(a => {
+        const adlar = bicimSecim(pl, a);
+        s.push(`- **${a.ad}: ${adlar.join(' + ')}**`);
+        adlar.forEach(ad => {
+          const sc = a.secim.find(x => x.ad === ad);
+          if (sc) s.push(`  - ${sc.ad}: ${sc.tarif}`);
+        });
+        if (adlar.length > 1) s.push('  - Bu seçenekler birleşerek uygulanır, biri diğerini iptal etmez.');
       });
-      if (adlar.length > 1) s.push('  - Bu seçenekler birleşerek uygulanır, biri diğerini iptal etmez.');
     });
     return s.join('\n');
   },
@@ -88,11 +91,16 @@ const PROMPT = {
     s.push('- Yazı tipleri ücretsiz, web\'de kullanılabilir ve Türkçe karakterleri tam olsun.');
     s.push('');
     s.push('');
-    s.push('## Arayüz biçimi');
-    s.push('Renklerin yanında arayüzün biçimine de karar ver. **Yalnızca listedeki');
-    s.push('adları** kullan — yeni ad uydurma.');
-    s.push('Seçimini markanın karakterine göre yap: kurumsal ve yoğun bir iş');
-    s.push('yazılımı ile sıcak, müşteriye dönük bir uygulama aynı biçimi almaz.');
+    s.push('## Arayüz kararları');
+    s.push('Renklerin yanında arayüzün biçimine ve yerleşimine de karar ver.');
+    s.push('**Yalnızca listedeki adları** kullan — yeni ad uydurma.');
+    s.push('');
+    s.push('Seçimini iki şeye göre yap:');
+    s.push(`- **Marka karakteri** (logodan): kurumsal ve yoğun bir iş yazılımı ile`);
+    s.push('  sıcak, müşteriye dönük bir uygulama aynı biçimi almaz.');
+    s.push(`- **İş türü**: ${p.sektor ? p.sektor + ' sektörü, ' : ''}${
+      PLATFORM_ADI[p.platform] || 'web'} kullanımı. Çok kayıtlı, masa başı bir iş`);
+    s.push('  ile sahada telefonla kullanılan bir iş aynı yerleşimi kaldırmaz.');
     s.push('');
     s.push('Başlıkların bir kısmında **birden fazla seçebilirsin**; artı ile ayır');
     s.push('(örnek: `Buzlu cam + Şerit vurgu`). Seçtiklerin birleşerek uygulanır,');
@@ -100,10 +108,13 @@ const PROMPT = {
     s.push('birbirini iptal edenleri değil. Gerekmiyorsa tek seçenek bırak.');
     s.push('Diğer başlıklarda tek bir ad ver.');
     s.push('');
-    TASARIM_ALAN.forEach(a => {
-      s.push(`**${a.ad}** — ${a.alt}${a.coklu ? ' _(birden fazla seçilebilir)_' : ' _(tek seçim)_'}`);
-      a.secim.forEach(x => s.push(`- ${x.ad}: ${x.tarif}`));
-      s.push('');
+    TASARIM_GRUP.forEach(g => {
+      s.push(`### ${g.ad}`, '');
+      g.alanlar.forEach(a => {
+        s.push(`**${a.ad}** — ${a.alt}${a.coklu ? ' _(birden fazla seçilebilir)_' : ' _(tek seçim)_'}`);
+        a.secim.forEach(x => s.push(`- ${x.ad}: ${x.tarif}`));
+        s.push('');
+      });
     });
 
     s.push('## Cevabı tam olarak bu biçimde ver');
@@ -113,7 +124,7 @@ const PROMPT = {
     PALET_ALAN.forEach(a => {
       s.push(`${a.ad}: ${a.anahtar === 'tema' ? (acik ? 'Açık' : 'Koyu') : a.ornek}`);
     });
-    TASARIM_ALAN.forEach(a => s.push(`${a.ad}: ${a.varsayilan}`));
+    TUM_TASARIM.forEach(a => s.push(`${a.ad}: ${a.varsayilan}`));
     s.push('```');
 
     return s.join('\n');
