@@ -741,77 +741,157 @@ function takvimBolumu(p) {
 }
 
 /* 2 · Tasarımı belirleme */
+/* Adım durumu proje başına hatırlanır: geri gelince kaldığın yerde açılır. */
+const TASARIM_YER = {};
+
+function adimNo(p) {
+  const n = TASARIM_YER[p.id] || 0;
+  return Math.max(0, Math.min(n, TASARIM_ADIM.length - 1));
+}
+
 function tasarimSayfasi(p, d) {
-  const pl = p.palet || null;
-  const acikTema = PROMPT.temaAcik(p);
+  const no    = adimNo(p);
+  const adim  = TASARIM_ADIM[no];
+  const pl    = p.palet || null;
   const adres = DB.logoAdres[p.id];
+  const yon   = AUTH.yonetici;
 
-  /* Palet gelmişse tema kilitli: renkler o temaya göre üretildi, sonradan
-     çevirince uymuyor. Değiştirmek isteyen yeni palet alır. */
-  const kilit = !!pl;
-
-  const serit = pl
-    ? `<div class="palet-tam">${PALET_ALAN.filter(a => a.renk).map(a => {
-        const renk = pl[a.anahtar] || '#333';
-        return `<span style="background:${esc(renk)}"><em>${esc(renk.replace('#', ''))}</em></span>`;
-      }).join('')}</div>`
-    : `<div class="bos-kutu">${svg(ICON.katman, 18)}
-        <span>Palet yok. Logoyu yükle, promptu kopyala, Claude'a logoyla birlikte ver;
-        dönen cevabı buraya yapıştır.</span></div>`;
-
-  return sayfaHero(p, d)
-    + onizlemeDugmesi(p)
-
-    + bolumBas('Tema') + `
+  /* Adımın gövdesi: ilk üçü kendi işini yapar, kalanı raf gösterir. */
+  let govde;
+  if (adim.tur === 'tema') {
+    const acikTema = PROMPT.temaAcik(p);
+    const kilit = !!pl;
+    govde = `
       <div class="tema-secim ${kilit ? 'kilitli' : ''}">
         <span class="secenek-serit">
           ${['Koyu', 'Açık'].map(t => `
             <button class="ss ${acikTema === (t === 'Açık') ? 'sec' : ''}"
                     data-eylem="tema-sec" data-proje="${p.id}" data-deger="${esc(t)}" type="button"
-                    ${AUTH.yonetici && !kilit ? '' : 'disabled'}>${t}</button>`).join('')}
+                    ${yon && !kilit ? '' : 'disabled'}>${t}</button>`).join('')}
         </span>
         <i>${kilit
           ? 'Palet bu temaya göre üretildi. Değiştirmek için logoyu tekrar yükleyip yeni palet al.'
-          : 'Önce temayı seç — prompt buna göre palet üretecek.'}</i>
-      </div>`
+          : 'Koyu tema göz yormaz, açık tema baskıya ve aydınlık ofise uygundur.'}</i>
+      </div>`;
 
-    + bolumBas('Logo') + `
+  } else if (adim.tur === 'logo') {
+    govde = `
       <div class="logo-bolum">
         <span class="mk-logo buyuk ${adres ? 'yukleniyor' : ''}"
               ${adres ? `data-logo="${esc(adres)}"` : ''}
-              data-eylem="${AUTH.yonetici ? 'logo-yukle' : ''}" data-proje="${p.id}"
-              ${AUTH.yonetici ? 'role="button" tabindex="0"' : ''}>
+              data-eylem="${yon ? 'logo-yukle' : ''}" data-proje="${p.id}"
+              ${yon ? 'role="button" tabindex="0"' : ''}>
           <span class="logo-harf">${svg(ICON.folder, 20)}</span>
           ${adres ? '<span class="donen"></span>' : ''}
         </span>
         <span class="mk-yazi">
           <b>${adres ? 'Firma logosu' : 'Logo yok'}</b>
-          <i>${AUTH.yonetici ? (adres ? 'Değiştirmek için dokun' : 'Yüklemek için dokun · en fazla 4 MB')
-                             : (adres ? 'Yüklenmiş' : 'Yönetici yükleyecek')}</i>
+          <i>${yon ? (adres ? 'Değiştirmek için dokun' : 'Yüklemek için dokun · en fazla 4 MB')
+                   : (adres ? 'Yüklenmiş' : 'Yönetici yükleyecek')}</i>
         </span>
-      </div>`
+      </div>`;
 
-    + bolumBas('Palet') + serit
-    + (pl ? `
-      <div class="tip">
-        <div><b>Başlık</b><u style="font-family:var(--yazi-baslik);font-weight:700">${esc(pl.baslik || '—')}</u></div>
-        <div><b>Metin</b><u>${esc(pl.govde || '—')}</u></div>
-      </div>` : '')
-    + (pl && pl.ton
-        ? bolumBas('Karakter') + `<div class="satirlar"><div class="sr">Ton <b>${esc(pl.ton)}</b></div></div>`
-        : '')
+  } else if (adim.tur === 'palet') {
+    govde = (pl ? paletSeridi(pl) : `
+      <div class="bos-kutu">${svg(ICON.katman, 18)}
+        <span>Palet yok. Promptu kopyala, Claude'a logoyla birlikte ver;
+        dönen cevabı buraya yapıştır. 24 tasarım kararı birden dolar.</span></div>`)
+      + (yon ? `
+        <button class="sayfa-dug" data-eylem="palet-prompt" data-proje="${p.id}" type="button">
+          ${svg(ICON.kopya, 15)} Prompt kopyala</button>
+        <button class="sayfa-dug ${pl ? 'ikincil' : ''}" data-eylem="palet-aktar"
+                data-proje="${p.id}" type="button">
+          ${svg(ICON.ice, 15)} Cevabı yapıştır</button>` : '')
+      + (pl ? '' : `<div class="adim-not">${svg(ICON.info, 13)}
+          <span>Paletsiz de devam edebilirsin — o zaman 24 kararı elle verirsin.</span></div>`);
 
-    + tasarimSecimi(p)
+  } else if (adim.tur === 'ozet') {
+    govde = paletSeridi(pl || {}) + tasarimOzeti(p);
 
+  } else {
+    govde = adimRaflari(p, adim);
+  }
+
+  return adimSeridi(p, no)
+    + onizlemeSatiri(p, adim)
+    + `<div class="adim-bas"><b>${esc(adim.ad)}</b><i>${esc(adim.aciklama)}</i></div>`
+    + govde
+    + adimGezinme(p, no);
+}
+
+/* Üstteki ilerleme şeridi — kaçıncı adımdasın ve hangileri geride kaldı. */
+function adimSeridi(p, no) {
+  return `
+    <div class="adim-serit">
+      <div class="as-ust">
+        <b>Adım ${no + 1} / ${TASARIM_ADIM.length}</b>
+        <span>${esc(TASARIM_ADIM[no].ad)}</span>
+      </div>
+      <div class="as-noktalar">${TASARIM_ADIM.map((a, i) => `
+        <button class="${i === no ? 'on' : i < no ? 'gecti' : ''}" type="button"
+                data-eylem="tasarim-adim" data-proje="${p.id}" data-deger="${i}"
+                title="${esc(a.ad)}"><i></i></button>`).join('')}</div>
+    </div>`;
+}
+
+/* Alttaki geri / ileri. Son adımda ileri yerine "Bitir". */
+function adimGezinme(p, no) {
+  const son = no === TASARIM_ADIM.length - 1;
+  return `
+    <div class="adim-gez">
+      <button class="ag geri" type="button" ${no ? '' : 'disabled'}
+              data-eylem="tasarim-adim" data-proje="${p.id}" data-deger="${no - 1}">
+        ${svg(ICON.chevron, 14)} Geri</button>
+      <button class="ag ileri" type="button"
+              data-eylem="tasarim-adim" data-proje="${p.id}" data-deger="${son ? -1 : no + 1}">
+        ${son ? 'Bitir' : TASARIM_ADIM[no + 1].ad} ${svg(ICON.chevron, 14)}</button>
+    </div>`;
+}
+
+/* Palet şeridi — iki yerde kullanılıyor. */
+function paletSeridi(pl) {
+  if (!pl || !PALET_ALAN.some(a => a.renk && pl[a.anahtar])) return '';
+  return `<div class="palet-tam">${PALET_ALAN.filter(a => a.renk).map(a => {
+      const renk = pl[a.anahtar] || '#333';
+      return `<span style="background:${esc(renk)}"><em>${esc(renk.replace('#', ''))}</em></span>`;
+    }).join('')}</div>
+    <div class="tip">
+      <div><b>Başlık</b><u style="font-family:var(--yazi-baslik);font-weight:700">${esc(pl.baslik || '—')}</u></div>
+      <div><b>Metin</b><u>${esc(pl.govde || '—')}</u></div>
+    </div>`;
+}
+
+/* Son adım: bütün kararlar tek listede. */
+function tasarimOzeti(p) {
+  const pl = p.palet || {};
+  return TASARIM_GRUP.map(g => bolumBas(g.ad) + `
+    <div class="satirlar">${g.alanlar.map(a => `
+      <div class="sr">${esc(a.ad)} <b>${esc(bicimSecim(pl, a).join(' + '))}</b></div>`).join('')}
+    </div>`).join('')
+    + (pl.ton ? `<div class="adim-not">${svg(ICON.info, 13)}
+        <span>Karakter: ${esc(pl.ton)}</span></div>` : '')
     + (AUTH.yonetici ? `
       <button class="sayfa-dug ikincil" data-eylem="palet-prompt" data-proje="${p.id}" type="button">
         ${svg(ICON.kopya, 15)} Prompt kopyala</button>
-      <button class="sayfa-dug ikincil" data-eylem="palet-aktar" data-proje="${p.id}" type="button">
-        ${svg(ICON.ice, 15)} Paleti yapıştır</button>
-      ${pl ? `<button class="sayfa-dug" data-eylem="palet-duzenle" data-proje="${p.id}" type="button">
-        ${svg(ICON.kalem, 15)} Elle düzenle</button>` : ''}` : '');
+      <button class="sayfa-dug ikincil" data-eylem="palet-duzenle" data-proje="${p.id}" type="button">
+        ${svg(ICON.kalem, 15)} Paleti elle düzenle</button>` : '');
 }
 
+/* Adımın kendi ekranını gösteren sabit önizleme. Seçim yapınca anında değişir. */
+function onizlemeSatiri(p, adim) {
+  ONIZLEME_EKRAN = adim.ekran;
+  /* Cihazı yalnız adım değişince zorla; kullanıcı adım içinde çevirebilsin. */
+  if (ONIZLEME_ADIM !== adim.anahtar) {
+    ONIZLEME_ADIM = adim.anahtar;
+    ONIZLEME_CIHAZ = adim.cihaz || 'web';
+  }
+  return `
+    <div class="onz-satir">
+      <div class="onz-goz">${onizlemeIc(p, p.palet)}</div>
+      <button class="onz-buyut" type="button" data-eylem="onizleme-ac" data-proje="${p.id}"
+              title="Büyüt">${svg(ICON.goz, 15)}</button>
+    </div>`;
+}
 /* ---------- Önizleme: seçimlerin bir arada nasıl durduğu ----------
    Sahte bir müşteri uygulaması. Projenin kendi paleti, kendi logosu ve
    yedi biçim kararıyla çiziliyor. Veri uydurma değil, örnek — boş kutulara
@@ -819,11 +899,8 @@ function tasarimSayfasi(p, d) {
 
 let ONIZLEME_CIHAZ = 'web';
 let ONIZLEME_EKRAN = 'panel';
+let ONIZLEME_ADIM  = null;
 
-const ONIZLEME_EKRANLAR = [
-  ['panel', 'Panel'], ['liste', 'Liste'], ['form', 'Form'],
-  ['ayarlar', 'Ayarlar'], ['bos', 'Boş'], ['yukleme', 'Yükleme'],
-];
 
 /* Sektöre göre örnek veri. Eşleşme yoksa nötr bir kayıt listesi. */
 function orneklem(p) {
@@ -879,19 +956,8 @@ function orneklem(p) {
             ['K-1039 · Elif Şahin', '15 Ağu · onaylandı', '6.400,00']] };
 }
 
-/* Sayfada yalnız bir düğme duruyor — yapışkan, nereye kaydırırsan orada.
-   Büyük bir blok tepede otursa raflara yer kalmıyordu. */
-function onizlemeDugmesi(p) {
-  return `
-    <button class="onz-dug" type="button" data-eylem="onizleme-ac" data-proje="${p.id}">
-      ${svg(ICON.goz, 16)}
-      <b>Önizleme</b>
-      <i>Seçimler bir arada nasıl duruyor?</i>
-      ${svg(ICON.chevron, 14)}
-    </button>`;
-}
-
-/* Tam ekran önizleme. Kapanınca sayfada kaldığın yere dönüyorsun. */
+/* Büyük önizleme — sayfadaki küçük önizlemenin "Büyüt"ü. Hangi ekranı
+   gösterdiğini adım belirlediği için burada yalnız cihaz geçişi var. */
 function onizlemeAc(projeId) {
   const p = DB.proje(projeId);
   if (!p) return;
@@ -909,10 +975,7 @@ function onizlemeAc(projeId) {
                   data-onz="cihaz" data-deger="${c}">${c === 'web' ? 'Web' : 'Telefon'}</button>`).join('')}
       </span>
     </div>
-    <div class="onz-ekran">${ONIZLEME_EKRANLAR.map(([k, ad]) => `
-      <button class="${ONIZLEME_EKRAN === k ? 'on' : ''}" type="button"
-              data-onz="ekran" data-deger="${k}">${ad}</button>`).join('')}</div>
-    <div class="onz-goz" id="onizleme-goz">${onizlemeIc(p, p.palet)}</div>`;
+    <div class="onz-goz">${onizlemeIc(p, p.palet)}</div>`;
 
   document.body.appendChild(el);
   logolariGoster();
@@ -926,13 +989,6 @@ function onizlemeAc(projeId) {
     const b = ev.target.closest('[data-onz]');
     if (!b) return;
     if (b.dataset.onz === 'kapat') return onizlemeKapat();
-
-    if (b.dataset.onz === 'ekran') {
-      if (ONIZLEME_EKRAN === b.dataset.deger) return;
-      ONIZLEME_EKRAN = b.dataset.deger;
-      $$('.onz-ekran button', el).forEach(x => x.classList.toggle('on', x === b));
-      return onizlemeTazele(p, p.palet);
-    }
 
     if (ONIZLEME_CIHAZ === b.dataset.deger) return;
     ONIZLEME_CIHAZ = b.dataset.deger;
@@ -1280,9 +1336,12 @@ function hexMi(x) { return /^#[0-9a-f]{6}$/i.test(String(x || '')); }
 
 /* Seçim değişince: kayıt beklemeden yeniden çiz. */
 function onizlemeTazele(p, pl) {
-  const goz = $('#onizleme-goz');
-  if (!goz) return;
-  goz.innerHTML = onizlemeIc(p, pl);
+  /* Sayfadaki küçük ve panelde açık büyük önizleme aynı şeyi gösterir;
+     ikisi de aynı anda tazelenir. */
+  const kutular = $$('.onz-goz');
+  if (!kutular.length) return;
+  const ic = onizlemeIc(p, pl);
+  kutular.forEach(k => { k.innerHTML = ic; });
   logolariGoster();
 }
 
@@ -1290,20 +1349,15 @@ function onizlemeTazele(p, pl) {
    Her seçenek gerçek bir küçük çizim. Yazıyı okuyup hayal etmek gerekmez.
    Çoklu alanlarda birkaçı birden seçilebilir; en az biri hep açık kalır. */
 
-let TASARIM_SEKME = 'bicim';
+/* Seçim varsayılanla aynı mı? Aynıysa sıfırlanacak bir şey yok. */
+function bicimAyni(secili, alan) {
+  return secili.length === 1 && secili[0] === alan.varsayilan;
+}
 
-function tasarimSecimi(p) {
-  const grup = TASARIM_GRUP.find(g => g.anahtar === TASARIM_SEKME) || TASARIM_GRUP[0];
+/* Bir adımın rafları. Adımda hangi başlıklar varsa yalnız onlar. */
+function adimRaflari(p, adim) {
   const pl = p.palet || {};
-
-  const sekmeler = `
-    <div class="tsek">${TASARIM_GRUP.map(g => `
-      <button class="${g.anahtar === grup.anahtar ? 'on' : ''}" type="button"
-              data-eylem="tasarim-sekme" data-deger="${g.anahtar}" data-proje="${p.id}">
-        ${esc(g.ad)}<em>${g.alanlar.length}</em>
-      </button>`).join('')}</div>`;
-
-  return sekmeler + grup.alanlar.map(a => {
+  return adimAlanlari(adim).map(a => {
     const secili = bicimSecim(pl, a);
     return bolumBas(a.ad)
       + `<div class="raf-alt">${esc(a.alt)}${
@@ -1326,12 +1380,6 @@ function tasarimSecimi(p) {
   }).join('');
 }
 
-/* Seçim varsayılanla aynı mı? Aynıysa sıfırlanacak bir şey yok. */
-function bicimAyni(secili, alan) {
-  return secili.length === 1 && secili[0] === alan.varsayilan;
-}
-
-/* Tek bir seçeneğin küçük çizimi. Yalnız görsel — veri taşımaz. */
 /* ---- Tel çizim: yerleşim ve durum seçeneklerinin küçük iskeleti ----
    Yüzey çizimleriyle karışmasın diye bilerek başka bir dil: kutu değil,
    ekranın planı. Her seçenek config'te bir parça listesi veriyor. */
@@ -4523,14 +4571,14 @@ async function eylemCalistir(el) {
     return;
   }
 
-  if (e === 'tasarim-sekme') {
-    if (TASARIM_SEKME === el.dataset.deger) return;
-    TASARIM_SEKME = el.dataset.deger;
-    const yer = el.closest('.tsek').getBoundingClientRect().top;
+  if (e === 'tasarim-adim') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const hedef = Number(el.dataset.deger);
+    if (hedef < 0) { location.hash = '#/projeler/' + pr.id; return; }
+    TASARIM_YER[pr.id] = hedef;
     render();
-    /* Sekme düğmesi parmağın altında kalsın, sayfa zıplamasın. */
-    const yeni = $('.tsek');
-    if (yeni) $('#view').scrollTop += yeni.getBoundingClientRect().top - yer;
+    $('#view').scrollTop = 0;
     return;
   }
 

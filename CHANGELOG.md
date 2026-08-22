@@ -1,5 +1,33 @@
 # Değişiklik Günlüğü
 
+## v0.25.0 — 22 Ağustos 2026
+**Tasarım durağı akışa döndü: 15 adım**
+
+Kararlar artık başlık türüne göre değil, **etkilediği ekrana göre**
+gruplanıyor. Bir seçim yapıp "bu neyi değiştirdi?" diye başka sayfada
+aramak yok: her adımda önizleme **o adımın ekranını** gösteriyor.
+
+Sıra: Tema → Logo → Palet → Genel iskelet → Yüzey → Panel ekranı →
+Tablolu sayfa → Telefonda tablo → Veri girişi → Detay ekranı → Ayarlar →
+Boş durum → Yükleme → Bildirim ve silme → Özet.
+
+Kabadan inceye: önce her ekranda ortak olan çatı, sonra ekran ekran.
+Bu sırayla gidince geri dönme ihtiyacı doğmuyor.
+
+Üstte ilerleme şeridi (Adım 7 / 15), altta Geri ve bir sonraki adımın adını
+yazan İleri düğmesi. Şeritteki noktalardan istediğin adıma atlayabilirsin.
+Kaldığın adım hatırlanıyor.
+
+"Telefonda tablo" adımında önizleme kendiliğinden telefon kipine geçiyor —
+o kararın anlamı ancak orada görünür.
+
+Son adım **Özet**: 24 kararın hepsi tek listede, palet ve yazı tipleriyle
+birlikte. Prompta yazılacak olan tam olarak bu.
+
+Üç sekme (Biçim · Yerleşim · Durumlar) kalktı; adımlar onların yerini aldı.
+Prompt ve NIZAM.md'de öbek sırası kabadan inceye değişti:
+Yerleşim → Biçim → Durumlar.
+
 ## v0.24.0 — 22 Ağustos 2026
 **Tasarım kararları 7'den 24'e çıktı: Biçim · Yerleşim · Durumlar**
 

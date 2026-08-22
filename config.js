@@ -7,9 +7,9 @@ const APP = {
   name:     'NIZAM | Studio',
   short:    'NIZAM Studio',
   owner:    'Nizam Soft',
-  version: 'v0.24.0',
+  version: 'v0.25.0',
   build:    '2026-08-20',
-  stage: 'Adım 4 · Yerleşim ve durumlar',
+  stage: 'Adım 4 · Tasarım akışı',
 };
 
 /* Supabase bağlantısı.
@@ -363,13 +363,70 @@ const DURUM_ALAN = [
 
 /* Üç öbek, üç sekme. Hepsi projenin `palet` alanında saklanır. */
 const TASARIM_GRUP = [
-  { anahtar: 'bicim',    ad: 'Biçim',    alanlar: TASARIM_ALAN },
   { anahtar: 'yerlesim', ad: 'Yerleşim', alanlar: YERLESIM_ALAN },
+  { anahtar: 'bicim',    ad: 'Biçim',    alanlar: TASARIM_ALAN },
   { anahtar: 'durum',    ad: 'Durumlar', alanlar: DURUM_ALAN },
 ];
 
 /* Bütün başlıklar tek dizide — prompt ve çözümleyici bunu gezer. */
-const TUM_TASARIM = TASARIM_ALAN.concat(YERLESIM_ALAN, DURUM_ALAN);
+const TUM_TASARIM = YERLESIM_ALAN.concat(TASARIM_ALAN, DURUM_ALAN);
+
+/* ---- Tasarım akışı ----
+   Kararlar başlık türüne göre değil, ETKİLEDİĞİ EKRANA göre gruplanır.
+   Her adımda önizleme o adımın ekranını gösterir; başka sayfada ne
+   değiştiğini aramak gerekmez. Sıra kabadan inceye: önce her ekranda
+   ortak olan, sonra ekran ekran. */
+const TASARIM_ADIM = [
+  { anahtar: 'tema',     ad: 'Tema',            tur: 'tema',  ekran: 'panel',
+    aciklama: 'Önce bunu seç — palet buna göre üretilecek.' },
+  { anahtar: 'logo',     ad: 'Logo',            tur: 'logo',  ekran: 'panel',
+    aciklama: 'Paletin kaynağı. Bu olmadan prompt anlamsız.' },
+  { anahtar: 'palet',    ad: 'Palet',           tur: 'palet', ekran: 'panel',
+    aciklama: 'Promptu Claude\'a logoyla ver, dönen cevabı yapıştır.' },
+
+  { anahtar: 'iskelet',  ad: 'Genel iskelet',   ekran: 'panel',
+    aciklama: 'Her ekranda ortak olan çatı.',
+    alanlar: ['ustcubuk', 'gezinme', 'sayfalistesi', 'genislik'] },
+  { anahtar: 'yuzey',    ad: 'Yüzey',           ekran: 'panel',
+    aciklama: 'Kutuların, düğmelerin ve simgelerin görünüşü.',
+    alanlar: ['kart', 'kose', 'yogunluk', 'dugme', 'simge'] },
+
+  { anahtar: 'panel',    ad: 'Panel ekranı',    ekran: 'panel',
+    aciklama: 'Uygulama açılınca ilk görülen ekran.',
+    alanlar: ['dashboard'] },
+  { anahtar: 'liste',    ad: 'Tablolu sayfa',   ekran: 'liste',
+    aciklama: 'En çok bakılan ekran. Kayıtlar burada.',
+    alanlar: ['tablosayfa', 'tablo', 'arama', 'filtre', 'listesonu', 'anaeylem'] },
+  { anahtar: 'mobil',    ad: 'Telefonda tablo', ekran: 'liste', cihaz: 'telefon',
+    aciklama: 'Dar ekranda tablo bozulur; ne olacağına karar ver.',
+    alanlar: ['tablomobil'] },
+  { anahtar: 'form',     ad: 'Veri girişi',     ekran: 'form',
+    aciklama: 'Yeni kayıt eklenirken açılan ekran.',
+    alanlar: ['verigirisi'] },
+  { anahtar: 'detay',    ad: 'Detay ekranı',    ekran: 'liste',
+    aciklama: 'Bir kaydın kendi sayfası.',
+    alanlar: ['detay'] },
+  { anahtar: 'ayarlar',  ad: 'Ayarlar ekranı',  ekran: 'ayarlar',
+    aciklama: 'Her uygulamada var, hep sonradan düşünülür.',
+    alanlar: ['ayarlar'] },
+  { anahtar: 'bos',      ad: 'Boş durum',       ekran: 'bos',
+    aciklama: 'Hiç kayıt yokken görünen ekran.',
+    alanlar: ['bosdurum'] },
+  { anahtar: 'yukleme',  ad: 'Yükleme',         ekran: 'yukleme',
+    aciklama: 'Veri beklenirken görünen ekran.',
+    alanlar: ['yukleme'] },
+  { anahtar: 'bildirim', ad: 'Bildirim ve silme', ekran: 'liste',
+    aciklama: 'Mesajlar nerede çıkar, silme nasıl olur.',
+    alanlar: ['bildirim', 'onaysil'] },
+
+  { anahtar: 'ozet',     ad: 'Özet',            tur: 'ozet',  ekran: 'panel',
+    aciklama: 'Verilen bütün kararlar. Prompta bu yazılacak.' },
+];
+
+/* Adımın başlıkları — anahtarlardan gerçek alanlara çevirir. */
+function adimAlanlari(adim) {
+  return (adim.alanlar || []).map(k => TUM_TASARIM.find(a => a.anahtar === k)).filter(Boolean);
+}
 
 /* Bir alanın seçili değerleri — her zaman dizi döner.
    Tek seçimliler tek elemanlı; hiç seçilmemişse varsayılan. */

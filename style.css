@@ -2409,30 +2409,9 @@ a.durak:active { transform: scale(.99); transition: transform .1s var(--ease); }
    renkleri buraya sızmaz: gösterdiğimiz şey müşterinin uygulaması.
    ========================================================================== */
 
-/* Yapışkan önizleme düğmesi — nereye kaydırırsan orada. */
-.onz-dug {
-  position: sticky; top: 0; z-index: 6;
-  display: flex; align-items: center; gap: 10px; width: 100%;
-  margin: 4px calc(var(--yan) * -1) 4px; padding: 11px var(--yan);
-  width: calc(100% + var(--yan) * 2);
-  border: 0; border-bottom: 1px solid var(--line-3);
-  background: var(--bg); box-shadow: 0 10px 14px -12px #000;
-  color: var(--ink); font-family: inherit; text-align: left; cursor: pointer;
-}
-/* Yapışınca üstteki iç boşluktan içerik sızmasın. */
-.onz-dug::before {
-  content: ""; position: absolute; left: 0; right: 0; bottom: 100%;
-  height: var(--ust); background: var(--bg);
-}
-.onz-dug b { font-family: var(--yazi-baslik); font-size: 13px; flex-shrink: 0; }
-.onz-dug i { flex: 1; min-width: 0; font-style: normal; font-size: 11px; color: var(--ink-dim);
-             overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.onz-dug > svg:first-child { flex-shrink: 0; color: var(--metal-2); }
-.onz-dug > svg:last-child  { flex-shrink: 0; color: var(--ink-faint); }
-
-/* Yukarıdan inen önizleme paneli.
+/* Yukarıdan inen büyük önizleme — sayfadaki küçük önizlemenin "Büyüt"ü.
    Tam ekran değil: altta en az bir seçim rafı açıkta kalıyor ve panel
-   açıkken oraya dokunulabiliyor — önizleme anında değişiyor. */
+   açıkken oraya dokunulabiliyor. */
 .onz {
   position: fixed; top: 0; left: 0; right: 0; z-index: 300;
   max-height: max(300px, calc(100dvh - 300px));
@@ -2670,40 +2649,8 @@ ekran planı.
               box-shadow: inset 0 0 0 1.5px var(--line-2); border-top: 1.5px solid var(--metal-2);
               box-sizing: border-box; }
 
-/* Öbek sekmeleri: Biçim · Yerleşim · Durumlar */
-.tsek {
-  display: flex; gap: 4px; padding: 4px; margin: 12px 0 4px;
-  background: var(--yuva-2); border: 1px solid var(--line-3); border-radius: 13px;
-}
-.tsek button {
-  flex: 1; display: flex; align-items: center; justify-content: center; gap: 5px;
-  padding: 8px 4px; border: 0; border-radius: 10px; cursor: pointer;
-  background: transparent; color: var(--ink-dim);
-  font-family: var(--yazi-baslik); font-size: 12.5px; font-weight: 600;
-}
-.tsek button em {
-  font-style: normal; font-size: 9.5px; font-weight: 600; padding: 1px 5px;
-  border-radius: 999px; background: var(--yuva); color: var(--ink-faint);
-}
-.tsek button.on { background: var(--surface-2); color: var(--ink);
-                  box-shadow: 0 1px 0 rgba(255, 255, 255, .06) inset; }
-.tsek button.on em { background: var(--surface-3); color: var(--ink-soft); }
 
 
-
-/* Önizleme ekran seçici */
-.onz-ekran {
-  display: flex; gap: 6px; flex-shrink: 0; overflow-x: auto; scrollbar-width: none;
-  padding: 9px 16px; border-bottom: 1px solid var(--line-3); background: var(--yuva-2);
-}
-.onz-ekran::-webkit-scrollbar { display: none; }
-.onz-ekran button {
-  flex: 0 0 auto; font-family: inherit; font-size: 10.5px; padding: 5px 12px;
-  border-radius: 999px; border: 1px solid var(--line-3);
-  background: transparent; color: var(--ink-dim); cursor: pointer;
-}
-.onz-ekran button.on { background: var(--surface-3); border-color: var(--metal-1);
-                       color: var(--ink); font-weight: 600; }
 
 /* ---- Sahte uygulamanın yeni parçaları ---- */
 .o-app { display: flex; flex-direction: column; }
@@ -2868,6 +2815,65 @@ ekran planı.
          border-radius: 50%; display: grid; place-items: center;
          color: var(--o-uzeri); font-size: 17px; font-weight: 300; line-height: 1;
          box-shadow: 0 8px 16px -6px #000; }
+
+
+
+/* ==========================================================================
+   TASARIM AKIŞI — adım adım
+   Karar başlığa göre değil, etkilediği ekrana göre gruplanır; önizleme
+   her adımda o ekranı gösterir. Nereye baktığını aramak gerekmez.
+   ========================================================================== */
+
+.adim-serit { margin: 2px 0 14px; }
+.as-ust { display: flex; align-items: baseline; gap: 8px; }
+.as-ust b { font-family: var(--yazi-baslik); font-size: 11px; letter-spacing: .8px;
+            text-transform: uppercase; color: var(--ink-faint); }
+.as-ust span { font-size: 11px; color: var(--ink-dim); margin-left: auto; }
+.as-noktalar { display: flex; gap: 3px; margin-top: 8px; }
+.as-noktalar button { flex: 1; padding: 7px 0 0; border: 0; background: transparent; cursor: pointer; }
+.as-noktalar i { display: block; height: 3px; border-radius: 2px; background: var(--line-2); }
+.as-noktalar .gecti i { background: var(--metal-1); }
+.as-noktalar .on i { background: var(--metal-2); }
+
+.adim-bas { margin: 16px 0 12px; }
+.adim-bas b { display: block; font-family: var(--yazi-baslik); font-size: 17px;
+              letter-spacing: -.2px; color: var(--ink-strong); }
+.adim-bas i { display: block; font-style: normal; font-size: 12px; line-height: 1.5;
+              color: var(--ink-dim); margin-top: 3px; }
+
+.adim-not { display: flex; align-items: flex-start; gap: 7px; margin-top: 12px;
+            padding: 9px 12px; border-radius: 12px;
+            border: 1px solid var(--line-3); background: var(--yuva);
+            font-size: 11px; line-height: 1.5; color: var(--ink-dim); }
+.adim-not svg { flex: 0 0 auto; margin-top: 1px; color: var(--ink-faint); }
+
+/* Adımın önizlemesi — sayfanın tepesinde, hep açık. */
+.onz-satir { position: relative; border: 1px solid var(--line-2); border-radius: 16px;
+             overflow: hidden; background: var(--yuva-2); }
+.onz-satir .onz-goz {
+  padding: 13px; display: flex; flex-direction: column; align-items: center;
+  background: repeating-conic-gradient(#1a1918 0 25%, #171614 0 50%) 0 0 / 16px 16px;
+}
+.onz-satir .onz-goz > .o-app { max-width: 420px; }
+.onz-buyut {
+  position: absolute; top: 9px; right: 9px; width: 28px; height: 28px;
+  display: grid; place-items: center; cursor: pointer;
+  border: 1px solid var(--line-2); border-radius: 9px;
+  background: color-mix(in srgb, var(--bg) 82%, transparent);
+  backdrop-filter: blur(8px); color: var(--ink-soft);
+}
+
+/* Alttaki geri / ileri */
+.adim-gez { display: flex; gap: 9px; margin-top: 22px; }
+.ag { display: flex; align-items: center; justify-content: center; gap: 6px;
+      padding: 13px 16px; border-radius: 13px; cursor: pointer;
+      font-family: var(--yazi-baslik); font-size: 13px; font-weight: 600;
+      border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); }
+.ag.geri { flex: 0 0 auto; color: var(--ink-soft); }
+.ag.geri svg { transform: rotate(180deg); }
+.ag.geri:disabled { opacity: .38; cursor: default; }
+.ag.ileri { flex: 1; background: var(--surface-3); border-color: var(--line-parlak); }
+.ag svg { flex: 0 0 auto; }
 
 
 @media (hover: hover) {
