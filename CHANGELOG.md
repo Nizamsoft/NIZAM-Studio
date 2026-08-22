@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.36.2
+- "n yeni" çipiyle atlanan karardan sonra İleri düğmesi artık akışı baştan takip ettirmiyor: varsa sıradaki yeni karara, yoksa doğrudan özete götürüyor. Geri'ye ya da nokta şeridine dokununca normal akışa dönülür.
+
 ## v0.36.1
 - Dolu zemin, buzlu cam ve çizgiyle ayrık hem kartlarda hem önizlemede birbirinin aynısı gözüküyordu: dolu artık tam yüzey renginde gölgeli bant, camda içerik çubuğun altından geçerken renkli görünüyor, çizgide zemin yok yalnız belirgin ayrım çizgisi var.
 

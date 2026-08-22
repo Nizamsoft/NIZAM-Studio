@@ -991,17 +991,38 @@ function adimSeridi(p, no, adim) {
     </div>`;
 }
 
+/* "n yeni" çipiyle atlanan projeler. Bu kipteyken İleri, sıradaki adımı
+   değil sıradaki yeni kararı gösterir; yenisi kalmayınca özete çıkar —
+   yoksa 51 adım baştan takip ettiriliyordu. */
+const YENI_KIP = {};
+
 /* Alt satır. Tek seçimli adımda ileri düğmesi "geç" der: seçim zaten ilerletir. */
 function adimGezinme(p, no, adim) {
   const son = no === TASARIM_ADIM.length - 1;
+
+  let hedef = son ? -1 : no + 1;
+  let yazi  = son ? 'Bitir' : 'İleri';
+  let kip   = '';
+  if (YENI_KIP[p.id] && !son) {
+    const kalan = yeniKararlar(p.palet).filter(a => a.anahtar !== adim.anahtar);
+    const sira  = kalan.length
+      ? TASARIM_ADIM.findIndex(a => a.anahtar === kalan[0].anahtar)
+      : TASARIM_ADIM.length - 1;
+    if (sira > -1) {
+      hedef = sira;
+      yazi  = kalan.length ? 'Sıradaki yeni' : 'Özete git';
+      kip   = ' data-yenikip="1"';
+    }
+  }
+
   return `
     <div class="adim-gez">
       <button class="ag geri" type="button" ${no ? '' : 'disabled'}
               data-eylem="tasarim-adim" data-proje="${p.id}" data-deger="${no - 1}">
         ${svg(ICON.chevron, 14)} Geri</button>
-      <button class="ag ileri" type="button"
-              data-eylem="tasarim-adim" data-proje="${p.id}" data-deger="${son ? -1 : no + 1}">
-        ${son ? 'Bitir' : 'İleri'} ${svg(ICON.chevron, 14)}</button>
+      <button class="ag ileri${kip ? ' yeni' : ''}" type="button"${kip}
+              data-eylem="tasarim-adim" data-proje="${p.id}" data-deger="${hedef}">
+        ${yazi} ${svg(ICON.chevron, 14)}</button>
     </div>`;
 }
 
@@ -5231,6 +5252,7 @@ async function eylemCalistir(el) {
     if (!ilk) return;
     const yer = TASARIM_ADIM.findIndex(a => a.anahtar === ilk.anahtar);
     if (yer < 0) return;
+    YENI_KIP[pr.id] = true;
     TASARIM_YER[pr.id] = yer;
     render();
     return;
@@ -5280,6 +5302,10 @@ async function eylemCalistir(el) {
     const pr = DB.proje(el.dataset.proje);
     if (!pr) return;
     const hedef = Number(el.dataset.deger);
+    /* Kipten çıkış: nokta şeridine, Geri'ye ya da başka bir yere dokunan
+       kullanıcı normal akışa dönmüş demektir. */
+    if (!el.dataset.yenikip) delete YENI_KIP[pr.id];
+    if (hedef === TASARIM_ADIM.length - 1) delete YENI_KIP[pr.id];
     if (hedef < 0) { location.hash = '#/projeler/' + pr.id; return; }
     TASARIM_YER[pr.id] = hedef;
     render();
