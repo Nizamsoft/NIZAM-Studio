@@ -1,5 +1,19 @@
 # Değişiklik Günlüğü
 
+## v0.23.2 — 22 Ağustos 2026
+**Önizleme tam ekran değil, yukarıdan inen panel**
+
+Önizleme artık ekranı kaplamıyor: yukarıdan kayarak iniyor ve **altta en az
+bir seçim rafı açıkta kalıyor**. Panel açıkken o rafa dokunabiliyorsun —
+seçim değişince önizleme aynı anda yeniden çiziliyor. Aç, dene, kapat
+döngüsü bitti.
+
+Açılırken sayfa kendiliğinden kayıp altta kalan şeride bir raf getiriyor;
+panelin altında boş ekran kalmıyor.
+
+Alt kenarında küçük bir tutamaç var — aşağıda iş yapılabildiği belli olsun
+diye. Esc ya da çarpı kapatıyor.
+
 ## v0.23.1 — 22 Ağustos 2026
 **Her rafın başında Sıfırla**
 

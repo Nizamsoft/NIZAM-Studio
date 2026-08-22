@@ -908,7 +908,10 @@ function onizlemeAc(projeId) {
   document.body.appendChild(el);
   logolariGoster();
   document.addEventListener('keydown', onizlemeKac);
-  requestAnimationFrame(() => el.classList.add('acik'));
+  requestAnimationFrame(() => {
+    el.classList.add('acik');
+    rafiGorunureAl(el);
+  });
 
   el.addEventListener('click', ev => {
     const b = ev.target.closest('[data-onz]');
@@ -919,6 +922,31 @@ function onizlemeAc(projeId) {
     $$('.cihaz button', el).forEach(x => x.classList.toggle('on', x === b));
     onizlemeTazele(p, p.palet);
   });
+}
+
+/* Panel tepeden iniyor; altta kalan şeritte hiç raf yoksa sayfayı kaydırıp
+   bir tanesini oraya getir. Açılıp da seçim yapılamayan bir panel işe yaramaz. */
+function rafiGorunureAl(el) {
+  const view = $('#view');
+  if (!view) return;
+
+  const alt   = el.getBoundingClientRect().bottom + 10;
+  const dip   = window.innerHeight - 96;
+  const raflar = $$('.raf', view);
+  if (!raflar.length) return;
+
+  const gorunen = raflar.some(r => {
+    const k = r.getBoundingClientRect();
+    return k.top >= alt && k.bottom <= dip;
+  });
+  if (gorunen) return;
+
+  /* Şeride en yakın rafı seç, blok başlığıyla birlikte yukarı çek. */
+  const hedef = raflar.reduce((en, r) =>
+    Math.abs(r.getBoundingClientRect().top - alt) < Math.abs(en.getBoundingClientRect().top - alt) ? r : en);
+  const bas = hedef.previousElementSibling && hedef.previousElementSibling.previousElementSibling;
+  const ust = (bas || hedef).getBoundingClientRect().top;
+  view.scrollTop += ust - alt;
 }
 
 function onizlemeKac(ev) { if (ev.key === 'Escape') onizlemeKapat(); }

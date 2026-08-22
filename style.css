@@ -2430,18 +2430,29 @@ a.durak:active { transform: scale(.99); transition: transform .1s var(--ease); }
 .onz-dug > svg:first-child { flex-shrink: 0; color: var(--metal-2); }
 .onz-dug > svg:last-child  { flex-shrink: 0; color: var(--ink-faint); }
 
-/* Tam ekran önizleme */
+/* Yukarıdan inen önizleme paneli.
+   Tam ekran değil: altta en az bir seçim rafı açıkta kalıyor ve panel
+   açıkken oraya dokunulabiliyor — önizleme anında değişiyor. */
 .onz {
-  position: fixed; inset: 0; z-index: 300;
+  position: fixed; top: 0; left: 0; right: 0; z-index: 300;
+  max-height: max(300px, calc(100dvh - 300px));
   display: flex; flex-direction: column; background: var(--bg);
-  opacity: 0; transform: translateY(14px);
-  transition: opacity .2s ease, transform .24s var(--ease);
+  border-bottom: 1px solid var(--line-2);
+  border-radius: 0 0 20px 20px;
+  box-shadow: 0 22px 34px -20px #000;
+  transform: translateY(-102%);
+  transition: transform .3s var(--ease);
 }
-.onz.acik { opacity: 1; transform: none; }
+.onz.acik { transform: none; }
 .onz-tepe {
   display: flex; align-items: center; gap: 12px; flex-shrink: 0;
-  padding: calc(14px + env(safe-area-inset-top, 0px)) 16px 14px;
+  padding: calc(12px + env(safe-area-inset-top, 0px)) 16px 12px;
   border-bottom: 1px solid var(--line-3);
+}
+/* Panelin altında tutamaç — aşağıda seçim yapılabildiği belli olsun. */
+.onz::after {
+  content: ""; position: absolute; left: 50%; bottom: 7px; width: 38px; height: 4px;
+  margin-left: -19px; border-radius: 999px; background: var(--line-parlak);
 }
 .onz-ad { flex: 1; min-width: 0; font-family: var(--yazi-baslik); font-size: 14px;
           font-weight: 700; color: var(--ink-strong); }
@@ -2450,7 +2461,7 @@ a.durak:active { transform: scale(.99); transition: transform .1s var(--ease); }
             overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .onz-goz {
   flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
-  padding: 18px 16px calc(24px + env(safe-area-inset-bottom, 0px));
+  padding: 14px 16px 20px;
   display: flex; flex-direction: column; align-items: center;
   background: repeating-conic-gradient(#1a1918 0 25%, #171614 0 50%) 0 0 / 16px 16px;
 }

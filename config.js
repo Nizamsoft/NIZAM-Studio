@@ -7,7 +7,7 @@ const APP = {
   name:     'NIZAM | Studio',
   short:    'NIZAM Studio',
   owner:    'Nizam Soft',
-  version: 'v0.23.1',
+  version: 'v0.23.2',
   build:    '2026-08-20',
   stage: 'Adım 4 · Önizleme düğmesi',
 };
