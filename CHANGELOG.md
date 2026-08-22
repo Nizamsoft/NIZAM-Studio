@@ -1,5 +1,26 @@
 # Değişiklik Günlüğü
 
+## v0.26.0 — 22 Ağustos 2026
+**Bir ekranda tek karar, kaydırma yok**
+
+Tasarım akışı 31 ekrana bölündü: her ekranda **tek bir karar**. Üstte adım
+çubuğu, ortada önizleme, altta o kararın rafı — üçü ekranı bölüşüyor,
+sayfa kaydırılmıyor. Bir seçeneğe dokununca kaydediyor ve kendiliğinden
+sonrakine geçiyor. Değiştirmek istemiyorsan "Değiştirmeden geç".
+
+Önizleme artık ekrandan çıkmıyor; hangi kararı veriyorsan onun ekranını
+gösteriyor.
+
+**Çoklu seçim üç başlığa indi.** Eskiden altı başlıkta birden fazla
+seçilebiliyordu ve birbirini iptal eden seçenekler bir aradaydı (Zebra +
+Tam ızgara gibi). Alternatifler ile katmanlar ayrıldı:
+
+- **Kart** (tek) + **Karta ekle** (Şerit vurgu · Işıklı kenar · Dokulu)
+- **Tablo satırı** (tek) + **Tabloya ekle** (Gruplu · Rakam hizalı · Vurgulu sütun)
+- **Düğme** (tek) + **Düğmeye ekle** (Yazı · İkonlu)
+
+"…ekle" başlıklarında hiçbiri seçilmeyebilir. Kalan 24 başlık tek seçim.
+
 ## v0.25.1 — 22 Ağustos 2026
 **Kararlar düğmesi**
 

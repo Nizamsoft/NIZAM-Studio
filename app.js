@@ -744,11 +744,25 @@ function takvimBolumu(p) {
 /* Adım durumu proje başına hatırlanır: geri gelince kaldığın yerde açılır. */
 const TASARIM_YER = {};
 
+/* Seçim yapıldıktan kısa bir an sonra sonraki adıma geç: kullanıcı
+   dokunduğu şeyin önizlemeye yansımasını görsün, sonra sayfa değişsin. */
+function adimIlerle(p, gecikme) {
+  const su = adimNo(p);
+  if (su >= TASARIM_ADIM.length - 1) return;
+  setTimeout(() => {
+    if (adimNo(p) !== su) return;
+    TASARIM_YER[p.id] = su + 1;
+    render();
+  }, gecikme || 0);
+}
+
 function adimNo(p) {
   const n = TASARIM_YER[p.id] || 0;
   return Math.max(0, Math.min(n, TASARIM_ADIM.length - 1));
 }
 
+/* Bir ekranda tek karar: üstte adım çubuğu, ortada önizleme, altta seçim.
+   Sayfa kaydırılmaz — üç parça ekrana sığacak şekilde bölüşür. */
 function tasarimSayfasi(p, d) {
   const no    = adimNo(p);
   const adim  = TASARIM_ADIM[no];
@@ -756,8 +770,8 @@ function tasarimSayfasi(p, d) {
   const adres = DB.logoAdres[p.id];
   const yon   = AUTH.yonetici;
 
-  /* Adımın gövdesi: ilk üçü kendi işini yapar, kalanı raf gösterir. */
-  let govde;
+  let govde, gez;
+
   if (adim.tur === 'tema') {
     const acikTema = PROMPT.temaAcik(p);
     const kilit = !!pl;
@@ -794,42 +808,49 @@ function tasarimSayfasi(p, d) {
   } else if (adim.tur === 'palet') {
     govde = (pl ? paletSeridi(pl) : `
       <div class="bos-kutu">${svg(ICON.katman, 18)}
-        <span>Palet yok. Promptu kopyala, Claude'a logoyla birlikte ver;
-        dönen cevabı buraya yapıştır. 24 tasarım kararı birden dolar.</span></div>`)
+        <span>Promptu kopyala, Claude'a logoyla birlikte ver; dönen cevabı yapıştır.
+        ${TUM_TASARIM.length} tasarım kararı birden dolar.</span></div>`)
       + (yon ? `
-        <button class="sayfa-dug" data-eylem="palet-prompt" data-proje="${p.id}" type="button">
-          ${svg(ICON.kopya, 15)} Prompt kopyala</button>
-        <button class="sayfa-dug ${pl ? 'ikincil' : ''}" data-eylem="palet-aktar"
-                data-proje="${p.id}" type="button">
-          ${svg(ICON.ice, 15)} Cevabı yapıştır</button>` : '')
-      + (pl ? '' : `<div class="adim-not">${svg(ICON.info, 13)}
-          <span>Paletsiz de devam edebilirsin — o zaman 24 kararı elle verirsin.</span></div>`);
+        <div class="palet-dug">
+          <button class="sayfa-dug" data-eylem="palet-prompt" data-proje="${p.id}" type="button">
+            ${svg(ICON.kopya, 15)} Prompt kopyala</button>
+          <button class="sayfa-dug ${pl ? 'ikincil' : ''}" data-eylem="palet-aktar"
+                  data-proje="${p.id}" type="button">
+            ${svg(ICON.ice, 15)} Cevabı yapıştır</button>
+        </div>` : '');
 
   } else if (adim.tur === 'ozet') {
-    govde = paletSeridi(pl || {}) + tasarimOzeti(p);
+    govde = `<div class="ozet-kaydir">${paletSeridi(pl || {})}${tasarimOzeti(p)}</div>`;
 
   } else {
-    govde = adimRaflari(p, adim);
+    govde = adimRafi(p, adim.alan);
   }
 
-  return adimSeridi(p, no)
-    + onizlemeSatiri(p, adim)
-    + `<div class="adim-bas">
+  gez = adimGezinme(p, no, adim);
+
+  return `<div class="akis ${adim.tur === 'ozet' ? 'ozet' : ''}">
+    ${adimSeridi(p, no, adim)}
+    ${adim.tur === 'ozet' ? '' : onizlemeSatiri(p, adim)}
+    <div class="akis-alt">
+      <div class="adim-bas">
         <div class="ab-yazi"><b>${esc(adim.ad)}</b><i>${esc(adim.aciklama)}</i></div>
-        <button class="ab-kararlar" type="button" data-eylem="kararlar" data-proje="${p.id}">
-          ${svg(ICON.katman, 14)} Kararlar</button>
-      </div>`
-    + govde
-    + adimGezinme(p, no);
+        <span class="ab-tur">${adim.alan
+          ? (adim.alan.coklu ? 'birkaçı' : 'tek seçim') : ''}</span>
+      </div>
+      ${govde}
+      ${gez}
+    </div>
+  </div>`;
 }
 
-/* Üstteki ilerleme şeridi — kaçıncı adımdasın ve hangileri geride kaldı. */
-function adimSeridi(p, no) {
+/* Üstteki şerit: öbek adı, sayaç, Kararlar düğmesi ve ilerleme noktaları. */
+function adimSeridi(p, no, adim) {
   return `
     <div class="adim-serit">
       <div class="as-ust">
-        <b>Adım ${no + 1} / ${TASARIM_ADIM.length}</b>
-        <span>${esc(TASARIM_ADIM[no].ad)}</span>
+        <b>${esc(adim.obek)} · ${no + 1} / ${TASARIM_ADIM.length}</b>
+        <button class="ab-kararlar" type="button" data-eylem="kararlar" data-proje="${p.id}">
+          ${svg(ICON.katman, 14)} Kararlar</button>
       </div>
       <div class="as-noktalar">${TASARIM_ADIM.map((a, i) => `
         <button class="${i === no ? 'on' : i < no ? 'gecti' : ''}" type="button"
@@ -838,18 +859,42 @@ function adimSeridi(p, no) {
     </div>`;
 }
 
-/* Alttaki geri / ileri. Son adımda ileri yerine "Bitir". */
-function adimGezinme(p, no) {
+/* Alt satır. Tek seçimli adımda ileri düğmesi "geç" der: seçim zaten ilerletir. */
+function adimGezinme(p, no, adim) {
   const son = no === TASARIM_ADIM.length - 1;
+  const tekil = adim.alan && !adim.alan.coklu;
   return `
     <div class="adim-gez">
       <button class="ag geri" type="button" ${no ? '' : 'disabled'}
               data-eylem="tasarim-adim" data-proje="${p.id}" data-deger="${no - 1}">
         ${svg(ICON.chevron, 14)} Geri</button>
-      <button class="ag ileri" type="button"
+      <button class="ag ${tekil ? 'atla' : 'ileri'}" type="button"
               data-eylem="tasarim-adim" data-proje="${p.id}" data-deger="${son ? -1 : no + 1}">
-        ${son ? 'Bitir' : TASARIM_ADIM[no + 1].ad} ${svg(ICON.chevron, 14)}</button>
+        ${son ? 'Bitir' : tekil ? 'Değiştirmeden geç' : 'İleri'} ${svg(ICON.chevron, 14)}</button>
     </div>`;
+}
+
+/* Tek başlığın rafı. */
+function adimRafi(p, a) {
+  const secili = bicimSecim(p.palet, a);
+  return `<div class="raf" data-coklu="${a.coklu ? 1 : 0}">
+    ${a.bos ? '' : `
+      <button class="bsc sifir" type="button"
+              data-eylem="tasarim-sifirla" data-proje="${p.id}" data-alan="${a.anahtar}"
+              ${AUTH.yonetici && !bicimAyni(secili, a) ? '' : 'disabled'}
+              title="${esc(a.ad)} başlığını ${esc(a.varsayilan)} hâline döndürür">
+        <span class="bon"><span class="on-sifir">${svg(ICON.geriAl, 20)}</span></span>
+        <span class="bsc-ad">Sıfırla</span>
+      </button>`}
+    ${a.secim.map(x => `
+      <button class="bsc ${secili.includes(x.ad) ? 'on' : ''}" type="button"
+              data-eylem="tasarim-sec" data-proje="${p.id}"
+              data-alan="${a.anahtar}" data-deger="${esc(x.ad)}"
+              ${AUTH.yonetici ? '' : 'disabled'} title="${esc(x.tarif)}">
+        <span class="bon">${tasarimOnizleme(a.anahtar, x.ad)}</span>
+        <span class="bsc-ad">${esc(x.ad)}</span>
+      </button>`).join('')}
+  </div>`;
 }
 
 /* Palet şeridi — iki yerde kullanılıyor. */
@@ -862,6 +907,33 @@ function paletSeridi(pl) {
     <div class="tip">
       <div><b>Başlık</b><u style="font-family:var(--yazi-baslik);font-weight:700">${esc(pl.baslik || '—')}</u></div>
       <div><b>Metin</b><u>${esc(pl.govde || '—')}</u></div>
+    </div>`;
+}
+
+/* Son adım: bütün kararlar tek listede. */
+function tasarimOzeti(p) {
+  const pl = p.palet || {};
+  return TASARIM_GRUP.map(g => bolumBas(g.ad) + `
+    <div class="satirlar">${g.alanlar.map(a => {
+      const d = bicimSecim(pl, a);
+      return `<div class="sr">${esc(a.ad)} <b>${d.length ? esc(d.join(' + ')) : '—'}</b></div>`;
+    }).join('')}</div>`).join('')
+    + (pl.ton ? `<div class="adim-not">${svg(ICON.info, 13)}
+        <span>Karakter: ${esc(pl.ton)}</span></div>` : '');
+}
+
+/* Adımın kendi ekranını gösteren önizleme. Seçim yapınca anında değişir. */
+function onizlemeSatiri(p, adim) {
+  ONIZLEME_EKRAN = adim.ekran;
+  if (ONIZLEME_ADIM !== adim.anahtar) {
+    ONIZLEME_ADIM = adim.anahtar;
+    ONIZLEME_CIHAZ = adim.cihaz || 'web';
+  }
+  return `
+    <div class="onz-satir">
+      <div class="onz-goz">${onizlemeIc(p, p.palet)}</div>
+      <button class="onz-buyut" type="button" data-eylem="onizleme-ac" data-proje="${p.id}"
+              title="Büyüt">${svg(ICON.goz, 15)}</button>
     </div>`;
 }
 
@@ -1117,10 +1189,10 @@ function onizlemeIc(p, pl) {
   }[bic.yogunluk[0]] || ['44px', '14px'];
 
   const sinif = ['o-app']
-    .concat(bic.kart.map(x => 'ok-' + ({ 'Düz': 'duz', 'Yükseltilmiş': 'yuksek', 'Çizgili': 'cizgi',
+    .concat(bic.kart.concat(bic.kartek).map(x => 'ok-' + ({ 'Düz': 'duz', 'Yükseltilmiş': 'yuksek', 'Çizgili': 'cizgi',
       'Buzlu cam': 'cam', 'Şerit vurgu': 'serit', 'Kağıt': 'kagit', 'Oyulmuş': 'oyuk',
       'Işıklı kenar': 'isik', 'Degrade': 'degrade', 'Dokulu': 'doku' }[x])))
-    .concat(bic.tablo.map(x => 'ot-' + ({ 'Çizgisiz': 'yok', 'Zebra': 'zebra', 'Yatay çizgi': 'yatay',
+    .concat(bic.tablo.concat(bic.tabloek).map(x => 'ot-' + ({ 'Çizgisiz': 'yok', 'Zebra': 'zebra', 'Yatay çizgi': 'yatay',
       'Tam ızgara': 'izgara', 'Kartlı satır': 'kartli', 'Gruplu': 'gruplu',
       'Rakam hizalı': 'rakam', 'Vurgulu sütun': 'vurgulu' }[x])))
     .concat(bic.kose[0] === 'Kesik' ? ['o-kesik'] : [])
@@ -1133,7 +1205,7 @@ function onizlemeIc(p, pl) {
     .join(' ');
 
   /* Düğme: ilk dolu-tipi ana butonu belirler, "Yazı" ikinciyi, "İkonlu" simge ekler. */
-  const dg   = bic.dugme;
+  const dg   = bic.dugme.concat(bic.dugmeek);
   const ana  = ['Dolu', 'Gölgeli', 'Degrade', 'Çizgili', 'Yumuşak'].find(x => dg.includes(x)) || 'Dolu';
   const anaS = { 'Dolu': 'od-dolu', 'Gölgeli': 'od-golge', 'Degrade': 'od-degrade',
                  'Çizgili': 'od-cizgi', 'Yumuşak': 'od-yumusak' }[ana];
@@ -1407,32 +1479,6 @@ function bicimAyni(secili, alan) {
   return secili.length === 1 && secili[0] === alan.varsayilan;
 }
 
-/* Bir adımın rafları. Adımda hangi başlıklar varsa yalnız onlar. */
-function adimRaflari(p, adim) {
-  const pl = p.palet || {};
-  return adimAlanlari(adim).map(a => {
-    const secili = bicimSecim(pl, a);
-    return bolumBas(a.ad)
-      + `<div class="raf-alt">${esc(a.alt)}${
-           a.coklu ? ' <b class="coklu-not">Birkaçı birden seçilebilir</b>' : ''}</div>
-         <div class="raf" data-coklu="${a.coklu ? 1 : 0}">
-           <button class="bsc sifir" type="button"
-                   data-eylem="tasarim-sifirla" data-proje="${p.id}" data-alan="${a.anahtar}"
-                   ${AUTH.yonetici && !bicimAyni(secili, a) ? '' : 'disabled'}
-                   title="${esc(a.ad)} başlığını ${esc(a.varsayilan)} hâline döndürür">
-             <span class="bon"><span class="on-sifir">${svg(ICON.geriAl, 20)}</span></span>
-             <span class="bsc-ad">Sıfırla</span>
-           </button>${a.secim.map(x => `
-           <button class="bsc ${secili.includes(x.ad) ? 'on' : ''}" type="button"
-                   data-eylem="tasarim-sec" data-proje="${p.id}"
-                   data-alan="${a.anahtar}" data-deger="${esc(x.ad)}"
-                   ${AUTH.yonetici ? '' : 'disabled'} title="${esc(x.tarif)}">
-             <span class="bon">${tasarimOnizleme(a.anahtar, x.ad)}</span>
-             <span class="bsc-ad">${esc(x.ad)}</span>
-           </button>`).join('')}</div>`;
-  }).join('');
-}
-
 /* ---- Tel çizim: yerleşim ve durum seçeneklerinin küçük iskeleti ----
    Yüzey çizimleriyle karışmasın diye bilerek başka bir dil: kutu değil,
    ekranın planı. Her seçenek config'te bir parça listesi veriyor. */
@@ -1517,6 +1563,9 @@ function tasarimOnizleme(alan, ad) {
   const bilgi = TUM_TASARIM.find(a => a.anahtar === alan);
   const sec = bilgi && bilgi.secim.find(x => x.ad === ad);
   if (sec && sec.tel) return telCizim(sec.tel);
+
+  /* "…ekle" başlıkları ana başlığın çizim dilini kullanır. */
+  alan = { kartek: 'kart', tabloek: 'tablo', dugmeek: 'dugme' }[alan] || alan;
 
   const satirlar = '<i class="ln b o"></i><i class="ln u"></i><i class="ln k"></i>';
 
@@ -1816,6 +1865,7 @@ function paletCozumle(metin) {
 
     if (alan.secim) {
       /* Çoklu alanlarda "Buzlu cam + Şerit vurgu" gelebilir. */
+      if (alan.bos && /^(yok|hiçbiri|hicbiri|-|—)$/i.test(deger)) { palet[k] = []; return; }
       const parca = alan.coklu ? deger.split(/\s*[+,]\s*/) : [deger];
       const okunan = [];
       for (const par of parca) {
@@ -2211,6 +2261,8 @@ function render() {
   hesapMenusuKapat();
   /* Zemin süsü yalnızca Panel'de. */
   $('#main').classList.toggle('susulu', key === 'panel' && !detay);
+  /* Tasarım akışı kaydırılmaz: üç parça ekrana bölüşür. */
+  $('#view').classList.toggle('sabit', sayfa === 'tasarim');
   ustEylemYaz(key, detay, id);
   artiYaz(key, detay, id);
   $('#btn-back').classList.toggle('hidden', !detay);
@@ -4569,7 +4621,7 @@ async function eylemCalistir(el) {
       yeni = deger;
     } else if (eski.includes(deger)) {
       /* Son seçeneği söktürmüyoruz: boş bir başlık AI'ı tahmine iter. */
-      if (eski.length === 1) { toast('En az bir seçenek açık kalmalı.'); return; }
+      if (eski.length === 1 && !al.bos) { toast('En az bir seçenek açık kalmalı.'); return; }
       yeni = eski.filter(x => x !== deger);
     } else {
       /* Sıra listedeki sıra olsun — "Şerit + Cam" ile "Cam + Şerit" aynı şey. */
@@ -4590,6 +4642,9 @@ async function eylemCalistir(el) {
 
     try {
       await DB.paletKaydet(pr.id, Object.assign({}, pr.palet || {}, { [al.anahtar]: yeni }));
+      /* Tek seçimli adımda karar verildi demektir: kendiliğinden ilerle.
+         Çokluda kalıyoruz, kullanıcı birkaçını işaretleyecek. */
+      if (!al.coklu) adimIlerle(pr, 320);
     } catch (err) {
       isaretle(eski);
       onizlemeTazele(pr, pr.palet);

@@ -2819,60 +2819,75 @@ ekran planı.
 
 
 /* ==========================================================================
-   TASARIM AKIŞI — adım adım
-   Karar başlığa göre değil, etkilediği ekrana göre gruplanır; önizleme
-   her adımda o ekranı gösterir. Nereye baktığını aramak gerekmez.
+   TASARIM AKIŞI — bir ekranda tek karar
+   Üstte adım çubuğu, ortada önizleme, altta seçim. Sayfa kaydırılmaz;
+   üç parça kalan yeri bölüşür.
    ========================================================================== */
 
-.adim-serit { margin: 2px 0 14px; }
-.as-ust { display: flex; align-items: baseline; gap: 8px; }
+.view.sabit { overflow: hidden; display: flex; flex-direction: column; }
+.akis { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+
+.adim-serit { flex: 0 0 auto; }
+.as-ust { display: flex; align-items: center; gap: 8px; }
 .as-ust b { font-family: var(--yazi-baslik); font-size: 11px; letter-spacing: .8px;
             text-transform: uppercase; color: var(--ink-faint); }
-.as-ust span { font-size: 11px; color: var(--ink-dim); margin-left: auto; }
-.as-noktalar { display: flex; gap: 3px; margin-top: 8px; }
+.ab-kararlar {
+  margin-left: auto; flex: 0 0 auto; display: flex; align-items: center; gap: 5px;
+  padding: 6px 10px; border-radius: 10px; cursor: pointer;
+  border: 1px solid var(--line-2); background: var(--yuva);
+  font-family: inherit; font-size: 11px; color: var(--ink-soft);
+}
+.ab-kararlar svg { color: var(--ink-faint); }
+.as-noktalar { display: flex; gap: 2px; margin-top: 8px; }
 .as-noktalar button { flex: 1; padding: 7px 0 0; border: 0; background: transparent; cursor: pointer; }
 .as-noktalar i { display: block; height: 3px; border-radius: 2px; background: var(--line-2); }
 .as-noktalar .gecti i { background: var(--metal-1); }
 .as-noktalar .on i { background: var(--metal-2); }
 
-.adim-bas { display: flex; align-items: flex-start; gap: 12px; margin: 16px 0 12px; }
-.ab-yazi { flex: 1; min-width: 0; }
-.ab-kararlar {
-  flex: 0 0 auto; display: flex; align-items: center; gap: 5px; margin-top: 3px;
-  padding: 7px 11px; border-radius: 10px; cursor: pointer;
-  border: 1px solid var(--line-2); background: var(--yuva);
-  font-family: inherit; font-size: 11px; color: var(--ink-soft);
+/* Önizleme: kalan boşluğun tamamını alır, içindeki uygulama sığacak kadar küçülür. */
+.onz-satir {
+  flex: 1 1 auto; min-height: 120px; position: relative; margin: 11px 0;
+  border: 1px solid var(--line-2); border-radius: 16px; overflow: hidden;
+  background: var(--yuva-2);
 }
-.ab-kararlar svg { color: var(--ink-faint); }
-.adim-bas b { display: block; font-family: var(--yazi-baslik); font-size: 17px;
-              letter-spacing: -.2px; color: var(--ink-strong); }
-.adim-bas i { display: block; font-style: normal; font-size: 12px; line-height: 1.5;
-              color: var(--ink-dim); margin-top: 3px; }
-
-.adim-not { display: flex; align-items: flex-start; gap: 7px; margin-top: 12px;
-            padding: 9px 12px; border-radius: 12px;
-            border: 1px solid var(--line-3); background: var(--yuva);
-            font-size: 11px; line-height: 1.5; color: var(--ink-dim); }
-.adim-not svg { flex: 0 0 auto; margin-top: 1px; color: var(--ink-faint); }
-
-/* Adımın önizlemesi — sayfanın tepesinde, hep açık. */
-.onz-satir { position: relative; border: 1px solid var(--line-2); border-radius: 16px;
-             overflow: hidden; background: var(--yuva-2); }
 .onz-satir .onz-goz {
-  padding: 13px; display: flex; flex-direction: column; align-items: center;
+  position: absolute; inset: 0; overflow: hidden;
+  display: flex; align-items: center; justify-content: center; padding: 12px;
   background: repeating-conic-gradient(#1a1918 0 25%, #171614 0 50%) 0 0 / 16px 16px;
 }
-.onz-satir .onz-goz > .o-app { max-width: 420px; }
+.onz-satir .onz-goz > .o-app { max-width: 360px; max-height: 100%; }
+.onz-satir .onk-not { display: none; }
 .onz-buyut {
-  position: absolute; top: 9px; right: 9px; width: 28px; height: 28px;
+  position: absolute; top: 9px; right: 9px; width: 28px; height: 28px; z-index: 2;
   display: grid; place-items: center; cursor: pointer;
   border: 1px solid var(--line-2); border-radius: 9px;
   background: color-mix(in srgb, var(--bg) 82%, transparent);
   backdrop-filter: blur(8px); color: var(--ink-soft);
 }
 
-/* Alttaki geri / ileri */
-.adim-gez { display: flex; gap: 9px; margin-top: 22px; }
+.akis-alt { flex: 0 0 auto; }
+.adim-bas { display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; }
+.ab-yazi { flex: 1; min-width: 0; }
+.adim-bas b { display: block; font-family: var(--yazi-baslik); font-size: 17px;
+              letter-spacing: -.2px; color: var(--ink-strong); }
+.adim-bas i { display: block; font-style: normal; font-size: 11.5px; line-height: 1.45;
+              color: var(--ink-dim); margin-top: 2px; }
+.ab-tur { flex: 0 0 auto; font-size: 10.5px; color: var(--ink-faint); }
+
+.adim-not { display: flex; align-items: flex-start; gap: 7px; margin-top: 10px;
+            padding: 9px 12px; border-radius: 12px;
+            border: 1px solid var(--line-3); background: var(--yuva);
+            font-size: 11px; line-height: 1.5; color: var(--ink-dim); }
+.adim-not svg { flex: 0 0 auto; margin-top: 1px; color: var(--ink-faint); }
+
+.palet-dug { display: flex; gap: 8px; }
+.palet-dug .sayfa-dug { flex: 1; margin: 0; }
+.akis.ozet .akis-alt { margin-top: 14px; }
+.akis.ozet .akis-alt { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+.ozet-kaydir { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
+               margin: 0 calc(var(--yan) * -1); padding: 0 var(--yan); }
+
+.adim-gez { display: flex; gap: 9px; margin-top: 12px; }
 .ag { display: flex; align-items: center; justify-content: center; gap: 6px;
       padding: 13px 16px; border-radius: 13px; cursor: pointer;
       font-family: var(--yazi-baslik); font-size: 13px; font-weight: 600;
@@ -2881,9 +2896,8 @@ ekran planı.
 .ag.geri svg { transform: rotate(180deg); }
 .ag.geri:disabled { opacity: .38; cursor: default; }
 .ag.ileri { flex: 1; background: var(--surface-3); border-color: var(--line-parlak); }
+.ag.atla { flex: 1; background: transparent; border-color: var(--line-3); color: var(--ink-dim); }
 .ag svg { flex: 0 0 auto; }
-
-
 
 /* Kararlar paneli — adımdan çıkmadan hepsine bakmak için. */
 .krp { max-height: min(78dvh, 720px); }

@@ -7,9 +7,9 @@ const APP = {
   name:     'NIZAM | Studio',
   short:    'NIZAM Studio',
   owner:    'Nizam Soft',
-  version: 'v0.25.1',
+  version: 'v0.26.0',
   build:    '2026-08-20',
-  stage: 'Adım 4 · Tasarım akışı',
+  stage: 'Adım 4 · Tek karar tek ekran',
 };
 
 /* Supabase bağlantısı.
@@ -91,23 +91,29 @@ const PALET_ALAN = [
 const TASARIM_ALAN = [
   {
     anahtar: 'kart', ad: 'Kart', alt: 'Uygulamadaki her kutu böyle görünecek.',
-    varsayilan: 'Yükseltilmiş', coklu: true,
+    varsayilan: 'Yükseltilmiş', ekran: 'panel',
     secim: [
       { ad: 'Düz',          tarif: 'Gölge yok. Kart yalnızca dolgu farkıyla zeminden ayrılır.' },
       { ad: 'Yükseltilmiş', tarif: 'Yumuşak gölge ve üstte ince ışık çizgisi; kart zeminden kalkık durur.' },
       { ad: 'Çizgili',      tarif: 'Dolgu yok, yalnız 1px çerçeve. En sade ve en hafif görünüm.' },
       { ad: 'Buzlu cam',    tarif: 'Yarı saydam dolgu + backdrop-filter bulanıklık + ince açık çerçeve.' },
-      { ad: 'Şerit vurgu',  tarif: 'Sol kenarda 3px vurgu renginde dikey şerit.' },
       { ad: 'Kağıt',        tarif: 'Neredeyse keskin köşe, kaymış sert gölge; basılı kağıt hissi.' },
       { ad: 'Oyulmuş',      tarif: 'Kart zemine gömülü: içte üstten koyu, alttan açık gölge. Kabartmanın tersi.' },
-      { ad: 'Işıklı kenar', tarif: 'Kenarda vurgu renginde 1px ışıyan çerçeve ve dışa doğru hafif renkli parıltı.' },
       { ad: 'Degrade',      tarif: 'Dolgu üstten alta yumuşak renk geçişi; üst kenar bir tık açık.' },
+    ],
+  },
+  {
+    anahtar: 'kartek', ad: 'Karta ekle', alt: 'Kartın üstüne binen katmanlar. Hiçbiri seçilmeyebilir.',
+    varsayilan: '', coklu: true, bos: true, ekran: 'panel',
+    secim: [
+      { ad: 'Şerit vurgu',  tarif: 'Sol kenarda 3px vurgu renginde dikey şerit.' },
+      { ad: 'Işıklı kenar', tarif: 'Kenarda vurgu renginde 1px ışıyan çerçeve ve dışa hafif renkli parıltı.' },
       { ad: 'Dokulu',       tarif: 'Dolgunun üzerinde çok ince gren dokusu; matbaa kağıdı hissi.' },
     ],
   },
   {
     anahtar: 'kose', ad: 'Köşe', alt: 'Kutuların ve düğmelerin köşesi.',
-    varsayilan: 'Yuvarlak',
+    varsayilan: 'Yuvarlak', ekran: 'panel',
     secim: [
       { ad: 'Keskin',   tarif: 'border-radius 0. Teknik ve kurumsal.' },
       { ad: 'Hafif',    tarif: 'border-radius 6px. Nötr, güvenli seçim.' },
@@ -120,7 +126,7 @@ const TASARIM_ALAN = [
   },
   {
     anahtar: 'yogunluk', ad: 'Yoğunluk', alt: 'Bir ekrana kaç satır sığsın.',
-    varsayilan: 'Normal',
+    varsayilan: 'Normal', ekran: 'panel',
     secim: [
       { ad: 'Sıkışık',     tarif: 'Satır 34px, kart içi boşluk 10px. Çok kayıtlı ekranlar için.' },
       { ad: 'Normal',      tarif: 'Satır 44px, kart içi boşluk 14px.' },
@@ -131,14 +137,20 @@ const TASARIM_ALAN = [
     ],
   },
   {
-    anahtar: 'tablo', ad: 'Tablo', alt: 'En çok bakılan ekran. Nasıl okunsun?',
-    varsayilan: 'Zebra', coklu: true,
+    anahtar: 'tablo', ad: 'Tablo satırı', alt: 'En çok bakılan ekran. Satırlar nasıl ayrılsın?',
+    varsayilan: 'Zebra', ekran: 'liste',
     secim: [
       { ad: 'Çizgisiz',      tarif: 'Ayraç yok; satırlar yalnız boşlukla ayrılır. Kısa listeler için.' },
       { ad: 'Zebra',         tarif: 'Tek sıradaki satırlar hafif açık zeminli. Uzun listede göz kaymaz.' },
       { ad: 'Yatay çizgi',   tarif: 'Her satırın altında 1px çizgi; dikey çizgi yok.' },
       { ad: 'Tam ızgara',    tarif: 'Yatay ve dikey çizgiler. Muhasebe tablosu görünümü.' },
       { ad: 'Kartlı satır',  tarif: 'Her satır kendi mini kartı; aralarında 6px boşluk, ortak çizgi yok.' },
+    ],
+  },
+  {
+    anahtar: 'tabloek', ad: 'Tabloya ekle', alt: 'Satır biçiminin üstüne binen kurallar.',
+    varsayilan: '', coklu: true, bos: true, ekran: 'liste',
+    secim: [
       { ad: 'Gruplu',        tarif: 'Satırlar başlık altında öbeklenir (tarih, kategori); grup başlığı yapışkan.' },
       { ad: 'Rakam hizalı',  tarif: 'Sayısal sütunlar sağa yaslı, mono rakamlı ve binlik ayraçlı.' },
       { ad: 'Vurgulu sütun', tarif: 'İlk sütun kalın yazılır ve yatay kaydırmada yapışık kalır.' },
@@ -146,7 +158,7 @@ const TASARIM_ALAN = [
   },
   {
     anahtar: 'tablomobil', ad: 'Tablo · telefonda', alt: 'Dar ekranda tablo ne olsun?',
-    varsayilan: 'Karta dönüş',
+    varsayilan: 'Karta dönüş', ekran: 'liste', cihaz: 'telefon',
     secim: [
       { ad: 'Karta dönüş',   tarif: 'Her satır kendi kartına dönüşür; sütun adları etiket olur.' },
       { ad: 'Yana kaydır',   tarif: 'Tablo olduğu gibi kalır, yatay kaydırılır. İlk sütun yapışık durur.' },
@@ -158,20 +170,26 @@ const TASARIM_ALAN = [
   },
   {
     anahtar: 'dugme', ad: 'Düğme', alt: 'Ana buton nasıl dursun?',
-    varsayilan: 'Dolu', coklu: true,
+    varsayilan: 'Dolu', ekran: 'panel',
     secim: [
       { ad: 'Dolu',    tarif: 'Ana buton vurgu rengiyle dolu, yazı beyaz/koyu kontrast.' },
       { ad: 'Çizgili', tarif: 'Saydam zemin, vurgu renginde çerçeve ve yazı.' },
       { ad: 'Yumuşak', tarif: 'Vurgu renginin %12 saydam hâliyle dolu, yazı vurgu renginde.' },
       { ad: 'Gölgeli', tarif: 'Dolu düğmenin altında vurgu renginden yumuşak renkli gölge; düğme havada durur.' },
       { ad: 'Degrade', tarif: 'Dolgu vurgu renginden koyusuna 135° geçiş.' },
-      { ad: 'Yazı',    tarif: 'Çerçevesiz ve zeminsiz; yalnız vurgu renginde yazı. İkincil eylemler için.' },
-      { ad: 'İkonlu',  tarif: 'Her düğmede solda 16px simge, sağında yazı; arada 8px boşluk.' },
+    ],
+  },
+  {
+    anahtar: 'dugmeek', ad: 'Düğmeye ekle', alt: 'Ana butonun üstüne binen kurallar.',
+    varsayilan: '', coklu: true, bos: true, ekran: 'panel',
+    secim: [
+      { ad: 'Yazı',   tarif: 'İkincil eylemler çerçevesiz, yalnız vurgu renginde yazı olur.' },
+      { ad: 'İkonlu', tarif: 'Her düğmede solda 16px simge, sağında yazı; arada 8px boşluk.' },
     ],
   },
   {
     anahtar: 'simge', ad: 'Simge', alt: 'Tek karar, her ekranı etkiler.',
-    varsayilan: 'Çizgi', coklu: true,
+    varsayilan: 'Çizgi', ekran: 'panel',
     secim: [
       { ad: 'Çizgi',       tarif: 'Yalnız kontur, 1.7px kalınlık, yuvarlak uç. Hafif ve nötr.' },
       { ad: 'Dolu',        tarif: 'Dolgulu, konturasız simgeler. Küçük boyutta daha okunur.' },
@@ -187,7 +205,7 @@ const TASARIM_ALAN = [
 const YERLESIM_ALAN = [
   {
     anahtar: 'ustcubuk', ad: 'Üst çubuk', alt: 'Her ekranın tepesinde ne dursun?',
-    varsayilan: 'İnce başlık',
+    varsayilan: 'İnce başlık', ekran: 'panel',
     secim: [
       { ad: 'Yok',          tarif: 'Üst çubuk yok; sayfa başlığı içeriğin ilk satırı olarak yazılır.', tel: ['blok'] },
       { ad: 'İnce başlık',  tarif: '44px yükseklikte, yalnız sayfa adı ve geri oku.', tel: ['ust', 'blok'] },
@@ -198,7 +216,7 @@ const YERLESIM_ALAN = [
   },
   {
     anahtar: 'gezinme', ad: 'Gezinme', alt: 'Sayfalar arası nasıl geçilsin?',
-    varsayilan: 'Alt sekme',
+    varsayilan: 'Alt sekme', ekran: 'panel',
     secim: [
       { ad: 'Alt sekme',     tarif: 'Altta 4-5 sekme. Telefonda başparmak menzilinde.', tel: ['blok', 'alt'] },
       { ad: 'Alt + orta +',  tarif: 'Alt sekme şeridi, ortasında yükseltilmiş ekleme düğmesi.', tel: ['blok', 'altArti'] },
@@ -209,7 +227,7 @@ const YERLESIM_ALAN = [
   },
   {
     anahtar: 'sayfalistesi', ad: 'Sayfa listesi', alt: 'Bir modülün sayfaları nasıl listelensin?',
-    varsayilan: 'Üst sekme',
+    varsayilan: 'Üst sekme', ekran: 'panel',
     secim: [
       { ad: 'Yan liste',     tarif: 'Modül seçilince solda o modülün sayfaları listelenir.', tel: ['yanInce', 'liste'] },
       { ad: 'Üst sekme',     tarif: 'Modülün sayfaları üstte yatay sekme olur.', tel: ['sekme', 'liste'] },
@@ -219,7 +237,7 @@ const YERLESIM_ALAN = [
   },
   {
     anahtar: 'tablosayfa', ad: 'Tablolu sayfa', alt: 'Liste ekranının iskeleti.',
-    varsayilan: 'Üstte filtre', coklu: true,
+    varsayilan: 'Üstte filtre', ekran: 'liste',
     secim: [
       { ad: 'Üstte filtre',  tarif: 'Tablonun üstünde arama ve filtre satırı.', tel: ['ara', 'liste'] },
       { ad: 'Solda filtre',  tarif: 'Solda kalıcı filtre paneli, sağda tablo.', tel: ['solPanel', 'liste'] },
@@ -230,7 +248,7 @@ const YERLESIM_ALAN = [
   },
   {
     anahtar: 'dashboard', ad: 'Dashboard', alt: 'Panel ekranı neyle karşılasın?',
-    varsayilan: 'Sayaç + son hareketler',
+    varsayilan: 'Sayaç + son hareketler', ekran: 'panel',
     secim: [
       { ad: 'Sayaç + büyük grafik', tarif: 'Üstte sayaç şeridi, altında tek büyük grafik.', tel: ['kart2', 'grafik'] },
       { ad: '2×2 ızgara',           tarif: 'Dört eşit kart. Her biri bir gösterge.', tel: ['izgara'] },
@@ -240,7 +258,7 @@ const YERLESIM_ALAN = [
   },
   {
     anahtar: 'verigirisi', ad: 'Veri girişi', alt: 'Kayıt eklerken ekran nasıl açılsın?',
-    varsayilan: 'Sağdan çekmece', coklu: true,
+    varsayilan: 'Sağdan çekmece', ekran: 'form',
     secim: [
       { ad: 'Tam sayfa form',   tarif: 'Ayrı bir sayfaya gidilir; uzun formlar için.', tel: ['ust', 'form'] },
       { ad: 'Sağdan çekmece',   tarif: 'Sağdan kayan panel; liste arkada durur. Telefonda alttan tam boy.', tel: ['liste', 'cekmece'] },
@@ -251,7 +269,7 @@ const YERLESIM_ALAN = [
   },
   {
     anahtar: 'ayarlar', ad: 'Ayarlar', alt: 'Ayar ekranı nasıl düzenlensin?',
-    varsayilan: 'Gruplu liste',
+    varsayilan: 'Gruplu liste', ekran: 'ayarlar',
     secim: [
       { ad: 'Tek liste',    tarif: 'Bütün ayarlar tek bir listede, başlıksız.', tel: ['liste'] },
       { ad: 'Gruplu liste', tarif: 'Ayarlar başlıklı öbeklere ayrılır.', tel: ['grupluListe'] },
@@ -261,7 +279,7 @@ const YERLESIM_ALAN = [
   },
   {
     anahtar: 'detay', ad: 'Detay ekranı', alt: 'Bir kaydın kendi sayfası nasıl kurulsun?',
-    varsayilan: 'Katlanır bölümler',
+    varsayilan: 'Katlanır bölümler', ekran: 'liste',
     secim: [
       { ad: 'Sekmeli',            tarif: 'Bilgi · Hareketler · Belgeler gibi sekmeler.', tel: ['ust', 'sekme', 'blok'] },
       { ad: 'Tek uzun akış',      tarif: 'Her şey alt alta tek sayfada; kaydırarak gezilir.', tel: ['ust', 'akis'] },
@@ -271,7 +289,7 @@ const YERLESIM_ALAN = [
   },
   {
     anahtar: 'anaeylem', ad: 'Ana eylem yeri', alt: 'Ekleme düğmesi nerede dursun?',
-    varsayilan: 'Sağ altta yüzen',
+    varsayilan: 'Sağ altta yüzen', ekran: 'liste',
     secim: [
       { ad: 'Sağ üstte',       tarif: 'Başlık çubuğunun sağında. Masaüstünde alışılmış yer.', tel: ['ustEylem', 'liste'] },
       { ad: 'Sağ altta yüzen', tarif: 'İçeriğin üzerinde yüzen yuvarlak düğme. Telefonda kolay erişim.', tel: ['liste', 'fab'] },
@@ -281,7 +299,7 @@ const YERLESIM_ALAN = [
   },
   {
     anahtar: 'arama', ad: 'Arama', alt: 'Aramaya nasıl ulaşılsın?',
-    varsayilan: 'Üstte sabit',
+    varsayilan: 'Üstte sabit', ekran: 'liste',
     secim: [
       { ad: 'Üstte sabit',     tarif: 'Her liste ekranının tepesinde açık arama kutusu.', tel: ['ara', 'liste'] },
       { ad: 'Simgeden açılan', tarif: 'Büyüteç simgesi; dokununca arama çubuğu açılır.', tel: ['ustAra', 'liste'] },
@@ -291,7 +309,7 @@ const YERLESIM_ALAN = [
   },
   {
     anahtar: 'filtre', ad: 'Filtre', alt: 'Filtreler nerede dursun?',
-    varsayilan: 'Üstte çip sırası',
+    varsayilan: 'Üstte çip sırası', ekran: 'liste',
     secim: [
       { ad: 'Üstte çip sırası', tarif: 'Yatay kayan çipler; seçili olan dolu görünür.', tel: ['cip', 'liste'] },
       { ad: 'Açılır panel',     tarif: 'Filtre düğmesi; basınca üstten panel iner.', tel: ['ustEylem', 'liste'] },
@@ -301,7 +319,7 @@ const YERLESIM_ALAN = [
   },
   {
     anahtar: 'genislik', ad: 'Genişlik', alt: 'Masaüstünde içerik ne kadar yayılsın?',
-    varsayilan: 'Ortada sınırlı',
+    varsayilan: 'Ortada sınırlı', ekran: 'panel',
     secim: [
       { ad: 'Tam genişlik',   tarif: 'İçerik ekranın tamamını kullanır. Geniş tablolar için.', tel: ['blokTam'] },
       { ad: 'Ortada sınırlı', tarif: 'En fazla 1200px, ortalanır. Uzun satırlar okunaklı kalır.', tel: ['blokOrta'] },
@@ -314,7 +332,7 @@ const YERLESIM_ALAN = [
 const DURUM_ALAN = [
   {
     anahtar: 'bosdurum', ad: 'Boş durum', alt: 'Hiç kayıt yokken ne görünsün?',
-    varsayilan: 'Simge + yazı + düğme',
+    varsayilan: 'Simge + yazı + düğme', ekran: 'bos',
     secim: [
       { ad: 'Sade yazı',            tarif: 'Ortada tek satır gri yazı.', tel: ['bosYazi'] },
       { ad: 'Simge + yazı',         tarif: 'Soluk bir simge ve altında açıklama.', tel: ['bosSimge'] },
@@ -324,7 +342,7 @@ const DURUM_ALAN = [
   },
   {
     anahtar: 'yukleme', ad: 'Yükleme', alt: 'Veri beklenirken ne görünsün?',
-    varsayilan: 'İskelet',
+    varsayilan: 'İskelet', ekran: 'yukleme',
     secim: [
       { ad: 'Dönen çark',      tarif: 'Ortada dönen halka. En basiti.', tel: ['cark'] },
       { ad: 'İskelet',         tarif: 'Gelecek içeriğin gri taslağı; sayfa zıplamaz.', tel: ['iskelet'] },
@@ -333,7 +351,7 @@ const DURUM_ALAN = [
   },
   {
     anahtar: 'bildirim', ad: 'Bildirim', alt: 'Uyarı ve onay mesajları nerede çıksın?',
-    varsayilan: 'Alttan kart',
+    varsayilan: 'Alttan kart', ekran: 'liste',
     secim: [
       { ad: 'Üstte şerit',    tarif: 'Sayfanın tepesinde tam genişlik şerit; kalıcı uyarılar için.', tel: ['seritUst', 'liste'] },
       { ad: 'Alttan kart',    tarif: 'Alttan kayan kart, birkaç saniyede kaybolur.', tel: ['liste', 'seritAlt'] },
@@ -343,7 +361,7 @@ const DURUM_ALAN = [
   },
   {
     anahtar: 'onaysil', ad: 'Onay & silme', alt: 'Silme nasıl olsun?',
-    varsayilan: 'Geri al şeridi',
+    varsayilan: 'Geri al şeridi', ekran: 'liste',
     secim: [
       { ad: 'Pencere ile onay', tarif: '"Emin misin?" penceresi; silmeden önce durdurur.', tel: ['liste', 'pencere'] },
       { ad: 'Kaydırarak sil',   tarif: 'Satırı yana kaydırınca kırmızı sil düğmesi çıkar.', tel: ['listeKaydir'] },
@@ -352,7 +370,7 @@ const DURUM_ALAN = [
   },
   {
     anahtar: 'listesonu', ad: 'Liste sonu', alt: 'Kayıt çoksa nasıl devam edilsin?',
-    varsayilan: 'Daha fazla düğmesi',
+    varsayilan: 'Daha fazla düğmesi', ekran: 'liste',
     secim: [
       { ad: 'Sayfa numarası',     tarif: 'Altta 1 2 3 … numaraları. Kaçıncı sayfada olduğun belli.', tel: ['liste', 'sayfaNo'] },
       { ad: 'Daha fazla düğmesi', tarif: 'Altta "Daha fazla" düğmesi; kontrol kullanıcıda.', tel: ['liste', 'sonDugme'] },
@@ -372,61 +390,35 @@ const TASARIM_GRUP = [
 const TUM_TASARIM = YERLESIM_ALAN.concat(TASARIM_ALAN, DURUM_ALAN);
 
 /* ---- Tasarım akışı ----
-   Kararlar başlık türüne göre değil, ETKİLEDİĞİ EKRANA göre gruplanır.
-   Her adımda önizleme o adımın ekranını gösterir; başka sayfada ne
-   değiştiğini aramak gerekmez. Sıra kabadan inceye: önce her ekranda
-   ortak olan, sonra ekran ekran. */
-const TASARIM_ADIM = [
-  { anahtar: 'tema',     ad: 'Tema',            tur: 'tema',  ekran: 'panel',
-    aciklama: 'Önce bunu seç — palet buna göre üretilecek.' },
-  { anahtar: 'logo',     ad: 'Logo',            tur: 'logo',  ekran: 'panel',
-    aciklama: 'Paletin kaynağı. Bu olmadan prompt anlamsız.' },
-  { anahtar: 'palet',    ad: 'Palet',           tur: 'palet', ekran: 'panel',
-    aciklama: 'Promptu Claude\'a logoyla ver, dönen cevabı yapıştır.' },
-
-  { anahtar: 'iskelet',  ad: 'Genel iskelet',   ekran: 'panel',
-    aciklama: 'Her ekranda ortak olan çatı.',
-    alanlar: ['ustcubuk', 'gezinme', 'sayfalistesi', 'genislik'] },
-  { anahtar: 'yuzey',    ad: 'Yüzey',           ekran: 'panel',
-    aciklama: 'Kutuların, düğmelerin ve simgelerin görünüşü.',
-    alanlar: ['kart', 'kose', 'yogunluk', 'dugme', 'simge'] },
-
-  { anahtar: 'panel',    ad: 'Panel ekranı',    ekran: 'panel',
-    aciklama: 'Uygulama açılınca ilk görülen ekran.',
-    alanlar: ['dashboard'] },
-  { anahtar: 'liste',    ad: 'Tablolu sayfa',   ekran: 'liste',
-    aciklama: 'En çok bakılan ekran. Kayıtlar burada.',
-    alanlar: ['tablosayfa', 'tablo', 'arama', 'filtre', 'listesonu', 'anaeylem'] },
-  { anahtar: 'mobil',    ad: 'Telefonda tablo', ekran: 'liste', cihaz: 'telefon',
-    aciklama: 'Dar ekranda tablo bozulur; ne olacağına karar ver.',
-    alanlar: ['tablomobil'] },
-  { anahtar: 'form',     ad: 'Veri girişi',     ekran: 'form',
-    aciklama: 'Yeni kayıt eklenirken açılan ekran.',
-    alanlar: ['verigirisi'] },
-  { anahtar: 'detay',    ad: 'Detay ekranı',    ekran: 'liste',
-    aciklama: 'Bir kaydın kendi sayfası.',
-    alanlar: ['detay'] },
-  { anahtar: 'ayarlar',  ad: 'Ayarlar ekranı',  ekran: 'ayarlar',
-    aciklama: 'Her uygulamada var, hep sonradan düşünülür.',
-    alanlar: ['ayarlar'] },
-  { anahtar: 'bos',      ad: 'Boş durum',       ekran: 'bos',
-    aciklama: 'Hiç kayıt yokken görünen ekran.',
-    alanlar: ['bosdurum'] },
-  { anahtar: 'yukleme',  ad: 'Yükleme',         ekran: 'yukleme',
-    aciklama: 'Veri beklenirken görünen ekran.',
-    alanlar: ['yukleme'] },
-  { anahtar: 'bildirim', ad: 'Bildirim ve silme', ekran: 'liste',
-    aciklama: 'Mesajlar nerede çıkar, silme nasıl olur.',
-    alanlar: ['bildirim', 'onaysil'] },
-
-  { anahtar: 'ozet',     ad: 'Özet',            tur: 'ozet',  ekran: 'panel',
-    aciklama: 'Verilen bütün kararlar. Prompta bu yazılacak.' },
+   Bir ekranda tek karar. Kaydırma yok, seçince kendiliğinden ilerler.
+   Sıra kabadan inceye ve ekran ekran: önizleme boşuna zıplamasın. */
+const AKIS_SIRASI = [
+  'ustcubuk', 'gezinme', 'sayfalistesi', 'genislik',
+  'kart', 'kartek', 'kose', 'yogunluk', 'dugme', 'dugmeek', 'simge',
+  'dashboard',
+  'tablosayfa', 'tablo', 'tabloek', 'arama', 'filtre', 'listesonu', 'anaeylem',
+  'tablomobil',
+  'verigirisi', 'detay', 'ayarlar',
+  'bosdurum', 'yukleme', 'bildirim', 'onaysil',
 ];
 
-/* Adımın başlıkları — anahtarlardan gerçek alanlara çevirir. */
-function adimAlanlari(adim) {
-  return (adim.alanlar || []).map(k => TUM_TASARIM.find(a => a.anahtar === k)).filter(Boolean);
-}
+const TASARIM_ADIM = [
+  { anahtar: 'tema',  ad: 'Tema',  tur: 'tema',  ekran: 'panel', obek: 'Başlangıç',
+    aciklama: 'Önce bunu seç — palet buna göre üretilecek.' },
+  { anahtar: 'logo',  ad: 'Logo',  tur: 'logo',  ekran: 'panel', obek: 'Başlangıç',
+    aciklama: 'Paletin kaynağı. Bu olmadan prompt anlamsız.' },
+  { anahtar: 'palet', ad: 'Palet', tur: 'palet', ekran: 'panel', obek: 'Başlangıç',
+    aciklama: 'Promptu Claude\'a logoyla ver, dönen cevabı yapıştır.' },
+].concat(AKIS_SIRASI.map(k => {
+  const a = YERLESIM_ALAN.concat(TASARIM_ALAN, DURUM_ALAN).find(x => x.anahtar === k);
+  const obek = YERLESIM_ALAN.includes(a) ? 'Yerleşim'
+             : TASARIM_ALAN.includes(a)  ? 'Biçim' : 'Durumlar';
+  return { anahtar: k, ad: a.ad, alan: a, ekran: a.ekran || 'panel',
+           cihaz: a.cihaz, obek, aciklama: a.alt };
+})).concat([
+  { anahtar: 'ozet', ad: 'Özet', tur: 'ozet', ekran: 'panel', obek: 'Bitiş',
+    aciklama: 'Verilen bütün kararlar. Prompta bu yazılacak.' },
+]);
 
 /* Bir alanın seçili değerleri — her zaman dizi döner.
    Tek seçimliler tek elemanlı; hiç seçilmemişse varsayılan. */
@@ -434,7 +426,7 @@ function bicimSecim(palet, alan) {
   const d = (palet || {})[alan.anahtar];
   const dizi = Array.isArray(d) ? d : (d ? String(d).split(/\s*[+,]\s*/) : []);
   const gecerli = dizi.filter(x => alan.secim.some(y => y.ad === x));
-  if (!gecerli.length) return [alan.varsayilan];
+  if (!gecerli.length) return alan.bos ? [] : [alan.varsayilan];
   return alan.coklu ? gecerli : [gecerli[0]];
 }
 

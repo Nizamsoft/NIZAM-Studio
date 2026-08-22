@@ -40,6 +40,7 @@ const PROMPT = {
       s.push('', `### ${g.ad}`);
       g.alanlar.forEach(a => {
         const adlar = bicimSecim(pl, a);
+        if (!adlar.length) { s.push(`- **${a.ad}: yok**`); return; }
         s.push(`- **${a.ad}: ${adlar.join(' + ')}**`);
         adlar.forEach(ad => {
           const sc = a.secim.find(x => x.ad === ad);
@@ -111,7 +112,9 @@ const PROMPT = {
     TASARIM_GRUP.forEach(g => {
       s.push(`### ${g.ad}`, '');
       g.alanlar.forEach(a => {
-        s.push(`**${a.ad}** — ${a.alt}${a.coklu ? ' _(birden fazla seçilebilir)_' : ' _(tek seçim)_'}`);
+        s.push(`**${a.ad}** — ${a.alt}${
+          a.bos ? ' _(birkaçı seçilebilir, gerekmiyorsa `yok` yaz)_'
+                : a.coklu ? ' _(birden fazla seçilebilir)_' : ' _(tek seçim)_'}`);
         a.secim.forEach(x => s.push(`- ${x.ad}: ${x.tarif}`));
         s.push('');
       });
@@ -124,7 +127,7 @@ const PROMPT = {
     PALET_ALAN.forEach(a => {
       s.push(`${a.ad}: ${a.anahtar === 'tema' ? (acik ? 'Açık' : 'Koyu') : a.ornek}`);
     });
-    TUM_TASARIM.forEach(a => s.push(`${a.ad}: ${a.varsayilan}`));
+    TUM_TASARIM.forEach(a => s.push(`${a.ad}: ${a.varsayilan || 'yok'}`));
     s.push('```');
 
     return s.join('\n');
