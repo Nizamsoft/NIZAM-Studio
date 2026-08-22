@@ -7,9 +7,9 @@ const APP = {
   name:     'NIZAM | Studio',
   short:    'NIZAM Studio',
   owner:    'Nizam Soft',
-  version: 'v0.27.1',
+  version: 'v0.28.0',
   build:    '2026-08-20',
-  stage: 'Adım 4 · 27 kararın hepsi görünür',
+  stage: 'Adım 4 · 42 karar, 46 adım',
 };
 
 /* Supabase bağlantısı.
@@ -109,6 +109,16 @@ const TASARIM_ALAN = [
       { ad: 'Şerit vurgu',  tarif: 'Sol kenarda 3px vurgu renginde dikey şerit.' },
       { ad: 'Işıklı kenar', tarif: 'Kenarda vurgu renginde 1px ışıyan çerçeve ve dışa hafif renkli parıltı.' },
       { ad: 'Dokulu',       tarif: 'Dolgunun üzerinde çok ince gren dokusu; matbaa kağıdı hissi.' },
+    ],
+  },
+  {
+    anahtar: 'vurgukart', ad: 'Vurgu kartı', alt: 'Önemli seçim ya da özet alanı nasıl öne çıksın?',
+    varsayilan: 'Degrade hero', ekran: 'panel',
+    secim: [
+      { ad: 'Yok',          tarif: 'Ayrı bir vurgu kartı kullanılmaz; her kutu eşit ağırlıkta.', tel: ['blok'] },
+      { ad: 'Degrade hero', tarif: 'Vurgu renginden koyusuna 135° degrade, büyük köşe, yumuşak renkli gölge.', tel: ['hero', 'liste'] },
+      { ad: 'Sade başlık',  tarif: 'Kart yerine büyük başlık ve altında ince ayraç.', tel: ['buyukBaslik', 'liste'] },
+      { ad: 'Şeritli',      tarif: 'Normal yüzey kartı ama üstünde vurgu renginde 4px şerit.', tel: ['seritKart', 'liste'] },
     ],
   },
   {
@@ -236,6 +246,56 @@ const YERLESIM_ALAN = [
     ],
   },
   {
+    anahtar: 'yoliz', ad: 'Yol izi', alt: 'Kullanıcı nerede olduğunu nereden anlasın?',
+    varsayilan: 'Geri oku + başlık', ekran: 'detay',
+    secim: [
+      { ad: 'Yok',               tarif: 'Yol izi yok; başlık yeterli sayılır.', tel: ['ust', 'blok'] },
+      { ad: 'Üstte metin',       tarif: 'Başlığın üstünde "Ana Sayfa › Raporlar" biçiminde ince yazı.', tel: ['yolMetin', 'ust', 'blok'] },
+      { ad: 'Geri oku + başlık', tarif: 'Solda geri oku, yanında sayfa adı. Telefonda en anlaşılır olan.', tel: ['ustGeri', 'blok'] },
+      { ad: 'Sekmeyle',          tarif: 'Yol izi yerine üst sekmeler konumu gösterir.', tel: ['ust', 'sekme', 'blok'] },
+    ],
+  },
+  {
+    anahtar: 'kullanicimenu', ad: 'Kullanıcı menüsü', alt: 'Kullanıcı kendi hesabına nereden ulaşsın?',
+    varsayilan: 'Sağ üstte çip', ekran: 'panel',
+    secim: [
+      { ad: 'Sağ üstte çip',   tarif: 'Avatar + ad + rol bir arada; dokununca menü açılır.', tel: ['ustCip', 'blok'] },
+      { ad: 'Sağ üstte avatar',tarif: 'Yalnız yuvarlak fotoğraf; ad yok.', tel: ['ustAvatar', 'blok'] },
+      { ad: 'Yan menü altında',tarif: 'Menünün en altında kullanıcı satırı.', tel: ['yanKisi'] },
+      { ad: 'Ayarlar içinde',  tarif: 'Üst çubukta hiç yok; hesap işleri Ayarlar ekranında.', tel: ['ust', 'grupluListe'] },
+    ],
+  },
+  {
+    anahtar: 'destek', ad: 'Destek ve istek', alt: 'Kullanıcı sorununu nereden iletsin?',
+    varsayilan: 'Üst çubukta', ekran: 'panel',
+    secim: [
+      { ad: 'Yok',            tarif: 'Uygulama içinden destek yolu yok.', tel: ['ust', 'blok'] },
+      { ad: 'Üst çubukta',    tarif: 'Üst çubukta soru işareti düğmesi; basınca istek penceresi.', tel: ['ustSoru', 'blok'] },
+      { ad: 'Ayarlar içinde', tarif: 'Ayarlar listesinde "İstek ve öneri" satırı.', tel: ['grupluListe'] },
+      { ad: 'Sağ altta yüzen',tarif: 'Sağ altta küçük yüzen destek düğmesi.', tel: ['blok', 'fab'] },
+    ],
+  },
+  {
+    anahtar: 'sayacduzen', ad: 'Sayaç düzeni', alt: 'Panel sayaçları nasıl dizilsin?',
+    varsayilan: '2\'li', ekran: 'panel',
+    secim: [
+      { ad: '2\'li',        tarif: 'Yan yana iki sayaç; geniş ve okunaklı.', tel: ['kart2', 'liste'] },
+      { ad: '3\'lü ızgara', tarif: 'Üçlü ızgara: üstte küçük gri etiket, altta büyük kalın sayı.', tel: ['kart3', 'liste'] },
+      { ad: 'Yatay şerit',  tarif: 'Tek satırda yana kayan sayaç şeridi; sayı çoksa.', tel: ['kartSerit', 'liste'] },
+      { ad: 'Dikey liste',  tarif: 'Alt alta satırlar, değer sağda.', tel: ['kartDikey', 'liste'] },
+    ],
+  },
+  {
+    anahtar: 'donem', ad: 'Dönem seçici', alt: 'Ay ya da tarih aralığı nereden seçilsin?',
+    varsayilan: 'Filtre içinde', ekran: 'liste',
+    secim: [
+      { ad: 'Yok',            tarif: 'Dönem seçimi yok; her şey güncel gösterilir.', tel: ['liste'] },
+      { ad: 'Üstte ay çubuğu',tarif: 'Oklarla ay değiştirilen şerit; ay adı büyük, yıl altında.', tel: ['ayCubugu', 'liste'] },
+      { ad: 'Filtre içinde',  tarif: 'Tarih aralığı diğer filtrelerle birlikte.', tel: ['ara', 'liste'] },
+      { ad: 'Başlıkta açılır',tarif: 'Sayfa başlığına dokununca dönem listesi açılır.', tel: ['ustSecici', 'liste'] },
+    ],
+  },
+  {
     anahtar: 'tablosayfa', ad: 'Tablolu sayfa', alt: 'Liste ekranının iskeleti.',
     varsayilan: 'Üstte filtre', ekran: 'liste',
     secim: [
@@ -318,6 +378,16 @@ const YERLESIM_ALAN = [
     ],
   },
   {
+    anahtar: 'iceaktarma', ad: 'İçe aktarma', alt: 'Excel ya da dosyadan toplu veri nasıl alınsın?',
+    varsayilan: 'Önizlemeli', ekran: 'ice',
+    secim: [
+      { ad: 'Yok',          tarif: 'Toplu içe aktarma yok; kayıtlar tek tek girilir.', tel: ['blok'] },
+      { ad: 'Basit yükleme',tarif: 'Dosya seç, yükle, biter. Ara ekran yok.', tel: ['dosya', 'sonDugme'] },
+      { ad: 'Önizlemeli',   tarif: 'Yüklemeden önce "N yeni · M mevcut" özeti ve satır listesi gösterilir.', tel: ['dosya', 'ozetSatir', 'liste'] },
+      { ad: 'Eşleştirmeli', tarif: 'Dosyadaki sütunlar alanlarla elle eşleştirilir, sonra önizleme gelir.', tel: ['eslestir', 'sonDugme'] },
+    ],
+  },
+  {
     anahtar: 'genislik', ad: 'Genişlik', alt: 'Masaüstünde içerik ne kadar yayılsın?',
     varsayilan: 'Ortada sınırlı', ekran: 'panel', genis: true,
     secim: [
@@ -350,6 +420,25 @@ const DURUM_ALAN = [
     ],
   },
   {
+    anahtar: 'hata', ad: 'Hata ekranı', alt: 'Bir şey ters gidince ne görünsün?',
+    varsayilan: 'Simge + tekrar dene', ekran: 'hata',
+    secim: [
+      { ad: 'Sade yazı',           tarif: 'Ortada tek satır hata metni.', tel: ['bosYazi'] },
+      { ad: 'Simge + tekrar dene', tarif: 'Uyarı simgesi, ne olduğunu anlatan cümle ve "Tekrar dene" düğmesi.', tel: ['hataSimge'] },
+      { ad: 'Tam sayfa',           tarif: 'Büyük simge, açıklama, "Tekrar dene" ve "Geri dön" düğmeleri.', tel: ['hataTam'] },
+    ],
+  },
+  {
+    anahtar: 'islemsonuc', ad: 'İşlem sonucu', alt: 'Kaydetme ya da gönderme bitince ne olsun?',
+    varsayilan: 'Toast', ekran: 'form',
+    secim: [
+      { ad: 'Toast',           tarif: 'Kısa bir mesaj belirir, birkaç saniyede kaybolur.', tel: ['form', 'seritAlt'] },
+      { ad: 'Tik animasyonu',  tarif: 'Ortada büyüyen onay işareti, sonra ekran kapanır.', tel: ['tik'] },
+      { ad: 'İlerleme çubuğu', tarif: 'Uzun işlemde yüzdeli çubuk ve adım yazısı.', tel: ['ilerleme', 'form'] },
+      { ad: 'Sonuç ekranı',    tarif: 'Tam sayfa "Gönderildi" ekranı; ne yapıldığını özetler.', tel: ['bosDugme'] },
+    ],
+  },
+  {
     anahtar: 'bildirim', ad: 'Bildirim', alt: 'Uyarı ve onay mesajları nerede çıksın?',
     varsayilan: 'Alttan kart', ekran: 'liste',
     secim: [
@@ -379,27 +468,103 @@ const DURUM_ALAN = [
   },
 ];
 
+/* ---- Açılış ve geçiş: uygulamaya girmeden önce ---- */
+const ACILIS_ALAN = [
+  {
+    anahtar: 'acilis', ad: 'Açılış ekranı', alt: 'Uygulama açılırken ne görünsün?',
+    varsayilan: 'Logo + ilerleme', ekran: 'acilis',
+    secim: [
+      { ad: 'Yok',                  tarif: 'Açılış ekranı yok; doğrudan uygulama gelir.', tel: ['blok'] },
+      { ad: 'Logo',                 tarif: 'Ortada logo, arka plan marka rengi. Kısa ve sade.', tel: ['acilisLogo'] },
+      { ad: 'Logo + ilerleme',      tarif: 'Logonun altında ince ilerleme çubuğu.', tel: ['acilisLogo', 'ilerleme'] },
+      { ad: 'Logo + yüzde + mesaj', tarif: 'Çubuk, yüzde ve "Veriler alınıyor…" gibi durum yazısı.', tel: ['acilisLogo', 'ilerleme', 'ikiCizgi'] },
+    ],
+  },
+  {
+    anahtar: 'giris', ad: 'Giriş ekranı', alt: 'Kullanıcı nasıl karşılansın?',
+    varsayilan: 'Ortada kart', ekran: 'giris',
+    secim: [
+      { ad: 'Ortada kart', tarif: 'Ortada tek kart: logo, e-posta, şifre, giriş düğmesi.', tel: ['girisKart'] },
+      { ad: 'Tam ekran',   tarif: 'Kart yok; alanlar sayfaya yayılır. Telefonda ferah durur.', tel: ['girisTam'] },
+      { ad: 'İki kolon',   tarif: 'Masaüstünde solda marka görseli, sağda form.', tel: ['girisIki'] },
+      { ad: 'Sade',        tarif: 'Logo üstte, alanlar altında, çerçeve ve gölge yok.', tel: ['girisSade'] },
+    ],
+  },
+  {
+    anahtar: 'gecis', ad: 'Sayfa geçişi', alt: 'Sayfadan sayfaya nasıl geçilsin?',
+    varsayilan: 'Soluk', ekran: 'liste',
+    secim: [
+      { ad: 'Yok',           tarif: 'Geçiş animasyonu yok; sayfa anında değişir. En hızlı hissi.', tel: ['gecisYok'] },
+      { ad: 'Soluk',         tarif: 'Yeni sayfa 160ms içinde belirir.', tel: ['gecisSoluk'] },
+      { ad: 'Sağdan kayma',  tarif: 'İçeri girilen sayfa sağdan kayar, geri dönerken sola. Hiyerarşi hissi verir.', tel: ['gecisSag'] },
+      { ad: 'Yukarı kayma',  tarif: 'Yeni sayfa alttan yukarı kayarak gelir.', tel: ['gecisYukari'] },
+    ],
+  },
+];
+
+/* ---- Sistem: uygulamanın kendi bakımı ---- */
+const SISTEM_ALAN = [
+  {
+    anahtar: 'guncelleme', ad: 'Güncelleme', alt: 'Yeni sürüm kullanıcıya nasıl ulaşsın?',
+    varsayilan: 'Güncelle düğmesi', ekran: 'ayarlar',
+    secim: [
+      { ad: 'Yok',              tarif: 'Kullanıcı sayfayı kendi yeniler.', tel: ['ust', 'blok'] },
+      { ad: 'Üstte rozet',      tarif: 'Yeni sürüm varsa üst çubukta küçük nokta belirir.', tel: ['ustRozet', 'blok'] },
+      { ad: 'Güncelle düğmesi', tarif: 'Ayarlarda "Uygulamayı güncelle" düğmesi ve altında sürüm etiketi.', tel: ['grupluListe', 'sonDugme'] },
+      { ad: 'Sürüm ekranı',     tarif: 'Ayrı ekran: güncel sürüm, yayın durumu ve sürüm geçmişi.', tel: ['ust', 'kart3', 'liste'] },
+    ],
+  },
+  {
+    anahtar: 'temadegis', ad: 'Tema değiştirme', alt: 'Kullanıcı temayı değiştirebilsin mi?',
+    varsayilan: 'Sabit', ekran: 'ayarlar',
+    secim: [
+      { ad: 'Sabit',          tarif: 'Tek tema; kullanıcı değiştiremez.', tel: ['grupluListe'] },
+      { ad: 'Kullanıcı seçer',tarif: 'Kullanıcı menüsünde ya da Ayarlar\'da koyu-açık geçişi.', tel: ['temaAnahtar', 'grupluListe'] },
+      { ad: 'Sistemi izler',  tarif: 'Cihazın temasına uyar; ayrıca elle de değiştirilebilir.', tel: ['temaIki', 'grupluListe'] },
+    ],
+  },
+  {
+    anahtar: 'yedek', ad: 'Yedek ve kayıt geçmişi', alt: 'Veri güvenliği ve iz sürme.',
+    varsayilan: 'Yedek al / yükle', ekran: 'ayarlar',
+    secim: [
+      { ad: 'Yok',                    tarif: 'Yedekleme ekranı yok; veritabanı yedeği yeterli sayılır.', tel: ['grupluListe'] },
+      { ad: 'Yedek al / yükle',       tarif: 'Ayarlarda dosyaya yedek alma ve geri yükleme.', tel: ['ikiDugme', 'grupluListe'] },
+      { ad: 'Yedek + değişiklik kaydı', tarif: 'Ayrıca kimin neyi ne zaman değiştirdiğini gösteren liste.', tel: ['ikiDugme', 'liste'] },
+    ],
+  },
+];
+
 /* Üç öbek, üç sekme. Hepsi projenin `palet` alanında saklanır. */
 const TASARIM_GRUP = [
   { anahtar: 'yerlesim', ad: 'Yerleşim', alanlar: YERLESIM_ALAN },
   { anahtar: 'bicim',    ad: 'Biçim',    alanlar: TASARIM_ALAN },
+  { anahtar: 'acilis',   ad: 'Açılış',   alanlar: ACILIS_ALAN },
   { anahtar: 'durum',    ad: 'Durumlar', alanlar: DURUM_ALAN },
+  { anahtar: 'sistem',   ad: 'Sistem',   alanlar: SISTEM_ALAN },
 ];
 
 /* Bütün başlıklar tek dizide — prompt ve çözümleyici bunu gezer. */
-const TUM_TASARIM = YERLESIM_ALAN.concat(TASARIM_ALAN, DURUM_ALAN);
+const TUM_TASARIM = YERLESIM_ALAN.concat(TASARIM_ALAN, ACILIS_ALAN, DURUM_ALAN, SISTEM_ALAN);
 
 /* ---- Tasarım akışı ----
-   Bir ekranda tek karar. Kaydırma yok, seçince kendiliğinden ilerler.
-   Sıra kabadan inceye ve ekran ekran: önizleme boşuna zıplamasın. */
-const AKIS_SIRASI = [
-  'ustcubuk', 'gezinme', 'sayfalistesi', 'genislik',
-  'kart', 'kartek', 'kose', 'yogunluk', 'dugme', 'dugmeek', 'simge',
-  'dashboard',
-  'tablosayfa', 'tablo', 'tabloek', 'arama', 'filtre', 'listesonu', 'anaeylem',
-  'tablomobil',
-  'verigirisi', 'detay', 'ayarlar',
-  'bosdurum', 'yukleme', 'bildirim', 'onaysil',
+   Bir ekranda tek karar. Kaydırma yok.
+   Öbekler dıştan içe: önce malzeme, sonra çatı, sonra ekran ekran, en sonda
+   uç durumlar ve sistem işleri. Bir öbek içinde önizleme ekranı olabildiğince
+   sabit kalır — boşuna zıplamasın. */
+const AKIS_OBEK = [
+  { ad: 'Genel görünüm', alanlar: [
+      'kart', 'kartek', 'vurgukart', 'kose', 'yogunluk', 'dugme', 'dugmeek', 'simge'] },
+  { ad: 'Uygulama çatısı', alanlar: [
+      'ustcubuk', 'gezinme', 'sayfalistesi', 'yoliz', 'genislik', 'kullanicimenu', 'destek'] },
+  { ad: 'Açılış ve geçiş', alanlar: ['acilis', 'giris', 'gecis'] },
+  { ad: 'Panel ekranı', alanlar: ['dashboard', 'sayacduzen'] },
+  { ad: 'Liste ekranı', alanlar: [
+      'tablosayfa', 'tablo', 'tabloek', 'arama', 'filtre', 'donem',
+      'listesonu', 'anaeylem', 'tablomobil'] },
+  { ad: 'Diğer ekranlar', alanlar: ['verigirisi', 'detay', 'ayarlar', 'iceaktarma'] },
+  { ad: 'Durumlar', alanlar: [
+      'bosdurum', 'yukleme', 'hata', 'islemsonuc', 'bildirim', 'onaysil'] },
+  { ad: 'Sistem', alanlar: ['guncelleme', 'temadegis', 'yedek'] },
 ];
 
 const TASARIM_ADIM = [
@@ -409,13 +574,12 @@ const TASARIM_ADIM = [
     aciklama: 'Paletin kaynağı. Bu olmadan prompt anlamsız.' },
   { anahtar: 'palet', ad: 'Palet', tur: 'palet', ekran: 'panel', obek: 'Başlangıç',
     aciklama: 'Promptu Claude\'a logoyla ver, dönen cevabı yapıştır.' },
-].concat(AKIS_SIRASI.map(k => {
-  const a = YERLESIM_ALAN.concat(TASARIM_ALAN, DURUM_ALAN).find(x => x.anahtar === k);
-  const obek = YERLESIM_ALAN.includes(a) ? 'Yerleşim'
-             : TASARIM_ALAN.includes(a)  ? 'Biçim' : 'Durumlar';
+].concat([].concat(...AKIS_OBEK.map(o => o.alanlar.map(k => {
+  const a = TUM_TASARIM.find(x => x.anahtar === k);
+  if (!a) throw new Error('Akışta tanımsız başlık: ' + k);
   return { anahtar: k, ad: a.ad, alan: a, ekran: a.ekran || 'panel',
-           cihaz: a.cihaz, genis: a.genis, obek, aciklama: a.alt };
-})).concat([
+           cihaz: a.cihaz, genis: a.genis, obek: o.ad, aciklama: a.alt };
+})))).concat([
   { anahtar: 'ozet', ad: 'Özet', tur: 'ozet', ekran: 'panel', obek: 'Bitiş',
     aciklama: 'Verilen bütün kararlar. Prompta bu yazılacak.' },
 ]);

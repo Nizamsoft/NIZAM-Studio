@@ -1,5 +1,29 @@
 # Değişiklik Günlüğü
 
+## v0.28.0 — 22 Ağustos 2026
+**42 karar, 46 adım, on öbek**
+
+Kübban Yönetim, YogaTuği Muhasebe ve NIZAM ToDo depolarına bakıldı; o
+projelerde var olup Studio'nun hiç sormadığı 15 karar eklendi.
+
+**Yeni kararlar:** Vurgu kartı · Sayaç düzeni · Yol izi · Kullanıcı menüsü ·
+Destek ve istek · Dönem seçici · İçe aktarma · Açılış ekranı · Giriş ekranı ·
+Sayfa geçişi · Güncelleme · Tema değiştirme · Yedek ve kayıt geçmişi ·
+Hata ekranı · İşlem sonucu.
+
+**Akış on öbeğe ayrıldı**, dıştan içe sıralı:
+
+1. Başlangıç · 2. Genel görünüm · 3. Uygulama çatısı · 4. Açılış ve geçiş ·
+5. Panel ekranı · 6. Liste ekranı · 7. Diğer ekranlar · 8. Durumlar ·
+9. Sistem · 10. Özet
+
+Önce malzeme (kart, köşe, simge), sonra her ekranda ortak olan çatı, sonra
+ekran ekran, en sonda uç durumlar ve sistem işleri. Bir öbek içinde önizleme
+ekranı olabildiğince sabit kalıyor.
+
+**Dört yeni önizleme ekranı:** Açılış · Giriş · İçe aktarma · Hata.
+42 kararın 42'si de önizlemede görünüyor.
+
 ## v0.27.1 — 22 Ağustos 2026
 **Önizleme çizim düzeltmeleri**
 
