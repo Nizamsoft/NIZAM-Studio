@@ -1,5 +1,34 @@
 # Değişiklik Günlüğü
 
+## v0.20.0 — 22 Ağustos 2026
+**Tasarım artık renkten ibaret değil**
+
+"Tasarımı belirleme" durağına **yedi yeni karar** eklendi: Kart · Köşe ·
+Yoğunluk · Tablo · Tablo telefonda · Düğme · Simge. Eskiden bunları AI
+tahmin ediyordu; artık projenin kararı olarak yazılı duruyor.
+
+**Seçim yazıyla değil, görselle.** Her başlığın altında yana kayan bir raf
+var; rafta gerçek küçük çizimler duruyor. Zebra tabloya bakınca zebra
+çizgili tablo görünüyor, yuvarlak köşeye bakınca yuvarlak kutu. Seçilenin
+kenarı metalik parlıyor, köşesine tik geliyor.
+
+**Renkler projenin kendi renkleri.** "Şerit vurgu" örneğindeki şerit ve
+düğme örneklerindeki dolgu, o projenin vurgu renginden geliyor.
+
+**Marka promptu bunları da soruyor.** Logoyu Claude'a verdiğinde palet ile
+birlikte yedi biçim kararını da döndürüyor; yapıştırınca seçimler
+kendiliğinden işaretleniyor. Beğenmediğin her biri tek dokunuşla değişir.
+
+**Görev promptu ve NIZAM.md'ye "Arayüz Biçimi" bölümü girdi.** Her karar
+tarifiyle yazılıyor — "Zebra: tek sıradaki satırlar hafif açık zeminli"
+gibi. AI ne yapacağını okuyor, uydurmuyor.
+
+Yan fayda: **aynı ekran yeniden çizilirken sayfa artık tepeye fırlamıyor.**
+Yarıda bir seçim yaparken bulunduğun yerde kalıyorsun.
+
+Veritabanı değişikliği yok — biçim kararları projenin mevcut palet
+alanında saklanıyor.
+
 ## v0.19.0 — 22 Ağustos 2026
 **Her durak kendi sayfası oldu**
 

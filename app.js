@@ -769,6 +769,7 @@ function tasarimSayfasi(p, d) {
         <div><b>Başlık</b><u style="font-family:var(--yazi-baslik);font-weight:700">${esc(pl.baslik || '—')}</u></div>
         <div><b>Metin</b><u>${esc(pl.govde || '—')}</u></div>
       </div>` : '')
+    + tasarimSecimi(p)
     + bolumBas('Ton') + `
       <div class="satirlar">
         <div class="sr">Tema
@@ -788,6 +789,89 @@ function tasarimSayfasi(p, d) {
         ${svg(ICON.ice, 15)} Paleti yapıştır</button>
       ${pl ? `<button class="sayfa-dug" data-eylem="palet-duzenle" data-proje="${p.id}" type="button">
         ${svg(ICON.kalem, 15)} Elle düzenle</button>` : ''}` : '');
+}
+
+/* ---------- Arayüz biçimi: görselli seçim rafları ----------
+   Her seçenek gerçek bir küçük çizim. Yazıyı okuyup hayal etmek gerekmez. */
+
+function tasarimSecimi(p) {
+  const pl = p.palet || {};
+  return TASARIM_ALAN.map(a => {
+    const secili = pl[a.anahtar] || a.varsayilan;
+    return bolumBas(a.ad)
+      + `<div class="raf-alt">${esc(a.alt)}</div>
+         <div class="raf">${a.secim.map(x => `
+           <button class="bsc ${x.ad === secili ? 'on' : ''}" type="button"
+                   data-eylem="tasarim-sec" data-proje="${p.id}"
+                   data-alan="${a.anahtar}" data-deger="${esc(x.ad)}"
+                   ${AUTH.yonetici ? '' : 'disabled'} title="${esc(x.tarif)}">
+             <span class="bon">${tasarimOnizleme(a.anahtar, x.ad)}</span>
+             <span class="bsc-ad">${esc(x.ad)}</span>
+           </button>`).join('')}</div>`;
+  }).join('');
+}
+
+/* Tek bir seçeneğin küçük çizimi. Yalnız görsel — veri taşımaz. */
+function tasarimOnizleme(alan, ad) {
+  const satirlar = '<i class="ln b o"></i><i class="ln u"></i><i class="ln k"></i>';
+
+  if (alan === 'kart') {
+    const sinif = { 'Düz': 'duz', 'Yükseltilmiş': 'yuksek', 'Çizgili': 'cizgi',
+                    'Buzlu cam': 'cam', 'Şerit vurgu': 'serit', 'Kağıt': 'kagit' }[ad];
+    return `<span class="on-kart k-${sinif}">${satirlar}</span>`;
+  }
+
+  if (alan === 'kose') {
+    const r = { 'Keskin': '0', 'Hafif': '5px', 'Yuvarlak': '12px', 'Hap': '999px' }[ad];
+    return `<span class="on-kose" style="border-radius:${r}"></span>`;
+  }
+
+  if (alan === 'yogunluk') {
+    const [say, ara] = { 'Sıkışık': [5, 3], 'Normal': [4, 7], 'Ferah': [3, 12] }[ad];
+    return `<span class="on-yog" style="gap:${ara}px">${'<i></i>'.repeat(say)}</span>`;
+  }
+
+  if (alan === 'tablo') {
+    const sinif = { 'Çizgisiz': '', 'Zebra': 't-zebra',
+                    'Yatay çizgi': 't-yatay', 'Tam ızgara': 't-izgara' }[ad];
+    const hucre = '<i></i><i></i><i></i>';
+    return `<span class="on-tb ${sinif}"><u class="h">${hucre}</u>${
+      `<u class="r">${hucre}</u>`.repeat(4)}</span>`;
+  }
+
+  if (alan === 'tablomobil') {
+    if (ad === 'Karta dönüş') return `<span class="on-mk">${'<i></i>'.repeat(4)}</span>`;
+    if (ad === 'Yana kaydır') {
+      const hucre = '<i></i><i></i><i></i><i></i>';
+      return `<span class="on-tb t-yatay tasan"><u class="h">${hucre}</u>${
+        `<u class="r">${hucre}</u>`.repeat(4)}</span>`;
+    }
+    const hucre = '<i></i><i class="dar"></i>';
+    return `<span class="on-tb t-yatay"><u class="h">${hucre}</u>${
+      `<u class="r">${hucre}</u>`.repeat(4)}</span>`;
+  }
+
+  if (alan === 'dugme') {
+    const sinif = { 'Dolu': 'd-dolu', 'Çizgili': 'd-cizgi', 'Yumuşak': 'd-yumusak' }[ad];
+    return `<span class="on-dg"><em class="${sinif}">Kaydet</em></span>`;
+  }
+
+  /* simge — üç örnek: ev, kişi, arama. Dolu set kendi kapalı biçimlerini
+     kullanır; kontur biçimini doldurmak çirkin sonuç veriyor. */
+  const sinif = { 'Çizgi': 'cizgi', 'Dolu': 'dolu', 'İki katman': 'katman' }[ad];
+  const kontur = [
+    '<path d="M3 10.5 12 4l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/>',
+    '<circle cx="12" cy="8" r="3.5"/><path d="M4.5 20c1-4 4-5.6 7.5-5.6S18.5 16 19.5 20"/>',
+    '<circle cx="11" cy="11" r="6.4"/><path d="M16 16l4.5 4.5"/>',
+  ];
+  const dolgulu = [
+    '<path d="M3 10.5 12 4l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/>',
+    '<circle cx="12" cy="8" r="4"/><path d="M4 20.6c.8-4.5 4-6.4 8-6.4s7.2 1.9 8 6.4z"/>',
+    '<path fill-rule="evenodd" d="M11 3.6a7.4 7.4 0 1 0 4.3 13.4l3.4 3.4a1.5 1.5 0 0 0 2.1-2.1l-3.4-3.4A7.4 7.4 0 0 0 11 3.6zm0 3a4.4 4.4 0 1 1 0 8.8 4.4 4.4 0 0 1 0-8.8z"/>',
+  ];
+  const yol = (sinif === 'dolu' ? dolgulu : kontur)
+    .map(d => `<svg viewBox="0 0 24 24">${d}</svg>`).join('');
+  return `<span class="on-sm sm-${sinif}">${yol}</span>`;
 }
 
 /* 3 · Yapıyı kurma */
@@ -949,8 +1033,13 @@ function projeYolu(p) {
 
 /* Yapıştırılan paleti okur. Biçim: "Arka plan: #0f0e0d" satırları. */
 function paletCozumle(metin) {
+  /* Palet alanları + arayüz biçimi alanları tek listede okunur. */
+  const tumu = PALET_ALAN.concat(TASARIM_ALAN.map(a => ({
+    anahtar: a.anahtar, ad: a.ad, secim: a.secim.map(x => x.ad), bicim: true,
+  })));
+
   const anahtar = {};
-  PALET_ALAN.forEach(a => { anahtar[a.ad.toLocaleLowerCase('tr')] = a.anahtar; });
+  tumu.forEach(a => { anahtar[a.ad.toLocaleLowerCase('tr')] = a.anahtar; });
 
   const palet = {};
   const hatalar = [];
@@ -963,11 +1052,16 @@ function paletCozumle(metin) {
     if (!k) return;
 
     let deger = es[2].replace(/^`|`$/g, '').trim();
-    const alan = PALET_ALAN.find(a => a.anahtar === k);
+    const alan = tumu.find(a => a.anahtar === k);
 
     if (alan.secim) {
       const uy = alan.secim.find(x => x.toLocaleLowerCase('tr') === deger.toLocaleLowerCase('tr'));
-      if (!uy) { hatalar.push(`"${alan.ad}" ${alan.secim.join(' ya da ')} olmalı.`); return; }
+      if (!uy) {
+        hatalar.push(alan.secim.length > 3
+          ? `"${alan.ad}" listedeki adlardan biri olmalı, "${deger}" değil.`
+          : `"${alan.ad}" ${alan.secim.join(' ya da ')} olmalı.`);
+        return;
+      }
       deger = uy;
     } else if (alan.renk) {
       const renk = deger.match(/#[0-9a-fA-F]{6}\b/);
@@ -1361,10 +1455,17 @@ function render() {
   SON_EKRAN = izi;
 
   const view = $('#view');
+
+  /* Aynı ekran yeniden çizilirken kullanıcı bulunduğu yerde kalsın:
+     tepeye fırlamak, yarıda bir seçim yaparken can sıkıcı. */
+  const dikey = gecis ? 0 : view.scrollTop;
+  const yatay = gecis ? [] : $$('.raf', view).map(r => r.scrollLeft);
+
   view.innerHTML = sayfa ? durakSayfasi(id, sayfa)
                  : detay ? VIEWS.projeDetay(id)
                  : VIEWS[key]();
-  view.scrollTop = 0;
+  view.scrollTop = dikey;
+  if (yatay.length) $$('.raf', view).forEach((r, i) => { r.scrollLeft = yatay[i] || 0; });
   view.classList.remove('swap');
 
   if (gecis) {
@@ -3150,7 +3251,7 @@ function paletAktar(projeId) {
       on.innerHTML = `
         <span class="label">Okunanlar</span>
         <div class="card"><div class="row-list">
-          ${PALET_ALAN.map(a => {
+          ${PALET_ALAN.concat(TASARIM_ALAN).map(a => {
             const d = cozum.palet[a.anahtar];
             return `<div class="row">
               <div class="row-main"><span class="row-title">${esc(a.ad)}</span></div>
@@ -3682,6 +3783,27 @@ async function eylemCalistir(el) {
     return isYap(
       () => DB.paletKaydet(pr.id, Object.assign({}, pr.palet || {}, { tema: el.dataset.deger })),
       el.dataset.deger + ' tema seçildi.');
+  }
+
+  if (e === 'tasarim-sec') {
+    const pr = DB.proje(el.dataset.proje);
+    const al = TASARIM_ALAN.find(a => a.anahtar === el.dataset.alan);
+    if (!pr || !al) return;
+    const deger = el.dataset.deger;
+    if ((pr.palet && pr.palet[al.anahtar] || al.varsayilan) === deger) return;
+    /* Beklemeden işaretle: raf anında tepki versin. Yeniden çizmiyoruz,
+       yoksa sayfa tepeye fırlar. Yazma tutmazsa eski işaret geri gelir. */
+    const raf   = el.parentElement;
+    const eskiB = $('.bsc.on', raf);
+    $$('.bsc', raf).forEach(b => b.classList.toggle('on', b === el));
+    try {
+      await DB.paletKaydet(pr.id, Object.assign({}, pr.palet || {}, { [al.anahtar]: deger }));
+    } catch (err) {
+      el.classList.remove('on');
+      if (eskiB) eskiB.classList.add('on');
+      toast(err.message, 'hata');
+    }
+    return;
   }
 
   if (e === 'yetkili-kopyala') {

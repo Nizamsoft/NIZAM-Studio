@@ -7,9 +7,9 @@ const APP = {
   name:     'NIZAM | Studio',
   short:    'NIZAM Studio',
   owner:    'Nizam Soft',
-  version: 'v0.19.0',
+  version: 'v0.20.0',
   build:    '2026-08-20',
-  stage: 'Adım 4 · Durak sayfaları',
+  stage: 'Adım 4 · Arayüz biçimi',
 };
 
 /* Supabase bağlantısı.
@@ -82,6 +82,80 @@ const PALET_ALAN = [
   { anahtar: 'baslik',  ad: 'Başlık yazı tipi', ornek: 'Space Grotesk' },
   { anahtar: 'govde',   ad: 'Metin yazı tipi',  ornek: 'IBM Plex Sans' },
   { anahtar: 'ton',     ad: 'Ton',              ornek: 'sıcak, kurumsal, sade' },
+];
+
+/* Arayüz biçimi — Tasarımı belirleme durağında görselli seçilir.
+   Değerler projenin `palet` alanında saklanır; ayrı sütun gerekmez.
+   `tarif` doğrudan prompta ve NIZAM.md'ye yazılır: AI ne yapacağını buradan okur. */
+const TASARIM_ALAN = [
+  {
+    anahtar: 'kart', ad: 'Kart', alt: 'Uygulamadaki her kutu böyle görünecek.',
+    varsayilan: 'Yükseltilmiş',
+    secim: [
+      { ad: 'Düz',          tarif: 'Gölge yok. Kart yalnızca dolgu farkıyla zeminden ayrılır.' },
+      { ad: 'Yükseltilmiş', tarif: 'Yumuşak gölge ve üstte ince ışık çizgisi; kart zeminden kalkık durur.' },
+      { ad: 'Çizgili',      tarif: 'Dolgu yok, yalnız 1px çerçeve. En sade ve en hafif görünüm.' },
+      { ad: 'Buzlu cam',    tarif: 'Yarı saydam dolgu + backdrop-filter bulanıklık + ince açık çerçeve.' },
+      { ad: 'Şerit vurgu',  tarif: 'Düz kart; sol kenarında 3px vurgu rengiyle dikey şerit.' },
+      { ad: 'Kağıt',        tarif: 'Neredeyse keskin köşe, kaymış sert gölge; basılı kağıt hissi.' },
+    ],
+  },
+  {
+    anahtar: 'kose', ad: 'Köşe', alt: 'Kutuların ve düğmelerin köşe yumuşaklığı.',
+    varsayilan: 'Yuvarlak',
+    secim: [
+      { ad: 'Keskin',   tarif: 'border-radius 0. Teknik ve kurumsal.' },
+      { ad: 'Hafif',    tarif: 'border-radius 6px. Nötr, güvenli seçim.' },
+      { ad: 'Yuvarlak', tarif: 'border-radius 14px. Modern ve yumuşak.' },
+      { ad: 'Hap',      tarif: 'Düğme ve etiketler 999px; kartlar 18px. Canlı ve samimi.' },
+    ],
+  },
+  {
+    anahtar: 'yogunluk', ad: 'Yoğunluk', alt: 'Bir ekrana kaç satır sığsın.',
+    varsayilan: 'Normal',
+    secim: [
+      { ad: 'Sıkışık', tarif: 'Satır yüksekliği 34px, kart içi boşluk 10px. Çok kayıtlı ekranlar için.' },
+      { ad: 'Normal',  tarif: 'Satır yüksekliği 44px, kart içi boşluk 14px.' },
+      { ad: 'Ferah',   tarif: 'Satır yüksekliği 56px, kart içi boşluk 20px. Az kayıtlı, gösterişli ekranlar için.' },
+    ],
+  },
+  {
+    anahtar: 'tablo', ad: 'Tablo', alt: 'En çok bakılan ekran. Satırlar nasıl ayrılsın?',
+    varsayilan: 'Zebra',
+    secim: [
+      { ad: 'Çizgisiz',    tarif: 'Ayraç yok; satırlar yalnız boşlukla ayrılır. Kısa listeler için.' },
+      { ad: 'Zebra',       tarif: 'Tek sıradaki satırlar hafif açık zeminli. Uzun listede göz kaymaz.' },
+      { ad: 'Yatay çizgi', tarif: 'Her satırın altında 1px çizgi; dikey çizgi yok.' },
+      { ad: 'Tam ızgara',  tarif: 'Yatay ve dikey çizgiler. Muhasebe tablosu görünümü.' },
+    ],
+  },
+  {
+    anahtar: 'tablomobil', ad: 'Tablo · telefonda', alt: 'Dar ekranda tablo ne olsun?',
+    varsayilan: 'Karta dönüş',
+    secim: [
+      { ad: 'Karta dönüş', tarif: 'Dar ekranda her satır kendi kartına dönüşür; sütun adları etiket olur.' },
+      { ad: 'Yana kaydır', tarif: 'Tablo olduğu gibi kalır, yatay kaydırılır. İlk sütun yapışık durur.' },
+      { ad: 'Sütun gizle', tarif: 'Yalnız önemli 2-3 sütun görünür; kalanı satır açılınca altta listelenir.' },
+    ],
+  },
+  {
+    anahtar: 'dugme', ad: 'Düğme', alt: 'Ana buton nasıl dursun?',
+    varsayilan: 'Dolu',
+    secim: [
+      { ad: 'Dolu',    tarif: 'Ana buton vurgu rengiyle dolu, yazı beyaz/koyu kontrast.' },
+      { ad: 'Çizgili', tarif: 'Ana buton saydam, vurgu renginde çerçeve ve yazı.' },
+      { ad: 'Yumuşak', tarif: 'Ana buton vurgu renginin %12 saydam hâliyle dolu, yazı vurgu renginde.' },
+    ],
+  },
+  {
+    anahtar: 'simge', ad: 'Simge', alt: 'Tek karar, her ekranı etkiler.',
+    varsayilan: 'Çizgi',
+    secim: [
+      { ad: 'Çizgi',      tarif: 'Yalnız kontur, 1.7px kalınlık, yuvarlak uç. Hafif ve nötr.' },
+      { ad: 'Dolu',       tarif: 'Dolgulu, konturasız simgeler. Küçük boyutta daha okunur.' },
+      { ad: 'İki katman', tarif: 'Kontur + arkada aynı rengin saydam dolgusu. Zengin ama yorucu değil.' },
+    ],
+  },
 ];
 
 const GENEL_MODUL = 'Proje Geneli';

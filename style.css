@@ -468,7 +468,8 @@ button { font-family: inherit; color: inherit; }
 .search svg { width: 15px; height: 15px; color: var(--ink-dim); }
 
 .view {
-  flex: 1; min-height: 0; padding: 20px 24px 32px;
+  --yan: 24px;
+  flex: 1; min-height: 0; padding: 20px var(--yan) 32px;
   overflow-y: auto; overscroll-behavior: contain;
 }
 .view.swap { animation: viewIn .28s var(--ease) both; }
@@ -1351,7 +1352,8 @@ html { background: var(--bg); }
   .proje:active, .gorev:active, .gsatir:active, .sayfa:active,
   .modul-bas:active, .standart-bas:active, .row[data-hs]:active, .hp-sat:active,
   .btn:active, .mini-btn:active, .mini-link:active, .ss:active, .mod:active,
-  .sc:active, .renk:active, .nav-item:active, .sayfa-ekle:active, .gorev-ekle:active {
+  .sc:active, .renk:active, .nav-item:active, .sayfa-ekle:active,
+  .gorev-ekle:active, .bsc:active {
     transform: scale(.985);
     transition: transform .1s var(--ease);
   }
@@ -2084,7 +2086,7 @@ a.durak:active { transform: scale(.99); transition: transform .1s var(--ease); }
   #topbar .btn { width: 44px; height: 44px; padding: 0; }
 
   /* Alt pay çubuk kadar: içerik cam çubuğun altından akıp geçsin. */
-  .view { padding: 16px 16px 96px; }
+  .view { --yan: 16px; padding: 16px var(--yan) 96px; }
 
   .stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .stat-num { font-size: 26px; }
@@ -2214,6 +2216,113 @@ a.durak:active { transform: scale(.99); transition: transform .1s var(--ease); }
    ekranda takılı kalıyordu. Hepsi tek yerde toplandı.
    ========================================================================== */
 
+
+/* ==========================================================================
+   ARAYÜZ BİÇİMİ — görselli seçim rafları (Tasarımı belirleme durağı)
+   Her seçenek yazı değil, küçük bir gerçek çizim. Rafla yana kayar.
+   ========================================================================== */
+
+.raf-alt { font-size: 11.5px; color: var(--ink-dim); line-height: 1.5; margin: -5px 0 10px; }
+
+.raf {
+  display: flex; gap: 10px; overflow-x: auto; overflow-y: hidden;
+  padding: 8px var(--yan) 8px; margin: 0 calc(var(--yan) * -1);
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.raf::-webkit-scrollbar { display: none; }
+
+.bsc {
+  flex: 0 0 auto; width: 104px;
+  padding: 9px; border: 1px solid var(--line); border-radius: 14px;
+  background: var(--yuva); cursor: pointer; position: relative;
+  font-family: inherit; color: inherit;
+  transition: border-color .16s var(--ease), background .16s var(--ease);
+}
+.bsc:disabled { cursor: default; opacity: .75; }
+.bsc-ad {
+  display: block; margin-top: 8px; text-align: center;
+  font-size: 11px; color: var(--ink-soft);
+}
+.bsc.on { background: var(--surface-2); border-color: var(--metal-2); }
+.bsc.on .bsc-ad { color: var(--ink); font-weight: 600; }
+.bsc.on::after {
+  content: ""; position: absolute; top: -5px; right: -5px;
+  width: 17px; height: 17px; border-radius: 50%;
+  background: var(--metal-2); border: 2px solid var(--bg);
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23171614' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'><path d='M5 13l4 4L19 7'/></svg>");
+  background-size: 11px; background-repeat: no-repeat; background-position: center;
+}
+
+/* Önizleme gövdesi — tüm çizimler bunun içinde yaşar. */
+.bon {
+  display: flex; height: 66px; border-radius: 9px; overflow: hidden;
+  background: var(--yuva-2); padding: 8px;
+}
+.bon .ln { display: block; height: 5px; border-radius: 3px; background: var(--line-parlak); }
+.bon .ln.b { background: var(--metal-1); }
+.bon .ln.k { width: 52%; } .bon .ln.o { width: 78%; } .bon .ln.u { width: 100%; }
+
+/* Yüzey ------------------------------------------------------------------- */
+.on-kart {
+  flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 5px;
+  padding: 8px; border-radius: 8px;
+}
+.k-duz    { background: var(--surface); }
+.k-yuksek { background: var(--surface-2);
+            box-shadow: 0 9px 14px -6px #000, 0 1px 0 rgba(255, 255, 255, .10) inset; }
+.k-cizgi  { background: transparent; border: 1px solid var(--line-parlak); }
+.k-cam    { background: rgba(255, 255, 255, .07); border: 1px solid rgba(255, 255, 255, .13);
+            backdrop-filter: blur(6px); }
+.k-serit  { background: var(--surface); border-left: 3px solid var(--p1, var(--metal-2)); }
+.k-kagit  { background: var(--surface); border-radius: 3px; box-shadow: 3px 3px 0 var(--yuva); }
+.bsc:has(.k-cam) .bon { background: linear-gradient(135deg, var(--surface-3), var(--yuva-2)); }
+
+/* Köşe -------------------------------------------------------------------- */
+.on-kose { flex: 1; background: var(--surface); border: 1px solid var(--line-parlak); }
+
+/* Yoğunluk ---------------------------------------------------------------- */
+.on-yog { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+.on-yog i { display: block; height: 8px; border-radius: 3px; background: var(--surface); }
+
+/* Tablo ------------------------------------------------------------------- */
+.bsc:has(.on-tb) .bon { padding: 0; }
+.on-tb { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.on-tb u { display: flex; align-items: center; text-decoration: none; }
+.on-tb .h { height: 13px; background: var(--surface-3); }
+.on-tb .r { height: 12px; }
+.on-tb i { flex: 1; height: 4px; margin: 0 5px; border-radius: 2px; background: var(--line-parlak); }
+.on-tb .h i { background: var(--metal-1); }
+.on-tb i.dar { flex: 0 0 14px; background: var(--line-2); }
+.on-tb.tasan u { width: 150%; flex: 0 0 auto; }
+.t-zebra .r:nth-child(odd) { background: rgba(255, 255, 255, .085); }
+.t-yatay .r, .t-izgara .r { border-top: 1px solid var(--line-parlak); }
+.t-izgara i + i { box-shadow: -5px 0 0 -4px var(--line-parlak); }
+
+/* Tablo · telefonda — karta dönüş */
+.on-mk { flex: 1; display: flex; flex-direction: column; gap: 4px; justify-content: center; }
+.on-mk i { display: block; height: 11px; border-radius: 5px; background: var(--surface); }
+
+/* Düğme ------------------------------------------------------------------- */
+.on-dg { flex: 1; display: grid; place-items: center; }
+.on-dg em {
+  font-style: normal; font-family: var(--yazi-baslik); font-weight: 600;
+  font-size: 9px; padding: 5px 14px; white-space: nowrap;
+}
+.d-dolu    { background: var(--red); color: #fff; border-radius: 8px; }
+.d-cizgi   { border: 1px solid var(--red); color: var(--red-ink); border-radius: 8px; }
+.d-yumusak { background: var(--red-soft); color: var(--red-ink-soft); border-radius: 999px; }
+
+/* Simge ------------------------------------------------------------------- */
+.on-sm { flex: 1; display: flex; align-items: center; justify-content: center; gap: 9px; }
+.on-sm svg { width: 19px; height: 19px; }
+.sm-cizgi  svg { fill: none; stroke: var(--metal-2); stroke-width: 1.7;
+                 stroke-linecap: round; stroke-linejoin: round; }
+.sm-dolu   svg { fill: var(--ink-soft); stroke: none; }
+.sm-katman svg { fill: rgba(214, 208, 205, .26); stroke: var(--metal-2); stroke-width: 1.5;
+                 stroke-linecap: round; stroke-linejoin: round; }
+
+
 @media (hover: hover) {
 a:hover { color: var(--red-ink); }
 .btn:hover { background: var(--surface-3); }
@@ -2265,4 +2374,5 @@ a:hover { color: var(--red-ink); }
 .sc.tehlikeli:hover { border-color: var(--red-cizgi); }
 .user-tile:hover { border-color: var(--line-parlak); }
 .hp-sat:hover { background: rgba(255, 255, 255, .05); }
+.bsc:not(.on):not(:disabled):hover { border-color: var(--line-parlak); background: var(--surface); }
 }

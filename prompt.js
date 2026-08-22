@@ -30,6 +30,20 @@ const PROMPT = {
     return s.join('\n');
   },
 
+  /* Arayüz biçimi — görev promptuna ve NIZAM.md'ye aynı biçimde girer. */
+  tasarimBlogu(proje) {
+    const pl = (proje && proje.palet) || {};
+    const s = ['## Arayüz Biçimi'];
+    s.push('Bu kararlar alınmış. Kendi biçimini uydurma, aşağıdakileri uygula.');
+    s.push('');
+    TASARIM_ALAN.forEach(a => {
+      const ad = pl[a.anahtar] || a.varsayilan;
+      const sc = a.secim.find(x => x.ad === ad) || a.secim[0];
+      s.push(`- **${a.ad}: ${sc.ad}** — ${sc.tarif}`);
+    });
+    return s.join('\n');
+  },
+
   /* ---------- Marka promptu ----------
      Logoyu Studio gönderemez; kullanıcı bu metni kopyalayıp logoyla birlikte
      yapıştırır. Dönen cevap Studio'ya geri yapıştırılır. */
@@ -69,6 +83,19 @@ const PROMPT = {
     s.push('- Renkleri 6 haneli onaltılık kodla yaz (#0f0e0d gibi).');
     s.push('- Yazı tipleri ücretsiz, web\'de kullanılabilir ve Türkçe karakterleri tam olsun.');
     s.push('');
+    s.push('');
+    s.push('## Arayüz biçimi');
+    s.push('Renklerin yanında arayüzün biçimine de karar ver. Her başlık için');
+    s.push('**yalnızca listedeki adlardan birini** seç — yeni ad uydurma.');
+    s.push('Seçimini markanın karakterine göre yap: kurumsal ve yoğun bir iş');
+    s.push('yazılımı ile sıcak, müşteriye dönük bir uygulama aynı biçimi almaz.');
+    s.push('');
+    TASARIM_ALAN.forEach(a => {
+      s.push(`**${a.ad}** — ${a.alt}`);
+      a.secim.forEach(x => s.push(`- ${x.ad}: ${x.tarif}`));
+      s.push('');
+    });
+
     s.push('## Cevabı tam olarak bu biçimde ver');
     s.push('Başka açıklama yazma, yalnızca bu satırları döndür:');
     s.push('');
@@ -76,6 +103,7 @@ const PROMPT = {
     PALET_ALAN.forEach(a => {
       s.push(`${a.ad}: ${a.anahtar === 'tema' ? (acik ? 'Açık' : 'Koyu') : a.ornek}`);
     });
+    TASARIM_ALAN.forEach(a => s.push(`${a.ad}: ${a.varsayilan}`));
     s.push('```');
 
     return s.join('\n');
@@ -106,6 +134,7 @@ const PROMPT = {
 
     const paletMetni = PROMPT.paletBlogu(proje);
     if (paletMetni) { s.push(paletMetni); s.push(''); }
+    s.push(PROMPT.tasarimBlogu(proje)); s.push('');
 
     s.push('Deponun kökünde `NIZAM.md` adında bir kimlik dosyası var.');
     s.push('İşe başlamadan önce oku — projenin mevcut sayfaları, kullanılan');
@@ -172,6 +201,7 @@ const PROMPT = {
 
     const paletMetni = PROMPT.paletBlogu(proje);
     if (paletMetni) { s.push(paletMetni); s.push(''); }
+    s.push(PROMPT.tasarimBlogu(proje)); s.push('');
 
     s.push('## Modüller ve sayfalar');
     moduller.forEach(m => {
