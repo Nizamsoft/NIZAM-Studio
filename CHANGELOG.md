@@ -1,5 +1,17 @@
 # Değişiklik Günlüğü
 
+## v0.33.1 — 22 Ağustos 2026
+**Terminoloji kalktı, kayıt numarası standart oldu**
+
+Terminoloji sorusu tamamen kaldırıldı.
+
+Kayıt numarası artık projeye özel değil, Nizam standardı:
+**HARF-SIRA** — kaydın türünü gösteren kısa harf, tire, sıra numarası.
+F-1042 (fatura), S-1001 (sipariş). Sayaç 1'den başlar, yıl başında
+sıfırlanmaz, boşluk bırakmaz.
+
+Sorulan teknik alan ikiye indi: **Roller** ve **Alan adı**.
+
 ## v0.33.0 — 22 Ağustos 2026
 **Roller katmanlı oldu**
 

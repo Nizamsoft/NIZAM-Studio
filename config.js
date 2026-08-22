@@ -7,7 +7,7 @@ const APP = {
   name:     'NIZAM | Studio',
   short:    'NIZAM Studio',
   owner:    'Nizam Soft',
-  version: 'v0.33.0',
+  version: 'v0.33.1',
   build:    '2026-08-20',
   stage: 'Adım 4 · Rol katmanları',
 };
@@ -723,6 +723,9 @@ const TEKNIK_STANDART = [
    'Excel gerekiyorsa xlsx. Başka paket eklemeden önce sor.'],
   ['Para birimi', '₺ TRY', 'Binlik nokta, ondalık virgül: 12.400,00'],
   ['Tarih ve saat', '22.05.2025 · 14:30', 'Gün.Ay.Yıl ve 24 saatlik saat.'],
+  ['Kayıt numarası', 'HARF-SIRA',
+   'Kaydın türünü gösteren kısa harf, tire, sıra numarası: F-1042 (fatura), '
+   + 'S-1001 (sipariş). Sayaç 1\'den başlar, yıl başında sıfırlanmaz, boşluk bırakmaz.'],
   ['Sürümleme', 'YIL.SAYAÇ', 'Örnek 2026.14. Ayarlar ekranında görünür.'],
   ['Arayüz dili', 'Türkçe', 'Tek dil. Metinler koda yazılır, sözlük dosyası yok.'],
   ['Erişilebilirlik', '44px · 4.5:1',
@@ -735,10 +738,6 @@ const TEKNIK_ALAN = [
   { anahtar: 'roller', ad: 'Roller', tur: 'katman', ornek: 'Personel · Amir · Yönetici',
     alt: 'Kaç katman var ve en alttan en üste hangi sırayla? Üstteki, alttakinin '
        + 'gördüğü her şeyi görür. Veritabanı güvenlik kuralları buna göre yazılır.' },
-  { anahtar: 'terim', ad: 'Terminoloji', ornek: 'cari → müşteri, hakediş → ödeme',
-    alt: 'Müşterinin kendi sözcükleri. Yanlış sözcük kullanıcıyı yabancılaştırır.' },
-  { anahtar: 'kayitNo', ad: 'Kayıt numarası', ornek: 'F-20418 · yıl başında sıfırlanır',
-    alt: 'Kayıtlara numara verilecek mi, hangi biçimde? Sonradan değiştirilemez.' },
   { anahtar: 'alanAdi', ad: 'Alan adı', ornek: 'kubban.nizamsoft.com',
     alt: 'Müşteri hangi adresten girecek? Yayın ayarı ve PWA manifesti buna bağlı.' },
 ];
