@@ -1,5 +1,31 @@
 # Değişiklik Günlüğü
 
+## v0.19.0 — 22 Ağustos 2026
+**Her durak kendi sayfası oldu**
+
+Duraklar açılıp kapanan kutular değil; her biri kendi sayfası.
+Adres de öyle: `#/projeler/<proje>/firma`. Geri düğmesi bir adım geri
+götürüyor — duraktan projeye, projeden listeye.
+
+**Sayfaların tepesinde hero var:** logo büyük, arkasında **projenin kendi
+rengi** zemine vuruyor. Altında sektör ve platform rozetleri, köşede durak
+numarası.
+
+**Düz form yok, tasarlanmış bölümler var:**
+
+- **Yetkili kişi bir kartvizit.** Baş harfler, ad, iletişim; altında
+  **Ara · Mail · Kopyala** düğmeleri. Numarayı okuyup elle tuşlamıyorsun
+- **Takvim bir çubuk.** "100 gün kaldı", "%1 geçti" ve bugünün nerede
+  olduğunu gösteren nokta. Gecikmişse kırmızı yazıyor
+- **Platform ve veritabanı** kendi simgeleriyle iki kutu
+- **Palet tam genişlik şerit**, altında renk kodları. Yazı tipleri kendi
+  karakterleriyle yazılı
+- **Boş alanlar boş satır bırakmıyor:** kesik çerçeveli bir kutu ne
+  eksik olduğunu ve neden gerektiğini söylüyor
+
+Beş sayfa: Firma bilgileri · Tasarımı belirleme · Yapıyı kurma ·
+Geliştirme · Sürüm.
+
 ## v0.18.1 — 21 Ağustos 2026
 **Firma bilgileri sonradan düzenlenebiliyor**
 

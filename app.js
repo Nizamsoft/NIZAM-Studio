@@ -27,7 +27,8 @@ const DEFAULT_ROUTE = 'panel';
 function rota() {
   const p = (location.hash || '').replace(/^#\/?/, '').split('/').filter(Boolean);
   const key = ROUTES[p[0]] ? p[0] : DEFAULT_ROUTE;
-  return { key, id: p[1] || null };
+  /* Üçüncü parça proje içindeki durak sayfası: #/projeler/<id>/firma */
+  return { key, id: p[1] || null, durak: p[2] || null };
 }
 
 /* ---------- Durum ---------- */
@@ -44,8 +45,6 @@ let ACIK_SABLON = null;
 let LOGO_ZAMANLAYICI = null;
 /* Projeler ekranındaki bölümler. Varsayılanı kod belirler, kullanıcı değiştirir. */
 const ACIK_PROJE_BOLUM = {};
-/* Proje içindeki duraklar. Anahtar: projeId:sıra */
-const ACIK_DURAK = {};
 
 /* ---------- İkonlar ---------- */
 
@@ -104,6 +103,14 @@ const ICON = {
     c: '<path d="M4 15.5v-3a8 8 0 0 1 16 0v3M4 14.5h2.2a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H5.2a1.2 1.2 0 0 1-1.2-1.2zM20 14.5h-2.2a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h1a1.2 1.2 0 0 0 1.2-1.2z"></path>',
   },
   cikis: '<path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 16l4-4-4-4M14 12H3"></path>',
+  telefon: {
+    d: '<path d="M6.5 3.5h3l1.5 4-2 1.4a12 12 0 0 0 6.1 6.1l1.4-2 4 1.5v3a2 2 0 0 1-2.2 2A17.5 17.5 0 0 1 4.5 5.7 2 2 0 0 1 6.5 3.5z"></path>',
+    c: '<path d="M6.5 3.5h3l1.5 4-2 1.4a12 12 0 0 0 6.1 6.1l1.4-2 4 1.5v3a2 2 0 0 1-2.2 2A17.5 17.5 0 0 1 4.5 5.7 2 2 0 0 1 6.5 3.5z"></path>',
+  },
+  mail: {
+    d: '<rect x="3" y="5.5" width="18" height="13" rx="2.5"></rect>',
+    c: '<rect x="3" y="5.5" width="18" height="13" rx="2.5"></rect><path d="M3.6 7l8.4 6 8.4-6"></path>',
+  },
 
   /* İçe aktar: kutuya inen ok */
   ice: {
@@ -570,6 +577,282 @@ function logolariGoster() {
   });
 }
 
+/* Proje içindeki beş durak. Adres, ad ve içeriği tek yerde tanımlı. */
+const DURAKLAR = {
+  firma:      { no: 1, ad: 'Firma bilgileri',    ciz: firmaSayfasi },
+  tasarim:    { no: 2, ad: 'Tasarımı belirleme', ciz: tasarimSayfasi },
+  yapi:       { no: 3, ad: 'Yapıyı kurma',       ciz: yapiSayfasi },
+  gelistirme: { no: 4, ad: 'Geliştirme',         ciz: gelistirmeSayfasi },
+  surum:      { no: 5, ad: 'Sürüm',              ciz: surumSayfasi },
+};
+
+function durakSayfasi(projeId, anahtar) {
+  if (YUKLENIYOR) return iskeletler(4);
+  if (DB.hata)    return hataKutusu(DB.hata);
+
+  const p = DB.proje(projeId);
+  if (!p) {
+    return `<div class="card">${empty(ICON.uyari, 'Proje bulunamadı',
+      'Silinmiş veya arşive alınmış olabilir.', 'Projelere dön', 'projelere')}</div>`;
+  }
+  return DURAKLAR[anahtar].ciz(p, DURAKLAR[anahtar]);
+}
+
+/* Her durak sayfasının tepesi: logo, firma adı, rozetler.
+   Zemine projenin kendi rengi vuruyor — hangi müşteride olduğun bir bakışta belli. */
+function sayfaHero(p, d) {
+  const adres = DB.logoAdres[p.id];
+
+  const rozet = [
+    p.sektor,
+    PLATFORM_ADI[p.platform],
+    VERI_ADI[p.veri],
+  ].filter(Boolean);
+
+  return `
+    <div class="hero" style="${renkDegiskenleri(p.renk)}">
+      <span class="hero-zemin"></span>
+      <span class="hero-no">${d.no}</span>
+      <span class="hero-logo ${adres ? 'yukleniyor' : ''}"
+            ${adres ? `data-logo="${esc(adres)}"` : ''}>
+        <span class="logo-harf">${esc(basHarf(p.firma))}</span>
+        ${adres ? '<span class="donen"></span>' : ''}
+      </span>
+      <h1>${esc(p.firma)}</h1>
+      <span class="hero-rozetler">
+        ${rozet.map((x, i) => `<span class="rz ${i === 0 && p.sektor ? 'marka' : ''}">${esc(x)}</span>`).join('')}
+      </span>
+    </div>`;
+}
+
+function bolumBas(ad) {
+  return `<div class="bl"><span>${esc(ad)}</span><i></i></div>`;
+}
+
+/* 1 · Firma bilgileri */
+function firmaSayfasi(p, d) {
+  const dil  = (DIL_SECENEK.find(x => x.kod === p.dil) || {}).ad;
+  const para = (PARA_SECENEK.find(x => x.kod === p.para) || {}).ad;
+
+  return sayfaHero(p, d)
+    + yetkiliKarti(p)
+    + bolumBas('Ürün') + `
+      <div class="ikili">
+        <div class="tkutu">
+          <span class="ik">${svg(ICON.katman, 14)}</span>
+          <b>Platform</b><u>${esc(PLATFORM_ADI[p.platform] || '—')}</u>
+        </div>
+        <div class="tkutu">
+          <span class="ik">${svg(ICON.kova, 14)}</span>
+          <b>Veritabanı</b><u>${esc(VERI_ADI[p.veri] || '—')}</u>
+        </div>
+      </div>`
+    + takvimBolumu(p)
+    + bolumBas('Diğer') + `
+      <div class="satirlar">
+        <div class="sr">${svg(ICON.info, 15)} Dil ve para
+          <b>${dil || para ? esc([dil, para].filter(Boolean).join(' · ')) : '—'}</b></div>
+        <div class="sr" data-eylem="repo" data-proje="${p.id}" role="button" tabindex="0">
+          ${svg(ICON.katman, 15)} Depo
+          ${p.repo ? `<b class="mono">${esc(p.repo)}</b>` : '<b class="eksik">eklenmedi</b>'}</div>
+        <div class="sr" data-eylem="kimlik" data-proje="${p.id}" role="button" tabindex="0">
+          ${svg(ICON.kopya, 15)} Kimlik dosyası <b>NIZAM.md</b></div>
+      </div>`
+    + (AUTH.yonetici ? `
+      <button class="sayfa-dug" data-eylem="firma-duzenle" data-proje="${p.id}" type="button">
+        ${svg(ICON.kalem, 15)} Bilgileri düzenle</button>` : '');
+}
+
+function yetkiliKarti(p) {
+  if (!p.yetkili && !p.telefon && !p.eposta) {
+    return bolumBas('Yetkili kişi') + `
+      <div class="bos-kutu">
+        ${svg(ICON.kisi, 18)}
+        <span>Yetkili kişi girilmemiş. İş sırasında soru çıkarsa kime soracağın belli olsun.</span>
+      </div>`;
+  }
+
+  const alt = [p.telefon, p.eposta].filter(Boolean).join(' · ');
+
+  return bolumBas('Yetkili kişi') + `
+    <div class="kisi-kart" style="${renkDegiskenleri(p.renk)}">
+      <div class="kk-ust">
+        <span class="kk-av">${esc(basHarf(p.yetkili || '?'))}</span>
+        <span class="kk-ad">
+          <b>${esc(p.yetkili || 'Adı girilmemiş')}</b>
+          ${alt ? `<i>${esc(alt)}</i>` : ''}
+        </span>
+      </div>
+      <div class="kk-eylem">
+        ${p.telefon ? `<a class="ke" href="tel:${esc(p.telefon.replace(/\s/g, ''))}">
+          ${svg(ICON.telefon, 14)} Ara</a>` : ''}
+        ${p.eposta ? `<a class="ke" href="mailto:${esc(p.eposta)}">
+          ${svg(ICON.mail, 14)} Mail</a>` : ''}
+        <button class="ke" data-eylem="yetkili-kopyala" data-proje="${p.id}" type="button">
+          ${svg(ICON.kopya, 14)} Kopyala</button>
+      </div>
+    </div>`;
+}
+
+/* Takvim: tarih satırı okumaktan hızlı — çubuk bugünün nerede olduğunu gösteriyor. */
+function takvimBolumu(p) {
+  if (!p.baslangic && !p.teslim) {
+    return bolumBas('Takvim') + `
+      <div class="bos-kutu">
+        ${svg(ICON.info, 18)}
+        <span>Tarih girilmemiş. Teslim tarihi koyarsan geciken projeler ayrı gösterilir.</span>
+      </div>`;
+  }
+
+  const bas = p.baslangic ? new Date(p.baslangic) : null;
+  const son = p.teslim ? new Date(p.teslim) : null;
+  const bugun = new Date(bugunTarih());
+
+  let yuzde = 0, ust = '', sag = '';
+  if (bas && son && son > bas) {
+    yuzde = Math.max(0, Math.min(100, Math.round((bugun - bas) / (son - bas) * 100)));
+    const kalan = Math.round((son - bugun) / 86400000);
+    ust = kalan >= 0 ? `${kalan} gün kaldı` : `${-kalan} gün geçti`;
+    sag = `%${yuzde} geçti`;
+  } else {
+    ust = bas ? 'Başladı' : 'Teslim bekliyor';
+  }
+
+  return bolumBas('Takvim') + `
+    <div class="takvim" style="${renkDegiskenleri(p.renk)}">
+      <div class="tk-ust">
+        <b class="${son && bugun > son ? 'gecikti' : ''}">${esc(ust)}</b>
+        ${sag ? `<em>${esc(sag)}</em>` : ''}
+      </div>
+      ${bas && son ? `<div class="ray"><i style="width:${yuzde}%"></i><b style="left:${yuzde}%"></b></div>` : ''}
+      <div class="tk-uc">
+        <span>Başlangıç<b>${bas ? esc(gunYaz(p.baslangic)) : '—'}</b></span>
+        <span>Teslim<b>${son ? esc(gunYaz(p.teslim)) : '—'}</b></span>
+      </div>
+    </div>`;
+}
+
+/* 2 · Tasarımı belirleme */
+function tasarimSayfasi(p, d) {
+  const pl = p.palet || null;
+  const acikTema = PROMPT.temaAcik(p);
+  const adres = DB.logoAdres[p.id];
+
+  const serit = pl
+    ? `<div class="palet-tam">${PALET_ALAN.filter(a => a.renk).map(a => {
+        const renk = pl[a.anahtar] || '#333';
+        return `<span style="background:${esc(renk)}"><em>${esc(renk.replace('#', ''))}</em></span>`;
+      }).join('')}</div>`
+    : `<div class="bos-kutu">${svg(ICON.katman, 18)}
+        <span>Palet yok. Logoyu yükle, promptu kopyala, Claude'a logoyla birlikte ver;
+        dönen cevabı buraya yapıştır.</span></div>`;
+
+  return sayfaHero(p, d)
+    + bolumBas('Logo') + `
+      <div class="logo-bolum">
+        <span class="mk-logo buyuk ${adres ? 'yukleniyor' : ''}"
+              ${adres ? `data-logo="${esc(adres)}"` : ''}
+              data-eylem="${AUTH.yonetici ? 'logo-yukle' : ''}" data-proje="${p.id}"
+              ${AUTH.yonetici ? 'role="button" tabindex="0"' : ''}>
+          <span class="logo-harf">${svg(ICON.folder, 20)}</span>
+          ${adres ? '<span class="donen"></span>' : ''}
+        </span>
+        <span class="mk-yazi">
+          <b>${adres ? 'Firma logosu' : 'Logo yok'}</b>
+          <i>${AUTH.yonetici ? (adres ? 'Değiştirmek için dokun' : 'Yüklemek için dokun · en fazla 4 MB')
+                             : (adres ? 'Yüklenmiş' : 'Yönetici yükleyecek')}</i>
+        </span>
+      </div>`
+    + bolumBas('Palet') + serit
+    + (pl ? `
+      <div class="tip">
+        <div><b>Başlık</b><u style="font-family:var(--yazi-baslik);font-weight:700">${esc(pl.baslik || '—')}</u></div>
+        <div><b>Metin</b><u>${esc(pl.govde || '—')}</u></div>
+      </div>` : '')
+    + bolumBas('Ton') + `
+      <div class="satirlar">
+        <div class="sr">Tema
+          <span class="secenek-serit ufak">
+            <button class="ss ${acikTema ? '' : 'sec'}" data-eylem="tema-sec" data-proje="${p.id}"
+                    data-deger="Koyu" type="button" ${AUTH.yonetici ? '' : 'disabled'}>Koyu</button>
+            <button class="ss ${acikTema ? 'sec' : ''}" data-eylem="tema-sec" data-proje="${p.id}"
+                    data-deger="Açık" type="button" ${AUTH.yonetici ? '' : 'disabled'}>Açık</button>
+          </span>
+        </div>
+        ${pl && pl.ton ? `<div class="sr">Karakter <b>${esc(pl.ton)}</b></div>` : ''}
+      </div>`
+    + (AUTH.yonetici ? `
+      <button class="sayfa-dug ikincil" data-eylem="palet-prompt" data-proje="${p.id}" type="button">
+        ${svg(ICON.kopya, 15)} Prompt kopyala</button>
+      <button class="sayfa-dug ikincil" data-eylem="palet-aktar" data-proje="${p.id}" type="button">
+        ${svg(ICON.ice, 15)} Paleti yapıştır</button>
+      ${pl ? `<button class="sayfa-dug" data-eylem="palet-duzenle" data-proje="${p.id}" type="button">
+        ${svg(ICON.kalem, 15)} Elle düzenle</button>` : ''}` : '');
+}
+
+/* 3 · Yapıyı kurma */
+function yapiSayfasi(p, d) {
+  const moduller = DB.modulleri(p.id);
+  const s = DB.sayim(p.id);
+
+  return sayfaHero(p, d) + `
+    <div class="ikili">
+      <div class="tkutu"><span class="ik">${svg(ICON.katman, 14)}</span><b>Modül</b><u>${s.modul}</u></div>
+      <div class="tkutu"><span class="ik">${svg(ICON.folder, 14)}</span><b>Sayfa</b><u>${s.sayfa}</u></div>
+    </div>`
+    + bolumBas('Modüller ve sayfalar')
+    + (moduller.length ? moduller.map(modulKarti).join('')
+        : `<div class="bos-kutu">${svg(ICON.katman, 18)}
+            <span>Henüz modül yok. Modül kurduğunda sayfaları da birlikte gelir.</span></div>`)
+    + (AUTH.yonetici ? `
+      <button class="sayfa-dug" data-eylem="modul-ekle" data-proje="${p.id}" type="button">
+        ${svg(ICON.arti, 15)} Modül Ekle</button>` : '');
+}
+
+/* 4 · Geliştirme */
+function gelistirmeSayfasi(p, d) {
+  const s = DB.sayim(p.id);
+  const gorevler = DB.gorevleri({ proje: p.id });
+  const dev  = gorevler.filter(g => g.durum === 'gelistiriliyor').length;
+  const kont = gorevler.filter(g => g.durum === 'kontrolde').length;
+
+  return sayfaHero(p, d) + `
+    <div class="ikili">
+      <div class="tkutu"><span class="ik">${svg(ICON.kalem, 14)}</span><b>Geliştiriliyor</b>
+        <u style="color:var(--st-dev-t)">${dev}</u></div>
+      <div class="tkutu"><span class="ik">${svg(ICON.check, 14)}</span><b>Kontrolde</b>
+        <u style="color:var(--st-check-t)">${kont}</u></div>
+    </div>
+
+    <div class="takvim" style="${renkDegiskenleri(p.renk)}">
+      <div class="tk-ust"><b>${s.bitmis}/${s.gorev} görev bitti</b><em>%${s.yuzde}</em></div>
+      <div class="ray"><i style="width:${s.yuzde}%"></i><b style="left:${s.yuzde}%"></b></div>
+    </div>`
+    + bolumBas('Açık işler')
+    + (gorevler.length
+        ? `<div class="card liste">${gorevler.slice(0, 12).map(gorevKarti).join('')}</div>`
+        : `<div class="bos-kutu">${svg(ICON.check, 18)}
+            <span>Henüz görev yok. Yapı durağındaki sayfalara görev açtığında burada listelenir.</span></div>`);
+}
+
+/* 5 · Sürüm */
+function surumSayfasi(p, d) {
+  return sayfaHero(p, d)
+    + bolumBas('Depo') + `
+      <div class="satirlar">
+        <div class="sr" data-eylem="repo" data-proje="${p.id}" role="button" tabindex="0">
+          ${svg(ICON.katman, 15)} Adres
+          ${p.repo ? `<b class="mono">${esc(p.repo)}</b>` : '<b class="eksik">eklenmedi</b>'}</div>
+      </div>`
+    + bolumBas('Sürüm notları') + `
+      <div class="bos-kutu">
+        ${svg(ICON.info, 18)}
+        <span>GitHub bağlanınca commit'ler buraya düşecek. Görev numarası
+        <b class="mono">[${TASK_PREFIX}-142]</b> biçiminde yazıldığında Studio görevi
+        kendiliğinden Kontrolde'ye çeker. Adım 5'te geliyor.</span>
+      </div>`;
+}
+
 /* Ekranın tepesi: logo, firma adı, platform ve tek ilerleme çubuğu.
    Dört ayrı istatistik kartının yerini aldı — rakamlar zaten durakların içinde. */
 function projeKunyesi(p) {
@@ -606,7 +889,6 @@ function projeDuraklari(p) {
       bitti: true,
       ozet: [p.sektor, PLATFORM_ADI[p.platform] || '—', VERI_ADI[p.veri] || '—']
         .filter(Boolean).join(' · '),
-      icerik: firmaDuragi(p),
     },
     {
       ad: 'Tasarımı belirleme',
@@ -614,7 +896,6 @@ function projeDuraklari(p) {
       ozet: paletVar
         ? 'Logo ve palet hazır.'
         : 'Logoyu yükle, promptu kopyala, dönen paleti yapıştır.',
-      icerik: markaDuragi(p),
     },
     {
       ad: 'Yapıyı kurma',
@@ -622,7 +903,6 @@ function projeDuraklari(p) {
       ozet: gercek
         ? `${gercek} modül · ${s.sayfa} sayfa`
         : 'Henüz modül yok. Modül kurduğunda sayfaları da birlikte gelir.',
-      icerik: yapiDuragi(p, moduller),
     },
     {
       ad: 'Geliştirme',
@@ -630,16 +910,12 @@ function projeDuraklari(p) {
       ozet: s.gorev
         ? `${s.bitmis}/${s.gorev} görev bitti`
         : 'Sayfalara görev açtığında burada ilerleme görünecek.',
-      icerik: s.gorev ? `
-        <div class="satir">Açık iş <b>${s.gorev - s.bitmis}</b></div>
-        <div class="satir">Tamamlanan <b>${s.bitmis}</b></div>` : '',
     },
     {
       ad: 'Sürüm',
       bitti: false,
       kilitli: true,
       ozet: 'GitHub bağlanınca commit\'ler buraya düşecek.',
-      icerik: '',
     },
   ];
 }
@@ -648,119 +924,28 @@ function projeYolu(p) {
   const duraklar = projeDuraklari(p);
   /* Şimdiki durak: bitmemiş ilk durak. Kilitli olan sıraya girmez. */
   const simdi = duraklar.findIndex(d => !d.bitti && !d.kilitli);
+  const anahtarlar = Object.keys(DURAKLAR);
 
   return `<div class="yol">${duraklar.map((d, i) => {
     const durum = d.bitti ? 'bitti' : (i === simdi ? 'simdi' : 'bekliyor');
     const etiket = d.bitti ? 'tamam' : (i === simdi ? 'şimdi burada' : 'bekliyor');
 
-    /* Varsayılan: yalnızca üstünde çalışılan durak açık.
-       Bitmiş ve bekleyenler kapalı — ekran kalabalık olmasın. */
-    const anahtar = p.id + ':' + i;
-    const acik = ACIK_DURAK[anahtar] === undefined ? (i === simdi) : ACIK_DURAK[anahtar];
-    const acilir = !!d.icerik;
-
     return `
-      <div class="durak ${durum} ${acik ? 'genis' : ''}">
+      <a class="durak ${durum}" href="#/projeler/${p.id}/${anahtarlar[i]}">
         <span class="durak-no">${i + 1}</span>
-        <div class="durak-bas ${acilir ? 'acilir' : ''}"
-             ${acilir ? `data-eylem="durak-ac" data-ad="${esc(anahtar)}" role="button" tabindex="0"` : ''}>
+        <div class="durak-bas">
           <h3>${esc(d.ad)}</h3>
           <em>${etiket}</em>
-          ${acilir ? `<span class="durak-chev">${svg(ICON.chevron, 14)}</span>` : ''}
+          <span class="durak-chev">${svg(ICON.chevron, 14)}</span>
         </div>
         <p>${d.ozet}</p>
-        ${acilir && acik ? `<div class="durak-ic">${d.icerik}</div>` : ''}
-      </div>`;
+      </a>`;
   }).join('')}</div>`;
 }
 
-/* 1 · Firma bilgileri */
-function firmaDuragi(p) {
-  const dil  = (DIL_SECENEK.find(x => x.kod === p.dil) || {}).ad;
-  const para = (PARA_SECENEK.find(x => x.kod === p.para) || {}).ad;
-  const yetkili = [p.yetkili, p.telefon].filter(Boolean).join(' · ');
-  const takvim = [p.baslangic, p.teslim].filter(Boolean).map(gunYaz).join(' → ');
 
-  /* Boş alan satır açmıyor — SQL çalıştırılmadıysa ekran eskisi gibi kalıyor. */
-  const varsa = (ad, deger, sinif = '') => deger
-    ? `<div class="satir">${ad} <b class="${sinif}">${esc(deger)}</b></div>` : '';
 
-  return `
-    <div class="satir">Platform <b>${PLATFORM_ADI[p.platform] || '—'}</b></div>
-    <div class="satir">Veri <b>${VERI_ADI[p.veri] || '—'}</b></div>
-    ${varsa('Sektör', p.sektor)}
-    ${varsa('Yetkili', yetkili)}
-    ${varsa('E-posta', p.eposta, 'mono')}
-    ${dil || para ? `<div class="satir">Dil / Para <b>${esc([dil, para].filter(Boolean).join(' · '))}</b></div>` : ''}
-    ${varsa('Takvim', takvim)}
-    <div class="satir">Depo ${p.repo
-      ? `<b class="mono">${esc(p.repo)}</b>`
-      : '<b class="eksik">eklenmedi</b>'}</div>
-    <div class="durak-arac">
-      ${AUTH.yonetici ? `<button class="mini-kabart" data-eylem="firma-duzenle" data-proje="${p.id}" type="button">
-        ${svg(ICON.kalem, 13)} Bilgileri düzenle</button>` : ''}
-      <button class="mini-kabart" data-eylem="kimlik" data-proje="${p.id}" type="button">
-        ${svg(ICON.kopya, 13)} Kimlik Dosyası</button>
-      ${AUTH.yonetici ? `<button class="mini-kabart" data-eylem="repo" data-proje="${p.id}" type="button">
-        ${svg(ICON.katman, 13)} ${p.repo ? 'Depoyu değiştir' : 'Depo adresi ekle'}</button>` : ''}
-    </div>`;
-}
 
-/* 3 · Yapıyı kurma */
-function yapiDuragi(p, moduller) {
-  return `
-    ${moduller.length ? `<div class="durak-moduller">${moduller.map(modulKarti).join('')}</div>` : ''}
-    ${AUTH.yonetici ? `
-      <div class="durak-arac">
-        <button class="mini-kabart" data-eylem="modul-ekle" data-proje="${p.id}" type="button">
-          ${svg(ICON.arti, 13)} Modül Ekle</button>
-      </div>` : ''}`;
-}
-
-/* 2 · Tasarımı belirleme — eski marka kartının durak içi hali. */
-function markaDuragi(p) {
-  const adres = DB.logoAdres[p.id];
-  const pl = p.palet || null;
-  const acikTema = PROMPT.temaAcik(p);
-
-  const kutular = PALET_ALAN.filter(a => a.renk).map(a => {
-    const renk = pl && pl[a.anahtar];
-    return `<span class="palet-kutu ${renk ? '' : 'bos'}"
-                  style="${renk ? `background:${esc(renk)}` : ''}" title="${esc(a.ad)}"></span>`;
-  }).join('');
-
-  return `
-    <div class="satir">Logo
-      <span class="mk-logo ${adres ? 'yukleniyor' : ''}"
-            ${adres ? `data-logo="${esc(adres)}"` : ''}
-            data-eylem="${AUTH.yonetici ? 'logo-yukle' : ''}" data-proje="${p.id}"
-            ${AUTH.yonetici ? 'role="button" tabindex="0"' : ''}>
-        <span class="logo-harf">${svg(ICON.folder, 16)}</span>
-        ${adres ? '<span class="donen"></span>' : ''}
-      </span>
-    </div>
-    <div class="satir">Tema
-      <span class="secenek-serit ufak">
-        <button class="ss ${acikTema ? '' : 'sec'}" data-eylem="tema-sec" data-proje="${p.id}"
-                data-deger="Koyu" type="button" ${AUTH.yonetici ? '' : 'disabled'}>Koyu</button>
-        <button class="ss ${acikTema ? 'sec' : ''}" data-eylem="tema-sec" data-proje="${p.id}"
-                data-deger="Açık" type="button" ${AUTH.yonetici ? '' : 'disabled'}>Açık</button>
-      </span>
-    </div>
-    <div class="satir">Renkler <span class="palet-serit">${kutular}</span></div>
-    ${pl ? `<div class="satir">Yazı tipi <b>${esc(pl.baslik || '—')} · ${esc(pl.govde || '—')}</b></div>
-            ${pl.ton ? `<div class="satir">Ton <b>${esc(pl.ton)}</b></div>` : ''}` : ''}
-
-    ${AUTH.yonetici ? `
-      <div class="durak-arac">
-        <button class="mini-kabart" data-eylem="palet-prompt" data-proje="${p.id}" type="button">
-          ${svg(ICON.kopya, 13)} Prompt kopyala</button>
-        <button class="mini-kabart" data-eylem="palet-aktar" data-proje="${p.id}" type="button">
-          ${svg(ICON.ice, 13)} Paleti yapıştır</button>
-        ${pl ? `<button class="mini-kabart" data-eylem="palet-duzenle" data-proje="${p.id}" type="button">
-          ${svg(ICON.kalem, 13)} Elle düzenle</button>` : ''}
-      </div>` : ''}`;
-}
 
 /* Yapıştırılan paleti okur. Biçim: "Arka plan: #0f0e0d" satırları. */
 function paletCozumle(metin) {
@@ -1146,12 +1331,15 @@ function stepRow(step, text, done) {
    ========================================================================== */
 
 function render() {
-  const { key, id } = rota();
+  const { key, id, durak } = rota();
   const detay = key === 'projeler' && id;
+  const sayfa = detay && DURAKLAR[durak] ? durak : null;
 
   /* Üstte iki satır: firma adı sabit, altında bulunduğun sayfanın adı. */
   const baslik = $('#page-title');
-  if (detay) {
+  if (sayfa) {
+    baslik.textContent = DURAKLAR[sayfa].ad;
+  } else if (detay) {
     const p = DB.proje(id);
     baslik.textContent = p ? p.firma : 'Proje';
   } else {
@@ -1168,12 +1356,14 @@ function render() {
 
   /* Aynı ekranda kalıp bir şeyi açıp kapatınca her şey yeniden uçuşmasın:
      giriş hareketi yalnızca gerçekten başka bir ekrana geçince oynar. */
-  const izi   = key + '/' + (id || '');
+  const izi   = key + '/' + (id || '') + '/' + (durak || '');
   const gecis = izi !== SON_EKRAN;
   SON_EKRAN = izi;
 
   const view = $('#view');
-  view.innerHTML = detay ? VIEWS.projeDetay(id) : VIEWS[key]();
+  view.innerHTML = sayfa ? durakSayfasi(id, sayfa)
+                 : detay ? VIEWS.projeDetay(id)
+                 : VIEWS[key]();
   view.scrollTop = 0;
   view.classList.remove('swap');
 
@@ -3494,6 +3684,15 @@ async function eylemCalistir(el) {
       el.dataset.deger + ' tema seçildi.');
   }
 
+  if (e === 'yetkili-kopyala') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const metin = [pr.yetkili, pr.telefon, pr.eposta].filter(Boolean).join('\n');
+    const oldu = await panoyaKopyala(metin);
+    toast(oldu ? 'Yetkili bilgileri kopyalandı.' : 'Kopyalanamadı.', oldu ? 'basari' : 'hata');
+    return;
+  }
+
   if (e === 'firma-duzenle') return firmaDuzenle(el.dataset.proje);
 
   if (e === 'logo-yukle')    return logoSec(el.dataset.proje);
@@ -3689,12 +3888,6 @@ async function eylemCalistir(el) {
   }
 
   if (e === 'modul-ekle') return modulEkleAc(el.dataset.proje || el.dataset.id || rota().id);
-
-  if (e === 'durak-ac') {
-    const ad = el.dataset.ad;
-    ACIK_DURAK[ad] = !el.closest('.durak').classList.contains('genis');
-    return render();
-  }
 
   if (e === 'proje-bolum') {
     const ad = el.dataset.ad;
@@ -4219,7 +4412,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (el) { e.preventDefault(); eylemCalistir(el); }
   });
 
-  $('#btn-back').addEventListener('click', () => { location.hash = '#/projeler'; });
+  $('#btn-back').addEventListener('click', () => {
+    const { id, durak } = rota();
+    location.hash = durak ? '#/projeler/' + id : '#/projeler';
+  });
 
   egilmeyiBagla();
 
