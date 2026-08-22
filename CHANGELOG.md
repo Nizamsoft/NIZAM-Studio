@@ -1,5 +1,43 @@
 # Değişiklik Günlüğü
 
+## v0.30.0 — 22 Ağustos 2026
+**Prompt sağlamlaştırıldı, yapıştırma denetleniyor**
+
+Prompt baştan yazıldı. En büyük sorun cevap kalıbının örnek değerlerle dolu
+olmasıydı — model logoya bakmadan kopyalayabiliyordu. Artık kalıpta
+`#______` ve `___` var, hiçbir gerçek değer yok.
+
+**Prompta eklenenler**
+- **Aşamalı çalışma talimatı**: logoyu oku → paleti kur → durum renkleri →
+  yazı tipleri → arayüz kararları → çelişki denetimi → kontrast denetimi →
+  cevap. Sekiz aşama, sırayla.
+- **"Logo ekli değilse dur"** — uydurma, söyle ve bekle.
+- **Bağlam**: sektör, platform, veritabanı, arayüz dili, para birimi.
+- **Birlikte olmayacaklar listesi** — 24 yasak çift. "Üst çubuk: Yok +
+  Kullanıcı menüsü: Sağ üstte çip" gibi.
+- **İkinci tema**: "Tema değiştirme" Sabit değilse öteki temanın 7 rengi de
+  isteniyor. Kullanıcı temayı çevirebilecekse iki palet gerekir.
+- **Yeni renkler**: Vurgu koyu (üzerine gelince), Başarı, Uyarı, Tehlike.
+  Vurgu kırmızıysa "kaydet" ile "sil" karışmasın diye.
+- **Simge seti** soruluyor (Lucide, Phosphor, Tabler gibi).
+- Yazı tipi Google Fonts şartı, 4px ızgara, 44×44px dokunma hedefi.
+
+**Görev promptu ve NIZAM.md'ye kodlama sırası girdi** — dokuz aşama,
+Studio'daki akışın aynısı. AI rastgele değil, sırayla kuracak.
+
+**Yapıştırma artık denetleniyor.** Cevap yapıştırılınca Studio dört şeye
+bakıp uyarı gösteriyor:
+1. Şablon kopyalanmış mı (renkler örneklerle birebir aynı mı)
+2. Kontrast — her metin tonu için WCAG oranı hesaplanıyor, 4.5:1 altı uyarı
+3. Çelişen kararlar
+4. İkinci tema gerekli ama gelmemiş mi
+
+Uyarılar engel değil; ne olduğunu söylüyor, kaydetmek sende.
+
+**Ad eşleşmesi gevşetildi.** Model `2'li` yerine `2'li` (eğik tırnak) yazsa,
+orta noktayı farklı karakterle koysa, başına madde imi eklese de okunuyor.
+Eskiden sessizce varsayılana düşüyordu.
+
 ## v0.29.0 — 22 Ağustos 2026
 **Hareket öbeği, kodlama sırası, belirgin gruplar**
 

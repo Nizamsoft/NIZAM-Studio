@@ -36,6 +36,15 @@ const PROMPT = {
     const s = ['## Arayüz Kararları'];
     s.push('Bunlar alınmış kararlar. Kendi biçimini uydurma, aşağıdakileri uygula.');
 
+    s.push('');
+    s.push('### Nasıl kodlanacak');
+    s.push('Kararları rastgele uygulama; şu sırayla ilerle. Her aşamayı bitirmeden');
+    s.push('ötekine geçme, sonrakiler öncekilerin üstüne kurulur:');
+    AKIS_OBEK.forEach((o, i) => s.push(`${i + 1}. **${o.ad}** — ${o.not}`));
+    s.push('');
+    s.push('Renk ve ölçüler değişken olarak tek yerde tanımlansın; her ekranda');
+    s.push('yeniden yazılmasın. Bir sonraki görevde bu kararlar aynen geçerli olacak.');
+
     TASARIM_GRUP.forEach(g => {
       s.push('', `### ${g.ad}`);
       g.alanlar.forEach(a => {
@@ -62,53 +71,82 @@ const PROMPT = {
 
     const acik = PROMPT.temaAcik(p);
     const tema = acik ? 'açık' : 'koyu';
-
     const s = [];
-    s.push('# Marka Paleti İsteği', '');
-    s.push(`Ekteki logo **${p.firma}** firmasına ait.`);
-    s.push('Bu firma için bir yazılım arayüzü tasarlayacağız.');
-    s.push('');
-    s.push('Logoyu incele: hangi renkler baskın, ton sıcak mı soğuk mu,');
-    s.push(`kurumsal mı canlı mı. Buradan bir **${tema} tema** paleti çıkar.`);
-    s.push('');
-    s.push('## Kurallar');
 
+    s.push('# Marka ve Arayüz Kararları', '');
+    s.push(`Ekteki logo **${p.firma}** firmasına ait. Bu firma için bir yazılım`);
+    s.push('arayüzü tasarlayacağız. Senden renk paleti ve arayüz kararları istiyorum.');
+    s.push('');
+    s.push('> **Logo ekli değilse dur.** Uydurma; "logo gelmemiş" yaz ve bekle.');
+    s.push('');
+
+    /* ---- Bağlam: kararları neye göre vereceğini bilsin ---- */
+    s.push('## Proje');
+    s.push(hiza('Firma', p.firma));
+    if (p.sektor) s.push(hiza('Sektör', p.sektor));
+    s.push(hiza('Platform', PLATFORM_ADI[p.platform] || 'Web'));
+    s.push(hiza('Veritabanı', VERI_ADI[p.veri] || '—'));
+    if (p.dil)  s.push(hiza('Arayüz dili', (DIL_SECENEK.find(x => x.kod === p.dil) || {}).ad || p.dil));
+    if (p.para) s.push(hiza('Para birimi', (PARA_SECENEK.find(x => x.kod === p.para) || {}).ad || p.para));
+    s.push(hiza('Tema', acik ? 'Açık' : 'Koyu'));
+    s.push('');
+    s.push('Bu bilgiler kararların dayanağı. Sahada telefonla kullanılan bir iş ile');
+    s.push('masa başında çok kayıtla çalışılan bir iş aynı yerleşimi kaldırmaz.');
+    s.push('');
+
+    /* ---- Aşamalı çalışma ---- */
+    s.push('## Nasıl ilerle');
+    s.push('Hepsini bir anda karara bağlama. Şu sırayla düşün, her aşamayı');
+    s.push('bitirmeden ötekine geçme:');
+    s.push('');
+    s.push('1. **Logoyu oku.** Baskın renkler, sıcak mı soğuk mu, kurumsal mı canlı mı.');
+    s.push('   Bir cümleyle karakteri tarif et (bu cümle "Ton" satırı olacak).');
+    s.push('2. **Paleti kur.** Önce arka plan ve yüzey, sonra çizgi, sonra üç metin tonu,');
+    s.push('   en son vurgu. Her rengi bir öncekine göre seç — tek tek uydurma.');
+    s.push('3. **Durum renklerini seç.** Başarı, uyarı, tehlike. Vurgu kırmızıysa');
+    s.push('   tehlike ondan ayrışmalı, yoksa "kaydet" ile "sil" karışır.');
+    s.push('4. **Yazı tiplerini seç.** Başlık ve metin.');
+    s.push('5. **Arayüz kararlarını ver.** Aşağıdaki başlıkları sırayla geç: önce');
+    s.push('   Yerleşim, sonra Biçim, sonra Açılış, Durumlar, Hareket, Sistem.');
+    s.push('6. **Çelişki denetimi yap.** Aşağıdaki yasak çiftlere takılan var mı bak.');
+    s.push('7. **Kontrastı denetle.** En silik metin bile arka planda 4.5:1 geçmeli.');
+    s.push('8. **Cevabı ver.** Yalnız istenen satırlar, başka açıklama yok.');
+    s.push('');
+
+    /* ---- Palet kuralları ---- */
+    s.push('## Palet kuralları');
     if (acik) {
-      s.push('- Açık tema. Arka plan yumuşak bir açık ton; yüzey (kartlar) ondan');
-      s.push('  daha açık, çoğu zaman beyaz. Çizgi zeminden bir tık koyu.');
+      s.push('- Açık tema. Arka plan yumuşak bir açık ton; yüzey ondan daha açık,');
+      s.push('  çoğu zaman beyaz. Çizgi zeminden bir tık koyu.');
       s.push('- Metin üç tonda ve koyu: ana en koyu, soft orta, silik en açık.');
-      s.push('  Üçü de açık zeminde okunabilsin — en siliği bile 4.5:1 kontrastı geçsin.');
-      s.push('- Vurgu rengi logodan gelsin ama açık zeminde **beyaz yazı taşıyacak');
-      s.push('  kadar koyu** olsun. Açık kalırsa düğme okunmaz.');
+      s.push('- Vurgu logodan gelsin ama açık zeminde **beyaz yazı taşıyacak kadar');
+      s.push('  koyu** olsun. Açık kalırsa düğme okunmaz.');
     } else {
       s.push('- Koyu tema. Arka plan en koyu, yüzey bir tık açık, çizgi ondan açık.');
       s.push('- Metin üç tonda: ana en açık, soft orta, silik en koyu.');
-      s.push('  Üçü de koyu zeminde okunabilsin — en siliği bile 4.5:1 kontrastı geçsin.');
-      s.push('- Vurgu rengi logodan gelsin ve koyu zeminde parlasın.');
+      s.push('- Vurgu logodan gelsin ve koyu zeminde parlasın.');
     }
+    s.push('- Üç metin tonu da zeminde okunabilsin — en siliği bile **4.5:1** geçsin.');
+    s.push('- Vurgu **az kullanılır**: ana buton, aktif menü, acil işareti. Başka yerde yok.');
+    s.push('- Vurgu koyu = vurgunun üzerine gelince ve basılınca kullanılacak tonu.');
+    s.push('- Renkleri 6 haneli onaltılık kodla yaz. Kısaltma (#fff) kullanma.');
+    s.push('- Yazı tipleri **Google Fonts\'ta bulunsun**, Türkçe karakterleri tam olsun.');
+    s.push('  Başlık 600-700, metin 400-500 ağırlıkta kullanılacak.');
+    s.push('- Simge seti ücretsiz ve açık kaynak olsun (Lucide, Phosphor, Tabler gibi).');
+    s.push('- Ölçüler 4px ızgarasına otursun. Dokunma hedefi en az 44×44px.');
+    s.push('');
 
-    s.push('- Vurgu **az kullanılır** — yalnızca ana buton, aktif menü ve acil işareti.');
-    s.push('- Renkleri 6 haneli onaltılık kodla yaz (#0f0e0d gibi).');
-    s.push('- Yazı tipleri ücretsiz, web\'de kullanılabilir ve Türkçe karakterleri tam olsun.');
-    s.push('');
-    s.push('');
+    /* ---- Arayüz kararları ---- */
     s.push('## Arayüz kararları');
-    s.push('Renklerin yanında arayüzün biçimine ve yerleşimine de karar ver.');
-    s.push('**Yalnızca listedeki adları** kullan — yeni ad uydurma.');
+    s.push('**Yalnızca listedeki adları** kullan — yeni ad uydurma, kısaltma yapma.');
+    s.push('Adı harfi harfine yaz (kesme işareti ve orta nokta dahil).');
     s.push('');
-    s.push('Seçimini iki şeye göre yap:');
-    s.push(`- **Marka karakteri** (logodan): kurumsal ve yoğun bir iş yazılımı ile`);
-    s.push('  sıcak, müşteriye dönük bir uygulama aynı biçimi almaz.');
-    s.push(`- **İş türü**: ${p.sektor ? p.sektor + ' sektörü, ' : ''}${
-      PLATFORM_ADI[p.platform] || 'web'} kullanımı. Çok kayıtlı, masa başı bir iş`);
-    s.push('  ile sahada telefonla kullanılan bir iş aynı yerleşimi kaldırmaz.');
+    s.push('Bir kısmında **birden fazla seçebilirsin**; artı ile ayır');
+    s.push('(örnek: `Zebra + Rakam hizalı`). Seçtiklerin birleşerek uygulanır, o yüzden');
+    s.push('yalnızca gerçekten bir arada duranları birleştir. Gerekmiyorsa tek bırak,');
+    s.push('hiç gerekmiyorsa `yok` yaz.');
     s.push('');
-    s.push('Başlıkların bir kısmında **birden fazla seçebilirsin**; artı ile ayır');
-    s.push('(örnek: `Buzlu cam + Şerit vurgu`). Seçtiklerin birleşerek uygulanır,');
-    s.push('o yüzden yalnızca gerçekten bir arada duran şeyleri birleştir —');
-    s.push('birbirini iptal edenleri değil. Gerekmiyorsa tek seçenek bırak.');
-    s.push('Diğer başlıklarda tek bir ad ver.');
-    s.push('');
+
     TASARIM_GRUP.forEach(g => {
       s.push(`### ${g.ad}`, '');
       g.alanlar.forEach(a => {
@@ -120,14 +158,44 @@ const PROMPT = {
       });
     });
 
-    s.push('## Cevabı tam olarak bu biçimde ver');
-    s.push('Başka açıklama yazma, yalnızca bu satırları döndür:');
+    /* ---- Çelişkiler ---- */
+    s.push('## Birlikte olmayacaklar');
+    s.push('Bu çiftlerden ikisini birden seçme — biri ötekinin yerini ortadan kaldırır:');
+    s.push('');
+    CELISKI.forEach(([[a1, d1], [a2, d2], neden]) => {
+      const b1 = TUM_TASARIM.find(x => x.anahtar === a1);
+      const b2 = TUM_TASARIM.find(x => x.anahtar === a2);
+      if (b1 && b2) s.push(`- **${b1.ad}: ${d1}** + **${b2.ad}: ${d2}** — ${neden}`);
+    });
+    s.push('');
+
+    /* ---- İkinci tema ---- */
+    s.push('## İkinci tema (koşullu)');
+    s.push('"Tema değiştirme" için **Sabit** dışında bir şey seçersen kullanıcı temayı');
+    s.push(`çevirebilecek demektir. O zaman ${acik ? 'koyu' : 'açık'} temanın renklerini de ver:`);
+    s.push('cevabın sonuna aşağıdaki 7 satırı ekle. Sabit seçersen bu satırları hiç yazma.');
+    s.push('');
+
+    /* ---- Cevap biçimi ---- */
+    s.push('## Cevap');
+    s.push('Denetimleri yaptıktan sonra **yalnızca** aşağıdaki satırları döndür.');
+    s.push('Başka açıklama, başlık ya da yorum yazma.');
+    s.push('');
+    s.push('> Aşağısı bir **şablon**, örnek cevap değil. `___` yazan her yeri kendin');
+    s.push('> doldur. Buradaki hiçbir değeri olduğu gibi kopyalama.');
     s.push('');
     s.push('```');
     PALET_ALAN.forEach(a => {
-      s.push(`${a.ad}: ${a.anahtar === 'tema' ? (acik ? 'Açık' : 'Koyu') : a.ornek}`);
+      if (a.anahtar === 'tema') { s.push(`Tema: ${acik ? 'Açık' : 'Koyu'}`); return; }
+      s.push(`${a.ad}: ${a.renk ? '#______' : '___'}`);
     });
-    TUM_TASARIM.forEach(a => s.push(`${a.ad}: ${a.varsayilan || 'yok'}`));
+    TUM_TASARIM.forEach(a => s.push(`${a.ad}: ___`));
+    s.push('```');
+    s.push('');
+    s.push('Tema değiştirme Sabit değilse ek olarak:');
+    s.push('');
+    s.push('```');
+    PALET_ALAN_2.forEach(a => s.push(`${a.ad}: #______`));
     s.push('```');
 
     return s.join('\n');

@@ -2121,36 +2121,49 @@ function projeYolu(p) {
 
 
 
-/* Yapıştırılan paleti okur. Biçim: "Arka plan: #0f0e0d" satırları. */
+/* ---------- Yapıştırılan cevabı okumak ----------
+   Model adı harfi harfine yazmayabilir: eğik tırnak, farklı orta nokta,
+   fazladan boşluk, madde imi. Bu yüzden karşılaştırmadan önce hepsini
+   sadeleştiriyoruz — yoksa seçim sessizce varsayılana düşüyor. */
+function adSadelestir(x) {
+  return String(x || '')
+    .replace(/[‘’ʼ´`]/g, "'")   /* eğik tırnaklar */
+    .replace(/[·•∙・]/g, '·')     /* orta nokta çeşitleri */
+    .replace(/[–—]/g, '-')                 /* uzun tireler */
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLocaleLowerCase('tr');
+}
+
 function paletCozumle(metin) {
-  /* Palet alanları + arayüz biçimi alanları tek listede okunur. */
-  const tumu = PALET_ALAN.concat(TUM_TASARIM.map(a => ({
-    anahtar: a.anahtar, ad: a.ad, secim: a.secim.map(x => x.ad), coklu: a.coklu,
+  const tumu = PALET_ALAN.concat(PALET_ALAN_2, TUM_TASARIM.map(a => ({
+    anahtar: a.anahtar, ad: a.ad, secim: a.secim.map(x => x.ad), coklu: a.coklu, bos: a.bos,
   })));
 
   const anahtar = {};
-  tumu.forEach(a => { anahtar[a.ad.toLocaleLowerCase('tr')] = a.anahtar; });
+  tumu.forEach(a => { anahtar[adSadelestir(a.ad)] = a.anahtar; });
 
   const palet = {};
   const hatalar = [];
 
   String(metin || '').split(/\r?\n/).forEach(satir => {
-    const es = satir.match(/^\s*\*{0,2}([A-Za-zÇĞİÖŞÜçğıöşü\s/&]+?)\*{0,2}\s*:\s*(.+?)\s*$/);
+    /* Baştaki madde imi, kalın işareti ve numara atılır. */
+    const temiz = satir.replace(/^\s*(?:[-*•]|\d+[.)])\s*/, '').replace(/\*\*/g, '');
+    const es = temiz.match(/^\s*([^:]{2,40}?)\s*:\s*(.+?)\s*$/);
     if (!es) return;
 
-    const k = anahtar[es[1].trim().toLocaleLowerCase('tr')];
+    const k = anahtar[adSadelestir(es[1])];
     if (!k) return;
 
     let deger = es[2].replace(/^`|`$/g, '').trim();
     const alan = tumu.find(a => a.anahtar === k);
 
     if (alan.secim) {
-      /* Çoklu alanlarda "Buzlu cam + Şerit vurgu" gelebilir. */
-      if (alan.bos && /^(yok|hiçbiri|hicbiri|-|—)$/i.test(deger)) { palet[k] = []; return; }
+      if (alan.bos && /^(yok|hiçbiri|hicbiri|-|—|___)$/i.test(deger)) { palet[k] = []; return; }
       const parca = alan.coklu ? deger.split(/\s*[+,]\s*/) : [deger];
       const okunan = [];
       for (const par of parca) {
-        const uy = alan.secim.find(x => x.toLocaleLowerCase('tr') === par.toLocaleLowerCase('tr'));
+        const uy = alan.secim.find(x => adSadelestir(x) === adSadelestir(par));
         if (!uy) {
           hatalar.push(alan.secim.length > 3
             ? `"${alan.ad}" listedeki adlardan biri olmalı, "${par}" değil.`
@@ -2162,16 +2175,94 @@ function paletCozumle(metin) {
       if (!okunan.length) return;
       palet[k] = alan.coklu ? okunan : okunan[0];
       return;
-    } else if (alan.renk) {
+    }
+
+    if (alan.renk) {
       const renk = deger.match(/#[0-9a-fA-F]{6}\b/);
       if (!renk) { hatalar.push(`"${alan.ad}" bir renk kodu değil: ${deger}`); return; }
       deger = renk[0].toLowerCase();
+    } else if (/^_+$/.test(deger)) {
+      return;   /* şablondaki boşluk doldurulmamış */
     }
     palet[k] = deger;
   });
 
   const eksik = PALET_ALAN.filter(a => !palet[a.anahtar]).map(a => a.ad);
-  return { palet, eksik, hatalar };
+  return { palet, eksik, hatalar, uyarilar: paletDenetle(palet, Object.keys(palet)) };
+}
+
+/* ---------- Yapıştırılan cevabın denetimi ----------
+   Model kuralları çiğneyebilir ve bunu söylemez. Üç şeye bakıyoruz:
+   şablonu kopyalamış mı, renkler okunuyor mu, kararlar çelişiyor mu. */
+function paletDenetle(pl, gelen) {
+  const u = [];
+  if (!pl || !Object.keys(pl).length) return u;
+
+  /* 1 · Şablon kopyası */
+  const ornekler = PALET_ALAN.filter(a => a.renk).map(a => [a.ad, a.ornek]);
+  const ayni = ornekler.filter(([, o]) => o && pl[PALET_ALAN.find(x => x.ornek === o).anahtar] === o);
+  if (ayni.length >= 4) {
+    u.push(`Renklerin ${ayni.length} tanesi promptaki örnekle birebir aynı — `
+         + 'şablon doldurulmadan kopyalanmış olabilir.');
+  }
+
+  /* 2 · Kontrast */
+  const zemin = pl.bg;
+  if (zemin) {
+    [['metin', 'Metin'], ['metin2', 'Metin soft'], ['metin3', 'Metin silik']].forEach(([k, ad]) => {
+      if (!pl[k]) return;
+      const o = kontrastOrani(pl[k], zemin);
+      if (o && o < 4.5) u.push(`${ad} arka planda ${o.toFixed(1)}:1 — 4.5:1 altında, okunmaz.`);
+    });
+    if (pl.vurgu) {
+      const o = kontrastOrani(pl.vurgu, zemin);
+      if (o && o < 3) u.push(`Vurgu arka planda ${o.toFixed(1)}:1 — çok sönük kalıyor.`);
+    }
+  }
+  if (pl.vurgu && pl.tehlike && renkYakin(pl.vurgu, pl.tehlike)) {
+    u.push('Vurgu ile Tehlike birbirine çok yakın — "kaydet" ile "sil" karışır.');
+  }
+
+  /* 3 · Çelişen kararlar */
+  CELISKI.forEach(([[a1, d1], [a2, d2], neden]) => {
+    /* En az biri gerçekten yapıştırılmış olmalı; yoksa varsayılanlar
+       yüzünden dokunulmamış başlıklar için uyarı yağar. */
+    if (gelen && !gelen.includes(a1) && !gelen.includes(a2)) return;
+    const b1 = TUM_TASARIM.find(x => x.anahtar === a1);
+    const b2 = TUM_TASARIM.find(x => x.anahtar === a2);
+    if (!b1 || !b2) return;
+    if (bicimSecim(pl, b1).includes(d1) && bicimSecim(pl, b2).includes(d2)) {
+      u.push(`${b1.ad}: ${d1} + ${b2.ad}: ${d2} — ${neden}`);
+    }
+  });
+
+  /* 4 · İkinci tema gerekli mi */
+  const td = bicimSecim(pl, TUM_TASARIM.find(x => x.anahtar === 'temadegis'));
+  if ((!gelen || gelen.includes('temadegis')) && td[0] && td[0] !== 'Sabit' && !pl.bg2) {
+    u.push(`Tema değiştirme "${td[0]}" seçilmiş ama ikinci temanın renkleri gelmemiş.`);
+  }
+  return u;
+}
+
+/* WCAG bağıl parlaklık ve kontrast oranı. */
+function bagilParlaklik(hex) {
+  const [r, g, b] = hexRgb(hex).map(v => {
+    const k = v / 255;
+    return k <= 0.03928 ? k / 12.92 : Math.pow((k + 0.055) / 1.055, 2.4);
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+function kontrastOrani(a, b) {
+  if (!/^#[0-9a-f]{6}$/i.test(a || '') || !/^#[0-9a-f]{6}$/i.test(b || '')) return 0;
+  const x = bagilParlaklik(a), y = bagilParlaklik(b);
+  return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
+}
+
+function renkYakin(a, b) {
+  if (!/^#[0-9a-f]{6}$/i.test(a || '') || !/^#[0-9a-f]{6}$/i.test(b || '')) return false;
+  const [r1, g1, b1] = hexRgb(a), [r2, g2, b2] = hexRgb(b);
+  return Math.abs(r1 - r2) + Math.abs(g1 - g2) + Math.abs(b1 - b2) < 90;
 }
 
 function projeKarti(p, i = 0) {
@@ -4353,7 +4444,7 @@ function paletAktar(projeId) {
       on.innerHTML = `
         <span class="label">Okunanlar</span>
         <div class="card"><div class="row-list">
-          ${PALET_ALAN.concat(TUM_TASARIM).map(a => {
+          ${PALET_ALAN.concat(cozum.palet.bg2 ? PALET_ALAN_2 : [], TUM_TASARIM).map(a => {
             const d = cozum.palet[a.anahtar];
             return `<div class="row">
               <div class="row-main"><span class="row-title">${esc(a.ad)}</span></div>
@@ -4365,7 +4456,12 @@ function paletAktar(projeId) {
           }).join('')}
         </div></div>
         ${cozum.hatalar.length ? `<div class="note uyari" style="margin-top:10px">${svg(ICON.uyari, 15)}
-          <span>${cozum.hatalar.map(esc).join(' ')}</span></div>` : ''}`;
+          <span>${cozum.hatalar.map(esc).join(' ')}</span></div>` : ''}
+        ${(cozum.uyarilar || []).length ? `<div class="pa-denetim">
+          <b>${svg(ICON.uyari, 14)} Denetim</b>
+          ${cozum.uyarilar.map(x => `<i>${esc(x)}</i>`).join('')}
+          <u>Yine de kaydedebilirsin — bunlar uyarı, engel değil.</u>
+        </div>` : ''}`;
 
       dugme.disabled = false;
     };

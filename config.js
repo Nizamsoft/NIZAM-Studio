@@ -7,9 +7,9 @@ const APP = {
   name:     'NIZAM | Studio',
   short:    'NIZAM Studio',
   owner:    'Nizam Soft',
-  version: 'v0.29.0',
+  version: 'v0.30.0',
   build:    '2026-08-20',
-  stage: 'Adım 4 · Hareket ve kodlama sırası',
+  stage: 'Adım 4 · Prompt sağlamlaştırma',
 };
 
 /* Supabase bağlantısı.
@@ -79,9 +79,58 @@ const PALET_ALAN = [
   { anahtar: 'metin2',  ad: 'Metin soft',       ornek: '#b8b2ad', renk: true },
   { anahtar: 'metin3',  ad: 'Metin silik',      ornek: '#7c746e', renk: true },
   { anahtar: 'vurgu',   ad: 'Vurgu',            ornek: '#e5342a', renk: true },
+  { anahtar: 'vurgu2',  ad: 'Vurgu koyu',       ornek: '#b8221a', renk: true,
+    not: 'Üzerine gelince ve basılınca kullanılır. Vurgudan bir tık koyu.' },
+  { anahtar: 'basari',  ad: 'Başarı',           ornek: '#3d9970', renk: true },
+  { anahtar: 'uyari',   ad: 'Uyarı',            ornek: '#d0a13c', renk: true },
+  { anahtar: 'tehlike', ad: 'Tehlike',          ornek: '#d14b3f', renk: true,
+    not: 'Silme ve geri alınamaz işlemler. Vurgu kırmızıysa ondan ayrışsın.' },
   { anahtar: 'baslik',  ad: 'Başlık yazı tipi', ornek: 'Space Grotesk' },
   { anahtar: 'govde',   ad: 'Metin yazı tipi',  ornek: 'IBM Plex Sans' },
+  { anahtar: 'simgeKit',ad: 'Simge seti',       ornek: 'Lucide' },
   { anahtar: 'ton',     ad: 'Ton',              ornek: 'sıcak, kurumsal, sade' },
+];
+
+/* İkinci tema — yalnız "Tema değiştirme" Sabit değilse istenir.
+   Kullanıcı temayı çevirebilecekse iki paletin de tanımlı olması gerekir. */
+const PALET_ALAN_2 = [
+  { anahtar: 'bg2',     ad: 'Arka plan 2',  ornek: '#f4f2f0', renk: true, ikinci: true },
+  { anahtar: 'yuzey2',  ad: 'Yüzey 2',      ornek: '#ffffff', renk: true, ikinci: true },
+  { anahtar: 'cizgi2',  ad: 'Çizgi 2',      ornek: '#e2ddd9', renk: true, ikinci: true },
+  { anahtar: 'metinA',  ad: 'Metin 2',      ornek: '#1d1a18', renk: true, ikinci: true },
+  { anahtar: 'metinB',  ad: 'Metin soft 2', ornek: '#5f5852', renk: true, ikinci: true },
+  { anahtar: 'metinC',  ad: 'Metin silik 2',ornek: '#8d857e', renk: true, ikinci: true },
+  { anahtar: 'vurguA',  ad: 'Vurgu 2',      ornek: '#8a6d12', renk: true, ikinci: true,
+    not: 'Açık zeminde beyaz yazı taşıyacak kadar koyu olmalı.' },
+];
+
+/* Birlikte olmayacak seçimler. Prompt bunları yasaklar, Studio yapıştırınca
+   denetler. Her satır: [alan, değer] + [alan, değer] + neden. */
+const CELISKI = [
+  [['ustcubuk', 'Yok'], ['kullanicimenu', 'Sağ üstte çip'],   'Üst çubuk yokken çip nereye konacak?'],
+  [['ustcubuk', 'Yok'], ['kullanicimenu', 'Sağ üstte avatar'],'Üst çubuk yokken avatar nereye konacak?'],
+  [['ustcubuk', 'Yok'], ['destek', 'Üst çubukta'],            'Üst çubuk yok.'],
+  [['ustcubuk', 'Yok'], ['guncelleme', 'Üstte rozet'],        'Üst çubuk yok.'],
+  [['ustcubuk', 'Yok'], ['anaeylem', 'Sağ üstte'],            'Üst çubuk yok.'],
+  [['ustcubuk', 'Yok'], ['arama', 'Simgeden açılan'],         'Simge üst çubukta durur, üst çubuk yok.'],
+  [['ustcubuk', 'Yok'], ['yoliz', 'Geri oku + başlık'],       'Geri oku üst çubukta durur.'],
+  [['ustcubuk', 'Yok'], ['donem', 'Başlıkta açılır'],         'Başlık yok.'],
+  [['gezinme', 'Sabit yan menü'],   ['anaeylem', 'Alt çubukta orta'], 'Alt çubuk yok.'],
+  [['gezinme', 'Açılır yan menü'],  ['anaeylem', 'Alt çubukta orta'], 'Alt çubuk yok.'],
+  [['gezinme', 'Üst menü'],         ['anaeylem', 'Alt çubukta orta'], 'Alt çubuk yok.'],
+  [['gezinme', 'Alt sekme'],        ['kullanicimenu', 'Yan menü altında'], 'Yan menü yok.'],
+  [['gezinme', 'Alt + orta +'],     ['kullanicimenu', 'Yan menü altında'], 'Yan menü yok.'],
+  [['gezinme', 'Üst menü'],         ['kullanicimenu', 'Yan menü altında'], 'Yan menü yok.'],
+  [['hareketMiktari', 'Yok'], ['gecis', 'Sağdan kayma'],      'Hareket kapalıyken geçiş animasyonu olmaz.'],
+  [['hareketMiktari', 'Yok'], ['gecis', 'Yukarı kayma'],      'Hareket kapalıyken geçiş animasyonu olmaz.'],
+  [['hareketMiktari', 'Yok'], ['listeGirisi', 'Sırayla belirme'], 'Hareket kapalı.'],
+  [['hareketMiktari', 'Yok'], ['listeGirisi', 'Aşağıdan kayma'],  'Hareket kapalı.'],
+  [['hareketMiktari', 'Yok'], ['sayiHareketi', 'Sayarak'],    'Hareket kapalı.'],
+  [['hareketMiktari', 'Yok'], ['dokunma', 'Dalga'],           'Hareket kapalı.'],
+  [['hareketMiktari', 'Yok'], ['acilma', 'Yükseklik animasyonu'], 'Hareket kapalı.'],
+  [['arama', 'Yok'], ['tablosayfa', 'Üstte filtre'],          'Filtre satırı aramayı da barındırır; arama yok deniyor.'],
+  [['iceaktarma', 'Yok'], ['yedek', 'Yedek + değişiklik kaydı'], 'Dosya girişi yokken dosya yedeği tutarsız kalır.'],
+  [['tablomobil', 'Yana kaydır'], ['tablo', 'Kartlı satır'],  'Kartlı satır zaten kaydırılmaz.'],
 ];
 
 /* Arayüz biçimi — Tasarımı belirleme durağında görselli seçilir.
