@@ -3448,3 +3448,73 @@ a:hover { color: var(--red-ink); }
 .hp-sat:hover { background: rgba(255, 255, 255, .05); }
 .bsc:not(.on):not(:disabled):hover { border-color: var(--line-parlak); background: var(--surface); }
 }
+
+/* ==========================================================================
+   ÇUBUK VE PANEL DOKUSU
+   Tek karar; üst çubuk, alt sekme, yan menü ve sayfa panelinin hepsine iner.
+   Sonda duruyor: yukarıdaki temel çubuk kurallarını bilerek eziyor.
+   ========================================================================== */
+
+/* --- tel çizim --- */
+.tel-wf .w-ust.wd-dolu, .tel-wf .w-alt.wd-dolu { background: var(--surface-3); }
+.tel-wf .w-ust.wd-cam,  .tel-wf .w-alt.wd-cam {
+  background: color-mix(in srgb, var(--surface-3) 35%, transparent);
+  box-shadow: inset 0 0 0 1px var(--line-parlak),
+              inset 0 1px 0 color-mix(in srgb, #fff 22%, transparent);
+}
+.tel-wf .w-ust.wd-cam i, .tel-wf .w-alt.wd-cam i { opacity: .55; }
+.tel-wf .w-ust.wd-cizgi { background: transparent; border-bottom: 1px solid var(--line-2);
+                          border-radius: 0; }
+.tel-wf .w-alt.wd-cizgi { background: transparent; border-top: 1px solid var(--line-2);
+                          border-radius: 0; }
+.tel-wf .w-ust.wd-hap, .tel-wf .w-alt.wd-hap {
+  margin: 0 5px; border-radius: 999px; background: var(--surface-3);
+  box-shadow: 0 3px 6px -3px #000;
+}
+.tel-wf .w-ust.wd-koyu, .tel-wf .w-alt.wd-koyu { background: var(--metal-1); }
+.tel-wf .w-ust.wd-koyu i, .tel-wf .w-alt.wd-koyu i { background: var(--surface-3); }
+
+/* --- önizleme: buzlu cam --- */
+.o-app.ocd-cam .o-ust, .o-app.ocd-cam .o-nav {
+  background: color-mix(in srgb, var(--o-yuzey) 55%, transparent);
+  backdrop-filter: blur(9px) saturate(150%);
+  -webkit-backdrop-filter: blur(9px) saturate(150%);
+}
+.o-app.ocd-cam .o-yanMenu, .o-app.ocd-cam .o-yanFiltre {
+  background: color-mix(in srgb, var(--o-yuzey) 45%, transparent);
+  backdrop-filter: blur(9px) saturate(150%);
+  -webkit-backdrop-filter: blur(9px) saturate(150%);
+}
+.o-app.ocd-cam .o-sekme { background: color-mix(in srgb, var(--o-yuzey) 40%, transparent); }
+/* Camın anlaşılması için içeriğin bir parçası çubuğun altına girsin —
+   yoksa yarı saydamlık boş zeminde görünmez. */
+.o-app.ocd-cam .o-ust { position: relative; z-index: 2; margin-bottom: -7px; }
+.o-app.ocd-cam .o-nav { position: relative; z-index: 2; margin-top: -9px; }
+.o-app.ocd-cam .o-gov { padding-top: 15px; padding-bottom: 15px; }
+
+/* --- önizleme: çizgiyle ayrık --- */
+.o-app.ocd-cizgi .o-ust, .o-app.ocd-cizgi .o-nav,
+.o-app.ocd-cizgi .o-yanMenu, .o-app.ocd-cizgi .o-sekme { background: transparent; }
+
+/* --- önizleme: yüzen hap --- */
+.o-app.ocd-hap .o-ust, .o-app.ocd-hap .o-nav, .o-app.ocd-hap .o-yanMenu {
+  /* Ada gibi dursun: gövdeden hem boşlukla hem kenarla ayrılıyor. */
+  border: 0; background: color-mix(in srgb, var(--o-yuzey) 88%, var(--o-metin));
+  box-shadow: 0 0 0 1px var(--o-cizgi), 0 7px 15px -7px rgba(0, 0, 0, .55);
+}
+.o-app.ocd-hap .o-ust { margin: 7px 7px 0; border-radius: 999px; padding: 8px 12px; }
+.o-app.ocd-hap .o-nav { margin: 0 7px 7px; border-radius: 999px; }
+.o-app.ocd-hap .o-yanMenu { margin: 7px 0 7px 7px; border-radius: 14px; }
+.o-app.ocd-hap .o-gov { padding-top: 8px; }
+
+/* --- önizleme: koyu kontrast --- */
+.o-app.ocd-koyu .o-ust, .o-app.ocd-koyu .o-nav, .o-app.ocd-koyu .o-yanMenu {
+  background: var(--o-metin); border-color: var(--o-metin);
+}
+.o-app.ocd-koyu .o-ust b, .o-app.ocd-koyu .o-ust .o-kcip i,
+.o-app.ocd-koyu .o-nav span.a, .o-app.ocd-koyu .o-yanMenu i.a { color: var(--o-bg); }
+.o-app.ocd-koyu .o-ust .o-ik, .o-app.ocd-koyu .o-ust .o-soru,
+.o-app.ocd-koyu .o-nav span, .o-app.ocd-koyu .o-yanMenu i {
+  color: color-mix(in srgb, var(--o-bg) 68%, var(--o-metin));
+}
+.o-app.ocd-koyu .o-yanMenu i.a { background: color-mix(in srgb, var(--o-bg) 22%, transparent); }

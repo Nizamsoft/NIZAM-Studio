@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## v0.35.0
+- Yeni tasarım kararı: **Çubuk ve panel dokusu** — dolu zemin · buzlu cam · çizgiyle ayrık · yüzen hap · koyu kontrast. Üst çubuk, alt sekme, yan menü ve sayfa panelinin hepsine iner. Kararlar 49, akış 51 adım.
+- Teknik standarda sabit kural: masaüstünde alt sekme çubuğu yok, 900px üstünde gezinme solda panele döner.
+
 ## v0.34.2
 - Palet adımında Geri/İleri satırı ekranın dışına taşıyordu, basılamıyordu — gövde artık kendi içinde kayıyor, düğmeler sabit.
 - Başlangıç adımındaki logo ve palet kartları küçültüldü.

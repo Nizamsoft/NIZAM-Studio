@@ -7,7 +7,7 @@ const APP = {
   name:     'NIZAM | Studio',
   short:    'NIZAM Studio',
   owner:    'Nizam Soft',
-  version: 'v0.34.2',
+  version: 'v0.35.0',
   build:    '2026-08-20',
   stage: 'Adım 4 · Prompt yalnız palet',
 };
@@ -268,6 +268,23 @@ const YERLESIM_ALAN = [
       { ad: 'Sabit yan menü',tarif: 'Solda hep açık dikey menü. Masaüstü ağırlıklı işler için.', tel: ['yan', 'blok'] },
       { ad: 'Açılır yan menü',tarif: 'Hamburger simgesiyle soldan kayan menü; ekran boşa gitmez.', tel: ['ustMenu', 'blok'] },
       { ad: 'Üst menü',      tarif: 'Üst çubukta yatay menü. Sayfa sayısı azsa yeterli.', tel: ['ustMenuYatay', 'blok'] },
+    ],
+  },
+  {
+    anahtar: 'cubukDoku', ad: 'Çubuk ve panel dokusu',
+    alt: 'Üst çubuk, alt sekme, yan menü ve sayfa paneli neye benzesin?',
+    varsayilan: 'Dolu zemin', ekran: 'panel',
+    secim: [
+      { ad: 'Dolu zemin',    tarif: 'Yüzey renginde kapalı çubuk, altında ince çizgi. Sade ve her yerde çalışır.',
+        tel: ['dokuDoluUst', 'blok', 'dokuDoluAlt'] },
+      { ad: 'Buzlu cam',     tarif: 'Yarı saydam, arkası bulanık. İçerik çubuğun altından akıp geçer.',
+        tel: ['dokuCamUst', 'blok', 'dokuCamAlt'] },
+      { ad: 'Çizgiyle ayrık',tarif: 'Çubuğun zemini sayfayla aynı; yalnız ince bir çizgi ayırır. En hafifi.',
+        tel: ['dokuCizgiUst', 'blok', 'dokuCizgiAlt'] },
+      { ad: 'Yüzen hap',     tarif: 'Kenarlardan boşluklu, yuvarlak köşeli, gölgeli ada gibi durur.',
+        tel: ['dokuHapUst', 'blok', 'dokuHapAlt'] },
+      { ad: 'Koyu kontrast', tarif: 'Çubuk ve panel koyu; üstündeki yazı açık. Gövdeden kesin ayrılır.',
+        tel: ['dokuKoyuUst', 'blok', 'dokuKoyuAlt'] },
     ],
   },
   {
@@ -655,7 +672,8 @@ const AKIS_OBEK = [
   { ad: 'Renk ve bileşen', not: 'Önce malzeme: her ekranda kullanılacak kutu, düğme, simge.',
     alanlar: ['kart', 'kartek', 'vurgukart', 'kose', 'yogunluk', 'dugme', 'dugmeek', 'simge'] },
   { ad: 'Uygulama kabuğu', not: 'Her ekranı saran çatı: üst çubuk, gezinme, genişlik.',
-    alanlar: ['ustcubuk', 'gezinme', 'sayfalistesi', 'yoliz', 'genislik', 'kullanicimenu', 'destek'] },
+    alanlar: ['ustcubuk', 'gezinme', 'cubukDoku', 'sayfalistesi', 'yoliz', 'genislik',
+              'kullanicimenu', 'destek'] },
   { ad: 'Giriş kapısı', not: 'Uygulamaya girerken görülen ilk iki ekran.',
     alanlar: ['acilis', 'giris'] },
   { ad: 'Panel ekranı', not: 'Açılışta karşılayan ekran.',
@@ -728,6 +746,9 @@ const TEKNIK_STANDART = [
    + 'S-1001 (sipariş). Sayaç 1\'den başlar, yıl başında sıfırlanmaz, boşluk bırakmaz.'],
   ['Sürümleme', 'YIL.SAYAÇ', 'Örnek 2026.14. Ayarlar ekranında görünür.'],
   ['Arayüz dili', 'Türkçe', 'Tek dil. Metinler koda yazılır, sözlük dosyası yok.'],
+  ['Masaüstü gezinme', 'Alt çubuk yok — solda panel',
+   '900px ve üstünde alt sekme çubuğu gizlenir; gezinme solda dikey panele döner. '
+   + 'Alt çubuk yalnız telefon ve tablette görünür. Seçilen çubuk dokusu ikisinde de aynıdır.'],
   ['Erişilebilirlik', '44px · 4.5:1',
    'Dokunma hedefi en az 44×44px, metin kontrastı en az 4.5:1.'],
 ];

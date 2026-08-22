@@ -1290,6 +1290,8 @@ function onizlemeIc(p, pl) {
     .concat(bic.tablo.concat(bic.tabloek).map(x => 'ot-' + ({ 'Çizgisiz': 'yok', 'Zebra': 'zebra', 'Yatay çizgi': 'yatay',
       'Tam ızgara': 'izgara', 'Kartlı satır': 'kartli', 'Gruplu': 'gruplu',
       'Rakam hizalı': 'rakam', 'Vurgulu sütun': 'vurgulu' }[x])))
+    .concat('ocd-' + ({ 'Dolu zemin': 'dolu', 'Buzlu cam': 'cam', 'Çizgiyle ayrık': 'cizgi',
+      'Yüzen hap': 'hap', 'Koyu kontrast': 'koyu' }[bic.cubukDoku[0]] || 'dolu'))
     .concat(bic.kose[0] === 'Kesik' ? ['o-kesik'] : [])
     .concat(bic.yogunluk[0] === 'Nefesli' ? ['o-nefesli'] : [])
     .concat('oe-' + ekr)
@@ -1806,6 +1808,10 @@ function onizlemeNotu(bic, tel, ekr) {
     not.push(`Kayıt detayı: ${bic.detay[0].toLocaleLowerCase('tr')}`);
   if (bic.gezinme[0] === 'Açılır yan menü')
     not.push('Menü hamburger simgesinden soldan kayarak açılır');
+  if (['Alt sekme', 'Alt + orta +'].includes(bic.gezinme[0]))
+    not.push('Bilgisayarda alt çubuk yok: gezinme solda panele döner');
+  if (bic.cubukDoku[0] === 'Buzlu cam')
+    not.push('İçerik çubuğun altından bulanıklaşarak geçer');
   if (!not.length) return '';
   return `<div class="onk-not">${svg(ICON.info, 13)}<span>${esc(not.slice(0, 2).join(' · '))}</span></div>`;
 }
@@ -1871,6 +1877,18 @@ const TEL_PARCA = {
   altArti:      '<u class="w-alt"><i></i><i></i><i class="bos"></i><i></i><i></i></u><span class="w-fab alt"></span>',
   sonDugme:     '<u class="w-sonDug"></u>',
   sayfaNo:      '<u class="w-sayfa"><i class="a"></i><i></i><i></i></u>',
+
+  /* Çubuk dokusu: aynı iskelet, farklı yüzey. Üst ve alt birlikte gösterilir. */
+  dokuDoluUst:  '<u class="w-ust wd-dolu"><i style="width:46%"></i></u>',
+  dokuCamUst:   '<u class="w-ust wd-cam"><i style="width:46%"></i></u>',
+  dokuCizgiUst: '<u class="w-ust wd-cizgi"><i style="width:46%"></i></u>',
+  dokuHapUst:   '<u class="w-ust wd-hap"><i style="width:46%"></i></u>',
+  dokuKoyuUst:  '<u class="w-ust wd-koyu"><i style="width:46%"></i></u>',
+  dokuDoluAlt:  '<u class="w-alt wd-dolu"><i></i><i></i><i></i><i></i></u>',
+  dokuCamAlt:   '<u class="w-alt wd-cam"><i></i><i></i><i></i><i></i></u>',
+  dokuCizgiAlt: '<u class="w-alt wd-cizgi"><i></i><i></i><i></i><i></i></u>',
+  dokuHapAlt:   '<u class="w-alt wd-hap"><i></i><i></i><i></i><i></i></u>',
+  dokuKoyuAlt:  '<u class="w-alt wd-koyu"><i></i><i></i><i></i><i></i></u>',
 
   /* gövde parçaları — kalan yeri paylaşır */
   blok:       '<u class="w-govde"><i class="w-blk"></i></u>',
