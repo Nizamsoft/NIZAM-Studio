@@ -6,6 +6,13 @@
 - Emin değilsen sor. Varsayımla ilerleme.
 - Tasarım değişikliklerinde önce mockup görseli sun.
 
+## Nasıl konuşulacak
+- **Kısa yaz.** Varsayılan: birkaç cümle. Uzun anlatım isteniyorsa kullanıcı ister.
+- Yaptığın işi madde madde döküp anlatma. Ne değişti, tek satır.
+- Gerekçe sorulmadıkça gerekçe yazma.
+- Tablo ve liste ancak gerçekten karşılaştırma varsa.
+- Sorular tek seferde ve toplu sorulur.
+
 ## Proje nedir
 Nizam Soft'un müşteriye özel yazılım üretme sürecini yöneten iç sistem.
 Müşteri talebi → yapılandırılmış görev → AI promptu → kod → test → sürüm.
