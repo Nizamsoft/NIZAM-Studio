@@ -30,6 +30,26 @@ const PROMPT = {
     return s.join('\n');
   },
 
+  /* Kurulum aşamaları — hem görev promptunda hem NIZAM.md'de yazar. */
+  kurulumBlogu() {
+    const s = ['### Nasıl kodlanacak — beş aşama'];
+    s.push('');
+    s.push('**Hepsini bir seferde yazma.** Aşağıdaki beş aşamaya böl. Her aşamanın');
+    s.push('sonunda dur, ne yaptığını özetle ve kullanıcıdan denemesini iste.');
+    s.push('Onay gelmeden sonraki aşamaya geçme. Bir şey ters gittiyse 5000 satır');
+    s.push('sonra değil, o aşamada anlaşılsın.');
+    s.push('');
+    KURULUM_ADIM.forEach((a, i) => {
+      s.push(`#### ${i + 1}. ${a.ad}`);
+      a.yap.forEach(x => s.push(`- ${x}`));
+      s.push(`> **Kullanıcıya test ettir:** ${a.test}`);
+      s.push('');
+    });
+    s.push('Her aşamanın içinde "Uygulama sırası" bölümündeki sırayı izle.');
+    s.push('Bir sonraki görevde bu kararlar aynen geçerli olacak.');
+    return s.join('\n');
+  },
+
   /* Arayüz biçimi — görev promptuna ve NIZAM.md'ye aynı biçimde girer. */
   tasarimBlogu(proje) {
     const pl = (proje && proje.palet) || {};
@@ -37,13 +57,13 @@ const PROMPT = {
     s.push('Bunlar alınmış kararlar. Kendi biçimini uydurma, aşağıdakileri uygula.');
 
     s.push('');
-    s.push('### Nasıl kodlanacak');
-    s.push('Kararları rastgele uygulama; şu sırayla ilerle. Her aşamayı bitirmeden');
-    s.push('ötekine geçme, sonrakiler öncekilerin üstüne kurulur:');
+    s.push('### Uygulama sırası');
+    s.push('Kararları rastgele uygulama; şu sırayla ilerle — sonrakiler');
+    s.push('öncekilerin üstüne kurulur:');
     AKIS_OBEK.forEach((o, i) => s.push(`${i + 1}. **${o.ad}** — ${o.not}`));
     s.push('');
     s.push('Renk ve ölçüler değişken olarak tek yerde tanımlansın; her ekranda');
-    s.push('yeniden yazılmasın. Bir sonraki görevde bu kararlar aynen geçerli olacak.');
+    s.push('yeniden yazılmasın.');
 
     TASARIM_GRUP.forEach(g => {
       s.push('', `### ${g.ad}`);
@@ -294,6 +314,7 @@ const PROMPT = {
     const paletMetni = PROMPT.paletBlogu(proje);
     if (paletMetni) { s.push(paletMetni); s.push(''); }
     s.push(PROMPT.tasarimBlogu(proje)); s.push('');
+    s.push(PROMPT.kurulumBlogu()); s.push('');
 
     s.push('## Modüller ve sayfalar');
     moduller.forEach(m => {

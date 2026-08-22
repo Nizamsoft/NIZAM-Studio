@@ -7,7 +7,7 @@ const APP = {
   name:     'NIZAM | Studio',
   short:    'NIZAM Studio',
   owner:    'Nizam Soft',
-  version: 'v0.30.0',
+  version: 'v0.30.1',
   build:    '2026-08-20',
   stage: 'Adım 4 · Prompt sağlamlaştırma',
 };
@@ -717,6 +717,68 @@ const TASARIM_ADIM = [
     obekNot: 'Verilen bütün kararlar tek listede.',
     aciklama: 'Verilen bütün kararlar. Prompta bu yazılacak.' },
 ]);
+
+/* ---- Kurulum aşamaları ----
+   AI'ın hepsini bir seferde yazması işi çöpe atıyor: yanlış giden bir şey
+   varsa 5000 satır sonra anlaşılıyor. Beş aşamaya bölüyoruz; her aşama
+   sonunda kullanıcı deneyip onaylamadan öteki başlamıyor. */
+const KURULUM_ADIM = [
+  {
+    ad: 'İskelet ve tema',
+    yap: [
+      'Renk, yazı tipi ve ölçüleri tek dosyada değişken olarak tanımla.',
+      'Uygulama kabuğunu kur: üst çubuk, gezinme, sayfa genişliği.',
+      'Açılış ekranı ve giriş ekranını yap.',
+      'Bütün sayfaları boş olarak aç — yalnız başlık ve boş durum.',
+    ],
+    test: 'Giriş yapılıyor mu, menüden her sayfaya gidiliyor mu, renkler ve '
+        + 'yazı tipleri doğru mu? Telefonda ve bilgisayarda ayrı bak.',
+  },
+  {
+    ad: 'Veri ve ana ekranlar',
+    yap: [
+      'Veritabanı tablolarını ve bağlantıyı kur.',
+      'Panel ekranını gerçek veriyle doldur.',
+      'Bir liste ekranını tam yap: tablo, arama, filtre, sayfalama.',
+      'Telefonda tablonun ne olacağına dair kararı uygula.',
+    ],
+    test: 'Veriler geliyor mu, tablo okunuyor mu, arama ve filtre çalışıyor mu? '
+        + 'Telefonda tablo bozuluyor mu?',
+  },
+  {
+    ad: 'Kayıt işlemleri',
+    yap: [
+      'Veri giriş ekranını yap: ekleme ve düzenleme.',
+      'Detay ekranını yap.',
+      'Silme ve onay akışını yap.',
+      'Kalan liste ekranlarını aynı kalıpla çoğalt.',
+    ],
+    test: 'Kayıt ekle, düzenle, sil. Yanlış veri girince ne oluyor? '
+        + 'Sildiğini geri alabiliyor musun?',
+  },
+  {
+    ad: 'Uç durumlar ve ayarlar',
+    yap: [
+      'Boş durum, yükleme ve hata ekranlarını uygula.',
+      'Bildirim ve işlem sonucu davranışını uygula.',
+      'Ayarlar ekranını, yedeği ve varsa içe aktarmayı yap.',
+      'Rolleri ve yetkileri bağla.',
+    ],
+    test: 'İnterneti kes, ne oluyor? Hiç kayıt yokken ekran ne diyor? '
+        + 'Yetkisiz kullanıcı neyi göremiyor?',
+  },
+  {
+    ad: 'Hareket ve cila',
+    yap: [
+      'Sayfa geçişi, dokunma tepkisi ve açılma animasyonlarını ekle.',
+      'Güncelleme akışını ve sürüm etiketini kur.',
+      'Erişilebilirliği gözden geçir: dokunma hedefleri, kontrast, odak.',
+      'Performans: gereksiz yeniden çizimleri temizle.',
+    ],
+    test: 'Eski bir telefonda akıcı mı? Animasyonlar yorucu mu? '
+        + 'Güncelleme düğmesi gerçekten yeni sürümü getiriyor mu?',
+  },
+];
 
 /* Bir alanın seçili değerleri — her zaman dizi döner.
    Tek seçimliler tek elemanlı; hiç seçilmemişse varsayılan. */

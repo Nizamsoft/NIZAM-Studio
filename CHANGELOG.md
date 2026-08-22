@@ -1,5 +1,26 @@
 # Değişiklik Günlüğü
 
+## v0.30.1 — 22 Ağustos 2026
+**Kodlama beş aşamaya bölündü**
+
+NIZAM.md'ye "Nasıl kodlanacak — beş aşama" bölümü girdi. AI hepsini bir
+seferde yazmıyor; her aşamanın sonunda durup kullanıcıdan denemesini
+istiyor, onay gelmeden devam etmiyor.
+
+1. **İskelet ve tema** — değişkenler, kabuk, açılış, giriş, boş sayfalar.
+   *Test: giriş yapılıyor mu, her sayfaya gidiliyor mu, renkler doğru mu.*
+2. **Veri ve ana ekranlar** — tablolar, panel, bir tam liste ekranı.
+   *Test: veri geliyor mu, arama ve filtre çalışıyor mu.*
+3. **Kayıt işlemleri** — ekleme, düzenleme, detay, silme, kalan listeler.
+   *Test: yanlış veri girince ne oluyor, sildiğini geri alabiliyor musun.*
+4. **Uç durumlar ve ayarlar** — boş, yükleme, hata, bildirim, yetkiler.
+   *Test: interneti kes, ne oluyor.*
+5. **Hareket ve cila** — animasyon, güncelleme, erişilebilirlik, performans.
+   *Test: eski telefonda akıcı mı.*
+
+Görev promptunda beş aşama yok — orada yalnız kısa uygulama sırası var.
+Tek bir görev için beş aşamalık plan gürültü olurdu.
+
 ## v0.30.0 — 22 Ağustos 2026
 **Prompt sağlamlaştırıldı, yapıştırma denetleniyor**
 
