@@ -3638,3 +3638,89 @@ a:hover { color: var(--red-ink); }
   border-color: color-mix(in srgb, #5b8def 55%, transparent);
   background: color-mix(in srgb, #5b8def 16%, var(--yuva));
 }
+
+/* ==========================================================================
+   YAPI AKIŞI — modül ve sayfa kurulumu
+   İskelet tasarım akışıyla ortak (.akis, .adim-serit, .adim-gez);
+   burada yalnız gövdeye özel parçalar var.
+   ========================================================================== */
+
+.yapi-arac { display: flex; gap: 9px; }
+.yapi-arac .sayfa-dug { flex: 1; }
+
+/* Modül kartı — tel çizim yerine simge, ad, sayfa sayısı. */
+.bsc.yk { width: 108px; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.bsc.yk .yk-ik {
+  display: grid; place-items: center; width: 100%; height: 46px;
+  border-radius: 9px; background: var(--surface-2); color: var(--ink-soft);
+}
+.bsc.yk .bsc-ad { margin-top: 7px; }
+.bsc.yk .yk-alt { display: block; font-size: 9.5px; color: var(--ink-faint); }
+.bsc.yk.on .yk-ik { background: var(--surface-3); color: var(--ink-strong); }
+.bsc.yk.ekle { border-style: dashed; }
+
+/* Sayfa çipleri — akışın içinde sarılarak dizilir. */
+.raf.sayfa-raf { flex-wrap: wrap; overflow-x: visible; align-content: flex-start; }
+.cip-sec {
+  flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px;
+  padding: 9px 12px; border-radius: 999px; cursor: pointer;
+  border: 1px solid var(--line); background: var(--yuva);
+  color: var(--ink-soft); font-family: inherit; font-size: 12px;
+  transition: border-color .16s var(--ease), background .16s var(--ease);
+}
+.cip-sec svg { opacity: .7; }
+.cip-sec.on {
+  background: var(--surface-2); border-color: var(--metal-2); color: var(--ink-strong);
+}
+.cip-sec.on svg { opacity: 1; }
+.cip-sec.ekle { border-style: dashed; color: var(--ink-faint); }
+.cip-sec:active { transform: scale(.97); }
+
+/* Sıra adımı */
+.yapi-sira { display: flex; flex-direction: column; gap: 7px; overflow-y: auto; min-height: 0; }
+.ys {
+  display: flex; align-items: center; gap: 9px;
+  padding: 9px 11px; border-radius: 13px;
+  border: 1px solid var(--line-2); background: var(--yuva);
+}
+.ys-no { flex: 0 0 20px; font-size: 11px; color: var(--ink-faint); }
+.ys-ad { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.ys-ad b { font-size: 13px; color: var(--ink-strong); white-space: nowrap;
+           overflow: hidden; text-overflow: ellipsis; }
+.ys-ad i { font-style: normal; font-size: 10.5px; color: var(--ink-faint); }
+.ys-dug {
+  flex: 0 0 32px; height: 32px; display: grid; place-items: center; cursor: pointer;
+  border-radius: 9px; border: 1px solid var(--line-2);
+  background: transparent; color: var(--ink-soft);
+}
+.ys-dug:disabled { opacity: .3; cursor: default; }
+.ys-dug.on { border-color: var(--metal-2); color: var(--ink-strong); background: var(--surface-2); }
+/* Yalnız taşıma düğmelerindeki ok döner; açılış simgesi ev, dönmemeli. */
+.ys-dug.tasi svg { transform: rotate(-90deg); }
+.ys-dug.tasi.asagi svg { transform: rotate(90deg); }
+
+/* Özet satırı */
+.yo { padding: 10px 12px; border-radius: 13px; background: var(--yuva);
+      border: 1px solid var(--line-2); margin-bottom: 7px; }
+.yo b { display: block; font-size: 13px; color: var(--ink-strong); }
+.yo i { display: block; font-style: normal; margin-top: 3px;
+        font-size: 11px; color: var(--ink-faint); line-height: 1.5; }
+
+/* Özet ve sıra adımlarında önizleme yok: alt blok kalan yeri alır, taşan
+   kısım kendi içinde kayar. */
+.akis.yapi.ozet .akis-alt {
+  flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column;
+}
+.akis.yapi .ozet-kaydir, .akis.yapi .yapi-sira {
+  flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
+}
+
+/* Yapı akışında önizleme kararın kendisi (menüdeki modüller): kolay
+   kolay ezilmesin, taşan liste kendi içinde kaysın. */
+.akis.yapi .onz-satir { flex: 1 2 auto; min-height: 238px; }
+@media (max-height: 700px) { .akis.yapi .onz-satir { min-height: 178px; } }
+
+/* Özet adımında ileri gidilecek yer yok: düğme kurulumun kendisi. */
+.ag.ileri.kur { background: var(--red); border-color: var(--red); color: #fff; }
+.ag.ileri.kur svg { opacity: 1; }
+.ag.ileri.kur:disabled { opacity: .45; }

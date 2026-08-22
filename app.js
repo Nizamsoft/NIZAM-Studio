@@ -145,6 +145,7 @@ const ICON = {
   arti:    '<path d="M12 5v14M5 12h14"></path>',
   tik:     '<path d="M5 12l5 5L20 7"></path>',
   kapat:   '<path d="M6 6l12 12M18 6L6 18"></path>',
+  ev:      '<path d="M3 10.5 12 4l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"></path>',
 };
 
 function svg(ikon, boy = 16) {
@@ -1209,6 +1210,10 @@ let ONIZLEME_CIHAZ = 'web';
 let ONIZLEME_EKRAN = 'panel';
 let ONIZLEME_ADIM  = null;
 let ONIZLEME_GENIS = false;
+/* Yapı akışı önizlemeyi gerçek modül ve sayfa adlarıyla çizer; tasarım
+   akışında boş kalır ve örnek adlar kullanılır. */
+let ONIZLEME_MENU  = null;
+let ONIZLEME_SAYFA = null;
 
 
 /* Sektöre göre örnek veri. Eşleşme yoksa nötr bir kayıt listesi. */
@@ -1381,6 +1386,8 @@ function onizlemeIc(p, pl) {
                      ayarlar: 'Ayarlar', bos: v.baslik, yukleme: v.baslik,
                      sayfalar: 'Modül', detay: v.satir[0][0], yogunluk: 'Panel',
                      ice: 'İçe aktar', hata: v.baslik }[ekr] || 'Panel';
+  const menuAdlari = (ONIZLEME_MENU && ONIZLEME_MENU.length
+    ? ONIZLEME_MENU : ['Panel', 'Kayıt', 'Rapor', 'Ayar']).slice(0, 5);
   const ucSec = bic.ustcubuk[0];
   const menuli = bic.gezinme[0] === 'Açılır yan menü';
   const yatayMenu = bic.gezinme[0] === 'Üst menü';
@@ -1390,7 +1397,7 @@ function onizlemeIc(p, pl) {
       <b>${esc(ekranAdi)}${
         ekr === 'liste' && bic.donem[0] === 'Başlıkta açılır' ? ' <u class="o-ok">Ağustos ▾</u>' : ''}</b>
       ${ucSec === 'Logo + arama' ? '<span class="o-ustAra">Ara…</span>' : ''}
-      ${yatayMenu ? `<span class="o-yatay">${['Panel', 'Kayıt', 'Rapor'].map((x, i) =>
+      ${yatayMenu ? `<span class="o-yatay">${menuAdlari.slice(0, 3).map((x, i) =>
         `<i class="${i ? '' : 'a'}">${x}</i>`).join('')}</span>` : ''}
       ${bic.destek[0] === 'Üst çubukta' ? '<span class="o-soru">?</span>' : ''}
       ${bic.guncelleme[0] === 'Üstte rozet' ? '<span class="o-nokta"></span>' : ''}
@@ -1422,8 +1429,8 @@ function onizlemeIc(p, pl) {
     || (odak === 'kullanicimenu' && bic.kullanicimenu[0] === 'Yan menü altında');
   const gezinme = !altSekme ? '' : `
     <div class="o-nav${ortaArti ? ' arti' : ''}">
-      ${['Panel', 'Kayıt', 'Rapor', 'Ayar'].map((x, i) =>
-        `<span class="${i ? '' : 'a'}">${x}</span>`).join('')}
+      ${menuAdlari.map((x, i) =>
+        `<span class="${i ? '' : 'a'}">${esc(x)}</span>`).join('')}
       ${ortaArti ? '<em></em>' : ''}
     </div>`;
 
@@ -1645,7 +1652,8 @@ function onizlemeIc(p, pl) {
   }[bic.yukleme[0]] || '';
 
   /* Sayfa listesi */
-  const sayfaAdlari = ['Siparişler', 'Ürünler', 'Masalar', 'Raporlar'];
+  const sayfaAdlari = (ONIZLEME_SAYFA && ONIZLEME_SAYFA.length ? ONIZLEME_SAYFA
+    : ['Siparişler', 'Ürünler', 'Masalar', 'Raporlar']).slice(0, 4);
   const sayfaGovde = {
     'Yan liste': `<div class="o-ikiBolme"><div class="o-yanFiltre">${
         sayfaAdlari.map((x, i) => `<i class="${i ? '' : 'a'}">${x}</i>`).join('')
@@ -1806,8 +1814,8 @@ function onizlemeIc(p, pl) {
     ${ciplak ? '' : ustCubuk}
     <div class="o-alt2">
       ${yanMenu || menuli ? `<div class="o-yanMenu${menuli ? ' acilir' : ''}">${
-        ['Panel', 'Kayıt', 'Rapor', 'Ayar'].map((x, i) =>
-        `<i class="${i ? '' : 'a'}">${x}</i>`).join('')}${
+        menuAdlari.map((x, i) =>
+        `<i class="${i ? '' : 'a'}">${esc(x)}</i>`).join('')}${
         bic.kullanicimenu[0] === 'Yan menü altında'
           ? '<span class="o-yanKisi"><em></em>Kerem G.</span>' : ''}</div>` : ''}
       <div class="o-gov">${beklemeCubugu}${govde}${silme}${sonDugme}${bildirim}${fab}${sonucKatmani}${gecisKatmani}${
@@ -1857,16 +1865,18 @@ function onizlemeSigdir() {
   $$('.onz-goz').forEach(goz => {
     const app = goz.firstElementChild;
     if (!app || !app.classList.contains('o-app')) return;
-    app.style.transform = '';
-    const k = goz.getBoundingClientRect();
-    const a = app.getBoundingClientRect();
-    if (!a.height || !k.height) return;
-    /* Bir yere kadar küçültürüz; altına inince okunmaz olur, o zaman
-       sayfanın azıcık kaymasına izin veririz. Kısa ekranda taban daha
-       düşük: kırpılmış bir çubuk, küçük çubuktan kötüdür. */
+    /* Ölçüm dönüşümden bağımsız olmalı: getBoundingClientRect ölçeklenmiş
+       (üstelik geçiş animasyonu sürerken yarı yolda olan) boyu veriyor,
+       o boyla yeni ölçek hesaplanınca önizleme her adımda biraz daha
+       küçülüyordu. offsetHeight yerleşim boyudur, ölçekten etkilenmez. */
+    const kh = goz.clientHeight, kw = goz.clientWidth;
+    const ah = app.offsetHeight, aw = app.offsetWidth;
+    if (!ah || !kh) return;
+    /* Bir yere kadar küçültürüz; altına inince okunmaz olur. Kısa ekranda
+       taban daha düşük: kırpılmış bir çubuk, küçük çubuktan kötüdür. */
     const taban = innerHeight <= 700 ? .4 : .5;
-    const oran = Math.max(taban, Math.min(1, (k.height - 18) / a.height, (k.width - 18) / a.width));
-    if (oran < .999) app.style.transform = `scale(${oran.toFixed(3)})`;
+    const oran = Math.max(taban, Math.min(1, (kh - 18) / ah, (kw - 18) / aw));
+    app.style.transform = oran < .999 ? `scale(${oran.toFixed(3)})` : '';
   });
 }
 
@@ -2182,7 +2192,12 @@ function tasarimOnizleme(alan, ad) {
 /* 3 · Yapıyı kurma */
 function yapiSayfasi(p, d) {
   const moduller = DB.modulleri(p.id);
+  const gercek   = moduller.filter(m => m.ad !== GENEL_MODUL);
   const s = DB.sayim(p.id);
+
+  /* Kurulu modül yoksa (ya da kullanıcı akışı açtıysa) boş liste yerine
+     adım adım kurulum. Tasarım durağıyla aynı iskelet. */
+  if (AUTH.yonetici && (!gercek.length || YAPI_TASLAK[p.id])) return yapiAkisi(p, d);
 
   return sayfaHero(p, d) + `
     <div class="ikili">
@@ -2194,8 +2209,217 @@ function yapiSayfasi(p, d) {
         : `<div class="bos-kutu">${svg(ICON.katman, 18)}
             <span>Henüz modül yok. Modül kurduğunda sayfaları da birlikte gelir.</span></div>`)
     + (AUTH.yonetici ? `
-      <button class="sayfa-dug" data-eylem="modul-ekle" data-proje="${p.id}" type="button">
-        ${svg(ICON.arti, 15)} Modül Ekle</button>` : '');
+      <div class="yapi-arac">
+        <button class="sayfa-dug" data-eylem="modul-ekle" data-proje="${p.id}" type="button">
+          ${svg(ICON.arti, 15)} Modül Ekle</button>
+        <button class="sayfa-dug ikincil" data-eylem="yapi-akis-ac" data-proje="${p.id}" type="button">
+          ${svg(ICON.katman, 15)} Adım adım kur</button>
+      </div>` : '');
+}
+
+/* ---------- 3 · Yapıyı kurma: adım adım akış ----------
+   Taslak bellekte durur; veritabanına ancak Özet'teki "Kur" düğmesiyle
+   tek seferde yazılır. Yarıda bırakılan akış hiçbir şey bozmaz. */
+const YAPI_TASLAK = {};
+
+function yapiTaslak(p) {
+  if (!YAPI_TASLAK[p.id]) {
+    /* Sektörün önerdiği modüller önden işaretli gelir: kullanıcı sıfırdan
+       düşünmesin, eksiltip ekleyerek ilerlesin. */
+    const ad = (p.sektor || '').toLocaleLowerCase('tr');
+    const sk = DB.sektorler.find(x => (x.ad || '').toLocaleLowerCase('tr') === ad);
+    YAPI_TASLAK[p.id] = {
+      yer: 0,
+      secili: ((sk && sk.moduller) || []).slice(),
+      sayfa: {},
+    };
+  }
+  return YAPI_TASLAK[p.id];
+}
+
+/* Bir modülün sayfaları: kullanıcı dokunmadıysa şablondan gelir. */
+function yapiSayfalari(t, ad) {
+  if (!t.sayfa[ad]) {
+    const sb = DB.modulSablonlari().find(m => m.ad === ad);
+    t.sayfa[ad] = ((sb && sb.sayfalar) || []).slice();
+  }
+  return t.sayfa[ad];
+}
+
+function yapiAdimlari(t) {
+  return [{ tur: 'moduller', ad: 'Modüller', obek: 'Ne kurulacak',
+            obekNot: 'Uygulamanın ana bölümleri. Sonra her birinin sayfaları sorulur.',
+            aciklama: 'Sektörün önerdikleri işaretli. Eksilt, ekle.' }]
+    .concat(t.secili.map(ad => ({
+      tur: 'sayfalar', modul: ad, ad: ad, obek: 'Sayfalar',
+      obekNot: 'Her modülün içinde hangi ekranlar var?',
+      aciklama: ad + ' modülünde hangi sayfalar olsun?' })))
+    .concat([
+      { tur: 'sira', ad: 'Sıra ve açılış', obek: 'Yerleşim',
+        obekNot: 'Menüde hangi sırayla dursunlar, hangisi ilk açılsın?',
+        aciklama: 'Menüdeki sıra ve açılış ekranı.' },
+      { tur: 'ozet', ad: 'Özet', obek: 'Kurulum',
+        obekNot: 'Hepsi tek seferde yazılır.',
+        aciklama: 'Kurulacakların listesi.' },
+    ]);
+}
+
+function yapiAkisi(p, d) {
+  const t   = yapiTaslak(p);
+  const adm = yapiAdimlari(t);
+  const no  = Math.max(0, Math.min(t.yer, adm.length - 1));
+  t.yer = no;
+  const adim = adm[no];
+
+  /* Önizleme gerçek adlarla çizilir: seçtiğin modül menüde görünür. */
+  ONIZLEME_MENU  = t.secili.length ? t.secili : null;
+  ONIZLEME_SAYFA = adim.tur === 'sayfalar' ? yapiSayfalari(t, adim.modul) : null;
+  ONIZLEME_EKRAN = adim.tur === 'sayfalar' ? 'sayfalar' : 'panel';
+  ONIZLEME_ADIM  = adim.tur === 'sayfalar' ? 'sayfalistesi' : 'gezinme';
+  ONIZLEME_CIHAZ = 'web';
+
+  return `<div class="akis yapi ${adim.tur}">
+    ${yapiSeridi(p, no, adim, adm)}
+    ${adim.tur === 'ozet' ? '' :
+      `<div class="onz-satir"><div class="onz-goz">${onizlemeIc(p, p.palet)}</div></div>`}
+    <div class="akis-alt">
+      <div class="adim-bas">
+        <div class="ab-yazi"><b>${esc(adim.ad)}</b><i>${esc(adim.aciklama)}</i></div>
+        <span class="ab-tur">${{ moduller: 'birkaçı', sayfalar: 'birkaçı',
+                                 sira: 'sırala', ozet: '' }[adim.tur]}</span>
+      </div>
+      ${yapiGovde(p, t, adim)}
+      ${yapiGezinme(p, no, adm, t)}
+    </div>
+  </div>`;
+}
+
+function yapiSeridi(p, no, adim, adm) {
+  const obekler = [];
+  adm.forEach((a, i) => {
+    const son = obekler[obekler.length - 1];
+    if (son && son.ad === a.obek) son.satir.push(i);
+    else obekler.push({ ad: a.obek, satir: [i] });
+  });
+  const suObek = obekler.findIndex(o => o.satir.includes(no));
+
+  return `
+    <div class="adim-serit">
+      <div class="as-obek">
+        <span class="as-rozet">${suObek + 1}</span>
+        <span class="as-ad"><b>${esc(adim.obek)}</b><i>${esc(adim.obekNot)}</i></span>
+        <button class="ab-kararlar" type="button" data-eylem="yapi-kapat" data-proje="${p.id}"
+                title="Akışı kapat">${svg(ICON.kapat, 14)}</button>
+      </div>
+      <div class="as-noktalar">${obekler.map((o, oi) => `
+        <span class="as-grup ${oi === suObek ? 'suan' : oi < suObek ? 'gecti' : ''}"
+              style="flex:${o.satir.length}">${o.satir.map(i => `
+          <button class="${i === no ? 'on' : i < no ? 'gecti' : ''}" type="button"
+                  data-eylem="yapi-adim" data-proje="${p.id}" data-deger="${i}"
+                  title="${esc(adm[i].ad)}"><i></i></button>`).join('')}</span>`).join('')}
+      </div>
+      <div class="as-sayac">${no + 1} / ${adm.length}</div>
+    </div>`;
+}
+
+function yapiGovde(p, t, adim) {
+  if (adim.tur === 'moduller') {
+    const sablonlar = DB.modulSablonlari();
+    /* Şablonda olmayan ama seçilmiş modüller (elle yazılanlar) de listede. */
+    const adlar = sablonlar.map(m => m.ad)
+      .concat(t.secili.filter(x => !sablonlar.some(m => m.ad === x)));
+
+    return `<div class="raf" data-coklu="1">
+      ${adlar.map(ad => {
+        const sb  = sablonlar.find(m => m.ad === ad);
+        const say = (t.sayfa[ad] || (sb && sb.sayfalar) || []).length;
+        const on  = t.secili.includes(ad);
+        return `<button class="bsc yk ${on ? 'on' : ''}" type="button"
+                        data-eylem="yapi-modul" data-proje="${p.id}" data-ad="${esc(ad)}">
+          <span class="yk-ik">${svg(ICON.katman, 18)}</span>
+          <span class="bsc-ad">${esc(ad)}</span>
+          <span class="yk-alt">${say} sayfa</span>
+        </button>`;
+      }).join('')}
+      <button class="bsc yk ekle" type="button"
+              data-eylem="yapi-modul-yaz" data-proje="${p.id}">
+        <span class="yk-ik">${svg(ICON.arti, 18)}</span>
+        <span class="bsc-ad">Kendim yazayım</span>
+        <span class="yk-alt">listede yok</span>
+      </button>
+    </div>`;
+  }
+
+  if (adim.tur === 'sayfalar') {
+    const sb    = DB.modulSablonlari().find(m => m.ad === adim.modul);
+    const secik = yapiSayfalari(t, adim.modul);
+    const tumu  = ((sb && sb.sayfalar) || []).concat(
+      secik.filter(x => !((sb && sb.sayfalar) || []).includes(x)));
+
+    return `<div class="raf sayfa-raf" data-coklu="1">
+      ${tumu.length ? tumu.map(ad => `
+        <button class="cip-sec ${secik.includes(ad) ? 'on' : ''}" type="button"
+                data-eylem="yapi-sayfa" data-proje="${p.id}"
+                data-modul="${esc(adim.modul)}" data-ad="${esc(ad)}">
+          ${svg(ICON.folder, 13)} ${esc(ad)}</button>`).join('')
+        : '<span class="ipucu">Bu modülün hazır sayfası yok — elle ekle.</span>'}
+      <button class="cip-sec ekle" type="button" data-eylem="yapi-sayfa-yaz"
+              data-proje="${p.id}" data-modul="${esc(adim.modul)}">
+        ${svg(ICON.arti, 13)} Sayfa ekle</button>
+    </div>`;
+  }
+
+  if (adim.tur === 'sira') {
+    return `<div class="yapi-sira">
+      ${t.secili.length ? t.secili.map((ad, i) => `
+        <div class="ys">
+          <span class="ys-no mono">${i + 1}</span>
+          <span class="ys-ad"><b>${esc(ad)}</b><i>${yapiSayfalari(t, ad).length} sayfa</i></span>
+          <button class="ys-dug ${i ? '' : 'on'}" type="button" ${i ? '' : 'disabled'}
+                  data-eylem="yapi-acilis" data-proje="${p.id}" data-ad="${esc(ad)}"
+                  title="${i ? 'Açılış ekranı yap' : 'Açılış ekranı'}">${svg(ICON.ev, 14)}</button>
+          <button class="ys-dug tasi" type="button" ${i ? '' : 'disabled'}
+                  data-eylem="yapi-tasi" data-proje="${p.id}" data-deger="${i}" data-yon="-1"
+                  title="Yukarı">${svg(ICON.chevron, 14)}</button>
+          <button class="ys-dug tasi asagi" type="button" ${i === t.secili.length - 1 ? 'disabled' : ''}
+                  data-eylem="yapi-tasi" data-proje="${p.id}" data-deger="${i}" data-yon="1"
+                  title="Aşağı">${svg(ICON.chevron, 14)}</button>
+        </div>`).join('')
+        : '<div class="bos-kutu"><span>Hiç modül seçmedin. Geri dönüp seç.</span></div>'}
+    </div>`;
+  }
+
+  /* Özet */
+  const toplamSayfa = t.secili.reduce((n, ad) => n + yapiSayfalari(t, ad).length, 0);
+  return `<div class="ozet-kaydir">
+    <div class="ikili">
+      <div class="tkutu"><span class="ik">${svg(ICON.katman, 14)}</span><b>Modül</b><u>${t.secili.length}</u></div>
+      <div class="tkutu"><span class="ik">${svg(ICON.folder, 14)}</span><b>Sayfa</b><u>${toplamSayfa}</u></div>
+    </div>
+    ${t.secili.map((ad, i) => `
+      <div class="yo">
+        <b>${i + 1}. ${esc(ad)}${i ? '' : ' · açılış'}</b>
+        <i>${yapiSayfalari(t, ad).map(esc).join(' · ') || 'sayfa yok'}</i>
+      </div>`).join('')}
+  </div>`;
+}
+
+function yapiGezinme(p, no, adm, t) {
+  const son = no === adm.length - 1;
+  return `
+    <div class="adim-gez">
+      <button class="ag geri" type="button" ${no ? '' : 'disabled'}
+              data-eylem="yapi-adim" data-proje="${p.id}" data-deger="${no - 1}">
+        ${svg(ICON.chevron, 14)} Geri</button>
+      ${son
+        /* Son adımda ileri gidilecek yer yok: düğme işin kendisi olur. */
+        ? `<button class="ag ileri kur" type="button" ${t.secili.length ? '' : 'disabled'}
+                   data-eylem="yapi-kur" data-proje="${p.id}">
+             ${svg(ICON.check, 14)} ${t.secili.length} modülü kur</button>`
+        : `<button class="ag ileri" type="button"
+                   data-eylem="yapi-adim" data-proje="${p.id}" data-deger="${no + 1}">
+             İleri ${svg(ICON.chevron, 14)}</button>`}
+    </div>`;
 }
 
 /* 4 · Geliştirme */
@@ -2846,8 +3070,10 @@ function render() {
   hesapMenusuKapat();
   /* Zemin süsü yalnızca Panel'de. */
   $('#main').classList.toggle('susulu', key === 'panel' && !detay);
-  /* Tasarım akışı kaydırılmaz: üç parça ekrana bölüşür. */
-  $('#view').classList.toggle('sabit', sayfa === 'tasarim');
+  /* Adım akışları kaydırılmaz: üç parça ekrana bölüşür. Yapı durağı ancak
+     akış açıkken sabit; kurulu modül listesi normal kaydırılan sayfadır. */
+  $('#view').classList.toggle('sabit',
+    sayfa === 'tasarim' || (sayfa === 'yapi' && !!YAPI_TASLAK[id]));
   ustEylemYaz(key, detay, id);
   artiYaz(key, detay, id);
   $('#btn-back').classList.toggle('hidden', !detay);
@@ -2883,6 +3109,9 @@ function render() {
 
   logolariGoster();
   onizlemeSigdir();
+  /* Bir kare sonra bir daha: sayfa geçiş animasyonu sürerken ölçülen kutu
+     gerçek boyunda olmuyor, önizleme gereksiz yere küçülüyordu. */
+  requestAnimationFrame(onizlemeSigdir);
 
   const logout = $('#btn-logout');
   if (logout) logout.addEventListener('click', signOut);
@@ -5535,6 +5764,123 @@ async function eylemCalistir(el) {
   }
 
   if (e === 'modul-ekle') return modulEkleAc(el.dataset.proje || el.dataset.id || rota().id);
+
+  /* ---- Yapı akışı ---- */
+  if (e === 'yapi-akis-ac') {
+    const pr = DB.proje(el.dataset.proje);
+    if (pr) { yapiTaslak(pr); render(); }
+    return;
+  }
+
+  if (e === 'yapi-kapat') {
+    delete YAPI_TASLAK[el.dataset.proje];
+    ONIZLEME_MENU = ONIZLEME_SAYFA = null;
+    render();
+    return;
+  }
+
+  if (e === 'yapi-adim') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    yapiTaslak(pr).yer = Number(el.dataset.deger);
+    render();
+    $('#view').scrollTop = 0;
+    return;
+  }
+
+  if (e === 'yapi-modul') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const t = yapiTaslak(pr), ad = el.dataset.ad;
+    const i = t.secili.indexOf(ad);
+    if (i > -1) t.secili.splice(i, 1); else t.secili.push(ad);
+    render();
+    return;
+  }
+
+  if (e === 'yapi-modul-yaz') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const ad = await metinSor({ baslik: 'Modül adı', yerTutucu: 'Örn. Sipariş',
+                                buton: 'Ekle' });
+    if (!ad) return;
+    const t = yapiTaslak(pr);
+    if (!t.secili.includes(ad)) t.secili.push(ad);
+    if (!t.sayfa[ad]) t.sayfa[ad] = [];
+    render();
+    return;
+  }
+
+  if (e === 'yapi-sayfa') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const t = yapiTaslak(pr);
+    const liste = yapiSayfalari(t, el.dataset.modul);
+    const i = liste.indexOf(el.dataset.ad);
+    if (i > -1) liste.splice(i, 1); else liste.push(el.dataset.ad);
+    render();
+    return;
+  }
+
+  if (e === 'yapi-sayfa-yaz') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const modul = el.dataset.modul;
+    const ad = await metinSor({ baslik: 'Sayfa adı', yerTutucu: 'Örn. Sipariş Detayı',
+                                buton: 'Ekle' });
+    if (!ad) return;
+    const liste = yapiSayfalari(yapiTaslak(pr), modul);
+    if (!liste.includes(ad)) liste.push(ad);
+    render();
+    return;
+  }
+
+  if (e === 'yapi-acilis') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    /* Açılış = menünün ilk sırası. Ayrı bir "açılış" alanı tutmak sırayla
+       çelişiyordu; kurulum da bu sırayla yazılıyor. */
+    const t = yapiTaslak(pr);
+    const i = t.secili.indexOf(el.dataset.ad);
+    if (i > 0) { t.secili.splice(i, 1); t.secili.unshift(el.dataset.ad); }
+    render();
+    return;
+  }
+
+  if (e === 'yapi-tasi') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const t = yapiTaslak(pr);
+    const i = Number(el.dataset.deger), j = i + Number(el.dataset.yon);
+    if (j < 0 || j >= t.secili.length) return;
+    const x = t.secili[i]; t.secili[i] = t.secili[j]; t.secili[j] = x;
+    render();
+    return;
+  }
+
+  if (e === 'yapi-kur') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const t = yapiTaslak(pr);
+    if (!t.secili.length) return;
+
+    /* Sıra listesi kaydın kendisi: ilk sıradaki açılış ekranı olur. */
+    const sirali = t.secili.slice();
+
+    el.disabled = true;
+    try {
+      for (const ad of sirali) await DB.modulEkle(pr.id, ad, yapiSayfalari(t, ad));
+      delete YAPI_TASLAK[pr.id];
+      ONIZLEME_MENU = ONIZLEME_SAYFA = null;
+      toast(sirali.length + ' modül kuruldu.');
+      render();
+    } catch (err) {
+      el.disabled = false;
+      toast(err.message, 'hata');
+    }
+    return;
+  }
+
 
   if (e === 'proje-bolum') {
     const ad = el.dataset.ad;

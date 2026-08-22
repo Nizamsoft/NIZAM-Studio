@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## v0.37.0
+- **Yapıyı kurma durağı adım adım akışa döndü** — tasarım durağının aynısı: nokta şeridi, canlı önizleme, altta Geri/İleri. Modüller (sektörün önerdikleri işaretli) → her modülün sayfaları ayrı ekranda → sıra ve açılış → özet ve tek "Kur" düğmesi. Önizlemede menü gerçek modül adlarını, sayfa adımında gerçek sayfa adlarını gösteriyor. Taslak bellekte durur, yarıda bırakmak hiçbir şeyi bozmaz.
+- "Modül Ekle" düğmesi duruyor; kurulu projede "Adım adım kur" ile akış yeniden açılıyor.
+- Önizleme ölçeği yanlış hesaplanıyordu: ölçüm dönüşümün kendisinden etkilendiği için her adımda biraz daha küçülüyor, uygulamanın üst çubuğu ve alt sekmesi kırpılıyordu. Artık yerleşim boyu ölçülüyor.
+
 ## v0.36.2
 - "n yeni" çipiyle atlanan karardan sonra İleri düğmesi artık akışı baştan takip ettirmiyor: varsa sıradaki yeni karara, yoksa doğrudan özete götürüyor. Geri'ye ya da nokta şeridine dokununca normal akışa dönülür.
 
