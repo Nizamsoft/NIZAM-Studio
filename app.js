@@ -1893,6 +1893,8 @@ const TEL_PARCA = {
   sayfaNo:      '<u class="w-sayfa"><i class="a"></i><i></i><i></i></u>',
 
   /* Çubuk dokusu: aynı iskelet, farklı yüzey. Üst ve alt birlikte gösterilir. */
+  /* Camda gövde renkli: çubuğun altından geçtiği kartta görünsün. */
+  blokGecen:    '<u class="w-govde"><i class="w-blk gecen"></i></u>',
   dokuDoluUst:  '<u class="w-ust wd-dolu"><i style="width:46%"></i></u>',
   dokuCamUst:   '<u class="w-ust wd-cam"><i style="width:46%"></i></u>',
   dokuCizgiUst: '<u class="w-ust wd-cizgi"><i style="width:46%"></i></u>',

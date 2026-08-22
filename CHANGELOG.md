@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.36.1
+- Dolu zemin, buzlu cam ve çizgiyle ayrık hem kartlarda hem önizlemede birbirinin aynısı gözüküyordu: dolu artık tam yüzey renginde gölgeli bant, camda içerik çubuğun altından geçerken renkli görünüyor, çizgide zemin yok yalnız belirgin ayrım çizgisi var.
+
 ## v0.36.0
 - Sonradan eklenen tasarım kararları artık kayboluyor değil: proje duraklarında "1 yeni" rozeti, akış şeridinde "n yeni" çipi (dokununca o adıma atlar), adım başlığında YENİ etiketi. Seçim yapılınca ya da YENİ'ye dokununca söner. Yeni açılan projelerde çıkmaz.
 - Kısa ekranlarda (664px ve altı) akış tek ekrana sığmıyordu: seçenek kartının adı kesiliyor, Geri/İleri satırı alt çubuğun altına giriyordu. Kartlar küçüldü, önizleme daha çok ölçekleniyor.

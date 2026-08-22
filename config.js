@@ -7,7 +7,7 @@ const APP = {
   name:     'NIZAM | Studio',
   short:    'NIZAM Studio',
   owner:    'Nizam Soft',
-  version: 'v0.36.0',
+  version: 'v0.36.1',
   build:    '2026-08-20',
   stage: 'Adım 4 · Prompt yalnız palet',
 };
@@ -278,7 +278,7 @@ const YERLESIM_ALAN = [
       { ad: 'Dolu zemin',    tarif: 'Yüzey renginde kapalı çubuk, altında ince çizgi. Sade ve her yerde çalışır.',
         tel: ['dokuDoluUst', 'blok', 'dokuDoluAlt'] },
       { ad: 'Buzlu cam',     tarif: 'Yarı saydam, arkası bulanık. İçerik çubuğun altından akıp geçer.',
-        tel: ['dokuCamUst', 'blok', 'dokuCamAlt'] },
+        tel: ['dokuCamUst', 'blokGecen', 'dokuCamAlt'] },
       { ad: 'Çizgiyle ayrık',tarif: 'Çubuğun zemini sayfayla aynı; yalnız ince bir çizgi ayırır. En hafifi.',
         tel: ['dokuCizgiUst', 'blok', 'dokuCizgiAlt'] },
       { ad: 'Yüzen hap',     tarif: 'Kenarlardan boşluklu, yuvarlak köşeli, gölgeli ada gibi durur.',
