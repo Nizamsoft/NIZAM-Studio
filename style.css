@@ -2824,7 +2824,10 @@ ekran planı.
    üç parça kalan yeri bölüşür.
    ========================================================================== */
 
-.view.sabit { overflow: hidden; display: flex; flex-direction: column; }
+/* Kural: kaydırma yok. Çok kısa ekranlarda önizleme okunmaz hâle gelmesin
+   diye taşarsa kaymasına izin veriyoruz — istisna, kural değil. */
+.view.sabit { overflow-y: auto; display: flex; flex-direction: column; }
+.view.sabit .akis { min-height: 100%; }
 .akis { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 
 .adim-serit { flex: 0 0 auto; }
@@ -2846,7 +2849,7 @@ ekran planı.
 
 /* Önizleme: kalan boşluğun tamamını alır, içindeki uygulama sığacak kadar küçülür. */
 .onz-satir {
-  flex: 1 1 auto; min-height: 120px; position: relative; margin: 11px 0;
+  flex: 1 1 auto; min-height: 170px; position: relative; margin: 11px 0;
   border: 1px solid var(--line-2); border-radius: 16px; overflow: hidden;
   background: var(--yuva-2);
 }
@@ -2855,18 +2858,22 @@ ekran planı.
   display: flex; align-items: center; justify-content: center; padding: 12px;
   background: repeating-conic-gradient(#1a1918 0 25%, #171614 0 50%) 0 0 / 16px 16px;
 }
-.onz-satir .onz-goz > .o-app { max-width: 360px; max-height: 100%; }
+.onz-satir .onz-goz > .o-app { max-width: 360px; flex: 0 0 auto; }
 .onz-satir .onk-not { display: none; }
-.onz-buyut {
-  position: absolute; top: 9px; right: 9px; width: 28px; height: 28px; z-index: 2;
-  display: grid; place-items: center; cursor: pointer;
-  border: 1px solid var(--line-2); border-radius: 9px;
-  background: color-mix(in srgb, var(--bg) 82%, transparent);
-  backdrop-filter: blur(8px); color: var(--ink-soft);
+/* Kutuya sığmayan önizleme küçültülür; kırpma yok. */
+.onz-satir .onz-goz > .o-app { transform-origin: center; transition: transform .16s var(--ease); }
+
+.tumSifir {
+  display: flex; align-items: center; justify-content: center; gap: 7px;
+  width: 100%; margin-top: 14px; padding: 11px; cursor: pointer;
+  border: 1px dashed var(--red-cizgi); border-radius: 12px;
+  background: var(--red-soft); color: var(--red-ink-soft);
+  font-family: inherit; font-size: 11.5px;
 }
+.tumSifir svg { flex: 0 0 auto; }
 
 .akis-alt { flex: 0 0 auto; }
-.adim-bas { display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; }
+.adim-bas { display: flex; align-items: baseline; gap: 10px; margin-bottom: 9px; }
 .ab-yazi { flex: 1; min-width: 0; }
 .adim-bas b { display: block; font-family: var(--yazi-baslik); font-size: 17px;
               letter-spacing: -.2px; color: var(--ink-strong); }
@@ -2887,7 +2894,7 @@ ekran planı.
 .ozet-kaydir { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
                margin: 0 calc(var(--yan) * -1); padding: 0 var(--yan); }
 
-.adim-gez { display: flex; gap: 9px; margin-top: 12px; }
+.adim-gez { display: flex; gap: 9px; margin-top: 11px; }
 .ag { display: flex; align-items: center; justify-content: center; gap: 6px;
       padding: 13px 16px; border-radius: 13px; cursor: pointer;
       font-family: var(--yazi-baslik); font-size: 13px; font-weight: 600;
@@ -2896,7 +2903,7 @@ ekran planı.
 .ag.geri svg { transform: rotate(180deg); }
 .ag.geri:disabled { opacity: .38; cursor: default; }
 .ag.ileri { flex: 1; background: var(--surface-3); border-color: var(--line-parlak); }
-.ag.atla { flex: 1; background: transparent; border-color: var(--line-3); color: var(--ink-dim); }
+.ag.ileri.hazir { background: var(--metal-2); border-color: var(--metal-2); color: #171614; }
 .ag svg { flex: 0 0 auto; }
 
 /* Kararlar paneli — adımdan çıkmadan hepsine bakmak için. */
@@ -2904,22 +2911,21 @@ ekran planı.
 .kr-govde {
   flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
   padding: 12px 16px calc(20px + env(safe-area-inset-bottom, 0px));
-  display: flex; flex-direction: column; gap: 8px;
 }
-.kr-adim {
-  display: block; width: 100%; text-align: left; cursor: pointer;
-  padding: 11px 13px; border-radius: 13px;
-  border: 1px solid var(--line-3); background: var(--yuva); font-family: inherit;
+.kr-obek { margin-bottom: 14px; }
+.kr-obek-ad {
+  display: block; margin: 0 0 6px 2px; font-family: var(--yazi-baslik);
+  font-size: 10px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--ink-faint);
 }
-.kr-ust { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
-.kr-ust b { font-family: var(--yazi-baslik); font-size: 12.5px; color: var(--ink); }
-.kr-ust em { margin-left: auto; font-style: normal; font-size: 9.5px; font-weight: 600;
-             padding: 1px 6px; border-radius: 999px;
-             background: var(--surface-2); color: var(--ink-faint); }
-.kr-sat { display: flex; align-items: baseline; gap: 10px; padding: 3px 0;
-          font-size: 11.5px; color: var(--ink-dim); }
-.kr-sat u { margin-left: auto; text-align: right; text-decoration: none;
-            font-size: 11.5px; font-weight: 600; color: var(--ink-soft); }
+.kr-sat {
+  display: flex; align-items: baseline; gap: 12px; width: 100%; text-align: left;
+  padding: 11px 13px; cursor: pointer; font-family: inherit;
+  border: 1px solid var(--line-3); border-radius: 12px; background: var(--yuva);
+  margin-bottom: 5px;
+}
+.kr-sat span { flex: 1; min-width: 0; font-size: 12.5px; color: var(--ink-dim); }
+.kr-sat u { text-align: right; text-decoration: none;
+            font-size: 12.5px; font-weight: 600; color: var(--ink); }
 
 
 @media (hover: hover) {

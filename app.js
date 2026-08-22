@@ -744,18 +744,6 @@ function takvimBolumu(p) {
 /* Adım durumu proje başına hatırlanır: geri gelince kaldığın yerde açılır. */
 const TASARIM_YER = {};
 
-/* Seçim yapıldıktan kısa bir an sonra sonraki adıma geç: kullanıcı
-   dokunduğu şeyin önizlemeye yansımasını görsün, sonra sayfa değişsin. */
-function adimIlerle(p, gecikme) {
-  const su = adimNo(p);
-  if (su >= TASARIM_ADIM.length - 1) return;
-  setTimeout(() => {
-    if (adimNo(p) !== su) return;
-    TASARIM_YER[p.id] = su + 1;
-    render();
-  }, gecikme || 0);
-}
-
 function adimNo(p) {
   const n = TASARIM_YER[p.id] || 0;
   return Math.max(0, Math.min(n, TASARIM_ADIM.length - 1));
@@ -786,7 +774,10 @@ function tasarimSayfasi(p, d) {
         <i>${kilit
           ? 'Palet bu temaya göre üretildi. Değiştirmek için logoyu tekrar yükleyip yeni palet al.'
           : 'Koyu tema göz yormaz, açık tema baskıya ve aydınlık ofise uygundur.'}</i>
-      </div>`;
+      </div>`
+      + (yon ? `
+        <button class="tumSifir" type="button" data-eylem="tasarim-tum-sifirla" data-proje="${p.id}">
+          ${svg(ICON.geriAl, 15)} Tüm tasarımı sıfırla</button>` : '');
 
   } else if (adim.tur === 'logo') {
     govde = `
@@ -862,15 +853,14 @@ function adimSeridi(p, no, adim) {
 /* Alt satır. Tek seçimli adımda ileri düğmesi "geç" der: seçim zaten ilerletir. */
 function adimGezinme(p, no, adim) {
   const son = no === TASARIM_ADIM.length - 1;
-  const tekil = adim.alan && !adim.alan.coklu;
   return `
     <div class="adim-gez">
       <button class="ag geri" type="button" ${no ? '' : 'disabled'}
               data-eylem="tasarim-adim" data-proje="${p.id}" data-deger="${no - 1}">
         ${svg(ICON.chevron, 14)} Geri</button>
-      <button class="ag ${tekil ? 'atla' : 'ileri'}" type="button"
+      <button class="ag ileri" type="button"
               data-eylem="tasarim-adim" data-proje="${p.id}" data-deger="${son ? -1 : no + 1}">
-        ${son ? 'Bitir' : tekil ? 'Değiştirmeden geç' : 'İleri'} ${svg(ICON.chevron, 14)}</button>
+        ${son ? 'Bitir' : 'İleri'} ${svg(ICON.chevron, 14)}</button>
     </div>`;
 }
 
@@ -919,7 +909,12 @@ function tasarimOzeti(p) {
       return `<div class="sr">${esc(a.ad)} <b>${d.length ? esc(d.join(' + ')) : '—'}</b></div>`;
     }).join('')}</div>`).join('')
     + (pl.ton ? `<div class="adim-not">${svg(ICON.info, 13)}
-        <span>Karakter: ${esc(pl.ton)}</span></div>` : '');
+        <span>Karakter: ${esc(pl.ton)}</span></div>` : '')
+    + (AUTH.yonetici ? `
+      <button class="sayfa-dug ikincil" data-eylem="palet-prompt" data-proje="${p.id}" type="button">
+        ${svg(ICON.kopya, 15)} Prompt kopyala</button>
+      <button class="sayfa-dug ikincil" data-eylem="palet-duzenle" data-proje="${p.id}" type="button">
+        ${svg(ICON.kalem, 15)} Paleti elle düzenle</button>` : '');
 }
 
 /* Adımın kendi ekranını gösteren önizleme. Seçim yapınca anında değişir. */
@@ -930,11 +925,7 @@ function onizlemeSatiri(p, adim) {
     ONIZLEME_CIHAZ = adim.cihaz || 'web';
   }
   return `
-    <div class="onz-satir">
-      <div class="onz-goz">${onizlemeIc(p, p.palet)}</div>
-      <button class="onz-buyut" type="button" data-eylem="onizleme-ac" data-proje="${p.id}"
-              title="Büyüt">${svg(ICON.goz, 15)}</button>
-    </div>`;
+    <div class="onz-satir"><div class="onz-goz">${onizlemeIc(p, p.palet)}</div></div>`;
 }
 
 /* Verdiğin bütün kararlar, adımdan çıkmadan. Satıra dokunursan o adıma gider. */
@@ -943,16 +934,29 @@ function kararlarAc(projeId) {
   if (!p) return;
   const pl = p.palet || {};
 
-  const govde = TASARIM_ADIM.map((adim, i) => {
-    const alanlar = adimAlanlari(adim);
-    if (!alanlar.length) return '';
-    return `
-      <button class="kr-adim" type="button" data-kr="${i}">
-        <span class="kr-ust"><b>${esc(adim.ad)}</b><em>${i + 1}</em></span>
-        ${alanlar.map(a => `
-          <span class="kr-sat">${esc(a.ad)}<u>${esc(bicimSecim(pl, a).join(' + '))}</u></span>`).join('')}
-      </button>`;
-  }).join('');
+  /* Öbek öbek: her satır bir karar, dokununca o adıma gider. */
+  const obekler = [];
+  TASARIM_ADIM.forEach((adim, i) => {
+    if (!adim.alan) return;
+    const ad = { panel: 'Panel ekranı', liste: 'Liste ekranı', form: 'Veri girişi',
+                 ayarlar: 'Ayarlar ekranı', bos: 'Boş durum',
+                 yukleme: 'Yükleme' }[adim.ekran] || adim.obek;
+    const son = obekler[obekler.length - 1];
+    if (son && son.ad === ad) son.satir.push([adim, i]);
+    else obekler.push({ ad, satir: [[adim, i]] });
+  });
+
+  const govde = obekler.map(o => `
+    <div class="kr-obek">
+      <span class="kr-obek-ad">${esc(o.ad)}</span>
+      ${o.satir.map(([adim, i]) => {
+        const d = bicimSecim(pl, adim.alan);
+        return `<button class="kr-sat" type="button" data-kr="${i}">
+          <span>${esc(adim.ad)}</span>
+          <u>${d.length ? esc(d.join(' + ')) : '—'}</u>
+        </button>`;
+      }).join('')}
+    </div>`).join('');
 
   const el = document.createElement('div');
   el.id = 'kararlar';
@@ -965,6 +969,7 @@ function kararlarAc(projeId) {
     <div class="kr-govde">${govde}</div>`;
 
   document.body.appendChild(el);
+  document.addEventListener('keydown', kararlarKac);
   requestAnimationFrame(() => el.classList.add('acik'));
 
   el.addEventListener('click', ev => {
@@ -979,44 +984,16 @@ function kararlarAc(projeId) {
   });
 }
 
+function kararlarKac(ev) { if (ev.key === 'Escape') kararlarKapat(); }
+
 function kararlarKapat() {
   const el = $('#kararlar');
   if (!el) return;
+  document.removeEventListener('keydown', kararlarKac);
   el.classList.remove('acik');
   setTimeout(() => el.remove(), 240);
 }
 
-/* Son adım: bütün kararlar tek listede. */
-function tasarimOzeti(p) {
-  const pl = p.palet || {};
-  return TASARIM_GRUP.map(g => bolumBas(g.ad) + `
-    <div class="satirlar">${g.alanlar.map(a => `
-      <div class="sr">${esc(a.ad)} <b>${esc(bicimSecim(pl, a).join(' + '))}</b></div>`).join('')}
-    </div>`).join('')
-    + (pl.ton ? `<div class="adim-not">${svg(ICON.info, 13)}
-        <span>Karakter: ${esc(pl.ton)}</span></div>` : '')
-    + (AUTH.yonetici ? `
-      <button class="sayfa-dug ikincil" data-eylem="palet-prompt" data-proje="${p.id}" type="button">
-        ${svg(ICON.kopya, 15)} Prompt kopyala</button>
-      <button class="sayfa-dug ikincil" data-eylem="palet-duzenle" data-proje="${p.id}" type="button">
-        ${svg(ICON.kalem, 15)} Paleti elle düzenle</button>` : '');
-}
-
-/* Adımın kendi ekranını gösteren sabit önizleme. Seçim yapınca anında değişir. */
-function onizlemeSatiri(p, adim) {
-  ONIZLEME_EKRAN = adim.ekran;
-  /* Cihazı yalnız adım değişince zorla; kullanıcı adım içinde çevirebilsin. */
-  if (ONIZLEME_ADIM !== adim.anahtar) {
-    ONIZLEME_ADIM = adim.anahtar;
-    ONIZLEME_CIHAZ = adim.cihaz || 'web';
-  }
-  return `
-    <div class="onz-satir">
-      <div class="onz-goz">${onizlemeIc(p, p.palet)}</div>
-      <button class="onz-buyut" type="button" data-eylem="onizleme-ac" data-proje="${p.id}"
-              title="Büyüt">${svg(ICON.goz, 15)}</button>
-    </div>`;
-}
 /* ---------- Önizleme: seçimlerin bir arada nasıl durduğu ----------
    Sahte bir müşteri uygulaması. Projenin kendi paleti, kendi logosu ve
    yedi biçim kararıyla çiziliyor. Veri uydurma değil, örnek — boş kutulara
@@ -1079,82 +1056,6 @@ function orneklem(p) {
             ['K-1041 · Selin Kaya', '17 Ağu · beklemede', '3.805,00'],
             ['K-1040 · M. Yılmaz', '16 Ağu · onaylandı', '21.900,00'],
             ['K-1039 · Elif Şahin', '15 Ağu · onaylandı', '6.400,00']] };
-}
-
-/* Büyük önizleme — sayfadaki küçük önizlemenin "Büyüt"ü. Hangi ekranı
-   gösterdiğini adım belirlediği için burada yalnız cihaz geçişi var. */
-function onizlemeAc(projeId) {
-  const p = DB.proje(projeId);
-  if (!p) return;
-
-  const el = document.createElement('div');
-  el.id = 'onizleme';
-  el.className = 'onz';
-  el.innerHTML = `
-    <div class="onz-tepe">
-      <button class="sh-kapat" type="button" data-onz="kapat">${svg(ICON.kapat, 15)}</button>
-      <span class="onz-ad">Önizleme<u>${esc(p.firma)}</u></span>
-      <span class="cihaz">
-        ${['web', 'telefon'].map(c => `
-          <button class="${ONIZLEME_CIHAZ === c ? 'on' : ''}" type="button"
-                  data-onz="cihaz" data-deger="${c}">${c === 'web' ? 'Web' : 'Telefon'}</button>`).join('')}
-      </span>
-    </div>
-    <div class="onz-goz">${onizlemeIc(p, p.palet)}</div>`;
-
-  document.body.appendChild(el);
-  logolariGoster();
-  document.addEventListener('keydown', onizlemeKac);
-  requestAnimationFrame(() => {
-    el.classList.add('acik');
-    rafiGorunureAl(el);
-  });
-
-  el.addEventListener('click', ev => {
-    const b = ev.target.closest('[data-onz]');
-    if (!b) return;
-    if (b.dataset.onz === 'kapat') return onizlemeKapat();
-
-    if (ONIZLEME_CIHAZ === b.dataset.deger) return;
-    ONIZLEME_CIHAZ = b.dataset.deger;
-    $$('.cihaz button', el).forEach(x => x.classList.toggle('on', x === b));
-    onizlemeTazele(p, p.palet);
-  });
-}
-
-/* Panel tepeden iniyor; altta kalan şeritte hiç raf yoksa sayfayı kaydırıp
-   bir tanesini oraya getir. Açılıp da seçim yapılamayan bir panel işe yaramaz. */
-function rafiGorunureAl(el) {
-  const view = $('#view');
-  if (!view) return;
-
-  const alt   = el.getBoundingClientRect().bottom + 10;
-  const dip   = window.innerHeight - 96;
-  const raflar = $$('.raf', view);
-  if (!raflar.length) return;
-
-  const gorunen = raflar.some(r => {
-    const k = r.getBoundingClientRect();
-    return k.top >= alt && k.bottom <= dip;
-  });
-  if (gorunen) return;
-
-  /* Şeride en yakın rafı seç, blok başlığıyla birlikte yukarı çek. */
-  const hedef = raflar.reduce((en, r) =>
-    Math.abs(r.getBoundingClientRect().top - alt) < Math.abs(en.getBoundingClientRect().top - alt) ? r : en);
-  const bas = hedef.previousElementSibling && hedef.previousElementSibling.previousElementSibling;
-  const ust = (bas || hedef).getBoundingClientRect().top;
-  view.scrollTop += ust - alt;
-}
-
-function onizlemeKac(ev) { if (ev.key === 'Escape') { onizlemeKapat(); kararlarKapat(); } }
-
-function onizlemeKapat() {
-  const el = $('#onizleme');
-  if (!el) return;
-  document.removeEventListener('keydown', onizlemeKac);
-  el.classList.remove('acik');
-  setTimeout(() => el.remove(), 240);
 }
 
 /* Asıl çizim. `pl` dışarıdan geliyor: bir seçeneğe dokunulduğunda kayıt
@@ -1460,6 +1361,22 @@ function onizlemeNotu(bic, tel, ekr) {
 function hexMi(x) { return /^#[0-9a-f]{6}$/i.test(String(x || '')); }
 
 /* Seçim değişince: kayıt beklemeden yeniden çiz. */
+/* Önizleme kırpılmasın: uygulama kutuya sığmıyorsa küçülterek sığdır. */
+function onizlemeSigdir() {
+  $$('.onz-goz').forEach(goz => {
+    const app = goz.firstElementChild;
+    if (!app || !app.classList.contains('o-app')) return;
+    app.style.transform = '';
+    const k = goz.getBoundingClientRect();
+    const a = app.getBoundingClientRect();
+    if (!a.height || !k.height) return;
+    /* Bir yere kadar küçültürüz; altına inince okunmaz olur, o zaman
+       sayfanın azıcık kaymasına izin veririz. */
+    const oran = Math.max(.5, Math.min(1, (k.height - 18) / a.height, (k.width - 18) / a.width));
+    if (oran < .999) app.style.transform = `scale(${oran.toFixed(3)})`;
+  });
+}
+
 function onizlemeTazele(p, pl) {
   /* Sayfadaki küçük ve panelde açık büyük önizleme aynı şeyi gösterir;
      ikisi de aynı anda tazelenir. */
@@ -1468,6 +1385,7 @@ function onizlemeTazele(p, pl) {
   const ic = onizlemeIc(p, pl);
   kutular.forEach(k => { k.innerHTML = ic; });
   logolariGoster();
+  onizlemeSigdir();
 }
 
 /* ---------- Arayüz biçimi: görselli seçim rafları ----------
@@ -2297,6 +2215,7 @@ function render() {
   $$('[data-route]').forEach(el => el.classList.toggle('active', el.dataset.route === key));
 
   logolariGoster();
+  onizlemeSigdir();
 
   const logout = $('#btn-logout');
   if (logout) logout.addEventListener('click', signOut);
@@ -4642,9 +4561,10 @@ async function eylemCalistir(el) {
 
     try {
       await DB.paletKaydet(pr.id, Object.assign({}, pr.palet || {}, { [al.anahtar]: yeni }));
-      /* Tek seçimli adımda karar verildi demektir: kendiliğinden ilerle.
-         Çokluda kalıyoruz, kullanıcı birkaçını işaretleyecek. */
-      if (!al.coklu) adimIlerle(pr, 320);
+      /* İlerlemiyoruz: kullanıcı seçtiğini önizlemede görüp karşılaştırsın.
+         Geçmeye hazır olduğunu İleri düğmesiyle söyler. */
+      const ileri = $('.ag.ileri');
+      if (ileri) ileri.classList.add('hazir');
     } catch (err) {
       isaretle(eski);
       onizlemeTazele(pr, pr.palet);
@@ -4690,8 +4610,22 @@ async function eylemCalistir(el) {
     return;
   }
 
+  if (e === 'tasarim-tum-sifirla') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const tamam = await onaySor({
+      baslik: 'Tüm tasarımı sıfırla?',
+      mesaj: `${TUM_TASARIM.length} tasarım kararı varsayılan hâline döner. `
+           + 'Palet, logo ve tema dokunulmadan kalır.',
+      buton: 'Sıfırla',
+    });
+    if (!tamam) return;
+    const yeni = Object.assign({}, pr.palet || {});
+    TUM_TASARIM.forEach(a => { delete yeni[a.anahtar]; });
+    return isYap(() => DB.paletKaydet(pr.id, yeni), 'Tasarım kararları sıfırlandı.');
+  }
+
   if (e === 'kararlar')    return kararlarAc(el.dataset.proje);
-  if (e === 'onizleme-ac') return onizlemeAc(el.dataset.proje);
 
   if (e === 'yetkili-kopyala') {
     const pr = DB.proje(el.dataset.proje);

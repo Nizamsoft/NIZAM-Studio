@@ -1,5 +1,21 @@
 # Değişiklik Günlüğü
 
+## v0.26.1 — 22 Ağustos 2026
+**Karşılaştırma, sıfırlama, kırpılmayan önizleme**
+
+Seçim artık kendiliğinden ilerletmiyor. Seçiyorsun, önizleme değişiyor,
+karşılaştırıyorsun; hazır olunca İleri. Karar verdiğin adımda İleri
+metalik parlıyor.
+
+İlk adıma **"Tüm tasarımı sıfırla"** geldi: 27 kararı birden varsayılana
+döndürür. Palet, logo ve temaya dokunmaz. Onay sorar.
+
+Önizlemedeki büyütme düğmesi kalktı — ekran zaten adıma göre değiştiği
+için gereksizdi. Önizleme **kırpılmıyor**: sığmıyorsa uygulama küçülerek
+tamamı görünüyor.
+
+Kararlar paneli ekran ekran gruplandı.
+
 ## v0.26.0 — 22 Ağustos 2026
 **Bir ekranda tek karar, kaydırma yok**
 
