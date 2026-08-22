@@ -7,9 +7,9 @@ const APP = {
   name:     'NIZAM | Studio',
   short:    'NIZAM Studio',
   owner:    'Nizam Soft',
-  version: 'v0.31.0',
+  version: 'v0.32.0',
   build:    '2026-08-20',
-  stage: 'Adım 4 · Hep açık tema',
+  stage: 'Adım 4 · Teknik standart',
 };
 
 /* Supabase bağlantısı.
@@ -694,6 +694,57 @@ const TASARIM_ADIM = [
     obekNot: 'Verilen bütün kararlar tek listede.',
     aciklama: 'Verilen bütün kararlar. Prompta bu yazılacak.' },
 ]);
+
+/* ---- Nizam teknik standardı ----
+   Her projede aynı. Sorulmaz; prompta ve NIZAM.md'ye olduğu gibi yazılır.
+   Amaç: AI her projede yeniden karar vermesin, hep aynı yerden çıksın. */
+const TEKNIK_STANDART = [
+  ['Dil ve çatı', 'Vanilla JS · HTML · CSS',
+   'Hazır çatı (React, Vue) yok. Bağımlılık az, ömrü uzun.'],
+  ['Derleme', 'Yok',
+   'Dosyalar doğrudan çalışır. Build adımı, paket yöneticisi, node_modules yok.'],
+  ['Dosya düzeni', 'Ekran başına ayrı dosya',
+   'Tek dosyada 1500 satırı geçme. Büyük dosyada bir yeri düzeltirken başka yer bozulur.'],
+  ['Barındırma', 'GitHub Pages',
+   'Depoya gönderilen kod kendiliğinden yayınlanır.'],
+  ['Depo', 'GitHub · main dalı', 'Commit başına [NS-x] etiketi.'],
+  ['PWA', 'Var',
+   'Ana ekrana eklenebilir. Servis işçisi kabuğu önbelleğe alır, sürüm değişince günceller.'],
+  ['Veri', 'Supabase',
+   'Postgres + Auth + Realtime + Storage. Satır güvenliği (RLS) her tabloda açık.'],
+  ['Gerçek zamanlı', 'Her zaman açık',
+   'Başkası bir kaydı değiştirince ekran kendiliğinden tazelenir.'],
+  ['Çevrimdışı', 'Her zaman çalışır',
+   'Okuma yerelden: son görülen veri tarayıcıda durur. Yazma kuyruğa girer, '
+   + 'internet gelince gönderilir. Çakışırsa son yazan kazanır ve kullanıcıya söylenir.'],
+  ['Değişiklik kaydı', 'Her zaman tutulur',
+   'Her yazma işleminde kim, ne, ne zaman kaydedilir. Ayarlarda listelenir.'],
+  ['Dosya saklama', 'Supabase Storage',
+   'Belge ve logolar özel klasörde, imzalı adresle sunulur. Profil fotoğrafı genel olabilir.'],
+  ['Giriş', 'E-posta + şifre',
+   'Kayıt ekranı yok; hesabı yönetici açar.'],
+  ['Paketler', 'Yalnız Supabase istemcisi',
+   'Excel gerekiyorsa xlsx. Başka paket eklemeden önce sor.'],
+  ['Para birimi', '₺ TRY', 'Binlik nokta, ondalık virgül: 12.400,00'],
+  ['Tarih ve saat', '22.05.2025 · 14:30', 'Gün.Ay.Yıl ve 24 saatlik saat.'],
+  ['Sürümleme', 'YIL.SAYAÇ', 'Örnek 2026.14. Ayarlar ekranında görünür.'],
+  ['Arayüz dili', 'Türkçe', 'Tek dil. Metinler koda yazılır, sözlük dosyası yok.'],
+  ['Erişilebilirlik', '44px · 4.5:1',
+   'Dokunma hedefi en az 44×44px, metin kontrastı en az 4.5:1.'],
+];
+
+/* Projeye özel teknik alanlar — sihirbazda ve Firma durağında sorulur.
+   Projenin `palet` alanında saklanır; ayrı sütun gerekmez. */
+const TEKNIK_ALAN = [
+  { anahtar: 'roller', ad: 'Roller', ornek: 'Yönetici, Personel',
+    alt: 'Kaç rol var ve kim neyi görebilir? Veritabanı güvenlik kuralları buna göre yazılır.' },
+  { anahtar: 'terim', ad: 'Terminoloji', ornek: 'cari → müşteri, hakediş → ödeme',
+    alt: 'Müşterinin kendi sözcükleri. Yanlış sözcük kullanıcıyı yabancılaştırır.' },
+  { anahtar: 'kayitNo', ad: 'Kayıt numarası', ornek: 'F-20418 · yıl başında sıfırlanır',
+    alt: 'Kayıtlara numara verilecek mi, hangi biçimde? Sonradan değiştirilemez.' },
+  { anahtar: 'alanAdi', ad: 'Alan adı', ornek: 'kubban.nizamsoft.com',
+    alt: 'Müşteri hangi adresten girecek? Yayın ayarı ve PWA manifesti buna bağlı.' },
+];
 
 /* ---- Kurulum aşamaları ----
    AI'ın hepsini bir seferde yazması işi çöpe atıyor: yanlış giden bir şey

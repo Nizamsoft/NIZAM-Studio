@@ -28,6 +28,31 @@ const PROMPT = {
     return s.join('\n');
   },
 
+  /* Teknik standart — her projede aynı. Görev promptuna ve NIZAM.md'ye girer. */
+  teknikBlogu(proje) {
+    const s = ['## Teknik Standart'];
+    s.push('Bunlar Nizam Soft standardı. Tartışma, değiştirme, alternatif önerme —');
+    s.push('gerekiyorsa önce sor.');
+    s.push('');
+    TEKNIK_STANDART.forEach(([ad, deger, not]) => {
+      s.push(`- **${ad}: ${deger}**`);
+      if (not) s.push(`  - ${not}`);
+    });
+
+    const pl = (proje && proje.palet) || {};
+    const ozel = TEKNIK_ALAN.filter(a => pl[a.anahtar]);
+    if (ozel.length) {
+      s.push('', '### Bu projeye özel');
+      ozel.forEach(a => s.push(`- **${a.ad}:** ${pl[a.anahtar]}`));
+    }
+    const eksik = TEKNIK_ALAN.filter(a => !pl[a.anahtar]);
+    if (eksik.length) {
+      s.push('', `> Şunlar henüz belirlenmedi: ${eksik.map(a => a.ad).join(', ')}.`);
+      s.push('> Bunlara ihtiyaç duyduğunda uydurma — sor.');
+    }
+    return s.join('\n');
+  },
+
   /* Kurulum aşamaları — hem görev promptunda hem NIZAM.md'de yazar. */
   kurulumBlogu() {
     const s = ['### Nasıl kodlanacak — beş aşama'];
@@ -219,6 +244,7 @@ const PROMPT = {
     if (proje && proje.repo) s.push(hiza('Depo', proje.repo));
     s.push('');
 
+    s.push(PROMPT.teknikBlogu(proje)); s.push('');
     const paletMetni = PROMPT.paletBlogu(proje);
     if (paletMetni) { s.push(paletMetni); s.push(''); }
     s.push(PROMPT.tasarimBlogu(proje)); s.push('');
@@ -286,6 +312,7 @@ const PROMPT = {
     if (proje.repo) s.push(hiza('Depo', proje.repo));
     s.push('');
 
+    s.push(PROMPT.teknikBlogu(proje)); s.push('');
     const paletMetni = PROMPT.paletBlogu(proje);
     if (paletMetni) { s.push(paletMetni); s.push(''); }
     s.push(PROMPT.tasarimBlogu(proje)); s.push('');

@@ -666,9 +666,63 @@ function firmaSayfasi(p, d) {
         <div class="sr" data-eylem="kimlik" data-proje="${p.id}" role="button" tabindex="0">
           ${svg(ICON.kopya, 15)} Kimlik dosyası <b>NIZAM.md</b></div>
       </div>`
+    + bolumBas('Teknik') + teknikBolumu(p)
     + (AUTH.yonetici ? `
       <button class="sayfa-dug" data-eylem="firma-duzenle" data-proje="${p.id}" type="button">
-        ${svg(ICON.kalem, 15)} Bilgileri düzenle</button>` : '');
+        ${svg(ICON.kalem, 15)} Bilgileri düzenle</button>
+      <button class="sayfa-dug ikincil" data-eylem="teknik-duzenle" data-proje="${p.id}" type="button">
+        ${svg(ICON.ayar, 15)} Teknik bilgileri düzenle</button>` : '');
+}
+
+/* Projeye özel teknik alanlar. Standart olanlar sorulmaz — onlar prompta
+   doğrudan yazılıyor, burada yalnız projeye göre değişenler duruyor. */
+function teknikBolumu(p) {
+  const pl = p.palet || {};
+  return `<div class="satirlar">${TEKNIK_ALAN.map(a => `
+    <div class="sr">${esc(a.ad)}
+      ${pl[a.anahtar] ? `<b>${esc(pl[a.anahtar])}</b>`
+                      : '<b class="eksik">belirlenmedi</b>'}</div>`).join('')}
+    </div>
+    <div class="adim-not">${svg(ICON.info, 13)}
+      <span>Yığın, barındırma, veri ve biçim kuralları Nizam standardı —
+      sorulmaz, prompta olduğu gibi yazılır.</span></div>`;
+}
+
+/* Dört alanı tek pencerede düzenle. */
+function teknikDuzenle(projeId) {
+  modalHepsiniKapat();
+  const p = DB.proje(projeId);
+  if (!p) return;
+  const pl = p.palet || {};
+
+  modalAc(`
+    ${modalBaslik(ICON.ayar, 'Teknik bilgiler', 'Bu projeye özel olanlar.')}
+    ${TEKNIK_ALAN.map(a => `
+      <label class="field">
+        <span>${esc(a.ad)} <i class="ipucu">${esc(a.alt)}</i></span>
+        <input type="text" data-tk="${a.anahtar}" value="${esc(pl[a.anahtar] || '')}"
+               placeholder="${esc(a.ornek)}" maxlength="200" autocomplete="off">
+      </label>`).join('')}
+    <div class="modal-alt">
+      <button class="btn btn-ghost" data-tk-i="iptal" type="button">Vazgeç</button>
+      <button class="btn btn-primary" data-tk-i="kaydet" type="button"><span>Kaydet</span></button>
+    </div>`, kutu => {
+    $('[data-tk-i="iptal"]', kutu).addEventListener('click', modalKapat);
+    $('[data-tk-i="kaydet"]', kutu).addEventListener('click', async () => {
+      const yeni = Object.assign({}, pl);
+      $$('[data-tk]', kutu).forEach(el => {
+        const v = el.value.trim();
+        if (v) yeni[el.dataset.tk] = v; else delete yeni[el.dataset.tk];
+      });
+      const yazi = $('[data-tk-i="kaydet"] span', kutu);
+      yazi.textContent = 'Yazılıyor…';
+      try {
+        await DB.paletKaydet(p.id, yeni);
+        modalKapat(); render(); toast('Teknik bilgiler kaydedildi.');
+      } catch (h) { yazi.textContent = 'Kaydet'; toast(h.message, 'hata'); }
+    });
+    setTimeout(() => { const i = $('[data-tk]', kutu); if (i) i.focus(); }, 40);
+  });
 }
 
 function yetkiliKarti(p) {
@@ -5068,7 +5122,8 @@ async function eylemCalistir(el) {
     return;
   }
 
-  if (e === 'firma-duzenle') return firmaDuzenle(el.dataset.proje);
+  if (e === 'firma-duzenle')  return firmaDuzenle(el.dataset.proje);
+  if (e === 'teknik-duzenle') return teknikDuzenle(el.dataset.proje);
 
   if (e === 'logo-yukle')    return logoSec(el.dataset.proje);
   if (e === 'palet-prompt')  return paletPromptu(el.dataset.proje);

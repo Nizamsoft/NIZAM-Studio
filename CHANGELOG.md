@@ -1,5 +1,27 @@
 # Değişiklik Günlüğü
 
+## v0.32.0 — 22 Ağustos 2026
+**Teknik standart yazıldı**
+
+AI'ın her projede yeniden karar verdiği teknik konular artık sabit ve
+yazılı. Prompta ve NIZAM.md'ye olduğu gibi giriyor: "Tartışma, değiştirme,
+alternatif önerme — gerekiyorsa önce sor."
+
+**Nizam standardı (18 madde):** Vanilla JS · derlemesiz · ekran başına ayrı
+dosya (tek dosyada 1500 satır sınırı) · GitHub Pages · PWA · Supabase ·
+**gerçek zamanlı her zaman açık** · **çevrimdışı her zaman çalışır** ·
+**değişiklik kaydı her zaman tutulur** · özel dosya saklama · e-posta+şifre
+girişi · yalnız Supabase istemcisi · ₺ TRY (12.400,00) · 22.05.2025 · 14:30 ·
+YIL.SAYAÇ sürüm · Türkçe · 44px ve 4.5:1.
+
+Çevrimdışı ve gerçek zamanlı birlikte en zor iş. Kapsam açıkça yazıldı:
+okuma yerelden, yazma kuyrukta, çakışırsa son yazan kazanır ve kullanıcıya
+söylenir. Belirsiz bırakılırsa veri sessizce kaybolur.
+
+**Projeye özel dört alan** Firma bilgileri durağına eklendi: Roller ·
+Terminoloji · Kayıt numarası · Alan adı. Belirlenmemişse prompt "uydurma,
+sor" diyor. Veritabanı değişikliği yok — projenin mevcut alanında saklanıyor.
+
 ## v0.31.0 — 22 Ağustos 2026
 **Müşteri uygulamaları hep açık tema**
 
