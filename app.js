@@ -814,39 +814,26 @@ function tasarimSayfasi(p, d) {
 
   let govde, gez;
 
-  if (adim.tur === 'tema') {
+  if (adim.tur === 'palet') {
     govde = `
-      <div class="baslangic-not">
-        <b>Açık tema</b>
-        <i>Bütün projelerimiz açık tema. Palet buna göre üretilecek —
-        arka plan yumuşak açık, yüzey beyaza yakın, metin koyu.</i>
-      </div>`
-      + (yon ? `
-        <button class="tumSifir" type="button" data-eylem="tasarim-tum-sifirla" data-proje="${p.id}">
-          ${svg(ICON.geriAl, 15)} Tüm tasarımı sıfırla</button>` : '');
-
-  } else if (adim.tur === 'logo') {
-    govde = `
-      <div class="logo-bolum">
-        <span class="mk-logo buyuk ${adres ? 'yukleniyor' : ''}"
+      <div class="logo-bolum ince">
+        <span class="mk-logo ${adres ? 'yukleniyor' : ''}"
               ${adres ? `data-logo="${esc(adres)}"` : ''}
               data-eylem="${yon ? 'logo-yukle' : ''}" data-proje="${p.id}"
               ${yon ? 'role="button" tabindex="0"' : ''}>
-          <span class="logo-harf">${svg(ICON.folder, 20)}</span>
+          <span class="logo-harf">${svg(ICON.folder, 16)}</span>
           ${adres ? '<span class="donen"></span>' : ''}
         </span>
         <span class="mk-yazi">
           <b>${adres ? 'Firma logosu' : 'Logo yok'}</b>
-          <i>${yon ? (adres ? 'Değiştirmek için dokun' : 'Yüklemek için dokun · en fazla 4 MB')
-                   : (adres ? 'Yüklenmiş' : 'Yönetici yükleyecek')}</i>
+          <i>${adres ? 'Paletin kaynağı. Değiştirmek için dokun.'
+                     : 'Prompt logosuz anlamsız — yüklemek için dokun.'}</i>
         </span>
-      </div>`;
-
-  } else if (adim.tur === 'palet') {
-    govde = (pl ? paletSeridi(pl) : `
+      </div>`
+      + (pl ? paletSeridi(pl) : `
       <div class="bos-kutu">${svg(ICON.katman, 18)}
         <span>Promptu kopyala, Claude'a logoyla birlikte ver; dönen cevabı yapıştır.
-        ${TUM_TASARIM.length} tasarım kararı birden dolar.</span></div>`)
+        ${TUM_TASARIM.length} tasarım kararı birden dolar. Tema açık, sorulmaz.</span></div>`)
       + (yon ? `
         <div class="palet-dug">
           <button class="sayfa-dug" data-eylem="palet-prompt" data-proje="${p.id}" type="button">
@@ -950,9 +937,13 @@ function adimRafi(p, a) {
 /* Palet şeridi — iki yerde kullanılıyor. */
 function paletSeridi(pl) {
   if (!pl || !PALET_ALAN.some(a => a.renk && pl[a.anahtar])) return '';
+  /* Gelmemiş rengi gri kutuyla göstermek "bozuk" gibi duruyordu; boş kutu
+     çizip adını yazmak daha dürüst. */
   return `<div class="palet-tam">${PALET_ALAN.filter(a => a.renk).map(a => {
-      const renk = pl[a.anahtar] || '#333';
-      return `<span style="background:${esc(renk)}"><em>${esc(renk.replace('#', ''))}</em></span>`;
+      const renk = pl[a.anahtar];
+      return renk
+        ? `<span style="background:${esc(renk)}" title="${esc(a.ad)}"><em>${esc(renk.replace('#', ''))}</em></span>`
+        : `<span class="bos" title="${esc(a.ad)} gelmedi"><em>—</em></span>`;
     }).join('')}</div>
     <div class="tip">
       <div><b>Başlık</b><u style="font-family:var(--yazi-baslik);font-weight:700">${esc(pl.baslik || '—')}</u></div>
@@ -974,7 +965,9 @@ function tasarimOzeti(p) {
       <button class="sayfa-dug ikincil" data-eylem="palet-prompt" data-proje="${p.id}" type="button">
         ${svg(ICON.kopya, 15)} Prompt kopyala</button>
       <button class="sayfa-dug ikincil" data-eylem="palet-duzenle" data-proje="${p.id}" type="button">
-        ${svg(ICON.kalem, 15)} Paleti elle düzenle</button>` : '');
+        ${svg(ICON.kalem, 15)} Paleti elle düzenle</button>
+      <button class="tumSifir" type="button" data-eylem="tasarim-tum-sifirla" data-proje="${p.id}">
+        ${svg(ICON.geriAl, 15)} Tüm tasarımı sıfırla</button>` : '');
 }
 
 /* Adımın kendi ekranını gösteren önizleme. Seçim yapınca anında değişir. */
@@ -1386,18 +1379,6 @@ function onizlemeIc(p, pl) {
 
   /* Genişlik adımında uygulama tam genişlik çizilir; küçültülürse
      "tam genişlik" ile "ortada sınırlı" arasındaki fark kaybolur. */
-  if (ONIZLEME_GENIS) return onizlemeGenisIc();
-  function onizlemeGenisIc() {
-    return `<div class="${sinif}" style="${esc(stil)}">
-      ${ustCubuk}
-      <div class="o-alt2"><div class="o-gov">
-        <div class="o-ikili">${v.stat.map(x =>
-          kart(`<i>${esc(x[0])}</i><b>${esc(x[1])}</b>`, 'o-stat')).join('')}</div>
-        ${tabloKutusu(2)}
-      </div></div>
-    </div>${onizlemeNotu(bic, tel, ekr)}`;
-  }
-
   const panelGovde = vurguKarti + ayarIpucu + {
     'Sayaç + büyük grafik': statlar + kart('<span class="o-grafik"></span>', 'o-buyuk'),
     '2×2 ızgara': `<div class="o-izgara ${sy === "3'lü ızgara" ? 'uc' : ''}">${
@@ -1647,6 +1628,20 @@ function onizlemeIc(p, pl) {
     `--o-baslik:${pl.baslik ? `'${pl.baslik.replace(/'/g, '')}', ` : ''}var(--yazi-baslik)`,
     `--o-govde:${pl.govde ? `'${pl.govde.replace(/'/g, '')}', ` : ''}var(--yazi-govde)`,
   ].join(';');
+
+  /* Palet adımında renge bakılır, yerleşime değil: kısa gövde çiz ki
+     önizleme küçültülmek zorunda kalmasın. Genişlik adımında da öyle. */
+  if (ONIZLEME_GENIS || odak === 'palet') return onizlemeKisaIc();
+  function onizlemeKisaIc() {
+    return `<div class="${sinif}" style="${esc(stil)}">
+      ${ustCubuk}
+      <div class="o-alt2"><div class="o-gov">
+        <div class="o-ikili">${v.stat.map(x =>
+          kart(`<i>${esc(x[0])}</i><b>${esc(x[1])}</b>`, 'o-stat')).join('')}</div>
+        ${tabloKutusu(2)}
+      </div></div>
+    </div>${onizlemeNotu(bic, tel, ekr)}`;
+  }
 
   const ciplak = ['acilis', 'giris'].includes(ekr);
   return `<div class="${sinif}" style="${esc(stil)}">
@@ -2115,7 +2110,8 @@ function projeDuraklari(p) {
     },
     {
       ad: 'Yapıyı kurma',
-      bitti: gercek > 0,
+      /* Modül tek başına yetmez: sayfası olmayan modül boş kutudur. */
+      bitti: gercek > 0 && s.sayfa > 0,
       ozet: gercek
         ? `${gercek} modül · ${s.sayfa} sayfa`
         : 'Henüz modül yok. Modül kurduğunda sayfaları da birlikte gelir.',
@@ -3029,6 +3025,7 @@ const SIHIRBAZ = {
   veri: 'sifirdan',
   dil: 'tr',
   para: 'TRY',
+  roller: '',
   baslangic: '',
   teslim: '',
   moduller: [],
@@ -3231,16 +3228,13 @@ function sihirbazAyar() {
         data-sb="${tur}" data-deger="${x.kod}" type="button">${esc(x.ad)}</button>`).join('')}
     </div>`;
 
-  return shBaslik(ICON.ayar, 'Dil, para ve takvim',
-    'Tarih biçimi, kuruş ayracı ve gecikme uyarısı buradan.') + `
-    <div class="field">
-      <span>Dil</span>
-      ${serit('dil', DIL_SECENEK, SIHIRBAZ.dil)}
-    </div>
-    <div class="field">
-      <span>Para birimi</span>
-      ${serit('para', PARA_SECENEK, SIHIRBAZ.para)}
-    </div>
+  return shBaslik(ICON.ayar, 'Roller ve takvim',
+    'Dil Türkçe, para ₺ TRY — standart. Burada roller ve tarihler var.') + `
+    <label class="field">
+      <span>Roller <em class="ipucu">virgülle ayır</em></span>
+      <input type="text" id="sb-roller" value="${esc(SIHIRBAZ.roller || '')}"
+             placeholder="Yönetici, Personel" maxlength="200" autocomplete="off">
+    </label>
     <label class="field">
       <span>Başlangıç</span>
       <input type="date" id="sb-baslangic" value="${esc(SIHIRBAZ.baslangic)}">
@@ -3253,7 +3247,8 @@ function sihirbazAyar() {
     <div class="note note-kucuk">
       ${svg(ICON.info, 15)}
       <span>Teslim tarihi girersen Panel'de <b>geciken projeler</b> ayrı gösterilir.
-      Boş bırakırsan yalnızca yüzde görünür.</span>
+      Boş bırakırsan yalnızca yüzde görünür. Kim neyi görebilir kararı
+      veritabanı güvenlik kurallarını belirler.</span>
     </div>`;
 }
 
@@ -3336,6 +3331,7 @@ function sihirbazBagla(kutu) {
     if (al('sb-yetkili')   !== null) SIHIRBAZ.yetkili   = al('sb-yetkili');
     if (al('sb-telefon')   !== null) SIHIRBAZ.telefon   = al('sb-telefon');
     if (al('sb-eposta')    !== null) SIHIRBAZ.eposta    = al('sb-eposta');
+    if (al('sb-roller')    !== null) SIHIRBAZ.roller    = al('sb-roller');
     if (al('sb-baslangic') !== null) SIHIRBAZ.baslangic = al('sb-baslangic');
     if (al('sb-teslim')    !== null) SIHIRBAZ.teslim    = al('sb-teslim');
   };
@@ -3455,6 +3451,12 @@ async function sihirbazKaydet() {
         teslim:    SIHIRBAZ.teslim || null,
       },
     });
+
+    /* Roller tasarım kararlarıyla aynı yerde saklanıyor; ayrı sütun gerekmez. */
+    if (SIHIRBAZ.roller.trim()) {
+      try { await DB.paletKaydet(id, { roller: SIHIRBAZ.roller.trim() }); }
+      catch (h) { /* kritik değil, Firma durağından sonra girilebilir */ }
+    }
 
     /* Logo ancak proje kurulduktan sonra yüklenebilir: dosya adı projenin
        kimliği. Yükleme patlarsa proje yine duruyor, logo sonradan eklenir. */

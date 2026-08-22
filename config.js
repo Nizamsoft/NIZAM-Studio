@@ -7,7 +7,7 @@ const APP = {
   name:     'NIZAM | Studio',
   short:    'NIZAM Studio',
   owner:    'Nizam Soft',
-  version: 'v0.32.0',
+  version: 'v0.32.1',
   build:    '2026-08-20',
   stage: 'Adım 4 · Teknik standart',
 };
@@ -675,12 +675,8 @@ const AKIS_OBEK = [
 ];
 
 const TASARIM_ADIM = [
-  { anahtar: 'tema',  ad: 'Başlangıç', tur: 'tema', ekran: 'panel', obek: 'Başlangıç',
-    obekNot: 'Rengin ve yazının kaynağı. Kodda ilk yazılan satırlar.',
-    aciklama: 'Tema sabit: açık. Baştan başlamak istersen buradan sıfırla.' },
-  { anahtar: 'logo',  ad: 'Logo',  tur: 'logo',  ekran: 'panel', obek: 'Başlangıç',
-    obekNot: 'Rengin ve yazının kaynağı. Kodda ilk yazılan satırlar.',
-    aciklama: 'Paletin kaynağı. Bu olmadan prompt anlamsız.' },
+  /* Logo ve firma bilgileri sihirbazda alındı; burada tekrar sorulmaz.
+     Akış doğrudan paletle başlar — tasarımın gerçek ilk kararı odur. */
   { anahtar: 'palet', ad: 'Palet', tur: 'palet', ekran: 'panel', obek: 'Başlangıç',
     obekNot: 'Rengin ve yazının kaynağı. Kodda ilk yazılan satırlar.',
     aciklama: 'Promptu Claude\'a logoyla ver, dönen cevabı yapıştır.' },

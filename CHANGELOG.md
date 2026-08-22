@@ -1,5 +1,21 @@
 # Değişiklik Günlüğü
 
+## v0.32.1 — 22 Ağustos 2026
+**Dört düzeltme**
+
+- **Sihirbazdan dil ve para seçimi kalktı** — ikisi de standart (Türkçe, ₺ TRY).
+  Yerine **Roller** alanı geldi; adım artık "Roller ve takvim".
+- **"Yapıyı kurma" sayfası olmayan modülle tamamlanmış sayılmıyor.**
+  1 modül · 0 sayfa artık "şimdi burada" diyor.
+- **Tasarım akışı Palet'ten başlıyor.** Tema adımı (sabit açık) ve Logo adımı
+  kalktı — logo zaten sihirbazda alınıyor. Logo satırı Palet adımının içinde,
+  değiştirmek için dokunuluyor. 50 adım.
+- **Palet şeridinde gelmemiş renkler** gri kutu yerine kesik desenli boş kutu.
+  Dört yeni renk (vurgu koyu, başarı, uyarı, tehlike) eski projelerde yok.
+
+Ayrıca "Tüm tasarımı sıfırla" Özet adımına taşındı; ilk adımda önizlemeye
+yer bırakmıyordu.
+
 ## v0.32.0 — 22 Ağustos 2026
 **Teknik standart yazıldı**
 

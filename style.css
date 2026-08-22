@@ -1664,6 +1664,10 @@ html { background: var(--bg); }
   display: flex; height: 64px; border-radius: 15px; overflow: hidden; margin-bottom: 14px;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .14), 0 8px 18px -10px #000;
 }
+.palet-tam span.bos {
+  background: repeating-linear-gradient(45deg, var(--yuva) 0 5px, var(--surface) 5px 10px);
+}
+.palet-tam span.bos em { color: var(--ink-dim); }
 .palet-tam span { flex: 1; position: relative; }
 .palet-tam em {
   position: absolute; left: 0; right: 0; bottom: 5px; text-align: center; font-style: normal;
@@ -2465,6 +2469,9 @@ a.durak:active { transform: scale(.99); transition: transform .1s var(--ease); }
 .onk-not svg { flex: 0 0 auto; color: var(--ink-faint); }
 
 /* Tema seçimi — kilitliyken neden kilitli olduğu yazar. */
+.logo-bolum.ince { padding: 11px 13px; gap: 11px; margin-bottom: 10px; }
+.logo-bolum.ince .mk-logo { width: 40px; height: 40px; border-radius: 12px; }
+
 .baslangic-not { padding: 13px 15px; border-radius: 13px;
                  border: 1px solid var(--line-2); background: var(--yuva); }
 .baslangic-not b { display: block; font-family: var(--yazi-baslik); font-size: 13px;
