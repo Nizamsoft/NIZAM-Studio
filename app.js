@@ -911,7 +911,8 @@ function tasarimSayfasi(p, d) {
       + (PALET_ALAN.some(a => a.renk && pl && pl[a.anahtar]) ? paletSeridi(pl) : `
       <div class="bos-kutu">${svg(ICON.katman, 18)}
         <span>Promptu kopyala, Claude'a logoyla birlikte ver; dönen cevabı yapıştır.
-        ${TUM_TASARIM.length} tasarım kararı birden dolar. Tema açık, sorulmaz.</span></div>`)
+        Renkler, yazı tipleri ve marka karakteri dolar. Arayüz kararlarını
+        sonraki adımlarda sen veriyorsun.</span></div>`)
       + (yon ? `
         <div class="palet-dug">
           <button class="sayfa-dug" data-eylem="palet-prompt" data-proje="${p.id}" type="button">
@@ -1039,6 +1040,7 @@ function tasarimOzeti(p) {
     }).join('')}</div>`).join('')
     + (pl.ton ? `<div class="adim-not">${svg(ICON.info, 13)}
         <span>Karakter: ${esc(pl.ton)}</span></div>` : '')
+    + celiskiKutusu(p)
     + (AUTH.yonetici ? `
       <button class="sayfa-dug ikincil" data-eylem="palet-prompt" data-proje="${p.id}" type="button">
         ${svg(ICON.kopya, 15)} Prompt kopyala</button>
@@ -1046,6 +1048,46 @@ function tasarimOzeti(p) {
         ${svg(ICON.kalem, 15)} Paleti elle düzenle</button>
       <button class="tumSifir" type="button" data-eylem="tasarim-tum-sifirla" data-proje="${p.id}">
         ${svg(ICON.geriAl, 15)} Tüm tasarımı sıfırla</button>` : '');
+}
+
+/* Özet adımında çelişki denetimi. Kararları elle verdiğimiz için
+   birbirini iptal eden ikilileri burada yakalıyoruz. */
+function celiskiKutusu(p) {
+  const pl = p.palet || {};
+  const bulunan = [];
+
+  CELISKI.forEach(([[a1, d1], [a2, d2], neden]) => {
+    const b1 = TUM_TASARIM.find(x => x.anahtar === a1);
+    const b2 = TUM_TASARIM.find(x => x.anahtar === a2);
+    if (!b1 || !b2) return;
+    if (bicimSecim(pl, b1).includes(d1) && bicimSecim(pl, b2).includes(d2)) {
+      const i1 = TASARIM_ADIM.findIndex(x => x.anahtar === a1);
+      bulunan.push([`${b1.ad}: ${d1} + ${b2.ad}: ${d2}`, neden, i1]);
+    }
+  });
+
+  /* Kontrast da burada: palet elle düzenlenmiş olabilir. */
+  const kontrast = [];
+  if (pl.bg) {
+    [['metin', 'Metin'], ['metin2', 'Metin soft'], ['metin3', 'Metin silik']].forEach(([k, ad]) => {
+      if (!pl[k]) return;
+      const o = kontrastOrani(pl[k], pl.bg);
+      if (o && o < 4.5) kontrast.push(`${ad} arka planda ${o.toFixed(1)}:1 — okunmaz.`);
+    });
+  }
+
+  if (!bulunan.length && !kontrast.length) {
+    return `<div class="adim-not iyi">${svg(ICON.check, 13)}
+      <span>Çelişen karar yok, kontrastlar yeterli.</span></div>`;
+  }
+
+  return `<div class="celiski">
+    <b>${svg(ICON.uyari, 14)} ${bulunan.length + kontrast.length} uyarı</b>
+    ${bulunan.map(([bas, neden, i]) => `
+      <button type="button" data-eylem="tasarim-adim" data-proje="${p.id}" data-deger="${i}">
+        <span>${esc(bas)}</span><i>${esc(neden)}</i></button>`).join('')}
+    ${kontrast.map(x => `<span class="ck-satir">${esc(x)}</span>`).join('')}
+  </div>`;
 }
 
 /* Adımın kendi ekranını gösteren önizleme. Seçim yapınca anında değişir. */

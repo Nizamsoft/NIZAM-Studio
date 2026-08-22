@@ -1,5 +1,23 @@
 # Değişiklik Günlüğü
 
+## v0.34.0 — 22 Ağustos 2026
+**Prompt yalnız paleti üretiyor, kararlar bizde**
+
+Prompt 23.600 karakterden **2.900 karaktere** indi. Artık sadece renk, yazı
+tipi, simge seti ve marka karakteri istiyor. 48 arayüz kararını Claude
+değil, biz veriyoruz — akıştaki 49 adımda tek tek.
+
+Promptta kalanlar: logo kontrolü, sekiz aşamalı düşünme sırası (zeminler →
+metin tonları → vurgu → durum renkleri → yazı tipleri → kontrast denetimi),
+açık tema kuralı, 4.5:1 kontrast şartı, Google Fonts şartı, örneksiz şablon.
+
+Çıkanlar: 48 başlığın tarifi, yasak çiftler listesi, uzun bağlam.
+
+**Çelişki denetimi Özet adımına taşındı.** Kararlar artık elle verildiği
+için çelişkiyi orada yakalıyoruz. Uyarı satırına dokununca doğrudan o adıma
+gidiyor. Kontrast da orada denetleniyor — paleti elle düzenlemiş olabilirsin.
+Sorun yoksa "Çelişen karar yok, kontrastlar yeterli" yazıyor.
+
 ## v0.33.2 — 22 Ağustos 2026
 **İki düzeltme**
 
