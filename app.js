@@ -894,6 +894,7 @@ function tasarimSayfasi(p, d) {
 
   if (adim.tur === 'palet') {
     govde = `
+      <div class="palet-kaydir">
       <div class="logo-bolum ince">
         <span class="mk-logo ${adres ? 'yukleniyor' : ''}"
               ${adres ? `data-logo="${esc(adres)}"` : ''}
@@ -920,7 +921,8 @@ function tasarimSayfasi(p, d) {
           <button class="sayfa-dug ${pl ? 'ikincil' : ''}" data-eylem="palet-aktar"
                   data-proje="${p.id}" type="button">
             ${svg(ICON.ice, 15)} Cevabı yapıştır</button>
-        </div>` : '');
+        </div>` : '')
+      + '</div>';
 
   } else if (adim.tur === 'ozet') {
     govde = `<div class="ozet-kaydir">${paletSeridi(pl || {})}${tasarimOzeti(p)}</div>`;
@@ -931,7 +933,8 @@ function tasarimSayfasi(p, d) {
 
   gez = adimGezinme(p, no, adim);
 
-  return `<div class="akis ${adim.tur === 'ozet' ? 'ozet' : ''}">
+  return `<div class="akis ${adim.tur === 'ozet' ? 'ozet' : ''}${
+      adim.tur === 'palet' ? ' palet' : ''}">
     ${adimSeridi(p, no, adim)}
     ${adim.tur === 'ozet' ? '' : onizlemeSatiri(p, adim)}
     <div class="akis-alt">

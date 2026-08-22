@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## v0.34.2
+- Palet adımında Geri/İleri satırı ekranın dışına taşıyordu, basılamıyordu — gövde artık kendi içinde kayıyor, düğmeler sabit.
+- Başlangıç adımındaki logo ve palet kartları küçültüldü.
+
 ## v0.34.1 — 22 Ağustos 2026
 **Yapıştırma penceresinde 48 "okunamadı" satırı kalktı**
 
