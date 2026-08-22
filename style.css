@@ -2854,21 +2854,37 @@ ekran planı.
 .akis { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 
 .adim-serit { flex: 0 0 auto; }
-.as-ust { display: flex; align-items: center; gap: 8px; }
-.as-ust b { font-family: var(--yazi-baslik); font-size: 11px; letter-spacing: .8px;
-            text-transform: uppercase; color: var(--ink-faint); }
-.ab-kararlar {
-  margin-left: auto; flex: 0 0 auto; display: flex; align-items: center; gap: 5px;
-  padding: 6px 10px; border-radius: 10px; cursor: pointer;
-  border: 1px solid var(--line-2); background: var(--yuva);
-  font-family: inherit; font-size: 11px; color: var(--ink-soft);
+
+/* Öbek başlığı: numara rozeti + ad + tek satır gerekçe. */
+.as-obek { display: flex; align-items: center; gap: 10px; }
+.as-rozet {
+  flex: 0 0 auto; width: 26px; height: 26px; border-radius: 9px;
+  display: grid; place-items: center;
+  background: var(--surface-3); border: 1px solid var(--line-parlak);
+  font-family: var(--yazi-baslik); font-size: 12px; font-weight: 700; color: var(--ink);
 }
-.ab-kararlar svg { color: var(--ink-faint); }
-.as-noktalar { display: flex; gap: 2px; margin-top: 8px; }
-.as-noktalar button { flex: 1; padding: 7px 0 0; border: 0; background: transparent; cursor: pointer; }
+.as-ad { flex: 1; min-width: 0; }
+.as-ad b { display: block; font-family: var(--yazi-baslik); font-size: 13.5px;
+           color: var(--ink-strong); letter-spacing: -.1px; }
+.as-ad i { display: block; font-style: normal; font-size: 10.5px; color: var(--ink-dim);
+           margin-top: 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ab-kararlar {
+  flex: 0 0 auto; width: 30px; height: 30px; display: grid; place-items: center;
+  padding: 0; border-radius: 10px; cursor: pointer;
+  border: 1px solid var(--line-2); background: var(--yuva); color: var(--ink-soft);
+}
+
+/* Noktalar öbek öbek: aradaki boşluk bölüm sınırını gösterir. */
+.as-noktalar { display: flex; gap: 7px; margin-top: 10px; }
+.as-grup { display: flex; gap: 2px; min-width: 0; }
+.as-noktalar button { flex: 1; min-width: 3px; padding: 6px 0 0; border: 0;
+                      background: transparent; cursor: pointer; }
 .as-noktalar i { display: block; height: 3px; border-radius: 2px; background: var(--line-2); }
 .as-noktalar .gecti i { background: var(--metal-1); }
 .as-noktalar .on i { background: var(--metal-2); }
+.as-grup.suan i { box-shadow: 0 0 0 1px color-mix(in srgb, var(--metal-2) 26%, transparent); }
+.as-sayac { margin-top: 6px; text-align: right; font-family: "IBM Plex Mono", monospace;
+            font-size: 10px; color: var(--ink-faint); }
 
 /* Önizleme: kalan boşluğun tamamını alır, içindeki uygulama sığacak kadar küçülür. */
 .onz-satir {
@@ -3222,6 +3238,79 @@ ekran planı.
 .o-gecis.soluk  { background: var(--o-bg); opacity: .45; }
 .o-gecis.sag    { left: 40%; background: var(--o-bg); box-shadow: -12px 0 20px -10px #000; }
 .o-gecis.yukari { top: 40%; background: var(--o-bg); box-shadow: 0 -12px 20px -10px #000; }
+
+
+/* ---- Tel çizim: hareket kararları ---- */
+.tel-wf .w-liste.dok b.kucul  { transform: scale(.88); background: var(--surface-3); }
+.tel-wf .w-liste.dok b.dalga  { background: radial-gradient(circle at 30% 50%,
+                                  var(--metal-1) 0 22%, var(--surface-2) 22%); }
+.tel-wf .w-liste.dok b.koyu   { background: var(--yuva); }
+.tel-wf .w-liste.sv b.sec     { background: var(--metal-2); }
+.tel-wf .w-liste.sv.soluk b:not(.sec)   { opacity: .35; }
+.tel-wf .w-liste.sv.kucuk b:not(.sec)   { transform: scaleX(.82); }
+.tel-wf .w-liste.sv.kucuk b.sec         { transform: scaleY(1.15); }
+.tel-wf .w-liste.sv.bulanik b:not(.sec) { filter: blur(1.6px); opacity: .6; }
+.tel-wf .w-liste.kat b.bas    { flex: .55; background: var(--surface-3); }
+.tel-wf .w-liste.kat b.acik   { flex: 2.2; }
+.tel-wf .w-liste.kat.kay b.acik   { background: linear-gradient(180deg, var(--surface-3), var(--surface)); }
+.tel-wf .w-liste.kat.soluk b.acik { opacity: .55; }
+.tel-wf .w-liste.lg b         { opacity: 1; }
+.tel-wf .w-liste.lg b:nth-child(2) { opacity: .7; }
+.tel-wf .w-liste.lg b:nth-child(3) { opacity: .45; }
+.tel-wf .w-liste.lg b:nth-child(4) { opacity: .22; }
+.tel-wf .w-liste.lg.kay b:nth-child(2) { transform: translateY(2px); }
+.tel-wf .w-liste.lg.kay b:nth-child(3) { transform: translateY(4px); }
+.tel-wf .w-liste.lg.kay b:nth-child(4) { transform: translateY(6px); }
+.tel-wf .w-bekDug { width: 46px; height: 14px; border-radius: 4px;
+                    background: var(--metal-1); display: grid; place-items: center; }
+.tel-wf .w-bekDug.yazi { background: var(--metal-1);
+  background-image: repeating-linear-gradient(90deg, transparent 0 4px, rgba(0,0,0,.25) 4px 6px); }
+.tel-wf .w-donen { width: 8px; height: 8px; border-radius: 50%; box-sizing: border-box;
+                   border: 1.5px solid rgba(255, 255, 255, .35); border-top-color: #fff; }
+.tel-wf .w-sayi { display: flex; align-items: baseline; gap: 4px; }
+.tel-wf .w-sayi b { width: 18px; height: 10px; border-radius: 2px; background: var(--metal-2); }
+.tel-wf .w-sayi b.ok { width: 8px; height: 6px; background: transparent;
+                       border-left: 4px solid transparent; border-right: 4px solid transparent;
+                       border-bottom: 6px solid var(--metal-1); border-radius: 0; }
+.tel-wf .w-sayi.parla b { background: var(--p1, var(--metal-2)); box-shadow: 0 0 8px -1px var(--p1, var(--metal-2)); }
+.tel-wf .w-hm { display: flex; align-items: flex-end; gap: 3px; height: 18px; }
+.tel-wf .w-hm b { width: 5px; border-radius: 2px; background: var(--metal-1); }
+.tel-wf .w-hm b:nth-child(1) { height: 6px; }
+.tel-wf .w-hm b:nth-child(2) { height: 10px; }
+.tel-wf .w-hm b:nth-child(3) { height: 14px; }
+.tel-wf .w-hm b:nth-child(4) { height: 18px; background: var(--metal-2); }
+
+/* ---- Önizleme: hareket katmanı (durdurulmuş kare) ---- */
+.o-app.od-kucul .o-r:nth-child(3) { transform: scale(.975); }
+.o-app.od-dalga .o-r:nth-child(3) { background: radial-gradient(circle at 26% 50%,
+  color-mix(in srgb, var(--o-metin) 14%, transparent) 0 26%, transparent 26%); }
+.o-app.od-koyu  .o-r:nth-child(3) { background: color-mix(in srgb, var(--o-metin) 9%, transparent); }
+.o-app.sv-soluk   .o-r:not(:nth-child(3)):not(.o-h) { opacity: .42; }
+.o-app.sv-kucuk   .o-r:not(:nth-child(3)):not(.o-h) { transform: scale(.96); }
+.o-app.sv-kucuk   .o-r:nth-child(3) { transform: scale(1.02); }
+.o-app.sv-bulanik .o-r:not(:nth-child(3)):not(.o-h) { filter: blur(1.4px); opacity: .7; }
+.o-app[class*="sv-"] .o-r:nth-child(3) { background: var(--o-vurgu-soft); }
+.o-app.lg-sira .o-r:nth-child(3) { opacity: .6; }
+.o-app.lg-sira .o-r:nth-child(4) { opacity: .3; }
+.o-app.lg-sira .o-r:nth-child(5) { opacity: .12; }
+.o-app.lg-kay  .o-r:nth-child(3) { opacity: .6; transform: translateY(3px); }
+.o-app.lg-kay  .o-r:nth-child(4) { opacity: .3; transform: translateY(6px); }
+.o-app.lg-kay  .o-r:nth-child(5) { opacity: .12; transform: translateY(9px); }
+.o-app.sy-parla .o-stat b { color: var(--o-vurgu);
+                            text-shadow: 0 0 14px color-mix(in srgb, var(--o-vurgu) 55%, transparent); }
+.o-app.sy-say .o-stat b::after { content: "↑"; font-size: 11px; margin-left: 5px;
+                                 color: var(--o-vurgu); vertical-align: 2px; }
+
+.o-dg.bekliyor { opacity: .75; }
+.o-halka { width: 13px; height: 13px; border-radius: 50%; box-sizing: border-box;
+           border: 2px solid color-mix(in srgb, var(--o-uzeri) 35%, transparent);
+           border-top-color: var(--o-uzeri); }
+.o-ilerleme.belirsiz i { width: 38%; margin-left: 22%; }
+.o-tikBuyuk { width: 52px; height: 52px; border-radius: 50%; background: var(--o-vurgu);
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'><path d='M5 13l4 4L19 7'/></svg>");
+  background-size: 26px; background-repeat: no-repeat; background-position: center; }
+.o-sagKolon.dikey { flex: 0 0 96px; }
+.o-izgara.uc { grid-template-columns: repeat(3, 1fr); }
 
 @media (hover: hover) {
 a:hover { color: var(--red-ink); }

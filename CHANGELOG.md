@@ -1,5 +1,31 @@
 # Değişiklik Günlüğü
 
+## v0.29.0 — 22 Ağustos 2026
+**Hareket öbeği, kodlama sırası, belirgin gruplar**
+
+**Yeni öbek: Hareket** — uygulamayı canlandıran katman. Sayfa geçişi ·
+Dokunma tepkisi · Seçim vurgusu (seçili olmayan sönsün mü) · Açılma ve
+kapanma · Bekleme göstergesi (güncelle düğmesinde dönen halka) · Liste
+girişi · Sayı değişimi · Hareket miktarı.
+
+**Sıra kodlama sırasına çevrildi:** ne önce yazılıyorsa o önce soruluyor.
+Renk ve bileşen → Uygulama kabuğu → Giriş kapısı → Panel → Liste → Diğer
+ekranlar → Uç durumlar → **Hareket** → Sistem. Animasyon en sona geçti,
+çünkü kodda da en son cila katmanı.
+
+**Grup başlıkları belirginleşti:** numara rozeti, öbek adı ve tek satır
+gerekçesi. İlerleme noktaları öbek öbek ayrıldı — bölüm sınırı görünüyor.
+
+49 karar, 53 adım.
+
+### Düzeltilen önizleme hataları
+- "Sonuç ekranı" hiç çizilmiyordu; artık tam sayfa "Kaydedildi" ekranı.
+- Sayaç düzeni yalnız bazı dashboard seçeneklerinde işliyordu.
+- Genişlik adımında uygulama küçültülüyordu; tam genişlik görünmüyordu.
+- "Kaydedildi" bildirimi her ekranda duruyor, içeriği kapatıyordu. Artık
+  yalnız kendi adımında çıkıyor — silme şeridi ve kaydırılmış satır da öyle.
+- Simge adımında tek simge görünüyordu, üçü birden gösteriliyor.
+
 ## v0.28.0 — 22 Ağustos 2026
 **42 karar, 46 adım, on öbek**
 

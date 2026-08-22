@@ -7,9 +7,9 @@ const APP = {
   name:     'NIZAM | Studio',
   short:    'NIZAM Studio',
   owner:    'Nizam Soft',
-  version: 'v0.28.0',
+  version: 'v0.29.0',
   build:    '2026-08-20',
-  stage: 'Adım 4 · 42 karar, 46 adım',
+  stage: 'Adım 4 · Hareket ve kodlama sırası',
 };
 
 /* Supabase bağlantısı.
@@ -490,6 +490,10 @@ const ACILIS_ALAN = [
       { ad: 'Sade',        tarif: 'Logo üstte, alanlar altında, çerçeve ve gölge yok.', tel: ['girisSade'] },
     ],
   },
+];
+
+/* ---- Hareket: uygulamayı canlandıran katman. Kodda en son yazılır. ---- */
+const HAREKET_ALAN = [
   {
     anahtar: 'gecis', ad: 'Sayfa geçişi', alt: 'Sayfadan sayfaya nasıl geçilsin?',
     varsayilan: 'Soluk', ekran: 'liste',
@@ -498,6 +502,74 @@ const ACILIS_ALAN = [
       { ad: 'Soluk',         tarif: 'Yeni sayfa 160ms içinde belirir.', tel: ['gecisSoluk'] },
       { ad: 'Sağdan kayma',  tarif: 'İçeri girilen sayfa sağdan kayar, geri dönerken sola. Hiyerarşi hissi verir.', tel: ['gecisSag'] },
       { ad: 'Yukarı kayma',  tarif: 'Yeni sayfa alttan yukarı kayarak gelir.', tel: ['gecisYukari'] },
+    ],
+  },
+  {
+    anahtar: 'dokunma', ad: 'Dokunma tepkisi', alt: 'Bir şeye basınca ne olsun?',
+    varsayilan: 'Hafif küçülme', ekran: 'liste',
+    secim: [
+      { ad: 'Yok',           tarif: 'Basınca görsel tepki yok.', tel: ['liste'] },
+      { ad: 'Hafif küçülme', tarif: 'Basılan öğe %98,5 küçülür, bırakınca geri döner. En sessiz tepki.', tel: ['dokKucul'] },
+      { ad: 'Dalga',         tarif: 'Dokunulan noktadan yayılan halka (ripple).', tel: ['dokDalga'] },
+      { ad: 'Zemin koyulaşır', tarif: 'Basılı tutulduğu sürece öğenin zemini bir ton koyulaşır.', tel: ['dokKoyu'] },
+    ],
+  },
+  {
+    anahtar: 'secimVurgu', ad: 'Seçim vurgusu', alt: 'Bir şey seçilince ötekiler ne olsun?',
+    varsayilan: 'Yalnız seçili vurgulanır', ekran: 'liste',
+    secim: [
+      { ad: 'Yalnız seçili vurgulanır', tarif: 'Seçili öğe vurgulanır, ötekiler olduğu gibi kalır.', tel: ['svNormal'] },
+      { ad: 'Ötekiler soluklaşır',      tarif: 'Seçili olmayanlar %55 saydamlığa iner; odak seçilene toplanır.', tel: ['svSoluk'] },
+      { ad: 'Ötekiler küçülür',         tarif: 'Seçili öğe büyür, ötekiler hafifçe küçülür.', tel: ['svKucuk'] },
+      { ad: 'Ötekiler bulanıklaşır',    tarif: 'Seçili olmayanlara 2px bulanıklık; en güçlü odak.', tel: ['svBulanik'] },
+    ],
+  },
+  {
+    anahtar: 'acilma', ad: 'Açılma ve kapanma', alt: 'Katlanan bölümler ve paneller nasıl açılsın?',
+    varsayilan: 'Yükseklik animasyonu', ekran: 'ayarlar',
+    secim: [
+      { ad: 'Anında',               tarif: 'Animasyon yok; içerik bir anda görünür.', tel: ['grupluListe'] },
+      { ad: 'Yükseklik animasyonu', tarif: 'Bölüm yüksekliği 220ms içinde açılır; içerik yerinden oynamaz.', tel: ['acKatla'] },
+      { ad: 'Kayarak',              tarif: 'İçerik yukarıdan aşağı kayarak girer.', tel: ['acKay'] },
+      { ad: 'Soluk + kayma',        tarif: 'Hem belirir hem 8px kayar. En yumuşak olanı.', tel: ['acSoluk'] },
+    ],
+  },
+  {
+    anahtar: 'bekleme', ad: 'Bekleme göstergesi', alt: 'Bir düğmeye basıldıktan sonra işlem sürerken?',
+    varsayilan: 'Düğmede dönen halka', ekran: 'form',
+    secim: [
+      { ad: 'Yok',                  tarif: 'Düğme değişmez; kullanıcı bekler.', tel: ['sonDugme'] },
+      { ad: 'Düğmede dönen halka',  tarif: 'Düğmenin içindeki yazı dönen halkaya dönüşür, düğme pasifleşir.', tel: ['bekHalka'] },
+      { ad: 'Yazı değişir',         tarif: '"Kaydet" → "Kaydediliyor…" olur; düğme pasifleşir.', tel: ['bekYazi'] },
+      { ad: 'Üstte ince çubuk',     tarif: 'Sayfanın tepesinde belirsiz ilerleme çubuğu akar.', tel: ['ilerleme', 'form'] },
+    ],
+  },
+  {
+    anahtar: 'listeGirisi', ad: 'Liste girişi', alt: 'Kayıtlar ekrana nasıl gelsin?',
+    varsayilan: 'Yok', ekran: 'liste',
+    secim: [
+      { ad: 'Yok',              tarif: 'Liste hazır gelir; animasyon yok. En hızlı hissi.', tel: ['liste'] },
+      { ad: 'Sırayla belirme',  tarif: 'Satırlar 40ms arayla tek tek belirir.', tel: ['lgSira'] },
+      { ad: 'Aşağıdan kayma',   tarif: 'Satırlar 10px aşağıdan yukarı kayarak girer.', tel: ['lgKay'] },
+    ],
+  },
+  {
+    anahtar: 'sayiHareketi', ad: 'Sayı değişimi', alt: 'Sayaçlardaki rakam değişince?',
+    varsayilan: 'Anında', ekran: 'panel',
+    secim: [
+      { ad: 'Anında',      tarif: 'Yeni değer doğrudan yazılır.', tel: ['kart2'] },
+      { ad: 'Sayarak',     tarif: 'Rakam eski değerden yenisine 600ms içinde sayarak çıkar.', tel: ['syArt'] },
+      { ad: 'Kısa parlama',tarif: 'Değişen sayı bir an vurgu renginde parlar.', tel: ['syParla'] },
+    ],
+  },
+  {
+    anahtar: 'hareketMiktari', ad: 'Hareket miktarı', alt: 'Genel olarak ne kadar hareket olsun?',
+    varsayilan: 'Az', ekran: 'liste',
+    secim: [
+      { ad: 'Yok',    tarif: 'Bütün animasyonlar kapalı. Eski cihazlar ve erişilebilirlik için.', tel: ['hmYok'] },
+      { ad: 'Az',     tarif: 'Yalnız geçiş ve dokunma tepkisi; süreler 160-220ms.', tel: ['hmAz'] },
+      { ad: 'Normal', tarif: 'Liste girişi ve açılmalar da animasyonlu; süreler 220-320ms.', tel: ['hmNormal'] },
+      { ad: 'Bol',    tarif: 'Sayı sayma, parlama ve yaylanma dahil. Gösterişli ama yorabilir.', tel: ['hmBol'] },
     ],
   },
 ];
@@ -540,11 +612,12 @@ const TASARIM_GRUP = [
   { anahtar: 'bicim',    ad: 'Biçim',    alanlar: TASARIM_ALAN },
   { anahtar: 'acilis',   ad: 'Açılış',   alanlar: ACILIS_ALAN },
   { anahtar: 'durum',    ad: 'Durumlar', alanlar: DURUM_ALAN },
+  { anahtar: 'hareket',  ad: 'Hareket',  alanlar: HAREKET_ALAN },
   { anahtar: 'sistem',   ad: 'Sistem',   alanlar: SISTEM_ALAN },
 ];
 
 /* Bütün başlıklar tek dizide — prompt ve çözümleyici bunu gezer. */
-const TUM_TASARIM = YERLESIM_ALAN.concat(TASARIM_ALAN, ACILIS_ALAN, DURUM_ALAN, SISTEM_ALAN);
+const TUM_TASARIM = YERLESIM_ALAN.concat(TASARIM_ALAN, ACILIS_ALAN, DURUM_ALAN, HAREKET_ALAN, SISTEM_ALAN);
 
 /* ---- Tasarım akışı ----
    Bir ekranda tek karar. Kaydırma yok.
@@ -552,35 +625,47 @@ const TUM_TASARIM = YERLESIM_ALAN.concat(TASARIM_ALAN, ACILIS_ALAN, DURUM_ALAN, 
    uç durumlar ve sistem işleri. Bir öbek içinde önizleme ekranı olabildiğince
    sabit kalır — boşuna zıplamasın. */
 const AKIS_OBEK = [
-  { ad: 'Genel görünüm', alanlar: [
-      'kart', 'kartek', 'vurgukart', 'kose', 'yogunluk', 'dugme', 'dugmeek', 'simge'] },
-  { ad: 'Uygulama çatısı', alanlar: [
-      'ustcubuk', 'gezinme', 'sayfalistesi', 'yoliz', 'genislik', 'kullanicimenu', 'destek'] },
-  { ad: 'Açılış ve geçiş', alanlar: ['acilis', 'giris', 'gecis'] },
-  { ad: 'Panel ekranı', alanlar: ['dashboard', 'sayacduzen'] },
-  { ad: 'Liste ekranı', alanlar: [
-      'tablosayfa', 'tablo', 'tabloek', 'arama', 'filtre', 'donem',
-      'listesonu', 'anaeylem', 'tablomobil'] },
-  { ad: 'Diğer ekranlar', alanlar: ['verigirisi', 'detay', 'ayarlar', 'iceaktarma'] },
-  { ad: 'Durumlar', alanlar: [
-      'bosdurum', 'yukleme', 'hata', 'islemsonuc', 'bildirim', 'onaysil'] },
-  { ad: 'Sistem', alanlar: ['guncelleme', 'temadegis', 'yedek'] },
+  /* Kodlama sırası: ne önce yazılıyorsa o önce sorulur. */
+  { ad: 'Renk ve bileşen', not: 'Önce malzeme: her ekranda kullanılacak kutu, düğme, simge.',
+    alanlar: ['kart', 'kartek', 'vurgukart', 'kose', 'yogunluk', 'dugme', 'dugmeek', 'simge'] },
+  { ad: 'Uygulama kabuğu', not: 'Her ekranı saran çatı: üst çubuk, gezinme, genişlik.',
+    alanlar: ['ustcubuk', 'gezinme', 'sayfalistesi', 'yoliz', 'genislik', 'kullanicimenu', 'destek'] },
+  { ad: 'Giriş kapısı', not: 'Uygulamaya girerken görülen ilk iki ekran.',
+    alanlar: ['acilis', 'giris'] },
+  { ad: 'Panel ekranı', not: 'Açılışta karşılayan ekran.',
+    alanlar: ['dashboard', 'sayacduzen'] },
+  { ad: 'Liste ekranı', not: 'En çok bakılan ekran ve içindeki her şey.',
+    alanlar: ['tablosayfa', 'tablo', 'tabloek', 'arama', 'filtre', 'donem',
+              'listesonu', 'anaeylem', 'tablomobil'] },
+  { ad: 'Diğer ekranlar', not: 'Kayıt girme, detay, ayarlar ve toplu aktarım.',
+    alanlar: ['verigirisi', 'detay', 'ayarlar', 'iceaktarma'] },
+  { ad: 'Uç durumlar', not: 'Ekran boşken, beklerken ve iş ters gittiğinde.',
+    alanlar: ['bosdurum', 'yukleme', 'hata', 'islemsonuc', 'bildirim', 'onaysil'] },
+  { ad: 'Hareket', not: 'Uygulamayı canlandıran katman. Kodda da en son yazılır.',
+    alanlar: ['gecis', 'dokunma', 'secimVurgu', 'acilma', 'bekleme',
+              'listeGirisi', 'sayiHareketi', 'hareketMiktari'] },
+  { ad: 'Sistem', not: 'Güncelleme, tema ve yedek — uygulamanın kendi bakımı.',
+    alanlar: ['guncelleme', 'temadegis', 'yedek'] },
 ];
 
 const TASARIM_ADIM = [
   { anahtar: 'tema',  ad: 'Tema',  tur: 'tema',  ekran: 'panel', obek: 'Başlangıç',
+    obekNot: 'Rengin ve yazının kaynağı. Kodda ilk yazılan satırlar.',
     aciklama: 'Önce bunu seç — palet buna göre üretilecek.' },
   { anahtar: 'logo',  ad: 'Logo',  tur: 'logo',  ekran: 'panel', obek: 'Başlangıç',
+    obekNot: 'Rengin ve yazının kaynağı. Kodda ilk yazılan satırlar.',
     aciklama: 'Paletin kaynağı. Bu olmadan prompt anlamsız.' },
   { anahtar: 'palet', ad: 'Palet', tur: 'palet', ekran: 'panel', obek: 'Başlangıç',
+    obekNot: 'Rengin ve yazının kaynağı. Kodda ilk yazılan satırlar.',
     aciklama: 'Promptu Claude\'a logoyla ver, dönen cevabı yapıştır.' },
 ].concat([].concat(...AKIS_OBEK.map(o => o.alanlar.map(k => {
   const a = TUM_TASARIM.find(x => x.anahtar === k);
   if (!a) throw new Error('Akışta tanımsız başlık: ' + k);
   return { anahtar: k, ad: a.ad, alan: a, ekran: a.ekran || 'panel',
-           cihaz: a.cihaz, genis: a.genis, obek: o.ad, aciklama: a.alt };
+           cihaz: a.cihaz, genis: a.genis, obek: o.ad, obekNot: o.not, aciklama: a.alt };
 })))).concat([
   { anahtar: 'ozet', ad: 'Özet', tur: 'ozet', ekran: 'panel', obek: 'Bitiş',
+    obekNot: 'Verilen bütün kararlar tek listede.',
     aciklama: 'Verilen bütün kararlar. Prompta bu yazılacak.' },
 ]);
 
