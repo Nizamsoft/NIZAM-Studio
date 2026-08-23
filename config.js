@@ -7,9 +7,9 @@ const APP = {
   name:     'NIZAM | Studio',
   short:    'NIZAM Studio',
   owner:    'Nizam Soft',
-  version: 'v0.38.0',
+  version: 'v0.39.0',
   build:    '2026-08-20',
-  stage: 'Adım 4 · Sayfa künyeleri',
+  stage: 'Adım 4 · Sohbetli künye',
 };
 
 /* Supabase bağlantısı.
@@ -888,12 +888,18 @@ const GENEL_MODUL = 'Proje Geneli';
    kurallarını belirliyor. */
 
 const SAYFA_TURU = [
-  { ad: 'Liste',   alt: 'Kayıtlar alt alta; ara, filtrele, tıkla',  ekran: 'liste' },
-  { ad: 'Form',    alt: 'Yeni kayıt girme ya da düzenleme',         ekran: 'form' },
-  { ad: 'Detay',   alt: 'Tek kaydın bütün bilgileri',               ekran: 'detay' },
-  { ad: 'Panel',   alt: 'Sayaçlar, grafik, özet',                   ekran: 'panel' },
-  { ad: 'Takvim',  alt: 'Tarihe göre yerleşim',                     ekran: 'liste' },
-  { ad: 'Ayarlar', alt: 'Tanım ve seçenek listeleri',               ekran: 'ayarlar' },
+  { ad: 'Liste',   alt: 'Kayıtlar alt alta; ara, filtrele, tıkla',  ekran: 'liste',
+    tel: ['ust', 'liste'] },
+  { ad: 'Form',    alt: 'Yeni kayıt girme ya da düzenleme',         ekran: 'form',
+    tel: ['ust', 'form'] },
+  { ad: 'Detay',   alt: 'Tek kaydın bütün bilgileri',               ekran: 'detay',
+    tel: ['ustGeri', 'blok'] },
+  { ad: 'Panel',   alt: 'Sayaçlar, grafik, özet',                   ekran: 'panel',
+    tel: ['ust', 'ikiliKolon'] },
+  { ad: 'Takvim',  alt: 'Tarihe göre yerleşim',                     ekran: 'liste',
+    tel: ['ust', 'izgara'] },
+  { ad: 'Ayarlar', alt: 'Tanım ve seçenek listeleri',               ekran: 'ayarlar',
+    tel: ['ust', 'grupluListe'] },
 ];
 
 const ALAN_TURU = [
@@ -914,8 +920,11 @@ const SAYFA_EYLEM = ['Ekle', 'Düzenle', 'Sil', 'Onayla', 'Ara', 'Filtrele',
 
 /* Künye eksikse akış ilerlemez: yarım künye AI'a tahmin ettiriyor. */
 function kunyeTam(k) {
-  return !!(k && (k.amac || '').trim() && k.tur
-    && (k.alanlar || []).length && (k.eylemler || []).length && (k.roller || []).length);
+  if (!k) return false;
+  const secenekTam = (k.alanlar || []).every(a =>
+    a.tur !== 'Seçenek' || (a.degerler || []).filter(Boolean).length);
+  return !!((k.amac || '').trim() && k.tur && (k.alanlar || []).length && secenekTam
+    && (k.eylemler || []).length && (k.roller || []).length);
 }
 
 /* Etiket karşılıkları */

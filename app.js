@@ -1214,8 +1214,79 @@ let ONIZLEME_GENIS = false;
    akışında boş kalır ve örnek adlar kullanılır. */
 let ONIZLEME_MENU  = null;
 let ONIZLEME_SAYFA = null;
-let ONIZLEME_ALAN  = null;
+let ONIZLEME_KUNYE = null;
 
+
+/* Form alanının türü kutunun görünüşünden anlaşılsın: seçenekte ok,
+   tarihte takvim işareti, evet/hayırda anahtar. */
+const TUR_SINIF = {
+  'Seçenek': 'oa-sec', 'Tarih': 'oa-tarih', 'Tarih-saat': 'oa-tarih',
+  'Evet/Hayır': 'oa-anahtar', 'Dosya': 'oa-dosya', 'Para': 'oa-para',
+  'Sayı': 'oa-sayi', 'İlişki': 'oa-iliski',
+};
+
+/* ---- Künyeden örnek veri ----
+   Önizleme kullanıcının kendi alanlarını, kendi seçenek değerlerini ve
+   kendi eylemlerini göstermeli. Genel örnek satırlar ("Masa 4 · 1.240,00")
+   künye adımında mantıksız duruyordu: sütun adı Durum, içeriği tutar. */
+
+const ORNEK_DEGER = {
+  'Metin':      i => ['Ali Demir', 'Selin Kaya', 'Mehmet Ak', 'Zeynep Er'][i % 4],
+  'Uzun metin': i => ['Kapıda ödeme', 'Acele', 'Not yok', 'İkinci kat'][i % 4],
+  'Sayı':       i => String([12, 3, 24, 7][i % 4]),
+  'Para':       i => ['1.240,00', '380,50', '2.190,00', '640,00'][i % 4],
+  'Tarih':      i => ['22.05.2025', '21.05.2025', '19.05.2025', '18.05.2025'][i % 4],
+  'Tarih-saat': i => ['22.05.2025 · 14:30', '22.05.2025 · 12:05',
+                      '21.05.2025 · 19:40', '21.05.2025 · 13:15'][i % 4],
+  'Evet/Hayır': i => i % 2 ? '—' : '✓',
+  'Dosya':      i => ['fis-1042.pdf', 'foto.jpg', '—', 'irsaliye.pdf'][i % 4],
+};
+
+function alanDegeri(a, i) {
+  if (a.tur === 'Seçenek') {
+    const d = (a.degerler || []).filter(Boolean);
+    return d.length ? d[i % d.length] : ['Bekliyor', 'Tamam'][i % 2];
+  }
+  if (a.tur === 'İlişki') return a.ad + ' ' + [4, 7, 2, 9][i % 4];
+  const f = ORNEK_DEGER[a.tur];
+  return f ? f(i) : a.ad + ' ' + (i + 1);
+}
+
+/* "Sipariş Listesi" → "sipariş": düğme yazısı buradan çıkıyor. */
+function tekilAd(sayfa) {
+  return String(sayfa || 'kayıt')
+    .replace(/\s*(listesi|listeleri|oluştur|ekle|detayı|detay|paneli|ekranı)\s*$/i, '')
+    .trim().toLocaleLowerCase('tr') || 'kayıt';
+}
+
+function kunyeOrneklem(sayfa, k) {
+  const alanlar = (k.alanlar || []).filter(a => a && a.ad);
+  const bul = (...turler) => alanlar.find(a => turler.includes(a.tur));
+  const sol = bul('Metin', 'İlişki') || alanlar[0];
+  const sag = bul('Para', 'Sayı', 'Seçenek', 'Tarih', 'Tarih-saat')
+    || alanlar[alanlar.length - 1] || sol;
+  const alt = alanlar.find(a => a !== sol && a !== sag) || null;
+
+  const satir = [0, 1, 2, 3].map(i => [
+    sol ? alanDegeri(sol, i) : 'Kayıt ' + (i + 1),
+    alt ? alanDegeri(alt, i) : '',
+    sag ? alanDegeri(sag, i) : '',
+  ]);
+
+  const para = bul('Para');
+  const stat = [
+    ['Kayıt', '42'],
+    para ? ['Toplam ' + para.ad.toLocaleLowerCase('tr'), '18.400'] : ['Bugün', '9'],
+  ];
+
+  const tekil = tekilAd(sayfa);
+  return {
+    stat, baslik: sayfa,
+    sutun: [sol ? sol.ad : 'Kayıt', sag ? sag.ad : ''],
+    dugme: ['Yeni ' + tekil, 'Rapor'],
+    satir, alanlar,
+  };
+}
 
 /* Sektöre göre örnek veri. Eşleşme yoksa nötr bir kayıt listesi. */
 function orneklem(p) {
@@ -1276,13 +1347,11 @@ function orneklem(p) {
 function onizlemeIc(p, pl) {
   pl = pl || {};
 
-  const v    = orneklem(p);
-  /* Künye adımında örnek veri yerine kullanıcının kendi alan adları. */
-  if (ONIZLEME_ALAN) {
-    if (ONIZLEME_ALAN.baslik) v.baslik = ONIZLEME_ALAN.baslik;
-    const su = (ONIZLEME_ALAN.sutun || []).filter(Boolean);
-    if (su.length) v.sutun = [su[0], su[su.length > 1 ? 1 : 0]];
-  }
+  /* Künye adımındaysak örnek veri kullanıcının kendi künyesinden üretilir. */
+  const ky   = ONIZLEME_KUNYE;
+  const v    = ky ? kunyeOrneklem(ky.sayfa, ky) : orneklem(p);
+  /* Seçilmemiş eylem önizlemede düğme olarak görünmemeli. */
+  const eyv  = ad => !ky || (ky.eylemler || []).includes(ad);
   const tel  = ONIZLEME_CIHAZ === 'telefon';
   const ekr  = ONIZLEME_EKRAN;
   /* Hangi adımdayız: o adımın kararı önizlemede öne çıkar, çakışan örtüler
@@ -1467,7 +1536,7 @@ function onizlemeIc(p, pl) {
     if (kartaDonus) return `<div class="o-kartlar">${v.satir.slice(0, 3).map(x =>
       kart(`<div class="o-kk-ust"><b>${esc(x[0])}</b><u>${esc(x[2])}</u></div><i>${esc(x[1])}</i>`, 'o-kk')
     ).join('')}</div>`;
-    const kaydir = odak === 'onaysil' && bic.onaysil[0] === 'Kaydırarak sil';
+    const kaydir = odak === 'onaysil' && eyv('Sil') && bic.onaysil[0] === 'Kaydırarak sil';
     const ackapa = tel && bic.tablomobil[0] === 'Aç-kapa satır';
     return `<div class="o-kutu o-tbl">
       <div class="o-r o-h"><span>${esc(v.sutun[0])}</span><u>${esc(v.sutun[1])}</u></div>
@@ -1480,7 +1549,7 @@ function onizlemeIc(p, pl) {
     </div>`;
   };
 
-  const ar = bic.arama[0];
+  const ar = eyv('Ara') ? bic.arama[0] : '';
   const aramaSatiri =
       ar === 'Üstte sabit'     ? `<div class="o-arama"><span>Ara…</span>${
                                     bic.filtre[0] === 'Açılır panel' ? '<em>Filtre ▾</em>' : ''}</div>`
@@ -1488,7 +1557,7 @@ function onizlemeIc(p, pl) {
     : ar === 'Ayrı sayfa'      ? `<div class="o-arama ayri"><span>Tüm modüllerde ara…</span></div>
                                   <div class="o-tblbas">Sonuçlar</div>`
     : '';
-  const fl = odak === 'onaysil' ? '' : bic.filtre[0];
+  const fl = (odak === 'onaysil' || !eyv('Filtrele')) ? '' : bic.filtre[0];
   /* "Filtre içinde" seçilince filtre satırına tarih aralığı çipi eklenir. */
   const donemCipi = bic.donem[0] === 'Filtre içinde'
     ? '<span class="o-tarihCip">01 – 31 Ağu</span>' : '';
@@ -1497,11 +1566,15 @@ function onizlemeIc(p, pl) {
     ? `<div class="o-cip">${donemCipi}${['Tümü', 'Bugün', 'Bu ay'].map((x, i) =>
         `<span class="${i ? '' : 'a'}">${x}</span>`).join('')}</div>`
     : donemCipi ? `<div class="o-cip">${donemCipi}</div>` : '';
+  /* Filtre başlıkları künyedeki alanlardan: "Durum · Tarih · Tutar" her
+     projede doğru olmuyor. */
+  const filtreAdlari = ky && ky.alanlar && ky.alanlar.length
+    ? ky.alanlar.slice(0, 3).map(a => a.ad) : ['Durum', 'Tarih', 'Tutar'];
   const filtrePanel =
-      fl === 'Açılır panel' ? `<div class="o-inpanel">${['Durum', 'Tarih', 'Tutar'].map(x =>
+      fl === 'Açılır panel' ? `<div class="o-inpanel">${filtreAdlari.map(x =>
           `<i>${x}<u>▾</u></i>`).join('')}<span class="o-dg ${anaS} kucuk">Uygula</span></div>`
     : fl === 'Alttan sayfa' ? `<div class="o-perde"></div><div class="o-altSayfa">
-          <b>Filtreler</b>${['Durum', 'Tarih', 'Tutar'].map(x =>
+          <b>Filtreler</b>${filtreAdlari.map(x =>
           `<i>${x}<u>▾</u></i>`).join('')}<span class="o-dg ${anaS} kucuk">Uygula</span></div>`
     : '';
 
@@ -1564,11 +1637,19 @@ function onizlemeIc(p, pl) {
       + `<div class="o-tblbas">${esc(v.baslik)}</div>` + tabloKutusu(),
   }[bic.dashboard[0]] || statlar;
 
-  const formIcKisa = () => `${formAlan('AD')}${formAlan('TUTAR')}`;
-  const formAlan = (etiket, boy = '') =>
-    `<label class="o-alan"><i>${etiket}</i><span style="${boy}"></span></label>`;
-  const formIc = `${formAlan(v.sutun[0].toLocaleUpperCase('tr'))}
-    ${formAlan('TARİH')}${formAlan('NOT', 'height:34px')}`;
+  const formAlan = (etiket, boy = '', tur = '', zorunlu = false) =>
+    `<label class="o-alan"><i>${esc(etiket)}${zorunlu ? '<em>*</em>' : ''}</i>
+       <span class="${TUR_SINIF[tur] || ''}" style="${boy}"></span></label>`;
+  /* Form alanları künyeden: adı, türü ve zorunluluğu ile. */
+  const kyAlan = (a) => formAlan(a.ad.toLocaleUpperCase('tr'),
+    a.tur === 'Uzun metin' ? 'height:34px' : '', a.tur, a.zorunlu);
+  const formIcKisa = () => ky && v.alanlar && v.alanlar.length
+    ? v.alanlar.slice(0, 2).map(kyAlan).join('')
+    : `${formAlan('AD')}${formAlan('TUTAR')}`;
+  const formIc = ky && v.alanlar && v.alanlar.length
+    ? v.alanlar.slice(0, 4).map(kyAlan).join('')
+    : `${formAlan(v.sutun[0].toLocaleUpperCase('tr'))}
+       ${formAlan('TARİH')}${formAlan('NOT', 'height:34px')}`;
   const formDugmeleri = `<div class="o-dugmeler">${anaDugme('Kaydet')}
     <span class="o-dg ${ikinci}">Vazgeç</span></div>`;
 
@@ -1683,10 +1764,16 @@ function onizlemeIc(p, pl) {
         `<i class="${i ? '' : 'a'}">${x}</i>`).join('')}</div>` : '';
 
   const kunye = `<b>${esc(v.satir[0][0])}</b><i>${esc(v.satir[0][1])}</i><u>${esc(v.satir[0][2])}</u>`;
+  /* Detayda kaydın bütün alanları: künye varsa etiket-değer olarak. */
+  const detayAlanlari = ky && v.alanlar && v.alanlar.length
+    ? `<div class="o-kutu o-tbl">${v.alanlar.slice(0, 5).map((a, i) =>
+        `<div class="o-r"><span>${esc(a.ad)}</span><u>${esc(alanDegeri(a, 0))}</u></div>`).join('')}</div>`
+    : '';
   const detayGovde = yolIzi + {
     'Sekmeli': `<div class="o-sekme ic">${['Bilgi', 'Hareket', 'Belge'].map((x, i) =>
-        `<i class="${i ? '' : 'a'}">${x}</i>`).join('')}</div>${kart(kunye, 'o-dk')}${formIcKisa()}`,
-    'Tek uzun akış': kart(kunye, 'o-dk') + `<div class="o-tblbas">Hareketler</div>`
+        `<i class="${i ? '' : 'a'}">${x}</i>`).join('')}</div>${kart(kunye, 'o-dk')}${
+          detayAlanlari || formIcKisa()}`,
+    'Tek uzun akış': kart(kunye, 'o-dk') + detayAlanlari + `<div class="o-tblbas">Hareketler</div>`
         + tabloKutusu(2) + `<div class="o-tblbas">Belgeler</div>` + tabloKutusu(2),
     'Sol özet + sağ içerik': `<div class="o-ikiBolme">
         <div class="o-ozetBolme">${kart(kunye, 'o-dk')}</div>
@@ -1785,9 +1872,9 @@ function onizlemeIc(p, pl) {
     : '';
 
   const ae = bic.anaeylem[0];
-  const fab = ekr === 'liste' && !ortuVar && ae === 'Sağ altta yüzen'
+  const fab = ekr === 'liste' && !ortuVar && eyv('Ekle') && ae === 'Sağ altta yüzen'
     ? `<span class="o-fab" style="background:${esc(vurgu)}">+</span>` : '';
-  const sonDugme = ekr === 'liste' && ae === 'Sayfa sonunda'
+  const sonDugme = ekr === 'liste' && eyv('Ekle') && ae === 'Sayfa sonunda'
     ? `<div class="o-dugmeler tek">${anaDugme(v.dugme[0])}</div>` : '';
 
   const stil = [
@@ -2239,12 +2326,46 @@ function yapiTaslak(p) {
 
 function yapiKunye(t, sayfa) {
   if (!t.kunye[sayfa]) {
-    t.kunye[sayfa] = { amac: '', tur: '', alanlar: [], eylemler: [], roller: [], kural: '' };
+    t.kunye[sayfa] = { amac: '', tur: '', alanlar: [], eylemler: [],
+                       roller: [], yetki: {}, kural: '' };
   }
   return t.kunye[sayfa];
 }
 
-function yapiAdimlari(t) {
+/* Künye tek tek soruluyor: her ekranda bir soru, altında canlı önizleme.
+   Sıra kodlama sırası: önce ekranın türü, sonra tuttuğu veri, sonra
+   yapılabilenler, en sonda kim ne yapar. */
+const KUNYE_ADIM = [
+  { anahtar: 'amac',     ad: 'Amaç',     soru: 'Bu sayfa ne işe yarıyor?' },
+  { anahtar: 'tur',      ad: 'Tür',      soru: 'Nasıl bir ekran?' },
+  { anahtar: 'alanlar',  ad: 'Alanlar',  soru: 'Bu sayfa neyi tutuyor?' },
+  { anahtar: 'eylemler', ad: 'Eylemler', soru: 'Burada ne yapılabilir?' },
+  { anahtar: 'roller',   ad: 'Roller',   soru: 'Kimler görebilir?' },
+  { anahtar: 'yetki',    ad: 'Yetki',    soru: 'Kim ne yapabilir?' },
+  { anahtar: 'kural',    ad: 'Kural',    soru: 'Uyulması gereken bir kural var mı?' },
+  { anahtar: 'ozet',     ad: 'Onay',     soru: 'Doğru anlamış mıyım?' },
+];
+
+/* Bir alt adım cevaplanmış sayılır mı? İleri düğmesi buna bakıyor. */
+function kunyeAdimTam(k, anahtar, roller) {
+  if (anahtar === 'amac')     return !!(k.amac || '').trim();
+  if (anahtar === 'tur')      return !!k.tur;
+  if (anahtar === 'alanlar')  return (k.alanlar || []).length > 0
+    && k.alanlar.every(a => a.tur !== 'Seçenek' || (a.degerler || []).filter(Boolean).length);
+  if (anahtar === 'eylemler') return (k.eylemler || []).length > 0;
+  if (anahtar === 'roller')   return (k.roller || []).length > 0;
+  if (anahtar === 'yetki')    return (k.eylemler || []).every(x => (k.yetki[x] || []).length);
+  return true;
+}
+
+/* Yetki adımı ancak anlamlıysa sorulur: tek rol varsa sormanın anlamı yok. */
+function kunyeAdimlari(k, roller) {
+  return KUNYE_ADIM.filter(a =>
+    a.anahtar !== 'yetki' || ((k.eylemler || []).length && roller.length > 1));
+}
+
+function yapiAdimlari(t, p) {
+  const roller = rolListesi(((p && p.palet) || {}).roller);
   const a = [
     { tur: 'modul', ad: 'Modül', obek: 'Ne kurulacak',
       obekNot: 'Bir firmaya bir modül. Sonradan bir tane daha eklenebilir.',
@@ -2253,10 +2374,13 @@ function yapiAdimlari(t) {
       obekNot: 'Bir firmaya bir modül. Sonradan bir tane daha eklenebilir.',
       aciklama: 'Modülün içinde hangi ekranlar olacak?' },
   ];
-  t.sayfalar.forEach(sf => a.push({
-    tur: 'kunye', sayfa: sf, ad: sf, obek: 'Sayfa künyeleri',
-    obekNot: 'Alan türleri tabloyu, roller güvenlik kurallarını yazıyor.',
-    aciklama: 'Bu sayfa ne yapar, neyi tutar, kim kullanır?' }));
+  t.sayfalar.forEach(sf => {
+    const k = yapiKunye(t, sf);
+    kunyeAdimlari(k, roller).forEach(ka => a.push({
+      tur: 'kunye', sayfa: sf, alt: ka.anahtar, ad: sf,
+      obek: sf, obekNot: 'Bu ekranı kurmak için gerekenler.',
+      aciklama: ka.soru }));
+  });
   a.push({ tur: 'ozet', ad: 'Özet', obek: 'Kurulum',
            obekNot: 'Hepsi tek seferde yazılır.', aciklama: 'Kurulacakların listesi.' });
   return a;
@@ -2264,16 +2388,14 @@ function yapiAdimlari(t) {
 
 function yapiAkisi(p, d) {
   const t   = yapiTaslak(p);
-  const adm = yapiAdimlari(t);
+  const adm = yapiAdimlari(t, p);
   const no  = Math.max(0, Math.min(t.yer, adm.length - 1));
   t.yer = no;
   const adim = adm[no];
 
-  /* Önizleme gerçek adlarla çizilir: modül menüde, sayfalar sekmede,
-     künyedeki alanlar tablo sütununda görünür. */
   ONIZLEME_MENU  = t.modul ? [t.modul, 'Rapor', 'Ayar'] : null;
   ONIZLEME_SAYFA = t.sayfalar.length ? t.sayfalar : null;
-  ONIZLEME_ALAN  = null;
+  ONIZLEME_KUNYE = null;
   ONIZLEME_CIHAZ = 'web';
 
   if (adim.tur === 'kunye') {
@@ -2281,26 +2403,44 @@ function yapiAkisi(p, d) {
     const tp = SAYFA_TURU.find(x => x.ad === k.tur);
     ONIZLEME_EKRAN = tp ? tp.ekran : 'liste';
     ONIZLEME_ADIM  = 'kunye';
-    ONIZLEME_ALAN  = { baslik: adim.sayfa, sutun: k.alanlar.map(a => a.ad) };
+    if (k.tur || (k.alanlar || []).length) {
+      ONIZLEME_KUNYE = Object.assign({ sayfa: adim.sayfa }, k);
+    }
   } else {
     ONIZLEME_EKRAN = adim.tur === 'sayfalar' ? 'sayfalar' : 'panel';
     ONIZLEME_ADIM  = adim.tur === 'sayfalar' ? 'sayfalistesi' : 'gezinme';
   }
 
-  return `<div class="akis yapi y-${adim.tur}">
+  return `<div class="akis yapi y-${adim.tur}${adim.alt ? ' k-' + adim.alt : ''}">
     ${yapiSeridi(p, no, adim, adm)}
     ${adim.tur === 'ozet' ? '' :
       `<div class="onz-satir"><div class="onz-goz">${onizlemeIc(p, p.palet)}</div></div>`}
     <div class="akis-alt">
-      <div class="adim-bas">
-        <div class="ab-yazi"><b>${esc(adim.ad)}</b><i>${esc(adim.aciklama)}</i></div>
-        <span class="ab-tur">${{ modul: 'tek seçim', sayfalar: 'birkaçı',
-                                 kunye: 'künye', ozet: '' }[adim.tur]}</span>
-      </div>
+      ${adim.tur === 'kunye' ? kunyeYolu(t, adim, p) : ''}
       ${yapiGovde(p, t, adim)}
       ${yapiGezinme(p, no, adm, t, adim)}
     </div>
   </div>`;
+}
+
+/* Sayfa adı + hangi sorudayız. Nokta şeridi bu sayfaya ait. */
+function kunyeYolu(t, adim, p) {
+  const k = yapiKunye(t, adim.sayfa);
+  const roller = rolListesi((p.palet || {}).roller);
+  const liste = kunyeAdimlari(k, roller);
+  const i = liste.findIndex(x => x.anahtar === adim.alt);
+  return `
+    <div class="ky-ust">
+      <span class="ky-yol"><b>${esc(adim.sayfa)}</b><s>›</s>${esc(liste[i].ad)}</span>
+      <span class="ky-adimlar">${liste.map((x, j) =>
+        `<i class="${j === i ? 'on' : j < i ? 'gecti' : ''}"></i>`).join('')}</span>
+    </div>`;
+}
+
+/* Sohbet baloncuğu: soruyu soran ve niye sorduğunu söyleyen satır. */
+function balon(metin, alt) {
+  return `<div class="sohbet"><span class="av">N</span><span class="bal">${metin}
+    ${alt ? `<i>${alt}</i>` : ''}</span></div>`;
 }
 
 function yapiSeridi(p, no, adim, adm) {
@@ -2333,108 +2473,52 @@ function yapiSeridi(p, no, adim, adm) {
 
 function yapiGovde(p, t, adim) {
   if (adim.tur === 'modul') {
-    /* Kurulu modüller listeden düşer: aynı adı ikinci kez kurmak kopya
-       yaratıyor, sonradan eklenen zaten hep yeni bir modül. */
-    const kurulu = DB.modulleri(p.id).map(m => m.ad);
-    const sablonlar = DB.modulSablonlari().filter(m => !kurulu.includes(m.ad));
-    const adlar = sablonlar.map(m => m.ad)
-      .concat(t.modul && !sablonlar.some(m => m.ad === t.modul) ? [t.modul] : []);
+    /* Kurulu modüller de listede: birine dokununca sayfaları düzenlenir. */
+    const kurulu = DB.modulleri(p.id).filter(m => m.ad !== GENEL_MODUL);
+    const sablonlar = DB.modulSablonlari().filter(m => !kurulu.some(x => x.ad === m.ad));
+    const kart = (ad, alt, ek) => `
+      <button class="bsc yk ${t.modul === ad ? 'on' : ''} ${ek || ''}" type="button"
+              data-eylem="yapi-modul" data-proje="${p.id}" data-ad="${esc(ad)}">
+        <span class="yk-ik">${svg(ICON.katman, 18)}</span>
+        <span class="bsc-ad">${esc(ad)}</span>
+        <span class="yk-alt">${esc(alt)}</span></button>`;
 
-    return `<div class="raf">
-      ${adlar.map(ad => {
-        const sb  = sablonlar.find(m => m.ad === ad);
-        const say = ((sb && sb.sayfalar) || []).length;
-        return `<button class="bsc yk ${t.modul === ad ? 'on' : ''}" type="button"
-                        data-eylem="yapi-modul" data-proje="${p.id}" data-ad="${esc(ad)}">
-          <span class="yk-ik">${svg(ICON.katman, 18)}</span>
-          <span class="bsc-ad">${esc(ad)}</span>
-          <span class="yk-alt">${say ? say + ' sayfa hazır' : 'boş'}</span>
-        </button>`;
-      }).join('')}
-      <button class="bsc yk ekle" type="button"
-              data-eylem="yapi-modul-yaz" data-proje="${p.id}">
-        <span class="yk-ik">${svg(ICON.arti, 18)}</span>
-        <span class="bsc-ad">Kendim yazayım</span>
-        <span class="yk-alt">listede yok</span>
-      </button>
-    </div>`;
+    return balon(kurulu.length
+        ? 'Bu firmada <em>' + esc(kurulu[0].ad) + '</em> modülü kurulu. Onu mu '
+          + 'düzenleyeceğiz, yoksa yeni bir modül mü kuruyoruz?'
+        : 'Bu firma için ilk modülü kuralım. Adı ne olsun?',
+        'Bir firmaya çoğunlukla tek modül yeter.')
+      + `<div class="raf">
+        ${kurulu.map(m => kart(m.ad, DB.sayfalari(m.id).length + ' sayfa · kurulu')).join('')}
+        ${sablonlar.map(m => kart(m.ad, (m.sayfalar || []).length + ' sayfa hazır')).join('')}
+        ${t.modul && !kurulu.some(m => m.ad === t.modul)
+          && !sablonlar.some(m => m.ad === t.modul) ? kart(t.modul, 'kendi yazdığın') : ''}
+        <button class="bsc yk ekle" type="button"
+                data-eylem="yapi-modul-yaz" data-proje="${p.id}">
+          <span class="yk-ik">${svg(ICON.arti, 18)}</span>
+          <span class="bsc-ad">Yeni modül</span>
+          <span class="yk-alt">adını ben yazayım</span></button>
+      </div>`;
   }
 
   if (adim.tur === 'sayfalar') {
-    const sb   = DB.modulSablonlari().find(m => m.ad === t.modul);
+    const sb    = DB.modulSablonlari().find(m => m.ad === t.modul);
     const hazir = (sb && sb.sayfalar) || [];
-    const tumu = hazir.concat(t.sayfalar.filter(x => !hazir.includes(x)));
+    const tumu  = hazir.concat(t.sayfalar.filter(x => !hazir.includes(x)));
 
-    return `<div class="raf sayfa-raf">
-      ${tumu.map(ad => `
-        <button class="cip-sec ${t.sayfalar.includes(ad) ? 'on' : ''}" type="button"
-                data-eylem="yapi-sayfa" data-proje="${p.id}" data-ad="${esc(ad)}">
-          ${svg(ICON.folder, 13)} ${esc(ad)}</button>`).join('')}
-      <button class="cip-sec ekle" type="button" data-eylem="yapi-sayfa-yaz"
-              data-proje="${p.id}">${svg(ICON.arti, 13)} Sayfa ekle</button>
-    </div>`;
+    return balon('<em>' + esc(t.modul) + '</em> içinde hangi ekranlar olacak?',
+        'Her ekranı sırayla tek tek soracağım.')
+      + `<div class="raf sayfa-raf">
+        ${tumu.map(ad => `
+          <button class="cip-sec ${t.sayfalar.includes(ad) ? 'on' : ''}" type="button"
+                  data-eylem="yapi-sayfa" data-proje="${p.id}" data-ad="${esc(ad)}">
+            ${svg(ICON.folder, 13)} ${esc(ad)}</button>`).join('')}
+        <button class="cip-sec ekle" type="button" data-eylem="yapi-sayfa-yaz"
+                data-proje="${p.id}">${svg(ICON.arti, 13)} Sayfa ekle</button>
+      </div>`;
   }
 
-  if (adim.tur === 'kunye') {
-    const k = yapiKunye(t, adim.sayfa);
-    const roller = rolListesi((p.palet || {}).roller);
-
-    return `<div class="kunye-kaydir">
-      <label class="field ky-alan">
-        <span>Ne işe yarar? <em class="ipucu">tek cümle</em></span>
-        <input type="text" data-ky="amac" data-proje="${p.id}" data-sayfa="${esc(adim.sayfa)}"
-               value="${esc(k.amac)}" maxlength="160" autocomplete="off"
-               placeholder="Örn. Günün siparişleri buradan görülür ve masaya atanır.">
-      </label>
-
-      <div class="ky-bas">Türü</div>
-      <div class="ky-cipler">
-        ${SAYFA_TURU.map(x => `
-          <button class="cip-sec ${k.tur === x.ad ? 'on' : ''}" type="button"
-                  data-eylem="yapi-ky-tur" data-proje="${p.id}" data-sayfa="${esc(adim.sayfa)}"
-                  data-ad="${esc(x.ad)}" title="${esc(x.alt)}">${esc(x.ad)}</button>`).join('')}
-      </div>
-
-      <div class="ky-bas">Hangi bilgiler var?
-        <button class="mini-link" type="button" data-eylem="yapi-ky-alan-ekle"
-                data-proje="${p.id}" data-sayfa="${esc(adim.sayfa)}">
-          ${svg(ICON.arti, 12)} Alan ekle</button></div>
-      ${k.alanlar.length ? `<div class="ky-alanlar">
-        ${k.alanlar.map((a, i) => `
-          <span class="ky-a">
-            <b>${esc(a.ad)}</b><i>${esc(a.tur)}</i>
-            <button type="button" data-eylem="yapi-ky-alan-sil" data-proje="${p.id}"
-                    data-sayfa="${esc(adim.sayfa)}" data-deger="${i}"
-                    title="Kaldır">${svg(ICON.kapat, 11)}</button>
-          </span>`).join('')}
-      </div>` : `<p class="ipucu ky-bos">Hiç alan yok. AI tabloyu buradan kuruyor —
-        en az bir tane gerekli.</p>`}
-
-      <div class="ky-bas">Ne yapılabilir?</div>
-      <div class="ky-cipler">
-        ${SAYFA_EYLEM.map(x => `
-          <button class="cip-sec ${k.eylemler.includes(x) ? 'on' : ''}" type="button"
-                  data-eylem="yapi-ky-eylem" data-proje="${p.id}"
-                  data-sayfa="${esc(adim.sayfa)}" data-ad="${esc(x)}">${esc(x)}</button>`).join('')}
-      </div>
-
-      <div class="ky-bas">Kimler kullanır?</div>
-      <div class="ky-cipler">
-        ${roller.length ? roller.map(x => `
-          <button class="cip-sec ${k.roller.includes(x) ? 'on' : ''}" type="button"
-                  data-eylem="yapi-ky-rol" data-proje="${p.id}"
-                  data-sayfa="${esc(adim.sayfa)}" data-ad="${esc(x)}">${esc(x)}</button>`).join('')
-          : '<span class="ipucu">Önce Firma durağında rolleri gir.</span>'}
-      </div>
-
-      <label class="field ky-alan">
-        <span>Kural <em class="ipucu">isteğe bağlı</em></span>
-        <input type="text" data-ky="kural" data-proje="${p.id}" data-sayfa="${esc(adim.sayfa)}"
-               value="${esc(k.kural)}" maxlength="200" autocomplete="off"
-               placeholder="Örn. Onaylanan sipariş değiştirilemez.">
-      </label>
-    </div>`;
-  }
+  if (adim.tur === 'kunye') return kunyeGovde(p, t, adim);
 
   /* Özet */
   const eksik = t.sayfalar.filter(sf => !kunyeTam(t.kunye[sf]));
@@ -2450,26 +2534,239 @@ function yapiGovde(p, t, adim) {
                                  data-proje="${p.id}" data-ad="${esc(sf)}">
         ${svg(ICON.uyari, 13)} <span>${esc(sf)} künyesi eksik</span></button>`).join('')}
     </div>` : ''}
-    ${t.sayfalar.map((sf, i) => {
-      const k = t.kunye[sf] || {};
-      return `<div class="yo">
-        <b>${i + 1}. ${esc(sf)}${k.tur ? ' · ' + esc(k.tur.toLocaleLowerCase('tr')) : ''}</b>
-        <i>${esc(k.amac || 'künye yok')}</i>
-        <i>${(k.alanlar || []).map(a => esc(a.ad) + ' <u>' + esc(a.tur) + '</u>').join(' · ')}</i>
-        <i>${(k.eylemler || []).map(esc).join(' · ')}${
-          (k.roller || []).length ? ' — ' + k.roller.map(esc).join(', ') : ''}</i>
-        ${k.kural ? `<i class="ky-kural">${svg(ICON.info, 11)} ${esc(k.kural)}</i>` : ''}
-      </div>`;
-    }).join('')}
+    ${t.sayfalar.map((sf, i) => `<div class="yo">
+      <b>${i + 1}. ${esc(sf)}</b><i>${esc(kunyeCumlesi(sf, t.kunye[sf] || {}))}</i>
+    </div>`).join('')}
   </div>`;
+}
+
+/* ---- Künyenin alt adımları ---- */
+function kunyeGovde(p, t, adim) {
+  const k      = yapiKunye(t, adim.sayfa);
+  const roller = rolListesi((p.palet || {}).roller);
+  const sf     = adim.sayfa;
+  const veri   = `data-proje="${p.id}" data-sayfa="${esc(sf)}"`;
+
+  if (adim.alt === 'amac') {
+    const ornek = ['Günlük kayıtlar buradan görülür.',
+                   'Yeni kayıt buradan girilir.',
+                   'Tek kaydın bütün bilgileri burada.'];
+    return `<div class="kunye-kaydir">
+      ${balon('<em>' + esc(sf) + '</em> ne işe yarıyor? Kendi cümlenle söyle.',
+              'Bu cümle AI\'ın ekranı neden yaptığını anlamasını sağlıyor.')}
+      <label class="field ky-alan">
+        <input type="text" data-ky="amac" ${veri} value="${esc(k.amac)}"
+               maxlength="160" autocomplete="off"
+               placeholder="Örn. Günün siparişleri görülür ve masaya atanır.">
+      </label>
+      <div class="ky-bas">Örnekler</div>
+      <div class="ornekler">${ornek.map(x => `
+        <button type="button" data-eylem="yapi-ky-ornek" ${veri}
+                data-ad="${esc(x)}">${esc(x)}</button>`).join('')}</div>
+    </div>`;
+  }
+
+  if (adim.alt === 'tur') {
+    return `<div class="kunye-kaydir">
+      ${balon('Bu sayfa nasıl bir ekran olacak?', 'Seçtiğin türün iskeleti üstte canlanır.')}
+      <div class="raf">${SAYFA_TURU.map(x => `
+        <button class="bsc ${k.tur === x.ad ? 'on' : ''}" type="button"
+                data-eylem="yapi-ky-tur" ${veri} data-ad="${esc(x.ad)}"
+                title="${esc(x.alt)}">
+          <span class="bon"><span class="tel-wf">${telCizim(x.tel)}</span></span>
+          <span class="bsc-ad">${esc(x.ad)}</span></button>`).join('')}
+      </div>
+      ${k.tur ? `<p class="ky-not">${esc((SAYFA_TURU.find(x => x.ad === k.tur) || {}).alt || '')}</p>` : ''}
+    </div>`;
+  }
+
+  if (adim.alt === 'alanlar') {
+    return `<div class="kunye-kaydir">
+      ${balon('Bu sayfada hangi bilgiler duracak?',
+              'Her satır bir veritabanı sütunu olacak; üstteki önizlemede görürsün.')}
+      ${k.alanlar.map((a, i) => alanKarti(p, sf, a, i)).join('')}
+      <button class="as2 ekle" type="button" data-eylem="yapi-ky-alan-ekle" ${veri}>
+        ${svg(ICON.arti, 13)} Alan ekle</button>
+    </div>`;
+  }
+
+  if (adim.alt === 'eylemler') {
+    return `<div class="kunye-kaydir">
+      ${balon('Kullanıcı bu sayfada ne yapabilecek?',
+              'İşaretlediğin her eylem önizlemede düğme olarak çıkar.')}
+      <div class="ky-cipler">${SAYFA_EYLEM.map(x => `
+        <button class="cip-sec ${k.eylemler.includes(x) ? 'on' : ''}" type="button"
+                data-eylem="yapi-ky-eylem" ${veri} data-ad="${esc(x)}">${esc(x)}</button>`).join('')}
+      </div>
+    </div>`;
+  }
+
+  if (adim.alt === 'roller') {
+    if (!roller.length) return `<div class="kunye-kaydir">
+      ${balon('Önce rolleri girmen gerekiyor.',
+              'Firma durağında rol katmanlarını yazınca burası dolar.')}</div>`;
+    const taban = k.roller.length ? roller.findIndex(r => k.roller.includes(r)) : -1;
+    return `<div class="kunye-kaydir">
+      ${balon('Bu sayfayı en alttan kim görebilmeli?',
+              'Alttakini seçince üstündekiler kendiliğinden gelir — amir personelin işini görür.')}
+      <div class="rol-merdiven">${roller.map((r, i) => {
+        const secili = taban > -1 && i >= taban;
+        const oto = secili && i > taban;
+        return `<button class="rm ${secili ? 'on' : ''} ${oto ? 'oto' : ''}" type="button"
+                        data-eylem="yapi-ky-rol" ${veri} data-ad="${esc(r)}">
+          <span class="rm-kat mono">${i + 1}</span>
+          <span class="rm-ad"><b>${esc(r)}</b><i>${
+            oto ? esc(roller[i - 1]) + '’i gördüğü için otomatik'
+            : secili ? 'seçtiğin taban katman' : 'göremez'}</i></span>
+          <span class="rm-tik">${secili ? svg(ICON.tik, 11) : ''}</span></button>`;
+      }).join('')}</div>
+    </div>`;
+  }
+
+  if (adim.alt === 'yetki') {
+    return `<div class="kunye-kaydir">
+      ${balon('Görmek ayrı, yapmak ayrı. Hangi eylemi kim yapabilir?',
+              'Alttakini seçince üstü otomatik gelir.')}
+      <div class="yetki">${k.eylemler.map(ey => {
+        const secik = k.yetki[ey] || [];
+        const taban = secik.length ? k.roller.findIndex(r => secik.includes(r)) : -1;
+        return `<div class="yt"><b>${esc(ey)}</b><div class="cipler">
+          ${k.roller.map((r, i) => `
+            <button class="${taban > -1 && i >= taban ? 'on' : ''}" type="button"
+                    data-eylem="yapi-ky-yetki" ${veri} data-ey="${esc(ey)}"
+                    data-ad="${esc(r)}">${esc(r)}</button>`).join('')}
+        </div></div>`;
+      }).join('')}</div>
+    </div>`;
+  }
+
+  if (adim.alt === 'kural') {
+    const ornek = ['Onaylanan kayıt değiştirilemez.', 'Tutar eksi olamaz.',
+                   'Silme yerine pasife alınır.', 'Aynı ad iki kez girilemez.'];
+    return `<div class="kunye-kaydir">
+      ${balon('Bu sayfada uyulması gereken bir kural var mı?',
+              'En çok yanlış anlaşılan yer burası. Yoksa boş bırak.')}
+      <label class="field ky-alan">
+        <input type="text" data-ky="kural" ${veri} value="${esc(k.kural)}"
+               maxlength="200" autocomplete="off"
+               placeholder="Örn. Onaylanan sipariş değiştirilemez.">
+      </label>
+      <div class="ky-bas">Sık kullanılanlar</div>
+      <div class="ornekler">${ornek.map(x => `
+        <button type="button" data-eylem="yapi-ky-kural-ornek" ${veri}
+                data-ad="${esc(x)}">${esc(x)}</button>`).join('')}</div>
+    </div>`;
+  }
+
+  /* Onay — anladığımı tekrar ediyorum */
+  const alanSatiri = k.alanlar.map(a => a.ad.toLocaleLowerCase('tr')
+    + (a.tur === 'Seçenek' && (a.degerler || []).length
+        ? ' (' + a.degerler.join(', ') + ')' : '')).join(', ');
+  return `<div class="ozet-kaydir">
+    ${balon('Anladığımı bir kez tekrar edeyim, yanlışım varsa geri dön düzelt.')}
+    <div class="ozet-bal">
+      <p>${kunyeCumlesi(sf, k, true)}</p>
+      <div class="satir"><u>Tablo</u><span>${esc(tabloAdi(sf))} — ${esc(
+        k.alanlar.map(a => sutunAdi(a.ad)).join(', ') || '—')}</span></div>
+      <div class="satir"><u>Alanlar</u><span>${esc(alanSatiri || '—')}</span></div>
+      <div class="satir"><u>Güvenlik</u><span>${esc(
+        k.roller.join(' · ') || '—')}${k.eylemler.length
+          ? ' — ' + k.eylemler.map(ey => ey.toLocaleLowerCase('tr') + ': '
+              + ((k.yetki[ey] || k.roller)[0] || '—')).join(', ') : ''}</span></div>
+    </div>
+  </div>`;
+}
+
+/* Alan kartı — türüne göre kendi sorusunu da soruyor. */
+function alanKarti(p, sf, a, i) {
+  const veri = `data-proje="${p.id}" data-sayfa="${esc(sf)}" data-deger="${i}"`;
+  const secenek = a.tur === 'Seçenek';
+  const iliski  = a.tur === 'İlişki';
+  return `<div class="alan-kart ${secenek && !(a.degerler || []).length ? 'eksik' : ''}">
+    <div class="ak-ust">
+      <b>${esc(a.ad)}</b><u>${esc(a.tur)}</u>
+      <button class="ak-sil" type="button" data-eylem="yapi-ky-alan-sil" ${veri}
+              title="Kaldır">${svg(ICON.kapat, 11)}</button>
+    </div>
+    ${secenek ? `
+      <p class="ak-soru">Hangi değerleri alabilir?</p>
+      <div class="ak-degerler">
+        ${(a.degerler || []).map((d, j) => `
+          <span data-eylem="yapi-ky-deger-sil" ${veri} data-ad="${esc(d)}"
+                role="button" tabindex="0">${esc(d)} <em>×</em></span>`).join('')}
+        <span class="ekle" data-eylem="yapi-ky-deger-ekle" ${veri}
+              role="button" tabindex="0">+ değer ekle</span>
+      </div>` : ''}
+    ${iliski ? `
+      <p class="ak-soru">Hangi sayfadan seçilecek?</p>
+      <div class="ak-degerler">
+        ${a.kaynak ? `<span>${esc(a.kaynak)}</span>` : ''}
+        <span class="ekle" data-eylem="yapi-ky-kaynak" ${veri}
+              role="button" tabindex="0">${a.kaynak ? 'değiştir' : '+ sayfa seç'}</span>
+      </div>` : ''}
+    <button class="ak-anahtar ${a.zorunlu ? 'on' : ''}" type="button"
+            data-eylem="yapi-ky-zorunlu" ${veri}>
+      <span></span> Boş bırakılamaz</button>
+  </div>`;
+}
+
+/* Künyeyi düz Türkçe tek cümleye çeviren yer — özet ve onay ekranı bunu
+   kullanıyor; AI'a giden metin de aynı cümleden besleniyor. */
+function kunyeCumlesi(sf, k, uzun) {
+  if (!k || !k.tur) return 'künye yok';
+  const alan = (k.alanlar || []).map(a => a.ad.toLocaleLowerCase('tr'));
+  const p = [];
+  p.push('<b>' + esc(sf) + '</b> bir ' + esc(k.tur.toLocaleLowerCase('tr')) + ' ekranı.');
+  if (k.amac) p.push(esc(k.amac));
+  if (alan.length) p.push('Her kayıtta ' + esc(alan.join(', ')) + ' var.');
+  if ((k.roller || []).length) {
+    const en = k.roller[0];
+    p.push('<b>' + esc(en) + '</b> ve üstü görüyor.');
+    /* Aynı yetkiye sahip eylemler tek cümlede toplanır; tek tek yazınca
+       "ekle işini Personel yapıyor, sil işini Personel yapıyor" oluyordu. */
+    const grup = new Map();
+    (k.eylemler || []).forEach(ey => {
+      const r = ((k.yetki[ey] || k.roller)[0]) || en;
+      grup.set(r, (grup.get(r) || []).concat(ey.toLocaleLowerCase('tr')));
+    });
+    if (grup.size === 1 && grup.has(en)) {
+      p.push('Bütün işleri (' + esc([...grup.values()][0].join(', ')) + ') aynı kişi yapabiliyor.');
+    } else if (grup.size) {
+      p.push([...grup.entries()].map(([r, l]) =>
+        esc(l.join(', ')) + ' → <b>' + esc(r) + '</b> ve üstü').join('; ') + '.');
+    }
+  }
+  if (k.kural) p.push('<b>' + esc(k.kural) + '</b>');
+  const metin = p.join(' ');
+  return uzun ? metin : metin.replace(/<\/?b>/g, '');
+}
+
+function tabloAdi(sf) {
+  return sutunAdi(sf).replace(/_(listesi|olustur|detayi|paneli|ekrani)$/, '') || 'kayitlar';
+}
+
+/* Türkçe adı veritabanı adına çevirir: "Sipariş Listesi" → "siparis_listesi" */
+function sutunAdi(ad) {
+  const harf = { 'ç': 'c', 'ğ': 'g', 'ı': 'i', 'ö': 'o', 'ş': 's', 'ü': 'u',
+                 'Ç': 'c', 'Ğ': 'g', 'İ': 'i', 'Ö': 'o', 'Ş': 's', 'Ü': 'u' };
+  return String(ad || '').split('').map(c => harf[c] || c).join('')
+    .toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
 }
 
 function yapiGezinme(p, no, adm, t, adim) {
   const son = no === adm.length - 1;
-  /* Künye zorunlu: yarım künyeyle ilerlemek AI'a tahmin ettiriyor. */
-  const kilit = adim.tur === 'kunye' && !kunyeTam(t.kunye[adim.sayfa]);
+  const roller = rolListesi((p.palet || {}).roller);
+  /* Cevaplanmadan ilerlenmiyor: yarım künye AI'a tahmin ettiriyor. */
+  const kilit = adim.tur === 'kunye'
+      ? !kunyeAdimTam(yapiKunye(t, adim.sayfa), adim.alt, roller)
+    : adim.tur === 'modul'    ? !t.modul
+    : adim.tur === 'sayfalar' ? !t.sayfalar.length
+    : false;
   const kurulur = t.modul && t.sayfalar.length
     && t.sayfalar.every(sf => kunyeTam(t.kunye[sf]));
+  const yazi = adim.alt === 'ozet' ? 'Doğru, devam'
+    : adim.alt === 'kural' && !(yapiKunye(t, adim.sayfa).kural || '').trim() ? 'Kural yok, geç'
+    : 'İleri';
 
   return `
     <div class="adim-gez">
@@ -2480,10 +2777,9 @@ function yapiGezinme(p, no, adm, t, adim) {
         ? `<button class="ag ileri kur" type="button" ${kurulur ? '' : 'disabled'}
                    data-eylem="yapi-kur" data-proje="${p.id}">
              ${svg(ICON.check, 14)} Kur</button>`
-        : `<button class="ag ileri" type="button" ${kilit || (adim.tur === 'modul' && !t.modul)
-                     || (adim.tur === 'sayfalar' && !t.sayfalar.length) ? 'disabled' : ''}
+        : `<button class="ag ileri" type="button" ${kilit ? 'disabled' : ''}
                    data-eylem="yapi-adim" data-proje="${p.id}" data-deger="${no + 1}">
-             İleri ${svg(ICON.chevron, 14)}</button>`}
+             ${esc(yazi)} ${svg(ICON.chevron, 14)}</button>`}
     </div>`;
 }
 
@@ -2497,13 +2793,35 @@ function yapiBaglari() {
       const pr = DB.proje(el.dataset.proje);
       if (!pr) return;
       yapiKunye(yapiTaslak(pr), el.dataset.sayfa)[el.dataset.ky] = el.value;
-      /* İleri düğmesi künye tamamlanınca açılsın — yeniden çizmeden. */
-      const dug = $('.ag.ileri');
-      if (dug && el.dataset.ky === 'amac') {
-        dug.disabled = !kunyeTam(YAPI_TASLAK[pr.id].kunye[el.dataset.sayfa]);
-      }
+      yapiIleriTazele(pr);
     });
   });
+}
+
+/* Çipe basınca bütün sayfayı yeniden çizmiyoruz: kaydırma yerinden
+   oynuyordu. Yalnız önizleme ve İleri düğmesi tazelenir. */
+function yapiOnizlemeTazele(pr) {
+  const t = yapiTaslak(pr);
+  const adm = yapiAdimlari(t, pr);
+  const adim = adm[Math.min(t.yer, adm.length - 1)];
+  if (!adim || adim.tur !== 'kunye') return;
+  const k  = yapiKunye(t, adim.sayfa);
+  const tp = SAYFA_TURU.find(x => x.ad === k.tur);
+  ONIZLEME_EKRAN = tp ? tp.ekran : 'liste';
+  ONIZLEME_KUNYE = (k.tur || (k.alanlar || []).length)
+    ? Object.assign({ sayfa: adim.sayfa }, k) : null;
+  const goz = $('.onz-goz');
+  if (goz) { goz.innerHTML = onizlemeIc(pr, pr.palet); onizlemeSigdir(); }
+}
+
+function yapiIleriTazele(pr) {
+  const t = yapiTaslak(pr);
+  const adm = yapiAdimlari(t, pr);
+  const adim = adm[Math.min(t.yer, adm.length - 1)];
+  const dug = $('.ag.ileri');
+  if (!dug || !adim || adim.tur !== 'kunye' || dug.classList.contains('kur')) return;
+  dug.disabled = !kunyeAdimTam(yapiKunye(t, adim.sayfa), adim.alt,
+    rolListesi((pr.palet || {}).roller));
 }
 
 /* 4 · Geliştirme */
@@ -3136,6 +3454,10 @@ function stepRow(step, text, done) {
    ========================================================================== */
 
 function render() {
+  /* Kaydırma yeri: akış içindeki bir seçim sonrası liste başa dönmesin. */
+  const kaydiran = $('.kunye-kaydir, .ozet-kaydir, .palet-kaydir');
+  const kaydirmaYeri = kaydiran ? kaydiran.scrollTop : null;
+
   const { key, id, durak } = rota();
   const detay = key === 'projeler' && id;
   const sayfa = detay && DURAKLAR[durak] ? durak : null;
@@ -3192,6 +3514,10 @@ function render() {
   $$('[data-route]').forEach(el => el.classList.toggle('active', el.dataset.route === key));
 
   logolariGoster();
+  if (kaydirmaYeri) {
+    const yeni = $('.kunye-kaydir, .ozet-kaydir, .palet-kaydir');
+    if (yeni) yeni.scrollTop = kaydirmaYeri;
+  }
   onizlemeSigdir();
   /* Bir kare sonra bir daha: sayfa geçiş animasyonu sürerken ölçülen kutu
      gerçek boyunda olmuyor, önizleme gereksiz yere küçülüyordu. */
@@ -5929,12 +6255,25 @@ async function eylemCalistir(el) {
     const pr = DB.proje(el.dataset.proje);
     if (!pr) return;
     const t = yapiTaslak(pr), ad = el.dataset.ad;
-    if (t.modul === ad) { t.modul = ''; t.sayfalar = []; }
+    if (t.modul === ad) { t.modul = ''; t.sayfalar = []; t.kunye = {}; }
     else {
       t.modul = ad;
-      /* Şablonun sayfaları önden işaretli gelir; kullanıcı eksiltir. */
-      const sb = DB.modulSablonlari().find(m => m.ad === ad);
-      t.sayfalar = ((sb && sb.sayfalar) || []).slice();
+      /* Kurulu modülse mevcut sayfaları ve daha önce girilmiş künyeleri
+         yükleriz: aynı işi ikinci kez yazdırmanın anlamı yok. */
+      const kurulu = DB.modulleri(pr.id).find(m => m.ad === ad);
+      if (kurulu) {
+        t.sayfalar = DB.sayfalari(kurulu.id).map(x => x.ad);
+        const eski = (pr.palet || {}).kunye || {};
+        t.kunye = {};
+        t.sayfalar.forEach(sf => {
+          const k = eski[ad + ' · ' + sf];
+          if (k) t.kunye[sf] = JSON.parse(JSON.stringify(k));
+        });
+      } else {
+        const sb = DB.modulSablonlari().find(m => m.ad === ad);
+        t.sayfalar = ((sb && sb.sayfalar) || []).slice();
+        t.kunye = {};
+      }
     }
     render();
     return;
@@ -5974,19 +6313,79 @@ async function eylemCalistir(el) {
     return;
   }
 
-  /* ---- Sayfa künyesi ---- */
-  if (e === 'yapi-ky-tur' || e === 'yapi-ky-eylem' || e === 'yapi-ky-rol') {
+  /* ---- Sayfa künyesi ----
+     Çip eylemleri render() çağırmıyor: tam çizim kaydırmayı başa alıyordu. */
+  if (e === 'yapi-ky-tur') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const k = yapiKunye(yapiTaslak(pr), el.dataset.sayfa);
+    k.tur = k.tur === el.dataset.ad ? '' : el.dataset.ad;
+    $$('.raf .bsc').forEach(b => b.classList.toggle('on', b.dataset.ad === k.tur));
+    const not = $('.ky-not');
+    const tp = SAYFA_TURU.find(x => x.ad === k.tur);
+    if (not) not.textContent = tp ? tp.alt : '';
+    yapiOnizlemeTazele(pr); yapiIleriTazele(pr);
+    return;
+  }
+
+  if (e === 'yapi-ky-eylem') {
     const pr = DB.proje(el.dataset.proje);
     if (!pr) return;
     const k = yapiKunye(yapiTaslak(pr), el.dataset.sayfa);
     const ad = el.dataset.ad;
-    if (e === 'yapi-ky-tur') k.tur = k.tur === ad ? '' : ad;
-    else {
-      const dizi = e === 'yapi-ky-eylem' ? k.eylemler : k.roller;
-      const i = dizi.indexOf(ad);
-      if (i > -1) dizi.splice(i, 1); else dizi.push(ad);
-    }
+    const i = k.eylemler.indexOf(ad);
+    if (i > -1) { k.eylemler.splice(i, 1); delete k.yetki[ad]; }
+    else { k.eylemler.push(ad); k.yetki[ad] = (k.roller || []).slice(); }
+    el.classList.toggle('on', k.eylemler.includes(ad));
+    yapiOnizlemeTazele(pr); yapiIleriTazele(pr);
+    return;
+  }
+
+  /* Rol merdiveni: alttakini seçmek üstündekileri de kapsar — amir
+     personelin işini görür, ayrıca işaretlemeye gerek yok. */
+  if (e === 'yapi-ky-rol') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const roller = rolListesi((pr.palet || {}).roller);
+    const k = yapiKunye(yapiTaslak(pr), el.dataset.sayfa);
+    const i = roller.indexOf(el.dataset.ad);
+    if (i < 0) return;
+    const taban = k.roller.length ? roller.findIndex(r => k.roller.includes(r)) : -1;
+    k.roller = taban === i ? [] : roller.slice(i);
+    /* Eylem yetkileri rol listesinin dışına taşamaz. */
+    Object.keys(k.yetki).forEach(ey => {
+      k.yetki[ey] = (k.yetki[ey] || []).filter(r => k.roller.includes(r));
+      if (!k.yetki[ey].length) k.yetki[ey] = k.roller.slice();
+    });
     render();
+    return;
+  }
+
+  if (e === 'yapi-ky-yetki') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const k = yapiKunye(yapiTaslak(pr), el.dataset.sayfa);
+    const ey = el.dataset.ey;
+    const i = k.roller.indexOf(el.dataset.ad);
+    if (i < 0) return;
+    const secik = k.yetki[ey] || [];
+    const taban = secik.length ? k.roller.findIndex(r => secik.includes(r)) : -1;
+    k.yetki[ey] = taban === i ? [] : k.roller.slice(i);
+    const satir = el.parentElement;
+    $$('button', satir).forEach((b, j) => b.classList.toggle('on',
+      k.yetki[ey].includes(k.roller[j])));
+    yapiIleriTazele(pr);
+    return;
+  }
+
+  if (e === 'yapi-ky-ornek' || e === 'yapi-ky-kural-ornek') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const alan = e === 'yapi-ky-ornek' ? 'amac' : 'kural';
+    yapiKunye(yapiTaslak(pr), el.dataset.sayfa)[alan] = el.dataset.ad;
+    const kutu = $(`[data-ky="${alan}"]`);
+    if (kutu) { kutu.value = el.dataset.ad; kutu.focus(); }
+    yapiIleriTazele(pr);
     return;
   }
 
@@ -6009,6 +6408,57 @@ async function eylemCalistir(el) {
     return;
   }
 
+  if (e === 'yapi-ky-zorunlu') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const a = yapiKunye(yapiTaslak(pr), el.dataset.sayfa).alanlar[Number(el.dataset.deger)];
+    if (!a) return;
+    a.zorunlu = !a.zorunlu;
+    el.classList.toggle('on', a.zorunlu);
+    yapiOnizlemeTazele(pr);
+    return;
+  }
+
+  if (e === 'yapi-ky-deger-ekle') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const deger = await metinSor({ baslik: 'Değer', buton: 'Ekle',
+      aciklama: 'Bu alanın alabileceği hâllerden biri.', yerTutucu: 'Örn. Bekliyor' });
+    if (!deger) return;
+    const a = yapiKunye(yapiTaslak(pr), el.dataset.sayfa).alanlar[Number(el.dataset.deger)];
+    if (!a) return;
+    a.degerler = (a.degerler || []).concat(
+      (a.degerler || []).includes(deger) ? [] : [deger]);
+    render();
+    return;
+  }
+
+  if (e === 'yapi-ky-deger-sil') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const a = yapiKunye(yapiTaslak(pr), el.dataset.sayfa).alanlar[Number(el.dataset.deger)];
+    if (!a) return;
+    a.degerler = (a.degerler || []).filter(d => d !== el.dataset.ad);
+    render();
+    return;
+  }
+
+  if (e === 'yapi-ky-kaynak') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const t = yapiTaslak(pr);
+    const secenekler = t.sayfalar.filter(x => x !== el.dataset.sayfa)
+      .concat(DB.modulleri(pr.id).filter(m => m.ad !== GENEL_MODUL)
+        .flatMap(m => DB.sayfalari(m.id).map(x => x.ad)));
+    const secim = await listeSor('Hangi sayfadan seçilecek?',
+      [...new Set(secenekler)], 'Başka sayfa yaz');
+    if (!secim) return;
+    const a = yapiKunye(t, el.dataset.sayfa).alanlar[Number(el.dataset.deger)];
+    if (a) a.kaynak = secim;
+    render();
+    return;
+  }
+
   if (e === 'yapi-kur') {
     const pr = DB.proje(el.dataset.proje);
     if (!pr) return;
@@ -6017,7 +6467,16 @@ async function eylemCalistir(el) {
 
     el.disabled = true;
     try {
-      await DB.modulEkle(pr.id, t.modul, t.sayfalar);
+      const kurulu = DB.modulleri(pr.id).find(m => m.ad === t.modul);
+      if (kurulu) {
+        /* Modül duruyorsa yalnız yeni sayfalar eklenir; kopya olmasın. */
+        const varOlan = DB.sayfalari(kurulu.id).map(x => x.ad);
+        for (const sf of t.sayfalar) {
+          if (!varOlan.includes(sf)) await DB.sayfaEkle(kurulu.id, sf);
+        }
+      } else {
+        await DB.modulEkle(pr.id, t.modul, t.sayfalar);
+      }
       /* Künyeler projenin palet torbasında: ayrı sütun gerekmiyor ve
          prompt üretilirken oradan okunuyor. */
       const eski = (pr.palet || {}).kunye || {};
@@ -6026,7 +6485,7 @@ async function eylemCalistir(el) {
       await DB.paletKaydet(pr.id, Object.assign({}, pr.palet || {}, { kunye: yeni }));
       delete YAPI_TASLAK[pr.id];
       ONIZLEME_MENU = ONIZLEME_SAYFA = ONIZLEME_ALAN = null;
-      toast(t.modul + ' kuruldu · ' + t.sayfalar.length + ' sayfa');
+      toast(t.modul + ' hazır · ' + t.sayfalar.length + ' sayfa');
       render();
     } catch (err) {
       el.disabled = false;

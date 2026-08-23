@@ -120,23 +120,47 @@ const PROMPT = {
     if (!anahtarlar.length) return '';
 
     const s = ['## Sayfa Künyeleri'];
-    s.push('Her sayfanın ne yaptığı, neyi tuttuğu ve kimin kullandığı aşağıda.');
-    s.push('Alan listesi o sayfanın veritabanı tablosudur — sütun adlarını ve');
-    s.push('türlerini buradan al, kendin uydurma. Rol listesi satır güvenliği');
-    s.push('(RLS) kuralını belirler: listede olmayan rol o tabloyu göremez.');
+    s.push('Her sayfanın ne yaptığı, neyi tuttuğu, kimin ne yapabildiği aşağıda.');
+    s.push('Bunlar kullanıcıyla tek tek konuşularak alındı; tahmin değil, karar.');
+    s.push('');
+    s.push('- **Alan listesi o sayfanın veritabanı tablosudur.** Sütun adlarını ve');
+    s.push('  türlerini buradan al, kendin uydurma, fazladan sütun ekleme.');
+    s.push('- **Seçenek alanlarının değerleri sabittir.** Yalnız yazılı değerler');
+    s.push('  girilebilir; başka bir değer kabul edilmemeli.');
+    s.push('- **İlişki alanı** yazılı sayfanın kaydına bağlanır (foreign key).');
+    s.push('- **Zorunlu alan** boş kaydedilemez; hem arayüzde hem veritabanında engelle.');
+    s.push('- **Yetki satırı** satır güvenliği (RLS) kuralıdır: yazılı rol ve üstü o');
+    s.push('  işi yapabilir, altındakiler yapamaz. Görme ile yapma ayrıdır.');
+    s.push('- **Kural** satırı iş kuralıdır; arayüzde de veritabanında da uygula.');
 
     anahtarlar.forEach(ad => {
       const k = kunye[ad] || {};
       s.push('', `### ${ad}`);
       if (k.amac) s.push(k.amac);
       s.push('');
-      if (k.tur) s.push(`- **Tür:** ${k.tur}`);
+      if (k.tur) s.push(`- **Ekran türü:** ${k.tur}`);
+
       if ((k.alanlar || []).length) {
         s.push('- **Alanlar:**');
-        k.alanlar.forEach(a => s.push(`  - ${a.ad} — ${a.tur}`));
+        k.alanlar.forEach(a => {
+          const ek = [];
+          if (a.zorunlu) ek.push('zorunlu');
+          if (a.tur === 'Seçenek' && (a.degerler || []).length)
+            ek.push('değerler: ' + a.degerler.join(' | '));
+          if (a.tur === 'İlişki' && a.kaynak) ek.push('kaynak: ' + a.kaynak);
+          s.push(`  - ${a.ad} — ${a.tur}${ek.length ? ' — ' + ek.join(' — ') : ''}`);
+        });
       }
-      if ((k.eylemler || []).length) s.push(`- **Eylemler:** ${k.eylemler.join(' · ')}`);
-      if ((k.roller || []).length)   s.push(`- **Kullanan roller:** ${k.roller.join(' · ')}`);
+
+      if ((k.roller || []).length) s.push(`- **Görebilen:** ${k.roller.join(' · ')}`);
+      if ((k.eylemler || []).length) {
+        s.push('- **Eylemler ve yetkiler:**');
+        k.eylemler.forEach(ey => {
+          const r = (k.yetki && k.yetki[ey] && k.yetki[ey].length)
+            ? k.yetki[ey] : (k.roller || []);
+          s.push(`  - ${ey} — ${r.length ? r.join(' · ') : 'belirtilmedi'}`);
+        });
+      }
       if (k.kural) s.push(`- **Kural:** ${k.kural}`);
     });
     return s.join('\n');

@@ -1,5 +1,15 @@
 # Değişiklik Günlüğü
 
+## v0.39.0
+- Künye tek tek soruluyor: **Amaç → Tür → Alanlar → Eylemler → Roller → Yetki → Kural → Onay**. Her ekranda tek soru, sohbet baloncuğunda niye sorulduğu yazıyor, örnek cevaplar dokunmalık.
+- **Önizleme künyeden besleniyor** — sütunlar senin alan adların, hücreler alan türüne göre gerçekçi (para 1.240,00, seçenek kendi değerin, ilişki "Masa 4"), formda alan türü belli (seçenekte ok, tarihte takvim, evet/hayırda anahtar, zorunluda yıldız), seçmediğin eylemin düğmesi çıkmıyor.
+- Seçenek alanı değerlerini, ilişki alanı kaynak sayfasını soruyor; her alanda "boş bırakılamaz" anahtarı var.
+- **Rol merdiveni**: alt katmanı seçince üstü kendiliğinden geliyor. Ayrıca "kim ne yapabilir" ayrı soruluyor — görmek ayrı, yapmak ayrı.
+- Sayfa sonunda **onay kartı**: anladığını düz Türkçe tekrar ediyor, altında kuracağı tabloyu gösteriyor.
+- Çipe basınca sayfa başa dönmüyor; kaydırma yeri korunuyor.
+- 3. durağa girer girmez akış açılıyor; kurulu modül varsa kart olarak seçiliyor, sayfaları ve künyeleri yükleniyor.
+- Prompt künye bölümü genişledi: değerler, zorunluluk, ilişki kaynağı ve eylem bazlı RLS kuralları.
+
 ## v0.38.0
 - Yapı akışı tek modüle göre yeniden kuruldu: **Modül → Sayfalar → her sayfanın künyesi → Özet + Kur**. Sıra/açılış adımı kalktı, kurulu modüller listeden düşüyor.
 - **Sayfa künyesi** — her sayfa için ne işe yaradığı, türü (liste/form/detay/panel/takvim/ayarlar), alanları (ad + tür), eylemleri, kullanan roller ve isteğe bağlı kural. Künye zorunlu: eksikken İleri ve Kur açılmıyor.
