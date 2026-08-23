@@ -3902,3 +3902,16 @@ a:hover { color: var(--red-ink); }
 .ak-ust.kalip { margin-bottom: 4px; }
 .ak-ozet { margin: 0 0 10px; font-size: 11.5px; color: var(--ink-faint); line-height: 1.5; }
 .ak-ozet i { font-style: normal; color: var(--ink-dim); }
+
+/* Kontrol ekranı: sayfa kartına dokununca künyesine gidilir. */
+.yo.dokun { display: block; width: 100%; text-align: left; cursor: pointer;
+            font-family: inherit; }
+.yo.dokun:active { transform: scale(.995); }
+.yo.eksik { border-color: color-mix(in srgb, #d0a13c 55%, transparent); }
+.yo b em { font-style: normal; font-size: 9px; letter-spacing: .1em;
+           text-transform: uppercase; margin-left: 7px; padding: 2px 7px;
+           border-radius: 999px; color: #f0d8a0;
+           background: color-mix(in srgb, #d0a13c 24%, transparent); }
+.yo-kalip { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 7px; }
+.yo-kalip u { text-decoration: none; font-size: 9.5px; padding: 3px 8px;
+              border-radius: 999px; background: var(--surface-2); color: var(--ink-dim); }

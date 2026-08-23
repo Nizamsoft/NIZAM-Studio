@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.41.0
+- **Soruları Claude soruyor.** Çözümleme promptu artık "önce bana soru sor, cevaplarımı bekle, emin olmadan blok verme" diyor. Sohbet Claude'da geçiyor; anlaşınca verdiği tek blok Studio'ya yapıştırılıyor ve her şey doluyor — sayfalar, alanlar, seçenek değerleri, kalıplar ve cevapları, roller, eylem bazlı yetkiler, kurallar.
+- Studio artık soru sormuyor, **kontrol ettiriyor**: yapıştırdıktan sonra tek ekranda sayfa listesi çıkıyor, eksik kalan sarı işaretli, üstüne dokununca o sayfanın künyesine girip düzeltiyorsun. Düzeltme bitince listeye dönüyor.
+- Akış 4 adıma indi: Modül → Anlat → Sayfalar → Kontrol. Künye adımları yalnız düzeltmek istediğinde açılıyor.
+- Sohbette verilen kararlar da saklanıyor ve prompta aynen giriyor.
+
 ## v0.40.0
 - **Anlat adımı** — modülü seçtikten sonra boş bir kutu çıkıyor: modülde ne olacağını kendi cümlelerinle yazıyorsun. Studio bir çözümleme promptu üretiyor, Claude'a veriyorsun, dönen bloğu yapıştırıyorsun; sayfalar, alanlar, kalıplar ve kurallar kendiliğinden doluyor. Anlatmak istemezsen boş geçilir, elle kurulur.
 - **Açık sorular adımı** — çözümlemenin karar veremediği yerler soru olarak geliyor; cevapların prompta aynen giriyor.

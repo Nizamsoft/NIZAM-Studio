@@ -2336,8 +2336,8 @@ const YAPI_TASLAK = {};
 
 function yapiTaslak(p) {
   if (!YAPI_TASLAK[p.id]) {
-    YAPI_TASLAK[p.id] = { yer: 0, modul: '', anlat: '', sorular: [],
-                          cevap: {}, sayfalar: [], kunye: {} };
+    YAPI_TASLAK[p.id] = { yer: 0, modul: '', anlat: '', kararlar: [],
+                          duzelt: null, sayfalar: [], kunye: {} };
   }
   return YAPI_TASLAK[p.id];
 }
@@ -2397,18 +2397,18 @@ function yapiAdimlari(t, p) {
       obekNot: 'Önce sen anlat; sorular ondan sonra.',
       aciklama: 'Modülün içinde hangi ekranlar olacak?' },
   ];
-  t.sayfalar.forEach(sf => {
-    const k = yapiKunye(t, sf);
+  /* Künye adımları yalnız düzeltmek istediğin sayfa için açılır. Sohbet
+     Claude'da geçiyor; Studio soru sormuyor, kontrol ettiriyor. */
+  if (t.duzelt && t.sayfalar.includes(t.duzelt)) {
+    const k = yapiKunye(t, t.duzelt);
     kunyeAdimlari(k, roller).forEach(ka => a.push({
-      tur: 'kunye', sayfa: sf, alt: ka.anahtar, ad: sf,
-      obek: sf, obekNot: 'Bu ekranı kurmak için gerekenler.',
+      tur: 'kunye', sayfa: t.duzelt, alt: ka.anahtar, ad: t.duzelt,
+      obek: t.duzelt, obekNot: 'Düzeltmek istediğin yeri değiştir.',
       aciklama: ka.soru }));
-  });
-  if ((t.sorular || []).length) a.push({ tur: 'sorular', ad: 'Açık sorular',
-    obek: 'Eksikler', obekNot: 'Anlatında karar verilmemiş yerler.',
-    aciklama: 'Bunları netleştirelim.' });
-  a.push({ tur: 'ozet', ad: 'Özet', obek: 'Kurulum',
-           obekNot: 'Hepsi tek seferde yazılır.', aciklama: 'Kurulacakların listesi.' });
+  }
+  a.push({ tur: 'ozet', ad: 'Kontrol', obek: 'Kurulum',
+           obekNot: 'Yanlış gördüğün yere dokun, düzelt.',
+           aciklama: 'Kurulacakların listesi.' });
   return a;
 }
 
@@ -2564,47 +2564,37 @@ function yapiGovde(p, t, adim) {
           ${svg(ICON.ice, 15)} Cevabı yapıştır</button>
       </div>
       ${t.sayfalar.length ? `<p class="ky-not">${svg(ICON.tik, 12)}
-        ${t.sayfalar.length} sayfa çözümlendi${(t.sorular || []).length
-          ? ' · ' + t.sorular.length + ' soru çıktı' : ''}.</p>` : `
-        <p class="ky-not">Anlatmak istemiyorsan boş geç — sayfaları elle kurarsın.</p>`}
-    </div>`;
-  }
-
-  if (adim.tur === 'sorular') {
-    return `<div class="kunye-kaydir">
-      ${balon('Anlatında karar verilmemiş yerler var. Bunları netleştirelim.',
-              'Cevaplamazsan AI kendi kararını verir.')}
-      ${t.sorular.map((sr, i) => `
-        <div class="alan-kart">
-          <p class="ak-soru" style="font-size:13px;color:var(--ink)">${esc(sr)}</p>
-          <label class="field ky-alan" style="margin:0">
-            <input type="text" data-cevap="${i}" data-proje="${p.id}"
-                   value="${esc(t.cevap[i] || '')}" maxlength="200"
-                   autocomplete="off" placeholder="Cevabın…">
-          </label>
-        </div>`).join('')}
+        ${t.sayfalar.length} sayfa aktarıldı${(t.kararlar || []).length
+          ? ' · ' + t.kararlar.length + ' karar kaydedildi' : ''}.</p>` : `
+        <p class="ky-not">Claude önce sana soru soracak; anlaştıktan sonra verdiği
+        bloğu buraya yapıştır. Anlatmak istemiyorsan boş geç.</p>`}
     </div>`;
   }
 
   if (adim.tur === 'kunye') return kunyeGovde(p, t, adim);
 
-  /* Özet */
+  /* Kontrol ekranı: Claude'un kurduğu yapı burada gözden geçirilir. */
   const eksik = t.sayfalar.filter(sf => !kunyeTam(t.kunye[sf]));
   return `<div class="ozet-kaydir">
-    <div class="ikili">
-      <div class="tkutu"><span class="ik">${svg(ICON.katman, 14)}</span><b>Modül</b>
-        <u>${t.modul ? 1 : 0}</u></div>
-      <div class="tkutu"><span class="ik">${svg(ICON.folder, 14)}</span><b>Sayfa</b>
-        <u>${t.sayfalar.length}</u></div>
-    </div>
-    ${eksik.length ? `<div class="celiski">
-      ${eksik.map(sf => `<button class="cl" type="button" data-eylem="yapi-sayfaya-git"
-                                 data-proje="${p.id}" data-ad="${esc(sf)}">
-        ${svg(ICON.uyari, 13)} <span>${esc(sf)} künyesi eksik</span></button>`).join('')}
-    </div>` : ''}
-    ${t.sayfalar.map((sf, i) => `<div class="yo">
-      <b>${i + 1}. ${esc(sf)}</b><i>${esc(kunyeCumlesi(sf, t.kunye[sf] || {}))}</i>
-    </div>`).join('')}
+    ${balon(eksik.length
+      ? 'Şunlar eksik kalmış. Üstüne dokunup tamamla.'
+      : 'Hepsi hazır görünüyor. Yanlış gördüğün yere dokunup düzeltebilirsin.',
+      t.sayfalar.length + ' sayfa · ' + t.sayfalar.reduce((n, sf) =>
+        n + ((t.kunye[sf] || {}).alanlar || []).length, 0) + ' alan')}
+    ${t.sayfalar.map((sf, i) => {
+      const k = t.kunye[sf] || {};
+      const tam = kunyeTam(k);
+      return `<button class="yo dokun ${tam ? '' : 'eksik'}" type="button"
+                      data-eylem="yapi-sayfaya-git" data-proje="${p.id}" data-ad="${esc(sf)}">
+        <b>${esc(sf)}${k.tur ? ' · ' + esc(k.tur.toLocaleLowerCase('tr')) : ''}
+          ${tam ? '' : '<em>eksik</em>'}</b>
+        <i>${esc(kunyeCumlesi(sf, k))}</i>
+        ${(k.kalip || []).length ? `<span class="yo-kalip">${k.kalip.map(a =>
+          `<u>${esc((KALIP.find(x => x.anahtar === a) || {}).ad || a)}</u>`).join('')}</span>` : ''}
+      </button>`;
+    }).join('')}
+    ${t.sayfalar.length ? '' : `<div class="bos-kutu">${svg(ICON.folder, 18)}
+      <span>Hiç sayfa yok. Geri dönüp anlat ya da sayfaları elle ekle.</span></div>`}
   </div>`;
 }
 
@@ -2874,8 +2864,9 @@ function yapiGezinme(p, no, adm, t, adim) {
     : false;   /* Anlat ve sorular boş geçilebilir. */
   const kurulur = t.modul && t.sayfalar.length
     && t.sayfalar.every(sf => kunyeTam(t.kunye[sf]));
+  const sonKunye = adim.tur === 'kunye' && adm[no + 1] && adm[no + 1].tur !== 'kunye';
   const yazi = adim.tur === 'anlat' ? (t.sayfalar.length ? 'İleri' : 'Anlatmadan devam')
-    : adim.tur === 'sorular' ? 'İleri'
+    : sonKunye ? 'Bitti'
     : adim.alt === 'kalip' && !(yapiKunye(t, adim.sayfa).kalip || []).length ? 'Hiçbiri, geç'
     : adim.alt === 'ozet' ? 'Doğru, devam'
     : adim.alt === 'kural' && !(yapiKunye(t, adim.sayfa).kural || '').trim() ? 'Kural yok, geç'
@@ -2913,14 +2904,6 @@ function yapiBaglari() {
       }
     });
   }
-  $$('[data-cevap]').forEach(el => {
-    if (el.dataset.bagli) return;
-    el.dataset.bagli = '1';
-    el.addEventListener('input', () => {
-      const pr = DB.proje(el.dataset.proje);
-      if (pr) yapiTaslak(pr).cevap[el.dataset.cevap] = el.value;
-    });
-  });
   $$('[data-ky]').forEach(el => {
     if (el.dataset.bagli) return;
     el.dataset.bagli = '1';
@@ -5478,7 +5461,8 @@ function anlatAktarAc(projeId) {
       }
       on.innerHTML = `<div class="pa-denetim">${svg(ICON.tik, 13)}
         <span><b>${cozum.sayfalar.length} sayfa</b> okundu${
-          cozum.sorular.length ? ` · <b>${cozum.sorular.length} soru</b> çıktı` : ''}.</span></div>
+          cozum.kararlar.length ? ` · <b>${cozum.kararlar.length} karar</b> kaydedilecek` : ''
+        }.</span></div>
         <div class="satirlar">${cozum.sayfalar.map(sf => `
           <div class="sr"><b>${esc(sf.ad)}</b>
             <span class="ipucu">${esc([sf.tur, (sf.alanlar || []).length + ' alan',
@@ -5513,7 +5497,9 @@ function cozumlemeOku(metin) {
   if (!o || !Array.isArray(o.sayfalar) || !o.sayfalar.length) return null;
   return {
     sayfalar: o.sayfalar.filter(x => x && x.ad),
-    sorular: Array.isArray(o.sorular) ? o.sorular.filter(x => typeof x === 'string') : [],
+    kararlar: Array.isArray(o.kararlar)
+      ? o.kararlar.filter(x => x && x.soru).map(x => ({ soru: x.soru, cevap: x.cevap || '' }))
+      : [],
   };
 }
 
@@ -5521,8 +5507,7 @@ function cozumlemeOku(metin) {
    varsa üstüne yazmıyoruz: soru sormadan veri kaybettirmek olur. */
 function cozumlemeUygula(t, cozum, p) {
   const roller = rolListesi((p.palet || {}).roller);
-  t.sorular = cozum.sorular;
-  t.cevap = {};
+  t.kararlar = cozum.kararlar || [];
   cozum.sayfalar.forEach(sf => {
     if (!t.sayfalar.includes(sf.ad)) t.sayfalar.push(sf.ad);
     const k = yapiKunye(t, sf.ad);
@@ -5543,9 +5528,23 @@ function cozumlemeUygula(t, cozum, p) {
     if (!(k.kalip || []).length && Array.isArray(sf.kalip)) {
       k.kalip = sf.kalip.filter(x => KALIP.some(kl => kl.anahtar === x));
     }
+    if (sf.kalipCevap && typeof sf.kalipCevap === 'object') {
+      k.kalipCevap = Object.assign({}, sf.kalipCevap, k.kalipCevap || {});
+    }
     if (!k.kural) k.kural = sf.kural || '';
-    if (!k.roller.length && roller.length) k.roller = roller.slice();
-    k.eylemler.forEach(ey => { if (!k.yetki[ey]) k.yetki[ey] = k.roller.slice(); });
+    /* Roller alttan üste sıralı: Claude alttaki rolü yazdıysa üstü de dahil. */
+    if (!k.roller.length) {
+      const gelen = Array.isArray(sf.roller) ? sf.roller.filter(r => roller.includes(r)) : [];
+      const taban = gelen.length ? Math.min(...gelen.map(r => roller.indexOf(r))) : 0;
+      k.roller = roller.slice(taban);
+    }
+    k.eylemler.forEach(ey => {
+      if (k.yetki[ey]) return;
+      const gelen = (sf.yetki && Array.isArray(sf.yetki[ey]))
+        ? sf.yetki[ey].filter(r => k.roller.includes(r)) : [];
+      const taban = gelen.length ? Math.min(...gelen.map(r => k.roller.indexOf(r))) : 0;
+      k.yetki[ey] = k.roller.slice(taban);
+    });
   });
 }
 
@@ -6479,7 +6478,13 @@ async function eylemCalistir(el) {
   if (e === 'yapi-adim') {
     const pr = DB.proje(el.dataset.proje);
     if (!pr) return;
-    yapiTaslak(pr).yer = Number(el.dataset.deger);
+    const t = yapiTaslak(pr);
+    const hedef = Number(el.dataset.deger);
+    /* Künye bölümünden çıkınca düzeltme kipi kapanır: liste yine kontrol
+       ekranı olur. */
+    const adm = yapiAdimlari(t, pr);
+    if (t.duzelt && (!adm[hedef] || adm[hedef].tur !== 'kunye')) t.duzelt = null;
+    t.yer = hedef;
     render();
     $('#view').scrollTop = 0;
     return;
@@ -6489,8 +6494,11 @@ async function eylemCalistir(el) {
     const pr = DB.proje(el.dataset.proje);
     if (!pr) return;
     const t = yapiTaslak(pr);
-    const i = yapiAdimlari(t).findIndex(a => a.tur === 'kunye' && a.sayfa === el.dataset.ad);
-    if (i > -1) { t.yer = i; render(); }
+    t.duzelt = el.dataset.ad;
+    const i = yapiAdimlari(t, pr).findIndex(a => a.tur === 'kunye');
+    t.yer = i > -1 ? i : t.yer;
+    render();
+    $('#view').scrollTop = 0;
     return;
   }
 
@@ -6800,11 +6808,10 @@ async function eylemCalistir(el) {
       /* Anlatım ve açık soruların cevapları da saklanır: prompt bunları
          AI'a aynen veriyor, ikinci kez anlatmaya gerek kalmıyor. */
       const anlatim = Object.assign({}, (pr.palet || {}).anlatim || {});
-      if ((t.anlat || '').trim() || (t.sorular || []).length) {
+      if ((t.anlat || '').trim() || (t.kararlar || []).length) {
         anlatim[t.modul] = {
           metin: (t.anlat || '').trim(),
-          sorular: (t.sorular || []).map((sr, i) => ({ soru: sr, cevap: t.cevap[i] || '' }))
-            .filter(x => x.cevap),
+          sorular: (t.kararlar || []).filter(x => x.soru && x.cevap),
         };
       }
       await DB.paletKaydet(pr.id, Object.assign({}, pr.palet || {},

@@ -196,8 +196,18 @@ const PROMPT = {
   cozumleme(proje, taslak) {
     const roller = rolListesi((proje.palet || {}).roller);
     const s = [];
-    s.push('Bir iş yazılımının bir modülünü kuruyorum. Aşağıda modülün ne');
-    s.push('olacağını kendi cümlelerimle anlattım. Bunu yapıya çevir.');
+    s.push('Bir iş yazılımının bir modülünü kuruyorum. Aşağıda ne olacağını');
+    s.push('kendi cümlelerimle anlattım.');
+    s.push('');
+    s.push('**Önce bana soru sor.** Anlatımımda karar verilmemiş ne varsa tek tek');
+    s.push('sor, cevaplarımı bekle. Emin olmadan yapıyı kurma, varsayım yapma.');
+    s.push('Anlaştığımıza kanaat getirince en sonda tek bir JSON bloğu ver —');
+    s.push('onu uygulamaya yapıştıracağım.');
+    s.push('');
+    s.push('Soruları yazılım terimiyle değil, işi bilen ama yazılım bilmeyen');
+    s.push('birinin anlayacağı dille sor. Bir seferde en çok 3-4 soru sor,');
+    s.push('cevapladıkça devam et. Cevabımdan yeni bir belirsizlik doğarsa onu da');
+    s.push('sor. Sormaya değer bir şey kalmayınca "Bloğu veriyorum" deyip ver.');
     s.push('');
     s.push('## Firma');
     s.push(`${proje.firma}${proje.sektor ? ' · ' + proje.sektor : ''}`);
@@ -207,8 +217,17 @@ const PROMPT = {
     s.push('## Anlattığım');
     s.push(String(taslak.anlat || '').trim());
     s.push('');
-    s.push('## Ne istiyorum');
-    s.push('Bana **yalnız bir JSON bloğu** ver. Öncesine sonrasına açıklama yazma.');
+    s.push('## Sorman gereken tipik yerler');
+    s.push('- Bir kaydın birden çok yeri etkilediği durumlar: nasıl belirlenir,');
+    s.push('  toplam denk olmalı mı, yanlış kayıt nasıl düzeltilir');
+    s.push('- Kodlu/hiyerarşik listelerde alt kodun nasıl türediği, kaç kat indiği');
+    s.push('- Hesaplanan sütunlar: neye göre, nereden başlayarak');
+    s.push('- Seçenek alanlarının alabileceği değerler');
+    s.push('- Bir kaydı kim görebilir, kim değiştirebilir, kim silebilir');
+    s.push('- Sayfalar arası bağlantı: hangi ekrandan hangisine gidilir');
+    s.push('');
+    s.push('## En sonda vereceğin blok');
+    s.push('Yalnız JSON, öncesine sonrasına açıklama yazma.');
     s.push('');
     s.push('```json');
     s.push('{');
@@ -218,48 +237,51 @@ const PROMPT = {
     s.push('      "amac": "Tek cümleyle bu ekran ne işe yarar",');
     s.push('      "tur": "Liste",');
     s.push('      "kalip": ["agac"],');
+    s.push('      "kalipCevap": { "agac.kod": "Üstünden türesin (100 → 100.01)" },');
     s.push('      "alanlar": [');
     s.push('        { "ad": "Kod", "tur": "Metin", "zorunlu": true },');
     s.push('        { "ad": "Durum", "tur": "Seçenek", "degerler": ["Açık", "Kapalı"] },');
-    s.push('        { "ad": "Hesap", "tur": "İlişki", "kaynak": "Hesaplar" }');
+    s.push('        { "ad": "Üst Hesap", "tur": "İlişki", "kaynak": "Hesaplar" }');
     s.push('      ],');
     s.push('      "eylemler": ["Ekle", "Düzenle"],');
+    s.push('      "roller": ["Personel", "Amir", "Yönetici"],');
+    s.push('      "yetki": { "Ekle": ["Personel"], "Düzenle": ["Amir"] },');
     s.push('      "kural": "Varsa iş kuralı, yoksa boş"');
     s.push('    }');
     s.push('  ],');
-    s.push('  "sorular": [');
-    s.push('    "Anlatımda karar verilmemiş, sorulması gereken şeyler"');
+    s.push('  "kararlar": [');
+    s.push('    { "soru": "Sorduğun soru", "cevap": "Verdiğim cevap" }');
     s.push('  ]');
     s.push('}');
     s.push('```');
     s.push('');
-    s.push('### Kurallar');
-    s.push('- `tur` yalnız şunlardan biri: ' + SAYFA_TURU.map(x => x.ad).join(' · '));
-    s.push('- Alan `tur` yalnız şunlardan biri: ' + ALAN_TURU.map(x => x.ad).join(' · '));
-    s.push('- `eylemler` yalnız şunlardan: ' + SAYFA_EYLEM.join(' · '));
-    s.push('- `Seçenek` alanına mutlaka `degerler` yaz; anlatımda yoksa uydurma,');
-    s.push('  onu `sorular` listesine soru olarak koy.');
+    s.push('### Blok kuralları');
+    s.push('- `tur` yalnız: ' + SAYFA_TURU.map(x => x.ad).join(' · '));
+    s.push('- Alan `tur` yalnız: ' + ALAN_TURU.map(x => x.ad).join(' · '));
+    s.push('- `eylemler` yalnız: ' + SAYFA_EYLEM.join(' · '));
+    if (roller.length) {
+      s.push('- `roller` ve `yetki` yalnız şu rollerden: ' + roller.join(' · '));
+      s.push('  Roller alttan üste sıralı; alttaki bir rol yazılırsa üstündekiler');
+      s.push('  de o işi yapabilir demektir, hepsini yazmana gerek yok.');
+    }
+    s.push('- `Seçenek` alanına mutlaka `degerler` yaz — bana sormadan uydurma.');
     s.push('- `İlişki` alanına mutlaka `kaynak` yaz (hangi sayfanın kaydı).');
-    s.push('- Alan adları kullanıcının dilinde olsun (Türkçe, insan adı gibi).');
+    s.push('- Alan adları benim dilimde olsun (Türkçe, insan gibi).');
+    s.push('- `kararlar` bölümüne konuşmamızda netleştirdiğimiz her şeyi yaz;');
+    s.push('  kodu yazacak olan onu okuyacak.');
     s.push('');
     s.push('### Kalıplar');
-    s.push('Bir sayfa aşağıdakilere uyuyorsa `kalip` dizisine anahtarını yaz.');
-    s.push('Uymuyorsa boş bırak. Kalıba uyan yapıyı alan alan çözmeye çalışma —');
-    s.push('kalıbı yazman yeterli, gerisini Studio soruyor.');
+    s.push('Bir sayfa aşağıdakine uyuyorsa `kalip` dizisine anahtarını yaz ve');
+    s.push('`kalipCevap` içine ilgili cevapları koy. Uymuyorsa boş bırak.');
     KALIP.forEach(k => {
       s.push('');
-      s.push(`- **${k.anahtar}** · ${k.ad} — ${k.ozet} (${k.ornek})`);
+      s.push(`**${k.anahtar}** · ${k.ad} — ${k.ozet} (${k.ornek})`);
+      k.sorular.forEach(sr => {
+        s.push(`  - \`${k.anahtar}.${sr.anahtar}\` — ${sr.soru}`
+          + (sr.secim ? ' → ' + sr.secim.map(x => '"' + x + '"').join(' | ')
+                      : ' → liste (birden çok değer)'));
+      });
     });
-    s.push('');
-    s.push('### Sorular');
-    s.push('En önemli kısım bu. Anlatımda **karar verilmemiş** her şeyi soru');
-    s.push('olarak yaz. Kendi kararını verip geçme. Örnek:');
-    s.push('- "Bir kaydın etkilediği hesaplar elle mi seçilir, işlem tipinden mi dolar?"');
-    s.push('- "Bakiye borç−alacak farkı mı, hesap türüne göre mi değişir?"');
-    s.push('- "Yanlış kayıt silinir mi, ters kayıtla mı iptal edilir?"');
-    s.push('En fazla 8 soru; en çok işi bozacak olanları seç. Soruları');
-    s.push('yazılım terimiyle değil, işi bilen ama yazılım bilmeyen birinin');
-    s.push('anlayacağı dille yaz.');
     return s.join('\n');
   },
 
