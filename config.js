@@ -7,7 +7,7 @@ const APP = {
   name:     'NIZAM | Studio',
   short:    'NIZAM Studio',
   owner:    'Nizam Soft',
-  version: 'v0.46.3',
+  version: 'v0.47.0',
   build:    '2026-08-20',
   stage: 'Adım 4 · Yapı ağacı',
 };
@@ -1008,8 +1008,8 @@ const KALIP = [
     ornek: "320'de fatura no, 108'de valör tarihi",
     tel: ['sekme', 'liste'],
     sorular: [
-      { anahtar: 'setler', tur: 'liste', soru: 'Hangi yerlerde farklı sütun olacak?',
-        alt: 'Her biri için ayrı sütun seti tanımlanır.' },
+      { anahtar: 'setler', tur: 'set', soru: 'Hangi yerde hangi sütunlar eklensin?',
+        alt: 'Yerin adını yaz, o yere özel sütunları ekle.' },
     ],
   },
   {
@@ -1026,6 +1026,14 @@ const KALIP = [
   },
 ];
 
+/* Beklenen kayıt sayısı: sayfalama, arama ve liste tekniği buna bağlı.
+   "1000 hesap olacak" bilgisi hiçbir yere yazılmıyordu. */
+const OLCEK = [
+  { ad: 'Az', alt: 'yüzlerce kayıt' },
+  { ad: 'Orta', alt: 'birkaç bin kayıt' },
+  { ad: 'Çok', alt: 'on binlerce kayıt' },
+];
+
 const SAYFA_EYLEM = ['Ekle', 'Düzenle', 'Sil', 'Onayla', 'Ara', 'Filtrele',
                      'Dışa aktar', 'Yazdır', 'Kopyala', 'İçe aktar', 'Toplu güncelle'];
 
@@ -1034,10 +1042,21 @@ const SAYFA_EYLEM = ['Ekle', 'Düzenle', 'Sil', 'Onayla', 'Ara', 'Filtrele',
 function kalipTam(k) {
   return (k.kalip || []).every(a => {
     const kl = KALIP.find(x => x.anahtar === a);
-    return !kl || kl.sorular.every(sr => sr.tur === 'liste'
-      ? ((k.kalipCevap || {})[a + '.' + sr.anahtar] || []).length
-      : (k.kalipCevap || {})[a + '.' + sr.anahtar]);
+    if (!kl) return true;
+    return kl.sorular.every(sr => {
+      const c = (k.kalipCevap || {})[a + '.' + sr.anahtar];
+      if (sr.tur === 'liste') return (c || []).length;
+      if (sr.tur === 'set')   return (c || []).length
+        && c.every(x => x && x.ad && (x.alanlar || []).length);
+      return !!c;
+    });
   });
+}
+
+/* Eski sürümde sütun setleri düz metin listesiydi; okurken nesneye çeviriyoruz. */
+function setListesi(deger) {
+  return (deger || []).map(x => typeof x === 'string'
+    ? { ad: x, alanlar: [] } : { ad: x.ad || '', alanlar: x.alanlar || [] });
 }
 
 function kunyeTam(k) {

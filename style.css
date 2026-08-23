@@ -4139,3 +4139,17 @@ a:hover { color: var(--red-ink); }
 
 .dz-ipucu { margin: -4px 0 0; text-align: center; font-size: 10.5px;
             color: var(--ink-faint); }
+
+/* Sütun seti kartı */
+.kset { border: 1px solid var(--line-2); border-radius: 12px; padding: 9px 10px;
+        margin-bottom: 8px; background: var(--surface-2); }
+.kset-ust { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; }
+.kset-ust b { flex: 1; min-width: 0; font-size: 12.5px; color: var(--ink-strong);
+              overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kset-ust button { width: 20px; height: 20px; display: grid; place-items: center;
+                   border: 0; border-radius: 50%; cursor: pointer;
+                   background: var(--yuva); color: var(--ink-faint); }
+.kset .ak-degerler { margin-bottom: 0; }
+.cip-sec .cs-alt { font-style: normal; font-size: 9.5px; color: var(--ink-faint);
+                   margin-left: 5px; }
+.cip-sec.on .cs-alt { color: var(--ink-soft); }

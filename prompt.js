@@ -163,6 +163,16 @@ const PROMPT = {
       if (k.amac) s.push(k.amac);
       s.push('');
       if (k.tur) s.push(`- **Ekran türü:** ${k.tur}`);
+      if (k.olcek) {
+        const o = OLCEK.find(x => x.ad === k.olcek);
+        s.push(`- **Beklenen kayıt:** ${k.olcek}${o ? ' — ' + o.alt : ''}`);
+        s.push('  Listeyi, sayfalamayı ve aramayı bu hacme göre kur.');
+      }
+      if (k.ayniKayit) {
+        s.push(`- **Aynı kaydı yazar:** ${k.ayniKayit}`);
+        s.push('  İki ayrı tablo kurma; tek tablo, iki görünüm. Birinden yapılan');
+        s.push('  düzenleme diğerinde de görünmeli.');
+      }
 
       if ((k.alanlar || []).length) {
         s.push('- **Alanlar:**');
@@ -193,7 +203,13 @@ const PROMPT = {
           s.push(`  - **${kl.ad}** — ${kl.ozet} (${kl.ornek})`);
           kl.sorular.forEach(sr => {
             const c = (k.kalipCevap || {})[a + '.' + sr.anahtar];
-            if (!c) return;
+            if (!c || (Array.isArray(c) && !c.length)) return;
+            if (sr.tur === 'set') {
+              s.push(`    - ${sr.soru}`);
+              setListesi(c).forEach(st => s.push(
+                `      - **${st.ad}** → ek sütunlar: ${(st.alanlar || []).join(', ') || '—'}`));
+              return;
+            }
             s.push(`    - ${sr.soru} → ${Array.isArray(c) ? c.join(' · ') : c}`);
           });
         });
@@ -261,6 +277,8 @@ const PROMPT = {
     s.push('      "ad": "Hesaplar",');
     s.push('      "amac": "Tek cümleyle bu ekran ne işe yarar",');
     s.push('      "tur": "Liste",');
+    s.push('      "olcek": "Orta",');
+    s.push('      "ayniKayit": "",');
     s.push('      "kalip": ["agac"],');
     s.push('      "kalipCevap": { "agac.kod": "Üstünden türesin (100 → 100.01)" },');
     s.push('      "alanlar": [');
@@ -296,6 +314,11 @@ const PROMPT = {
     s.push('- `eylemler` şunlar olabilir: ' + SAYFA_EYLEM.join(' · '));
     s.push('  Listede olmayan gerçek bir eylem varsa ("Ters kayıt", "Birleştir")');
     s.push('  onu da yazabilirsin — uydurma, gerçekten gerekiyorsa.');
+    s.push('- `olcek` yalnız: ' + OLCEK.map(x => x.ad + ' (' + x.alt + ')').join(' · '));
+    s.push('  Kullanıcı "1000 hesap olacak" gibi bir şey söylediyse ona göre yaz.');
+    s.push('- `ayniKayit`: bu sayfa başka bir sayfayla **aynı kaydı** yazıyorsa o');
+    s.push('  sayfanın adını yaz (fiş girişi ile hareketler gibi). Yoksa boş bırak —');
+    s.push('  yazılmazsa iki ayrı tablo kurulur ve düzenleme birine yansımaz.');
     s.push('- `baglantilar` boş kalmasın: hangi ekrandan hangisine, ne zaman');
     s.push('  gidildiğini yaz. Ekran arası geçiş yazılmazsa kaybolur.');
     s.push('- `hazirVeri`: kurulurken hazır yüklenecek liste varsa yaz');
@@ -320,9 +343,11 @@ const PROMPT = {
       s.push('');
       s.push(`**${k.anahtar}** · ${k.ad} — ${k.ozet} (${k.ornek})`);
       k.sorular.forEach(sr => {
-        s.push(`  - \`${k.anahtar}.${sr.anahtar}\` — ${sr.soru}`
-          + (sr.secim ? ' → ' + sr.secim.map(x => '"' + x + '"').join(' | ')
-                      : ' → liste (birden çok değer)'));
+        const bicim = sr.secim ? sr.secim.map(x => '"' + x + '"').join(' | ')
+          : sr.tur === 'set'
+            ? '[{ "ad": "320 Tedarikçiler", "alanlar": ["Fatura", "Fatura No"] }, …]'
+            : 'liste (birden çok değer)';
+        s.push(`  - \`${k.anahtar}.${sr.anahtar}\` — ${sr.soru} → ${bicim}`);
       });
     });
     return s.join('\n');

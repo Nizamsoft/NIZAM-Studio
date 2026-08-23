@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.47.0
+- **Sütun setlerinin içeriği artık tutuluyor.** "320 Tedarikçiler → Fatura, Fatura No", "108 Çekler → Valör Tarihi, Çözülme Durumu" — her yerin kendi ek sütunları yazılıyor, prompta da öyle giriyor. Eskiden sadece yerin adı kalıyordu.
+- **Beklenen kayıt sayısı** soruluyor (az · orta · çok). Sayfalama, arama ve listenin nasıl çizileceği buna bağlıydı, hiçbir yere yazılmıyordu.
+- **"Aynı kaydı başka sayfa da yazıyor mu?"** soruluyor. Fiş girişi ile hareketler aynı kaydı tutuyorsa AI iki ayrı tablo kurmuyor: tek tablo, iki görünüm.
+- Önizlemede sağ sütun seçimi düzeldi — "Tarih | Tarih" gibi iki aynı sütun çıkmıyor.
+
 ## v0.46.3
 - Çözümleme yapıştırıldıktan sonra anlat ekranında kalınıyordu; artık ağaca dönüp sonucu gösteriyor.
 

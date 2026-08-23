@@ -1280,8 +1280,10 @@ function kunyeOrneklem(sayfa, k) {
   const alanlar = (k.alanlar || []).filter(a => a && a.ad);
   const bul = (...turler) => alanlar.find(a => turler.includes(a.tur));
   const sol = bul('Metin', 'İlişki') || alanlar[0];
-  const sag = bul('Para', 'Sayı', 'Seçenek', 'Tarih', 'Tarih-saat')
-    || alanlar[alanlar.length - 1] || sol;
+  /* Sağ sütun için sıra önemli: para varsa o, yoksa sayı, sonra seçenek.
+     Tek listede aramak "Tarih | Tarih" gibi iki aynı sütun çıkarıyordu. */
+  const sag = [bul('Para'), bul('Sayı'), bul('Seçenek'), bul('Tarih', 'Tarih-saat')]
+    .find(a => a && a !== sol) || alanlar.filter(a => a !== sol).pop() || sol;
   const alt = alanlar.find(a => a !== sol && a !== sag) || null;
 
   const satir = [0, 1, 2, 3].map(i => [
@@ -1601,7 +1603,8 @@ function onizlemeIc(p, pl) {
         `<span class="${i ? '' : 'a'}">${esc(x)}</span>`).join('<em>›</em>')}</div>`);
     }
     if (kalVar('sutun')) {
-      const st = ((ky.kalipCevap || {})['sutun.setler'] || []).filter(Boolean);
+      const st = setListesi((ky.kalipCevap || {})['sutun.setler'])
+        .map(x => x.ad).filter(Boolean);
       const liste = st.length ? ['Varsayılan'].concat(st) : ['Varsayılan', '320', '108'];
       p2.push(`<div class="o-sekme ic">${liste.slice(0, 4).map((x, i) =>
         `<i class="${i ? '' : 'a'}">${esc(x)}</i>`).join('')}</div>`);
@@ -2441,8 +2444,9 @@ function modulYukle(p, t, ad) {
 
 function yapiKunye(t, sayfa) {
   if (!t.kunye[sayfa]) {
-    t.kunye[sayfa] = { amac: '', tur: '', kalip: [], kalipCevap: {}, alanlar: [],
-                       eylemler: [], roller: [], yetki: {}, kural: '' };
+    t.kunye[sayfa] = { amac: '', tur: '', olcek: '', kalip: [], kalipCevap: {},
+                       ayniKayit: '', alanlar: [], eylemler: [], roller: [],
+                       yetki: {}, kural: '' };
   }
   return t.kunye[sayfa];
 }
@@ -2513,10 +2517,13 @@ function agacKayma(seviye) {
 
 function dalOzeti(k, anahtar) {
   if (anahtar === 'amac')  return k.amac || 'yazılmadı';
-  if (anahtar === 'tur')   return k.tur || 'seçilmedi';
-  if (anahtar === 'kalip') return (k.kalip || []).length
-    ? k.kalip.map(a => (KALIP.find(x => x.anahtar === a) || {}).ad || a).join(' · ')
-    : 'kalıp yok';
+  if (anahtar === 'tur')   return (k.tur || 'seçilmedi')
+    + (k.olcek ? ' · ' + k.olcek.toLocaleLowerCase('tr') + ' kayıt' : '');
+  if (anahtar === 'kalip') {
+    const p = (k.kalip || []).map(a => (KALIP.find(x => x.anahtar === a) || {}).ad || a);
+    if (k.ayniKayit) p.push('kayıt: ' + k.ayniKayit);
+    return p.length ? p.join(' · ') : 'kalıp yok';
+  }
   if (anahtar === 'alanlar') return (k.alanlar || []).length
     ? k.alanlar.map(a => a.ad.toLocaleLowerCase('tr')).slice(0, 3).join(' · ')
       + (k.alanlar.length > 3 ? ' · +' + (k.alanlar.length - 3) : '')
@@ -2846,6 +2853,13 @@ function kunyeGovde(p, t, adim) {
           <span class="bsc-ad">${esc(x.ad)}</span></button>`).join('')}
       </div>
       ${k.tur ? `<p class="ky-not">${esc((SAYFA_TURU.find(x => x.ad === k.tur) || {}).alt || '')}</p>` : ''}
+      <div class="ky-bas">Kaç kayıt olur?</div>
+      <p class="ak-ozet">Sayfalama, arama ve listenin nasıl çizileceği buna bağlı.</p>
+      <div class="ky-cipler">${OLCEK.map(x => `
+        <button class="cip-sec ${k.olcek === x.ad ? 'on' : ''}" type="button"
+                data-eylem="yapi-ky-olcek" ${veri} data-ad="${esc(x.ad)}">
+          ${esc(x.ad)} <em class="cs-alt">${esc(x.alt)}</em></button>`).join('')}
+      </div>
     </div>`;
   }
 
@@ -2868,6 +2882,30 @@ function kunyeGovde(p, t, adim) {
           <p class="ak-ozet">${esc(kl.ozet)} <i>${esc(kl.ornek)}</i></p>
           ${kl.sorular.map(sr => {
             const deger = (k.kalipCevap || {})[a + '.' + sr.anahtar];
+            if (sr.tur === 'set') {
+              /* Yerin adı yetmiyor: o yere hangi sütunların ekleneceği de lazım. */
+              const setler = setListesi(deger);
+              return `<p class="ak-soru">${esc(sr.soru)}</p>
+                ${setler.map((st, si) => `
+                  <div class="kset">
+                    <div class="kset-ust"><b>${esc(st.ad)}</b>
+                      <button type="button" data-eylem="yapi-ky-set-sil" ${veri}
+                              data-ad="${a}.${sr.anahtar}" data-deger2="${si}"
+                              title="Kaldır">${svg(ICON.kapat, 11)}</button></div>
+                    <div class="ak-degerler">
+                      ${st.alanlar.map(x => `<span data-eylem="yapi-ky-setalan-sil" ${veri}
+                            data-ad="${a}.${sr.anahtar}" data-deger2="${si}"
+                            data-deger3="${esc(x)}" role="button" tabindex="0">
+                            ${esc(x)} <em>×</em></span>`).join('')}
+                      <span class="ekle" data-eylem="yapi-ky-setalan-ekle" ${veri}
+                            data-ad="${a}.${sr.anahtar}" data-deger2="${si}"
+                            role="button" tabindex="0">+ sütun</span>
+                    </div>
+                  </div>`).join('')}
+                <button class="as2 ekle" type="button" data-eylem="yapi-ky-set-ekle"
+                        ${veri} data-ad="${a}.${sr.anahtar}">
+                  ${svg(ICON.arti, 13)} Yer ekle</button>`;
+            }
             if (sr.tur === 'liste') {
               const liste = deger || [];
               return `<p class="ak-soru">${esc(sr.soru)}</p>
@@ -2888,6 +2926,17 @@ function kunyeGovde(p, t, adim) {
           }).join('')}
         </div>`;
       }).join('') : `<p class="ky-not">Hiçbiri değilse boş geç — sıradan bir sayfa olarak kurulur.</p>`}
+
+      <div class="ky-bas">Aynı kaydı başka bir sayfa da yazıyor mu?</div>
+      <p class="ak-ozet">Ör. fiş girişi ile hareketler aynı kaydı tutar; iki ayrı
+        tablo kurulmasın diye soruyorum.</p>
+      <div class="ky-cipler">
+        ${t.sayfalar.filter(x => x !== sf).map(x => `
+          <button class="cip-sec ${k.ayniKayit === x ? 'on' : ''}" type="button"
+                  data-eylem="yapi-ky-ayni" ${veri} data-ad="${esc(x)}">${esc(x)}</button>`).join('')}
+        <button class="cip-sec ${k.ayniKayit ? '' : 'on'}" type="button"
+                data-eylem="yapi-ky-ayni" ${veri} data-ad="">Kendi kaydı</button>
+      </div>
     </div>`;
   }
 
@@ -5807,6 +5856,10 @@ function cozumlemeUygula(t, cozum, p) {
     if (sf.kalipCevap && typeof sf.kalipCevap === 'object') {
       k.kalipCevap = Object.assign({}, sf.kalipCevap, k.kalipCevap || {});
     }
+    if (!k.olcek && sf.olcek) {
+      k.olcek = (OLCEK.find(x => x.ad === sf.olcek) || {}).ad || '';
+    }
+    if (!k.ayniKayit && sf.ayniKayit) k.ayniKayit = sf.ayniKayit;
     if (!k.kural) k.kural = sf.kural || '';
     /* Roller alttan üste sıralı: Claude alttaki rolü yazdıysa üstü de dahil. */
     if (!k.roller.length) {
@@ -7009,6 +7062,72 @@ async function eylemCalistir(el) {
     $$('button', el.parentElement).forEach(b => b.classList.toggle('on',
       b.dataset.deger2 === k.kalipCevap[el.dataset.ad]));
     yapiIleriTazele(pr);
+    return;
+  }
+
+  if (e === 'yapi-ky-olcek' || e === 'yapi-ky-ayni') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const k = yapiKunye(yapiTaslak(pr), el.dataset.sayfa);
+    const alan = e === 'yapi-ky-olcek' ? 'olcek' : 'ayniKayit';
+    k[alan] = k[alan] === el.dataset.ad ? '' : el.dataset.ad;
+    $$('button', el.parentElement).forEach(b => b.classList.toggle('on',
+      (b.dataset.ad || '') === (k[alan] || '')));
+    yapiIleriTazele(pr);
+    return;
+  }
+
+  /* Sütun setleri: yerin adı + o yere eklenen sütunlar. */
+  if (e === 'yapi-ky-set-ekle') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const ad = await metinSor({ baslik: 'Yer', buton: 'Ekle',
+      aciklama: 'Hangi hesapta / bağlamda farklı sütunlar olacak?',
+      yerTutucu: 'Örn. 320 Tedarikçiler' });
+    if (!ad) return;
+    const k = yapiKunye(yapiTaslak(pr), el.dataset.sayfa);
+    k.kalipCevap = k.kalipCevap || {};
+    k.kalipCevap[el.dataset.ad] = setListesi(k.kalipCevap[el.dataset.ad])
+      .concat([{ ad, alanlar: [] }]);
+    render();
+    return;
+  }
+
+  if (e === 'yapi-ky-set-sil') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const k = yapiKunye(yapiTaslak(pr), el.dataset.sayfa);
+    const liste = setListesi(k.kalipCevap[el.dataset.ad]);
+    liste.splice(Number(el.dataset.deger2), 1);
+    k.kalipCevap[el.dataset.ad] = liste;
+    render();
+    return;
+  }
+
+  if (e === 'yapi-ky-setalan-ekle') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const ad = await metinSor({ baslik: 'Sütun', buton: 'Ekle',
+      aciklama: 'Bu yerde fazladan görünecek sütun.', yerTutucu: 'Örn. Fatura No' });
+    if (!ad) return;
+    const k = yapiKunye(yapiTaslak(pr), el.dataset.sayfa);
+    const liste = setListesi(k.kalipCevap[el.dataset.ad]);
+    const st = liste[Number(el.dataset.deger2)];
+    if (st && !st.alanlar.includes(ad)) st.alanlar.push(ad);
+    k.kalipCevap[el.dataset.ad] = liste;
+    render();
+    return;
+  }
+
+  if (e === 'yapi-ky-setalan-sil') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const k = yapiKunye(yapiTaslak(pr), el.dataset.sayfa);
+    const liste = setListesi(k.kalipCevap[el.dataset.ad]);
+    const st = liste[Number(el.dataset.deger2)];
+    if (st) st.alanlar = st.alanlar.filter(x => x !== el.dataset.deger3);
+    k.kalipCevap[el.dataset.ad] = liste;
+    render();
     return;
   }
 
