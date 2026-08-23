@@ -5741,6 +5741,8 @@ function anlatAktarAc(projeId) {
     $('[data-cz="kaydet"]', kutu).addEventListener('click', () => {
       if (!cozum) return;
       cozumlemeUygula(t, cozum, p);
+      /* Aktarımdan sonra ağaca dön: sonucu görmesi gereken yer orası. */
+      t.mod = 'agac'; t.odak = null; t.dal = null;
       modalKapat();
       toast(cozum.sayfalar.length + ' sayfa aktarıldı.');
       render();
