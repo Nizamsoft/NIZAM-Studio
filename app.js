@@ -2685,7 +2685,7 @@ function agacSutunDuzen(p, t, sayfa, k, dallar) {
         <span class="dz-rk"></span>
         <span class="dz-yaz"><b>${esc(dal.ad || '')}</b><i>${esc(dal.soru || '')}</i></span>
       </div>
-      ${onizlemeAlani(p, k, t.dal, gost)}
+      <div class="dz-onz">${onizlemeAlani(p, k, t.dal, gost)}</div>
       <div class="dz-govde">${kunyeGovde(p, t, { tur: 'kunye', sayfa, alt: t.dal })}</div>
     </div></div>`;
 }
@@ -3161,8 +3161,14 @@ function yapiOnizlemeTazele(pr) {
   ONIZLEME_EKRAN = (t.dal === 'kalip' && yapisal) ? 'liste' : (tp ? tp.ekran : 'liste');
   ONIZLEME_KUNYE = (k.tur || (k.alanlar || []).length)
     ? Object.assign({ sayfa: t.odak }, k) : null;
-  const goz = $('.dz-onizleme .onz-goz');
-  if (goz) { goz.innerHTML = onizlemeIc(pr, pr.palet); onizlemeSigdir(); }
+  /* Bütün alanı yeniden kuruyoruz: yer tutucudan uygulamaya (ya da tersine)
+     geçiş yalnız içeriği tazeleyince olmuyordu. */
+  const kutu = $('.dz-onz');
+  if (!kutu) return;
+  const gost = ['tur', 'alanlar', 'eylemler', 'kalip', 'kural'].includes(t.dal);
+  kutu.innerHTML = onizlemeAlani(pr, k, t.dal, gost);
+  logolariGoster();
+  onizlemeSigdir();
 }
 
 /* Dal düğümünün özeti ve durumu anında güncellensin. */

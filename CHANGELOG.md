@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.47.2
+- Tür seçilince önizleme yer tutucudan uygulamaya geçmiyordu: yalnız içerik tazeleniyor, alanın kendisi kalıyordu. Artık seçim yapılınca önizleme anında canlanıyor.
+
 ## v0.47.1
 - Modül kurulduktan sonra "ONIZLEME_ALAN is not defined" hatası çıkıyordu — eski değişken adı iki yerde kalmış, düzeltildi.
 
