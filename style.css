@@ -4280,3 +4280,54 @@ a:hover { color: var(--red-ink); }
 /* Düzenleme ekranı */
 .dk-govde > .dz-bas { padding-bottom: 10px; }
 .dk-govde > .dz-onz { margin-bottom: 12px; }
+
+/* ==========================================================================
+   NOT DEFTERİ — tepeden açılan geçici karalama
+   Hiçbir yere kaydedilmez; boyu alt kenarından çekilerek ayarlanır.
+   ========================================================================== */
+
+#notluk {
+  position: fixed; left: 0; right: 0; top: 0; z-index: 60;
+  display: flex; flex-direction: column;
+  height: 300px; box-sizing: border-box;
+  padding: calc(10px + env(safe-area-inset-top, 0px)) 14px 0;
+  background: color-mix(in srgb, var(--surface) 92%, #000);
+  border-bottom: 1px solid var(--line);
+  box-shadow: 0 24px 48px -24px rgba(0, 0, 0, .9);
+  transition: transform .3s var(--ease), opacity .3s var(--ease);
+}
+#notluk.kapali { transform: translateY(-101%); opacity: 0; pointer-events: none; }
+
+.nt-ust { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; padding-bottom: 9px; }
+.nt-ust b { font-size: 13px; color: var(--ink-strong); }
+.nt-alt { flex: 1; font-size: 10px; color: var(--ink-faint); letter-spacing: .04em;
+          text-transform: uppercase; }
+.nt-dug { padding: 6px 10px; border-radius: 999px; cursor: pointer; font-family: inherit;
+          font-size: 11px; border: 1px solid var(--line); background: var(--yuva);
+          color: var(--ink-soft); }
+.nt-dug:active { transform: scale(.96); }
+.nt-kapat { width: 30px; height: 30px; display: grid; place-items: center; cursor: pointer;
+            border-radius: 10px; border: 1px solid var(--line-2); background: transparent;
+            color: var(--ink-soft); }
+.nt-kapat svg { width: 15px; height: 15px; fill: none; stroke: currentColor;
+                stroke-width: 2; stroke-linecap: round; }
+
+#nt-metin {
+  flex: 1; min-height: 0; width: 100%; box-sizing: border-box; resize: none;
+  font-family: var(--yazi-kod); font-size: 13px; line-height: 1.6;
+  padding: 11px 12px; border-radius: 13px; border: 1px solid var(--line);
+  background: var(--yuva); color: var(--ink);
+}
+#nt-metin:focus { outline: none; border-color: var(--metal-1); }
+
+/* Alt kenardan çekerek boyu ayarla */
+.nt-tut { flex: 0 0 auto; height: 22px; display: grid; place-items: center;
+          cursor: ns-resize; touch-action: none; }
+.nt-tut i { width: 46px; height: 4px; border-radius: 999px; background: var(--line-parlak); }
+.nt-tut:active i { background: var(--metal-2); }
+
+#notluk.tasima { transition: none; }
+
+#btn-not { flex: 0 0 auto; }
+#btn-not.acik { background: var(--surface-3); color: var(--ink-strong); }
+@media (max-width: 900px) { #topbar #btn-not { width: 40px; height: 40px; } }

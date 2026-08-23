@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.49.0
+- **Not defteri** — üst çubuğa kalem simgesi geldi. Basınca tepeden açılıyor, alt kenarından çekerek boyunu ayarlıyorsun. Kopyala ve Temizle düğmeleri var. Hiçbir yere kaydedilmiyor; ekranlar arası geziniyor, sayfa yenilenince siliniyor.
+
 ## v0.48.1
 - Blokta modül adı yoksa aktarım sonrası ağaç boş görünüyordu — sayfalar geliyordu ama adsız modül çizilmiyordu. Artık ad soruluyor; yine de boş kalırsa "Yeni Modül" olarak açılıyor.
 - Modül adına dokununca (henüz kurulmamışsa) değiştirilebiliyor.

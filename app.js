@@ -148,6 +148,58 @@ const ICON = {
   ev:      '<path d="M3 10.5 12 4l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"></path>',
 };
 
+/* ---------- Not defteri ----------
+   Tepeden açılan geçici karalama alanı. Hiçbir yere kaydedilmiyor: bilerek,
+   kullanıcı "kayıt etmesine gerek yok" dedi. Sekmeler arasında duruyor,
+   sayfa yenilenince gidiyor. */
+function notDefteriKur() {
+  const kutu = $('#notluk');
+  const dug  = $('#btn-not');
+  if (!kutu || !dug || kutu.dataset.kuruldu) return;
+  kutu.dataset.kuruldu = '1';
+
+  const ac = (acik) => {
+    kutu.classList.toggle('kapali', !acik);
+    kutu.setAttribute('aria-hidden', acik ? 'false' : 'true');
+    dug.classList.toggle('acik', acik);
+    if (acik) setTimeout(() => $('#nt-metin').focus(), 220);
+  };
+
+  dug.addEventListener('click', () => ac(kutu.classList.contains('kapali')));
+  $('#nt-kapat').addEventListener('click', () => ac(false));
+  $('#nt-temizle').addEventListener('click', () => {
+    $('#nt-metin').value = ''; $('#nt-metin').focus();
+  });
+  $('#nt-kopya').addEventListener('click', async () => {
+    const m = $('#nt-metin').value;
+    if (!m.trim()) return toast('Not boş.', 'hata');
+    try { await navigator.clipboard.writeText(m); toast('Not kopyalandı.'); }
+    catch (h) { $('#nt-metin').select(); toast('Kopyalanamadı, elle seç.', 'hata'); }
+  });
+
+  /* Boyu alt kenardan çekerek ayarlanır. */
+  const tut = $('#nt-tut');
+  let bas = 0, ilk = 0;
+  const y = e => (e.touches ? e.touches[0].clientY : e.clientY);
+  const basla = e => {
+    bas = y(e); ilk = kutu.getBoundingClientRect().height;
+    kutu.classList.add('tasima');
+    document.addEventListener('pointermove', surukle);
+    document.addEventListener('pointerup', bitir);
+    e.preventDefault();
+  };
+  const surukle = e => {
+    const boy = Math.max(160, Math.min(innerHeight - 90, ilk + (y(e) - bas)));
+    kutu.style.height = boy + 'px';
+  };
+  const bitir = () => {
+    kutu.classList.remove('tasima');
+    document.removeEventListener('pointermove', surukle);
+    document.removeEventListener('pointerup', bitir);
+  };
+  tut.addEventListener('pointerdown', basla);
+}
+
 function svg(ikon, boy = 16) {
   const cift  = ikon && typeof ikon === 'object';
   const dolgu = cift ? `<g class="dolgu">${ikon.d}</g>` : '';
@@ -7609,6 +7661,7 @@ async function uygulamayiAc() {
 
   $('#login').classList.add('hidden');
   $('#app').classList.remove('hidden');
+  notDefteriKur();
   menuyuCiz();
   kullaniciYaz();
   /* Açılışta zaten indi; ikinci kez çekmiyoruz. */

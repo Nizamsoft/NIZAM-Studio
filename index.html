@@ -25,14 +25,14 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="NIZAM Studio">
 
-<link rel="stylesheet" href="style.css?v=0.48.1">
+<link rel="stylesheet" href="style.css?v=0.49.0">
 </head>
 <body>
 
 <!-- ===== Açılış ekranı ===== -->
 <div id="loader">
   <div class="loader-box">
-    <img draggable="false" class="loader-logo" src="logo-full.png?v=0.48.1" alt="NIZAM Studio" width="118" height="128">
+    <img draggable="false" class="loader-logo" src="logo-full.png?v=0.49.0" alt="NIZAM Studio" width="118" height="128">
     <div class="loader-sub">Nizam Soft</div>
     <div class="loader-track"><div class="loader-fill"></div></div>
     <div class="loader-msg">Hazırlanıyor…</div>
@@ -43,7 +43,7 @@
 <!-- ===== Giriş ekranı ===== -->
 <div id="login" class="hidden">
   <form class="login-card" id="login-form" autocomplete="on">
-    <img class="login-logo" src="logo-n.png?v=0.48.1" alt="" width="57" height="66">
+    <img class="login-logo" src="logo-n.png?v=0.49.0" alt="" width="57" height="66">
     <h1>NIZAM <span class="pipe">|</span> Studio</h1>
     <p class="login-sub">Nizam Soft</p>
 
@@ -68,7 +68,7 @@
 
   <aside id="sidebar">
     <div class="brand">
-      <img class="brand-logo" src="logo-n.png?v=0.48.1" alt="" width="24" height="28">
+      <img class="brand-logo" src="logo-n.png?v=0.49.0" alt="" width="24" height="28">
       <div class="brand-text">
         <div class="brand-name">NIZAM <span class="pipe">|</span> Studio</div>
         <div class="brand-sub">Nizam Soft</div>
@@ -91,6 +91,23 @@
   </aside>
 
   <div id="main">
+    <!-- Not defteri: tepeden açılan geçici karalama alanı. Kaydedilmez;
+         boyunu alt kenarından çekerek ayarlarsın. -->
+    <div id="notluk" class="kapali" aria-hidden="true">
+      <div class="nt-ust">
+        <b>Not defteri</b>
+        <span class="nt-alt">kaydedilmez</span>
+        <button class="nt-dug" id="nt-kopya" type="button">Kopyala</button>
+        <button class="nt-dug" id="nt-temizle" type="button">Temizle</button>
+        <button class="nt-kapat" id="nt-kapat" type="button" aria-label="Kapat">
+          <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+        </button>
+      </div>
+      <textarea id="nt-metin" spellcheck="false"
+        placeholder="Aklına geleni yaz — sonra kopyalayıp Claude'a atarsın."></textarea>
+      <div class="nt-tut" id="nt-tut" role="separator" aria-label="Boyu ayarla"><i></i></div>
+    </div>
+
     <header id="topbar">
       <button class="icon-btn hidden" id="btn-back" type="button" aria-label="Geri">
         <svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"></path></svg>
@@ -101,6 +118,11 @@
         <i id="page-title">Panel</i>
       </div>
       <div class="spacer"></div>
+      <button class="icon-btn" id="btn-not" type="button" aria-label="Not defteri"
+              title="Not defteri">
+        <svg viewBox="0 0 24 24"><path d="M4 20l4.5-1.2L19.3 8A2 2 0 0 0 16.5 5.2L5.7 16z"></path>
+          <path d="M14.8 6.7l2.5 2.5"></path></svg>
+      </button>
       <button class="btn btn-primary only-desktop" id="topbar-action" type="button">
         <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"></path></svg>
         <span>Yeni Proje</span>
@@ -146,12 +168,12 @@
 
 <div id="toast" class="hidden"></div>
 
-<script src="vendor/supabase.js?v=0.48.1"></script>
-<script src="config.js?v=0.48.1"></script>
-<script src="auth.js?v=0.48.1"></script>
-<script src="data.js?v=0.48.1"></script>
-<script src="guncelle.js?v=0.48.1"></script>
-<script src="prompt.js?v=0.48.1"></script>
-<script src="app.js?v=0.48.1"></script>
+<script src="vendor/supabase.js?v=0.49.0"></script>
+<script src="config.js?v=0.49.0"></script>
+<script src="auth.js?v=0.49.0"></script>
+<script src="data.js?v=0.49.0"></script>
+<script src="guncelle.js?v=0.49.0"></script>
+<script src="prompt.js?v=0.49.0"></script>
+<script src="app.js?v=0.49.0"></script>
 </body>
 </html>
