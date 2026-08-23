@@ -2655,6 +2655,9 @@ function agacEkrani(p, t) {
     }).join('')}
     <button class="knt hayalet" type="button" data-eylem="yapi-sayfa-yaz"
             data-proje="${p.id}"><b>${svg(ICON.arti, 14)} Sayfa ekle</b></button>
+    <button class="knt hayalet sil" type="button" data-eylem="agac-modul-sil"
+            data-proje="${p.id}" data-ad="${esc(t.modul)}">
+      <b>${svg(ICON.kapat, 13)} Modülü kaldır</b></button>
   </div>`;
 
   const govde = `
@@ -3817,7 +3820,7 @@ function stepRow(step, text, done) {
 
 function render() {
   /* Kaydırma yeri: akış içindeki bir seçim sonrası liste başa dönmesin. */
-  const kaydiran = $('.kunye-kaydir, .ozet-kaydir, .palet-kaydir');
+  const kaydiran = $('.dk-govde, .kunye-kaydir, .ozet-kaydir, .palet-kaydir');
   const kaydirmaYeri = kaydiran ? kaydiran.scrollTop : null;
 
   const { key, id, durak } = rota();
@@ -3877,7 +3880,7 @@ function render() {
 
   logolariGoster();
   if (kaydirmaYeri) {
-    const yeni = $('.kunye-kaydir, .ozet-kaydir, .palet-kaydir');
+    const yeni = $('.dk-govde, .kunye-kaydir, .ozet-kaydir, .palet-kaydir');
     if (yeni) yeni.scrollTop = kaydirmaYeri;
   }
   onizlemeSigdir();
@@ -6898,6 +6901,39 @@ async function eylemCalistir(el) {
   }
 
   if (e === 'agac-modul') return modulSecAc(el.dataset.proje);
+
+  if (e === 'agac-modul-sil') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const t = yapiTaslak(pr);
+    const kurulu = DB.modulleri(pr.id).find(m => m.ad === el.dataset.ad);
+    const gorev = kurulu
+      ? DB.gorevleri({ proje: pr.id }).filter(g => g.modul_id === kurulu.id).length : 0;
+    if (gorev) return toast('Bu modülde ' + gorev + ' görev var, önce onları taşı.', 'hata');
+    if (!await onaySor({
+      baslik: el.dataset.ad + ' kaldırılsın mı?',
+      mesaj: kurulu
+        ? 'Modül, sayfaları ve künyeleri silinir. Bu geri alınamaz.'
+        : 'Henüz kurulmadı; taslak silinir.',
+      buton: 'Kaldır' })) return;
+
+    if (kurulu) {
+      try {
+        await DB.modulSil(kurulu.id);
+        const pl = Object.assign({}, pr.palet || {});
+        const kn = Object.assign({}, pl.kunye || {});
+        Object.keys(kn).forEach(x => { if (x.startsWith(el.dataset.ad + ' · ')) delete kn[x]; });
+        const an = Object.assign({}, pl.anlatim || {});
+        delete an[el.dataset.ad];
+        await DB.paletKaydet(pr.id, Object.assign(pl, { kunye: kn, anlatim: an }));
+      } catch (err) { return toast(err.message, 'hata'); }
+    }
+    t.modul = ''; t.sayfalar = []; t.kunye = {}; t.odak = null; t.dal = null;
+    t.anlat = ''; t.kararlar = [];
+    toast(el.dataset.ad + ' kaldırıldı.');
+    render();
+    return;
+  }
 
   if (e === 'agac-sayfa-sil') {
     const pr = DB.proje(el.dataset.proje);

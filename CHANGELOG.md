@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## v0.50.1
+- Ağaçta bir şeye dokununca sayfa başa fırlıyordu; kaydırma yeri artık korunuyor.
+- **Modül kaldırma** geldi: modülün sayfa listesinin altında sessiz bir düğme. Kurulmuş modülü sayfaları ve künyeleriyle siliyor, görevi varsa önce uyarıyor.
+
 ## v0.50.0
 - **Ağaç tek parça oldu, hep yukarıdan aşağı akıyor:** firma → modüller → seçili modülün sayfaları → açık sayfanın künyesi. Hiçbir kat kaybolmuyor, modüle ikinci dokunuş kapatıyor.
 - **Modül adı düzeltilebiliyor** — yol izindeki modül çipine dokununca soruyor. "Yeni Modül" olarak kalmışsa kartın altında "adına dokun, değiştir" yazıyor.

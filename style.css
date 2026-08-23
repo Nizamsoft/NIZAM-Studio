@@ -4347,3 +4347,6 @@ a:hover { color: var(--red-ink); }
 .knt.modul.acik { border-color: var(--p1);
                   box-shadow: 0 0 0 1px var(--p1), 0 8px 20px -12px var(--p1);
                   margin-bottom: 4px; }
+
+.knt.hayalet.sil { padding: 9px 12px; }
+.knt.hayalet.sil b { font-size: 12px; color: var(--ink-dim); }
