@@ -3863,6 +3863,13 @@ a:hover { color: var(--red-ink); }
           background: var(--surface-3); color: var(--ink-faint); }
 .rm.on .rm-tik { background: var(--metal-2); color: #17150f; }
 
+/* Ekran başlığı */
+.bslk { margin: 2px 0 14px; }
+.bslk b { display: block; font-family: var(--baslik); font-size: 19px;
+          color: var(--ink-strong); letter-spacing: -.2px; }
+.bslk em { display: block; margin-top: 3px; font-style: normal; font-size: 12px;
+           color: var(--ink-faint); }
+
 /* Kim ne yapabilir */
 .yetki { display: flex; flex-direction: column; gap: 8px; }
 .yt { padding: 9px 11px; border-radius: 13px; border: 1px solid var(--line-2);
@@ -4350,3 +4357,27 @@ a:hover { color: var(--red-ink); }
 
 .knt.hayalet.sil { padding: 9px 12px; }
 .knt.hayalet.sil b { font-size: 12px; color: var(--ink-dim); }
+
+/* Modül kuralları satırı */
+.gvd.ic.kural { margin-bottom: 4px; }
+.mk-kural { display: flex; align-items: center; gap: 11px; padding: 12px 13px;
+            border-radius: 14px; width: 100%; font-family: inherit; text-align: left;
+            cursor: pointer; margin-bottom: 9px; position: relative;
+            border: 1px solid color-mix(in srgb, #5b8def 30%, transparent);
+            background: color-mix(in srgb, #5b8def 8%, var(--yuva)); }
+.mk-kural.eksik { border-color: color-mix(in srgb, var(--st-dev-t) 40%, transparent);
+                  background: color-mix(in srgb, var(--st-dev-t) 8%, var(--yuva)); }
+.mk-kural .ik { flex: 0 0 30px; height: 30px; border-radius: 10px; display: grid;
+                place-items: center; color: #8fb4f5;
+                background: color-mix(in srgb, #5b8def 18%, transparent); }
+.mk-kural.eksik .ik { color: var(--st-dev-t);
+                      background: color-mix(in srgb, var(--st-dev-t) 18%, transparent); }
+.mk-kural .yz { flex: 1; min-width: 0; }
+.mk-kural .yz b { display: block; font-size: 13.5px; color: var(--ink-strong); }
+.mk-kural .yz i { display: block; font-style: normal; font-size: 11px;
+                  color: var(--ink-faint); margin-top: 2px; overflow: hidden;
+                  text-overflow: ellipsis; white-space: nowrap; }
+.mk-kural .ok2 { color: var(--ink-dim); font-size: 16px; flex: 0 0 auto; }
+
+/* Sayfanın üç sorusu */
+.dal2 .d .yz i { white-space: normal; }

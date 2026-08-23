@@ -115,26 +115,44 @@ const PROMPT = {
      Alan türleri veritabanı sütununu, eylemler düğmeleri, roller satır
      güvenliği kurallarını belirliyor. */
   kunyeBlogu(proje) {
-    const kunye = ((proje && proje.palet) || {}).kunye || {};
+    const pl = (proje && proje.palet) || {};
+    const kunye = pl.kunye || {};
     const anahtarlar = Object.keys(kunye);
     if (!anahtarlar.length) return '';
 
     const s = ['## Sayfa Künyeleri'];
-    s.push('Her sayfanın ne yaptığı, neyi tuttuğu, kimin ne yapabildiği aşağıda.');
-    s.push('Bunlar kullanıcıyla tek tek konuşularak alındı; tahmin değil, karar.');
+    s.push('Kullanıcıyla tek tek konuşularak alındı; tahmin değil, karar.');
     s.push('');
     s.push('- **Alan listesi o sayfanın veritabanı tablosudur.** Sütun adlarını ve');
     s.push('  türlerini buradan al, kendin uydurma, fazladan sütun ekleme.');
-    s.push('- **Seçenek alanlarının değerleri sabittir.** Yalnız yazılı değerler');
-    s.push('  girilebilir; başka bir değer kabul edilmemeli.');
+    s.push('- **Seçenek alanlarının değerleri sabittir.**');
     s.push('- **İlişki alanı** yazılı sayfanın kaydına bağlanır (foreign key).');
-    s.push('- **Zorunlu alan** boş kaydedilemez; hem arayüzde hem veritabanında engelle.');
-    s.push('- **Yetki satırı** satır güvenliği (RLS) kuralıdır: yazılı rol ve üstü o');
-    s.push('  işi yapabilir, altındakiler yapamaz. Görme ile yapma ayrıdır.');
-    s.push('- **Kural** satırı iş kuralıdır; arayüzde de veritabanında da uygula.');
+    s.push('- **Zorunlu alan** boş kaydedilemez; arayüzde de veritabanında da engelle.');
+    s.push('- **Modül kuralları bütün sayfalarda geçerlidir.** Bir sayfada "Bu sayfada');
+    s.push('  farklı" satırı varsa yalnız orada modül kuralının yerine geçer.');
+    s.push('- Yetki satırı satır güvenliği (RLS) kuralıdır: yazılı rol ve üstü o işi');
+    s.push('  yapabilir, altındakiler yapamaz.');
 
-    /* Kullanıcının kendi anlatımı ve verdiği cevaplar: en değerli bağlam. */
-    const anlatim = ((proje && proje.palet) || {}).anlatim || {};
+    /* Modül düzeyi */
+    const mkh = pl.modulKunye || {};
+    Object.keys(mkh).forEach(m => {
+      const mk = mkh[m] || {};
+      if (!(mk.roller || []).length && !(mk.eylemler || []).length) return;
+      s.push('', `### ${m} — modül kuralları`, '');
+      if ((mk.roller || []).length)
+        s.push(`- **Görebilen:** ${mk.roller.join(' · ')}`);
+      if ((mk.eylemler || []).length) {
+        s.push('- **Yapılabilecek işler ve yetkiler:**');
+        mk.eylemler.forEach(ey => {
+          const r = ((mk.yetki || {})[ey] || mk.roller || []);
+          s.push(`  - ${ey} — ${r.length ? r.join(' · ') : 'belirtilmedi'}`);
+        });
+      }
+      if (mk.kural) s.push(`- **Ortak kural:** ${mk.kural}`);
+    });
+
+    /* Kullanıcının kendi anlatımı ve verdiği cevaplar */
+    const anlatim = pl.anlatim || {};
     Object.keys(anlatim).forEach(m => {
       const a = anlatim[m];
       if (!a || (!a.metin && !(a.sorular || []).length)) return;
@@ -157,6 +175,7 @@ const PROMPT = {
       }
     });
 
+    /* Sayfalar */
     anahtarlar.forEach(ad => {
       const k = kunye[ad] || {};
       s.push('', `### ${ad}`);
@@ -170,10 +189,8 @@ const PROMPT = {
       }
       if (k.ayniKayit) {
         s.push(`- **Aynı kaydı yazar:** ${k.ayniKayit}`);
-        s.push('  İki ayrı tablo kurma; tek tablo, iki görünüm. Birinden yapılan');
-        s.push('  düzenleme diğerinde de görünmeli.');
+        s.push('  İki ayrı tablo kurma; tek tablo, iki görünüm.');
       }
-
       if ((k.alanlar || []).length) {
         s.push('- **Alanlar:**');
         k.alanlar.forEach(a => {
@@ -185,18 +202,8 @@ const PROMPT = {
           s.push(`  - ${a.ad} — ${a.tur}${ek.length ? ' — ' + ek.join(' — ') : ''}`);
         });
       }
-
-      if ((k.roller || []).length) s.push(`- **Görebilen:** ${k.roller.join(' · ')}`);
-      if ((k.eylemler || []).length) {
-        s.push('- **Eylemler ve yetkiler:**');
-        k.eylemler.forEach(ey => {
-          const r = (k.yetki && k.yetki[ey] && k.yetki[ey].length)
-            ? k.yetki[ey] : (k.roller || []);
-          s.push(`  - ${ey} — ${r.length ? r.join(' · ') : 'belirtilmedi'}`);
-        });
-      }
       if ((k.kalip || []).length) {
-        s.push('- **Kalıplar:**');
+        s.push('- **Yapı:**');
         k.kalip.forEach(a => {
           const kl = KALIP.find(x => x.anahtar === a);
           if (!kl) return;
@@ -214,7 +221,18 @@ const PROMPT = {
           });
         });
       }
-      if (k.kural) s.push(`- **Kural:** ${k.kural}`);
+      const f = k.fark || {};
+      const farkli = (f.roller || []).length || (f.eylemler || []).length
+        || Object.keys(f.yetki || {}).length || (f.kural || '').trim();
+      if (farkli) {
+        s.push('- **Bu sayfada modül kuralından farklı:**');
+        if ((f.roller || []).length) s.push(`  - Görebilen: ${f.roller.join(' · ')}`);
+        (f.eylemler || []).forEach(ey => {
+          const r = (f.yetki || {})[ey] || [];
+          s.push(`  - ${ey} — ${r.length ? r.join(' · ') : 'yalnız bu sayfada var'}`);
+        });
+        if ((f.kural || '').trim()) s.push(`  - Kural: ${f.kural}`);
+      }
     });
     return s.join('\n');
   },
@@ -261,6 +279,7 @@ const PROMPT = {
     s.push('- Hesaplanan sütunlar: neye göre, nereden başlayarak');
     s.push('- Seçenek alanlarının alabileceği değerler');
     s.push('- Bir kaydı kim görebilir, kim değiştirebilir, kim silebilir');
+    s.push('  (bunu modülün tamamı için sor, sayfa sayfa değil)');
     s.push('- Sayfalar arası bağlantı: hangi ekrandan hangisine gidilir');
     s.push('- Kurulurken hazır yüklenmesi gereken liste var mı');
     s.push('- Yazdırılacak ya da dışa verilecek bir belge var mı');
@@ -273,6 +292,12 @@ const PROMPT = {
     s.push('```json');
     s.push('{');
     s.push('  "modul": "Muhasebe Modülü",');
+    s.push('  "modulKurallari": {');
+    s.push('    "roller": ["Personel"],');
+    s.push('    "eylemler": ["Ekle", "Düzenle", "Sil", "Ara"],');
+    s.push('    "yetki": { "Ekle": ["Personel"], "Düzenle": ["Amir"], "Sil": ["Yönetici"] },');
+    s.push('    "kural": "Bütün sayfalarda geçerli iş kuralı, yoksa boş"');
+    s.push('  },');
     s.push('  "sayfalar": [');
     s.push('    {');
     s.push('      "ad": "Hesaplar",');
@@ -287,10 +312,7 @@ const PROMPT = {
     s.push('        { "ad": "Durum", "tur": "Seçenek", "degerler": ["Açık", "Kapalı"] },');
     s.push('        { "ad": "Üst Hesap", "tur": "İlişki", "kaynak": "Hesaplar" }');
     s.push('      ],');
-    s.push('      "eylemler": ["Ekle", "Düzenle"],');
-    s.push('      "roller": ["Personel", "Amir", "Yönetici"],');
-    s.push('      "yetki": { "Ekle": ["Personel"], "Düzenle": ["Amir"] },');
-    s.push('      "kural": "Varsa iş kuralı, yoksa boş"');
+    s.push('      "fark": { "roller": [], "eylemler": [], "yetki": {}, "kural": "" }');
     s.push('    }');
     s.push('  ],');
     s.push('  "baglantilar": [');
@@ -314,9 +336,15 @@ const PROMPT = {
     s.push('  ve Türkçe bir ad öner ("Muhasebe Modülü", "Sipariş Takibi").');
     s.push('- `tur` yalnız: ' + SAYFA_TURU.map(x => x.ad).join(' · '));
     s.push('- Alan `tur` yalnız: ' + ALAN_TURU.map(x => x.ad).join(' · '));
+    s.push('- **`modulKurallari` bir kez yazılır, bütün sayfalarda geçerlidir.**');
+    s.push('  Kim görür, hangi işler yapılabilir, hangi işi kim yapar, ortak kural.');
+    s.push('  Sayfaların içinde bunları tekrarlama.');
     s.push('- `eylemler` şunlar olabilir: ' + SAYFA_EYLEM.join(' · '));
-    s.push('  Listede olmayan gerçek bir eylem varsa ("Ters kayıt", "Birleştir")');
-    s.push('  onu da yazabilirsin — uydurma, gerçekten gerekiyorsa.');
+    s.push('  Listede olmayan gerçek bir iş varsa ("Ters kayıt", "Birleştir") onu da');
+    s.push('  yazabilirsin — uydurma, gerçekten gerekiyorsa.');
+    s.push('- `fark` yalnız o sayfa modül kuralından **ayrılıyorsa** dolar.');
+    s.push('  Ör. yalnız işverenin gördüğü bir ayar ekranı, ya da o sayfaya özel bir');
+    s.push('  kural. Ayrılmıyorsa hepsini boş bırak.');
     s.push('- `olcek` yalnız: ' + OLCEK.map(x => x.ad + ' (' + x.alt + ')').join(' · '));
     s.push('  Kullanıcı "1000 hesap olacak" gibi bir şey söylediyse ona göre yaz.');
     s.push('- `ayniKayit`: bu sayfa başka bir sayfayla **aynı kaydı** yazıyorsa o');

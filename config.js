@@ -7,7 +7,7 @@ const APP = {
   name:     'NIZAM | Studio',
   short:    'NIZAM Studio',
   owner:    'Nizam Soft',
-  version: 'v0.50.1',
+  version: 'v0.51.0',
   build:    '2026-08-20',
   stage: 'Adım 4 · Yapı ağacı',
 };
@@ -1059,12 +1059,14 @@ function setListesi(deger) {
     ? { ad: x, alanlar: [] } : { ad: x.ad || '', alanlar: x.alanlar || [] });
 }
 
+/* Sayfa künyesi: yalnız amaç, ekran ve alanlar. Kim görür / kim ne yapar /
+   ortak kural modül düzeyinde bir kez soruluyor. */
 function kunyeTam(k) {
   if (!k) return false;
   const secenekTam = (k.alanlar || []).every(a =>
     a.tur !== 'Seçenek' || (a.degerler || []).filter(Boolean).length);
-  return !!((k.amac || '').trim() && k.tur && (k.alanlar || []).length && secenekTam
-    && kalipTam(k) && (k.eylemler || []).length && (k.roller || []).length);
+  return !!((k.amac || '').trim() && k.tur && (k.alanlar || []).length
+    && secenekTam && kalipTam(k));
 }
 
 /* Etiket karşılıkları */
