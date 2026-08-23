@@ -111,6 +111,37 @@ const PROMPT = {
     return s.join('\n');
   },
 
+  /* Sayfa künyeleri — AI'ın ekranı tahmin etmeden kurabilmesi için.
+     Alan türleri veritabanı sütununu, eylemler düğmeleri, roller satır
+     güvenliği kurallarını belirliyor. */
+  kunyeBlogu(proje) {
+    const kunye = ((proje && proje.palet) || {}).kunye || {};
+    const anahtarlar = Object.keys(kunye);
+    if (!anahtarlar.length) return '';
+
+    const s = ['## Sayfa Künyeleri'];
+    s.push('Her sayfanın ne yaptığı, neyi tuttuğu ve kimin kullandığı aşağıda.');
+    s.push('Alan listesi o sayfanın veritabanı tablosudur — sütun adlarını ve');
+    s.push('türlerini buradan al, kendin uydurma. Rol listesi satır güvenliği');
+    s.push('(RLS) kuralını belirler: listede olmayan rol o tabloyu göremez.');
+
+    anahtarlar.forEach(ad => {
+      const k = kunye[ad] || {};
+      s.push('', `### ${ad}`);
+      if (k.amac) s.push(k.amac);
+      s.push('');
+      if (k.tur) s.push(`- **Tür:** ${k.tur}`);
+      if ((k.alanlar || []).length) {
+        s.push('- **Alanlar:**');
+        k.alanlar.forEach(a => s.push(`  - ${a.ad} — ${a.tur}`));
+      }
+      if ((k.eylemler || []).length) s.push(`- **Eylemler:** ${k.eylemler.join(' · ')}`);
+      if ((k.roller || []).length)   s.push(`- **Kullanan roller:** ${k.roller.join(' · ')}`);
+      if (k.kural) s.push(`- **Kural:** ${k.kural}`);
+    });
+    return s.join('\n');
+  },
+
   /* ---------- Marka promptu ----------
      Logoyu Studio gönderemez; kullanıcı bu metni kopyalayıp logoyla birlikte
      yapıştırır. Dönen cevap Studio'ya geri yapıştırılır. */
@@ -209,6 +240,8 @@ const PROMPT = {
     const paletMetni = PROMPT.paletBlogu(proje);
     if (paletMetni) { s.push(paletMetni); s.push(''); }
     s.push(PROMPT.tasarimBlogu(proje)); s.push('');
+    const kunyeMetni = PROMPT.kunyeBlogu(proje);
+    if (kunyeMetni) { s.push(kunyeMetni); s.push(''); }
 
     s.push('Deponun kökünde `NIZAM.md` adında bir kimlik dosyası var.');
     s.push('İşe başlamadan önce oku — projenin mevcut sayfaları, kullanılan');
@@ -277,6 +310,8 @@ const PROMPT = {
     const paletMetni = PROMPT.paletBlogu(proje);
     if (paletMetni) { s.push(paletMetni); s.push(''); }
     s.push(PROMPT.tasarimBlogu(proje)); s.push('');
+    const kunyeMetni2 = PROMPT.kunyeBlogu(proje);
+    if (kunyeMetni2) { s.push(kunyeMetni2); s.push(''); }
     s.push(PROMPT.kurulumBlogu()); s.push('');
 
     s.push('## Modüller ve sayfalar');

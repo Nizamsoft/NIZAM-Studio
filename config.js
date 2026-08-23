@@ -7,9 +7,9 @@ const APP = {
   name:     'NIZAM | Studio',
   short:    'NIZAM Studio',
   owner:    'Nizam Soft',
-  version: 'v0.37.0',
+  version: 'v0.38.0',
   build:    '2026-08-20',
-  stage: 'Adım 4 · Yapı akışı',
+  stage: 'Adım 4 · Sayfa künyeleri',
 };
 
 /* Supabase bağlantısı.
@@ -880,6 +880,43 @@ function bicimSecim(palet, alan) {
 }
 
 const GENEL_MODUL = 'Proje Geneli';
+
+/* ---- Sayfa künyesi ----
+   AI'ın ekranı tahmin etmeden kurabilmesi için gereken en küçük bilgi:
+   ne işe yarar, hangi tür, hangi alanlar, hangi eylemler, kim görür.
+   Alan türleri veritabanı sütununu, eylemler düğmeleri, roller RLS
+   kurallarını belirliyor. */
+
+const SAYFA_TURU = [
+  { ad: 'Liste',   alt: 'Kayıtlar alt alta; ara, filtrele, tıkla',  ekran: 'liste' },
+  { ad: 'Form',    alt: 'Yeni kayıt girme ya da düzenleme',         ekran: 'form' },
+  { ad: 'Detay',   alt: 'Tek kaydın bütün bilgileri',               ekran: 'detay' },
+  { ad: 'Panel',   alt: 'Sayaçlar, grafik, özet',                   ekran: 'panel' },
+  { ad: 'Takvim',  alt: 'Tarihe göre yerleşim',                     ekran: 'liste' },
+  { ad: 'Ayarlar', alt: 'Tanım ve seçenek listeleri',               ekran: 'ayarlar' },
+];
+
+const ALAN_TURU = [
+  { ad: 'Metin',      alt: 'Kısa yazı — ad, açıklama' },
+  { ad: 'Uzun metin', alt: 'Çok satırlı not' },
+  { ad: 'Sayı',       alt: 'Adet, miktar' },
+  { ad: 'Para',       alt: '₺ tutar' },
+  { ad: 'Tarih',      alt: '22.05.2025' },
+  { ad: 'Tarih-saat', alt: '22.05.2025 · 14:30' },
+  { ad: 'Seçenek',    alt: 'Sabit listeden biri — durum, tür' },
+  { ad: 'Evet/Hayır', alt: 'İşaretli mi değil mi' },
+  { ad: 'Dosya',      alt: 'Belge ya da fotoğraf' },
+  { ad: 'İlişki',     alt: 'Başka bir kayda bağlanır — müşteri, ürün' },
+];
+
+const SAYFA_EYLEM = ['Ekle', 'Düzenle', 'Sil', 'Onayla', 'Ara', 'Filtrele',
+                     'Dışa aktar', 'Yazdır'];
+
+/* Künye eksikse akış ilerlemez: yarım künye AI'a tahmin ettiriyor. */
+function kunyeTam(k) {
+  return !!(k && (k.amac || '').trim() && k.tur
+    && (k.alanlar || []).length && (k.eylemler || []).length && (k.roller || []).length);
+}
 
 /* Etiket karşılıkları */
 const PLATFORM_ADI = { web: 'Web', mobil: 'Mobil', ikisi: 'Web · Mobil' };

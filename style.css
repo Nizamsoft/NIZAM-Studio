@@ -3676,42 +3676,49 @@ a:hover { color: var(--red-ink); }
 .cip-sec.ekle { border-style: dashed; color: var(--ink-faint); }
 .cip-sec:active { transform: scale(.97); }
 
-/* Sıra adımı */
-.yapi-sira { display: flex; flex-direction: column; gap: 7px; overflow-y: auto; min-height: 0; }
-.ys {
-  display: flex; align-items: center; gap: 9px;
-  padding: 9px 11px; border-radius: 13px;
-  border: 1px solid var(--line-2); background: var(--yuva);
-}
-.ys-no { flex: 0 0 20px; font-size: 11px; color: var(--ink-faint); }
-.ys-ad { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-.ys-ad b { font-size: 13px; color: var(--ink-strong); white-space: nowrap;
-           overflow: hidden; text-overflow: ellipsis; }
-.ys-ad i { font-style: normal; font-size: 10.5px; color: var(--ink-faint); }
-.ys-dug {
-  flex: 0 0 32px; height: 32px; display: grid; place-items: center; cursor: pointer;
-  border-radius: 9px; border: 1px solid var(--line-2);
-  background: transparent; color: var(--ink-soft);
-}
-.ys-dug:disabled { opacity: .3; cursor: default; }
-.ys-dug.on { border-color: var(--metal-2); color: var(--ink-strong); background: var(--surface-2); }
-/* Yalnız taşıma düğmelerindeki ok döner; açılış simgesi ev, dönmemeli. */
-.ys-dug.tasi svg { transform: rotate(-90deg); }
-.ys-dug.tasi.asagi svg { transform: rotate(90deg); }
-
 /* Özet satırı */
 .yo { padding: 10px 12px; border-radius: 13px; background: var(--yuva);
       border: 1px solid var(--line-2); margin-bottom: 7px; }
 .yo b { display: block; font-size: 13px; color: var(--ink-strong); }
 .yo i { display: block; font-style: normal; margin-top: 3px;
         font-size: 11px; color: var(--ink-faint); line-height: 1.5; }
+.yo i:empty { display: none; }
+.yo i u { text-decoration: none; font-family: var(--yazi-kod); font-size: 10px;
+          color: var(--ink-dim); }
+.yo i.ky-kural { color: var(--ink-soft); display: flex; align-items: center; gap: 5px; }
+
+/* ---- Sayfa künyesi ---- */
+.kunye-kaydir { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
+                -webkit-overflow-scrolling: touch; padding-bottom: 4px; }
+.ky-alan { margin-bottom: 12px; }
+.ky-bas {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  font-size: 9.5px; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--ink-dim); font-weight: 600; margin: 0 0 7px;
+}
+.ky-cipler { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 14px; }
+.ky-cipler .cip-sec { padding: 7px 11px; font-size: 11.5px; }
+.ky-alanlar { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 14px; }
+.ky-a {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 6px 7px 6px 11px; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--surface-2);
+}
+.ky-a b { font-size: 11.5px; color: var(--ink-strong); }
+.ky-a i { font-style: normal; font-family: var(--yazi-kod); font-size: 9.5px;
+          color: var(--ink-dim); }
+.ky-a button {
+  width: 18px; height: 18px; display: grid; place-items: center; cursor: pointer;
+  border: 0; border-radius: 50%; background: var(--yuva); color: var(--ink-faint);
+}
+.ky-bos { margin: 0 0 14px; }
 
 /* Özet ve sıra adımlarında önizleme yok: alt blok kalan yeri alır, taşan
    kısım kendi içinde kayar. */
-.akis.yapi.ozet .akis-alt {
+.akis.yapi.y-ozet .akis-alt, .akis.yapi.y-kunye .akis-alt {
   flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column;
 }
-.akis.yapi .ozet-kaydir, .akis.yapi .yapi-sira {
+.akis.yapi .ozet-kaydir {
   flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
 }
 
@@ -3724,3 +3731,15 @@ a:hover { color: var(--red-ink); }
 .ag.ileri.kur { background: var(--red); border-color: var(--red); color: #fff; }
 .ag.ileri.kur svg { opacity: 1; }
 .ag.ileri.kur:disabled { opacity: .45; }
+
+
+/* Öbek başlığı taşmasın: uzun not satırı şeridi genişletip bütün sayfayı
+   yana kaydırıyordu. */
+.as-obek .as-ad { min-width: 0; }
+.as-obek .as-ad b, .as-obek .as-ad i {
+  display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* Künye adımında asıl iş formda: önizleme küçülür, form kalanı alır. */
+.akis.yapi.y-kunye .onz-satir { flex: 0 1 auto; min-height: 150px; }
+@media (max-height: 700px) { .akis.yapi.y-kunye .onz-satir { min-height: 118px; } }

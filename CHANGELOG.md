@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.38.0
+- Yapı akışı tek modüle göre yeniden kuruldu: **Modül → Sayfalar → her sayfanın künyesi → Özet + Kur**. Sıra/açılış adımı kalktı, kurulu modüller listeden düşüyor.
+- **Sayfa künyesi** — her sayfa için ne işe yaradığı, türü (liste/form/detay/panel/takvim/ayarlar), alanları (ad + tür), eylemleri, kullanan roller ve isteğe bağlı kural. Künye zorunlu: eksikken İleri ve Kur açılmıyor.
+- Künye prompta yeni bir bölüm olarak giriyor: alan türleri veritabanı tablosunu, roller RLS kuralını, eylemler düğmeleri belirliyor — AI artık tahmin etmiyor.
+- Künye adımında önizleme o sayfanın türüne göre çiziliyor ve tablo sütunlarında kendi alan adların görünüyor.
+
 ## v0.37.0
 - **Yapıyı kurma durağı adım adım akışa döndü** — tasarım durağının aynısı: nokta şeridi, canlı önizleme, altta Geri/İleri. Modüller (sektörün önerdikleri işaretli) → her modülün sayfaları ayrı ekranda → sıra ve açılış → özet ve tek "Kur" düğmesi. Önizlemede menü gerçek modül adlarını, sayfa adımında gerçek sayfa adlarını gösteriyor. Taslak bellekte durur, yarıda bırakmak hiçbir şeyi bozmaz.
 - "Modül Ekle" düğmesi duruyor; kurulu projede "Adım adım kur" ile akış yeniden açılıyor.
