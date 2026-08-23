@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## v0.44.0
+- Ağaç tek bir yatay raya döndü: **firma → modül → sayfalar → dallar → düzenleyici**. Bir düğüme dokununca ray yumuşakça sola kayıyor, geldiğin yer solda ince şerit olarak duruyor.
+- **Düzenleme de ağacın içinde.** Amaç, Tür, Alanlar gibi dallara basınca ayrı ekrana çıkmıyor: dalın kendi sütunu açılıyor, tepesinde o sayfanın canlı önizlemesi, altında düzenleyici. Alttaki düğme sıradaki dala geçiriyor.
+- Dal düğümleri seçim yapıldıkça yerinde güncelleniyor; sayfa yeniden çizilmediği için kaydırma ve ray yerinden oynamıyor.
+
 ## v0.43.0
 - **Yapıyı kurma artık doğrudan ağaçla açılıyor.** Firma logosundan modüle, modülden sayfalara dallanan tam ekran tuval; modül ve sayfa ekleme ağacın içindeki kesik kutulardan yapılıyor. Ara ekran, adım şeridi yok.
 - **Sayfaya dokununca o sayfa kökün yerine geçiyor** ve kendi dalları açılıyor: Amaç · Tür · Kalıp · Alanlar · Eylemler · Roller · Yetki · Kural. Her dalın kendi renk şeridi ve durum noktası var, altında o an ne girildiği yazıyor. Dala dokununca düzenleme ekranı açılıyor, "Bitti" ağaca döndürüyor.

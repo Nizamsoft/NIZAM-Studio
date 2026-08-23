@@ -3995,4 +3995,44 @@ a:hover { color: var(--red-ink); }
 .nd.bos .nokta { background: var(--line-parlak); }
 .ag-dug.guclu { background: var(--surface-2); border-color: var(--metal-2);
                 color: var(--ink-strong); }
-.ag-dug.guclu svg { transform: rotate(180deg); }
+.ag-dug.geri svg { transform: rotate(180deg); }
+
+/* ---- Ağaç rayı: derinleştikçe sola kayar ---- */
+.ag-govde { overflow: hidden; }
+.ag-ray { display: flex; align-items: flex-start; height: 100%;
+          transition: transform .42s cubic-bezier(.22, .61, .36, 1); }
+.sut { flex: 0 0 auto; height: 100%; box-sizing: border-box; position: relative;
+       display: flex; }
+.sut.cizgili::before { content: ""; position: absolute; left: 0; top: 22px; bottom: 22px;
+                       width: 1px; background: var(--line-2); }
+.sut-ic { flex: 1; min-width: 0; padding: 0 0 0 14px; display: flex; flex-direction: column;
+          gap: 8px; overflow-y: auto; overscroll-behavior: contain; max-height: 100%; }
+.sut-ic.tek { justify-content: center; }
+.sut-ic.duzen { gap: 10px; padding-left: 16px; overflow-x: hidden; }
+.sut:first-child .sut-ic { padding-left: 0; }
+
+/* Ray içindeki düğümler artık akışta: mutlak konum yok. */
+.ag-ray .nd { position: relative; left: auto; right: auto; top: auto;
+              flex: 0 0 auto; min-height: 52px; }
+.ag-ray .nd.kok { width: 46px; height: 46px; min-height: 46px; align-self: center; }
+.ag-ray .nd.hayalet { min-height: 44px; }
+
+/* Düzenleyici sütunu */
+.dz-bas { display: flex; align-items: center; gap: 10px; padding: 2px 0 2px; }
+.dz-rk { width: 4px; align-self: stretch; min-height: 30px; border-radius: 3px;
+         background: var(--dr); }
+.dz-yaz { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.dz-yaz b { font-size: 15px; color: var(--ink-strong); }
+.dz-yaz i { font-style: normal; font-size: 11px; color: var(--ink-faint); }
+.dz-onizleme { flex: 0 0 auto; height: 150px; position: relative; border-radius: 14px;
+               border: 1px solid var(--line-2); background: var(--yuva-2); overflow: hidden; }
+.dz-onizleme .onz-goz { position: absolute; inset: 0; display: flex;
+                        align-items: center; justify-content: center; overflow: hidden; }
+.dz-onizleme .onz-goz > .o-app { max-width: 360px; flex: 0 0 auto;
+                                 transform-origin: center; transition: transform .16s var(--ease); }
+.dz-onizleme .onk-not { display: none; }
+.dz-govde { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+.dz-govde .kunye-kaydir { overflow: visible; }
+.dz-govde .sohbet { display: none; }
+.dz-govde .raf { margin: 0; padding: 6px 0; max-width: 100%; }
+.dz-govde .ky-cipler, .dz-govde .kunye-kaydir { max-width: 100%; }

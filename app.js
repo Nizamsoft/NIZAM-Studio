@@ -2416,35 +2416,37 @@ function kunyeAdimlari(k, roller) {
     a.anahtar !== 'yetki' || ((k.eylemler || []).length && roller.length > 1));
 }
 
-function yapiAdimlari(t, p) {
-  /* Artık yalnız künye alt adımları: modül ve sayfalar ağaçtan kuruluyor. */
-  const roller = rolListesi(((p && p.palet) || {}).roller);
-  if (!t.duzelt || !t.sayfalar.includes(t.duzelt)) return [];
-  const k = yapiKunye(t, t.duzelt);
-  return kunyeAdimlari(k, roller).map(ka => ({
-    tur: 'kunye', sayfa: t.duzelt, alt: ka.anahtar, ad: t.duzelt,
-    obek: t.duzelt, obekNot: 'Bu ekranı kurmak için gerekenler.',
-    aciklama: ka.soru }));
-}
-
 /* Yapı durağı doğrudan ağaçla açılır: modül ve sayfalar buradan kurulur,
    bir sayfaya dokununca o sayfa kökün yerine geçip kendi dallarını açar. */
 function yapiAkisi(p, d) {
   const t = yapiTaslak(p);
   if (t.mod === 'anlat') return anlatEkrani(p, t);
-  if (t.mod === 'kunye' && t.duzelt && t.sayfalar.includes(t.duzelt))
-    return kunyeEkrani(p, t);
   t.mod = 'agac';
   return agacEkrani(p, t);
 }
 
-/* ---- Ağaç ---- */
+/* ---- Ağaç ----
+   Tek bir yatay ray: firma → modül → sayfalar → dallar → düzenleyici.
+   Derinleştikçe ray sola kayar, geldiğin yer solda ince bir şerit olarak
+   durur. Düzenleme de ağacın içinde; ayrı ekrana çıkmıyoruz. */
+
 const DAL_RENK = {
   amac: '#c9ced6', tur: '#8d8378', kalip: '#3d9970', alanlar: '#c9ced6',
   eylemler: '#c9a227', roller: '#5b8def', yetki: '#5b8def', kural: '#d0a13c',
 };
 
-function dalOzeti(k, anahtar, roller) {
+/* Sütun genişlikleri ve kayma noktaları — ikisi birlikte hesaplanıyor ki
+   her seviyede bir öncekinden bir parça görünsün. */
+const SUT = { kok: 50, modul: 106, sayfa: 208, dal: 208, duzen: 330 };
+let AGAC_KAY = 0;
+
+function agacKayma(seviye) {
+  if (seviye === 0) return 0;
+  if (seviye === 1) return SUT.kok + SUT.modul + SUT.sayfa - 88;
+  return SUT.kok + SUT.modul + SUT.sayfa + SUT.dal - 28;
+}
+
+function dalOzeti(k, anahtar) {
   if (anahtar === 'amac')  return k.amac || 'yazılmadı';
   if (anahtar === 'tur')   return k.tur || 'seçilmedi';
   if (anahtar === 'kalip') return (k.kalip || []).length
@@ -2465,84 +2467,11 @@ function dalOzeti(k, anahtar, roller) {
   return k.kural || 'henüz yazılmadı';
 }
 
-function agacEkrani(p, t) {
-  const sayfa = t.odak && t.sayfalar.includes(t.odak) ? t.odak : null;
-  return sayfa ? agacSayfa(p, t, sayfa) : agacModul(p, t);
-}
-
-function agacKabuk(p, yol, tuval, dugmeler) {
-  return `<div class="ag-ekran" style="${renkDegiskenleri(p.renk)}">
-    <div class="ag-yol">${yol}</div>
-    <div class="ag-govde">${tuval}</div>
-    <div class="ag-alt">${dugmeler}</div>
-  </div>`;
-}
-
-function agacModul(p, t) {
-  const kurulu  = DB.modulleri(p.id).filter(m => m.ad !== GENEL_MODUL);
-  const harf    = (p.firma || '?').trim().slice(0, 2).toLocaleUpperCase('tr');
-  const Y = 22, DY = 72, XS = 172;
-  const say = t.sayfalar.length;
-  const mY  = Y + Math.max(0, (say - 1)) / 2 * DY;
-  const boy = Y + (say + 1) * DY + 40;
-
-  const sayfaNode = t.sayfalar.map((sf, i) => {
-    const k = t.kunye[sf] || {};
-    const durum = kunyeTam(k) ? 'tamam' : 'eksik';
-    return `
-      <button class="nd ${durum}" style="left:${XS}px;right:0;top:${Y + i * DY}px;height:54px;
-              animation-delay:${(0.05 * i + 0.1).toFixed(2)}s" type="button"
-              data-eylem="agac-sayfa" data-proje="${p.id}" data-ad="${esc(sf)}">
-        <span class="nokta"></span>
-        <b>${esc(sf)}</b><i>${esc(agacSayfaAlt(k))}</i></button>`;
-  }).join('');
-
-  const cizgi = t.sayfalar.map((_, i) => `
-    <path d="M172 ${Y + i * DY + 27} H ${XS}" stroke="#4a4440" fill="none"/>`).join('');
-
-  const tuval = `<div class="tuval" style="height:${boy}px">
-    <svg>
-      <defs><linearGradient id="agRenk" x1="0" y1="0" x2="1" y2="0">
-        <stop offset="0" stop-color="var(--p1)"/><stop offset="1" stop-color="var(--p2)"/>
-      </linearGradient></defs>
-      ${t.modul ? `<path d="M42 ${mY + 28} H 54" stroke="url(#agRenk)" stroke-width="1.6" fill="none"/>` : ''}
-      ${say ? `<path d="M158 ${mY + 28} H 164 M164 ${Y + 27} V ${Y + (say - 1) * DY + 27}"
-                     stroke="#4a4440" fill="none"/>` : ''}
-      ${cizgi}
-      ${t.modul ? `<path d="M164 ${Y + (say ? (say - 1) * DY : 0) + 27} V ${Y + say * DY + 22}
-                          H ${XS}" stroke="#3c3734" stroke-dasharray="4 4" fill="none"/>` : ''}
-    </svg>
-
-    <button class="nd kok" style="left:0;top:${mY + 8}px;width:42px;height:42px" type="button"
-            data-eylem="agac-kok" data-proje="${p.id}"><b>${esc(harf)}</b></button>
-
-    ${t.modul ? `
-      <button class="nd modul secili" style="left:54px;top:${mY}px;width:104px;height:56px"
-              type="button" data-eylem="agac-modul" data-proje="${p.id}">
-        <b>${esc(t.modul)}</b><i>${say} sayfa</i></button>
-      ${sayfaNode}
-      <button class="nd hayalet" style="left:${XS}px;right:0;top:${Y + say * DY}px;height:44px;
-              animation-delay:${(0.05 * say + 0.14).toFixed(2)}s" type="button"
-              data-eylem="yapi-sayfa-yaz" data-proje="${p.id}">
-        <b>${svg(ICON.arti, 13)} sayfa ekle</b></button>`
-    : `
-      <button class="nd hayalet" style="left:54px;top:${mY}px;width:160px;height:56px"
-              type="button" data-eylem="agac-modul" data-proje="${p.id}">
-        <b>${svg(ICON.arti, 13)} modül kur</b></button>`}
-  </div>`;
-
-  const tam = t.modul && say && t.sayfalar.every(sf => kunyeTam(t.kunye[sf]));
-  const dugmeler = `
-    <button class="ag-dug" type="button" data-eylem="agac-anlat" data-proje="${p.id}">
-      ${svg(ICON.kopya, 15)} ${t.sayfalar.length && (t.anlat || '').trim()
-        ? 'Anlatımı düzenle' : 'Claude ile kur'}</button>
-    <button class="ag-dug ana" type="button" ${tam ? '' : 'disabled'}
-            data-eylem="yapi-kur" data-proje="${p.id}">
-      ${svg(ICON.check, 15)} Kur</button>`;
-
-  return agacKabuk(p, `<b>${esc(p.firma)}</b><s>›</s>yapı ağacı
-    ${kurulu.length ? `<span class="ag-rozet">${kurulu.length} modül kurulu</span>` : ''}`,
-    tuval, dugmeler);
+function dalDolu(k, anahtar) {
+  return { amac: !!(k.amac || '').trim(), tur: !!k.tur, kalip: (k.kalip || []).length,
+    alanlar: (k.alanlar || []).length, eylemler: (k.eylemler || []).length,
+    roller: (k.roller || []).length, yetki: Object.keys(k.yetki || {}).length,
+    kural: !!(k.kural || '').trim() }[anahtar];
 }
 
 function agacSayfaAlt(k) {
@@ -2554,61 +2483,165 @@ function agacSayfaAlt(k) {
   return p.join(' · ') || 'künye boş';
 }
 
-function agacSayfa(p, t, sayfa) {
-  const k = yapiKunye(t, sayfa);
+function agacEkrani(p, t) {
+  const sayfa  = t.odak && t.sayfalar.includes(t.odak) ? t.odak : null;
+  if (!sayfa) t.dal = null;
   const roller = rolListesi((p.palet || {}).roller);
-  const dallar = kunyeAdimlari(k, roller).filter(a => a.anahtar !== 'ozet');
-  const Y = 18, DY = 66, XS = 142;
-  const mY = Y + Math.max(0, dallar.length - 1) / 2 * DY;
-  const boy = Y + dallar.length * DY + 30;
+  const k      = sayfa ? yapiKunye(t, sayfa) : null;
+  const dallar = k ? kunyeAdimlari(k, roller).filter(a => a.anahtar !== 'ozet') : [];
+  if (t.dal && !dallar.some(a => a.anahtar === t.dal)) t.dal = null;
+  const seviye = !sayfa ? 0 : t.dal ? 2 : 1;
 
-  const dolu = {
-    amac: !!(k.amac || '').trim(), tur: !!k.tur, kalip: (k.kalip || []).length,
-    alanlar: (k.alanlar || []).length, eylemler: (k.eylemler || []).length,
-    roller: (k.roller || []).length, yetki: Object.keys(k.yetki || {}).length,
-    kural: !!(k.kural || '').trim(),
-  };
-  const node = dallar.map((a, i) => {
-    /* Boş ama isteğe bağlı olan yeşil görünmesin: "kalıp yok" tamamlanmış
-       değil, dokunulmamış demek. */
-    const durum = !kunyeAdimTam(k, a.anahtar, roller) ? 'eksik'
-      : dolu[a.anahtar] ? 'tamam' : 'bos';
-    return `
-      <button class="nd dal ${durum}"
-              style="left:${XS}px;right:0;top:${Y + i * DY}px;height:52px;
-                     animation-delay:${(0.05 * i + 0.08).toFixed(2)}s" type="button"
-              data-eylem="agac-dal" data-proje="${p.id}" data-sayfa="${esc(sayfa)}"
-              data-ad="${a.anahtar}">
-        <span class="rk" style="background:${DAL_RENK[a.anahtar] || '#8d8378'}"></span>
-        <span class="nokta"></span>
-        <b>${esc(a.ad)}</b><i>${esc(dalOzeti(k, a.anahtar, roller))}</i></button>`;
-  }).join('');
+  /* Önizleme künyeden beslenir: düzenleyici sütununun tepesinde durur. */
+  ONIZLEME_MENU  = t.modul ? [t.modul, 'Rapor', 'Ayar'] : null;
+  ONIZLEME_SAYFA = t.sayfalar.length ? t.sayfalar : null;
+  ONIZLEME_KUNYE = null;
+  ONIZLEME_CIHAZ = 'web';
+  if (seviye === 2) {
+    const tp = SAYFA_TURU.find(x => x.ad === k.tur);
+    ONIZLEME_EKRAN = tp ? tp.ekran : 'liste';
+    ONIZLEME_ADIM  = 'kunye';
+    if (k.tur || (k.alanlar || []).length) ONIZLEME_KUNYE = Object.assign({ sayfa }, k);
+  }
 
-  const cizgi = dallar.map((_, i) => `
-    <path d="M142 ${Y + i * DY + 26} H ${XS}" stroke="#4a4440" fill="none"/>`).join('');
+  const eski = AGAC_KAY;
+  AGAC_KAY = agacKayma(seviye);
 
-  const tuval = `<div class="tuval" style="height:${boy}px">
-    <svg>
-      <path d="M126 ${mY + 26} H 134 M134 ${Y + 26} V ${Y + (dallar.length - 1) * DY + 26}"
-            stroke="#4a4440" fill="none"/>
-      ${cizgi}
-    </svg>
-    <button class="nd modul secili" style="left:0;top:${mY - 4}px;width:126px;height:64px"
-            type="button" data-eylem="agac-geri" data-proje="${p.id}">
-      <b>${esc(sayfa)}</b><i>${esc(agacSayfaAlt(k))}</i></button>
-    ${node}
+  const yol = seviye === 0
+    ? `<b>${esc(p.firma)}</b><s>›</s>yapı ağacı`
+    : seviye === 1
+      ? `<b>${esc(t.modul)}</b><s>›</s>${esc(sayfa)}`
+      : `<b>${esc(sayfa)}</b><s>›</s>${esc((dallar.find(a => a.anahtar === t.dal) || {}).ad || '')}`;
+
+  return `<div class="ag-ekran" style="${renkDegiskenleri(p.renk)}">
+    <div class="ag-yol">
+      ${seviye ? `<button class="ag-geri sol" type="button" data-eylem="agac-geri"
+                          data-proje="${p.id}">${svg(ICON.chevron, 14)}</button>` : ''}
+      ${yol}
+    </div>
+    <div class="ag-govde">
+      <div class="ag-ray" data-kay="${AGAC_KAY}" style="transform:translateX(${-eski}px)">
+        ${agacSutunKok(p, t)}
+        ${agacSutunModul(p, t)}
+        ${agacSutunSayfa(p, t, sayfa)}
+        ${sayfa ? agacSutunDal(p, t, k, dallar, roller) : ''}
+        ${sayfa && t.dal ? agacSutunDuzen(p, t, sayfa, k, dallar) : ''}
+      </div>
+    </div>
+    <div class="ag-alt">${agacDugmeleri(p, t, sayfa, dallar, seviye)}</div>
   </div>`;
+}
 
-  const dugmeler = `
-    <button class="ag-dug" type="button" data-eylem="agac-sayfa-sil"
-            data-proje="${p.id}" data-ad="${esc(sayfa)}">
-      ${svg(ICON.kapat, 14)} Sayfayı kaldır</button>
-    <button class="ag-dug guclu" type="button" data-eylem="agac-geri" data-proje="${p.id}">
-      ${svg(ICON.chevron, 14)} Ağaca dön</button>`;
+function agacSutunKok(p, t) {
+  const harf = (p.firma || '?').trim().slice(0, 2).toLocaleUpperCase('tr');
+  return `<div class="sut" style="width:${SUT.kok}px">
+    <div class="sut-ic tek">
+      <button class="nd kok" type="button" data-eylem="agac-kok" data-proje="${p.id}">
+        <b>${esc(harf)}</b></button>
+    </div></div>`;
+}
 
-  return agacKabuk(p, `<b>${esc(t.modul)}</b><s>›</s>${esc(sayfa)}
-    <button class="ag-geri" type="button" data-eylem="agac-geri" data-proje="${p.id}"
-            title="Ağaca dön">${svg(ICON.chevron, 14)}</button>`, tuval, dugmeler);
+function agacSutunModul(p, t) {
+  return `<div class="sut cizgili" style="width:${SUT.modul}px">
+    <div class="sut-ic tek">
+      ${t.modul
+        ? `<button class="nd modul secili" type="button" data-eylem="agac-modul"
+                   data-proje="${p.id}">
+             <b>${esc(t.modul)}</b><i>${t.sayfalar.length} sayfa</i></button>`
+        : `<button class="nd hayalet" type="button" data-eylem="agac-modul"
+                   data-proje="${p.id}"><b>${svg(ICON.arti, 13)} modül</b></button>`}
+    </div></div>`;
+}
+
+function agacSutunSayfa(p, t, secili) {
+  if (!t.modul) return '';
+  return `<div class="sut cizgili" style="width:${SUT.sayfa}px">
+    <div class="sut-ic">
+      ${t.sayfalar.map((sf, i) => {
+        const k = t.kunye[sf] || {};
+        return `<button class="nd ${kunyeTam(k) ? 'tamam' : 'eksik'}
+                        ${secili === sf ? ' secili' : ''}" type="button"
+                        style="animation-delay:${(0.04 * i).toFixed(2)}s"
+                        data-eylem="agac-sayfa" data-proje="${p.id}" data-ad="${esc(sf)}">
+          <span class="nokta"></span><b>${esc(sf)}</b><i>${esc(agacSayfaAlt(k))}</i>
+        </button>`;
+      }).join('')}
+      <button class="nd hayalet" type="button" data-eylem="yapi-sayfa-yaz"
+              data-proje="${p.id}"><b>${svg(ICON.arti, 13)} sayfa ekle</b></button>
+    </div></div>`;
+}
+
+function agacSutunDal(p, t, k, dallar, roller) {
+  return `<div class="sut cizgili" style="width:${SUT.dal}px">
+    <div class="sut-ic">
+      ${dallar.map((a, i) => {
+        const durum = !kunyeAdimTam(k, a.anahtar, roller) ? 'eksik'
+          : dalDolu(k, a.anahtar) ? 'tamam' : 'bos';
+        return `<button class="nd dal ${durum}${t.dal === a.anahtar ? ' secili' : ''}"
+                        type="button" style="animation-delay:${(0.04 * i).toFixed(2)}s"
+                        data-eylem="agac-dal" data-proje="${p.id}"
+                        data-sayfa="${esc(t.odak)}" data-ad="${a.anahtar}">
+          <span class="rk" style="background:${DAL_RENK[a.anahtar] || '#8d8378'}"></span>
+          <span class="nokta"></span>
+          <b>${esc(a.ad)}</b><i>${esc(dalOzeti(k, a.anahtar))}</i></button>`;
+      }).join('')}
+    </div></div>`;
+}
+
+/* Düzenleyici de ağacın bir dalı: kendi sütununda, üstünde önizlemesiyle. */
+function agacSutunDuzen(p, t, sayfa, k, dallar) {
+  const dal  = dallar.find(a => a.anahtar === t.dal) || {};
+  const gost = ['tur', 'alanlar', 'eylemler', 'kalip'].includes(t.dal);
+  return `<div class="sut cizgili son" style="width:${SUT.duzen}px">
+    <div class="sut-ic duzen">
+      <div class="dz-bas" style="--dr:${DAL_RENK[t.dal] || '#8d8378'}">
+        <span class="dz-rk"></span>
+        <span class="dz-yaz"><b>${esc(dal.ad || '')}</b><i>${esc(dal.soru || '')}</i></span>
+      </div>
+      ${gost ? `<div class="dz-onizleme"><div class="onz-goz">
+        ${onizlemeIc(p, p.palet)}</div></div>` : ''}
+      <div class="dz-govde">${kunyeGovde(p, t, { tur: 'kunye', sayfa, alt: t.dal })}</div>
+    </div></div>`;
+}
+
+function agacDugmeleri(p, t, sayfa, dallar, seviye) {
+  if (seviye === 2) {
+    const i = dallar.findIndex(a => a.anahtar === t.dal);
+    const sonraki = dallar[i + 1];
+    return `
+      <button class="ag-dug geri" type="button" data-eylem="agac-geri" data-proje="${p.id}">
+        ${svg(ICON.chevron, 14)} Dallar</button>
+      ${sonraki
+        ? `<button class="ag-dug guclu" type="button" data-eylem="agac-dal"
+                   data-proje="${p.id}" data-sayfa="${esc(sayfa)}" data-ad="${sonraki.anahtar}">
+             ${esc(sonraki.ad)} ${svg(ICON.chevron, 14)}</button>`
+        : `<button class="ag-dug guclu" type="button" data-eylem="agac-geri"
+                   data-proje="${p.id}">${svg(ICON.tik, 14)} Bitti</button>`}`;
+  }
+  if (seviye === 1) {
+    return `
+      <button class="ag-dug" type="button" data-eylem="agac-sayfa-sil"
+              data-proje="${p.id}" data-ad="${esc(sayfa)}">
+        ${svg(ICON.kapat, 14)} Kaldır</button>
+      <button class="ag-dug guclu geri" type="button" data-eylem="agac-geri" data-proje="${p.id}">
+        ${svg(ICON.chevron, 14)} Ağaç</button>`;
+  }
+  const tam = t.modul && t.sayfalar.length && t.sayfalar.every(sf => kunyeTam(t.kunye[sf]));
+  return `
+    <button class="ag-dug" type="button" data-eylem="agac-anlat" data-proje="${p.id}">
+      ${svg(ICON.kopya, 15)} ${(t.anlat || '').trim() ? 'Anlatım' : 'Claude ile kur'}</button>
+    <button class="ag-dug ana" type="button" ${tam ? '' : 'disabled'}
+            data-eylem="yapi-kur" data-proje="${p.id}">
+      ${svg(ICON.check, 15)} Kur</button>`;
+}
+
+/* Ray çizildikten sonra hedefe kayar: eski değerle çizip yeni değere
+   geçiyoruz ki geçiş animasyonu çalışsın. */
+function agacKaydir() {
+  const ray = $('.ag-ray');
+  if (!ray) return;
+  const hedef = Number(ray.dataset.kay || 0);
+  requestAnimationFrame(() => { ray.style.transform = `translateX(${-hedef}px)`; });
 }
 
 /* Anlat ve künye ekranları: eski akış iskeletini kullanır. */
@@ -2640,67 +2673,6 @@ function anlatEkrani(p, t) {
       </div>
     </div>
   </div>`;
-}
-
-function kunyeEkrani(p, t) {
-  const adm = yapiAdimlari(t, p);
-  const no  = Math.max(0, Math.min(t.yer, adm.length - 1));
-  t.yer = no;
-  const adim = adm[no];
-
-  ONIZLEME_MENU  = t.modul ? [t.modul, 'Rapor', 'Ayar'] : null;
-  ONIZLEME_SAYFA = t.sayfalar.length ? t.sayfalar : null;
-  ONIZLEME_KUNYE = null;
-  ONIZLEME_CIHAZ = 'web';
-
-  if (adim.tur === 'kunye') {
-    const k = yapiKunye(t, adim.sayfa);
-    const tp = SAYFA_TURU.find(x => x.ad === k.tur);
-    ONIZLEME_EKRAN = tp ? tp.ekran : 'liste';
-    ONIZLEME_ADIM  = 'kunye';
-    if (k.tur || (k.alanlar || []).length) {
-      ONIZLEME_KUNYE = Object.assign({ sayfa: adim.sayfa }, k);
-    }
-  } else {
-    ONIZLEME_EKRAN = adim.tur === 'sayfalar' ? 'sayfalar' : 'panel';
-    ONIZLEME_ADIM  = adim.tur === 'sayfalar' ? 'sayfalistesi' : 'gezinme';
-  }
-
-  return `<div class="akis yapi y-${adim.tur}${adim.alt ? ' k-' + adim.alt : ''}">
-    <div class="adim-serit">
-      <div class="as-obek">
-        <span class="as-rozet">${no + 1}</span>
-        <span class="as-ad"><b>${esc(adim.obek)}</b><i>${esc(adim.obekNot)}</i></span>
-        <button class="ab-kararlar" type="button" data-eylem="agac-geri" data-proje="${p.id}"
-                title="Ağaca dön">${svg(ICON.kapat, 14)}</button>
-      </div>
-      <div class="as-noktalar"><span class="as-grup suan" style="flex:1">${adm.map((_, i) => `
-        <button class="${i === no ? 'on' : i < no ? 'gecti' : ''}" type="button"
-                data-eylem="yapi-adim" data-proje="${p.id}" data-deger="${i}"><i></i></button>`)
-        .join('')}</span></div>
-      <div class="as-sayac">${no + 1} / ${adm.length}</div>
-    </div>
-    <div class="onz-satir"><div class="onz-goz">${onizlemeIc(p, p.palet)}</div></div>
-    <div class="akis-alt">
-      ${kunyeYolu(t, adim, p)}
-      ${yapiGovde(p, t, adim)}
-      ${yapiGezinme(p, no, adm, t, adim)}
-    </div>
-  </div>`;
-}
-
-/* Sayfa adı + hangi sorudayız. Nokta şeridi bu sayfaya ait. */
-function kunyeYolu(t, adim, p) {
-  const k = yapiKunye(t, adim.sayfa);
-  const roller = rolListesi((p.palet || {}).roller);
-  const liste = kunyeAdimlari(k, roller);
-  const i = liste.findIndex(x => x.anahtar === adim.alt);
-  return `
-    <div class="ky-ust">
-      <span class="ky-yol"><b>${esc(adim.sayfa)}</b><s>›</s>${esc(liste[i].ad)}</span>
-      <span class="ky-adimlar">${liste.map((x, j) =>
-        `<i class="${j === i ? 'on' : j < i ? 'gecti' : ''}"></i>`).join('')}</span>
-    </div>`;
 }
 
 /* Sohbet baloncuğu: soruyu soran ve niye sorduğunu söyleyen satır. */
@@ -2998,31 +2970,6 @@ function sutunAdi(ad) {
     .toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
 }
 
-function yapiGezinme(p, no, adm, t, adim) {
-  const son = no === adm.length - 1;
-  const roller = rolListesi((p.palet || {}).roller);
-  /* Cevaplanmadan ilerlenmiyor: yarım künye AI'a tahmin ettiriyor. */
-  const kilit = !kunyeAdimTam(yapiKunye(t, adim.sayfa), adim.alt, roller);
-  const yazi = adim.alt === 'kural' && !(yapiKunye(t, adim.sayfa).kural || '').trim()
-    ? 'Kural yok, geç' : adim.alt === 'kalip'
-      && !(yapiKunye(t, adim.sayfa).kalip || []).length ? 'Hiçbiri, geç' : 'İleri';
-
-  return `
-    <div class="adim-gez">
-      <button class="ag geri" type="button"
-              data-eylem="${no ? 'yapi-adim' : 'agac-geri'}" data-proje="${p.id}"
-              data-deger="${no - 1}">
-        ${svg(ICON.chevron, 14)} Geri</button>
-      ${son
-        ? `<button class="ag ileri" type="button" ${kilit ? 'disabled' : ''}
-                   data-eylem="agac-geri" data-proje="${p.id}">
-             ${svg(ICON.check, 14)} Bitti</button>`
-        : `<button class="ag ileri" type="button" ${kilit ? 'disabled' : ''}
-                   data-eylem="yapi-adim" data-proje="${p.id}" data-deger="${no + 1}">
-             ${esc(yazi)} ${svg(ICON.chevron, 14)}</button>`}
-    </div>`;
-}
-
 /* Künyedeki yazı alanları: her tuşta yeniden çizersek imleç kaçar.
    Değer taslağa yazılır, ekran olduğu gibi kalır. */
 function yapiBaglari() {
@@ -3053,29 +3000,33 @@ function yapiBaglari() {
 }
 
 /* Çipe basınca bütün sayfayı yeniden çizmiyoruz: kaydırma yerinden
-   oynuyordu. Yalnız önizleme ve İleri düğmesi tazelenir. */
+   oynuyor, ray da baştan kayıyordu. Yalnız önizleme tazelenir. */
 function yapiOnizlemeTazele(pr) {
   const t = yapiTaslak(pr);
-  const adm = yapiAdimlari(t, pr);
-  const adim = adm[Math.min(t.yer, adm.length - 1)];
-  if (!adim || adim.tur !== 'kunye') return;
-  const k  = yapiKunye(t, adim.sayfa);
+  if (!t.odak || !t.dal) return;
+  const k  = yapiKunye(t, t.odak);
   const tp = SAYFA_TURU.find(x => x.ad === k.tur);
   ONIZLEME_EKRAN = tp ? tp.ekran : 'liste';
   ONIZLEME_KUNYE = (k.tur || (k.alanlar || []).length)
-    ? Object.assign({ sayfa: adim.sayfa }, k) : null;
-  const goz = $('.onz-goz');
+    ? Object.assign({ sayfa: t.odak }, k) : null;
+  const goz = $('.dz-onizleme .onz-goz');
   if (goz) { goz.innerHTML = onizlemeIc(pr, pr.palet); onizlemeSigdir(); }
 }
 
+/* Dal düğümünün özeti ve durumu anında güncellensin. */
 function yapiIleriTazele(pr) {
   const t = yapiTaslak(pr);
-  const adm = yapiAdimlari(t, pr);
-  const adim = adm[Math.min(t.yer, adm.length - 1)];
-  const dug = $('.ag.ileri');
-  if (!dug || !adim || adim.tur !== 'kunye' || dug.classList.contains('kur')) return;
-  dug.disabled = !kunyeAdimTam(yapiKunye(t, adim.sayfa), adim.alt,
-    rolListesi((pr.palet || {}).roller));
+  if (!t.odak || !t.dal) return;
+  const k = yapiKunye(t, t.odak);
+  const dug = $(`.nd.dal[data-ad="${t.dal}"]`);
+  if (!dug) return;
+  const roller = rolListesi((pr.palet || {}).roller);
+  const durum = !kunyeAdimTam(k, t.dal, roller) ? 'eksik'
+    : dalDolu(k, t.dal) ? 'tamam' : 'bos';
+  dug.classList.remove('eksik', 'tamam', 'bos');
+  dug.classList.add(durum);
+  const alt = $('i', dug);
+  if (alt) alt.textContent = dalOzeti(k, t.dal);
 }
 
 /* 4 · Geliştirme */
@@ -3777,6 +3728,7 @@ function render() {
      gerçek boyunda olmuyor, önizleme gereksiz yere küçülüyordu. */
   requestAnimationFrame(onizlemeSigdir);
   yapiBaglari();
+  agacKaydir();
 
   const logout = $('#btn-logout');
   if (logout) logout.addEventListener('click', signOut);
@@ -6687,19 +6639,20 @@ async function eylemCalistir(el) {
     const pr = DB.proje(el.dataset.proje);
     if (!pr) return;
     const t = yapiTaslak(pr);
-    if (t.mod === 'kunye' || t.mod === 'anlat') { t.mod = 'agac'; t.duzelt = null; }
+    if (t.mod === 'anlat') t.mod = 'agac';
+    else if (t.dal) t.dal = null;
     else t.odak = null;
     render();
-    $('#view').scrollTop = 0;
     return;
   }
 
   if (e === 'agac-sayfa') {
     const pr = DB.proje(el.dataset.proje);
     if (!pr) return;
-    yapiTaslak(pr).odak = el.dataset.ad;
+    const t = yapiTaslak(pr);
+    t.odak = el.dataset.ad;
+    t.dal = null;
     render();
-    $('#view').scrollTop = 0;
     return;
   }
 
@@ -6707,12 +6660,9 @@ async function eylemCalistir(el) {
     const pr = DB.proje(el.dataset.proje);
     if (!pr) return;
     const t = yapiTaslak(pr);
-    t.duzelt = el.dataset.sayfa;
-    t.mod = 'kunye';
-    const i = yapiAdimlari(t, pr).findIndex(a => a.alt === el.dataset.ad);
-    t.yer = i > -1 ? i : 0;
+    t.odak = el.dataset.sayfa;
+    t.dal = el.dataset.ad;
     render();
-    $('#view').scrollTop = 0;
     return;
   }
 
@@ -6755,33 +6705,6 @@ async function eylemCalistir(el) {
     delete YAPI_TASLAK[el.dataset.proje];
     ONIZLEME_MENU = ONIZLEME_SAYFA = ONIZLEME_ALAN = null;
     render();
-    return;
-  }
-
-  if (e === 'yapi-adim') {
-    const pr = DB.proje(el.dataset.proje);
-    if (!pr) return;
-    const t = yapiTaslak(pr);
-    const hedef = Number(el.dataset.deger);
-    /* Künye bölümünden çıkınca düzeltme kipi kapanır: liste yine kontrol
-       ekranı olur. */
-    const adm = yapiAdimlari(t, pr);
-    if (t.duzelt && (!adm[hedef] || adm[hedef].tur !== 'kunye')) t.duzelt = null;
-    t.yer = hedef;
-    render();
-    $('#view').scrollTop = 0;
-    return;
-  }
-
-  if (e === 'yapi-sayfaya-git') {
-    const pr = DB.proje(el.dataset.proje);
-    if (!pr) return;
-    const t = yapiTaslak(pr);
-    t.duzelt = el.dataset.ad;
-    const i = yapiAdimlari(t, pr).findIndex(a => a.tur === 'kunye');
-    t.yer = i > -1 ? i : t.yer;
-    render();
-    $('#view').scrollTop = 0;
     return;
   }
 
