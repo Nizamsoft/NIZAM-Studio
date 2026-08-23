@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.47.1
+- Modül kurulduktan sonra "ONIZLEME_ALAN is not defined" hatası çıkıyordu — eski değişken adı iki yerde kalmış, düzeltildi.
+
 ## v0.47.0
 - **Sütun setlerinin içeriği artık tutuluyor.** "320 Tedarikçiler → Fatura, Fatura No", "108 Çekler → Valör Tarihi, Çözülme Durumu" — her yerin kendi ek sütunları yazılıyor, prompta da öyle giriyor. Eskiden sadece yerin adı kalıyordu.
 - **Beklenen kayıt sayısı** soruluyor (az · orta · çok). Sayfalama, arama ve listenin nasıl çizileceği buna bağlıydı, hiçbir yere yazılmıyordu.

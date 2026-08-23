@@ -6878,7 +6878,7 @@ async function eylemCalistir(el) {
 
   if (e === 'yapi-kapat') {
     delete YAPI_TASLAK[el.dataset.proje];
-    ONIZLEME_MENU = ONIZLEME_SAYFA = ONIZLEME_ALAN = null;
+    ONIZLEME_MENU = ONIZLEME_SAYFA = ONIZLEME_KUNYE = null;
     render();
     return;
   }
@@ -7283,7 +7283,7 @@ async function eylemCalistir(el) {
       await DB.paletKaydet(pr.id, Object.assign({}, pr.palet || {},
         { kunye: yeni, anlatim }));
       delete YAPI_TASLAK[pr.id];
-      ONIZLEME_MENU = ONIZLEME_SAYFA = ONIZLEME_ALAN = null;
+      ONIZLEME_MENU = ONIZLEME_SAYFA = ONIZLEME_KUNYE = null;
       toast(t.modul + ' hazır · ' + t.sayfalar.length + ' sayfa');
       render();
     } catch (err) {
