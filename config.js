@@ -7,7 +7,7 @@ const APP = {
   name:     'NIZAM | Studio',
   short:    'NIZAM Studio',
   owner:    'Nizam Soft',
-  version: 'v0.41.0',
+  version: 'v0.42.0',
   build:    '2026-08-20',
   stage: 'Adım 4 · Sohbet Claude’da',
 };
@@ -949,6 +949,60 @@ const KALIP = [
     ],
   },
   {
+    anahtar: 'satir', ad: 'Ana kayıt + satırları',
+    ozet: 'Bir kaydın içinde kalem kalem satırlar var.',
+    ornek: 'Fatura + kalemleri, sipariş + ürünleri',
+    tel: ['ust', 'grupluListe'],
+    sorular: [
+      { anahtar: 'toplam', soru: 'Üst kaydın tutarı nereden gelsin?',
+        secim: ['Satırların toplamı olsun', 'Elle girilsin'] },
+      { anahtar: 'satirAlan', tur: 'liste', soru: 'Satırda hangi bilgiler var?',
+        alt: 'Örn. ürün, miktar, birim fiyat, tutar' },
+      { anahtar: 'bos', soru: 'Satırsız kayıt olabilir mi?',
+        secim: ['Hayır, en az bir satır', 'Olabilir'] },
+    ],
+  },
+  {
+    anahtar: 'akis', ad: 'Durum akışı',
+    ozet: 'Kayıt sırayla el değiştirir.',
+    ornek: 'Talep → onay → sipariş → teslim',
+    tel: ['adim', 'liste'],
+    sorular: [
+      { anahtar: 'adimlar', tur: 'liste', soru: 'Hangi durumlardan geçiyor?',
+        alt: 'Sırayla yaz: talep, onay, teslim…' },
+      { anahtar: 'geri', soru: 'Geri adım atılabilir mi?',
+        secim: ['Evet, geri alınabilir', 'Hayır, tek yön'] },
+      { anahtar: 'kilit', soru: 'Bitince değişebilir mi?',
+        secim: ['Hayır, kilitlenir', 'Değişebilir'] },
+    ],
+  },
+  {
+    anahtar: 'stok', ad: 'Stok hareketi',
+    ozet: 'Giren çıkar, kalan hesaplanır.',
+    ornek: 'Depoya 50 girdi, 12 çıktı, 38 kaldı',
+    tel: ['ust', 'listeDuzen'],
+    sorular: [
+      { anahtar: 'eksi', soru: 'Stok eksiye düşebilir mi?',
+        secim: ['Hayır, engellensin', 'Düşebilir ama uyarsın', 'Serbest'] },
+      { anahtar: 'yer', soru: 'Birden fazla depo var mı?',
+        secim: ['Tek yer', 'Birden fazla depo'] },
+      { anahtar: 'maliyet', soru: 'Maliyet nasıl tutulsun?',
+        secim: ['Son alış fiyatı', 'Ortalama maliyet', 'Maliyet tutulmasın'] },
+    ],
+  },
+  {
+    anahtar: 'takvim', ad: 'Takvim ve çakışma',
+    ozet: 'Kayıtlar bir zaman aralığını tutar.',
+    ornek: 'Rezervasyon, vardiya, randevu',
+    tel: ['ust', 'izgara'],
+    sorular: [
+      { anahtar: 'cakisma', soru: 'Aynı anda iki kayıt olabilir mi?',
+        secim: ['Hayır, çakışma engellensin', 'Olabilir'] },
+      { anahtar: 'sure', soru: 'Süre nasıl tutulsun?',
+        secim: ['Başlangıç ve bitiş', 'Yalnız gün', 'Başlangıç + süre'] },
+    ],
+  },
+  {
     anahtar: 'sutun', ad: 'Bağlama göre sütun',
     ozet: 'Aynı kayıt, baktığın yere göre farklı sütunlarla.',
     ornek: "320'de fatura no, 108'de valör tarihi",
@@ -973,7 +1027,7 @@ const KALIP = [
 ];
 
 const SAYFA_EYLEM = ['Ekle', 'Düzenle', 'Sil', 'Onayla', 'Ara', 'Filtrele',
-                     'Dışa aktar', 'Yazdır'];
+                     'Dışa aktar', 'Yazdır', 'Kopyala', 'İçe aktar', 'Toplu güncelle'];
 
 /* Künye eksikse akış ilerlemez: yarım künye AI'a tahmin ettiriyor. */
 /* Seçilen kalıbın kendi soruları da cevaplanmalı. */

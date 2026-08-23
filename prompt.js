@@ -141,6 +141,20 @@ const PROMPT = {
       s.push('', `### ${m} — kullanıcının anlatımı`);
       if (a.metin) s.push('> ' + a.metin.split('\n').join('\n> '));
       (a.sorular || []).forEach(x => s.push(`- ${x.soru} → **${x.cevap}**`));
+      if ((a.baglantilar || []).length) {
+        s.push('', '**Ekranlar arası geçiş**');
+        a.baglantilar.forEach(b =>
+          s.push(`- ${b.nereden} → ${b.nereye}${b.ne_zaman ? ' — ' + b.ne_zaman : ''}`));
+      }
+      if ((a.hazirVeri || []).length) {
+        s.push('', '**Kurulurken yüklenecek hazır veri**');
+        a.hazirVeri.forEach(h => s.push(`- ${h.sayfa ? h.sayfa + ': ' : ''}${h.kaynak}`));
+      }
+      if ((a.ciktilar || []).length) {
+        s.push('', '**Çıktılar**');
+        a.ciktilar.forEach(c =>
+          s.push(`- ${c.ad}${c.nereden ? ' — ' + c.nereden : ''}${c.bicim ? ' · ' + c.bicim : ''}`));
+      }
     });
 
     anahtarlar.forEach(ad => {
@@ -214,6 +228,13 @@ const PROMPT = {
     s.push(`Modül: ${taslak.modul || '—'}`);
     if (roller.length) s.push(`Roller (alttan üste): ${roller.join(' · ')}`);
     s.push('');
+    if ((taslak.sayfalar || []).length) {
+      s.push('## Kuracağım ekranlar');
+      taslak.sayfalar.forEach(x => s.push('- ' + x));
+      s.push('');
+      s.push('Bu listeyi esas al. Eksik gördüğün ekran varsa önce bana sor.');
+      s.push('');
+    }
     s.push('## Anlattığım');
     s.push(String(taslak.anlat || '').trim());
     s.push('');
@@ -225,6 +246,10 @@ const PROMPT = {
     s.push('- Seçenek alanlarının alabileceği değerler');
     s.push('- Bir kaydı kim görebilir, kim değiştirebilir, kim silebilir');
     s.push('- Sayfalar arası bağlantı: hangi ekrandan hangisine gidilir');
+    s.push('- Kurulurken hazır yüklenmesi gereken liste var mı');
+    s.push('- Yazdırılacak ya da dışa verilecek bir belge var mı');
+    s.push('- Bir kaydın içinde satırlar varsa: üst toplam nereden gelir,');
+    s.push('  satırsız kayıt olabilir mi');
     s.push('');
     s.push('## En sonda vereceğin blok');
     s.push('Yalnız JSON, öncesine sonrasına açıklama yazma.');
@@ -249,6 +274,16 @@ const PROMPT = {
     s.push('      "kural": "Varsa iş kuralı, yoksa boş"');
     s.push('    }');
     s.push('  ],');
+    s.push('  "baglantilar": [');
+    s.push('    { "nereden": "Hesaplar", "nereye": "Hareketler",');
+    s.push('      "ne_zaman": "Alt hesaba dokununca o hesabın hareketleri açılır" }');
+    s.push('  ],');
+    s.push('  "hazirVeri": [');
+    s.push('    { "sayfa": "Hesaplar", "kaynak": "Tek düzen hesap planı hazır yüklensin" }');
+    s.push('  ],');
+    s.push('  "ciktilar": [');
+    s.push('    { "ad": "Hesap ekstresi", "nereden": "Hareketler", "bicim": "PDF" }');
+    s.push('  ],');
     s.push('  "kararlar": [');
     s.push('    { "soru": "Sorduğun soru", "cevap": "Verdiğim cevap" }');
     s.push('  ]');
@@ -258,7 +293,15 @@ const PROMPT = {
     s.push('### Blok kuralları');
     s.push('- `tur` yalnız: ' + SAYFA_TURU.map(x => x.ad).join(' · '));
     s.push('- Alan `tur` yalnız: ' + ALAN_TURU.map(x => x.ad).join(' · '));
-    s.push('- `eylemler` yalnız: ' + SAYFA_EYLEM.join(' · '));
+    s.push('- `eylemler` şunlar olabilir: ' + SAYFA_EYLEM.join(' · '));
+    s.push('  Listede olmayan gerçek bir eylem varsa ("Ters kayıt", "Birleştir")');
+    s.push('  onu da yazabilirsin — uydurma, gerçekten gerekiyorsa.');
+    s.push('- `baglantilar` boş kalmasın: hangi ekrandan hangisine, ne zaman');
+    s.push('  gidildiğini yaz. Ekran arası geçiş yazılmazsa kaybolur.');
+    s.push('- `hazirVeri`: kurulurken hazır yüklenecek liste varsa yaz');
+    s.push('  (hesap planı, ürün listesi, il-ilçe). Yoksa boş dizi.');
+    s.push('- `ciktilar`: yazdırılacak ya da dışa verilecek belge varsa yaz');
+    s.push('  (fiş, fatura, ekstre, rapor). Yoksa boş dizi.');
     if (roller.length) {
       s.push('- `roller` ve `yetki` yalnız şu rollerden: ' + roller.join(' · '));
       s.push('  Roller alttan üste sıralı; alttaki bir rol yazılırsa üstündekiler');

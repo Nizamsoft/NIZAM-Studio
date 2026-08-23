@@ -2337,6 +2337,7 @@ const YAPI_TASLAK = {};
 function yapiTaslak(p) {
   if (!YAPI_TASLAK[p.id]) {
     YAPI_TASLAK[p.id] = { yer: 0, modul: '', anlat: '', kararlar: [],
+                          baglantilar: [], hazirVeri: [], ciktilar: [],
                           duzelt: null, sayfalar: [], kunye: {} };
   }
   return YAPI_TASLAK[p.id];
@@ -2390,12 +2391,12 @@ function yapiAdimlari(t, p) {
     { tur: 'modul', ad: 'Modül', obek: 'Ne kurulacak',
       obekNot: 'Bir firmaya bir modül. Sonradan bir tane daha eklenebilir.',
       aciklama: 'Hazır şablonlardan seç ya da adını kendin yaz.' },
-    { tur: 'anlat', ad: 'Anlat', obek: 'Ne kurulacak',
-      obekNot: 'Önce sen anlat; sorular ondan sonra.',
-      aciklama: 'Bu modülde ne olacağını kendi cümlelerinle yaz.' },
     { tur: 'sayfalar', ad: 'Sayfalar', obek: 'Ne kurulacak',
-      obekNot: 'Önce sen anlat; sorular ondan sonra.',
+      obekNot: 'Önce ekranları say, sonra anlat.',
       aciklama: 'Modülün içinde hangi ekranlar olacak?' },
+    { tur: 'anlat', ad: 'Anlat', obek: 'Ne kurulacak',
+      obekNot: 'Önce ekranları say, sonra anlat.',
+      aciklama: 'Bu modülde ne olacağını kendi cümlelerinle yaz.' },
   ];
   /* Künye adımları yalnız düzeltmek istediğin sayfa için açılır. Sohbet
      Claude'da geçiyor; Studio soru sormuyor, kontrol ettiriyor. */
@@ -2694,9 +2695,12 @@ function kunyeGovde(p, t, adim) {
     return `<div class="kunye-kaydir">
       ${balon('Kullanıcı bu sayfada ne yapabilecek?',
               'İşaretlediğin her eylem önizlemede düğme olarak çıkar.')}
-      <div class="ky-cipler">${SAYFA_EYLEM.map(x => `
+      <div class="ky-cipler">${SAYFA_EYLEM
+        .concat(k.eylemler.filter(x => !SAYFA_EYLEM.includes(x))).map(x => `
         <button class="cip-sec ${k.eylemler.includes(x) ? 'on' : ''}" type="button"
                 data-eylem="yapi-ky-eylem" ${veri} data-ad="${esc(x)}">${esc(x)}</button>`).join('')}
+        <button class="cip-sec ekle" type="button" data-eylem="yapi-ky-eylem-yaz" ${veri}>
+          ${svg(ICON.arti, 12)} Başka</button>
       </div>
     </div>`;
   }
@@ -5500,6 +5504,10 @@ function cozumlemeOku(metin) {
     kararlar: Array.isArray(o.kararlar)
       ? o.kararlar.filter(x => x && x.soru).map(x => ({ soru: x.soru, cevap: x.cevap || '' }))
       : [],
+    baglantilar: Array.isArray(o.baglantilar)
+      ? o.baglantilar.filter(x => x && x.nereden && x.nereye) : [],
+    hazirVeri: Array.isArray(o.hazirVeri) ? o.hazirVeri.filter(x => x && x.kaynak) : [],
+    ciktilar: Array.isArray(o.ciktilar) ? o.ciktilar.filter(x => x && x.ad) : [],
   };
 }
 
@@ -5507,7 +5515,10 @@ function cozumlemeOku(metin) {
    varsa üstüne yazmıyoruz: soru sormadan veri kaybettirmek olur. */
 function cozumlemeUygula(t, cozum, p) {
   const roller = rolListesi((p.palet || {}).roller);
-  t.kararlar = cozum.kararlar || [];
+  t.kararlar    = cozum.kararlar || [];
+  t.baglantilar = cozum.baglantilar || [];
+  t.hazirVeri   = cozum.hazirVeri || [];
+  t.ciktilar    = cozum.ciktilar || [];
   cozum.sayfalar.forEach(sf => {
     if (!t.sayfalar.includes(sf.ad)) t.sayfalar.push(sf.ad);
     const k = yapiKunye(t, sf.ad);
@@ -5522,8 +5533,11 @@ function cozumlemeUygula(t, cozum, p) {
         kaynak: a.kaynak || '',
       }));
     }
+    /* Listede olmayan gerçek eylemler de kabul edilir: "Ters kayıt" gibi
+       işe özel eylemleri kırpmak künyeyi eksiltiyordu. */
     if (!k.eylemler.length && Array.isArray(sf.eylemler)) {
-      k.eylemler = sf.eylemler.filter(x => SAYFA_EYLEM.includes(x));
+      k.eylemler = sf.eylemler.filter(x => typeof x === 'string' && x.trim())
+        .map(x => x.trim()).slice(0, 12);
     }
     if (!(k.kalip || []).length && Array.isArray(sf.kalip)) {
       k.kalip = sf.kalip.filter(x => KALIP.some(kl => kl.anahtar === x));
@@ -6629,6 +6643,18 @@ async function eylemCalistir(el) {
     return;
   }
 
+  if (e === 'yapi-ky-eylem-yaz') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const ad = await metinSor({ baslik: 'Eylem', buton: 'Ekle',
+      aciklama: 'Listede olmayan bir iş.', yerTutucu: 'Örn. Ters kayıt' });
+    if (!ad) return;
+    const k = yapiKunye(yapiTaslak(pr), el.dataset.sayfa);
+    if (!k.eylemler.includes(ad)) { k.eylemler.push(ad); k.yetki[ad] = (k.roller || []).slice(); }
+    render();
+    return;
+  }
+
   if (e === 'yapi-ky-ornek' || e === 'yapi-ky-kural-ornek') {
     const pr = DB.proje(el.dataset.proje);
     if (!pr) return;
@@ -6808,10 +6834,14 @@ async function eylemCalistir(el) {
       /* Anlatım ve açık soruların cevapları da saklanır: prompt bunları
          AI'a aynen veriyor, ikinci kez anlatmaya gerek kalmıyor. */
       const anlatim = Object.assign({}, (pr.palet || {}).anlatim || {});
-      if ((t.anlat || '').trim() || (t.kararlar || []).length) {
+      if ((t.anlat || '').trim() || (t.kararlar || []).length
+          || (t.baglantilar || []).length) {
         anlatim[t.modul] = {
           metin: (t.anlat || '').trim(),
           sorular: (t.kararlar || []).filter(x => x.soru && x.cevap),
+          baglantilar: t.baglantilar || [],
+          hazirVeri: t.hazirVeri || [],
+          ciktilar: t.ciktilar || [],
         };
       }
       await DB.paletKaydet(pr.id, Object.assign({}, pr.palet || {},

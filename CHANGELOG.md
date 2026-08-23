@@ -1,5 +1,12 @@
 # Değişiklik Günlüğü
 
+## v0.42.0
+- **4 yeni kalıp**: ana kayıt + satırları (fatura + kalemleri) · durum akışı (talep → onay → teslim) · stok hareketi (giren, çıkan, kalan) · takvim ve çakışma (rezervasyon, vardiya). Toplam 8 kalıp.
+- **Ekranlar arası geçiş** artık kayboluyor değil: blokta `baglantilar` var, "Hesaplar → Hareketler, alt hesaba dokununca" gibi. Prompta ayrı bölüm olarak giriyor.
+- **Hazır veri** (tek düzen hesap planı, ürün listesi) ve **çıktılar** (fiş, fatura, ekstre) soruluyor ve prompta yazılıyor.
+- Eylem listesi kapalı değil: "Ters kayıt", "Birleştir" gibi işe özel eylemler yazılabiliyor.
+- Anlat/prompt adımı sayfalardan sonraya alındı; prompt artık senin saydığın ekran listesini de içeriyor. Akış: Modül → Sayfalar → Anlat → Kontrol.
+
 ## v0.41.0
 - **Soruları Claude soruyor.** Çözümleme promptu artık "önce bana soru sor, cevaplarımı bekle, emin olmadan blok verme" diyor. Sohbet Claude'da geçiyor; anlaşınca verdiği tek blok Studio'ya yapıştırılıyor ve her şey doluyor — sayfalar, alanlar, seçenek değerleri, kalıplar ve cevapları, roller, eylem bazlı yetkiler, kurallar.
 - Studio artık soru sormuyor, **kontrol ettiriyor**: yapıştırdıktan sonra tek ekranda sayfa listesi çıkıyor, eksik kalan sarı işaretli, üstüne dokununca o sayfanın künyesine girip düzeltiyorsun. Düzeltme bitince listeye dönüyor.
