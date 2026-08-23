@@ -3998,17 +3998,22 @@ a:hover { color: var(--red-ink); }
 .ag-dug.geri svg { transform: rotate(180deg); }
 
 /* ---- Ağaç rayı: derinleştikçe sola kayar ---- */
-.ag-govde { overflow: hidden; }
-.ag-ray { display: flex; align-items: flex-start; height: 100%;
+/* Sütunlar birbirine göre ortalanır: ana düğüm çocuklarının tam hizasında
+   durur, ağaç böyle okunuyor. */
+.ag-govde { overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; }
+.ag-ray { display: flex; align-items: center; min-height: 100%;
           transition: transform .42s cubic-bezier(.22, .61, .36, 1); }
-.sut { flex: 0 0 auto; height: 100%; box-sizing: border-box; position: relative;
-       display: flex; }
-.sut.cizgili::before { content: ""; position: absolute; left: 0; top: 22px; bottom: 22px;
-                       width: 1px; background: var(--line-2); }
+.sut { flex: 0 0 auto; box-sizing: border-box; position: relative; display: flex;
+       padding: 6px 0; }
+/* Gövde çizgisi sütunun 12px içinde: tam kenarda olunca üstteki kartın
+   arkasında kalıp görünmüyordu. */
+.sut.cizgili::before { content: ""; position: absolute; left: 12px; top: 26px; bottom: 26px;
+                       width: 1px; background: var(--line-parlak); opacity: .85; }
 .sut-ic { flex: 1; min-width: 0; padding: 0 0 0 14px; display: flex; flex-direction: column;
-          gap: 8px; overflow-y: auto; overscroll-behavior: contain; max-height: 100%; }
+          gap: 8px; }
+.sut.cizgili > .sut-ic { padding-left: 26px; }
 .sut-ic.tek { justify-content: center; }
-.sut-ic.duzen { gap: 10px; padding-left: 16px; overflow-x: hidden; }
+.sut.cizgili > .sut-ic.duzen { gap: 10px; padding-left: 24px; overflow-x: hidden; }
 .sut:first-child .sut-ic { padding-left: 0; }
 
 /* Ray içindeki düğümler artık akışta: mutlak konum yok. */
@@ -4024,15 +4029,69 @@ a:hover { color: var(--red-ink); }
 .dz-yaz { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .dz-yaz b { font-size: 15px; color: var(--ink-strong); }
 .dz-yaz i { font-style: normal; font-size: 11px; color: var(--ink-faint); }
-.dz-onizleme { flex: 0 0 auto; height: 150px; position: relative; border-radius: 14px;
+.dz-onizleme { flex: 0 0 auto; height: 170px; position: relative; border-radius: 14px;
                border: 1px solid var(--line-2); background: var(--yuva-2); overflow: hidden; }
 .dz-onizleme .onz-goz { position: absolute; inset: 0; display: flex;
                         align-items: center; justify-content: center; overflow: hidden; }
 .dz-onizleme .onz-goz > .o-app { max-width: 360px; flex: 0 0 auto;
                                  transform-origin: center; transition: transform .16s var(--ease); }
 .dz-onizleme .onk-not { display: none; }
-.dz-govde { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+.dz-govde { flex: 1 1 auto; min-height: 0; }
 .dz-govde .kunye-kaydir { overflow: visible; }
 .dz-govde .sohbet { display: none; }
 .dz-govde .raf { margin: 0; padding: 6px 0; max-width: 100%; }
 .dz-govde .ky-cipler, .dz-govde .kunye-kaydir { max-width: 100%; }
+
+/* ---- Ağaç: oklu bağlantılar ---- */
+
+.sut.cizgili .sut-ic > .nd,
+.sut.cizgili .sut-ic > .dal-sil { position: relative; }
+.sut.cizgili .sut-ic > .nd::before {
+  content: ""; position: absolute; left: -14px; top: 50%; width: 10px; height: 1px;
+  background: var(--line-2);
+}
+.sut.cizgili .sut-ic > .nd::after {
+  content: ""; position: absolute; left: -5px; top: 50%; margin-top: -3.5px;
+  border: 3.5px solid transparent; border-left-color: var(--line-parlak);
+  border-right: 0;
+}
+.sut.cizgili .sut-ic > .nd.secili::before { background: var(--p1); }
+.sut.cizgili .sut-ic > .nd.secili::after { border-left-color: var(--p1); }
+.sut.cizgili .sut-ic > .nd.hayalet::before { background: transparent;
+  border-top: 1px dashed var(--line-2); }
+.sut.cizgili .sut-ic > .nd.hayalet::after { border-left-color: var(--line-2); }
+/* Tek düğümlü sütunda dikey gövde yok, yalnız ok. */
+.sut.cizgili:has(.sut-ic.tek)::before { display: none; }
+.sut.cizgili .sut-ic.tek > .nd::before { left: -24px; width: 21px; }
+
+/* ---- Yol izi ---- */
+.ag-yol { gap: 9px; }
+.ag-geri { margin-left: 0; flex: 0 0 34px; width: 34px; height: 34px; border-radius: 12px;
+           background: var(--surface-2); border-color: var(--line); }
+.ag-geri svg { transform: rotate(180deg); }
+.yol-iz { flex: 1; min-width: 0; display: flex; align-items: center; gap: 5px;
+          overflow-x: auto; scrollbar-width: none; }
+.yol-iz::-webkit-scrollbar { display: none; }
+.yol-iz s { text-decoration: none; color: var(--ink-dim); opacity: .5; display: grid;
+            place-items: center; flex: 0 0 auto; }
+.yi { flex: 0 0 auto; padding: 5px 10px; border-radius: 999px; cursor: pointer;
+      border: 1px solid transparent; background: var(--surface-2); color: var(--ink-soft);
+      font-family: inherit; font-size: 11px; letter-spacing: .04em; text-transform: uppercase;
+      max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.yi.son { background: transparent; color: var(--ink-strong); font-weight: 600;
+          border-color: var(--line-2); }
+.yi:disabled { cursor: default; }
+
+/* Dal sütununun altındaki sessiz kaldır düğmesi */
+.dal-sil { margin-top: 4px; align-self: flex-start; display: inline-flex; align-items: center;
+           gap: 6px; padding: 8px 11px; border-radius: 11px; cursor: pointer;
+           border: 1px dashed var(--line-2); background: transparent;
+           color: var(--ink-faint); font-family: inherit; font-size: 11.5px; }
+
+.ag-dug.tek { flex: 1; }
+
+/* Düzenleyicide yönerge baloncuğu görünsün: gizleyince ne yapılacağı
+   anlaşılmıyordu. */
+.dz-govde .sohbet { display: flex; margin-bottom: 10px; }
+.dz-govde .sohbet .av { display: none; }
+.dz-govde .sohbet .bal { border-radius: 12px; font-size: 12.5px; }

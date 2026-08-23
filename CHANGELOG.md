@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.45.0
+- Ağaçtaki düğümler artık **oklarla bağlı**: modülden dikey gövde çıkıyor, gövdeden her sayfaya ok gidiyor. Ana düğüm çocuklarının tam hizasında duruyor.
+- Üstteki yol izi çip çip oldu — her basamağa dokununca oraya dönüyorsun, bulunduğun yer kendiliğinden görünür oluyor. Yanında tek bir geri düğmesi var.
+- Alttaki "Kaldır / Ağaç" düğmeleri kalktı; sayfa kaldırma dal listesinin altına sessiz bir düğme olarak indi, dal ekranında yalnız "Sıradaki" düğmesi kaldı.
+- Künye düzenleyicisindeki yönerge yazısı geri geldi (gizli kalmıştı) ve alan adımı boşken ne yapılacağını anlatıyor.
+
 ## v0.44.0
 - Ağaç tek bir yatay raya döndü: **firma → modül → sayfalar → dallar → düzenleyici**. Bir düğüme dokununca ray yumuşakça sola kayıyor, geldiğin yer solda ince şerit olarak duruyor.
 - **Düzenleme de ağacın içinde.** Amaç, Tür, Alanlar gibi dallara basınca ayrı ekrana çıkmıyor: dalın kendi sütunu açılıyor, tepesinde o sayfanın canlı önizlemesi, altında düzenleyici. Alttaki düğme sıradaki dala geçiriyor.

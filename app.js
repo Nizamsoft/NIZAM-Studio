@@ -2507,17 +2507,23 @@ function agacEkrani(p, t) {
   const eski = AGAC_KAY;
   AGAC_KAY = agacKayma(seviye);
 
-  const yol = seviye === 0
-    ? `<b>${esc(p.firma)}</b><s>›</s>yapı ağacı`
-    : seviye === 1
-      ? `<b>${esc(t.modul)}</b><s>›</s>${esc(sayfa)}`
-      : `<b>${esc(sayfa)}</b><s>›</s>${esc((dallar.find(a => a.anahtar === t.dal) || {}).ad || '')}`;
+  const basamak = [
+    { ad: p.firma, eylem: 'agac-koke' },
+    t.modul ? { ad: t.modul, eylem: 'agac-koke' } : null,
+    sayfa ? { ad: sayfa, eylem: 'agac-sayfaya' } : null,
+    t.dal ? { ad: (dallar.find(a => a.anahtar === t.dal) || {}).ad } : null,
+  ].filter(Boolean);
 
   return `<div class="ag-ekran" style="${renkDegiskenleri(p.renk)}">
     <div class="ag-yol">
-      ${seviye ? `<button class="ag-geri sol" type="button" data-eylem="agac-geri"
-                          data-proje="${p.id}">${svg(ICON.chevron, 14)}</button>` : ''}
-      ${yol}
+      ${seviye ? `<button class="ag-geri" type="button" data-eylem="agac-geri"
+                          data-proje="${p.id}" title="Geri">
+                    ${svg(ICON.chevron, 15)}</button>` : ''}
+      <div class="yol-iz">${basamak.map((b, i) => `
+        ${i ? '<s>' + svg(ICON.chevron, 10) + '</s>' : ''}
+        <button class="yi ${i === basamak.length - 1 ? 'son' : ''}" type="button"
+                ${b.eylem ? `data-eylem="${b.eylem}" data-proje="${p.id}"` : 'disabled'}>
+          ${esc(b.ad)}</button>`).join('')}</div>
     </div>
     <div class="ag-govde">
       <div class="ag-ray" data-kay="${AGAC_KAY}" style="transform:translateX(${-eski}px)">
@@ -2528,7 +2534,8 @@ function agacEkrani(p, t) {
         ${sayfa && t.dal ? agacSutunDuzen(p, t, sayfa, k, dallar) : ''}
       </div>
     </div>
-    <div class="ag-alt">${agacDugmeleri(p, t, sayfa, dallar, seviye)}</div>
+    ${(() => { const d = agacDugmeleri(p, t, sayfa, dallar, seviye);
+      return d ? `<div class="ag-alt">${d}</div>` : ''; })()}
   </div>`;
 }
 
@@ -2585,6 +2592,9 @@ function agacSutunDal(p, t, k, dallar, roller) {
           <span class="nokta"></span>
           <b>${esc(a.ad)}</b><i>${esc(dalOzeti(k, a.anahtar))}</i></button>`;
       }).join('')}
+      <button class="dal-sil" type="button" data-eylem="agac-sayfa-sil"
+              data-proje="${p.id}" data-ad="${esc(t.odak)}">
+        ${svg(ICON.kapat, 12)} Bu sayfayı kaldır</button>
     </div></div>`;
 }
 
@@ -2605,27 +2615,20 @@ function agacSutunDuzen(p, t, sayfa, k, dallar) {
 }
 
 function agacDugmeleri(p, t, sayfa, dallar, seviye) {
+  /* Alt çubuk yalnız ağaç seviyesinde: gezinme yukarıdaki yol izinde,
+     her seviyede iki düğme koymak kalabalık ediyordu. */
   if (seviye === 2) {
     const i = dallar.findIndex(a => a.anahtar === t.dal);
     const sonraki = dallar[i + 1];
-    return `
-      <button class="ag-dug geri" type="button" data-eylem="agac-geri" data-proje="${p.id}">
-        ${svg(ICON.chevron, 14)} Dallar</button>
-      ${sonraki
-        ? `<button class="ag-dug guclu" type="button" data-eylem="agac-dal"
-                   data-proje="${p.id}" data-sayfa="${esc(sayfa)}" data-ad="${sonraki.anahtar}">
-             ${esc(sonraki.ad)} ${svg(ICON.chevron, 14)}</button>`
-        : `<button class="ag-dug guclu" type="button" data-eylem="agac-geri"
-                   data-proje="${p.id}">${svg(ICON.tik, 14)} Bitti</button>`}`;
+    return sonraki
+      ? `<button class="ag-dug guclu tek" type="button" data-eylem="agac-dal"
+                 data-proje="${p.id}" data-sayfa="${esc(sayfa)}" data-ad="${sonraki.anahtar}">
+           Sıradaki: ${esc(sonraki.ad)} ${svg(ICON.chevron, 14)}</button>`
+      : `<button class="ag-dug guclu tek geri" type="button" data-eylem="agac-geri"
+                 data-proje="${p.id}">${svg(ICON.chevron, 14)} Dallara dön</button>`;
   }
-  if (seviye === 1) {
-    return `
-      <button class="ag-dug" type="button" data-eylem="agac-sayfa-sil"
-              data-proje="${p.id}" data-ad="${esc(sayfa)}">
-        ${svg(ICON.kapat, 14)} Kaldır</button>
-      <button class="ag-dug guclu geri" type="button" data-eylem="agac-geri" data-proje="${p.id}">
-        ${svg(ICON.chevron, 14)} Ağaç</button>`;
-  }
+  if (seviye === 1) return '';
+
   const tam = t.modul && t.sayfalar.length && t.sayfalar.every(sf => kunyeTam(t.kunye[sf]));
   return `
     <button class="ag-dug" type="button" data-eylem="agac-anlat" data-proje="${p.id}">
@@ -2642,6 +2645,11 @@ function agacKaydir() {
   if (!ray) return;
   const hedef = Number(ray.dataset.kay || 0);
   requestAnimationFrame(() => { ray.style.transform = `translateX(${-hedef}px)`; });
+  /* Yol izi uzayınca bulunduğun basamak ekrandan çıkıyordu. */
+  const yol = $('.yol-iz');
+  if (yol) requestAnimationFrame(() => {
+    yol.scrollTo({ left: yol.scrollWidth, behavior: 'smooth' });
+  });
 }
 
 /* Anlat ve künye ekranları: eski akış iskeletini kullanır. */
@@ -2796,8 +2804,12 @@ function kunyeGovde(p, t, adim) {
 
   if (adim.alt === 'alanlar') {
     return `<div class="kunye-kaydir">
-      ${balon('Bu sayfada hangi bilgiler duracak?',
-              'Her satır bir veritabanı sütunu olacak; üstteki önizlemede görürsün.')}
+      ${balon('Bu sayfada her kayıtta hangi bilgiler tutulacak?',
+              'Örnek: tarih, tutar, müşteri, durum. Yazdığın her bilgi hem '
+              + 'ekranda bir sütun hem veritabanında bir alan olur.')}
+      ${k.alanlar.length ? '' : `<div class="bos-kutu">${svg(ICON.folder, 18)}
+        <span>Henüz bilgi yok. "Alan ekle" ile başla: adını yaz, türünü seç
+        (yazı, para, tarih, seçenek…). Üstteki önizlemede anında görürsün.</span></div>`}
       ${k.alanlar.map((a, i) => alanKarti(p, sf, a, i)).join('')}
       <button class="as2 ekle" type="button" data-eylem="yapi-ky-alan-ekle" ${veri}>
         ${svg(ICON.arti, 13)} Alan ekle</button>
@@ -6634,6 +6646,23 @@ async function eylemCalistir(el) {
 
   /* ---- Yapı ağacı ---- */
   if (e === 'agac-kok') return;
+
+  if (e === 'agac-koke') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const t = yapiTaslak(pr);
+    t.odak = null; t.dal = null;
+    render();
+    return;
+  }
+
+  if (e === 'agac-sayfaya') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    yapiTaslak(pr).dal = null;
+    render();
+    return;
+  }
 
   if (e === 'agac-geri') {
     const pr = DB.proje(el.dataset.proje);
