@@ -1,5 +1,12 @@
 # Değişiklik Günlüğü
 
+## v0.50.0
+- **Ağaç tek parça oldu, hep yukarıdan aşağı akıyor:** firma → modüller → seçili modülün sayfaları → açık sayfanın künyesi. Hiçbir kat kaybolmuyor, modüle ikinci dokunuş kapatıyor.
+- **Modül adı düzeltilebiliyor** — yol izindeki modül çipine dokununca soruyor. "Yeni Modül" olarak kalmışsa kartın altında "adına dokun, değiştir" yazıyor.
+- **Üstteki geri tuşu** artık sabit bir yere atlamıyor: yapı ağacındaysa bir kat yukarı çıkıyor (dal → sayfa → modül → firma), başka yerde tarayıcı geçmişinde bir adım geri gidiyor.
+- **Kalıp tek seçim** oldu; ikincisine dokununca öncekinin yerini alıyor. Prompt da Claude'dan tek kalıp istiyor.
+- Not defteri düğmesi dar ekranda başlığı eziyordu, küçültüldü.
+
 ## v0.49.0
 - **Not defteri** — üst çubuğa kalem simgesi geldi. Basınca tepeden açılıyor, alt kenarından çekerek boyunu ayarlıyorsun. Kopyala ve Temizle düğmeleri var. Hiçbir yere kaydedilmiyor; ekranlar arası geziniyor, sayfa yenilenince siliniyor.
 

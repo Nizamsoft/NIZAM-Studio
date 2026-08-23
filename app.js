@@ -2608,18 +2608,54 @@ function yolCipleri(basamak) {
       >${esc(b.ad)}</button>`).join('');
 }
 
+/* Ağaç tek parça ve hep yukarıdan aşağı akar: firma → modüller →
+   seçili modülün sayfaları → açık sayfanın künyesi. Hiçbir kat kaybolmuyor. */
 function agacEkrani(p, t) {
-  /* Sayfalar geldiyse ad boş olsa bile modül ağacını göster: yoksa
-     aktarılan yapı ortadan kaybolmuş gibi duruyor. */
   if (!t.modul && t.sayfalar.length) t.modul = 'Yeni Modül';
-  return t.modul ? agacModul(p, t) : agacGiris(p, t);
-}
 
-/* Giriş: firma kökü, altında kurulu modüller ve "yeni modül". */
-function agacGiris(p, t) {
   const harf   = (p.firma || '?').trim().slice(0, 2).toLocaleUpperCase('tr');
   const kurulu = DB.modulleri(p.id).filter(m => m.ad !== GENEL_MODUL);
   const kunye  = (p.palet || {}).kunye || {};
+  const roller = rolListesi((p.palet || {}).roller);
+  const acik   = t.odak && t.sayfalar.includes(t.odak) ? t.odak : null;
+
+  /* Taslaktaki modül listede yoksa (henüz kurulmadıysa) o da görünür. */
+  const modeller = kurulu.map(m => m.ad);
+  if (t.modul && !modeller.includes(t.modul)) modeller.push(t.modul);
+
+  const dallar = sf => {
+    const k = yapiKunye(t, sf);
+    return kunyeAdimlari(k, roller).filter(a => a.anahtar !== 'ozet').map((a, i) => {
+      const durum = !kunyeAdimTam(k, a.anahtar, roller) ? 'eksik'
+        : dalDolu(k, a.anahtar) ? 'tamam' : 'bos';
+      return `<button class="d ${durum}" type="button"
+                      style="animation-delay:${(0.03 * i).toFixed(2)}s"
+                      data-eylem="agac-dal" data-proje="${p.id}" data-sayfa="${esc(sf)}"
+                      data-ad="${a.anahtar}">
+        <span class="rk" style="background:${DAL_RENK[a.anahtar] || '#8d8378'}"></span>
+        <span class="yz"><b>${esc(a.ad)}</b><i>${esc(dalOzeti(k, a.anahtar))}</i></span>
+        <span class="nk"></span></button>`;
+    }).join('');
+  };
+
+  const sayfalar = () => `<div class="gvd ic">
+    ${t.sayfalar.map((sf, i) => {
+      const k = t.kunye[sf] || {};
+      const durum = kunyeTam(k) ? 'tamam' : 'eksik';
+      return `
+        <button class="knt sayfa ${acik === sf ? 'acik' : durum}" type="button"
+                style="animation-delay:${(0.04 * i).toFixed(2)}s"
+                data-eylem="agac-sayfa" data-proje="${p.id}" data-ad="${esc(sf)}">
+          <span class="rz"></span><b>${esc(sf)}</b><i>${esc(agacSayfaAlt(k))}</i></button>
+        ${acik === sf ? `<div class="dal2">${dallar(sf)}
+          <button class="d sil" type="button" data-eylem="agac-sayfa-sil"
+                  data-proje="${p.id}" data-ad="${esc(sf)}">
+            <span class="yz"><b>${svg(ICON.kapat, 11)} Bu sayfayı kaldır</b></span></button>
+        </div>` : ''}`;
+    }).join('')}
+    <button class="knt hayalet" type="button" data-eylem="yapi-sayfa-yaz"
+            data-proje="${p.id}"><b>${svg(ICON.arti, 14)} Sayfa ekle</b></button>
+  </div>`;
 
   const govde = `
     <div class="kokk">
@@ -2630,78 +2666,50 @@ function agacGiris(p, t) {
     </div>
     <div class="inik"></div>
     <div class="gvd">
-      ${kurulu.map(m => {
-        const sf = DB.sayfalari(m.id);
-        const tam = sf.length && sf.every(x => kunyeTam(kunye[m.ad + ' · ' + x.ad]));
-        return `<button class="knt modul ${tam ? 'tamam' : 'eksik'}" type="button"
-                        data-eylem="agac-modul-ac" data-proje="${p.id}" data-ad="${esc(m.ad)}">
-          <span class="rz"></span><b>${esc(m.ad)}</b>
-          <i>kurulu · ${sf.length} sayfa</i></button>`;
+      ${modeller.map(ad => {
+        const m  = kurulu.find(x => x.ad === ad);
+        const sf = m ? DB.sayfalari(m.id) : [];
+        const secili = t.modul === ad;
+        const tam = secili
+          ? t.sayfalar.length && t.sayfalar.every(x => kunyeTam(t.kunye[x]))
+          : sf.length && sf.every(x => kunyeTam(kunye[ad + ' · ' + x.ad]));
+        const say = secili ? t.sayfalar.length : sf.length;
+        return `
+          <button class="knt modul ${secili ? 'acik' : tam ? 'tamam' : 'eksik'}" type="button"
+                  data-eylem="agac-modul-ac" data-proje="${p.id}" data-ad="${esc(ad)}">
+            <span class="rz"></span><b>${esc(ad)}</b>
+            <i>${m ? 'kurulu · ' : 'taslak · '}${say} sayfa${
+              secili && !m ? ' · adına dokun, değiştir' : ''}</i></button>
+          ${secili ? sayfalar() : ''}`;
       }).join('')}
       <button class="knt hayalet" type="button" data-eylem="agac-yeni-modul"
               data-proje="${p.id}">
         <b>${svg(ICON.arti, 15)} Yeni modül</b><i>anlat, Claude kursun</i></button>
     </div>`;
 
-  return agacKabuk(p, yolCipleri([{ ad: 'Yapı ağacı' }]), govde, '');
-}
-
-/* Modül ağacı: modül tepede, sayfalar altında; açık sayfanın künyesi dallanır. */
-function agacModul(p, t) {
-  const roller = rolListesi((p.palet || {}).roller);
-  const acik   = t.odak && t.sayfalar.includes(t.odak) ? t.odak : null;
-  const toplam = t.sayfalar.reduce((n, sf) => n + ((t.kunye[sf] || {}).alanlar || []).length, 0);
-
-  const dallar = sf => {
-    const k = yapiKunye(t, sf);
-    return kunyeAdimlari(k, roller).filter(a => a.anahtar !== 'ozet').map((a, i) => {
-      const durum = !kunyeAdimTam(k, a.anahtar, roller) ? 'eksik'
-        : dalDolu(k, a.anahtar) ? 'tamam' : 'bos';
-      return `<button class="d ${durum}" type="button" style="animation-delay:${(0.03 * i).toFixed(2)}s"
-                      data-eylem="agac-dal" data-proje="${p.id}" data-sayfa="${esc(sf)}"
-                      data-ad="${a.anahtar}">
-        <span class="rk" style="background:${DAL_RENK[a.anahtar] || '#8d8378'}"></span>
-        <span class="yz"><b>${esc(a.ad)}</b><i>${esc(dalOzeti(k, a.anahtar))}</i></span>
-        <span class="nk"></span></button>`;
-    }).join('');
-  };
-
-  const govde = `
-    <button class="knt modul tepe" type="button" data-eylem="agac-modul-ad"
-            data-proje="${p.id}">
-      <b>${esc(t.modul)}</b><i>${t.sayfalar.length} sayfa · ${toplam} alan</i></button>
-    <div class="inik"></div>
-    <div class="gvd">
-      ${t.sayfalar.map((sf, i) => {
-        const k = t.kunye[sf] || {};
-        const durum = kunyeTam(k) ? 'tamam' : 'eksik';
-        return `
-          <button class="knt ${acik === sf ? 'acik' : durum}" type="button"
-                  style="animation-delay:${(0.04 * i).toFixed(2)}s"
-                  data-eylem="agac-sayfa" data-proje="${p.id}" data-ad="${esc(sf)}">
-            <span class="rz"></span><b>${esc(sf)}</b><i>${esc(agacSayfaAlt(k))}</i></button>
-          ${acik === sf ? `<div class="dal2">${dallar(sf)}
-            <button class="d sil" type="button" data-eylem="agac-sayfa-sil"
-                    data-proje="${p.id}" data-ad="${esc(sf)}">
-              <span class="yz"><b>${svg(ICON.kapat, 11)} Bu sayfayı kaldır</b></span></button>
-          </div>` : ''}`;
-      }).join('')}
-      <button class="knt hayalet" type="button" data-eylem="yapi-sayfa-yaz"
-              data-proje="${p.id}"><b>${svg(ICON.arti, 15)} Sayfa ekle</b></button>
-    </div>`;
-
-  const tam = t.sayfalar.length && t.sayfalar.every(sf => kunyeTam(t.kunye[sf]));
-  const dugmeler = `
+  const tam = t.modul && t.sayfalar.length
+    && t.sayfalar.every(sf => kunyeTam(t.kunye[sf]));
+  const dugmeler = t.modul ? `
     <button class="ag-dug" type="button" data-eylem="agac-anlat" data-proje="${p.id}">
       ${svg(ICON.kopya, 15)} Anlatım</button>
     <button class="ag-dug ana" type="button" ${tam ? '' : 'disabled'}
             data-eylem="yapi-kur" data-proje="${p.id}">
-      ${svg(ICON.check, 15)} Kur</button>`;
+      ${svg(ICON.check, 15)} Kur</button>` : '';
 
-  return agacKabuk(p, yolCipleri([
-    { ad: p.firma, eylem: 'agac-koke', proje: p.id },
-    { ad: t.modul },
-  ]), govde, dugmeler);
+  const basamak = [{ ad: p.firma }];
+  if (t.modul) basamak.push({ ad: t.modul, eylem: 'agac-modul-ad', proje: p.id });
+  if (acik) basamak.push({ ad: acik });
+
+  return agacKabuk(p, yolCipleri(basamak), govde, dugmeler);
+}
+
+/* Ağaçta bir kat yukarı: dal → sayfa → modül → firma. */
+function yapiGeri(t) {
+  if (t.mod === 'anlat') { t.mod = 'agac'; if (!t.sayfalar.length) t.modul = ''; return true; }
+  if (t.dal)   { t.dal = null; return true; }
+  if (t.odak)  { t.odak = null; return true; }
+  if (t.modul) { t.modul = ''; t.sayfalar = []; t.kunye = {}; return true; }
+  return false;
 }
 
 /* Anlat: önizleme yok, yalnız metin ve iki düğme. */
@@ -5788,9 +5796,10 @@ function anlatAktarAc(projeId) {
       if (!cozum) return;
       cozumlemeUygula(t, cozum, p);
       modalKapat();
-      /* Blokta modül adı yoksa (eski biçim) sorulur; adsız modül ağaçta
-         görünmüyordu. */
+      /* Blokta modül adı yoksa (eski biçim) sorulur. Pencere kapanışıyla
+         çakışmasın diye bir kare bekliyoruz. */
       if (!t.modul) {
+        await new Promise(r => setTimeout(r, 260));
         t.modul = await metinSor({ baslik: 'Modülün adı',
           aciklama: 'Blokta yazmıyordu, sen yaz.', yerTutucu: 'Örn. Muhasebe Modülü',
           buton: 'Tamam', deger: '' }) || 'Yeni Modül';
@@ -5857,7 +5866,8 @@ function cozumlemeUygula(t, cozum, p) {
         .map(x => x.trim()).slice(0, 12);
     }
     if (!(k.kalip || []).length && Array.isArray(sf.kalip)) {
-      k.kalip = sf.kalip.filter(x => KALIP.some(kl => kl.anahtar === x));
+      /* Tek kalıp: blok birkaç tane yollarsa ilki alınır. */
+      k.kalip = sf.kalip.filter(x => KALIP.some(kl => kl.anahtar === x)).slice(0, 1);
     }
     if (sf.kalipCevap && typeof sf.kalipCevap === 'object') {
       k.kalipCevap = Object.assign({}, sf.kalipCevap, k.kalipCevap || {});
@@ -6802,7 +6812,9 @@ async function eylemCalistir(el) {
     if (!pr) return;
     const t = yapiTaslak(pr);
     t.odak = null; t.dal = null;
-    modulYukle(pr, t, el.dataset.ad);
+    /* Aynı modüle ikinci dokunuş kapatır. */
+    if (t.modul === el.dataset.ad) { t.modul = ''; t.sayfalar = []; t.kunye = {}; }
+    else modulYukle(pr, t, el.dataset.ad);
     render();
     return;
   }
@@ -6825,8 +6837,10 @@ async function eylemCalistir(el) {
     const t = yapiTaslak(pr);
     const kurulu = DB.modulleri(pr.id).some(m => m.ad === t.modul);
     if (kurulu) return toast('Kurulmuş modülün adı buradan değişmiyor.', 'hata');
-    const ad = await metinSor({ baslik: 'Modülün adı', deger: t.modul,
-                                buton: 'Kaydet' });
+    const ad = await metinSor({ baslik: 'Modülün adı',
+      aciklama: 'Ağaçta ve promptta bu ad görünür.',
+      deger: t.modul === 'Yeni Modül' ? '' : t.modul,
+      yerTutucu: 'Örn. Muhasebe Modülü', buton: 'Kaydet' });
     if (!ad) return;
     t.modul = ad;
     render();
@@ -7072,14 +7086,14 @@ async function eylemCalistir(el) {
     if (!pr) return;
     const t = yapiTaslak(pr);
     const k = yapiKunye(t, el.dataset.sayfa);
-    k.kalip = k.kalip || [];
-    const i = k.kalip.indexOf(el.dataset.ad);
-    if (i > -1) {
-      k.kalip.splice(i, 1);
-      Object.keys(k.kalipCevap || {}).forEach(x => {
-        if (x.startsWith(el.dataset.ad + '.')) delete k.kalipCevap[x];
-      });
-    } else k.kalip.push(el.dataset.ad);
+    /* Kalıp tek seçim: ikincisine dokununca öncekinin yerini alır. */
+    const eski = (k.kalip || [])[0];
+    const yeni = eski === el.dataset.ad ? '' : el.dataset.ad;
+    k.kalipCevap = k.kalipCevap || {};
+    Object.keys(k.kalipCevap).forEach(x => {
+      if (!yeni || !x.startsWith(yeni + '.')) delete k.kalipCevap[x];
+    });
+    k.kalip = yeni ? [yeni] : [];
     /* Kaydırma yeri korunsun diye tam çizim yapıyoruz ama önizleme de
        kalıba göre değişmeli. */
     render();
@@ -7852,7 +7866,14 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   $('#btn-back').addEventListener('click', () => {
+    /* Yapı ağacında bir kat yukarı çıkar; başka yerde tarayıcı geçmişinde
+       bir adım geri gider. Sabit bir hedefe atlamak "geri" değil. */
     const { id, durak } = rota();
+    if (durak === 'yapi' && YAPI_TASLAK[id] && yapiGeri(YAPI_TASLAK[id])) {
+      render();
+      return;
+    }
+    if (history.length > 1) { history.back(); return; }
     location.hash = durak ? '#/projeler/' + id : '#/projeler';
   });
 

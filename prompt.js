@@ -340,8 +340,9 @@ const PROMPT = {
     s.push('  kodu yazacak olan onu okuyacak.');
     s.push('');
     s.push('### Kalıplar');
-    s.push('Bir sayfa aşağıdakine uyuyorsa `kalip` dizisine anahtarını yaz ve');
-    s.push('`kalipCevap` içine ilgili cevapları koy. Uymuyorsa boş bırak.');
+    s.push('Bir sayfa aşağıdakine uyuyorsa `kalip` dizisine **tek** anahtar yaz');
+    s.push('(en baskın olanı) ve `kalipCevap` içine o kalıbın cevaplarını koy.');
+    s.push('Uymuyorsa boş dizi bırak.');
     KALIP.forEach(k => {
       s.push('');
       s.push(`**${k.anahtar}** · ${k.ad} — ${k.ozet} (${k.ornek})`);

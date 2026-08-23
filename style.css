@@ -4330,4 +4330,20 @@ a:hover { color: var(--red-ink); }
 
 #btn-not { flex: 0 0 auto; }
 #btn-not.acik { background: var(--surface-3); color: var(--ink-strong); }
-@media (max-width: 900px) { #topbar #btn-not { width: 40px; height: 40px; } }
+/* Dar ekranda başlığı ezmesin. */
+@media (max-width: 900px) {
+  #topbar #btn-not { width: 34px; height: 34px; }
+  #topbar #btn-not svg { width: 16px; height: 16px; }
+  #topbar { gap: 7px; }
+}
+
+/* İç içe geçen ağaç: modülün altındaki sayfalar bir kat daha girintili. */
+.gvd.ic { margin: 2px 0 12px 18px; padding-left: 18px;
+          border-left: 1px dashed var(--line-2); }
+.gvd.ic > .knt::before { left: -18px; width: 12px; background: var(--line-2); }
+.gvd.ic > .knt::after { left: -7px; border-left-color: var(--line-2); }
+.knt.sayfa { padding: 11px 13px; }
+.knt.sayfa b { font-size: 13.5px; }
+.knt.modul.acik { border-color: var(--p1);
+                  box-shadow: 0 0 0 1px var(--p1), 0 8px 20px -12px var(--p1);
+                  margin-bottom: 4px; }
