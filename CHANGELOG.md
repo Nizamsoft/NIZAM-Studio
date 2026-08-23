@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.43.0
+- **Yapıyı kurma artık doğrudan ağaçla açılıyor.** Firma logosundan modüle, modülden sayfalara dallanan tam ekran tuval; modül ve sayfa ekleme ağacın içindeki kesik kutulardan yapılıyor. Ara ekran, adım şeridi yok.
+- **Sayfaya dokununca o sayfa kökün yerine geçiyor** ve kendi dalları açılıyor: Amaç · Tür · Kalıp · Alanlar · Eylemler · Roller · Yetki · Kural. Her dalın kendi renk şeridi ve durum noktası var, altında o an ne girildiği yazıyor. Dala dokununca düzenleme ekranı açılıyor, "Bitti" ağaca döndürüyor.
+- Düğümler soldan akarak geliyor, eksik olanın noktası yanıp sönüyor, seçili düğüm proje renginde parlıyor. Renkler proje renginden ve durum renklerinden geliyor; kırmızı yalnız "Kur" düğmesinde.
+- Kurulu tek modül varsa ağaç onunla açılıyor, sayfaları ve künyeleri geri yükleniyor.
+
 ## v0.42.0
 - **4 yeni kalıp**: ana kayıt + satırları (fatura + kalemleri) · durum akışı (talep → onay → teslim) · stok hareketi (giren, çıkan, kalan) · takvim ve çakışma (rezervasyon, vardiya). Toplam 8 kalıp.
 - **Ekranlar arası geçiş** artık kayboluyor değil: blokta `baglantilar` var, "Hesaplar → Hareketler, alt hesaba dokununca" gibi. Prompta ayrı bölüm olarak giriyor.

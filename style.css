@@ -3915,3 +3915,84 @@ a:hover { color: var(--red-ink); }
 .yo-kalip { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 7px; }
 .yo-kalip u { text-decoration: none; font-size: 9.5px; padding: 3px 8px;
               border-radius: 999px; background: var(--surface-2); color: var(--ink-dim); }
+
+/* ==========================================================================
+   YAPI AĞACI — modül ve sayfalar tek tuvalde
+   Yapı durağı doğrudan burayla açılır; bir sayfaya dokununca o sayfa
+   kökün yerine geçip kendi dallarını açar.
+   ========================================================================== */
+
+/* Görünümün içinde normal akışta durur: mutlak konumlandırınca üst çubuğun
+   altına giriyor, düğmeler alt çubuğun altında kalıyordu. */
+.ag-ekran { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+.ag-yol { display: flex; align-items: center; gap: 7px; padding: 0 0 10px;
+          flex: 0 0 auto; font-size: 11px; letter-spacing: .06em; text-transform: uppercase;
+          color: var(--ink-dim); white-space: nowrap; overflow: hidden; }
+.ag-yol b { color: var(--ink-strong); font-weight: 600; overflow: hidden;
+            text-overflow: ellipsis; }
+.ag-yol s { text-decoration: none; opacity: .4; }
+.ag-rozet { margin-left: auto; font-size: 9.5px; padding: 3px 8px; border-radius: 999px;
+            background: var(--surface-2); color: var(--ink-dim); text-transform: none;
+            letter-spacing: 0; }
+.ag-geri { margin-left: auto; width: 30px; height: 30px; border-radius: 10px; cursor: pointer;
+           border: 1px solid var(--line-2); background: transparent; color: var(--ink-soft);
+           display: grid; place-items: center; }
+.ag-geri svg { transform: rotate(180deg); }
+.ag-govde { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; }
+.ag-alt { flex: 0 0 auto; display: flex; gap: 9px; padding: 12px 0 0; }
+.ag-dug { flex: 1; min-width: 0; height: 46px; border-radius: 15px; cursor: pointer;
+          display: flex; align-items: center; justify-content: center; gap: 7px;
+          border: 1px solid var(--line); background: var(--yuva); color: var(--ink-soft);
+          font-family: inherit; font-size: 13px; font-weight: 600; }
+.ag-dug.ana { background: var(--red); border-color: var(--red); color: #fff; }
+.ag-dug:disabled { opacity: .45; cursor: default; }
+.ag-dug:active { transform: scale(.98); }
+
+.tuval { position: relative; box-sizing: border-box; padding: 4px 0 20px; }
+.tuval svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+
+.nd { position: absolute; box-sizing: border-box; border-radius: 14px; cursor: pointer;
+      border: 1px solid var(--line); background: var(--yuva); font-family: inherit;
+      text-align: left; padding: 9px 12px; display: flex; flex-direction: column;
+      justify-content: center; animation: ndGir .34s var(--ease) both; }
+@keyframes ndGir { from { opacity: 0; transform: translateX(-10px) scale(.96); } }
+.nd:active { transform: scale(.98); }
+.nd b { font-size: 13px; color: var(--ink-strong); white-space: nowrap; overflow: hidden;
+        text-overflow: ellipsis; }
+.nd i { font-style: normal; font-size: 10px; color: var(--ink-faint); margin-top: 2px;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nd .nokta { position: absolute; right: 10px; top: 11px; width: 8px; min-width: 8px;
+             height: 8px; min-height: 8px; padding: 0; border-radius: 50%; display: block; }
+
+.nd.kok { border-radius: 50%; padding: 0; align-items: center; justify-content: center;
+          background: #17150f; border: 1.5px solid var(--p1);
+          box-shadow: 0 0 0 5px color-mix(in srgb, var(--p1) 12%, transparent); }
+.nd.kok b { font-size: 15px; color: var(--p1); }
+.nd.modul { background: linear-gradient(150deg,
+              color-mix(in srgb, var(--p1) 16%, var(--yuva)), var(--yuva));
+            border-color: color-mix(in srgb, var(--p1) 45%, transparent); }
+.nd.secili { border-color: var(--p1);
+             box-shadow: 0 0 0 1px var(--p1), 0 8px 22px -12px var(--p1); }
+.nd.tamam { border-color: color-mix(in srgb, var(--st-done-t, #3d9970) 50%, transparent); }
+.nd.tamam .nokta { background: var(--st-done-t, #3d9970); }
+.nd.eksik { border-color: color-mix(in srgb, var(--st-dev-t, #d0a13c) 50%, transparent); }
+.nd.eksik .nokta { background: var(--st-dev-t, #d0a13c); animation: ndNabiz 1.8s ease-in-out infinite; }
+@keyframes ndNabiz { 50% { opacity: .35; } }
+.nd.hayalet { border-style: dashed; background: transparent; align-items: center;
+              justify-content: center; }
+.nd.hayalet b { color: var(--ink-faint); font-weight: 500; }
+.nd.hayalet svg { vertical-align: -2px; margin-right: 3px; }
+.nd.dal { background: var(--surface-2); }
+.nd.dal .rk { position: absolute; left: 0; top: 12px; bottom: 12px; width: 3px;
+              border-radius: 0 3px 3px 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  .nd { animation: none; }
+  .nd.eksik .nokta { animation: none; }
+}
+
+/* Dokunulmamış ama zorunlu olmayan dal: ne yeşil ne sarı. */
+.nd.bos .nokta { background: var(--line-parlak); }
+.ag-dug.guclu { background: var(--surface-2); border-color: var(--metal-2);
+                color: var(--ink-strong); }
+.ag-dug.guclu svg { transform: rotate(180deg); }
