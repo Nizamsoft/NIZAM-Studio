@@ -4029,7 +4029,7 @@ a:hover { color: var(--red-ink); }
 .dz-yaz { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .dz-yaz b { font-size: 15px; color: var(--ink-strong); }
 .dz-yaz i { font-style: normal; font-size: 11px; color: var(--ink-faint); }
-.dz-onizleme { flex: 0 0 auto; height: 170px; position: relative; border-radius: 14px;
+.dz-onizleme { flex: 0 0 170px; height: 170px; min-height: 170px; position: relative; border-radius: 14px;
                border: 1px solid var(--line-2); background: var(--yuva-2); overflow: hidden; }
 .dz-onizleme .onz-goz { position: absolute; inset: 0; display: flex;
                         align-items: center; justify-content: center; overflow: hidden; }

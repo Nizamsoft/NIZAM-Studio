@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.45.1
+- Dal ekranlarındaki önizleme kırpılıyordu: altındaki liste uzayınca kutu eziliyor, ölçek eski boya göre kalıyordu. Kutu artık ezilmiyor ve boyu her değiştiğinde önizleme kendini yeniden sığdırıyor.
+
 ## v0.45.0
 - Ağaçtaki düğümler artık **oklarla bağlı**: modülden dikey gövde çıkıyor, gövdeden her sayfaya ok gidiyor. Ana düğüm çocuklarının tam hizasında duruyor.
 - Üstteki yol izi çip çip oldu — her basamağa dokununca oraya dönüyorsun, bulunduğun yer kendiliğinden görünür oluyor. Yanında tek bir geri düğmesi var.

@@ -1972,8 +1972,30 @@ function hexMi(x) { return /^#[0-9a-f]{6}$/i.test(String(x || '')); }
 
 /* Seçim değişince: kayıt beklemeden yeniden çiz. */
 /* Önizleme kırpılmasın: uygulama kutuya sığmıyorsa küçülterek sığdır. */
-function onizlemeSigdir() {
+/* Kutu boyu sonradan değişebiliyor (ray kayarken, yazı tipi geç gelince,
+   alt liste uzayınca). Tek seferlik ölçüm yetmiyordu: önizleme kırpılmış
+   kalıyordu. Kutuyu izleyip her değişimde yeniden sığdırıyoruz. */
+let ONIZLEME_GOZCU = null;
+function onizlemeGozcu() {
+  if (!window.ResizeObserver) return null;
+  if (!ONIZLEME_GOZCU) {
+    ONIZLEME_GOZCU = new ResizeObserver(() => {
+      if (ONIZLEME_GOZCU.bekliyor) return;
+      ONIZLEME_GOZCU.bekliyor = true;
+      requestAnimationFrame(() => {
+        ONIZLEME_GOZCU.bekliyor = false;
+        onizlemeSigdir(true);
+      });
+    });
+  }
+  return ONIZLEME_GOZCU;
+}
+
+function onizlemeSigdir(izlemeden) {
+  const gozcu = izlemeden ? null : onizlemeGozcu();
+  if (gozcu) gozcu.disconnect();
   $$('.onz-goz').forEach(goz => {
+    if (gozcu) gozcu.observe(goz);
     const app = goz.firstElementChild;
     if (!app || !app.classList.contains('o-app')) return;
     /* Ölçüm dönüşümden bağımsız olmalı: getBoundingClientRect ölçeklenmiş
@@ -1985,7 +2007,7 @@ function onizlemeSigdir() {
     if (!ah || !kh) return;
     /* Bir yere kadar küçültürüz; altına inince okunmaz olur. Kutu alçaldıkça
        taban da iner: kırpılmış bir ekran, küçük ekrandan kötüdür. */
-    const taban = kh < 170 ? .3 : innerHeight <= 700 ? .4 : .5;
+    const taban = kh < 190 ? .24 : innerHeight <= 700 ? .4 : .5;
     const oran = Math.max(taban, Math.min(1, (kh - 18) / ah, (kw - 18) / aw));
     app.style.transform = oran < .999 ? `scale(${oran.toFixed(3)})` : '';
   });
