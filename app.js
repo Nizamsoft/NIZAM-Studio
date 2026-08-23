@@ -2682,17 +2682,20 @@ function agacSutunDuzen(p, t, sayfa, k, dallar) {
    göstermek yerine ne yapılması gerektiğini söylüyoruz. */
 function onizlemeAlani(p, k, dal, gost) {
   if (!gost) return '';
+  /* Kalıp ve eylem adımlarında alan girilmemiş olsa da önizleme çizilir:
+     seçtiğin kalıbın ne yaptığını görmen gerekiyor. Yalnız gerçekten
+     çizilemeyecek durumda yönlendirme gösteriyoruz. */
   const eksik =
-      !k.tur                          ? 'Önce ekranın türünü seç — önizleme o zaman canlanır.'
+      !k.tur ? 'Önce ekranın türünü seç — önizleme o zaman canlanır.'
     : dal === 'alanlar' && !(k.alanlar || []).length
         ? 'Alan ekle: her alan tabloda bir sütun olur, önizlemede görürsün.'
-    : dal !== 'tur' && !(k.alanlar || []).length
-        ? 'Tabloyu görmek için önce alanları gir.'
     : '';
   if (eksik) return `<div class="dz-onizleme bos">
     <span class="dz-bos">${svg(ICON.katman, 20)}<i>${esc(eksik)}</i></span></div>`;
   return `<div class="dz-onizleme"><div class="onz-goz">
-    ${onizlemeIc(p, p.palet)}</div></div>`;
+    ${onizlemeIc(p, p.palet)}</div></div>
+    ${(k.alanlar || []).length ? '' :
+      '<p class="dz-ipucu">Sütunlar örnek — alanları girince kendi adların gelir</p>'}`;
 }
 
 function agacDugmeleri(p, t, sayfa, dallar, seviye) {

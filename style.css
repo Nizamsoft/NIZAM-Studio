@@ -4130,3 +4130,6 @@ a:hover { color: var(--red-ink); }
 .dz-bos { display: flex; flex-direction: column; align-items: center; gap: 9px;
           text-align: center; color: var(--ink-faint); max-width: 240px; }
 .dz-bos i { font-style: normal; font-size: 12px; line-height: 1.5; }
+
+.dz-ipucu { margin: -4px 0 0; text-align: center; font-size: 10.5px;
+            color: var(--ink-faint); }
