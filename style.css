@@ -4095,3 +4095,38 @@ a:hover { color: var(--red-ink); }
 .dz-govde .sohbet { display: flex; margin-bottom: 10px; }
 .dz-govde .sohbet .av { display: none; }
 .dz-govde .sohbet .bal { border-radius: 12px; font-size: 12.5px; }
+
+/* ---- Kalıpların önizlemedeki karşılığı ---- */
+.o-tbl.o-bakiyeli .o-r { gap: 8px; }
+.o-tbl.o-bakiyeli .o-r em { font-style: normal; flex: 0 0 auto; font-size: 10px;
+                            color: var(--o-metin3); font-family: "IBM Plex Mono", monospace; }
+.o-tbl.o-bakiyeli .o-r.o-h em { font-size: 8.5px; letter-spacing: .04em; }
+.o-r.o-alt span { padding-left: 14px; }
+.o-r .o-chev { font-style: normal; display: inline-block; width: 10px; color: var(--o-metin3);
+               font-size: 9px; }
+.o-bacak { display: flex; flex-wrap: wrap; gap: 4px; padding: 5px 10px 7px 22px;
+           background: color-mix(in srgb, var(--o-vurgu) 7%, transparent); }
+.o-bacak span { font-size: 8.5px; padding: 2px 7px; border-radius: 999px;
+                background: var(--o-yuzey); color: var(--o-metin2);
+                border: 1px solid var(--o-cizgi); }
+.o-satirlar { padding: 3px 10px 6px 22px;
+              background: color-mix(in srgb, var(--o-vurgu) 6%, transparent); }
+.o-satirlar i { display: flex; justify-content: space-between; font-style: normal;
+                font-size: 9px; color: var(--o-metin2); padding: 2px 0; }
+.o-satirlar i b { font-weight: 500; }
+.o-satirlar i u { text-decoration: none; font-family: "IBM Plex Mono", monospace; }
+.o-akisSerit { display: flex; align-items: center; gap: 5px; margin-bottom: 8px; }
+.o-akisSerit span { font-size: 9px; padding: 3px 8px; border-radius: 999px;
+                    background: var(--o-yuzey); border: 1px solid var(--o-cizgi);
+                    color: var(--o-metin3); }
+.o-akisSerit span.a { background: var(--o-vurgu-soft); color: var(--o-vurgu-ink);
+                      border-color: color-mix(in srgb, var(--o-vurgu) 40%, transparent); }
+.o-akisSerit em { font-style: normal; font-size: 9px; color: var(--o-metin3); opacity: .6; }
+.o-grupBas.ic { font-size: 8.5px; padding: 5px 10px 3px; }
+
+/* Boş önizleme: uydurma veri yerine yönlendirme */
+.dz-onizleme.bos { display: grid; place-items: center; padding: 16px;
+                   border-style: dashed; }
+.dz-bos { display: flex; flex-direction: column; align-items: center; gap: 9px;
+          text-align: center; color: var(--ink-faint); max-width: 240px; }
+.dz-bos i { font-style: normal; font-size: 12px; line-height: 1.5; }

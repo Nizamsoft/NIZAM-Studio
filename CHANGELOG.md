@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## v0.46.0
+- **Kalıplar artık önizlemeye yansıyor.** Ağaç liste → satırlar girintili, ana kayıtta açılma oku. Yürüyen bakiye / stok → tabloya "Bakiye" (ya da "Kalan") sütunu. Çok bacaklı kayıt → satırın altında etkilenen hesap çipleri. Ana kayıt + satırları → kaydın altında kalemler. Durum akışı → tablonun üstünde adım şeridi. Bağlama göre sütun → sütun seti sekmeleri. Takvim → tarih başlıkları.
+- **Boşken uydurma veri gösterilmiyor.** Tür seçilmeden "önce türü seç", alan girilmeden "alan ekle, her alan bir sütun olur" diyor; önizleme ancak gösterecek gerçek bir şey olunca çiziliyor.
+
 ## v0.45.1
 - Dal ekranlarındaki önizleme kırpılıyordu: altındaki liste uzayınca kutu eziliyor, ölçek eski boya göre kalıyordu. Kutu artık ezilmiyor ve boyu her değiştiğinde önizleme kendini yeniden sığdırıyor.
 

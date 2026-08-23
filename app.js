@@ -1548,6 +1548,14 @@ function onizlemeIc(p, pl) {
     : vk === 'Şeritli'      ? kart(`<i>${esc(v.stat[0][0])}</i><b>${esc(v.stat[0][1])}</b>`, 'o-stat o-ustSerit')
     : '';
 
+  /* Kalıplar önizlemeye yansır: seçtiğin yapı tabloda görünmezse kalıbı
+     seçmenin ne yaptığı anlaşılmıyor. */
+  const kal   = (ky && ky.kalip) || [];
+  const kalVar = a => kal.includes(a);
+  const bakiyeli = kalVar('bakiye') || kalVar('stok');
+  const bakAd = kalVar('stok') ? 'Kalan' : 'Bakiye';
+  const bakDeger = ['18.400', '18.020', '15.830', '15.190'];
+
   const tabloKutusu = (satirSayi = 4) => {
     const kartaDonus = tel && ['Karta dönüş', 'Tam ekran'].includes(bic.tablomobil[0]);
     if (kartaDonus) return `<div class="o-kartlar">${v.satir.slice(0, 3).map(x =>
@@ -1555,16 +1563,51 @@ function onizlemeIc(p, pl) {
     ).join('')}</div>`;
     const kaydir = odak === 'onaysil' && eyv('Sil') && bic.onaysil[0] === 'Kaydırarak sil';
     const ackapa = tel && bic.tablomobil[0] === 'Aç-kapa satır';
-    return `<div class="o-kutu o-tbl">
-      <div class="o-r o-h"><span>${esc(v.sutun[0])}</span><u>${esc(v.sutun[1])}</u></div>
+    /* Ağaç kalıbı: ana kayıt açılır, altındakiler girintili. */
+    const agacli = kalVar('agac');
+    const tarihli = kalVar('takvim');
+
+    return `<div class="o-kutu o-tbl${bakiyeli ? ' o-bakiyeli' : ''}">
+      <div class="o-r o-h"><span>${esc(v.sutun[0])}</span>
+        ${bakiyeli ? `<em>${esc(bakAd)}</em>` : ''}<u>${esc(v.sutun[1])}</u></div>
       ${v.satir.slice(0, satirSayi).map((x, i) => `
-        <div class="o-r${kaydir && i === 1 ? ' kaydirildi' : ''}"><span>${esc(x[0])}${
+        ${tarihli && i % 2 === 0
+          ? `<div class="o-grupBas ic">${esc(['22 Mayıs', '21 Mayıs'][i / 2] || '20 Mayıs')}</div>`
+          : ''}
+        <div class="o-r${kaydir && i === 1 ? ' kaydirildi' : ''}${
+          agacli ? (i % 2 ? ' o-alt' : ' o-ana') : ''}"><span>${
+          agacli ? `<i class="o-chev">${i % 2 ? '' : '›'}</i>` : ''}${esc(x[0])}${
           tel && bic.tablomobil[0] === 'İki satır' ? `<i>${esc(x[1])}</i>` : ''
-        }</span><u>${esc(x[2])}</u>${kaydir && i === 1 ? '<b class="o-sil">Sil</b>' : ''}</div>
+        }</span>${bakiyeli ? `<em>${esc(bakDeger[i] || '—')}</em>` : ''
+        }<u>${esc(x[2])}</u>${kaydir && i === 1 ? '<b class="o-sil">Sil</b>' : ''}</div>
+        ${kalVar('bacak') && i === 0 ? `<div class="o-bacak">${
+          ['100 Kasa', '320 Tedarikçi', '760 Gider'].map(y =>
+            `<span>${y}</span>`).join('')}</div>` : ''}
+        ${kalVar('satir') && i === 0 ? `<div class="o-satirlar">${
+          [['Lahmacun', '2 × 90,00'], ['Ayran', '3 × 25,00']].map(y =>
+            `<i><b>${y[0]}</b><u>${y[1]}</u></i>`).join('')}</div>` : ''}
         ${ackapa && i === 0 ? `<div class="o-acilan"><i>Tarih<u>18 Ağu</u></i>
           <i>Durum<u>Onaylı</u></i><i>Not<u>—</u></i></div>` : ''}`).join('')}
     </div>`;
   };
+
+  /* Durum akışı ve bağlama göre sütun: tablonun üstünde şerit olarak. */
+  const kalipSeridi = (() => {
+    const p2 = [];
+    if (kalVar('akis')) {
+      const ad = ((ky.kalipCevap || {})['akis.adimlar'] || []).filter(Boolean);
+      const liste = ad.length ? ad : ['Talep', 'Onay', 'Teslim'];
+      p2.push(`<div class="o-akisSerit">${liste.slice(0, 4).map((x, i) =>
+        `<span class="${i ? '' : 'a'}">${esc(x)}</span>`).join('<em>›</em>')}</div>`);
+    }
+    if (kalVar('sutun')) {
+      const st = ((ky.kalipCevap || {})['sutun.setler'] || []).filter(Boolean);
+      const liste = st.length ? ['Varsayılan'].concat(st) : ['Varsayılan', '320', '108'];
+      p2.push(`<div class="o-sekme ic">${liste.slice(0, 4).map((x, i) =>
+        `<i class="${i ? '' : 'a'}">${esc(x)}</i>`).join('')}</div>`);
+    }
+    return p2.join('');
+  })();
 
   const ar = eyv('Ara') ? bic.arama[0] : '';
   const aramaSatiri =
@@ -1618,7 +1661,7 @@ function onizlemeIc(p, pl) {
     ${bic.tablosayfa.includes('Özet kartları') ? statlar : ''}
     ${bic.tablosayfa.includes('Sekmeli liste') ? `<div class="o-sekme ic">${
       ['Bekleyen', 'Onaylı', 'Kapalı'].map((x, i) => `<i class="${i ? '' : 'a'}">${x}</i>`).join('')}</div>` : ''}
-    ${aramaSatiri}${cipler}
+    ${aramaSatiri}${cipler}${kalipSeridi}
     <div class="o-tblbas">${esc(v.baslik)}</div>
     <div class="o-ikiBolme">
       ${bic.tablosayfa.includes('Solda filtre') || bic.filtre[0] === 'Yan panel'
@@ -2623,17 +2666,33 @@ function agacSutunDal(p, t, k, dallar, roller) {
 /* Düzenleyici de ağacın bir dalı: kendi sütununda, üstünde önizlemesiyle. */
 function agacSutunDuzen(p, t, sayfa, k, dallar) {
   const dal  = dallar.find(a => a.anahtar === t.dal) || {};
-  const gost = ['tur', 'alanlar', 'eylemler', 'kalip'].includes(t.dal);
+  const gost = ['tur', 'alanlar', 'eylemler', 'kalip', 'kural'].includes(t.dal);
   return `<div class="sut cizgili son" style="width:${SUT.duzen}px">
     <div class="sut-ic duzen">
       <div class="dz-bas" style="--dr:${DAL_RENK[t.dal] || '#8d8378'}">
         <span class="dz-rk"></span>
         <span class="dz-yaz"><b>${esc(dal.ad || '')}</b><i>${esc(dal.soru || '')}</i></span>
       </div>
-      ${gost ? `<div class="dz-onizleme"><div class="onz-goz">
-        ${onizlemeIc(p, p.palet)}</div></div>` : ''}
+      ${onizlemeAlani(p, k, t.dal, gost)}
       <div class="dz-govde">${kunyeGovde(p, t, { tur: 'kunye', sayfa, alt: t.dal })}</div>
     </div></div>`;
+}
+
+/* Önizleme ancak gösterecek bir şey varken çizilir. Boşken uydurma veri
+   göstermek yerine ne yapılması gerektiğini söylüyoruz. */
+function onizlemeAlani(p, k, dal, gost) {
+  if (!gost) return '';
+  const eksik =
+      !k.tur                          ? 'Önce ekranın türünü seç — önizleme o zaman canlanır.'
+    : dal === 'alanlar' && !(k.alanlar || []).length
+        ? 'Alan ekle: her alan tabloda bir sütun olur, önizlemede görürsün.'
+    : dal !== 'tur' && !(k.alanlar || []).length
+        ? 'Tabloyu görmek için önce alanları gir.'
+    : '';
+  if (eksik) return `<div class="dz-onizleme bos">
+    <span class="dz-bos">${svg(ICON.katman, 20)}<i>${esc(eksik)}</i></span></div>`;
+  return `<div class="dz-onizleme"><div class="onz-goz">
+    ${onizlemeIc(p, p.palet)}</div></div>`;
 }
 
 function agacDugmeleri(p, t, sayfa, dallar, seviye) {
