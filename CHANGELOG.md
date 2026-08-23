@@ -1,5 +1,12 @@
 # Değişiklik Günlüğü
 
+## v0.40.0
+- **Anlat adımı** — modülü seçtikten sonra boş bir kutu çıkıyor: modülde ne olacağını kendi cümlelerinle yazıyorsun. Studio bir çözümleme promptu üretiyor, Claude'a veriyorsun, dönen bloğu yapıştırıyorsun; sayfalar, alanlar, kalıplar ve kurallar kendiliğinden doluyor. Anlatmak istemezsen boş geçilir, elle kurulur.
+- **Açık sorular adımı** — çözümlemenin karar veremediği yerler soru olarak geliyor; cevapların prompta aynen giriyor.
+- **Kalıplar** — ağaç liste · çok bacaklı kayıt · bağlama göre sütun · yürüyen bakiye. Sayfanın kalıbını seçiyorsun, kalıbın kendi 2-3 sorusu çipten cevaplanıyor; veri modelini anlatmana gerek kalmıyor.
+- Önizlemedeki örnek metinler alan adına uyuyor: "İşlem Adı" sütununda kişi adı değil işlem adı yazıyor.
+- Prompt kullanıcının kendi anlatımını, verdiği cevapları ve kalıp kararlarını da taşıyor.
+
 ## v0.39.0
 - Künye tek tek soruluyor: **Amaç → Tür → Alanlar → Eylemler → Roller → Yetki → Kural → Onay**. Her ekranda tek soru, sohbet baloncuğunda niye sorulduğu yazıyor, örnek cevaplar dokunmalık.
 - **Önizleme künyeden besleniyor** — sütunlar senin alan adların, hücreler alan türüne göre gerçekçi (para 1.240,00, seçenek kendi değerin, ilişki "Masa 4"), formda alan türü belli (seçenekte ok, tarihte takvim, evet/hayırda anahtar, zorunluda yıldız), seçmediğin eylemin düğmesi çıkmıyor.

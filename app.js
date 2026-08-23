@@ -1231,7 +1231,7 @@ const TUR_SINIF = {
    künye adımında mantıksız duruyordu: sütun adı Durum, içeriği tutar. */
 
 const ORNEK_DEGER = {
-  'Metin':      i => ['Ali Demir', 'Selin Kaya', 'Mehmet Ak', 'Zeynep Er'][i % 4],
+  'Metin':      (i, ad) => metinOrnegi(ad)[i % 4],
   'Uzun metin': i => ['Kapıda ödeme', 'Acele', 'Not yok', 'İkinci kat'][i % 4],
   'Sayı':       i => String([12, 3, 24, 7][i % 4]),
   'Para':       i => ['1.240,00', '380,50', '2.190,00', '640,00'][i % 4],
@@ -1242,6 +1242,23 @@ const ORNEK_DEGER = {
   'Dosya':      i => ['fis-1042.pdf', 'foto.jpg', '—', 'irsaliye.pdf'][i % 4],
 };
 
+/* Örnek metin alan adına uysun: "İşlem Adı" sütununda kişi adı yazması
+   önizlemeyi mantıksız gösteriyordu. */
+function metinOrnegi(ad) {
+  const x = String(ad || '').toLocaleLowerCase('tr');
+  const gecer = (...k) => k.some(y => x.includes(y));
+  if (gecer('işlem', 'islem', 'açıklama', 'aciklama', 'konu', 'not'))
+    return ['Nakit tahsilat', 'Fatura ödemesi', 'Devir', 'Masraf fişi'];
+  if (gecer('müşteri', 'musteri', 'cari', 'kişi', 'kisi', 'personel', 'yetkili',
+            'ad', 'isim', 'unvan'))
+    return ['Ali Demir', 'Selin Kaya', 'Mehmet Ak', 'Zeynep Er'];
+  if (gecer('ürün', 'urun', 'mal', 'stok', 'hizmet'))
+    return ['Lahmacun', 'Ayran', 'Baklava', 'Çay'];
+  if (gecer('adres', 'şehir', 'sehir', 'il'))
+    return ['Gaziantep', 'Ankara', 'İstanbul', 'İzmir'];
+  return ['Kayıt 1', 'Kayıt 2', 'Kayıt 3', 'Kayıt 4'];
+}
+
 function alanDegeri(a, i) {
   if (a.tur === 'Seçenek') {
     const d = (a.degerler || []).filter(Boolean);
@@ -1249,7 +1266,7 @@ function alanDegeri(a, i) {
   }
   if (a.tur === 'İlişki') return a.ad + ' ' + [4, 7, 2, 9][i % 4];
   const f = ORNEK_DEGER[a.tur];
-  return f ? f(i) : a.ad + ' ' + (i + 1);
+  return f ? f(i, a.ad) : a.ad + ' ' + (i + 1);
 }
 
 /* "Sipariş Listesi" → "sipariş": düğme yazısı buradan çıkıyor. */
@@ -2319,15 +2336,16 @@ const YAPI_TASLAK = {};
 
 function yapiTaslak(p) {
   if (!YAPI_TASLAK[p.id]) {
-    YAPI_TASLAK[p.id] = { yer: 0, modul: '', sayfalar: [], kunye: {} };
+    YAPI_TASLAK[p.id] = { yer: 0, modul: '', anlat: '', sorular: [],
+                          cevap: {}, sayfalar: [], kunye: {} };
   }
   return YAPI_TASLAK[p.id];
 }
 
 function yapiKunye(t, sayfa) {
   if (!t.kunye[sayfa]) {
-    t.kunye[sayfa] = { amac: '', tur: '', alanlar: [], eylemler: [],
-                       roller: [], yetki: {}, kural: '' };
+    t.kunye[sayfa] = { amac: '', tur: '', kalip: [], kalipCevap: {}, alanlar: [],
+                       eylemler: [], roller: [], yetki: {}, kural: '' };
   }
   return t.kunye[sayfa];
 }
@@ -2338,6 +2356,7 @@ function yapiKunye(t, sayfa) {
 const KUNYE_ADIM = [
   { anahtar: 'amac',     ad: 'Amaç',     soru: 'Bu sayfa ne işe yarıyor?' },
   { anahtar: 'tur',      ad: 'Tür',      soru: 'Nasıl bir ekran?' },
+  { anahtar: 'kalip',    ad: 'Kalıp',    soru: 'Bunlardan biri senin durumun mu?' },
   { anahtar: 'alanlar',  ad: 'Alanlar',  soru: 'Bu sayfa neyi tutuyor?' },
   { anahtar: 'eylemler', ad: 'Eylemler', soru: 'Burada ne yapılabilir?' },
   { anahtar: 'roller',   ad: 'Roller',   soru: 'Kimler görebilir?' },
@@ -2350,6 +2369,7 @@ const KUNYE_ADIM = [
 function kunyeAdimTam(k, anahtar, roller) {
   if (anahtar === 'amac')     return !!(k.amac || '').trim();
   if (anahtar === 'tur')      return !!k.tur;
+  if (anahtar === 'kalip')    return kalipTam(k);
   if (anahtar === 'alanlar')  return (k.alanlar || []).length > 0
     && k.alanlar.every(a => a.tur !== 'Seçenek' || (a.degerler || []).filter(Boolean).length);
   if (anahtar === 'eylemler') return (k.eylemler || []).length > 0;
@@ -2370,8 +2390,11 @@ function yapiAdimlari(t, p) {
     { tur: 'modul', ad: 'Modül', obek: 'Ne kurulacak',
       obekNot: 'Bir firmaya bir modül. Sonradan bir tane daha eklenebilir.',
       aciklama: 'Hazır şablonlardan seç ya da adını kendin yaz.' },
+    { tur: 'anlat', ad: 'Anlat', obek: 'Ne kurulacak',
+      obekNot: 'Önce sen anlat; sorular ondan sonra.',
+      aciklama: 'Bu modülde ne olacağını kendi cümlelerinle yaz.' },
     { tur: 'sayfalar', ad: 'Sayfalar', obek: 'Ne kurulacak',
-      obekNot: 'Bir firmaya bir modül. Sonradan bir tane daha eklenebilir.',
+      obekNot: 'Önce sen anlat; sorular ondan sonra.',
       aciklama: 'Modülün içinde hangi ekranlar olacak?' },
   ];
   t.sayfalar.forEach(sf => {
@@ -2381,6 +2404,9 @@ function yapiAdimlari(t, p) {
       obek: sf, obekNot: 'Bu ekranı kurmak için gerekenler.',
       aciklama: ka.soru }));
   });
+  if ((t.sorular || []).length) a.push({ tur: 'sorular', ad: 'Açık sorular',
+    obek: 'Eksikler', obekNot: 'Anlatında karar verilmemiş yerler.',
+    aciklama: 'Bunları netleştirelim.' });
   a.push({ tur: 'ozet', ad: 'Özet', obek: 'Kurulum',
            obekNot: 'Hepsi tek seferde yazılır.', aciklama: 'Kurulacakların listesi.' });
   return a;
@@ -2518,6 +2544,48 @@ function yapiGovde(p, t, adim) {
       </div>`;
   }
 
+  if (adim.tur === 'anlat') {
+    const dolu = (t.anlat || '').trim().length > 20;
+    return `<div class="kunye-kaydir">
+      ${balon('Bu modülde ne olacağını bana anlat. Konuşur gibi yaz — '
+        + 'ekranlar, hangi bilgiler tutulacak, neyin neyi etkilediği.',
+        'Sonra bunu Claude\'a çözümletip yapıyı kuruyorum; kalan soruları sana sorarım.')}
+      <label class="field ky-alan">
+        <textarea id="anlat-kutu" rows="7" spellcheck="false"
+          placeholder="Örn. Muhasebe modülünde hesaplar sayfası olacak. 100-Kasa, 102-Banka gibi ana hesaplar, altlarında 102.01 gibi alt hesaplar. Alt hesaba basınca hareketleri açılsın. Bir kayıt üç hesabı birden etkileyebilir…"
+          data-anlat="${p.id}">${esc(t.anlat || '')}</textarea>
+      </label>
+      <div class="palet-dug">
+        <button class="sayfa-dug ${dolu ? '' : 'ikincil'}" type="button"
+                data-eylem="anlat-prompt" data-proje="${p.id}" ${dolu ? '' : 'disabled'}>
+          ${svg(ICON.kopya, 15)} Prompt kopyala</button>
+        <button class="sayfa-dug ikincil" type="button"
+                data-eylem="anlat-aktar" data-proje="${p.id}">
+          ${svg(ICON.ice, 15)} Cevabı yapıştır</button>
+      </div>
+      ${t.sayfalar.length ? `<p class="ky-not">${svg(ICON.tik, 12)}
+        ${t.sayfalar.length} sayfa çözümlendi${(t.sorular || []).length
+          ? ' · ' + t.sorular.length + ' soru çıktı' : ''}.</p>` : `
+        <p class="ky-not">Anlatmak istemiyorsan boş geç — sayfaları elle kurarsın.</p>`}
+    </div>`;
+  }
+
+  if (adim.tur === 'sorular') {
+    return `<div class="kunye-kaydir">
+      ${balon('Anlatında karar verilmemiş yerler var. Bunları netleştirelim.',
+              'Cevaplamazsan AI kendi kararını verir.')}
+      ${t.sorular.map((sr, i) => `
+        <div class="alan-kart">
+          <p class="ak-soru" style="font-size:13px;color:var(--ink)">${esc(sr)}</p>
+          <label class="field ky-alan" style="margin:0">
+            <input type="text" data-cevap="${i}" data-proje="${p.id}"
+                   value="${esc(t.cevap[i] || '')}" maxlength="200"
+                   autocomplete="off" placeholder="Cevabın…">
+          </label>
+        </div>`).join('')}
+    </div>`;
+  }
+
   if (adim.tur === 'kunye') return kunyeGovde(p, t, adim);
 
   /* Özet */
@@ -2577,6 +2645,48 @@ function kunyeGovde(p, t, adim) {
           <span class="bsc-ad">${esc(x.ad)}</span></button>`).join('')}
       </div>
       ${k.tur ? `<p class="ky-not">${esc((SAYFA_TURU.find(x => x.ad === k.tur) || {}).alt || '')}</p>` : ''}
+    </div>`;
+  }
+
+  if (adim.alt === 'kalip') {
+    const secili = k.kalip || [];
+    return `<div class="kunye-kaydir">
+      ${balon('Bu sayfa bunlardan birine benziyor mu?',
+              'Benziyorsa seç — yapıyı ben kurarım, tek tek anlatmana gerek kalmaz.')}
+      <div class="raf">${KALIP.map(kl => `
+        <button class="bsc ${secili.includes(kl.anahtar) ? 'on' : ''}" type="button"
+                data-eylem="yapi-ky-kalip" ${veri} data-ad="${kl.anahtar}">
+          <span class="bon"><span class="tel-wf">${telCizim(kl.tel)}</span></span>
+          <span class="bsc-ad">${esc(kl.ad)}</span></button>`).join('')}
+      </div>
+      ${secili.length ? secili.map(a => {
+        const kl = KALIP.find(x => x.anahtar === a);
+        if (!kl) return '';
+        return `<div class="alan-kart">
+          <div class="ak-ust kalip"><b>${esc(kl.ad)}</b></div>
+          <p class="ak-ozet">${esc(kl.ozet)} <i>${esc(kl.ornek)}</i></p>
+          ${kl.sorular.map(sr => {
+            const deger = (k.kalipCevap || {})[a + '.' + sr.anahtar];
+            if (sr.tur === 'liste') {
+              const liste = deger || [];
+              return `<p class="ak-soru">${esc(sr.soru)}</p>
+                <div class="ak-degerler">
+                  ${liste.map(x => `<span data-eylem="yapi-ky-kset-sil" ${veri}
+                        data-ad="${a}.${sr.anahtar}" data-deger2="${esc(x)}"
+                        role="button" tabindex="0">${esc(x)} <em>×</em></span>`).join('')}
+                  <span class="ekle" data-eylem="yapi-ky-kset-ekle" ${veri}
+                        data-ad="${a}.${sr.anahtar}" role="button" tabindex="0">+ ekle</span>
+                </div>`;
+            }
+            return `<p class="ak-soru">${esc(sr.soru)}</p>
+              <div class="ky-cipler">${sr.secim.map(x => `
+                <button class="cip-sec ${deger === x ? 'on' : ''}" type="button"
+                        data-eylem="yapi-ky-kcevap" ${veri}
+                        data-ad="${a}.${sr.anahtar}" data-deger2="${esc(x)}">${esc(x)}</button>`).join('')}
+              </div>`;
+          }).join('')}
+        </div>`;
+      }).join('') : `<p class="ky-not">Hiçbiri değilse boş geç — sıradan bir sayfa olarak kurulur.</p>`}
     </div>`;
   }
 
@@ -2761,10 +2871,13 @@ function yapiGezinme(p, no, adm, t, adim) {
       ? !kunyeAdimTam(yapiKunye(t, adim.sayfa), adim.alt, roller)
     : adim.tur === 'modul'    ? !t.modul
     : adim.tur === 'sayfalar' ? !t.sayfalar.length
-    : false;
+    : false;   /* Anlat ve sorular boş geçilebilir. */
   const kurulur = t.modul && t.sayfalar.length
     && t.sayfalar.every(sf => kunyeTam(t.kunye[sf]));
-  const yazi = adim.alt === 'ozet' ? 'Doğru, devam'
+  const yazi = adim.tur === 'anlat' ? (t.sayfalar.length ? 'İleri' : 'Anlatmadan devam')
+    : adim.tur === 'sorular' ? 'İleri'
+    : adim.alt === 'kalip' && !(yapiKunye(t, adim.sayfa).kalip || []).length ? 'Hiçbiri, geç'
+    : adim.alt === 'ozet' ? 'Doğru, devam'
     : adim.alt === 'kural' && !(yapiKunye(t, adim.sayfa).kural || '').trim() ? 'Kural yok, geç'
     : 'İleri';
 
@@ -2786,6 +2899,28 @@ function yapiGezinme(p, no, adm, t, adim) {
 /* Künyedeki yazı alanları: her tuşta yeniden çizersek imleç kaçar.
    Değer taslağa yazılır, ekran olduğu gibi kalır. */
 function yapiBaglari() {
+  const anlat = $('[data-anlat]');
+  if (anlat && !anlat.dataset.bagli) {
+    anlat.dataset.bagli = '1';
+    anlat.addEventListener('input', () => {
+      const pr = DB.proje(anlat.dataset.anlat);
+      if (!pr) return;
+      yapiTaslak(pr).anlat = anlat.value;
+      const dug = $('[data-eylem="anlat-prompt"]');
+      if (dug) {
+        dug.disabled = anlat.value.trim().length <= 20;
+        dug.classList.toggle('ikincil', dug.disabled);
+      }
+    });
+  }
+  $$('[data-cevap]').forEach(el => {
+    if (el.dataset.bagli) return;
+    el.dataset.bagli = '1';
+    el.addEventListener('input', () => {
+      const pr = DB.proje(el.dataset.proje);
+      if (pr) yapiTaslak(pr).cevap[el.dataset.cevap] = el.value;
+    });
+  });
   $$('[data-ky]').forEach(el => {
     if (el.dataset.bagli) return;
     el.dataset.bagli = '1';
@@ -5306,6 +5441,114 @@ function paletPromptu(projeId) {
   });
 }
 
+/* Çözümleme cevabını okur: sayfalar, künyeler ve açık sorular. */
+function anlatAktarAc(projeId) {
+  modalHepsiniKapat();
+  const p = DB.proje(projeId);
+  if (!p) return;
+  const t = yapiTaslak(p);
+
+  modalAc(`
+    ${modalBaslik(ICON.ice, 'Çözümlemeyi yapıştır',
+      'Claude\'un döndürdüğü bloğu olduğu gibi yapıştır.')}
+    <label class="field">
+      <span>Yapıştır</span>
+      <textarea id="cz-metin" rows="10" spellcheck="false"
+        placeholder='{ "sayfalar": [ … ], "sorular": [ … ] }'></textarea>
+    </label>
+    <div id="cz-onizleme"></div>
+    <div class="modal-alt">
+      <button class="btn btn-ghost" data-cz="iptal" type="button">Vazgeç</button>
+      <button class="btn btn-primary" data-cz="kaydet" type="button" disabled>
+        <span>Aktar</span></button>
+    </div>`, kutu => {
+    const alan  = $('#cz-metin', kutu);
+    const on    = $('#cz-onizleme', kutu);
+    const dugme = $('[data-cz="kaydet"]', kutu);
+    let cozum = null;
+
+    const tazele = () => {
+      cozum = cozumlemeOku(alan.value);
+      if (!alan.value.trim()) { on.innerHTML = ''; dugme.disabled = true; return; }
+      if (!cozum) {
+        on.innerHTML = `<div class="pa-denetim hata">${svg(ICON.uyari, 13)}
+          <span>Blok okunamadı. Claude\'un verdiği <b>{ … }</b> parçasını
+          olduğu gibi yapıştır.</span></div>`;
+        dugme.disabled = true; return;
+      }
+      on.innerHTML = `<div class="pa-denetim">${svg(ICON.tik, 13)}
+        <span><b>${cozum.sayfalar.length} sayfa</b> okundu${
+          cozum.sorular.length ? ` · <b>${cozum.sorular.length} soru</b> çıktı` : ''}.</span></div>
+        <div class="satirlar">${cozum.sayfalar.map(sf => `
+          <div class="sr"><b>${esc(sf.ad)}</b>
+            <span class="ipucu">${esc([sf.tur, (sf.alanlar || []).length + ' alan',
+              (sf.kalip || []).map(x => (KALIP.find(k => k.anahtar === x) || {}).ad)
+                .filter(Boolean).join(', ')].filter(Boolean).join(' · '))}</span></div>`).join('')}
+        </div>`;
+      dugme.disabled = false;
+    };
+
+    alan.addEventListener('input', tazele);
+    $('[data-cz="iptal"]', kutu).addEventListener('click', modalKapat);
+    $('[data-cz="kaydet"]', kutu).addEventListener('click', () => {
+      if (!cozum) return;
+      cozumlemeUygula(t, cozum, p);
+      modalKapat();
+      toast(cozum.sayfalar.length + ' sayfa aktarıldı.');
+      render();
+    });
+  });
+}
+
+/* JSON bloğunu metnin içinden çekip okur — Claude çoğu zaman önüne
+   arkasına açıklama yazıyor, kod çiti koyuyor. */
+function cozumlemeOku(metin) {
+  const ham = String(metin || '');
+  const cit = ham.match(/```(?:json)?\s*([\s\S]*?)```/);
+  const govde = cit ? cit[1] : ham;
+  const bas = govde.indexOf('{'), son = govde.lastIndexOf('}');
+  if (bas < 0 || son <= bas) return null;
+  let o;
+  try { o = JSON.parse(govde.slice(bas, son + 1)); } catch (h) { return null; }
+  if (!o || !Array.isArray(o.sayfalar) || !o.sayfalar.length) return null;
+  return {
+    sayfalar: o.sayfalar.filter(x => x && x.ad),
+    sorular: Array.isArray(o.sorular) ? o.sorular.filter(x => typeof x === 'string') : [],
+  };
+}
+
+/* Okunan çözümlemeyi taslağa yazar. Kullanıcının elle girdiği bir şey
+   varsa üstüne yazmıyoruz: soru sormadan veri kaybettirmek olur. */
+function cozumlemeUygula(t, cozum, p) {
+  const roller = rolListesi((p.palet || {}).roller);
+  t.sorular = cozum.sorular;
+  t.cevap = {};
+  cozum.sayfalar.forEach(sf => {
+    if (!t.sayfalar.includes(sf.ad)) t.sayfalar.push(sf.ad);
+    const k = yapiKunye(t, sf.ad);
+    if (!k.amac) k.amac = sf.amac || '';
+    if (!k.tur)  k.tur  = (SAYFA_TURU.find(x => x.ad === sf.tur) || {}).ad || '';
+    if (!k.alanlar.length && Array.isArray(sf.alanlar)) {
+      k.alanlar = sf.alanlar.filter(a => a && a.ad).map(a => ({
+        ad: a.ad,
+        tur: (ALAN_TURU.find(x => x.ad === a.tur) || ALAN_TURU[0]).ad,
+        zorunlu: !!a.zorunlu,
+        degerler: Array.isArray(a.degerler) ? a.degerler.filter(Boolean) : [],
+        kaynak: a.kaynak || '',
+      }));
+    }
+    if (!k.eylemler.length && Array.isArray(sf.eylemler)) {
+      k.eylemler = sf.eylemler.filter(x => SAYFA_EYLEM.includes(x));
+    }
+    if (!(k.kalip || []).length && Array.isArray(sf.kalip)) {
+      k.kalip = sf.kalip.filter(x => KALIP.some(kl => kl.anahtar === x));
+    }
+    if (!k.kural) k.kural = sf.kural || '';
+    if (!k.roller.length && roller.length) k.roller = roller.slice();
+    k.eylemler.forEach(ey => { if (!k.yetki[ey]) k.yetki[ey] = k.roller.slice(); });
+  });
+}
+
 /* Claude'un döndürdüğü bloğu okur ve projeye yazar. */
 function paletAktar(projeId) {
   modalHepsiniKapat();
@@ -6389,6 +6632,78 @@ async function eylemCalistir(el) {
     return;
   }
 
+  if (e === 'yapi-ky-kalip') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const k = yapiKunye(yapiTaslak(pr), el.dataset.sayfa);
+    k.kalip = k.kalip || [];
+    const i = k.kalip.indexOf(el.dataset.ad);
+    if (i > -1) {
+      k.kalip.splice(i, 1);
+      Object.keys(k.kalipCevap || {}).forEach(x => {
+        if (x.startsWith(el.dataset.ad + '.')) delete k.kalipCevap[x];
+      });
+    } else k.kalip.push(el.dataset.ad);
+    render();
+    return;
+  }
+
+  if (e === 'yapi-ky-kcevap') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const k = yapiKunye(yapiTaslak(pr), el.dataset.sayfa);
+    k.kalipCevap = k.kalipCevap || {};
+    const su = k.kalipCevap[el.dataset.ad];
+    k.kalipCevap[el.dataset.ad] = su === el.dataset.deger2 ? '' : el.dataset.deger2;
+    $$('button', el.parentElement).forEach(b => b.classList.toggle('on',
+      b.dataset.deger2 === k.kalipCevap[el.dataset.ad]));
+    yapiIleriTazele(pr);
+    return;
+  }
+
+  if (e === 'yapi-ky-kset-ekle') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const deger = await metinSor({ baslik: 'Ekle', buton: 'Ekle',
+      yerTutucu: 'Örn. 320 Tedarikçiler' });
+    if (!deger) return;
+    const k = yapiKunye(yapiTaslak(pr), el.dataset.sayfa);
+    k.kalipCevap = k.kalipCevap || {};
+    const liste = k.kalipCevap[el.dataset.ad] || [];
+    if (!liste.includes(deger)) liste.push(deger);
+    k.kalipCevap[el.dataset.ad] = liste;
+    render();
+    return;
+  }
+
+  if (e === 'yapi-ky-kset-sil') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const k = yapiKunye(yapiTaslak(pr), el.dataset.sayfa);
+    k.kalipCevap[el.dataset.ad] = (k.kalipCevap[el.dataset.ad] || [])
+      .filter(x => x !== el.dataset.deger2);
+    render();
+    return;
+  }
+
+  /* ---- Anlat: çözümleme döngüsü ---- */
+  if (e === 'anlat-prompt') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const t = yapiTaslak(pr);
+    return metinPenceresi({
+      baslik: 'Çözümleme promptu',
+      aciklama: 'Kopyala, Claude\'a yapıştır; dönen bloğu buraya geri getir.',
+      metin: PROMPT.cozumleme(pr, t),
+    });
+  }
+
+  if (e === 'anlat-aktar') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    return anlatAktarAc(pr.id);
+  }
+
   if (e === 'yapi-ky-alan-ekle') {
     const pr = DB.proje(el.dataset.proje);
     if (!pr) return;
@@ -6482,7 +6797,18 @@ async function eylemCalistir(el) {
       const eski = (pr.palet || {}).kunye || {};
       const yeni = Object.assign({}, eski);
       t.sayfalar.forEach(sf => { yeni[t.modul + ' · ' + sf] = t.kunye[sf]; });
-      await DB.paletKaydet(pr.id, Object.assign({}, pr.palet || {}, { kunye: yeni }));
+      /* Anlatım ve açık soruların cevapları da saklanır: prompt bunları
+         AI'a aynen veriyor, ikinci kez anlatmaya gerek kalmıyor. */
+      const anlatim = Object.assign({}, (pr.palet || {}).anlatim || {});
+      if ((t.anlat || '').trim() || (t.sorular || []).length) {
+        anlatim[t.modul] = {
+          metin: (t.anlat || '').trim(),
+          sorular: (t.sorular || []).map((sr, i) => ({ soru: sr, cevap: t.cevap[i] || '' }))
+            .filter(x => x.cevap),
+        };
+      }
+      await DB.paletKaydet(pr.id, Object.assign({}, pr.palet || {},
+        { kunye: yeni, anlatim }));
       delete YAPI_TASLAK[pr.id];
       ONIZLEME_MENU = ONIZLEME_SAYFA = ONIZLEME_ALAN = null;
       toast(t.modul + ' hazır · ' + t.sayfalar.length + ' sayfa');

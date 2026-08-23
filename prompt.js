@@ -133,6 +133,16 @@ const PROMPT = {
     s.push('  işi yapabilir, altındakiler yapamaz. Görme ile yapma ayrıdır.');
     s.push('- **Kural** satırı iş kuralıdır; arayüzde de veritabanında da uygula.');
 
+    /* Kullanıcının kendi anlatımı ve verdiği cevaplar: en değerli bağlam. */
+    const anlatim = ((proje && proje.palet) || {}).anlatim || {};
+    Object.keys(anlatim).forEach(m => {
+      const a = anlatim[m];
+      if (!a || (!a.metin && !(a.sorular || []).length)) return;
+      s.push('', `### ${m} — kullanıcının anlatımı`);
+      if (a.metin) s.push('> ' + a.metin.split('\n').join('\n> '));
+      (a.sorular || []).forEach(x => s.push(`- ${x.soru} → **${x.cevap}**`));
+    });
+
     anahtarlar.forEach(ad => {
       const k = kunye[ad] || {};
       s.push('', `### ${ad}`);
@@ -161,8 +171,95 @@ const PROMPT = {
           s.push(`  - ${ey} — ${r.length ? r.join(' · ') : 'belirtilmedi'}`);
         });
       }
+      if ((k.kalip || []).length) {
+        s.push('- **Kalıplar:**');
+        k.kalip.forEach(a => {
+          const kl = KALIP.find(x => x.anahtar === a);
+          if (!kl) return;
+          s.push(`  - **${kl.ad}** — ${kl.ozet} (${kl.ornek})`);
+          kl.sorular.forEach(sr => {
+            const c = (k.kalipCevap || {})[a + '.' + sr.anahtar];
+            if (!c) return;
+            s.push(`    - ${sr.soru} → ${Array.isArray(c) ? c.join(' · ') : c}`);
+          });
+        });
+      }
       if (k.kural) s.push(`- **Kural:** ${k.kural}`);
     });
+    return s.join('\n');
+  },
+
+  /* ---------- Çözümleme promptu ----------
+     Kullanıcı modülü kendi cümleleriyle anlatıyor; bu prompt onu yapıya
+     çeviriyor. Studio tarayıcıda Claude'a bağlanmıyor: metin kopyalanıp
+     yapıştırılıyor — paletteki döngünün aynısı. */
+  cozumleme(proje, taslak) {
+    const roller = rolListesi((proje.palet || {}).roller);
+    const s = [];
+    s.push('Bir iş yazılımının bir modülünü kuruyorum. Aşağıda modülün ne');
+    s.push('olacağını kendi cümlelerimle anlattım. Bunu yapıya çevir.');
+    s.push('');
+    s.push('## Firma');
+    s.push(`${proje.firma}${proje.sektor ? ' · ' + proje.sektor : ''}`);
+    s.push(`Modül: ${taslak.modul || '—'}`);
+    if (roller.length) s.push(`Roller (alttan üste): ${roller.join(' · ')}`);
+    s.push('');
+    s.push('## Anlattığım');
+    s.push(String(taslak.anlat || '').trim());
+    s.push('');
+    s.push('## Ne istiyorum');
+    s.push('Bana **yalnız bir JSON bloğu** ver. Öncesine sonrasına açıklama yazma.');
+    s.push('');
+    s.push('```json');
+    s.push('{');
+    s.push('  "sayfalar": [');
+    s.push('    {');
+    s.push('      "ad": "Hesaplar",');
+    s.push('      "amac": "Tek cümleyle bu ekran ne işe yarar",');
+    s.push('      "tur": "Liste",');
+    s.push('      "kalip": ["agac"],');
+    s.push('      "alanlar": [');
+    s.push('        { "ad": "Kod", "tur": "Metin", "zorunlu": true },');
+    s.push('        { "ad": "Durum", "tur": "Seçenek", "degerler": ["Açık", "Kapalı"] },');
+    s.push('        { "ad": "Hesap", "tur": "İlişki", "kaynak": "Hesaplar" }');
+    s.push('      ],');
+    s.push('      "eylemler": ["Ekle", "Düzenle"],');
+    s.push('      "kural": "Varsa iş kuralı, yoksa boş"');
+    s.push('    }');
+    s.push('  ],');
+    s.push('  "sorular": [');
+    s.push('    "Anlatımda karar verilmemiş, sorulması gereken şeyler"');
+    s.push('  ]');
+    s.push('}');
+    s.push('```');
+    s.push('');
+    s.push('### Kurallar');
+    s.push('- `tur` yalnız şunlardan biri: ' + SAYFA_TURU.map(x => x.ad).join(' · '));
+    s.push('- Alan `tur` yalnız şunlardan biri: ' + ALAN_TURU.map(x => x.ad).join(' · '));
+    s.push('- `eylemler` yalnız şunlardan: ' + SAYFA_EYLEM.join(' · '));
+    s.push('- `Seçenek` alanına mutlaka `degerler` yaz; anlatımda yoksa uydurma,');
+    s.push('  onu `sorular` listesine soru olarak koy.');
+    s.push('- `İlişki` alanına mutlaka `kaynak` yaz (hangi sayfanın kaydı).');
+    s.push('- Alan adları kullanıcının dilinde olsun (Türkçe, insan adı gibi).');
+    s.push('');
+    s.push('### Kalıplar');
+    s.push('Bir sayfa aşağıdakilere uyuyorsa `kalip` dizisine anahtarını yaz.');
+    s.push('Uymuyorsa boş bırak. Kalıba uyan yapıyı alan alan çözmeye çalışma —');
+    s.push('kalıbı yazman yeterli, gerisini Studio soruyor.');
+    KALIP.forEach(k => {
+      s.push('');
+      s.push(`- **${k.anahtar}** · ${k.ad} — ${k.ozet} (${k.ornek})`);
+    });
+    s.push('');
+    s.push('### Sorular');
+    s.push('En önemli kısım bu. Anlatımda **karar verilmemiş** her şeyi soru');
+    s.push('olarak yaz. Kendi kararını verip geçme. Örnek:');
+    s.push('- "Bir kaydın etkilediği hesaplar elle mi seçilir, işlem tipinden mi dolar?"');
+    s.push('- "Bakiye borç−alacak farkı mı, hesap türüne göre mi değişir?"');
+    s.push('- "Yanlış kayıt silinir mi, ters kayıtla mı iptal edilir?"');
+    s.push('En fazla 8 soru; en çok işi bozacak olanları seç. Soruları');
+    s.push('yazılım terimiyle değil, işi bilen ama yazılım bilmeyen birinin');
+    s.push('anlayacağı dille yaz.');
     return s.join('\n');
   },
 

@@ -3888,3 +3888,17 @@ a:hover { color: var(--red-ink); }
 /* Künye alt adımlarında gövde kayar, düğmeler sabit durur. */
 .akis.yapi.y-kunye .akis-alt { flex: 1 1 auto; min-height: 0; display: flex;
                                flex-direction: column; }
+
+/* Anlat adımı: serbest metin kutusu akışın içinde. */
+.ky-alan textarea {
+  width: 100%; box-sizing: border-box; resize: none;
+  font-family: inherit; font-size: 13px; line-height: 1.6;
+  padding: 11px 12px; border-radius: 13px;
+  border: 1px solid var(--line); background: var(--yuva); color: var(--ink);
+}
+.ky-alan textarea:focus { outline: none; border-color: var(--metal-1); }
+.ky-not svg { vertical-align: -2px; margin-right: 4px; }
+
+.ak-ust.kalip { margin-bottom: 4px; }
+.ak-ozet { margin: 0 0 10px; font-size: 11.5px; color: var(--ink-faint); line-height: 1.5; }
+.ak-ozet i { font-style: normal; color: var(--ink-dim); }

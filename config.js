@@ -7,9 +7,9 @@ const APP = {
   name:     'NIZAM | Studio',
   short:    'NIZAM Studio',
   owner:    'Nizam Soft',
-  version: 'v0.39.0',
+  version: 'v0.40.0',
   build:    '2026-08-20',
-  stage: 'Adım 4 · Sohbetli künye',
+  stage: 'Adım 4 · Anlat ve kalıplar',
 };
 
 /* Supabase bağlantısı.
@@ -915,16 +915,83 @@ const ALAN_TURU = [
   { ad: 'İlişki',     alt: 'Başka bir kayda bağlanır — müşteri, ürün' },
 ];
 
+/* ---- Kalıplar ----
+   Sık tekrar eden yapılar hazır dursun: kullanıcı veri modelini anlatmasın,
+   "bu benim durumum" desin. Her kalıbın kendi kısa soruları var; onlar da
+   çipten seçiliyor. */
+const KALIP = [
+  {
+    anahtar: 'agac', ad: 'Ağaç liste',
+    ozet: 'Klasörün içinde klasör var.',
+    ornek: '100 Kasa → 100.01 Merkez Kasa',
+    tel: ['ust', 'katlanir'],
+    sorular: [
+      { anahtar: 'kod', soru: 'Alt kaydın kodu nasıl olsun?',
+        secim: ['Üstünden türesin (100 → 100.01)', 'Elle yazılsın'] },
+      { anahtar: 'derinlik', soru: 'Kaç kat inebilsin?',
+        secim: ['2 kat', '3 kat', 'Sınırsız'] },
+      { anahtar: 'acilis', soru: 'Açılışta ne görünsün?',
+        secim: ['Yalnız ana kayıtlar', 'Hepsi açık'] },
+    ],
+  },
+  {
+    anahtar: 'bacak', ad: 'Çok bacaklı kayıt',
+    ozet: 'Bir işlem birden fazla yeri etkiler.',
+    ornek: 'Kasadan harcama → kasa, tedarikçi, gider',
+    tel: ['ust', 'akis'],
+    sorular: [
+      { anahtar: 'nasil', soru: 'Etkilenen yerler nasıl belirlensin?',
+        secim: ['İşlem tipi seçilince kendiliğinden dolsun', 'Her seferinde elle seçilsin'] },
+      { anahtar: 'denge', soru: 'Toplamı denk olmak zorunda mı?',
+        secim: ['Evet, denk olmalı', 'Hayır'] },
+      { anahtar: 'duzeltme', soru: 'Yanlış kayıt nasıl düzeltilsin?',
+        secim: ['Ters kayıtla iptal', 'Düzeltilebilsin', 'Silinebilsin'] },
+    ],
+  },
+  {
+    anahtar: 'sutun', ad: 'Bağlama göre sütun',
+    ozet: 'Aynı kayıt, baktığın yere göre farklı sütunlarla.',
+    ornek: "320'de fatura no, 108'de valör tarihi",
+    tel: ['sekme', 'liste'],
+    sorular: [
+      { anahtar: 'setler', tur: 'liste', soru: 'Hangi yerlerde farklı sütun olacak?',
+        alt: 'Her biri için ayrı sütun seti tanımlanır.' },
+    ],
+  },
+  {
+    anahtar: 'bakiye', ad: 'Yürüyen bakiye',
+    ozet: 'Her satırda kalan ne kadar.',
+    ornek: 'Banka ekstresindeki son sütun',
+    tel: ['ust', 'listeDuzen'],
+    sorular: [
+      { anahtar: 'yon', soru: 'Bakiye nasıl hesaplansın?',
+        secim: ['Borç − alacak', 'Alacak − borç', 'Hesap türüne göre değişsin'] },
+      { anahtar: 'baslangic', soru: 'Nereden başlasın?',
+        secim: ['Sıfırdan', 'Devir tutarından'] },
+    ],
+  },
+];
+
 const SAYFA_EYLEM = ['Ekle', 'Düzenle', 'Sil', 'Onayla', 'Ara', 'Filtrele',
                      'Dışa aktar', 'Yazdır'];
 
 /* Künye eksikse akış ilerlemez: yarım künye AI'a tahmin ettiriyor. */
+/* Seçilen kalıbın kendi soruları da cevaplanmalı. */
+function kalipTam(k) {
+  return (k.kalip || []).every(a => {
+    const kl = KALIP.find(x => x.anahtar === a);
+    return !kl || kl.sorular.every(sr => sr.tur === 'liste'
+      ? ((k.kalipCevap || {})[a + '.' + sr.anahtar] || []).length
+      : (k.kalipCevap || {})[a + '.' + sr.anahtar]);
+  });
+}
+
 function kunyeTam(k) {
   if (!k) return false;
   const secenekTam = (k.alanlar || []).every(a =>
     a.tur !== 'Seçenek' || (a.degerler || []).filter(Boolean).length);
   return !!((k.amac || '').trim() && k.tur && (k.alanlar || []).length && secenekTam
-    && (k.eylemler || []).length && (k.roller || []).length);
+    && kalipTam(k) && (k.eylemler || []).length && (k.roller || []).length);
 }
 
 /* Etiket karşılıkları */
