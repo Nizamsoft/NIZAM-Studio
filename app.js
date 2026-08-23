@@ -2564,7 +2564,12 @@ function agacEkrani(p, t) {
   ONIZLEME_CIHAZ = 'web';
   if (seviye === 2) {
     const tp = SAYFA_TURU.find(x => x.ad === k.tur);
-    ONIZLEME_EKRAN = tp ? tp.ekran : 'liste';
+    /* Kalıplar kaydın yapısını anlatıyor; etkisi listede görünür. Tür
+       "Detay" bile olsa kalıp adımında listeyi gösteriyoruz, yoksa seçtiğin
+       kalıbın ne yaptığı görünmüyor. */
+    const yapisal = ['agac', 'bakiye', 'bacak', 'satir', 'sutun', 'stok', 'takvim']
+      .some(x => (k.kalip || []).includes(x));
+    ONIZLEME_EKRAN = (t.dal === 'kalip' && yapisal) ? 'liste' : (tp ? tp.ekran : 'liste');
     ONIZLEME_ADIM  = 'kunye';
     if (k.tur || (k.alanlar || []).length) ONIZLEME_KUNYE = Object.assign({ sayfa }, k);
   }
@@ -3102,7 +3107,9 @@ function yapiOnizlemeTazele(pr) {
   if (!t.odak || !t.dal) return;
   const k  = yapiKunye(t, t.odak);
   const tp = SAYFA_TURU.find(x => x.ad === k.tur);
-  ONIZLEME_EKRAN = tp ? tp.ekran : 'liste';
+  const yapisal = ['agac', 'bakiye', 'bacak', 'satir', 'sutun', 'stok', 'takvim']
+    .some(x => (k.kalip || []).includes(x));
+  ONIZLEME_EKRAN = (t.dal === 'kalip' && yapisal) ? 'liste' : (tp ? tp.ekran : 'liste');
   ONIZLEME_KUNYE = (k.tur || (k.alanlar || []).length)
     ? Object.assign({ sayfa: t.odak }, k) : null;
   const goz = $('.dz-onizleme .onz-goz');
@@ -6974,7 +6981,8 @@ async function eylemCalistir(el) {
   if (e === 'yapi-ky-kalip') {
     const pr = DB.proje(el.dataset.proje);
     if (!pr) return;
-    const k = yapiKunye(yapiTaslak(pr), el.dataset.sayfa);
+    const t = yapiTaslak(pr);
+    const k = yapiKunye(t, el.dataset.sayfa);
     k.kalip = k.kalip || [];
     const i = k.kalip.indexOf(el.dataset.ad);
     if (i > -1) {
@@ -6983,6 +6991,8 @@ async function eylemCalistir(el) {
         if (x.startsWith(el.dataset.ad + '.')) delete k.kalipCevap[x];
       });
     } else k.kalip.push(el.dataset.ad);
+    /* Kaydırma yeri korunsun diye tam çizim yapıyoruz ama önizleme de
+       kalıba göre değişmeli. */
     render();
     return;
   }

@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## v0.46.2
+- Ağaç artık yerinden oynamıyor: sütunlar ekran boyunda sabit, içerik uzayınca sütun kendi içinde kayıyor. Kalıp ekleyip çıkardıkça bütün ağacın zıplaması bitti.
+- Kalıp adımında tür "Detay" ya da "Form" olsa bile yapıyı gösteren liste çiziliyor — kalıbın ne yaptığı ancak orada görünüyor.
+
 ## v0.46.1
 - Kalıp adımında alanlar girilmemişken de önizleme çiziliyor: kalıba basınca ne değiştiğini görmen gerekiyordu. Altında "sütunlar örnek — alanları girince kendi adların gelir" notu var.
 
