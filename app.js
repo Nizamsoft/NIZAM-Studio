@@ -2557,6 +2557,9 @@ function yolCipleri(basamak) {
 }
 
 function agacEkrani(p, t) {
+  /* Sayfalar geldiyse ad boş olsa bile modül ağacını göster: yoksa
+     aktarılan yapı ortadan kaybolmuş gibi duruyor. */
+  if (!t.modul && t.sayfalar.length) t.modul = 'Yeni Modül';
   return t.modul ? agacModul(p, t) : agacGiris(p, t);
 }
 
@@ -5729,12 +5732,19 @@ function anlatAktarAc(projeId) {
 
     alan.addEventListener('input', tazele);
     $('[data-cz="iptal"]', kutu).addEventListener('click', modalKapat);
-    $('[data-cz="kaydet"]', kutu).addEventListener('click', () => {
+    $('[data-cz="kaydet"]', kutu).addEventListener('click', async () => {
       if (!cozum) return;
       cozumlemeUygula(t, cozum, p);
+      modalKapat();
+      /* Blokta modül adı yoksa (eski biçim) sorulur; adsız modül ağaçta
+         görünmüyordu. */
+      if (!t.modul) {
+        t.modul = await metinSor({ baslik: 'Modülün adı',
+          aciklama: 'Blokta yazmıyordu, sen yaz.', yerTutucu: 'Örn. Muhasebe Modülü',
+          buton: 'Tamam', deger: '' }) || 'Yeni Modül';
+      }
       /* Aktarımdan sonra ağaca dön: sonucu görmesi gereken yer orası. */
       t.mod = 'agac'; t.odak = null; t.dal = null;
-      modalKapat();
       toast(cozum.sayfalar.length + ' sayfa aktarıldı.');
       render();
     });
@@ -6757,7 +6767,19 @@ async function eylemCalistir(el) {
     return;
   }
 
-  if (e === 'agac-modul-ad') return;
+  if (e === 'agac-modul-ad') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const t = yapiTaslak(pr);
+    const kurulu = DB.modulleri(pr.id).some(m => m.ad === t.modul);
+    if (kurulu) return toast('Kurulmuş modülün adı buradan değişmiyor.', 'hata');
+    const ad = await metinSor({ baslik: 'Modülün adı', deger: t.modul,
+                                buton: 'Kaydet' });
+    if (!ad) return;
+    t.modul = ad;
+    render();
+    return;
+  }
 
   if (e === 'agac-koke') {
     const pr = DB.proje(el.dataset.proje);

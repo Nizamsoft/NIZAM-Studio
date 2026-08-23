@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## v0.48.1
+- Blokta modül adı yoksa aktarım sonrası ağaç boş görünüyordu — sayfalar geliyordu ama adsız modül çizilmiyordu. Artık ad soruluyor; yine de boş kalırsa "Yeni Modül" olarak açılıyor.
+- Modül adına dokununca (henüz kurulmamışsa) değiştirilebiliyor.
+
 ## v0.48.0
 - **Ağaç dikey oldu.** Yapıyı kurmaya basınca tepede firma logosu, altında oklarla modüller. "Yeni modül" de bir modül kartı gibi duruyor.
 - **Elle modül kurma kalktı.** Yeni modül anlatarak kuruluyor: metin kutusu, "Prompt oluştur" ve "Cevabı yapıştır". Anlat ekranında önizleme yok. Modülün adını da Claude'un bloğu getiriyor.
