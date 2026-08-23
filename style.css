@@ -3997,6 +3997,12 @@ a:hover { color: var(--red-ink); }
                 color: var(--ink-strong); }
 .ag-dug.geri svg { transform: rotate(180deg); }
 
+/* Dokunulmamış ama zorunlu olmayan dal: ne yeşil ne sarı. */
+.nd.bos .nokta { background: var(--line-parlak); }
+.ag-dug.guclu { background: var(--surface-2); border-color: var(--metal-2);
+                color: var(--ink-strong); }
+.ag-dug.geri svg { transform: rotate(180deg); }
+
 /* ---- Ağaç rayı: derinleştikçe sola kayar ---- */
 /* Sütunlar birbirine göre ortalanır: ana düğüm çocuklarının tam hizasında
    durur, ağaç böyle okunuyor. */
@@ -4153,3 +4159,124 @@ a:hover { color: var(--red-ink); }
 .cip-sec .cs-alt { font-style: normal; font-size: 9.5px; color: var(--ink-faint);
                    margin-left: 5px; }
 .cip-sec.on .cs-alt { color: var(--ink-soft); }
+
+/* ==========================================================================
+   YAPI AĞACI — dikey
+   Tepede firma, altında oklarla modüller. Modül seçilince modül tepeye
+   çıkar, sayfaları altına dizilir, sayfaya dokununca künyesi dallanır.
+   ========================================================================== */
+
+.dk { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+.dk-yol { display: flex; align-items: center; gap: 6px; padding: 0 0 10px; flex: 0 0 auto;
+          overflow-x: auto; scrollbar-width: none; }
+.dk-yol::-webkit-scrollbar { display: none; }
+.dk-yol s { text-decoration: none; color: var(--ink-dim); opacity: .5; flex: 0 0 auto; }
+.dk-yol .yi { flex: 0 0 auto; padding: 5px 11px; border-radius: 999px; cursor: pointer;
+              border: 1px solid transparent; background: var(--surface-2);
+              color: var(--ink-soft); font-family: inherit; font-size: 11px;
+              letter-spacing: .04em; text-transform: uppercase; max-width: 150px;
+              overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dk-yol .yi.son { background: transparent; color: var(--ink-strong); font-weight: 600;
+                  border-color: var(--line-2); }
+.dk-yol .yi:disabled { cursor: default; }
+.dk-govde { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
+            padding-bottom: 8px; }
+.dk-alt { flex: 0 0 auto; display: flex; gap: 9px; padding: 10px 0 0; }
+
+/* Firma kökü */
+.kokk { display: flex; flex-direction: column; align-items: center; }
+.kokk .halka { width: 62px; height: 62px; border-radius: 50%; display: grid;
+               place-items: center; overflow: hidden; background: #17150f;
+               border: 1.5px solid var(--p1);
+               box-shadow: 0 0 0 6px color-mix(in srgb, var(--p1) 10%, transparent); }
+.kokk .halka b { font-size: 19px; color: var(--p1); font-family: var(--yazi-baslik); }
+.kokk .halka .mk-logo { width: 100%; height: 100%; border-radius: 50%; }
+.kokk .fad { margin-top: 9px; font-size: 12.5px; color: var(--ink-soft); }
+
+/* Aşağı ok */
+.inik { width: 1px; height: 22px; background: var(--line-parlak); margin: 8px auto 0;
+        position: relative; }
+.inik::after { content: ""; position: absolute; left: 50%; bottom: -1px;
+               transform: translateX(-50%); border: 4px solid transparent;
+               border-top-color: var(--line-parlak); border-bottom: 0; }
+
+/* Dikey gövde ve oklar */
+.gvd { position: relative; margin: 6px 0 0 22px; padding-left: 20px;
+       border-left: 1px solid var(--line-parlak); }
+.gvd > .knt::before, .gvd > .knt::after { content: ""; position: absolute; top: 26px; }
+.gvd > .knt::before { left: -20px; width: 14px; height: 1px; background: var(--line-parlak); }
+.gvd > .knt::after { left: -7px; margin-top: -3.5px; border: 3.5px solid transparent;
+                     border-left-color: var(--line-parlak); border-right: 0; }
+
+.knt { display: block; width: 100%; box-sizing: border-box; text-align: left;
+       font-family: inherit; border: 1px solid var(--line); background: var(--yuva);
+       border-radius: 15px; padding: 12px 14px; margin-bottom: 9px; cursor: pointer;
+       position: relative; animation: ndGir .3s var(--ease) both; }
+@keyframes ndGir { from { opacity: 0; transform: translateY(-6px); } }
+.knt:active { transform: scale(.99); }
+.knt b { display: block; font-size: 14.5px; color: var(--ink-strong); }
+.knt i { display: block; font-style: normal; font-size: 11px; color: var(--ink-faint);
+         margin-top: 3px; }
+.knt .rz { position: absolute; right: 13px; top: 15px; width: 8px; height: 8px;
+           border-radius: 50%; }
+.knt.tamam { border-color: color-mix(in srgb, var(--st-done-t) 45%, transparent); }
+.knt.tamam .rz { background: var(--st-done-t); }
+.knt.eksik { border-color: color-mix(in srgb, var(--st-dev-t) 45%, transparent); }
+.knt.eksik .rz { background: var(--st-dev-t); animation: ndNabiz 1.8s ease-in-out infinite; }
+@keyframes ndNabiz { 50% { opacity: .35; } }
+.knt.modul { background: linear-gradient(150deg,
+               color-mix(in srgb, var(--p1) 15%, var(--yuva)), var(--yuva));
+             border-color: color-mix(in srgb, var(--p1) 45%, transparent); }
+.knt.modul.tepe { margin-bottom: 0; }
+.knt.acik { border-color: var(--p1);
+            box-shadow: 0 0 0 1px var(--p1), 0 8px 20px -12px var(--p1); margin-bottom: 4px; }
+.knt.hayalet { border-style: dashed; background: transparent; text-align: center; }
+.knt.hayalet b { color: var(--ink-faint); font-weight: 500; }
+.knt.hayalet i { color: var(--ink-dim); }
+.knt.hayalet svg { vertical-align: -2px; margin-right: 4px; }
+
+/* Sayfanın künye dalları */
+.dal2 { margin: 2px 0 12px 18px; padding-left: 18px;
+        border-left: 1px dashed var(--line-2); display: flex; flex-direction: column; gap: 6px; }
+.dal2 .d { position: relative; display: flex; align-items: center; gap: 9px;
+           padding: 9px 11px; border-radius: 12px; border: 1px solid var(--line-2);
+           background: var(--surface-2); font-family: inherit; text-align: left;
+           cursor: pointer; animation: ndGir .26s var(--ease) both; }
+.dal2 .d::before { content: ""; position: absolute; left: -18px; top: 50%; width: 12px;
+                   height: 1px; background: var(--line-2); }
+.dal2 .d::after { content: ""; position: absolute; left: -7px; top: 50%; margin-top: -3px;
+                  border: 3px solid transparent; border-left-color: var(--line-2);
+                  border-right: 0; }
+.dal2 .rk { width: 3px; align-self: stretch; border-radius: 2px; flex: 0 0 3px; }
+.dal2 .yz { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.dal2 .yz b { font-size: 12.5px; color: var(--ink-strong); }
+.dal2 .yz i { font-style: normal; font-size: 10px; color: var(--ink-faint);
+              white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dal2 .nk { width: 7px; height: 7px; border-radius: 50%; flex: 0 0 7px; }
+.dal2 .d.tamam .nk { background: var(--st-done-t); }
+.dal2 .d.eksik .nk { background: var(--st-dev-t); animation: ndNabiz 1.8s ease-in-out infinite; }
+.dal2 .d.bos .nk { background: var(--line-parlak); }
+.dal2 .d.sil { border-style: dashed; background: transparent; justify-content: center; }
+.dal2 .d.sil b { color: var(--ink-faint); font-weight: 500; }
+.dal2 .d.sil svg { vertical-align: -1px; margin-right: 4px; }
+
+/* Anlat ekranı */
+.anl-kutu { width: 100%; box-sizing: border-box; min-height: 200px; resize: none;
+            font-family: inherit; font-size: 13.5px; line-height: 1.6; padding: 13px 14px;
+            border-radius: 15px; border: 1px solid var(--line); background: var(--yuva);
+            color: var(--ink); }
+.anl-kutu:focus { outline: none; border-color: var(--metal-1); }
+.anl-dug { display: flex; gap: 9px; margin-top: 11px; }
+.anl-dug button { flex: 1; height: 48px; border-radius: 15px; cursor: pointer;
+                  font-family: inherit; font-size: 13px; font-weight: 600; display: flex;
+                  align-items: center; justify-content: center; gap: 7px;
+                  border: 1px solid var(--line); background: var(--yuva);
+                  color: var(--ink-soft); }
+.anl-dug button.ana { background: var(--surface-2); border-color: var(--metal-2);
+                      color: var(--ink-strong); }
+.anl-dug button:disabled { opacity: .45; cursor: default; }
+.anl-not { margin-top: 14px; font-size: 11.5px; color: var(--ink-faint); line-height: 1.6; }
+
+/* Düzenleme ekranı */
+.dk-govde > .dz-bas { padding-bottom: 10px; }
+.dk-govde > .dz-onz { margin-bottom: 12px; }

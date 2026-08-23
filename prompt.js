@@ -272,6 +272,7 @@ const PROMPT = {
     s.push('');
     s.push('```json');
     s.push('{');
+    s.push('  "modul": "Muhasebe Modülü",');
     s.push('  "sayfalar": [');
     s.push('    {');
     s.push('      "ad": "Hesaplar",');
@@ -309,6 +310,8 @@ const PROMPT = {
     s.push('```');
     s.push('');
     s.push('### Blok kuralları');
+    s.push('- `modul`: modülün adı. Ben söylediysem onu yaz, söylemediysem kısa');
+    s.push('  ve Türkçe bir ad öner ("Muhasebe Modülü", "Sipariş Takibi").');
     s.push('- `tur` yalnız: ' + SAYFA_TURU.map(x => x.ad).join(' · '));
     s.push('- Alan `tur` yalnız: ' + ALAN_TURU.map(x => x.ad).join(' · '));
     s.push('- `eylemler` şunlar olabilir: ' + SAYFA_EYLEM.join(' · '));

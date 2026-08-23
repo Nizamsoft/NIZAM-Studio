@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.48.0
+- **Ağaç dikey oldu.** Yapıyı kurmaya basınca tepede firma logosu, altında oklarla modüller. "Yeni modül" de bir modül kartı gibi duruyor.
+- **Elle modül kurma kalktı.** Yeni modül anlatarak kuruluyor: metin kutusu, "Prompt oluştur" ve "Cevabı yapıştır". Anlat ekranında önizleme yok. Modülün adını da Claude'un bloğu getiriyor.
+- Blok yapıştırılınca ağaç kuruluyor: **modül tepede, sayfalar altında oklarla**. Bir sayfaya dokununca künyesi hemen altında dallanıyor — Amaç · Tür · Kalıp · Alanlar · Eylemler · Roller · Yetki · Kural. İkinci dokunuş kapatıyor.
+- Bir dala dokununca düzenleme kendi ekranında açılıyor; üstte canlı önizleme, altta "Sıradaki" ile bir sonraki dala geçiş.
+
 ## v0.47.2
 - Tür seçilince önizleme yer tutucudan uygulamaya geçmiyordu: yalnız içerik tazeleniyor, alanın kendisi kalıyordu. Artık seçim yapılınca önizleme anında canlanıyor.
 
