@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## v0.63.0
+- **Link önizlemesi düzenlendi.** Adres birine gönderildiğinde artık 1200×630 bir kapak kartı çıkıyor: logo, "NIZAM | Studio" ve tek cümlelik tanım. Eskiden kare uygulama simgesi küçük bir kutu olarak görünüyordu.
+- Bütün Open Graph ve Twitter etiketleri tam adresle yazıldı — kazıyıcılar göreli adresi çözemiyordu. `og:url`, `og:locale`, görsel ölçüleri, `twitter:card = summary_large_image` ve `canonical` eklendi.
+- Sekme başlığı ve arama açıklaması genişletildi.
+
 ## v0.62.0
 - **Proje yolu yeniden sıralandı: 6 durak → 8.** Yapı kurulduktan sonra sıra artık **Beta → Geliştirme → Final → Güncellemeler**. Eskiden Yapı'dan doğrudan Geliştirme'ye geçiliyor, sonunda da hiç sıraya girmeyen boş bir "Sürüm" durağı duruyordu.
 - **Beta durağı** son bloğu (modüller, sayfalar ve künyeleri) panoya alıyor — kod bu blokla başlıyor. Claude beş aşamayı bitirip main'e gönderince "Beta çıktı, denedim" diye işaretliyorsun. Studio deponun içini göremediği için bu işareti sen koyuyorsun.
