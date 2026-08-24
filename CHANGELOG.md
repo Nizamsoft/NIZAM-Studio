@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.54.0
+- **Roller artık Yapı'da belirleniyor.** Ağaçta firmanın hemen altında "Roller" satırı var: kaç yetki katmanı olduğunu ve adlarını orada yazıyorsun. Modül kurallarındaki "kimler görür" sorusu bu listeden besleniyor — doğru yerde soruluyor.
+- **Sihirbaz 6 adımdan 5'e indi.** Roller çıktı, tarihler "Yetkili kişi" adımına inip "Yetkili ve takvim" oldu.
+- **Rol merdiveni yeniden çizildi:** satırlar artık kart, en geniş katman metal rozetle işaretli, katman sayısı kırmızı seçiliyor. Eskiden etiketler girdiyi ittiği için her satır farklı genişlikteydi.
+- Tarih alanları koyu temaya uyduruldu ve yan yana geldi.
+
 ## v0.53.0
 - **Prompt kopyalama tek dokunuş oldu.** Eskiden önce pencere açılıyor, sonra kopyalanıyordu. Şimdi düğmeye basınca prompt panoya gidiyor, düğme yeşil tikle "Prompt kopyalandı"ya dönüyor ve kırmızı **Cevabı yapıştır** düğmesine geçip parlıyor — sıradaki adım kendini gösteriyor. Promptu okumak isteyen için altta "Promptu gör" duruyor.
 - Palet adımında "Logo yok"un altındaki açıklama kaldırıldı.

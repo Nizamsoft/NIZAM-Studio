@@ -3423,20 +3423,39 @@ ekran planı.
                 font-size: 10.5px; color: var(--ink-dim); }
 
 
-/* Rol merdiveni — en altta en dar yetki, en üstte en geniş. */
+/* Rol merdiveni — en altta en dar yetki, en üstte en geniş.
+   Satırlar kart oldu: eskiden etiketler girdiyi ittiği için her satır
+   farklı genişlikteydi, merdiven merdiven gibi durmuyordu. */
 .rol-kat { display: block; }
-.rol-sayi { margin-bottom: 10px; }
-.rol-liste { display: flex; flex-direction: column; gap: 6px; }
-.rol-satir { display: flex; align-items: center; gap: 9px; }
+.rol-sayi { margin-bottom: 12px; }
+.rol-sayi .ss.sec { background: var(--red-soft); border-color: var(--red-cizgi);
+                    color: var(--red-ink); font-weight: 600; }
+.rol-liste { display: flex; flex-direction: column; gap: 7px; }
+.rol-satir {
+  display: flex; align-items: center; gap: 10px; padding: 7px 10px 7px 7px;
+  border: 1px solid var(--line); background: var(--surface-2);
+  border-radius: var(--radius-sm);
+}
+.rol-satir.ust { border-color: var(--metal-1); }
 .rol-no {
-  flex: 0 0 auto; width: 22px; height: 22px; border-radius: 7px;
+  flex: 0 0 auto; width: 24px; height: 24px; border-radius: 8px;
   display: grid; place-items: center; font-size: 11px; font-weight: 700;
   font-family: var(--yazi-baslik); background: var(--surface-3); color: var(--ink-soft);
 }
-.rol-satir input { flex: 1; min-width: 0; }
-.rol-satir em { flex: 0 0 auto; font-style: normal; font-size: 10px; color: var(--ink-dim); }
-.rol-not { display: block; margin-top: 9px; font-style: normal;
+.rol-satir.ust .rol-no { background: var(--metal-1); color: var(--ink-strong); }
+.rol-satir input { flex: 1; min-width: 0; height: 34px; padding: 0;
+                   background: transparent; border: 0;
+                   font-size: 13.5px; font-weight: 600; }
+.rol-satir input:focus { background: transparent; }
+.rol-satir em { flex: 0 0 auto; font-style: normal; font-size: 9.5px;
+                letter-spacing: .04em; text-transform: uppercase; color: var(--ink-dim); }
+.rol-not { display: block; margin-top: 10px; font-style: normal;
            font-size: 10.5px; color: var(--ink-dim); }
+
+/* Tarih alanları: native kontrol koyu arayüze uysun, ikisi yan yana dursun. */
+.field input[type="date"] { color-scheme: dark; }
+.tarih-ikili { display: flex; gap: 9px; }
+.tarih-ikili .field { flex: 1; margin-bottom: 14px; }
 
 .rol-goster { display: flex; flex-direction: column; gap: 5px; }
 .rg { display: flex; align-items: center; gap: 10px; padding: 10px 13px;

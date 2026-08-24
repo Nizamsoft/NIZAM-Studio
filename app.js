@@ -747,13 +747,13 @@ function rolMerdiveni(roller, onek) {
           const sira = n - 1 - i;                      /* üstten alta çiz */
           const ad = liste[sira] || (ROL_ORNEK[n] || [])[sira] || '';
           return `
-            <label class="rol-satir">
+            <label class="rol-satir ${sira === n - 1 ? 'ust' : ''}">
               <span class="rol-no">${sira + 1}</span>
               <input type="text" data-rol="${sira}" value="${esc(ad)}"
                      placeholder="${esc((ROL_ORNEK[n] || [])[sira] || 'Rol adı')}"
                      maxlength="40" autocomplete="off">
-              ${sira === n - 1 ? '<em>en geniş yetki</em>'
-                : sira === 0 ? '<em>en dar yetki</em>' : ''}
+              ${sira === n - 1 ? '<em>en geniş</em>'
+                : sira === 0 ? '<em>en dar</em>' : ''}
             </label>`;
         }).join('')}
       </div>
@@ -2485,6 +2485,10 @@ function yapiSayfasi(p, d) {
    Taslak bellekte durur; veritabanına ancak "Kur" ile yazılır. */
 const YAPI_TASLAK = {};
 
+/* Rol merdiveni taslağı: her tuşta veritabanına yazmıyoruz,
+   ekrandan çıkarken bir kez kaydediliyor. */
+const ROL_TASLAK = {};
+
 function yapiTaslak(p) {
   if (!YAPI_TASLAK[p.id]) {
     YAPI_TASLAK[p.id] = { yer: 0, modul: '', anlat: '', kararlar: [],
@@ -2570,6 +2574,7 @@ function modulKunyeTam(mk) {
 function yapiAkisi(p, d) {
   const t = yapiTaslak(p);
   if (t.mod === 'anlat') return anlatEkrani(p, t);
+  if (t.mod === 'roller') return rolEkrani(p, t);
   if (t.mod === 'mkural' && t.modul) return modulKuralEkrani(p, t);
   if (t.dal && t.odak && t.sayfalar.includes(t.odak)) return duzenEkrani(p, t);
   t.mod = 'agac';
@@ -2733,6 +2738,12 @@ function agacEkrani(p, t) {
     </div>
     <div class="inik"></div>
     <div class="gvd">
+      <button class="knt roller ${roller.length ? 'tamam' : 'eksik'}" type="button"
+              data-eylem="agac-roller" data-proje="${p.id}">
+        <span class="rz"></span><b>Roller</b>
+        <i>${roller.length
+          ? roller.length + ' katman · ' + esc(roller.join(' › '))
+          : 'kaç yetki katmanı var, daha yazılmadı'}</i></button>
       ${modeller.map(ad => {
         const m  = kurulu.find(x => x.ad === ad);
         const sf = m ? DB.sayfalari(m.id) : [];
@@ -2773,6 +2784,7 @@ function agacEkrani(p, t) {
 /* Ağaçta bir kat yukarı: dal → sayfa → modül → firma. */
 function yapiGeri(t) {
   if (t.mod === 'anlat') { t.mod = 'agac'; if (!t.sayfalar.length) t.modul = ''; return true; }
+  if (t.mod === 'roller') { t.mod = 'agac'; rollariKaydet(DB.proje(rota().id)); return true; }
   if (t.mod === 'mkural') { t.mod = 'agac'; t.dal = null; return true; }
   if (t.dal)   { t.dal = null; return true; }
   if (t.odak)  { t.odak = null; return true; }
@@ -2823,6 +2835,7 @@ function onizlemeAlani(p, k, dal, gost) {
 
 /* Düzenleme: dalın kendi ekranı — üstte önizleme, altta düzenleyici. */
 function duzenEkrani(p, t) {
+  if (t.mod === 'roller') return rolEkrani(p, t);
   if (t.mod === 'mkural') return modulKuralEkrani(p, t);
   const sayfa  = t.odak;
   const k      = yapiKunye(t, sayfa);
@@ -3047,6 +3060,40 @@ function kalipKarti(p, sf, k, a, veri) {
   </div>`;
 }
 
+/* Merdiven ekrandan çıkarken bir kez yazılır; değişmediyse dokunulmaz. */
+async function rollariKaydet(p) {
+  if (!p) return;
+  const yeni = ROL_TASLAK[p.id];
+  delete ROL_TASLAK[p.id];
+  if (!yeni || !yeni.length) return;
+  const eski = rolListesi((p.palet || {}).roller);
+  if (eski.join('\u0001') === yeni.join('\u0001')) return;
+  try {
+    await DB.paletKaydet(p.id, Object.assign({}, p.palet || {}, { roller: yeni }));
+  } catch (h) { toast(h.message, 'hata'); }
+}
+
+/* Roller — proje geneli, bir kez. Modül kurallarının "kimler görür"
+   sorusu bu merdivenden besleniyor, o yüzden ağacın en tepesinde duruyor. */
+function rolEkrani(p, t) {
+  const roller = ROL_TASLAK[p.id] || rolListesi((p.palet || {}).roller);
+
+  const govde = `
+    <div class="bslk"><b>Roller</b><em>bütün modüllerde geçerli</em></div>
+    ${balon('Bu programı kaç katman insan kullanacak?',
+            'En altta en dar yetki, en üstte en geniş.')}
+    ${rolMerdiveni(roller, 'yp')}
+    <p class="anl-not">Sayfaları kimin göreceğini ve kimin ne yapabileceğini
+      modül kurallarında bu listeden seçeceksin.</p>`;
+
+  return agacKabuk(p, yolCipleri([
+    { ad: p.firma, eylem: 'agac-koke', proje: p.id },
+    { ad: 'Roller' },
+  ]), `<div class="kunye-kaydir">${govde}</div>`, `
+    <button class="ag-dug guclu tek geri" type="button" data-eylem="agac-koke"
+            data-proje="${p.id}">${svg(ICON.tik, 14)} Bitti, ağaca dön</button>`);
+}
+
 /* Modül kuralları ekranı — üç soru, bir kez. */
 function modulKuralEkrani(p, t) {
   const mk = t.mk || (t.mk = { roller: [], eylemler: [], yetki: {}, kural: '' });
@@ -3189,6 +3236,24 @@ function sutunAdi(ad) {
 /* Künyedeki yazı alanları: her tuşta yeniden çizersek imleç kaçar.
    Değer taslağa yazılır, ekran olduğu gibi kalır. */
 function yapiBaglari() {
+  /* Rol merdiveni: katman sayısı düğmeleri kendi içinde yeniden çiziyor,
+     yazılan adlar her tuşta palete yazılıyor. */
+  const rolKat = $('.rol-kat[data-rol-onek="yp"]');
+  if (rolKat && !rolKat.dataset.bagli) {
+    rolKat.dataset.bagli = '1';
+    const sar = rolKat.parentElement;
+    const yaz = () => {
+      const pr = DB.proje(rota().id);
+      if (!pr) return;
+      ROL_TASLAK[pr.id] = rolOku(sar);
+    };
+    rolBagla(sar);
+    sar.addEventListener('input', yaz);
+    sar.addEventListener('click', ev => {
+      if (ev.target.closest('[data-rol-sayi]')) setTimeout(yaz, 0);
+    });
+  }
+
   const mkKural = $('[data-mk="kural"]');
   if (mkKural && !mkKural.dataset.bagli) {
     mkKural.dataset.bagli = '1';
@@ -4306,7 +4371,7 @@ const SIHIRBAZ = {
   kaydediyor: false,
 };
 
-const SIHIRBAZ_ADIM = 6;
+const SIHIRBAZ_ADIM = 5;
 
 function sihirbaziAc() {
   modalHepsiniKapat();
@@ -4357,7 +4422,7 @@ function sihirbazHtml() {
 
   const govde = [
     sihirbazFirma, sihirbazYetkili, sihirbazUrun,
-    sihirbazAyar, sihirbazModul, sihirbazOzet,
+    sihirbazModul, sihirbazOzet,
   ][a - 1]();
 
   return `
@@ -4445,7 +4510,8 @@ function sihirbazFirma() {
 
 /* 2 · Yetkili kişi */
 function sihirbazYetkili() {
-  return shBaslik(ICON.kisi, 'Yetkili kişi', 'İş sırasında soru çıkarsa kime soracağını bilelim.') + `
+  return shBaslik(ICON.kisi, 'Yetkili ve takvim',
+    'Soru çıkarsa kime soracağız, iş ne zaman teslim edilecek.') + `
     <label class="field">
       <span>Ad soyad</span>
       <input type="text" id="sb-yetkili" value="${esc(SIHIRBAZ.yetkili)}"
@@ -4463,10 +4529,21 @@ function sihirbazYetkili() {
              autocapitalize="off" spellcheck="false" maxlength="80">
     </label>
 
+    <div class="tarih-ikili">
+      <label class="field">
+        <span>Başlangıç</span>
+        <input type="date" id="sb-baslangic" value="${esc(SIHIRBAZ.baslangic)}">
+      </label>
+      <label class="field">
+        <span>Teslim <em class="ipucu">isteğe bağlı</em></span>
+        <input type="date" id="sb-teslim" value="${esc(SIHIRBAZ.teslim)}">
+      </label>
+    </div>
+
     <div class="note note-kucuk">
       ${svg(ICON.info, 15)}
-      <span>Bu bilgiler yalnızca senin görebileceğin yerde durur.
-      Prompta girmez, müşteri deposuna yazılmaz.</span>
+      <span>Kişi bilgileri yalnızca senin görebileceğin yerde durur — prompta
+      girmez. Teslim tarihi girersen Panel'de <b>geciken projeler</b> ayrılır.</span>
     </div>`;
 }
 
@@ -4495,32 +4572,7 @@ function sihirbazUrun() {
     </div>`;
 }
 
-/* 4 · Dil, para, takvim */
-function sihirbazAyar() {
-  return shBaslik(ICON.ayar, 'Roller ve takvim',
-    'Dil Türkçe, para ₺ TRY — standart. Burada roller ve tarihler var.') + `
-    <div class="field">
-      <span>Roller <em class="ipucu">en alttan en üste</em></span>
-      ${rolMerdiveni(SIHIRBAZ.roller, 'sb')}
-    </div>
-    <label class="field">
-      <span>Başlangıç</span>
-      <input type="date" id="sb-baslangic" value="${esc(SIHIRBAZ.baslangic)}">
-    </label>
-    <label class="field">
-      <span>Teslim hedefi <em class="ipucu">isteğe bağlı</em></span>
-      <input type="date" id="sb-teslim" value="${esc(SIHIRBAZ.teslim)}">
-    </label>
-
-    <div class="note note-kucuk">
-      ${svg(ICON.info, 15)}
-      <span>Teslim tarihi girersen Panel'de <b>geciken projeler</b> ayrı gösterilir.
-      Boş bırakırsan yalnızca yüzde görünür. Kim neyi görebilir kararı
-      veritabanı güvenlik kurallarını belirler.</span>
-    </div>`;
-}
-
-/* 5 · Modüller */
+/* 4 · Modüller */
 function sihirbazModul() {
   const sablonlar = DB.modulSablonlari();
   const sektor = DB.sektorler.find(x => x.ad === SIHIRBAZ.sektor);
@@ -4555,7 +4607,7 @@ function sihirbazModul() {
     </div>`;
 }
 
-/* 6 · Özet */
+/* 5 · Özet */
 function sihirbazOzet() {
   const sablonlar = DB.modulSablonlari();
   const sayfa = SIHIRBAZ.moduller.reduce((t, ad) => {
@@ -6971,10 +7023,19 @@ async function eylemCalistir(el) {
     return;
   }
 
+  if (e === 'agac-roller') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    yapiTaslak(pr).mod = 'roller';
+    render();
+    return;
+  }
+
   if (e === 'agac-koke') {
     const pr = DB.proje(el.dataset.proje);
     if (!pr) return;
     const t = yapiTaslak(pr);
+    if (t.mod === 'roller') { t.mod = 'agac'; await rollariKaydet(pr); render(); return; }
     /* Firma çipi: modülden çıkıp modül listesine döner. */
     if (t.mod === 'anlat') { t.mod = 'agac'; if (!t.sayfalar.length) t.modul = ''; }
     else if (t.dal) { t.dal = null; }
@@ -6988,6 +7049,7 @@ async function eylemCalistir(el) {
     if (!pr) return;
     const t = yapiTaslak(pr);
     t.dal = null;
+    if (t.mod === 'roller') t.mod = 'agac';
     if (t.mod === 'mkural') t.mod = 'agac';
     render();
     $('#view').scrollTop = 0;
