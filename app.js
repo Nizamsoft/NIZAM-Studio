@@ -643,10 +643,11 @@ function logolariGoster() {
 /* Proje içindeki beş durak. Adres, ad ve içeriği tek yerde tanımlı. */
 const DURAKLAR = {
   firma:      { no: 1, ad: 'Firma bilgileri',    ciz: firmaSayfasi },
-  tasarim:    { no: 2, ad: 'Tasarımı belirleme', ciz: tasarimSayfasi },
-  yapi:       { no: 3, ad: 'Yapıyı kurma',       ciz: yapiSayfasi },
-  gelistirme: { no: 4, ad: 'Geliştirme',         ciz: gelistirmeSayfasi },
-  surum:      { no: 5, ad: 'Sürüm',              ciz: surumSayfasi },
+  kurulum:    { no: 2, ad: 'Depo ve sohbet',     ciz: kurulumSayfasi },
+  tasarim:    { no: 3, ad: 'Tasarımı belirleme', ciz: tasarimSayfasi },
+  yapi:       { no: 4, ad: 'Yapıyı kurma',       ciz: yapiSayfasi },
+  gelistirme: { no: 5, ad: 'Geliştirme',         ciz: gelistirmeSayfasi },
+  surum:      { no: 6, ad: 'Sürüm',              ciz: surumSayfasi },
 };
 
 function durakSayfasi(projeId, anahtar) {
@@ -3464,7 +3465,71 @@ function gelistirmeSayfasi(p, d) {
             <span>Henüz görev yok. Yapı durağındaki sayfalara görev açtığında burada listelenir.</span></div>`);
 }
 
-/* 5 · Sürüm */
+/* Yeni sekmede aç. Tek kullanım yeri Destek satırıydı, artık ortak. */
+function disariAc(url) {
+  window.open(url, '_blank', 'noopener');
+}
+
+/* Firma adından depo adı: "Güllüoğlu Kübban" → "gulluoglu-kubban" */
+function depoAdi(firma) {
+  const tr = { 'ç':'c','ğ':'g','ı':'i','İ':'i','ö':'o','ş':'s','ü':'u' };
+  return String(firma || '').toLocaleLowerCase('tr')
+    .replace(/[çğıİöşü]/g, x => tr[x] || x)
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 60) || 'yeni-proje';
+}
+
+/* 2 · Depo ve sohbet — koda başlamadan önce açılan iki kapı.
+   Studio tarayıcıda çalışıyor; GitHub jetonu tutmuyoruz. Bunun yerine
+   hazır doldurulmuş sayfayı açıp adresi geri istiyoruz. */
+function kurulumSayfasi(p, d) {
+  const pl = p.palet || {};
+  const sohbet = !!pl.sohbetAcildi;
+  const tik = svg(ICON.tik, 12);
+
+  const kart = (no, bitti, ad, aciklama, govde) => `
+    <div class="kur-kart ${bitti ? 'bitti' : ''}">
+      <div class="kur-bas">
+        <span class="kur-no">${bitti ? tik : no}</span>
+        <b>${esc(ad)}</b>
+        <span class="kur-rozet">${bitti ? 'tamam' : 'sırada'}</span>
+      </div>
+      <p>${aciklama}</p>
+      ${govde}
+    </div>`;
+
+  return sayfaHero(p, d)
+    + kart(1, !!p.repo, 'GitHub deposu',
+        'Kod buraya gidecek. Adı firmadan türetilir, depo gizli açılır.', `
+      <div class="kur-dug">
+        <button class="sayfa-dug ${p.repo ? 'ikincil' : ''}" type="button"
+                data-eylem="repo-ac" data-proje="${p.id}">
+          ${svg(ICON.katman, 15)} GitHub'da aç</button>
+      </div>
+      <div class="kur-deger" data-eylem="repo" data-proje="${p.id}"
+           role="button" tabindex="0">
+        ${svg(ICON.katman, 13)} Adres
+        ${p.repo ? `<b class="mono">${esc(p.repo)}</b>`
+                 : '<b class="eksik">dokun, yapıştır</b>'}</div>`)
+
+    + kart(2, sohbet, 'Claude sohbeti',
+        'Projenin kimlik dosyası panoya alınır, Claude açılır. İlk mesaj olarak '
+        + 'yapıştır — bundan sonraki bütün işler o sohbette yürür.', `
+      <div class="kur-dug">
+        <button class="sayfa-dug ${sohbet ? 'ikincil' : ''}" type="button"
+                data-eylem="sohbet-ac" data-proje="${p.id}">
+          ${svg(ICON.kopya, 15)} Kopyala ve Claude'u aç</button>
+      </div>
+      <label class="kur-onay ${sohbet ? 'on' : ''}" data-eylem="sohbet-onay"
+             data-proje="${p.id}" role="button" tabindex="0">
+        <span class="kur-kutu">${tik}</span> Sohbeti açtım</label>`)
+
+    + `<div class="note note-kucuk">${svg(ICON.info, 15)}
+        <span>İkisi de bitince <b>Tasarımı belirleme</b> durağı sıraya girer.</span></div>`;
+}
+
+/* 6 · Sürüm */
 function surumSayfasi(p, d) {
   return sayfaHero(p, d)
     + bolumBas('Depo') + `
@@ -3518,6 +3583,15 @@ function projeDuraklari(p) {
       bitti: true,
       ozet: [p.sektor, PLATFORM_ADI[p.platform] || '—', VERI_ADI[p.veri] || '—']
         .filter(Boolean).join(' · '),
+    },
+    {
+      ad: 'Depo ve sohbet',
+      bitti: !!p.repo && !!(p.palet && p.palet.sohbetAcildi),
+      ozet: p.repo
+        ? ((p.palet && p.palet.sohbetAcildi)
+            ? p.repo
+            : 'Depo hazır. Sıra Claude sohbetini açmakta.')
+        : 'Kod nereye gidecek, iş hangi sohbette yürüyecek — ikisi de burada.',
     },
     {
       ad: 'Tasarımı belirleme',
@@ -4892,7 +4966,7 @@ async function sihirbazKaydet() {
     sihirbazKapat();
     sayaclariYaz();
     toast(SIHIRBAZ.firma.trim() + ' kuruldu.');
-    location.hash = '#/projeler/' + id;
+    location.hash = '#/projeler/' + id + '/kurulum';
     render();
   } catch (e) {
     toast(e.message, 'hata');
@@ -6565,7 +6639,7 @@ function hesapMenusu() {
     const yer = DESTEK.tip === 'wa'
       ? 'https://wa.me/' + String(DESTEK.deger).replace(/\D/g, '')
       : 'mailto:' + DESTEK.deger;
-    window.open(yer, '_blank');
+    disariAc(yer);
   });
   $('[data-hs="cikis"]', el).addEventListener('click', () => { hesapMenusuKapat(); signOut(); });
 
@@ -6993,6 +7067,37 @@ async function eylemCalistir(el) {
       metin: PROMPT.kimlik(projeId),
       dosya: 'NIZAM.md',
     });
+  }
+
+  if (e === 'repo-ac') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const ad = depoAdi(pr.firma);
+    disariAc('https://github.com/new?name=' + encodeURIComponent(ad)
+      + '&description=' + encodeURIComponent(pr.firma + ' · NIZAM Studio')
+      + '&visibility=private');
+    toast('Depoyu açtıktan sonra adresini buraya yapıştır.');
+    return;
+  }
+
+  if (e === 'sohbet-ac') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const oldu = await panoyaKopyala(PROMPT.kimlik(pr.id));
+    disariAc('https://claude.ai/new');
+    toast(oldu ? 'NIZAM.md panoya alındı — sohbete yapıştır.'
+               : 'Claude açıldı ama kopyalanamadı; kimlik dosyasını elle al.',
+          oldu ? 'basari' : 'uyari');
+    return;
+  }
+
+  if (e === 'sohbet-onay') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const pl = pr.palet || {};
+    return isYap(() => DB.paletKaydet(pr.id,
+      Object.assign({}, pl, { sohbetAcildi: !pl.sohbetAcildi })),
+      pl.sohbetAcildi ? 'İşaret kaldırıldı.' : 'Sohbet açıldı olarak işaretlendi.');
   }
 
   if (e === 'repo') {

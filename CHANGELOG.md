@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## v0.56.0
+- **Yeni durak: Depo ve sohbet.** Proje kurulunca doğrudan buraya düşüyorsun. İki kapı var: GitHub'da gizli depo (adı firmadan türetiliyor, sayfa doldurulmuş açılıyor, adresi yapıştırıyorsun) ve Claude sohbeti (NIZAM.md panoya alınıp claude.ai açılıyor). İkisi bitmeden Tasarım durağı sıraya girmiyor.
+- Duraklar 5'ten 6'ya çıktı; Tasarım 3, Yapı 4, Geliştirme 5, Sürüm 6 oldu.
+
 ## v0.55.0
 - **Tasarım artık ada ada.** Adıma girmeden önce harita açılıyor: 11 ada, her biri bir öbek. Biten yeşil tikli, sıradaki kırmızı ve nabız atıyor, sağda `3/9` karar sayacı ve tepede genel yüzde var. 52 adımı baştan sona takip etmek yerine adayı bitirip haritaya dönüyorsun.
 - Adanın son adımında İleri **"Adayı bitir"** oluyor ve haritaya dönüyor; ilk adımında Geri **"Harita"** oluyor. Üstteki öbek rozeti de haritaya dönüş düğmesi.
