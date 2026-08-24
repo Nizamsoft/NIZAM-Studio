@@ -640,14 +640,17 @@ function logolariGoster() {
   });
 }
 
-/* Proje içindeki beş durak. Adres, ad ve içeriği tek yerde tanımlı. */
+/* Proje içindeki sekiz durak. Adres, ad ve içeriği tek yerde tanımlı.
+   Sıra önemli: projeDuraklari() dizisi bununla indeks indeks eşleşiyor. */
 const DURAKLAR = {
   firma:      { no: 1, ad: 'Firma bilgileri',    ciz: firmaSayfasi },
   kurulum:    { no: 2, ad: 'Depo ve sohbet',     ciz: kurulumSayfasi },
   tasarim:    { no: 3, ad: 'Tasarımı belirleme', ciz: tasarimSayfasi },
   yapi:       { no: 4, ad: 'Yapıyı kurma',       ciz: yapiSayfasi },
-  gelistirme: { no: 5, ad: 'Geliştirme',         ciz: gelistirmeSayfasi },
-  surum:      { no: 6, ad: 'Sürüm',              ciz: surumSayfasi },
+  beta:       { no: 5, ad: 'Beta',               ciz: betaSayfasi },
+  gelistirme: { no: 6, ad: 'Geliştirme',         ciz: gelistirmeSayfasi },
+  final:      { no: 7, ad: 'Final',              ciz: finalSayfasi },
+  guncelleme: { no: 8, ad: 'Güncellemeler',      ciz: guncellemeSayfasi },
 };
 
 function durakSayfasi(projeId, anahtar) {
@@ -3657,8 +3660,80 @@ function kurulumSayfasi(p, d) {
         <span>İkisi de bitince <b>Tasarımı belirleme</b> durağı sıraya girer.</span></div>`;
 }
 
-/* 6 · Sürüm */
-function surumSayfasi(p, d) {
+/* Beta, Final ve Güncellemeler kartları — kurulum durağıyla aynı dil. */
+function durakKarti(no, bitti, ad, aciklama, govde) {
+  return `
+    <div class="kur-kart ${bitti ? 'bitti' : ''}">
+      <div class="kur-bas">
+        <span class="kur-no">${bitti ? svg(ICON.tik, 12) : no}</span>
+        <b>${esc(ad)}</b>
+        <span class="kur-rozet">${bitti ? 'tamam' : 'sırada'}</span>
+      </div>
+      <p>${aciklama}</p>
+      ${govde}
+    </div>`;
+}
+
+/* 5 · Beta — ilk çalışan sürüm. Son blok gider, Claude kurar, sen denersin. */
+function betaSayfasi(p, d) {
+  const pl = p.palet || {};
+  const cikti = !!pl.betaCikti;
+  const slug = depoSlug(p.repo);
+
+  return sayfaHero(p, d)
+    + durakKarti(1, cikti, '3. blok: modüller ve sayfalar',
+        'Sayfa künyeleri, modül kuralları ve beş aşamalı kurulum talimatı '
+        + 'panoya alınır. Claude Code oturumuna yapıştır — kod bu blokla başlar.'
+        + (slug ? '' : ' <b class="eksik">Önce depo adresini kaydet.</b>'), `
+      <div class="kur-dug">
+        <button class="sayfa-dug kopyala-dug" data-eylem="yapi-blok"
+                data-proje="${p.id}" type="button">
+          <span class="kd-ikon">${svg(ICON.kopya, 15)}${svg(ICON.tik, 15)}</span>
+          <span class="kd-yazi">3. bloğu kopyala</span></button>
+      </div>`)
+
+    + durakKarti(2, cikti, 'Beta çıktı',
+        'Claude beş aşamayı bitirip <b class="mono">main</b> dalına gönderdiğinde '
+        + 'uygulamayı dene. Gördüğün eksikleri not al — sonraki durakta görev olarak '
+        + 'açacaksın.', `
+      <label class="kur-onay ${cikti ? 'on' : ''}" data-eylem="beta-onay"
+             data-proje="${p.id}" role="button" tabindex="0">
+        <span class="kur-kutu">${svg(ICON.tik, 12)}</span> Beta çıktı, denedim</label>`)
+
+    + `<div class="note note-kucuk">${svg(ICON.info, 15)}
+        <span>Studio deponun içini göremiyor; beta çıktığını sen işaretliyorsun.</span></div>`;
+}
+
+/* 7 · Final — görevler bitti, teslim. */
+function finalSayfasi(p, d) {
+  const pl = p.palet || {};
+  const verildi = !!pl.finalVerildi;
+  const s = DB.sayim(p.id);
+  const hazir = s.gorev > 0 && s.bitmis === s.gorev;
+
+  return sayfaHero(p, d) + `
+    <div class="takvim" style="${renkDegiskenleri(p.renk)}">
+      <div class="tk-ust"><b>${s.bitmis}/${s.gorev} görev bitti</b><em>%${s.yuzde}</em></div>
+      <div class="ray"><i style="width:${s.yuzde}%"></i><b style="left:${s.yuzde}%"></b></div>
+    </div>`
+    + durakKarti(1, verildi, 'Final sürüm',
+        hazir || verildi
+          ? 'Bütün görevler bitti. Son bir kez dene, sonra müşteriye teslim et.'
+          : '<b class="eksik">Önce açık görevleri bitir.</b> Final, geliştirme '
+            + 'durağındaki bütün görevler tamamlandığında verilir.', `
+      <label class="kur-onay ${verildi ? 'on' : ''} ${hazir || verildi ? '' : 'pasif'}"
+             ${hazir || verildi ? `data-eylem="final-onay" data-proje="${p.id}"
+             role="button" tabindex="0"` : ''}>
+        <span class="kur-kutu">${svg(ICON.tik, 12)}</span> Final sürüm verildi</label>`)
+
+    + `<div class="note note-kucuk">${svg(ICON.info, 15)}
+        <span>Finalden sonra gelen istekler <b>Güncellemeler</b> durağında yürür.</span></div>`;
+}
+
+/* 8 · Güncellemeler — proje yaşadıkça açık kalan durak. */
+function guncellemeSayfasi(p, d) {
+  const gorevler = DB.gorevleri({ proje: p.id }).filter(g => g.durum !== 'tamamlandi');
+
   return sayfaHero(p, d)
     + bolumBas('Depo') + `
       <div class="satirlar">
@@ -3666,6 +3741,12 @@ function surumSayfasi(p, d) {
           ${svg(ICON.katman, 15)} Adres
           ${p.repo ? `<b class="mono">${esc(p.repo)}</b>` : '<b class="eksik">eklenmedi</b>'}</div>
       </div>`
+    + bolumBas('Açık istekler')
+    + (gorevler.length
+        ? `<div class="card liste">${gorevler.slice(0, 12).map(gorevKarti).join('')}</div>`
+        : `<div class="bos-kutu">${svg(ICON.check, 18)}
+            <span>Açık istek yok. Yeni bir şey istendiğinde görev olarak aç;
+            burada listelenir.</span></div>`)
     + bolumBas('Sürüm notları') + `
       <div class="bos-kutu">
         ${svg(ICON.info, 18)}
@@ -3738,25 +3819,40 @@ function projeDuraklari(p) {
         : 'Henüz modül yok. Modül kurduğunda sayfaları da birlikte gelir.',
     },
     {
+      ad: 'Beta',
+      bitti: !!(p.palet && p.palet.betaCikti),
+      ozet: (p.palet && p.palet.betaCikti)
+        ? 'Beta çıktı, denendi.'
+        : 'Son bloğu Claude\'a ver, ilk çalışan sürümü kursun; sen dene.',
+    },
+    {
       ad: 'Geliştirme',
       bitti: s.gorev > 0 && s.bitmis === s.gorev,
       ozet: s.gorev
         ? `${s.bitmis}/${s.gorev} görev bitti`
-        : 'Sayfalara görev açtığında burada ilerleme görünecek.',
+        : 'Betayı denerken gördüğün eksikleri görev olarak aç.',
     },
     {
-      ad: 'Sürüm',
+      ad: 'Final',
+      bitti: !!(p.palet && p.palet.finalVerildi),
+      ozet: (p.palet && p.palet.finalVerildi)
+        ? 'Final sürüm verildi.'
+        : 'Bütün görevler bitince final sürümü teslim et.',
+    },
+    {
+      /* Bilerek hiç bitmiyor: proje yaşadıkça yeni istek gelir. */
+      ad: 'Güncellemeler',
       bitti: false,
-      kilitli: true,
-      ozet: 'GitHub bağlanınca commit\'ler buraya düşecek.',
+      ozet: 'Finalden sonra gelen istekler burada yürür.',
     },
   ];
 }
 
 function projeYolu(p) {
   const duraklar = projeDuraklari(p);
-  /* Şimdiki durak: bitmemiş ilk durak. Kilitli olan sıraya girmez. */
-  const simdi = duraklar.findIndex(d => !d.bitti && !d.kilitli);
+  /* Şimdiki durak: bitmemiş ilk durak. Son durak hiç bitmediği için
+     proje tamamlandığında imleç orada kalır — doğrusu da bu. */
+  const simdi = duraklar.findIndex(d => !d.bitti);
   const anahtarlar = Object.keys(DURAKLAR);
 
   return `<div class="yol">${duraklar.map((d, i) => {
@@ -7211,6 +7307,27 @@ async function eylemCalistir(el) {
     if (ad === null) return;
     return isYap(() => DB.paletKaydet(pr.id,
       Object.assign({}, pr.palet || {}, { modulAdi: ad })), 'Modül adı kaydedildi.');
+  }
+
+  if (e === 'yapi-blok')  return promptKopyala(el, pr => PROMPT.yapi(pr.id),
+                                                '3. bloğu kopyala');
+
+  if (e === 'beta-onay') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const pl = pr.palet || {};
+    return isYap(() => DB.paletKaydet(pr.id,
+      Object.assign({}, pl, { betaCikti: !pl.betaCikti })),
+      pl.betaCikti ? 'İşaret kaldırıldı.' : 'Beta çıktı olarak işaretlendi.');
+  }
+
+  if (e === 'final-onay') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const pl = pr.palet || {};
+    return isYap(() => DB.paletKaydet(pr.id,
+      Object.assign({}, pl, { finalVerildi: !pl.finalVerildi })),
+      pl.finalVerildi ? 'İşaret kaldırıldı.' : 'Final sürüm verildi.');
   }
 
   if (e === 'sohbet-onay') {

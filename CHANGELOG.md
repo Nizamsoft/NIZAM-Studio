@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü
 
+## v0.62.0
+- **Proje yolu yeniden sıralandı: 6 durak → 8.** Yapı kurulduktan sonra sıra artık **Beta → Geliştirme → Final → Güncellemeler**. Eskiden Yapı'dan doğrudan Geliştirme'ye geçiliyor, sonunda da hiç sıraya girmeyen boş bir "Sürüm" durağı duruyordu.
+- **Beta durağı** son bloğu (modüller, sayfalar ve künyeleri) panoya alıyor — kod bu blokla başlıyor. Claude beş aşamayı bitirip main'e gönderince "Beta çıktı, denedim" diye işaretliyorsun. Studio deponun içini göremediği için bu işareti sen koyuyorsun.
+- **Final durağı** bütün görevler bitmeden işaretlenemiyor; sebebi ekranda yazıyor.
+- **Güncellemeler durağı** bilerek hiç "tamam" olmuyor — final verildikten sonra proje orada yaşamaya devam ediyor. Depo adresi ve açık istekler orada.
+- **3. blok promptu eklendi** (`Modüller ve sayfalar 3/3`): sayfa künyeleri, modül kuralları ve beş aşamalı kurulum talimatı. Önceki iki bloğun aksine bu blok kod yazmayı istiyor.
+- Görev durumları yine dört: Yapılacak · Geliştiriliyor · Kontrolde · Tamamlandı. Beta ve Final durak işareti, görev durumu değil.
+
 ## v0.61.0
 - **Üst çubuk çelişkileri artık yakalanıyor.** "İnce başlık" tarifi *"yalnız sayfa adı ve geri oku"* diyor; yanına kullanıcı çipi, destek düğmesi, arama simgesi, eylem düğmesi ya da güncelleme rozeti seçilirse Özet ekranı uyarıyor ve dokununca o adıma götürüyor. Sağa bir şey koymak istiyorsan üst çubuğu "Logo + arama" ya da "Eylemli" seçmelisin.
 - **Yalnız mobil projede masaüstü kararı uyarı veriyor.** "Genişlik" başlığı ve "Bildirim: Sağ üstte" masaüstü kararı; proje sadece mobilse Özet bunu söylüyor. Platform "İkisi birden" ise uyarı çıkmıyor.

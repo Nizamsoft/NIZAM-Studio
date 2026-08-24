@@ -188,6 +188,56 @@ const PROMPT = {
     return s.join('\n');
   },
 
+  /* 3. blok — modüller, sayfalar ve künyeleri. Öncekilerin aksine bu blok
+     kod yazmayı İSTER: beta sürüm buradan çıkar. */
+  yapi(projeId) {
+    const p = DB.proje(projeId);
+    if (!p) return '';
+
+    const s = [];
+    s.push('# ' + projeAdi(p) + ' — Modüller ve sayfalar (3/3)', '');
+
+    const slug = depoSlug(p.repo);
+    if (slug) {
+      s.push('> ### Depo: `' + slug + '`');
+      s.push('> Bu oturum yalnız bu depoya bağlı olmalı. Deposu farklıysa dur');
+      s.push('> ve söyle; başka depo ekleme, dosya oluşturma, commit atma.');
+      s.push('');
+    }
+
+    s.push('Söz verdiğim son blok bu. Hangi ekranların olacağı, her birinde');
+    s.push('hangi bilgilerin duracağı ve kimin ne yapabileceği aşağıda.');
+    s.push('**Bu blokla birlikte kod yazmaya başlıyorsun** — çıkacak şey');
+    s.push('müşteriye denetilecek ilk çalışan sürüm, yani beta.', '');
+
+    const kunye = PROMPT.kunyeBlogu(p);
+    if (kunye) { s.push(kunye); s.push(''); }
+
+    s.push(PROMPT.kurulumBlogu());
+    s.push('');
+
+    s.push('## Şimdi ne yapacaksın');
+    s.push('1. `NIZAM.md` içindeki `## Modüller ve sayfalar` başlığının altındaki');
+    s.push('   *"henüz belirlenmedi"* satırını sil, yukarıdaki künyeleri oraya yaz.');
+    s.push('2. Yukarıdaki **beş aşamayı** sırayla uygula. Her aşamanın sonunda dur,');
+    s.push('   ne yaptığını özetle ve bana denetmeden sonrakine geçme.');
+    s.push('3. Her aşamayı ayrı commit\'le **`main` dalına** gönder. Commit mesajı');
+    s.push('   `[' + TASK_PREFIX + '-0] <aşama adı>` biçiminde olsun.');
+    s.push('4. Beş aşama bitince haber ver — ben deneyip eksikleri görev olarak');
+    s.push('   açacağım, sonra tek tek geleceğiz.');
+    s.push('');
+
+    s.push('## Şunları yapma');
+    s.push('- **Künyede olmayan alan, sayfa ya da modül ekleme.** Alan listesi o');
+    s.push('  sayfanın veritabanı tablosudur; eksik gördüğün bir şey varsa sor.');
+    s.push('- **Tasarım kararlarını değiştirme.** 2. blokta ne yazdıysa o.');
+    s.push('- **Beş aşamayı birleştirme.** Hepsini bir seferde yazarsan ters giden');
+    s.push('  şey 5000 satır sonra anlaşılır.');
+    s.push('- **Bu oturuma başka depo ekleme.** Tek depo, tek oturum.');
+
+    return s.join('\n');
+  },
+
   /* Kurulum aşamaları — hem görev promptunda hem NIZAM.md'de yazar. */
   kurulumBlogu() {
     const s = ['### Nasıl kodlanacak — beş aşama'];
