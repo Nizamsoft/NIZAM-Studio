@@ -60,6 +60,63 @@ const PROMPT = {
     return s.join('\n');
   },
 
+  /* Depo durağının tanışma promptu. Tasarım (durak 3) ve yapı (durak 4)
+     henüz yapılmadı; buraya onlardan hiçbir şey girmez. Amaç yalnızca
+     depoyu tanıtmak ve NIZAM.md'yi kurmak. */
+  tanisma(projeId) {
+    const p = DB.proje(projeId);
+    if (!p) return '';
+
+    const s = [];
+    s.push('# ' + projeAdi(p) + ' — proje başlangıcı', '');
+    s.push('Bu deponun ilk oturumu. Kod yazmanı **istemiyorum**; şimdilik yalnız');
+    s.push('projeyi tanı ve kimlik dosyasını kur.', '');
+
+    s.push('## Proje');
+    s.push(hiza('Firma', p.firma));
+    if (modulAdi(p)) s.push(hiza('Ürün', modulAdi(p)));
+    if (p.sektor)    s.push(hiza('Sektör', p.sektor));
+    s.push(hiza('Platform', PLATFORM_ADI[p.platform] || '—'));
+    s.push(hiza('Veritabanı', VERI_ADI[p.veri] || '—'));
+    if (p.repo) s.push(hiza('Depo', p.repo));
+    s.push(hiza('Arayüz dili', 'Türkçe'));
+    s.push('');
+
+    s.push(PROMPT.teknikBlogu(p));
+    s.push('');
+
+    s.push('## Şimdi ne yapacaksın');
+    s.push('1. Depo köküne `NIZAM.md` adında bir dosya aç. İçine yukarıdaki');
+    s.push('   proje bilgilerini ve teknik standardı yaz. Sonuna şu üç boş');
+    s.push('   başlığı ekle: `## Tasarım kararları`, `## Modüller ve sayfalar`,');
+    s.push('   `## Kararlar` — hepsinin altına *"henüz belirlenmedi"* yaz.');
+    s.push('2. Kısa bir `README.md` ekle: firma adı, ürün adı, tek cümle tarif.');
+    s.push('3. Bunları tek commit\'le gönder. Commit mesajı: `[' + TASK_PREFIX + '-0] Proje kimliği`.');
+    s.push('4. Dur ve bekle.');
+    s.push('');
+
+    s.push('## Şunları yapma');
+    s.push('- **Uygulama kodu yazma.** Ekran, bileşen, veritabanı şeması, hiçbiri.');
+    s.push('- **Tasarım kararı verme.** Renk, yazı tipi, yerleşim — hiçbirini seçme.');
+    s.push('- **Sayfa ya da modül uydurma.** Hangi ekranların olacağı henüz belli değil.');
+    s.push('- Eksik gördüğün bir şeyi tahmin etme; not al, sonra sor.');
+    s.push('');
+
+    s.push('## Sırada ne var');
+    s.push('Bundan sonra sana iki blok daha yapıştıracağım:');
+    s.push('');
+    s.push('1. **Tasarım kararları** — palet, yazı tipleri ve arayüz kararları.');
+    s.push('2. **Modüller, sayfalar ve künyeleri** — hangi ekranlar olacak, her');
+    s.push('   birinde hangi alanlar duracak, kim ne yapabilecek.');
+    s.push('');
+    s.push('Her blok geldiğinde `NIZAM.md` dosyasını büyüteceksin. Uygulama kodu');
+    s.push('ancak ikisi de geldikten sonra, görev görev yazılacak.');
+    s.push('');
+    s.push('Anladıysan tek cümleyle onayla, dosyaları oluştur ve bekle.');
+
+    return s.join('\n');
+  },
+
   /* Kurulum aşamaları — hem görev promptunda hem NIZAM.md'de yazar. */
   kurulumBlogu() {
     const s = ['### Nasıl kodlanacak — beş aşama'];

@@ -3554,8 +3554,9 @@ function kurulumSayfasi(p, d) {
     + kart(2, sohbet, 'Claude Code oturumu',
         p.repo
           ? 'Claude Code açılır, deposu <b>' + esc(depoSlug(p.repo) || '—')
-            + '</b> olarak seçili gelir. Projenin kimliği panoya alınır — '
-            + 'Claude ilk mesajı okuyunca yapıştırırsın. Sonraki bütün işler orada yürür.'
+            + '</b> olarak seçili gelir. Tanıtım panoya alınır: firma, ürün ve '
+            + 'teknik standart — yapıştırıp gönderirsin. Claude NIZAM.md\'yi kurup '
+            + 'bekler; tasarım ve yapı sonraki duraklarda gidecek.'
           : 'Önce depo adresini kaydet — Claude Code o zaman depoyu seçili açar. '
             + 'Şimdi açarsan depoyu elle seçmen gerekir.', `
       <div class="kur-dug">
@@ -7151,25 +7152,28 @@ async function eylemCalistir(el) {
     const pr = DB.proje(el.dataset.proje);
     if (!pr) return;
 
-    const kimlik = PROMPT.kimlik(pr.id);
-    const oldu = await panoyaKopyala(kimlik);
+    /* Bu adımda tasarım ve yapı henüz yapılmadı; tam kimlik dosyası değil,
+       yalnız tanışma promptu gidiyor. */
+    const metin = PROMPT.tanisma(pr.id);
     const slug = depoSlug(pr.repo);
+    const sorgu = [];
 
-    /* Kimlik dosyası on binlerce karakter — adres çubuğuna sığmaz, sunucu
-       da böyle uzun bir sorguyu reddeder. Prompta kısa bir açılış yazıp
-       gerisini panodan yapıştırtıyoruz. */
-    const acilis = 'Bu depo boş. NIZAM Studio\'nun ürettiği proje kimliğini panoya '
-      + 'kopyaladım; bir sonraki mesajda yapıştıracağım. Onu depo köküne '
-      + '`NIZAM.md` olarak yaz, sonra içindeki beş aşamalı kuruluma başla.';
+    /* Türkçe metin adres çubuğunda ~1.8 kat şişiyor; tanıtım çoğu zaman
+       sığmıyor. Sığmadığında prompt kutusunu boş bırakıyoruz — dolu olsaydı
+       kullanıcı yapıştırmadan önce onu silmek zorunda kalırdı. */
+    const sigar = encodeURIComponent(metin).length < 6000;
+    let oldu = false;
+    if (sigar) sorgu.push('prompt=' + encodeURIComponent(metin));
+    else       oldu = await panoyaKopyala(metin);
 
-    const sorgu = ['prompt=' + encodeURIComponent(acilis)];
     if (slug) sorgu.push('repositories=' + encodeURIComponent(slug));
-    disariAc('https://claude.ai/code?' + sorgu.join('&'));
+    disariAc('https://claude.ai/code' + (sorgu.length ? '?' + sorgu.join('&') : ''));
 
     toast(!slug ? 'Claude Code açıldı. Depo adresi yok, elle seçmen gerekiyor.'
-      : !oldu   ? 'Claude Code açıldı ama kimlik kopyalanamadı — "Promptu gör" ile al.'
-                : 'Claude Code açıldı: ' + slug + ' · kimlik panoda.',
-      slug && oldu ? 'basari' : 'uyari');
+      : sigar   ? 'Claude Code açıldı: ' + slug
+      : oldu    ? 'Tanıtım panoda — kutuya yapıştır ve gönder.'
+                : 'Claude Code açıldı ama tanıtım kopyalanamadı.',
+      slug && (sigar || oldu) ? 'basari' : 'uyari');
     return;
   }
 

@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## v0.58.1
+- **İlk Claude Code oturumuna artık tam kimlik dosyası gitmiyor.** O adımda tasarım ve yapı henüz yapılmamış oluyordu; giden metnin içinde verilmemiş kararlar ve boş künyeler vardı. Yerine kısa bir **tanışma** promptu geldi: firma, ürün, platform, veritabanı, depo ve teknik standart. Claude bunlarla `NIZAM.md` + `README.md` kurup `[NS-0]` ile commit'liyor ve duruyor.
+- Prompt açıkça yasaklıyor: uygulama kodu yazma, tasarım kararı verme, sayfa/modül uydurma. Tasarım ve yapı bloklarının sonraki duraklarda geleceğini söylüyor.
+- Tanıtım panoya alınıyor ve Claude Code'un prompt kutusu **boş** açılıyor — dolu gelseydi yapıştırmadan önce silmek gerekiyordu. Tek yapıştır, tek gönder.
+
 ## v0.58.0
 - **Claude Code doğrudan depoyla açılıyor.** İkinci kart artık "Claude Code oturumu": `claude.ai/new` sohbeti yerine `claude.ai/code` açılıyor ve **deposu seçili geliyor** (`repositories=` parametresiyle). Prompt kutusunda ne yapılacağını anlatan açılış mesajı hazır duruyor, projenin kimlik dosyası da panoda — ilk mesajdan sonra yapıştırıyorsun.
 - Depo adresi `github.com/owner/repo`, `https://…` ya da düz `owner/repo` biçimlerinden okunuyor; adres yoksa Claude Code yine açılıyor ama depoyu elle seçmen gerektiği söyleniyor.
