@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.57.0
+- **Proje adı artık "Firma - Modül".** Depo durağının tepesine **Modül adı** satırı geldi (örn. Kişisel Bütçe). Yazdığın an proje listesi, künye, üst çubuk, görev başlıkları ve promptlar "Nizam Soft - Kişisel Bütçe" diye görünüyor; depo adı da `nizam-soft-kisisel-butce` oluyor. Modül adı boşsa hiçbir şey değişmiyor, sade firma adı kalıyor.
+- Yapı ağacına girince ilk modül bu adla hazır geliyor.
+- Rozet harfleri ("NS") firma adından geliyor, önizlemedeki sahte müşteri uygulaması da firma adını kullanmaya devam ediyor — orası müşterinin kendi markası.
+- "GitHub'da aç" tarayıcıda kalıyor (mobil uygulamada adı hazır doldurmanın yolu yok), ama artık depo adı açarken panoya alınıyor — iOS uygulamaya devrederse tek yapıştırmayla giriyorsun.
+
 ## v0.56.0
 - **Yeni durak: Depo ve sohbet.** Proje kurulunca doğrudan buraya düşüyorsun. İki kapı var: GitHub'da gizli depo (adı firmadan türetiliyor, sayfa doldurulmuş açılıyor, adresi yapıştırıyorsun) ve Claude sohbeti (NIZAM.md panoya alınıp claude.ai açılıyor). İkisi bitmeden Tasarım durağı sıraya girmiyor.
 - Duraklar 5'ten 6'ya çıktı; Tasarım 3, Yapı 4, Geliştirme 5, Sürüm 6 oldu.

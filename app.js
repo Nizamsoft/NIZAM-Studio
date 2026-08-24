@@ -682,7 +682,7 @@ function sayfaHero(p, d) {
         <span class="logo-harf">${esc(basHarf(p.firma))}</span>
         ${adres ? '<span class="donen"></span>' : ''}
       </span>
-      <h1>${esc(p.firma)}</h1>
+      <h1>${esc(projeAdi(p))}</h1>
       <span class="hero-rozetler">
         ${rozet.map((x, i) => `<span class="rz ${i === 0 && p.sektor ? 'marka' : ''}">${esc(x)}</span>`).join('')}
       </span>
@@ -1325,7 +1325,7 @@ function kararlarAc(projeId) {
   el.innerHTML = `
     <div class="onz-tepe">
       <button class="sh-kapat" type="button" data-kr="kapat">${svg(ICON.kapat, 15)}</button>
-      <span class="onz-ad">Kararlar<u>${TUM_TASARIM.length} başlık · ${esc(p.firma)}</u></span>
+      <span class="onz-ad">Kararlar<u>${TUM_TASARIM.length} başlık · ${esc(projeAdi(p))}</u></span>
     </div>
     <div class="kr-govde">${govde}</div>`;
 
@@ -2588,7 +2588,7 @@ const ROL_TASLAK = {};
 
 function yapiTaslak(p) {
   if (!YAPI_TASLAK[p.id]) {
-    YAPI_TASLAK[p.id] = { yer: 0, modul: '', anlat: '', kararlar: [],
+    YAPI_TASLAK[p.id] = { yer: 0, modul: modulAdi(p), anlat: '', kararlar: [],
                           baglantilar: [], hazirVeri: [], ciktilar: [],
                           mod: 'agac', odak: null, dal: null, duzelt: null,
                           mk: { roller: [], eylemler: [], yetki: {}, kural: '' },
@@ -3480,6 +3480,18 @@ function depoAdi(firma) {
     .slice(0, 60) || 'yeni-proje';
 }
 
+/* Modül adı: "Kişisel Bütçe" gibi ürün adı. Depo adına ve bütün
+   başlıklara firmanın yanına tireyle ekleniyor. */
+function modulAdiSor(p) {
+  return metinSor({
+    baslik: 'Modül adı',
+    aciklama: 'Firmanın yanına tireyle eklenir: ' + p.firma + ' - …',
+    deger: modulAdi(p),
+    yerTutucu: 'Örn. Kişisel Bütçe',
+    buton: 'Kaydet',
+  });
+}
+
 /* 2 · Depo ve sohbet — koda başlamadan önce açılan iki kapı.
    Studio tarayıcıda çalışıyor; GitHub jetonu tutmuyoruz. Bunun yerine
    hazır doldurulmuş sayfayı açıp adresi geri istiyoruz. */
@@ -3500,6 +3512,13 @@ function kurulumSayfasi(p, d) {
     </div>`;
 
   return sayfaHero(p, d)
+    + `<div class="kur-ad" data-eylem="modul-adi" data-proje="${p.id}"
+            role="button" tabindex="0">
+        <span class="kur-ad-et">Modül adı</span>
+        ${pl.modulAdi ? `<b>${esc(pl.modulAdi)}</b>`
+                      : '<b class="eksik">dokun, yaz</b>'}
+        <i>Depo adı ve bütün başlıklar firmanın yanına bunu ekler.</i>
+      </div>`
     + kart(1, !!p.repo, 'GitHub deposu',
         'Kod buraya gidecek. Adı firmadan türetilir, depo gizli açılır.', `
       <div class="kur-dug">
@@ -3561,7 +3580,7 @@ function projeKunyesi(p) {
         ${adres ? '<span class="donen"></span>' : ''}
       </span>
       <span class="kunye-yazi">
-        <h2>${esc(p.firma)}</h2>
+        <h2>${esc(projeAdi(p))}</h2>
         <p>${[p.sektor, PLATFORM_ADI[p.platform] || p.platform, VERI_ADI[p.veri] || p.veri]
               .filter(Boolean).map(esc).join(' · ')}</p>
       </span>
@@ -3801,7 +3820,7 @@ function projeKarti(p, i = 0) {
       <div class="proje-ust">
         <span class="proje-rozet" style="${renkStil(p.renk)}">${esc(basHarf(p.firma))}</span>
         <span class="proje-ad-kutu">
-          <span class="proje-ad">${esc(p.firma)}</span>
+          <span class="proje-ad">${esc(projeAdi(p))}</span>
           <span class="proje-meta">${PLATFORM_ADI[p.platform] || p.platform}</span>
         </span>
         <span class="pill ${durumSinif(p.durum)}">${DURUM_ADI[p.durum] || p.durum}</span>
@@ -4162,7 +4181,7 @@ function render() {
     baslik.textContent = DURAKLAR[sayfa].ad;
   } else if (detay) {
     const p = DB.proje(id);
-    baslik.textContent = p ? p.firma : 'Proje';
+    baslik.textContent = p ? projeAdi(p) : 'Proje';
   } else {
     baslik.textContent = ROUTES[key].kisa || ROUTES[key].title;
   }
@@ -5441,7 +5460,7 @@ function yeniGorevHtml() {
   const proje    = DB.proje(YENI.proje);
 
   return `
-    ${modalBaslik(ICON.check, 'Yeni görev', (proje ? proje.firma : '') + ' · nereye bağlanacağını seç.')}
+    ${modalBaslik(ICON.check, 'Yeni görev', (proje ? projeAdi(proje) : '') + ' · nereye bağlanacağını seç.')}
 
     <label class="field">
       <span>Başlık</span>
@@ -7069,14 +7088,39 @@ async function eylemCalistir(el) {
     });
   }
 
+  if (e === 'modul-adi') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const ad = await modulAdiSor(pr);
+    if (ad === null) return;
+    return isYap(() => DB.paletKaydet(pr.id,
+      Object.assign({}, pr.palet || {}, { modulAdi: ad })), 'Modül adı kaydedildi.');
+  }
+
   if (e === 'repo-ac') {
     const pr = DB.proje(el.dataset.proje);
     if (!pr) return;
-    const ad = depoAdi(pr.firma);
+
+    /* Depo adı modülü de taşıyor; boşsa açmadan önce bir kez soruyoruz.
+       Vazgeçilirse akış tıkanmasın diye firma adıyla devam ediyor. */
+    if (!modulAdi(pr)) {
+      const ad = await modulAdiSor(pr);
+      if (ad) {
+        try {
+          await DB.paletKaydet(pr.id,
+            Object.assign({}, pr.palet || {}, { modulAdi: ad }));
+        } catch (h) { /* kritik değil, satırdan sonra girilebilir */ }
+      }
+    }
+
+    const ad = depoAdi(projeAdi(pr));
+    /* iOS github.com'u uygulamaya devrederse hazır doldurma kaybolur;
+       ad panoda dursun ki tek yapıştırmayla girilsin. */
+    await panoyaKopyala(ad);
     disariAc('https://github.com/new?name=' + encodeURIComponent(ad)
-      + '&description=' + encodeURIComponent(pr.firma + ' · NIZAM Studio')
+      + '&description=' + encodeURIComponent(projeAdi(pr) + ' · NIZAM Studio')
       + '&visibility=private');
-    toast('Depoyu açtıktan sonra adresini buraya yapıştır.');
+    toast('Depo adı panoda: ' + ad);
     return;
   }
 
@@ -7119,7 +7163,7 @@ async function eylemCalistir(el) {
     const proje = DB.proje(id);
     if (!proje) return;
 
-    const sec = await secenekSor(proje.firma, [
+    const sec = await secenekSor(projeAdi(proje), [
       { anahtar: 'ad',    ad: 'Adı değiştir',   ikon: ICON.kalem },
       { anahtar: 'renk',  ad: 'Rengi değiştir', ikon: ICON.boya },
       { anahtar: 'repo',  ad: 'Depo adresi',    ikon: ICON.katman, alt: proje.repo || 'henüz eklenmedi' },
@@ -7152,7 +7196,7 @@ async function eylemCalistir(el) {
     if (sec === 'arsiv') {
       const ok = await onaySor({
         baslik: 'Proje arşive kaldırılsın mı?',
-        mesaj: `"${proje.firma}" listeden çıkar. Modülleri, sayfaları ve görevleri silinmez — geri getirilebilir.`,
+        mesaj: `"${projeAdi(proje)}" listeden çıkar. Modülleri, sayfaları ve görevleri silinmez — geri getirilebilir.`,
         buton: 'Arşive kaldır',
       });
       if (!ok) return;
@@ -7170,7 +7214,7 @@ async function eylemCalistir(el) {
 
       const ok = await onaySor({
         baslik: 'Proje tamamen silinsin mi?',
-        mesaj: `"${proje.firma}"${kayip ? ` ve içindeki ${kayip}` : ''} silinecek. `
+        mesaj: `"${projeAdi(proje)}"${kayip ? ` ve içindeki ${kayip}` : ''} silinecek. `
              + 'Logosu da gidecek. Bu işlem geri alınamaz. '
              + 'Sadece listeden kaldırmak istiyorsan "Arşive kaldır" kullan.',
         buton: 'Kalıcı olarak sil',
@@ -7957,6 +8001,22 @@ function esc(s) {
     .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
+/* Projenin ekranlarda görünen adı: "Nizam Soft - Kişisel Bütçe".
+   Modül henüz kurulmadıysa Depo durağında yazılan ad kullanılıyor;
+   o da yoksa sade firma adı döner. */
+function modulAdi(p) {
+  const pl = (p && p.palet) || {};
+  if (pl.modulAdi) return pl.modulAdi;
+  const m = DB.modulleri(p.id).filter(x => !x.genel)[0];
+  return m ? m.ad : '';
+}
+
+function projeAdi(p) {
+  if (!p) return '';
+  const m = modulAdi(p);
+  return m ? p.firma + ' - ' + m : p.firma;
+}
+
 function basHarf(ad) {
   const p = String(ad || '').trim().split(/\s+/).filter(Boolean);
   if (!p.length) return '—';
@@ -8005,7 +8065,7 @@ function gorevYolu(g) {
   const sayfa = g.sayfa_id ? DB.sayfalar.find(s => s.id === g.sayfa_id) : null;
 
   const parcalar = [
-    proje ? `<b>${esc(proje.firma)}</b>` : 'Proje',
+    proje ? `<b>${esc(projeAdi(proje))}</b>` : 'Proje',
     modul ? esc(modul.ad) : null,
     sayfa ? esc(sayfa.ad) : null,
   ].filter(Boolean);

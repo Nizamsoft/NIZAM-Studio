@@ -404,6 +404,7 @@ const PROMPT = {
 
     s.push('## Proje');
     s.push(hiza('Firma', p.firma));
+    if (modulAdi(p)) s.push(hiza('Ürün', modulAdi(p)));
     if (p.sektor) s.push(hiza('Sektör', p.sektor));
     s.push(hiza('Platform', PLATFORM_ADI[p.platform] || 'Web'));
     s.push(hiza('Tema', 'Açık — bütün projelerimiz açık tema'));
@@ -474,6 +475,7 @@ const PROMPT = {
 
     s.push('## Proje');
     s.push(hiza('Firma', proje ? proje.firma : '—'));
+    if (proje && modulAdi(proje)) s.push(hiza('Ürün', modulAdi(proje)));
     s.push(hiza('Platform', PLATFORM_ADI[proje && proje.platform] || '—'));
     s.push(hiza('Veritabanı', VERI_ADI[proje && proje.veri] || '—'));
     if (proje && proje.repo) s.push(hiza('Depo', proje.repo));
@@ -537,7 +539,7 @@ const PROMPT = {
     const gorevler = DB.gorevleri({ proje: projeId });
     const s = [];
 
-    s.push(`# ${proje.firma} — Proje Kimliği`, '');
+    s.push(`# ${projeAdi(proje)} — Proje Kimliği`, '');
     s.push('> Bu dosyayı NIZAM Studio üretti.');
     s.push('> Her iş sonrası güncellenmesi geliştirmeyi yapan AI\'ın görevidir.');
     s.push('');

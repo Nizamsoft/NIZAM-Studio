@@ -1702,6 +1702,20 @@ html { background: var(--bg); }
 }
 .sayfa-dug:active { transform: scale(.985); }
 
+/* Depo durağının tepesindeki modül adı satırı. */
+.kur-ad { display: grid; grid-template-columns: auto 1fr; gap: 3px 10px;
+          align-items: baseline; padding: 13px 15px; margin-bottom: 12px;
+          border: 1px dashed var(--line-parlak); border-radius: 16px;
+          background: var(--yuva); cursor: pointer;
+          transition: border-color .16s ease; }
+.kur-ad:hover { border-color: var(--metal-1); }
+.kur-ad-et { font-size: 11.5px; color: var(--ink-faint); }
+.kur-ad b { font-family: var(--yazi-baslik); font-size: 14.5px; color: var(--ink-strong); }
+.kur-ad b.eksik { font-family: inherit; font-size: 12.5px; font-weight: 500;
+                  color: var(--uyari, #d0a13c); }
+.kur-ad i { grid-column: 1 / -1; font-style: normal; font-size: 10.5px;
+            color: var(--ink-dim); line-height: 1.5; }
+
 /* Depo ve sohbet durağı — iki kapı, ikisi de bir kez açılır. */
 .kur-kart { padding: 15px 15px 13px; margin-bottom: 12px; border-radius: 16px;
             border: 1px solid var(--line-2); background: var(--yuva); }
