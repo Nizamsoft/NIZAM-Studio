@@ -3488,6 +3488,17 @@ function depoAdi(p) {
   return [firma, modul].filter(Boolean).join('-').slice(0, 80) || 'YeniProje';
 }
 
+/* Kaydedilen depo adresinden GitHub owner/repo çıkarır.
+   "github.com/nizamsoft/NIZAMSOFT-KisiselButce" → "nizamsoft/NIZAMSOFT-KisiselButce"
+   Adres eksik ya da tanınmıyorsa boş döner. */
+function depoSlug(repo) {
+  const m = String(repo || '').trim()
+    .replace(/^https?:\/\//, '').replace(/^www\./, '')
+    .replace(/^github\.com\//, '').replace(/\.git$/, '').replace(/\/+$/, '')
+    .match(/^([A-Za-z0-9._-]+)\/([A-Za-z0-9._-]+)$/);
+  return m ? m[1] + '/' + m[2] : '';
+}
+
 /* Modül adı: "Kişisel Bütçe" gibi ürün adı. Depo adına ve bütün
    başlıklara firmanın yanına tireyle ekleniyor. */
 function modulAdiSor(p) {
@@ -3540,17 +3551,21 @@ function kurulumSayfasi(p, d) {
         ${p.repo ? `<b class="mono">${esc(p.repo)}</b>`
                  : '<b class="eksik">dokun, yapıştır</b>'}</div>`)
 
-    + kart(2, sohbet, 'Claude sohbeti',
-        'Projenin kimlik dosyası panoya alınır, Claude açılır. İlk mesaj olarak '
-        + 'yapıştır — bundan sonraki bütün işler o sohbette yürür.', `
+    + kart(2, sohbet, 'Claude Code oturumu',
+        p.repo
+          ? 'Claude Code açılır, deposu <b>' + esc(depoSlug(p.repo) || '—')
+            + '</b> olarak seçili gelir. Projenin kimliği panoya alınır — '
+            + 'Claude ilk mesajı okuyunca yapıştırırsın. Sonraki bütün işler orada yürür.'
+          : 'Önce depo adresini kaydet — Claude Code o zaman depoyu seçili açar. '
+            + 'Şimdi açarsan depoyu elle seçmen gerekir.', `
       <div class="kur-dug">
         <button class="sayfa-dug ${sohbet ? 'ikincil' : ''}" type="button"
                 data-eylem="sohbet-ac" data-proje="${p.id}">
-          ${svg(ICON.kopya, 15)} Kopyala ve Claude'u aç</button>
+          ${svg(ICON.katman, 15)} Claude Code'da aç</button>
       </div>
       <label class="kur-onay ${sohbet ? 'on' : ''}" data-eylem="sohbet-onay"
              data-proje="${p.id}" role="button" tabindex="0">
-        <span class="kur-kutu">${tik}</span> Sohbeti açtım</label>`)
+        <span class="kur-kutu">${tik}</span> Oturumu açtım</label>`)
 
     + `<div class="note note-kucuk">${svg(ICON.info, 15)}
         <span>İkisi de bitince <b>Tasarımı belirleme</b> durağı sıraya girer.</span></div>`;
@@ -3617,7 +3632,7 @@ function projeDuraklari(p) {
       ozet: p.repo
         ? ((p.palet && p.palet.sohbetAcildi)
             ? p.repo
-            : 'Depo hazır. Sıra Claude sohbetini açmakta.')
+            : 'Depo hazır. Sıra Claude Code oturumunu açmakta.')
         : 'Kod nereye gidecek, iş hangi sohbette yürüyecek — ikisi de burada.',
     },
     {
@@ -7135,11 +7150,26 @@ async function eylemCalistir(el) {
   if (e === 'sohbet-ac') {
     const pr = DB.proje(el.dataset.proje);
     if (!pr) return;
-    const oldu = await panoyaKopyala(PROMPT.kimlik(pr.id));
-    disariAc('https://claude.ai/new');
-    toast(oldu ? 'NIZAM.md panoya alındı — sohbete yapıştır.'
-               : 'Claude açıldı ama kopyalanamadı; kimlik dosyasını elle al.',
-          oldu ? 'basari' : 'uyari');
+
+    const kimlik = PROMPT.kimlik(pr.id);
+    const oldu = await panoyaKopyala(kimlik);
+    const slug = depoSlug(pr.repo);
+
+    /* Kimlik dosyası on binlerce karakter — adres çubuğuna sığmaz, sunucu
+       da böyle uzun bir sorguyu reddeder. Prompta kısa bir açılış yazıp
+       gerisini panodan yapıştırtıyoruz. */
+    const acilis = 'Bu depo boş. NIZAM Studio\'nun ürettiği proje kimliğini panoya '
+      + 'kopyaladım; bir sonraki mesajda yapıştıracağım. Onu depo köküne '
+      + '`NIZAM.md` olarak yaz, sonra içindeki beş aşamalı kuruluma başla.';
+
+    const sorgu = ['prompt=' + encodeURIComponent(acilis)];
+    if (slug) sorgu.push('repositories=' + encodeURIComponent(slug));
+    disariAc('https://claude.ai/code?' + sorgu.join('&'));
+
+    toast(!slug ? 'Claude Code açıldı. Depo adresi yok, elle seçmen gerekiyor.'
+      : !oldu   ? 'Claude Code açıldı ama kimlik kopyalanamadı — "Promptu gör" ile al.'
+                : 'Claude Code açıldı: ' + slug + ' · kimlik panoda.',
+      slug && oldu ? 'basari' : 'uyari');
     return;
   }
 

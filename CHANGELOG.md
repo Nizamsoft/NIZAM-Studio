@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## v0.58.0
+- **Claude Code doğrudan depoyla açılıyor.** İkinci kart artık "Claude Code oturumu": `claude.ai/new` sohbeti yerine `claude.ai/code` açılıyor ve **deposu seçili geliyor** (`repositories=` parametresiyle). Prompt kutusunda ne yapılacağını anlatan açılış mesajı hazır duruyor, projenin kimlik dosyası da panoda — ilk mesajdan sonra yapıştırıyorsun.
+- Depo adresi `github.com/owner/repo`, `https://…` ya da düz `owner/repo` biçimlerinden okunuyor; adres yoksa Claude Code yine açılıyor ama depoyu elle seçmen gerektiği söyleniyor.
+
 ## v0.57.1
 - **Depo adı okunur oldu:** `nizam-soft-kisisel-butce` yerine **`NIZAMSOFT-KisiselButce`** — firma tamamen büyük ve bitişik, modül her kelimenin ilk harfi büyük ve bitişik, aralarında tek tire. Türkçe harfler ASCII'ye iniyor (`Güllüoğlu Kübban` → `GULLUOGLUKUBBAN`). Modül adı boşsa yalnız firma yazılıyor.
 
