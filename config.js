@@ -7,7 +7,7 @@ const APP = {
   name:     'NIZAM | Studio',
   short:    'NIZAM Studio',
   owner:    'Nizam Soft',
-  version: 'v0.63.1',
+  version: 'v0.64.0',
   build:    '2026-08-20',
   stage: 'Adım 4 · Yapı ağacı',
 };
@@ -780,12 +780,41 @@ const TEKNIK_STANDART = [
 /* Projeye özel teknik alanlar — sihirbazda ve Firma durağında sorulur.
    Projenin `palet` alanında saklanır; ayrı sütun gerekmez. */
 const TEKNIK_ALAN = [
+  { anahtar: 'veriKatmani', ad: 'Veri katmanı', tur: 'secim',
+    secim: ['Supabase (bulut)', 'Yerel tarayıcı'],
+    varsayilan: 'Supabase (bulut)', ornek: 'Supabase (bulut)',
+    alt: 'Veri nerede duracak? Yerel seçilirse sunucu, giriş ve gerçek zamanlı '
+       + 'yok; her şey cihazda kalır ve teknik standardın altı satırı değişir.' },
   { anahtar: 'roller', ad: 'Roller', tur: 'katman', ornek: 'Personel · Amir · Yönetici',
     alt: 'Kaç katman var ve en alttan en üste hangi sırayla? Üstteki, alttakinin '
        + 'gördüğü her şeyi görür. Veritabanı güvenlik kuralları buna göre yazılır.' },
   { anahtar: 'alanAdi', ad: 'Alan adı', ornek: 'kubban.nizamsoft.com',
     alt: 'Müşteri hangi adresten girecek? Yayın ayarı ve PWA manifesti buna bağlı.' },
 ];
+
+/* Veri yerelde kalınca teknik standardın altı satırı anlamını yitiriyor:
+   sunucu yok, kimlik doğrulama yok, paylaşım yok. Bu satırlar onların
+   yerine geçiyor — geri kalan standart aynen duruyor. */
+const YEREL_STANDART = {
+  'Veri': ['Yerel tarayıcı (IndexedDB)',
+    'Sunucu yok. Bütün kayıtlar kullanıcının cihazında durur. Site verisi '
+    + 'silinirse kayıtlar da gider — yedeği kullanıcı alır.'],
+  'Gerçek zamanlı': ['Yok',
+    'Tek cihaz, tek kullanıcı. Eşitlenecek başka bir yer yok.'],
+  'Değişiklik kaydı': ['Yerelde tutulur',
+    'Ne, ne zaman değişti cihazda kaydedilir ve Ayarlar\'da listelenir. '
+    + '"Kim" yok — uygulamayı tek kişi kullanıyor.'],
+  'Dosya saklama': ['Yerel (IndexedDB)',
+    'Eklenen dosyalar da cihazda durur; yedeğe dahil edilir.'],
+  'Giriş': ['Yerel PIN',
+    'Açılışta PIN sorulur, PIN cihazda saklanır. Bu gerçek kimlik doğrulama '
+    + 'değil — meraklı gözlere karşı. Verinin kendisi şifrelenmez.'],
+  'Paketler': ['Yok',
+    'Dış paket kullanılmaz. Excel gerekiyorsa xlsx. Başka paket eklemeden önce sor.'],
+  'Yedek': ['Dosyaya dışa/içe aktarma',
+    'Ayarlar\'dan tek dosya olarak indirilir ve geri yüklenir. Sunucu olmadığı '
+    + 'için yedeği almak kullanıcının sorumluluğunda; uygulama düzenli olarak hatırlatır.'],
+};
 
 /* Rol katmanları: en alttan en üste. Üstteki, alttakinin yetkilerini de alır.
    Virgüllü liste yerine merdiven — çünkü yetki sırası kodu belirliyor. */

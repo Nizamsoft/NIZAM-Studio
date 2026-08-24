@@ -30,17 +30,40 @@ const PROMPT = {
 
   /* Teknik standart — her projede aynı. Görev promptuna ve NIZAM.md'ye girer. */
   teknikBlogu(proje) {
+    const pl0 = (proje && proje.palet) || {};
+    const yerel = pl0.veriKatmani === 'Yerel tarayıcı';
+
     const s = ['## Teknik Standart'];
     s.push('Bunlar Nizam Soft standardı. Tartışma, değiştirme, alternatif önerme —');
     s.push('gerekiyorsa önce sor.');
+    if (yerel) {
+      s.push('');
+      s.push('> **Bu proje sunucusuz.** Veri kullanıcının tarayıcısında kalıyor;');
+      s.push('> Supabase, kimlik doğrulama ve gerçek zamanlı yok. Aşağıdaki');
+      s.push('> satırlar buna göre yazıldı.');
+    }
     s.push('');
+
+    /* Yerelde altı satır anlamını yitiriyor; yerlerine YEREL_STANDART geçiyor. */
+    const yazilan = [];
     TEKNIK_STANDART.forEach(([ad, deger, not]) => {
+      const y = yerel && YEREL_STANDART[ad];
+      if (y) { yazilan.push(ad); s.push(`- **${ad}: ${y[0]}**`); if (y[1]) s.push(`  - ${y[1]}`); return; }
       s.push(`- **${ad}: ${deger}**`);
       if (not) s.push(`  - ${not}`);
     });
+    /* Standartta karşılığı olmayanlar (Yedek gibi) sona eklenir. */
+    if (yerel) {
+      Object.keys(YEREL_STANDART).forEach(ad => {
+        if (yazilan.includes(ad)) return;
+        const y = YEREL_STANDART[ad];
+        s.push(`- **${ad}: ${y[0]}**`);
+        if (y[1]) s.push(`  - ${y[1]}`);
+      });
+    }
 
     const pl = (proje && proje.palet) || {};
-    const ozel = TEKNIK_ALAN.filter(a => pl[a.anahtar]);
+    const ozel = TEKNIK_ALAN.filter(a => pl[a.anahtar] && a.anahtar !== 'veriKatmani');
     if (ozel.length) {
       s.push('', '### Bu projeye özel');
       ozel.forEach(a => {
@@ -52,7 +75,7 @@ const PROMPT = {
         s.push('  - Yetki veritabanı kurallarıyla (RLS) uygulanır, yalnız arayüzde gizlemekle değil.');
       });
     }
-    const eksik = TEKNIK_ALAN.filter(a => !pl[a.anahtar]);
+    const eksik = TEKNIK_ALAN.filter(a => !pl[a.anahtar] && a.anahtar !== 'veriKatmani');
     if (eksik.length) {
       s.push('', `> Şunlar henüz belirlenmedi: ${eksik.map(a => a.ad).join(', ')}.`);
       s.push('> Bunlara ihtiyaç duyduğunda uydurma — sor.');

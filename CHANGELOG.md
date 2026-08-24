@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## v0.64.0
+- **Veri katmanı artık proje başına seçiliyor.** Teknik bilgilerde yeni bir alan: **Supabase (bulut)** ya da **Yerel tarayıcı**. Eskiden teknik standart her projede Supabase diyordu; sunucusuz bir uygulama için altı satır birden yanlış gidiyordu.
+- **Yerel seçilince** promptta şunlar değişiyor: veri IndexedDB'de, gerçek zamanlı yok, dosyalar cihazda, giriş **yerel PIN** ile, dış paket yok, değişiklik kaydı cihazda. Ayrıca **Yedek: dosyaya dışa/içe aktarma** satırı ekleniyor ve en başta "bu proje sunucusuz" uyarısı çıkıyor.
+- Yerel PIN'in gerçek kimlik doğrulama olmadığı, verinin şifrelenmediği ve yedek almanın kullanıcının sorumluluğunda olduğu promptta açıkça yazılı.
+
 ## v0.63.1
 - **Kopyala düğmeleri artık sessiz kalmıyor.** Prompt üretimi hata verirse ekranda sebebi yazıyor; pano açılamazsa metin pencereyle veriliyor, elle kopyalanabiliyor. Eskiden ikisi de "hiçbir şey olmuyor" gibi görünüyordu.
 - **Beta durağı künye eksikse uyarıyor:** "Sayfa künyesi yok. Önce Yapıyı kurma durağında modülü kur." Blok yine kopyalanıyor ama yarım olduğu belli oluyor.

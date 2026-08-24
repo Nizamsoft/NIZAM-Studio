@@ -827,7 +827,15 @@ function teknikDuzenle(projeId) {
 
   modalAc(`
     ${modalBaslik(ICON.ayar, 'Teknik bilgiler', 'Bu projeye özel olanlar.')}
-    ${TEKNIK_ALAN.map(a => a.tur === 'katman' ? `
+    ${TEKNIK_ALAN.map(a => a.tur === 'secim' ? `
+      <div class="field">
+        <span>${esc(a.ad)} <i class="ipucu">${esc(a.alt)}</i></span>
+        <div class="secenek-serit">${a.secim.map(x => `
+          <button class="ss ${(pl[a.anahtar] || a.varsayilan) === x ? 'sec' : ''}"
+                  type="button" data-tks="${a.anahtar}" data-deger="${esc(x)}">${esc(x)}</button>`).join('')}
+        </div>
+        <input type="hidden" data-tk="${a.anahtar}" value="${esc(pl[a.anahtar] || a.varsayilan)}">
+      </div>` : a.tur === 'katman' ? `
       <div class="field">
         <span>${esc(a.ad)} <i class="ipucu">${esc(a.alt)}</i></span>
         ${rolMerdiveni(pl[a.anahtar], 'tk')}
@@ -842,6 +850,12 @@ function teknikDuzenle(projeId) {
       <button class="btn btn-primary" data-tk-i="kaydet" type="button"><span>Kaydet</span></button>
     </div>`, kutu => {
     rolBagla(kutu);
+    /* Seçim şeridi gizli alana yazıyor; kaydetme yolu tek kalsın. */
+    $$('[data-tks]', kutu).forEach(d => d.addEventListener('click', () => {
+      const gizli = $('[data-tk="' + d.dataset.tks + '"]', kutu);
+      if (gizli) gizli.value = d.dataset.deger;
+      d.parentElement.querySelectorAll('.ss').forEach(x => x.classList.toggle('sec', x === d));
+    }));
     $('[data-tk-i="iptal"]', kutu).addEventListener('click', modalKapat);
     $('[data-tk-i="kaydet"]', kutu).addEventListener('click', async () => {
       const yeni = Object.assign({}, pl);
