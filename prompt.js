@@ -69,6 +69,21 @@ const PROMPT = {
 
     const s = [];
     s.push('# ' + projeAdi(p) + ' — proje başlangıcı', '');
+
+    /* Claude Code yeni oturumu en son kullanılan depoyla açabiliyor.
+       Hangi depoda çalışılacağı en tepede, tartışmasız yazsın. */
+    const slug = depoSlug(p.repo);
+    if (slug) {
+      s.push('> ### Depo: `' + slug + '`');
+      s.push('> Bu iş **yalnız bu depoda** yapılacak. Oturum başka bir depoda');
+      s.push('> açıldıysa hiçbir şey yazma, dur ve bana söyle.');
+    } else {
+      s.push('> ### Depo henüz bağlanmadı');
+      s.push('> Hangi depoda çalışacağımızı sana söylemedim. Dosya oluşturmadan');
+      s.push('> önce bana depo adresini sor ve onayımı al.');
+    }
+    s.push('');
+
     s.push('Bu deponun ilk oturumu. Kod yazmanı **istemiyorum**; şimdilik yalnız');
     s.push('projeyi tanı ve kimlik dosyasını kur.', '');
 
@@ -78,7 +93,7 @@ const PROMPT = {
     if (p.sektor)    s.push(hiza('Sektör', p.sektor));
     s.push(hiza('Platform', PLATFORM_ADI[p.platform] || '—'));
     s.push(hiza('Veritabanı', VERI_ADI[p.veri] || '—'));
-    if (p.repo) s.push(hiza('Depo', p.repo));
+    s.push(hiza('Depo', p.repo || 'BELİRLENMEDİ — sor'));
     s.push(hiza('Arayüz dili', 'Türkçe'));
     s.push('');
 
@@ -86,7 +101,8 @@ const PROMPT = {
     s.push('');
 
     s.push('## Şimdi ne yapacaksın');
-    s.push('1. Depo köküne `NIZAM.md` adında bir dosya aç. İçine yukarıdaki');
+    s.push('1. ' + (slug ? '`' + slug + '` deposunun' : 'Deponun')
+      + ' köküne `NIZAM.md` adında bir dosya aç. İçine yukarıdaki');
     s.push('   proje bilgilerini ve teknik standardı yaz. Sonuna şu üç boş');
     s.push('   başlığı ekle: `## Tasarım kararları`, `## Modüller ve sayfalar`,');
     s.push('   `## Kararlar` — hepsinin altına *"henüz belirlenmedi"* yaz.');

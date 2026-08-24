@@ -3567,11 +3567,12 @@ function kurulumSayfasi(p, d) {
             + '</b> olarak seçili gelir. Tanıtım panoya alınır: firma, ürün ve '
             + 'teknik standart — yapıştırıp gönderirsin. Claude NIZAM.md\'yi kurup '
             + 'bekler; tasarım ve yapı sonraki duraklarda gidecek.'
-          : 'Önce depo adresini kaydet — Claude Code o zaman depoyu seçili açar. '
-            + 'Şimdi açarsan depoyu elle seçmen gerekir.', `
+          : '<b class="eksik">Önce depo adresini kaydet.</b> Claude Code yeni oturumu '
+            + 'en son kullandığın depoyla açabiliyor — adres olmadan yanlış depoda '
+            + 'çalışmaya başlarsın.', `
       <div class="kur-dug">
-        <a class="sayfa-dug ${sohbet ? 'ikincil' : ''}" target="_blank" rel="noopener"
-           data-pano="tanisma" data-proje="${p.id}"
+        <a class="sayfa-dug ${sohbet || !p.repo ? 'ikincil' : ''}" target="_blank"
+           rel="noopener" data-pano="tanisma" data-proje="${p.id}"
            href="https://claude.ai/code${depoSlug(p.repo)
              ? '?repositories=' + encodeURIComponent(depoSlug(p.repo)) : ''}">
           ${svg(ICON.katman, 15)} Claude Code'da aç</a>

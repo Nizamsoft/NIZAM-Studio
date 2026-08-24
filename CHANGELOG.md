@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## v0.58.3
+- **Tanıtım metni artık hangi depoda çalışılacağını en tepede söylüyor.** Claude Code yeni oturumu en son kullanılan depoyla açabildiği için bu şarttı; eskiden depo satırı yalnız adres kayıtlıysa ve tablonun içinde geçiyordu. Şimdi başlığın hemen altında `> ### Depo: owner/repo` uyarısı var ve "başka bir depoda açıldıysan hiçbir şey yazma, dur ve söyle" diyor. `NIZAM.md` talimatı da depoyu adıyla anıyor.
+- Adres henüz kaydedilmemişse metin bunu açıkça yazıyor: "Depo henüz bağlanmadı — dosya oluşturmadan önce bana sor." Depo satırı tabloda da her zaman görünüyor.
+- Depo adresi yokken Claude Code düğmesi sönük duruyor ve kart kırmızıyla uyarıyor.
+
 ## v0.58.2
 - **"GitHub'da aç" ve "Claude Code'da aç" artık gerçekten açılıyor.** iPhone'da ana ekrandan açılan uygulamada `window.open` sessizce engelleniyordu; üstüne çağrı bir `await`'ten sonra geldiği için Safari onu kullanıcı dokunuşu saymıyordu. İkisi de gerçek bağlantıya (`<a target="_blank">`) dönüştü, adres çizim anında hesaplanıyor.
 - **Depo kurulunca düğme değişiyor:** "GitHub'da aç" yerine **"Depoyu aç"** oluyor ve deponun kendisine götürüyor — bir daha yeni depo kurdurmuyor.
