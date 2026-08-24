@@ -75,8 +75,10 @@ const PROMPT = {
     const slug = depoSlug(p.repo);
     if (slug) {
       s.push('> ### Depo: `' + slug + '`');
-      s.push('> Bu iş **yalnız bu depoda** yapılacak. Oturum başka bir depoda');
-      s.push('> açıldıysa hiçbir şey yazma, dur ve bana söyle.');
+      s.push('> Bu oturum **yalnız bu depoya** bağlı olmalı. Oturumun deposu');
+      s.push('> farklıysa: bu oturuma hedef depoyu **ekleme**, dosya oluşturma,');
+      s.push('> commit atma. Dur ve "oturum yanlış depoda" de — doğru depoyla');
+      s.push('> yeni bir oturum açacağım. Depo doğruysa aşağıdakileri yap.');
     } else {
       s.push('> ### Depo henüz bağlanmadı');
       s.push('> Hangi depoda çalışacağımızı sana söylemedim. Dosya oluşturmadan');
@@ -117,6 +119,7 @@ const PROMPT = {
     s.push('- **Uygulama kodu yazma.** Ekran, bileşen, veritabanı şeması, hiçbiri.');
     s.push('- **Tasarım kararı verme.** Renk, yazı tipi, yerleşim — hiçbirini seçme.');
     s.push('- **Sayfa ya da modül uydurma.** Hangi ekranların olacağı henüz belli değil.');
+    s.push('- **Bu oturuma başka depo ekleme.** Tek depo, tek oturum.');
     s.push('- Eksik gördüğün bir şeyi tahmin etme; not al, sonra sor.');
     s.push('');
 

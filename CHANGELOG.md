@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.59.2
+- **Yanlış depoya bağlı oturum uyarısı sıkılaştırıldı.** Eski metin "yanlış depoya yazma" diyordu; Claude bunu hedef depoyu oturuma **ekleyerek** aşıyor, iş doğru depoya gidiyor ama oturum yanlış depoya bağlı kalıyordu. Artık açıkça yazıyor: depo farklıysa hedef depoyu bu oturuma ekleme, dosya oluşturma, commit atma — dur ve söyle. "Şunları yapma" listesine de **"Bu oturuma başka depo ekleme. Tek depo, tek oturum."** maddesi eklendi.
+
 ## v0.59.1
 - **Claude Code artık gerçekten yeni oturum açıyor.** Telefonda `claude.ai/code` mevcut oturumu açtığı için `repositories=` parametresi tutmuyor, oturum en son kullanılan depoda başlıyordu. Bağlantı `claude.ai/code/new` oldu — belgede telefonda yeni oturum için bu adres yazıyor.
 - **Tanıtım metni dalı da söylüyor:** commit `main` dalına gidecek. Claude Code oturuma ayrı bir dal atayabildiği için bu artık açıkça yazılı; yeni depoda ayrı dala ve pull request'e gerek yok.
