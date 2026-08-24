@@ -107,7 +107,9 @@ const PROMPT = {
     s.push('   başlığı ekle: `## Tasarım kararları`, `## Modüller ve sayfalar`,');
     s.push('   `## Kararlar` — hepsinin altına *"henüz belirlenmedi"* yaz.');
     s.push('2. Kısa bir `README.md` ekle: firma adı, ürün adı, tek cümle tarif.');
-    s.push('3. Bunları tek commit\'le gönder. Commit mesajı: `[' + TASK_PREFIX + '-0] Proje kimliği`.');
+    s.push('3. Bunları tek commit\'le **`main` dalına** gönder. Commit mesajı:');
+    s.push('   `[' + TASK_PREFIX + '-0] Proje kimliği`. Oturuma ayrı bir dal atanmış');
+    s.push('   olabilir; bu depo yeni, ayrı dala ve pull request\'e gerek yok.');
     s.push('4. Dur ve bekle.');
     s.push('');
 

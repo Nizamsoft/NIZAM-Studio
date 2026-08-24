@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## v0.59.1
+- **Claude Code artık gerçekten yeni oturum açıyor.** Telefonda `claude.ai/code` mevcut oturumu açtığı için `repositories=` parametresi tutmuyor, oturum en son kullanılan depoda başlıyordu. Bağlantı `claude.ai/code/new` oldu — belgede telefonda yeni oturum için bu adres yazıyor.
+- **Tanıtım metni dalı da söylüyor:** commit `main` dalına gidecek. Claude Code oturuma ayrı bir dal atayabildiği için bu artık açıkça yazılı; yeni depoda ayrı dala ve pull request'e gerek yok.
+
 ## v0.59.0
 - **Depo adresi kendiliğinden geliyor.** "GitHub'da aç"a basıp depoyu kurduktan sonra uygulamaya dönünce adres kendi yazılıyor — artık elle yapıştırmıyorsun. Depo adını zaten Studio üretiyor; eksik olan tek parça GitHub kullanıcı adındı, o da ilk projede bir kez soruluyor ve bir daha sorulmuyor.
 - Adres yazılınca düğme **"Depoyu aç"**a dönüyor ve deponun kendisine götürüyor; bir daha yeni depo kurdurmuyor.

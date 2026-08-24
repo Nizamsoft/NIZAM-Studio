@@ -3620,7 +3620,7 @@ function kurulumSayfasi(p, d) {
       <div class="kur-dug">
         <a class="sayfa-dug ${sohbet || !p.repo ? 'ikincil' : ''}" target="_blank"
            rel="noopener" data-pano="tanisma" data-proje="${p.id}"
-           href="https://claude.ai/code${depoSlug(p.repo)
+           href="https://claude.ai/code/new${depoSlug(p.repo)
              ? '?repositories=' + encodeURIComponent(depoSlug(p.repo)) : ''}">
           ${svg(ICON.katman, 15)} Claude Code'da aç</a>
       </div>
