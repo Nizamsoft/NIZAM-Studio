@@ -1702,6 +1702,54 @@ html { background: var(--bg); }
 }
 .sayfa-dug:active { transform: scale(.985); }
 
+/* Tasarım haritası — öbekler ada ada. Durak yolunun aynı dili. */
+.ada-sar { padding: 2px 0 10px; }
+.ada-ust { display: flex; align-items: center; gap: 11px; margin-bottom: 18px; }
+.ada-ust b { flex: 1; font-family: var(--yazi-baslik); font-size: 17px;
+             color: var(--ink-strong); }
+.ada-cubuk { flex: 0 0 84px; height: 5px; border-radius: 3px;
+             background: var(--surface-3); overflow: hidden; }
+.ada-cubuk i { display: block; height: 100%; border-radius: 3px;
+               background: linear-gradient(90deg, var(--metal-1), var(--metal-2)); }
+.ada-yuzde { font-size: 11px; color: var(--ink-dim); }
+
+.durak.ada { padding-bottom: 14px; }
+.ada-kart {
+  display: flex; align-items: center; gap: 11px; width: 100%; text-align: left;
+  padding: 11px 13px; border: 1px solid var(--line-2); border-radius: 14px;
+  background: var(--yuva); cursor: pointer; font-family: inherit;
+  transition: border-color .16s ease, background .16s ease;
+}
+.ada-kart:hover { border-color: var(--metal-1); }
+.ada-kart:active { transform: scale(.99); }
+.durak.bitti .ada-kart { background: transparent; }
+.durak.simdi .ada-kart {
+  border-color: var(--red-cizgi); background: var(--red-soft);
+  animation: adaNabiz 2.2s ease-in-out infinite;
+}
+@keyframes adaNabiz {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(229, 52, 42, .34); }
+  60%      { box-shadow: 0 0 0 6px rgba(229, 52, 42, 0); }
+}
+.ada-yazi { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.ada-yazi b { font-family: var(--yazi-baslik); font-size: 14px; color: var(--ink); }
+.ada-yazi i { font-style: normal; font-size: 10.5px; color: var(--ink-dim); line-height: 1.45; }
+.ada-sag { flex: 0 0 auto; display: flex; flex-direction: column;
+           align-items: flex-end; gap: 3px; }
+.ada-say { font-size: 10.5px; color: var(--ink-faint); }
+.durak.bitti .ada-say { color: #5cbf92; }
+.ada-durum { font-size: 9px; letter-spacing: .07em; text-transform: uppercase;
+             color: var(--ink-dim); font-weight: 600; }
+.durak.simdi .ada-durum { color: var(--red-ink); }
+
+/* Öbek rozeti artık haritaya dönüş düğmesi. */
+button.as-rozet { border: 0; cursor: pointer; font-family: var(--yazi-baslik); }
+button.as-rozet:active { transform: scale(.94); }
+
+@media (prefers-reduced-motion: reduce) {
+  .durak.simdi .ada-kart { animation: none; }
+}
+
 /* Duraklar artık sayfaya götüren bağlantı */
 a.durak { display: block; text-decoration: none; color: inherit; }
 a.durak:active { transform: scale(.99); transition: transform .1s var(--ease); }

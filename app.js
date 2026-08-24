@@ -936,9 +936,107 @@ function adimNo(p) {
   return Math.max(0, Math.min(n, TASARIM_ADIM.length - 1));
 }
 
+/* Ekranın hangi kipte olduğu: ada haritası mı, tek karar mı.
+   Tasarım durağına her girişte harita açılır. */
+const TASARIM_MOD = {};
+
+/* Adımları öbek öbek grupla. Üç yerde aynı döngü yazılıydı; tek yerden.
+   `kararli` verilirse palet/özet gibi kararsız adımlar dışarıda kalır. */
+function obekleriKur(kararli) {
+  const obekler = [];
+  TASARIM_ADIM.forEach((adim, i) => {
+    if (kararli && !adim.alan) return;
+    const son = obekler[obekler.length - 1];
+    if (son && son.ad === adim.obek) son.satir.push(i);
+    else obekler.push({ ad: adim.obek, not: adim.obekNot || '', satir: [i] });
+  });
+  return obekler;
+}
+
+/* Onaylanan adımlar önce bellekte birikir, adadan çıkarken tek yazımda
+   palete gider — 52 adım için 52 ayrı yazma anlamsız. */
+const ONAY_TASLAK = {};
+
+function adimOnayla(p, i) {
+  const adim = TASARIM_ADIM[i];
+  if (!adim || !adim.alan) return;
+  const pl = p.palet || {};
+  const var1 = Array.isArray(pl.bitenAdim) ? pl.bitenAdim : [];
+  const bek = ONAY_TASLAK[p.id] || (ONAY_TASLAK[p.id] = []);
+  if (var1.indexOf(adim.anahtar) < 0 && bek.indexOf(adim.anahtar) < 0) {
+    bek.push(adim.anahtar);
+  }
+}
+
+async function onaylariYaz(p) {
+  const bek = ONAY_TASLAK[p.id];
+  delete ONAY_TASLAK[p.id];
+  if (!bek || !bek.length) return;
+  const pl = p.palet || {};
+  const var1 = Array.isArray(pl.bitenAdim) ? pl.bitenAdim : [];
+  try {
+    await DB.paletKaydet(p.id, Object.assign({}, pl, { bitenAdim: var1.concat(bek) }));
+  } catch (h) { /* kritik değil: seçimler zaten palete yazılıyor */ }
+}
+
+/* Bu adıma cevap verilmiş mi? `bicimSecim` cevap yokken varsayılana düştüğü,
+   `bicimAyni` de bilerek seçilen varsayılanı "aynı" saydığı için ikisi de
+   bu soruya cevap vermiyor. Ölçüt: palete yazılmış ya da İleri'yle onaylanmış. */
+function adimBitti(p, i) {
+  const adim = TASARIM_ADIM[i];
+  const pl = p.palet || {};
+  if (adim.tur === 'palet') return !!pl.bg;
+  const onaylanan = (Array.isArray(pl.bitenAdim) ? pl.bitenAdim : [])
+    .concat(ONAY_TASLAK[p.id] || []);
+  if (onaylanan.indexOf(adim.anahtar) > -1) return true;
+  return adim.alan ? pl[adim.anahtar] !== undefined : false;
+}
+
+/* Bir adanın durumu ve sayacı. */
+function adaDurumu(p, o) {
+  const biten = o.satir.filter(i => adimBitti(p, i)).length;
+  return { biten, toplam: o.satir.length, tam: biten >= o.satir.length };
+}
+
 /* Bir ekranda tek karar: üstte adım çubuğu, ortada önizleme, altta seçim.
    Sayfa kaydırılmaz — üç parça ekrana sığacak şekilde bölüşür. */
+/* Tasarım haritası — ada ada. Her öbek bir ada; biten yeşil, sıradaki
+   kırmızı ve nabız atar. Sıra zorunlu değil, ileri adaya da dokunulabilir. */
+function tasarimHaritasi(p, d) {
+  const obekler = obekleriKur();
+  const durumlar = obekler.map(o => adaDurumu(p, o));
+  const simdi = durumlar.findIndex(x => !x.tam);
+
+  const toplam = durumlar.reduce((t, x) => t + x.toplam, 0);
+  const biten  = durumlar.reduce((t, x) => t + x.biten, 0);
+  const yuzde  = toplam ? Math.round(biten / toplam * 100) : 0;
+
+  return `<div class="ada-sar">
+    <div class="ada-ust">
+      <b>Tasarım haritası</b>
+      <span class="ada-cubuk"><i style="width:${yuzde}%"></i></span>
+      <span class="ada-yuzde mono">%${yuzde}</span>
+    </div>
+    <div class="yol">${obekler.map((o, i) => {
+      const x = durumlar[i];
+      const durum = x.tam ? 'bitti' : i === simdi ? 'simdi' : 'bekliyor';
+      return `<div class="durak ada ${durum}">
+        <span class="durak-no">${x.tam ? svg(ICON.tik, 13) : i + 1}</span>
+        <button class="ada-kart" type="button" data-eylem="tasarim-ada"
+                data-proje="${p.id}" data-deger="${o.satir[0]}">
+          <span class="ada-yazi"><b>${esc(o.ad)}</b><i>${esc(o.not)}</i></span>
+          <span class="ada-sag">
+            <span class="ada-say mono">${x.biten}/${x.toplam}</span>
+            <span class="ada-durum">${
+              x.tam ? 'bitti' : i === simdi ? 'sıradaki' : ''}</span>
+          </span></button>
+      </div>`;
+    }).join('')}</div>
+  </div>`;
+}
+
 function tasarimSayfasi(p, d) {
+  if (TASARIM_MOD[p.id] !== 'adim') return tasarimHaritasi(p, d);
   const no    = adimNo(p);
   const adim  = TASARIM_ADIM[no];
   const pl    = p.palet || null;
@@ -1017,18 +1115,15 @@ function tasarimSayfasi(p, d) {
 function adimSeridi(p, no, adim) {
   /* Noktalar öbek öbek ayrılır: hangi bölümdesin ve kaç bölüm kaldı görünür. */
   const yeniler = yeniKararlar(p.palet).map(a => a.anahtar);
-  const obekler = [];
-  TASARIM_ADIM.forEach((a, i) => {
-    const son = obekler[obekler.length - 1];
-    if (son && son.ad === a.obek) son.satir.push(i);
-    else obekler.push({ ad: a.obek, satir: [i] });
-  });
+  const obekler = obekleriKur();
   const suObek = obekler.findIndex(o => o.satir.includes(no));
 
   return `
     <div class="adim-serit">
       <div class="as-obek">
-        <span class="as-rozet">${suObek + 1}</span>
+        <button class="as-rozet" type="button" title="Haritaya dön"
+                data-eylem="tasarim-adim" data-proje="${p.id}"
+                data-deger="-2">${suObek + 1}</button>
         <span class="as-ad"><b>${esc(adim.obek)}</b><i>${esc(adim.obekNot || '')}</i></span>
         ${yeniler.length && !yeniler.includes(adim.anahtar) ? `
           <button class="as-yeni" type="button" data-eylem="yeni-karar-git"
@@ -1057,9 +1152,14 @@ const YENI_KIP = {};
 /* Alt satır. Tek seçimli adımda ileri düğmesi "geç" der: seçim zaten ilerletir. */
 function adimGezinme(p, no, adim) {
   const son = no === TASARIM_ADIM.length - 1;
+  /* Ada bitince akış devam etmez, haritaya döner: kullanıcı nerede olduğunu
+     ve ne kaldığını görür. -2 "haritaya dön" demek. */
+  const obek = obekleriKur().find(o => o.satir.includes(no)) || { satir: [no] };
+  const adaSonu = no === obek.satir[obek.satir.length - 1];
+  const adaBasi = no === obek.satir[0];
 
-  let hedef = son ? -1 : no + 1;
-  let yazi  = son ? 'Bitir' : 'İleri';
+  let hedef = son ? -1 : adaSonu ? -2 : no + 1;
+  let yazi  = son ? 'Bitir' : adaSonu ? 'Adayı bitir' : 'İleri';
   let kip   = '';
   if (YENI_KIP[p.id] && !son) {
     const kalan = yeniKararlar(p.palet).filter(a => a.anahtar !== adim.anahtar);
@@ -1075,9 +1175,10 @@ function adimGezinme(p, no, adim) {
 
   return `
     <div class="adim-gez">
-      <button class="ag geri" type="button" ${no ? '' : 'disabled'}
-              data-eylem="tasarim-adim" data-proje="${p.id}" data-deger="${no - 1}">
-        ${svg(ICON.chevron, 14)} Geri</button>
+      <button class="ag geri" type="button"
+              data-eylem="tasarim-adim" data-proje="${p.id}"
+              data-deger="${adaBasi ? -2 : no - 1}">
+        ${svg(ICON.chevron, 14)} ${adaBasi ? 'Harita' : 'Geri'}</button>
       <button class="ag ileri${kip ? ' yeni' : ''}" type="button"${kip}
               data-eylem="tasarim-adim" data-proje="${p.id}" data-deger="${hedef}">
         ${yazi} ${svg(ICON.chevron, 14)}</button>
@@ -1202,18 +1303,13 @@ function kararlarAc(projeId) {
   const pl = p.palet || {};
 
   /* Öbek öbek: her satır bir karar, dokununca o adıma gider. */
-  const obekler = [];
-  TASARIM_ADIM.forEach((adim, i) => {
-    if (!adim.alan) return;
-    const son = obekler[obekler.length - 1];
-    if (son && son.ad === adim.obek) son.satir.push([adim, i]);
-    else obekler.push({ ad: adim.obek, satir: [[adim, i]] });
-  });
+  const obekler = obekleriKur(true);
 
   const govde = obekler.map(o => `
     <div class="kr-obek">
       <span class="kr-obek-ad">${esc(o.ad)}</span>
-      ${o.satir.map(([adim, i]) => {
+      ${o.satir.map(i => {
+        const adim = TASARIM_ADIM[i];
         const d = bicimSecim(pl, adim.alan);
         return `<button class="kr-sat" type="button" data-kr="${i}">
           <span>${esc(adim.ad)}</span>
@@ -3980,6 +4076,12 @@ function render() {
   const detay = key === 'projeler' && id;
   const sayfa = detay && DURAKLAR[durak] ? durak : null;
 
+  /* Tasarım durağından çıkıldıysa kip haritaya döner: geri gelindiğinde
+     yarım kalan adımın içine değil, haritanın başına düşülsün. */
+  if (sayfa !== 'tasarim') {
+    Object.keys(TASARIM_MOD).forEach(k => { delete TASARIM_MOD[k]; });
+  }
+
   /* Üstte iki satır: firma adı sabit, altında bulunduğun sayfanın adı. */
   const baslik = $('#page-title');
   if (sayfa) {
@@ -6743,6 +6845,16 @@ async function eylemCalistir(el) {
     return;
   }
 
+  if (e === 'tasarim-ada') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    TASARIM_MOD[pr.id] = 'adim';
+    TASARIM_YER[pr.id] = Number(el.dataset.deger);
+    render();
+    $('#view').scrollTop = 0;
+    return;
+  }
+
   if (e === 'tasarim-adim') {
     const pr = DB.proje(el.dataset.proje);
     if (!pr) return;
@@ -6751,7 +6863,14 @@ async function eylemCalistir(el) {
        kullanıcı normal akışa dönmüş demektir. */
     if (!el.dataset.yenikip) delete YENI_KIP[pr.id];
     if (hedef === TASARIM_ADIM.length - 1) delete YENI_KIP[pr.id];
-    if (hedef < 0) { location.hash = '#/projeler/' + pr.id; return; }
+
+    /* İleri gidiyorsa bu adım onaylanmış sayılır — varsayılanı kabul etmek de
+       bir karardır. Toplu yazılıyor, her adımda veritabanına gidilmiyor. */
+    const su = adimNo(pr);
+    if (hedef === -2 || hedef > su) adimOnayla(pr, su);
+
+    if (hedef === -2) { TASARIM_MOD[pr.id] = 'harita'; await onaylariYaz(pr); render(); return; }
+    if (hedef < 0) { await onaylariYaz(pr); location.hash = '#/projeler/' + pr.id; return; }
     TASARIM_YER[pr.id] = hedef;
     render();
     $('#view').scrollTop = 0;

@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.55.0
+- **Tasarım artık ada ada.** Adıma girmeden önce harita açılıyor: 11 ada, her biri bir öbek. Biten yeşil tikli, sıradaki kırmızı ve nabız atıyor, sağda `3/9` karar sayacı ve tepede genel yüzde var. 52 adımı baştan sona takip etmek yerine adayı bitirip haritaya dönüyorsun.
+- Adanın son adımında İleri **"Adayı bitir"** oluyor ve haritaya dönüyor; ilk adımında Geri **"Harita"** oluyor. Üstteki öbek rozeti de haritaya dönüş düğmesi.
+- Sıra zorunlu değil: ileri bir adaya dokunup açabilirsin.
+- Varsayılanı İleri'yle onaylamak da tamamlama sayılıyor; onaylar adadan çıkarken tek yazımda kaydediliyor.
+
 ## v0.54.0
 - **Roller artık Yapı'da belirleniyor.** Ağaçta firmanın hemen altında "Roller" satırı var: kaç yetki katmanı olduğunu ve adlarını orada yazıyorsun. Modül kurallarındaki "kimler görür" sorusu bu listeden besleniyor — doğru yerde soruluyor.
 - **Sihirbaz 6 adımdan 5'e indi.** Roller çıktı, tarihler "Yetkili kişi" adımına inip "Yetkili ve takvim" oldu.
