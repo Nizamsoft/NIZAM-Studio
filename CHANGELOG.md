@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## v0.60.0
+- **Tasarım özetindeki düğme artık doğru promptu veriyor.** Eskiden marka paleti *isteme* promptunu kopyalıyordu — oysa o adımda palet çoktan gelmişti. Şimdi **2. bloğu** kopyalıyor: palet, yazı tipleri ve 52 arayüz kararı, üstüne "NIZAM.md'deki *Tasarım kararları* başlığını doldur, `[NS-0] Tasarım kararları` ile main'e gönder, dur ve bekle" talimatı.
+- Blok kod yazmayı, sayfa uydurmayı ve karar değiştirmeyi açıkça yasaklıyor; depo uyarısı da içinde.
+- Palet adasındaki "Prompt kopyala" değişmedi — o hâlâ logodan palet isteyen prompt. İkisi artık ayrı işler.
+
 ## v0.59.2
 - **Yanlış depoya bağlı oturum uyarısı sıkılaştırıldı.** Eski metin "yanlış depoya yazma" diyordu; Claude bunu hedef depoyu oturuma **ekleyerek** aşıyor, iş doğru depoya gidiyor ama oturum yanlış depoya bağlı kalıyordu. Artık açıkça yazıyor: depo farklıysa hedef depoyu bu oturuma ekleme, dosya oluşturma, commit atma — dur ve söyle. "Şunları yapma" listesine de **"Bu oturuma başka depo ekleme. Tek depo, tek oturum."** maddesi eklendi.
 

@@ -138,6 +138,54 @@ const PROMPT = {
     return s.join('\n');
   },
 
+  /* 2. blok — tasarım kararları. Tanıtımdan sonra aynı Claude Code
+     oturumuna yapıştırılır. Marka paleti promptuyla karıştırılmasın:
+     o palet İSTEMEK için, bu palet GELDİKTEN sonra kararları teslim için. */
+  tasarim(projeId) {
+    const p = DB.proje(projeId);
+    if (!p) return '';
+
+    const s = [];
+    s.push('# ' + projeAdi(p) + ' — 2. blok: Tasarım kararları', '');
+
+    const slug = depoSlug(p.repo);
+    if (slug) {
+      s.push('> ### Depo: `' + slug + '`');
+      s.push('> Bu oturum yalnız bu depoya bağlı olmalı. Deposu farklıysa dur');
+      s.push('> ve söyle; başka depo ekleme, dosya oluşturma, commit atma.');
+      s.push('');
+    }
+
+    s.push('Tanıtımda söz verdiğim iki bloktan **birincisi** bu. İçinde');
+    s.push('rengin, yazının ve arayüzün bütün kararları var. Kod yazmanı');
+    s.push('hâlâ **istemiyorum** — bunları `NIZAM.md`\'ye yazacaksın.', '');
+
+    const palet = PROMPT.paletBlogu(p);
+    if (palet) { s.push(palet); s.push(''); }
+    s.push(PROMPT.tasarimBlogu(p));
+    s.push('');
+
+    s.push('## Şimdi ne yapacaksın');
+    s.push('1. `NIZAM.md` içindeki `## Tasarım kararları` başlığının altındaki');
+    s.push('   *"henüz belirlenmedi"* satırını sil, yukarıdaki kararları oraya yaz.');
+    s.push('   Renkleri değişken olarak tek yerde tanımla; her ekranda tekrarlama.');
+    s.push('2. Tek commit\'le **`main` dalına** gönder. Commit mesajı:');
+    s.push('   `[' + TASK_PREFIX + '-0] Tasarım kararları`.');
+    s.push('3. Dur ve bekle. Sıradaki blok: modüller, sayfalar ve künyeleri.');
+    s.push('');
+
+    s.push('## Şunları yapma');
+    s.push('- **Uygulama kodu yazma.** Ekran, bileşen, CSS dosyası — hiçbiri.');
+    s.push('- **Sayfa ya da modül uydurma.** Hangi ekranların olacağı hâlâ belli değil.');
+    s.push('- **Karar ekleme ya da değiştirme.** Yukarıdakiler tartışılmadan uygulanır;');
+    s.push('  eksik gördüğün bir şey varsa uydurma, sor.');
+    s.push('- **Bu oturuma başka depo ekleme.** Tek depo, tek oturum.');
+    s.push('');
+    s.push('Yazdıktan sonra tek cümleyle onayla ve bekle.');
+
+    return s.join('\n');
+  },
+
   /* Kurulum aşamaları — hem görev promptunda hem NIZAM.md'de yazar. */
   kurulumBlogu() {
     const s = ['### Nasıl kodlanacak — beş aşama'];

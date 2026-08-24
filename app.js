@@ -1238,8 +1238,10 @@ function tasarimOzeti(p) {
         <span>Karakter: ${esc(pl.ton)}</span></div>` : '')
     + celiskiKutusu(p)
     + (AUTH.yonetici ? `
-      <button class="sayfa-dug ikincil" data-eylem="palet-prompt" data-proje="${p.id}" type="button">
-        ${svg(ICON.kopya, 15)} Prompt kopyala</button>
+      <button class="sayfa-dug kopyala-dug" data-eylem="tasarim-blok"
+              data-proje="${p.id}" type="button">
+        <span class="kd-ikon">${svg(ICON.kopya, 15)}${svg(ICON.tik, 15)}</span>
+        <span class="kd-yazi">2. bloğu kopyala — tasarım kararları</span></button>
       <button class="sayfa-dug ikincil" data-eylem="palet-duzenle" data-proje="${p.id}" type="button">
         ${svg(ICON.kalem, 15)} Paleti elle düzenle</button>
       <button class="tumSifir" type="button" data-eylem="tasarim-tum-sifirla" data-proje="${p.id}">
@@ -6148,25 +6150,30 @@ function logoSec(projeId) {
 /* Tek dokunuşta panoya alır: düğme "kopyalandı"ya döner, yapıştır düğmesi
    parlar. İki dokunuş (önce pencere aç, sonra kopyala) gereksizdi. */
 async function paletKopyala(el) {
+  return promptKopyala(el, p => PROMPT.marka(p.id), 'Prompt kopyala');
+}
+
+/* Panoya alır, düğmeyi "kopyalandı" hâline çevirir, 2,2 sn sonra geri alır. */
+async function promptKopyala(el, uret, eskiYazi) {
   const p = DB.proje(el.dataset.proje);
   if (!p) return;
 
-  const oldu = await panoyaKopyala(PROMPT.marka(p.id));
-  if (!oldu) { toast('Kopyalanamadı. "Promptu gör" ile elle kopyala.', 'hata'); return; }
+  const oldu = await panoyaKopyala(uret(p));
+  if (!oldu) { toast('Kopyalanamadı. Metni elle almayı dene.', 'hata'); return; }
 
   const yazi = $('.kd-yazi', el);
   el.classList.add('kopyalandi');
-  if (yazi) yazi.textContent = 'Prompt kopyalandı';
+  if (yazi) yazi.textContent = 'Kopyalandı';
 
-  /* Sıradaki adım yapıştırmak: o düğme sonraki çizime kadar parlıyor. */
+  /* Palet adımında sıradaki iş yapıştırmak: o düğme parlasın. */
   const yapistir = $('[data-eylem="palet-aktar"][data-proje="' + p.id + '"]');
   if (yapistir) yapistir.classList.add('parla');
 
-  clearTimeout(paletKopyala.zaman);
-  paletKopyala.zaman = setTimeout(() => {
+  clearTimeout(promptKopyala.zaman);
+  promptKopyala.zaman = setTimeout(() => {
     if (!el.isConnected) return;
     el.classList.remove('kopyalandi');
-    if (yazi) yazi.textContent = 'Prompt kopyala';
+    if (yazi) yazi.textContent = eskiYazi;
   }, 2200);
 }
 
@@ -7085,6 +7092,8 @@ async function eylemCalistir(el) {
 
   if (e === 'logo-yukle')    return logoSec(el.dataset.proje);
   if (e === 'palet-prompt')      return paletKopyala(el);
+  if (e === 'tasarim-blok')      return promptKopyala(el, pr => PROMPT.tasarim(pr.id),
+                                                      '2. bloğu kopyala — tasarım kararları');
   if (e === 'palet-prompt-gor')  return paletPromptu(el.dataset.proje);
   if (e === 'palet-aktar')   return paletAktar(el.dataset.proje);
   if (e === 'palet-duzenle') return paletDuzenle(el.dataset.proje);
