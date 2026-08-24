@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## v0.61.0
+- **Üst çubuk çelişkileri artık yakalanıyor.** "İnce başlık" tarifi *"yalnız sayfa adı ve geri oku"* diyor; yanına kullanıcı çipi, destek düğmesi, arama simgesi, eylem düğmesi ya da güncelleme rozeti seçilirse Özet ekranı uyarıyor ve dokununca o adıma götürüyor. Sağa bir şey koymak istiyorsan üst çubuğu "Logo + arama" ya da "Eylemli" seçmelisin.
+- **Yalnız mobil projede masaüstü kararı uyarı veriyor.** "Genişlik" başlığı ve "Bildirim: Sağ üstte" masaüstü kararı; proje sadece mobilse Özet bunu söylüyor. Platform "İkisi birden" ise uyarı çıkmıyor.
+- **Marka paleti promptuna kural eklendi:** Ton cümlesi vurgu rengiyle çelişmesin — vurgu maviyse ton "kırmızı kıvılcım" diye tarif edilmesin.
+
 ## v0.60.1
 - Tasarım bloğunda iki çelişki düzeltildi: başlık "2. blok" derken gövde "iki bloktan birincisi" diyordu — bloklar artık **2/3** ve **3/3** diye numaralanıyor. Ayrıca "renkleri değişken olarak tanımla" talimatı "CSS dosyası yazma" yasağıyla çakışıyordu; artık renk kodlarının şimdilik yalnız NIZAM.md'ye yazılacağı, değişken tanımının kod zamanına kalacağı söyleniyor.
 

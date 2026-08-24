@@ -7,7 +7,7 @@ const APP = {
   name:     'NIZAM | Studio',
   short:    'NIZAM Studio',
   owner:    'Nizam Soft',
-  version: 'v0.60.1',
+  version: 'v0.61.0',
   build:    '2026-08-20',
   stage: 'Adım 4 · Yapı ağacı',
 };
@@ -101,6 +101,20 @@ const CELISKI = [
   [['ustcubuk', 'Yok'], ['arama', 'Simgeden açılan'],         'Simge üst çubukta durur, üst çubuk yok.'],
   [['ustcubuk', 'Yok'], ['yoliz', 'Geri oku + başlık'],       'Geri oku üst çubukta durur.'],
   [['ustcubuk', 'Yok'], ['donem', 'Başlıkta açılır'],         'Başlık yok.'],
+  /* İnce başlık tarifi "yalnız sayfa adı ve geri oku" diyor; sağa bir şey
+     eklemek istiyorsan üst çubuğu "Logo + arama" ya da "Eylemli" seç. */
+  [['ustcubuk', 'İnce başlık'], ['kullanicimenu', 'Sağ üstte çip'],
+   'İnce başlıkta yalnız sayfa adı ve geri oku var; çip sığmaz.'],
+  [['ustcubuk', 'İnce başlık'], ['kullanicimenu', 'Sağ üstte avatar'],
+   'İnce başlıkta yalnız sayfa adı ve geri oku var; avatar sığmaz.'],
+  [['ustcubuk', 'İnce başlık'], ['destek', 'Üst çubukta'],
+   'İnce başlıkta destek düğmesine yer yok.'],
+  [['ustcubuk', 'İnce başlık'], ['anaeylem', 'Sağ üstte'],
+   'İnce başlıkta eylem düğmesine yer yok.'],
+  [['ustcubuk', 'İnce başlık'], ['arama', 'Simgeden açılan'],
+   'Büyüteç üst çubukta durur; ince başlıkta yer yok.'],
+  [['ustcubuk', 'İnce başlık'], ['guncelleme', 'Üstte rozet'],
+   'Rozet üst çubukta durur; ince başlıkta yer yok.'],
   [['gezinme', 'Sabit yan menü'],   ['anaeylem', 'Alt çubukta orta'], 'Alt çubuk yok.'],
   [['gezinme', 'Açılır yan menü'],  ['anaeylem', 'Alt çubukta orta'], 'Alt çubuk yok.'],
   [['gezinme', 'Üst menü'],         ['anaeylem', 'Alt çubukta orta'], 'Alt çubuk yok.'],
@@ -451,7 +465,7 @@ const YERLESIM_ALAN = [
   },
   {
     anahtar: 'genislik', ad: 'Genişlik', alt: 'Masaüstünde içerik ne kadar yayılsın?',
-    varsayilan: 'Ortada sınırlı', ekran: 'panel', genis: true,
+    varsayilan: 'Ortada sınırlı', ekran: 'panel', genis: true, masaustu: true,
     secim: [
       { ad: 'Tam genişlik',   tarif: 'İçerik ekranın tamamını kullanır. Geniş tablolar için.', tel: ['blokTam'] },
       { ad: 'Ortada sınırlı', tarif: 'En fazla 1200px, ortalanır. Uzun satırlar okunaklı kalır.', tel: ['blokOrta'] },
@@ -506,7 +520,7 @@ const DURUM_ALAN = [
     secim: [
       { ad: 'Üstte şerit',    tarif: 'Sayfanın tepesinde tam genişlik şerit; kalıcı uyarılar için.', tel: ['seritUst', 'liste'] },
       { ad: 'Alttan kart',    tarif: 'Alttan kayan kart, birkaç saniyede kaybolur.', tel: ['liste', 'seritAlt'] },
-      { ad: 'Sağ üstte',      tarif: 'Sağ üst köşede yığılan kartlar. Masaüstü alışkanlığı.', tel: ['liste', 'sagUst'] },
+      { ad: 'Sağ üstte',      tarif: 'Sağ üst köşede yığılan kartlar. Masaüstü alışkanlığı.', tel: ['liste', 'sagUst'], masaustu: true },
       { ad: 'Ortada pencere', tarif: 'Ekranı durduran pencere. Yalnız kritik uyarılar için.', tel: ['liste', 'pencere'] },
     ],
   },

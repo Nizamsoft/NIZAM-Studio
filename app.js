@@ -1264,6 +1264,29 @@ function celiskiKutusu(p) {
     }
   });
 
+  /* Yalnız mobil bir projede masaüstü kararı seçilmişse söyle. Seçenek
+     Studio'nun kendi listesinden geldi; uyarısı da Studio'dan gelmeli. */
+  const masaustu = [];
+  if (p.platform === 'mobil') {
+    TUM_TASARIM.forEach(a => {
+      const secili = bicimSecim(pl, a);
+      if (a.masaustu && secili.length) {
+        masaustu.push([a.ad + ': ' + secili.join(' + '),
+          'Bu proje yalnız mobil; masaüstü kararının karşılığı yok.',
+          TASARIM_ADIM.findIndex(x => x.anahtar === a.anahtar)]);
+        return;
+      }
+      (a.secim || []).forEach(sc => {
+        if (sc.masaustu && secili.includes(sc.ad)) {
+          masaustu.push([a.ad + ': ' + sc.ad,
+            'Bu proje yalnız mobil; masaüstü kararının karşılığı yok.',
+            TASARIM_ADIM.findIndex(x => x.anahtar === a.anahtar)]);
+        }
+      });
+    });
+  }
+  bulunan.push(...masaustu);
+
   /* Kontrast da burada: palet elle düzenlenmiş olabilir. */
   const kontrast = [];
   if (pl.bg) {

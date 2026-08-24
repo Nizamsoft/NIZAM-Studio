@@ -569,6 +569,8 @@ const PROMPT = {
     s.push('- Yazı tipleri **Google Fonts\'ta bulunsun**, Türkçe karakterleri tam olsun.');
     s.push('  Başlık 600-700, metin 400-500 ağırlıkta kullanılacak.');
     s.push('- Simge seti ücretsiz ve açık kaynak olsun (Lucide, Phosphor, Tabler gibi).');
+    s.push('- **Ton cümlesi vurgu rengiyle çelişmesin.** Vurguyu maviden seçtiysen');
+    s.push('  tonu "kırmızı kıvılcım" diye tarif etme; ikisi aynı şeyi anlatsın.');
     s.push('');
 
     s.push('## Cevap');
