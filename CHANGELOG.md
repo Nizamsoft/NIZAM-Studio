@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## v0.66.0
+- **Çözümleme promptu artık veri katmanını söylüyor.** Modül kurulurken Claude'a yalnız firma, sektör ve roller gidiyordu; sunucusuz bir projede bile modül kurallarına *"satır güvenliği (RLS)"* yazıyordu. Yerel seçiliyse prompt açıkça yasaklıyor: roller yalnız arayüzü biçimlendirir, RLS yazma.
+- **Modül silme her yoldan aynı işi yapıyor.** Proje ekranındaki ⋯ menüsünden silinen modülün sayfa künyeleri, anlatımı ve modül kuralları palette **yetim kalıyordu** — promptlar silinmiş modülü yazmaya devam ediyordu. Artık üç silme yolu da paleti temizliyor ve modülde görev varsa hepsi engelliyor.
+- Ağaçtan modül silinince taslak tamamen sıfırlanıyor; modül kuralları ve bağlantı listesi bir sonraki modüle sızıyordu.
+
 ## v0.65.0
 - **Beta durağına "Yayın adresi" adımı geldi ve sıraya girdi.** Artık 3. blok, yayın adresi kaydedilmeden kopyalanamıyor — düğme sönük duruyor ve sebebi yazıyor. Sıra: adresi al → bloğu kopyala → betayı dene.
 - **Pages ayarları tek dokunuşla açılıyor** (`Settings → Pages` bağlantısı) ve geri dönünce adres kendiliğinden yazılıyor: `nizamsoft.github.io/NIZAMSOFT-KisiselButce`. Depo adresinden türetiliyor, elle yazmaya gerek yok.

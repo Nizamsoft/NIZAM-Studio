@@ -474,6 +474,16 @@ const PROMPT = {
     s.push(`${proje.firma}${proje.sektor ? ' · ' + proje.sektor : ''}`);
     s.push(`Modül: ${taslak.modul || '—'}`);
     if (roller.length) s.push(`Roller (alttan üste): ${roller.join(' · ')}`);
+
+    /* Veri katmanı buraya girmezse Claude kurallara RLS yazıyor —
+       sunucusuz projede karşılığı yok. */
+    if ((proje.palet || {}).veriKatmani === 'Yerel tarayıcı') {
+      s.push('Veri: Yerel tarayıcı — sunucu yok, kimlik doğrulama yok.');
+      s.push('Roller yalnız arayüzü biçimlendirir. Kurallara "RLS", "satır');
+      s.push('güvenliği" ya da "kullanıcı yalnız kendi kaydını görür" yazma.');
+    } else {
+      s.push('Veri: Supabase — satır güvenliği (RLS) her tabloda açık.');
+    }
     s.push('');
     if ((taslak.sayfalar || []).length) {
       s.push('## Kuracağım ekranlar');

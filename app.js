@@ -3581,6 +3581,48 @@ function modulAdiSor(p) {
   });
 }
 
+/* Proje ekranından modül silme. Ağaçtaki yolla aynı işi yapsın diye
+   ortak: görev kontrolü, onay, palet temizliği. */
+async function modulKaldir(el, id) {
+  const modul = DB.moduller.find(m => m.id === id);
+  const pr = modul ? DB.proje(modul.proje_id) : null;
+  const ad = el.dataset.ad || (modul && modul.ad) || 'Modül';
+
+  if (pr) {
+    const gorev = modulGorevSayisi(pr, id);
+    if (gorev) return toast('Bu modülde ' + gorev + ' görev var, önce onları taşı.', 'hata');
+  }
+  if (!await onaySor({
+    baslik: 'Modül silinsin mi?',
+    mesaj: `"${ad}" modülü, sayfaları ve künyeleri silinecek. Bu işlem geri alınamaz.`,
+  })) return;
+
+  ACIK_MODUL.delete(id);
+  return isYap(async () => {
+    await DB.modulSil(id);
+    if (pr) await modulPaletTemizle(pr, ad);
+  }, 'Modül silindi.');
+}
+
+/* Modül silinince palet üç yerde iz bırakıyor: sayfa künyeleri, anlatım
+   ve modül kuralları. Temizlenmezse silinmiş modül prompta yazılmaya
+   devam ediyor — kunyeBlogu palete bakıyor, veritabanına değil. */
+async function modulPaletTemizle(pr, ad) {
+  const pl = Object.assign({}, pr.palet || {});
+  const kn = Object.assign({}, pl.kunye || {});
+  Object.keys(kn).forEach(x => { if (x.startsWith(ad + ' · ')) delete kn[x]; });
+  const an = Object.assign({}, pl.anlatim || {});
+  delete an[ad];
+  const mkh = Object.assign({}, pl.modulKunye || {});
+  delete mkh[ad];
+  await DB.paletKaydet(pr.id, Object.assign(pl, { kunye: kn, anlatim: an, modulKunye: mkh }));
+}
+
+/* Modülde görev varsa silme: görevler yetim kalır (modul_id null'a düşer). */
+function modulGorevSayisi(pr, modulId) {
+  return DB.gorevleri({ proje: pr.id }).filter(g => g.modul_id === modulId).length;
+}
+
 /* GitHub Pages'in bu depo için üreteceği adres.
    "nizamsoft/NIZAMSOFT-KisiselButce" → "nizamsoft.github.io/NIZAMSOFT-KisiselButce" */
 function pagesAdresi(p) {
@@ -7544,13 +7586,7 @@ async function eylemCalistir(el) {
       return isYap(() => DB.adDegistir('modules', id, ad), 'Ad güncellendi.');
     }
 
-    const ok = await onaySor({
-      baslik: 'Modül silinsin mi?',
-      mesaj: `"${el.dataset.ad}" modülü ve içindeki tüm sayfalar silinecek. Bu işlem geri alınamaz.`,
-    });
-    if (!ok) return;
-    ACIK_MODUL.delete(id);
-    return isYap(() => DB.modulSil(id), 'Modül silindi.');
+    return modulKaldir(el, id);
   }
 
   if (e === 'modul-ekle') return modulEkleAc(el.dataset.proje || el.dataset.id || rota().id);
@@ -7665,8 +7701,7 @@ async function eylemCalistir(el) {
     if (!pr) return;
     const t = yapiTaslak(pr);
     const kurulu = DB.modulleri(pr.id).find(m => m.ad === el.dataset.ad);
-    const gorev = kurulu
-      ? DB.gorevleri({ proje: pr.id }).filter(g => g.modul_id === kurulu.id).length : 0;
+    const gorev = kurulu ? modulGorevSayisi(pr, kurulu.id) : 0;
     if (gorev) return toast('Bu modülde ' + gorev + ' görev var, önce onları taşı.', 'hata');
     if (!await onaySor({
       baslik: el.dataset.ad + ' kaldırılsın mı?',
@@ -7678,19 +7713,14 @@ async function eylemCalistir(el) {
     if (kurulu) {
       try {
         await DB.modulSil(kurulu.id);
-        const pl = Object.assign({}, pr.palet || {});
-        const kn = Object.assign({}, pl.kunye || {});
-        Object.keys(kn).forEach(x => { if (x.startsWith(el.dataset.ad + ' · ')) delete kn[x]; });
-        const an = Object.assign({}, pl.anlatim || {});
-        delete an[el.dataset.ad];
-        const mkh = Object.assign({}, pl.modulKunye || {});
-        delete mkh[el.dataset.ad];
-        await DB.paletKaydet(pr.id, Object.assign(pl,
-          { kunye: kn, anlatim: an, modulKunye: mkh }));
+        await modulPaletTemizle(pr, el.dataset.ad);
       } catch (err) { return toast(err.message, 'hata'); }
     }
+    /* Taslağın tamamı sıfırlanmalı: kalan mk/bağlantı bir sonraki modüle sızıyordu. */
     t.modul = ''; t.sayfalar = []; t.kunye = {}; t.odak = null; t.dal = null;
     t.anlat = ''; t.kararlar = [];
+    t.mk = { roller: [], eylemler: [], yetki: {}, kural: '' };
+    t.baglantilar = []; t.hazirVeri = []; t.ciktilar = [];
     toast(el.dataset.ad + ' kaldırıldı.');
     render();
     return;
@@ -8212,15 +8242,7 @@ async function eylemCalistir(el) {
     return isYap(() => DB.adDegistir('modules', id, ad), 'Ad güncellendi.');
   }
 
-  if (e === 'modul-sil') {
-    const ok = await onaySor({
-      baslik: 'Modül silinsin mi?',
-      mesaj: `"${el.dataset.ad}" modülü ve içindeki tüm sayfalar silinecek. Bu işlem geri alınamaz.`,
-    });
-    if (!ok) return;
-    ACIK_MODUL.delete(id);
-    return isYap(() => DB.modulSil(id), 'Modül silindi.');
-  }
+  if (e === 'modul-sil') return modulKaldir(el, id);
 
   if (e === 'sayfa-ekle') {
     const ad = await metinSor({ baslik: 'Yeni sayfa', yerTutucu: 'Örn. Sipariş Detayı', buton: 'Ekle' });
