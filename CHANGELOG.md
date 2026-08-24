@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.57.1
+- **Depo adı okunur oldu:** `nizam-soft-kisisel-butce` yerine **`NIZAMSOFT-KisiselButce`** — firma tamamen büyük ve bitişik, modül her kelimenin ilk harfi büyük ve bitişik, aralarında tek tire. Türkçe harfler ASCII'ye iniyor (`Güllüoğlu Kübban` → `GULLUOGLUKUBBAN`). Modül adı boşsa yalnız firma yazılıyor.
+
 ## v0.57.0
 - **Proje adı artık "Firma - Modül".** Depo durağının tepesine **Modül adı** satırı geldi (örn. Kişisel Bütçe). Yazdığın an proje listesi, künye, üst çubuk, görev başlıkları ve promptlar "Nizam Soft - Kişisel Bütçe" diye görünüyor; depo adı da `nizam-soft-kisisel-butce` oluyor. Modül adı boşsa hiçbir şey değişmiyor, sade firma adı kalıyor.
 - Yapı ağacına girince ilk modül bu adla hazır geliyor.

@@ -3470,14 +3470,22 @@ function disariAc(url) {
   window.open(url, '_blank', 'noopener');
 }
 
-/* Firma adından depo adı: "Güllüoğlu Kübban" → "gulluoglu-kubban" */
-function depoAdi(firma) {
-  const tr = { 'ç':'c','ğ':'g','ı':'i','İ':'i','ö':'o','ş':'s','ü':'u' };
-  return String(firma || '').toLocaleLowerCase('tr')
-    .replace(/[çğıİöşü]/g, x => tr[x] || x)
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 60) || 'yeni-proje';
+/* Türkçe harfleri ASCII'ye indirir — GitHub depo adı ASCII ister. */
+function asciiye(metin) {
+  const tr = { 'ç':'c','Ç':'C','ğ':'g','Ğ':'G','ı':'i','İ':'I',
+               'ö':'o','Ö':'O','ş':'s','Ş':'S','ü':'u','Ü':'U' };
+  return String(metin || '').replace(/[çÇğĞıİöÖşŞüÜ]/g, x => tr[x]);
+}
+
+/* Depo adı: firma tamamen büyük ve bitişik, modül her kelimenin ilk harfi
+   büyük ve bitişik, aralarında tek tire.
+   "Nizam Soft" + "Kişisel Bütçe" → "NIZAMSOFT-KisiselButce" */
+function depoAdi(p) {
+  const kelimeler = ad => asciiye(ad).split(/[^A-Za-z0-9]+/).filter(Boolean);
+  const firma = kelimeler(p && p.firma).join('').toUpperCase();
+  const modul = kelimeler(modulAdi(p))
+    .map(k => k[0].toUpperCase() + k.slice(1).toLowerCase()).join('');
+  return [firma, modul].filter(Boolean).join('-').slice(0, 80) || 'YeniProje';
 }
 
 /* Modül adı: "Kişisel Bütçe" gibi ürün adı. Depo adına ve bütün
@@ -7113,7 +7121,7 @@ async function eylemCalistir(el) {
       }
     }
 
-    const ad = depoAdi(projeAdi(pr));
+    const ad = depoAdi(pr);
     /* iOS github.com'u uygulamaya devrederse hazır doldurma kaybolur;
        ad panoda dursun ki tek yapıştırmayla girilsin. */
     await panoyaKopyala(ad);
