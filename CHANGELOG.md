@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## v0.63.1
+- **Kopyala düğmeleri artık sessiz kalmıyor.** Prompt üretimi hata verirse ekranda sebebi yazıyor; pano açılamazsa metin pencereyle veriliyor, elle kopyalanabiliyor. Eskiden ikisi de "hiçbir şey olmuyor" gibi görünüyordu.
+- **Beta durağı künye eksikse uyarıyor:** "Sayfa künyesi yok. Önce Yapıyı kurma durağında modülü kur." Blok yine kopyalanıyor ama yarım olduğu belli oluyor.
+- Beta kartına **"Bloğu gör"** bağlantısı eklendi — metni okumak ya da elle kopyalamak için.
+
 ## v0.63.0
 - **Link önizlemesi düzenlendi.** Adres birine gönderildiğinde artık 1200×630 bir kapak kartı çıkıyor: logo, "NIZAM | Studio" ve tek cümlelik tanım. Eskiden kare uygulama simgesi küçük bir kutu olarak görünüyordu.
 - Bütün Open Graph ve Twitter etiketleri tam adresle yazıldı — kazıyıcılar göreli adresi çözemiyordu. `og:url`, `og:locale`, görsel ölçüleri, `twitter:card = summary_large_image` ve `canonical` eklendi.

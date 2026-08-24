@@ -3679,18 +3679,25 @@ function betaSayfasi(p, d) {
   const pl = p.palet || {};
   const cikti = !!pl.betaCikti;
   const slug = depoSlug(p.repo);
+  /* Künye Yapı durağındaki "Kur" ile yazılıyor; yoksa blok yarım çıkar. */
+  const kunyeVar = Object.keys(pl.kunye || {}).length > 0;
 
   return sayfaHero(p, d)
     + durakKarti(1, cikti, '3. blok: modüller ve sayfalar',
-        'Sayfa künyeleri, modül kuralları ve beş aşamalı kurulum talimatı '
-        + 'panoya alınır. Claude Code oturumuna yapıştır — kod bu blokla başlar.'
-        + (slug ? '' : ' <b class="eksik">Önce depo adresini kaydet.</b>'), `
+        (kunyeVar
+          ? 'Sayfa künyeleri, modül kuralları ve beş aşamalı kurulum talimatı '
+            + 'panoya alınır. Claude Code oturumuna yapıştır — kod bu blokla başlar.'
+          : '<b class="eksik">Sayfa künyesi yok.</b> Önce <b>Yapıyı kurma</b> '
+            + 'durağında modülü kur; blok o zaman dolu çıkar.')
+        + (slug ? '' : ' <b class="eksik">Depo adresi de kayıtlı değil.</b>'), `
       <div class="kur-dug">
-        <button class="sayfa-dug kopyala-dug" data-eylem="yapi-blok"
-                data-proje="${p.id}" type="button">
+        <button class="sayfa-dug kopyala-dug ${kunyeVar ? '' : 'ikincil'}"
+                data-eylem="yapi-blok" data-proje="${p.id}" type="button">
           <span class="kd-ikon">${svg(ICON.kopya, 15)}${svg(ICON.tik, 15)}</span>
           <span class="kd-yazi">3. bloğu kopyala</span></button>
-      </div>`)
+      </div>
+      <button class="promptu-gor" type="button" data-eylem="yapi-blok-gor"
+              data-proje="${p.id}">Bloğu gör</button>`)
 
     + durakKarti(2, cikti, 'Beta çıktı',
         'Claude beş aşamayı bitirip <b class="mono">main</b> dalına gönderdiğinde '
@@ -6269,16 +6276,36 @@ function logoSec(projeId) {
 /* Tek dokunuşta panoya alır: düğme "kopyalandı"ya döner, yapıştır düğmesi
    parlar. İki dokunuş (önce pencere aç, sonra kopyala) gereksizdi. */
 async function paletKopyala(el) {
-  return promptKopyala(el, p => PROMPT.marka(p.id), 'Prompt kopyala');
+  return promptKopyala(el, p => PROMPT.marka(p.id), 'Prompt kopyala',
+                       'Marka Paleti Promptu');
 }
 
 /* Panoya alır, düğmeyi "kopyalandı" hâline çevirir, 2,2 sn sonra geri alır. */
-async function promptKopyala(el, uret, eskiYazi) {
+async function promptKopyala(el, uret, eskiYazi, baslik) {
   const p = DB.proje(el.dataset.proje);
-  if (!p) return;
+  if (!p) { toast('Proje bulunamadı.', 'hata'); return; }
 
-  const oldu = await panoyaKopyala(uret(p));
-  if (!oldu) { toast('Kopyalanamadı. Metni elle almayı dene.', 'hata'); return; }
+  /* Metin üretimi patlarsa düğme sessizce ölüyordu: hata görünsün. */
+  let metin;
+  try {
+    metin = uret(p);
+  } catch (h) {
+    toast('Prompt üretilemedi: ' + h.message, 'hata');
+    return;
+  }
+  if (!metin || !metin.trim()) {
+    toast('Prompt boş çıktı — önceki durakları tamamla.', 'uyari');
+    return;
+  }
+
+  const oldu = await panoyaKopyala(metin);
+  if (!oldu) {
+    /* Pano kapalıysa (izin, eski tarayıcı) metni pencereyle ver —
+       düğme her hâlükârda bir iş yapsın. */
+    metinPenceresi({ baslik: baslik || 'Prompt',
+      aciklama: 'Pano açılamadı. Metni seçip elle kopyala.', metin });
+    return;
+  }
 
   const yazi = $('.kd-yazi', el);
   el.classList.add('kopyalandi');
@@ -7212,7 +7239,8 @@ async function eylemCalistir(el) {
   if (e === 'logo-yukle')    return logoSec(el.dataset.proje);
   if (e === 'palet-prompt')      return paletKopyala(el);
   if (e === 'tasarim-blok')      return promptKopyala(el, pr => PROMPT.tasarim(pr.id),
-                                                      '2. bloğu kopyala — tasarım kararları');
+                                                      '2. bloğu kopyala — tasarım kararları',
+                                                      'Tasarım kararları (2/3)');
   if (e === 'palet-prompt-gor')  return paletPromptu(el.dataset.proje);
   if (e === 'palet-aktar')   return paletAktar(el.dataset.proje);
   if (e === 'palet-duzenle') return paletDuzenle(el.dataset.proje);
@@ -7309,8 +7337,16 @@ async function eylemCalistir(el) {
       Object.assign({}, pr.palet || {}, { modulAdi: ad })), 'Modül adı kaydedildi.');
   }
 
+  if (e === 'yapi-blok-gor') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    return metinPenceresi({ baslik: 'Modüller ve sayfalar (3/3)',
+      aciklama: 'Claude Code oturumuna yapıştır.', metin: PROMPT.yapi(pr.id) });
+  }
+
   if (e === 'yapi-blok')  return promptKopyala(el, pr => PROMPT.yapi(pr.id),
-                                                '3. bloğu kopyala');
+                                                '3. bloğu kopyala',
+                                                'Modüller ve sayfalar (3/3)');
 
   if (e === 'beta-onay') {
     const pr = DB.proje(el.dataset.proje);
