@@ -1525,10 +1525,24 @@ function onizlemeIc(p, pl) {
   const ik = ad => `<svg viewBox="0 0 24 24">${YOL[ad][smAd === 'Dolu' ? 1 : 0]}</svg>`;
 
   const adres = DB.logoAdres[p.id];
-  const logo = adres
-    ? `<span class="o-logo dolu" data-logo="${esc(adres)}"></span>`
-    : `<span class="o-logo" style="background:linear-gradient(160deg,${esc(vurgu)},${
-        esc(saydam(vurgu, .55))})">${esc(basHarf(p.firma))}</span>`;
+
+  /* Logo görünümü kararı: kutulu mu, zeminsiz mi, adı yanında mı. */
+  const logoBic  = bic.logo[0];
+  const logoAcik = logoBic !== 'Kutu içinde';
+  const logoAdli = logoBic === 'Zeminsiz, altında ad';
+  const logoYan  = logoBic === 'Yanında ad';
+  const logoIsik = logoAdli ? `<i class="o-isik" style="background:linear-gradient(90deg,transparent,${
+    esc(vurgu)},transparent)"></i>` : '';
+
+  const logoIc = (ek) => adres
+    ? `<span class="o-logo ${ek} ${logoAcik ? 'acik' : 'dolu'}" data-logo="${esc(adres)}"></span>`
+    : `<span class="o-logo ${ek} ${logoAcik ? 'acik' : ''}" style="${logoAcik ? `color:${esc(vurgu)}`
+        : `background:linear-gradient(160deg,${esc(vurgu)},${esc(saydam(vurgu, .55))})`}">${
+        esc(basHarf(p.firma))}</span>`;
+
+  const logo = logoYan
+    ? `<span class="o-markaYan">${logoIc('')}<b>${esc(p.firma)}</b></span>`
+    : logoIc('');
 
   /* ---- Üst çubuk ---- */
   const ekranAdi = { panel: 'Panel', liste: v.baslik, form: v.dugme[0],
@@ -1911,11 +1925,13 @@ function onizlemeIc(p, pl) {
   const ac = bic.acilis[0];
   const acilisGovde = ac === 'Yok'
     ? `<div class="o-bos"><i>Açılış ekranı yok — uygulama doğrudan gelir.</i></div>`
-    : `<div class="o-acilis">
-        ${adres ? `<span class="o-aLogo dolu" data-logo="${esc(adres)}"></span>`
-                : `<span class="o-aLogo" style="background:linear-gradient(160deg,${esc(vurgu)},${
-                    esc(saydam(vurgu, .55))})">${esc(basHarf(p.firma))}</span>`}
-        <b>${esc(p.firma)}</b>
+    : `<div class="o-acilis${logoYan ? ' yan' : ''}">
+        ${adres ? `<span class="o-aLogo ${logoAcik ? 'acik' : 'dolu'}" data-logo="${esc(adres)}"></span>`
+                : `<span class="o-aLogo ${logoAcik ? 'acik' : ''}" style="${logoAcik ? `color:${esc(vurgu)}`
+                    : `background:linear-gradient(160deg,${esc(vurgu)},${esc(saydam(vurgu, .55))})`}">${
+                    esc(basHarf(p.firma))}</span>`}
+        ${logoIsik}
+        ${logoBic === 'Zeminsiz' ? '' : `<b>${esc(p.firma)}</b>`}
         ${ac !== 'Logo' ? '<div class="o-aCubuk"><i></i></div>' : ''}
         ${ac === 'Logo + yüzde + mesaj' ? '<u>%64 · Veriler alınıyor…</u>' : ''}
       </div>`;
@@ -1924,17 +1940,20 @@ function onizlemeIc(p, pl) {
   const gr = bic.giris[0];
   const girisAlan = `${formAlan('E-POSTA')}${formAlan('ŞİFRE')}`;
   const girisIc = `${girisAlan}<div class="o-dugmeler tek">${anaDugme('Giriş yap')}</div>`;
-  const girisMarka = `${adres ? `<span class="o-aLogo kucuk dolu" data-logo="${esc(adres)}"></span>`
-      : `<span class="o-aLogo kucuk" style="background:linear-gradient(160deg,${esc(vurgu)},${
-          esc(saydam(vurgu, .55))})">${esc(basHarf(p.firma))}</span>`}
-    <b>${esc(p.firma)}</b>`;
+  const girisMarka = `${adres
+      ? `<span class="o-aLogo kucuk ${logoAcik ? 'acik' : 'dolu'}" data-logo="${esc(adres)}"></span>`
+      : `<span class="o-aLogo kucuk ${logoAcik ? 'acik' : ''}" style="${logoAcik ? `color:${esc(vurgu)}`
+          : `background:linear-gradient(160deg,${esc(vurgu)},${esc(saydam(vurgu, .55))})`}">${
+          esc(basHarf(p.firma))}</span>`}
+    ${logoIsik}
+    ${logoBic === 'Zeminsiz' ? '' : `<b>${esc(p.firma)}</b>`}`;
   const girisGovde = {
     'Ortada kart': `<div class="o-girisOrta">${kart(
-        `<div class="o-gMarka">${girisMarka}</div>${girisIc}`, 'o-gKart')}</div>`,
-    'Tam ekran':   `<div class="o-girisTam"><div class="o-gMarka">${girisMarka}</div>${girisIc}</div>`,
+        `<div class="o-gMarka${logoYan ? ' yan' : ''}">${girisMarka}</div>${girisIc}`, 'o-gKart')}</div>`,
+    'Tam ekran':   `<div class="o-girisTam"><div class="o-gMarka${logoYan ? ' yan' : ''}">${girisMarka}</div>${girisIc}</div>`,
     'İki kolon':   `<div class="o-girisIki"><div class="o-gGorsel"></div>
-        <div class="o-gSag"><div class="o-gMarka">${girisMarka}</div>${girisIc}</div></div>`,
-    'Sade':        `<div class="o-girisSade"><div class="o-gMarka">${girisMarka}</div>${girisIc}</div>`,
+        <div class="o-gSag"><div class="o-gMarka${logoYan ? ' yan' : ''}">${girisMarka}</div>${girisIc}</div></div>`,
+    'Sade':        `<div class="o-girisSade"><div class="o-gMarka${logoYan ? ' yan' : ''}">${girisMarka}</div>${girisIc}</div>`,
   }[gr] || '';
 
   /* İçe aktarma */
@@ -2244,6 +2263,12 @@ const TEL_PARCA = {
   dosya:      '<u class="w-dosya"></u>',
   ozetSatir:  '<u class="w-ozet"><i></i><i></i></u>',
   eslestir:   '<u class="w-govde"><i class="w-esles"><b></b><b></b><b></b></i></u>',
+
+  /* logo görünümü */
+  logoAd:    '<u class="w-govde bos"><i class="w-alogo"></i><i class="w-isik"></i><b class="w-ad"></b></u>',
+  logoYalin: '<u class="w-govde bos"><i class="w-alogo"></i></u>',
+  logoKutu:  '<u class="w-govde bos"><i class="w-alogo kutulu"></i></u>',
+  logoYan:   '<u class="w-govde bos yan"><i class="w-alogo kucuk"></i><b class="w-ad"></b></u>',
 
   /* açılış ve giriş */
   acilisLogo: '<u class="w-govde bos"><i class="w-alogo"></i></u>',

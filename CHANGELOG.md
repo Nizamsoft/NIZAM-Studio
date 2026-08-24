@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## v0.52.0
+- **Tek logo.** `logo-full.png` ve `logo-n.png` kalktı; uygulamanın her yerinde tek bir `logo.png` var: zeminsiz N, altında ışık çizgisi, altında STUDIO. Açılış, giriş, üst çubuk ve filigran aynı görseli kullanıyor.
+- **Yeni tasarım kararı: Logo görünümü.** Uygulama kabuğu öbeğinde, üst çubuktan hemen sonra soruluyor. Varsayılan "Zeminsiz, altında ad" — Studio'nun kendi logosuyla aynı dil. Diğer seçenekler: yalnız logo · kutu içinde · yanında ad.
+- Karar önizlemeye bağlı: seçim üst çubuktaki, açılıştaki ve girişteki logoyu anında değiştiriyor.
+
 ## v0.51.1
 - Uygulama simgesindeki kırmızı ışık gerçek bir ışığa dönüştü: ince çekirdek, yumuşak hale.
 

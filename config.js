@@ -7,7 +7,7 @@ const APP = {
   name:     'NIZAM | Studio',
   short:    'NIZAM Studio',
   owner:    'Nizam Soft',
-  version: 'v0.51.1',
+  version: 'v0.52.0',
   build:    '2026-08-20',
   stage: 'Adım 4 · Yapı ağacı',
 };
@@ -257,6 +257,16 @@ const YERLESIM_ALAN = [
       { ad: 'Logo + arama', tarif: 'Solda logo, ortada arama kutusu, sağda profil.', tel: ['ustAra', 'blok'] },
       { ad: 'Sekmeli',      tarif: 'Başlığın altında yatay sekme şeridi; alt sayfalar oradan.', tel: ['ust', 'sekme', 'blok'] },
       { ad: 'Eylemli',      tarif: 'Başlığın sağında o ekranın birincil eylem düğmesi.', tel: ['ustEylem', 'blok'] },
+    ],
+  },
+  {
+    anahtar: 'logo', ad: 'Logo görünümü', alt: 'Firma logosu ekranlarda nasıl dursun?',
+    varsayilan: 'Zeminsiz, altında ad', ekran: 'panel', eklendi: 'v0.52.0',
+    secim: [
+      { ad: 'Zeminsiz, altında ad', tarif: 'Logo kutusuz durur; altında ince ışık çizgisi, onun altında firma adı. Açılışta ve girişte böyle görünür.', tel: ['logoAd'] },
+      { ad: 'Zeminsiz',    tarif: 'Yalnız logo. Çerçeve de yazı da yok.', tel: ['logoYalin'] },
+      { ad: 'Kutu içinde', tarif: 'Logo yuvarlak köşeli bir kutunun içinde durur; zeminden ayrışır.', tel: ['logoKutu'] },
+      { ad: 'Yanında ad',  tarif: 'Logo solda, firma adı sağında yan yana.', tel: ['logoYan'] },
     ],
   },
   {
@@ -672,7 +682,7 @@ const AKIS_OBEK = [
   { ad: 'Renk ve bileşen', not: 'Önce malzeme: her ekranda kullanılacak kutu, düğme, simge.',
     alanlar: ['kart', 'kartek', 'vurgukart', 'kose', 'yogunluk', 'dugme', 'dugmeek', 'simge'] },
   { ad: 'Uygulama kabuğu', not: 'Her ekranı saran çatı: üst çubuk, gezinme, genişlik.',
-    alanlar: ['ustcubuk', 'gezinme', 'cubukDoku', 'sayfalistesi', 'yoliz', 'genislik',
+    alanlar: ['ustcubuk', 'logo', 'gezinme', 'cubukDoku', 'sayfalistesi', 'yoliz', 'genislik',
               'kullanicimenu', 'destek'] },
   { ad: 'Giriş kapısı', not: 'Uygulamaya girerken görülen ilk iki ekran.',
     alanlar: ['acilis', 'giris'] },

@@ -2509,6 +2509,11 @@ a.durak:active { transform: scale(.99); transition: transform .1s var(--ease); }
 }
 .o-logo.dolu { background: #fff; }
 .o-logo img { width: 100%; height: 100%; object-fit: contain; }
+/* Zeminsiz logo: kutu ve beyaz zemin yok, harf vurgu renginde. */
+.o-logo.acik { background: none; }
+.o-markaYan { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.o-markaYan b { font-family: var(--o-baslik); font-size: 10.5px; color: var(--o-metin);
+                white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 .o-ik { margin-left: auto; display: flex; align-items: center; gap: 10px; }
 .o-ik svg { width: 15px; height: 15px; }
@@ -3110,6 +3115,14 @@ ekran planı.
 .tel-wf .w-alogo { width: 20px; height: 20px; border-radius: 6px;
                    background: var(--p1, var(--metal-2)); }
 .tel-wf .w-alogo.kucuk { width: 14px; height: 14px; border-radius: 5px; }
+.tel-wf .w-alogo.kutulu { background: var(--surface-2); border: 1px solid var(--line-parlak);
+                          box-shadow: inset 0 0 0 3px var(--p1, var(--metal-2)); }
+/* Logonun altındaki ışık çizgisi — uçlara doğru sönüyor. */
+.tel-wf .w-isik { width: 26px; height: 2px; border-radius: 1px;
+  background: linear-gradient(90deg, transparent, var(--p1, var(--red)) 45% 55%, transparent); }
+.tel-wf .w-ad { width: 20px; height: 4px; border-radius: 2px; background: var(--line-parlak); }
+.tel-wf .w-govde.yan { flex-direction: row; gap: 5px; align-items: center; justify-content: center; }
+.tel-wf .w-govde.yan .w-ad { width: 24px; }
 .tel-wf .w-iki { flex-direction: column; gap: 2px; align-items: center; }
 .tel-wf .w-iki i { width: 16px; height: 2px; border-radius: 1px; background: var(--line-parlak); }
 .tel-wf .w-iki i.k { width: 26px; }
@@ -3212,6 +3225,12 @@ ekran planı.
 .o-aLogo.kucuk { width: 30px; height: 30px; border-radius: 10px; font-size: 13px; }
 .o-aLogo.dolu { background: #fff; }
 .o-aLogo img { width: 100%; height: 100%; object-fit: contain; }
+.o-aLogo.acik { background: none; }
+/* Logonun altındaki ışık çizgisi. */
+.o-isik { display: block; width: 76px; height: 2px; border-radius: 2px; margin: -2px 0; }
+.o-gMarka .o-isik { width: 54px; }
+.o-acilis.yan, .o-gMarka.yan { flex-direction: row; align-items: center; gap: 8px; }
+.o-acilis.yan .o-isik, .o-gMarka.yan .o-isik { display: none; }
 .o-acilis b { font-family: var(--o-baslik); font-size: 13px; }
 .o-aCubuk { width: 120px; height: 3px; border-radius: 2px; margin-top: 4px;
             background: color-mix(in srgb, var(--o-metin) 12%, transparent); }
