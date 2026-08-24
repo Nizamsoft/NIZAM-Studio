@@ -124,7 +124,7 @@ const PROMPT = {
     s.push('');
 
     s.push('## Sırada ne var');
-    s.push('Bundan sonra sana iki blok daha yapıştıracağım:');
+    s.push('Bundan sonra sana iki blok daha yapıştıracağım (2/3 ve 3/3):');
     s.push('');
     s.push('1. **Tasarım kararları** — palet, yazı tipleri ve arayüz kararları.');
     s.push('2. **Modüller, sayfalar ve künyeleri** — hangi ekranlar olacak, her');
@@ -146,7 +146,7 @@ const PROMPT = {
     if (!p) return '';
 
     const s = [];
-    s.push('# ' + projeAdi(p) + ' — 2. blok: Tasarım kararları', '');
+    s.push('# ' + projeAdi(p) + ' — Tasarım kararları (2/3)', '');
 
     const slug = depoSlug(p.repo);
     if (slug) {
@@ -156,9 +156,10 @@ const PROMPT = {
       s.push('');
     }
 
-    s.push('Tanıtımda söz verdiğim iki bloktan **birincisi** bu. İçinde');
-    s.push('rengin, yazının ve arayüzün bütün kararları var. Kod yazmanı');
-    s.push('hâlâ **istemiyorum** — bunları `NIZAM.md`\'ye yazacaksın.', '');
+    s.push('Tanıtımdan sonraki **ilk blok** bu; içinde rengin, yazının ve');
+    s.push('arayüzün bütün kararları var. Sonuncusu modüller, sayfalar ve');
+    s.push('künyeleri olacak. Kod yazmanı hâlâ **istemiyorum** — bu kararları');
+    s.push('şimdilik yalnız `NIZAM.md`\'ye yazacaksın.', '');
 
     const palet = PROMPT.paletBlogu(p);
     if (palet) { s.push(palet); s.push(''); }
@@ -168,10 +169,11 @@ const PROMPT = {
     s.push('## Şimdi ne yapacaksın');
     s.push('1. `NIZAM.md` içindeki `## Tasarım kararları` başlığının altındaki');
     s.push('   *"henüz belirlenmedi"* satırını sil, yukarıdaki kararları oraya yaz.');
-    s.push('   Renkleri değişken olarak tek yerde tanımla; her ekranda tekrarlama.');
+    s.push('   Renk kodlarını olduğu gibi aktar — kod yazma zamanı geldiğinde');
+    s.push('   tek yerde değişken olarak tanımlayacaksın, ama şimdi değil.');
     s.push('2. Tek commit\'le **`main` dalına** gönder. Commit mesajı:');
     s.push('   `[' + TASK_PREFIX + '-0] Tasarım kararları`.');
-    s.push('3. Dur ve bekle. Sıradaki blok: modüller, sayfalar ve künyeleri.');
+    s.push('3. Dur ve bekle. Sıradaki ve son blok: modüller, sayfalar ve künyeleri.');
     s.push('');
 
     s.push('## Şunları yapma');

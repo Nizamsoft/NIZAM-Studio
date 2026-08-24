@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.60.1
+- Tasarım bloğunda iki çelişki düzeltildi: başlık "2. blok" derken gövde "iki bloktan birincisi" diyordu — bloklar artık **2/3** ve **3/3** diye numaralanıyor. Ayrıca "renkleri değişken olarak tanımla" talimatı "CSS dosyası yazma" yasağıyla çakışıyordu; artık renk kodlarının şimdilik yalnız NIZAM.md'ye yazılacağı, değişken tanımının kod zamanına kalacağı söyleniyor.
+
 ## v0.60.0
 - **Tasarım özetindeki düğme artık doğru promptu veriyor.** Eskiden marka paleti *isteme* promptunu kopyalıyordu — oysa o adımda palet çoktan gelmişti. Şimdi **2. bloğu** kopyalıyor: palet, yazı tipleri ve 52 arayüz kararı, üstüne "NIZAM.md'deki *Tasarım kararları* başlığını doldur, `[NS-0] Tasarım kararları` ile main'e gönder, dur ve bekle" talimatı.
 - Blok kod yazmayı, sayfa uydurmayı ve karar değiştirmeyi açıkça yasaklıyor; depo uyarısı da içinde.
