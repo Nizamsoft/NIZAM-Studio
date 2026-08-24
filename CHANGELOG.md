@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## v0.58.2
+- **"GitHub'da aç" ve "Claude Code'da aç" artık gerçekten açılıyor.** iPhone'da ana ekrandan açılan uygulamada `window.open` sessizce engelleniyordu; üstüne çağrı bir `await`'ten sonra geldiği için Safari onu kullanıcı dokunuşu saymıyordu. İkisi de gerçek bağlantıya (`<a target="_blank">`) dönüştü, adres çizim anında hesaplanıyor.
+- **Depo kurulunca düğme değişiyor:** "GitHub'da aç" yerine **"Depoyu aç"** oluyor ve deponun kendisine götürüyor — bir daha yeni depo kurdurmuyor.
+- Pano kopyalama bağlantıyı engellemeyen ayrı bir dinleyiciye taşındı; tanıtım metni yine panoya giriyor.
+
 ## v0.58.1
 - **İlk Claude Code oturumuna artık tam kimlik dosyası gitmiyor.** O adımda tasarım ve yapı henüz yapılmamış oluyordu; giden metnin içinde verilmemiş kararlar ve boş künyeler vardı. Yerine kısa bir **tanışma** promptu geldi: firma, ürün, platform, veritabanı, depo ve teknik standart. Claude bunlarla `NIZAM.md` + `README.md` kurup `[NS-0]` ile commit'liyor ve duruyor.
 - Prompt açıkça yasaklıyor: uygulama kodu yazma, tasarım kararı verme, sayfa/modül uydurma. Tasarım ve yapı bloklarının sonraki duraklarda geleceğini söylüyor.

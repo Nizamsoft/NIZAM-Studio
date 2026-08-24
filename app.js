@@ -3465,9 +3465,12 @@ function gelistirmeSayfasi(p, d) {
             <span>Henüz görev yok. Yapı durağındaki sayfalara görev açtığında burada listelenir.</span></div>`);
 }
 
-/* Yeni sekmede aç. Tek kullanım yeri Destek satırıydı, artık ortak. */
+/* Yeni sekmede aç. Üçüncü argüman (windowFeatures) verilirse Safari bunu
+   "popup pencere" talebi sayıp engelliyor; _blank zaten noopener demek.
+   Dış http adresleri için bunu kullanma — gerçek <a target="_blank"> yaz;
+   iOS'ta ana ekrandan açılan uygulamada window.open sessizce çalışmıyor. */
 function disariAc(url) {
-  window.open(url, '_blank', 'noopener');
+  window.open(url, '_blank');
 }
 
 /* Türkçe harfleri ASCII'ye indirir — GitHub depo adı ASCII ister. */
@@ -3539,11 +3542,18 @@ function kurulumSayfasi(p, d) {
         <i>Depo adı ve bütün başlıklar firmanın yanına bunu ekler.</i>
       </div>`
     + kart(1, !!p.repo, 'GitHub deposu',
-        'Kod buraya gidecek. Adı firmadan türetilir, depo gizli açılır.', `
-      <div class="kur-dug">
-        <button class="sayfa-dug ${p.repo ? 'ikincil' : ''}" type="button"
-                data-eylem="repo-ac" data-proje="${p.id}">
-          ${svg(ICON.katman, 15)} GitHub'da aç</button>
+        p.repo
+          ? 'Depo kuruldu. Düğme artık deponun kendisine götürür.'
+          : 'Kod buraya gidecek. Adı firmadan türetilir, depo gizli açılır.', `
+      <div class="kur-dug">${p.repo
+        ? `<a class="sayfa-dug ikincil" target="_blank" rel="noopener"
+              href="https://github.com/${esc(depoSlug(p.repo))}">
+            ${svg(ICON.katman, 15)} Depoyu aç</a>`
+        : `<a class="sayfa-dug" target="_blank" rel="noopener"
+              href="https://github.com/new?name=${encodeURIComponent(depoAdi(p))
+              }&description=${encodeURIComponent(projeAdi(p) + ' · NIZAM Studio')
+              }&visibility=private">
+            ${svg(ICON.katman, 15)} GitHub'da aç</a>`}
       </div>
       <div class="kur-deger" data-eylem="repo" data-proje="${p.id}"
            role="button" tabindex="0">
@@ -3560,9 +3570,11 @@ function kurulumSayfasi(p, d) {
           : 'Önce depo adresini kaydet — Claude Code o zaman depoyu seçili açar. '
             + 'Şimdi açarsan depoyu elle seçmen gerekir.', `
       <div class="kur-dug">
-        <button class="sayfa-dug ${sohbet ? 'ikincil' : ''}" type="button"
-                data-eylem="sohbet-ac" data-proje="${p.id}">
-          ${svg(ICON.katman, 15)} Claude Code'da aç</button>
+        <a class="sayfa-dug ${sohbet ? 'ikincil' : ''}" target="_blank" rel="noopener"
+           data-pano="tanisma" data-proje="${p.id}"
+           href="https://claude.ai/code${depoSlug(p.repo)
+             ? '?repositories=' + encodeURIComponent(depoSlug(p.repo)) : ''}">
+          ${svg(ICON.katman, 15)} Claude Code'da aç</a>
       </div>
       <label class="kur-onay ${sohbet ? 'on' : ''}" data-eylem="sohbet-onay"
              data-proje="${p.id}" role="button" tabindex="0">
@@ -7121,62 +7133,6 @@ async function eylemCalistir(el) {
       Object.assign({}, pr.palet || {}, { modulAdi: ad })), 'Modül adı kaydedildi.');
   }
 
-  if (e === 'repo-ac') {
-    const pr = DB.proje(el.dataset.proje);
-    if (!pr) return;
-
-    /* Depo adı modülü de taşıyor; boşsa açmadan önce bir kez soruyoruz.
-       Vazgeçilirse akış tıkanmasın diye firma adıyla devam ediyor. */
-    if (!modulAdi(pr)) {
-      const ad = await modulAdiSor(pr);
-      if (ad) {
-        try {
-          await DB.paletKaydet(pr.id,
-            Object.assign({}, pr.palet || {}, { modulAdi: ad }));
-        } catch (h) { /* kritik değil, satırdan sonra girilebilir */ }
-      }
-    }
-
-    const ad = depoAdi(pr);
-    /* iOS github.com'u uygulamaya devrederse hazır doldurma kaybolur;
-       ad panoda dursun ki tek yapıştırmayla girilsin. */
-    await panoyaKopyala(ad);
-    disariAc('https://github.com/new?name=' + encodeURIComponent(ad)
-      + '&description=' + encodeURIComponent(projeAdi(pr) + ' · NIZAM Studio')
-      + '&visibility=private');
-    toast('Depo adı panoda: ' + ad);
-    return;
-  }
-
-  if (e === 'sohbet-ac') {
-    const pr = DB.proje(el.dataset.proje);
-    if (!pr) return;
-
-    /* Bu adımda tasarım ve yapı henüz yapılmadı; tam kimlik dosyası değil,
-       yalnız tanışma promptu gidiyor. */
-    const metin = PROMPT.tanisma(pr.id);
-    const slug = depoSlug(pr.repo);
-    const sorgu = [];
-
-    /* Türkçe metin adres çubuğunda ~1.8 kat şişiyor; tanıtım çoğu zaman
-       sığmıyor. Sığmadığında prompt kutusunu boş bırakıyoruz — dolu olsaydı
-       kullanıcı yapıştırmadan önce onu silmek zorunda kalırdı. */
-    const sigar = encodeURIComponent(metin).length < 6000;
-    let oldu = false;
-    if (sigar) sorgu.push('prompt=' + encodeURIComponent(metin));
-    else       oldu = await panoyaKopyala(metin);
-
-    if (slug) sorgu.push('repositories=' + encodeURIComponent(slug));
-    disariAc('https://claude.ai/code' + (sorgu.length ? '?' + sorgu.join('&') : ''));
-
-    toast(!slug ? 'Claude Code açıldı. Depo adresi yok, elle seçmen gerekiyor.'
-      : sigar   ? 'Claude Code açıldı: ' + slug
-      : oldu    ? 'Tanıtım panoda — kutuya yapıştır ve gönder.'
-                : 'Claude Code açıldı ama tanıtım kopyalanamadı.',
-      slug && (sigar || oldu) ? 'basari' : 'uyari');
-    return;
-  }
-
   if (e === 'sohbet-onay') {
     const pr = DB.proje(el.dataset.proje);
     if (!pr) return;
@@ -8445,6 +8401,16 @@ document.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('click', e => {
     const el = e.target.closest('[data-eylem]');
     if (el) { e.preventDefault(); eylemCalistir(el); }
+  });
+
+  /* Dışarı açılan bağlantılar panoya da yazıyor. Ayrı dinleyici, çünkü
+     eylem dinleyicisi preventDefault çağırıyor ve bağlantıyı öldürürdü.
+     await yok: kopyalama jestin içinde başlar, gezinme beklemez. */
+  document.addEventListener('click', e => {
+    const el = e.target.closest('[data-pano]');
+    if (!el) return;
+    const pr = DB.proje(el.dataset.proje);
+    if (pr && el.dataset.pano === 'tanisma') panoyaKopyala(PROMPT.tanisma(pr.id));
   });
 
   document.addEventListener('keydown', e => {
