@@ -3581,6 +3581,26 @@ function modulAdiSor(p) {
   });
 }
 
+/* GitHub Pages'in bu depo için üreteceği adres.
+   "nizamsoft/NIZAMSOFT-KisiselButce" → "nizamsoft.github.io/NIZAMSOFT-KisiselButce" */
+function pagesAdresi(p) {
+  const slug = depoSlug(p && p.repo);
+  if (!slug) return '';
+  const [sahip, depo] = slug.split('/');
+  return sahip.toLowerCase() + '.github.io/' + depo;
+}
+
+/* "Pages'i aç"a dokunulan projeler — dönünce adresi kendimiz yazıyoruz. */
+const PAGES_BEKLIYOR = {};
+
+async function yayinAdresiTamamla(p) {
+  const adres = pagesAdresi(p);
+  if (!adres) return;
+  await isYap(() => DB.paletKaydet(p.id,
+    Object.assign({}, p.palet || {}, { alanAdi: adres })),
+    'Yayın adresi yazıldı: ' + adres);
+}
+
 /* GitHub'dan dönünce adresi yaz. Sahibi biliniyorsa doğrudan kaydediyoruz;
    bilinmiyorsa (ilk proje) bir kez soruyoruz ve bir daha sormuyoruz. */
 async function depoAdresiTamamla(p) {
@@ -3696,24 +3716,46 @@ function betaSayfasi(p, d) {
   /* Künye Yapı durağındaki "Kur" ile yazılıyor; yoksa blok yarım çıkar. */
   const kunyeVar = Object.keys(pl.kunye || {}).length > 0;
 
+  const yayin = pl.alanAdi || '';
+  const beklenen = pagesAdresi(p);
+
   return sayfaHero(p, d)
-    + durakKarti(1, cikti, '3. blok: modüller ve sayfalar',
+    + durakKarti(1, !!yayin, 'Yayın adresi',
+        'Uygulamayı deneyeceğin adres. GitHub\'da <b>Settings → Pages</b>\'i aç, '
+        + '<b>Deploy from a branch</b> · <b class="mono">main</b> · <b class="mono">/ (root)</b> '
+        + 'seç ve kaydet. Buraya dönünce adresi kendimiz yazarız.'
+        + (slug ? '' : ' <b class="eksik">Önce depo adresini kaydet.</b>'), `
+      <div class="kur-dug">${slug ? `
+        <a class="sayfa-dug ${yayin ? 'ikincil' : ''}" target="_blank" rel="noopener"
+           data-pages-ac="${p.id}"
+           href="https://github.com/${esc(slug)}/settings/pages">
+          ${svg(ICON.katman, 15)} Pages ayarlarını aç</a>` : ''}
+      </div>
+      <div class="kur-deger" data-eylem="alan-adi" data-proje="${p.id}"
+           role="button" tabindex="0">
+        ${svg(ICON.katman, 13)} Adres
+        ${yayin ? `<b class="mono">${esc(yayin)}</b>`
+                : '<b class="eksik">dokun, yapıştır</b>'}</div>`)
+
+    + durakKarti(2, cikti, '3. blok: modüller ve sayfalar',
         (kunyeVar
           ? 'Sayfa künyeleri, modül kuralları ve beş aşamalı kurulum talimatı '
             + 'panoya alınır. Claude Code oturumuna yapıştır — kod bu blokla başlar.'
           : '<b class="eksik">Sayfa künyesi yok.</b> Önce <b>Yapıyı kurma</b> '
             + 'durağında modülü kur; blok o zaman dolu çıkar.')
-        + (slug ? '' : ' <b class="eksik">Depo adresi de kayıtlı değil.</b>'), `
+        + (yayin ? '' : ' <b class="eksik">Önce yayın adresini kaydet</b> — '
+            + 'Claude uygulamayı hangi adrese kuracağını bilmeli.'), `
       <div class="kur-dug">
-        <button class="sayfa-dug kopyala-dug ${kunyeVar ? '' : 'ikincil'}"
-                data-eylem="yapi-blok" data-proje="${p.id}" type="button">
+        <button class="sayfa-dug kopyala-dug ${kunyeVar && yayin ? '' : 'ikincil'}"
+                data-eylem="yapi-blok" data-proje="${p.id}" type="button"
+                ${yayin ? '' : 'disabled'}>
           <span class="kd-ikon">${svg(ICON.kopya, 15)}${svg(ICON.tik, 15)}</span>
           <span class="kd-yazi">3. bloğu kopyala</span></button>
       </div>
       <button class="promptu-gor" type="button" data-eylem="yapi-blok-gor"
               data-proje="${p.id}">Bloğu gör</button>`)
 
-    + durakKarti(2, cikti, 'Beta çıktı',
+    + durakKarti(3, cikti, 'Beta çıktı',
         'Claude beş aşamayı bitirip <b class="mono">main</b> dalına gönderdiğinde '
         + 'uygulamayı dene. Gördüğün eksikleri not al — sonraki durakta görev olarak '
         + 'açacaksın.', `
@@ -7351,6 +7393,22 @@ async function eylemCalistir(el) {
       Object.assign({}, pr.palet || {}, { modulAdi: ad })), 'Modül adı kaydedildi.');
   }
 
+  if (e === 'alan-adi') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const adres = await metinSor({
+      baslik: 'Yayın adresi',
+      aciklama: 'Uygulamanın açılacağı adres. Prompta da yazılır.',
+      deger: (pr.palet || {}).alanAdi || pagesAdresi(pr),
+      yerTutucu: 'nizamsoft.github.io/NIZAMSOFT-KisiselButce',
+      buton: 'Kaydet',
+    });
+    if (adres === null) return;
+    delete PAGES_BEKLIYOR[pr.id];
+    return isYap(() => DB.paletKaydet(pr.id,
+      Object.assign({}, pr.palet || {}, { alanAdi: adres })), 'Yayın adresi kaydedildi.');
+  }
+
   if (e === 'yapi-blok-gor') {
     const pr = DB.proje(el.dataset.proje);
     if (!pr) return;
@@ -8666,6 +8724,8 @@ document.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('click', e => {
     const el = e.target.closest('[data-depo-ac]');
     if (el) DEPO_BEKLIYOR[el.dataset.depoAc] = true;
+    const pg = e.target.closest('[data-pages-ac]');
+    if (pg) PAGES_BEKLIYOR[pg.dataset.pagesAc] = true;
   });
 
   /* Uygulamaya dönüldüğünde bekleyen depo varsa adresi doldur. Depo adını
@@ -8678,6 +8738,11 @@ document.addEventListener('DOMContentLoaded', () => {
       if (pr.repo) { delete DEPO_BEKLIYOR[pid]; return; }
       delete DEPO_BEKLIYOR[pid];
       depoAdresiTamamla(pr);
+    });
+    Object.keys(PAGES_BEKLIYOR).forEach(pid => {
+      const pr = DB.proje(pid);
+      delete PAGES_BEKLIYOR[pid];
+      if (pr && !(pr.palet || {}).alanAdi) yayinAdresiTamamla(pr);
     });
   });
 

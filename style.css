@@ -1753,6 +1753,8 @@ a.sayfa-dug { text-decoration: none; }
 .kur-onay.on .kur-kutu { background: #2f7a58; border-color: #2f7a58; color: #fff; }
 /* Koşulu tutmayan onay: görünür ama dokunulmaz. */
 .kur-onay.pasif { opacity: .45; cursor: default; }
+/* Koşulu tutmayan kopyala düğmesi: görünür ama basılamaz. */
+.sayfa-dug[disabled] { opacity: .45; cursor: default; box-shadow: none; }
 
 /* Tasarım haritası — öbekler ada ada. Durak yolunun aynı dili. */
 .ada-sar { padding: 2px 0 10px; }

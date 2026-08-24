@@ -228,6 +228,18 @@ const PROMPT = {
       s.push('');
     }
 
+    const yayin = (p.palet || {}).alanAdi;
+    if (yayin) {
+      s.push('> ### Yayın adresi: `https://' + yayin + '`');
+      s.push('> GitHub Pages projeyi **alt klasörden** yayınlıyor. Bu yüzden');
+      s.push('> bütün yollar **göreli** olsun: `style.css`, `./app.js`, `./icon.png`.');
+      s.push('> Kök yol (`/style.css`) kullanma — yayında kırılır. Servis işçisinin');
+      s.push('> önbelleklediği yollar ve PWA manifestindeki `start_url` de göreli olsun.');
+      s.push('> Depo köküne boş bir `.nojekyll` dosyası ekle; yoksa GitHub bazı');
+      s.push('> dosyaları yok sayar.');
+      s.push('');
+    }
+
     s.push('Söz verdiğim son blok bu. Hangi ekranların olacağı, her birinde');
     s.push('hangi bilgilerin duracağı ve kimin ne yapabileceği aşağıda.');
     s.push('**Bu blokla birlikte kod yazmaya başlıyorsun** — çıkacak şey');

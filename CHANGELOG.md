@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## v0.65.0
+- **Beta durağına "Yayın adresi" adımı geldi ve sıraya girdi.** Artık 3. blok, yayın adresi kaydedilmeden kopyalanamıyor — düğme sönük duruyor ve sebebi yazıyor. Sıra: adresi al → bloğu kopyala → betayı dene.
+- **Pages ayarları tek dokunuşla açılıyor** (`Settings → Pages` bağlantısı) ve geri dönünce adres kendiliğinden yazılıyor: `nizamsoft.github.io/NIZAMSOFT-KisiselButce`. Depo adresinden türetiliyor, elle yazmaya gerek yok.
+- **3. blok artık yayın adresini de söylüyor** ve iki yayın tuzağını kapatıyor: GitHub Pages alt klasörden yayınladığı için bütün yollar göreli olmalı (`style.css`, `./app.js`) — kök yol yayında kırılır. Servis işçisi yolları ve manifestteki `start_url` de göreli. Ayrıca depo köküne `.nojekyll` isteniyor.
+
 ## v0.64.0
 - **Veri katmanı artık proje başına seçiliyor.** Teknik bilgilerde yeni bir alan: **Supabase (bulut)** ya da **Yerel tarayıcı**. Eskiden teknik standart her projede Supabase diyordu; sunucusuz bir uygulama için altı satır birden yanlış gidiyordu.
 - **Yerel seçilince** promptta şunlar değişiyor: veri IndexedDB'de, gerçek zamanlı yok, dosyalar cihazda, giriş **yerel PIN** ile, dış paket yok, değişiklik kaydı cihazda. Ayrıca **Yedek: dosyaya dışa/içe aktarma** satırı ekleniyor ve en başta "bu proje sunucusuz" uyarısı çıkıyor.
