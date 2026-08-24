@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.51.1
+- Uygulama simgesindeki kırmızı ışık gerçek bir ışığa dönüştü: ince çekirdek, yumuşak hale.
+
 ## v0.51.0
 - **Künye ikiye ayrıldı.** Kim görür, hangi işler yapılabilir, hangisini kim yapar ve ortak kural artık **bir kez modül için** soruluyor; ağaçta modülün altında "Modül kuralları" satırı olarak duruyor.
 - **Sayfa künyesi üç soruya indi:** ne işe yarar · nasıl bir ekran (tür, kaç kayıt, yapı) · neler yazılacak. Dördüncü satır "Farklı mı?" — sayfa modül kuralından ayrılıyorsa orada yazılıyor, dokunulmazsa modülün kuralı geçerli.
