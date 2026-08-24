@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## v0.59.0
+- **Depo adresi kendiliğinden geliyor.** "GitHub'da aç"a basıp depoyu kurduktan sonra uygulamaya dönünce adres kendi yazılıyor — artık elle yapıştırmıyorsun. Depo adını zaten Studio üretiyor; eksik olan tek parça GitHub kullanıcı adındı, o da ilk projede bir kez soruluyor ve bir daha sorulmuyor.
+- Adres yazılınca düğme **"Depoyu aç"**a dönüyor ve deponun kendisine götürüyor; bir daha yeni depo kurdurmuyor.
+- Adres satırına elle yazarsan da kullanıcı adı oradan öğreniliyor.
+
 ## v0.58.3
 - **Tanıtım metni artık hangi depoda çalışılacağını en tepede söylüyor.** Claude Code yeni oturumu en son kullanılan depoyla açabildiği için bu şarttı; eskiden depo satırı yalnız adres kayıtlıysa ve tablonun içinde geçiyordu. Şimdi başlığın hemen altında `> ### Depo: owner/repo` uyarısı var ve "başka bir depoda açıldıysan hiçbir şey yazma, dur ve söyle" diyor. `NIZAM.md` talimatı da depoyu adıyla anıyor.
 - Adres henüz kaydedilmemişse metin bunu açıkça yazıyor: "Depo henüz bağlanmadı — dosya oluşturmadan önce bana sor." Depo satırı tabloda da her zaman görünüyor.

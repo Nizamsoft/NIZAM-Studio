@@ -3502,6 +3502,31 @@ function depoSlug(repo) {
   return m ? m[1] + '/' + m[2] : '';
 }
 
+/* GitHub kullanıcı/organizasyon adı. Depo adını zaten biz üretiyoruz;
+   eksik olan tek parça sahibi. Bir kez öğrenip hatırlıyoruz — gizli bir
+   şey değil, herkese açık bir ad. */
+const DEPO_SAHIBI_ANAHTAR = 'ns.depoSahibi';
+
+function depoSahibi() {
+  try {
+    const kayit = localStorage.getItem(DEPO_SAHIBI_ANAHTAR);
+    if (kayit) return kayit;
+  } catch (h) { /* gizli sekmede localStorage kapalı olabilir */ }
+  /* Hiç kaydedilmemişse en son adres girilen projeden öğren. */
+  const v = DB.projeler.map(x => depoSlug(x.repo)).filter(Boolean).pop();
+  return v ? v.split('/')[0] : '';
+}
+
+function depoSahibiYaz(slug) {
+  const sahip = String(slug || '').split('/')[0];
+  if (!sahip) return;
+  try { localStorage.setItem(DEPO_SAHIBI_ANAHTAR, sahip); } catch (h) { /* önemsiz */ }
+}
+
+/* "GitHub'da aç"a dokunulan projeler. Kullanıcı dönünce adresi kendimiz
+   yazıyoruz — depo adı bizden çıktığı için tahmin değil. */
+const DEPO_BEKLIYOR = {};
+
 /* Modül adı: "Kişisel Bütçe" gibi ürün adı. Depo adına ve bütün
    başlıklara firmanın yanına tireyle ekleniyor. */
 function modulAdiSor(p) {
@@ -3512,6 +3537,26 @@ function modulAdiSor(p) {
     yerTutucu: 'Örn. Kişisel Bütçe',
     buton: 'Kaydet',
   });
+}
+
+/* GitHub'dan dönünce adresi yaz. Sahibi biliniyorsa doğrudan kaydediyoruz;
+   bilinmiyorsa (ilk proje) bir kez soruyoruz ve bir daha sormuyoruz. */
+async function depoAdresiTamamla(p) {
+  let sahip = depoSahibi();
+  if (!sahip) {
+    sahip = await metinSor({
+      baslik: 'GitHub kullanıcı adın',
+      aciklama: 'Depo adresini kendimiz yazabilmek için bir kez soruyoruz.',
+      yerTutucu: 'nizamsoft',
+      buton: 'Kaydet',
+    });
+    if (!sahip) return;
+    sahip = String(sahip).trim().replace(/^.*\//, '');
+    depoSahibiYaz(sahip);
+  }
+  const adres = 'github.com/' + sahip + '/' + depoAdi(p);
+  await isYap(() => DB.projeGuncelle(p.id, { repo: adres }),
+    'Depo adresi yazıldı: ' + adres);
 }
 
 /* 2 · Depo ve sohbet — koda başlamadan önce açılan iki kapı.
@@ -3544,12 +3589,14 @@ function kurulumSayfasi(p, d) {
     + kart(1, !!p.repo, 'GitHub deposu',
         p.repo
           ? 'Depo kuruldu. Düğme artık deponun kendisine götürür.'
-          : 'Kod buraya gidecek. Adı firmadan türetilir, depo gizli açılır.', `
+          : 'Kod buraya gidecek. Adı firmadan türetilir, depo gizli açılır. '
+            + 'Sen kurup geri dönünce adresi kendimiz yazarız.', `
       <div class="kur-dug">${p.repo
         ? `<a class="sayfa-dug ikincil" target="_blank" rel="noopener"
               href="https://github.com/${esc(depoSlug(p.repo))}">
             ${svg(ICON.katman, 15)} Depoyu aç</a>`
         : `<a class="sayfa-dug" target="_blank" rel="noopener"
+              data-depo-ac="${p.id}"
               href="https://github.com/new?name=${encodeURIComponent(depoAdi(p))
               }&description=${encodeURIComponent(projeAdi(p) + ' · NIZAM Studio')
               }&visibility=private">
@@ -7155,6 +7202,8 @@ async function eylemCalistir(el) {
       buton: 'Kaydet',
     });
     if (adres === null) return;
+    depoSahibiYaz(depoSlug(adres));
+    delete DEPO_BEKLIYOR[projeId];
     return isYap(() => DB.projeGuncelle(projeId, { repo: adres }), 'Depo adresi kaydedildi.');
   }
 
@@ -8412,6 +8461,25 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!el) return;
     const pr = DB.proje(el.dataset.proje);
     if (pr && el.dataset.pano === 'tanisma') panoyaKopyala(PROMPT.tanisma(pr.id));
+  });
+
+  /* "GitHub'da aç"a dokunuldu: kullanıcı dönünce adresi kendimiz yazacağız. */
+  document.addEventListener('click', e => {
+    const el = e.target.closest('[data-depo-ac]');
+    if (el) DEPO_BEKLIYOR[el.dataset.depoAc] = true;
+  });
+
+  /* Uygulamaya dönüldüğünde bekleyen depo varsa adresi doldur. Depo adını
+     biz ürettik, sahibini hatırlıyoruz — tahmin değil, kurduğumuz ad. */
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible') return;
+    Object.keys(DEPO_BEKLIYOR).forEach(pid => {
+      const pr = DB.proje(pid);
+      if (!pr) { delete DEPO_BEKLIYOR[pid]; return; }
+      if (pr.repo) { delete DEPO_BEKLIYOR[pid]; return; }
+      delete DEPO_BEKLIYOR[pid];
+      depoAdresiTamamla(pr);
+    });
   });
 
   document.addEventListener('keydown', e => {
