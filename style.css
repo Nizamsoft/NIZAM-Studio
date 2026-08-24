@@ -1756,8 +1756,10 @@ a.durak:active { transform: scale(.99); transition: transform .1s var(--ease); }
 
 .mk-logo { position: relative; }
 .mk-logo .donen { width: 16px; height: 16px; border-width: 1.6px; }
-/* Adres süresi dolmuşsa kırık resim yerine kesik çerçeve kalır. */
-.yuklenemedi { border: 1px dashed var(--line-parlak) !important; }
+/* Adres süresi dolmuşsa kırık resim yerine kesik çerçeve kalır — sessizce
+   boş görünmesin, uyarı renginde dursun ki dokunulacağı anlaşılsın. */
+.yuklenemedi { border: 1px dashed var(--uyari, #d0a13c) !important;
+               color: var(--uyari, #d0a13c) !important; }
 .kunye-yazi { flex: 1; min-width: 0; }
 .kunye-yazi h2 {
   font-family: var(--yazi-baslik); font-size: 19px; font-weight: 700;
@@ -1881,11 +1883,17 @@ a.durak:active { transform: scale(.99); transition: transform .1s var(--ease); }
 .mk-logo {
   display: flex; align-items: center; justify-content: center; flex-shrink: 0;
   width: 38px; height: 38px; margin-left: auto; border-radius: 11px; cursor: pointer;
-  background-color: var(--yuva); background-size: contain;
+  /* Boş kutu koyu zeminde siyah bir delik gibi okunuyordu: bir tık açık
+     yüzey ve belirgin kesik çerçeve "buraya logo koy" diye anlaşılsın. */
+  background-color: var(--surface-2); background-size: contain;
   background-position: center; background-repeat: no-repeat;
-  border: 1px dashed var(--line); color: var(--ink-dim);
+  border: 1px dashed var(--line-parlak); color: var(--ink-faint);
+  transition: border-color .16s ease, background-color .16s ease;
 }
-.mk-logo.dolu { border-style: solid; background-color: #fff; }
+.mk-logo:hover { border-color: var(--metal-1); color: var(--ink-soft); }
+/* Beyaz logo beyaz zeminde kaybolmasın diye içeriden ince bir çizgi. */
+.mk-logo.dolu { border-style: solid; border-color: var(--line);
+                background-color: #fff; box-shadow: inset 0 0 0 1px var(--line); }
 
 .secenek-serit.ufak { margin-left: auto; width: auto; flex: 0 0 auto; }
 .secenek-serit.ufak .ss { padding: 5px 12px; font-size: 11.5px; }
@@ -2956,6 +2964,46 @@ ekran planı.
             font-size: 11px; line-height: 1.5; color: var(--ink-dim); }
 .adim-not svg { flex: 0 0 auto; margin-top: 1px; color: var(--ink-faint); }
 
+/* Kopyala düğmesi: dokununca ikon tike döner, yazı değişir. */
+.kopyala-dug { display: inline-flex; align-items: center; justify-content: center; gap: 7px; }
+.kd-ikon { position: relative; width: 15px; height: 15px; flex: 0 0 15px; }
+.kd-ikon svg { position: absolute; inset: 0; transition: opacity .18s ease, transform .18s ease; }
+.kd-ikon svg:last-child { opacity: 0; transform: scale(.5) rotate(-25deg); }
+.kopyala-dug.kopyalandi .kd-ikon svg:first-child { opacity: 0; transform: scale(.5); }
+.kopyala-dug.kopyalandi .kd-ikon svg:last-child { opacity: 1; transform: none; }
+/* Kopyalanınca iki düğme rol değiştirir: iş bitti, sıra yapıştırmada.
+   Kırmızı tek yerde kalsın diye kopyalanan düğme sessizleşir. */
+.kopyala-dug.kopyalandi {
+  background: linear-gradient(180deg, var(--surface-3), var(--kart-alt));
+  color: var(--ink-soft);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .14), inset 0 -1px 0 rgba(0, 0, 0, .5);
+}
+.kopyala-dug.kopyalandi .kd-ikon { color: var(--basari, #3d9970); }
+.kd-yazi { white-space: nowrap; transition: opacity .18s ease; }
+.kopyala-dug.kopyalandi .kd-yazi { font-size: 13px; }
+
+/* Sıradaki adım: yapıştır düğmesi kopyalanana kadar bekler, sonra öne çıkar. */
+.sayfa-dug.parla {
+  background: linear-gradient(180deg, var(--red-acik), var(--red));
+  color: #fff;
+  animation: dugParla 1.7s ease-in-out infinite;
+}
+@keyframes dugParla {
+  0%, 100% { box-shadow: 0 10px 24px -10px rgba(229, 52, 42, .8),
+                         inset 0 1px 0 rgba(255, 255, 255, .28),
+                         0 0 0 0 rgba(229, 52, 42, .55); }
+  60%      { box-shadow: 0 10px 24px -10px rgba(229, 52, 42, .8),
+                         inset 0 1px 0 rgba(255, 255, 255, .28),
+                         0 0 0 7px rgba(229, 52, 42, 0); }
+}
+
+/* Promptu okumak isteyen için sessiz bağlantı. */
+.promptu-gor { display: block; width: 100%; margin-top: 9px; padding: 6px;
+               background: none; border: 0; cursor: pointer; font-family: inherit;
+               font-size: 11.5px; color: var(--ink-dim); text-decoration: underline;
+               text-underline-offset: 3px; }
+.promptu-gor:hover { color: var(--ink-soft); }
+
 .palet-dug { display: flex; gap: 8px; }
 .palet-dug .sayfa-dug { flex: 1; margin: 0; }
 .akis.ozet .akis-alt { margin-top: 14px; }
@@ -3636,7 +3684,8 @@ a:hover { color: var(--red-ink); }
   50%      { opacity: .58; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .as-yeni, .as-noktalar button.yeni i { animation: none; }
+  .as-yeni, .as-noktalar button.yeni i, .sayfa-dug.parla { animation: none; }
+  .kd-ikon svg, .kd-yazi { transition: none; }
 }
 
 /* Kısa ekranlarda (664px ve altı) akış tek ekrana sığmıyordu: seçenek

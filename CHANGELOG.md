@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.53.0
+- **Prompt kopyalama tek dokunuş oldu.** Eskiden önce pencere açılıyor, sonra kopyalanıyordu. Şimdi düğmeye basınca prompt panoya gidiyor, düğme yeşil tikle "Prompt kopyalandı"ya dönüyor ve kırmızı **Cevabı yapıştır** düğmesine geçip parlıyor — sıradaki adım kendini gösteriyor. Promptu okumak isteyen için altta "Promptu gör" duruyor.
+- Palet adımında "Logo yok"un altındaki açıklama kaldırıldı.
+- **Logo kutusu artık siyah bir delik gibi durmuyor:** boşken bir tık açık yüzey ve belirgin kesik çerçeve. Yüklenemeyen logo sessizce boş kalmak yerine uyarı renginde çerçeveleniyor.
+- Sihirbaz temizliği: kullanılmayan dil/para kodu kaldırıldı, roller yeni projede artık sıfırlanıyor (önceki projenin rolleri taşınıyordu).
+
 ## v0.52.0
 - **Tek logo.** `logo-full.png` ve `logo-n.png` kalktı; uygulamanın her yerinde tek bir `logo.png` var: zeminsiz N, altında ışık çizgisi, altında STUDIO. Açılış, giriş, üst çubuk ve filigran aynı görseli kullanıyor.
 - **Yeni tasarım kararı: Logo görünümü.** Uygulama kabuğu öbeğinde, üst çubuktan hemen sonra soruluyor. Varsayılan "Zeminsiz, altında ad" — Studio'nun kendi logosuyla aynı dil. Diğer seçenekler: yalnız logo · kutu içinde · yanında ad.

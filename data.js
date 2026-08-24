@@ -128,7 +128,7 @@ const DB = {
         /* Hassas alanlar bilerek dışarıda: yetkili, telefon, eposta. */
         projeler: this.projeler.map(p => ({
           id: p.id, firma: p.firma, renk: p.renk, platform: p.platform,
-          veri: p.veri, sira: p.sira, arsiv: p.arsiv, logo: p.logo,
+          veri: p.veri, sira: p.sira, arsiv: p.arsiv, logo: p.logo, repo: p.repo,
           palet: p.palet || null, durum: p.durum,
         })),
         sayim,

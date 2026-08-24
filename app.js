@@ -960,8 +960,7 @@ function tasarimSayfasi(p, d) {
         </span>
         <span class="mk-yazi">
           <b>${adres ? 'Firma logosu' : 'Logo yok'}</b>
-          <i>${adres ? 'Paletin kaynağı. Değiştirmek için dokun.'
-                     : 'Prompt logosuz anlamsız — yüklemek için dokun.'}</i>
+          ${adres ? '<i>Paletin kaynağı. Değiştirmek için dokun.</i>' : ''}
         </span>
       </div>`
       + (PALET_ALAN.some(a => a.renk && pl && pl[a.anahtar]) ? paletSeridi(pl) : `
@@ -971,12 +970,16 @@ function tasarimSayfasi(p, d) {
         sonraki adımlarda sen veriyorsun.</span></div>`)
       + (yon ? `
         <div class="palet-dug">
-          <button class="sayfa-dug" data-eylem="palet-prompt" data-proje="${p.id}" type="button">
-            ${svg(ICON.kopya, 15)} Prompt kopyala</button>
+          <button class="sayfa-dug kopyala-dug" data-eylem="palet-prompt"
+                  data-proje="${p.id}" type="button">
+            <span class="kd-ikon">${svg(ICON.kopya, 15)}${svg(ICON.tik, 15)}</span>
+            <span class="kd-yazi">Prompt kopyala</span></button>
           <button class="sayfa-dug ${pl ? 'ikincil' : ''}" data-eylem="palet-aktar"
                   data-proje="${p.id}" type="button">
             ${svg(ICON.ice, 15)} Cevabı yapıştır</button>
-        </div>` : '')
+        </div>
+        <button class="promptu-gor" type="button" data-eylem="palet-prompt-gor"
+                data-proje="${p.id}">Promptu gör</button>` : '')
       + '</div>';
 
   } else if (adim.tur === 'ozet') {
@@ -4313,6 +4316,7 @@ function sihirbaziAc() {
     yetkili: '', telefon: '', eposta: '',
     platform: 'ikisi', veri: 'sifirdan',
     dil: 'tr', para: 'TRY',
+    roller: ['Personel', 'Yönetici'],
     baslangic: bugunTarih(), teslim: '',
     moduller: [], kaydediyor: false,
   });
@@ -4493,12 +4497,6 @@ function sihirbazUrun() {
 
 /* 4 · Dil, para, takvim */
 function sihirbazAyar() {
-  const serit = (tur, liste, secili) => `
-    <div class="secenek-serit">
-      ${liste.map(x => `<button class="ss ${secili === x.kod ? 'sec' : ''}"
-        data-sb="${tur}" data-deger="${x.kod}" type="button">${esc(x.ad)}</button>`).join('')}
-    </div>`;
-
   return shBaslik(ICON.ayar, 'Roller ve takvim',
     'Dil Türkçe, para ₺ TRY — standart. Burada roller ve tarihler var.') + `
     <div class="field">
@@ -4627,8 +4625,6 @@ function sihirbazBagla(kutu) {
       if (t === 'renk')     SIHIRBAZ.renk = d;
       if (t === 'platform') SIHIRBAZ.platform = d;
       if (t === 'veri')     SIHIRBAZ.veri = d;
-      if (t === 'dil')      SIHIRBAZ.dil = d;
-      if (t === 'para')     SIHIRBAZ.para = d;
       if (t === 'sektor') {
         SIHIRBAZ.sektor = SIHIRBAZ.sektor === d ? '' : d;
         /* Sektör değişince önerilen modülleri işaretle — dokunulmamışsa. */
@@ -5818,6 +5814,31 @@ function logoSec(projeId) {
   alan.click();
 }
 
+/* Tek dokunuşta panoya alır: düğme "kopyalandı"ya döner, yapıştır düğmesi
+   parlar. İki dokunuş (önce pencere aç, sonra kopyala) gereksizdi. */
+async function paletKopyala(el) {
+  const p = DB.proje(el.dataset.proje);
+  if (!p) return;
+
+  const oldu = await panoyaKopyala(PROMPT.marka(p.id));
+  if (!oldu) { toast('Kopyalanamadı. "Promptu gör" ile elle kopyala.', 'hata'); return; }
+
+  const yazi = $('.kd-yazi', el);
+  el.classList.add('kopyalandi');
+  if (yazi) yazi.textContent = 'Prompt kopyalandı';
+
+  /* Sıradaki adım yapıştırmak: o düğme sonraki çizime kadar parlıyor. */
+  const yapistir = $('[data-eylem="palet-aktar"][data-proje="' + p.id + '"]');
+  if (yapistir) yapistir.classList.add('parla');
+
+  clearTimeout(paletKopyala.zaman);
+  paletKopyala.zaman = setTimeout(() => {
+    if (!el.isConnected) return;
+    el.classList.remove('kopyalandi');
+    if (yazi) yazi.textContent = 'Prompt kopyala';
+  }, 2200);
+}
+
 /* Promptu panoya alır ve ne yapılacağını yazar. */
 function paletPromptu(projeId) {
   const p = DB.proje(projeId);
@@ -6715,7 +6736,8 @@ async function eylemCalistir(el) {
   if (e === 'teknik-duzenle') return teknikDuzenle(el.dataset.proje);
 
   if (e === 'logo-yukle')    return logoSec(el.dataset.proje);
-  if (e === 'palet-prompt')  return paletPromptu(el.dataset.proje);
+  if (e === 'palet-prompt')      return paletKopyala(el);
+  if (e === 'palet-prompt-gor')  return paletPromptu(el.dataset.proje);
   if (e === 'palet-aktar')   return paletAktar(el.dataset.proje);
   if (e === 'palet-duzenle') return paletDuzenle(el.dataset.proje);
 
