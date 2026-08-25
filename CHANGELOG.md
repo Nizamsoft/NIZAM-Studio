@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.67.0
+- **Geliştirme durağı ikiye ayrıldı: "Bütün programlarda olsun" ve "Yalnız bu programda olsun".** Beta'yı denerken gördüğün eksik bazen tek bir programın değil — *"hiçbir uygulamada yakınlaştırma olmasın"* gibi. Artık ilk kart bunu Studio'nun kendi deposuna yollayan bir prompt üretiyor; ikinci kart yalnız bu programı ilgilendiren işi görev olarak açıyor.
+- **Geliştirme durağında görev ekleme düğmesi yoktu.** Beta çıktıktan sonra iş açmak için Yapı durağına dönüp sayfayı bulmak gerekiyordu. Artık durağın kendisinden açılıyor.
+- **Teknik standart artık damgalanabiliyor.** Standarda yeni satır eklenince eski programlar bunu hiç duymuyordu; satır sessizce yalnız bir sonraki prompta giriyor, hedef depodaki `NIZAM.md` eski hâliyle kalıyordu. Damgalı satır artık her programın Geliştirme durağında **"yeni standart"** olarak çıkıyor, yol haritasında rozet veriyor ve tek düğmeyle o programa taşınan bir prompt üretiyor. Gerekmiyorsa "gördüm" ile susuyor.
+- **İki yeni standart:** *Yakınlaştırma — kapalı* (çift dokunma ve iki parmakla büyütme yok; yazı boyutu ayarlardan değişir) ve *Geliştirme istekleri — Ayarlarda toplanır* (kullanıcı isteğini programın içinden yazar, cihazda birikir, tek metin olarak kopyalanır; sunucuya gitmez).
+
 ## v0.66.0
 - **Çözümleme promptu artık veri katmanını söylüyor.** Modül kurulurken Claude'a yalnız firma, sektör ve roller gidiyordu; sunucusuz bir projede bile modül kurallarına *"satır güvenliği (RLS)"* yazıyordu. Yerel seçiliyse prompt açıkça yasaklıyor: roller yalnız arayüzü biçimlendirir, RLS yazma.
 - **Modül silme her yoldan aynı işi yapıyor.** Proje ekranındaki ⋯ menüsünden silinen modülün sayfa künyeleri, anlatımı ve modül kuralları palette **yetim kalıyordu** — promptlar silinmiş modülü yazmaya devam ediyordu. Artık üç silme yolu da paleti temizliyor ve modülde görev varsa hepsi engelliyor.

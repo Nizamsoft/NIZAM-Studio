@@ -3481,12 +3481,17 @@ function yapiIleriTazele(pr) {
   if (alt) alt.textContent = dalOzeti(k, t.dal);
 }
 
-/* 4 · Geliştirme */
+/* 6 · Geliştirme — iki ayrı yön.
+   Beta çıktıktan sonra gelen istekler iki türlü olur: yalnız bu programı
+   ilgilendiren iş (görev açılır) ve "bütün programlarda böyle olsun" isteği
+   (Studio'nun standardına girer, oradan her programa yayılır).
+   Üçüncü kart o yayılımın bu programa düşen ucudur. */
 function gelistirmeSayfasi(p, d) {
   const s = DB.sayim(p.id);
   const gorevler = DB.gorevleri({ proje: p.id });
   const dev  = gorevler.filter(g => g.durum === 'gelistiriliyor').length;
   const kont = gorevler.filter(g => g.durum === 'kontrolde').length;
+  const yeniStd = yeniStandartlar(p.palet);
 
   return sayfaHero(p, d) + `
     <div class="ikili">
@@ -3500,11 +3505,50 @@ function gelistirmeSayfasi(p, d) {
       <div class="tk-ust"><b>${s.bitmis}/${s.gorev} görev bitti</b><em>%${s.yuzde}</em></div>
       <div class="ray"><i style="width:${s.yuzde}%"></i><b style="left:${s.yuzde}%"></b></div>
     </div>`
+
+    + (yeniStd.length ? durakKarti('!', false,
+        yeniStd.length > 1 ? `${yeniStd.length} yeni standart` : 'Yeni standart',
+        'Bu program kurulduktan sonra Nizam standardına eklendi. Promptu ver, '
+        + 'Claude önce <b class="mono">NIZAM.md</b>\'yi sonra kodu güncellesin.', `
+      <div class="std-liste">
+        ${yeniStd.map(([ad, deger]) => `
+          <div class="std-satir"><b>${esc(ad)}</b><span>${esc(deger)}</span></div>`).join('')}
+      </div>
+      <div class="kur-dug">
+        <button class="sayfa-dug kopyala-dug" type="button"
+                data-eylem="standart-blok" data-proje="${p.id}">
+          <span class="kd-ikon">${svg(ICON.kopya, 15)}${svg(ICON.tik, 15)}</span>
+          <span class="kd-yazi">Standart promptunu kopyala</span></button>
+      </div>
+      <button class="promptu-gor" type="button" data-eylem="standart-goruldu"
+              data-proje="${p.id}">Bu programda gerekmiyor, gördüm</button>`) : '')
+
+    + durakKarti(1, false, 'Bütün programlarda olsun',
+        'Gördüğün eksik yalnız bu programın değilse — "hiçbir uygulamada '
+        + 'yakınlaştırma olmasın" gibi — buradan söyle. İstek Studio\'nun teknik '
+        + 'standardına girer, bundan sonraki her program onunla doğar; '
+        + 'mevcut programlar da bu durakta haberi alır.', `
+      <div class="kur-dug">
+        <button class="sayfa-dug ikincil" type="button" data-eylem="studio-istek">
+          ${svg(ICON.kalem, 15)} Studio geliştirmesi yaz</button>
+      </div>
+      <div class="kur-deger duz">${svg(ICON.katman, 13)} Hedef depo <b class="mono">${esc(APP.depo)}</b></div>`)
+
+    + durakKarti(2, s.gorev > 0, 'Yalnız bu programda olsun',
+        'Betayı denerken gördüğün eksikler. Her biri bir görev; görevden '
+        + `<b class="mono">[${TASK_PREFIX}-x]</b> etiketli prompt çıkar.`, `
+      <div class="kur-dug">
+        <button class="sayfa-dug ${yeniStd.length ? 'ikincil' : ''}" type="button"
+                data-eylem="gorev-ekle" data-proje="${p.id}">
+          ${svg(ICON.arti, 15)} Görev ekle</button>
+      </div>`)
+
     + bolumBas('Açık işler')
     + (gorevler.length
         ? `<div class="card liste">${gorevler.slice(0, 12).map(gorevKarti).join('')}</div>`
         : `<div class="bos-kutu">${svg(ICON.check, 18)}
-            <span>Henüz görev yok. Yapı durağındaki sayfalara görev açtığında burada listelenir.</span></div>`);
+            <span>Henüz görev yok. Yukarıdaki <b>Görev ekle</b> ile aç ya da
+            Yapı durağında sayfadan başla.</span></div>`);
 }
 
 /* Yeni sekmede aç. Üçüncü argüman (windowFeatures) verilirse Safari bunu
@@ -3933,6 +3977,7 @@ function projeDuraklari(p) {
     {
       ad: 'Geliştirme',
       bitti: s.gorev > 0 && s.bitmis === s.gorev,
+      rozet: yeniStandartlar(p.palet).length,
       ozet: s.gorev
         ? `${s.bitmis}/${s.gorev} görev bitti`
         : 'Betayı denerken gördüğün eksikleri görev olarak aç.',
@@ -5355,13 +5400,17 @@ function modalHepsiniKapat() {
 function kacTusu(e) { if (e.key === 'Escape') modalKapat(); }
 
 /* Tek alanlı soru — sayfa/modül adı gibi kısa girdiler için */
-function metinSor({ baslik, aciklama, deger = '', yerTutucu = '', buton = 'Kaydet' }) {
+function metinSor({ baslik, aciklama, deger = '', yerTutucu = '',
+                   buton = 'Kaydet', cok = false }) {
   return new Promise(resolve => {
     modalAc(`
       ${modalBaslik(ICON.kalem, baslik, aciklama || '')}
       <label class="field">
-        <input type="text" id="modal-metin" value="${esc(deger)}" placeholder="${esc(yerTutucu)}"
-               autocomplete="off" maxlength="80">
+        ${cok
+          ? `<textarea id="modal-metin" rows="4" placeholder="${esc(yerTutucu)}"
+                       maxlength="600">${esc(deger)}</textarea>`
+          : `<input type="text" id="modal-metin" value="${esc(deger)}" placeholder="${esc(yerTutucu)}"
+               autocomplete="off" maxlength="80">`}
       </label>
       <div class="modal-alt">
         <button class="btn btn-ghost" data-m="iptal" type="button">Vazgeç</button>
@@ -5372,7 +5421,8 @@ function metinSor({ baslik, aciklama, deger = '', yerTutucu = '', buton = 'Kayde
 
       const bitir = v => { modalKapat(); resolve(v); };
       alan.addEventListener('keydown', e => {
-        if (e.key === 'Enter')  { e.preventDefault(); bitir(alan.value.trim() || null); }
+        /* Çok satırlıda Enter satır atlar; kaydetmek düğmeyle. */
+        if (e.key === 'Enter' && !cok) { e.preventDefault(); bitir(alan.value.trim() || null); }
         if (e.key === 'Escape') bitir(null);
       });
       $('[data-m="iptal"]', kutu).addEventListener('click', () => bitir(null));
@@ -7461,6 +7511,42 @@ async function eylemCalistir(el) {
   if (e === 'yapi-blok')  return promptKopyala(el, pr => PROMPT.yapi(pr.id),
                                                 '3. bloğu kopyala',
                                                 'Modüller ve sayfalar (3/3)');
+
+  /* Yeni standardı bu programa taşıyan prompt. */
+  if (e === 'standart-blok') {
+    return promptKopyala(el, pr => PROMPT.programGelistirme(pr.id),
+      'Standart promptunu kopyala', 'Standart güncellemesi');
+  }
+
+  /* "Gördüm" — standart bu programda gerekmiyorsa rozeti susturur. */
+  if (e === 'standart-goruldu') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const pl  = pr.palet || {};
+    const gor = (Array.isArray(pl.gorulenStandart) ? pl.gorulenStandart : [])
+      .concat(yeniStandartlar(pl).map(([ad]) => ad));
+    return isYap(() => DB.paletKaydet(pr.id,
+      Object.assign({}, pl, { gorulenStandart: gor })), 'Görüldü olarak işaretlendi.');
+  }
+
+  /* Bütün programları ilgilendiren istek — hedef depo Studio'nun kendisi. */
+  if (e === 'studio-istek') {
+    const istek = await metinSor({
+      baslik: 'Studio geliştirmesi',
+      aciklama: 'Bütün programlarda geçerli olacak istek. Tek cümle yeter.',
+      yerTutucu: 'Örn. Hiçbir uygulamada telefonda yakınlaştırma olmasın.',
+      buton: 'Promptu al', cok: true,
+    });
+    if (istek === null) return;
+    const metin = PROMPT.studioGelistirme(istek);
+    const oldu = await panoyaKopyala(metin);
+    if (!oldu) {
+      return metinPenceresi({ baslik: 'Studio geliştirmesi',
+        aciklama: 'Pano açılamadı. Metni seçip elle kopyala.', metin });
+    }
+    toast('Prompt kopyalandı. NIZAM-Studio deposunda yapıştır.', 'basari');
+    return;
+  }
 
   if (e === 'beta-onay') {
     const pr = DB.proje(el.dataset.proje);

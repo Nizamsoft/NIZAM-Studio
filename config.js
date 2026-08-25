@@ -7,8 +7,11 @@ const APP = {
   name:     'NIZAM | Studio',
   short:    'NIZAM Studio',
   owner:    'Nizam Soft',
-  version: 'v0.66.0',
-  build:    '2026-08-20',
+  version: 'v0.67.0',
+  build:    '2026-08-25',
+  /* Studio'nun kendi deposu — "bütün programlarda geçerli olsun"
+     istekleri buraya gider. */
+  depo:    'Nizamsoft/NIZAM-Studio',
   stage: 'Adım 4 · Yapı ağacı',
 };
 
@@ -735,7 +738,12 @@ const TASARIM_ADIM = [
 
 /* ---- Nizam teknik standardı ----
    Her projede aynı. Sorulmaz; prompta ve NIZAM.md'ye olduğu gibi yazılır.
-   Amaç: AI her projede yeniden karar vermesin, hep aynı yerden çıksın. */
+   Amaç: AI her projede yeniden karar vermesin, hep aynı yerden çıksın.
+
+   Satır biçimi: [ad, değer, not] — dördüncü eleman isteğe bağlı `eklendi`
+   damgasıdır. Damgalı satır, o sürümden önce kurulmuş projelerde
+   Geliştirme durağında "yeni standart" olarak çıkar (bkz. yeniStandartlar).
+   Yeni satır damgasız eklenirse eski programlar onu hiç duymaz. */
 const TEKNIK_STANDART = [
   ['Dil ve çatı', 'Vanilla JS · HTML · CSS',
    'Hazır çatı (React, Vue) yok. Bağımlılık az, ömrü uzun.'],
@@ -775,6 +783,14 @@ const TEKNIK_STANDART = [
    + 'Alt çubuk yalnız telefon ve tablette görünür. Seçilen çubuk dokusu ikisinde de aynıdır.'],
   ['Erişilebilirlik', '44px · 4.5:1',
    'Dokunma hedefi en az 44×44px, metin kontrastı en az 4.5:1.'],
+  ['Yakınlaştırma', 'Kapalı',
+   'Çift dokunma ve iki parmakla yakınlaştırma kapalı: viewport etiketinde '
+   + 'maximum-scale=1, user-scalable=no. Yazı boyutu ayarlardan değişir, '
+   + 'sayfa esnetilerek değil.', 'v0.67.0'],
+  ['Geliştirme istekleri', 'Ayarlarda toplanır',
+   'Ayarlar\'da "Geliştirme istekleri" ekranı olur: kullanıcı isteğini yazar, '
+   + 'liste cihazda birikir, "Hepsini kopyala" ile tek metin olarak alınır. '
+   + 'Sunucuya gitmez, kimseye gönderilmez.', 'v0.67.0'],
 ];
 
 /* Projeye özel teknik alanlar — sihirbazda ve Firma durağında sorulur.
@@ -876,6 +892,8 @@ const KURULUM_ADIM = [
       'Boş durum, yükleme ve hata ekranlarını uygula.',
       'Bildirim ve işlem sonucu davranışını uygula.',
       'Ayarlar ekranını, yedeği ve varsa içe aktarmayı yap.',
+      'Ayarlar\'a "Geliştirme istekleri" ekranını ekle: istek yaz, listede '
+        + 'biriksin, hepsini tek metin olarak kopyala.',
       'Rolleri ve yetkileri bağla.',
     ],
     test: 'İnterneti kes, ne oluyor? Hiç kayıt yokken ekran ne diyor? '
@@ -917,6 +935,18 @@ function yeniKararlar(palet) {
     && surumSayi(a.eklendi) > tab
     && !pl[a.anahtar]
     && gor.indexOf(a.anahtar) < 0);
+}
+
+/* Bu proje için henüz duyurulmamış teknik standartlar.
+   Tasarım kararlarından farkı: standardın palette bir değeri yok, seçimi de
+   yok — susturmanın tek yolu "Gördüm" (palet.gorulenStandart). */
+function yeniStandartlar(palet) {
+  const pl  = palet || {};
+  const tab = surumSayi(pl.gorulenSurum);
+  const gor = Array.isArray(pl.gorulenStandart) ? pl.gorulenStandart : [];
+  return TEKNIK_STANDART.filter(([ad, , , eklendi]) => eklendi
+    && surumSayi(eklendi) > tab
+    && gor.indexOf(ad) < 0);
 }
 
 function bicimSecim(palet, alan) {

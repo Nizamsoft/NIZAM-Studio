@@ -1755,6 +1755,17 @@ a.sayfa-dug { text-decoration: none; }
 .kur-onay.pasif { opacity: .45; cursor: default; }
 /* Koşulu tutmayan kopyala düğmesi: görünür ama basılamaz. */
 .sayfa-dug[disabled] { opacity: .45; cursor: default; box-shadow: none; }
+/* Dokunulmayan değer satırı — yalnız bilgi. */
+.kur-deger.duz { cursor: default; }
+
+/* Sonradan gelen teknik standartlar — Geliştirme durağında. */
+.std-liste { margin: 11px 0 0 37px; display: grid; gap: 7px; }
+.std-satir { display: flex; align-items: baseline; gap: 9px; padding: 8px 11px;
+             border: 1px solid var(--line); border-radius: 9px;
+             background: var(--yuzey-2, rgba(255, 255, 255, .03)); }
+.std-satir b { font-size: 12px; color: var(--ink); }
+.std-satir span { font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+                  color: var(--ink-soft); margin-left: auto; text-align: right; }
 
 /* Tasarım haritası — öbekler ada ada. Durak yolunun aynı dili. */
 .ada-sar { padding: 2px 0 10px; }

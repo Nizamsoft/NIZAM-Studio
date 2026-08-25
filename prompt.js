@@ -754,6 +754,114 @@ const PROMPT = {
     return s.join('\n');
   },
 
+  /* ---------- Geliştirme durağı: iki ayrı yön ---------- */
+
+  /* Program geliştirmesi — Studio'ya sonradan eklenen teknik standartları
+     bu programa taşır. Yalnız o programın deposunda çalışır. */
+  programGelistirme(projeId) {
+    const p = DB.proje(projeId);
+    if (!p) return '';
+
+    const yeniler = yeniStandartlar(p.palet);
+    if (!yeniler.length) return '';
+
+    const pl    = p.palet || {};
+    const yerel = pl.veriKatmani === 'Yerel tarayıcı';
+    const s = [];
+
+    s.push('# ' + projeAdi(p) + ' — standart güncellemesi', '');
+
+    const slug = depoSlug(p.repo);
+    s.push('> ### Depo: ' + (slug ? '`' + slug + '`' : 'kayıtlı değil'));
+    if (slug) {
+      s.push('> Bu oturum yalnız bu depoya bağlı olmalı. Deposu farklıysa dur');
+      s.push('> ve söyle; başka depo ekleme, dosya oluşturma, commit atma.');
+    } else {
+      s.push('> Bu programın deposunu Studio\'ya yazmamışım. Dosyaya dokunmadan');
+      s.push('> önce doğru depoda olduğunu bana sor.');
+    }
+    s.push('');
+
+    s.push('Nizam Soft teknik standardına yeni satır' + (yeniler.length > 1 ? 'lar' : '')
+      + ' eklendi. Bu program o');
+    s.push('satır' + (yeniler.length > 1 ? 'lar' : '') + ' yokken kuruldu; şimdi ona da uygulanacak.', '');
+
+    s.push('## Yeni standart' + (yeniler.length > 1 ? 'lar' : ''), '');
+    yeniler.forEach(([ad, deger, not]) => {
+      const y = yerel && YEREL_STANDART[ad];
+      s.push('- **' + ad + ': ' + (y ? y[0] : deger) + '**');
+      const n = y ? y[1] : not;
+      if (n) s.push('  - ' + n);
+    });
+    s.push('');
+
+    s.push('## Şimdi ne yapacaksın');
+    s.push('1. `NIZAM.md` dosyasını aç. `## Teknik Standart` başlığının altına');
+    s.push('   yukarıdaki satır' + (yeniler.length > 1 ? 'ları' : 'ı') + ' ekle — kimlik dosyası doğruluk kaynağı,');
+    s.push('   önce orası güncellenir.');
+    s.push('2. Sonra kodda uygula. Bu standart mevcut bir davranışla çakışıyorsa');
+    s.push('   uydurma — dur ve bana sor.');
+    s.push('3. Tek commit yeter. Mesajın başına `[' + TASK_PREFIX + '-0]` yaz ve');
+    s.push('   **`main` dalına** gönder.');
+    s.push('');
+
+    s.push('## Şunları yapma');
+    s.push('- **Başka bir şeye dokunma.** Yalnız bu standart' + (yeniler.length > 1 ? 'lar' : '') + '. Yol üstünde');
+    s.push('  gördüğün eksikleri düzeltme, not olarak yaz.');
+    s.push('- **Tasarım kararlarını değiştirme.**');
+    s.push('- **Bu oturuma başka depo ekleme.**');
+
+    return s.join('\n');
+  },
+
+  /* Studio geliştirmesi — "bütün programlarda böyle olsun" isteği.
+     Hedef depo müşterininki değil, Studio'nun kendisi. */
+  studioGelistirme(istek) {
+    const metin = String(istek || '').trim();
+    if (!metin) return '';
+
+    const s = [];
+    s.push('# NIZAM Studio — yeni teknik standart', '');
+
+    s.push('> ### Depo: `' + APP.depo + '`');
+    s.push('> Bu istek tek bir müşteri programı için değil. Studio\'nun kendi');
+    s.push('> deposunda çalış; müşteri deposuna dokunma, bu oturuma başka depo');
+    s.push('> ekleme. Oturum başka bir depodaysa dur ve söyle.');
+    s.push('');
+
+    s.push('## İstek', '');
+    s.push(metin, '');
+
+    s.push('## Ne yapacaksın');
+    s.push('1. Bunu `config.js` içindeki `TEKNIK_STANDART` dizisine yeni bir satır');
+    s.push('   olarak ekle. Biçim: `[ad, değer, not, eklendi]`.');
+    s.push('   - **ad** kısa olsun, iki üç kelime.');
+    s.push('   - **not** neden ve nasıl olduğunu tek paragrafta anlatsın.');
+    s.push('   - **eklendi** bu sürümün bir üstü olsun — damgasız satırı eski');
+    s.push('     programlar hiç duymaz.');
+    s.push('2. Veri yerelde olan projelerde anlamı değişiyorsa `YEREL_STANDART`');
+    s.push('   içine de karşılığını yaz.');
+    s.push('3. Zaten var olan bir satırla çakışıyorsa yeni satır açma — mevcut');
+    s.push('   satırı güncelle ve damgasını bu sürüme çek.');
+    s.push('4. Studio\'nun sürüm işlerini yap: `config.js` içindeki `APP.version`,');
+    s.push('   `CHANGELOG.md` (en yeni üstte), `index.html` içindeki `?v=`');
+    s.push('   numaraları, `sw.js` içindeki `CACHE` adı.');
+    s.push('5. `main` dalına gönder.');
+    s.push('');
+
+    s.push('## Şunları yapma');
+    s.push('- **Kod yazma dışında bir şey kurma.** Bu bir standart satırı; yeni');
+    s.push('  ekran, yeni ayar, yeni tablo istemiyorum.');
+    s.push('- **Görev durumlarını artırma.** Dört tane: Yapılacak, Geliştiriliyor,');
+    s.push('  Kontrolde, Tamamlandı.');
+    s.push('');
+
+    s.push('Bittiğinde Studio\'yu güncelleyip her programın Geliştirme durağında');
+    s.push('bu standardı göreceğim; oradan tek tek uygulatacağım.');
+
+    return s.join('\n');
+  },
+
   /* ---------- Proje kimlik dosyası ---------- */
 
   kimlik(projeId) {
