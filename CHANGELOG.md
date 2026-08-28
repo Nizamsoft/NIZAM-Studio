@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.74.1
+- **"Bütün kararları gör" çalışmıyordu.** Haritanın altına yeni eklenen satır adım numarasını ayarlıyor ama adım kipine geçmiyordu; harita yeniden çiziliyor ve düğme ölü görünüyordu.
+
 ## v0.74.0
 - **Görsel dünya adasında artık tek kart açık.** Dört kart aynı anda "sırada" yazıyordu, hangisinin sırası olduğu anlaşılmıyordu. Şimdi biten adım tik ve özetiyle kapanıyor (*"logo + işletme görseli"*, *"3 yuva açıldı"*), sıradaki açık ve **şimdi** etiketli, bekleyenler sade satır. Kapalı satıra dokununca o adım açılıyor.
 - **Şerit adanın kendi adımını sayıyor.** Genel adım şeridi kalan bütün kararları sayıp *"1 / 15"* diyordu; bu ada tek adım olduğu için yanıltıyordu. Yerine dört bölmeli kendi şeridi ve `2/4` sayacı geldi.

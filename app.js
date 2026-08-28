@@ -1058,7 +1058,7 @@ function tasarimHaritasi(p, d) {
           </span></button>
       </div>`;
     }).join('')}</div>
-    <button class="ada-ozet" type="button" data-eylem="tasarim-adim"
+    <button class="ada-ozet" type="button" data-eylem="tasarim-ada"
             data-proje="${p.id}" data-deger="${ozetNo}">
       ${svg(ICON.katman, 15)} Bütün kararları gör</button>
   </div>`;
