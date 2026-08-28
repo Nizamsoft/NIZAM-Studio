@@ -699,6 +699,45 @@ const PROMPT = {
     s.push('6. **Ayarlar** — satır satır seçenek listesi.');
     s.push('');
 
+    s.push('## Kalite çıtası — en önemli bölüm');
+    s.push('Temiz ve düzgün bir ekran yetmiyor. Aşağıdaki **altı katman**');
+    s.push('olmadan tasarım yarım sayılır. Her birini uygula:', '');
+
+    s.push('**1 · Açılış görseli.** Panel düz bir renk şeridiyle başlamaz.');
+    s.push('   Tam genişlik bir görselle açılır, içerik sayfası büyük bir köşe');
+    s.push('   yarıçapıyla onun **üstüne biner**. Görselin altına, yazının');
+    s.push('   okunacağı yere perde koy.');
+    s.push('**2 · İşe özel simgeler.** Hazır simge setine benzeyen çizim verme.');
+    s.push('   Bu işin **kendi nesnelerini** çiz — kasap için satır ve terazi,');
+    s.push('   kuruyemişçi için çuval ve kavanoz, lokanta için tencere ve ocak.');
+    s.push('   Tek renk çizgi değil: paletten iki üç renk kullan, arkalarına');
+    s.push('   yumuşak bir daire zemin koy.');
+    s.push('**3 · Doku.** Düz dolgu bırakma. Kart zemininde kâğıt greni,');
+    s.push('   ekran arkasında dikişsiz bir doku olsun — hafif, %5-8 civarı,');
+    s.push('   okunurluğu bozmayacak kadar.');
+    s.push('**4 · Amblem ve süsleme.** Logoyu kutuya sıkıştırma; çevresine');
+    s.push('   markaya yakışan bir çerçeve kur. Altına bir satır slogan koy.');
+    s.push('   Bölüm başlıklarının altına ince çizgi, kart köşelerine küçük');
+    s.push('   bir işaret gibi tekrar eden bir motif bırak.');
+    s.push('**5 · Derinlik.** Her şey tek düzlemde durmasın. Yumuşak ve');
+    s.push('   katmanlı gölge kullan; sayfa görselin üstünde, kart sayfanın');
+    s.push('   üstünde dursun. Sert kutu gölgesi değil, geniş ve düşük opaklıklı.');
+    s.push('**6 · Tipografi ölçeği.** Serif yazı tipini aksesuar gibi kullanma.');
+    s.push('   Panel selamlaması ve bölüm başlıkları **gerçek boyutta** serif');
+    s.push('   olsun (28-32px), gövde sans kalsın. Boyut basamakları belirgin');
+    s.push('   olsun, her şey 14-16px arasında sıkışmasın.', '');
+
+    s.push('Çıta şu: bu ekranlar bir **yönetim paneli** gibi değil, bir');
+    s.push('**butik otel ya da el yapımı marka uygulaması** gibi görünmeli.');
+    s.push('İş verisi her zaman önde ve okunaklı — ama arkasında bir dünya olsun.', '');
+
+    s.push('### Şunları yapma');
+    s.push('- Beyaz zemin üstünde beyaz kart. En az bir tonluk fark olsun.');
+    s.push('- Renkli bir şeritten ibaret üst başlık.');
+    s.push('- Material, Lucide, Feather gibi hazır setlerden çıkmış görünen simge.');
+    s.push('- Hazır yönetim paneli şablonu havası.');
+    s.push('- Süs uğruna okunurluğu bozmak: metin kontrastı her yerde 4.5:1.', '');
+
     s.push('## Görselleri sen üret');
     s.push('Tasarımın gerektirdiği görselleri **kendin üret** ve her birine sıra');
     s.push('numarası ver. **`G1` benim verdiğim işletme görselidir** — onu');
@@ -719,6 +758,20 @@ const PROMPT = {
     s.push('- Ekranları telefon ölçüsünde tasarla; masaüstünde aynı dil geniş');
     s.push('  ekrana taşınacak.');
     s.push('');
+
+    s.push('## Nasıl teslim edeceksin');
+    s.push('Hepsini **tek bir tabakada** ver: solda altı ekran numaralı ve');
+    s.push('başlıklı, sağda bir **Stil ve Varlık Listesi** paneli. O panelde');
+    s.push('şunlar olsun:', '');
+    s.push('- **Görseller** — ürettiğin her görselin küçük hâli, altında');
+    s.push('  numarası (`G1`, `G2`…) ve tek satırlık ne olduğu');
+    s.push('- **İkon seti** — bütün simgeler bir arada, tek SVG');
+    s.push('- **Doku / zemin** — dikişsiz örneğin bir karesi');
+    s.push('- **Renk paleti** — kutucuklar ve altında hex kodları');
+    s.push('- **Yazı tipleri** — başlık ve gövde, örnek satırlarıyla');
+    s.push('- **Yuvarlama** — köşe yarıçapı değeri');
+    s.push('- **Bileşen örnekleri** — birincil ve ikincil düğme, durum etiketleri,');
+    s.push('  giriş alanı', '');
 
     s.push('Beğenmezsem söyleyeceğim, düzelteceksin. Anlaştıktan sonra senden');
     s.push('**bunu nasıl yaptığının tarifini** isteyeceğim — o yüzden verdiğin');
@@ -743,9 +796,13 @@ const PROMPT = {
     s.push('```');
     s.push('## GÖRSEL DİL');
     s.push('Renk: ana, ikincil, vurgu, zemin, metin — hex kodlarıyla ve hangisi nerede');
-    s.push('Yüzey: kart zemini, köşe yarıçapı, gölge, kenarlık');
-    s.push('Tipografi: başlık ve gövde yazı tipi, ağırlık, boyut basamakları');
-    s.push('Simge: çizim biçimi, çizgi kalınlığı, renk, arkasında zemin var mı');
+    s.push('Yüzey: kart zemini, köşe yarıçapı, kenarlık');
+    s.push('Doku: hangi yüzeyde hangi doku, opaklığı ne');
+    s.push('Derinlik: gölge değerleri ve neyin neyin üstünde durduğu');
+    s.push('Tipografi: başlık ve gövde yazı tipi, ağırlık, boyut basamakları (px)');
+    s.push('Simge: çizim biçimi, çizgi kalınlığı, kaç renk, arkasında zemin var mı');
+    s.push('Amblem: logo çerçevesi, slogan, tekrar eden süsleme motifi');
+    s.push('Açılış: panelin tepesi nasıl kurulur — görsel, perde, içeriğin binmesi');
     s.push('Boşluk: temel birim ve kart içi / kartlar arası ölçüler');
     s.push('Başlık düzeni: bölüm başlıkları nasıl görünür');
     s.push('Alt çubuk: zemin, simge rengi, ortadaki düğme');
