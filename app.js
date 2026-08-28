@@ -1003,7 +1003,12 @@ async function onaylariYaz(p) {
 function adimBitti(p, i) {
   const adim = TASARIM_ADIM[i];
   const pl = p.palet || {};
-  if (adim.tur === 'palet') return !!pl.bg;
+  /* Görsel dünya adası: tarif geldi ve tarifin istediği bütün görseller
+     yuvalara kondu mu? Yarım bırakılmışsa ada bitmiş sayılmıyor. */
+  if (adim.tur === 'gorsel') {
+    const y = pl.gorseller || [];
+    return !!String(pl.tarif || '').trim() && y.length > 0 && y.every(x => x.yol);
+  }
   const onaylanan = (Array.isArray(pl.bitenAdim) ? pl.bitenAdim : [])
     .concat(ONAY_TASLAK[p.id] || []);
   if (onaylanan.indexOf(adim.anahtar) > -1) return true;
@@ -1063,43 +1068,11 @@ function tasarimSayfasi(p, d) {
 
   let govde, gez;
 
-  if (adim.tur === 'palet') {
-    govde = `
-      <div class="palet-kaydir">
-      <div class="logo-bolum ince">
-        <span class="mk-logo ${adres ? 'yukleniyor' : ''}"
-              ${adres ? `data-logo="${esc(adres)}"` : ''}
-              data-eylem="${yon ? 'logo-yukle' : ''}" data-proje="${p.id}"
-              ${yon ? 'role="button" tabindex="0"' : ''}>
-          <span class="logo-harf">${svg(ICON.folder, 16)}</span>
-          ${adres ? '<span class="donen"></span>' : ''}
-        </span>
-        <span class="mk-yazi">
-          <b>${adres ? 'Firma logosu' : 'Logo yok'}</b>
-          ${adres ? '<i>Paletin kaynağı. Değiştirmek için dokun.</i>' : ''}
-        </span>
-      </div>`
-      + (PALET_ALAN.some(a => a.renk && pl && pl[a.anahtar]) ? paletSeridi(pl) : `
-      <div class="bos-kutu">${svg(ICON.katman, 18)}
-        <span>Promptu kopyala, Claude'a logoyla birlikte ver; dönen cevabı yapıştır.
-        Renkler, yazı tipleri ve marka karakteri dolar. Arayüz kararlarını
-        sonraki adımlarda sen veriyorsun.</span></div>`)
-      + (yon ? `
-        <div class="palet-dug">
-          <button class="sayfa-dug kopyala-dug" data-eylem="palet-prompt"
-                  data-proje="${p.id}" type="button">
-            <span class="kd-ikon">${svg(ICON.kopya, 15)}${svg(ICON.tik, 15)}</span>
-            <span class="kd-yazi">Prompt kopyala</span></button>
-          <button class="sayfa-dug ${pl ? 'ikincil' : ''}" data-eylem="palet-aktar"
-                  data-proje="${p.id}" type="button">
-            ${svg(ICON.ice, 15)} Cevabı yapıştır</button>
-        </div>
-        <button class="promptu-gor" type="button" data-eylem="palet-prompt-gor"
-                data-proje="${p.id}">Promptu gör</button>` : '')
-      + '</div>';
+  if (adim.tur === 'gorsel') {
+    govde = gorselDunyaGovdesi(p);
 
   } else if (adim.tur === 'ozet') {
-    govde = `<div class="ozet-kaydir">${paletSeridi(pl || {})}${tasarimOzeti(p)}</div>`;
+    govde = `<div class="ozet-kaydir">${tarifSeridi(p)}${tasarimOzeti(p)}</div>`;
 
   } else {
     govde = adimRafi(p, adim.alan);
@@ -1108,9 +1081,9 @@ function tasarimSayfasi(p, d) {
   gez = adimGezinme(p, no, adim);
 
   return `<div class="akis ${adim.tur === 'ozet' ? 'ozet' : ''}${
-      adim.tur === 'palet' ? ' palet' : ''}">
+      adim.tur === 'gorsel' ? ' gorsel' : ''}">
     ${adimSeridi(p, no, adim)}
-    ${adim.tur === 'ozet' ? '' : onizlemeSatiri(p, adim)}
+    ${['ozet', 'gorsel'].includes(adim.tur) ? '' : onizlemeSatiri(p, adim)}
     <div class="akis-alt">
       <div class="adim-bas">
         <div class="ab-yazi"><b>${esc(adim.ad)}</b><i>${esc(adim.aciklama)}</i></div>
@@ -1226,21 +1199,207 @@ function adimRafi(p, a) {
   </div>`;
 }
 
-/* Palet şeridi — iki yerde kullanılıyor. */
-function paletSeridi(pl) {
-  if (!pl || !PALET_ALAN.some(a => a.renk && pl[a.anahtar])) return '';
-  /* Gelmemiş rengi gri kutuyla göstermek "bozuk" gibi duruyordu; boş kutu
-     çizip adını yazmak daha dürüst. */
-  return `<div class="palet-tam">${PALET_ALAN.filter(a => a.renk).map(a => {
-      const renk = pl[a.anahtar];
-      return renk
-        ? `<span style="background:${esc(renk)}" title="${esc(a.ad)}"><em>${esc(renk.replace('#', ''))}</em></span>`
-        : `<span class="bos" title="${esc(a.ad)} gelmedi"><em>—</em></span>`;
-    }).join('')}</div>
-    <div class="tip">
-      <div><b>Başlık</b><u style="font-family:var(--yazi-baslik);font-weight:700">${esc(pl.baslik || '—')}</u></div>
-      <div><b>Metin</b><u>${esc(pl.govde || '—')}</u></div>
-    </div>`;
+/* ==========================================================================
+   GÖRSEL DÜNYA
+   Uygulamanın bütün görünüşü bu adadan çıkıyor. Studio hiçbir estetik karar
+   vermiyor: logo ve işletme görselini toplar, promptu üretir, dönen tarifi
+   yuvalara çevirir, adresleri bir sonraki bloğa taşır.
+   ========================================================================== */
+
+/* Ada gövdesi — dört adım, sırayla açılır. */
+function gorselDunyaGovdesi(p) {
+  const pl    = p.palet || {};
+  const yon   = AUTH.yonetici;
+  const logo  = DB.logoAdres[p.id];
+  const isl   = gorselAdresi(p, 'G0');
+  const tarif = String(pl.tarif || '').trim();
+  const yuvalar = pl.gorseller || [];
+  const dolu  = yuvalar.filter(y => y.yol).length;
+  const malzemeTam = !!logo && !!isl;
+
+  return `<div class="gd-kaydir">`
+
+  + durakKarti(1, malzemeTam, 'Malzeme',
+      'Logo sihirbazda alındı. Bir de <b>işletmeyi anlatan görsel</b> gerekiyor — '
+      + 'mekân, ürün ya da vitrin. Konseptin tek kaynağı bu; ChatGPT rengi, '
+      + 'dokuyu ve havayı ondan çıkaracak.', `
+    <div class="gd-iki">
+      <div class="gd-kutu ${logo ? 'var' : ''}"
+           ${yon ? `data-eylem="logo-yukle" data-proje="${p.id}" role="button" tabindex="0"` : ''}>
+        <span class="gd-on ${logo ? 'resim' : ''}" ${logo ? `data-logo="${esc(logo)}"` : ''}>
+          ${logo ? '' : svg(ICON.folder, 20)}</span>
+        <b>Logo</b><i>${logo ? 'hazır · değiştirmek için dokun' : 'sihirbazda yüklenmedi'}</i>
+      </div>
+      <div class="gd-kutu ${isl ? 'var' : ''}"
+           ${yon ? `data-eylem="isletme-gorseli" data-proje="${p.id}" role="button" tabindex="0"` : ''}>
+        <span class="gd-on ${isl ? 'resim' : ''}" ${isl ? `data-logo="${esc(isl)}"` : ''}>
+          ${isl ? '' : '+'}</span>
+        <b>İşletme görseli</b><i>${isl ? 'hazır · değiştirmek için dokun' : 'dokun, seç'}</i>
+      </div>
+    </div>`)
+
+  + durakKarti(2, !!tarif, 'Tasarım promptu',
+      'Promptu kopyala, <b>iki görselle birlikte</b> ChatGPT\'ye ver. Altı ekranı '
+      + 'tasarlar, gereken görselleri kendi üretir ve hangisinin nereye gideceğini '
+      + 'numarasıyla yazar. Beğenene kadar orada konuş — Studio karışmaz.'
+      + (malzemeTam ? '' : ' <b class="eksik">Önce iki görseli de yükle.</b>'), `
+    <div class="gd-uret">
+      <div class="gd-us">${svg(ICON.katman, 13)}<b>Tema</b><span>renk · yüzey · tipografi</span></div>
+      <div class="gd-us">${svg(ICON.katman, 13)}<b>İkon seti</b><span>işe özel çizim</span></div>
+      <div class="gd-us">${svg(ICON.katman, 13)}<b>Yeni görseller</b><span>üretir, numaralar</span></div>
+      <div class="gd-us">${svg(ICON.katman, 13)}<b>Ekran düzeni</b><span>altı ekran</span></div>
+    </div>
+    <div class="kur-dug">
+      <button class="sayfa-dug kopyala-dug ${malzemeTam ? '' : 'ikincil'}" type="button"
+              data-eylem="gorsel-tasarim" data-proje="${p.id}" ${malzemeTam ? '' : 'disabled'}>
+        <span class="kd-ikon">${svg(ICON.kopya, 15)}${svg(ICON.tik, 15)}</span>
+        <span class="kd-yazi">Tasarım promptunu kopyala</span></button>
+    </div>
+    <button class="promptu-gor" type="button" data-eylem="gorsel-tarif-prompt"
+            data-proje="${p.id}">Beğendiğinde: tarif promptunu kopyala</button>`)
+
+  + durakKarti(3, !!tarif, 'Tarifi yapıştır',
+      tarif
+        ? 'Tarif alındı. Görsel dil ve yerleşim aşağıda; değiştirmek istersen '
+          + 'yeniden yapıştır.'
+        : 'ChatGPT\'nin verdiği tarifi bırak. Studio yerleşimi okuyup '
+          + '<b>isimli görsel yuvaları</b> açar.', `
+    ${tarif ? tarifKarti(p) : ''}
+    <div class="kur-dug">
+      <button class="sayfa-dug ${tarif ? 'ikincil' : (malzemeTam ? '' : 'ikincil')}" type="button"
+              data-eylem="tarif-aktar" data-proje="${p.id}">
+        ${svg(ICON.ice, 15)} ${tarif ? 'Tarifi değiştir' : 'Tarifi yapıştır'}</button>
+    </div>`)
+
+  + durakKarti(4, yuvalar.length > 0 && dolu === yuvalar.length, 'Görselleri yerine koy',
+      yuvalar.length
+        ? 'ChatGPT\'nin ürettiklerini indir, yuvalara bırak. Hangisinin nereye '
+          + 'gideceğini yuva söylüyor — sıra karıştıramazsın.'
+        : '<b class="eksik">Önce tarifi yapıştır.</b> Yuvaları tarif açıyor.', `
+    <div class="kur-dug">
+      <button class="sayfa-dug ${yuvalar.length && dolu < yuvalar.length ? '' : 'ikincil'}"
+              type="button" data-eylem="gorsel-yuvalar" data-proje="${p.id}"
+              ${yuvalar.length ? '' : 'disabled'}>
+        ${svg(ICON.katman, 15)} Yuvaları aç${yuvalar.length ? ` — ${dolu}/${yuvalar.length} dolu` : ''}</button>
+    </div>
+    ${yuvalar.length && dolu < yuvalar.length ? `
+      <div class="note note-kucuk">${svg(ICON.uyari, 15)}
+        <span>Yuvalar dolmadan 2. blok yarım kalır — eksik görsel Claude'un
+        elinde kırık bağlantı olur.</span></div>` : ''}`)
+
+  + `</div>`;
+}
+
+/* Bir yuvanın imzalı adresi. G0 = işletme görseli (ChatGPT'ye giden, tarif
+   isterse G1 olarak kullanılan). */
+function gorselAdresi(p, no) {
+  const harita = DB.gorselAdres || {};
+  const dogrudan = harita[p.id + '/' + no];
+  if (dogrudan) return dogrudan;
+  /* İki yuva aynı dosyayı gösterebilir: tarif G1'i "senin verdiğin görsel"
+     diye kullanınca G0 ile aynı yolu paylaşıyorlar. Kendi anahtarında adres
+     yoksa aynı yolu gösterenden al, kutu boş görünmesin. */
+  const yuvalar = (p.palet || {}).gorseller || [];
+  const ben = yuvalar.find(y => y.no === no);
+  if (!ben || !ben.yol) return '';
+  const es = yuvalar.find(y => y.yol === ben.yol && harita[p.id + '/' + y.no]);
+  return es ? harita[p.id + '/' + es.no] : '';
+}
+
+/* Tarifin Studio'daki görünüşü — ada içinde ve özet adımında. */
+function tarifKarti(p) {
+  const pl = p.palet || {};
+  const dil = String(pl.tarif || '').trim();
+  const yuvalar = pl.gorseller || [];
+  if (!dil) return '';
+
+  const satir = dil.split(/\r?\n/).filter(x => x.trim() && !/^#/.test(x));
+  return `<div class="tarif-kart">
+    <div class="tk-bas"><b>Görsel dil</b><span class="tk-rz">ChatGPT</span></div>
+    ${satir.slice(0, 8).map(x => {
+      const es = x.match(/^\s*([^:]{2,28}?)\s*:\s*(.+)$/);
+      return es
+        ? `<div class="tk-satir"><b>${esc(es[1])}</b><span>${esc(es[2])}</span></div>`
+        : `<div class="tk-satir"><span>${esc(x.replace(/^[-*]\s*/, ''))}</span></div>`;
+    }).join('')}
+    ${satir.length > 8 ? `<button class="promptu-gor" type="button"
+        data-eylem="tarif-gor" data-proje="${p.id}">Tarifin tamamını gör</button>` : ''}
+    ${yuvalar.length ? `<div class="tk-yer">
+      ${yuvalar.map(y => `<span class="tk-y ${y.yol ? 'dolu' : ''}">${esc(y.no)} · ${esc(y.ad)}</span>`).join('')}
+    </div>` : ''}
+  </div>`;
+}
+
+/* ---------- Tarif çözümleme ----------
+   ChatGPT serbest metin döndürür. YERLEŞİM bölümündeki boru işaretli
+   satırları yuvaya çeviriyoruz; tutturamadıysa metin yine saklanır ve
+   yuvalar elle açılır — akış durmaz. */
+function tarifCozumle(metin, eskiYuvalar) {
+  const ham = String(metin || '').replace(/\r/g, '');
+  const eski = {};
+  (eskiYuvalar || []).forEach(y => { eski[y.no] = y; });
+
+  /* Bölümler: "## YERLEŞİM" başlığından sonrası. Başlık yoksa bütün metinde
+     boru işaretli satır aranır. */
+  const buyuk = ham.toLocaleUpperCase('tr');
+  const yi = buyuk.search(/##\s*YERLE[SŞ]/);
+  const di = buyuk.search(/##\s*G[OÖ]RSEL\s*D[İI]L/);
+
+  let dil = ham.trim();
+  let yerBolum = ham;
+  if (yi > -1) {
+    yerBolum = ham.slice(yi);
+    dil = (di > -1 && di < yi ? ham.slice(di, yi) : ham.slice(0, yi)).trim();
+  } else if (di > -1) {
+    dil = ham.slice(di).trim();
+  }
+  dil = dil.replace(/^##\s*.*$/m, '').replace(/^```\w*$|^```$/gm, '').trim();
+
+  const yuvalar = [];
+  yerBolum.split('\n').forEach(satir => {
+    const t = satir.replace(/^\s*(?:[-*•]|\d+[.)])\s*/, '').replace(/\*\*/g, '').trim();
+    if (!t || t.startsWith('#') || t.startsWith('```')) return;
+    const par = t.split('|').map(x => x.trim()).filter((x, i) => i < 4);
+    if (par.length < 3) return;
+    const no = (par[0].match(/^G\s*(\d+)$/i) || [])[1];
+    if (!no) return;
+    /* Markdown tablo başlığı ("--- | --- | ---") boru içerir ama G ile başlamaz. */
+    const dosya = par[1].replace(/^`|`$/g, '')
+      .replace(/[^A-Za-z0-9._-]/g, '-').toLowerCase() || ('gorsel-' + no);
+    const anahtar = 'G' + no;
+    yuvalar.push(Object.assign({ yol: '', boyut: 0, tur: '' }, eski[anahtar] || {}, {
+      no: anahtar,
+      dosya: /\.[a-z0-9]{2,4}$/.test(dosya) ? dosya : dosya + '.png',
+      ad: par[2] || 'Görsel',
+      tarif: par[3] || '',
+    }));
+  });
+
+  yuvalar.sort((a, b) => parseInt(a.no.slice(1), 10) - parseInt(b.no.slice(1), 10));
+  return { dil: dil || ham.trim(), yuvalar };
+}
+
+/* Tarif özeti — özet adımının tepesinde. Tam metin uzun; ilk satırlar
+   ve dolu yuva sayısı yetiyor. */
+function tarifSeridi(p) {
+  const pl = p.palet || {};
+  const t  = String(pl.tarif || '').trim();
+  const yuvalar = pl.gorseller || [];
+  const dolu = yuvalar.filter(y => y.yol).length;
+
+  if (!t) {
+    return `<div class="bos-kutu">${svg(ICON.katman, 18)}
+      <span>Görsel dil tarifi yok. <b>Görsel dünya</b> adasına dönüp
+      ChatGPT'den tarifi al — bu blok onsuz yarım çıkar.</span></div>`;
+  }
+
+  const satir = t.split(/\r?\n/).filter(x => x.trim() && !/^#/.test(x)).slice(0, 6);
+  return `<div class="tarif-serit">
+    <div class="ts-ust"><b>Görsel dil</b>
+      <span class="ts-rz">${dolu}/${yuvalar.length} görsel</span></div>
+    ${satir.map(x => `<div class="ts-satir">${esc(x.replace(/^[-*]\s*/, ''))}</div>`).join('')}
+    ${t.split(/\r?\n/).length > 6 ? '<div class="ts-devam">…</div>' : ''}
+  </div>`;
 }
 
 /* Son adım: bütün kararlar tek listede. */
@@ -1251,16 +1410,12 @@ function tasarimOzeti(p) {
       const d = bicimSecim(pl, a);
       return `<div class="sr">${esc(a.ad)} <b>${d.length ? esc(d.join(' + ')) : '—'}</b></div>`;
     }).join('')}</div>`).join('')
-    + (pl.ton ? `<div class="adim-not">${svg(ICON.info, 13)}
-        <span>Karakter: ${esc(pl.ton)}</span></div>` : '')
     + celiskiKutusu(p)
     + (AUTH.yonetici ? `
       <button class="sayfa-dug kopyala-dug" data-eylem="tasarim-blok"
               data-proje="${p.id}" type="button">
         <span class="kd-ikon">${svg(ICON.kopya, 15)}${svg(ICON.tik, 15)}</span>
-        <span class="kd-yazi">2. bloğu kopyala — tasarım kararları</span></button>
-      <button class="sayfa-dug ikincil" data-eylem="palet-duzenle" data-proje="${p.id}" type="button">
-        ${svg(ICON.kalem, 15)} Paleti elle düzenle</button>
+        <span class="kd-yazi">2. bloğu kopyala — görsel dil</span></button>
       <button class="tumSifir" type="button" data-eylem="tasarim-tum-sifirla" data-proje="${p.id}">
         ${svg(ICON.geriAl, 15)} Tüm tasarımı sıfırla</button>` : '');
 }
@@ -1304,27 +1459,16 @@ function celiskiKutusu(p) {
   }
   bulunan.push(...masaustu);
 
-  /* Kontrast da burada: palet elle düzenlenmiş olabilir. */
-  const kontrast = [];
-  if (pl.bg) {
-    [['metin', 'Metin'], ['metin2', 'Metin soft'], ['metin3', 'Metin silik']].forEach(([k, ad]) => {
-      if (!pl[k]) return;
-      const o = kontrastOrani(pl[k], pl.bg);
-      if (o && o < 4.5) kontrast.push(`${ad} arka planda ${o.toFixed(1)}:1 — okunmaz.`);
-    });
-  }
-
-  if (!bulunan.length && !kontrast.length) {
+  if (!bulunan.length) {
     return `<div class="adim-not iyi">${svg(ICON.check, 13)}
-      <span>Çelişen karar yok, kontrastlar yeterli.</span></div>`;
+      <span>Çelişen karar yok.</span></div>`;
   }
 
   return `<div class="celiski">
-    <b>${svg(ICON.uyari, 14)} ${bulunan.length + kontrast.length} uyarı</b>
+    <b>${svg(ICON.uyari, 14)} ${bulunan.length} uyarı</b>
     ${bulunan.map(([bas, neden, i]) => `
       <button type="button" data-eylem="tasarim-adim" data-proje="${p.id}" data-deger="${i}">
         <span>${esc(bas)}</span><i>${esc(neden)}</i></button>`).join('')}
-    ${kontrast.map(x => `<span class="ck-satir">${esc(x)}</span>`).join('')}
   </div>`;
 }
 
@@ -1579,8 +1723,12 @@ function onizlemeIc(p, pl) {
   const r = k => pl[k] || varsayilan[k];
   const vurgu = pl.vurgu || (PROJE_RENK[p.renk] || PROJE_RENK.metal)[0];
 
-  const bic = {};
-  TUM_TASARIM.forEach(a => { bic[a.anahtar] = bicimSecim(pl, a); });
+  const bic0 = {};
+  TUM_TASARIM.forEach(a => { bic0[a.anahtar] = bicimSecim(pl, a); });
+  /* Görünüşe dair kararların çoğu kalktı — onlara artık ChatGPT'nin tarifi
+     karar veriyor. Önizleme künye ekranında hâlâ kullanılıyor; olmayan bir
+     başlık sorulunca boş dizi dönüp aşağıdaki varsayılana düşsün. */
+  const bic = new Proxy(bic0, { get: (t, k) => (k in t ? t[k] : []) });
 
   const koseler = {
     'Keskin': ['0', '0'], 'Hafif': ['6px', '6px'], 'Yuvarlak': ['14px', '12px'],
@@ -1897,7 +2045,10 @@ function onizlemeIc(p, pl) {
 
   /* Genişlik adımında uygulama tam genişlik çizilir; küçültülürse
      "tam genişlik" ile "ortada sınırlı" arasındaki fark kaybolur. */
-  const panelGovde = vurguKarti + ayarIpucu + {
+  /* Parantez şart: `a + b + {…}[k] || varsayilan` toplamı önce yapar ve
+     anahtar bulunamayınca "undefined" metnini üretip varsayılana hiç
+     düşmez. Kararların çoğu kalkınca bu tuzak ortaya çıktı. */
+  const panelGovde = vurguKarti + ayarIpucu + ({
     'Sayaç + büyük grafik': statlar + kart('<span class="o-grafik"></span>', 'o-buyuk'),
     '2×2 ızgara': `<div class="o-izgara ${sy === "3'lü ızgara" ? 'uc' : ''}">${
       ['Sipariş', 'Ciro', 'Ürün', 'İptal'].slice(0, sy === "3'lü ızgara" ? 3 : 4).map((x, i) =>
@@ -1908,7 +2059,7 @@ function onizlemeIc(p, pl) {
         kart(`<i>${esc(x[0])}</i><b>${esc(x[1])}</b>`, 'o-stat')).join('')}</div></div>`,
     'Sayaç + son hareketler': statlar
       + `<div class="o-tblbas">${esc(v.baslik)}</div>` + tabloKutusu(),
-  }[bic.dashboard[0]] || statlar;
+  }[bic.dashboard[0]] || statlar);
 
   const formAlan = (etiket, boy = '', tur = '', zorunlu = false) =>
     `<label class="o-alan"><i>${esc(etiket)}${zorunlu ? '<em>*</em>' : ''}</i>
@@ -2042,7 +2193,7 @@ function onizlemeIc(p, pl) {
     ? `<div class="o-kutu o-tbl">${v.alanlar.slice(0, 5).map((a, i) =>
         `<div class="o-r"><span>${esc(a.ad)}</span><u>${esc(alanDegeri(a, 0))}</u></div>`).join('')}</div>`
     : '';
-  const detayGovde = yolIzi + {
+  const detayGovde = yolIzi + ({
     'Sekmeli': `<div class="o-sekme ic">${['Bilgi', 'Hareket', 'Belge'].map((x, i) =>
         `<i class="${i ? '' : 'a'}">${x}</i>`).join('')}</div>${kart(kunye, 'o-dk')}${
           detayAlanlari || formIcKisa()}`,
@@ -2055,7 +2206,7 @@ function onizlemeIc(p, pl) {
         + `<div class="o-katlanir"><i class="acik">Bilgiler<u>▾</u></i>
              <span class="o-katIc">${formIcKisa()}</span>
              <i>Hareketler<u>›</u></i><i>Belgeler<u>›</u></i></div>`,
-  }[bic.detay[0]] || '';
+  }[bic.detay[0]] || '');
 
   /* Yoğunluk: liste ve form aynı karede — "Karma" ancak böyle görünür. */
   const yogGovde = `
@@ -2190,7 +2341,8 @@ function onizlemeIc(p, pl) {
         `<i class="${i ? '' : 'a'}">${esc(x)}</i>`).join('')}${
         bic.kullanicimenu[0] === 'Yan menü altında'
           ? '<span class="o-yanKisi"><em></em>Kerem G.</span>' : ''}</div>` : ''}
-      <div class="o-gov">${beklemeCubugu}${govde}${silme}${sonDugme}${bildirim}${fab}${sonucKatmani}${gecisKatmani}${
+      <div class="o-gov">${[beklemeCubugu, govde, silme, sonDugme, bildirim, fab,
+        sonucKatmani, gecisKatmani].map(x => x == null ? '' : x).join('')}${
         bic.destek[0] === 'Sağ altta yüzen' && !ciplak ? '<span class="o-destekFab">?</span>' : ''}</div>
     </div>
     ${ciplak ? '' : gezinme}
@@ -2200,30 +2352,33 @@ function onizlemeIc(p, pl) {
 
 function onizlemeNotu(bic, tel, ekr) {
   const not = [];
-  if (ekr === 'liste' && !tel) not.push(`Telefonda: ${bic.tablomobil[0].toLocaleLowerCase('tr')}`);
-  if (ekr === 'liste' && tel && bic.tablomobil[0] === 'Aç-kapa satır')
+  /* Bu başlıkların çoğu kalktı; görünüşe artık ChatGPT'nin tarifi karar
+     veriyor. Kalanları okurken var mı diye bakıyoruz. */
+  const bs = k => (bic[k] && bic[k][0]) || '';
+  if (ekr === 'liste' && !tel) not.push(`Telefonda: ${(bs('tablomobil') || '—').toLocaleLowerCase('tr')}`);
+  if (ekr === 'liste' && tel && bs('tablomobil') === 'Aç-kapa satır')
     not.push('Satıra dokununca kalan sütunlar altında açılır');
-  if (ekr === 'liste' && tel && bic.tablomobil[0] === 'Tam ekran')
+  if (ekr === 'liste' && tel && bs('tablomobil') === 'Tam ekran')
     not.push('Kayıttan kayda yatay kaydırarak geçilir');
-  if (ekr === 'liste' && bic.onaysil[0] === 'Kaydırarak sil')
+  if (ekr === 'liste' && bs('onaysil') === 'Kaydırarak sil')
     not.push('Satırı yana kaydırınca sil düğmesi çıkar');
-  if (ekr === 'liste' && bic.onaysil[0] === 'Pencere ile onay')
+  if (ekr === 'liste' && bs('onaysil') === 'Pencere ile onay')
     not.push('Silmeden önce onay penceresi çıkar');
-  if (ekr === 'liste' && bic.arama[0] === 'Simgeden açılan')
+  if (ekr === 'liste' && bs('arama') === 'Simgeden açılan')
     not.push('Arama büyüteç simgesinden açılır');
-  if (ekr === 'liste' && bic.filtre[0] === 'Alttan sayfa')
+  if (ekr === 'liste' && bs('filtre') === 'Alttan sayfa')
     not.push('Filtreler alttan yarım sayfa olarak açılır');
   if (ekr === 'liste' && bic.tablo.includes('Gruplu'))
     not.push('Satırlar tarih ya da kategoriye göre öbeklenir');
-  if (ekr === 'panel' && bic.yogunluk[0] === 'Karma')
+  if (ekr === 'panel' && bs('yogunluk') === 'Karma')
     not.push('Form ve detay sayfaları bundan daha ferah olur');
-  if (ekr === 'ayarlar' && bic.detay[0])
-    not.push(`Kayıt detayı: ${bic.detay[0].toLocaleLowerCase('tr')}`);
-  if (bic.gezinme[0] === 'Açılır yan menü')
+  if (ekr === 'ayarlar' && bs('detay'))
+    not.push(`Kayıt detayı: ${bs('detay').toLocaleLowerCase('tr')}`);
+  if (bs('gezinme') === 'Açılır yan menü')
     not.push('Menü hamburger simgesinden soldan kayarak açılır');
-  if (['Alt sekme', 'Alt + orta +'].includes(bic.gezinme[0]))
+  if (['Alt sekme', 'Alt + orta +'].includes(bs('gezinme')))
     not.push('Bilgisayarda alt çubuk yok: gezinme solda panele döner');
-  if (bic.cubukDoku[0] === 'Buzlu cam')
+  if (bs('cubukDoku') === 'Buzlu cam')
     not.push('İçerik çubuğun altından bulanıklaşarak geçer');
   if (!not.length) return '';
   return `<div class="onk-not">${svg(ICON.info, 13)}<span>${esc(not.slice(0, 2).join(' · '))}</span></div>`;
@@ -3933,7 +4088,12 @@ function projeDuraklari(p) {
   const s        = DB.sayim(p.id);
   const moduller = DB.modulleri(p.id);
   const gercek   = moduller.filter(m => m.ad !== GENEL_MODUL).length;
-  const paletVar = !!(p.palet && p.palet.bg);
+  /* Tasarım artık paletle değil tarifle bitiyor: tarif geldi ve tarifin
+     istediği bütün görseller yuvalara kondu mu? */
+  const pl0     = p.palet || {};
+  const yuva    = pl0.gorseller || [];
+  const gorselTam = yuva.length > 0 && yuva.every(y => y.yol);
+  const tarifVar = !!String(pl0.tarif || '').trim() && gorselTam;
 
   return [
     {
@@ -3953,11 +4113,13 @@ function projeDuraklari(p) {
     },
     {
       ad: 'Tasarımı belirleme',
-      bitti: paletVar,
+      bitti: tarifVar,
       rozet: yeniKararlar(p.palet).length,
-      ozet: paletVar
-        ? 'Logo ve palet hazır.'
-        : 'Logoyu yükle, promptu kopyala, dönen paleti yapıştır.',
+      ozet: tarifVar
+        ? 'Görsel dil hazır · ' + yuva.length + ' görsel.'
+        : String(pl0.tarif || '').trim()
+          ? 'Tarif geldi. Sıra görselleri yuvalara koymakta.'
+          : 'İşletme görselini yükle, promptu ChatGPT\'ye ver, tarifi yapıştır.',
     },
     {
       ad: 'Yapıyı kurma',
@@ -4041,124 +4203,6 @@ function adSadelestir(x) {
     .toLocaleLowerCase('tr');
 }
 
-function paletCozumle(metin) {
-  const tumu = PALET_ALAN.concat(TUM_TASARIM.map(a => ({
-    anahtar: a.anahtar, ad: a.ad, secim: a.secim.map(x => x.ad), coklu: a.coklu, bos: a.bos,
-  })));
-
-  const anahtar = {};
-  tumu.forEach(a => { anahtar[adSadelestir(a.ad)] = a.anahtar; });
-
-  const palet = {};
-  const hatalar = [];
-
-  String(metin || '').split(/\r?\n/).forEach(satir => {
-    /* Baştaki madde imi, kalın işareti ve numara atılır. */
-    const temiz = satir.replace(/^\s*(?:[-*•]|\d+[.)])\s*/, '').replace(/\*\*/g, '');
-    const es = temiz.match(/^\s*([^:]{2,40}?)\s*:\s*(.+?)\s*$/);
-    if (!es) return;
-
-    const k = anahtar[adSadelestir(es[1])];
-    if (!k) return;
-
-    let deger = es[2].replace(/^`|`$/g, '').trim();
-    const alan = tumu.find(a => a.anahtar === k);
-
-    if (alan.secim) {
-      if (alan.bos && /^(yok|hiçbiri|hicbiri|-|—|___)$/i.test(deger)) { palet[k] = []; return; }
-      const parca = alan.coklu ? deger.split(/\s*[+,]\s*/) : [deger];
-      const okunan = [];
-      for (const par of parca) {
-        const uy = alan.secim.find(x => adSadelestir(x) === adSadelestir(par));
-        if (!uy) {
-          hatalar.push(alan.secim.length > 3
-            ? `"${alan.ad}" listedeki adlardan biri olmalı, "${par}" değil.`
-            : `"${alan.ad}" ${alan.secim.join(' ya da ')} olmalı.`);
-          continue;
-        }
-        if (!okunan.includes(uy)) okunan.push(uy);
-      }
-      if (!okunan.length) return;
-      palet[k] = alan.coklu ? okunan : okunan[0];
-      return;
-    }
-
-    if (alan.renk) {
-      const renk = deger.match(/#[0-9a-fA-F]{6}\b/);
-      if (!renk) { hatalar.push(`"${alan.ad}" bir renk kodu değil: ${deger}`); return; }
-      deger = renk[0].toLowerCase();
-    } else if (/^_+$/.test(deger)) {
-      return;   /* şablondaki boşluk doldurulmamış */
-    }
-    palet[k] = deger;
-  });
-
-  const eksik = PALET_ALAN.filter(a => !palet[a.anahtar]).map(a => a.ad);
-  return { palet, eksik, hatalar, uyarilar: paletDenetle(palet, Object.keys(palet)) };
-}
-
-/* ---------- Yapıştırılan cevabın denetimi ----------
-   Model kuralları çiğneyebilir ve bunu söylemez. Üç şeye bakıyoruz:
-   şablonu kopyalamış mı, renkler okunuyor mu, kararlar çelişiyor mu. */
-function paletDenetle(pl, gelen) {
-  const u = [];
-  if (!pl || !Object.keys(pl).length) return u;
-
-  /* 1 · Şablon kopyası */
-  const ornekler = PALET_ALAN.filter(a => a.renk).map(a => [a.ad, a.ornek]);
-  const ayni = ornekler.filter(([, o]) => o && pl[PALET_ALAN.find(x => x.ornek === o).anahtar] === o);
-  if (ayni.length >= 4) {
-    u.push(`Renklerin ${ayni.length} tanesi promptaki örnekle birebir aynı — `
-         + 'şablon doldurulmadan kopyalanmış olabilir.');
-  }
-
-  /* 2 · Kontrast */
-  const zemin = pl.bg;
-  if (zemin) {
-    [['metin', 'Metin'], ['metin2', 'Metin soft'], ['metin3', 'Metin silik']].forEach(([k, ad]) => {
-      if (!pl[k]) return;
-      const o = kontrastOrani(pl[k], zemin);
-      if (o && o < 4.5) u.push(`${ad} arka planda ${o.toFixed(1)}:1 — 4.5:1 altında, okunmaz.`);
-    });
-    if (pl.vurgu) {
-      const o = kontrastOrani(pl.vurgu, zemin);
-      if (o && o < 3) u.push(`Vurgu arka planda ${o.toFixed(1)}:1 — çok sönük kalıyor.`);
-    }
-  }
-  if (pl.vurgu && pl.tehlike && renkYakin(pl.vurgu, pl.tehlike)) {
-    u.push('Vurgu ile Tehlike birbirine çok yakın — "kaydet" ile "sil" karışır.');
-  }
-
-  /* 3 · Çelişen kararlar */
-  CELISKI.forEach(([[a1, d1], [a2, d2], neden]) => {
-    /* En az biri gerçekten yapıştırılmış olmalı; yoksa varsayılanlar
-       yüzünden dokunulmamış başlıklar için uyarı yağar. */
-    if (gelen && !gelen.includes(a1) && !gelen.includes(a2)) return;
-    const b1 = TUM_TASARIM.find(x => x.anahtar === a1);
-    const b2 = TUM_TASARIM.find(x => x.anahtar === a2);
-    if (!b1 || !b2) return;
-    if (bicimSecim(pl, b1).includes(d1) && bicimSecim(pl, b2).includes(d2)) {
-      u.push(`${b1.ad}: ${d1} + ${b2.ad}: ${d2} — ${neden}`);
-    }
-  });
-
-  return u;
-}
-
-/* WCAG bağıl parlaklık ve kontrast oranı. */
-function bagilParlaklik(hex) {
-  const [r, g, b] = hexRgb(hex).map(v => {
-    const k = v / 255;
-    return k <= 0.03928 ? k / 12.92 : Math.pow((k + 0.055) / 1.055, 2.4);
-  });
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
-}
-
-function kontrastOrani(a, b) {
-  if (!/^#[0-9a-f]{6}$/i.test(a || '') || !/^#[0-9a-f]{6}$/i.test(b || '')) return 0;
-  const x = bagilParlaklik(a), y = bagilParlaklik(b);
-  return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
-}
 
 function renkYakin(a, b) {
   if (!/^#[0-9a-f]{6}$/i.test(a || '') || !/^#[0-9a-f]{6}$/i.test(b || '')) return false;
@@ -6423,12 +6467,6 @@ function logoSec(projeId) {
 
 /* Tek dokunuşta panoya alır: düğme "kopyalandı"ya döner, yapıştır düğmesi
    parlar. İki dokunuş (önce pencere aç, sonra kopyala) gereksizdi. */
-async function paletKopyala(el) {
-  return promptKopyala(el, p => PROMPT.marka(p.id), 'Prompt kopyala',
-                       'Marka Paleti Promptu');
-}
-
-/* Panoya alır, düğmeyi "kopyalandı" hâline çevirir, 2,2 sn sonra geri alır. */
 async function promptKopyala(el, uret, eskiYazi, baslik) {
   const p = DB.proje(el.dataset.proje);
   if (!p) { toast('Proje bulunamadı.', 'hata'); return; }
@@ -6459,8 +6497,8 @@ async function promptKopyala(el, uret, eskiYazi, baslik) {
   el.classList.add('kopyalandi');
   if (yazi) yazi.textContent = 'Kopyalandı';
 
-  /* Palet adımında sıradaki iş yapıştırmak: o düğme parlasın. */
-  const yapistir = $('[data-eylem="palet-aktar"][data-proje="' + p.id + '"]');
+  /* Görsel dünya adasında sıradaki iş yapıştırmak: o düğme parlasın. */
+  const yapistir = $('[data-eylem="tarif-aktar"][data-proje="' + p.id + '"]');
   if (yapistir) yapistir.classList.add('parla');
 
   clearTimeout(promptKopyala.zaman);
@@ -6471,16 +6509,175 @@ async function promptKopyala(el, uret, eskiYazi, baslik) {
   }, 2200);
 }
 
-/* Promptu panoya alır ve ne yapılacağını yazar. */
-function paletPromptu(projeId) {
+/* ---------- Görsel dünya eylemleri ---------- */
+
+/* İşletme görseli — G0 yuvası. Tarif değişse de silinmiyor. */
+function isletmeGorseliSec(projeId) {
+  gorselSecVeYukle(projeId, 'G0', 'İşletme görseli');
+}
+
+function gorselSecVeYukle(projeId, no, ad) {
+  const alan = document.createElement('input');
+  alan.type = 'file';
+  alan.accept = 'image/*,.svg';
+  alan.style.display = 'none';
+  document.body.appendChild(alan);
+
+  alan.addEventListener('change', async () => {
+    const dosya = alan.files && alan.files[0];
+    alan.remove();
+    if (!dosya) return;
+
+    /* G0 yuvası tarifle gelmiyor; ilk yüklemede kendimiz açıyoruz. */
+    const pr = DB.proje(projeId);
+    const pl = (pr && pr.palet) || {};
+    if (!(pl.gorseller || []).some(y => y.no === no)) {
+      const yeni = (pl.gorseller || []).concat([{
+        no, ad: ad || 'Görsel', tarif: 'İşletmeyi anlatan görsel — konseptin kaynağı.',
+        dosya: 'isletme.jpg', yol: '', boyut: 0, tur: '',
+      }]);
+      try {
+        await DB.paletKaydet(projeId, Object.assign({}, pl, { gorseller: yeni }));
+      } catch (h) { toast(h.message, 'hata'); return; }
+    }
+
+    toast('Görsel yükleniyor…');
+    try {
+      await DB.gorselYukle(projeId, no, dosya);
+      render();
+      toast('Görsel yüklendi.', 'basari');
+    } catch (h) { toast(h.message, 'hata'); }
+  });
+
+  alan.click();
+}
+
+/* Tarifi yapıştır — önizlemede kaç yuva çıktığını gösterir. */
+function tarifAktar(projeId) {
+  modalHepsiniKapat();
   const p = DB.proje(projeId);
   if (!p) return;
+  const pl = p.palet || {};
 
-  metinPenceresi({
-    baslik: 'Marka Paleti Promptu',
-    aciklama: 'Kopyala, Claude\'a logoyla birlikte yapıştır.',
-    metin: PROMPT.marka(projeId),
-  });
+  modalAc(`
+    ${modalBaslik(ICON.ice, 'Tarifi yapıştır',
+      'ChatGPT\'nin verdiği görsel dil ve yerleşim metnini olduğu gibi yapıştır.')}
+    <label class="field">
+      <span>Yapıştır</span>
+      <textarea id="tf-metin" rows="11" spellcheck="false"
+        placeholder="## GÖRSEL DİL&#10;Renk: ...&#10;&#10;## YERLEŞİM&#10;G1 | gorsel-1.jpg | Panel açılışı | Tam genişlik, üstüne perde">${esc(pl.tarif || '')}</textarea>
+    </label>
+    <div id="tf-onizleme"></div>
+    <div class="modal-alt">
+      <button class="btn btn-ghost" data-tf="iptal" type="button">Vazgeç</button>
+      <button class="btn btn-primary" data-tf="kaydet" type="button" disabled><span>Kaydet</span></button>
+    </div>`, kutu => {
+    const alan  = $('#tf-metin', kutu);
+    const on    = $('#tf-onizleme', kutu);
+    const dugme = $('[data-tf="kaydet"]', kutu);
+    let cozum = { dil: '', yuvalar: [] };
+
+    const tazele = () => {
+      if (!alan.value.trim()) { on.innerHTML = ''; dugme.disabled = true; return; }
+      cozum = tarifCozumle(alan.value, pl.gorseller);
+      dugme.disabled = false;
+
+      on.innerHTML = cozum.yuvalar.length
+        ? `<span class="label">Açılacak yuvalar</span>
+           <div class="card"><div class="row-list">
+             ${cozum.yuvalar.map(y => `<div class="row">
+               <div class="row-main"><span class="row-title">${esc(y.no)} · ${esc(y.ad)}</span>
+                 <span class="row-sub mono">${esc(y.dosya)}</span></div>
+               <span class="row-val">${y.yol ? 'dolu' : 'boş'}</span></div>`).join('')}
+           </div></div>`
+        : `<div class="note uyari">${svg(ICON.uyari, 15)}
+            <span>Yerleşim satırı okunamadı. Tarif yine kaydedilir; yuvaları
+            elle açman gerekir. Satırlar
+            <b class="mono">G1 | dosya.jpg | Yer | Nasıl</b> biçiminde olmalı.</span></div>`;
+    };
+
+    alan.addEventListener('input', tazele);
+    setTimeout(() => alan.focus(), 40);
+    tazele();
+
+    $('[data-tf="iptal"]', kutu).addEventListener('click', modalKapat);
+    dugme.addEventListener('click', async () => {
+      const yazi = $('[data-tf="kaydet"] span', kutu);
+      yazi.textContent = 'Yazılıyor…';
+      dugme.disabled = true;
+      try {
+        /* İşletme görseli (G0) tarifte yok ama silinmemeli. */
+        const g0 = (pl.gorseller || []).find(y => y.no === 'G0');
+        let yuvalar = cozum.yuvalar;
+        if (g0) {
+          /* Tarif G1'i "senin verdiğin görsel" diye kullanmışsa dosyayı
+             yeniden yükletmiyoruz — aynı dosyayı gösteriyor. */
+          yuvalar = yuvalar.map(y => (y.no === 'G1' && !y.yol && g0.yol)
+            ? Object.assign({}, y, { yol: g0.yol, boyut: g0.boyut, tur: g0.tur })
+            : y);
+          yuvalar = [g0].concat(yuvalar.filter(y => y.no !== 'G0'));
+        }
+        await DB.paletKaydet(projeId, Object.assign({}, pl,
+          { tarif: cozum.dil, gorseller: yuvalar }));
+        await DB.gorselleriTazele(true);
+        modalKapat();
+        render();
+        toast(cozum.yuvalar.length
+          ? cozum.yuvalar.length + ' yuva açıldı.' : 'Tarif kaydedildi.', 'basari');
+      } catch (h) {
+        yazi.textContent = 'Kaydet';
+        dugme.disabled = false;
+        toast(h.message, 'hata');
+      }
+    });
+  }, 'genis');
+}
+
+/* Yuva listesi — her yuvanın adını ve ne isteneceğini tarif yazdı. */
+function gorselYuvalari(projeId) {
+  modalHepsiniKapat();
+  const p = DB.proje(projeId);
+  if (!p) return;
+  const yuvalar = (p.palet || {}).gorseller || [];
+  const dolu = yuvalar.filter(y => y.yol).length;
+
+  modalAc(`
+    ${modalBaslik(ICON.katman, 'Görseller',
+      'Yuvaların adı da dosya adı da tariften geliyor.')}
+    <div class="yuva-l">
+      ${yuvalar.map(y => {
+        const adres = gorselAdresi(p, y.no);
+        return `<div class="yv ${y.yol ? '' : 'bos'}" data-eylem="yuva-doldur"
+                     data-proje="${p.id}" data-no="${esc(y.no)}" role="button" tabindex="0">
+          <span class="yv-kare ${adres ? 'resim' : ''}"
+                ${adres ? `data-logo="${esc(adres)}"` : ''}>${adres ? '' : '+'}</span>
+          <span class="yv-yz">
+            <span class="yv-ust"><em class="mono">${esc(y.no)}</em><b>${esc(y.ad)}</b></span>
+            <i>${esc(y.tarif || '')}</i>
+            <u class="mono">${esc(y.dosya)}${y.boyut ? ' · ' + kb(y.boyut) : ''}</u>
+          </span>
+          <span class="yv-dr ${y.yol ? 'ok' : 'bek'}">${y.yol ? 'dolu' : 'bekliyor'}</span>
+        </div>`;
+      }).join('')}
+    </div>
+    ${yuvalar.length ? `
+      <div class="yv-ilerle">
+        <span class="mono">${dolu}/${yuvalar.length}</span>
+        <span class="yv-cb"><i style="width:${Math.round(dolu / yuvalar.length * 100)}%"></i></span>
+      </div>` : `<div class="bos-kutu">${svg(ICON.katman, 18)}
+        <span>Yuva yok. Önce tarifi yapıştır.</span></div>`}
+    <div class="modal-alt">
+      <button class="btn btn-ghost" data-m="kapat" type="button">Kapat</button>
+    </div>`, kutu => {
+    logolariGoster();
+    $('[data-m="kapat"]', kutu).addEventListener('click', modalKapat);
+  }, 'genis');
+}
+
+function kb(n) {
+  return n > 1024 * 1024
+    ? (n / 1024 / 1024).toFixed(1) + ' MB'
+    : Math.round(n / 1024) + ' KB';
 }
 
 /* Çözümleme cevabını okur: sayfalar, künyeler ve açık sorular. */
@@ -6648,170 +6845,6 @@ function cozumlemeUygula(t, cozum, p) {
   });
 }
 
-/* Claude'un döndürdüğü bloğu okur ve projeye yazar. */
-function paletAktar(projeId) {
-  modalHepsiniKapat();
-  const p = DB.proje(projeId);
-  if (!p) return;
-
-  const ORNEK = PALET_ALAN.map(a => `${a.ad}: ${a.ornek}`).join('\n');
-
-  modalAc(`
-    ${modalBaslik(ICON.ice, 'Paleti yapıştır', 'Claude\'un döndürdüğü bloğu olduğu gibi yapıştır.')}
-
-    <label class="field">
-      <span>Yapıştır</span>
-      <textarea id="pa-metin" rows="11" spellcheck="false" placeholder="${esc(ORNEK)}"></textarea>
-    </label>
-
-    <div id="pa-onizleme"></div>
-
-    <div class="modal-alt">
-      <button class="btn btn-ghost" data-pa="iptal" type="button">Vazgeç</button>
-      <button class="btn btn-primary" data-pa="kaydet" type="button" disabled><span>Kaydet</span></button>
-    </div>`, kutu => {
-    const alan  = $('#pa-metin', kutu);
-    const on    = $('#pa-onizleme', kutu);
-    const dugme = $('[data-pa="kaydet"]', kutu);
-    let cozum = { palet: {}, eksik: [], hatalar: [] };
-
-    const tazele = () => {
-      cozum = paletCozumle(alan.value);
-      const say = Object.keys(cozum.palet).length;
-
-      if (!alan.value.trim()) { on.innerHTML = ''; dugme.disabled = true; return; }
-
-      if (!say) {
-        on.innerHTML = `<div class="note uyari">${svg(ICON.uyari, 15)}
-          <span>Hiçbir satır okunamadı. Her satır <b>Alan: değer</b> biçiminde olmalı.</span></div>`;
-        dugme.disabled = true;
-        return;
-      }
-
-      on.innerHTML = `
-        <span class="label">Okunanlar</span>
-        <div class="card"><div class="row-list">
-          ${PALET_ALAN.concat(TUM_TASARIM.filter(a => cozum.palet[a.anahtar] !== undefined)).map(a => {
-            const d = cozum.palet[a.anahtar];
-            return `<div class="row">
-              <div class="row-main"><span class="row-title">${esc(a.ad)}</span></div>
-              <span class="row-val ${d ? '' : 'uyari-yazi'}">
-                ${d && a.renk ? `<span class="palet-kutu ufak" style="background:${esc(d)}"></span>` : ''}
-                ${d ? esc(Array.isArray(d) ? d.join(' + ') : d) : 'okunamadı'}
-              </span>
-            </div>`;
-          }).join('')}
-        </div></div>
-        ${cozum.hatalar.length ? `<div class="note uyari" style="margin-top:10px">${svg(ICON.uyari, 15)}
-          <span>${cozum.hatalar.map(esc).join(' ')}</span></div>` : ''}
-        ${(cozum.uyarilar || []).length ? `<div class="pa-denetim">
-          <b>${svg(ICON.uyari, 14)} Denetim</b>
-          ${cozum.uyarilar.map(x => `<i>${esc(x)}</i>`).join('')}
-          <u>Yine de kaydedebilirsin — bunlar uyarı, engel değil.</u>
-        </div>` : ''}`;
-
-      dugme.disabled = false;
-    };
-
-    alan.addEventListener('input', tazele);
-    setTimeout(() => alan.focus(), 40);
-    $('[data-pa="iptal"]', kutu).addEventListener('click', modalKapat);
-
-    dugme.addEventListener('click', async () => {
-      const yazi = $('[data-pa="kaydet"] span', kutu);
-      yazi.textContent = 'Yazılıyor…';
-      dugme.disabled = true;
-      try {
-        await DB.paletKaydet(projeId, Object.assign({}, p.palet || {}, cozum.palet));
-        modalKapat();
-        render();
-        toast('Palet kaydedildi.', 'basari');
-      } catch (h) {
-        yazi.textContent = 'Kaydet';
-        dugme.disabled = false;
-        toast(h.message, 'hata');
-      }
-    });
-  }, 'genis');
-}
-
-/* Elle düzenleme: renkler için renk seçici, yazı tipleri için metin. */
-function paletDuzenle(projeId) {
-  modalHepsiniKapat();
-  const p = DB.proje(projeId);
-  if (!p) return;
-  const pl = p.palet || {};
-
-  modalAc(`
-    ${modalBaslik(ICON.kalem, 'Paleti düzenle', 'Beğenmediğin rengi değiştir.')}
-
-    ${PALET_ALAN.map(a => a.secim ? `
-      <div class="field">
-        <span>${esc(a.ad)}</span>
-        <div class="secenek-serit">
-          ${a.secim.map(d => `<button class="ss ${(pl[a.anahtar] || a.ornek) === d ? 'sec' : ''}"
-             data-ps="${a.anahtar}" data-deger="${esc(d)}" type="button">${esc(d)}</button>`).join('')}
-        </div>
-      </div>` : a.renk ? `
-      <div class="palet-satir">
-        <span class="palet-ad">${esc(a.ad)}</span>
-        <input type="color" class="palet-sec" data-p="${a.anahtar}"
-               value="${esc(pl[a.anahtar] || a.ornek)}">
-        <input type="text" class="palet-kod mono" data-pk="${a.anahtar}"
-               value="${esc(pl[a.anahtar] || a.ornek)}" maxlength="7" spellcheck="false">
-      </div>` : `
-      <label class="field">
-        <span>${esc(a.ad)}</span>
-        <input type="text" data-p="${a.anahtar}" value="${esc(pl[a.anahtar] || '')}"
-               placeholder="${esc(a.ornek)}" maxlength="60" autocomplete="off">
-      </label>`).join('')}
-
-    <div class="modal-alt">
-      <button class="btn btn-ghost" data-pd="iptal" type="button">Vazgeç</button>
-      <button class="btn btn-primary" data-pd="kaydet" type="button"><span>Kaydet</span></button>
-    </div>`, kutu => {
-    /* Seçmeli alanlar (tema) */
-    const secilen = {};
-    PALET_ALAN.filter(a => a.secim).forEach(a => { secilen[a.anahtar] = pl[a.anahtar] || a.ornek; });
-    $$('[data-ps]', kutu).forEach(b => b.addEventListener('click', () => {
-      const k = b.dataset.ps;
-      secilen[k] = b.dataset.deger;
-      $$(`[data-ps="${k}"]`, kutu).forEach(x => x.classList.toggle('sec', x === b));
-    }));
-
-    /* Renk seçici ile kod kutusu birbirini takip etsin. */
-    $$('.palet-sec', kutu).forEach(sec => {
-      const kod = $(`[data-pk="${sec.dataset.p}"]`, kutu);
-      sec.addEventListener('input', () => { kod.value = sec.value; });
-      kod.addEventListener('input', () => {
-        if (/^#[0-9a-fA-F]{6}$/.test(kod.value)) sec.value = kod.value;
-      });
-    });
-
-    $('[data-pd="iptal"]', kutu).addEventListener('click', modalKapat);
-    $('[data-pd="kaydet"]', kutu).addEventListener('click', async () => {
-      const yeni = {};
-      PALET_ALAN.forEach(a => {
-        if (a.secim) { yeni[a.anahtar] = secilen[a.anahtar]; return; }
-        const el = a.renk ? $(`[data-pk="${a.anahtar}"]`, kutu) : $(`[data-p="${a.anahtar}"]`, kutu);
-        const d = (el.value || '').trim();
-        if (d) yeni[a.anahtar] = a.renk ? d.toLowerCase() : d;
-      });
-
-      const yazi = $('[data-pd="kaydet"] span', kutu);
-      yazi.textContent = 'Kaydediliyor…';
-      try {
-        await DB.paletKaydet(projeId, yeni);
-        modalKapat();
-        render();
-        toast('Palet güncellendi.', 'basari');
-      } catch (h) {
-        yazi.textContent = 'Kaydet';
-        toast(h.message, 'hata');
-      }
-    });
-  }, 'genis');
-}
 
 /* ==========================================================================
    EKİP
@@ -7385,13 +7418,36 @@ async function eylemCalistir(el) {
   if (e === 'teknik-duzenle') return teknikDuzenle(el.dataset.proje);
 
   if (e === 'logo-yukle')    return logoSec(el.dataset.proje);
-  if (e === 'palet-prompt')      return paletKopyala(el);
   if (e === 'tasarim-blok')      return promptKopyala(el, pr => PROMPT.tasarim(pr.id),
                                                       '2. bloğu kopyala — tasarım kararları',
                                                       'Tasarım kararları (2/3)');
-  if (e === 'palet-prompt-gor')  return paletPromptu(el.dataset.proje);
-  if (e === 'palet-aktar')   return paletAktar(el.dataset.proje);
-  if (e === 'palet-duzenle') return paletDuzenle(el.dataset.proje);
+  if (e === 'isletme-gorseli') return isletmeGorseliSec(el.dataset.proje);
+
+  if (e === 'gorsel-tasarim')
+    return promptKopyala(el, pr => PROMPT.gorselTasarim(pr.id),
+      'Tasarım promptunu kopyala', 'Görsel dünya — tasarım promptu');
+
+  if (e === 'gorsel-tarif-prompt')
+    return promptKopyala(el, pr => PROMPT.gorselTarif(pr.id),
+      'Beğendiğinde: tarif promptunu kopyala', 'Tarif promptu');
+
+  if (e === 'tarif-aktar')   return tarifAktar(el.dataset.proje);
+  if (e === 'gorsel-yuvalar') return gorselYuvalari(el.dataset.proje);
+
+  if (e === 'yuva-doldur') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const y = ((pr.palet || {}).gorseller || []).find(x => x.no === el.dataset.no);
+    return gorselSecVeYukle(pr.id, el.dataset.no, y ? y.ad : 'Görsel');
+  }
+
+  if (e === 'tarif-gor') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    return metinPenceresi({ baslik: 'Görsel dil tarifi',
+      aciklama: 'ChatGPT yazdı; Studio değiştirmiyor.',
+      metin: String((pr.palet || {}).tarif || '') });
+  }
 
   if (e === 'ekibe') { location.hash = '#/ekip'; return; }
   if (e === 'kullanici-ekle') return kullaniciEkleAc();

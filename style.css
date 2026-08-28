@@ -1660,20 +1660,6 @@ html { background: var(--bg); }
 .bos-kutu b { color: var(--ink-soft); font-weight: 600; }
 
 /* Palet tam genişlik şerit */
-.palet-tam {
-  display: flex; height: 48px; border-radius: 13px; overflow: hidden; margin-bottom: 10px;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .14), 0 8px 18px -10px #000;
-}
-.palet-tam span.bos {
-  background: repeating-linear-gradient(45deg, var(--yuva) 0 5px, var(--surface) 5px 10px);
-}
-.palet-tam span.bos em { color: var(--ink-dim); }
-.palet-tam span { flex: 1; position: relative; }
-.palet-tam em {
-  position: absolute; left: 0; right: 0; bottom: 5px; text-align: center; font-style: normal;
-  font-family: var(--yazi-kod); font-size: 7.5px; color: rgba(255, 255, 255, .55);
-  mix-blend-mode: difference;
-}
 
 .tip { display: flex; gap: 9px; margin-bottom: 12px; }
 .tip div {
@@ -1766,6 +1752,104 @@ a.sayfa-dug { text-decoration: none; }
 .std-satir b { font-size: 12px; color: var(--ink); }
 .std-satir span { font-family: 'IBM Plex Mono', monospace; font-size: 11px;
                   color: var(--ink-soft); margin-left: auto; text-align: right; }
+
+/* ==========================================================================
+   GÖRSEL DÜNYA
+   Ada gövdesi kurulum kartlarının aynı dilini kullanıyor; buradakiler yalnız
+   o karta özgü parçalar.
+   ========================================================================== */
+.gd-kaydir { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
+             margin: 0 calc(var(--yan) * -1); padding: 2px var(--yan) 8px;
+             -webkit-overflow-scrolling: touch; }
+
+.gd-iki { display: flex; gap: 9px; margin: 12px 0 0 37px; }
+.gd-kutu {
+  flex: 1; border: 1.5px dashed var(--line-parlak); border-radius: 13px;
+  padding: 12px 8px; text-align: center; background: var(--yuva); cursor: pointer;
+  transition: border-color .16s ease;
+}
+.gd-kutu.var { border-style: solid; border-color: var(--line-2); }
+.gd-kutu:active { transform: scale(.99); }
+.gd-on {
+  display: grid; place-items: center; width: 46px; height: 46px; margin: 0 auto 8px;
+  border-radius: 11px; background: var(--surface-2); color: var(--ink-dim);
+  font-size: 19px; background-size: cover; background-position: center;
+}
+.gd-on.resim { background-color: var(--surface); }
+.gd-kutu b { display: block; font-size: 12px; color: var(--ink); }
+.gd-kutu i { display: block; font-style: normal; font-size: 10px; color: var(--ink-dim); margin-top: 2px; }
+
+.gd-uret { margin: 12px 0 0 37px; display: grid; gap: 7px; }
+.gd-us {
+  display: flex; align-items: center; gap: 9px; padding: 8px 11px;
+  border: 1px solid var(--line-2); border-radius: 10px; background: var(--yuva);
+  color: var(--ink-faint);
+}
+.gd-us b { flex: 1; font-size: 12px; color: var(--ink); font-weight: 600; }
+.gd-us span { font-family: var(--yazi-kod); font-size: 10px; color: var(--ink-dim); }
+
+/* Tarif kartı — ada içinde ve özet adımında. */
+.tarif-kart {
+  margin: 12px 0 0 37px; border: 1px solid var(--line-2); border-radius: 13px;
+  background: var(--yuva); padding: 12px 13px;
+}
+.tk-bas { display: flex; align-items: center; gap: 9px; margin-bottom: 6px; }
+.tk-bas b { flex: 1; font-family: var(--yazi-baslik); font-size: 13.5px; color: var(--ink-strong); }
+.tk-rz {
+  font-family: var(--yazi-kod); font-size: 9.5px; padding: 3px 7px; border-radius: 6px;
+  background: rgba(69, 163, 123, .15); color: var(--st-done-t);
+}
+.tk-satir { display: flex; gap: 10px; padding: 7px 0; border-top: 1px solid var(--line-3); font-size: 11.5px; }
+.tk-satir b { flex: 0 0 78px; font-weight: 600; color: var(--ink-soft); }
+.tk-satir span { flex: 1; color: var(--ink-faint); line-height: 1.45; }
+.tk-yer { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.tk-y {
+  font-family: var(--yazi-kod); font-size: 10px; padding: 4px 8px; border-radius: 7px;
+  background: var(--surface); border: 1px solid var(--line-3); color: var(--ink-dim);
+}
+.tk-y.dolu { border-color: var(--line-parlak); color: var(--ink-soft); }
+
+/* Özet adımının tepesindeki kısa tarif şeridi. */
+.tarif-serit {
+  border: 1px solid var(--line-2); border-radius: 14px; background: var(--yuva-2);
+  padding: 13px 14px; margin-bottom: 14px;
+}
+.ts-ust { display: flex; align-items: center; gap: 9px; margin-bottom: 8px; }
+.ts-ust b { flex: 1; font-family: var(--yazi-baslik); font-size: 14px; color: var(--ink-strong); }
+.ts-rz { font-family: var(--yazi-kod); font-size: 10px; color: var(--ink-dim); }
+.ts-satir { font-size: 11.5px; color: var(--ink-faint); line-height: 1.5; }
+.ts-devam { color: var(--ink-dim); font-size: 13px; letter-spacing: .2em; }
+
+/* Yuva listesi — pencere içinde. */
+.yuva-l { display: grid; gap: 9px; margin-top: 4px; }
+.yv {
+  display: flex; align-items: center; gap: 11px; padding: 10px 11px;
+  border: 1px solid var(--line-2); border-radius: 13px; background: var(--yuva);
+  cursor: pointer; text-align: left;
+}
+.yv.bos { border-style: dashed; border-color: var(--line-parlak); background: transparent; }
+.yv:active { transform: scale(.995); }
+.yv-kare {
+  width: 52px; height: 52px; border-radius: 10px; flex: 0 0 52px;
+  display: grid; place-items: center; font-size: 19px; color: var(--ink-dim);
+  background: var(--surface); background-size: cover; background-position: center;
+}
+.yv.bos .yv-kare { border: 1px dashed var(--line-parlak); }
+.yv-yz { flex: 1; min-width: 0; }
+.yv-ust { display: flex; align-items: baseline; gap: 7px; }
+.yv-ust em { font-style: normal; font-size: 10px; color: var(--ink-dim); }
+.yv-ust b { font-size: 12.5px; color: var(--ink); font-weight: 600; }
+.yv-yz i { display: block; font-style: normal; font-size: 11px; color: var(--ink-faint);
+           margin-top: 2px; line-height: 1.4; }
+.yv-yz u { display: block; text-decoration: none; font-size: 10px; color: var(--ink-dim); margin-top: 3px; }
+.yv-dr { font-family: var(--yazi-kod); font-size: 9.5px; padding: 3px 8px; border-radius: 6px; flex: 0 0 auto; }
+.yv-dr.ok  { background: rgba(69, 163, 123, .15); color: var(--st-done-t); }
+.yv-dr.bek { background: rgba(216, 166, 63, .13); color: var(--st-dev-t); }
+.yv-ilerle { display: flex; align-items: center; gap: 10px; margin-top: 14px; }
+.yv-ilerle span.mono { font-size: 11px; color: var(--ink-dim); }
+.yv-cb { flex: 1; height: 5px; border-radius: 3px; background: var(--surface-3); overflow: hidden; }
+.yv-cb i { display: block; height: 100%; border-radius: 3px;
+           background: linear-gradient(90deg, var(--metal-1), var(--metal-2)); }
 
 /* Tasarım haritası — öbekler ada ada. Durak yolunun aynı dili. */
 .ada-sar { padding: 2px 0 10px; }
@@ -1991,7 +2075,7 @@ a.durak:active { transform: scale(.99); transition: transform .1s var(--ease); }
 /* Durak içinde ilerleme çubuğuna yer yok; yüzde zaten künyede yazıyor. */
 .durak-moduller .modul-bar { display: none; }
 
-/* Marka: logo ve palet ------------------------------------------------------ */
+/* Marka: firma logosu -------------------------------------------------------- */
 
 .mk-logo {
   display: flex; align-items: center; justify-content: center; flex-shrink: 0;
@@ -2011,31 +2095,8 @@ a.durak:active { transform: scale(.99); transition: transform .1s var(--ease); }
 .secenek-serit.ufak { margin-left: auto; width: auto; flex: 0 0 auto; }
 .secenek-serit.ufak .ss { padding: 5px 12px; font-size: 11.5px; }
 
-.palet-serit { display: flex; gap: 5px; margin-left: auto; flex-wrap: wrap; justify-content: flex-end; }
-.palet-kutu {
-  width: 22px; height: 22px; border-radius: 7px; flex-shrink: 0;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .14), 0 3px 8px -5px #000;
-}
-.palet-kutu.bos { background: repeating-linear-gradient(45deg,
-  var(--surface-2), var(--surface-2) 4px, var(--yuva) 4px, var(--yuva) 8px); }
-.palet-kutu.ufak { width: 14px; height: 14px; border-radius: 4px; display: inline-block;
-  vertical-align: -2px; margin-right: 6px; }
 
 /* Elle düzenleme satırı */
-.palet-satir { display: flex; align-items: center; gap: 10px; margin-bottom: 9px; }
-.palet-ad { flex: 1; font-size: 12.5px; color: var(--ink-soft); }
-.palet-sec {
-  width: 42px; height: 34px; padding: 0; border: 1px solid var(--line);
-  border-radius: 9px; background: none; cursor: pointer; flex-shrink: 0;
-}
-.palet-sec::-webkit-color-swatch-wrapper { padding: 3px; }
-.palet-sec::-webkit-color-swatch { border: 0; border-radius: 6px; }
-.palet-kod {
-  width: 96px; height: 34px; flex-shrink: 0; padding: 0 10px;
-  background: var(--surface); border: 1px solid var(--line); border-radius: 9px;
-  color: var(--ink); font-size: 12px;
-}
-.palet-kod:focus { outline: none; border-color: var(--metal-1); }
 
 /* Ekip listesi -------------------------------------------------------------- */
 
@@ -3117,15 +3178,11 @@ ekran planı.
                text-underline-offset: 3px; }
 .promptu-gor:hover { color: var(--ink-soft); }
 
-.palet-dug { display: flex; gap: 8px; }
-.palet-dug .sayfa-dug { flex: 1; margin: 0; }
 .akis.ozet .akis-alt { margin-top: 14px; }
 .akis.ozet .akis-alt { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
-/* Palet adımının gövdesi uzun: kendi içinde kaysın ki Geri/İleri
+/* Görsel dünya adasının gövdesi uzun: kendi içinde kaysın ki Geri/İleri
    satırı ekranın dışına taşmasın. */
-.akis.palet .akis-alt { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
-.palet-kaydir { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
-                -webkit-overflow-scrolling: touch; }
+.akis.gorsel .akis-alt { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
 .ozet-kaydir { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
                margin: 0 calc(var(--yan) * -1); padding: 0 var(--yan); }
 

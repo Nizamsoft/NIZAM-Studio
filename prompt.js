@@ -14,17 +14,58 @@ const PROMPT = {
   /* Müşteri uygulamaları hep açık tema. Studio'nun kendi teması ayrı. */
   temaAcik() { return true; },
 
-  /* Paleti hem görev promptuna hem NIZAM.md'ye aynı biçimde basar. */
-  paletBlogu(proje) {
-    const pl = proje && proje.palet;
-    if (!pl) return '';
+  /* ---- Görsel dil ----
+     Renk, yüzey, tipografi ve simge biçimi artık Studio'da seçilmiyor:
+     ChatGPT logo ve işletme görselinden bir tarif çıkarıyor, o tarif
+     buraya olduğu gibi giriyor. Studio karar vermiyor, taşıyor. */
+  gorselDilBlogu(proje) {
+    const pl = (proje && proje.palet) || {};
+    const t = String(pl.tarif || '').trim();
+    if (!t) return '';
 
-    const s = ['## Renk ve Tipografi'];
-    s.push('Bu proje için belirlenmiş palet. Renk tahmin etme, buradakileri kullan.');
+    const s = ['## Görsel Dil'];
+    s.push('Bu tarifi ben yazmadım, tasarımı yapan çıkardı. **Olduğu gibi uygula.**');
+    s.push('Renk tahmin etme, yazı tipi değiştirme, kendi ölçünü koyma.');
     s.push('');
-    PALET_ALAN.forEach(a => { if (pl[a.anahtar]) s.push(hiza(a.ad, pl[a.anahtar])); });
+    s.push(t);
     s.push('');
-    s.push('Vurgu rengi az kullanılır: ana buton, aktif menü ve acil işareti.');
+    s.push('Renk ve ölçüler tek yerde değişken olarak tanımlansın; her ekranda');
+    s.push('yeniden yazılmasın. Bir ekranda uyguladığın kural bütün ekranlarda aynı.');
+    return s.join('\n');
+  },
+
+  /* ---- Görsel yerleşimi ----
+     Hangi görsel nerede duracak ve dosyası nereden inecek. Adresler imzalı
+     ve bir saat geçerli — blok kopyalandıktan sonra bekletilmemeli. */
+  gorselBlogu(proje) {
+    const pl = (proje && proje.palet) || {};
+    /* G0 ChatGPT'ye giden kaynak görsel; tarif ona yer verdiyse zaten
+       başka bir numarayla listede. İki kez indirtmenin anlamı yok. */
+    const yuvalar = (pl.gorseller || []).filter(y => y.yol && y.no !== 'G0');
+    if (!yuvalar.length) return '';
+
+    const s = ['## Görseller'];
+    s.push('Aşağıdaki görselleri **indir ve depoya koy**. Her birinin nerede');
+    s.push('kullanılacağı yazıyor; başka yere koyma, kırpma, rengini değiştirme.');
+    s.push('');
+    yuvalar.forEach(y => {
+      s.push('### ' + y.no + ' · ' + (y.ad || 'Görsel'));
+      s.push(hiza('Dosya', y.dosya));
+      s.push(hiza('Yer', y.tarif || '—'));
+      /* Aynı dosyayı paylaşan yuvalar olabilir (G1 = G0'ın dosyası);
+         kendi anahtarında adres yoksa aynı yolu gösterenden al. */
+      const harita = (typeof DB !== 'undefined' && DB.gorselAdres) || {};
+      let adres = harita[proje.id + '/' + y.no] || '';
+      if (!adres) {
+        const es = (pl.gorseller || []).find(x => x.yol === y.yol && harita[proje.id + '/' + x.no]);
+        if (es) adres = harita[proje.id + '/' + es.no];
+      }
+      if (adres) s.push(hiza('İndir', adres));
+      s.push('');
+    });
+    s.push('Adresler **bir saat** geçerli. İlk iş olarak indir; sonra kodda');
+    s.push('göreli yoldan çağır (`./gorsel-1.jpg`), kök yol kullanma.');
+    s.push('Adres açılmıyorsa dur ve söyle — kırık bağlantıyla devam etme.');
     return s.join('\n');
   },
 
@@ -169,7 +210,7 @@ const PROMPT = {
     if (!p) return '';
 
     const s = [];
-    s.push('# ' + projeAdi(p) + ' — Tasarım kararları (2/3)', '');
+    s.push('# ' + projeAdi(p) + ' — Görsel dil (2/3)', '');
 
     const slug = depoSlug(p.repo);
     if (slug) {
@@ -179,34 +220,52 @@ const PROMPT = {
       s.push('');
     }
 
-    s.push('Tanıtımdan sonraki **ilk blok** bu; içinde rengin, yazının ve');
-    s.push('arayüzün bütün kararları var. Sonuncusu modüller, sayfalar ve');
-    s.push('künyeleri olacak. Kod yazmanı hâlâ **istemiyorum** — bu kararları');
-    s.push('şimdilik yalnız `NIZAM.md`\'ye yazacaksın.', '');
+    s.push('Tanıtımdan sonraki **ilk blok** bu. Uygulamanın nasıl görüneceği');
+    s.push('burada yazıyor. Sonuncusu modüller, sayfalar ve künyeleri olacak.');
+    s.push('');
+    s.push('Bu blokta iki iş var: **görselleri depoya indirmek** ve görsel dili');
+    s.push('`NIZAM.md`\'ye yazmak. **Uygulama kodu yazmanı hâlâ istemiyorum.**');
+    s.push('');
 
-    const palet = PROMPT.paletBlogu(p);
-    if (palet) { s.push(palet); s.push(''); }
+    const gorsel = PROMPT.gorselBlogu(p);
+    if (gorsel) { s.push(gorsel); s.push(''); }
+
+    const dil = PROMPT.gorselDilBlogu(p);
+    if (dil) { s.push(dil); s.push(''); }
+    else {
+      s.push('> **Görsel dil tarifi yok.** Studio\'da Görsel dünya adası');
+      s.push('> tamamlanmamış. Renk ve biçim uydurma — bana sor.');
+      s.push('');
+    }
+
     s.push(PROMPT.tasarimBlogu(p));
     s.push('');
 
     s.push('## Şimdi ne yapacaksın');
-    s.push('1. `NIZAM.md` içindeki `## Tasarım kararları` başlığının altındaki');
-    s.push('   *"henüz belirlenmedi"* satırını sil, yukarıdaki kararları oraya yaz.');
-    s.push('   Renk kodlarını olduğu gibi aktar — kod yazma zamanı geldiğinde');
-    s.push('   tek yerde değişken olarak tanımlayacaksın, ama şimdi değil.');
-    s.push('2. Tek commit\'le **`main` dalına** gönder. Commit mesajı:');
-    s.push('   `[' + TASK_PREFIX + '-0] Tasarım kararları`.');
-    s.push('3. Dur ve bekle. Sıradaki ve son blok: modüller, sayfalar ve künyeleri.');
+    let n = 1;
+    if (gorsel) {
+      s.push(n++ + '. Yukarıdaki görselleri indir, depo köküne koy. Adresler bir');
+      s.push('   saat geçerli — ilk işin bu olsun.');
+    }
+    s.push(n++ + '. `NIZAM.md` içindeki `## Tasarım kararları` başlığının altındaki');
+    s.push('   *"henüz belirlenmedi"* satırını sil; görsel dili, görsel');
+    s.push('   yerleşimini ve arayüz kararlarını oraya yaz. Renk kodlarını');
+    s.push('   olduğu gibi aktar.');
+    s.push(n++ + '. Tek commit\'le **`main` dalına** gönder. Commit mesajı:');
+    s.push('   `[' + TASK_PREFIX + '-0] Görsel dil`.');
+    s.push(n++ + '. Dur ve bekle. Sıradaki ve son blok: modüller, sayfalar ve künyeleri.');
     s.push('');
 
     s.push('## Şunları yapma');
     s.push('- **Uygulama kodu yazma.** Ekran, bileşen, CSS dosyası — hiçbiri.');
+    s.push('- **Görsel dili yorumlama.** Tarifte ne yazıyorsa o; "daha modern');
+    s.push('  olur" diye değiştirme, eksik gördüğünü uydurma, sor.');
+    s.push('- **Görsel üretme ya da yerine başkasını koyma.** Bir adres');
+    s.push('  açılmıyorsa dur ve söyle.');
     s.push('- **Sayfa ya da modül uydurma.** Hangi ekranların olacağı hâlâ belli değil.');
-    s.push('- **Karar ekleme ya da değiştirme.** Yukarıdakiler tartışılmadan uygulanır;');
-    s.push('  eksik gördüğün bir şey varsa uydurma, sor.');
     s.push('- **Bu oturuma başka depo ekleme.** Tek depo, tek oturum.');
     s.push('');
-    s.push('Yazdıktan sonra tek cümleyle onayla ve bekle.');
+    s.push('Görseller indi ve yazıldıysa tek cümleyle onayla ve bekle.');
 
     return s.join('\n');
   },
@@ -263,9 +322,11 @@ const PROMPT = {
     s.push('');
 
     s.push('## Şunları yapma');
+    s.push('- **Görsel dili değiştirme.** 2. bloktaki tarif neyse o. Görseller');
+    s.push('  zaten depoda; yerlerini değiştirme, yenisini üretme.');
     s.push('- **Künyede olmayan alan, sayfa ya da modül ekleme.** Alan listesi o');
     s.push('  sayfanın veritabanı tablosudur; eksik gördüğün bir şey varsa sor.');
-    s.push('- **Tasarım kararlarını değiştirme.** 2. blokta ne yazdıysa o.');
+;
     s.push('- **Beş aşamayı birleştirme.** Hepsini bir seferde yazarsan ters giden');
     s.push('  şey 5000 satır sonra anlaşılır.');
     s.push('- **Bu oturuma başka depo ekleme.** Tek depo, tek oturum.');
@@ -297,18 +358,11 @@ const PROMPT = {
   tasarimBlogu(proje) {
     const pl = (proje && proje.palet) || {};
     const s = ['## Arayüz Kararları'];
-    s.push('Bunlar alınmış kararlar. Kendi biçimini uydurma, aşağıdakileri uygula.');
-
-    s.push('');
-    s.push('### Uygulama sırası');
-    s.push('Kararları rastgele uygulama; şu sırayla ilerle — sonrakiler');
-    s.push('öncekilerin üstüne kurulur:');
-    AKIS_OBEK.forEach((o, i) => s.push(`${i + 1}. **${o.ad}** — ${o.not}`));
-    s.push('');
-    s.push('Renk ve ölçüler değişken olarak tek yerde tanımlansın; her ekranda');
-    s.push('yeniden yazılmasın.');
+    s.push('Bir ekran görüntüsünde görünmeyen kararlar. Görsel dil bunları');
+    s.push('söylemiyor; ben seçtim. Kendi biçimini uydurma.');
 
     TASARIM_GRUP.forEach(g => {
+      if (!g.alanlar.length) return;
       s.push('', `### ${g.ad}`);
       g.alanlar.forEach(a => {
         const adlar = bicimSecim(pl, a);
@@ -608,148 +662,123 @@ const PROMPT = {
     return s.join('\n');
   },
 
-  /* ---------- Marka promptu ----------
-     Logoyu Studio gönderemez; kullanıcı bu metni kopyalayıp logoyla birlikte
-     yapıştırır. Dönen cevap Studio'ya geri yapıştırılır. */
+  /* ---------- Görsel dünya: ChatGPT'ye giden iki prompt ----------
+     Studio kod tarafını Claude'a, görünüş tarafını ChatGPT'ye veriyor.
+     Buradan çıkan iki metin de müşteri deposuna değil, bir sohbete gider;
+     depo uyarısı yok, kod talimatı yok. */
 
-  marka(projeId) {
+  /* 1 · Tasarım promptu — logo ve işletme görseliyle birlikte verilir. */
+  gorselTasarim(projeId) {
     const p = DB.proje(projeId);
     if (!p) return '';
+    const pl = p.palet || {};
+    const roller = rolListesi(pl.roller);
+
     const s = [];
+    s.push('# ' + projeAdi(p) + ' — görsel dünya', '');
 
-    s.push('# Marka Paleti İsteği', '');
-    s.push(`Ekteki logo **${p.firma}** firmasına ait. Bu firma için bir yazılım`);
-    s.push('arayüzü tasarlıyoruz. Senden **yalnız renk paleti ve yazı tipleri**');
-    s.push('istiyorum — arayüz kararlarını biz kendimiz veriyoruz.');
-    s.push('');
-    s.push('> **Logo ekli değilse dur.** Uydurma; "logo gelmemiş" yaz ve bekle.');
-    s.push('');
+    s.push('Sana iki görsel veriyorum: **birincisi firmanın logosu**,');
+    s.push('**ikincisi işletmenin kendisi**. Bu ikisinden bir görsel dil çıkar');
+    s.push('ve aşağıdaki altı ekranı tasarla. Hepsi tek dünyadan çıksın —');
+    s.push('renk, doku, simge biçimi ve tipografi bütün ekranlarda aynı olsun.', '');
 
-    s.push('## Proje');
+    s.push('## Firma');
     s.push(hiza('Firma', p.firma));
     if (modulAdi(p)) s.push(hiza('Ürün', modulAdi(p)));
-    if (p.sektor) s.push(hiza('Sektör', p.sektor));
-    s.push(hiza('Platform', PLATFORM_ADI[p.platform] || 'Web'));
-    s.push(hiza('Tema', 'Açık — bütün projelerimiz açık tema'));
-    s.push(hiza('Arayüz dili', 'Türkçe'));
+    if (p.sektor)    s.push(hiza('Sektör', p.sektor));
+    s.push(hiza('Platform', PLATFORM_ADI[p.platform] || '—'));
+    if (roller.length) s.push(hiza('Roller', roller.join(' · ')));
     s.push('');
 
-    s.push('## Nasıl ilerle');
-    s.push('Hepsini bir anda karara bağlama. Şu sırayla düşün:');
-    s.push('');
-    s.push('1. **Logoyu oku.** Baskın renkler, ton sıcak mı soğuk mu, kurumsal mı');
-    s.push('   canlı mı. Bir cümleyle karakteri tarif et — bu cümle "Ton" satırı olacak.');
-    s.push('2. **Zeminleri kur.** Önce arka plan, sonra yüzey, sonra çizgi.');
-    s.push('   Her rengi bir öncekine göre seç; tek tek uydurma.');
-    s.push('3. **Metin tonlarını seç.** Ana, soft, silik — üçü de zeminde okunsun.');
-    s.push('4. **Vurguyu logodan çıkar.** Sonra bir tık koyusunu (basılı hâli).');
-    s.push('5. **Durum renklerini seç.** Başarı, uyarı, tehlike.');
-    s.push('6. **Yazı tiplerini ve simge setini seç.**');
-    s.push('7. **Kontrastı denetle.** Tutmuyorsa 3. adıma dön, tonu düzelt.');
-    s.push('8. **Cevabı ver.** Yalnız istenen satırlar.');
+    s.push('## Tasarlayacağın altı ekran');
+    s.push('1. **Panel** — açılışta karşılayan ekran; kısayol kartları ve günün özeti.');
+    s.push('2. **Liste** — en çok bakılan ekran; arama, filtre, satırlar, ana eylem.');
+    s.push('3. **Kayıt girişi** — form; alan etiketleri, kutular, kaydet düğmesi.');
+    s.push('4. **Boş durum** — hiç kayıt yokken liste ekranı ne diyor.');
+    s.push('5. **Giriş ekranı** — e-posta ve şifre; uygulamaya girilen ilk ekran.');
+    s.push('6. **Ayarlar** — satır satır seçenek listesi.');
     s.push('');
 
-    s.push('## Kurallar');
-    s.push('- **Açık tema.** Koyu tema üretme, sorma da.');
-    s.push('- Arka plan yumuşak bir açık ton; yüzey ondan daha açık, çoğu zaman');
-    s.push('  beyaz. Çizgi zeminden bir tık koyu.');
-    s.push('- Metin üç tonda ve koyu: ana en koyu, soft orta, silik en açık.');
-    s.push('  Üçü de zeminde okunsun — en siliği bile **4.5:1** geçsin.');
-    s.push('- Vurgu logodan gelsin ama **beyaz yazı taşıyacak kadar koyu** olsun.');
-    s.push('  Açık kalırsa düğme okunmaz.');
-    s.push('- Vurgu **az kullanılır**: ana buton, aktif menü, acil işareti. Başka yerde yok.');
-    s.push('- Vurgu koyu = üzerine gelince ve basılınca kullanılacak ton.');
-    s.push('- Tehlike rengi vurgudan ayrışsın; yoksa "kaydet" ile "sil" karışır.');
-    s.push('- Renkleri 6 haneli onaltılık kodla yaz. Kısaltma (#fff) kullanma.');
-    s.push('- Yazı tipleri **Google Fonts\'ta bulunsun**, Türkçe karakterleri tam olsun.');
-    s.push('  Başlık 600-700, metin 400-500 ağırlıkta kullanılacak.');
-    s.push('- Simge seti ücretsiz ve açık kaynak olsun (Lucide, Phosphor, Tabler gibi).');
-    s.push('- **Ton cümlesi vurgu rengiyle çelişmesin.** Vurguyu maviden seçtiysen');
-    s.push('  tonu "kırmızı kıvılcım" diye tarif etme; ikisi aynı şeyi anlatsın.');
+    s.push('## Görselleri sen üret');
+    s.push('Tasarımın gerektirdiği görselleri **kendin üret** ve her birine sıra');
+    s.push('numarası ver. **`G1` benim verdiğim işletme görselidir** — onu');
+    s.push('kullanmak istersen numarası odur, yeniden üretme.');
+    s.push('');
+    s.push('- Simgeleri tek bir **SVG** dosyasında ver; PNG simge ölçeklenmiyor.');
+    s.push('- Doku ve zemin dikişsiz döşenebilsin.');
+    s.push('- Metnin üstüne gelen her görselde perde ya da karartma olsun;');
+    s.push('  yazı kontrastı en az **4.5:1** kalmalı.');
     s.push('');
 
-    s.push('## Cevap');
-    s.push('Kontrast denetimini yaptıktan sonra **yalnızca** aşağıdaki satırları');
-    s.push('döndür. Başka açıklama, başlık ya da yorum yazma.');
+    s.push('## Uyacağın kurallar');
+    s.push('- Arayüz dili **Türkçe**. Para `₺` (12.400,00), tarih `22.05.2025`.');
+    s.push('- Dokunma hedefi en az **44×44px**.');
+    s.push('- Logonun rengini, biçimini ve oranını değiştirme.');
+    s.push('- Bu bir **iş uygulaması**: gün boyu kullanılacak. Süs okunurluğu');
+    s.push('  bozmasın, veri her zaman önde olsun.');
+    s.push('- Ekranları telefon ölçüsünde tasarla; masaüstünde aynı dil geniş');
+    s.push('  ekrana taşınacak.');
     s.push('');
-    s.push('> Aşağısı bir **şablon**, örnek cevap değil. `___` yazan her yeri kendin');
-    s.push('> doldur. Buradaki hiçbir değeri olduğu gibi kopyalama.');
-    s.push('');
-    s.push('```');
-    PALET_ALAN.forEach(a => s.push(`${a.ad}: ${a.renk ? '#______' : '___'}`));
-    s.push('```');
+
+    s.push('Beğenmezsem söyleyeceğim, düzelteceksin. Anlaştıktan sonra senden');
+    s.push('**bunu nasıl yaptığının tarifini** isteyeceğim — o yüzden verdiğin');
+    s.push('kararları aklında tut: renk kodları, ölçüler, hangi görseli nereye koydun.');
 
     return s.join('\n');
   },
 
-  /* ---------- Görev promptu ---------- */
-
-  gorev(gorevId) {
-    const g = DB.gorev(gorevId);
-    if (!g) return '';
-
-    const proje = DB.proje(g.proje_id);
-    const modul = g.modul_id ? DB.moduller.find(m => m.id === g.modul_id) : null;
-    const sayfa = g.sayfa_id ? DB.sayfalar.find(s => s.id === g.sayfa_id) : null;
-    const stdlar = DB.gorevinStandartlari(gorevId);
-    const no = TASK_PREFIX + '-' + g.no;
+  /* 2 · Tarif promptu — tasarım beğenildikten sonra verilir.
+     Çıktı Studio'ya yapıştırılıyor; YERLEŞİM bölümü boru işaretiyle
+     ayrılmış olmalı ki yuvalar kendiliğinden açılabilsin. */
+  gorselTarif(projeId) {
+    const p = DB.proje(projeId);
+    if (!p) return '';
 
     const s = [];
+    s.push('Tasarımı beğendim. Şimdi **bunu nasıl yaptığını yaz** — başka biri');
+    s.push('aynı dili hiç görmediği ekranlarda tekrarlayabilsin diye.', '');
 
-    s.push('# NIZAM Studio — Geliştirme Görevi', '');
+    s.push('İki bölüm istiyorum, **tam olarak bu başlıklarla**:', '');
 
-    s.push('## Proje');
-    s.push(hiza('Firma', proje ? proje.firma : '—'));
-    if (proje && modulAdi(proje)) s.push(hiza('Ürün', modulAdi(proje)));
-    s.push(hiza('Platform', PLATFORM_ADI[proje && proje.platform] || '—'));
-    s.push(hiza('Veritabanı', VERI_ADI[proje && proje.veri] || '—'));
-    if (proje && proje.repo) s.push(hiza('Depo', proje.repo));
+    s.push('```');
+    s.push('## GÖRSEL DİL');
+    s.push('Renk: ana, ikincil, vurgu, zemin, metin — hex kodlarıyla ve hangisi nerede');
+    s.push('Yüzey: kart zemini, köşe yarıçapı, gölge, kenarlık');
+    s.push('Tipografi: başlık ve gövde yazı tipi, ağırlık, boyut basamakları');
+    s.push('Simge: çizim biçimi, çizgi kalınlığı, renk, arkasında zemin var mı');
+    s.push('Boşluk: temel birim ve kart içi / kartlar arası ölçüler');
+    s.push('Başlık düzeni: bölüm başlıkları nasıl görünür');
+    s.push('Alt çubuk: zemin, simge rengi, ortadaki düğme');
+    s.push('');
+    s.push('## YERLEŞİM');
+    s.push('G1 | gorsel-1.jpg | Panel açılışı | Tam genişlik 260px, üstüne koyudan şeffafa perde');
+    s.push('G2 | gorsel-2.png | Zemin dokusu | Bütün ekranların arkasında, %6 opaklık, dikişsiz');
+    s.push('```');
     s.push('');
 
-    s.push(PROMPT.teknikBlogu(proje)); s.push('');
-    const paletMetni = PROMPT.paletBlogu(proje);
-    if (paletMetni) { s.push(paletMetni); s.push(''); }
-    s.push(PROMPT.tasarimBlogu(proje)); s.push('');
-    const kunyeMetni = PROMPT.kunyeBlogu(proje);
-    if (kunyeMetni) { s.push(kunyeMetni); s.push(''); }
-
-    s.push('Deponun kökünde `NIZAM.md` adında bir kimlik dosyası var.');
-    s.push('İşe başlamadan önce oku — projenin mevcut sayfaları, kullanılan');
-    s.push('bileşenler ve alınmış kararlar orada yazıyor.');
+    s.push('### YERLEŞİM biçimi — buna harfiyen uy');
+    s.push('Her satır tek görsel, **dört alan, aralarında boru işareti** `|`:');
+    s.push('');
+    s.push('`numara | dosya adı | nerede | nasıl duracağı`');
+    s.push('');
+    s.push('- **numara**: `G1`, `G2`… ürettiğin sırayla. `G1` benim verdiğim');
+    s.push('  işletme görselidir; kullanmadıysan onu yazma.');
+    s.push('- **dosya adı**: `gorsel-1.jpg` gibi, küçük harf, Türkçe harf yok.');
+    s.push('  Simge seti için `.svg` yaz.');
+    s.push('- **nerede**: kısa ad — "Panel açılışı", "Giriş ekranı zemini".');
+    s.push('- **nasıl duracağı**: ölçü, perde, opaklık — tek cümle.');
+    s.push('- Satır başına `-` ya da numara koyma, tabloya çevirme.');
     s.push('');
 
-    s.push(`## Görev — ${no}`);
-    s.push(hiza('Başlık', g.baslik));
-    s.push(hiza('Yeri', yerYaz(modul, sayfa)));
-    if (g.oncelik === 'acil') s.push(hiza('Öncelik', 'ACİL'));
+    s.push('### Şunları yapma');
+    s.push('- Kod yazma. Ne CSS ne HTML — bu bir tarif, uygulama değil.');
+    s.push('- İki başlığın dışına bölüm ekleme.');
+    s.push('- "Duruma göre", "tercihen" gibi belirsiz ifade kullanma; kararı ver.');
+    s.push('- Kullanmadığın bir görseli YERLEŞİM\'e yazma.');
     s.push('');
 
-    if (g.aciklama) {
-      s.push('Ne yapılacak:');
-      s.push(g.aciklama.trim());
-      s.push('');
-    }
-
-    if (stdlar.length) {
-      s.push(stdlar.length === 1 ? '## Kullanılacak Nizam Standardı' : '## Kullanılacak Nizam Standartları');
-      stdlar.forEach(st => {
-        s.push('');
-        s.push(`### ${st.ad}`);
-        s.push(st.tarif || st.ozet);
-      });
-      s.push('');
-    }
-
-    s.push('## Kurallar');
-    s.push(`1. Commit mesajının başına \`[${no}]\` yaz. Studio bu etiketi arayıp`);
-    s.push('   görevi kendiliğinden "Kontrolde"ye çekiyor.');
-    s.push('2. İş bitince `NIZAM.md` dosyasını güncelle — eklediğin sayfa, özellik');
-    s.push('   ve aldığın kararlar oraya yazılsın.');
-    s.push('3. Mevcut tasarım dilini bozma: yeni renk, yeni yazı tipi, yeni bileşen');
-    s.push('   düzeni getirme.');
-    s.push('4. Yalnızca bu görevi yap. Aklına gelen başka iyileştirmeleri yapma,');
-    s.push('   not olarak yaz.');
-    s.push('5. Bitince değişikliği GitHub\'a gönder.');
+    s.push('Tarifi verdikten sonra ürettiğin görselleri tek tek indirebileceğim');
+    s.push('biçimde ver — her birinin numarasını söyleyerek.');
 
     return s.join('\n');
   },
@@ -885,8 +914,16 @@ const PROMPT = {
     s.push('');
 
     s.push(PROMPT.teknikBlogu(proje)); s.push('');
-    const paletMetni = PROMPT.paletBlogu(proje);
-    if (paletMetni) { s.push(paletMetni); s.push(''); }
+    const dilMetni = PROMPT.gorselDilBlogu(proje);
+    if (dilMetni) { s.push(dilMetni); s.push(''); }
+    /* Kimlik dosyasında adres değil yerleşim dursun — imzalı adres bir
+       saatte ölür, depoya yazılırsa yanıltıcı olur. */
+    const yerlesim = ((proje.palet || {}).gorseller || []).filter(y => y.yol && y.no !== 'G0');
+    if (yerlesim.length) {
+      s.push('## Görseller', '');
+      yerlesim.forEach(y => s.push(`- **${y.no} · ${y.dosya}** — ${y.ad}${y.tarif ? ': ' + y.tarif : ''}`));
+      s.push('');
+    }
     s.push(PROMPT.tasarimBlogu(proje)); s.push('');
     const kunyeMetni2 = PROMPT.kunyeBlogu(proje);
     if (kunyeMetni2) { s.push(kunyeMetni2); s.push(''); }

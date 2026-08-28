@@ -19,6 +19,8 @@ const DB = {
   sektorler: [],
   /* Logolar private kovada; adres her oturumda yeniden üretilir. */
   logoAdres: {},
+  /* Görsel yuvalarının imzalı adresleri: gorselAdres[projeId + '/' + no] */
+  gorselAdres: {},
   sayimOnbellek: null,
   panelOnbellek: null,
   standartlar: [],
@@ -222,7 +224,7 @@ const DB = {
     const sonuclar = await Promise.all(adlar.map(ad => this.OKUYUCULAR[ad](AUTH.db)));
     adlar.forEach((ad, i) => this.yerlestir(ad, sonuclar[i]));
 
-    if (adlar.includes('projeler')) await this.logolariTazele();
+    if (adlar.includes('projeler')) { await this.logolariTazele(); await this.gorselleriTazele(); }
     this.onbellekYaz();
   },
 
@@ -253,6 +255,7 @@ const DB = {
 
       this.yuklendi = true;
       await this.logolariTazele();
+      await this.gorselleriTazele();
       this.onbellekYaz();
     } catch (e) {
       this.hata = veriHatasi(e) + (e && e.tablo ? ` (${e.tablo})` : '');
@@ -794,6 +797,89 @@ const DB = {
     await this.tazele('projeler');
   },
 
+  /* ---- Görsel yuvaları ----
+     Tarif kaç görsel gerektiğini söylüyor; yuvalar `palet.gorseller` içinde
+     duruyor. Dosyanın kendisi `gorseller` kovasında, proje klasöründe.
+     Kova özel: adres imzalı ve bir saat geçerli. */
+
+  gorselYol(projeId, dosya) { return projeId + '/' + dosya; },
+
+  async gorselYukle(projeId, no, dosya) {
+    yazmaKontrol();
+    if (!/^image\//.test(dosya.type) && !/svg/i.test(dosya.type))
+      throw new Error('Yalnızca resim yükleyebilirsin.');
+    if (dosya.size > 3 * 1024 * 1024) throw new Error('Dosya 3 MB\'ı geçmesin.');
+
+    const pr = this.proje(projeId);
+    const pl = (pr && pr.palet) || {};
+    const yuvalar = (pl.gorseller || []).slice();
+    const i = yuvalar.findIndex(y => y.no === no);
+    if (i < 0) throw new Error('Yuva bulunamadı: ' + no);
+
+    /* Dosya adını tarif belirledi; uzantısı yüklenen dosyadan gelsin —
+       tarif .jpg der ama sen .png yüklersen bağlantı kırılırdı. */
+    const uzanti = (dosya.name.split('.').pop() || 'png').toLowerCase().slice(0, 5);
+    const govde  = String(yuvalar[i].dosya || ('gorsel-' + (i + 1))).replace(/\.[^.]+$/, '');
+    const ad     = govde + '.' + uzanti;
+    const yol    = this.gorselYol(projeId, ad);
+
+    const yukle = await AUTH.db.storage.from('gorseller')
+      .upload(yol, dosya, { upsert: true, contentType: dosya.type });
+    if (yukle.error) throw new Error(depoHatasi(yukle.error, 'gorseller'));
+
+    yuvalar[i] = Object.assign({}, yuvalar[i],
+      { dosya: ad, yol, boyut: dosya.size, tur: dosya.type });
+    await this.paletKaydet(projeId, Object.assign({}, pl, { gorseller: yuvalar }));
+    await this.gorselleriTazele(true);
+  },
+
+  async gorselSil(projeId, no) {
+    yazmaKontrol();
+    const pr = this.proje(projeId);
+    const pl = (pr && pr.palet) || {};
+    const yuvalar = (pl.gorseller || []).slice();
+    const i = yuvalar.findIndex(y => y.no === no);
+    if (i < 0) return;
+
+    if (yuvalar[i].yol) {
+      try { await AUTH.db.storage.from('gorseller').remove([yuvalar[i].yol]); } catch (e) {}
+      delete this.gorselAdres[projeId + '/' + no];
+    }
+    /* Yuva kalıyor, yalnız dosyası gidiyor — tarif onu hâlâ istiyor. */
+    yuvalar[i] = Object.assign({}, yuvalar[i], { yol: '', boyut: 0, tur: '' });
+    await this.paletKaydet(projeId, Object.assign({}, pl, { gorseller: yuvalar }));
+  },
+
+  /* Bütün projelerin dolu yuvaları için tek çağrıda imzalı adres. */
+  async gorselleriTazele(zorla = false) {
+    if (!AUTH.db) { this.gorselAdres = {}; return; }
+
+    const cift = [];
+    this.projeler.forEach(p => {
+      ((p.palet || {}).gorseller || []).forEach(y => {
+        if (y.yol) cift.push([p.id + '/' + y.no, y.yol]);
+      });
+    });
+
+    const anahtar = cift.map(x => x[1]).sort().join('|');
+    const yas = Date.now() - (this._gorselZaman || 0);
+    if (!zorla && anahtar === this._gorselAnahtar && yas < 45 * 60 * 1000) return;
+
+    this._gorselAnahtar = anahtar;
+    this._gorselZaman = Date.now();
+    this.gorselAdres = {};
+    if (!cift.length) return;
+
+    const { data, error } = await AUTH.db.storage
+      .from('gorseller').createSignedUrls(cift.map(x => x[1]), 3600);
+    if (error || !data) return;
+
+    data.forEach(x => {
+      if (!x.signedUrl) return;
+      cift.filter(c => c[1] === x.path).forEach(c => { this.gorselAdres[c[0]] = x.signedUrl; });
+    });
+  },
+
   async paletKaydet(projeId, palet) {
     yazmaKontrol();
     const { data, error } = await AUTH.db
@@ -859,7 +945,8 @@ function sektorHatasi(e) {
 
 function depoHatasi(e, kova = 'avatarlar') {
   const m = (e && e.message) || '';
-  const sql = kova === 'logolar' ? 'sql/11-marka.sql' : 'sql/09-foto.sql';
+  const sql = kova === 'logolar' ? 'sql/11-marka.sql'
+    : kova === 'gorseller' ? 'sql/14-gorsel.sql' : 'sql/09-foto.sql';
   if (/bucket not found/i.test(m))                 return kova + ' kovası yok — Supabase → Storage\'den oluştur.';
   if (/policy|row-level|not authorized/i.test(m))  return 'Yükleme izni yok — ' + sql + ' dosyasını çalıştır.';
   if (/payload too large|exceeded/i.test(m))       return 'Dosya çok büyük.';

@@ -1,5 +1,14 @@
 # Değişiklik Günlüğü
 
+## v0.68.0
+- **Tasarım durağı baştan kuruldu: 50 karar yerine 13.** Renk, kart biçimi, simge seti, tipografi — bunları artık Studio sormuyor. Logo ve **işletme görseli** ChatGPT'ye gidiyor, o altı ekranı tasarlayıp bir **görsel dil tarifi** döndürüyor, Claude Code bütün ekranları o tarife göre kuruyor. Studio hiçbir estetik karar vermiyor: malzeme topluyor, prompt üretiyor, cevabı taşıyor.
+- **On ada dörde indi:** Görsel dünya · Kabuk · Davranış · Sistem. Kalan 13 kararın ortak özelliği, bir ekran görüntüsünde **görünmemeleri** — masaüstü genişliği telefon tasarımında yok, hareket miktarı durağan resimde yok, bildirimin nereye çıktığı davranıştır.
+- **Görsel yuvaları geldi.** Tarif kaç görsel gerektiğini ve her birinin nerede duracağını söylüyor; Studio isimli boş yuvalar açıyor. ChatGPT'nin ürettiğini yuvaya bırakıyorsun — sıra karıştıramazsın, çünkü yuvanın adını da dosya adını da tarif yazdı. Verdiğin işletme görselini tarif kullanmışsa o yuva **kendiliğinden doluyor**.
+- **2. blok değişti:** artık tasarım kararları listesi değil, görsel dil tarifi + yerleşim + görsellerin imzalı adresleri. Claude ilk iş olarak görselleri depoya indiriyor, sonra tarifi `NIZAM.md`'ye yazıyor.
+- Görseller `gorseller` kovasında, özel; adresler bir saat geçerli. Kurulum: `sql/14-gorsel.sql`.
+- Kalkanlar: palet adası, marka promptu, `PALET_ALAN`, palet yapıştırma ve elle düzenleme, görünüşe dair 29 çelişki kuralı.
+- **Bulunan hata:** önizlemede `a + b + {…}[k] || varsayilan` parantezsiz yazılmıştı; toplama önce olduğu için anahtar bulunamayınca varsayılana hiç düşmüyor, ekrana `undefined` basıyordu. Kararların çoğu kalkınca ortaya çıktı, düzeltildi.
+
 ## v0.67.0
 - **Geliştirme durağı ikiye ayrıldı: "Bütün programlarda olsun" ve "Yalnız bu programda olsun".** Beta'yı denerken gördüğün eksik bazen tek bir programın değil — *"hiçbir uygulamada yakınlaştırma olmasın"* gibi. Artık ilk kart bunu Studio'nun kendi deposuna yollayan bir prompt üretiyor; ikinci kart yalnız bu programı ilgilendiren işi görev olarak açıyor.
 - **Geliştirme durağında görev ekleme düğmesi yoktu.** Beta çıktıktan sonra iş açmak için Yapı durağına dönüp sayfayı bulmak gerekiyordu. Artık durağın kendisinden açılıyor.
