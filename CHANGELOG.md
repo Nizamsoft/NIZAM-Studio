@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## v0.72.0
+- **"Yeniden tasarlama — çıkar" kuralı geldi.** İlk gerçek denemede ortaya çıktı: ChatGPT tabakada bakır, gölgeli, hacimli ikonlar çiziyor; tek tek istenince aynı konuları **düz iki renkli geometrik simge** olarak yeniden üretiyordu. Tabakayla dosyalar arasındaki bağ kopuyordu. Tarif promptu artık açıkça söylüyor: bu görselleri zaten çizdin, şimdi yenisini üretmiyorsun — kullandığını **tek dosya hâlinde çıkarıyorsun**. Aynı çizim dili, aynı renk, aynı ışık; "daha kullanışlı olur" diye başka üsluba geçmek yasak.
+- Tasarım promptu da baştan uyarıyor: ekranları çizerken kullandığın her görseli sonradan ayrı ayrı çıkarabilecek şekilde kur, çünkü aynısı istenecek.
+- Üç teknik kural eklendi, üçü de denemede çıktı: **görsellerin içine yazı gömme** (logo ve slogan hero'ya pişmişti, uygulamanın kendi logosuyla üst üste binerdi) · **arkaya açık leke pişirme** (illüstrasyonun arkasındaki kâğıt gölgesi koyu zeminde kirli bulut gibi duruyordu) · **kanvas görselin kendisi kadar olsun** (süs motifi kocaman boş tuvalin ortasındaydı).
+
 ## v0.71.0
 - **Tarif promptu artık görselleri de zorunlu istiyor.** Eskiden son satırda *"görselleri tek tek verebilirsin"* diyordu; ChatGPT tarifi yazıp duruyordu, görselleri elle istemek gerekiyordu. Artık ayrı ve zorunlu bir bölüm: iki bölümü verdikten hemen sonra, sormadan, YERLEŞİM'deki her görseli üretecek.
 - Kurallar netleşti: her görsel ayrı mesajda ve başında `G2 · gorsel-2.jpg` yazacak · dosya adı YERLEŞİM'dekiyle **birebir** aynı olacak · `.svg` olanlar resim değil **SVG kodu** olarak gelecek (kopyalanıp dosyaya kaydedilebilsin) · ikon seti tek dosyada, her simge kendi `<symbol id>` içinde · doku dikişsiz · illüstrasyon zemini saydam · yer tutucu yasak · üretemediğini sessizce atlamayacak.

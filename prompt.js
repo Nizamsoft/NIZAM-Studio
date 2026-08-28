@@ -774,8 +774,12 @@ const PROMPT = {
     s.push('  giriş alanı', '');
 
     s.push('Beğenmezsem söyleyeceğim, düzelteceksin. Anlaştıktan sonra senden');
-    s.push('**bunu nasıl yaptığının tarifini** isteyeceğim — o yüzden verdiğin');
-    s.push('kararları aklında tut: renk kodları, ölçüler, hangi görseli nereye koydun.');
+    s.push('iki şey isteyeceğim: **bunu nasıl yaptığının tarifi** ve');
+    s.push('**ekranlarda kullandığın görsellerin tek tek dosya hâli**.');
+    s.push('O yüzden ekranları çizerken kullandığın her görseli — hero,');
+    s.push('illüstrasyon, ikon seti, doku, süsleme — sonradan ayrı ayrı');
+    s.push('çıkarabileceğin şekilde kur. Sonra "yeniden çizeyim" olmayacak;');
+    s.push('aynısını isteyeceğim.');
 
     return s.join('\n');
   },
@@ -840,6 +844,20 @@ const PROMPT = {
     s.push('almalı. İki bölümü verdikten **hemen sonra**, sormadan, beklemeden');
     s.push('`YERLEŞİM` listesindeki **her görseli tek tek üret**.', '');
 
+    s.push('> ### Yeniden tasarlama — çıkar');
+    s.push('> Bu görselleri tasarımda **zaten çizdin**. Şimdi yapacağın şey');
+    s.push('> yeni bir görsel üretmek değil, ekranlarda kullandığın görseli');
+    s.push('> tek dosya hâlinde **çıkarmak**. Aynı çizim dili, aynı renkler,');
+    s.push('> aynı ışık, aynı malzeme hissi. Sadeleştirme, moderniz etme,');
+    s.push('> "daha kullanışlı olur" diye başka bir üsluba geçme.');
+    s.push('> ');
+    s.push('> **Özellikle ikon setinde.** Ekranlarda hangi çizim diliyle');
+    s.push('> çizdiysen — gölgeli mi, hacimli mi, kaç renkli, hangi malzeme —');
+    s.push('> dosyada da o dil olacak. Düz iki renkli geometrik simgeye');
+    s.push('> çevirme. Küçük boyutta okunması için yeterince büyük ve net');
+    s.push('> üret; üslubu değiştirerek çözme.');
+    s.push('');
+
     s.push('- Her görsel **ayrı mesajda** gelsin; başında numarası ve dosya adı');
     s.push('  yazsın: `G2 · gorsel-2.jpg`.');
     s.push('- **Dosya adı YERLEŞİM\'de yazdığıyla birebir aynı olsun.** Uzantıyı');
@@ -850,7 +868,14 @@ const PROMPT = {
     s.push('- İkon seti tek dosyada gelsin; her simge kendi `<symbol id="…">`');
     s.push('  öğesinde ve anlaşılır bir adla (`ikon-siparis`, `ikon-rapor`).');
     s.push('- **Doku dikişsiz olsun** — yan yana döşenince ek yeri görünmesin.');
-    s.push('- İllüstrasyonların zemini **saydam** olsun; beyaz kutu içinde verme.');
+    s.push('- İllüstrasyonların zemini **gerçekten saydam** olsun. Arkasına');
+    s.push('  açık renk leke, kâğıt parçası ya da yumuşak gölge **pişirme** —');
+    s.push('  koyu zeminde kirli bir bulut gibi görünüyor.');
+    s.push('- **Görsellerin içine yazı gömme.** Logo, slogan, etiket, başlık,');
+    s.push('  sahte tablo satırı — hiçbiri. Uygulama yazıyı kendi çiziyor;');
+    s.push('  gömülü olursa üst üste biner ve ölçeklenince bulanıklaşır.');
+    s.push('- **Kanvas görselin kendisi kadar olsun.** Küçük bir motifi kocaman');
+    s.push('  boş tuvalin ortasına koyma; kırpılmış ver.');
     s.push('- Örnek, yer tutucu, "burada şöyle bir görsel olacak" gibi şeyler');
     s.push('  gönderme. Gerçek dosyayı üret.');
     s.push('- Bir görseli üretemiyorsan sessizce atlama: hangisi ve neden,');
