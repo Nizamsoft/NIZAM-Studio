@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.76.0
+- **Silinen projenin görselleri de gidiyor.** Yeni `gorseller` kovasındaki dosyalar kalıyordu: proje satırı silinince palet de gidiyor ve dosyaların yolunu bir daha bulamıyorduk, kovada yer kaplıyorlardı. Silme onayı da artık kaç görsel gideceğini yazıyor.
+- **Silmeden sonra "dışarıda kalanlar" penceresi.** Studio yalnız kendi verisini silebiliyor — GitHub deposunu ve sohbetleri silmek jeton saklamayı gerektirirdi, bilerek saklamıyoruz. Pencere üç izi sayıyor ve doğrudan oraya götürüyor: deponun **Settings → Danger Zone** sayfası, Claude Code oturum listesi, ChatGPT sohbeti. Depo adresi silinmeden önce alınıyor; sonrasında proje kaydı yok, bağlantıyı üretemezdik.
+- **Bulunan hata:** silme sonrası açılan pencere anında kapanıyordu. Adres `#/projeler`e dönerken `hashchange` bütün pencereleri kapatıyor ve sıra yüzünden bu yeni pencereyi de alıyordu. Artık adres değişimi beklenip pencere ondan sonra açılıyor.
+- **Bulunan hata:** yeni pencerenin `.dk` sınıfı yapı ağacındaki `.dk` ile çakışıyordu; numara ve metin alt alta düşüyor, açıklamadaki kalın sözcükler satır kırıyordu. Sınıflar `.sk-` önekine alındı.
+
 ## v0.75.0
 - **Yapı tasarımdan önce geldi.** Sıra yanlıştı: ChatGPT ekranları çizerken hangi modüllerin ve sayfaların olacağını bilmiyordu, o yüzden altı **genel** ekran çiziyordu. Artık `3 · Yapıyı kurma` → `4 · Tasarımı belirleme`.
 - **Tasarım promptu künyeyi taşıyor.** Programın gerçek modülleri, sayfaları ve alanları prompta giriyor: panelin kartları o sayfalar, listenin sütunları o alanlar, formun kutuları o alanlar oluyor. Simgeler de buna göre — her modül ve sayfa için o işi anlatan bir simge isteniyor, genel "belge, ayar, kullanıcı" değil.

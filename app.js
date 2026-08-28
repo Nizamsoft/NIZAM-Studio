@@ -6565,6 +6565,82 @@ function logoSec(projeId) {
 }
 
 
+/* Adres değişince hashchange bütün pencereleri kapatıyor. Silme sonrası
+   pencereyi ondan SONRA açmalıyız, yoksa açılır açılmaz kapanıyor. */
+function adreseGit(hash) {
+  return new Promise(coz => {
+    if (location.hash === hash) return coz();
+    let bitti = false;
+    const bitir = () => {
+      if (bitti) return;
+      bitti = true;
+      window.removeEventListener('hashchange', bitir);
+      coz();
+    };
+    window.addEventListener('hashchange', bitir);
+    location.hash = hash;
+    /* Olay gelmezse (aynı adres, eski tarayıcı) takılıp kalmayalım. */
+    setTimeout(bitir, 300);
+  });
+}
+
+/* ---------- Silmenin dışarıda kalan ayağı ----------
+   Studio yalnız kendi verisini silebiliyor. GitHub deposunu ve sohbetleri
+   silmek için jeton saklamak gerekirdi; bilerek saklamıyoruz. Onun yerine
+   ne kaldığını sayıp doğrudan oraya götüren bağlantıları veriyoruz. */
+function disaridaKalanlar(ad, slug) {
+  modalAc(`
+    ${modalBaslik(ICON.cop, 'Studio\'dan silindi',
+      esc(ad) + ' ve bütün verisi gitti. Dışarıda üç iz kaldı.')}
+
+    <div class="sk-liste">
+      <div class="sk">
+        <span class="sk-n">1</span>
+        <div class="sk-yz">
+          <b>GitHub deposu</b>
+          <i>${slug
+            ? 'Kod ve geçmiş orada duruyor. Silmek için deponun <b>Settings</b> '
+              + 'sayfasını aç, en alttaki <b>Danger Zone</b> bölümünden sil.'
+            : 'Bu projeye depo adresi kaydedilmemişti. Açtıysan GitHub\'dan elle sil.'}</i>
+          ${slug ? `<span class="sk-ad mono">${esc(slug)}</span>` : ''}
+        </div>
+      </div>
+      ${slug ? `
+        <a class="sayfa-dug ikincil" target="_blank" rel="noopener"
+           href="https://github.com/${esc(slug)}/settings">
+          ${svg(ICON.katman, 15)} Depo ayarlarını aç</a>` : ''}
+
+      <div class="sk">
+        <span class="sk-n">2</span>
+        <div class="sk-yz">
+          <b>Claude Code oturumu</b>
+          <i>Silme yok, arşivleme var. claude.ai/code listesinde oturumun
+             üstüne gel, arşiv simgesine dokun.</i>
+        </div>
+      </div>
+      <a class="sayfa-dug ikincil" target="_blank" rel="noopener"
+         href="https://claude.ai/code">${svg(ICON.katman, 15)} Oturum listesini aç</a>
+
+      <div class="sk">
+        <span class="sk-n">3</span>
+        <div class="sk-yz">
+          <b>ChatGPT sohbeti</b>
+          <i>Tasarımı yaptığın sohbet duruyor. Gerekmiyorsa sohbet listesinden sil.</i>
+        </div>
+      </div>
+    </div>
+
+    <div class="note note-kucuk">${svg(ICON.info, 15)}
+      <span>Studio bunları kendi silemiyor: jeton saklamıyor. Depo silme geri
+      alınamaz — adı iki kez oku.</span></div>
+
+    <div class="modal-alt">
+      <button class="btn btn-primary" data-m="kapat" type="button"><span>Tamam</span></button>
+    </div>`, kutu => {
+    $('[data-m="kapat"]', kutu).addEventListener('click', modalKapat);
+  }, 'genis');
+}
+
 /* ---------- Prompt bağlantıları ----------
    Prompt düğmeleri gerçek `<a target="_blank">` — dokununca panoya yazar ve
    hedef yapay zekâyı açar. Neden düğme değil: iOS'ta ana ekrandan açılan
@@ -7813,22 +7889,30 @@ async function eylemCalistir(el) {
 
     if (sec === 'sil') {
       const s = DB.sayim(id);
+      const gorsel = ((proje.palet || {}).gorseller || []).filter(y => y.yol).length;
       const kayip = [
         s.modul ? s.modul + ' modül' : '',
         s.sayfa ? s.sayfa + ' sayfa' : '',
         s.gorev ? s.gorev + ' görev' : '',
+        gorsel ? gorsel + ' görsel' : '',
       ].filter(Boolean).join(', ');
 
       const ok = await onaySor({
         baslik: 'Proje tamamen silinsin mi?',
         mesaj: `"${projeAdi(proje)}"${kayip ? ` ve içindeki ${kayip}` : ''} silinecek. `
-             + 'Logosu da gidecek. Bu işlem geri alınamaz. '
+             + 'Logo, görseller ve tasarım tarifi de gidecek. Bu işlem geri alınamaz. '
              + 'Sadece listeden kaldırmak istiyorsan "Arşive kaldır" kullan.',
         buton: 'Kalıcı olarak sil',
       });
       if (!ok) return;
-      if (rota().id === id) location.hash = '#/projeler';
-      return isYap(() => DB.projeSil(id), 'Proje silindi.');
+
+      /* Depo adresi silinmeden önce alınıyor: sonrasında proje kaydı yok,
+         GitHub bağlantısını üretemeyiz. */
+      const slug = depoSlug(proje.repo);
+      const ad   = projeAdi(proje);
+      if (rota().id === id) await adreseGit('#/projeler');
+      await isYap(() => DB.projeSil(id), 'Proje silindi.');
+      return disaridaKalanlar(ad, slug);
     }
     return;
   }

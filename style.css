@@ -1753,6 +1753,24 @@ a.sayfa-dug { text-decoration: none; }
 .std-satir span { font-family: 'IBM Plex Mono', monospace; font-size: 11px;
                   color: var(--ink-soft); margin-left: auto; text-align: right; }
 
+/* Silmeden sonra dışarıda kalanlar. `.dk` adı yapı ağacında kullanılıyor,
+   bu yüzden ayrı önek. */
+.sk-liste { display: grid; gap: 10px; margin-top: 4px; }
+.sk { display: flex; gap: 11px; align-items: flex-start; padding: 12px 13px;
+      border: 1px solid var(--line-2); border-radius: 13px; background: var(--yuva); }
+.sk-n { width: 22px; height: 22px; border-radius: 50%; flex: 0 0 22px;
+        display: grid; place-items: center; background: var(--surface-2);
+        font-family: var(--yazi-kod); font-size: 10.5px; color: var(--ink-faint); }
+.sk-yz { flex: 1; min-width: 0; }
+/* Doğrudan çocuk: açıklamanın içindeki kalın sözcükler satır kırmasın. */
+.sk-yz > b { display: block; font-family: var(--yazi-baslik); font-size: 13.5px; color: var(--ink); }
+.sk-yz > i { display: block; font-style: normal; font-size: 11.5px; color: var(--ink-faint);
+             margin-top: 3px; line-height: 1.5; }
+.sk-yz i b { color: var(--ink-soft); font-weight: 600; }
+.sk-ad { display: inline-block; margin-top: 6px; font-family: var(--yazi-kod); font-size: 11px;
+         color: var(--ink-soft); padding: 3px 8px; border-radius: 6px; background: var(--surface); }
+.sk-liste .sayfa-dug { margin: -2px 0 2px 33px; width: calc(100% - 33px); }
+
 /* Görsel dünya adasının kendi başlığı ve şeridi — genel adım şeridinin
    yerine geçiyor. O şerit kalan bütün kararları sayıyor; tek adımlık bu
    adada "1 / 15" yazınca yanıltıyordu. */

@@ -425,6 +425,17 @@ const DB = {
       try { await AUTH.db.storage.from('logolar').remove([p.logo]); } catch (e) {}
     }
 
+    /* Görsel yuvalarının dosyaları da gitsin: proje satırı silinince palet
+       de gider ve yollarını bir daha bulamayız, kovada yer kaplarlar. */
+    const yollar = (((p || {}).palet || {}).gorseller || [])
+      .map(y => y.yol).filter(Boolean);
+    if (yollar.length) {
+      try { await AUTH.db.storage.from('gorseller').remove(yollar); } catch (e) {}
+      Object.keys(this.gorselAdres).forEach(k => {
+        if (k.indexOf(id + '/') === 0) delete this.gorselAdres[k];
+      });
+    }
+
     const { error } = await AUTH.db.from('projects').delete().eq('id', id);
     if (error) throw new Error(veriHatasi(error));
     await this.tazele('projeler', 'moduller', 'sayfalar', 'gorevler', 'hareketler');
