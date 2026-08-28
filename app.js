@@ -645,8 +645,12 @@ function logolariGoster() {
 const DURAKLAR = {
   firma:      { no: 1, ad: 'Firma bilgileri',    ciz: firmaSayfasi },
   kurulum:    { no: 2, ad: 'Depo ve sohbet',     ciz: kurulumSayfasi },
-  tasarim:    { no: 3, ad: 'Tasarımı belirleme', ciz: tasarimSayfasi },
-  yapi:       { no: 4, ad: 'Yapıyı kurma',       ciz: yapiSayfasi },
+  /* Yapı tasarımdan önce: ChatGPT ekranları çizerken hangi modüllerin ve
+     sayfaların olduğunu bilmeli. Bilmezse altı genel ekran çiziyor; künye
+     elindeyken gerçek modülleri, gerçek alanları ve o işe ait simgeleri
+     çiziyor. Bağımlılık bu yönde. */
+  yapi:       { no: 3, ad: 'Yapıyı kurma',       ciz: yapiSayfasi },
+  tasarim:    { no: 4, ad: 'Tasarımı belirleme', ciz: tasarimSayfasi },
   beta:       { no: 5, ad: 'Beta',               ciz: betaSayfasi },
   gelistirme: { no: 6, ad: 'Geliştirme',         ciz: gelistirmeSayfasi },
   final:      { no: 7, ad: 'Final',              ciz: finalSayfasi },
@@ -4188,6 +4192,14 @@ function projeDuraklari(p) {
         : 'Kod nereye gidecek, iş hangi sohbette yürüyecek — ikisi de burada.',
     },
     {
+      ad: 'Yapıyı kurma',
+      /* Modül tek başına yetmez: sayfası olmayan modül boş kutudur. */
+      bitti: gercek > 0 && s.sayfa > 0,
+      ozet: gercek
+        ? `${gercek} modül · ${s.sayfa} sayfa`
+        : 'Modülü kur; sayfalar ve künyeler birlikte gelir. Tasarım bunun üstüne kurulacak.',
+    },
+    {
       ad: 'Tasarımı belirleme',
       bitti: tarifVar,
       rozet: yeniKararlar(p.palet).length,
@@ -4195,15 +4207,9 @@ function projeDuraklari(p) {
         ? 'Görsel dil hazır · ' + yuva.length + ' görsel.'
         : String(pl0.tarif || '').trim()
           ? 'Tarif geldi. Sıra görselleri yuvalara koymakta.'
-          : 'İşletme görselini yükle, promptu ChatGPT\'ye ver, tarifi yapıştır.',
-    },
-    {
-      ad: 'Yapıyı kurma',
-      /* Modül tek başına yetmez: sayfası olmayan modül boş kutudur. */
-      bitti: gercek > 0 && s.sayfa > 0,
-      ozet: gercek
-        ? `${gercek} modül · ${s.sayfa} sayfa`
-        : 'Henüz modül yok. Modül kurduğunda sayfaları da birlikte gelir.',
+          : gercek
+          ? 'İşletme görselini yükle, promptu ChatGPT\'ye ver, tarifi yapıştır.'
+          : 'Önce modülü kur — ChatGPT neyi tasarlayacağını künyeden okuyor.',
     },
     {
       ad: 'Beta',

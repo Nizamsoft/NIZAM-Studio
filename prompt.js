@@ -690,6 +690,28 @@ const PROMPT = {
     if (roller.length) s.push(hiza('Roller', roller.join(' · ')));
     s.push('');
 
+    /* Yapı durağı tasarımdan önce geliyor: künye elimizdeyse ChatGPT genel
+       değil, bu programın gerçek ekranlarını çizsin. */
+    const kunye = PROMPT.kunyeBlogu(p);
+    if (kunye) {
+      s.push('## Bu programda ne var');
+      s.push('Aşağıda programın gerçek modülleri, sayfaları ve her sayfanın');
+      s.push('tuttuğu bilgiler yazıyor. Ekranları **bunlara göre** çiz:');
+      s.push('panelin kartları bu sayfalar olsun, listenin sütunları bu alanlar,');
+      s.push('formun kutuları bu alanlar. Uydurma ekran ekleme.');
+      s.push('');
+      s.push('Simgeleri de buna göre çiz: her modül ve sayfa için o işi anlatan');
+      s.push('bir simge gerekiyor — genel "belge, ayar, kullanıcı" değil.');
+      s.push('');
+      s.push(kunye);
+      s.push('');
+    } else {
+      s.push('> **Künye yok.** Yapı durağı tamamlanmamış, hangi ekranların');
+      s.push('> olacağını bilmiyorum. Aşağıdaki altı ekranı genel hâliyle çiz;');
+      s.push('> modül adlarını uydurma, örnek olduğunu belli et.');
+      s.push('');
+    }
+
     s.push('## Tasarlayacağın altı ekran');
     s.push('1. **Panel** — açılışta karşılayan ekran; kısayol kartları ve günün özeti.');
     s.push('2. **Liste** — en çok bakılan ekran; arama, filtre, satırlar, ana eylem.');

@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## v0.75.0
+- **Yapı tasarımdan önce geldi.** Sıra yanlıştı: ChatGPT ekranları çizerken hangi modüllerin ve sayfaların olacağını bilmiyordu, o yüzden altı **genel** ekran çiziyordu. Artık `3 · Yapıyı kurma` → `4 · Tasarımı belirleme`.
+- **Tasarım promptu künyeyi taşıyor.** Programın gerçek modülleri, sayfaları ve alanları prompta giriyor: panelin kartları o sayfalar, listenin sütunları o alanlar, formun kutuları o alanlar oluyor. Simgeler de buna göre — her modül ve sayfa için o işi anlatan bir simge isteniyor, genel "belge, ayar, kullanıcı" değil.
+- Künye henüz yoksa prompt bunu söylüyor ve genel çizim isteyip modül adı uydurmasını yasaklıyor.
+
 ## v0.74.1
 - **"Bütün kararları gör" çalışmıyordu.** Haritanın altına yeni eklenen satır adım numarasını ayarlıyor ama adım kipine geçmiyordu; harita yeniden çiziliyor ve düğme ölü görünüyordu.
 
