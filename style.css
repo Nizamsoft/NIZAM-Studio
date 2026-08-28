@@ -1753,6 +1753,65 @@ a.sayfa-dug { text-decoration: none; }
 .std-satir span { font-family: 'IBM Plex Mono', monospace; font-size: 11px;
                   color: var(--ink-soft); margin-left: auto; text-align: right; }
 
+/* Görsel dünya adasının kendi başlığı ve şeridi — genel adım şeridinin
+   yerine geçiyor. O şerit kalan bütün kararları sayıyor; tek adımlık bu
+   adada "1 / 15" yazınca yanıltıyordu. */
+.ada-bas { display: flex; align-items: center; gap: 11px; padding: 12px 0 0; }
+.ab-no {
+  width: 30px; height: 30px; border-radius: 50%; flex: 0 0 30px;
+  background: var(--red); color: #fff; border: none; cursor: pointer;
+  display: grid; place-items: center; font-family: var(--yazi-kod); font-size: 12px;
+}
+.ab-no.tam { background: var(--st-done); color: #0d1a14; }
+.ab-yz { flex: 1; min-width: 0; }
+.ab-yz b { display: block; font-family: var(--yazi-baslik); font-size: 17px; color: var(--ink-strong); }
+.ab-yz i { display: block; font-style: normal; font-size: 11.5px; color: var(--ink-faint); margin-top: 2px; }
+.ab-say { font-size: 11px; color: var(--ink-dim); }
+.ada-serit { display: flex; gap: 4px; padding: 10px 0 2px; }
+.ada-serit i { flex: 1; height: 3px; border-radius: 2px; background: var(--surface-3); }
+.ada-serit i.on { background: var(--metal-2); }
+.ada-serit i.simdi { background: var(--red); }
+
+/* Kapalı adım satırı — biten ya da sırası gelmemiş. */
+.ada-satir {
+  display: flex; align-items: center; gap: 11px; width: 100%; text-align: left;
+  padding: 12px 14px; margin-bottom: 9px; border: 1px solid var(--line-3);
+  border-radius: 14px; background: var(--yuva-2); cursor: pointer;
+  font-family: inherit; color: inherit;
+}
+.ada-satir:active { transform: scale(.995); }
+.as-no {
+  width: 24px; height: 24px; border-radius: 50%; flex: 0 0 24px;
+  display: grid; place-items: center; font-family: var(--yazi-kod); font-size: 10.5px;
+  background: var(--surface-2); color: var(--ink-dim);
+}
+.ada-satir.bitti .as-no { background: var(--st-done); color: #0d1a14; }
+.ada-satir b { flex: 1; font-family: var(--yazi-baslik); font-size: 14px; color: var(--ink-soft); }
+.ada-satir.bitti b { color: var(--ink); }
+.as-ozet { font-size: 10px; color: var(--ink-dim); }
+.as-cev { color: var(--ink-dim); display: flex; }
+.ada-acik { margin-bottom: 9px; }
+.ada-acik .kur-kart:not(.bitti) {
+  border-color: var(--red-cizgi);
+  background: linear-gradient(180deg, var(--red-soft), var(--yuva-2) 45%);
+}
+.ada-acik .kur-kart:not(.bitti) .kur-no { background: var(--red); color: #fff; }
+.ada-acik .kur-kart:not(.bitti) .kur-rozet { color: var(--red-ink-soft); }
+
+/* Haritanın altındaki özet satırı — "Bitiş" artık bir ada değil. */
+.ada-ozet {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%; margin-top: 6px; padding: 13px; border-radius: 14px;
+  border: 1px dashed var(--line-parlak); background: transparent;
+  color: var(--ink-soft); font-family: var(--yazi-govde); font-size: 13px; font-weight: 600;
+  cursor: pointer;
+}
+.ada-ozet:active { transform: scale(.99); }
+
+/* Ada bitmeden "Adayı bitir" öne çıkmasın; bitince yeşile dönsün. */
+.ag.ileri.sonuk { opacity: .45; }
+.ag.ileri.tam { background: var(--st-done); border-color: var(--st-done); color: #0d1a14; }
+
 /* ==========================================================================
    GÖRSEL DÜNYA
    Ada gövdesi kurulum kartlarının aynı dilini kullanıyor; buradakiler yalnız

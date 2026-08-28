@@ -1026,7 +1026,10 @@ function adaDurumu(p, o) {
 /* Tasarım haritası — ada ada. Her öbek bir ada; biten yeşil, sıradaki
    kırmızı ve nabız atar. Sıra zorunlu değil, ileri adaya da dokunulabilir. */
 function tasarimHaritasi(p, d) {
-  const obekler = obekleriKur();
+  /* Özet bir ada değil, bitişte bir bakış. Haritada 5. ada gibi durunca
+     "daha bir ada var" hissi veriyordu; aşağıya satır olarak indi. */
+  const obekler = obekleriKur().filter(o => o.ad !== 'Bitiş');
+  const ozetNo  = TASARIM_ADIM.findIndex(a => a.tur === 'ozet');
   const durumlar = obekler.map(o => adaDurumu(p, o));
   const simdi = durumlar.findIndex(x => !x.tam);
 
@@ -1055,6 +1058,9 @@ function tasarimHaritasi(p, d) {
           </span></button>
       </div>`;
     }).join('')}</div>
+    <button class="ada-ozet" type="button" data-eylem="tasarim-adim"
+            data-proje="${p.id}" data-deger="${ozetNo}">
+      ${svg(ICON.katman, 15)} Bütün kararları gör</button>
   </div>`;
 }
 
@@ -1080,11 +1086,17 @@ function tasarimSayfasi(p, d) {
 
   gez = adimGezinme(p, no, adim);
 
+  /* Görsel dünya tek adımlık bir ada: kalan 14 kararı sayan şerit ve
+     ikinci kez yazılan başlık burada yalnız kafa karıştırıyordu. Kendi
+     dört adımını sayan bir şerit ve tek başlık kalıyor. */
+  const gorselAda = adim.tur === 'gorsel';
+
   return `<div class="akis ${adim.tur === 'ozet' ? 'ozet' : ''}${
-      adim.tur === 'gorsel' ? ' gorsel' : ''}">
-    ${adimSeridi(p, no, adim)}
+      gorselAda ? ' gorsel' : ''}">
+    ${gorselAda ? gorselAdaBasligi(p) : adimSeridi(p, no, adim)}
     ${['ozet', 'gorsel'].includes(adim.tur) ? '' : onizlemeSatiri(p, adim)}
     <div class="akis-alt">
+      ${gorselAda ? '' : `
       <div class="adim-bas">
         <div class="ab-yazi"><b>${esc(adim.ad)}</b><i>${esc(adim.aciklama)}</i></div>
         ${yeniKararlar(p.palet).some(a => a.anahtar === adim.anahtar)
@@ -1095,7 +1107,7 @@ function tasarimSayfasi(p, d) {
                      title="Sonradan eklendi. Rozeti kaldırmak için dokun.">YENİ</button>`
           : `<span class="ab-tur">${adim.alan
               ? (adim.alan.coklu ? 'birkaçı' : 'tek seçim') : ''}</span>`}
-      </div>
+      </div>`}
       ${govde}
       ${gez}
     </div>
@@ -1152,6 +1164,13 @@ function adimGezinme(p, no, adim) {
   let hedef = son ? -1 : adaSonu ? -2 : no + 1;
   let yazi  = son ? 'Bitir' : adaSonu ? 'Adayı bitir' : 'İleri';
   let kip   = '';
+  /* Görsel dünya adasında dört adım bitmeden "Adayı bitir" ana düğme gibi
+     duruyor ve kullanıcıyı erken çıkarıyordu: bitene kadar sönük. */
+  let sonuk = '';
+  if (adim.tur === 'gorsel') {
+    const gd = gorselAdaDurumu(p);
+    sonuk = gd.tam ? ' tam' : ' sonuk';
+  }
   if (YENI_KIP[p.id] && !son) {
     const kalan = yeniKararlar(p.palet).filter(a => a.anahtar !== adim.anahtar);
     const sira  = kalan.length
@@ -1170,7 +1189,7 @@ function adimGezinme(p, no, adim) {
               data-eylem="tasarim-adim" data-proje="${p.id}"
               data-deger="${adaBasi ? -2 : no - 1}">
         ${svg(ICON.chevron, 14)} ${adaBasi ? 'Harita' : 'Geri'}</button>
-      <button class="ag ileri${kip ? ' yeni' : ''}" type="button"${kip}
+      <button class="ag ileri${kip ? ' yeni' : ''}${sonuk}" type="button"${kip}
               data-eylem="tasarim-adim" data-proje="${p.id}" data-deger="${hedef}">
         ${yazi} ${svg(ICON.chevron, 14)}</button>
     </div>`;
@@ -1206,89 +1225,141 @@ function adimRafi(p, a) {
    yuvalara çevirir, adresleri bir sonraki bloğa taşır.
    ========================================================================== */
 
-/* Ada gövdesi — dört adım, sırayla açılır. */
-function gorselDunyaGovdesi(p) {
+/* Adanın kendi durumu: dört adım, hangisi bitti, sıradaki hangisi.
+   Bir yerde hesaplanıyor ki başlık, gövde ve alt düğme aynı şeyi söylesin. */
+function gorselAdaDurumu(p) {
   const pl    = p.palet || {};
-  const yon   = AUTH.yonetici;
   const logo  = DB.logoAdres[p.id];
   const isl   = gorselAdresi(p, 'G0');
   const tarif = String(pl.tarif || '').trim();
-  const yuvalar = pl.gorseller || [];
+  const yuvalar = (pl.gorseller || []).filter(y => y.no !== 'G0');
   const dolu  = yuvalar.filter(y => y.yol).length;
-  const malzemeTam = !!logo && !!isl;
 
-  return `<div class="gd-kaydir">`
+  const adimlar = [
+    { ad: 'Malzeme', bitti: !!logo && !!isl,
+      ozet: [logo ? 'logo' : '', isl ? 'işletme görseli' : ''].filter(Boolean).join(' + ') || 'iki görsel gerekiyor' },
+    /* Promptun verildiğini Studio göremiyor; tarif geldiyse verilmiş demektir. */
+    { ad: 'Tasarım promptu', bitti: !!tarif, ozet: tarif ? 'verildi' : 'bekliyor' },
+    { ad: 'Tarifi yapıştır', bitti: !!tarif && yuvalar.length > 0,
+      ozet: yuvalar.length ? yuvalar.length + ' yuva açıldı' : 'bekliyor' },
+    { ad: 'Görselleri yerine koy', bitti: yuvalar.length > 0 && dolu === yuvalar.length,
+      ozet: yuvalar.length ? dolu + '/' + yuvalar.length + ' dolu' : 'bekliyor' },
+  ];
 
-  + durakKarti(1, malzemeTam, 'Malzeme',
+  /* Sıradaki: bitmemiş ilk adım. Hepsi bittiyse -1. */
+  const simdi = adimlar.findIndex(a => !a.bitti);
+  return { adimlar, simdi, tam: simdi < 0, logo, isl, tarif, yuvalar, dolu };
+}
+
+/* Ada başlığı — kendi dört adımını sayar. Kalan kararları sayan genel
+   şerit burada "1 / 15" diyordu ve bu ada tek adım olduğu için yanıltıyordu. */
+function gorselAdaBasligi(p) {
+  const d = gorselAdaDurumu(p);
+  const biten = d.adimlar.filter(a => a.bitti).length;
+
+  return `<div class="ada-bas">
+    <button class="ab-no ${d.tam ? 'tam' : ''}" type="button" title="Haritaya dön"
+            data-eylem="tasarim-adim" data-proje="${p.id}" data-deger="-2">
+      ${d.tam ? svg(ICON.tik, 13) : '1'}</button>
+    <span class="ab-yz"><b>Görsel dünya</b>
+      <i>${d.tam
+        ? 'Görsel dil hazır · ' + d.yuvalar.length + ' görsel.'
+        : 'Uygulamanın bütün havası bu adadan çıkıyor.'}</i></span>
+    <span class="ab-say mono">${biten}/${d.adimlar.length}</span>
+  </div>
+  <div class="ada-serit">${d.adimlar.map((a, i) =>
+    `<i class="${a.bitti ? 'on' : i === d.simdi ? 'simdi' : ''}"></i>`).join('')}</div>`;
+}
+
+/* Ada gövdesi — aynı anda tek kart açık. Biten adımlar özetiyle kapanır,
+   bekleyenler sade satır olur. Dördü birden açıkken hangisinin sırası
+   olduğu anlaşılmıyordu. */
+function gorselDunyaGovdesi(p) {
+  const d   = gorselAdaDurumu(p);
+  const yon = AUTH.yonetici;
+
+  /* Kapalı satır: biten ya da henüz sırası gelmemiş adım. */
+  const kapali = (i, a) => `
+    <button class="ada-satir ${a.bitti ? 'bitti' : 'bekleyen'}" type="button"
+            data-eylem="gorsel-adim" data-proje="${p.id}" data-deger="${i}">
+      <span class="as-no">${a.bitti ? svg(ICON.tik, 12) : i + 1}</span>
+      <b>${esc(a.ad)}</b>
+      <span class="as-ozet mono">${esc(a.ozet)}</span>
+      <span class="as-cev">${svg(ICON.chevron, 13)}</span>
+    </button>`;
+
+  /* Elle açılan adım varsa o, yoksa sıradaki. */
+  const acik = GORSEL_ADIM[p.id] != null ? GORSEL_ADIM[p.id] : d.simdi;
+
+  const govde = [
+    () => durakKarti(1, d.adimlar[0].bitti, 'Malzeme',
       'Logo sihirbazda alındı. Bir de <b>işletmeyi anlatan görsel</b> gerekiyor — '
-      + 'mekân, ürün ya da vitrin. Konseptin tek kaynağı bu; ChatGPT rengi, '
-      + 'dokuyu ve havayı ondan çıkaracak.', `
-    <div class="gd-iki">
-      <div class="gd-kutu ${logo ? 'var' : ''}"
-           ${yon ? `data-eylem="logo-yukle" data-proje="${p.id}" role="button" tabindex="0"` : ''}>
-        <span class="gd-on ${logo ? 'resim' : ''}" ${logo ? `data-logo="${esc(logo)}"` : ''}>
-          ${logo ? '' : svg(ICON.folder, 20)}</span>
-        <b>Logo</b><i>${logo ? 'hazır · değiştirmek için dokun' : 'sihirbazda yüklenmedi'}</i>
-      </div>
-      <div class="gd-kutu ${isl ? 'var' : ''}"
-           ${yon ? `data-eylem="isletme-gorseli" data-proje="${p.id}" role="button" tabindex="0"` : ''}>
-        <span class="gd-on ${isl ? 'resim' : ''}" ${isl ? `data-logo="${esc(isl)}"` : ''}>
-          ${isl ? '' : '+'}</span>
-        <b>İşletme görseli</b><i>${isl ? 'hazır · değiştirmek için dokun' : 'dokun, seç'}</i>
-      </div>
-    </div>`)
+      + 'mekân, ürün ya da vitrin. Konseptin tek kaynağı bu.', `
+      <div class="gd-iki">
+        <div class="gd-kutu ${d.logo ? 'var' : ''}"
+             ${yon ? `data-eylem="logo-yukle" data-proje="${p.id}" role="button" tabindex="0"` : ''}>
+          <span class="gd-on ${d.logo ? 'resim' : ''}" ${d.logo ? `data-logo="${esc(d.logo)}"` : ''}>
+            ${d.logo ? '' : svg(ICON.folder, 20)}</span>
+          <b>Logo</b><i>${d.logo ? 'hazır · değiştir' : 'sihirbazda yüklenmedi'}</i>
+        </div>
+        <div class="gd-kutu ${d.isl ? 'var' : ''}"
+             ${yon ? `data-eylem="isletme-gorseli" data-proje="${p.id}" role="button" tabindex="0"` : ''}>
+          <span class="gd-on ${d.isl ? 'resim' : ''}" ${d.isl ? `data-logo="${esc(d.isl)}"` : ''}>
+            ${d.isl ? '' : '+'}</span>
+          <b>İşletme görseli</b><i>${d.isl ? 'hazır · değiştir' : 'dokun, seç'}</i>
+        </div>
+      </div>`),
 
-  + durakKarti(2, !!tarif, 'Tasarım promptu',
+    () => durakKarti(2, d.adimlar[1].bitti, 'Tasarım promptu',
       'Promptu kopyala, <b>iki görselle birlikte</b> ChatGPT\'ye ver. Altı ekranı '
       + 'tasarlar, gereken görselleri kendi üretir ve hangisinin nereye gideceğini '
       + 'numarasıyla yazar. Beğenene kadar orada konuş — Studio karışmaz.'
-      + (malzemeTam ? '' : ' <b class="eksik">Önce iki görseli de yükle.</b>'), `
-    <div class="gd-uret">
-      <div class="gd-us">${svg(ICON.katman, 13)}<b>Tema</b><span>renk · yüzey · tipografi</span></div>
-      <div class="gd-us">${svg(ICON.katman, 13)}<b>İkon seti</b><span>işe özel çizim</span></div>
-      <div class="gd-us">${svg(ICON.katman, 13)}<b>Yeni görseller</b><span>üretir, numaralar</span></div>
-      <div class="gd-us">${svg(ICON.katman, 13)}<b>Ekran düzeni</b><span>altı ekran</span></div>
-    </div>
-    <div class="kur-dug">
-      ${promptBaglantisi({ tur: 'gorselTasarim', proje: p.id, hedef: 'chatgpt',
-        yazi: 'Kopyala ve ChatGPT\'de aç', kapali: !malzemeTam })}
-    </div>
-    <div class="kur-dug">
-      ${promptBaglantisi({ tur: 'gorselTarif', proje: p.id, hedef: 'chatgpt', ikincil: true,
-        yazi: 'Beğendiğinde: tarif promptu', kapali: !malzemeTam })}
-    </div>`)
+      + (d.adimlar[0].bitti ? '' : ' <b class="eksik">Önce iki görseli de yükle.</b>'), `
+      <div class="kur-dug">
+        ${promptBaglantisi({ tur: 'gorselTasarim', proje: p.id, hedef: 'chatgpt',
+          yazi: 'Kopyala ve ChatGPT\'de aç', kapali: !d.adimlar[0].bitti })}
+      </div>
+      <div class="kur-dug">
+        ${promptBaglantisi({ tur: 'gorselTarif', proje: p.id, hedef: 'chatgpt', ikincil: true,
+          yazi: 'Beğendiğinde: tarif promptu', kapali: !d.adimlar[0].bitti })}
+      </div>`),
 
-  + durakKarti(3, !!tarif, 'Tarifi yapıştır',
-      tarif
-        ? 'Tarif alındı. Görsel dil ve yerleşim aşağıda; değiştirmek istersen '
-          + 'yeniden yapıştır.'
+    () => durakKarti(3, d.adimlar[2].bitti, 'Tarifi yapıştır',
+      d.tarif
+        ? 'Tarif alındı. Değiştirmek istersen yeniden yapıştır.'
         : 'ChatGPT\'nin verdiği tarifi bırak. Studio yerleşimi okuyup '
           + '<b>isimli görsel yuvaları</b> açar.', `
-    ${tarif ? tarifKarti(p) : ''}
-    <div class="kur-dug">
-      <button class="sayfa-dug ${tarif ? 'ikincil' : (malzemeTam ? '' : 'ikincil')}" type="button"
-              data-eylem="tarif-aktar" data-proje="${p.id}">
-        ${svg(ICON.ice, 15)} ${tarif ? 'Tarifi değiştir' : 'Tarifi yapıştır'}</button>
-    </div>`)
+      <div class="kur-dug">
+        <button class="sayfa-dug ${d.tarif ? 'ikincil' : ''}" type="button"
+                data-eylem="tarif-aktar" data-proje="${p.id}">
+          ${svg(ICON.ice, 15)} ${d.tarif ? 'Tarifi değiştir' : 'Tarifi yapıştır'}</button>
+      </div>`),
 
-  + durakKarti(4, yuvalar.length > 0 && dolu === yuvalar.length, 'Görselleri yerine koy',
-      yuvalar.length
+    () => durakKarti(4, d.adimlar[3].bitti, 'Görselleri yerine koy',
+      d.yuvalar.length
         ? 'ChatGPT\'nin ürettiklerini indir, yuvalara bırak. Hangisinin nereye '
           + 'gideceğini yuva söylüyor — sıra karıştıramazsın.'
         : '<b class="eksik">Önce tarifi yapıştır.</b> Yuvaları tarif açıyor.', `
-    <div class="kur-dug">
-      <button class="sayfa-dug ${yuvalar.length && dolu < yuvalar.length ? '' : 'ikincil'}"
-              type="button" data-eylem="gorsel-yuvalar" data-proje="${p.id}"
-              ${yuvalar.length ? '' : 'disabled'}>
-        ${svg(ICON.katman, 15)} Yuvaları aç${yuvalar.length ? ` — ${dolu}/${yuvalar.length} dolu` : ''}</button>
-    </div>
-    ${yuvalar.length && dolu < yuvalar.length ? `
-      <div class="note note-kucuk">${svg(ICON.uyari, 15)}
-        <span>Yuvalar dolmadan 2. blok yarım kalır — eksik görsel Claude'un
-        elinde kırık bağlantı olur.</span></div>` : ''}`)
+      <div class="kur-dug">
+        <button class="sayfa-dug ${d.yuvalar.length && d.dolu < d.yuvalar.length ? '' : 'ikincil'}"
+                type="button" data-eylem="gorsel-yuvalar" data-proje="${p.id}"
+                ${d.yuvalar.length ? '' : 'disabled'}>
+          ${svg(ICON.katman, 15)} Yuvaları aç${d.yuvalar.length
+            ? ` — ${d.dolu}/${d.yuvalar.length} dolu` : ''}</button>
+      </div>`),
+  ];
 
-  + `</div>`;
+  return `<div class="gd-kaydir">${
+    d.adimlar.map((a, i) => i === acik
+      /* Açık kart sıradaki iş; "sırada" demek yerine "şimdi" diyor. */
+      ? `<div class="ada-acik">${govde[i]().replace('>sırada<', '>şimdi<')}</div>`
+      : kapali(i, a)).join('')
+  }${d.tam ? tarifKarti(p) : ''}</div>`;
 }
+
+/* Elle açılan adım. Kapalı satıra dokununca oraya bakılır; ada değişince
+   sıfırlanır ki bir sonraki projede eski seçim yapışıp kalmasın. */
+const GORSEL_ADIM = {};
 
 /* Bir yuvanın imzalı adresi. G0 = işletme görseli (ChatGPT'ye giden, tarif
    isterse G1 olarak kullanılan). */
@@ -3943,13 +4014,13 @@ function kurulumSayfasi(p, d) {
 }
 
 /* Beta, Final ve Güncellemeler kartları — kurulum durağıyla aynı dil. */
-function durakKarti(no, bitti, ad, aciklama, govde) {
+function durakKarti(no, bitti, ad, aciklama, govde, rozet) {
   return `
     <div class="kur-kart ${bitti ? 'bitti' : ''}">
       <div class="kur-bas">
         <span class="kur-no">${bitti ? svg(ICON.tik, 12) : no}</span>
         <b>${esc(ad)}</b>
-        <span class="kur-rozet">${bitti ? 'tamam' : 'sırada'}</span>
+        <span class="kur-rozet">${esc(rozet || (bitti ? 'tamam' : 'sırada'))}</span>
       </div>
       <p>${aciklama}</p>
       ${govde}
@@ -6074,6 +6145,7 @@ function metinPenceresi({ baslik, aciklama, metin, dosya, geri, ac }) {
     const acBag = $('[data-mp="ac"]', kutu);
     if (acBag) acBag.addEventListener('click', () => {
       panoyaKopyala(metin);
+      uygulamayiDene(ac.yazi.includes('ChatGPT') ? 'ChatGPT' : 'Claude Code');
       toast('Kopyalandı — ' + ac.yazi.replace(/^.*ve /, '') + '…', 'basari');
     });
 
@@ -6496,6 +6568,28 @@ function logoSec(projeId) {
    jestinin içinde başlıyor. */
 
 const CHATGPT_ADRES = 'https://chatgpt.com/';
+
+/* Telefonda uygulamanın kendisini açmayı deniyoruz. Bu şemalar resmî
+   belgelenmiş değil; kuruluysa uygulama devralır, kurulu değilse hiçbir
+   şey olmaz ve bağlantı normal seyrinde web'e gider. Kayıp yok. */
+const UYGULAMA_SEMA = {
+  'ChatGPT': 'chatgpt://',
+  'Claude Code': 'claude://',
+};
+
+function uygulamayiDene(ad) {
+  const sema = UYGULAMA_SEMA[ad];
+  /* Yalnız telefon ve tablette: masaüstünde kurulu uygulama yok, üstelik
+     tarayıcı "bilinmeyen adres" uyarısı çıkarıyor. */
+  if (!sema || !matchMedia('(max-width: 900px)').matches) return;
+  try {
+    const cerceve = document.createElement('iframe');
+    cerceve.style.display = 'none';
+    cerceve.src = sema;
+    document.body.appendChild(cerceve);
+    setTimeout(() => cerceve.remove(), 1200);
+  } catch (h) { /* şema tanınmıyorsa sessizce web'e devam */ }
+}
 
 /* Hangi düğme hangi promptu üretir. */
 const PANO_PROMPT = {
@@ -7386,6 +7480,7 @@ async function eylemCalistir(el) {
   if (e === 'tasarim-ada') {
     const pr = DB.proje(el.dataset.proje);
     if (!pr) return;
+    delete GORSEL_ADIM[pr.id];
     TASARIM_MOD[pr.id] = 'adim';
     TASARIM_YER[pr.id] = Number(el.dataset.deger);
     render();
@@ -7446,6 +7541,13 @@ async function eylemCalistir(el) {
 
   if (e === 'logo-yukle')    return logoSec(el.dataset.proje);
   if (e === 'isletme-gorseli') return isletmeGorseliSec(el.dataset.proje);
+
+  /* Kapalı adım satırına dokunuldu: o kart açılsın, sıradaki kapansın. */
+  if (e === 'gorsel-adim') {
+    const i = Number(el.dataset.deger);
+    GORSEL_ADIM[el.dataset.proje] = (GORSEL_ADIM[el.dataset.proje] === i) ? null : i;
+    return render();
+  }
 
   if (e === 'tarif-aktar')   return tarifAktar(el.dataset.proje);
   if (e === 'gorsel-yuvalar') return gorselYuvalari(el.dataset.proje);
@@ -8903,6 +9005,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     panoyaKopyala(metin);
+    uygulamayiDene(el.dataset.hedef);
 
     const yazi = $('.kd-yazi', el);
     el.classList.add('kopyalandi');

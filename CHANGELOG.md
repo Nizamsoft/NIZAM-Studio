@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü
 
+## v0.74.0
+- **Görsel dünya adasında artık tek kart açık.** Dört kart aynı anda "sırada" yazıyordu, hangisinin sırası olduğu anlaşılmıyordu. Şimdi biten adım tik ve özetiyle kapanıyor (*"logo + işletme görseli"*, *"3 yuva açıldı"*), sıradaki açık ve **şimdi** etiketli, bekleyenler sade satır. Kapalı satıra dokununca o adım açılıyor.
+- **Şerit adanın kendi adımını sayıyor.** Genel adım şeridi kalan bütün kararları sayıp *"1 / 15"* diyordu; bu ada tek adım olduğu için yanıltıyordu. Yerine dört bölmeli kendi şeridi ve `2/4` sayacı geldi.
+- **Başlık iki kez yazmıyor.** Üstteki ada başlığı kaldı, altındaki ikinci büyük başlık gitti.
+- **"Adayı bitir" ada bitene kadar sönük**, bitince yeşile dönüyor. Hiçbir şey yapılmadan ana düğme gibi durup kullanıcıyı erken çıkarıyordu.
+- **"Bitiş" haritadan çıktı.** Özet bir ada değil; haritanın altında *"Bütün kararları gör"* satırı oldu. Beşinci ada gibi durunca "daha bir ada var" hissi veriyordu.
+- **Prompt düğmeleri telefonda uygulamayı açmayı deniyor.** ChatGPT ve Claude için uygulama şeması deneniyor; kurulu değilse hiçbir şey olmuyor ve bağlantı normal seyrinde web'e gidiyor. Şemalar resmî belgelenmiş değil, o yüzden web yolu hep duruyor.
+
 ## v0.73.0
 Dördü de ilk gerçek kullanımda çıktı.
 
