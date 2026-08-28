@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## v0.71.0
+- **Tarif promptu artık görselleri de zorunlu istiyor.** Eskiden son satırda *"görselleri tek tek verebilirsin"* diyordu; ChatGPT tarifi yazıp duruyordu, görselleri elle istemek gerekiyordu. Artık ayrı ve zorunlu bir bölüm: iki bölümü verdikten hemen sonra, sormadan, YERLEŞİM'deki her görseli üretecek.
+- Kurallar netleşti: her görsel ayrı mesajda ve başında `G2 · gorsel-2.jpg` yazacak · dosya adı YERLEŞİM'dekiyle **birebir** aynı olacak · `.svg` olanlar resim değil **SVG kodu** olarak gelecek (kopyalanıp dosyaya kaydedilebilsin) · ikon seti tek dosyada, her simge kendi `<symbol id>` içinde · doku dikişsiz · illüstrasyon zemini saydam · yer tutucu yasak · üretemediğini sessizce atlamayacak.
+- YERLEŞİM biçim açıklamasına eklendi: yazdığın dosya adı bağlayıcıdır, görsel aynı adla üretilecek — uygulama onu o adla arıyor.
+
 ## v0.70.1
 - **Tarif başlıkları `##` olmadan da tanınıyor.** ChatGPT bölüm başlıklarını bazen düz `GÖRSEL DİL` / `YERLEŞİM` diye yazıyor; ayrıştırıcı yalnız `##` ile arıyordu. Bulamayınca yuvalar yine açılıyordu ama yerleşim satırları görsel dil metninin içinde kalıp 2. bloğa iki kez giriyordu.
 

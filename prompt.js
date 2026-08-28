@@ -821,7 +821,8 @@ const PROMPT = {
     s.push('- **numara**: `G1`, `G2`… ürettiğin sırayla. `G1` benim verdiğim');
     s.push('  işletme görselidir; kullanmadıysan onu yazma.');
     s.push('- **dosya adı**: `gorsel-1.jpg` gibi, küçük harf, Türkçe harf yok.');
-    s.push('  Simge seti için `.svg` yaz.');
+    s.push('  Simge seti ve süsleme için `.svg` yaz. Burada yazdığın ad');
+    s.push('  bağlayıcı: görseli aynı adla üreteceksin, uygulama o adla arayacak.');
     s.push('- **nerede**: kısa ad — "Panel açılışı", "Giriş ekranı zemini".');
     s.push('- **nasıl duracağı**: ölçü, perde, opaklık — tek cümle.');
     s.push('- Satır başına `-` ya da numara koyma, tabloya çevirme.');
@@ -834,8 +835,29 @@ const PROMPT = {
     s.push('- Kullanmadığın bir görseli YERLEŞİM\'e yazma.');
     s.push('');
 
-    s.push('Tarifi verdikten sonra ürettiğin görselleri tek tek indirebileceğim');
-    s.push('biçimde ver — her birinin numarasını söyleyerek.');
+    s.push('## Sonra görselleri ver — bu bölüm zorunlu');
+    s.push('Tarif tek başına işe yaramıyor: kodu yazacak olan görselleri de');
+    s.push('almalı. İki bölümü verdikten **hemen sonra**, sormadan, beklemeden');
+    s.push('`YERLEŞİM` listesindeki **her görseli tek tek üret**.', '');
+
+    s.push('- Her görsel **ayrı mesajda** gelsin; başında numarası ve dosya adı');
+    s.push('  yazsın: `G2 · gorsel-2.jpg`.');
+    s.push('- **Dosya adı YERLEŞİM\'de yazdığıyla birebir aynı olsun.** Uzantıyı');
+    s.push('  değiştirme; listede `.svg` yazan `.png` olarak gelmesin.');
+    s.push('- **`.svg` uzantılı olanları resim olarak üretme, SVG kodu olarak yaz.**');
+    s.push('  Kod bloğu içinde, kopyalayıp dosyaya kaydedebileceğim şekilde,');
+    s.push('  `<svg …>` ile başlayıp `</svg>` ile biten tek parça.');
+    s.push('- İkon seti tek dosyada gelsin; her simge kendi `<symbol id="…">`');
+    s.push('  öğesinde ve anlaşılır bir adla (`ikon-siparis`, `ikon-rapor`).');
+    s.push('- **Doku dikişsiz olsun** — yan yana döşenince ek yeri görünmesin.');
+    s.push('- İllüstrasyonların zemini **saydam** olsun; beyaz kutu içinde verme.');
+    s.push('- Örnek, yer tutucu, "burada şöyle bir görsel olacak" gibi şeyler');
+    s.push('  gönderme. Gerçek dosyayı üret.');
+    s.push('- Bir görseli üretemiyorsan sessizce atlama: hangisi ve neden,');
+    s.push('  tek cümleyle söyle.', '');
+
+    s.push('Hepsi bittiğinde tek satırla onayla: kaç görsel verdin ve');
+    s.push('numaraları ne. Ben bunları uygulamadaki yuvalarına koyacağım.');
 
     return s.join('\n');
   },
