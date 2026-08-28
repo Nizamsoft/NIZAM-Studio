@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.69.0
+- **Bütün prompt düğmeleri artık "kopyala ve aç".** Dokununca prompt panoya girer, düğme *"ChatGPT açılıyor…"* yazar ve hedef sohbet yeni sekmede açılır. Görsel dünya'nın iki promptu **ChatGPT**'ye, kalan hepsi **Claude Code**'a gider.
+- Sonraki bloklar **mevcut oturumu** açıyor (`claude.ai/code`); yalnız ilk tanışma ve Studio geliştirmesi yeni oturum açıyor. Her blokta `/new` açmak gereksiz sohbet yığıyordu.
+- Düğmeler gerçek `<a target="_blank">` — iOS'ta ana ekrandan açılan uygulamada `window.open` sessizce çalışmıyor, üstelik genel eylem dinleyicisi `preventDefault` çağırıp bağlantıyı öldürüyordu. Kopyalama dokunma jestinin içinde, `await` beklemeden başlıyor.
+- Görev ve Studio geliştirme promptları pencereyle veriliyor; oradaki ana düğme de kopyalayıp açıyor.
+
 ## v0.68.0
 - **Tasarım durağı baştan kuruldu: 50 karar yerine 13.** Renk, kart biçimi, simge seti, tipografi — bunları artık Studio sormuyor. Logo ve **işletme görseli** ChatGPT'ye gidiyor, o altı ekranı tasarlayıp bir **görsel dil tarifi** döndürüyor, Claude Code bütün ekranları o tarife göre kuruyor. Studio hiçbir estetik karar vermiyor: malzeme topluyor, prompt üretiyor, cevabı taşıyor.
 - **On ada dörde indi:** Görsel dünya · Kabuk · Davranış · Sistem. Kalan 13 kararın ortak özelliği, bir ekran görüntüsünde **görünmemeleri** — masaüstü genişliği telefon tasarımında yok, hareket miktarı durağan resimde yok, bildirimin nereye çıktığı davranıştır.

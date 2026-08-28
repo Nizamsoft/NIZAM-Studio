@@ -3138,23 +3138,26 @@ ekran planı.
             font-size: 11px; line-height: 1.5; color: var(--ink-dim); }
 .adim-not svg { flex: 0 0 auto; margin-top: 1px; color: var(--ink-faint); }
 
-/* Kopyala düğmesi: dokununca ikon tike döner, yazı değişir. */
-.kopyala-dug { display: inline-flex; align-items: center; justify-content: center; gap: 7px; }
+/* Kopyala düğmesi: dokununca ikon tike döner, yazı değişir.
+   `.pano-dug` aynı görünüşün bağlantı hâli — prompt düğmeleri gerçek
+   <a> olmak zorunda, yoksa iOS'ta uygulama kipinde sekme açılmıyor. */
+.pano-dug { text-decoration: none; }
+.kopyala-dug, .pano-dug { display: inline-flex; align-items: center; justify-content: center; gap: 7px; }
 .kd-ikon { position: relative; width: 15px; height: 15px; flex: 0 0 15px; }
 .kd-ikon svg { position: absolute; inset: 0; transition: opacity .18s ease, transform .18s ease; }
 .kd-ikon svg:last-child { opacity: 0; transform: scale(.5) rotate(-25deg); }
-.kopyala-dug.kopyalandi .kd-ikon svg:first-child { opacity: 0; transform: scale(.5); }
-.kopyala-dug.kopyalandi .kd-ikon svg:last-child { opacity: 1; transform: none; }
+.kopyala-dug.kopyalandi .kd-ikon svg:first-child, .pano-dug.kopyalandi .kd-ikon svg:first-child { opacity: 0; transform: scale(.5); }
+.kopyala-dug.kopyalandi .kd-ikon svg:last-child, .pano-dug.kopyalandi .kd-ikon svg:last-child { opacity: 1; transform: none; }
 /* Kopyalanınca iki düğme rol değiştirir: iş bitti, sıra yapıştırmada.
    Kırmızı tek yerde kalsın diye kopyalanan düğme sessizleşir. */
-.kopyala-dug.kopyalandi {
+.kopyala-dug.kopyalandi, .pano-dug.kopyalandi {
   background: linear-gradient(180deg, var(--surface-3), var(--kart-alt));
   color: var(--ink-soft);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .14), inset 0 -1px 0 rgba(0, 0, 0, .5);
 }
-.kopyala-dug.kopyalandi .kd-ikon { color: var(--basari, #3d9970); }
+.kopyala-dug.kopyalandi .kd-ikon, .pano-dug.kopyalandi .kd-ikon { color: var(--basari, #3d9970); }
 .kd-yazi { white-space: nowrap; transition: opacity .18s ease; }
-.kopyala-dug.kopyalandi .kd-yazi { font-size: 13px; }
+.kopyala-dug.kopyalandi .kd-yazi, .pano-dug.kopyalandi .kd-yazi { font-size: 13px; }
 
 /* Sıradaki adım: yapıştır düğmesi kopyalanana kadar bekler, sonra öne çıkar. */
 .sayfa-dug.parla {
@@ -4531,11 +4534,12 @@ a:hover { color: var(--red-ink); }
             color: var(--ink); }
 .anl-kutu:focus { outline: none; border-color: var(--metal-1); }
 .anl-dug { display: flex; gap: 9px; margin-top: 11px; }
-.anl-dug button { flex: 1; height: 48px; border-radius: 15px; cursor: pointer;
+.anl-dug button, .anl-dug a { flex: 1; height: 48px; text-decoration: none; border-radius: 15px; cursor: pointer;
                   font-family: inherit; font-size: 13px; font-weight: 600; display: flex;
                   align-items: center; justify-content: center; gap: 7px;
                   border: 1px solid var(--line); background: var(--yuva);
                   color: var(--ink-soft); }
+.anl-dug a { color: var(--ink); }
 .anl-dug button.ana { background: var(--surface-2); border-color: var(--metal-2);
                       color: var(--ink-strong); }
 .anl-dug button:disabled { opacity: .45; cursor: default; }

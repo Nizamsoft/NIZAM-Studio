@@ -1250,13 +1250,13 @@ function gorselDunyaGovdesi(p) {
       <div class="gd-us">${svg(ICON.katman, 13)}<b>Ekran düzeni</b><span>altı ekran</span></div>
     </div>
     <div class="kur-dug">
-      <button class="sayfa-dug kopyala-dug ${malzemeTam ? '' : 'ikincil'}" type="button"
-              data-eylem="gorsel-tasarim" data-proje="${p.id}" ${malzemeTam ? '' : 'disabled'}>
-        <span class="kd-ikon">${svg(ICON.kopya, 15)}${svg(ICON.tik, 15)}</span>
-        <span class="kd-yazi">Tasarım promptunu kopyala</span></button>
+      ${promptBaglantisi({ tur: 'gorselTasarim', proje: p.id, hedef: 'chatgpt',
+        yazi: 'Kopyala ve ChatGPT\'de aç', kapali: !malzemeTam })}
     </div>
-    <button class="promptu-gor" type="button" data-eylem="gorsel-tarif-prompt"
-            data-proje="${p.id}">Beğendiğinde: tarif promptunu kopyala</button>`)
+    <div class="kur-dug">
+      ${promptBaglantisi({ tur: 'gorselTarif', proje: p.id, hedef: 'chatgpt', ikincil: true,
+        yazi: 'Beğendiğinde: tarif promptu', kapali: !malzemeTam })}
+    </div>`)
 
   + durakKarti(3, !!tarif, 'Tarifi yapıştır',
       tarif
@@ -1412,10 +1412,8 @@ function tasarimOzeti(p) {
     }).join('')}</div>`).join('')
     + celiskiKutusu(p)
     + (AUTH.yonetici ? `
-      <button class="sayfa-dug kopyala-dug" data-eylem="tasarim-blok"
-              data-proje="${p.id}" type="button">
-        <span class="kd-ikon">${svg(ICON.kopya, 15)}${svg(ICON.tik, 15)}</span>
-        <span class="kd-yazi">2. bloğu kopyala — görsel dil</span></button>
+      ${promptBaglantisi({ tur: 'tasarim', proje: p.id, slug: depoSlug(p.repo),
+        yazi: '2. blok — kopyala ve Claude Code\'da aç' })}
       <button class="tumSifir" type="button" data-eylem="tasarim-tum-sifirla" data-proje="${p.id}">
         ${svg(ICON.geriAl, 15)} Tüm tasarımı sıfırla</button>` : '');
 }
@@ -3096,8 +3094,11 @@ function anlatEkrani(p, t) {
     <textarea class="anl-kutu" data-anlat="${p.id}"
       placeholder="Örn. Muhasebe modülünde hesaplar sayfası olacak. 100-Kasa, 102-Banka gibi ana hesaplar, altlarında 102.01 gibi alt hesaplar…">${esc(t.anlat || '')}</textarea>
     <div class="anl-dug">
-      <button type="button" data-eylem="anlat-prompt" data-proje="${p.id}"
-              ${dolu ? '' : 'disabled'}>${svg(ICON.kopya, 15)} Prompt oluştur</button>
+      ${dolu
+        ? `<a target="_blank" rel="noopener" data-pano="cozumleme" data-proje="${p.id}"
+             data-hedef="Claude Code" href="${esc(claudeAdresi(depoSlug(p.repo), false))}">
+             ${svg(ICON.kopya, 15)} Kopyala ve aç</a>`
+        : `<button type="button" disabled>${svg(ICON.kopya, 15)} Prompt oluştur</button>`}
       <button class="ana" type="button" data-eylem="anlat-aktar" data-proje="${p.id}">
         ${svg(ICON.ice, 15)} Cevabı yapıştır</button>
     </div>
@@ -3563,10 +3564,14 @@ function yapiBaglari() {
       const pr = DB.proje(anlat.dataset.anlat);
       if (!pr) return;
       yapiTaslak(pr).anlat = anlat.value;
-      const dug = $('[data-eylem="anlat-prompt"]');
-      if (dug) {
-        dug.disabled = anlat.value.trim().length <= 20;
-        dug.classList.toggle('ikincil', dug.disabled);
+      /* Düğme artık gerçek bir bağlantı; açık/kapalı hâli çizimde belirleniyor.
+         Eşiği geçtiğimiz anda bir kez yeniden çiziyoruz, her tuşta değil. */
+      const acik = anlat.value.trim().length > 20;
+      if (acik !== !!$('[data-pano="cozumleme"]')) {
+        const yer = anlat.selectionStart;
+        render();
+        const yeni = $('[data-anlat]');
+        if (yeni) { yeni.focus(); try { yeni.setSelectionRange(yer, yer); } catch (h) {} }
       }
     });
   }
@@ -3670,10 +3675,8 @@ function gelistirmeSayfasi(p, d) {
           <div class="std-satir"><b>${esc(ad)}</b><span>${esc(deger)}</span></div>`).join('')}
       </div>
       <div class="kur-dug">
-        <button class="sayfa-dug kopyala-dug" type="button"
-                data-eylem="standart-blok" data-proje="${p.id}">
-          <span class="kd-ikon">${svg(ICON.kopya, 15)}${svg(ICON.tik, 15)}</span>
-          <span class="kd-yazi">Standart promptunu kopyala</span></button>
+        ${promptBaglantisi({ tur: 'standart', proje: p.id, slug: depoSlug(p.repo),
+          yazi: 'Kopyala ve Claude Code\'da aç' })}
       </div>
       <button class="promptu-gor" type="button" data-eylem="standart-goruldu"
               data-proje="${p.id}">Bu programda gerekmiyor, gördüm</button>`) : '')
@@ -3987,11 +3990,9 @@ function betaSayfasi(p, d) {
         + (yayin ? '' : ' <b class="eksik">Önce yayın adresini kaydet</b> — '
             + 'Claude uygulamayı hangi adrese kuracağını bilmeli.'), `
       <div class="kur-dug">
-        <button class="sayfa-dug kopyala-dug ${kunyeVar && yayin ? '' : 'ikincil'}"
-                data-eylem="yapi-blok" data-proje="${p.id}" type="button"
-                ${yayin ? '' : 'disabled'}>
-          <span class="kd-ikon">${svg(ICON.kopya, 15)}${svg(ICON.tik, 15)}</span>
-          <span class="kd-yazi">3. bloğu kopyala</span></button>
+        ${promptBaglantisi({ tur: 'yapi', proje: p.id, slug: depoSlug(p.repo),
+          ikincil: !(kunyeVar && yayin),
+          yazi: '3. blok — kopyala ve Claude Code\'da aç', kapali: !yayin })}
       </div>
       <button class="promptu-gor" type="button" data-eylem="yapi-blok-gor"
               data-proje="${p.id}">Bloğu gör</button>`)
@@ -5749,12 +5750,16 @@ async function gorevEylemi(tip, id, deger) {
   if (tip === 'kapat')  return modalKapat();
 
   if (tip === 'prompt') {
+    const g = DB.gorev(id);
+    const gp = g ? DB.proje(g.proje_id) : null;
     return metinPenceresi({
       baslik: 'Hazır prompt',
       aciklama: 'Kopyala, Claude Code\'a yapıştır. Başka bir şey yazmana gerek yok.',
       metin: PROMPT.gorev(id),
       dosya: null,
       geri: () => gorevKartiAc(id),
+      ac: { adres: claudeAdresi(gp ? depoSlug(gp.repo) : '', false),
+            yazi: 'Kopyala ve Claude Code\'da aç' },
     });
   }
 
@@ -6037,14 +6042,19 @@ function kisiSor(mevcut) {
    METİN PENCERESİ — prompt ve kimlik dosyası
    ========================================================================== */
 
-function metinPenceresi({ baslik, aciklama, metin, dosya, geri }) {
+function metinPenceresi({ baslik, aciklama, metin, dosya, geri, ac }) {
   modalAc(`
     ${modalBaslik(ICON.kopya, baslik, aciklama)}
     <pre class="kod">${esc(metin)}</pre>
     <div class="modal-alt">
       <button class="btn btn-ghost" data-mp="kapat" type="button">${geri ? 'Geri' : 'Kapat'}</button>
       ${dosya ? `<button class="btn btn-ghost" data-mp="indir" type="button">İndir</button>` : ''}
-      <button class="btn btn-primary" data-mp="kopyala" type="button"><span>Panoya Kopyala</span></button>
+      ${ac
+        /* Gerçek bağlantı: kopyalama dokunma jestinin içinde başlıyor,
+           await beklemiyor — iOS'ta aksi hâlde sekme açılmıyor. */
+        ? `<a class="btn btn-primary" target="_blank" rel="noopener"
+             data-mp="ac" href="${esc(ac.adres)}"><span>${esc(ac.yazi)}</span></a>`
+        : `<button class="btn btn-primary" data-mp="kopyala" type="button"><span>Panoya Kopyala</span></button>`}
     </div>`, kutu => {
     $('[data-mp="kapat"]', kutu).addEventListener('click', () => {
       modalKapat();
@@ -6057,7 +6067,14 @@ function metinPenceresi({ baslik, aciklama, metin, dosya, geri }) {
       toast(dosya + ' indirildi.');
     });
 
-    $('[data-mp="kopyala"]', kutu).addEventListener('click', async () => {
+    const acBag = $('[data-mp="ac"]', kutu);
+    if (acBag) acBag.addEventListener('click', () => {
+      panoyaKopyala(metin);
+      toast('Kopyalandı — ' + ac.yazi.replace(/^.*ve /, '') + '…', 'basari');
+    });
+
+    const kopyaDug = $('[data-mp="kopyala"]', kutu);
+    if (kopyaDug) kopyaDug.addEventListener('click', async () => {
       const yazi = $('[data-mp="kopyala"] span', kutu);
       const ok = await panoyaKopyala(metin);
       if (ok) {
@@ -6465,48 +6482,54 @@ function logoSec(projeId) {
   alan.click();
 }
 
-/* Tek dokunuşta panoya alır: düğme "kopyalandı"ya döner, yapıştır düğmesi
-   parlar. İki dokunuş (önce pencere aç, sonra kopyala) gereksizdi. */
-async function promptKopyala(el, uret, eskiYazi, baslik) {
-  const p = DB.proje(el.dataset.proje);
-  if (!p) { toast('Proje bulunamadı.', 'hata'); return; }
 
-  /* Metin üretimi patlarsa düğme sessizce ölüyordu: hata görünsün. */
-  let metin;
-  try {
-    metin = uret(p);
-  } catch (h) {
-    toast('Prompt üretilemedi: ' + h.message, 'hata');
-    return;
+/* ---------- Prompt bağlantıları ----------
+   Prompt düğmeleri gerçek `<a target="_blank">` — dokununca panoya yazar ve
+   hedef yapay zekâyı açar. Neden düğme değil: iOS'ta ana ekrandan açılan
+   uygulamada `window.open` sessizce çalışmıyor, üstelik genel `data-eylem`
+   dinleyicisi preventDefault çağırıp bağlantıyı öldürüyor. Bu yüzden ayrı
+   `data-pano` dinleyicisi var ve kopyalama `await` beklemeden, dokunma
+   jestinin içinde başlıyor. */
+
+const CHATGPT_ADRES = 'https://chatgpt.com/';
+
+/* Hangi düğme hangi promptu üretir. */
+const PANO_PROMPT = {
+  tanisma:       p => PROMPT.tanisma(p.id),
+  gorselTasarim: p => PROMPT.gorselTasarim(p.id),
+  gorselTarif:   p => PROMPT.gorselTarif(p.id),
+  tasarim:       p => PROMPT.tasarim(p.id),
+  cozumleme:     p => PROMPT.cozumleme(p, yapiTaslak(p)),
+  yapi:          p => PROMPT.yapi(p.id),
+  standart:      p => PROMPT.programGelistirme(p.id),
+};
+
+/* Claude Code adresi. `yeni` yalnız ilk oturumda: sonraki bloklar aynı
+   sohbete yapıştırılıyor, her seferinde /new açmak gereksiz oturum yığıyor
+   (bir kere yaşandı, sohbetleri tek tek arşivlemek gerekti). */
+function claudeAdresi(slug, yeni) {
+  if (!yeni) return 'https://claude.ai/code';
+  return 'https://claude.ai/code/new'
+    + (slug ? '?repositories=' + encodeURIComponent(slug) : '');
+}
+
+/* Kopyala-ve-aç bağlantısı. hedef: 'chatgpt' · 'claude' · 'claude-yeni'
+   ya da doğrudan bir adres. */
+function promptBaglantisi({ tur, proje, yazi, hedef = 'claude', ikincil, kapali, slug }) {
+  const adres = hedef === 'chatgpt' ? CHATGPT_ADRES
+    : hedef === 'claude'      ? claudeAdresi(slug, false)
+    : hedef === 'claude-yeni' ? claudeAdresi(slug, true)
+    : hedef;
+  const ad = hedef === 'chatgpt' ? 'ChatGPT' : 'Claude Code';
+  if (kapali) {
+    return `<button class="sayfa-dug ikincil" type="button" disabled>
+      ${svg(ICON.kopya, 15)} ${esc(yazi)}</button>`;
   }
-  if (!metin || !metin.trim()) {
-    toast('Prompt boş çıktı — önceki durakları tamamla.', 'uyari');
-    return;
-  }
-
-  const oldu = await panoyaKopyala(metin);
-  if (!oldu) {
-    /* Pano kapalıysa (izin, eski tarayıcı) metni pencereyle ver —
-       düğme her hâlükârda bir iş yapsın. */
-    metinPenceresi({ baslik: baslik || 'Prompt',
-      aciklama: 'Pano açılamadı. Metni seçip elle kopyala.', metin });
-    return;
-  }
-
-  const yazi = $('.kd-yazi', el);
-  el.classList.add('kopyalandi');
-  if (yazi) yazi.textContent = 'Kopyalandı';
-
-  /* Görsel dünya adasında sıradaki iş yapıştırmak: o düğme parlasın. */
-  const yapistir = $('[data-eylem="tarif-aktar"][data-proje="' + p.id + '"]');
-  if (yapistir) yapistir.classList.add('parla');
-
-  clearTimeout(promptKopyala.zaman);
-  promptKopyala.zaman = setTimeout(() => {
-    if (!el.isConnected) return;
-    el.classList.remove('kopyalandi');
-    if (yazi) yazi.textContent = eskiYazi;
-  }, 2200);
+  return `<a class="sayfa-dug pano-dug ${ikincil ? 'ikincil' : ''}" target="_blank"
+     rel="noopener" data-pano="${esc(tur)}" data-proje="${esc(proje)}"
+     data-hedef="${esc(ad)}" href="${esc(adres)}">
+    <span class="kd-ikon">${svg(ICON.kopya, 15)}${svg(ICON.tik, 15)}</span>
+    <span class="kd-yazi">${esc(yazi)}</span></a>`;
 }
 
 /* ---------- Görsel dünya eylemleri ---------- */
@@ -7418,18 +7441,7 @@ async function eylemCalistir(el) {
   if (e === 'teknik-duzenle') return teknikDuzenle(el.dataset.proje);
 
   if (e === 'logo-yukle')    return logoSec(el.dataset.proje);
-  if (e === 'tasarim-blok')      return promptKopyala(el, pr => PROMPT.tasarim(pr.id),
-                                                      '2. bloğu kopyala — tasarım kararları',
-                                                      'Tasarım kararları (2/3)');
   if (e === 'isletme-gorseli') return isletmeGorseliSec(el.dataset.proje);
-
-  if (e === 'gorsel-tasarim')
-    return promptKopyala(el, pr => PROMPT.gorselTasarim(pr.id),
-      'Tasarım promptunu kopyala', 'Görsel dünya — tasarım promptu');
-
-  if (e === 'gorsel-tarif-prompt')
-    return promptKopyala(el, pr => PROMPT.gorselTarif(pr.id),
-      'Beğendiğinde: tarif promptunu kopyala', 'Tarif promptu');
 
   if (e === 'tarif-aktar')   return tarifAktar(el.dataset.proje);
   if (e === 'gorsel-yuvalar') return gorselYuvalari(el.dataset.proje);
@@ -7564,16 +7576,8 @@ async function eylemCalistir(el) {
       aciklama: 'Claude Code oturumuna yapıştır.', metin: PROMPT.yapi(pr.id) });
   }
 
-  if (e === 'yapi-blok')  return promptKopyala(el, pr => PROMPT.yapi(pr.id),
-                                                '3. bloğu kopyala',
-                                                'Modüller ve sayfalar (3/3)');
 
   /* Yeni standardı bu programa taşıyan prompt. */
-  if (e === 'standart-blok') {
-    return promptKopyala(el, pr => PROMPT.programGelistirme(pr.id),
-      'Standart promptunu kopyala', 'Standart güncellemesi');
-  }
-
   /* "Gördüm" — standart bu programda gerekmiyorsa rozeti susturur. */
   if (e === 'standart-goruldu') {
     const pr = DB.proje(el.dataset.proje);
@@ -7594,14 +7598,16 @@ async function eylemCalistir(el) {
       buton: 'Promptu al', cok: true,
     });
     if (istek === null) return;
-    const metin = PROMPT.studioGelistirme(istek);
-    const oldu = await panoyaKopyala(metin);
-    if (!oldu) {
-      return metinPenceresi({ baslik: 'Studio geliştirmesi',
-        aciklama: 'Pano açılamadı. Metni seçip elle kopyala.', metin });
-    }
-    toast('Prompt kopyalandı. NIZAM-Studio deposunda yapıştır.', 'basari');
-    return;
+    /* Metin yazıldıktan sonra dokunma jesti bitmiş oluyor; doğrudan sekme
+       açamayız (iOS engelliyor). Promptu pencereyle verip açma işini
+       kullanıcının bir sonraki dokunuşuna bırakıyoruz. */
+    return metinPenceresi({
+      baslik: 'Studio geliştirmesi',
+      aciklama: 'NIZAM-Studio deposunda yeni bir oturumda çalışacak.',
+      metin: PROMPT.studioGelistirme(istek),
+      ac: { adres: claudeAdresi(APP.depo, true),
+            yazi: 'Kopyala ve Claude Code\'da aç' },
+    });
   }
 
   if (e === 'beta-onay') {
@@ -8881,7 +8887,23 @@ document.addEventListener('DOMContentLoaded', () => {
     const el = e.target.closest('[data-pano]');
     if (!el) return;
     const pr = DB.proje(el.dataset.proje);
-    if (pr && el.dataset.pano === 'tanisma') panoyaKopyala(PROMPT.tanisma(pr.id));
+    const uret = PANO_PROMPT[el.dataset.pano];
+    if (!pr || !uret) return;
+
+    let metin;
+    try { metin = uret(pr); } catch (h) { toast('Prompt üretilemedi: ' + h.message, 'hata'); return; }
+    if (!metin || !metin.trim()) {
+      /* Boş prompt sessizce gitmesin: sekme açılır ama panoda bir şey olmaz. */
+      e.preventDefault();
+      toast('Prompt boş çıktı — önceki adımları tamamla.', 'uyari');
+      return;
+    }
+    panoyaKopyala(metin);
+
+    const yazi = $('.kd-yazi', el);
+    el.classList.add('kopyalandi');
+    if (yazi) yazi.textContent = (el.dataset.hedef || 'Sohbet') + ' açılıyor…';
+    toast('Prompt panoda — ' + (el.dataset.hedef || 'sohbet') + '\'e yapıştır.', 'basari');
   });
 
   /* "GitHub'da aç"a dokunuldu: kullanıcı dönünce adresi kendimiz yazacağız. */
