@@ -1342,8 +1342,11 @@ function tarifCozumle(metin, eskiYuvalar) {
   /* Bölümler: "## YERLEŞİM" başlığından sonrası. Başlık yoksa bütün metinde
      boru işaretli satır aranır. */
   const buyuk = ham.toLocaleUpperCase('tr');
-  const yi = buyuk.search(/##\s*YERLE[SŞ]/);
-  const di = buyuk.search(/##\s*G[OÖ]RSEL\s*D[İI]L/);
+  /* Başlıkları `##` ile yazmasını istiyoruz ama her seferinde uymuyor:
+     düz "YERLEŞİM" satırı da başlık sayılsın. Uymazsa bütün metin tarif
+     olarak kaydediliyor ve yerleşim satırları iki kez basılıyordu. */
+  const yi = buyuk.search(/(^|\n)[ \t]*#{0,4}[ \t]*YERLE[SŞ][İI]M[ \t]*(\n|:)/);
+  const di = buyuk.search(/(^|\n)[ \t]*#{0,4}[ \t]*G[OÖ]RSEL[ \t]*D[İI]L[ \t]*(\n|:)/);
 
   let dil = ham.trim();
   let yerBolum = ham;
@@ -1353,7 +1356,8 @@ function tarifCozumle(metin, eskiYuvalar) {
   } else if (di > -1) {
     dil = ham.slice(di).trim();
   }
-  dil = dil.replace(/^##\s*.*$/m, '').replace(/^```\w*$|^```$/gm, '').trim();
+  dil = dil.replace(/^[ \t]*#{0,4}[ \t]*G[OÖ]RSEL[ \t]*D[İI]L[ \t]*:?[ \t]*$/im, '')
+           .replace(/^```\w*$|^```$/gm, '').trim();
 
   const yuvalar = [];
   yerBolum.split('\n').forEach(satir => {

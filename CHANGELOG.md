@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.70.1
+- **Tarif başlıkları `##` olmadan da tanınıyor.** ChatGPT bölüm başlıklarını bazen düz `GÖRSEL DİL` / `YERLEŞİM` diye yazıyor; ayrıştırıcı yalnız `##` ile arıyordu. Bulamayınca yuvalar yine açılıyordu ama yerleşim satırları görsel dil metninin içinde kalıp 2. bloğa iki kez giriyordu.
+
 ## v0.70.0
 - **Tasarım promptuna kalite çıtası eklendi.** İlk denemede çıkan tasarımlar temiz ama düzdü: renkli başlık şeridi, beyaz kutular, hazır setten çıkmış görünen simgeler. Prompt "tema üret" diyordu ama **hangi katmanlar olmadan tasarımın yarım sayılacağını** söylemiyordu. Artık altı katman tek tek zorunlu: açılış görseli üstüne binen içerik · işe özel çizilmiş çok renkli simgeler · kâğıt dokusu · logo çerçevesi ve süsleme motifi · katmanlı derinlik · gerçek boyutta serif başlık.
 - Çıta bir cümleyle bağlandı: *"yönetim paneli gibi değil, butik otel uygulaması gibi görünmeli."* Yanına yasak listesi: beyaz üstüne beyaz kart, renkli şeritten ibaret başlık, Material/Lucide havası, hazır şablon.
