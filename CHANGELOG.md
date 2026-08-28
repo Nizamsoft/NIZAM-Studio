@@ -1,5 +1,14 @@
 # Değişiklik Günlüğü
 
+## v0.73.0
+Dördü de ilk gerçek kullanımda çıktı.
+
+- **Görseller tek tek isteniyor.** Dört görsel birden istenince ChatGPT ikisini yapıp duruyordu; eksik olan da fark edilmiyordu. Artık: bir mesajda tek görsel, sonunda *"kaldı: G4, G6"* satırı, sen **"devam"** diyene kadar bekle.
+- **İki ayrı simge dili.** Tek "ikon seti" istemek yanlıştı. Büyük yerlerde (hızlı işlem kartları, boş durum) zengin çok renkli illüstrasyon; alt çubuk, liste ve formlarda sade **tek renk** çizgi simge — çünkü aktif sekmede renk kodla değişiyor. Tasarım promptu artık ikisini birden kurduruyor, tarif ikisini ayrı yuva olarak yazıyor.
+- **Biçim amaca göre.** "Simge için `.svg` yaz" kuralı geri tepiyordu: gölgeli bakır illüstrasyon vektörde çıkmayınca model kolaya kaçıp düz geometrik simgeye çeviriyordu. Yeni kural: illüstrasyon, fotoğraf ve doku → **saydam PNG, en az 256px**; arayüz simgesi ve süsleme → **tek renk SVG**, renk `currentColor` ile.
+- **Dosya yolu değil, dosya.** ChatGPT `/mnt/data/...` yazıp geçmişti. Prompt artık indirilebilir dosya ya da kod bloğu istiyor.
+- Tarif promptu **yeni sohbette de** çalışıyor: "bu görselleri zaten çizdin *(yeni bir sohbetteysek: ekli tabakada)*".
+
 ## v0.72.0
 - **"Yeniden tasarlama — çıkar" kuralı geldi.** İlk gerçek denemede ortaya çıktı: ChatGPT tabakada bakır, gölgeli, hacimli ikonlar çiziyor; tek tek istenince aynı konuları **düz iki renkli geometrik simge** olarak yeniden üretiyordu. Tabakayla dosyalar arasındaki bağ kopuyordu. Tarif promptu artık açıkça söylüyor: bu görselleri zaten çizdin, şimdi yenisini üretmiyorsun — kullandığını **tek dosya hâlinde çıkarıyorsun**. Aynı çizim dili, aynı renk, aynı ışık; "daha kullanışlı olur" diye başka üsluba geçmek yasak.
 - Tasarım promptu da baştan uyarıyor: ekranları çizerken kullandığın her görseli sonradan ayrı ayrı çıkarabilecek şekilde kur, çünkü aynısı istenecek.

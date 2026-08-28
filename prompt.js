@@ -743,7 +743,11 @@ const PROMPT = {
     s.push('numarası ver. **`G1` benim verdiğim işletme görselidir** — onu');
     s.push('kullanmak istersen numarası odur, yeniden üretme.');
     s.push('');
-    s.push('- Simgeleri tek bir **SVG** dosyasında ver; PNG simge ölçeklenmiyor.');
+    s.push('- **İki ayrı simge dili kur.** Büyük yerlerde (hızlı işlem kartları,');
+    s.push('  boş durum) zengin, gölgeli, çok renkli illüstrasyon simgeler;');
+    s.push('  alt çubuk, liste satırları ve form alanlarında sade, **tek renk**,');
+    s.push('  ince çizgi simgeler. İkincisi tek renk olmalı çünkü aktif sekmede');
+    s.push('  rengi kodla değiştireceğiz.');
     s.push('- Doku ve zemin dikişsiz döşenebilsin.');
     s.push('- Metnin üstüne gelen her görselde perde ya da karartma olsun;');
     s.push('  yazı kontrastı en az **4.5:1** kalmalı.');
@@ -825,8 +829,12 @@ const PROMPT = {
     s.push('- **numara**: `G1`, `G2`… ürettiğin sırayla. `G1` benim verdiğim');
     s.push('  işletme görselidir; kullanmadıysan onu yazma.');
     s.push('- **dosya adı**: `gorsel-1.jpg` gibi, küçük harf, Türkçe harf yok.');
-    s.push('  Simge seti ve süsleme için `.svg` yaz. Burada yazdığın ad');
-    s.push('  bağlayıcı: görseli aynı adla üreteceksin, uygulama o adla arayacak.');
+    s.push('  Uzantıyı amaca göre seç: illüstrasyon ve doku `.png`, arayüz');
+    s.push('  simgesi ve süsleme `.svg`. Burada yazdığın ad bağlayıcı: görseli');
+    s.push('  aynı adla üreteceksin, uygulama o adla arayacak.');
+    s.push('- **İki simge setini ayrı satır yaz.** Örnek:');
+    s.push('  `G4 | ikon-buyuk.png | Hızlı işlem kartları | Bakır illüstrasyon, 256px, saydam`');
+    s.push('  `G5 | ikon-arayuz.svg | Alt çubuk ve liste satırları | Tek renk, currentColor`');
     s.push('- **nerede**: kısa ad — "Panel açılışı", "Giriş ekranı zemini".');
     s.push('- **nasıl duracağı**: ölçü, perde, opaklık — tek cümle.');
     s.push('- Satır başına `-` ya da numara koyma, tabloya çevirme.');
@@ -845,7 +853,8 @@ const PROMPT = {
     s.push('`YERLEŞİM` listesindeki **her görseli tek tek üret**.', '');
 
     s.push('> ### Yeniden tasarlama — çıkar');
-    s.push('> Bu görselleri tasarımda **zaten çizdin**. Şimdi yapacağın şey');
+    s.push('> Bu görselleri tasarımda **zaten çizdin** (yeni bir sohbetteysek:');
+    s.push('> yukarıda ekli tasarım tabakasında). Şimdi yapacağın şey');
     s.push('> yeni bir görsel üretmek değil, ekranlarda kullandığın görseli');
     s.push('> tek dosya hâlinde **çıkarmak**. Aynı çizim dili, aynı renkler,');
     s.push('> aynı ışık, aynı malzeme hissi. Sadeleştirme, moderniz etme,');
@@ -858,15 +867,31 @@ const PROMPT = {
     s.push('> üret; üslubu değiştirerek çözme.');
     s.push('');
 
-    s.push('- Her görsel **ayrı mesajda** gelsin; başında numarası ve dosya adı');
-    s.push('  yazsın: `G2 · gorsel-2.jpg`.');
+    s.push('### Sırayla ver — hepsini bir seferde deneme');
+    s.push('Bir mesajda **tek görsel**. Verdikten sonra tek satırla');
+    s.push('*"kaldı: G4, G6"* diye yaz ve dur. Ben **"devam"** diyeceğim,');
+    s.push('sıradakine geçeceksin. Hepsini bir seferde üretmeye kalkışınca');
+    s.push('yarıda kesiliyor ve eksik görsel fark edilmiyor.', '');
+
+    s.push('- Görselin başında numarası ve dosya adı yazsın: `G2 · gorsel-2.jpg`.');
     s.push('- **Dosya adı YERLEŞİM\'de yazdığıyla birebir aynı olsun.** Uzantıyı');
     s.push('  değiştirme; listede `.svg` yazan `.png` olarak gelmesin.');
-    s.push('- **`.svg` uzantılı olanları resim olarak üretme, SVG kodu olarak yaz.**');
-    s.push('  Kod bloğu içinde, kopyalayıp dosyaya kaydedebileceğim şekilde,');
-    s.push('  `<svg …>` ile başlayıp `</svg>` ile biten tek parça.');
-    s.push('- İkon seti tek dosyada gelsin; her simge kendi `<symbol id="…">`');
-    s.push('  öğesinde ve anlaşılır bir adla (`ikon-siparis`, `ikon-rapor`).');
+    s.push('- **Bana dosyanın kendisini ver.** İndirilebilir dosya ya da kod');
+    s.push('  bloğu; çalışma alanındaki yol (`/mnt/data/...`) işime yaramıyor,');
+    s.push('  onu indiremiyorum.', '');
+
+    s.push('### Biçim amaca göre seçilir');
+    s.push('- **İllüstrasyon, fotoğraf, doku, gölgeli/çok renkli simge → PNG.**');
+    s.push('  Saydam zemin, en az 256×256. Bunları SVG olarak üretmeye');
+    s.push('  çalışma: gölge ve malzeme hissi vektörde ya kayboluyor ya da');
+    s.push('  dosya devleşiyor. Sen de kolaya kaçıp düz simgeye çeviriyorsun —');
+    s.push('  **çevirme**, PNG ver.');
+    s.push('- **Arayüz simgesi (alt çubuk, liste, form) → SVG.** Tek renk,');
+    s.push('  gölgesiz, ince çizgi. Tek dosya; her simge kendi');
+    s.push('  `<symbol id="ikon-siparis">` öğesinde. **Dosyada renk gömülü');
+    s.push('  olmasın** (`currentColor` kullan) — aktif sekmede rengi kodla');
+    s.push('  değiştireceğiz.');
+    s.push('- **Süsleme, çerçeve, ayırıcı → SVG.** Tek ya da iki renk, sade.');
     s.push('- **Doku dikişsiz olsun** — yan yana döşenince ek yeri görünmesin.');
     s.push('- İllüstrasyonların zemini **gerçekten saydam** olsun. Arkasına');
     s.push('  açık renk leke, kâğıt parçası ya da yumuşak gölge **pişirme** —');
