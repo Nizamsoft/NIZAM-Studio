@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü
 
+## v0.79.0
+İlk tam turdan dört ders. Görseller ve tasarım doğru geldi; takılan yerler tarifin biçimiydi.
+
+- **Tarif metin olarak isteniyor.** ChatGPT tarifi tasarlanmış bir *tabaka görseli* olarak çizdi — güzel duruyordu ama Studio'ya yapıştırılamıyor, o düz metin okuyor. Prompt artık baştan söylüyor: kod bloğu içinde, kopyalanabilir metin; tablo görseli ya da rehber sayfası çizme.
+- **Tek liste, tek numaralandırma.** Önce `G1–G9`, sonra ayrı bir `G10–G20` listesi verdi; hangisinin geçerli olduğu anlaşılmıyordu. Artık: tek YERLEŞİM, `G1`'den kesintisiz; sonradan varlık eklenecekse liste baştan yazılır, yanına ikincisi eklenmez.
+- **Arayüz parçaları varlık değil.** Durum etiketi, düğme, giriş alanı, sekme, çip — kodla çiziliyor. Görsele çevrilince yazı resme gömülüyor, ölçeklenmiyor, rengi değişmiyor. Gelen `durum-etiketleri.png` hem yanlış üsluptaydı hem içine harf gömülmüştü. Tasarım promptu da artık uyarıyor: stil panelinde bileşen örneği **görünsün** ama varlık listesine girmeyecek.
+- **Doku gerçekten dikişsiz olmalı.** Gelen arka desen çerçeveli tek bir kart olarak geldi: köşelerinde süs, ortasında parlaklık. Döşenince ızgara gibi tekrar ederdi. Kural netleşti: çerçeve, kenarlık, köşe süsü ve vinyet yok; her yerinde aynı yoğunlukta, kenarları birbirine geçen karo.
+
 ## v0.78.0
 - **Logo artık varlık listesine girmiyor.** İlk başarılı tasarım turunda çıktı: ChatGPT tabakanın varlık listesine logoyu da koyuyordu. Oysa logo Studio'dan geliyor ve uygulama onu ayrı katman olarak çiziyor; yeniden üretilirse asıl logodan sapar ve ekranda iki logo üst üste biner. Üç yere kural kondu — tasarım promptunda *"ekranlarda kullan ama varlık olarak sayma"*, tarif promptunda *"YERLEŞİM'e yazma"*, görsel üretim bölümünde *"logoyu ve G1'i üretme, sıraya koyma"*.
 

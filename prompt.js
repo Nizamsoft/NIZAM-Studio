@@ -835,6 +835,9 @@ const PROMPT = {
     s.push('- **Yuvarlama** — köşe yarıçapı değeri');
     s.push('- **Bileşen örnekleri** — birincil ve ikincil düğme, durum etiketleri,');
     s.push('  giriş alanı', '');
+    s.push('> Bileşen örnekleri panelde **görünsün** ama bir sonraki adımda');
+    s.push('> varlık listesine girmeyecek: düğme ve etiket kodla çiziliyor,');
+    s.push('> dosya olarak istenmiyor.', '');
 
     s.push('Beğenmezsem söyleyeceğim, düzelteceksin. Anlaştıktan sonra senden');
     s.push('iki şey isteyeceğim: **bunu nasıl yaptığının tarifi** ve');
@@ -857,6 +860,13 @@ const PROMPT = {
     const s = [];
     s.push('Tasarımı beğendim. Şimdi **bunu nasıl yaptığını yaz** — başka biri');
     s.push('aynı dili hiç görmediği ekranlarda tekrarlayabilsin diye.', '');
+
+    s.push('> ### Metin olarak yaz — tabaka çizme');
+    s.push('> Bunu bir uygulamaya yapıştıracağım; **düz metin** okuyor,');
+    s.push('> resim okumuyor. Tarifi tasarlanmış bir tabaka, tablo görseli ya');
+    s.push('> da rehber sayfası olarak **çizme**. Kod bloğu içinde, kopyalanıp');
+    s.push('> yapıştırılabilir metin olarak ver.');
+    s.push('');
 
     s.push('İki bölüm istiyorum, **tam olarak bu başlıklarla**:', '');
 
@@ -902,11 +912,25 @@ const PROMPT = {
     s.push('- Satır başına `-` ya da numara koyma, tabloya çevirme.');
     s.push('');
 
+    s.push('### YERLEŞİM\'e neyi yazmayacaksın');
+    s.push('Varlık listesi yalnız **gerçekten dosya olması gereken** şeylerdir:');
+    s.push('fotoğraf, illüstrasyon, doku, simge seti, süsleme motifi.', '');
+    s.push('- **Arayüz parçalarını yazma.** Düğme, durum etiketi, giriş alanı,');
+    s.push('  sekme, çip, aç-kapa anahtarı — bunlar kodla çiziliyor. Renkli bir');
+    s.push('  hap ve içinde yazı; görsele çevrilirse yazı resme gömülür,');
+    s.push('  ölçeklenmez, rengi değişmez. Stil panelinde örneklerini');
+    s.push('  gösterdin, doğrusu o — ama varlık değiller.');
+    s.push('- **Logoyu yazma.** Studio\'dan geliyor.');
+    s.push('- Kullanmadığın bir görseli yazma.', '');
+
     s.push('### Şunları yapma');
     s.push('- Kod yazma. Ne CSS ne HTML — bu bir tarif, uygulama değil.');
     s.push('- İki başlığın dışına bölüm ekleme.');
     s.push('- "Duruma göre", "tercihen" gibi belirsiz ifade kullanma; kararı ver.');
-    s.push('- Kullanmadığın bir görseli YERLEŞİM\'e yazma.');
+    s.push('- **İkinci bir liste açma.** Tek YERLEŞİM, tek numaralandırma,');
+    s.push('  `G1`\'den başlayıp kesintisiz. Sonradan aklına gelen varlık olursa');
+    s.push('  listeyi baştan yaz, yanına ikinci liste ekleme — hangisinin');
+    s.push('  geçerli olduğu anlaşılmıyor.');
     s.push('');
 
     s.push('## Sonra görselleri ver — bu bölüm zorunlu');
@@ -954,7 +978,10 @@ const PROMPT = {
     s.push('  olmasın** (`currentColor` kullan) — aktif sekmede rengi kodla');
     s.push('  değiştireceğiz.');
     s.push('- **Süsleme, çerçeve, ayırıcı → SVG.** Tek ya da iki renk, sade.');
-    s.push('- **Doku dikişsiz olsun** — yan yana döşenince ek yeri görünmesin.');
+    s.push('- **Doku gerçekten dikişsiz olsun.** İçine çerçeve, kenarlık, köşe');
+    s.push('  süsü ya da ortası parlak vinyet **koyma** — bunlar döşenince');
+    s.push('  ızgara gibi tekrar eder. Doku her yerinde aynı yoğunlukta,');
+    s.push('  kenarları birbirine geçen bir karo olmalı.');
     s.push('- İllüstrasyonların zemini **gerçekten saydam** olsun. Arkasına');
     s.push('  açık renk leke, kâğıt parçası ya da yumuşak gölge **pişirme** —');
     s.push('  koyu zeminde kirli bir bulut gibi görünüyor.');
