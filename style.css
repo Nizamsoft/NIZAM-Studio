@@ -327,6 +327,30 @@ button { font-family: inherit; color: inherit; }
 }
 .icon-btn svg { width: 17px; height: 17px; }
 
+/* Üst çubuğun geri oku ----------------------------------------------------
+   Kutu yok, çerçeve yok — yalnız ok. Düğme gibi değil, yön gibi duruyor.
+
+   Ana ekranda KAYBOLMUYOR, pasifleşiyor. Gizleseydik belirip kaybolurken
+   çubuktaki her şey 45 piksel sağa sola kayardı; yeri hep ayrılı olduğu için
+   artık tek piksel oynamıyor.
+
+   Ok 20 piksel ama basılan alan 44: dokunma hedefi simgenin boyu değildir. */
+.geri-ok {
+  display: flex; align-items: center; justify-content: center;
+  flex: 0 0 24px; width: 24px; height: 44px; margin-left: -4px;
+  padding: 0; border: 0; background: none; cursor: pointer;
+  color: var(--ink-faint);
+  transition: color .16s ease, opacity .18s ease, transform .12s var(--ease);
+}
+.geri-ok svg { width: 20px; height: 20px; }
+/* Küçülme: uygulamanın her yerindeki dokunma tepkisi. Ok küçük olduğu için
+   oran da büyük — %97 bu boyutta hiç fark edilmiyor. */
+.geri-ok:not(.pasif):active { transform: scale(.82); }
+.geri-ok:focus-visible { outline: 2px solid var(--metal-1); outline-offset: 2px; border-radius: 8px; }
+
+/* Gidilecek yer yok: ok duruyor ama sönük ve basılamaz. */
+.geri-ok.pasif { opacity: .26; cursor: default; pointer-events: none; }
+
 /* ==========================================================================
    UYGULAMA İSKELETİ
    ========================================================================== */
@@ -2901,7 +2925,8 @@ a.durak:active { transform: scale(.99); transition: transform .1s var(--ease); }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
   .tilt { transform: none !important; }
-  .sa-kart:hover, .kova:hover { transform: none !important; }}
+  .sa-kart:hover, .kova:hover { transform: none !important; }
+  .geri-ok:active { transform: none !important; }}
 
 /* ==========================================================================
    ALT SEKME ÇUBUĞU — yüzen cam hap
@@ -4252,6 +4277,7 @@ a:hover { color: var(--red-ink); }
 .nav-item:hover { background: var(--surface-2); color: var(--ink); }
 .user-chip:hover { background: var(--surface-3); }
 .hesap:hover { border-color: var(--line-parlak); }
+.geri-ok:not(.pasif):hover { color: var(--ink-strong); }
 .stat[class*="k-"]:hover {
   --k-cizgi: rgba(var(--k-renk), .58);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .13),

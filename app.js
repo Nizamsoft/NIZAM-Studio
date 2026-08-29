@@ -4833,7 +4833,13 @@ function render() {
     sayfa === 'tasarim' || sayfa === 'yapi');
   ustEylemYaz(key, detay, id);
   artiYaz(key, detay, id);
-  $('#btn-back').classList.toggle('hidden', !detay && !kova);
+  /* Geri oku hiç kaybolmuyor: gidilecek bir yer yoksa yalnız soluyor ve
+     basılamaz oluyor. Gizleseydik belirip kaybolurken üst çubuk her seferinde
+     kayardı — logo, marka ve sayfa adı sağa sola oynardı. */
+  const geri = $('#btn-back');
+  const geriVar = !!(detay || kova);
+  geri.classList.toggle('pasif', !geriVar);
+  geri.disabled = !geriVar;
   projeRengiYay(detay ? DB.proje(id) : null);
 
   /* Aynı ekranda kalıp bir şeyi açıp kapatınca her şey yeniden uçuşmasın:

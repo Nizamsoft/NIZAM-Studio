@@ -1,5 +1,12 @@
 # Değişiklik Günlüğü
 
+## v0.101.0
+- **Geri oku artık üst çubuğu kaydırmıyor.** Eskiden 38 piksellik çerçeveli bir kareydi ve alt sayfaya girince beliriyordu; belirdiği anda logo, marka ve sayfa adı 45 piksel sağa kayıyordu. Şimdi yeri her ekranda ayrılı — girip çıkarken tek piksel oynamıyor.
+- **Ana ekranda kaybolmuyor, pasifleşiyor.** Ok yerinde duruyor ama sönük ve basılamaz. Gidilecek bir yer olmadığı ok'un yokluğundan değil, solukluğundan anlaşılıyor.
+- **Kutu ve çerçeve kalktı, yalnız ok kaldı.** Düğme gibi değil, yön gibi duruyor.
+- **Basınca küçülüyor** — uygulamanın her yerindeki dokunma tepkisi. Ok küçük olduğu için oran da büyük tutuldu; %97 bu boyutta hiç fark edilmiyor. Pasifken küçülmüyor.
+- Ok 20 piksel ama basılan alan 44: dokunma hedefi simgenin boyu değildir.
+
 ## v0.100.1
 - **Kova kartlarındaki sayı artık sıfırdan saymıyor**, ilk karede doğru değeriyle geliyor. Sayının yukarı tırmanması "veri henüz yüklenmedi" gibi okunuyordu; oysa değer tarayıcıdaki önbellekten geliyor ve daha ekran çizilirken belli.
 - Sayaç canlanması diğer yerlerde duruyor — orada anlatılan şey sayının kendisi değil, ilerleme.
