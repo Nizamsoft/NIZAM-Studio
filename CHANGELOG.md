@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.95.1
+- Yalnız sürüm damgası. Hiçbir görsel ya da işlevsel değişiklik yok — otomatik güncellemenin telefonda gerçekten çalıştığını görmek için gönderildi.
+
 ## v0.95.0
 - **Zemin artık düz gri değil: karbon dokusu.** İnce köşegen bir örgü. Düz yüzeyde kartlar zemine yapışık duruyordu; doku zemine derinlik veriyor ve kartlar üstünde duruyormuş gibi okunuyor.
 - **Kartlar zeminden koptu.** Gölge iki katman oldu: yakın ve sert olanı kartı zeminden ayırıyor, uzak ve yumuşak olanı yükseklik hissini veriyor. Aynı kabartma modül, standart grubu ve bilgi şeritlerine de geldi.
