@@ -156,6 +156,12 @@ const ICON = {
   /* tek katman işaretler */
   chevron: '<path d="M9 6l6 6-6 6"></path>',
 
+  /* Final durağı: teslim bayrağı. */
+  bayrak: {
+    d: '<path d="M5 4h11l-2 3.5L16 11H5z"></path>',
+    c: '<path d="M5 21V4h11l-2 3.5L16 11H5"></path>',
+  },
+
   /* Proje kovaları: süren iş ve bitmiş iş. */
   saat: {
     d: '<circle cx="12" cy="12" r="9"></circle>',
@@ -4301,6 +4307,21 @@ function projeDuraklari(p) {
   ];
 }
 
+/* Her durağın simgesi. Hepsi aynı simgeyle dururken kartlar birbirinden
+   ayırt edilemiyordu. */
+/* Bir durak kilitli mi: kendinden önceki bitmemiş bir durak varsa evet. */
+function durakKilitli(projeId, anahtar) {
+  const p = DB.proje(projeId);
+  if (!p) return false;
+  const sira = Object.keys(DURAKLAR).indexOf(anahtar);
+  if (sira < 1) return false;
+  const duraklar = projeDuraklari(p);
+  const simdi = duraklar.findIndex(d => !d.bitti);
+  return simdi !== -1 && sira > simdi;
+}
+
+const DURAK_IKON = ['kisi', 'folder', 'gAltyapi', 'gTasarim', 'goz', 'kalem', 'bayrak', 'saat'];
+
 function projeYolu(p) {
   const duraklar = projeDuraklari(p);
   /* Şimdiki durak: bitmemiş ilk durak. Son durak hiç bitmediği için
@@ -4308,22 +4329,53 @@ function projeYolu(p) {
   const simdi = duraklar.findIndex(d => !d.bitti);
   const anahtarlar = Object.keys(DURAKLAR);
 
-  return `<div class="yol">${duraklar.map((d, i) => {
-    const durum = d.bitti ? 'bitti' : (i === simdi ? 'simdi' : 'bekliyor');
-    const etiket = d.bitti ? 'tamam' : (i === simdi ? 'şimdi burada' : 'bekliyor');
+  /* Sıra YILANKAVİ: 1-2 soldan sağa, 3-4 sağdan sola. Böylece aşağı inen ok
+     geldiğin kartın tam altında duruyor. Normal okuma sırasında ok iki
+     sütunun ortasında havada kalıyor, nereden nereye gittiği anlaşılmıyordu. */
+  const kart = (d, i, sutun, satir) => {
+    const durum = d.bitti ? 'bitti' : (i === simdi ? 'simdi' : 'kilitli');
+    const etiket = d.bitti ? 'tamam' : (i === simdi ? 'şimdi burada' : d.ozet);
+    const ic = `
+      <span class="ad-ust">
+        <span class="ad-ikon">${svg(d.bitti ? ICON.tik : ICON[DURAK_IKON[i]], 18)}</span>
+        ${durum === 'kilitli'
+          ? `<span class="ad-kilit">${svg(ICON.kilit, 13)}</span>`
+          : `<span class="ad-no mono">${String(i + 1).padStart(2, '0')}</span>`}
+      </span>
+      <span class="ad-yz">
+        <span class="ad-ad">${esc(d.ad)}</span>
+        <span class="ad-alt">${esc(etiket)}</span>
+        ${d.rozet ? `<span class="yeni-rozet">${d.rozet} yeni</span>` : ''}
+      </span>`;
+    const yer = `style="grid-column:${sutun};grid-row:${satir}"`;
+    /* Kilitli adıma girilmiyor: bağlantı değil, düz kutu. */
+    return durum === 'kilitli'
+      ? `<span class="ad-kart kilitli" ${yer} aria-disabled="true">${ic}</span>`
+      : `<a class="ad-kart ${durum}" ${yer} href="#/projeler/${p.id}/${anahtarlar[i]}">${ic}</a>`;
+  };
 
-    return `
-      <a class="durak ${durum}" href="#/projeler/${p.id}/${anahtarlar[i]}">
-        <span class="durak-no">${i + 1}</span>
-        <div class="durak-bas">
-          <h3>${esc(d.ad)}</h3>
-          <em>${etiket}</em>
-          ${d.rozet ? `<span class="yeni-rozet">${d.rozet} yeni</span>` : ''}
-          <span class="durak-chev">${svg(ICON.chevron, 14)}</span>
-        </div>
-        <p>${d.ozet}</p>
-      </a>`;
-  }).join('')}</div>`;
+  /* Bir bağ, kendinden önceki adım bittiyse yeşile dönüyor. Koşul yalnız
+     bu: `simdi`ye bakmak gerekmiyor ve zararlı — her şey bitince `simdi`
+     -1 oluyordu ve hiçbir bağ yeşile dönmüyordu. */
+  const bag = (i, sutun, satir, sinif) =>
+    `<span class="bag ${sinif} ${duraklar[i - 1] && duraklar[i - 1].bitti ? 'gecti' : ''}"
+           style="grid-column:${sutun};grid-row:${satir}"><i></i><em>${svg(ICON.chevron, 13)}</em></span>`;
+
+  let ic = '';
+  for (let s = 0; s * 2 < duraklar.length; s++) {
+    const ters  = s % 2 === 1;
+    const satir = s * 2 + 1;
+    const sol = ters ? 3 : 1, sag = ters ? 1 : 3;
+    const a = s * 2, b = s * 2 + 1;
+
+    ic += kart(duraklar[a], a, sol, satir);
+    if (duraklar[b]) {
+      ic += bag(b, 2, satir, ters ? 'ters' : '');
+      ic += kart(duraklar[b], b, sag, satir);
+      if (duraklar[b + 1]) ic += bag(b + 1, sag, satir + 1, 'dikey');
+    }
+  }
+  return `<div class="adimlar">${ic}</div>`;
 }
 
 
@@ -4840,7 +4892,13 @@ function render() {
      dönmemeli, proje rengi yayılmamalı — ortada bir proje yok. */
   const kova  = key === 'projeler' && PROJE_KOVASI[id] ? id : null;
   const detay = key === 'projeler' && id && !kova;
-  const sayfa = detay && DURAKLAR[durak] ? durak : null;
+  let sayfa = detay && DURAKLAR[durak] ? durak : null;
+  /* Kilit sıkı: adres çubuğuna elle yazılsa da kilitli durak açılmıyor,
+     projenin yol haritasına düşülüyor. */
+  if (sayfa && durakKilitli(id, sayfa)) {
+    location.replace('#/projeler/' + id);
+    sayfa = null;
+  }
 
   /* Tasarım durağından çıkıldıysa kip haritaya döner: geri gelindiğinde
      yarım kalan adımın içine değil, haritanın başına düşülsün. */

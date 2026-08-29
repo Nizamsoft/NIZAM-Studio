@@ -1,5 +1,14 @@
 # Değişiklik Günlüğü
 
+## v0.106.0
+- **Projenin sekiz adımı kart oldu.** Soldan kesikli çizgili liste yerine iki sütunlu kartlar; aralarında Standartlar sayfasındaki bağ şeridi — ince çizgi, ortasında ok.
+- **Geçilen her bağ yeşile dönüyor.** Yolun nereye kadar geldiğini iz söylüyor, nerede durduğunu kırmızı kart.
+- **Sıra yılankavi:** 1-2 soldan sağa, 3-4 sağdan sola. Böylece aşağı inen ok geldiğin kartın tam altında duruyor; normal okuma sırasında ok iki sütunun ortasında havada kalıyor, nereden nereye gittiği anlaşılmıyordu. Sağdan sola akan satırlarda yatay ok da sola dönüyor.
+- **Kilit sıkı:** sırası gelmemiş adım sönük duruyor, bağlantı değil düz kutu — dokunulmuyor. Adres çubuğuna elle yazılsa da açılmıyor, projenin yol haritasına düşülüyor.
+- Bitmiş adımın simgesi tike dönüyor, alt yazısı "tamam" oluyor. Her adımın kendi simgesi var — hepsi aynı simgeyle dururken kartlar birbirinden ayırt edilemiyordu.
+- Başlığa iki satırlık sabit yer ayrıldı: "Tasarımı belirleme" iki satıra sürerken "Beta" bir satırda kalıyor ve kartların iç hizası kayıyordu.
+- **Bulunan hata:** bağın yeşile dönme koşuluna gereksiz yere "şimdiki adım" da karışmıştı; bütün adımlar bitince şimdiki adım kalmadığı için hiçbir bağ yeşile dönmüyordu. Koşul yalnız "önceki adım bitti mi" oldu.
+
 ## v0.105.1
 - **Görsel değiştirmek artık ilk denemede tutuyor.** Eskiden var olan bir görselin üstüne yenisini koyduğunda ilk sefer hiçbir şey değişmiyor, ikinci seferde oluyordu.
 - Sebep bir yarış durumuydu: servis işçisi resmi **yolla** önbelliyor ve yeni dosya aynı yolun üzerine yazılıyor. Uygulama "bu resmi unut" mesajını gönderiyor ama **beklemiyordu**; yeni adresi istediğinde silme daha işlenmemiş oluyor ve önbellekten yine eski kopya geliyordu. İkinci denemede silme çoktan olmuş oluyordu — bu yüzden o çalışıyordu.
