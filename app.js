@@ -354,16 +354,9 @@ const VIEWS = {
         ${araclar}`;
     }
 
-    return `
-      <div class="note" style="margin-bottom:12px">
-        ${svg(ICON.info, 15)}
-        <span>Bunlar her programda geçerli. Yeni program kurulurken hepsi
-        prompta kendiliğinden giriyor; kurulmuş programlara Geliştirme
-        durağından duyuruluyor.</span>
-      </div>
-      ${araclar}
-      ${DB.standartGruplari().map(grupKarti).join('')}
-    `;
+    /* Açıklama şeridi kalktı: liste zaten kendini anlatıyor, her açılışta
+       aynı üç satırı okumak yalnız yer kaplıyordu. */
+    return araclar + DB.standartGruplari().map(grupKarti).join('');
   },
 
   /* ---------- Sektörler ---------- */

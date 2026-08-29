@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.93.1
+- Standartlar ekranının tepesindeki açıklama şeridi kalktı. Liste zaten kendini anlatıyor; her açılışta aynı üç satırı okumak yalnız yer kaplıyordu.
+
 ## v0.93.0
 - **Standartlar iki eksene oturdu: grup ve alan.** Grup işin cinsini söylüyor — Altyapı, Veri, Güvenlik, Tasarım, Animasyon, Optimizasyon, Biçim, Erişilebilirlik. Alan ekranın parçasını söylüyor — Alt çubuk, Üst çubuk, Panel, Sayfa geçişi. Bir satır tek bir kural; "Alt çubuk standartları" demek, alanı Alt çubuk olan kuralların tamamı demek.
 - **Standart eklemek artık elle form doldurmak değil.** Standartlar ekranında iki düğme var: *Standart ekleme promptu* ile promptu alıp değişikliği yaptığın Claude oturumuna yapıştırıyorsun; Claude kuralı sabit bir blok olarak veriyor; *Kuralı yapıştır* ile blok Studio'ya giriyor ve standart kuruluyor. Yapıştırmadan önce hangi kuralın nereye düşeceğini önizleme gösteriyor.
