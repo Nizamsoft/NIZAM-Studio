@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## v0.92.0
+- **Kısayol kartları yukarı çekildi.** Fotoğrafın masa hizasında değil, logo duvarının hemen altında başlıyorlar.
+- **Panel kaydırılmıyor.** İçerik zaten tam sığıyordu; kalan tek hareket parmağı bırakınca gelen esnemeydi, o da kalktı.
+- Kartların tepe payı artık ekran boyuna göre kendini ayarlıyor. Sabit bir değer kısa telefonlarda kartları alt çubuğun altına itiyordu; uzun ekranda 228 pikselde duruyor, ekran kısaldıkça kendiliğinden yukarı çıkıyor.
+
 ## v0.91.0
 - **"Bugünkü durum" kartı panelden kalktı.** Sayılar zaten alt çubuğun rozetlerinde ve Görevler ekranında duruyordu; panel ikinci bir proje listesi taşımak zorunda kalıyordu. Panel artık yalnızca nereye gidileceğini söylüyor.
 - **Selam ortalandı ve iki satıra ayrıldı.** Hap duruyor: üstte "İyi günler, Nizam", altında tarih. Avatar kalktı — kim olduğun sağ üstteki kutuda zaten yazıyor.

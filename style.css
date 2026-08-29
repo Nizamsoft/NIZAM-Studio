@@ -2318,7 +2318,15 @@ a.durak:active { transform: scale(.99); transition: transform .1s var(--ease); }
   display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px;
   margin-top: 16px;
 }
-#main.susulu .kisayol { margin-top: 268px; }
+/* Izgara fotoğrafın masa hizasında başlıyor. Sabit bir değer kısa
+   ekranlarda kartları alt çubuğun altına itiyordu: 552px selamın, ızgaranın
+   ve çubuk payının kapladığı yer, kalanı boşluğa veriliyor. Uzun ekranda
+   228'de duruyor, kısaldıkça kendiliğinden yukarı çıkıyor. */
+#main.susulu .kisayol { margin-top: clamp(0px, 100vh - 552px, 228px); }
+
+/* Panel kaydırılmıyor: içerik zaten tam sığıyor, kalan tek hareket
+   parmağı bırakınca gelen esneme oluyordu. */
+#main.susulu .view { overflow: hidden; }
 .kk {
   position: relative; display: block; text-align: center; cursor: pointer;
   padding: 13px 8px 22px; border-radius: 16px; text-decoration: none;
