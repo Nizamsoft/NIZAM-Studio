@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü
 
+## v0.103.0
+- **Görsel yüklenirken kartın üstünde dolan bir halka var.** Yanında yüzde ve kaç KB'ın gittiği yazıyor; bitince yeşil tike dönüyor. Beklerken kartın kendi görseli soluyor — yenisinin geldiği belli olsun.
+- **Halkanın dolduğu oran gerçek.** Supabase istemcisi yüklemeyi `fetch` ile yapıyor ve `fetch` gönderim ilerlemesi bildirmiyor; bu yüzden o tek çağrı istemcinin dışına çıkarıldı ve aynı adrese aynı oturum anahtarıyla `XMLHttpRequest` ile gidiliyor. Hata metinleri eskisiyle birebir aynı kaldı — "kova yok", "izin yok" cevapları yine Türkçe çıkıyor.
+- Uydurma dolan bir çubuk koymadık: erken biterse zıplar, gecikirse sonda bekler; bir kez öyle olunca kullanıcı hiçbir çubuğa bir daha inanmaz.
+- Baytlar gidince halka doluyor ama başlık **"Görsel gönderildi · bitiriliyor…"** oluyor: imzalı adres ve palet kaydı hâlâ sürüyor, iş bitmeden "bitti" demiyoruz.
+- **Yükleme kısaldı: görsel artık 1200 piksele küçültülüyor, 1600'e değil.** Ölçü kartın ihtiyacından çıkıyor — kart 358 css piksel, 3x telefonda 1074 piksel istiyor. 1600 bunun bir buçuk katıydı; kazandırdığı netlik ekranda görünmüyor, bekleme ise uzuyordu. ChatGPT için de fazlasıyla yeterli, görsel modeller zaten kendileri küçültüyor.
+- **Bulunan hata:** bitiş tikinin simgesi görünmüyordu. "Bitince halkayı gizle" kuralı `.py-halka svg` diyordu ve tik de halkanın içinde duruyor; kural tiki de gizliyordu. Doğrudan çocuk seçicisine çevrildi.
+
 ## v0.102.0
 - **Proje kartı artık işletmenin görselini taşıyor.** Görsel kartın tamamını kaplıyor; rozet, firma adı ve platform satırı **alta indi**, üst yarı görsele bırakıldı.
 - Bilgileri aşağı almak bir zevk kararı değil, ölçüm sonucu: bilgiler üstteyken firma adının kontrast oranı **2.8**, platform satırınınki **1.2** çıkıyordu — çizimlerin en parlak yeri tam oraya denk geliyor. Kartın dibi zaten koyu; aşağı alınca ikisi de **8'in üstüne** çıktı.

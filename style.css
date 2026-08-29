@@ -811,6 +811,42 @@ svg .dolgu > * { fill: currentColor; fill-opacity: .22; }
    aşağıda, orada böyle bir pay gerekmiyor. */
 .proje:not(.gorselli) .proje-ust { padding-right: 34px; }
 .proje-bilgi:active { transform: scale(.88); }
+
+/* Görsel yüklenirken kartın üstünde duran katman ------------------------------
+   Halkanın dolduğu oran gerçek: gönderilen bayttan geliyor, zamana bağlı bir
+   sayaçtan değil. Uydurma dolan bir çubuk erken biterse zıplıyor, gecikirse
+   sonda bekliyor; bir kez öyle olunca kullanıcı hiçbir çubuğa inanmıyor. */
+.proje-yukleme {
+  position: absolute; inset: 0; z-index: 7;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
+  background: rgba(10, 9, 8, .78);
+}
+/* Yeni görselin geldiği belli olsun diye eski görsel geri çekiliyor.
+   Kardeş seçici işe yaramıyor: katman görselin SONRASINDA duruyor. */
+.proje.yukluyor .proje-gorsel { opacity: .5; transition: opacity .3s var(--ease); }
+
+.py-halka { position: relative; display: flex; width: 56px; height: 56px; }
+/* Doğrudan çocuk: tikin kendi svg'si de halkanın İÇİNDE duruyor, seçici
+   ayrılmazsa aşağıdaki "bitince halkayı gizle" kuralı tiki de gizliyor. */
+.py-halka > svg { width: 56px; height: 56px; transform: rotate(-90deg); }
+.py-iz   { fill: none; stroke: rgba(255, 255, 255, .14); stroke-width: 4; }
+.py-dolu { fill: none; stroke: var(--metal-2); stroke-width: 4; stroke-linecap: round;
+           transition: stroke-dashoffset .18s linear; }
+
+/* Bitince halka yerini tike bırakıyor. */
+.py-tik {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  border-radius: 999px; color: #0f1a15; opacity: 0; transform: scale(.5);
+  background: linear-gradient(180deg, var(--st-done-t), var(--st-done));
+  transition: opacity .2s var(--ease), transform .3s var(--yay);
+}
+.py-tik svg { stroke-width: 3; }
+.proje-yukleme.bitti .py-halka > svg { opacity: 0; }
+.proje-yukleme.bitti .py-tik { opacity: 1; transform: none; }
+
+.py-yazi { font-family: var(--yazi-baslik); font-weight: 600; font-size: 12.5px; color: var(--ink-strong); }
+.py-alt  { font-family: var(--yazi-kod); font-size: 10.5px; color: var(--ink-soft); margin-top: -8px;
+           font-variant-numeric: tabular-nums; }
 .proje-bilgi:focus-visible { outline: 2px solid var(--metal-1); outline-offset: 2px; }
 .proje:active { transform: scale(.99); }
 .proje:focus-visible { outline: 2px solid var(--metal-1); outline-offset: 2px; }

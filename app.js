@@ -4361,13 +4361,15 @@ function projeKarti(p, i = 0) {
      geliyor. Kartın dibi zaten koyu; aşağı almak oranları sekizin üstüne
      çıkarıyor ve görselin en iyi kısmını da serbest bırakıyor. */
   return `
-    <div class="card proje tilt ${gor ? 'gorselli' : ''}" data-eylem="proje-ac" data-id="${p.id}"
+    <div class="card proje tilt ${gor ? 'gorselli' : ''} ${GORSEL_YUKLENIYOR[p.id] ? 'yukluyor' : ''}"
+         data-eylem="proje-ac" data-id="${p.id}"
          role="button" tabindex="0" style="${renkDegiskenleri(p.renk)};--i:${i}">
       <span class="parlama"></span>
       ${gor ? `<span class="proje-gorsel"><img src="${esc(gor)}" alt="" loading="lazy"></span>
                <span class="proje-tepe"></span>` : ''}
       ${AUTH.yonetici ? `<button class="proje-bilgi" data-eylem="proje-gorsel" data-id="${p.id}"
         type="button" aria-label="${gor ? 'Görseli değiştir' : 'Görsel ekle'}">i</button>` : ''}
+      ${GORSEL_YUKLENIYOR[p.id] ? gorselYuklemeKatmani(p.id) : ''}
 
       <div class="proje-govde">
         <div class="proje-ust">
@@ -4770,6 +4772,26 @@ function standartKarti(st, i = 0) {
                       data-ad="${esc(st.ad)}" type="button">${svg(ICON.cop, 13)} Kaldır</button>
             </div>` : ''}
         </div>` : ''}
+    </div>`;
+}
+
+/* Yükleme katmanı: dolan halka, durum yazısı ve bitince tik.
+   Halkanın dolduğu oran gerçek — gönderilen bayttan geliyor, sayaçtan değil. */
+function gorselYuklemeKatmani(projeId) {
+  const d = GORSEL_YUKLENIYOR[projeId] || { oran: 0, boyut: 0 };
+  const CEVRE = 157;
+  return `
+    <div class="proje-yukleme ${d.bitti ? 'bitti' : ''}" data-proje="${projeId}">
+      <span class="py-halka">
+        <svg viewBox="0 0 60 60" aria-hidden="true">
+          <circle class="py-iz"   cx="30" cy="30" r="25"></circle>
+          <circle class="py-dolu" cx="30" cy="30" r="25"
+                  stroke-dasharray="${CEVRE}" stroke-dashoffset="${CEVRE * (1 - d.oran)}"></circle>
+        </svg>
+        <span class="py-tik">${svg(ICON.tik, 26)}</span>
+      </span>
+      <span class="py-yazi">${d.bitti ? 'Görsel gönderildi' : 'Görsel yükleniyor'}</span>
+      <span class="py-alt">%${Math.round(d.oran * 100)} · ${kb(d.giden || 0)}/${kb(d.boyut)}</span>
     </div>`;
 }
 
@@ -6898,10 +6920,39 @@ function promptBaglantisi({ tur, proje, yazi, hedef = 'claude', ikincil, kapali,
 
 /* ---------- Görsel dünya eylemleri ---------- */
 
+/* Hangi projenin görseli yükleniyor ve ne kadarı gitti.
+   Ekranda tutuluyor ki kart yeniden çizilse de gösterge kaybolmasın. */
+const GORSEL_YUKLENIYOR = {};
+
 /* İşletme görseli — G0 yuvası. Tarif değişse de silinmiyor. */
 function isletmeGorseliSec(projeId) {
   gorselSecVeYukle(projeId, 'G0', 'İşletme görseli');
 }
+
+/* Halkayı ve yazıyı yerinde günceller. Bütün ekranı yeniden çizmiyoruz:
+   yükleme boyunca saniyede onlarca kez gelen bir olay bu. */
+function gorselGostergesiTazele(projeId) {
+  const kat = document.querySelector('.proje-yukleme[data-proje="' + projeId + '"]');
+  const d   = GORSEL_YUKLENIYOR[projeId];
+  if (!kat || !d) return;
+
+  const halka = $('.py-dolu', kat);
+  const yazi  = $('.py-alt', kat);
+  const bas   = $('.py-yazi', kat);
+  /* Baytlar gitti ama imzalı adres ve palet kaydı sürüyor. "Yüklendi" demek
+     erken olur; tik doluyken başlık da buna göre değişiyor. */
+  if (bas) bas.textContent = d.bitti ? 'Görsel gönderildi' : 'Görsel yükleniyor';
+  const CEVRE = 157;                       /* 2πr, r = 25 */
+  if (halka) halka.setAttribute('stroke-dashoffset', String(CEVRE * (1 - d.oran)));
+  if (yazi) {
+    yazi.textContent = d.bitti
+      ? 'bitiriliyor…'
+      : '%' + Math.round(d.oran * 100) + ' · ' + kb(d.giden || 0) + '/' + kb(d.boyut);
+  }
+  kat.classList.toggle('bitti', !!d.bitti);
+}
+
+function kb(bayt) { return Math.round(bayt / 1024) + ' KB'; }
 
 function gorselSecVeYukle(projeId, no, ad) {
   const alan = document.createElement('input');
@@ -6928,12 +6979,33 @@ function gorselSecVeYukle(projeId, no, ad) {
       } catch (h) { toast(h.message, 'hata'); return; }
     }
 
-    toast('Görsel yükleniyor…');
+    /* Gösterge kartın üstünde: bildirim balonu ekranın dibinde açılıp
+       kayboluyor, oysa beklenen şey kartın kendisi. */
+    GORSEL_YUKLENIYOR[projeId] = { oran: 0, boyut: dosya.size };
+    render();
+
     try {
-      await DB.gorselYukle(projeId, no, dosya);
+      await DB.gorselYukle(projeId, no, dosya, (giden, toplam) => {
+        const d = GORSEL_YUKLENIYOR[projeId];
+        if (!d) return;
+        d.oran   = toplam ? giden / toplam : 0;
+        d.boyut  = toplam || d.boyut;
+        d.giden  = giden;
+        gorselGostergesiTazele(projeId);
+      });
+      /* Yükleme bitti ama imzalı adres ve palet kaydı hâlâ gidiyor: halka
+         dolu kalsın, iş gerçekten bitmeden "bitti" demesin. */
+      GORSEL_YUKLENIYOR[projeId] = { oran: 1, boyut: dosya.size, giden: dosya.size, bitti: true };
+      gorselGostergesiTazele(projeId);
+      await new Promise(r => setTimeout(r, 480));
+      delete GORSEL_YUKLENIYOR[projeId];
       render();
       toast('Görsel yüklendi.', 'basari');
-    } catch (h) { toast(h.message, 'hata'); }
+    } catch (h) {
+      delete GORSEL_YUKLENIYOR[projeId];
+      render();
+      toast(h.message, 'hata');
+    }
   });
 
   alan.click();

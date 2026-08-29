@@ -911,7 +911,56 @@ const DB = {
 
   gorselYol(projeId, dosya) { return projeId + '/' + dosya; },
 
-  async gorselYukle(projeId, no, dosya) {
+  /* Depoya XHR ile yükler ve kaç bayt gittiğini bildirir.
+
+     Supabase istemcisi yüklemeyi `fetch` ile yapıyor; `fetch` gönderim
+     ilerlemesi bildirmediği için "yükleniyor" göstergesi ancak belirsiz bir
+     şerit olabiliyordu. Aynı adrese aynı oturum anahtarıyla XHR ile gidince
+     `upload.onprogress` gerçek oranı veriyor — dolan çubuk uydurma olmuyor.
+
+     Hata metinleri istemcininkiyle aynı kalsın diye gövde `depoHatasi`ye
+     veriliyor: kullanıcı "kova yok" ya da "izin yok" cevabını eskisi gibi
+     Türkçe görüyor. */
+  async depoyaGonder(kova, yol, dosya, ilerleme) {
+    const oturum = await AUTH.db.auth.getSession();
+    const jeton  = oturum && oturum.data && oturum.data.session
+                 && oturum.data.session.access_token;
+    if (!jeton) throw new Error('Oturum bulunamadı, yeniden giriş yap.');
+
+    const adres = SUPABASE.url.replace(/\/$/, '')
+                + '/storage/v1/object/' + kova + '/' + yol.split('/').map(encodeURIComponent).join('/');
+
+    return new Promise((coz, red) => {
+      const x = new XMLHttpRequest();
+      x.open('POST', adres, true);
+      x.setRequestHeader('authorization', 'Bearer ' + jeton);
+      x.setRequestHeader('apikey', SUPABASE.key);
+      x.setRequestHeader('x-upsert', 'true');
+      if (dosya.type) x.setRequestHeader('content-type', dosya.type);
+      /* İstemcinin gönderdiğiyle aynı: bu başlık düşerse depo varsayılanı
+         değişir ve dosya farklı süreyle önbelleklenir. */
+      x.setRequestHeader('cache-control', 'max-age=3600');
+
+      if (typeof ilerleme === 'function' && x.upload) {
+        x.upload.onprogress = e => {
+          if (e.lengthComputable) ilerleme(e.loaded, e.total);
+        };
+      }
+
+      x.onload = () => {
+        if (x.status >= 200 && x.status < 300) { coz(); return; }
+        let govde = {};
+        try { govde = JSON.parse(x.responseText || '{}'); } catch (h) {}
+        red(new Error(depoHatasi(
+          { message: govde.message || govde.error || x.responseText || ('HTTP ' + x.status) }, kova)));
+      };
+      x.onerror   = () => red(new Error('Sunucuya ulaşılamadı. İnternet bağlantını kontrol et.'));
+      x.ontimeout = () => red(new Error('Yükleme zaman aşımına uğradı.'));
+      x.send(dosya);
+    });
+  },
+
+  async gorselYukle(projeId, no, dosya, ilerleme) {
     yazmaKontrol();
     if (!/^image\//.test(dosya.type) && !/svg/i.test(dosya.type))
       throw new Error('Yalnızca resim yükleyebilirsin.');
@@ -925,17 +974,20 @@ const DB = {
 
     /* Dosya adını tarif belirledi; uzantısı yüklenen dosyadan gelsin —
        tarif .jpg der ama sen .png yüklersen bağlantı kırılırdı. */
-    /* Tam ekran çizilebilen görseller; 1600 px 3x telefonda da yeter. */
-    const kucuk  = await this.gorseliKucult(dosya, 1600, 0.82);
+    /* Bu görsel iki yerde kullanılıyor: proje kartının zemini ve ChatGPT'ye
+       giden malzeme. Ölçü kartın ihtiyacından çıkıyor — kart 358 css piksel,
+       3x telefonda 1074 piksel istiyor. 1600 bunun bir buçuk katıydı: yükleme
+       gereksiz uzuyordu, kazandırdığı netlik ekranda görünmüyordu. 1200 hem
+       3x'te net kalıyor hem ChatGPT için fazlasıyla yeterli — görsel modeller
+       zaten kendileri küçültüyor. */
+    const kucuk  = await this.gorseliKucult(dosya, 1200, 0.82);
     const uzanti = (kucuk.name.split('.').pop() || 'png').toLowerCase().slice(0, 5);
     const govde  = String(yuvalar[i].dosya || ('gorsel-' + (i + 1))).replace(/\.[^.]+$/, '');
     const ad     = govde + '.' + uzanti;
     const yol    = this.gorselYol(projeId, ad);
 
     const eskiAdres = this.gorselAdres[projeId + '/' + no];
-    const yukle = await AUTH.db.storage.from('gorseller')
-      .upload(yol, kucuk, { upsert: true, contentType: kucuk.type });
-    if (yukle.error) throw new Error(depoHatasi(yukle.error, 'gorseller'));
+    await this.depoyaGonder('gorseller', yol, kucuk, ilerleme);
     this.onbellektenSil(eskiAdres);
 
     yuvalar[i] = Object.assign({}, yuvalar[i],
