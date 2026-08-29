@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## v0.91.0
+- **"Bugünkü durum" kartı panelden kalktı.** Sayılar zaten alt çubuğun rozetlerinde ve Görevler ekranında duruyordu; panel ikinci bir proje listesi taşımak zorunda kalıyordu. Panel artık yalnızca nereye gidileceğini söylüyor.
+- **Selam ortalandı ve iki satıra ayrıldı.** Hap duruyor: üstte "İyi günler, Nizam", altında tarih. Avatar kalktı — kim olduğun sağ üstteki kutuda zaten yazıyor.
+- Bir önceki sürümdeki kart karartması panelde aslında uygulanmıyordu: `#main.susulu .kk` daha özel bir kuralla eski yarı saydam rengi geri veriyordu. Artık kartlar gerçekten koyu ve saydam değil.
+
 ## v0.90.0
 - **Panelin malzemesi koyulaştı ve tekleşti.** Kısayol kartları, bugünkü durum kartı, selam hapı, üst çubuk ve alt çubuk artık aynı koyu renk. Fotoğrafın üstünde duran her şey tek malzeme.
 - **Kartlar artık açıktan koyuya kaymıyor.** Panelde ekran solarken kartlar yarı saydam kalıyor ve altındaki fotoğrafın ışığını geçiriyordu; kart rengi koyu olmasına rağmen açık başlayıp koyulaşıyordu. Panelde artık yalnız fotoğraf soluyor, kartlar ilk kareden itibaren tam koyu geliyor.

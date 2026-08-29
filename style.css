@@ -1168,7 +1168,6 @@ html { background: var(--bg); }
    yapıyor, ikisi üst üste binince hem yavaş hem dağınık duruyordu.
    İlerleme rayları dolmaya devam ediyor — o kartın gelişi değil, verinin
    kendisi. Tek ve sabit gecikme, sıraya bağlı değil. */
-.view.swap .bd-ray > i,
 .view.swap .bar > i {
   transform-origin: left center;
   animation: doldur .85s var(--ease) both;
@@ -2291,9 +2290,10 @@ a.durak:active { transform: scale(.99); transition: transform .1s var(--ease); }
 /* Panelin selam şeridi — fotoğrafın tavan bandında yüzen buzlu hap.
    Doğrudan fotoğrafın üstüne yazılınca yapışık duruyordu; hap alt çubukla
    aynı malzeme olduğu için uygulamaya ait görünüyor. */
+.p-selam-yer { text-align: center; }
 .p-selam {
-  display: inline-flex; align-items: center; gap: 10px; white-space: nowrap;
-  margin-top: 10px; padding: 8px 14px 8px 10px; border-radius: 999px;
+  display: inline-block; text-align: center; white-space: nowrap;
+  margin-top: 12px; padding: 10px 22px; border-radius: 999px;
   background: var(--panel-cam);
   border: 1px solid var(--panel-cizgi);
   backdrop-filter: blur(24px) saturate(160%);
@@ -2301,16 +2301,9 @@ a.durak:active { transform: scale(.99); transition: transform .1s var(--ease); }
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08),
               0 14px 30px -18px rgba(0, 0, 0, .9);
 }
-.ps-av {
-  width: 24px; height: 24px; border-radius: 50%; flex: 0 0 24px;
-  display: grid; place-items: center; background-size: cover; background-position: center;
-  background-color: var(--surface-2); border: 1px solid rgba(214, 208, 205, .4);
-  font-family: var(--yazi-kod); font-size: 9px; color: #fff;
-}
-.ps-av.foto { color: transparent; }
-.p-selam b { font-family: var(--yazi-baslik); font-size: 14px; color: #fff; }
-.ps-ay { width: 1px; height: 13px; background: rgba(255, 255, 255, .16); }
-.p-selam i { font-style: normal; font-size: 10.5px; color: rgba(255, 255, 255, .62); }
+.p-selam b { display: block; font-family: var(--yazi-baslik); font-size: 15px; color: #fff; }
+.p-selam i { display: block; margin-top: 3px; font-style: normal; font-size: 10.5px;
+             color: rgba(255, 255, 255, .62); }
 
 /* Cam yoksa hap yarı saydam kalır ve yazı fotoğrafa karışır: kapatıyoruz. */
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
@@ -2371,7 +2364,6 @@ a.durak:active { transform: scale(.99); transition: transform .1s var(--ease); }
   from { transform: translateX(-120%); opacity: 1; }
   to   { transform: translateX(120%);  opacity: 0; }
 }
-.bd-sr:active { transform: scale(.99); }
 
 /* Ekranı henüz olmayan kart: görünür ama sönük ve dokunmuyor. */
 .kk.yakinda { opacity: .42; cursor: default; }
@@ -2389,51 +2381,6 @@ a.durak:active { transform: scale(.99); transition: transform .1s var(--ease); }
 .kk.ana .kk-dr { background: var(--red-soft); border-color: var(--red-cizgi); color: var(--red-ink); }
 .kk.ana .kk-cv { color: var(--red-ink-soft); }
 
-/* Bugünkü durum kartı -------------------------------------------------------- */
-.bugun {
-  margin-top: 11px; padding: 14px; border-radius: 18px;
-  background: var(--panel-kart); border: 1px solid var(--panel-cizgi);
-}
-.bd-bas { display: flex; align-items: baseline; margin-bottom: 11px; }
-.bd-bas b { flex: 1; font-family: var(--yazi-baslik); font-size: 15px; color: var(--ink-strong); }
-.bd-genel {
-  font-size: 11px; color: var(--ink-dim); padding: 3px 8px; border-radius: 7px;
-  background: var(--surface); border: 1px solid var(--line-3); margin-right: 10px;
-}
-.bd-bas a { display: flex; align-items: center; gap: 4px; font-size: 11.5px;
-            color: var(--ink-faint); text-decoration: none; }
-.bd-sayilar { display: flex; padding-bottom: 12px; border-bottom: 1px solid var(--line-3); }
-.bd-p { flex: 1; text-align: center; position: relative; }
-.bd-p + .bd-p::before {
-  content: ""; position: absolute; left: 0; top: 10%; height: 80%; width: 1px;
-  background: var(--line-3);
-}
-.bd-p b { display: block; font-family: var(--yazi-baslik); font-size: 23px; line-height: 1; }
-.bd-p i { display: block; font-style: normal; font-size: 9.5px; color: var(--ink-faint); margin-top: 6px; }
-.bd-liste { padding-top: 4px; }
-.bd-sr {
-  display: flex; align-items: center; gap: 10px; padding: 8px 0;
-  text-decoration: none; color: inherit; cursor: pointer;
-}
-.bd-sr + .bd-sr { border-top: 1px solid var(--line-3); }
-.bd-sr:active { opacity: .7; }
-.bd-rz {
-  width: 26px; height: 26px; border-radius: 8px; flex: 0 0 26px;
-  display: grid; place-items: center; font-family: var(--yazi-baslik);
-  font-weight: 700; font-size: 10px; color: #fff;
-}
-.bd-yz { flex: 1; min-width: 0; }
-.bd-yz b { display: block; font-family: var(--yazi-baslik); font-size: 12.5px; color: var(--ink);
-           white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.bd-ray { display: block; height: 3px; border-radius: 2px; margin-top: 5px;
-          background: var(--surface-3); overflow: hidden; }
-.bd-ray i { display: block; height: 100%; border-radius: 2px;
-            background: linear-gradient(90deg, var(--metal-1), var(--metal-2)); }
-.bd-yuz { font-size: 11px; color: var(--ink-soft); flex: 0 0 auto; }
-.bd-bos { display: flex; gap: 9px; align-items: center; padding: 12px 0 4px;
-          font-size: 12px; color: var(--ink-faint); }
-.bd-bos b { color: var(--ink-soft); }
-
 /* Panel kartları: fotoğrafın üstünde yüzen buzlu cam --------------------------
    Yalnız Panel'de. Diğer ekranlarda kartlar katı grafit olarak kalıyor —
    orada arkada fotoğraf yok, cam yapmanın anlamı da yok. */
@@ -2441,15 +2388,16 @@ a.durak:active { transform: scale(.99); transition: transform .1s var(--ease); }
 /* Kartlarda `backdrop-filter` YOK — bilerek. Kaydırırken sekiz kartın
    arkasını her karede yeniden bulanıklaştırmak takılmanın asıl sebebiydi.
    Bulanıklık zaten görselin kendisine pişirildi; kartların yaptığı iş
-   sadece koyultmak. Görünüş neredeyse aynı, hesap sıfır. */
+   sadece koyultmak. Görünüş neredeyse aynı, hesap sıfır.
+   Kartlar ayrıca saydam DEĞİL: yarı saydam kalınca altındaki fotoğrafın
+   ışığını geçiriyor ve ekran solarken açıktan koyuya kayıyorlardı. */
 #main.susulu .kk,
-#main.susulu .bugun,
 #main.susulu .stat,
 #main.susulu .proje,
 #main.susulu .card {
-  background: rgba(16, 15, 14, .80);
-  border: 1px solid rgba(255, 255, 255, .11);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .09),
+  background: var(--panel-kart);
+  border: 1px solid var(--panel-cizgi);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .05),
               0 20px 44px -24px rgba(0, 0, 0, .98);
 }
 /* Kartın kendi süsleri camın üstünde çamur yapıyordu: ışık huzmesi ve

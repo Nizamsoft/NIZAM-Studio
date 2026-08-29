@@ -226,20 +226,18 @@ const VIEWS = {
 
     const dev  = on ? on.dev  : DB.gorevleri({ durum: 'gelistiriliyor' }).length;
     const kont = on ? on.kont : DB.gorevleri({ durum: 'kontrolde' }).length;
-    const bugun = on ? on.bugun : DB.gorevleri({ durum: 'tamamlandi' })
-      .filter(g => (g.guncellendi || '').slice(0, 10) === bugunTarih()).length;
-
-    const ilerleme = DB.ilerleme(DB.gorevler);
     const acik = dev + kont;
 
     /* Karşılama bloğu (halka + selam) kaldırıldı: zemindeki ofis fotoğrafının
        kendi logo duvarı hero'yu taşıyor, üstüne selam yazınca ikisi birbirini
        eziyordu. Üst çubuk zaten kullanıcının adını gösteriyor; halkadaki genel
        yüzde de özet kartına taşındı. */
+    /* "Bugünkü durum" kartı kaldırıldı: sayılar hem alt çubuğun rozetlerinde
+       hem Görevler ekranında zaten duruyordu, panel de ikinci bir liste
+       taşımak zorunda kalıyordu. Panel yalnızca nereye gidileceğini söylüyor. */
     return `
       ${panelSelam()}
       ${kisayolIzgarasi(p.length, acik)}
-      ${bugunkuDurum(dev, kont, bugun, p, ilerleme.yuzde)}
     `;
   },
 
@@ -8807,13 +8805,11 @@ function karsilama(ilerleme, projeSayi, acikIs) {
 function panelSelam() {
   const ad = String(AUTH.ad || '').split(' ')[0];
   return `
-    <div class="p-selam">
-      ${AUTH.foto
-        ? `<span class="ps-av foto" style="background-image:url('${esc(AUTH.foto)}')"></span>`
-        : `<span class="ps-av">${esc(AUTH.basHarfler)}</span>`}
-      <b>${esc(selamla())}${ad ? ', ' + esc(ad) : ''}</b>
-      <span class="ps-ay"></span>
-      <i>${esc(todayLabel())}</i>
+    <div class="p-selam-yer">
+      <div class="p-selam">
+        <b>${esc(selamla())}${ad ? ', ' + esc(ad) : ''}</b>
+        <i>${esc(todayLabel())}</i>
+      </div>
     </div>`;
 }
 
@@ -8859,41 +8855,6 @@ function kisayolIzgarasi(projeSayi, acikIs) {
 /* ---------- Bugünkü durum ----------
    Üç sayı ve altında son projeler. Sayılar artık ekranın tepesini kaplamıyor;
    gidilecek yerlerden sonra, tek kartın içinde duruyor. */
-function bugunkuDurum(dev, kont, bugun, projeler, yuzde) {
-  /* data-sayac: açılışta sıfırdan sayar (bkz. sayaclariCanlandir). */
-  const sayi = (deger, ad, renk) => `
-    <span class="bd-p"><b style="color:${renk}" data-sayac="${deger}">${deger}</b><i>${esc(ad)}</i></span>`;
-
-  const satir = (p, i) => {
-    const s = DB.sayim(p.id);
-    return `
-      <a class="bd-sr" href="#/projeler/${p.id}" style="${renkDegiskenleri(p.renk)};--i:${i + 8}">
-        <span class="bd-rz" style="${renkStil(p.renk)}">${esc(basHarf(p.firma))}</span>
-        <span class="bd-yz">
-          <b>${esc(projeAdi(p))}</b>
-          <span class="bd-ray"><i style="width:${s.yuzde}%"></i></span>
-        </span>
-        <span class="bd-yuz mono">%${s.yuzde}</span>
-      </a>`;
-  };
-
-  return `
-    <div class="bugun" style="--i:7">
-      <div class="bd-bas"><b>Bugünkü durum</b>
-        <span class="bd-genel mono">%${yuzde}</span>
-        <a href="#/gorevler">Tümü ${svg(ICON.chevron, 11)}</a></div>
-      <div class="bd-sayilar">
-        ${sayi(dev,   'Geliştiriliyor', 'var(--st-dev-t)')}
-        ${sayi(kont,  'Kontrolde',      'var(--st-check-t)')}
-        ${sayi(bugun, 'Bugün biten',    'var(--st-done-t)')}
-      </div>
-      ${projeler.length
-        ? `<div class="bd-liste">${projeler.slice(0, 3).map(satir).join('')}</div>`
-        : `<div class="bd-bos">${svg(ICON.folder, 15)}
-            <span>Henüz proje yok. <b>Yeni Proje</b> ile başla.</span></div>`}
-    </div>`;
-}
-
 /* Saate göre selam. */
 function selamla() {
   const s = new Date().getHours();
