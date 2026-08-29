@@ -9204,7 +9204,10 @@ async function boot() {
   let veri = null;
   if (oturumVar) {
     DB.onbellekOku();                 /* varsa kayıtlı sayılarla ekran hemen dolsun */
-    veri = DB.yukle().catch(() => {}); /* hata varsa uygulama yine açılsın */
+    /* Resimler de burada iniyor: veri gelince ısıtma sözü zincire ekleniyor,
+       açılış çubuğu ikisini birden bekliyor. Uygulama açıldıktan sonra
+       hiçbir ekranda resim beklenmesin diye. */
+    veri = DB.yukle().then(() => DB.isitma).catch(() => {});
   }
 
   await runLoader(veri);

@@ -25,6 +25,7 @@ const DB = {
   panelOnbellek: null,
   standartlar: [],
   gorevStandart: [],
+  isitma: null,
 
   yuklendi: false,
   hata: null,
@@ -224,7 +225,11 @@ const DB = {
     const sonuclar = await Promise.all(adlar.map(ad => this.OKUYUCULAR[ad](AUTH.db)));
     adlar.forEach((ad, i) => this.yerlestir(ad, sonuclar[i]));
 
-    if (adlar.includes('projeler')) { await this.logolariTazele(); await this.gorselleriTazele(); }
+    if (adlar.includes('projeler')) {
+      await this.logolariTazele();
+      await this.gorselleriTazele();
+      this.isitma = this.resimleriIsit();
+    }
     this.onbellekYaz();
   },
 
@@ -256,6 +261,9 @@ const DB = {
       this.yuklendi = true;
       await this.logolariTazele();
       await this.gorselleriTazele();
+      /* Resimler burada indirilmeye başlıyor; açılış çubuğu `isitma`
+         sözünü bekliyor (bkz. boot). Uygulama içinde beklenmiyor. */
+      this.isitma = this.resimleriIsit();
       this.onbellekYaz();
     } catch (e) {
       this.hata = veriHatasi(e) + (e && e.tablo ? ` (${e.tablo})` : '');
@@ -708,16 +716,19 @@ const DB = {
     if (!/^image\//.test(dosya.type)) throw new Error('Yalnızca resim yükleyebilirsin.');
     if (dosya.size > 4 * 1024 * 1024) throw new Error('Dosya 4 MB\'ı geçmesin.');
 
-    const uzanti = (dosya.name.split('.').pop() || 'jpg').toLowerCase().slice(0, 5);
+    /* Profil fotoğrafı 40 pikselik bir dairede görünüyor; 256 fazlasıyla yeter. */
+    const kucuk = await this.gorseliKucult(dosya, 256, 0.8);
+    const uzanti = (kucuk.name.split('.').pop() || 'jpg').toLowerCase().slice(0, 5);
     const yol = AUTH.user.id + '.' + uzanti;
 
     const yukle = await AUTH.db.storage.from('avatarlar')
-      .upload(yol, dosya, { upsert: true, contentType: dosya.type });
+      .upload(yol, kucuk, { upsert: true, contentType: kucuk.type });
     if (yukle.error) throw new Error(depoHatasi(yukle.error));
 
     const { data } = AUTH.db.storage.from('avatarlar').getPublicUrl(yol);
     /* Tarayıcı eski fotoğrafı önbellekte tutmasın diye zaman damgası ekleniyor. */
     const adres = data.publicUrl + '?t=' + Date.now();
+    this.onbellektenSil(data.publicUrl);
 
     const sonuc = await AUTH.db.from('profiles')
       .update({ foto: adres }).eq('id', AUTH.user.id).select('foto');
@@ -793,18 +804,67 @@ const DB = {
       const p = this.projeler.find(pr => pr.logo === x.path);
       if (p) this.logoAdres[p.id] = x.signedUrl;
     });
-
-    this.resimleriIsit();
   },
 
-  /* Resimleri açılışta arka planda indirir — tarayıcının önbelleğine girsinler.
-     Projeye girildiğinde indirme beklenmez, logo anında görünür.
-     Beklemiyoruz: indirme sürerken uygulama açılmaya devam ediyor. */
+  /* Bütün resimleri açılışta indirir ve söz döndürür — açılış çubuğu bunu
+     bekliyor. Amaç: uygulama açıldıktan sonra hiçbir ekranda resim
+     beklenmesin. Servis işçisi bunları önbelleğe alıyor, ikinci açılışta
+     ağa hiç gidilmiyor. */
   resimleriIsit() {
-    /* Yalnızca proje logoları. Ekip fotoğrafları da eklenince tarayıcının
-       eşzamanlı indirme sırası doluyor ve senin kendi fotoğrafın arkada
-       kalıyordu — ekip fotoğrafları zaten Ekip ekranında yükleniyor. */
-    Object.values(this.logoAdres).forEach(adres => { new Image().src = adres; });
+    const adresler = Object.values(this.logoAdres)
+      .concat(Object.values(this.gorselAdres))
+      .filter(Boolean);
+    if (!adresler.length) return Promise.resolve();
+
+    return Promise.all(adresler.map(adres =>
+      fetch(adres, { mode: 'cors', credentials: 'omit' }).catch(() => {})));
+  },
+
+  /* Servis işçisine "bu resmi unut" der. Bir fotoğraf değiştirildiğinde
+     önbellekteki eskisi kalıyordu: önbellek anahtarı imzasız yol olduğu
+     için yeni imza bile eski kopyaya düşüyor. */
+  onbellektenSil(adres) {
+    if (!adres || !navigator.serviceWorker || !navigator.serviceWorker.controller) return;
+    try {
+      const u = new URL(adres, location.href);
+      navigator.serviceWorker.controller.postMessage(
+        { tip: 'unut', yol: u.origin + u.pathname });
+    } catch (e) {}
+  },
+
+  /* Yüklemeden önce tarayıcıda küçültür. Telefondan gelen 4 MB'lık bir
+     fotoğraf 40 pikselik bir daire için indiriliyordu; sunucuya da zaten
+     küçük dosya gitsin. SVG'ye dokunmuyoruz — vektör, zaten küçük.
+     Küçültme herhangi bir sebeple olmazsa özgün dosya kullanılıyor:
+     yükleme hiç yapılmamaktansa büyük yapılsın. */
+  async gorseliKucult(dosya, enBoy, kalite) {
+    if (!dosya || /svg/i.test(dosya.type) || !/^image\//.test(dosya.type)) return dosya;
+    if (typeof createImageBitmap !== 'function') return dosya;
+
+    try {
+      const kaynak = await createImageBitmap(dosya);
+      const olcek = Math.min(1, enBoy / Math.max(kaynak.width, kaynak.height));
+      const g = Math.round(kaynak.width * olcek);
+      const y = Math.round(kaynak.height * olcek);
+
+      const tuval = (typeof OffscreenCanvas === 'function')
+        ? new OffscreenCanvas(g, y)
+        : Object.assign(document.createElement('canvas'), { width: g, height: y });
+      const ctx = tuval.getContext('2d');
+      ctx.drawImage(kaynak, 0, 0, g, y);
+      kaynak.close && kaynak.close();
+
+      const blob = tuval.convertToBlob
+        ? await tuval.convertToBlob({ type: 'image/webp', quality: kalite })
+        : await new Promise(r => tuval.toBlob(r, 'image/webp', kalite));
+
+      /* Küçültülmüş hâli büyüdüyse (küçük ikonlarda olur) özgünü bırak. */
+      if (!blob || blob.size >= dosya.size) return dosya;
+      return new File([blob], String(dosya.name || 'gorsel').replace(/\.[^.]+$/, '') + '.webp',
+        { type: 'image/webp' });
+    } catch (e) {
+      return dosya;
+    }
   },
 
   async logoYukle(projeId, dosya) {
@@ -812,12 +872,16 @@ const DB = {
     if (!/^image\//.test(dosya.type)) throw new Error('Yalnızca resim yükleyebilirsin.');
     if (dosya.size > 4 * 1024 * 1024) throw new Error('Dosya 4 MB\'ı geçmesin.');
 
-    const uzanti = (dosya.name.split('.').pop() || 'png').toLowerCase().slice(0, 5);
+    /* Logo en büyük 44 pikselde çiziliyor; 512 hem yeterli hem ileriye pay. */
+    const kucuk = await this.gorseliKucult(dosya, 512, 0.85);
+    const uzanti = (kucuk.name.split('.').pop() || 'png').toLowerCase().slice(0, 5);
     const yol = projeId + '.' + uzanti;
 
+    const eski = this.logoAdres[projeId];
     const yukle = await AUTH.db.storage.from('logolar')
-      .upload(yol, dosya, { upsert: true, contentType: dosya.type });
+      .upload(yol, kucuk, { upsert: true, contentType: kucuk.type });
     if (yukle.error) throw new Error(depoHatasi(yukle.error, 'logolar'));
+    this.onbellektenSil(eski);
 
     const { error } = await AUTH.db.from('projects').update({ logo: yol }).eq('id', projeId);
     if (error) throw new Error(veriHatasi(error));
@@ -856,17 +920,21 @@ const DB = {
 
     /* Dosya adını tarif belirledi; uzantısı yüklenen dosyadan gelsin —
        tarif .jpg der ama sen .png yüklersen bağlantı kırılırdı. */
-    const uzanti = (dosya.name.split('.').pop() || 'png').toLowerCase().slice(0, 5);
+    /* Tam ekran çizilebilen görseller; 1600 px 3x telefonda da yeter. */
+    const kucuk  = await this.gorseliKucult(dosya, 1600, 0.82);
+    const uzanti = (kucuk.name.split('.').pop() || 'png').toLowerCase().slice(0, 5);
     const govde  = String(yuvalar[i].dosya || ('gorsel-' + (i + 1))).replace(/\.[^.]+$/, '');
     const ad     = govde + '.' + uzanti;
     const yol    = this.gorselYol(projeId, ad);
 
+    const eskiAdres = this.gorselAdres[projeId + '/' + no];
     const yukle = await AUTH.db.storage.from('gorseller')
-      .upload(yol, dosya, { upsert: true, contentType: dosya.type });
+      .upload(yol, kucuk, { upsert: true, contentType: kucuk.type });
     if (yukle.error) throw new Error(depoHatasi(yukle.error, 'gorseller'));
+    this.onbellektenSil(eskiAdres);
 
     yuvalar[i] = Object.assign({}, yuvalar[i],
-      { dosya: ad, yol, boyut: dosya.size, tur: dosya.type });
+      { dosya: ad, yol, boyut: kucuk.size, tur: kucuk.type });
     await this.paletKaydet(projeId, Object.assign({}, pl, { gorseller: yuvalar }));
     await this.gorselleriTazele(true);
   },

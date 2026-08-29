@@ -1,5 +1,14 @@
 # Değişiklik Günlüğü
 
+## v0.94.0
+- **Her şey bir kez iniyor, sonra telefonda kalıyor.** İlk açılış 2.09 MB'tan **1.12 MB**'a indi. İkinci açılıştan itibaren sunucuya yalnız üç istek gidiyor — sürüm denetimi ve servis işçisinin kendi güncellemesi. **Sayfalar arası geçişte tek bayt inmiyor.**
+- **Logo iki kez iniyordu.** Dört kullanımdan birinin adresinde sürüm numarası yoktu; tarayıcı onu ayrı bir dosya sayıp 438 KB'ı iki kez indiriyordu. Ayrıca dosya 600 piksel genişliğindeydi, oysa en büyük çizildiği yer açılış ekranında 89 piksel. **876 KB → 37 KB.**
+- Uygulama simgeleri 288 KB'tan 50 KB'a, panelin ofis fotoğrafı 142 KB'tan 43 KB'a indi (WebP).
+- **Firma logoları ve proje görselleri 45 dakikada bir baştan iniyordu.** Adreslerindeki imza yenilenince adres de değişiyor, tarayıcı aynı resmi yeni dosya sanıyordu. Servis işçisi artık bu resimleri imzasız yolla saklıyor — imza değişse de aynı kayda düşüyor.
+- **Yüklenen görseller tarayıcıda küçültülüyor.** Profil fotoğrafı 256 piksele, firma logosu 512'ye, proje görselleri 1600'e; hepsi WebP'ye çevriliyor. 3000×2000 bir fotoğraf 216 KB'tan 25 KB'a iniyor. Sunucuya da zaten küçük dosya gidiyor.
+- **Açılış çubuğu artık resimleri de bekliyor.** "Hazır" yazdığında her şey inmiş oluyor. Bağlantı kötüyse üç saniyede bırakıyor, kalanı arkada tamamlanıyor.
+- Bir fotoğraf değiştirildiğinde önbellekteki eskisi siliniyor — yenisi bir kez iniyor.
+
 ## v0.93.1
 - Standartlar ekranının tepesindeki açıklama şeridi kalktı. Liste zaten kendini anlatıyor; her açılışta aynı üç satırı okumak yalnız yer kaplıyordu.
 
