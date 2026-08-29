@@ -237,6 +237,7 @@ const VIEWS = {
        eziyordu. Üst çubuk zaten kullanıcının adını gösteriyor; halkadaki genel
        yüzde de özet kartına taşındı. */
     return `
+      ${panelSelam()}
       ${kisayolIzgarasi(p.length, acik)}
       ${bugunkuDurum(dev, kont, bugun, p, ilerleme.yuzde)}
     `;
@@ -4659,7 +4660,6 @@ function render() {
   /* Zemin fotoğrafı yalnızca Panel'de. Sayfa değişince koyuluk sıfırlanır,
      yoksa panele döndüğünde fotoğraf kararmış geliyor. */
   $('#main').classList.toggle('susulu', key === 'panel' && !detay);
-  $('#main').style.setProperty('--zemin-ust', '0');
   /* Adım akışları kaydırılmaz: üç parça ekrana bölüşür. Yapı durağı ancak
      akış açıkken sabit; kurulu modül listesi normal kaydırılan sayfadır. */
   $('#view').classList.toggle('sabit',
@@ -8794,6 +8794,16 @@ function karsilama(ilerleme, projeSayi, acikIs) {
     </div>`;
 }
 
+/* Fotoğrafın tavan bandı boş kalıyordu; selam oraya oturuyor. Eski
+   karşılama bloğunun halkası yok — o yüzde özet kartında. */
+function panelSelam() {
+  return `
+    <div class="p-selam">
+      <b>${esc(selamla())}, ${esc(String(AUTH.ad || '').split(' ')[0])}</b>
+      <i>${esc(todayLabel())}</i>
+    </div>`;
+}
+
 /* ---------- Panelin kısayol ızgarası ----------
    Panel eskiden dört sayaç ve proje listesiydi: ne olduğunu söylüyor ama
    nereye gidileceğini söylemiyordu — her şeye alt çubuktan ulaşılıyordu.
@@ -9103,29 +9113,9 @@ async function boot() {
   }
 }
 
-/* Panel zemininde ofis fotoğrafı sabit duruyor ve kartlar üstünden akıyor.
-   Kaydırınca kartlar fotoğrafın net kısmına geliyordu; ilk 220 pikselde
-   perdeyi koyultup fotoğrafı geri çekiyoruz. Yalnız bir CSS değişkeni
-   yazılıyor — düzen hesabı yok, kaydırma takılmıyor. */
-function zeminKoyulugu() {
-  const ana = $('#main');
-  if (!ana || !ana.classList.contains('susulu')) return;
-  const v = $('#view');
-  if (!v) return;
-  const t = Math.min(1, Math.max(0, v.scrollTop / 220));
-  ana.style.setProperty('--zemin-ust', t.toFixed(3));
-}
-
 /* ==========================================================================
    OLAYLAR
    ========================================================================== */
-
-/* Kaydırma dinleyicisi bir kez bağlanıyor: #view her çizimde yeniden
-   yaratılmıyor, içeriği değişiyor. */
-document.addEventListener('DOMContentLoaded', () => {
-  const v = $('#view');
-  if (v) v.addEventListener('scroll', zeminKoyulugu, { passive: true });
-});
 
 window.addEventListener('hashchange', () => {
   if (!$('#app').classList.contains('hidden')) { modalHepsiniKapat(); render(); }

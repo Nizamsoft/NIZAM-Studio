@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.83.0
+- **Kaydırma kararması kalktı, yerine koyu buzlu cam geldi.** Fotoğraf sabit olduğu için kaydırınca kartlar net fotoğrafın üstüne geliyordu; çözüm olarak zemini karartıyorduk — fotoğraf da kayboluyordu. Artık fotoğraf net kalıyor, okunurluğu **camın kendisi** taşıyor: yoğun bulanıklık, düşük geçirgenlik, ince ışıklı kenar. `zeminKoyulugu` fonksiyonu, kaydırma dinleyicisi ve kararma katmanı silindi.
+- **Fotoğraf daha çok kırpıldı**, tavan payı azaldı: logo duvarı, raflar ve masa artık ekranın büyük kısmını kaplıyor.
+- **Selam şeridi geri geldi** ama küçük ve cam kutusuz: fotoğrafın tavan bandında, doğrudan görselin üstünde. Eski karşılamanın 150px'lik halkası yok — genel yüzde özet kartında duruyor.
+- Cam desteklenmeyen tarayıcıda kartlar neredeyse tam kapatılıyor: arkadaki fotoğraf bulanıklaşmadan görünürse yazı okunmuyor.
+
 ## v0.82.0
 - **Zemin dikey ofis karesine geçti** ve boydan boya kullanılıyor. Önceki iki kare yataydı; telefonda ortadan ince bir dilim alınıyor, simetri ve kırmızı raflar gidiyordu. Yeni kare portre çekilmiş, kırpma yok. Boş tavan üstten kırpıldı.
 - **Karşılama bloğu kaldırıldı.** Fotoğrafın kendi logo duvarı hero'yu taşıyor; üstüne halka ve selam yazısı gelince ikisi birbirini eziyor, duvardaki logo hiç görünmüyordu. Üst çubuk zaten kullanıcının adını gösteriyor. Halkadaki genel ilerleme yüzdesi **"Bugünkü durum" kartının başlığına** taşındı — veri kaybolmadı.

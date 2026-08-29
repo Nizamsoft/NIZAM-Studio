@@ -2274,15 +2274,6 @@ a.durak:active { transform: scale(.99); transition: transform .1s var(--ease); }
     rgba(23, 22, 20, .95) 74%,
     var(--bg) 92%);
 }
-/* Fotoğraf sabit duruyor, kartlar üstünden akıyor. Kaydırınca kartlar
-   fotoğrafın net kısmına geliyor ve yazı okunmuyordu: kaydırma ilerledikçe
-   bu katman koyulaşıp fotoğrafı geri çekiyor. Değeri JS yazıyor. */
-#zemin-sus .ofis-kararma {
-  position: absolute; inset: 0; background: var(--bg);
-  opacity: calc(var(--zemin-ust, 0) * .84);
-  transition: opacity .12s linear;
-}
-
 /* Markanın kırmızısı fotoğrafın üstünde de bir kez duysun — üst köşede,
    çok soluk. */
 #zemin-sus .hale-kirmizi {
@@ -2302,6 +2293,18 @@ a.durak:active { transform: scale(.99); transition: transform .1s var(--ease); }
 #main { position: relative; }
 #main.susulu .view { position: relative; z-index: 1; }
 
+/* Panelin selam şeridi — fotoğrafın tavan bandında. Cam kutu yok; yazı
+   doğrudan fotoğrafın üstünde, gölgeyle okunuyor. */
+.p-selam { display: flex; align-items: baseline; gap: 9px; padding: 10px 2px 0; }
+.p-selam b {
+  font-family: var(--yazi-baslik); font-size: 21px; color: #fff;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, .7);
+}
+.p-selam i {
+  font-style: normal; font-size: 11.5px; color: rgba(255, 255, 255, .72);
+  text-shadow: 0 1px 8px rgba(0, 0, 0, .75);
+}
+
 /* Panelin kısayol ızgarası ---------------------------------------------------
    Üç sütun. Her kutu bir yere götürüyor; kırmızı yalnız "Yeni Proje"de. */
 /* Panelde zemindeki ofis fotoğrafı hero: ızgara onun altından başlıyor ki
@@ -2310,7 +2313,7 @@ a.durak:active { transform: scale(.99); transition: transform .1s var(--ease); }
   display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px;
   margin-top: 16px;
 }
-#main.susulu .kisayol { margin-top: 322px; }
+#main.susulu .kisayol { margin-top: 268px; }
 .kk {
   position: relative; display: block; text-align: center; cursor: pointer;
   padding: 13px 8px 22px; border-radius: 16px; text-decoration: none;
@@ -2393,17 +2396,29 @@ a.durak:active { transform: scale(.99); transition: transform .1s var(--ease); }
    Yalnız Panel'de. Diğer ekranlarda kartlar katı grafit olarak kalıyor —
    orada arkada fotoğraf yok, cam yapmanın anlamı da yok. */
 
+/* Kaydırınca fotoğraf kararmıyor; kartların net fotoğraf üstünde de
+   okunması gerekiyor. Bu yüzden cam açık değil koyu: yoğun bulanıklık,
+   düşük geçirgenlik, ince ışıklı kenar. */
 #main.susulu .kk,
 #main.susulu .bugun,
 #main.susulu .stat,
 #main.susulu .proje,
 #main.susulu .card {
-  background: rgba(28, 27, 25, .52);
-  border: 1px solid rgba(255, 255, 255, .13);
-  backdrop-filter: blur(22px) saturate(165%);
-  -webkit-backdrop-filter: blur(22px) saturate(165%);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .10),
-              0 18px 40px -22px rgba(0, 0, 0, .95);
+  background: rgba(16, 15, 14, .74);
+  border: 1px solid rgba(255, 255, 255, .11);
+  backdrop-filter: blur(30px) saturate(150%);
+  -webkit-backdrop-filter: blur(30px) saturate(150%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .09),
+              0 20px 44px -24px rgba(0, 0, 0, .98);
+}
+/* Cam desteklenmiyorsa neredeyse tam kapatıyoruz: arkadaki fotoğraf
+   bulanıklaşmadan görünürse yazı okunmuyor. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  #main.susulu .kk,
+  #main.susulu .bugun,
+  #main.susulu .stat,
+  #main.susulu .proje,
+  #main.susulu .card { background: rgba(16, 15, 14, .94); }
 }
 /* Kartın kendi süsleri camın üstünde çamur yapıyordu: ışık huzmesi ve
    proje rengi degradesi bu ekranda kapalı. */
