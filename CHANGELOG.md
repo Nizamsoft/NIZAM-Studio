@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## v0.101.1
+- **Geri oku Standartlar, Ekip, Görevler ve Ayarlar'da da çalışıyor.** Yalnız proje detayında ve kovada aktifti; diğer ekranlara girince sönük kalıyor, "buradan çıkamıyorum" gibi duruyordu. Artık tek pasif yer **Panel** — zaten açılış ekranı, geri gidilecek yer orası.
+- Tarayıcı geçmişi boşken ok bir kat yukarı çıkıyor. Eskiden her yerden Projeler'e atlıyordu; ok artık Ayarlar'da da çalıştığı için oradan Projeler'e düşmek "geri" olmazdı.
+
 ## v0.101.0
 - **Geri oku artık üst çubuğu kaydırmıyor.** Eskiden 38 piksellik çerçeveli bir kareydi ve alt sayfaya girince beliriyordu; belirdiği anda logo, marka ve sayfa adı 45 piksel sağa kayıyordu. Şimdi yeri her ekranda ayrılı — girip çıkarken tek piksel oynamıyor.
 - **Ana ekranda kaybolmuyor, pasifleşiyor.** Ok yerinde duruyor ama sönük ve basılamaz. Gidilecek bir yer olmadığı ok'un yokluğundan değil, solukluğundan anlaşılıyor.

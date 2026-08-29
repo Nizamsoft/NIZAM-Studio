@@ -4835,9 +4835,13 @@ function render() {
   artiYaz(key, detay, id);
   /* Geri oku hiç kaybolmuyor: gidilecek bir yer yoksa yalnız soluyor ve
      basılamaz oluyor. Gizleseydik belirip kaybolurken üst çubuk her seferinde
-     kayardı — logo, marka ve sayfa adı sağa sola oynardı. */
+     kayardı — logo, marka ve sayfa adı sağa sola oynardı.
+
+     Ok yalnız açılış ekranında pasif. Panelin dışındaki her yerden geri
+     gidilecek bir yer vardır: Standartlar'a, Ekip'e ya da Ayarlar'a girip de
+     okun sönük kalması "buradan çıkamıyorum" gibi okunuyordu. */
   const geri = $('#btn-back');
-  const geriVar = !!(detay || kova);
+  const geriVar = key !== DEFAULT_ROUTE;
   geri.classList.toggle('pasif', !geriVar);
   geri.disabled = !geriVar;
   projeRengiYay(detay ? DB.proje(id) : null);
@@ -9536,13 +9540,18 @@ document.addEventListener('DOMContentLoaded', () => {
   $('#btn-back').addEventListener('click', () => {
     /* Yapı ağacında bir kat yukarı çıkar; başka yerde tarayıcı geçmişinde
        bir adım geri gider. Sabit bir hedefe atlamak "geri" değil. */
-    const { id, durak } = rota();
+    const { key, id, durak } = rota();
     if (durak === 'yapi' && YAPI_TASLAK[id] && yapiGeri(YAPI_TASLAK[id])) {
       render();
       return;
     }
     if (history.length > 1) { history.back(); return; }
-    location.hash = durak ? '#/projeler/' + id : '#/projeler';
+    /* Geçmiş yoksa bir kat yukarı çıkıyoruz. Eskiden burada her yerden
+       Projeler'e atlanıyordu; ok artık Ayarlar ve Ekip'te de çalıştığı için
+       oradan Projeler'e düşmek "geri" olmazdı. */
+    location.hash = durak                     ? '#/projeler/' + id
+                  : (key === 'projeler' && id) ? '#/projeler'
+                  : '#/' + DEFAULT_ROUTE;
   });
 
   egilmeyiBagla();
