@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.105.1
+- **Görsel değiştirmek artık ilk denemede tutuyor.** Eskiden var olan bir görselin üstüne yenisini koyduğunda ilk sefer hiçbir şey değişmiyor, ikinci seferde oluyordu.
+- Sebep bir yarış durumuydu: servis işçisi resmi **yolla** önbelliyor ve yeni dosya aynı yolun üzerine yazılıyor. Uygulama "bu resmi unut" mesajını gönderiyor ama **beklemiyordu**; yeni adresi istediğinde silme daha işlenmemiş oluyor ve önbellekten yine eski kopya geliyordu. İkinci denemede silme çoktan olmuş oluyordu — bu yüzden o çalışıyordu.
+- Servis işçisi artık silme bitince haber veriyor, uygulama da bunu bekliyor. Cevap gelmezse bir saniye sonra yine de devam ediyor; yüklemeyi askıda bırakmak daha kötü.
+- Hem boş kartta hem eski görseli olan kartta ilk denemede çalışıyor.
+
 ## v0.105.0
 - **Görseller artık her sürümde yeniden inmiyor.** Sebep önbellek kovasının adındaydı: kovanın adı sürüm numarasını taşıyordu ve her yeni sürümde eski kova siliniyordu — müşteri görselleri de onunla birlikte gidiyordu. Sürüm sık çıktığı için görseller neredeyse her açılışta yeniden iniyordu.
 - Resimler artık **ayrı ve sürümsüz** bir kovada. Kod değişince görsel bayatlamıyor; sürüm yükseltmesi yalnız kabuk dosyalarının kovasını siliyor.

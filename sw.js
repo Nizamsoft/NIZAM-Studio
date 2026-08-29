@@ -21,7 +21,7 @@
    Bir resim yeniden yüklenince eski kopya önbellekte kalırdı; uygulama
    `postMessage({ tip: 'unut', yol })` gönderiyor, o kayıt siliniyor. */
 
-const CACHE = 'nizam-studio-v0.105.0';
+const CACHE = 'nizam-studio-v0.105.1';
 
 /* Resimler AYRI ve SÜRÜMSÜZ bir önbellekte duruyor.
 
@@ -70,7 +70,20 @@ self.addEventListener('activate', e => {
 self.addEventListener('message', e => {
   const veri = e.data || {};
   if (veri.tip !== 'unut' || !veri.yol) return;
-  e.waitUntil(caches.open(RESIM).then(c => c.delete(new Request(veri.yol))).catch(() => {}));
+
+  /* Silme bitince haber veriyoruz: uygulama yeni adresi istemeden önce
+     bunu bekliyor. Beklemeseydi önbellekten eski kopya gelirdi ve
+     değiştirilen görsel ilk denemede hiç değişmemiş gibi görünürdü. */
+  const cevap = () => {
+    const p = e.ports && e.ports[0];
+    if (p) { try { p.postMessage(true); } catch (h) {} }
+  };
+  e.waitUntil(
+    caches.open(RESIM)
+      .then(c => c.delete(new Request(veri.yol)))
+      .catch(() => {})
+      .then(cevap, cevap)
+  );
 });
 
 self.addEventListener('fetch', e => {

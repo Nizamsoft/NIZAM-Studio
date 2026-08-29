@@ -829,12 +829,25 @@ const DB = {
      önbellekteki eskisi kalıyordu: önbellek anahtarı imzasız yol olduğu
      için yeni imza bile eski kopyaya düşüyor. */
   onbellektenSil(adres) {
-    if (!adres || !navigator.serviceWorker || !navigator.serviceWorker.controller) return;
-    try {
-      const u = new URL(adres, location.href);
-      navigator.serviceWorker.controller.postMessage(
-        { tip: 'unut', yol: u.origin + u.pathname });
-    } catch (e) {}
+    const kontrol = navigator.serviceWorker && navigator.serviceWorker.controller;
+    if (!adres || !kontrol) return Promise.resolve();
+
+    let u;
+    try { u = new URL(adres, location.href); } catch (e) { return Promise.resolve(); }
+
+    /* Cevap kanalı: silme bitmeden yeni adresi istemeyelim. Servis işçisi
+       cevap veremezse (eski sürüm, kanal desteklenmiyor) bir saniye sonra
+       yine de devam ediyoruz — yüklemeyi askıda bırakmak daha kötü. */
+    return new Promise(coz => {
+      let bitti = false;
+      const tamam = () => { if (!bitti) { bitti = true; coz(); } };
+      setTimeout(tamam, 1000);
+      try {
+        const kanal = new MessageChannel();
+        kanal.port1.onmessage = tamam;
+        kontrol.postMessage({ tip: 'unut', yol: u.origin + u.pathname }, [kanal.port2]);
+      } catch (e) { tamam(); }
+    });
   },
 
   /* Yüklemeden önce tarayıcıda küçültür. Telefondan gelen 4 MB'lık bir
@@ -988,7 +1001,11 @@ const DB = {
 
     const eskiAdres = this.gorselAdres[projeId + '/' + no];
     await this.depoyaGonder('gorseller', yol, kucuk, ilerleme);
-    this.onbellektenSil(eskiAdres);
+    /* BEKLENİYOR. Servis işçisi resmi yolla önbelliyor ve yeni dosya aynı
+       yolun üzerine yazılıyor; eski kopya silinmeden yeni adresi istersek
+       önbellekten yine eskisi geliyor. Mesaj beklenmediği için ilk deneme
+       hiç değişmiyor, ikincide silme çoktan olmuş oluyordu. */
+    await this.onbellektenSil(eskiAdres);
 
     yuvalar[i] = Object.assign({}, yuvalar[i],
       { dosya: ad, yol, boyut: kucuk.size, tur: kucuk.type });
