@@ -4936,11 +4936,31 @@ a:hover { color: var(--red-ink); }
    Desteklemeyen tarayıcıda hiçbir şey olmuyor, sayfa eskisi gibi çiziliyor.
 
    Yalnız `#view` kayıyor: kendi adı olduğu için kök anlık görüntüsünün
-   dışında kalıyor. Üst çubuk, alt çubuk ve panel fotoğrafı kökte kalıp
-   yumuşakça eriyor — onlar kaymamalı, yerlerinde duran şeyler.
+   dışında kalıyor. Üst çubuk ve alt çubuk kaymıyor ve solmuyor —
+   duran şeyler, oldukları yerde kalıyorlar. Panel fotoğrafı kökte kalıp
+   yumuşakça eriyor.
    ========================================================================== */
 
 #view { view-transition-name: ekran; }
+
+/* Üst ve alt çubuk kökten ayrılıyor. Kökte kalınca eskisi solup yenisi
+   belirirken ikisi de yarı saydam oluyor ve çubuk bir an yok oluyordu —
+   oysa duran bir şey. Kendi adları olunca yerlerinde kalıyorlar; geçiş
+   boyunca hiç animasyon almıyorlar, yalnız yeni hâlleri görünür. */
+#topbar { view-transition-name: ust-cubuk; }
+#tabbar { view-transition-name: alt-cubuk; }
+
+/* Eski görüntü hiç çizilmiyor: çubukların zemini yarı saydam olduğu için
+   altta kalınca eski hâl sızıyor, bir an iki tane etkin sekme görünüyordu. */
+::view-transition-old(ust-cubuk),
+::view-transition-old(alt-cubuk) {
+  display: none;
+}
+::view-transition-new(ust-cubuk),
+::view-transition-new(alt-cubuk) {
+  animation: none;
+  mix-blend-mode: normal;
+}
 
 @media (prefers-reduced-motion: no-preference) {
   ::view-transition-old(root),

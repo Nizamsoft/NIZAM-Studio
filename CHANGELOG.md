@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## v0.88.1
+- **Sayfa geçişinde üst ve alt çubuk artık kaybolmuyor.** Çubuklar geçişin dışında tutuldu: kaymıyor, solmuyor, oldukları yerde duruyorlar. Yalnız içerik kayıyor.
+- Eski çubuk görüntüsü hiç çizilmiyor — zemini yarı saydam olduğu için altta kalınca bir an iki etkin sekme birden görünüyordu.
+
 ## v0.88.0
 - **Kartlar artık tek tek gelmiyor.** Proje kartları, görev satırları, standartlar, panelin kısayolları — hepsi tek parça. Kart kart beliriş ile sayfa geçişi üst üste binince hem yavaş hem dağınık duruyordu.
 - **Sayfalar arası geçiş geldi: derinliğe göre kayma.** İçeri girerken yeni ekran sağdan gelir, eskisi sola çekilip solar; geri dönerken tersi. Yön adresteki parça sayısından çıkıyor — `#/projeler` bir parça, `#/projeler/p1` iki, `#/projeler/p1/yapi` üç; derinleşiyorsa ileri, sığlaşıyorsa geri.
