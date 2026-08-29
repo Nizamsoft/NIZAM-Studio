@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.97.0
+- **Standartlar baştan sona alfabetik.** Üç kademe birden: gruplar, grubun içindeki alanlar, alanın içindeki kurallar.
+- Sıralama Türkçe harf düzeniyle yapılıyor — ç, ğ, ı, ö, ş, ü kendi yerine oturuyor, sona atılmıyor. Altyapı → Çeviri → Erişilebilirlik → Tasarım → Veri.
+- Eskiden gruplar `config.js`'teki sabit sıradaydı, alanlar da kayıt sırasına göre diziliyordu; aradığın grubun listenin neresinde olduğunu ezberlemeden bulamıyordun. Kayıt sırası artık yalnız aynı adlı iki kayıt çakışırsa devreye giriyor.
+- Aynı sıralama göreve üretilen prompta da yansıyor: kurallar orada da alfabetik gidiyor.
+
 ## v0.96.0
 - **Standartlar ekranındaki iki düğme kart oldu.** Tek satırda iki sütun, aralarında sırayı taşıyan ince bir çizgi. Kartlar zeminden kopuk duruyor: iki katmanlı gölge, üstte ışık kenarı, köşeden geçen huzme, dokununca hafif çöküş.
 - **"Standart ekleme promptu" artık Claude'u açmıyor.** Tek yaptığı promptu panoya yazmak; sekme açmak kullanıcıyı uygulamadan çıkarıyor ve geri döndüğünde kart hâlini kaybediyordu. Basınca simge kırmızıdan yeşile dönüp tik çıkıyor, başlık "Prompt panoda", alt satır "Claude'a yapıştır" oluyor.

@@ -569,9 +569,16 @@ const DB = {
   },
 
   /* Standartları iki eksende böler: önce grup, grubun içinde alan.
-     Grup sırası config.js'teki STANDART_GRUPLARI'dır — o liste hem ekranın
-     hem promptun omurgası, alfabetik değil. Orada olmayan bir grup adı
-     sona eklenir. Boş gruplar listelenmez.
+     Boş gruplar listelenmez.
+
+     Üç kademe de alfabetik: gruplar, grubun içindeki alanlar, alanın
+     içindeki kurallar. Sıralama Türkçe harf düzeniyle yapılıyor — ç, ğ,
+     ı, ö, ş, ü kendi yerlerine oturur, sona atılmaz.
+
+     Eskiden gruplar config.js'teki sabit sıradaydı ve alanlar `sira`
+     alanına göre diziliyordu; aranan grup listenin neresinde olduğu
+     ezberlenmeden bulunamıyordu. `sira` artık yalnız aynı adlı iki kayıt
+     çakışırsa devreye giriyor.
 
      Dönen her grupta düz bir `liste` de var: göreve standart iliştiren
      pencereler alanları umursamıyor, tek düz liste istiyor. */
@@ -590,22 +597,14 @@ const DB = {
     });
 
     const sirala = liste => liste.slice().sort((x, y) =>
-      (x.sira || 0) - (y.sira || 0) || tr(x.ad, y.ad));
+      tr(x.ad, y.ad) || (x.sira || 0) - (y.sira || 0));
 
-    const gruplar = [...kova.entries()].map(([ad, ic]) => {
+    return [...kova.entries()].map(([ad, ic]) => {
       const alanlar = [...ic.entries()]
         .map(([aad, liste]) => ({ ad: aad, liste: sirala(liste) }))
-        .sort((x, y) => (x.liste[0].sira || 0) - (y.liste[0].sira || 0) || tr(x.ad, y.ad));
+        .sort((x, y) => tr(x.ad, y.ad));
       return { ad, alanlar, liste: alanlar.reduce((t, x) => t.concat(x.liste), []) };
-    });
-
-    /* Bilinen gruplar önce ve sabit sırayla; sonradan doğmuş bir grup adı
-       varsa alfabetik olarak sona. */
-    const sira = g => {
-      const i = STANDART_GRUPLARI.indexOf(g.ad);
-      return i === -1 ? STANDART_GRUPLARI.length : i;
-    };
-    return gruplar.sort((a, b) => sira(a) - sira(b) || tr(a.ad, b.ad));
+    }).sort((a, b) => tr(a.ad, b.ad));
   },
 
   /* Modül şablonları yalnızca veritabanından gelir.
