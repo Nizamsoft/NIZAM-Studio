@@ -85,7 +85,11 @@
   --iskelet-1:      #23211f;
   --iskelet-2:      #34302d;
   --isik:           rgba(255, 255, 255, .052);
-  --golge:          0 12px 30px -16px rgba(0, 0, 0, .92);
+  /* Kart gölgesi iki katman: yakın ve sert olan kartı zeminden ayırıyor,
+     uzak ve yumuşak olan yükseklik hissini veriyor. Tek katmanla kart
+     dokulu zemine yapışık duruyordu. */
+  --golge:          0 2px 4px -2px rgba(0, 0, 0, .70),
+                    0 18px 34px -20px rgba(0, 0, 0, .95);
   --golge-yuksek:   0 26px 50px -24px rgba(0, 0, 0, .95);
   --perde:          rgba(9, 7, 6, .74);
 
@@ -1058,15 +1062,32 @@ svg .dolgu > * { fill: currentColor; fill-opacity: .22; }
    ========================================================================== */
 
 
-body { background: radial-gradient(120% 80% at 50% -20%, var(--bg-ust) 0%, var(--bg) 55%); }
+/* Zemin: karbon dokusu. Düz gri bir yüzeyde kartlar zemine yapışık
+   duruyordu; ince köşegen örgü zemine derinlik veriyor ve kartlar üstünde
+   duruyormuş gibi okunuyor. Resim değil, çizim — dosya ağırlığı sıfır.
+   Sayfa kaydırılırken zemin yerinde durduğu için yeniden boyanmıyor.
+   Panelde görünmüyor: orada ofis fotoğrafı zaten üstünü kapatıyor. */
+body {
+  background-color: var(--bg);
+  background-image:
+    repeating-linear-gradient(45deg,  rgba(255, 255, 255, .022) 0 1px, transparent 1px 4px),
+    repeating-linear-gradient(-45deg, rgba(0, 0, 0, .30)        0 1px, transparent 1px 4px),
+    radial-gradient(120% 55% at 50% -8%, rgba(214, 208, 205, .08), transparent 62%),
+    linear-gradient(180deg, #1e1c1a, #131211);
+}
 html { background: var(--bg); }
 
 /* ---------- Kartlar: metal levha ---------- */
 
+.card,
+.modul,
+.standart-grup,
+.note {
+  box-shadow: var(--golge), inset 0 1px 0 var(--isik);
+}
 .card {
   background: linear-gradient(180deg, var(--kart-ust), var(--kart-alt));
   border-color: var(--line);
-  box-shadow: var(--golge), inset 0 1px 0 var(--isik);
 }
 
 /* ---------- Yan menü ---------- */

@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.95.0
+- **Zemin artık düz gri değil: karbon dokusu.** İnce köşegen bir örgü. Düz yüzeyde kartlar zemine yapışık duruyordu; doku zemine derinlik veriyor ve kartlar üstünde duruyormuş gibi okunuyor.
+- **Kartlar zeminden koptu.** Gölge iki katman oldu: yakın ve sert olanı kartı zeminden ayırıyor, uzak ve yumuşak olanı yükseklik hissini veriyor. Aynı kabartma modül, standart grubu ve bilgi şeritlerine de geldi.
+- Doku resim değil, çizim — dosya ağırlığı sıfır. Sayfa kaydırılırken zemin yerinde durduğu için yeniden boyanmıyor.
+- Panelde görünmüyor: orada ofis fotoğrafı zaten üstünü kapatıyor.
+
 ## v0.94.1
 - **Profil fotoğrafı da açılış ekranında iniyor.** Isıtma listesine proje logoları ve görselleri girmişti ama kullanıcının kendi fotoğrafı girmemişti; ilk açılışta uygulama açıldıktan sonra, üst çubukta gecikmeli beliriyordu. Artık listenin başında ve tek başına iniyor — diğerlerinin arkasında sıra beklemiyor.
 - Ekip fotoğrafları da ısıtmaya girdi; küçültme geldikten sonra hepsi birkaç kilobayt.
