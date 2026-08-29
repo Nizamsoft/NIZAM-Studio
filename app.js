@@ -8812,12 +8812,14 @@ function panelSelam() {
 function kisayolIzgarasi(projeSayi, acikIs) {
   const yon = AUTH.yonetici;
 
-  const kutu = ({ ad, alt, ikon, adres, eylem, ana }) => {
+  const kutu = ({ ad, alt, ikon, adres, eylem, ana, yakinda }) => {
     const ic = `
       <span class="kk-dr">${svg(ICON[ikon], 23)}</span>
       <b>${esc(ad)}</b>
       <i>${esc(alt)}</i>
-      <span class="kk-cv">${svg(ICON.chevron, 11)}</span>`;
+      ${yakinda ? '' : `<span class="kk-cv">${svg(ICON.chevron, 11)}</span>`}`;
+    /* Henüz ekranı olmayan kart: yeri tutulsun ama boşa dokundurmasın. */
+    if (yakinda) return `<span class="kk yakinda">${ic}</span>`;
     return eylem
       ? `<button class="kk ${ana ? 'ana' : ''}" type="button" data-eylem="${eylem}">${ic}</button>`
       : `<a class="kk ${ana ? 'ana' : ''}" href="${adres}">${ic}</a>`;
@@ -8828,12 +8830,13 @@ function kisayolIzgarasi(projeSayi, acikIs) {
       ikon: 'folder', adres: '#/projeler' },
     { ad: 'Görevler', alt: acikIs ? acikIs + ' açık iş' : 'açık iş yok',
       ikon: 'check', adres: '#/gorevler' },
+    /* Ekranı henüz yok; adı duruyor, yeri ayrıldı. */
+    { ad: 'Örnek Projeler', alt: 'yakında', ikon: 'goz', yakinda: true },
+    { ad: 'Ekip', alt: 'kullanıcı ve yetki', ikon: 'kisi',
+      adres: yon ? '#/ekip' : '#/ayarlar', yakinda: !yon },
+    { ad: 'Standartlar', alt: 'ortak tarifler', ikon: 'katman', adres: '#/standartlar' },
+    { ad: 'Ayarlar', alt: 'uygulama ayarı', ikon: 'ayar', adres: '#/ayarlar' },
   ];
-  if (yon) kutular.push({ ad: 'Yeni Proje', alt: 'sihirbazla kur',
-    ikon: 'arti', eylem: 'sihirbaz', ana: true });
-  kutular.push({ ad: 'Standartlar', alt: 'ortak tarifler', ikon: 'katman', adres: '#/standartlar' });
-  if (yon) kutular.push({ ad: 'Ekip', alt: 'kullanıcı ve yetki', ikon: 'kisi', adres: '#/ekip' });
-  kutular.push({ ad: 'Ayarlar', alt: 'uygulama ayarı', ikon: 'ayar', adres: '#/ayarlar' });
 
   return `<div class="kisayol">${kutular.map(kutu).join('')}</div>`;
 }

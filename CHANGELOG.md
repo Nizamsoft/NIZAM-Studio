@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.84.0
+- **Kısayol ızgarası yeniden sıralandı:** Projeler · Görevler · Örnek Projeler · Ekip · Standartlar · Ayarlar.
+- **"Yeni Proje" ızgaradan çıktı.** Alt çubuğun ortasındaki kırmızı `+` zaten aynı işi yapıyordu; ızgarada ikinci kez durması hem yer kaplıyor hem kırmızıyı ikiye bölüyordu. Kırmızı artık yalnız alt çubukta ve aktif sekmede.
+- **"Örnek Projeler" yer tutucu olarak eklendi** — ekranı henüz yok, o yüzden sönük ve dokunmuyor. Adı ve yeri hazır; ekranı sonra kurulacak.
+- Kart başlığına iki satırlık sabit yer ayrıldı: "Örnek Projeler" iki satıra taştığında diğer kartların iç hizası kayıyordu.
+
 ## v0.83.0
 - **Kaydırma kararması kalktı, yerine koyu buzlu cam geldi.** Fotoğraf sabit olduğu için kaydırınca kartlar net fotoğrafın üstüne geliyordu; çözüm olarak zemini karartıyorduk — fotoğraf da kayboluyordu. Artık fotoğraf net kalıyor, okunurluğu **camın kendisi** taşıyor: yoğun bulanıklık, düşük geçirgenlik, ince ışıklı kenar. `zeminKoyulugu` fonksiyonu, kaydırma dinleyicisi ve kararma katmanı silindi.
 - **Fotoğraf daha çok kırpıldı**, tavan payı azaldı: logo duvarı, raflar ve masa artık ekranın büyük kısmını kaplıyor.

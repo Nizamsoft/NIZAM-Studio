@@ -2328,7 +2328,10 @@ a.durak:active { transform: scale(.99); transition: transform .1s var(--ease); }
   border-radius: 50%; background: var(--surface-2); color: var(--metal-2);
   border: 1px solid var(--line-3);
 }
-.kk b { display: block; font-family: var(--yazi-baslik); font-size: 12.5px;
+/* "Örnek Projeler" iki satıra taşıyor; başlığa iki satırlık sabit yer
+   ayrılıyor ki kartların iç hizası bozulmasın. */
+.kk b { display: flex; align-items: center; justify-content: center;
+        min-height: 32px; font-family: var(--yazi-baslik); font-size: 12.5px;
         color: var(--ink-strong); line-height: 1.25; }
 .kk i { display: block; font-style: normal; font-size: 9.5px; color: var(--ink-dim);
         margin-top: 5px; line-height: 1.35; }
@@ -2336,6 +2339,11 @@ a.durak:active { transform: scale(.99); transition: transform .1s var(--ease); }
    çakışıyordu. */
 .kk-cv { position: absolute; left: 50%; bottom: 8px; transform: translateX(-50%);
          color: var(--ink-dim); display: flex; }
+/* Ekranı henüz olmayan kart: görünür ama sönük ve dokunmuyor. */
+.kk.yakinda { opacity: .42; cursor: default; }
+.kk.yakinda:hover { border-color: var(--line-2); }
+.kk.yakinda:active { transform: none; }
+
 /* Izgaranın ana eylemi: kırmızı burada, başka yerde değil. */
 .kk.ana {
   background: linear-gradient(180deg, rgba(229, 52, 42, .20), rgba(229, 52, 42, .07));
