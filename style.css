@@ -652,6 +652,75 @@ svg .dolgu > * { fill: currentColor; fill-opacity: .22; }
 
 .proje-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(268px, 1fr)); gap: 13px; }
 
+/* Projeler ekranının iki kovası --------------------------------------------
+   Yan yana iki kart; içinde yalnız kaç proje olduğu. Basınca o kovanın
+   sayfası açılıyor — kart açılıp kapanmıyor.
+
+   Havada duruyorlar: iki katmanlı gölge (yakını zeminden ayırır, uzağı
+   yüksekliği verir), üstte ışık kenarı, köşeden geçen huzme. Standartlar
+   ve panel kartlarıyla aynı dil. */
+.kovalar { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.kova {
+  position: relative; overflow: hidden; display: flex; flex-direction: column;
+  align-items: flex-start; gap: 12px; width: 100%; text-align: left; cursor: pointer;
+  padding: 15px 13px 16px; border-radius: var(--radius-lg); text-decoration: none;
+  background: linear-gradient(180deg, var(--kart-ust), var(--kart-alt));
+  border: 1px solid var(--line); color: var(--ink); font-family: var(--yazi-govde);
+  box-shadow: 0 2px 4px -2px rgba(0, 0, 0, .7),
+              0 22px 40px -22px rgba(0, 0, 0, .95),
+              inset 0 1px 0 var(--isik);
+  transition: transform .3s var(--yay), box-shadow .3s var(--ease), border-color .2s var(--ease);
+}
+.kova::before {
+  content: ''; position: absolute; top: -55%; left: -16%; width: 66%; height: 190%;
+  background: linear-gradient(101deg, rgba(255, 255, 255, .06), transparent 60%);
+  pointer-events: none;
+}
+/* Üstte kovanın rengini taşıyan ince şerit — proje kartındaki ile aynı. */
+.kova::after {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, var(--kv), transparent 68%);
+}
+.kova:active { transform: translateY(-1px) scale(.985); transition-duration: .1s; }
+.kova:focus-visible { outline: 2px solid var(--metal-1); outline-offset: 2px; }
+
+.kv-ust { position: relative; display: flex; align-items: center;
+          justify-content: space-between; width: 100%; }
+.kv-ikon {
+  display: flex; align-items: center; justify-content: center;
+  flex: 0 0 40px; width: 40px; height: 40px; border-radius: 12px; color: var(--kv);
+  background: linear-gradient(180deg,
+    color-mix(in srgb, var(--kv) 22%, transparent),
+    color-mix(in srgb, var(--kv) 9%,  transparent));
+  border: 1px solid color-mix(in srgb, var(--kv) 32%, transparent);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .09);
+}
+.kv-cv { position: relative; display: flex; color: var(--ink-dim); }
+
+.kv-yz { position: relative; display: flex; flex-direction: column; gap: 3px; width: 100%; }
+/* Sayı asıl bilgi: kartın içindeki en büyük şey o. */
+.kv-say {
+  font-family: var(--yazi-baslik); font-weight: 700; font-size: 30px; line-height: 1;
+  color: var(--kv); font-variant-numeric: tabular-nums;
+}
+/* Başlığa sabit yer AYRILMIYOR: yan yana iki kart tek ızgara satırında
+   duruyor, ızgara ikisini zaten aynı yüksekliğe çekiyor. Ayırsaydık iki
+   başlık da tek satıra sığdığı için kartın altında boşluk kalırdı. */
+.kv-ad {
+  font-family: var(--yazi-baslik); font-weight: 600; font-size: 12.5px;
+  line-height: 1.34; color: var(--ink-strong); letter-spacing: -.005em;
+}
+
+/* Renkler uydurma değil: sarı uygulamanın "Geliştiriliyor", yeşil
+   "Tamamlandı" rengi. Kırmızı yok — o alt çubuktaki artının. */
+.k-basmis { --kv: var(--st-dev); }
+.k-bitmis { --kv: var(--st-done); }
+
+/* Boş kova kaybolmuyor, sönüyor: iki kart hep aynı yerde dursun, biri
+   kaybolunca öbürü tek başına ortada kalmasın. */
+.kova.bos { opacity: .5; }
+.kova.bos .kv-say { color: var(--ink-dim); }
+
 .proje {
   padding: 16px 16px 14px;
   display: flex; flex-direction: column; gap: 12px;
@@ -2832,7 +2901,7 @@ a.durak:active { transform: scale(.99); transition: transform .1s var(--ease); }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
   .tilt { transform: none !important; }
-  .sa-kart:hover { transform: none !important; }}
+  .sa-kart:hover, .kova:hover { transform: none !important; }}
 
 /* ==========================================================================
    ALT SEKME ÇUBUĞU — yüzen cam hap
@@ -4196,6 +4265,12 @@ a:hover { color: var(--red-ink); }
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .13),
               inset 0 -1px 0 rgba(0, 0, 0, .45),
               0 16px 30px -16px rgba(0, 0, 0, .95);
+}
+.kova:hover {
+  transform: translateY(-3px); border-color: var(--line-parlak);
+  box-shadow: 0 2px 4px -2px rgba(0, 0, 0, .7),
+              0 32px 54px -24px rgba(0, 0, 0, .98),
+              inset 0 1px 0 rgba(255, 255, 255, .09);
 }
 .proje:hover { background: var(--surface-2); border-color: var(--line-parlak); }
 .modul-bas:hover { background: var(--surface-2); }

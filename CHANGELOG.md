@@ -1,5 +1,14 @@
 # Değişiklik Günlüğü
 
+## v0.100.0
+- **Projeler ekranı iki kova kartına indi:** Başlamış Projeler · Bitmiş Projeler. Yan yana, tek satırda, içinde yalnız kaç proje olduğu. Basınca o kovanın sayfası açılıyor — kart açılıp kapanmıyor.
+- Eskiden üç açılır şerit vardı ve **boş olan hiç çizilmiyordu**; bu yüzden ekranda kaç bölüm göreceğin veriye göre değişiyordu. Artık iki kart hep aynı yerde; boş kova kaybolmuyor, sönüyor ve 0 yazıyor.
+- **Başlamış = bitmemiş olan her şey**, yüzdesi sıfır olanlar dahil. İki kova olduğu için başka gidecek yerleri yok; "ilerlemesi sıfırdan büyük" deseydik hiç görevi bitmemiş bir proje ekrandan tamamen kaybolurdu.
+- Kartlar havada duruyor: iki katmanlı gölge, üstte ışık kenarı, köşeden geçen huzme. Standartlar ve panel kartlarıyla aynı dil.
+- Renkler uydurma değil — sarı uygulamanın "Geliştiriliyor", yeşil "Tamamlandı" rengi. Kırmızı yok, o alt çubuktaki artının.
+- Kova sayfası proje detayı sayılmıyor: üst çubuktaki artı "Yeni Görev"e dönmüyor, proje rengi yayılmıyor. Ortada bir proje yok.
+- Kovanın içi şimdilik proje kartlarının düz listesi; o sayfanın kendi düzeni sonraki turda.
+
 ## v0.99.1
 - **Profil paneli artık yağ gibi açılıyor.** Takılmanın dört sebebi vardı, dördü de kalktı.
 - **Panel her açılışta sıfırdan kuruluyordu:** beş satır, beş simge ve dinleyiciler yaratılıyor, ardından *aynı karede* hareket başlıyordu. İlk kare hem yeni parçaları çizmek hem hareketi başlatmak zorundaydı. Artık panel bir kez kuruluyor, sonra yalnız gösterilip gizleniyor.

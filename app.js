@@ -24,6 +24,19 @@ const ROUTES = {
 
 const DEFAULT_ROUTE = 'panel';
 
+/* Projeler ekranının iki kovası. Adres `#/projeler/basmis` — proje kimlikleri
+   uuid olduğu için bu iki kelimeyle asla çakışmaz.
+
+   İki kova var, üç değil: bu yüzden "başlamış" ilerlemeye değil BİTMEMİŞ
+   olmaya bakıyor. Yüzdesi sıfır olan projenin gidecek başka yeri yok;
+   ">0" deseydik hiç görevi bitmemiş bir proje ekrandan tamamen kaybolurdu. */
+const PROJE_KOVASI = {
+  basmis: { ad: 'Başlamış Projeler', ikon: 'saat', sinif: 'k-basmis',
+            sec: y => y < 100 },
+  bitmis: { ad: 'Bitmiş Projeler',   ikon: 'bitti', sinif: 'k-bitmis',
+            sec: y => y >= 100 },
+};
+
 function rota() {
   const p = (location.hash || '').replace(/^#\/?/, '').split('/').filter(Boolean);
   const key = ROUTES[p[0]] ? p[0] : DEFAULT_ROUTE;
@@ -142,6 +155,16 @@ const ICON = {
 
   /* tek katman işaretler */
   chevron: '<path d="M9 6l6 6-6 6"></path>',
+
+  /* Proje kovaları: süren iş ve bitmiş iş. */
+  saat: {
+    d: '<circle cx="12" cy="12" r="9"></circle>',
+    c: '<circle cx="12" cy="12" r="9"></circle><path d="M12 7.2V12l3.2 2"></path>',
+  },
+  bitti: {
+    d: '<circle cx="12" cy="12" r="9"></circle>',
+    c: '<circle cx="12" cy="12" r="9"></circle><path d="M8.2 12.3l2.6 2.6 5-5.4"></path>',
+  },
 
   /* Kum saati — güncelleme denetlenirken devriliyor. */
   kum: {
@@ -295,36 +318,48 @@ const VIEWS = {
         AUTH.yonetici ? 'Yeni Proje' : null, 'sihirbaz')}</div>`;
     }
 
-    /* Üç kova: ilerlemeye göre. Yüzde elle girilmiyor, görevlerden hesaplanıyor. */
-    const kova = { calisilan: [], baslanmamis: [], tamamlanan: [] };
+    /* İki kova. Yüzde elle girilmiyor, görevlerden hesaplanıyor. */
+    const say = {};
+    Object.keys(PROJE_KOVASI).forEach(k => { say[k] = 0; });
     DB.projeler.forEach(p => {
       const y = DB.sayim(p.id).yuzde;
-      if (y >= 100)     kova.tamamlanan.push(p);
-      else if (y > 0)   kova.calisilan.push(p);
-      else              kova.baslanmamis.push(p);
+      Object.keys(PROJE_KOVASI).forEach(k => { if (PROJE_KOVASI[k].sec(y)) say[k]++; });
     });
 
-    const bolum = (anahtar, ad, liste, varsayilanAcik) => {
-      if (!liste.length) return '';
-      const acik = ACIK_PROJE_BOLUM[anahtar] === undefined
-        ? varsayilanAcik
-        : ACIK_PROJE_BOLUM[anahtar];
-
+    return `<div class="kovalar">${Object.keys(PROJE_KOVASI).map(k => {
+      const kv = PROJE_KOVASI[k];
       return `
-        <div class="pgrup">
-          <button class="pgrup-bas ${acik ? 'acik' : ''}" data-eylem="proje-bolum"
-                  data-ad="${anahtar}" type="button" aria-expanded="${acik}">
-            <span class="chev">${svg(ICON.chevron, 15)}</span>
-            <span class="pgrup-ad">${ad}</span>
-            <span class="pgrup-say">${liste.length}</span>
-          </button>
-          ${acik ? `<div class="proje-grid">${liste.map(projeKarti).join('')}</div>` : ''}
-        </div>`;
-    };
+        <a class="kova ${kv.sinif} ${say[k] ? '' : 'bos'}" href="#/projeler/${k}">
+          <span class="kv-ust">
+            <span class="kv-ikon">${svg(ICON[kv.ikon], 20)}</span>
+            <span class="kv-cv">${svg(ICON.chevron, 13)}</span>
+          </span>
+          <span class="kv-yz">
+            <span class="kv-say" data-sayac="${say[k]}">${say[k]}</span>
+            <span class="kv-ad">${esc(kv.ad)}</span>
+          </span>
+        </a>`;
+    }).join('')}</div>`;
+  },
 
-    return bolum('calisilan',   'Üstünde çalışılan', kova.calisilan,   true)
-         + bolum('baslanmamis', 'Başlanmamış',       kova.baslanmamis, false)
-         + bolum('tamamlanan',  'Tamamlanan',        kova.tamamlanan,  false);
+  /* Bir kovanın içi. Proje kartları olduğu gibi duruyor — bu sayfanın
+     kendi düzeni sonraki turda ele alınacak. */
+  projeKovasi: (k) => {
+    if (YUKLENIYOR) return iskeletler(4);
+    if (DB.hata)    return hataKutusu(DB.hata);
+
+    const kv    = PROJE_KOVASI[k];
+    const liste = DB.projeler.filter(p => kv.sec(DB.sayim(p.id).yuzde));
+
+    if (!liste.length) {
+      return `<div class="card">${empty(ICON[kv.ikon], kv.ad + ' yok',
+        k === 'bitmis'
+          ? 'Bir projenin bütün görevleri bitince buraya düşer.'
+          : 'Yeni Proje sihirbazı firma, renk, platform, veritabanı ve modülleri sorar.',
+        AUTH.yonetici && k === 'basmis' ? 'Yeni Proje' : null, 'sihirbaz')}</div>`;
+    }
+
+    return `<div class="proje-grid">${liste.map(projeKarti).join('')}</div>`;
   },
 
   /* ---------- Proje detayı ---------- */
@@ -4759,7 +4794,10 @@ function render() {
   const kaydirmaYeri = kaydiran ? kaydiran.scrollTop : null;
 
   const { key, id, durak } = rota();
-  const detay = key === 'projeler' && id;
+  /* Kova sayfası proje detayı DEĞİL: üst çubuktaki artı "Yeni Görev"e
+     dönmemeli, proje rengi yayılmamalı — ortada bir proje yok. */
+  const kova  = key === 'projeler' && PROJE_KOVASI[id] ? id : null;
+  const detay = key === 'projeler' && id && !kova;
   const sayfa = detay && DURAKLAR[durak] ? durak : null;
 
   /* Tasarım durağından çıkıldıysa kip haritaya döner: geri gelindiğinde
@@ -4772,6 +4810,8 @@ function render() {
   const baslik = $('#page-title');
   if (sayfa) {
     baslik.textContent = DURAKLAR[sayfa].ad;
+  } else if (kova) {
+    baslik.textContent = PROJE_KOVASI[kova].ad;
   } else if (detay) {
     const p = DB.proje(id);
     baslik.textContent = p ? projeAdi(p) : 'Proje';
@@ -4789,7 +4829,7 @@ function render() {
     sayfa === 'tasarim' || sayfa === 'yapi');
   ustEylemYaz(key, detay, id);
   artiYaz(key, detay, id);
-  $('#btn-back').classList.toggle('hidden', !detay);
+  $('#btn-back').classList.toggle('hidden', !detay && !kova);
   projeRengiYay(detay ? DB.proje(id) : null);
 
   /* Aynı ekranda kalıp bir şeyi açıp kapatınca her şey yeniden uçuşmasın:
@@ -4806,6 +4846,7 @@ function render() {
   const yatay = gecis ? [] : $$('.raf', view).map(r => r.scrollLeft);
 
   view.innerHTML = sayfa ? durakSayfasi(id, sayfa)
+                 : kova  ? VIEWS.projeKovasi(kova)
                  : detay ? VIEWS.projeDetay(id)
                  : VIEWS[key]();
   view.scrollTop = dikey;
