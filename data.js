@@ -811,13 +811,19 @@ const DB = {
      beklenmesin. Servis işçisi bunları önbelleğe alıyor, ikinci açılışta
      ağa hiç gidilmiyor. */
   resimleriIsit() {
-    const adresler = Object.values(this.logoAdres)
-      .concat(Object.values(this.gorselAdres))
-      .filter(Boolean);
-    if (!adresler.length) return Promise.resolve();
+    const cek = adres => fetch(adres, { mode: 'cors', credentials: 'omit' }).catch(() => {});
 
-    return Promise.all(adresler.map(adres =>
-      fetch(adres, { mode: 'cors', credentials: 'omit' }).catch(() => {})));
+    /* Kendi fotoğrafın önce ve tek başına: üst çubukta hemen görünüyor,
+       diğerlerinin arkasında sıra beklememeli. Eskiden ısıtma listesinde
+       hiç yoktu — açılış ekranı geçtikten sonra iniyordu. */
+    const benim = AUTH.foto ? cek(AUTH.foto) : Promise.resolve();
+
+    const kalan = Object.values(this.logoAdres)
+      .concat(Object.values(this.gorselAdres))
+      .concat(this.kisilerHepsi.map(k => k.foto))
+      .filter(Boolean);
+
+    return benim.then(() => Promise.all(kalan.map(cek)));
   },
 
   /* Servis işçisine "bu resmi unut" der. Bir fotoğraf değiştirildiğinde

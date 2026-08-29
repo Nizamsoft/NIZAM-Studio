@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## v0.94.1
+- **Profil fotoğrafı da açılış ekranında iniyor.** Isıtma listesine proje logoları ve görselleri girmişti ama kullanıcının kendi fotoğrafı girmemişti; ilk açılışta uygulama açıldıktan sonra, üst çubukta gecikmeli beliriyordu. Artık listenin başında ve tek başına iniyor — diğerlerinin arkasında sıra beklemiyor.
+- Ekip fotoğrafları da ısıtmaya girdi; küçültme geldikten sonra hepsi birkaç kilobayt.
+
 ## v0.94.0
 - **Her şey bir kez iniyor, sonra telefonda kalıyor.** İlk açılış 2.09 MB'tan **1.12 MB**'a indi. İkinci açılıştan itibaren sunucuya yalnız üç istek gidiyor — sürüm denetimi ve servis işçisinin kendi güncellemesi. **Sayfalar arası geçişte tek bayt inmiyor.**
 - **Logo iki kez iniyordu.** Dört kullanımdan birinin adresinde sürüm numarası yoktu; tarayıcı onu ayrı bir dosya sayıp 438 KB'ı iki kez indiriyordu. Ayrıca dosya 600 piksel genişliğindeydi, oysa en büyük çizildiği yer açılış ekranında 89 piksel. **876 KB → 37 KB.**
