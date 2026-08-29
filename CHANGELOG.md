@@ -1,5 +1,14 @@
 # Değişiklik Günlüğü
 
+## v0.99.1
+- **Profil paneli artık yağ gibi açılıyor.** Takılmanın dört sebebi vardı, dördü de kalktı.
+- **Panel her açılışta sıfırdan kuruluyordu:** beş satır, beş simge ve dinleyiciler yaratılıyor, ardından *aynı karede* hareket başlıyordu. İlk kare hem yeni parçaları çizmek hem hareketi başlatmak zorundaydı. Artık panel bir kez kuruluyor, sonra yalnız gösterilip gizleniyor.
+- **Üç ayrı süre, iki ayrı eğri vardı:** içerik yaylanarak hedefi aşıp geri gelirken açılan kenarı düz gidiyor, ikisi birbirinden ayrılıyordu; saydamlık da yolun yarısında bitiyordu. Şimdi tek süre, tek eğri.
+- **`clip-path` kaldırıldı.** `transform` ve `opacity` ekran kartında yapılır, `clip-path` yapılmaz — her karede yeniden boyanıyordu.
+- **`backdrop-filter` kaldırıldı.** Panelin zemini zaten %96–99 kapalıydı; bulanıklaştırdığı şey görünmüyordu bile, ama her karede arkayı yeniden bulanıklaştırma bedeli ödeniyordu. Görünüşte hiçbir fark yok.
+- Sınıf eklenmeden önce başlangıç stili zorlanıyor: tek kare beklemek yetmiyordu, tarayıcı ikisini birleştirince geçiş hiç başlamıyor, panel zıplayarak geliyordu.
+- Panel kapalıyken sayfada duruyor ama `visibility: hidden` — altındaki içeriğin tıklamasını yutmuyor.
+
 ## v0.99.0
 - **"Güncellemeleri denetle" artık profil panelinde de var.** Sağ üstteki kullanıcı kutusuna basınca açılan panelde, Çıkış'ın hemen üstünde; yanında o an yüklü sürüm yazıyor. Ayarlar'daki satır olduğu yerde duruyor — denetlemek için ayarlara gitmek gerekmiyor artık.
 - **Denetlerken kum saati devriliyor.** İki yerde de: paneldeki satırın simgesi ve Ayarlar'daki düğme. Sürekli fırıl fırıl dönmüyor, gerçek kum saati gibi yarım tur atıp bekliyor — kesintisiz dönen kum saati bozuk bir bekleme çarkı gibi okunuyor.

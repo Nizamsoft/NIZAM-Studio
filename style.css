@@ -2488,19 +2488,33 @@ a.durak:active { transform: scale(.99); transition: transform .1s var(--ease); }
   background: linear-gradient(180deg,
     color-mix(in srgb, var(--bg-ust) 99%, transparent),
     color-mix(in srgb, var(--bg-ust) 96%, transparent));
-  backdrop-filter: blur(20px) saturate(150%);
-  -webkit-backdrop-filter: blur(20px) saturate(150%);
   box-shadow: 0 18px 34px -22px rgba(0, 0, 0, .95);
 
+  /* Hareket yalnız `transform` ve `opacity` ile — ikisi de ekran kartında
+     yapılır, hiçbir kare yeniden boyanmaz.
+
+     Eskiden üç ayrı özellik, üç ayrı süre ve iki ayrı eğri vardı: içerik
+     `--yay` ile hedefi aşıp geri gelirken açılan kenarı `clip-path` düz
+     gidiyordu, ikisi birbirinden ayrılıyordu; saydamlık da yolun yarısında
+     bitiyordu. Şimdi tek süre, tek eğri.
+
+     `clip-path` kalktı: `transform` gibi ekran kartında yapılmıyor, her
+     karede yeniden boyanıyordu. `backdrop-filter` de kalktı — panelin zemini
+     zaten %96-99 kapalı, bulanıklaştırdığı şey görünmüyordu bile; ama her
+     karede arkayı yeniden bulanıklaştırma bedelini ödüyorduk. */
   opacity: 0;
-  transform: translateY(-10px);
-  clip-path: inset(0 0 100% 0);
-  transition: opacity .18s ease,
-              transform .32s var(--yay),
-              clip-path .32s var(--ease);
-  will-change: transform, clip-path, opacity;
+  transform: translateY(-8px);
+  /* Kapalıyken tıklamayı yutmasın: artık hep sayfada duruyor. */
+  visibility: hidden;
+  transition: opacity .2s var(--ease),
+              transform .2s var(--ease),
+              visibility 0s linear .2s;
+  will-change: transform, opacity;
 }
-.hesap-panel.acik { opacity: 1; transform: none; clip-path: inset(0 0 0 0); }
+.hesap-panel.acik {
+  opacity: 1; transform: none; visibility: visible;
+  transition: opacity .2s var(--ease), transform .2s var(--ease), visibility 0s;
+}
 
 /* Kırmızı çizgi açıkken panelin dibine iner — çubuk tek parça görünsün. */
 #topbar.panel-acik::after { opacity: 0; }

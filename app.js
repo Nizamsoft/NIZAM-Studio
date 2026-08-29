@@ -7351,13 +7351,14 @@ function fotoSec() {
 /* Hesap paneli: ayrı bir kart değil — üst çubuğun aşağı doğru uzayan parçası.
 
    Panel içeriği AŞAĞI İTMİYOR, üstüne biniyor. İtseydi her karede sayfanın
-   yerleşimi baştan hesaplanırdı; böyle yalnızca kaydırma ve saydamlık oynuyor,
-   ikisi de ekran kartında yapılıyor. Takılma olmuyor. */
-function hesapMenusu() {
-  const acik = $('#hesap-panel');
-  if (acik && acik.classList.contains('acik')) { hesapMenusuKapat(); return; }
-  if (acik) acik.remove();
+   yerleşimi baştan hesaplanırdı.
 
+   Panel BİR KEZ kuruluyor, sonra yalnız gösterilip gizleniyor. Eskiden her
+   açılışta sıfırdan yaratılıyordu: beş satır, beş satır içi simge ve
+   dinleyiciler kuruluyor, ardından AYNI karede hareket başlıyordu. İlk kare
+   hem yeni düğümleri çizmek hem hareketi başlatmak zorunda kalıyor, açılış
+   orada takılıyordu. Artık ilk kare yalnız hareketi taşıyor. */
+function hesapPaneliKur() {
   const destekYazi = DESTEK.tip === 'wa' ? 'WhatsApp' : DESTEK.deger;
 
   const el = document.createElement('div');
@@ -7387,12 +7388,6 @@ function hesapMenusu() {
       <span class="hp-ikon">${svg(ICON.cikis, 16)}</span>
       <span class="hp-ad">Çıkış yap</span>
     </button>`;
-
-  const ust = $('#topbar');
-  ust.appendChild(el);
-  ust.classList.add('panel-acik');
-  /* Bir kare bekle ki geçiş oynasın; sınıfı hemen eklersek animasyon atlanır. */
-  requestAnimationFrame(() => el.classList.add('acik'));
 
   $('[data-hs="not"]', el).addEventListener('click', () => {
     hesapMenusuKapat();
@@ -7430,6 +7425,23 @@ function hesapMenusu() {
 
   $('[data-hs="cikis"]', el).addEventListener('click', () => { hesapMenusuKapat(); signOut(); });
 
+  $('#topbar').appendChild(el);
+  return el;
+}
+
+function hesapMenusu() {
+  const el = $('#hesap-panel') || hesapPaneliKur();
+  if (el.classList.contains('acik')) { hesapMenusuKapat(); return; }
+
+  $('#topbar').classList.add('panel-acik');
+
+  /* Sınıfı eklemeden önce başlangıç stilinin gerçekten işlendiğinden emin
+     ol. Tek `requestAnimationFrame` yetmiyor: tarayıcı ilk stili ve `.acik`
+     stilini aynı karede birleştirirse geçiş hiç başlamıyor, panel zıplayarak
+     geliyordu. Düzeni bir kez okumak (`offsetHeight`) stili zorluyor. */
+  void el.offsetHeight;
+  requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('acik')));
+
   setTimeout(() => {
     document.addEventListener('click', disariBasinca);
     document.addEventListener('keydown', escBasinca);
@@ -7448,9 +7460,10 @@ function hesapMenusuKapat() {
   document.removeEventListener('keydown', escBasinca);
   $('#topbar').classList.remove('panel-acik');
   if (!el) return;
+  /* Panel silinmiyor, yalnız kapanıyor: bir dahaki açılışta yeniden
+     kurulmasın. Kapalıyken `visibility: hidden` olduğu için tıklamayı da
+     yutmuyor. */
   el.classList.remove('acik');
-  /* Geçiş 320 ms; daha erken silersek kapanış görünmüyor. */
-  setTimeout(() => el.remove(), 360);
 }
 
 /* Standart yazma / düzenleme penceresi */
