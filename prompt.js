@@ -792,8 +792,13 @@ const PROMPT = {
 
     s.push('## Görselleri sen üret');
     s.push('Tasarımın gerektirdiği görselleri **kendin üret** ve her birine sıra');
-    s.push('numarası ver. **`G1` benim verdiğim işletme görselidir** — onu');
-    s.push('kullanmak istersen numarası odur, yeniden üretme.');
+    s.push('numarası ver. Ama iki görsel **bende var, onları üretme**:');
+    s.push('');
+    s.push('- **Logo.** Sana yukarıda verdim; uygulama onu ayrı katman olarak');
+    s.push('  çiziyor. Yeniden çizersen asıl logodan sapar ve iki logo üst üste');
+    s.push('  biner. Ekranlarda kullan, ama varlık olarak sayma.');
+    s.push('- **İşletme görseli — `G1`.** O da benden geldi. Kullanmak istersen');
+    s.push('  numarası odur, yeniden üretme.');
     s.push('');
     s.push('- **İki ayrı simge dili kur.** Büyük yerlerde (hızlı işlem kartları,');
     s.push('  boş durum) zengin, gölgeli, çok renkli illüstrasyon simgeler;');
@@ -882,6 +887,9 @@ const PROMPT = {
     s.push('');
     s.push('- **numara**: `G1`, `G2`… ürettiğin sırayla. `G1` benim verdiğim');
     s.push('  işletme görselidir; kullanmadıysan onu yazma.');
+    s.push('- **Logoyu YERLEŞİM\'e yazma ve üretme.** Logo Studio\'dan geliyor,');
+    s.push('  uygulama onu kendi çiziyor. Ekranlarda kullandın, orası doğru —');
+    s.push('  ama bir varlık dosyası olarak istemiyorum.');
     s.push('- **dosya adı**: `gorsel-1.jpg` gibi, küçük harf, Türkçe harf yok.');
     s.push('  Uzantıyı amaca göre seç: illüstrasyon ve doku `.png`, arayüz');
     s.push('  simgesi ve süsleme `.svg`. Burada yazdığın ad bağlayıcı: görseli');
@@ -958,7 +966,9 @@ const PROMPT = {
     s.push('- Örnek, yer tutucu, "burada şöyle bir görsel olacak" gibi şeyler');
     s.push('  gönderme. Gerçek dosyayı üret.');
     s.push('- Bir görseli üretemiyorsan sessizce atlama: hangisi ve neden,');
-    s.push('  tek cümleyle söyle.', '');
+    s.push('  tek cümleyle söyle.');
+    s.push('- **Logoyu ve `G1` işletme görselini üretme.** İkisi de bende;');
+    s.push('  onlar için dosya bekleme, sıraya da koyma.', '');
 
     s.push('Hepsi bittiğinde tek satırla onayla: kaç görsel verdin ve');
     s.push('numaraları ne. Ben bunları uygulamadaki yuvalarına koyacağım.');

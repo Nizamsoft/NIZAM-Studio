@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.78.0
+- **Logo artık varlık listesine girmiyor.** İlk başarılı tasarım turunda çıktı: ChatGPT tabakanın varlık listesine logoyu da koyuyordu. Oysa logo Studio'dan geliyor ve uygulama onu ayrı katman olarak çiziyor; yeniden üretilirse asıl logodan sapar ve ekranda iki logo üst üste biner. Üç yere kural kondu — tasarım promptunda *"ekranlarda kullan ama varlık olarak sayma"*, tarif promptunda *"YERLEŞİM'e yazma"*, görsel üretim bölümünde *"logoyu ve G1'i üretme, sıraya koyma"*.
+
 ## v0.77.0
 Yapıyı tasarımdan önce koymak veriyi doğru getirdi ama tasarımı öldürdü: ChatGPT sol kenar menülü **masaüstü muhasebe paneli** çizdi, ekranlar sayı yığınına döndü, Stil ve Varlık Listesi paneli hiç gelmedi — yani renk kodları da yoktu.
 
