@@ -765,8 +765,43 @@ svg .dolgu > * { fill: currentColor; fill-opacity: .22; }
 
    Perde kesik bir kenarla değil, yumuşak bir geçişle iniyor: amaç görseli
    göstermek, kesmek değil. */
-.proje.gorselli { min-height: 228px; justify-content: flex-end; }
-.proje.gorselli .proje-govde { padding: 12px 14px 13px; gap: 10px; }
+.proje.gorselli { min-height: 236px; justify-content: flex-end; }
+
+/* Bilgi bloğu kartın çeyreğine sıkıştırıldı. Yalnız punto küçültmek
+   yetmiyordu — %40'ta takılıyordu; çeyreğe inmek için bir SATIRIN gitmesi
+   gerekiyor. İlerleme rayı kendi satırından çıkıp kartın dibine indi,
+   platform satırı da kalktı: blok %50'den %27'ye düştü. */
+.proje.gorselli .proje-govde { padding: 8px 12px 9px; gap: 6px; }
+.proje.gorselli .proje-ust { gap: 9px; }
+.proje.gorselli .proje-rozet { width: 26px; height: 26px; font-size: 10.5px; border-radius: 8px; }
+.proje.gorselli .proje-ad { font-size: 13px; }
+.proje.gorselli .proje-meta { display: none; }
+.proje.gorselli .pill { font-size: 9.5px; padding: 3px 8px; }
+/* Yüzde satırı gitti: aynı bilgiyi alttaki ray ve "bitmiş/toplam görev"
+   sayısı zaten söylüyordu. */
+.proje.gorselli .proje-orta { display: none; }
+/* Ayraç çizgisi ve üst payı kalkıyor: görselli kartta satırları zaten perde
+   ayırıyor, çizgi hem gereksiz hem 12 piksel yiyordu. */
+.proje.gorselli .proje-alt {
+  gap: 10px; font-size: 10px; padding: 0 30px 0 0; border-top: 0;
+}
+/* Menü düğmesi satırın içinde dururken 38 piksellik dokunma hedefiyle sayı
+   satırını 48 piksele şişiriyordu — blok bir türlü çeyreğe inmiyordu. Köşeye
+   alındı: hedef boyu aynı kaldı, satır tek satıra indi. */
+.proje.gorselli .proje-menu {
+  position: absolute; right: 4px; bottom: 4px; z-index: 5;
+}
+
+/* İlerleme rayı kartın en dibinde, tam genişlikte. Kendi satırında dururken
+   hem yer yiyordu hem daha darda kalıyordu. */
+.proje-ray {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 3px; z-index: 4;
+  background: rgba(255, 255, 255, .10);
+}
+.proje-ray > i {
+  display: block; height: 100%;
+  background: linear-gradient(90deg, var(--metal-1), var(--metal-2));
+}
 
 .proje-gorsel { position: absolute; inset: 0; z-index: 0; }
 .proje-gorsel img { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -776,8 +811,8 @@ svg .dolgu > * { fill: currentColor; fill-opacity: .22; }
      ama gerçek kart daha geniş: `cover` görselin başka, daha parlak bir yerini
      başlığın altına getirince firma adı 3.8'e düştü. Bu eğride dört satır da
      sekizin üstünde ve görselin üst %40'ına hiç dokunulmuyor. */
-  background: linear-gradient(180deg, transparent 26%, rgba(10, 9, 8, .62) 44%,
-    rgba(10, 9, 8, .93) 58%, rgba(10, 9, 8, .975) 72%, rgba(10, 9, 8, .99) 100%);
+  background: linear-gradient(180deg, transparent 56%, rgba(10, 9, 8, .66) 70%,
+    rgba(10, 9, 8, .94) 80%, rgba(10, 9, 8, .99) 90%, rgba(10, 9, 8, .99) 100%);
 }
 /* Tepedeki sönük pay yalnız "i" düğmesi için — görselin geri kalanına
    dokunmuyor. */

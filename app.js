@@ -4366,7 +4366,8 @@ function projeKarti(p, i = 0) {
          role="button" tabindex="0" style="${renkDegiskenleri(p.renk)};--i:${i}">
       <span class="parlama"></span>
       ${gor ? `<span class="proje-gorsel"><img src="${esc(gor)}" alt="" loading="lazy"></span>
-               <span class="proje-tepe"></span>` : ''}
+               <span class="proje-tepe"></span>
+               <span class="proje-ray"><i style="width:${s.yuzde}%"></i></span>` : ''}
       ${AUTH.yonetici ? `<button class="proje-bilgi" data-eylem="proje-gorsel" data-id="${p.id}"
         type="button" aria-label="${gor ? 'Görseli değiştir' : 'Görsel ekle'}">i</button>` : ''}
       ${GORSEL_YUKLENIYOR[p.id] ? gorselYuklemeKatmani(p.id) : ''}

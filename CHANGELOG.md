@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü
 
+## v0.104.0
+- **Görselli kartta bilgi bloğu kartın yarısından çeyreğine indi** — ölçülen oran %50'den **%27**'ye. Görsel artık kartın dörtte üçünü kaplıyor.
+- Yalnız punto küçültmek yetmiyordu, %40'ta takılıyordu: çeyreğe inmek için bir satırın gitmesi gerekiyordu. **İlerleme rayı kendi satırından çıkıp kartın en dibine indi** — tam genişlikte ince bir çizgi. Hem yer açıldı hem ray daha okunaklı oldu.
+- Platform satırı ("Web · Mobil") ve yüzde yazısı görselli karttan kalktı: aynı bilgiyi alttaki ray ve "bitmiş/toplam görev" sayısı zaten söylüyor. Görselsiz kart ikisini de göstermeye devam ediyor.
+- Rozet 34'ten 26 piksele, yazılar bir kademe küçüldü; ayraç çizgisi kalktı — görselli kartta satırları zaten perde ayırıyor.
+- Perde de yukarı çekildi: blok yükselince koyu bölge onunla birlikte çıkmalı, yoksa yazı görselin parlak yerine denk geliyor.
+- **Bulunan hata:** `•••` menü düğmesi sayı satırının içinde dururken 38 piksellik dokunma hedefiyle satırı 48 piksele şişiriyordu; blok bu yüzden bir türlü çeyreğe inmiyordu. Düğme kartın köşesine alındı — dokunma hedefi aynı kaldı.
+
 ## v0.103.1
 - **Yükleme bitince kart artık bir an boşalmıyor.** Katman, yeni görsel gerçekten inene kadar duruyor; halka dolu, üstünde "Görsel gönderildi · bitiriliyor…" yazıyor. Sonra katman kalkıyor ve görsel yerinde hazır duruyor.
 - Eski görsel zaten silinmiyordu — aynı yolun üzerine yazılıyor. Kötü görünen şey silme değil, katman kalkınca yeni görselin daha inmemiş olmasıydı: kart bir an boşalıp görsel patlayarak geliyordu. Silmeyi öne almak bunu çözmez, kartı yükleme boyunca bomboş bırakırdı.
