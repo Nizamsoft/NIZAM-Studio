@@ -150,24 +150,24 @@ const ICON = {
          + '<path d="M8 10V7a4 4 0 0 1 8 0v3"></path>',
 };
 
+let notDefteriAc = () => {};
+
 /* ---------- Not defteri ----------
    Tepeden açılan geçici karalama alanı. Hiçbir yere kaydedilmiyor: bilerek,
    kullanıcı "kayıt etmesine gerek yok" dedi. Sekmeler arasında duruyor,
    sayfa yenilenince gidiyor. */
 function notDefteriKur() {
   const kutu = $('#notluk');
-  const dug  = $('#btn-not');
-  if (!kutu || !dug || kutu.dataset.kuruldu) return;
+  if (!kutu || kutu.dataset.kuruldu) return;
   kutu.dataset.kuruldu = '1';
 
   const ac = (acik) => {
     kutu.classList.toggle('kapali', !acik);
     kutu.setAttribute('aria-hidden', acik ? 'false' : 'true');
-    dug.classList.toggle('acik', acik);
     if (acik) setTimeout(() => $('#nt-metin').focus(), 220);
   };
-
-  dug.addEventListener('click', () => ac(kutu.classList.contains('kapali')));
+  /* Açma düğmesi artık üst çubukta değil, hesap panelinde. */
+  notDefteriAc = ac;
   $('#nt-kapat').addEventListener('click', () => ac(false));
   $('#nt-temizle').addEventListener('click', () => {
     $('#nt-metin').value = ''; $('#nt-metin').focus();
@@ -7239,6 +7239,10 @@ function hesapMenusu() {
   el.id = 'hesap-panel';
   el.className = 'hesap-panel';
   el.innerHTML = `
+    <button class="hp-sat" data-hs="not" type="button">
+      <span class="hp-ikon">${svg(ICON.kalem, 16)}</span>
+      <span class="hp-ad">Not defteri</span>
+    </button>
     <button class="hp-sat" data-hs="bildirim" type="button">
       <span class="hp-ikon">${svg(ICON.zil, 16)}</span>
       <span class="hp-ad">Bildirimler</span>
@@ -7260,6 +7264,10 @@ function hesapMenusu() {
   /* Bir kare bekle ki geçiş oynasın; sınıfı hemen eklersek animasyon atlanır. */
   requestAnimationFrame(() => el.classList.add('acik'));
 
+  $('[data-hs="not"]', el).addEventListener('click', () => {
+    hesapMenusuKapat();
+    notDefteriAc(true);
+  });
   $('[data-hs="bildirim"]', el).addEventListener('click', () => {
     hesapMenusuKapat();
     toast('Bildirimler Adım 5\'te gelecek.');

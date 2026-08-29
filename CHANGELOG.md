@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## v0.90.0
+- **Panelin malzemesi koyulaştı ve tekleşti.** Kısayol kartları, bugünkü durum kartı, selam hapı, üst çubuk ve alt çubuk artık aynı koyu renk. Fotoğrafın üstünde duran her şey tek malzeme.
+- **Kartlar artık açıktan koyuya kaymıyor.** Panelde ekran solarken kartlar yarı saydam kalıyor ve altındaki fotoğrafın ışığını geçiriyordu; kart rengi koyu olmasına rağmen açık başlayıp koyulaşıyordu. Panelde artık yalnız fotoğraf soluyor, kartlar ilk kareden itibaren tam koyu geliyor.
+- **Üst çubuktaki kalem kalktı.** Not defteri, sağ üstteki kullanıcı kutusuna basınca açılan panelin ilk satırı oldu. Üst çubuk sadeleşti.
+
 ## v0.89.0
 - **Sayfa geçişi sadeleşti: kayma gitti, soluk geçiş kaldı.** Yeni ekran solarak gelir, eskisi anında gider.
 - Sebebi maliyet. Tarayıcının geçiş motoru (View Transitions) daha zengin bir çapraz geçiş yapıyordu ama her adres değişiminde **tüm sayfanın iki tam ekran görüntüsünü** alıyordu — telefonda 3x çözünürlükte iki doku. Bunun bedeli animasyonun kendisinden büyüktü. Düz `opacity` ise tek katman, ekran kartında bedava sayılır.
