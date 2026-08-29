@@ -1,5 +1,14 @@
 # Değişiklik Günlüğü
 
+## v0.77.0
+Yapıyı tasarımdan önce koymak veriyi doğru getirdi ama tasarımı öldürdü: ChatGPT sol kenar menülü **masaüstü muhasebe paneli** çizdi, ekranlar sayı yığınına döndü, Stil ve Varlık Listesi paneli hiç gelmedi — yani renk kodları da yoktu.
+
+- **Tam künye tasarımcıya gitmiyor artık.** Promptun **%38'i** künyeydi: alan türleri, zorunluluklar, roller, yetkiler. O ayrıntı kodu yazacak olan için; tasarımcıya verilince ekranı veri tablosuna çeviriyor. Yerine kısa özet: hangi ekranlar var, ne işe yarıyor, hangi dört bilgi görünüyor. Prompt 7.756 → 6.491 karakter.
+- **Altı ekran rolü korunuyor.** Künye görünce bütün sayfaları ayrı ayrı çiziyordu. Artık açıkça yazıyor: altı rolü gerçek ekranlarla doldur, ama **altı ekran altı kalsın**.
+- **"Hepsi telefon" kuralı öne alındı.** Altı ekran başlığının ilk satırı: her ekran dikey telefon çerçevesi içinde, masaüstü yok, sol kenar menüsü yok.
+- **Yasak listesine iki madde:** masaüstü paneli çizme · ekranı veri tablosuna çevirme ("program muhasebe bile olsa her ekranda nefes, başlık ve doku olsun").
+- **Teslim biçimi zorunlu oldu:** *"Panel olmadan tasarım eksiktir — bir sonraki adımda tarifi isteyeceğim ve renk kodlarını oradan okuyacağım."*
+
 ## v0.76.0
 - **Silinen projenin görselleri de gidiyor.** Yeni `gorseller` kovasındaki dosyalar kalıyordu: proje satırı silinince palet de gidiyor ve dosyaların yolunu bir daha bulamıyorduk, kovada yer kaplıyorlardı. Silme onayı da artık kaç görsel gideceğini yazıyor.
 - **Silmeden sonra "dışarıda kalanlar" penceresi.** Studio yalnız kendi verisini silebiliyor — GitHub deposunu ve sohbetleri silmek jeton saklamayı gerektirirdi, bilerek saklamıyoruz. Pencere üç izi sayıyor ve doğrudan oraya götürüyor: deponun **Settings → Danger Zone** sayfası, Claude Code oturum listesi, ChatGPT sohbeti. Depo adresi silinmeden önce alınıyor; sonrasında proje kaydı yok, bağlantıyı üretemezdik.

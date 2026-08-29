@@ -662,6 +662,28 @@ const PROMPT = {
     return s.join('\n');
   },
 
+  /* Tasarımcıya giden kısa künye. Tam künye (alan türleri, zorunluluk,
+     roller, yetkiler) kodu yazacak olan için; tasarımcıya verilince
+     promptun üçte birini kaplıyor ve ekranı tabloya çeviriyor. Burada
+     yalnız hangi ekranlar var ve her birinde ne görünüyor. */
+  ekranOzeti(proje) {
+    const kunye = (proje.palet || {}).kunye || {};
+    const adlar = Object.keys(kunye);
+    if (!adlar.length) return '';
+
+    const s = [];
+    adlar.slice(0, 12).forEach(tam => {
+      const k = kunye[tam] || {};
+      const sayfa = tam.split(' · ').pop();
+      const sutun = (k.alanlar || []).slice(0, 4).map(a => a.ad).filter(Boolean);
+      s.push('- **' + sayfa + '**' + (k.tur ? ' _(' + k.tur.toLocaleLowerCase('tr') + ')_' : '')
+        + (k.amac ? ' — ' + k.amac : '')
+        + (sutun.length ? '  \n  Görünen bilgiler: ' + sutun.join(' · ') : ''));
+    });
+    if (adlar.length > 12) s.push('- …ve ' + (adlar.length - 12) + ' ekran daha');
+    return s.join('\n');
+  },
+
   /* ---------- Görsel dünya: ChatGPT'ye giden iki prompt ----------
      Studio kod tarafını Claude'a, görünüş tarafını ChatGPT'ye veriyor.
      Buradan çıkan iki metin de müşteri deposuna değil, bir sohbete gider;
@@ -690,29 +712,15 @@ const PROMPT = {
     if (roller.length) s.push(hiza('Roller', roller.join(' · ')));
     s.push('');
 
-    /* Yapı durağı tasarımdan önce geliyor: künye elimizdeyse ChatGPT genel
-       değil, bu programın gerçek ekranlarını çizsin. */
-    const kunye = PROMPT.kunyeBlogu(p);
-    if (kunye) {
-      s.push('## Bu programda ne var');
-      s.push('Aşağıda programın gerçek modülleri, sayfaları ve her sayfanın');
-      s.push('tuttuğu bilgiler yazıyor. Ekranları **bunlara göre** çiz:');
-      s.push('panelin kartları bu sayfalar olsun, listenin sütunları bu alanlar,');
-      s.push('formun kutuları bu alanlar. Uydurma ekran ekleme.');
-      s.push('');
-      s.push('Simgeleri de buna göre çiz: her modül ve sayfa için o işi anlatan');
-      s.push('bir simge gerekiyor — genel "belge, ayar, kullanıcı" değil.');
-      s.push('');
-      s.push(kunye);
-      s.push('');
-    } else {
-      s.push('> **Künye yok.** Yapı durağı tamamlanmamış, hangi ekranların');
-      s.push('> olacağını bilmiyorum. Aşağıdaki altı ekranı genel hâliyle çiz;');
-      s.push('> modül adlarını uydurma, örnek olduğunu belli et.');
-      s.push('');
-    }
-
+    /* Yapı durağı tasarımdan önce geliyor. Ama tam künyeyi vermek geri
+       tepiyordu: promptun üçte birini kaplayıp ekranı veri tablosuna
+       çeviriyor, atmosferi eziyordu. Kısa özet yeter — tasarımcının
+       bilmesi gereken hangi ekranlar var ve ne görünüyor. */
+    const ekranlar = PROMPT.ekranOzeti(p);
     s.push('## Tasarlayacağın altı ekran');
+    s.push('**Hepsi telefon.** Her ekran dikey bir telefon çerçevesi içinde,');
+    s.push('yan yana dizili. Masaüstü çizme; sol kenar menüsü, geniş tablo,');
+    s.push('çok sütunlu pano yok. Masaüstüne bu dil sonra taşınacak.', '');
     s.push('1. **Panel** — açılışta karşılayan ekran; kısayol kartları ve günün özeti.');
     s.push('2. **Liste** — en çok bakılan ekran; arama, filtre, satırlar, ana eylem.');
     s.push('3. **Kayıt girişi** — form; alan etiketleri, kutular, kaydet düğmesi.');
@@ -720,6 +728,23 @@ const PROMPT = {
     s.push('5. **Giriş ekranı** — e-posta ve şifre; uygulamaya girilen ilk ekran.');
     s.push('6. **Ayarlar** — satır satır seçenek listesi.');
     s.push('');
+
+    if (ekranlar) {
+      s.push('### Bu programın ekranları');
+      s.push('Yukarıdaki altı rolü **bu programın gerçek ekranlarıyla** doldur:');
+      s.push('panelin kartları bu sayfalar olsun, liste ekranı bunlardan birini');
+      s.push('göstersin, form onun kayıt girişi olsun. Uydurma ekran ekleme.', '');
+      s.push(ekranlar);
+      s.push('');
+      s.push('Simgeleri de bunlara göre çiz: her ekran için o işi anlatan bir');
+      s.push('simge gerekiyor — genel "belge, ayar, kullanıcı" değil.', '');
+      s.push('> **Ama altı ekran altı kalsın.** Bütün sayfaları ayrı ayrı çizme;');
+      s.push('> yukarıdaki altı rolü doldur, gerisi aynı dille kurulacak.', '');
+    } else {
+      s.push('> **Ekran künyesi yok.** Yapı durağı tamamlanmamış, hangi');
+      s.push('> ekranların olacağını bilmiyorum. Altı ekranı genel hâliyle çiz;');
+      s.push('> modül adı uydurma, örnek olduğunu belli et.', '');
+    }
 
     s.push('## Kalite çıtası — en önemli bölüm');
     s.push('Temiz ve düzgün bir ekran yetmiyor. Aşağıdaki **altı katman**');
@@ -754,6 +779,11 @@ const PROMPT = {
     s.push('İş verisi her zaman önde ve okunaklı — ama arkasında bir dünya olsun.', '');
 
     s.push('### Şunları yapma');
+    s.push('- **Masaüstü paneli çizme.** Sol kenar menüsü, geniş tablo, çok');
+    s.push('  sütunlu pano — hiçbiri. Altı ekran da telefon.');
+    s.push('- **Ekranı veri tablosuna çevirme.** Program muhasebe bile olsa');
+    s.push('  ekran sayı yığını değil: her ekranda nefes, başlık ve doku olsun.');
+    s.push('  Rakamlar önemlidir ama ekranın tamamı rakamdan ibaret olamaz.');
     s.push('- Beyaz zemin üstünde beyaz kart. En az bir tonluk fark olsun.');
     s.push('- Renkli bir şeritten ibaret üst başlık.');
     s.push('- Material, Lucide, Feather gibi hazır setlerden çıkmış görünen simge.');
@@ -785,10 +815,12 @@ const PROMPT = {
     s.push('  ekrana taşınacak.');
     s.push('');
 
-    s.push('## Nasıl teslim edeceksin');
+    s.push('## Nasıl teslim edeceksin — bu bölüm zorunlu');
     s.push('Hepsini **tek bir tabakada** ver: solda altı ekran numaralı ve');
-    s.push('başlıklı, sağda bir **Stil ve Varlık Listesi** paneli. O panelde');
-    s.push('şunlar olsun:', '');
+    s.push('başlıklı, sağda bir **Stil ve Varlık Listesi** paneli.');
+    s.push('**Panel olmadan tasarım eksiktir** — bir sonraki adımda senden');
+    s.push('tarifi isteyeceğim ve renk kodlarını oradan okuyacağım.');
+    s.push('Panelde şunlar olsun:', '');
     s.push('- **Görseller** — ürettiğin her görselin küçük hâli, altında');
     s.push('  numarası (`G1`, `G2`…) ve tek satırlık ne olduğu');
     s.push('- **İkon seti** — bütün simgeler bir arada, tek SVG');
