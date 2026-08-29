@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü
 
+## v0.87.0
+Panel kaydırırken takılıyordu. Sebep buzlu camdı: kaydırma sırasında **sekiz kart aynı anda** arkasını yeniden bulanıklaştırıyor, üstelik zeminde tam ekran bir bulanıklık katmanı daha duruyordu. Her karede dokuz ayrı bulanıklık hesabı.
+
+- **Bulanıklık görselin kendisine pişirildi.** `ofis.jpg` artık üstte net, %30'dan sonra giderek bulanık — dosyada. Çalışma anında hesap yok. Dosya da küçüldü: 221 → 145 KB.
+- **Kartlardan `backdrop-filter` kaldırıldı.** Arkadaki görsel zaten bulanık olduğu için kartların yaptığı tek iş koyultmaktı; opaklık %74'ten %80'e çekildi, görünüş neredeyse aynı kaldı. Panelde `backdrop-filter` kullanan öğe **8'den 1'e** indi (yalnız selam hapı, o da net bölgede duruyor).
+- Zemin görseli kendi katmanına alındı (`translateZ(0)`), kaydırırken yeniden boyanmıyor.
+- `.view`'a `-webkit-overflow-scrolling: touch` eklendi; eski iOS'ta momentum kaydırma bunsuz açılmıyor ve parmak kalkınca liste anında duruyordu.
+
 ## v0.86.0
 - **Panel açılışta canlanıyor.** Selam hapı önce, kısayol kartları 42ms arayla sırayla, özet kartı 294ms'de, ilerleme rayları 536ms'de sıfırdan doluyor. Sayılar da sıfırdan gerçek değere sayıyor. Zaten var olan `yukariGel` / `doldur` / `data-sayac` altyapısına bağlandı — yeni bir animasyon dili getirilmedi.
 - Giriş yalnız **başka bir ekrandan panele geçince** oynuyor. Aynı ekranda bir şey açılıp kapanınca her şeyin yeniden uçuşması yorucu olurdu; bu kural uygulamada zaten vardı, yeni kartlar da ona uydu.
