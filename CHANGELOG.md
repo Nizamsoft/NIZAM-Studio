@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.86.0
+- **Panel açılışta canlanıyor.** Selam hapı önce, kısayol kartları 42ms arayla sırayla, özet kartı 294ms'de, ilerleme rayları 536ms'de sıfırdan doluyor. Sayılar da sıfırdan gerçek değere sayıyor. Zaten var olan `yukariGel` / `doldur` / `data-sayac` altyapısına bağlandı — yeni bir animasyon dili getirilmedi.
+- Giriş yalnız **başka bir ekrandan panele geçince** oynuyor. Aynı ekranda bir şey açılıp kapanınca her şeyin yeniden uçuşması yorucu olurdu; bu kural uygulamada zaten vardı, yeni kartlar da ona uydu.
+- **Dokunma tepkisi:** karta basınca hafif çöküyor ve camın üstünden bir ışık huzmesi geçiyor. Süre kısa tutuldu ki art arda dokunuşta birikmesin.
+- `prefers-reduced-motion` açıksa hem giriş hem parlama kapalı.
+
 ## v0.85.0
 - **Selam şeridi buzlu hap oldu.** Yazı doğrudan fotoğrafın üstüne konunca yapışık duruyordu. Artık alt çubukla aynı malzemede bir hapın içinde: avatar · selam · ince ayırıcı · tarih. Aynı camı kullandığı için uygulamaya ait görünüyor, fotoğrafın üstünde yüzüyor.
 - Kullanıcının fotoğrafı varsa hapta o görünüyor, yoksa baş harfleri.

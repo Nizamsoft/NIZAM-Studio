@@ -8817,17 +8817,19 @@ function panelSelam() {
 function kisayolIzgarasi(projeSayi, acikIs) {
   const yon = AUTH.yonetici;
 
-  const kutu = ({ ad, alt, ikon, adres, eylem, ana, yakinda }) => {
+  /* --i: açılıştaki sıralı beliriş için; kartlar 42ms arayla geliyor. */
+  const kutu = ({ ad, alt, ikon, adres, eylem, ana, yakinda }, i) => {
     const ic = `
       <span class="kk-dr">${svg(ICON[ikon], 23)}</span>
       <b>${esc(ad)}</b>
       <i>${esc(alt)}</i>
       ${yakinda ? '' : `<span class="kk-cv">${svg(ICON.chevron, 11)}</span>`}`;
     /* Henüz ekranı olmayan kart: yeri tutulsun ama boşa dokundurmasın. */
-    if (yakinda) return `<span class="kk yakinda">${ic}</span>`;
+    const st = `style="--i:${i + 1}"`;
+    if (yakinda) return `<span class="kk yakinda" ${st}>${ic}</span>`;
     return eylem
-      ? `<button class="kk ${ana ? 'ana' : ''}" type="button" data-eylem="${eylem}">${ic}</button>`
-      : `<a class="kk ${ana ? 'ana' : ''}" href="${adres}">${ic}</a>`;
+      ? `<button class="kk ${ana ? 'ana' : ''}" type="button" ${st} data-eylem="${eylem}">${ic}</button>`
+      : `<a class="kk ${ana ? 'ana' : ''}" ${st} href="${adres}">${ic}</a>`;
   };
 
   const kutular = [
@@ -8850,13 +8852,14 @@ function kisayolIzgarasi(projeSayi, acikIs) {
    Üç sayı ve altında son projeler. Sayılar artık ekranın tepesini kaplamıyor;
    gidilecek yerlerden sonra, tek kartın içinde duruyor. */
 function bugunkuDurum(dev, kont, bugun, projeler, yuzde) {
+  /* data-sayac: açılışta sıfırdan sayar (bkz. sayaclariCanlandir). */
   const sayi = (deger, ad, renk) => `
-    <span class="bd-p"><b style="color:${renk}">${deger}</b><i>${esc(ad)}</i></span>`;
+    <span class="bd-p"><b style="color:${renk}" data-sayac="${deger}">${deger}</b><i>${esc(ad)}</i></span>`;
 
-  const satir = p => {
+  const satir = (p, i) => {
     const s = DB.sayim(p.id);
     return `
-      <a class="bd-sr" href="#/projeler/${p.id}" style="${renkDegiskenleri(p.renk)}">
+      <a class="bd-sr" href="#/projeler/${p.id}" style="${renkDegiskenleri(p.renk)};--i:${i + 8}">
         <span class="bd-rz" style="${renkStil(p.renk)}">${esc(basHarf(p.firma))}</span>
         <span class="bd-yz">
           <b>${esc(projeAdi(p))}</b>
@@ -8867,7 +8870,7 @@ function bugunkuDurum(dev, kont, bugun, projeler, yuzde) {
   };
 
   return `
-    <div class="bugun">
+    <div class="bugun" style="--i:7">
       <div class="bd-bas"><b>Bugünkü durum</b>
         <span class="bd-genel mono">%${yuzde}</span>
         <a href="#/gorevler">Tümü ${svg(ICON.chevron, 11)}</a></div>

@@ -1156,6 +1156,10 @@ html { background: var(--bg); }
 }
 @keyframes doldur { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 
+.view.swap .p-selam,
+.view.swap .kk,
+.view.swap .bugun,
+.view.swap .bd-sr,
 .view.swap .proje,
 .view.swap .oz,
 .view.swap .stat,
@@ -1166,6 +1170,12 @@ html { background: var(--bg); }
 .view.swap .note {
   animation: yukariGel .44s var(--ease) both;
   animation-delay: calc(var(--i, 0) * 42ms);
+}
+
+.view.swap .bd-ray > i {
+  transform-origin: left center;
+  animation: doldur .85s var(--ease) both;
+  animation-delay: calc(200ms + var(--i, 0) * 42ms);
 }
 
 .view.swap .bar > i {
@@ -2356,6 +2366,28 @@ a.durak:active { transform: scale(.99); transition: transform .1s var(--ease); }
    çakışıyordu. */
 .kk-cv { position: absolute; left: 50%; bottom: 8px; transform: translateX(-50%);
          color: var(--ink-dim); display: flex; }
+/* Dokunma tepkisi: kart hafifçe çöküyor ve camın üstünden bir ışık geçiyor.
+   Uygulamanın "cevap verdiği" hissi buradan geliyor; süre kısa ki
+   art arda dokunuşta birikmesin. */
+.kk { overflow: hidden; }
+.kk::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(115deg, transparent 38%,
+    rgba(255, 255, 255, .16) 50%, transparent 62%);
+  transform: translateX(-120%);
+  opacity: 0;
+}
+.kk:not(.yakinda):active { transform: scale(.965); }
+.kk:not(.yakinda):active::after { animation: kkParla .5s var(--ease); }
+@media (prefers-reduced-motion: reduce) {
+  .kk:not(.yakinda):active::after { animation: none; }
+}
+@keyframes kkParla {
+  from { transform: translateX(-120%); opacity: 1; }
+  to   { transform: translateX(120%);  opacity: 0; }
+}
+.bd-sr:active { transform: scale(.99); }
+
 /* Ekranı henüz olmayan kart: görünür ama sönük ve dokunmuyor. */
 .kk.yakinda { opacity: .42; cursor: default; }
 .kk.yakinda:hover { border-color: var(--line-2); }
