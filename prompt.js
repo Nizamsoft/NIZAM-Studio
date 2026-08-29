@@ -69,12 +69,15 @@ const PROMPT = {
     return s.join('\n');
   },
 
-  /* Teknik standart — her projede aynı. Görev promptuna ve NIZAM.md'ye girer. */
+  /* Nizam standardı — her projede aynı. Kurulum promptuna ve NIZAM.md'ye
+     girer. Kaynak Supabase'deki tablo; tablo boşsa koddaki tohuma düşer
+     (bkz. standartListesi). İki eksende yazılır: önce grup, grubun içinde
+     alan — AI'ın "alt çubuk kuralları" diye arayacağı yer orası. */
   teknikBlogu(proje) {
-    const pl0 = (proje && proje.palet) || {};
+    const pl0   = (proje && proje.palet) || {};
     const yerel = pl0.veriKatmani === 'Yerel tarayıcı';
 
-    const s = ['## Teknik Standart'];
+    const s = ['## Nizam Standardı'];
     s.push('Bunlar Nizam Soft standardı. Tartışma, değiştirme, alternatif önerme —');
     s.push('gerekiyorsa önce sor.');
     if (yerel) {
@@ -85,23 +88,24 @@ const PROMPT = {
     }
     s.push('');
 
-    /* Yerelde altı satır anlamını yitiriyor; yerlerine YEREL_STANDART geçiyor. */
-    const yazilan = [];
-    TEKNIK_STANDART.forEach(([ad, deger, not]) => {
-      const y = yerel && YEREL_STANDART[ad];
-      if (y) { yazilan.push(ad); s.push(`- **${ad}: ${y[0]}**`); if (y[1]) s.push(`  - ${y[1]}`); return; }
-      s.push(`- **${ad}: ${deger}**`);
-      if (not) s.push(`  - ${not}`);
-    });
-    /* Standartta karşılığı olmayanlar (Yedek gibi) sona eklenir. */
-    if (yerel) {
-      Object.keys(YEREL_STANDART).forEach(ad => {
-        if (yazilan.includes(ad)) return;
-        const y = YEREL_STANDART[ad];
-        s.push(`- **${ad}: ${y[0]}**`);
-        if (y[1]) s.push(`  - ${y[1]}`);
+    DB.standartGruplari(standartListesi()).forEach(g => {
+      const satir = [];
+      g.alanlar.forEach(a => {
+        a.liste.forEach(st => {
+          /* Sunucusuz projede `yerel` metni tarifin yerine geçer. Yalnız
+             yerelde anlamı olan satırlar (Yedek gibi) sunuculu projede
+             boş kalır ve hiç yazılmaz. */
+          const t = (yerel && st.yerel) ? st.yerel : st.tarif;
+          if (!t) return;
+          satir.push('- **' + a.ad + ' · ' + st.ad + '**');
+          satir.push('  - ' + String(t).replace(/\n+/g, ' '));
+        });
       });
-    }
+      if (!satir.length) return;
+      s.push('### ' + g.ad);
+      satir.forEach(x => s.push(x));
+      s.push('');
+    });
 
     const pl = (proje && proje.palet) || {};
     const ozel = TEKNIK_ALAN.filter(a => pl[a.anahtar] && a.anahtar !== 'veriKatmani');
@@ -1036,16 +1040,15 @@ const PROMPT = {
     s.push('satır' + (yeniler.length > 1 ? 'lar' : '') + ' yokken kuruldu; şimdi ona da uygulanacak.', '');
 
     s.push('## Yeni standart' + (yeniler.length > 1 ? 'lar' : ''), '');
-    yeniler.forEach(([ad, deger, not]) => {
-      const y = yerel && YEREL_STANDART[ad];
-      s.push('- **' + ad + ': ' + (y ? y[0] : deger) + '**');
-      const n = y ? y[1] : not;
-      if (n) s.push('  - ' + n);
+    yeniler.forEach(st => {
+      s.push('- **' + st.alan + ' · ' + st.ad + '** _(' + st.grup + ')_');
+      const t = (yerel && st.yerel) ? st.yerel : st.tarif;
+      if (t) s.push('  - ' + String(t).replace(/\n+/g, ' '));
     });
     s.push('');
 
     s.push('## Şimdi ne yapacaksın');
-    s.push('1. `NIZAM.md` dosyasını aç. `## Teknik Standart` başlığının altına');
+    s.push('1. `NIZAM.md` dosyasını aç. `## Nizam Standardı` başlığının altına');
     s.push('   yukarıdaki satır' + (yeniler.length > 1 ? 'ları' : 'ı') + ' ekle — kimlik dosyası doğruluk kaynağı,');
     s.push('   önce orası güncellenir.');
     s.push('2. Sonra kodda uygula. Bu standart mevcut bir davranışla çakışıyorsa');
@@ -1059,6 +1062,71 @@ const PROMPT = {
     s.push('  gördüğün eksikleri düzeltme, not olarak yaz.');
     s.push('- **Tasarım kararlarını değiştirme.**');
     s.push('- **Bu oturuma başka depo ekleme.**');
+
+    return s.join('\n');
+  },
+
+  /* Standart ekleme promptu — bir programda yeni bir kural doğduğunda,
+     o değişikliği yapan Claude oturumuna yapıştırılır. Claude kuralı sabit
+     bir blok olarak geri verir; blok Studio'ya yapıştırılınca standart
+     kendiliğinden kurulur. Amaç: standart yazmak için Studio'ya oturup
+     form doldurmak zorunda kalmamak. */
+  standartEkle() {
+    const alanlar = [...new Set(standartListesi()
+      .map(st => (st.alan || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'tr'));
+
+    const s = [];
+    s.push('# Nizam standardı — kural çıkar', '');
+
+    s.push('Bu oturumda yaptığımız **son değişikliğe** bak. İçinde bundan sonra');
+    s.push('**her** programda geçerli olması gereken bir kural var mı?');
+    s.push('');
+    s.push('- Yoksa yalnızca `YOK` yaz, başka hiçbir şey yazma.');
+    s.push('- Varsa aşağıdaki bloğu doldur. Blok dışında tek kelime yazma —');
+    s.push('  ne giriş, ne özet, ne kutlama. Metnin tamamı Studio\'ya yapıştırılacak.');
+    s.push('');
+
+    s.push('## Biçim', '');
+    s.push('```');
+    s.push('Grup: Tasarım');
+    s.push('Alan: Üst çubuk');
+    s.push('Başlık: Araç düğmeleri profil panelinde');
+    s.push('Kural: Üst çubukta yalnız marka, sayfa adı ve kullanıcı kutusu durur.');
+    s.push('Not defteri, bildirim, destek gibi araçlar kullanıcı kutusuna basınca');
+    s.push('açılan panelin satırları olur.');
+    s.push('```');
+    s.push('');
+    s.push('Birden fazla kural çıktıysa blokları `---` ile ayır.');
+    s.push('');
+
+    s.push('## Grup — bu sekizden birini seç, yenisini uydurma', '');
+    STANDART_GRUPLARI.forEach(g => s.push('- ' + g));
+    s.push('');
+
+    if (alanlar.length) {
+      s.push('## Alan — varsa bu listeden seç', '');
+      s.push('Alan, ekranın hangi parçasından söz ettiğini söyler. Aşağıdakilerden');
+      s.push('biri uyuyorsa **aynen** onu yaz; hiçbiri uymuyorsa yeni bir tane');
+      s.push('yaz ama kısa tut, iki kelimeyi geçme.');
+      s.push('');
+      alanlar.forEach(a => s.push('- ' + a));
+      s.push('');
+    }
+
+    s.push('## Kuralı nasıl yazacaksın', '');
+    s.push('- **Kod anlatma.** "`#btn-not` kaldırıldı" değil, "kalem üst çubukta');
+    s.push('  durmaz". Kuralı okuyan başka bir programı sıfırdan yazacak.');
+    s.push('- **Emir kipi, geniş zaman.** "Yaptık", "kaldırdık" değil; "olur",');
+    s.push('  "durmaz", "kullanılmaz".');
+    s.push('- **Nedenini bir cümleyle söyle** — sonradan tartışma çıkmasın.');
+    s.push('- **Bu programa özel şeyi standart yapma.** "Ofis fotoğrafı panelde');
+    s.push('  arka plan olur" bir standart değil, bu programın tercihidir.');
+    s.push('  "Arka plan görseli 200 KB\'ı geçmez" standarttır.');
+    s.push('- **Başlık iki üç kelime.** Alan zaten yeri söylüyor, başlık kuralın');
+    s.push('  ne dediğini söyler.');
+    s.push('');
+
+    s.push('Kod yazma, dosya değiştirme, commit atma. Yalnız bloğu ver.');
 
     return s.join('\n');
   },

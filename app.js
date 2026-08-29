@@ -336,29 +336,32 @@ const VIEWS = {
     if (YUKLENIYOR) return iskeletler(4);
     if (DB.hata)    return hataKutusu(DB.hata);
 
+    /* İki düğme, tek akış: promptu al → Claude'a yapıştır → cevabı geri
+       yapıştır. Standart yazmak için forma oturmak gerekmiyor. */
+    const araclar = AUTH.yonetici ? `
+      <div class="std-arac">
+        ${promptBaglantisi({ tur: 'standartEkle', yazi: 'Standart ekleme promptu' })}
+        <button class="sayfa-dug ikincil" type="button" data-eylem="standart-ice-aktar">
+          ${svg(ICON.ice, 15)} Kuralı yapıştır</button>
+      </div>` : '';
+
     if (!DB.standartlar.length) {
       return `
         <div class="card">${empty(ICON.katman, 'Standart yok',
-          'sql/05-standartlar.sql dosyasını Supabase\'de çalıştırırsan sekiz hazır standart kurulur.',
-          AUTH.yonetici ? 'Yeni Standart' : null, 'standart-ekle')}</div>
-        ${AUTH.yonetici ? `
-          <div class="standart-arac">
-            <button class="mini-link" data-eylem="standart-ice-aktar" type="button">
-              ${svg(ICON.ice, 13)} Hazır blok yapıştır</button>
-          </div>` : ''}`;
+          'Supabase\'de önce sql/05-standartlar.sql, sonra sql/17-standart.sql '
+          + 'dosyasını çalıştır — hazır standartlar kurulur.',
+          AUTH.yonetici ? 'Elle ekle' : null, 'standart-ekle')}</div>
+        ${araclar}`;
     }
 
     return `
       <div class="note" style="margin-bottom:12px">
         ${svg(ICON.info, 15)}
-        <span>Bir görev bu standartlardan birine dokunuyorsa, tarifi promptun içine
-        kendiliğinden yapıştırılır. Aynı şeyi her seferinde yazmazsın.</span>
+        <span>Bunlar her programda geçerli. Yeni program kurulurken hepsi
+        prompta kendiliğinden giriyor; kurulmuş programlara Geliştirme
+        durağından duyuruluyor.</span>
       </div>
-      ${AUTH.yonetici ? `
-        <div class="standart-arac">
-          <button class="mini-link" data-eylem="standart-ice-aktar" type="button">
-            ${svg(ICON.ice, 13)} Hazır blok yapıştır</button>
-        </div>` : ''}
+      ${araclar}
       ${DB.standartGruplari().map(grupKarti).join('')}
     `;
   },
@@ -3737,8 +3740,8 @@ function gelistirmeSayfasi(p, d) {
         'Bu program kurulduktan sonra Nizam standardına eklendi. Promptu ver, '
         + 'Claude önce <b class="mono">NIZAM.md</b>\'yi sonra kodu güncellesin.', `
       <div class="std-liste">
-        ${yeniStd.map(([ad, deger]) => `
-          <div class="std-satir"><b>${esc(ad)}</b><span>${esc(deger)}</span></div>`).join('')}
+        ${yeniStd.map(st => `
+          <div class="std-satir"><b>${esc(st.alan)}</b><span>${esc(st.ad)}</span></div>`).join('')}
       </div>
       <div class="kur-dug">
         ${promptBaglantisi({ tur: 'standart', proje: p.id, slug: depoSlug(p.repo),
@@ -4479,21 +4482,28 @@ function stageNote(text) {
 
 /* Yapıştırılan metni standart kayıtlarına çevirir.
 
-   Beklenen biçim (Tarif satırı çok satırlı olabilir):
+   Beklenen biçim (Kural satırı çok satırlı olabilir):
 
-     Ad: Alt Sekme Çubuğu
-     Grup: Arayüz
-     Özet: Mobil · buzlu cam
-     Tarif: 900 pikselin altındaki ekranlarda...
+     Grup: Tasarım
+     Alan: Üst çubuk
+     Başlık: Araç düğmeleri profil panelinde
+     Kural: Üst çubukta yalnız marka, sayfa adı ve kullanıcı kutusu durur...
 
-   Birden fazla standart alt alta yapıştırılabilir; her yeni "Ad:" satırı
-   yeni bir kaydı başlatır. Araya "---" konabilir, zorunlu değil. */
+   Birden fazla kural alt alta yapıştırılabilir; "Grup:" ya da "Ad:" satırı
+   yeni bir kaydı başlatır. Araya "---" konabilir, zorunlu değil.
+
+   Eski biçim (Ad / Grup / Özet / Tarif) da çalışmaya devam ediyor: elde
+   yazılmış blokların bir gün geri yapıştırılması gerekebilir. */
 function standartCozumle(metin) {
   const ANAHTAR = {
-    ad: 'ad', grup: 'grup',
+    grup: 'grup', alan: 'alan',
+    'başlık': 'ad', baslik: 'ad', ad: 'ad',
     'özet': 'ozet', ozet: 'ozet',
-    tarif: 'tarif', 'açıklama': 'tarif', aciklama: 'tarif',
+    kural: 'tarif', tarif: 'tarif', 'açıklama': 'tarif', aciklama: 'tarif',
   };
+
+  /* "Bu değişiklikten standart çıkmaz" cevabı. Hata değil, boş sonuç. */
+  if (/^\s*YOK\s*$/i.test(String(metin || ''))) return { kayitlar: [], hatalar: [] };
 
   const kayitlar = [];
   const hatalar  = [];
@@ -4502,11 +4512,29 @@ function standartCozumle(metin) {
 
   const kapat = () => {
     if (!simdiki) return;
-    ['ad', 'grup', 'ozet', 'tarif'].forEach(a => { simdiki[a] = (simdiki[a] || '').trim(); });
-    if (!simdiki.ad)         hatalar.push('Adı olmayan bir blok atlandı.');
-    else if (!simdiki.tarif) hatalar.push(`"${simdiki.ad}" için tarif yok, atlandı.`);
+    ['grup', 'alan', 'ad', 'ozet', 'tarif'].forEach(a => {
+      simdiki[a] = (simdiki[a] || '').trim();
+    });
+    /* Alan yazılmamışsa başlık hem alan hem başlık olur — eski biçimde
+       "Ad" tek başına geliyordu. */
+    if (!simdiki.alan) simdiki.alan = simdiki.ad;
+    if (!simdiki.ad)   simdiki.ad   = simdiki.alan;
+
+    if (!simdiki.alan)       hatalar.push('Alanı ve başlığı olmayan bir blok atlandı.');
+    else if (!simdiki.tarif) hatalar.push(`"${simdiki.alan}" için kural yazılmamış, atlandı.`);
     else {
       if (!simdiki.grup) simdiki.grup = VARSAYILAN_GRUP;
+      /* Uydurulmuş grup adı listeyi dağıtır: bilinen sekizden biri değilse
+         varsayılana çekilir. */
+      if (STANDART_GRUPLARI.indexOf(simdiki.grup) === -1) {
+        const denk = STANDART_GRUPLARI.find(g =>
+          g.toLocaleLowerCase('tr') === simdiki.grup.toLocaleLowerCase('tr'));
+        if (denk) simdiki.grup = denk;
+        else {
+          hatalar.push(`"${simdiki.grup}" diye bir grup yok, "${VARSAYILAN_GRUP}" sayıldı.`);
+          simdiki.grup = VARSAYILAN_GRUP;
+        }
+      }
       kayitlar.push(simdiki);
     }
     simdiki = null; sonAlan = null;
@@ -4514,20 +4542,26 @@ function standartCozumle(metin) {
 
   String(metin || '').split(/\r?\n/).forEach(satir => {
     if (/^\s*-{3,}\s*$/.test(satir)) { kapat(); return; }
+    /* Claude bloğu kod çiti içinde verirse çitleri yut. */
+    if (/^\s*```/.test(satir)) return;
 
     const es = satir.match(/^\s*([A-Za-zÇĞİÖŞÜçğıöşü]+)\s*:\s*([\s\S]*)$/);
     const alan = es ? ANAHTAR[es[1].toLocaleLowerCase('tr')] : null;
 
-    if (alan === 'ad') kapat();
+    /* Zaten dolu bir alan ikinci kez geliyorsa yeni kayıt başlamıştır.
+       Böylece hem yeni biçim (Grup ile başlar) hem eski biçim (Ad ile
+       başlar) çalışıyor ve bloklar arasına "---" koymak zorunlu olmuyor. */
+    if (alan && simdiki && simdiki[alan]) kapat();
 
     if (alan) {
-      if (!simdiki) simdiki = { ad: '', grup: '', ozet: '', tarif: '' };
+      if (!simdiki) simdiki = { grup: '', alan: '', ad: '', ozet: '', tarif: '' };
       simdiki[alan] = es[2];
       sonAlan = alan;
       return;
     }
 
-    /* Anahtar yoksa satır, son alanın devamıdır — çok satırlı tarifler böyle çalışır. */
+    /* Anahtar yoksa satır, son alanın devamıdır — çok satırlı kurallar
+       böyle çalışıyor. */
     if (simdiki && sonAlan) simdiki[sonAlan] += '\n' + satir;
   });
 
@@ -4535,13 +4569,17 @@ function standartCozumle(metin) {
   return { kayitlar, hatalar };
 }
 
-/* Düzenleme penceresindeki grup önerileri: sabit liste + veride geçen adlar. */
-function grupSecenekleri() {
-  const varOlan = DB.standartlar.map(st => (st.grup || '').trim()).filter(Boolean);
-  return [...new Set([...STANDART_GRUPLARI, ...varOlan])];
+/* Düzenleme penceresindeki alan önerileri: veride geçen alan adları.
+   Grup sabit sekiz kova olduğu için orada öneri gerekmiyor, seçim var. */
+function alanSecenekleri() {
+  return [...new Set(standartListesi()
+    .map(st => (st.alan || st.ad || '').trim()).filter(Boolean))]
+    .sort((a, b) => a.localeCompare(b, 'tr'));
 }
 
-/* Bir standart grubu. Başlığa basınca açılır; başka bir grup açılınca kapanır. */
+/* Bir standart grubu. Başlığa basınca açılır; başka bir grup açılınca kapanır.
+   İçeride alan adları ara başlık — ayrı bir açılır katman değil, çünkü üç
+   kademe açıp kapamak telefonda yoruyor. */
 function grupKarti(g, i = 0) {
   const acik = ACIK_GRUP === g.ad;
   const kac  = g.liste.length;
@@ -4554,17 +4592,26 @@ function grupKarti(g, i = 0) {
         <span class="modul-ikon">${svg(ICON.katman, 16)}</span>
         <span class="modul-yazi">
           <span class="modul-ad">${esc(g.ad)}</span>
-          <span class="modul-alt">${kac} standart</span>
+          <span class="modul-alt">${g.alanlar.length} alan · ${kac} kural</span>
         </span>
       </div>
 
-      ${acik ? `<div class="grup-govde">${g.liste.map(standartKarti).join('')}</div>` : ''}
+      ${acik ? `<div class="grup-govde">
+        ${g.alanlar.map(a => `
+          <div class="std-alan">
+            <div class="std-alan-bas">${esc(a.ad)}<em>${a.liste.length}</em></div>
+            ${a.liste.map(standartKarti).join('')}
+          </div>`).join('')}
+      </div>` : ''}
     </div>`;
 }
 
 function standartKarti(st, i = 0) {
   const acik = ACIK_STANDART.has(st.id);
   const kac  = DB.standartKullanimi(st.id);
+  /* Özet alanı artık doldurulmuyor: başlık zaten kuralın ne dediğini
+     söylüyor, altına kuralın ilk cümlesi düşüyor. */
+  const alt  = st.ozet || String(st.tarif || '').split(/(?<=\.)\s/)[0] || '';
 
   return `
     <div class="card standart" style="--i:${i}">
@@ -4574,20 +4621,22 @@ function standartKarti(st, i = 0) {
         <span class="modul-ikon">${svg(ICON.katman, 16)}</span>
         <span class="modul-yazi">
           <span class="modul-ad">${esc(st.ad)}</span>
-          <span class="modul-alt">${esc(st.ozet)}</span>
+          <span class="modul-alt">${esc(alt)}</span>
         </span>
-        <span class="kullanim mono">${kac ? kac + ' projede' : 'kullanılmadı'}</span>
+        ${kac ? `<span class="kullanim mono">${kac} projede</span>` : ''}
       </div>
 
       ${acik ? `
         <div class="standart-govde">
-          <p class="standart-tarif">${st.tarif ? esc(st.tarif) : '<em class="ipucu">Tarif henüz yazılmadı.</em>'}</p>
+          <p class="standart-tarif">${st.tarif ? esc(st.tarif) : '<em class="ipucu">Kural henüz yazılmadı.</em>'}</p>
+          ${st.yerel ? `<p class="standart-tarif yerel">
+            <b>Sunucusuz projede:</b> ${esc(st.yerel)}</p>` : ''}
           ${AUTH.yonetici ? `
             <div class="modul-araclar" style="padding-left:0;margin-top:12px">
               <button class="mini-link" data-eylem="standart-duzenle" data-id="${st.id}" type="button">
                 ${svg(ICON.kalem, 13)} Düzenle</button>
               <button class="mini-link" data-eylem="standart-kopyala" data-id="${st.id}" type="button">
-                ${svg(ICON.kopya, 13)} Tarifi kopyala</button>
+                ${svg(ICON.kopya, 13)} Kuralı kopyala</button>
               <button class="mini-link tehlike" data-eylem="standart-sil" data-id="${st.id}"
                       data-ad="${esc(st.ad)}" type="button">${svg(ICON.cop, 13)} Kaldır</button>
             </div>` : ''}
@@ -6670,6 +6719,8 @@ const PANO_PROMPT = {
   cozumleme:     p => PROMPT.cozumleme(p, yapiTaslak(p)),
   yapi:          p => PROMPT.yapi(p.id),
   standart:      p => PROMPT.programGelistirme(p.id),
+  /* Projesiz: bir programda doğan kuralı standarda çeviren prompt. */
+  standartEkle:  () => PROMPT.standartEkle(),
 };
 
 /* Claude Code adresi. `yeni` yalnız ilk oturumda: sonraki bloklar aynı
@@ -6694,7 +6745,7 @@ function promptBaglantisi({ tur, proje, yazi, hedef = 'claude', ikincil, kapali,
       ${svg(ICON.kopya, 15)} ${esc(yazi)}</button>`;
   }
   return `<a class="sayfa-dug pano-dug ${ikincil ? 'ikincil' : ''}" target="_blank"
-     rel="noopener" data-pano="${esc(tur)}" data-proje="${esc(proje)}"
+     rel="noopener" data-pano="${esc(tur)}" data-proje="${esc(proje || '')}"
      data-hedef="${esc(ad)}" href="${esc(adres)}">
     <span class="kd-ikon">${svg(ICON.kopya, 15)}${svg(ICON.tik, 15)}</span>
     <span class="kd-yazi">${esc(yazi)}</span></a>`;
@@ -7303,58 +7354,142 @@ function hesapMenusuKapat() {
 }
 
 /* Standart yazma / düzenleme penceresi */
+/* Claude'un verdiği kural bloğunu standarda çevirir. Önizleme, yazmadan
+   önce neyin nereye düşeceğini gösteriyor: yanlış grup ya da okunamayan
+   blok en çok burada yakalanıyor. */
+function standartIceAktar() {
+  modalHepsiniKapat();
+
+  modalAc(`
+    ${modalBaslik(ICON.ice, 'Kuralı yapıştır',
+      'Claude\'un verdiği bloğu olduğu gibi yapıştır. Birden fazlaysa aralarına --- koy.')}
+    <label class="field">
+      <span>Yapıştır</span>
+      <textarea id="si-metin" rows="11" spellcheck="false"
+        placeholder="Grup: Tasarım&#10;Alan: Üst çubuk&#10;Başlık: Araç düğmeleri profil panelinde&#10;Kural: Üst çubukta yalnız marka, sayfa adı ve kullanıcı kutusu durur…"></textarea>
+    </label>
+    <div id="si-onizleme"></div>
+    <div class="modal-alt">
+      <button class="btn btn-ghost" data-si="iptal" type="button">Vazgeç</button>
+      <button class="btn btn-primary" data-si="kaydet" type="button" disabled><span>Kaydet</span></button>
+    </div>`, kutu => {
+    const alan  = $('#si-metin', kutu);
+    const on    = $('#si-onizleme', kutu);
+    const dugme = $('[data-si="kaydet"]', kutu);
+    let cozum = { kayitlar: [], hatalar: [] };
+
+    const tazele = () => {
+      const metin = alan.value.trim();
+      if (!metin) { on.innerHTML = ''; dugme.disabled = true; return; }
+
+      cozum = standartCozumle(metin);
+      dugme.disabled = !cozum.kayitlar.length;
+
+      const yeni = k => !DB.standartlar.some(st => (st.alan || st.ad) === k.alan && st.ad === k.ad);
+
+      on.innerHTML = (cozum.kayitlar.length
+        ? `<span class="label">${cozum.kayitlar.length} kural</span>
+           <div class="card"><div class="row-list">
+             ${cozum.kayitlar.map(k => `<div class="row">
+               <div class="row-main">
+                 <span class="row-title">${esc(k.alan)} · ${esc(k.ad)}</span>
+                 <span class="row-sub">${esc(k.grup)}</span>
+               </div>
+               <span class="row-val">${yeni(k) ? 'yeni' : 'güncellenecek'}</span>
+             </div>`).join('')}
+           </div></div>`
+        : `<div class="note uyari">${svg(ICON.uyari, 15)}
+            <span>Blok okunamadı. Satırlar <b class="mono">Grup:</b>,
+            <b class="mono">Alan:</b>, <b class="mono">Başlık:</b> ve
+            <b class="mono">Kural:</b> ile başlamalı.</span></div>`)
+        + (cozum.hatalar.length
+          ? `<div class="note uyari" style="margin-top:8px">${svg(ICON.uyari, 15)}
+              <span>${cozum.hatalar.map(esc).join(' ')}</span></div>` : '');
+    };
+
+    alan.addEventListener('input', tazele);
+    setTimeout(() => alan.focus(), 40);
+
+    $('[data-si="iptal"]', kutu).addEventListener('click', modalKapat);
+    $('[data-si="kaydet"]', kutu).addEventListener('click', async () => {
+      if (!cozum.kayitlar.length) return;
+      const btn = $('[data-si="kaydet"] span', kutu);
+      btn.textContent = 'Kaydediliyor…';
+      try {
+        const sonuc = await DB.standartlarIceAktar(cozum.kayitlar);
+        modalKapat();
+        ACIK_GRUP = cozum.kayitlar[0].grup;
+        render();
+        toast(`${sonuc.eklenen} eklendi, ${sonuc.guncellenen} güncellendi.`);
+      } catch (e) {
+        toast(e.message, 'hata');
+        btn.textContent = 'Kaydet';
+      }
+    });
+  }, 'genis');
+}
+
 function standartDuzenle(id) {
   modalHepsiniKapat();
   const st = id ? DB.standart(id) : null;
 
   modalAc(`
-    ${modalBaslik(ICON.katman, st ? 'Standardı düzenle' : 'Yeni standart', 'Tarif prompta olduğu gibi girer — net ve emir kipinde yaz.')}
+    ${modalBaslik(ICON.katman, st ? 'Standardı düzenle' : 'Yeni standart', 'Kural prompta olduğu gibi girer — net ve emir kipinde yaz.')}
 
     <label class="field">
-      <span>Ad</span>
-      <input type="text" id="sd-ad" value="${esc(st ? st.ad : '')}"
-             placeholder="Örn. Tarih Filtresi" maxlength="60" autocomplete="off">
+      <span>Grup <em class="ipucu">işin cinsi</em></span>
+      <select id="sd-grup">
+        ${STANDART_GRUPLARI.map(g => `<option value="${esc(g)}"${
+          (st ? st.grup : VARSAYILAN_GRUP) === g ? ' selected' : ''}>${esc(g)}</option>`).join('')}
+      </select>
     </label>
     <label class="field">
-      <span>Grup <em class="ipucu">listede hangi başlığın altında duracak</em></span>
-      <input type="text" id="sd-grup" list="sd-gruplar" maxlength="40" autocomplete="off"
-             value="${esc(st ? (st.grup || VARSAYILAN_GRUP) : VARSAYILAN_GRUP)}"
-             placeholder="Örn. Arayüz">
-      <datalist id="sd-gruplar">
-        ${grupSecenekleri().map(g => `<option value="${esc(g)}"></option>`).join('')}
+      <span>Alan <em class="ipucu">ekranın hangi parçası</em></span>
+      <input type="text" id="sd-alan" list="sd-alanlar" maxlength="60" autocomplete="off"
+             value="${esc(st ? (st.alan || st.ad) : '')}" placeholder="Örn. Üst çubuk">
+      <datalist id="sd-alanlar">
+        ${alanSecenekleri().map(a => `<option value="${esc(a)}"></option>`).join('')}
       </datalist>
     </label>
     <label class="field">
-      <span>Kısa özet <em class="ipucu">listede görünür</em></span>
-      <input type="text" id="sd-ozet" value="${esc(st ? st.ozet : '')}"
-             placeholder="Örn. Gün · Hafta · Ay · Aralık" maxlength="90" autocomplete="off">
+      <span>Başlık <em class="ipucu">kural ne diyor, iki üç kelime</em></span>
+      <input type="text" id="sd-ad" value="${esc(st ? st.ad : '')}"
+             placeholder="Örn. Araç düğmeleri profil panelinde" maxlength="80" autocomplete="off">
     </label>
     <label class="field">
-      <span>Tarif <em class="ipucu">prompta giren metin</em></span>
+      <span>Kural <em class="ipucu">prompta giren metin</em></span>
       <textarea id="sd-tarif" rows="7"
-        placeholder="Dört seçenek sunulur: Gün, Hafta, Ay ve Aralık…">${esc(st ? st.tarif : '')}</textarea>
+        placeholder="Üst çubukta yalnız marka, sayfa adı ve kullanıcı kutusu durur…">${esc(st ? st.tarif : '')}</textarea>
+    </label>
+    <label class="field">
+      <span>Sunucusuz projede <em class="ipucu">boş bırakılabilir</em></span>
+      <textarea id="sd-yerel" rows="3"
+        placeholder="Veri kullanıcının cihazında kalan projelerde bu kuralın karşılığı ne? Yoksa boş bırak.">${esc(st ? (st.yerel || '') : '')}</textarea>
     </label>
 
     <div class="modal-alt">
       <button class="btn btn-ghost" data-sd="iptal" type="button">Vazgeç</button>
       <button class="btn btn-primary" data-sd="kaydet" type="button"><span>Kaydet</span></button>
     </div>`, kutu => {
-    setTimeout(() => $('#sd-ad', kutu).focus(), 40);
+    setTimeout(() => $('#sd-alan', kutu).focus(), 40);
 
     $('[data-sd="iptal"]', kutu).addEventListener('click', modalKapat);
     $('[data-sd="kaydet"]', kutu).addEventListener('click', async () => {
       const ad    = $('#sd-ad', kutu).value.trim();
+      const alan  = $('#sd-alan', kutu).value.trim();
       const grup  = $('#sd-grup', kutu).value.trim() || VARSAYILAN_GRUP;
-      const ozet  = $('#sd-ozet', kutu).value.trim();
       const tarif = $('#sd-tarif', kutu).value.trim();
+      const yerel = $('#sd-yerel', kutu).value.trim();
 
-      if (!ad)    { toast('Standardın adını yaz.'); return; }
-      if (!tarif) { toast('Tarifi yaz — prompta bu metin giriyor.'); return; }
+      if (!alan)  { toast('Alanı yaz — ekranın hangi parçası?'); return; }
+      if (!ad)    { toast('Başlığı yaz — kural ne diyor?'); return; }
+      if (!tarif) { toast('Kuralı yaz — prompta bu metin giriyor.'); return; }
 
       const btn = $('[data-sd="kaydet"] span', kutu);
       btn.textContent = 'Kaydediliyor…';
       try {
-        await DB.standartKaydet(id, { ad, grup, ozet, tarif });
+        await DB.standartKaydet(id, { ad, alan, grup, tarif, yerel,
+          eklendi: APP.version });
         modalKapat();
         ACIK_GRUP = grup;
         if (id) ACIK_STANDART.add(id);
@@ -7768,7 +7903,7 @@ async function eylemCalistir(el) {
     if (!pr) return;
     const pl  = pr.palet || {};
     const gor = (Array.isArray(pl.gorulenStandart) ? pl.gorulenStandart : [])
-      .concat(yeniStandartlar(pl).map(([ad]) => ad));
+      .concat(yeniStandartlar(pl).map(st => st.id));
     return isYap(() => DB.paletKaydet(pr.id,
       Object.assign({}, pl, { gorulenStandart: gor })), 'Görüldü olarak işaretlendi.');
   }
@@ -9141,7 +9276,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!el) return;
     const pr = DB.proje(el.dataset.proje);
     const uret = PANO_PROMPT[el.dataset.pano];
-    if (!pr || !uret) return;
+    /* Projesiz prompt da var (standart ekleme) — o zaman data-proje boş. */
+    if (!uret || (el.dataset.proje && !pr)) return;
 
     let metin;
     try { metin = uret(pr); } catch (h) { toast('Prompt üretilemedi: ' + h.message, 'hata'); return; }

@@ -7,7 +7,7 @@ const APP = {
   name:     'NIZAM | Studio',
   short:    'NIZAM Studio',
   owner:    'Nizam Soft',
-  version: 'v0.92.0',
+  version: 'v0.93.0',
   build:    '2026-08-28',
   /* Studio'nun kendi deposu — "bütün programlarda geçerli olsun"
      istekleri buraya gider. */
@@ -67,10 +67,16 @@ const PARA_SECENEK = [
   { kod: 'GBP', ad: '£ GBP' },
 ];
 
-/* Standart grupları — yalnızca düzenleme penceresindeki hazır öneriler.
-   Ekranda sıralama alfabetiktir, buradaki sıra değil. Yeni ad yazılabilir. */
-const STANDART_GRUPLARI = ['Arayüz', 'Veri & Çıktı', 'Bildirim', 'Yedekleme', 'Güvenlik'];
-const VARSAYILAN_GRUP = 'Arayüz';
+/* ---- Standardın iki ekseni ----
+   grup = işin cinsi. Sabit sekiz kova; yenisi açılmaz, çünkü bu liste hem
+          promptun hem ekranın omurgası.
+   alan = ekranın parçası. Serbest metin: "Alt çubuk", "Panel", "Sayfa geçişi".
+          Yenisi kendiliğinden doğar, bir standart o alanda ilk kez yazılınca.
+   Bir satır tek bir kuraldır. "Alt çubuk standartları" demek, alanı
+   "Alt çubuk" olan satırların tamamı demektir. */
+const STANDART_GRUPLARI = ['Altyapı', 'Veri', 'Güvenlik', 'Tasarım',
+  'Animasyon', 'Optimizasyon', 'Biçim', 'Erişilebilirlik'];
+const VARSAYILAN_GRUP = 'Tasarım';
 
 
 /* Birlikte olmayacak seçimler. Prompt bunları yasaklar, Studio yapıştırınca
@@ -286,14 +292,18 @@ const TASARIM_ADIM = [
     aciklama: 'Verilen bütün kararlar. Prompta bu yazılacak.' },
 ]);
 
-/* ---- Nizam teknik standardı ----
-   Her projede aynı. Sorulmaz; prompta ve NIZAM.md'ye olduğu gibi yazılır.
-   Amaç: AI her projede yeniden karar vermesin, hep aynı yerden çıksın.
+/* ---- Nizam teknik standardı — TOHUM ve YEDEK ----
+   Standardın yaşadığı yer artık Supabase'deki `standards` tablosu; oraya
+   ekleme kod değiştirmeden, prompt-yapıştır ile yapılıyor. Bu dizi iki iş
+   görüyor:
+     1. `sql/17-standart.sql` bu içeriği tabloya tohumluyor.
+     2. Tablo boşsa (SQL henüz çalıştırılmadıysa ya da erişilemiyorsa)
+        prompt teknik standartsız çıkmasın diye buraya düşülüyor.
+   Tohumlandıktan sonra doğruluk kaynağı tablodur; buradaki metni
+   değiştirmek kurulmuş bir Studio'yu etkilemez.
 
    Satır biçimi: [ad, değer, not] — dördüncü eleman isteğe bağlı `eklendi`
-   damgasıdır. Damgalı satır, o sürümden önce kurulmuş projelerde
-   Geliştirme durağında "yeni standart" olarak çıkar (bkz. yeniStandartlar).
-   Yeni satır damgasız eklenirse eski programlar onu hiç duymaz. */
+   damgasıdır. */
 const TEKNIK_STANDART = [
   ['Dil ve çatı', 'Vanilla JS · HTML · CSS',
    'Hazır çatı (React, Vue) yok. Bağımlılık az, ömrü uzun.'],
@@ -342,6 +352,54 @@ const TEKNIK_STANDART = [
    + 'liste cihazda birikir, "Hepsini kopyala" ile tek metin olarak alınır. '
    + 'Sunucuya gitmez, kimseye gönderilmez.', 'v0.67.0'],
 ];
+
+/* Teknik standardın hangi satırı hangi gruba düşüyor. Eşleşmeyen satır
+   Altyapı sayılır — orası omurga. */
+const TEKNIK_GRUP = {
+  'Dil ve çatı': 'Altyapı', 'Derleme': 'Altyapı', 'Dosya düzeni': 'Altyapı',
+  'Barındırma': 'Altyapı', 'Depo': 'Altyapı', 'PWA': 'Altyapı',
+  'Paketler': 'Altyapı', 'Geliştirme istekleri': 'Altyapı',
+  'Veri': 'Veri', 'Gerçek zamanlı': 'Veri', 'Çevrimdışı': 'Veri',
+  'Değişiklik kaydı': 'Veri', 'Dosya saklama': 'Veri', 'Yedek': 'Veri',
+  'Giriş': 'Güvenlik',
+  'Para birimi': 'Biçim', 'Tarih ve saat': 'Biçim', 'Kayıt numarası': 'Biçim',
+  'Sürümleme': 'Biçim', 'Arayüz dili': 'Biçim',
+  'Erişilebilirlik': 'Erişilebilirlik', 'Yakınlaştırma': 'Erişilebilirlik',
+  'Masaüstü gezinme': 'Tasarım',
+};
+
+/* Koddaki teknik standardı tablo satırı biçimine çevirir: eski `ad` alana,
+   eski `değer` başlığa, eski `not` tarife düşer. Yalnız tablo boşken
+   kullanılır. */
+function standartTohum() {
+  return TEKNIK_STANDART.map(([alan, deger, not, eklendi]) => {
+    const y = YEREL_STANDART[alan];
+    return {
+      id: 'tohum:' + alan,
+      grup: TEKNIK_GRUP[alan] || 'Altyapı',
+      alan: alan,
+      ad: deger,
+      ozet: '',
+      tarif: not || '',
+      yerel: y ? (y[0] + (y[1] ? '. ' + y[1] : '')) : '',
+      eklendi: eklendi || '',
+      sira: 0,
+      tohum: true,
+    };
+  }).concat(
+    /* Yalnız sunucusuz projede anlamı olan satırlar (Yedek gibi) teknik
+       standartta karşılığı olmadığı için burada ayrıca ekleniyor. Tarifi
+       boş: sunuculu projede hiç yazılmaz. */
+    Object.keys(YEREL_STANDART)
+      .filter(alan => !TEKNIK_STANDART.some(([a]) => a === alan))
+      .map(alan => ({
+        id: 'tohum:' + alan, grup: TEKNIK_GRUP[alan] || 'Veri', alan: alan,
+        ad: YEREL_STANDART[alan][0], ozet: '', tarif: '',
+        yerel: YEREL_STANDART[alan][0]
+             + (YEREL_STANDART[alan][1] ? '. ' + YEREL_STANDART[alan][1] : ''),
+        eklendi: '', sira: 0, tohum: true,
+      })));
+}
 
 /* Projeye özel teknik alanlar — sihirbazda ve Firma durağında sorulur.
    Projenin `palet` alanında saklanır; ayrı sütun gerekmez. */
@@ -487,16 +545,28 @@ function yeniKararlar(palet) {
     && gor.indexOf(a.anahtar) < 0);
 }
 
-/* Bu proje için henüz duyurulmamış teknik standartlar.
+/* Standardın yaşayan listesi: tablo doluysa o, boşsa koddaki tohum. */
+function standartListesi() {
+  const t = (typeof DB !== 'undefined' && Array.isArray(DB.standartlar)) ? DB.standartlar : [];
+  return t.length ? t : standartTohum();
+}
+
+/* Bu proje için henüz duyurulmamış standartlar.
    Tasarım kararlarından farkı: standardın palette bir değeri yok, seçimi de
-   yok — susturmanın tek yolu "Gördüm" (palet.gorulenStandart). */
+   yok — susturmanın tek yolu "Gördüm" (palet.gorulenStandart).
+   Susturma kaydı satırın id'sini tutar; eski kayıtlar ad tuttuğu için
+   alan ve başlık da eşleşme sayılır, yoksa bir kez "gördüm" denenler
+   geri gelirdi. */
 function yeniStandartlar(palet) {
   const pl  = palet || {};
   const tab = surumSayi(pl.gorulenSurum);
   const gor = Array.isArray(pl.gorulenStandart) ? pl.gorulenStandart : [];
-  return TEKNIK_STANDART.filter(([ad, , , eklendi]) => eklendi
-    && surumSayi(eklendi) > tab
-    && gor.indexOf(ad) < 0);
+  const susturuldu = st => gor.indexOf(st.id) >= 0
+    || gor.indexOf(st.alan) >= 0 || gor.indexOf(st.ad) >= 0;
+
+  return standartListesi().filter(st => st.eklendi
+    && surumSayi(st.eklendi) > tab
+    && !susturuldu(st));
 }
 
 function bicimSecim(palet, alan) {

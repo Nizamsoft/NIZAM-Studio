@@ -1,5 +1,14 @@
 # Değişiklik Günlüğü
 
+## v0.93.0
+- **Standartlar iki eksene oturdu: grup ve alan.** Grup işin cinsini söylüyor — Altyapı, Veri, Güvenlik, Tasarım, Animasyon, Optimizasyon, Biçim, Erişilebilirlik. Alan ekranın parçasını söylüyor — Alt çubuk, Üst çubuk, Panel, Sayfa geçişi. Bir satır tek bir kural; "Alt çubuk standartları" demek, alanı Alt çubuk olan kuralların tamamı demek.
+- **Standart eklemek artık elle form doldurmak değil.** Standartlar ekranında iki düğme var: *Standart ekleme promptu* ile promptu alıp değişikliği yaptığın Claude oturumuna yapıştırıyorsun; Claude kuralı sabit bir blok olarak veriyor; *Kuralı yapıştır* ile blok Studio'ya giriyor ve standart kuruluyor. Yapıştırmadan önce hangi kuralın nereye düşeceğini önizleme gösteriyor.
+- **Kodda duran teknik standart veritabanına taşındı.** Dil, çatı, barındırma, para birimi, tarih biçimi — hepsi artık `standards` tablosunda ve Studio'nun kaynağına dokunmadan değiştirilebiliyor. `config.js`'teki liste tohum ve yedek olarak duruyor: tablo boşsa prompt yine de standartsız çıkmıyor.
+- **Yeni program kurulurken bütün standartlar prompta kendiliğinden giriyor**, gruplu ve alanlı olarak. Eskiden yalnız bir göreve iliştirilmiş standartlar prompta girebiliyordu.
+- **Yeni bir standart eklendiğinde kurulmuş programlara duyuruluyor.** Kural yazıldığı anda sürümle damgalanıyor; daha eski kurulmuş her programın Geliştirme durağında "yeni standart" olarak çıkıyor, promptu üretiliyor.
+- Standart artık sunucusuz projeler için ayrı bir karşılık taşıyabiliyor. Veri kullanıcının cihazında kalan bir projede prompt o metni yazıyor.
+- **İki bozuk yer düzeldi.** `sql/05-standartlar.sql` içindeki hazır standart bloğu çalışmıyordu — sütun sayısı tutmadığı için dosyanın tamamı hata veriyordu; tohum artık `sql/17-standart.sql` içinde. "Hazır blok yapıştır" düğmesi olmayan bir işlevi çağırıyor, yani hiç çalışmıyordu.
+
 ## v0.92.0
 - **Kısayol kartları yukarı çekildi.** Fotoğrafın masa hizasında değil, logo duvarının hemen altında başlıyorlar.
 - **Panel kaydırılmıyor.** İçerik zaten tam sığıyordu; kalan tek hareket parmağı bırakınca gelen esnemeydi, o da kalktı.

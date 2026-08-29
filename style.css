@@ -2483,7 +2483,34 @@ a.durak:active { transform: scale(.99); transition: transform .1s var(--ease); }
 
 /* Standart grupları -------------------------------------------------------- */
 
+/* Sağa yaslı tek "yeni …" bağlantısı — sektör, şablon, ekip ekranlarında. */
 .standart-arac { display: flex; justify-content: flex-end; margin-bottom: 12px; }
+
+/* Standart ekleme akışının iki düğmesi: promptu al, cevabı yapıştır.
+   Yan yana ve tam genişlikte — bu ekranın asıl işi bu. */
+.std-arac { display: flex; gap: 8px; margin-bottom: 14px; }
+.std-arac > * { flex: 1; }
+@media (max-width: 420px) { .std-arac { flex-direction: column; } }
+
+/* Grubun içindeki alan başlığı. Ayrı bir açılır katman değil, çizgi:
+   üç kademe açıp kapamak telefonda yoruyor. */
+.std-alan + .std-alan { margin-top: 14px; }
+.std-alan-bas {
+  display: flex; align-items: baseline; gap: 8px;
+  margin: 10px 2px 2px; font-size: 11px; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--ink-faint);
+}
+.std-alan-bas::after {
+  content: ''; flex: 1; height: 1px; background: var(--line-3);
+}
+.std-alan-bas em {
+  order: 3; font-style: normal; font-family: var(--yazi-kod);
+  font-size: 10px; color: var(--ink-faint);
+}
+
+/* Sunucusuz projede geçerli karşılık — kuralın altında, sönük. */
+.standart-tarif.yerel { margin-top: 9px; color: var(--ink-soft); font-size: 12.5px; }
+.standart-tarif.yerel b { color: var(--ink); }
 .note.uyari svg { color: var(--st-dev); }
 .row-val.uyari-yazi { color: var(--st-dev); }
 

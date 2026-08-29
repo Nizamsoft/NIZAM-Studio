@@ -560,23 +560,44 @@ const DB = {
     await this.tazele('gorevStandart');
   },
 
-  /* Standartları gruplara böler. Sıra config.js'teki STANDART_GRUPLARI'dır;
-     orada olmayan bir grup adı sona eklenir. Boş gruplar listelenmez. */
-  standartGruplari() {
+  /* Standartları iki eksende böler: önce grup, grubun içinde alan.
+     Grup sırası config.js'teki STANDART_GRUPLARI'dır — o liste hem ekranın
+     hem promptun omurgası, alfabetik değil. Orada olmayan bir grup adı
+     sona eklenir. Boş gruplar listelenmez.
+
+     Dönen her grupta düz bir `liste` de var: göreve standart iliştiren
+     pencereler alanları umursamıyor, tek düz liste istiyor. */
+  standartGruplari(liste) {
+    const kaynak = Array.isArray(liste) ? liste : this.standartlar;
+    const tr = (x, y) => String(x).localeCompare(String(y), 'tr');
     const kova = new Map();
-    this.standartlar.forEach(st => {
+
+    kaynak.forEach(st => {
       const g = (st.grup || VARSAYILAN_GRUP).trim() || VARSAYILAN_GRUP;
-      if (!kova.has(g)) kova.set(g, []);
-      kova.get(g).push(st);
+      const a = (st.alan || st.ad || '').trim() || '—';
+      if (!kova.has(g)) kova.set(g, new Map());
+      const ic = kova.get(g);
+      if (!ic.has(a)) ic.set(a, []);
+      ic.get(a).push(st);
     });
 
-    /* Hem gruplar hem grup içi alfabetik — Türkçe sıraya göre
-       (ç, ğ, ı, ö, ş, ü yerli yerinde). */
-    const tr = (x, y) => x.localeCompare(y, 'tr');
+    const sirala = liste => liste.slice().sort((x, y) =>
+      (x.sira || 0) - (y.sira || 0) || tr(x.ad, y.ad));
 
-    return [...kova.entries()]
-      .map(([ad, liste]) => ({ ad, liste: liste.slice().sort((x, y) => tr(x.ad, y.ad)) }))
-      .sort((a, b) => tr(a.ad, b.ad));
+    const gruplar = [...kova.entries()].map(([ad, ic]) => {
+      const alanlar = [...ic.entries()]
+        .map(([aad, liste]) => ({ ad: aad, liste: sirala(liste) }))
+        .sort((x, y) => (x.liste[0].sira || 0) - (y.liste[0].sira || 0) || tr(x.ad, y.ad));
+      return { ad, alanlar, liste: alanlar.reduce((t, x) => t.concat(x.liste), []) };
+    });
+
+    /* Bilinen gruplar önce ve sabit sırayla; sonradan doğmuş bir grup adı
+       varsa alfabetik olarak sona. */
+    const sira = g => {
+      const i = STANDART_GRUPLARI.indexOf(g.ad);
+      return i === -1 ? STANDART_GRUPLARI.length : i;
+    };
+    return gruplar.sort((a, b) => sira(a) - sira(b) || tr(a.ad, b.ad));
   },
 
   /* Modül şablonları yalnızca veritabanından gelir.
@@ -633,15 +654,21 @@ const DB = {
     await this.tazele('standartlar');
   },
 
-  /* Yapıştırılan kayıtları yazar. Aynı adda standart varsa üzerine yazar,
-     yoksa ekler. Tek tek gider ki hangisinin patladığı belli olsun. */
+  /* Yapıştırılan kuralları yazar. Aynı alan+başlık varsa üzerine yazar,
+     yoksa ekler. Tek tek gider ki hangisinin patladığı belli olsun.
+
+     Her yazılan satır bu sürümle damgalanıyor: damga, daha önce kurulmuş
+     programların Geliştirme durağında "yeni standart" olarak çıkmasını
+     sağlıyor (bkz. yeniStandartlar). */
   async standartlarIceAktar(kayitlar) {
     yazmaKontrol();
     let eklenen = 0, guncellenen = 0;
 
     for (const k of kayitlar) {
-      const mevcut = this.standartlar.find(st => st.ad === k.ad);
-      const alanlar = { ad: k.ad, grup: k.grup, ozet: k.ozet, tarif: k.tarif };
+      const mevcut = this.standartlar.find(st =>
+        (st.alan || st.ad) === k.alan && st.ad === k.ad);
+      const alanlar = { ad: k.ad, alan: k.alan, grup: k.grup,
+                        ozet: k.ozet, tarif: k.tarif, eklendi: APP.version };
 
       const { error } = mevcut
         ? await AUTH.db.from('standards').update(alanlar).eq('id', mevcut.id)
