@@ -7,7 +7,7 @@ const APP = {
   name:     'NIZAM | Studio',
   short:    'NIZAM Studio',
   owner:    'Nizam Soft',
-  version: 'v0.95.1',
+  version: 'v0.96.0',
   build:    '2026-08-28',
   /* Studio'nun kendi deposu — "bütün programlarda geçerli olsun"
      istekleri buraya gider. */
@@ -77,6 +77,21 @@ const PARA_SECENEK = [
 const STANDART_GRUPLARI = ['Altyapı', 'Veri', 'Güvenlik', 'Tasarım',
   'Animasyon', 'Optimizasyon', 'Biçim', 'Erişilebilirlik'];
 const VARSAYILAN_GRUP = 'Tasarım';
+
+/* Her grubun kendi simgesi ve rengi. Buradaki değer bir kısa addır:
+   simgeyi app.js'teki ICON.g* karşılığından, rengi style.css'teki
+   .gr-* kuralından alır. Listede olmayan bir grup adı doğarsa metal
+   kalır — renk uydurmuyoruz. */
+const GRUP_SIMGE = {
+  'Altyapı':          'altyapi',
+  'Veri':             'veri',
+  'Güvenlik':         'guvenlik',
+  'Tasarım':          'tasarim',
+  'Animasyon':        'animasyon',
+  'Optimizasyon':     'optimizasyon',
+  'Biçim':            'bicim',
+  'Erişilebilirlik':  'erisim',
+};
 
 
 /* Birlikte olmayacak seçimler. Prompt bunları yasaklar, Studio yapıştırınca

@@ -2507,11 +2507,161 @@ a.durak:active { transform: scale(.99); transition: transform .1s var(--ease); }
 /* Sağa yaslı tek "yeni …" bağlantısı — sektör, şablon, ekip ekranlarında. */
 .standart-arac { display: flex; justify-content: flex-end; margin-bottom: 12px; }
 
-/* Standart ekleme akışının iki düğmesi: promptu al, cevabı yapıştır.
-   Yan yana ve tam genişlikte — bu ekranın asıl işi bu. */
-.std-arac { display: flex; gap: 8px; margin-bottom: 14px; }
-.std-arac > * { flex: 1; }
-@media (max-width: 420px) { .std-arac { flex-direction: column; } }
+/* Standart ekleme akışının iki kartı: promptu al, cevabı yapıştır.
+   Tek satırda iki sütun — bu ekranın asıl işi bu. Ortadaki dar şerit
+   bağlantı çizgisini taşıyor, telefonda da bölünmüyorlar: kartlar
+   döşeme olduğu için dar sütuna sığıyor. */
+.std-arac {
+  display: grid; grid-template-columns: 1fr 20px 1fr; align-items: stretch;
+  margin-bottom: 14px;
+}
+
+.sa-bag { position: relative; display: flex; align-items: center; justify-content: center; }
+.sa-bag i {
+  display: block; width: 100%; height: 1px;
+  background: linear-gradient(90deg, var(--line), var(--line-3));
+  transition: background .3s var(--ease);
+}
+.sa-bag em {
+  position: absolute; display: flex; color: var(--ink-dim);
+  transition: color .3s var(--ease), transform .35s var(--yay);
+}
+.std-arac.adim2 .sa-bag i { background: linear-gradient(90deg, var(--st-done), var(--red)); }
+.std-arac.adim2 .sa-bag em { color: var(--red-ink); transform: translateX(2px); }
+
+/* Döşeme kart. "Uçuyor" hissi üç şeyden: iki katmanlı gölge (yakını
+   zeminden ayırır, uzağı yüksekliği verir), üstte ışık kenarı, köşeden
+   geçen huzme. Dokununca hafifçe çöküyor. */
+.sa-kart {
+  position: relative; display: flex; flex-direction: column; align-items: flex-start;
+  gap: 10px; padding: 14px 13px 15px; border-radius: var(--radius-lg);
+  border: 1px solid var(--line); cursor: pointer; overflow: hidden;
+  background: linear-gradient(180deg, var(--kart-ust), var(--kart-alt));
+  color: var(--ink); font-family: inherit; text-align: left;
+  box-shadow: 0 2px 4px -2px rgba(0, 0, 0, .7),
+              0 22px 40px -22px rgba(0, 0, 0, .95),
+              inset 0 1px 0 var(--isik);
+  transition: transform .3s var(--yay), box-shadow .3s var(--ease),
+              background .28s var(--ease), border-color .28s var(--ease), opacity .28s var(--ease);
+}
+.sa-kart:active { transform: translateY(-1px) scale(.985); transition-duration: .1s; }
+.sa-kart:focus-visible { outline: 2px solid var(--metal-1); outline-offset: 2px; }
+.sa-kart::before {
+  content: ''; position: absolute; top: -55%; left: -16%; width: 66%; height: 190%;
+  background: linear-gradient(101deg, rgba(255, 255, 255, .06), transparent 60%);
+  pointer-events: none;
+}
+
+.sa-ust { position: relative; display: flex; align-items: center; justify-content: space-between; width: 100%; }
+.sa-ikon {
+  position: relative; display: flex; align-items: center; justify-content: center;
+  flex: 0 0 40px; width: 40px; height: 40px; border-radius: 12px;
+  background: linear-gradient(180deg, var(--surface-3), var(--kart-alt));
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .07), inset 0 1px 0 rgba(255, 255, 255, .10);
+  color: var(--ink-soft);
+  transition: background .28s var(--ease), color .28s var(--ease), box-shadow .28s var(--ease);
+}
+/* Birinci kartın karosunda iki simge üst üste: kopya ve tik. Yalnız burada
+   iki tane var, o yüzden kural `.ana` altında — ikinci kartta tek simge
+   `:last-child` olurdu ve gizlenirdi. */
+.sa-kart.ana .sa-ikon svg { position: absolute; transition: opacity .2s var(--ease), transform .3s var(--yay); }
+.sa-kart.ana .sa-ikon svg:last-child { opacity: 0; transform: scale(.4) rotate(-25deg); }
+
+.sa-adim {
+  display: flex; align-items: center; justify-content: center;
+  width: 19px; height: 19px; border-radius: 999px;
+  font-family: var(--yazi-kod); font-size: 10px; color: var(--ink-dim);
+  background: var(--yuva-2); box-shadow: inset 0 0 0 1px var(--line-3);
+  transition: color .28s var(--ease), box-shadow .28s var(--ease);
+}
+
+.sa-yazi { position: relative; display: flex; flex-direction: column; gap: 3px; width: 100%; }
+/* Başlığa iki satırlık sabit yer: "Standart ekleme promptu" iki satıra
+   sürerken "Kuralı yapıştır" bir satırda kalıyor ve iç hizalar kayıyordu.
+   Punto 12.5'e indi — 13.5'te "Standart ekleme" dar sütuna sığmıyor ve
+   başlık üç satıra taşıp ayrılan yeri aşıyordu. */
+.sa-ad {
+  font-family: var(--yazi-baslik); font-weight: 600; font-size: 12.5px;
+  line-height: 1.34; min-height: calc(1.34em * 2);
+  color: var(--ink-strong); letter-spacing: -.005em;
+}
+.sa-alt { font-size: 11px; line-height: 1.45; color: var(--ink-dim); transition: color .28s var(--ease); }
+
+/* Ana eylem. Kırmızı yalnız simge karosunda: kartın tamamı kırmızı olsaydı
+   alt çubuktaki + ile ekranda ikinci bir kırmızı blok olurdu. */
+.sa-kart.ana .sa-ikon {
+  background: linear-gradient(180deg, var(--red-acik), var(--red));
+  color: #fff;
+  box-shadow: 0 8px 18px -8px rgba(229, 52, 42, .75), inset 0 1px 0 rgba(255, 255, 255, .28);
+}
+
+/* Kopyalandı: kırmızı söner, yeşile döner, tik çıkar. */
+.sa-kart.kopyalandi { border-color: rgba(69, 163, 123, .34); }
+.sa-kart.kopyalandi .sa-ikon {
+  background: linear-gradient(180deg, var(--st-done-t), var(--st-done));
+  color: #0f1a15;
+  box-shadow: 0 8px 18px -8px rgba(69, 163, 123, .6), inset 0 1px 0 rgba(255, 255, 255, .3);
+}
+.sa-kart.kopyalandi .sa-ikon svg:first-child { opacity: 0; transform: scale(.4); }
+.sa-kart.kopyalandi .sa-ikon svg:last-child  { opacity: 1; transform: none; }
+.sa-kart.kopyalandi .sa-alt  { color: var(--st-done-t); }
+.sa-kart.kopyalandi .sa-adim { color: var(--st-done-t); box-shadow: inset 0 0 0 1px rgba(69, 163, 123, .4); }
+
+/* İkinci kart sırasını bekliyor, prompt kopyalanınca kırmızıyı devralıyor. */
+.sa-kart.bekliyor { opacity: .5; }
+.sa-kart.bekliyor .sa-ikon { background: linear-gradient(180deg, var(--surface-2), var(--yuva)); }
+.sa-kart.sirada { border-color: rgba(229, 52, 42, .30); }
+.sa-kart.sirada .sa-ikon {
+  background: linear-gradient(180deg, var(--red-acik), var(--red));
+  color: #fff;
+  box-shadow: 0 8px 18px -8px rgba(229, 52, 42, .75), inset 0 1px 0 rgba(255, 255, 255, .28);
+}
+
+/* Grup simgeleri: sekiz grubun her biri kendi rengi ---------------------------
+   Hepsi aynı katman simgesi ve aynı gri karo olunca kartlar birbirinden
+   ayırt edilemiyordu; göz listeyi baştan okumak zorunda kalıyordu.
+
+   Renk yalnız KAROda: kart, yazı ve çerçeve grafit kalıyor. Doygunluk düşük
+   tutuldu — sekiz canlı renk yan yana gelince ekran şeker kutusuna dönüyor.
+   Kırmızı listede yok; o hâlâ logoya, ana eyleme, aktif sekmeye ve "Acil"e ait.
+   Tanınmayan bir grup adı doğarsa metal kalır: renk uydurmuyoruz. */
+
+.gr-altyapi      { --gr: #7d93b8; }  /* çelik mavisi */
+.gr-veri         { --gr: #3fa694; }  /* teal */
+.gr-guvenlik     { --gr: #c8973f; }  /* altın */
+.gr-tasarim      { --gr: #9b7fd4; }  /* mor */
+.gr-animasyon    { --gr: #4fa8c9; }  /* camgöbeği */
+.gr-optimizasyon { --gr: #8fae4a; }  /* zeytin */
+.gr-bicim        { --gr: #b8926b; }  /* kum */
+.gr-erisim       { --gr: #5f93d6; }  /* gök */
+
+/* Yedek renk `var()` çağrısının İÇİNDE duruyor, ayrı bir `--gr` bildirimi
+   olarak değil: bu kural `.gr-*`ten daha seçici olduğu için orada bildirilen
+   yedek grup rengini eziyor ve sekiz grup da gri kalıyordu. */
+.modul-ikon.grup-ikon {
+  background: linear-gradient(180deg,
+    color-mix(in srgb, var(--gr, var(--ink-faint)) 22%, transparent),
+    color-mix(in srgb, var(--gr, var(--ink-faint)) 9%,  transparent));
+  border: 1px solid color-mix(in srgb, var(--gr, var(--ink-faint)) 32%, transparent);
+  color: var(--gr, var(--ink-faint));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .09);
+}
+
+/* Grup açılınca içerideki kuralların karoları da aynı renge geçiyor, ama
+   çok daha sönük: hangi grubun içinde olduğun kaybolmasın, listeyi de
+   renk basmasın. */
+.grup-govde .modul-ikon {
+  background: color-mix(in srgb, var(--gr, var(--ink-faint)) 13%, transparent);
+  border: 1px solid color-mix(in srgb, var(--gr, var(--ink-faint)) 20%, transparent);
+  color: color-mix(in srgb, var(--gr, var(--ink-faint)) 78%, var(--ink-soft));
+}
+
+/* Cam desteklenmeyen eski tarayıcıda color-mix de yok: karo düz gri kalır,
+   simge yine kendi rengini taşır. */
+@supports not (color: color-mix(in srgb, red 50%, transparent)) {
+  .modul-ikon.grup-ikon,
+  .grup-govde .modul-ikon { background: var(--surface-3); border-color: var(--line); }
+}
 
 /* Grubun içindeki alan başlığı. Ayrı bir açılır katman değil, çizgi:
    üç kademe açıp kapamak telefonda yoruyor. */
@@ -2619,7 +2769,8 @@ a.durak:active { transform: scale(.99); transition: transform .1s var(--ease); }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
-  .tilt { transform: none !important; }}
+  .tilt { transform: none !important; }
+  .sa-kart:hover { transform: none !important; }}
 
 /* ==========================================================================
    ALT SEKME ÇUBUĞU — yüzen cam hap
@@ -4005,6 +4156,13 @@ a:hover { color: var(--red-ink); }
 .btn-red:hover { background: var(--red-soft); }
 .ss:hover { border-color: var(--line-parlak); }
 .standart-bas:hover { background: var(--surface-2); }
+/* Araç kartları imleçle yükseliyor — "uçuyor" hissini taşıyan hareket bu. */
+.sa-kart:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 2px 4px -2px rgba(0, 0, 0, .7),
+              0 32px 54px -24px rgba(0, 0, 0, .98),
+              inset 0 1px 0 rgba(255, 255, 255, .09);
+}
 .std-etiket.ekle:hover { border-color: var(--line-parlak); color: var(--ink-soft); }
 .btn-primary:hover { background: linear-gradient(180deg, var(--red-acik), var(--red)); }
 .proje:hover { background:

@@ -1,5 +1,14 @@
 # Değişiklik Günlüğü
 
+## v0.96.0
+- **Standartlar ekranındaki iki düğme kart oldu.** Tek satırda iki sütun, aralarında sırayı taşıyan ince bir çizgi. Kartlar zeminden kopuk duruyor: iki katmanlı gölge, üstte ışık kenarı, köşeden geçen huzme, dokununca hafif çöküş.
+- **"Standart ekleme promptu" artık Claude'u açmıyor.** Tek yaptığı promptu panoya yazmak; sekme açmak kullanıcıyı uygulamadan çıkarıyor ve geri döndüğünde kart hâlini kaybediyordu. Basınca simge kırmızıdan yeşile dönüp tik çıkıyor, başlık "Prompt panoda", alt satır "Claude'a yapıştır" oluyor.
+- **İkinci kart sırasını bekliyor.** Prompt kopyalanana kadar sönük; sonra canlanıp kırmızıyı devralıyor. Kural kaydedilince birinci kart ilk hâline sıfırlanıyor, ikincisi yeniden sönüyor — bir sonraki standart için hazır. Vazgeçilirse sıfırlama olmuyor, kopyalanan prompt panoda kalıyor.
+- **Sekiz standart grubunun her birine kendi simgesi ve rengi geldi:** Altyapı çelik mavisi · Veri teal · Güvenlik altın · Tasarım mor · Animasyon camgöbeği · Optimizasyon zeytin · Biçim kum · Erişilebilirlik gök. Hepsi aynı katman simgesi ve aynı gri karo olunca kartlar birbirinden ayırt edilemiyor, göz listeyi baştan okumak zorunda kalıyordu.
+- Renk yalnız karoda; kart, yazı ve çerçeve grafit kalıyor. Doygunluk düşük tutuldu — sekiz canlı renk yan yana gelince ekran şeker kutusuna dönüyor. Kırmızı listede yok: o hâlâ logonun, ana eylemin, aktif sekmenin ve "Acil"in. Tanınmayan bir grup adı doğarsa karo metal kalıyor.
+- Grup açılınca içerideki kuralların karoları da aynı renge geçiyor, çok daha sönük.
+- **Bulunan hata:** yeni kartlar için seçilen `.sk` ve `.sk-ad` adları, silme ekranındaki mevcut bir bileşende zaten kullanılıyordu; kurallar birbirini eziyor, kart başlığı ödünç aldığı iç paydan ötürü iki satır yerine üçe taşıyordu. Yeni bileşen `.sa-` önekine alındı.
+
 ## v0.95.1
 - Yalnız sürüm damgası. Hiçbir görsel ya da işlevsel değişiklik yok — otomatik güncellemenin telefonda gerçekten çalıştığını görmek için gönderildi.
 

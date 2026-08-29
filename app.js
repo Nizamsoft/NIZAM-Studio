@@ -142,6 +142,42 @@ const ICON = {
 
   /* tek katman işaretler */
   chevron: '<path d="M9 6l6 6-6 6"></path>',
+
+  /* --- Standart grupları. Sekiz grubun her birine kendi simgesi:
+     hepsi aynı katman simgesiyken kartlar birbirinden ayırt edilemiyordu.
+     Renkleri style.css'te, burada yalnız biçim var. --- */
+  gAltyapi: {
+    d: '<path d="M20 7l-8-4-8 4 8 4z"></path>',
+    c: '<path d="M20 7l-8-4-8 4 8 4z"></path><path d="M4 12l8 4 8-4M4 17l8 4 8-4"></path>',
+  },
+  gVeri: {
+    d: '<ellipse cx="12" cy="6" rx="7" ry="3"></ellipse>',
+    c: '<ellipse cx="12" cy="6" rx="7" ry="3"></ellipse><path d="M5 6v12c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 12c0 1.7 3.1 3 7 3s7-1.3 7-3"></path>',
+  },
+  gGuvenlik: {
+    d: '<path d="M12 3l7 3v5.5c0 4.4-2.9 8-7 9.5-4.1-1.5-7-5.1-7-9.5V6z"></path>',
+    c: '<path d="M12 3l7 3v5.5c0 4.4-2.9 8-7 9.5-4.1-1.5-7-5.1-7-9.5V6z"></path><path d="M9 12l2 2 4-4"></path>',
+  },
+  gTasarim: {
+    d: '<path d="M12 3a9 9 0 0 0 0 18c1.1 0 1.7-.8 1.7-1.6 0-1.3-1-1.7-1-2.7 0-.8.6-1.4 1.5-1.4H16a5 5 0 0 0 5-5c0-4-4-7.3-9-7.3z"></path>',
+    c: '<path d="M12 3a9 9 0 0 0 0 18c1.1 0 1.7-.8 1.7-1.6 0-1.3-1-1.7-1-2.7 0-.8.6-1.4 1.5-1.4H16a5 5 0 0 0 5-5c0-4-4-7.3-9-7.3z"></path><path d="M7.5 12v.01M10 8.5v.01M14.5 7.5v.01M17.5 11v.01"></path>',
+  },
+  gAnimasyon: {
+    d: '<circle cx="12" cy="12" r="9"></circle>',
+    c: '<path d="M3 14c2.2 0 2.2-4 4.5-4S9.7 14 12 14s2.2-4 4.5-4 2.3 4 4.5 4"></path><path d="M3 19h18"></path>',
+  },
+  gOptimizasyon: {
+    d: '<path d="M13 2L4.5 13.5H11l-1 8.5 8.5-11.5H12z"></path>',
+    c: '<path d="M13 2L4.5 13.5H11l-1 8.5 8.5-11.5H12z"></path>',
+  },
+  gBicim: {
+    d: '<rect x="3.5" y="4" width="17" height="16" rx="2.5"></rect>',
+    c: '<rect x="3.5" y="4" width="17" height="16" rx="2.5"></rect><path d="M7.5 9h9M7.5 12.5h9M7.5 16h5"></path>',
+  },
+  gErisim: {
+    d: '<circle cx="12" cy="12" r="9"></circle>',
+    c: '<circle cx="12" cy="12" r="9"></circle><path d="M12 7.5v.01"></path><path d="M8 10.2c2.6.7 5.4.7 8 0M12 10.6V15m0 0l-2.2 3.6M12 15l2.2 3.6"></path>',
+  },
   arti:    '<path d="M12 5v14M5 12h14"></path>',
   tik:     '<path d="M5 12l5 5L20 7"></path>',
   kapat:   '<path d="M6 6l12 12M18 6L6 18"></path>',
@@ -336,14 +372,9 @@ const VIEWS = {
     if (YUKLENIYOR) return iskeletler(4);
     if (DB.hata)    return hataKutusu(DB.hata);
 
-    /* İki düğme, tek akış: promptu al → Claude'a yapıştır → cevabı geri
+    /* İki kart, tek akış: promptu al → Claude'a yapıştır → cevabı geri
        yapıştır. Standart yazmak için forma oturmak gerekmiyor. */
-    const araclar = AUTH.yonetici ? `
-      <div class="std-arac">
-        ${promptBaglantisi({ tur: 'standartEkle', yazi: 'Standart ekleme promptu' })}
-        <button class="sayfa-dug ikincil" type="button" data-eylem="standart-ice-aktar">
-          ${svg(ICON.ice, 15)} Kuralı yapıştır</button>
-      </div>` : '';
+    const araclar = AUTH.yonetici ? stdAracKartlari() : '';
 
     if (!DB.standartlar.length) {
       return `
@@ -4570,26 +4601,72 @@ function alanSecenekleri() {
     .sort((a, b) => a.localeCompare(b, 'tr'));
 }
 
+/* Standartlar ekranının iki adımlık aracı: promptu al → Claude'a yapıştır →
+   cevabı geri yapıştır.
+
+   Kopyalandı bilgisi burada duruyor, kartın sınıfında değil: ekran yeniden
+   çizilse de kart hâlini koruyor. Kural kaydedilince sıfırlanıyor. */
+let STD_KOPYALANDI = false;
+
+function stdAracKartlari() {
+  const k = STD_KOPYALANDI;
+  return `
+    <div class="std-arac ${k ? 'adim2' : ''}">
+      <button class="sa-kart ana ${k ? 'kopyalandi' : ''}" type="button" data-eylem="std-prompt">
+        <span class="sa-ust">
+          <span class="sa-ikon">${svg(ICON.kopya, 18)}${svg(ICON.tik, 18)}</span>
+          <span class="sa-adim">1</span>
+        </span>
+        <span class="sa-yazi">
+          <span class="sa-ad">${k ? 'Prompt panoda' : 'Standart ekleme promptu'}</span>
+          <span class="sa-alt">${k ? 'Claude\'a yapıştır' : 'Panoya kopyalar'}</span>
+        </span>
+      </button>
+
+      <span class="sa-bag"><i></i><em>${svg(ICON.chevron, 13)}</em></span>
+
+      <button class="sa-kart ${k ? 'sirada' : 'bekliyor'}" type="button" data-eylem="standart-ice-aktar">
+        <span class="sa-ust">
+          <span class="sa-ikon">${svg(ICON.ice, 18)}</span>
+          <span class="sa-adim">2</span>
+        </span>
+        <span class="sa-yazi">
+          <span class="sa-ad">Kuralı yapıştır</span>
+          <span class="sa-alt">Claude'un bloğunu bırak</span>
+        </span>
+      </button>
+    </div>`;
+}
+
+/* Grubun simgesi ve rengi. Tanınmayan grup adı metal kalır. */
+function grupSimgesi(ad) {
+  const kisa = GRUP_SIMGE[ad];
+  if (!kisa) return { ikon: ICON.katman, sinif: '' };
+  const anahtar = 'g' + kisa.charAt(0).toUpperCase() + kisa.slice(1);
+  return { ikon: ICON[anahtar] || ICON.katman, sinif: 'gr-' + kisa };
+}
+
 /* Bir standart grubu. Başlığa basınca açılır; başka bir grup açılınca kapanır.
    İçeride alan adları ara başlık — ayrı bir açılır katman değil, çünkü üç
    kademe açıp kapamak telefonda yoruyor. */
 function grupKarti(g, i = 0) {
   const acik = ACIK_GRUP === g.ad;
   const kac  = g.liste.length;
+  const sim  = grupSimgesi(g.ad);
 
   return `
     <div class="card modul standart-grup" style="--i:${i}">
       <div class="modul-bas ${acik ? 'acik' : ''}" data-eylem="standart-grup-ac" data-ad="${esc(g.ad)}"
            role="button" tabindex="0" aria-expanded="${acik}">
         <span class="chev">${svg(ICON.chevron, 15)}</span>
-        <span class="modul-ikon">${svg(ICON.katman, 16)}</span>
+        <span class="modul-ikon grup-ikon ${sim.sinif}">${svg(sim.ikon, 16)}</span>
         <span class="modul-yazi">
           <span class="modul-ad">${esc(g.ad)}</span>
           <span class="modul-alt">${g.alanlar.length} alan · ${kac} kural</span>
         </span>
       </div>
 
-      ${acik ? `<div class="grup-govde">
+      ${acik ? `<div class="grup-govde ${sim.sinif}">
         ${g.alanlar.map(a => `
           <div class="std-alan">
             <div class="std-alan-bas">${esc(a.ad)}<em>${a.liste.length}</em></div>
@@ -7412,6 +7489,9 @@ function standartIceAktar() {
         const sonuc = await DB.standartlarIceAktar(cozum.kayitlar);
         modalKapat();
         ACIK_GRUP = cozum.kayitlar[0].grup;
+        /* Tur bitti: birinci kart ilk hâline dönüyor, bir sonraki standart
+           için hazır. Vazgeçilirse dokunulmuyor — prompt panoda duruyor. */
+        STD_KOPYALANDI = false;
         render();
         toast(`${sonuc.eklenen} eklendi, ${sonuc.guncellenen} güncellendi.`);
       } catch (e) {
@@ -7797,6 +7877,21 @@ async function eylemCalistir(el) {
   }
 
   if (e === 'standartlara') { location.hash = '#/standartlar'; return; }
+
+  /* Standart ekleme promptu. Claude sekmesi AÇILMIYOR — istenen tek şey
+     promptun panoya girmesi; sekme açmak kullanıcıyı uygulamadan çıkarıyor
+     ve geri döndüğünde kart hâlini kaybediyordu. */
+  if (e === 'std-prompt') {
+    let metin;
+    try { metin = PROMPT.standartEkle(); }
+    catch (h) { toast('Prompt üretilemedi: ' + h.message, 'hata'); return; }
+    const oldu = await panoyaKopyala(metin);
+    if (!oldu) { toast('Kopyalanamadı.', 'hata'); return; }
+    STD_KOPYALANDI = true;
+    render();
+    toast('Prompt panoda — Claude\'a yapıştır.', 'basari');
+    return;
+  }
 
   if (e === 'standart-ice-aktar') return standartIceAktar();
 
