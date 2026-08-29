@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## v0.100.1
+- **Kova kartlarındaki sayı artık sıfırdan saymıyor**, ilk karede doğru değeriyle geliyor. Sayının yukarı tırmanması "veri henüz yüklenmedi" gibi okunuyordu; oysa değer tarayıcıdaki önbellekten geliyor ve daha ekran çizilirken belli.
+- Sayaç canlanması diğer yerlerde duruyor — orada anlatılan şey sayının kendisi değil, ilerleme.
+
 ## v0.100.0
 - **Projeler ekranı iki kova kartına indi:** Başlamış Projeler · Bitmiş Projeler. Yan yana, tek satırda, içinde yalnız kaç proje olduğu. Basınca o kovanın sayfası açılıyor — kart açılıp kapanmıyor.
 - Eskiden üç açılır şerit vardı ve **boş olan hiç çizilmiyordu**; bu yüzden ekranda kaç bölüm göreceğin veriye göre değişiyordu. Artık iki kart hep aynı yerde; boş kova kaybolmuyor, sönüyor ve 0 yazıyor.

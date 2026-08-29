@@ -326,6 +326,10 @@ const VIEWS = {
       Object.keys(PROJE_KOVASI).forEach(k => { if (PROJE_KOVASI[k].sec(y)) say[k]++; });
     });
 
+    /* Sayı sıfırdan sayarak gelmiyor. Kova sayısı bir hareket değil, bir
+       gerçek: ekrana her girişte sıfırdan yukarı tırmanması kullanıcıya
+       "veri henüz yüklenmedi" dedirtiyordu. Değer önbellekten geliyor,
+       ilk karede doğru yazılıyor. */
     return `<div class="kovalar">${Object.keys(PROJE_KOVASI).map(k => {
       const kv = PROJE_KOVASI[k];
       return `
@@ -335,7 +339,7 @@ const VIEWS = {
             <span class="kv-cv">${svg(ICON.chevron, 13)}</span>
           </span>
           <span class="kv-yz">
-            <span class="kv-say" data-sayac="${say[k]}">${say[k]}</span>
+            <span class="kv-say">${say[k]}</span>
             <span class="kv-ad">${esc(kv.ad)}</span>
           </span>
         </a>`;
