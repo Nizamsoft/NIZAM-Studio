@@ -62,17 +62,21 @@ const GUNCELLEME = {
   },
 
   /* Ayarlar'daki "Güncellemeleri denetle" düğmesi. */
+  /* Sonucu döndürüyor ki çağıran kum saatini ne zaman durduracağını bilsin:
+     yeni sürüm bulunduysa sayfa yenilenene kadar dönmeye devam etmeli. */
   async elleDenetle() {
     const uzak = await this.uzakSurum();
 
-    if (!uzak) { toast('Sunucuya ulaşılamadı.', 'hata'); return; }
+    if (!uzak) { toast('Sunucuya ulaşılamadı.', 'hata'); return 'hata'; }
 
     if (this.daha_yeni(uzak, APP.version)) {
       toast(uzak + ' bulundu, güncelleniyor…', 'basari');
       setTimeout(() => this.yenile(), 700);
-    } else {
-      toast('Zaten en güncel sürümdesin (' + APP.version + ').');
+      return 'yeni';
     }
+
+    toast('Zaten en güncel sürümdesin (' + APP.version + ').');
+    return 'guncel';
   },
 };
 

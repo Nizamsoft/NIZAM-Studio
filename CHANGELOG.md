@@ -1,5 +1,12 @@
 # Değişiklik Günlüğü
 
+## v0.99.0
+- **"Güncellemeleri denetle" artık profil panelinde de var.** Sağ üstteki kullanıcı kutusuna basınca açılan panelde, Çıkış'ın hemen üstünde; yanında o an yüklü sürüm yazıyor. Ayarlar'daki satır olduğu yerde duruyor — denetlemek için ayarlara gitmek gerekmiyor artık.
+- **Denetlerken kum saati devriliyor.** İki yerde de: paneldeki satırın simgesi ve Ayarlar'daki düğme. Sürekli fırıl fırıl dönmüyor, gerçek kum saati gibi yarım tur atıp bekliyor — kesintisiz dönen kum saati bozuk bir bekleme çarkı gibi okunuyor.
+- **Yeni sürüm bulunduysa kum saati durmuyor,** sayfa kendini yenileyene kadar dönmeye devam ediyor. Durursa iş bitmiş gibi görünüyor, oysa yenilenme sırada.
+- Panel denetleme sürerken kapanmıyor: sonucu kullanıcı satırın kendisinde görüyor.
+- Satırın yazısı da "Denetleniyor…" oluyor. Hareket azaltma açıkken animasyon kapanıyor; bekleme bilgisi yalnız harekete bırakılmasın diye.
+
 ## v0.98.0
 - **Panelin kısayol kartları Standartlar ekranının kart diline geçti.** Simge 46 piksellik yuvarlak daireden 40 piksellik yumuşak karoya döndü ve sola oturdu; yazı da ortalıdan sola hizalandı. Üç sütunlu dar ızgarada sola hizalı satır hem daha çok kelime alıyor hem göz tek bir dikey çizgiyi takip ediyor.
 - Ok, kartın altındaki ortadan sağ üste taşındı — alttaki yeri açıklama satırına bıraktı.

@@ -143,6 +143,12 @@ const ICON = {
   /* tek katman işaretler */
   chevron: '<path d="M9 6l6 6-6 6"></path>',
 
+  /* Kum saati — güncelleme denetlenirken devriliyor. */
+  kum: {
+    d: '<path d="M7.5 3.6h9v2.2L12 12l4.5 6.2v2.2h-9v-2.2L12 12 7.5 5.8z"></path>',
+    c: '<path d="M6.5 3.6h11M6.5 20.4h11"></path><path d="M7.5 3.6v2.2L12 12l-4.5 6.2v2.2M16.5 3.6v2.2L12 12l4.5 6.2v2.2"></path>',
+  },
+
   /* --- Standart grupları. Sekiz grubun her birine kendi simgesi:
      hepsi aynı katman simgesiyken kartlar birbirinden ayırt edilemiyordu.
      Renkleri style.css'te, burada yalnız biçim var. --- */
@@ -7372,6 +7378,11 @@ function hesapMenusu() {
       <span class="hp-ad">Destek</span>
       <span class="hp-deger">${esc(destekYazi)}</span>
     </button>
+    <button class="hp-sat" data-hs="guncelle" type="button">
+      <span class="hp-ikon">${svg(ICON.kum, 16)}</span>
+      <span class="hp-ad">Güncellemeleri denetle</span>
+      <span class="hp-deger">${esc(APP.version)}</span>
+    </button>
     <button class="hp-sat tehlike-satir" data-hs="cikis" type="button">
       <span class="hp-ikon">${svg(ICON.cikis, 16)}</span>
       <span class="hp-ad">Çıkış yap</span>
@@ -7398,6 +7409,25 @@ function hesapMenusu() {
       : 'mailto:' + DESTEK.deger;
     disariAc(yer);
   });
+  /* Denetleme sürerken panel açık kalıyor: kum saati orada dönüyor, sonucu
+     kullanıcı satırın kendisinde görüyor. Panel kapansaydı dönen bir şey
+     kalmaz, sonuç yalnız bildirim balonunda görünürdü. */
+  $('[data-hs="guncelle"]', el).addEventListener('click', async ev => {
+    const dug = ev.currentTarget;
+    if (dug.classList.contains('deneniyor')) return;
+    const ad    = $('.hp-ad', dug);
+    const ilkAd = ad.textContent;
+    dug.classList.add('deneniyor');
+    ad.textContent = 'Denetleniyor…';
+
+    const sonuc = await GUNCELLEME.elleDenetle();
+    /* Yeni sürüm bulunduysa sayfa birazdan kendini yeniliyor: kum saati
+       dönmeye devam etsin, iş bitmiş gibi durmasın. */
+    if (sonuc === 'yeni') return;
+    dug.classList.remove('deneniyor');
+    ad.textContent = ilkAd;
+  });
+
   $('[data-hs="cikis"]', el).addEventListener('click', () => { hesapMenusuKapat(); signOut(); });
 
   setTimeout(() => {
@@ -7908,7 +7938,20 @@ async function eylemCalistir(el) {
     return render();
   }
 
-  if (e === 'guncelle') return GUNCELLEME.elleDenetle();
+  if (e === 'guncelle') {
+    if (el.classList.contains('deneniyor')) return;
+    const ilkIc = el.innerHTML;
+    el.classList.add('deneniyor');
+    el.disabled = true;
+    el.innerHTML = `<span class="kum-don">${svg(ICON.kum, 15)}</span> Denetleniyor…`;
+
+    const sonuc = await GUNCELLEME.elleDenetle();
+    if (sonuc === 'yeni') return;   /* sayfa yenilenecek, dönmeye devam */
+    el.classList.remove('deneniyor');
+    el.disabled = false;
+    el.innerHTML = ilkIc;
+    return;
+  }
 
   if (e === 'yedek-al') {
     const ad = 'nizam-studio-yedek-' + bugunTarih() + '.json';

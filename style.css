@@ -2528,6 +2528,25 @@ a.durak:active { transform: scale(.99); transition: transform .1s var(--ease); }
   max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .hp-sat.tehlike-satir .hp-ad { color: var(--red-ink); }
+
+/* Güncelleme denetlenirken kum saati devriliyor ------------------------------
+   Sürekli fırıl fırıl dönmüyor: gerçek kum saati gibi yarım tur atıp bekliyor.
+   Kesintisiz dönen bir kum saati bozuk bir bekleme çarkı gibi okunuyor.
+
+   Hareket azaltma açıkken animasyon zaten kapanıyor; o yüzden satırın yazısı
+   da "Denetleniyor…" oluyor — bekleme bilgisi yalnız harekete bırakılmıyor. */
+@keyframes kumDevril {
+  0%, 38%   { transform: rotate(0); }
+  58%, 100% { transform: rotate(180deg); }
+}
+.hp-sat.deneniyor .hp-ikon svg,
+.btn.deneniyor .kum-don svg {
+  transform-origin: 50% 50%;
+  animation: kumDevril 1.25s var(--ease) infinite;
+}
+.hp-sat.deneniyor .hp-ikon { color: var(--st-dev-t); }
+.btn.deneniyor .kum-don { display: inline-flex; color: var(--st-dev-t); }
+.btn.deneniyor { color: var(--ink-soft); opacity: 1; }
 /* Satır arası ince ayraç — kart hissi vermeden ayırıyor. */
 .hp-sat + .hp-sat { border-top: 1px solid var(--line-3); border-radius: 0; }
 
