@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## v0.103.1
+- **Yükleme bitince kart artık bir an boşalmıyor.** Katman, yeni görsel gerçekten inene kadar duruyor; halka dolu, üstünde "Görsel gönderildi · bitiriliyor…" yazıyor. Sonra katman kalkıyor ve görsel yerinde hazır duruyor.
+- Eski görsel zaten silinmiyordu — aynı yolun üzerine yazılıyor. Kötü görünen şey silme değil, katman kalkınca yeni görselin daha inmemiş olmasıydı: kart bir an boşalıp görsel patlayarak geliyordu. Silmeyi öne almak bunu çözmez, kartı yükleme boyunca bomboş bırakırdı.
+- Ağ takılırsa beş saniye sonra yine de devam ediliyor; kullanıcıyı dolu bir halkanın karşısında bırakmak daha kötü.
+
 ## v0.103.0
 - **Görsel yüklenirken kartın üstünde dolan bir halka var.** Yanında yüzde ve kaç KB'ın gittiği yazıyor; bitince yeşil tike dönüyor. Beklerken kartın kendi görseli soluyor — yenisinin geldiği belli olsun.
 - **Halkanın dolduğu oran gerçek.** Supabase istemcisi yüklemeyi `fetch` ile yapıyor ve `fetch` gönderim ilerlemesi bildirmiyor; bu yüzden o tek çağrı istemcinin dışına çıkarıldı ve aynı adrese aynı oturum anahtarıyla `XMLHttpRequest` ile gidiliyor. Hata metinleri eskisiyle birebir aynı kaldı — "kova yok", "izin yok" cevapları yine Türkçe çıkıyor.

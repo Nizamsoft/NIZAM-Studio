@@ -6954,6 +6954,27 @@ function gorselGostergesiTazele(projeId) {
 
 function kb(bayt) { return Math.round(bayt / 1024) + ' KB'; }
 
+/* Görseli göstermeden önce tarayıcıya indirtir.
+
+   Yükleme bitince yeni imzalı adres hazır oluyor ama dosya henüz inmemiş
+   oluyor: katmanı hemen kaldırınca kart bir an görselsiz kalıyor, sonra
+   görsel patlayarak geliyor. Önce indiriyoruz, sonra kaldırıyoruz.
+
+   Ağ takılırsa sonsuza kadar beklemiyoruz — süre dolunca yine de devam
+   ediyor; kullanıcıyı dolu bir halkanın karşısında bırakmak daha kötü. */
+function gorseliOnyukle(adres, sure = 5000) {
+  return new Promise(coz => {
+    if (!adres) { coz(); return; }
+    const im = new Image();
+    let bitti = false;
+    const tamam = () => { if (!bitti) { bitti = true; coz(); } };
+    im.onload = tamam;
+    im.onerror = tamam;
+    setTimeout(tamam, sure);
+    im.src = adres;
+  });
+}
+
 function gorselSecVeYukle(projeId, no, ad) {
   const alan = document.createElement('input');
   alan.type = 'file';
@@ -6997,7 +7018,13 @@ function gorselSecVeYukle(projeId, no, ad) {
          dolu kalsın, iş gerçekten bitmeden "bitti" demesin. */
       GORSEL_YUKLENIYOR[projeId] = { oran: 1, boyut: dosya.size, giden: dosya.size, bitti: true };
       gorselGostergesiTazele(projeId);
-      await new Promise(r => setTimeout(r, 480));
+
+      /* Katman, yeni görsel inene kadar duruyor. Eski dosya zaten silinmiyor;
+         aynı yolun üstüne yazılıyor. Kötü görünen şey silme değil, katman
+         kalkınca yeni görselin daha inmemiş olmasıydı. */
+      const pr = DB.proje(projeId);
+      await gorseliOnyukle(pr ? gorselAdresi(pr, no) : '');
+
       delete GORSEL_YUKLENIYOR[projeId];
       render();
       toast('Görsel yüklendi.', 'basari');
