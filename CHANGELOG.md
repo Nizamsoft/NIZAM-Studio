@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## v0.85.0
+- **Selam şeridi buzlu hap oldu.** Yazı doğrudan fotoğrafın üstüne konunca yapışık duruyordu. Artık alt çubukla aynı malzemede bir hapın içinde: avatar · selam · ince ayırıcı · tarih. Aynı camı kullandığı için uygulamaya ait görünüyor, fotoğrafın üstünde yüzüyor.
+- Kullanıcının fotoğrafı varsa hapta o görünüyor, yoksa baş harfleri.
+- Cam desteklenmeyen tarayıcıda hap neredeyse kapatılıyor; yarı saydam kalırsa yazı fotoğrafa karışıyordu.
+
 ## v0.84.0
 - **Kısayol ızgarası yeniden sıralandı:** Projeler · Görevler · Örnek Projeler · Ekip · Standartlar · Ayarlar.
 - **"Yeni Proje" ızgaradan çıktı.** Alt çubuğun ortasındaki kırmızı `+` zaten aynı işi yapıyordu; ızgarada ikinci kez durması hem yer kaplıyor hem kırmızıyı ikiye bölüyordu. Kırmızı artık yalnız alt çubukta ve aktif sekmede.

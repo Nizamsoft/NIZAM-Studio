@@ -8797,9 +8797,14 @@ function karsilama(ilerleme, projeSayi, acikIs) {
 /* Fotoğrafın tavan bandı boş kalıyordu; selam oraya oturuyor. Eski
    karşılama bloğunun halkası yok — o yüzde özet kartında. */
 function panelSelam() {
+  const ad = String(AUTH.ad || '').split(' ')[0];
   return `
     <div class="p-selam">
-      <b>${esc(selamla())}, ${esc(String(AUTH.ad || '').split(' ')[0])}</b>
+      ${AUTH.foto
+        ? `<span class="ps-av foto" style="background-image:url('${esc(AUTH.foto)}')"></span>`
+        : `<span class="ps-av">${esc(AUTH.basHarfler)}</span>`}
+      <b>${esc(selamla())}${ad ? ', ' + esc(ad) : ''}</b>
+      <span class="ps-ay"></span>
       <i>${esc(todayLabel())}</i>
     </div>`;
 }
