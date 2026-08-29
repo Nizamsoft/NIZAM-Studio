@@ -232,11 +232,13 @@ const VIEWS = {
     const ilerleme = DB.ilerleme(DB.gorevler);
     const acik = dev + kont;
 
+    /* Karşılama bloğu (halka + selam) kaldırıldı: zemindeki ofis fotoğrafının
+       kendi logo duvarı hero'yu taşıyor, üstüne selam yazınca ikisi birbirini
+       eziyordu. Üst çubuk zaten kullanıcının adını gösteriyor; halkadaki genel
+       yüzde de özet kartına taşındı. */
     return `
-      ${karsilama(ilerleme, p.length, acik)}
-
       ${kisayolIzgarasi(p.length, acik)}
-      ${bugunkuDurum(dev, kont, bugun, p)}
+      ${bugunkuDurum(dev, kont, bugun, p, ilerleme.yuzde)}
     `;
   },
 
@@ -8829,7 +8831,7 @@ function kisayolIzgarasi(projeSayi, acikIs) {
 /* ---------- Bugünkü durum ----------
    Üç sayı ve altında son projeler. Sayılar artık ekranın tepesini kaplamıyor;
    gidilecek yerlerden sonra, tek kartın içinde duruyor. */
-function bugunkuDurum(dev, kont, bugun, projeler) {
+function bugunkuDurum(dev, kont, bugun, projeler, yuzde) {
   const sayi = (deger, ad, renk) => `
     <span class="bd-p"><b style="color:${renk}">${deger}</b><i>${esc(ad)}</i></span>`;
 
@@ -8849,6 +8851,7 @@ function bugunkuDurum(dev, kont, bugun, projeler) {
   return `
     <div class="bugun">
       <div class="bd-bas"><b>Bugünkü durum</b>
+        <span class="bd-genel mono">%${yuzde}</span>
         <a href="#/gorevler">Tümü ${svg(ICON.chevron, 11)}</a></div>
       <div class="bd-sayilar">
         ${sayi(dev,   'Geliştiriliyor', 'var(--st-dev-t)')}

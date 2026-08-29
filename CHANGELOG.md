@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.82.0
+- **Zemin dikey ofis karesine geçti** ve boydan boya kullanılıyor. Önceki iki kare yataydı; telefonda ortadan ince bir dilim alınıyor, simetri ve kırmızı raflar gidiyordu. Yeni kare portre çekilmiş, kırpma yok. Boş tavan üstten kırpıldı.
+- **Karşılama bloğu kaldırıldı.** Fotoğrafın kendi logo duvarı hero'yu taşıyor; üstüne halka ve selam yazısı gelince ikisi birbirini eziyor, duvardaki logo hiç görünmüyordu. Üst çubuk zaten kullanıcının adını gösteriyor. Halkadaki genel ilerleme yüzdesi **"Bugünkü durum" kartının başlığına** taşındı — veri kaybolmadı.
+- **Üst perde açıldı.** Fotoğrafın üst yarısı artık %10 opaklıkla örtülüyor: logo duvarı, kırmızı raflar ve ödüller okunuyor. Kartların başladığı yerden sonra hızla kapanıyor, kaydırma koyulaşması aynen duruyor.
+- Kısayol ızgarası panelde 322px aşağıdan başlıyor; fotoğrafın üst yarısı ona ayrıldı.
+
 ## v0.81.1
 - Panel zemini yeni ofis fotoğrafına geçti: toplantı odası, kırmızı raflar ve sertifika duvarı. Telefon dikey olduğu için yatay kare ortadan kırpılıyor — kadraj sertifika duvarı ve sağdaki kırmızı raf görünecek şekilde ayarlandı.
 
