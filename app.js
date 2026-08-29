@@ -9128,8 +9128,37 @@ async function boot() {
    OLAYLAR
    ========================================================================== */
 
+/* ---------- Sayfa geçişi ----------
+   Yön, adresteki parça sayısından çıkıyor: `#/projeler` bir parça,
+   `#/projeler/p1` iki, `#/projeler/p1/yapi` üç. Derinleşiyorsa ileri,
+   sığlaşıyorsa geri. Aynı derinlikte (panelden projelere gibi) ileri
+   sayılıyor — yan yana duran sekmelerde yön duygusu zaten yok. */
+let SON_ADRES = location.hash;
+
+function adresDerinlik(hash) {
+  return String(hash || '').replace(/^#\/?/, '').split('/').filter(Boolean).length;
+}
+
+/* Tarayıcının kendi geçiş motoru: eski ve yeni ekranın görüntüsünü alıp
+   ekran kartında kaydırıyor. Desteklemiyorsa sessizce normal çizime
+   düşüyor — animasyon olmuyor, başka hiçbir şey değişmiyor. */
+function gecisliCiz(yon) {
+  const kok = document.documentElement;
+  if (!document.startViewTransition ||
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    render();
+    return;
+  }
+  kok.dataset.yon = yon;
+  const g = document.startViewTransition(() => render());
+  g.finished.finally(() => { delete kok.dataset.yon; });
+}
+
 window.addEventListener('hashchange', () => {
-  if (!$('#app').classList.contains('hidden')) { modalHepsiniKapat(); render(); }
+  const yeni = location.hash;
+  const yon  = adresDerinlik(yeni) < adresDerinlik(SON_ADRES) ? 'geri' : 'ileri';
+  SON_ADRES = yeni;
+  if (!$('#app').classList.contains('hidden')) { modalHepsiniKapat(); gecisliCiz(yon); }
 });
 
 /* Ana ekrandan mı, tarayıcı sekmesinden mi açıldı? Alt çubuğun payı buna göre

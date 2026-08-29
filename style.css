@@ -475,7 +475,11 @@ button { font-family: inherit; color: inherit; }
      liste anında duruyor ve kasıyormuş gibi hissettiriyor. */
   -webkit-overflow-scrolling: touch;
 }
-.view.swap { animation: viewIn .28s var(--ease) both; }
+/* Sayfa geçişi tarayıcının kendi motoruyla yapılıyor (bkz. Sayfa geçişi).
+   Desteklemeyen tarayıcıda bu eski beliriş yedek olarak devrede kalıyor. */
+@supports not (view-transition-name: none) {
+  .view.swap { animation: viewIn .28s var(--ease) both; }
+}
 @keyframes viewIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 
 
@@ -1159,32 +1163,15 @@ html { background: var(--bg); }
 }
 @keyframes doldur { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 
-.view.swap .p-selam,
-.view.swap .kk,
-.view.swap .bugun,
-.view.swap .bd-sr,
-.view.swap .proje,
-.view.swap .oz,
-.view.swap .stat,
-.view.swap .modul,
-.view.swap .gsatir,
-.view.swap .standart,
-.view.swap .empty,
-.view.swap .note {
-  animation: yukariGel .44s var(--ease) both;
-  animation-delay: calc(var(--i, 0) * 42ms);
-}
-
-.view.swap .bd-ray > i {
-  transform-origin: left center;
-  animation: doldur .85s var(--ease) both;
-  animation-delay: calc(200ms + var(--i, 0) * 42ms);
-}
-
+/* Kartlar artık tek tek gelmiyor: sayfa geçişi bu işi bir bütün olarak
+   yapıyor, ikisi üst üste binince hem yavaş hem dağınık duruyordu.
+   İlerleme rayları dolmaya devam ediyor — o kartın gelişi değil, verinin
+   kendisi. Tek ve sabit gecikme, sıraya bağlı değil. */
+.view.swap .bd-ray > i,
 .view.swap .bar > i {
   transform-origin: left center;
   animation: doldur .85s var(--ease) both;
-  animation-delay: calc(140ms + var(--i, 0) * 42ms);
+  animation-delay: 180ms;
 }
 
 /* ---------- Pencereler ---------- */
@@ -4940,3 +4927,44 @@ a:hover { color: var(--red-ink); }
 
 /* Sayfanın üç sorusu */
 .dal2 .d .yz i { white-space: normal; }
+
+
+/* ==========================================================================
+   SAYFA GEÇİŞİ
+   Tarayıcının kendi geçiş motoru: eski ve yeni ekranın görüntüsünü alıp
+   ekran kartında kaydırıyor. JS her karede hesap yapmadığı için takılmıyor.
+   Desteklemeyen tarayıcıda hiçbir şey olmuyor, sayfa eskisi gibi çiziliyor.
+
+   Yalnız `#view` kayıyor: kendi adı olduğu için kök anlık görüntüsünün
+   dışında kalıyor. Üst çubuk, alt çubuk ve panel fotoğrafı kökte kalıp
+   yumuşakça eriyor — onlar kaymamalı, yerlerinde duran şeyler.
+   ========================================================================== */
+
+#view { view-transition-name: ekran; }
+
+@media (prefers-reduced-motion: no-preference) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: .3s;
+  }
+  ::view-transition-old(ekran),
+  ::view-transition-new(ekran) {
+    animation-duration: .34s;
+    animation-timing-function: var(--ease);
+    animation-fill-mode: both;
+  }
+
+  /* İçeri girerken: yeni ekran sağdan gelir, eski sola çekilip solar. */
+  html[data-yon="ileri"]::view-transition-old(ekran) { animation-name: ekranCikSola; }
+  html[data-yon="ileri"]::view-transition-new(ekran) { animation-name: ekranGelSagdan; }
+  /* Geri dönerken tersi — nereye gittiğin hissedilsin. */
+  html[data-yon="geri"]::view-transition-old(ekran)  { animation-name: ekranCikSaga; }
+  html[data-yon="geri"]::view-transition-new(ekran)  { animation-name: ekranGelSoldan; }
+}
+
+/* Eski ekran tamamen çıkmıyor: yarı yolda soluyor. Tam genişlik kadar
+   kaydırmak "iki ayrı sayfa" hissi veriyor ve hantal duruyor. */
+@keyframes ekranCikSola   { to   { transform: translateX(-22%); opacity: 0; } }
+@keyframes ekranGelSagdan { from { transform: translateX(30%);  opacity: 0; } }
+@keyframes ekranCikSaga   { to   { transform: translateX(22%);  opacity: 0; } }
+@keyframes ekranGelSoldan { from { transform: translateX(-30%); opacity: 0; } }

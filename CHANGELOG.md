@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü
 
+## v0.88.0
+- **Kartlar artık tek tek gelmiyor.** Proje kartları, görev satırları, standartlar, panelin kısayolları — hepsi tek parça. Kart kart beliriş ile sayfa geçişi üst üste binince hem yavaş hem dağınık duruyordu.
+- **Sayfalar arası geçiş geldi: derinliğe göre kayma.** İçeri girerken yeni ekran sağdan gelir, eskisi sola çekilip solar; geri dönerken tersi. Yön adresteki parça sayısından çıkıyor — `#/projeler` bir parça, `#/projeler/p1` iki, `#/projeler/p1/yapi` üç; derinleşiyorsa ileri, sığlaşıyorsa geri.
+- Geçişi **tarayıcının kendi motoru** yapıyor: eski ve yeni ekranın görüntüsünü alıp ekran kartında kaydırıyor, JS her karede hesap yapmıyor. Desteklemeyen tarayıcıda sessizce eski belirişe düşüyor.
+- Yalnız `#view` kayıyor. Üst çubuk, alt çubuk ve panel fotoğrafı yerlerinde yumuşakça eriyor — onlar duran şeyler, kaymamalı.
+- Eski ekran tam genişlik kadar kaymıyor, %22'de soluyor: tam kaydırmak "iki ayrı sayfa" hissi verip hantallaştırıyordu.
+- İlerleme rayları dolmaya devam ediyor — o kartın gelişi değil, verinin kendisi. Artık sıraya bağlı değil, tek ve sabit gecikmeyle.
+
 ## v0.87.0
 Panel kaydırırken takılıyordu. Sebep buzlu camdı: kaydırma sırasında **sekiz kart aynı anda** arkasını yeniden bulanıklaştırıyor, üstelik zeminde tam ekran bir bulanıklık katmanı daha duruyordu. Her karede dokuz ayrı bulanıklık hesabı.
 
