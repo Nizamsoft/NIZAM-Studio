@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.81.1
+- Panel zemini yeni ofis fotoğrafına geçti: toplantı odası, kırmızı raflar ve sertifika duvarı. Telefon dikey olduğu için yatay kare ortadan kırpılıyor — kadraj sertifika duvarı ve sağdaki kırmızı raf görünecek şekilde ayarlandı.
+
 ## v0.81.0
 - **Panel önce nereye gidileceğini gösteriyor.** Eskiden dört sayaç yukarıda, altında proje listesi vardı: ne olduğunu söylüyor ama nereye gidileceğini söylemiyordu — her şeye alt çubuktan ulaşılıyordu. Artık **3×2 kısayol ızgarası**: Projeler · Görevler · **Yeni Proje** · Standartlar · Ekip · Ayarlar. Her kutunun altında o an kaç şey olduğu yazıyor.
 - **Sayılar tek karta indi.** "Bugünkü durum": Geliştiriliyor · Kontrolde · Bugün biten, altında son üç proje tek satırlık ince ray ile. Dört ayrı sayaç kartı ekranın tepesini kaplıyordu.
