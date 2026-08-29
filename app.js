@@ -9046,11 +9046,18 @@ function kisayolIzgarasi(projeSayi, acikIs) {
 
   /* --i: açılıştaki sıralı beliriş için; kartlar 42ms arayla geliyor. */
   const kutu = ({ ad, alt, ikon, adres, eylem, ana, yakinda }, i) => {
+    /* Standartlar ekranındaki kartın dili: karo simge sol üstte, ok sağ
+       üstte, yazı altta sola hizalı. `.kk-ust` adı yetkili kartında
+       kullanılıyor, o yüzden `.kk-bas`. */
     const ic = `
-      <span class="kk-dr">${svg(ICON[ikon], 23)}</span>
-      <b>${esc(ad)}</b>
-      <i>${esc(alt)}</i>
-      ${yakinda ? '' : `<span class="kk-cv">${svg(ICON.chevron, 11)}</span>`}`;
+      <span class="kk-bas">
+        <span class="kk-dr">${svg(ICON[ikon], 20)}</span>
+        ${yakinda ? '' : `<span class="kk-cv">${svg(ICON.chevron, 13)}</span>`}
+      </span>
+      <span class="kk-yz">
+        <b>${esc(ad)}</b>
+        <i>${esc(alt)}</i>
+      </span>`;
     /* Henüz ekranı olmayan kart: yeri tutulsun ama boşa dokundurmasın. */
     const st = `style="--i:${i + 1}"`;
     if (yakinda) return `<span class="kk yakinda" ${st}>${ic}</span>`;

@@ -2348,35 +2348,58 @@ a.durak:active { transform: scale(.99); transition: transform .1s var(--ease); }
 /* Panel kaydırılmıyor: içerik zaten tam sığıyor, kalan tek hareket
    parmağı bırakınca gelen esneme oluyordu. */
 #main.susulu .view { overflow: hidden; }
+/* Kısayol kartı, Standartlar ekranındaki kartın dilinde: karo simge sol
+   üstte, ok sağ üstte, yazı altta sola hizalı. Malzemesi de aynı — grafit
+   degrade ve açık çerçeve; panel kartının koyusu yerine bu kullanılıyor ki
+   uygulama tek bir kart dili konuşsun.
+
+   "Uçuyor" hissi üç şeyden: iki katmanlı gölge (yakını zeminden ayırır,
+   uzağı yüksekliği verir), üstte ışık kenarı, köşeden geçen huzme. */
 .kk {
-  position: relative; display: block; text-align: center; cursor: pointer;
-  padding: 13px 8px 22px; border-radius: 16px; text-decoration: none;
-  font-family: var(--yazi-govde); color: inherit;
-  background: var(--panel-kart); border: 1px solid var(--panel-cizgi);
-  transition: border-color .16s ease, transform .12s var(--ease);
+  position: relative; display: flex; flex-direction: column; align-items: flex-start;
+  gap: 10px; padding: 14px 12px; border-radius: var(--radius-lg);
+  text-decoration: none; cursor: pointer;
+  font-family: var(--yazi-govde); color: var(--ink);
+  background: linear-gradient(180deg, var(--kart-ust), var(--kart-alt));
+  border: 1px solid var(--line);
+  box-shadow: 0 2px 4px -2px rgba(0, 0, 0, .7),
+              0 22px 40px -22px rgba(0, 0, 0, .95),
+              inset 0 1px 0 var(--isik);
+  transition: border-color .16s ease, transform .12s var(--ease), box-shadow .3s var(--ease);
 }
 .kk:active { transform: scale(.98); }
 .kk:hover  { border-color: var(--line-parlak); }
+.kk-bas { position: relative; display: flex; align-items: center;
+          justify-content: space-between; width: 100%; }
 .kk-dr {
-  display: grid; place-items: center; width: 46px; height: 46px; margin: 0 auto 9px;
-  border-radius: 50%; background: var(--surface-2); color: var(--metal-2);
-  border: 1px solid var(--line-3);
+  position: relative; display: flex; align-items: center; justify-content: center;
+  flex: 0 0 40px; width: 40px; height: 40px; border-radius: 12px;
+  background: linear-gradient(180deg, var(--surface-3), var(--kart-alt));
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .07), inset 0 1px 0 rgba(255, 255, 255, .10);
+  color: var(--metal-2);
 }
+.kk-yz { position: relative; display: flex; flex-direction: column; gap: 3px; width: 100%; }
 /* "Örnek Projeler" iki satıra taşıyor; başlığa iki satırlık sabit yer
    ayrılıyor ki kartların iç hizası bozulmasın. */
-.kk b { display: flex; align-items: center; justify-content: center;
-        min-height: 32px; font-family: var(--yazi-baslik); font-size: 12.5px;
-        color: var(--ink-strong); line-height: 1.25; }
-.kk i { display: block; font-style: normal; font-size: 9.5px; color: var(--ink-dim);
-        margin-top: 5px; line-height: 1.35; }
-/* Ok metnin altında, ortada: sağ alt köşede iki satırlık açıklamayla
-   çakışıyordu. */
-.kk-cv { position: absolute; left: 50%; bottom: 8px; transform: translateX(-50%);
-         color: var(--ink-dim); display: flex; }
+.kk b { display: block; font-family: var(--yazi-baslik); font-weight: 600; font-size: 12.5px;
+        line-height: 1.34; min-height: calc(1.34em * 2);
+        color: var(--ink-strong); letter-spacing: -.005em; }
+.kk i { display: block; font-style: normal; font-size: 10px; color: var(--ink-dim);
+        line-height: 1.4; }
+/* Ok kartın altındaki ortadan sağ üste taşındı: alttaki yeri açıklama
+   satırına bıraktı. */
+.kk-cv { position: relative; color: var(--ink-dim); display: flex; }
 /* Dokunma tepkisi: kart hafifçe çöküyor ve camın üstünden bir ışık geçiyor.
    Uygulamanın "cevap verdiği" hissi buradan geliyor; süre kısa ki
    art arda dokunuşta birikmesin. */
 .kk { overflow: hidden; }
+/* Köşeden geçen duran ışık: kartın yüzeyine hacim veriyor, dokunma
+   huzmesinden ayrı — o geçip gidiyor, bu hep duruyor. */
+.kk::before {
+  content: ""; position: absolute; top: -55%; left: -16%; width: 66%; height: 190%;
+  background: linear-gradient(101deg, rgba(255, 255, 255, .06), transparent 60%);
+  pointer-events: none;
+}
 .kk::after {
   content: ""; position: absolute; inset: 0; pointer-events: none;
   background: linear-gradient(115deg, transparent 38%,
@@ -2407,7 +2430,10 @@ a.durak:active { transform: scale(.99); transition: transform .1s var(--ease); }
 /* Alt çubukta zaten kırmızı dolu bir + var; ızgarada ikinci bir kırmızı
    daire üst üste binmiş gibi duruyordu. Kutu kırmızıyla işaretli ama
    simgesi dolu değil. */
-.kk.ana .kk-dr { background: var(--red-soft); border-color: var(--red-cizgi); color: var(--red-ink); }
+.kk.ana .kk-dr {
+  background: var(--red-soft); color: var(--red-ink);
+  box-shadow: inset 0 0 0 1px var(--red-cizgi), inset 0 1px 0 rgba(255, 255, 255, .10);
+}
 .kk.ana .kk-cv { color: var(--red-ink-soft); }
 
 /* Panel kartları: fotoğrafın üstünde yüzen buzlu cam --------------------------
@@ -2420,7 +2446,10 @@ a.durak:active { transform: scale(.99); transition: transform .1s var(--ease); }
    sadece koyultmak. Görünüş neredeyse aynı, hesap sıfır.
    Kartlar ayrıca saydam DEĞİL: yarı saydam kalınca altındaki fotoğrafın
    ışığını geçiriyor ve ekran solarken açıktan koyuya kayıyorlardı. */
-#main.susulu .kk,
+/* Kısayol kartı bu listeden çıktı: artık Standartlar ekranındaki kartın
+   malzemesini taşıyor ve panelde de aynı görünüyor — uygulama tek bir kart
+   dili konuşsun diye. Diğerleri fotoğrafın üstünde koyu kalmaya devam
+   ediyor, orada okunurluğu taşıyan şey koyuluk. */
 #main.susulu .stat,
 #main.susulu .proje,
 #main.susulu .card {

@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü
 
+## v0.98.0
+- **Panelin kısayol kartları Standartlar ekranının kart diline geçti.** Simge 46 piksellik yuvarlak daireden 40 piksellik yumuşak karoya döndü ve sola oturdu; yazı da ortalıdan sola hizalandı. Üç sütunlu dar ızgarada sola hizalı satır hem daha çok kelime alıyor hem göz tek bir dikey çizgiyi takip ediyor.
+- Ok, kartın altındaki ortadan sağ üste taşındı — alttaki yeri açıklama satırına bıraktı.
+- **Malzeme de aynı:** grafit degrade, açık çerçeve, iki katmanlı gölge, üstte ışık kenarı ve köşeden geçen duran huzme. Kısayol kartı panelin koyu kart listesinden çıkarıldı; uygulamanın her yerinde tek bir kart dili konuşulsun diye. Fotoğrafın üstünde duran diğer kartlar koyu kalmaya devam ediyor.
+- **Simge renklerine dokunulmadı** — daireler bugünkü gri metalinde. Değişen yalnız kartın biçimi.
+- Başlığa iki satırlık sabit yer ayrıldı: "Örnek Projeler" iki satıra taşarken diğerleri bir satırda kalıyor ve kartların iç hizası bozuluyordu.
+- Yeni kart eskisinden kısa; panel hâlâ kaydırmasız sığıyor.
+
 ## v0.97.0
 - **Standartlar baştan sona alfabetik.** Üç kademe birden: gruplar, grubun içindeki alanlar, alanın içindeki kurallar.
 - Sıralama Türkçe harf düzeniyle yapılıyor — ç, ğ, ı, ö, ş, ü kendi yerine oturuyor, sona atılmıyor. Altyapı → Çeviri → Erişilebilirlik → Tasarım → Veri.
