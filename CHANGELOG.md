@@ -1,5 +1,12 @@
 # Değişiklik Günlüğü
 
+## v0.80.0
+- **Panelin zemininde ofis fotoğrafı.** Tam ekran, sabit duruyor; kartlar üstünden akıyor. Üç katman üst üste: fotoğraf tepede net → aşağı indikçe artan bulanıklık (maskeyle) → aşağı indikçe koyulaşan perde. Kartlar buzlu cam, fotoğrafın üstünde yüzüyor.
+- **Kaydırınca fotoğraf geri çekiliyor.** Sabit fotoğrafın sorunu şuydu: kaydırdıkça kartlar fotoğrafın *net* kısmına geliyor ve yazı okunmuyordu. İlk 220 pikselde bir perde katmanı koyulaşıp fotoğrafı arkaya itiyor. Tek bir CSS değişkeni yazılıyor, düzen hesabı yok.
+- Cam yalnız **Panel'de**: diğer ekranlarda arkada fotoğraf yok, kartlar katı grafit kalıyor. Kartın kendi ışık huzmesi ve proje rengi degradesi camın üstünde çamur yaptığı için bu ekranda kapalı.
+- `backdrop-filter` desteklenmeyen tarayıcıda bulanıklık düşüyor, perde tek başına okunurluğu taşıyor.
+- Fotoğraf sağa kırpıldı: duvardaki "Nizam Software" yazısı üstteki logo ve selamlamayla çakışıyordu.
+
 ## v0.79.0
 İlk tam turdan dört ders. Görseller ve tasarım doğru geldi; takılan yerler tarifin biçimiydi.
 
