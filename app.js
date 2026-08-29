@@ -4365,7 +4365,8 @@ function projeKarti(p, i = 0) {
          data-eylem="proje-ac" data-id="${p.id}"
          role="button" tabindex="0" style="${renkDegiskenleri(p.renk)};--i:${i}">
       <span class="parlama"></span>
-      ${gor ? `<span class="proje-gorsel"><img src="${esc(gor)}" alt="" loading="lazy"></span>
+      ${gor ? `<span class="proje-gorsel"><img src="${esc(gor)}" alt=""
+                 decoding="async" fetchpriority="high"></span>
                <span class="proje-tepe"></span>
                <span class="proje-ray"><i style="width:${s.yuzde}%"></i></span>` : ''}
       ${AUTH.yonetici ? `<button class="proje-bilgi" data-eylem="proje-gorsel" data-id="${p.id}"

@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.105.0
+- **Görseller artık her sürümde yeniden inmiyor.** Sebep önbellek kovasının adındaydı: kovanın adı sürüm numarasını taşıyordu ve her yeni sürümde eski kova siliniyordu — müşteri görselleri de onunla birlikte gidiyordu. Sürüm sık çıktığı için görseller neredeyse her açılışta yeniden iniyordu.
+- Resimler artık **ayrı ve sürümsüz** bir kovada. Kod değişince görsel bayatlamıyor; sürüm yükseltmesi yalnız kabuk dosyalarının kovasını siliyor.
+- **Kart görseli artık geç yüklenmiyor.** Görselde `loading="lazy"` vardı; kart ekranın en üstünde bile olsa tarayıcı yüklemeyi erteliyordu, her sayfa geçişinde görsel bir gecikmeyle oturuyordu — önbellekten gelse bile "yeniden iniyor" gibi görünüyordu.
+- Açılışta bütün görselleri indiren ısıtma zaten vardı ve çalışıyordu; ısıttığı şey bir sonraki sürümde siliniyordu. Şimdi kalıcı.
+
 ## v0.104.0
 - **Görselli kartta bilgi bloğu kartın yarısından çeyreğine indi** — ölçülen oran %50'den **%27**'ye. Görsel artık kartın dörtte üçünü kaplıyor.
 - Yalnız punto küçültmek yetmiyordu, %40'ta takılıyordu: çeyreğe inmek için bir satırın gitmesi gerekiyordu. **İlerleme rayı kendi satırından çıkıp kartın en dibine indi** — tam genişlikte ince bir çizgi. Hem yer açıldı hem ray daha okunaklı oldu.

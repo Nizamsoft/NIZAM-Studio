@@ -21,7 +21,16 @@
    Bir resim yeniden yüklenince eski kopya önbellekte kalırdı; uygulama
    `postMessage({ tip: 'unut', yol })` gönderiyor, o kayıt siliniyor. */
 
-const CACHE = 'nizam-studio-v0.104.0';
+const CACHE = 'nizam-studio-v0.105.0';
+
+/* Resimler AYRI ve SÜRÜMSÜZ bir önbellekte duruyor.
+
+   Eskiden hepsi tek kovadaydı ve kovanın adı sürüm numarasını taşıyordu:
+   her yeni sürümde eski kova siliniyor, müşteri görselleri de onunla
+   birlikte gidiyordu. Sürüm sık çıktığı için kullanıcı görselleri
+   neredeyse her açılışta yeniden indiriyordu. Resimlerin sürümle ilgisi
+   yok — kod değişince görsel bayatlamıyor. */
+const RESIM = 'nizam-studio-resim';
 const SHELL = [
   './', './index.html', './style.css', './app.js', './config.js', './auth.js', './data.js', './prompt.js', './guncelle.js',
   './vendor/supabase.js',
@@ -49,7 +58,10 @@ self.addEventListener('install', e => {
 self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys()
-      .then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
+      /* Resim kovasına dokunulmuyor; yalnız eski sürümlerin kabuk kovaları
+         siliniyor. */
+      .then(keys => Promise.all(
+        keys.filter(k => k !== CACHE && k !== RESIM).map(k => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });
@@ -58,7 +70,7 @@ self.addEventListener('activate', e => {
 self.addEventListener('message', e => {
   const veri = e.data || {};
   if (veri.tip !== 'unut' || !veri.yol) return;
-  e.waitUntil(caches.open(CACHE).then(c => c.delete(new Request(veri.yol))).catch(() => {}));
+  e.waitUntil(caches.open(RESIM).then(c => c.delete(new Request(veri.yol))).catch(() => {}));
 });
 
 self.addEventListener('fetch', e => {
@@ -71,17 +83,14 @@ self.addEventListener('fetch', e => {
   if (depoResmi(url)) {
     const ana = anahtar(url);
     e.respondWith(
-      caches.match(ana).then(bulunan => {
+      caches.open(RESIM).then(c => c.match(ana).then(bulunan => {
         if (bulunan) return bulunan;
         return fetch(req).then(res => {
           /* Yalnız gerçekten gelen resim saklanıyor; hata sayfası değil. */
-          if (res && res.ok) {
-            const kopya = res.clone();
-            caches.open(CACHE).then(c => c.put(ana, kopya)).catch(() => {});
-          }
+          if (res && res.ok) c.put(ana, res.clone()).catch(() => {});
           return res;
         });
-      })
+      }))
     );
     return;
   }
