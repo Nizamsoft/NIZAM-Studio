@@ -475,12 +475,6 @@ button { font-family: inherit; color: inherit; }
      liste anında duruyor ve kasıyormuş gibi hissettiriyor. */
   -webkit-overflow-scrolling: touch;
 }
-/* Sayfa geçişi tarayıcının kendi motoruyla yapılıyor (bkz. Sayfa geçişi).
-   Desteklemeyen tarayıcıda bu eski beliriş yedek olarak devrede kalıyor. */
-@supports not (view-transition-name: none) {
-  .view.swap { animation: viewIn .28s var(--ease) both; }
-}
-@keyframes viewIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 
 
 
@@ -1328,7 +1322,12 @@ html { background: var(--bg); }
   }
   .mini-btn, .mini-link { min-width: 38px; min-height: 38px; }}
 
-/* --- Sayfa geçişi biraz kısaldı --- */
+/* --- Sayfa geçişi ---
+   Yeni ekran soluk gelir, eskisi anında gider. Ucuz olanı bu: tek katman,
+   `opacity` ekran kartında bedava sayılır. Tarayıcının geçiş motoru daha
+   zengin bir çapraz geçiş yapabiliyordu ama her seferinde tüm sayfanın iki
+   tam ekran görüntüsünü alıyordu — telefonda bunun bedeli animasyonun
+   kendisinden büyük. */
 @keyframes viewIn { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: none; } }
 .view.swap { animation: viewIn .24s var(--ease) both; }
 
@@ -2246,7 +2245,13 @@ a.durak:active { transform: scale(.99); transition: transform .1s var(--ease); }
 #main.susulu #zemin-sus {
   display: block; position: absolute; inset: 0; z-index: 0;
   pointer-events: none; overflow: hidden;
+  /* Fotoğraf `#view` dışında duruyor; onunla birlikte solmazsa panele
+     dönerken olduğu yerde patlıyor ve geçiş hiç olmamış gibi görünüyor.
+     Panelden çıkarken `susulu` kalkıp geri gelince animasyon kendiliğinden
+     baştan çalışıyor. */
+  animation: zeminIn .34s var(--ease) both;
 }
+@keyframes zeminIn { from { opacity: 0; } to { opacity: 1; } }
 #zemin-sus .ofis {
   position: absolute; inset: 0; width: 100%; height: 100%;
   object-fit: cover; object-position: 50% 22%;
@@ -4927,64 +4932,3 @@ a:hover { color: var(--red-ink); }
 
 /* Sayfanın üç sorusu */
 .dal2 .d .yz i { white-space: normal; }
-
-
-/* ==========================================================================
-   SAYFA GEÇİŞİ
-   Tarayıcının kendi geçiş motoru: eski ve yeni ekranın görüntüsünü alıp
-   ekran kartında kaydırıyor. JS her karede hesap yapmadığı için takılmıyor.
-   Desteklemeyen tarayıcıda hiçbir şey olmuyor, sayfa eskisi gibi çiziliyor.
-
-   Yalnız `#view` kayıyor: kendi adı olduğu için kök anlık görüntüsünün
-   dışında kalıyor. Üst çubuk ve alt çubuk kaymıyor ve solmuyor —
-   duran şeyler, oldukları yerde kalıyorlar. Panel fotoğrafı kökte kalıp
-   yumuşakça eriyor.
-   ========================================================================== */
-
-#view { view-transition-name: ekran; }
-
-/* Üst ve alt çubuk kökten ayrılıyor. Kökte kalınca eskisi solup yenisi
-   belirirken ikisi de yarı saydam oluyor ve çubuk bir an yok oluyordu —
-   oysa duran bir şey. Kendi adları olunca yerlerinde kalıyorlar; geçiş
-   boyunca hiç animasyon almıyorlar, yalnız yeni hâlleri görünür. */
-#topbar { view-transition-name: ust-cubuk; }
-#tabbar { view-transition-name: alt-cubuk; }
-
-/* Eski görüntü hiç çizilmiyor: çubukların zemini yarı saydam olduğu için
-   altta kalınca eski hâl sızıyor, bir an iki tane etkin sekme görünüyordu. */
-::view-transition-old(ust-cubuk),
-::view-transition-old(alt-cubuk) {
-  display: none;
-}
-::view-transition-new(ust-cubuk),
-::view-transition-new(alt-cubuk) {
-  animation: none;
-  mix-blend-mode: normal;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  ::view-transition-old(root),
-  ::view-transition-new(root) {
-    animation-duration: .3s;
-  }
-  ::view-transition-old(ekran),
-  ::view-transition-new(ekran) {
-    animation-duration: .34s;
-    animation-timing-function: var(--ease);
-    animation-fill-mode: both;
-  }
-
-  /* İçeri girerken: yeni ekran sağdan gelir, eski sola çekilip solar. */
-  html[data-yon="ileri"]::view-transition-old(ekran) { animation-name: ekranCikSola; }
-  html[data-yon="ileri"]::view-transition-new(ekran) { animation-name: ekranGelSagdan; }
-  /* Geri dönerken tersi — nereye gittiğin hissedilsin. */
-  html[data-yon="geri"]::view-transition-old(ekran)  { animation-name: ekranCikSaga; }
-  html[data-yon="geri"]::view-transition-new(ekran)  { animation-name: ekranGelSoldan; }
-}
-
-/* Eski ekran tamamen çıkmıyor: yarı yolda soluyor. Tam genişlik kadar
-   kaydırmak "iki ayrı sayfa" hissi veriyor ve hantal duruyor. */
-@keyframes ekranCikSola   { to   { transform: translateX(-22%); opacity: 0; } }
-@keyframes ekranGelSagdan { from { transform: translateX(30%);  opacity: 0; } }
-@keyframes ekranCikSaga   { to   { transform: translateX(22%);  opacity: 0; } }
-@keyframes ekranGelSoldan { from { transform: translateX(-30%); opacity: 0; } }

@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.89.0
+- **Sayfa geçişi sadeleşti: kayma gitti, soluk geçiş kaldı.** Yeni ekran solarak gelir, eskisi anında gider.
+- Sebebi maliyet. Tarayıcının geçiş motoru (View Transitions) daha zengin bir çapraz geçiş yapıyordu ama her adres değişiminde **tüm sayfanın iki tam ekran görüntüsünü** alıyordu — telefonda 3x çözünürlükte iki doku. Bunun bedeli animasyonun kendisinden büyüktü. Düz `opacity` ise tek katman, ekran kartında bedava sayılır.
+- **Panele dönerken ofis fotoğrafı da soluyor.** Fotoğraf `#view`'ın dışında ayrı bir katman olduğu için olduğu yerde patlıyor, geçiş hiç olmamış gibi görünüyordu.
+- Yön hesabı, `data-yon` damgası ve kayma kareleri tamamen kalktı — artık her geçiş aynı.
+
 ## v0.88.1
 - **Sayfa geçişinde üst ve alt çubuk artık kaybolmuyor.** Çubuklar geçişin dışında tutuldu: kaymıyor, solmuyor, oldukları yerde duruyorlar. Yalnız içerik kayıyor.
 - Eski çubuk görüntüsü hiç çizilmiyor — zemini yarı saydam olduğu için altta kalınca bir an iki etkin sekme birden görünüyordu.

@@ -9129,36 +9129,13 @@ async function boot() {
    ========================================================================== */
 
 /* ---------- Sayfa geçişi ----------
-   Yön, adresteki parça sayısından çıkıyor: `#/projeler` bir parça,
-   `#/projeler/p1` iki, `#/projeler/p1/yapi` üç. Derinleşiyorsa ileri,
-   sığlaşıyorsa geri. Aynı derinlikte (panelden projelere gibi) ileri
-   sayılıyor — yan yana duran sekmelerde yön duygusu zaten yok. */
-let SON_ADRES = location.hash;
-
-function adresDerinlik(hash) {
-  return String(hash || '').replace(/^#\/?/, '').split('/').filter(Boolean).length;
-}
-
-/* Tarayıcının kendi geçiş motoru: eski ve yeni ekranın görüntüsünü alıp
-   ekran kartında kaydırıyor. Desteklemiyorsa sessizce normal çizime
-   düşüyor — animasyon olmuyor, başka hiçbir şey değişmiyor. */
-function gecisliCiz(yon) {
-  const kok = document.documentElement;
-  if (!document.startViewTransition ||
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    render();
-    return;
-  }
-  kok.dataset.yon = yon;
-  const g = document.startViewTransition(() => render());
-  g.finished.finally(() => { delete kok.dataset.yon; });
-}
-
+   Yeni ekran soluk gelir, eskisi anında gider. Tarayıcının geçiş motoru
+   (startViewTransition) daha zengin bir çapraz geçiş yapabiliyor ama her
+   seferinde tüm sayfanın iki tam ekran görüntüsünü alıyor — telefonda
+   bunun bedeli animasyonun kendisinden büyük. Düz bir `opacity` ise
+   ekran kartında bedava sayılır. */
 window.addEventListener('hashchange', () => {
-  const yeni = location.hash;
-  const yon  = adresDerinlik(yeni) < adresDerinlik(SON_ADRES) ? 'geri' : 'ileri';
-  SON_ADRES = yeni;
-  if (!$('#app').classList.contains('hidden')) { modalHepsiniKapat(); gecisliCiz(yon); }
+  if (!$('#app').classList.contains('hidden')) { modalHepsiniKapat(); render(); }
 });
 
 /* Ana ekrandan mı, tarayıcı sekmesinden mi açıldı? Alt çubuğun payı buna göre
