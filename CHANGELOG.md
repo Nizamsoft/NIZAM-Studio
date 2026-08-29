@@ -1,5 +1,15 @@
 # Değişiklik Günlüğü
 
+## v0.102.0
+- **Proje kartı artık işletmenin görselini taşıyor.** Görsel kartın tamamını kaplıyor; rozet, firma adı ve platform satırı **alta indi**, üst yarı görsele bırakıldı.
+- Bilgileri aşağı almak bir zevk kararı değil, ölçüm sonucu: bilgiler üstteyken firma adının kontrast oranı **2.8**, platform satırınınki **1.2** çıkıyordu — çizimlerin en parlak yeri tam oraya denk geliyor. Kartın dibi zaten koyu; aşağı alınca ikisi de **8'in üstüne** çıktı.
+- Perde kesik bir kenarla değil, yumuşak bir geçişle iniyor: amaç görseli göstermek, kesmek değil. Görselin **üst %40'ına hiç dokunulmuyor**.
+- **Sağ üstte "i" düğmesi:** görsel oradan yükleniyor. Eskiden bu iş dört dokunuş öteydeydi — proje → Tasarımı belirleme → Görsel dünya → Malzeme. Artık kartın üstünde.
+- Kartta gösterilen görsel, ChatGPT'ye giden **İşletme görselinin aynısı**. İkinci bir görsel tutulmuyor; her proje için ayrıca üretip yönetmek kazandırdığı kadrajdan pahalı.
+- Görselin üstünde silik gri okunmadığı için sayılar ve platform satırı bir kademe parlatıldı; ilerleme yatağı opak kaldı.
+- **Görseli olmayan proje bugünkü hâlinde**, kısa duruyor — boş bir görsel alanı açmıyor.
+- **Bulunan hata:** ilk perde ayarı dar mockup kartında geçiyordu ama gerçek kart daha geniş; `cover` görselin başka ve daha parlak bir yerini başlığın altına getirince firma adı 3.8'e düşüyordu. Perde ölçülerek yeniden ayarlandı. Ayrıca görselsiz kartta "i" düğmesi durum etiketinin üstüne biniyordu.
+
 ## v0.101.1
 - **Geri oku Standartlar, Ekip, Görevler ve Ayarlar'da da çalışıyor.** Yalnız proje detayında ve kovada aktifti; diğer ekranlara girince sönük kalıyor, "buradan çıkamıyorum" gibi duruyordu. Artık tek pasif yer **Panel** — zaten açılış ekranı, geri gidilecek yer orası.
 - Tarayıcı geçmişi boşken ok bir kat yukarı çıkıyor. Eskiden her yerden Projeler'e atlıyordu; ok artık Ayarlar'da da çalıştığı için oradan Projeler'e düşmek "geri" olmazdı.

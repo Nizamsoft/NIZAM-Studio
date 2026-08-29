@@ -4352,29 +4352,43 @@ function renkYakin(a, b) {
 }
 
 function projeKarti(p, i = 0) {
-  const s = DB.sayim(p.id);
+  const s   = DB.sayim(p.id);
+  const gor = gorselAdresi(p, 'G0');
+
+  /* Görsel varsa kartın üst yarısı ona bırakılıyor, bilgiler alta iniyor.
+     Sebebi ölçüldü: bilgiler üstteyken firma adının kontrastı 2.8, alt bilgi
+     satırınınki 1.2 çıkıyordu — çizimlerin en parlak yeri tam oraya denk
+     geliyor. Kartın dibi zaten koyu; aşağı almak oranları sekizin üstüne
+     çıkarıyor ve görselin en iyi kısmını da serbest bırakıyor. */
   return `
-    <div class="card proje tilt" data-eylem="proje-ac" data-id="${p.id}" role="button" tabindex="0"
-         style="${renkDegiskenleri(p.renk)};--i:${i}">
+    <div class="card proje tilt ${gor ? 'gorselli' : ''}" data-eylem="proje-ac" data-id="${p.id}"
+         role="button" tabindex="0" style="${renkDegiskenleri(p.renk)};--i:${i}">
       <span class="parlama"></span>
-      <div class="proje-ust">
-        <span class="proje-rozet" style="${renkStil(p.renk)}">${esc(basHarf(p.firma))}</span>
-        <span class="proje-ad-kutu">
-          <span class="proje-ad">${esc(projeAdi(p))}</span>
-          <span class="proje-meta">${PLATFORM_ADI[p.platform] || p.platform}</span>
-        </span>
-        <span class="pill ${durumSinif(p.durum)}">${DURUM_ADI[p.durum] || p.durum}</span>
-      </div>
-      <div class="proje-orta">
-        <div class="bar"><i style="width:${s.yuzde}%"></i></div>
-        <span class="proje-pct mono" data-sayac="${s.yuzde}" data-on="%">%${s.yuzde}</span>
-      </div>
-      <div class="proje-alt">
-        <span><b class="mono">${s.modul}</b> modül</span>
-        <span><b class="mono">${s.sayfa}</b> sayfa</span>
-        <span><b class="mono">${s.bitmis}/${s.gorev}</b> görev</span>
-        ${AUTH.yonetici ? `<button class="mini-btn proje-menu" data-eylem="proje-menu" data-id="${p.id}"
-          type="button" aria-label="Proje seçenekleri">${svg(ICON.nokta, 15)}</button>` : ''}
+      ${gor ? `<span class="proje-gorsel"><img src="${esc(gor)}" alt="" loading="lazy"></span>
+               <span class="proje-tepe"></span>` : ''}
+      ${AUTH.yonetici ? `<button class="proje-bilgi" data-eylem="proje-gorsel" data-id="${p.id}"
+        type="button" aria-label="${gor ? 'Görseli değiştir' : 'Görsel ekle'}">i</button>` : ''}
+
+      <div class="proje-govde">
+        <div class="proje-ust">
+          <span class="proje-rozet" style="${renkStil(p.renk)}">${esc(basHarf(p.firma))}</span>
+          <span class="proje-ad-kutu">
+            <span class="proje-ad">${esc(projeAdi(p))}</span>
+            <span class="proje-meta">${PLATFORM_ADI[p.platform] || p.platform}</span>
+          </span>
+          <span class="pill ${durumSinif(p.durum)}">${DURUM_ADI[p.durum] || p.durum}</span>
+        </div>
+        <div class="proje-orta">
+          <div class="bar"><i style="width:${s.yuzde}%"></i></div>
+          <span class="proje-pct mono" data-sayac="${s.yuzde}" data-on="%">%${s.yuzde}</span>
+        </div>
+        <div class="proje-alt">
+          <span><b class="mono">${s.modul}</b> modül</span>
+          <span><b class="mono">${s.sayfa}</b> sayfa</span>
+          <span><b class="mono">${s.bitmis}/${s.gorev}</b> görev</span>
+          ${AUTH.yonetici ? `<button class="mini-btn proje-menu" data-eylem="proje-menu" data-id="${p.id}"
+            type="button" aria-label="Proje seçenekleri">${svg(ICON.nokta, 15)}</button>` : ''}
+        </div>
       </div>
     </div>`;
 }
@@ -7925,6 +7939,10 @@ async function eylemCalistir(el) {
 
   if (e === 'logo-yukle')    return logoSec(el.dataset.proje);
   if (e === 'isletme-gorseli') return isletmeGorseliSec(el.dataset.proje);
+  /* Kartın sağ üstündeki "i": aynı G0 yuvasına yüklüyor. Ayrı bir kart
+     görseli tutmuyoruz — ikinci bir görseli her proje için ayrıca üretip
+     yönetmek, kazandırdığı kadrajdan pahalı. */
+  if (e === 'proje-gorsel') return isletmeGorseliSec(id);
 
   /* Kapalı adım satırına dokunuldu: o kart açılsın, sıradaki kapansın. */
   if (e === 'gorsel-adim') {
