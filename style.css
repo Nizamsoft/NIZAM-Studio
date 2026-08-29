@@ -2299,10 +2299,92 @@ a.durak:active { transform: scale(.99); transition: transform .1s var(--ease); }
 #main { position: relative; }
 #main.susulu .view { position: relative; z-index: 1; }
 
+/* Panelin kısayol ızgarası ---------------------------------------------------
+   Üç sütun. Her kutu bir yere götürüyor; kırmızı yalnız "Yeni Proje"de. */
+.kisayol {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px;
+  margin-top: 16px;
+}
+.kk {
+  position: relative; display: block; text-align: center; cursor: pointer;
+  padding: 13px 8px 22px; border-radius: 16px; text-decoration: none;
+  font-family: var(--yazi-govde); color: inherit;
+  background: var(--yuva); border: 1px solid var(--line-2);
+  transition: border-color .16s ease, transform .12s var(--ease);
+}
+.kk:active { transform: scale(.98); }
+.kk:hover  { border-color: var(--line-parlak); }
+.kk-dr {
+  display: grid; place-items: center; width: 46px; height: 46px; margin: 0 auto 9px;
+  border-radius: 50%; background: var(--surface-2); color: var(--metal-2);
+  border: 1px solid var(--line-3);
+}
+.kk b { display: block; font-family: var(--yazi-baslik); font-size: 12.5px;
+        color: var(--ink-strong); line-height: 1.25; }
+.kk i { display: block; font-style: normal; font-size: 9.5px; color: var(--ink-dim);
+        margin-top: 5px; line-height: 1.35; }
+/* Ok metnin altında, ortada: sağ alt köşede iki satırlık açıklamayla
+   çakışıyordu. */
+.kk-cv { position: absolute; left: 50%; bottom: 8px; transform: translateX(-50%);
+         color: var(--ink-dim); display: flex; }
+/* Izgaranın ana eylemi: kırmızı burada, başka yerde değil. */
+.kk.ana {
+  background: linear-gradient(180deg, rgba(229, 52, 42, .20), rgba(229, 52, 42, .07));
+  border-color: var(--red-cizgi);
+}
+/* Alt çubukta zaten kırmızı dolu bir + var; ızgarada ikinci bir kırmızı
+   daire üst üste binmiş gibi duruyordu. Kutu kırmızıyla işaretli ama
+   simgesi dolu değil. */
+.kk.ana .kk-dr { background: var(--red-soft); border-color: var(--red-cizgi); color: var(--red-ink); }
+.kk.ana .kk-cv { color: var(--red-ink-soft); }
+
+/* Bugünkü durum kartı -------------------------------------------------------- */
+.bugun {
+  margin-top: 11px; padding: 14px; border-radius: 18px;
+  background: var(--yuva); border: 1px solid var(--line-2);
+}
+.bd-bas { display: flex; align-items: baseline; margin-bottom: 11px; }
+.bd-bas b { flex: 1; font-family: var(--yazi-baslik); font-size: 15px; color: var(--ink-strong); }
+.bd-bas a { display: flex; align-items: center; gap: 4px; font-size: 11.5px;
+            color: var(--ink-faint); text-decoration: none; }
+.bd-sayilar { display: flex; padding-bottom: 12px; border-bottom: 1px solid var(--line-3); }
+.bd-p { flex: 1; text-align: center; position: relative; }
+.bd-p + .bd-p::before {
+  content: ""; position: absolute; left: 0; top: 10%; height: 80%; width: 1px;
+  background: var(--line-3);
+}
+.bd-p b { display: block; font-family: var(--yazi-baslik); font-size: 23px; line-height: 1; }
+.bd-p i { display: block; font-style: normal; font-size: 9.5px; color: var(--ink-faint); margin-top: 6px; }
+.bd-liste { padding-top: 4px; }
+.bd-sr {
+  display: flex; align-items: center; gap: 10px; padding: 8px 0;
+  text-decoration: none; color: inherit; cursor: pointer;
+}
+.bd-sr + .bd-sr { border-top: 1px solid var(--line-3); }
+.bd-sr:active { opacity: .7; }
+.bd-rz {
+  width: 26px; height: 26px; border-radius: 8px; flex: 0 0 26px;
+  display: grid; place-items: center; font-family: var(--yazi-baslik);
+  font-weight: 700; font-size: 10px; color: #fff;
+}
+.bd-yz { flex: 1; min-width: 0; }
+.bd-yz b { display: block; font-family: var(--yazi-baslik); font-size: 12.5px; color: var(--ink);
+           white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bd-ray { display: block; height: 3px; border-radius: 2px; margin-top: 5px;
+          background: var(--surface-3); overflow: hidden; }
+.bd-ray i { display: block; height: 100%; border-radius: 2px;
+            background: linear-gradient(90deg, var(--metal-1), var(--metal-2)); }
+.bd-yuz { font-size: 11px; color: var(--ink-soft); flex: 0 0 auto; }
+.bd-bos { display: flex; gap: 9px; align-items: center; padding: 12px 0 4px;
+          font-size: 12px; color: var(--ink-faint); }
+.bd-bos b { color: var(--ink-soft); }
+
 /* Panel kartları: fotoğrafın üstünde yüzen buzlu cam --------------------------
    Yalnız Panel'de. Diğer ekranlarda kartlar katı grafit olarak kalıyor —
    orada arkada fotoğraf yok, cam yapmanın anlamı da yok. */
 
+#main.susulu .kk,
+#main.susulu .bugun,
 #main.susulu .stat,
 #main.susulu .proje,
 #main.susulu .card {
@@ -2505,7 +2587,12 @@ a.durak:active { transform: scale(.99); transition: transform .1s var(--ease); }
     #tabbar { background: var(--surface-2); }
   }
 
-  /* Uygulama kipinde ana ekran çizgisinin üstünde dursun. */
+  /* Alt çubuk yüzüyor: içerik her hâlükârda altında kalmasın. Bu pay eskiden
+     yalnız uygulama kipinde veriliyordu; tarayıcı sekmesinde son kart çubuğun
+     arkasına giriyordu. */
+  .view { padding-bottom: 96px; }
+
+  /* Uygulama kipinde ana ekran çizgisinin payı da eklenir. */
   @media (display-mode: standalone) {
     #tabbar { margin-bottom: max(14px, calc(env(safe-area-inset-bottom, 0px) - 8px)); }
     .view   { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }

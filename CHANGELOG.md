@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.81.0
+- **Panel önce nereye gidileceğini gösteriyor.** Eskiden dört sayaç yukarıda, altında proje listesi vardı: ne olduğunu söylüyor ama nereye gidileceğini söylemiyordu — her şeye alt çubuktan ulaşılıyordu. Artık **3×2 kısayol ızgarası**: Projeler · Görevler · **Yeni Proje** · Standartlar · Ekip · Ayarlar. Her kutunun altında o an kaç şey olduğu yazıyor.
+- **Sayılar tek karta indi.** "Bugünkü durum": Geliştiriliyor · Kontrolde · Bugün biten, altında son üç proje tek satırlık ince ray ile. Dört ayrı sayaç kartı ekranın tepesini kaplıyordu.
+- Kırmızı ızgarada yalnız **Yeni Proje**'de. Alt çubukta zaten kırmızı dolu bir `+` olduğu için ızgaradaki simge dolu değil, kırmızı çerçeveli — iki kırmızı daire üst üste binmiş gibi duruyordu.
+- **Bulunan hata:** `.view`'un alt payı yalnız uygulama kipinde veriliyordu; tarayıcı sekmesinde son kart yüzen alt çubuğun arkasına giriyordu. Artık pay her hâlükârda var, uygulama kipinde ana ekran çizgisinin payı da ekleniyor.
+
 ## v0.80.0
 - **Panelin zemininde ofis fotoğrafı.** Tam ekran, sabit duruyor; kartlar üstünden akıyor. Üç katman üst üste: fotoğraf tepede net → aşağı indikçe artan bulanıklık (maskeyle) → aşağı indikçe koyulaşan perde. Kartlar buzlu cam, fotoğrafın üstünde yüzüyor.
 - **Kaydırınca fotoğraf geri çekiliyor.** Sabit fotoğrafın sorunu şuydu: kaydırdıkça kartlar fotoğrafın *net* kısmına geliyor ve yazı okunmuyordu. İlk 220 pikselde bir perde katmanı koyulaşıp fotoğrafı arkaya itiyor. Tek bir CSS değişkeni yazılıyor, düzen hesabı yok.

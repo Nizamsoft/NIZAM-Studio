@@ -235,22 +235,8 @@ const VIEWS = {
     return `
       ${karsilama(ilerleme, p.length, acik)}
 
-      <div class="stat-grid">
-        ${stat('Aktif Proje', p.length, p.length ? 'devam ediyor' : 'henüz proje yok', '', 0, 'folder')}
-        ${stat('Geliştiriliyor', dev, dev ? 'kodlanıyor' : 'açık iş yok', 'c-dev', 1, 'kalem')}
-        ${stat('Kontrolde', kont, kont ? 'onayını bekliyor' : 'onayını bekleyen yok', 'c-check', 2, 'check')}
-        ${stat('Bugün Biten', bugun, bugun ? 'onaylandı' : 'gün yeni başladı', 'c-done', 3, 'tik')}
-      </div>
-
-      <div class="section">
-        <span class="label">Son projeler</span>
-        ${p.length
-          ? `<div class="proje-grid">${p.slice(0, 6).map(projeKarti).join('')}</div>`
-          : `<div class="card">${empty(ICON.folder, 'Henüz proje yok',
-               'İlk müşteri projeni oluştur; modülleri ve sayfalarıyla birlikte kurulsun.',
-               AUTH.yonetici ? 'Yeni Proje' : null, 'sihirbaz')}</div>`}
-      </div>
-
+      ${kisayolIzgarasi(p.length, acik)}
+      ${bugunkuDurum(dev, kont, bugun, p)}
     `;
   },
 
@@ -8803,6 +8789,76 @@ function karsilama(ilerleme, projeSayi, acikIs) {
       </div>
       <h2 class="selam">${esc(selamla())}, ${esc(AUTH.ad)}</h2>
       <p class="selam-alt">${esc(todayLabel())} · ${ozet}</p>
+    </div>`;
+}
+
+/* ---------- Panelin kısayol ızgarası ----------
+   Panel eskiden dört sayaç ve proje listesiydi: ne olduğunu söylüyor ama
+   nereye gidileceğini söylemiyordu — her şeye alt çubuktan ulaşılıyordu.
+   Şimdi önce gidilecek yerler, sayılar altta özet kartında.
+   Kırmızı yalnız "Yeni Proje"de: ızgaranın ana eylemi o. */
+function kisayolIzgarasi(projeSayi, acikIs) {
+  const yon = AUTH.yonetici;
+
+  const kutu = ({ ad, alt, ikon, adres, eylem, ana }) => {
+    const ic = `
+      <span class="kk-dr">${svg(ICON[ikon], 23)}</span>
+      <b>${esc(ad)}</b>
+      <i>${esc(alt)}</i>
+      <span class="kk-cv">${svg(ICON.chevron, 11)}</span>`;
+    return eylem
+      ? `<button class="kk ${ana ? 'ana' : ''}" type="button" data-eylem="${eylem}">${ic}</button>`
+      : `<a class="kk ${ana ? 'ana' : ''}" href="${adres}">${ic}</a>`;
+  };
+
+  const kutular = [
+    { ad: 'Projeler', alt: projeSayi ? projeSayi + ' aktif proje' : 'henüz yok',
+      ikon: 'folder', adres: '#/projeler' },
+    { ad: 'Görevler', alt: acikIs ? acikIs + ' açık iş' : 'açık iş yok',
+      ikon: 'check', adres: '#/gorevler' },
+  ];
+  if (yon) kutular.push({ ad: 'Yeni Proje', alt: 'sihirbazla kur',
+    ikon: 'arti', eylem: 'sihirbaz', ana: true });
+  kutular.push({ ad: 'Standartlar', alt: 'ortak tarifler', ikon: 'katman', adres: '#/standartlar' });
+  if (yon) kutular.push({ ad: 'Ekip', alt: 'kullanıcı ve yetki', ikon: 'kisi', adres: '#/ekip' });
+  kutular.push({ ad: 'Ayarlar', alt: 'uygulama ayarı', ikon: 'ayar', adres: '#/ayarlar' });
+
+  return `<div class="kisayol">${kutular.map(kutu).join('')}</div>`;
+}
+
+/* ---------- Bugünkü durum ----------
+   Üç sayı ve altında son projeler. Sayılar artık ekranın tepesini kaplamıyor;
+   gidilecek yerlerden sonra, tek kartın içinde duruyor. */
+function bugunkuDurum(dev, kont, bugun, projeler) {
+  const sayi = (deger, ad, renk) => `
+    <span class="bd-p"><b style="color:${renk}">${deger}</b><i>${esc(ad)}</i></span>`;
+
+  const satir = p => {
+    const s = DB.sayim(p.id);
+    return `
+      <a class="bd-sr" href="#/projeler/${p.id}" style="${renkDegiskenleri(p.renk)}">
+        <span class="bd-rz" style="${renkStil(p.renk)}">${esc(basHarf(p.firma))}</span>
+        <span class="bd-yz">
+          <b>${esc(projeAdi(p))}</b>
+          <span class="bd-ray"><i style="width:${s.yuzde}%"></i></span>
+        </span>
+        <span class="bd-yuz mono">%${s.yuzde}</span>
+      </a>`;
+  };
+
+  return `
+    <div class="bugun">
+      <div class="bd-bas"><b>Bugünkü durum</b>
+        <a href="#/gorevler">Tümü ${svg(ICON.chevron, 11)}</a></div>
+      <div class="bd-sayilar">
+        ${sayi(dev,   'Geliştiriliyor', 'var(--st-dev-t)')}
+        ${sayi(kont,  'Kontrolde',      'var(--st-check-t)')}
+        ${sayi(bugun, 'Bugün biten',    'var(--st-done-t)')}
+      </div>
+      ${projeler.length
+        ? `<div class="bd-liste">${projeler.slice(0, 3).map(satir).join('')}</div>`
+        : `<div class="bd-bos">${svg(ICON.folder, 15)}
+            <span>Henüz proje yok. <b>Yeni Proje</b> ile başla.</span></div>`}
     </div>`;
 }
 
