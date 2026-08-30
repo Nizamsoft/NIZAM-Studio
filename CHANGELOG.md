@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.113.2
+- **NIZAM.md künye satırına geçti.** Kartların altındaki ayrı rozet kalktı; kimlik dosyası artık Alan adı ve Modül adı ile aynı ızgarada, aynı biçimde duruyor. Dokununca içeriği yine açılıyor. Yer kartında artık tek bir liste var: veri katmanı, alan adı, modül adı, depo, kimlik dosyası, sohbet adı.
+
 ## v0.113.1
 - Firma sayfasının altındaki **"Bilgileri düzenle" düğmesi kalktı** — her kartın kendi kalemi zaten aynı pencereyi açıyor.
 - Yer kartının dibindeki **yığın/barındırma standardı açıklaması kalktı**: her açılışta okunacak bir şey değil, sayfayı uzatıyordu.

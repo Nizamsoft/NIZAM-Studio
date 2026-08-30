@@ -1031,15 +1031,15 @@ function firmaSayfasi(p, d) {
       ${kunyeSatiri('#c48a5c', ICON.katman,  'Modül adı',    pl.modulAdi, 'modul-adi', p.id)}
       ${kunyeSatiri('#b8926b', ICON.dal,      'Depo',         p.repo,      'repo',      p.id,
                     false, 'dokun, yapıştır')}
+      ${/* Kimlik dosyası elle girilmiyor, Studio üretiyor — ama yeri burası:
+            deponun neyi taşıdığını söyleyen satır. Dokununca içeriği açılır. */ ''}
+      ${kunyeSatiri('#4fa8c9', ICON.dosya,    'Kimlik dosyası', 'NIZAM.md', 'kimlik', p.id)}
       ${/* Sohbet adı ancak prompt panoya alındıktan sonra sorulabilir:
             öncesinde ortada isim verilecek bir sohbet yok. */ ''}
-      ${kunyeSatiri('#9b7fd4', ICON.dosya,    'Sohbet adı',   pl.sohbetAdi,
+      ${kunyeSatiri('#9b7fd4', ICON.kopya,    'Sohbet adı',   pl.sohbetAdi,
                     pl.sohbetAcildi ? 'sohbet-adi' : '', p.id, !pl.sohbetAcildi)}
     </div>
-    <div class="fb-ayrac">${kurulumAraclari(p)}</div>
-    <div class="fb-cip" style="margin-top:9px">
-      ${fbCip('#9b7fd4', ICON.dosya, '<b class="mono">NIZAM.md</b>', 'kimlik', p.id)}
-    </div>`);
+    <div class="fb-ayrac">${kurulumAraclari(p)}</div>`);
 
   /* Alttaki genel "Bilgileri düzenle" düğmesi kalktı: her kartın kendi
      kalemi zaten aynı pencereyi açıyor. */
