@@ -878,31 +878,34 @@ function fbKart(renk, ikon, baslik, eylem, projeId, ic) {
     </div>`;
 }
 
-/* Takvim rayı künye kartının altında: ayrı takvim kartı açmaya değmiyor,
-   iki tarih ve bir çubuktan ibaret. */
-function fbTakvim(p) {
-  if (!p.baslangic && !p.teslim) return '';
-
+/* Takvim kendi ince şeridinde: "ne zaman" ayrı bir soru, künyenin dibinde
+   saklanacak bir alt satır değil. Ayrı kart açmaya da değmiyor — iki tarih
+   ve bir çubuktan ibaret. */
+function fbTakvimSeridi(p) {
   const bas   = p.baslangic ? new Date(p.baslangic) : null;
   const son   = p.teslim ? new Date(p.teslim) : null;
   const bugun = new Date(bugunTarih());
 
-  let yuzde = 0, orta = bas ? 'Başladı' : 'Teslim bekliyor', gecikti = false;
+  let yuzde = 0, sayi = '', birim = 'gün kaldı', gecikti = false;
   if (bas && son && son > bas) {
     yuzde = Math.max(0, Math.min(100, Math.round((bugun - bas) / (son - bas) * 100)));
     const kalan = Math.round((son - bugun) / 86400000);
     gecikti = kalan < 0;
-    orta = kalan >= 0 ? `<em>${kalan} gün</em> kaldı` : `<em>${-kalan} gün</em> geçti`;
+    sayi = String(Math.abs(kalan));
+    birim = gecikti ? 'gün geçti' : 'gün kaldı';
   }
 
   return `
-    <div class="fb-tkv">
-      ${bas && son ? `<div class="fb-ray"><i style="width:${yuzde}%"></i></div>` : ''}
-      <div class="fb-talt">
-        <span>${svg(ICON.takvim, 11)}${bas ? esc(gunYaz(p.baslangic)) : '—'}</span>
-        <span class="${gecikti ? 'gecikti' : ''}">${svg(ICON.saat, 11)}${orta}</span>
-        <span>${son ? esc(gunYaz(p.teslim)) : '—'}${svg(ICON.bayrak, 11)}</span>
-      </div>
+    <div class="fb-tks ${gecikti ? 'gecikti' : ''}">
+      <span class="fb-tsi">${svg(ICON.saat, 13)}</span>
+      <span class="fb-torta">
+        ${bas && son ? `<span class="fb-tray"><i style="width:${yuzde}%"></i></span>` : ''}
+        <span class="fb-tuc">
+          <span>${bas ? esc(gunYaz(p.baslangic)) : 'başlangıç girilmedi'}</span>
+          <span>${son ? esc(gunYaz(p.teslim)) : 'teslim girilmedi'}</span>
+        </span>
+      </span>
+      ${sayi ? `<span class="fb-tkalan"><b>${sayi}</b><i>${birim}</i></span>` : ''}
     </div>`;
 }
 
@@ -914,6 +917,9 @@ function fbCip(renk, ikon, ic, eylem, projeId, adres) {
   return `<span class="fb-cp" style="--ci:${renk}">${govde}</span>`;
 }
 
+/* Kartlar soruya göre gruplanıyor: İş ne yapıyoruz, Kişiler kim, Yer nerede
+   duruyor. Takvim "ne zaman" olduğu için künyeden çıkıp kendi şeridine geçti;
+   Durum silindi — kahramandaki yüzdeyle aynı şeyi söylüyordu. */
 function firmaSayfasi(p, d) {
   const dil  = (DIL_SECENEK.find(x => x.kod === p.dil) || {}).ad;
   const para = (PARA_SECENEK.find(x => x.kod === p.para) || {}).ad;
@@ -921,19 +927,18 @@ function firmaSayfasi(p, d) {
   const roller = rolListesi(pl.roller);
   const alt = [p.telefon, p.eposta].filter(Boolean).length;
 
-  const kunye = fbKart('var(--fb-kunye)', ICON.etiket, 'Künye', 'firma-duzenle', p.id, `
+  const is = fbKart('var(--fb-kunye)', ICON.etiket, 'İş', 'firma-duzenle', p.id, `
     <div class="fb-kg">
-      ${kunyeSatiri('#8fae4a', ICON.dukkan,  'Sektör',      p.sektor)}
-      ${kunyeSatiri('#7d93b8', ICON.katman,  'Platform',    PLATFORM_ADI[p.platform])}
-      ${kunyeSatiri('#3fa694', ICON.gVeri,   'Veritabanı',  VERI_ADI[p.veri])}
-      ${kunyeSatiri('#c8973f', ICON.gAnimasyon, 'Durum',    DURUM_ADI[p.durum])}
-      ${kunyeSatiri('#b8926b', ICON.dil,     'Arayüz dili', dil)}
-      ${kunyeSatiri('#9b7fd4', ICON.para,    'Para birimi', para)}
-    </div>
-    ${fbTakvim(p)}`);
+      ${kunyeSatiri('#8fae4a', ICON.dukkan, 'Sektör',      p.sektor)}
+      ${kunyeSatiri('#7d93b8', ICON.katman, 'Platform',    PLATFORM_ADI[p.platform])}
+      ${kunyeSatiri('#3fa694', ICON.gVeri,  'Veritabanı',  VERI_ADI[p.veri])}
+      ${kunyeSatiri('#b8926b', ICON.dil,    'Arayüz dili', dil)}
+      ${kunyeSatiri('#c8973f', ICON.para,   'Para birimi', para)}
+    </div>`);
 
-  const yetkili = fbKart('var(--fb-kisi)', ICON.kisi, 'Yetkili kişi',
-    'firma-duzenle', p.id, `
+  /* Müşteri tarafındaki kişi ve uygulama tarafındaki rol katmanları aynı
+     soruya cevap veriyor: kim. Ayraç ikisini ayırıyor. */
+  const kisiler = fbKart('var(--fb-kisi)', ICON.kisi, 'Kişiler', 'firma-duzenle', p.id, `
     <div class="fb-kisi">
       <span class="fb-av" style="${renkDegiskenleri(p.renk)}">${esc(basHarf(p.yetkili || '?'))}</span>
       <span class="fb-kyz">
@@ -947,30 +952,39 @@ function firmaSayfasi(p, d) {
         'tel:' + p.telefon.replace(/\s/g, '')) : ''}
       ${p.eposta ? fbCip('#4fa8c9', ICON.mail, 'E-posta', '', '', 'mailto:' + p.eposta) : ''}
       ${alt ? fbCip('#b8b2ad', ICON.kopya, 'Kopyala', 'yetkili-kopyala', p.id) : ''}
+    </div>
+    <div class="fb-ayrac">
+      <span class="fb-et">Uygulama tarafı${roller.length ? ' · ' + roller.length + ' katman' : ''}</span>
+      <div class="fb-cip">
+        ${roller.length
+          ? roller.slice().reverse().map((r, i) => fbCip(
+              i === 0 ? '#d8a63f' : i === roller.length - 1 ? '#7d93b8' : '#3fa694',
+              i === 0 ? ICON.gGuvenlik : i === roller.length - 1 ? ICON.kilit : ICON.kisi,
+              `<em>${roller.length - i}</em>${esc(r)}`)).join('')
+          : fbCip('#d8a63f', ICON.gGuvenlik, '<b class="eksik">rol belirlenmedi</b>')}
+      </div>
     </div>`);
 
-  const teknik = fbKart('var(--fb-teknik)', ICON.ayar, 'Teknik', 'teknik-duzenle', p.id, `
-    <div class="fb-cip">
-      ${roller.length
-        ? roller.slice().reverse().map((r, i) => fbCip(
-            i === 0 ? '#d8a63f' : i === roller.length - 1 ? '#7d93b8' : '#3fa694',
-            i === 0 ? ICON.gGuvenlik : i === roller.length - 1 ? ICON.kilit : ICON.kisi,
-            `<em>${roller.length - i}</em>${esc(r)}`)).join('')
-        : fbCip('#d8a63f', ICON.gGuvenlik, '<b class="eksik">rol belirlenmedi</b>')}
-      ${fbCip('#4fa8c9', ICON.bulut, pl.veriKatmani
-        ? esc(pl.veriKatmani) : '<b class="eksik">veri katmanı yok</b>')}
-      ${fbCip('#5fb37f', ICON.anahtar, pl.alanAdi
-        ? `<b class="mono">${esc(pl.alanAdi)}</b>` : '<b class="eksik">alan adı yok</b>')}
-      ${fbCip('#c48a5c', ICON.dal, p.repo ? `<b class="mono">${esc(p.repo)}</b>`
-        : '<b class="eksik">depo eklenmedi</b>', 'repo', p.id)}
-      ${fbCip('#9b7fd4', ICON.dosya, '<b class="mono">NIZAM.md</b>', 'kimlik', p.id)}
+  /* Veri, site ve kod — üçü de "nerede duruyor" sorusu. Depo ve kimlik
+     dosyası düzenlenmiyor, gidilecek yer; ayracın altında duruyorlar. */
+  const yer = fbKart('#4fa8c9', ICON.bulut, 'Yer', 'firma-duzenle', p.id, `
+    <div class="fb-kg tek">
+      ${kunyeSatiri('#4fa8c9', ICON.bulut,   'Veri katmanı', pl.veriKatmani)}
+      ${kunyeSatiri('#5fb37f', ICON.anahtar, 'Alan adı',     pl.alanAdi)}
+    </div>
+    <div class="fb-ayrac">
+      <div class="fb-cip">
+        ${fbCip('#c48a5c', ICON.dal, p.repo ? `<b class="mono">${esc(p.repo)}</b>`
+          : '<b class="eksik">depo eklenmedi</b>', 'repo', p.id)}
+        ${fbCip('#9b7fd4', ICON.dosya, '<b class="mono">NIZAM.md</b>', 'kimlik', p.id)}
+      </div>
     </div>
     <div class="adim-not">${svg(ICON.info, 13)}
       <span>Yığın, barındırma, veri ve biçim kuralları Nizam standardı —
       sorulmaz, prompta olduğu gibi yazılır.</span></div>`);
 
   return firmaKahraman(p) + `<div class="fb-govde">`
-    + fbSerit(p, d) + kunye + yetkili + teknik
+    + fbSerit(p, d) + fbTakvimSeridi(p) + is + kisiler + yer
     + (AUTH.yonetici ? `
       <button class="sayfa-dug" data-eylem="firma-duzenle" data-proje="${p.id}" type="button">
         ${svg(ICON.kalem, 15)} Bilgileri düzenle</button>` : '')
@@ -1045,90 +1059,6 @@ function rolOku(kutu) {
     .sort((a, b) => Number(a.dataset.rol) - Number(b.dataset.rol))
     .map(x => x.value.trim())
     .filter(Boolean);
-}
-
-/* Teknik penceresi de firma penceresiyle aynı dilde: iki kart. Veri katmanı
-   ve alan adı birlikte (ikisi de "nerede duracak" sorusu), roller kendi
-   kartında çünkü içinde merdiven var. */
-function teknikDuzenle(projeId) {
-  modalHepsiniKapat();
-  const p = DB.proje(projeId);
-  if (!p) return;
-  const pl = p.palet || {};
-  const alan = a => TEKNIK_ALAN.find(x => x.anahtar === a) || {};
-
-  const veri = alan('veriKatmani');
-  const ad   = alan('alanAdi');
-  const secili = pl.veriKatmani || veri.varsayilan;
-
-  modalAc(`
-    ${modalBaslik(ICON.ayar, 'Teknik bilgiler', 'Bu projeye özel olanlar.')}
-
-    ${fdKart('var(--fb-teknik)', ICON.ayar, 'Altyapı',
-      `<div class="fbd-sec" style="--ki:#4fa8c9">
-        <span class="fbd-set"><span class="fbd-si">${svg(ICON.bulut, 12)}</span>
-          <span>${esc(veri.ad)}</span></span>
-        <div class="fbd-cipler">
-          ${(veri.secim || []).map(x => `<button class="fbd-cp ${secili === x ? 'on' : ''}"
-            type="button" data-tks="veriKatmani" data-deger="${esc(x)}">${esc(x)}</button>`).join('')}
-        </div>
-        <input type="hidden" data-tk="veriKatmani" value="${esc(secili)}">
-      </div>`
-      + fdAlan('#5fb37f', ICON.anahtar, ad.ad, 'tk-alanAdi', pl.alanAdi,
-               ad.ornek, 'text', 200, true, 'data-tk="alanAdi"')
-      + fdNot(veri.alt))}
-
-    ${fdKart('#d8a63f', ICON.gGuvenlik, 'Roller', rolMerdiveni(pl.roller, 'tk'))}
-
-    <div class="modal-alt">
-      <button class="btn btn-ghost" data-tk-i="iptal" type="button">Vazgeç</button>
-      <button class="btn btn-primary" data-tk-i="kaydet" type="button"><span>Kaydet</span></button>
-    </div>`, kutu => {
-    rolBagla(kutu);
-
-    /* Kart başlıklarındaki sayaç: Altyapı'da kaç alan dolu, Roller'de kaç katman.
-       Merdiven kendini yeniden çizdiği için sayaç olaydan sonra okunuyor. */
-    const sayaclariTazele = () => {
-      const dolu = [$('[data-tk="veriKatmani"]', kutu), $('[data-tk="alanAdi"]', kutu)]
-        .filter(x => x && x.value.trim()).length;
-      const a = $('[data-fdsay="Altyapı"]', kutu);
-      if (a) a.textContent = dolu + '/2';
-      const r = $('[data-fdsay="Roller"]', kutu);
-      if (r) r.textContent = rolOku(kutu).length + ' katman';
-    };
-
-    /* Seçim rozeti gizli alana yazıyor; kaydetme yolu tek kalsın. */
-    kutu.addEventListener('click', ev => {
-      const d = ev.target.closest('[data-tks]');
-      if (d) {
-        const gizli = $('[data-tk="' + d.dataset.tks + '"]', kutu);
-        if (gizli) gizli.value = d.dataset.deger;
-        d.parentElement.querySelectorAll('.fbd-cp').forEach(x => x.classList.toggle('on', x === d));
-      }
-      /* Katman sayısı değişince merdiven yeniden çiziliyor; sayaç ondan sonra. */
-      if (d || ev.target.closest('[data-rol-sayi]')) setTimeout(sayaclariTazele, 0);
-    });
-    kutu.addEventListener('input', sayaclariTazele);
-    sayaclariTazele();
-
-    $('[data-tk-i="iptal"]', kutu).addEventListener('click', modalKapat);
-    $('[data-tk-i="kaydet"]', kutu).addEventListener('click', async () => {
-      const yeni = Object.assign({}, pl);
-      $$('[data-tk]', kutu).forEach(el => {
-        const v = el.value.trim();
-        if (v) yeni[el.dataset.tk] = v; else delete yeni[el.dataset.tk];
-      });
-      const roller = rolOku(kutu);
-      if (roller.length) yeni.roller = roller; else delete yeni.roller;
-      const yazi = $('[data-tk-i="kaydet"] span', kutu);
-      yazi.textContent = 'Yazılıyor…';
-      try {
-        await DB.paletKaydet(p.id, yeni);
-        modalKapat(); render(); toast('Teknik bilgiler kaydedildi.');
-      } catch (h) { yazi.textContent = 'Kaydet'; toast(h.message, 'hata'); }
-    });
-    setTimeout(() => { const i = $('#tk-alanAdi', kutu); if (i) i.focus(); }, 40);
-  }, 'genis');
 }
 
 /* 2 · Tasarımı belirleme */
@@ -6872,11 +6802,12 @@ function sablonDuzenle(id) {
 /* Firma bilgilerini sonradan düzenleme.
    Sihirbazda girilen bilgiler ilk kurulumda kaybolmuş olabilir (sütunlar
    sonradan eklendi) ya da zamanla değişir — yetkili kişi ayrılır, tarih kayar. */
-/* Düzenleme penceresi sayfanın kendisiyle aynı dili konuşuyor: aynı üç kart,
+/* Düzenleme penceresi sayfanın kendisiyle aynı dili konuşuyor: aynı kartlar,
    aynı renkli simgeler. Gri kutular yerine ikon + etiket + alt çizgi —
    odaklanınca çizgi ve simge o alanın rengine dönüyor. */
 
-/* Yazılan alan. `mono` tarih ve numara gibi sabit genişlik isteyenler için. */
+/* Yazılan alan. `mono` tarih ve adres gibi sabit genişlik isteyenler için,
+   `ek` de gizli anahtar (data-tk) gibi fazladan öznitelikler için. */
 function fdAlan(renk, ikon, etiket, id, deger, yer, tur, uzunluk, mono, ek) {
   return `
     <label class="fbd-al" style="--ki:${renk}">
@@ -6924,34 +6855,61 @@ function fdKart(renk, ikon, baslik, ic) {
     </div>`;
 }
 
+/* Düzenleme penceresi sayfayla birebir aynı gruplarda: İş · Kişiler · Yer ·
+   Takvim. Eskiden iki ayrı pencere vardı (firma ve teknik); gruplar ikisinin
+   ortasından geçtiği için — roller "kim", alan adı "nerede" — tek pencerede
+   birleştiler. Kaydederken iki yere birden yazıyor: projenin kendi alanları
+   ve palet. */
 function firmaDuzenle(projeId) {
   modalHepsiniKapat();
   const p = DB.proje(projeId);
   if (!p) return;
+
+  const pl   = p.palet || {};
+  const alan = a => TEKNIK_ALAN.find(x => x.anahtar === a) || {};
+  const veri = alan('veriKatmani');
+  const adres = alan('alanAdi');
 
   let sektor = p.sektor || '';
   let dil    = p.dil  || 'tr';
   let para   = p.para || 'TRY';
 
   const sektorler = DB.sektorler.map(x => ({ kod: x.ad, ad: x.ad }));
+  const veriSecili = pl.veriKatmani || veri.varsayilan;
 
   modalAc(`
     ${modalBaslik(ICON.folder, 'Firma bilgileri', 'Bu bilgiler promptlara ve kimlik dosyasına girer.')}
 
-    ${fdKart('var(--fb-kunye)', ICON.etiket, 'Künye',
+    ${fdKart('var(--fb-kunye)', ICON.etiket, 'İş',
       (sektorler.length
         ? fdSecim('#8fae4a', ICON.dukkan, 'Sektör', 'sektor', sektorler, sektor)
         : `<p class="ipucu">Sektör listesi boş — Ayarlar → Sektörler'den ekleyebilirsin.</p>`)
       + fdSecim('#b8926b', ICON.dil,  'Arayüz dili', 'dil',  DIL_SECENEK,  dil)
-      + fdSecim('#9b7fd4', ICON.para, 'Para birimi', 'para', PARA_SECENEK, para))}
+      + fdSecim('#c8973f', ICON.para, 'Para birimi', 'para', PARA_SECENEK, para))}
 
-    ${fdKart('var(--fb-kisi)', ICON.kisi, 'Yetkili kişi',
+    ${fdKart('var(--fb-kisi)', ICON.kisi, 'Kişiler',
       fdAlan('#c4a05c', ICON.kisi,    'Ad soyad', 'fd-yetkili', p.yetkili,
              'Örn. Mehmet Yılmaz', 'text', 60)
       + fdAlan('#5fb37f', ICON.telefon, 'Telefon', 'fd-telefon', p.telefon,
              '0532 000 00 00', 'tel', 24, true)
       + fdAlan('#4fa8c9', ICON.mail,    'E-posta', 'fd-eposta', p.eposta,
-             'ornek@firma.com', 'email', 80, true))}
+             'ornek@firma.com', 'email', 80, true)
+      + `<div class="fbd-ayrac"><span class="fbd-et">Uygulama tarafı · rol katmanları</span>
+          ${rolMerdiveni(pl.roller, 'tk')}</div>`)}
+
+    ${fdKart('#4fa8c9', ICON.bulut, 'Yer',
+      `<div class="fbd-sec" style="--ki:#4fa8c9">
+        <span class="fbd-set"><span class="fbd-si">${svg(ICON.bulut, 12)}</span>
+          <span>${esc(veri.ad)}</span></span>
+        <div class="fbd-cipler">
+          ${(veri.secim || []).map(x => `<button class="fbd-cp ${veriSecili === x ? 'on' : ''}"
+            type="button" data-tks="veriKatmani" data-deger="${esc(x)}">${esc(x)}</button>`).join('')}
+        </div>
+        <input type="hidden" data-tk="veriKatmani" value="${esc(veriSecili)}">
+      </div>`
+      + fdAlan('#5fb37f', ICON.anahtar, adres.ad, 'tk-alanAdi', pl.alanAdi,
+               adres.ornek, 'text', 200, true, 'data-tk="alanAdi"')
+      + fdNot(veri.alt))}
 
     ${fdKart('#c8973f', ICON.takvim, 'Takvim',
       fdAlan('#c8973f', ICON.takvim, 'Başlangıç', 'fd-baslangic', p.baslangic,
@@ -6963,56 +6921,75 @@ function firmaDuzenle(projeId) {
       <button class="btn btn-ghost" data-fd="iptal" type="button">Vazgeç</button>
       <button class="btn btn-primary" data-fd="kaydet" type="button"><span>Kaydet</span></button>
     </div>`, kutu => {
+    rolBagla(kutu);
+
+    const deger = id => { const e = $('#' + id, kutu); return e ? e.value.trim() : ''; };
 
     /* Kart başlığındaki sayaç yazarken de doğru kalsın diye her değişimde
-       yeniden sayılıyor; açılışta bir kez çağrılıyor. */
+       yeniden sayılıyor. Roller'de sayaç değil, katman sayısı yazıyor. */
     const sayaclariTazele = () => {
-      const dolu = [
-        ['Künye',        [sektorler.length ? sektor : null, dil, para].filter(x => x !== null)],
-        ['Yetkili kişi', ['fd-yetkili', 'fd-telefon', 'fd-eposta'].map(id => $('#' + id, kutu).value.trim())],
-        ['Takvim',       ['fd-baslangic', 'fd-teslim'].map(id => $('#' + id, kutu).value.trim())],
-      ];
-      dolu.forEach(([ad, degerler]) => {
-        const et = $(`[data-fdsay="${ad}"]`, kutu);
-        if (et) et.textContent = `${degerler.filter(Boolean).length}/${degerler.length}`;
-      });
+      const yaz = (ad, dolu, top) => {
+        const el = $(`[data-fdsay="${ad}"]`, kutu);
+        if (el) el.textContent = dolu + '/' + top;
+      };
+      const isDolu = [sektorler.length ? sektor : null, dil, para].filter(x => x !== null);
+      yaz('İş', isDolu.filter(Boolean).length, isDolu.length);
+      const k = $('[data-fdsay="Kişiler"]', kutu);
+      if (k) k.textContent = ['fd-yetkili', 'fd-telefon', 'fd-eposta'].filter(deger).length
+                           + '/3 · ' + rolOku(kutu).length + ' katman';
+      yaz('Yer', [deger('tk-alanAdi'), $('[data-tk="veriKatmani"]', kutu).value].filter(Boolean).length, 2);
+      yaz('Takvim', ['fd-baslangic', 'fd-teslim'].filter(deger).length, 2);
     };
 
-    $$('[data-fd]', kutu).forEach(el => el.addEventListener('click', () => {
-      const t = el.dataset.fd;
-      const d = el.dataset.deger;
-      if (t === 'iptal' || t === 'kaydet') return;
-
-      if (t === 'sektor') sektor = sektor === d ? '' : d;
-      if (t === 'dil')    dil = d;
-      if (t === 'para')   para = d;
-
-      $$(`[data-fd="${t}"]`, kutu).forEach(x => x.classList.toggle('on',
-        t === 'sektor' ? x.dataset.deger === sektor : x === el));
-      sayaclariTazele();
-    }));
-
-    $$('.fbd-yz input', kutu).forEach(el => el.addEventListener('input', sayaclariTazele));
+    kutu.addEventListener('click', ev => {
+      const t = ev.target.closest('[data-fd]');
+      if (t && t.dataset.fd !== 'iptal' && t.dataset.fd !== 'kaydet') {
+        const tur = t.dataset.fd, d = t.dataset.deger;
+        if (tur === 'sektor') sektor = sektor === d ? '' : d;
+        if (tur === 'dil')    dil = d;
+        if (tur === 'para')   para = d;
+        $$(`[data-fd="${tur}"]`, kutu).forEach(x => x.classList.toggle('on',
+          tur === 'sektor' ? x.dataset.deger === sektor : x === t));
+      }
+      /* Seçim rozeti gizli alana yazıyor; kaydetme yolu tek kalsın. */
+      const v = ev.target.closest('[data-tks]');
+      if (v) {
+        const gizli = $('[data-tk="' + v.dataset.tks + '"]', kutu);
+        if (gizli) gizli.value = v.dataset.deger;
+        v.parentElement.querySelectorAll('.fbd-cp').forEach(x => x.classList.toggle('on', x === v));
+      }
+      /* Katman sayısı değişince merdiven yeniden çiziliyor; sayaç ondan sonra. */
+      setTimeout(sayaclariTazele, 0);
+    });
+    kutu.addEventListener('input', sayaclariTazele);
     sayaclariTazele();
 
     $('[data-fd="iptal"]', kutu).addEventListener('click', modalKapat);
 
     $('[data-fd="kaydet"]', kutu).addEventListener('click', async () => {
-      const al = id => $('#' + id, kutu).value.trim();
       const alanlar = {
         sektor:    sektor || null,
-        yetkili:   al('fd-yetkili') || null,
-        telefon:   al('fd-telefon') || null,
-        eposta:    al('fd-eposta') || null,
+        yetkili:   deger('fd-yetkili') || null,
+        telefon:   deger('fd-telefon') || null,
+        eposta:    deger('fd-eposta') || null,
         dil, para,
-        baslangic: al('fd-baslangic') || null,
-        teslim:    al('fd-teslim') || null,
+        baslangic: deger('fd-baslangic') || null,
+        teslim:    deger('fd-teslim') || null,
       };
+
+      const palet = Object.assign({}, pl);
+      $$('[data-tk]', kutu).forEach(el => {
+        const v = el.value.trim();
+        if (v) palet[el.dataset.tk] = v; else delete palet[el.dataset.tk];
+      });
+      const roller = rolOku(kutu);
+      if (roller.length) palet.roller = roller; else delete palet.roller;
 
       const yazi = $('[data-fd="kaydet"] span', kutu);
       yazi.textContent = 'Kaydediliyor…';
       try {
         await DB.projeGuncelle(projeId, alanlar);
+        await DB.paletKaydet(projeId, palet);
         modalKapat();
         render();
         toast('Bilgiler güncellendi.', 'basari');
@@ -8319,7 +8296,6 @@ async function eylemCalistir(el) {
   }
 
   if (e === 'firma-duzenle')  return firmaDuzenle(el.dataset.proje);
-  if (e === 'teknik-duzenle') return teknikDuzenle(el.dataset.proje);
 
   if (e === 'logo-yukle')    return logoSec(el.dataset.proje);
   if (e === 'isletme-gorseli') return isletmeGorseliSec(el.dataset.proje);

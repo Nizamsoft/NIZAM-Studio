@@ -1,5 +1,14 @@
 # Değişiklik Günlüğü
 
+## v0.111.0
+- **Firma bilgileri kartları soruya göre gruplandı.** Künye/Yetkili/Teknik yerine **İş** (ne yapıyoruz), **Kişiler** (kim), **Yer** (nerede duruyor). Sayfaya bakan bu üç soruyu sırayla okuyor.
+- **Takvim künyeden çıkıp kendi ince şeridine geçti.** "Ne zaman" ayrı bir soru; künyenin dibindeki alt satırda saklı kalıyordu. Şerit aşama şeridinin hemen altında: ray, iki tarih ve büyük punto kalan gün. Gecikince gün sayısı kırmızıya dönüyor.
+- **Durum satırı silindi.** Kahramandaki "%34 tamam" ile aynı şeyi söylüyordu.
+- **Kişiler kartı iki tarafı birleştiriyor:** üstte müşteri tarafındaki yetkili ve ona ulaşma yolları, ayracın altında uygulama tarafındaki rol katmanları. İkisi de "kim" sorusunun cevabı.
+- **Yer kartı** veri katmanı ve alan adını taşıyor; depo ile NIZAM.md ayracın altında, çünkü onlar düzenlenen değil gidilen şeyler.
+- **İki düzenleme penceresi tek pencerede birleşti.** Gruplar ikisinin ortasından geçtiği için (roller "kim", alan adı "nerede") ayrı Firma ve Teknik pencereleri anlamını yitirdi. Tek pencerede sayfayla birebir aynı kartlar var: İş · Kişiler · Yer · Takvim. Kaydederken hem projenin alanlarına hem palete yazıyor.
+- Alan adı gibi uzun değerler iki sütuna sığmadığı için Yer kartı tek sütun; takvim şeridindeki tarihlerden "başladı/teslim" ekleri kalktı — 412 piksellik ekranda kesiliyorlardı.
+
 ## v0.110.0
 - **Teknik bilgiler penceresi de kart diline geçti.** Üç ayrı blok yerine iki kart: **Altyapı** (veri katmanı ve alan adı — ikisi de "nerede duracak" sorusu) ve **Roller**.
 - **Rol merdiveni ikonlandı.** En geniş yetki kalkan, en dar kilit, aradakiler kişi — sayfadaki rol rozetleriyle aynı simgeler. Gri kutular kalktı; satırlar çizgiyle ayrılıyor, odaklanınca simge ve çizgi o katmanın rengine dönüyor.

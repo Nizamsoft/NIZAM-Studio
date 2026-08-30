@@ -5664,6 +5664,8 @@ a:hover { color: var(--red-ink); }
 /* ---------- Künye ızgarası ---------- */
 
 .fb-kg{ position:relative; display:grid; grid-template-columns:1fr 1fr; gap:2px 10px; }
+/* Alan adı gibi uzun tek parça değerler iki sütuna sığmıyor, kesiliyordu. */
+.fb-kg.tek{ grid-template-columns:1fr; }
 .fb-s{ display:flex; align-items:center; gap:9px; min-width:0; padding:7px 0; }
 .fb-si{
   flex:0 0 22px;
@@ -5686,31 +5688,71 @@ a:hover { color: var(--red-ink); }
 }
 .fb-syazi b.eksik{ color:var(--st-dev-t); font-weight:500; }
 
-/* ---------- Takvim rayı ---------- */
+/* ---------- Takvim şeridi ----------
+   Künyenin dibindeki alt satır değil, kendi şeridi: "ne zaman" ayrı bir soru.
+   Ayrı kart açmaya değmiyor — iki tarih ve bir çubuktan ibaret. */
 
-.fb-tkv{ position:relative; margin-top:10px; padding-top:10px; border-top:1px solid var(--line-3); }
-.fb-ray{
-  height:5px; border-radius:999px; overflow:hidden;
+.fb-tks{
+  position:relative; overflow:hidden;
+  display:flex; align-items:center; gap:10px;
+  margin-bottom:10px; padding:9px 12px;
+  border:1px solid var(--line); border-radius:var(--radius-lg);
+  background:linear-gradient(180deg, var(--kart-ust), var(--kart-alt));
+  box-shadow:0 2px 4px -2px rgba(0,0,0,.75),
+             0 16px 30px -22px rgba(0,0,0,.95),
+             inset 0 1px 0 var(--isik);
+}
+.fb-tks::before{
+  content:''; position:absolute; top:-55%; left:-16%; width:52%; height:190%;
+  background:linear-gradient(101deg, rgba(255,255,255,.05), transparent 60%);
+  pointer-events:none;
+}
+.fb-tsi{
+  position:relative; flex:0 0 26px;
+  width:26px; height:26px;
+  display:flex; align-items:center; justify-content:center;
+  border-radius:8px; color:#c8973f;
+  background:color-mix(in srgb, #c8973f 13%, transparent);
+}
+.fb-torta{ position:relative; flex:1; min-width:0; }
+.fb-tray{
+  display:block; height:4px; border-radius:999px; overflow:hidden;
   background:var(--bar-bos);
   box-shadow:inset 0 1px 2px rgba(0,0,0,.6);
 }
-.fb-ray i{
+.fb-tray i{
   display:block; height:100%; border-radius:999px;
   background:linear-gradient(90deg, var(--metal-1), var(--metal-2));
 }
-.fb-talt{
-  display:flex; align-items:center; justify-content:space-between;
-  margin-top:7px;
-  font-family:var(--yazi-kod); font-size:9.5px; color:var(--ink-dim);
+.fb-tuc{
+  display:flex; justify-content:space-between; gap:10px; margin-top:5px;
+  font-family:var(--yazi-kod); font-size:9px; color:var(--ink-dim);
 }
-.fb-talt span{ display:inline-flex; align-items:center; gap:5px; }
-.fb-talt svg{ width:11px; height:11px; }
-.fb-talt em{
-  font-style:normal;
-  font-family:var(--yazi-baslik); font-weight:600; font-size:11px;
-  color:var(--st-dev-t);
+.fb-tuc span{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.fb-tkalan{ position:relative; flex:0 0 auto; text-align:right; }
+.fb-tkalan b{
+  display:block; line-height:1.1;
+  font-family:var(--yazi-baslik); font-weight:700; font-size:14px; color:var(--st-dev-t);
 }
-.fb-talt .gecikti em{ color:var(--red-ink); }
+.fb-tkalan i{
+  font-style:normal; font-size:8.5px; letter-spacing:.07em;
+  text-transform:uppercase; color:var(--ink-dim);
+}
+.fb-tks.gecikti .fb-tkalan b{ color:var(--red-ink); }
+.fb-tks.gecikti .fb-tsi{ color:var(--red-ink); background:var(--red-soft); }
+
+/* Kart içi ayraç: aynı soruya cevap veren ama ayrı doğadaki iki öbeği
+   ayırıyor — müşteri tarafı / uygulama tarafı gibi. */
+.fb-ayrac{
+  position:relative;
+  margin-top:10px; padding-top:10px;
+  border-top:1px solid var(--line-3);
+}
+.fb-et{
+  display:block; margin-bottom:7px;
+  font-family:var(--yazi-kod); font-size:8.5px;
+  letter-spacing:.07em; text-transform:uppercase; color:var(--ink-dim);
+}
 
 /* ---------- Yetkili ---------- */
 
@@ -5863,7 +5905,7 @@ button.fb-cp:active{ transform:scale(.94); }
    rol rozetleriyle aynı: en geniş kalkan, en dar kilit, aradakiler kişi.
    -------------------------------------------------------------------------- */
 
-.rol-sayi{ margin-bottom:9px; }
+.rol-sayi{ margin-bottom:9px; padding-left:0; }
 .rol-liste{ display:flex; flex-direction:column; gap:0; }
 .rol-satir{
   position:relative;
@@ -5898,3 +5940,15 @@ button.fb-cp:active{ transform:scale(.94); }
   background:linear-gradient(90deg, var(--ki), transparent 70%);
 }
 .rol-satir:focus-within .fbd-si{ box-shadow:0 0 0 1px color-mix(in srgb, var(--ki) 40%, transparent); }
+
+/* Düzenleme penceresinde de aynı ayraç. */
+.fbd-ayrac{
+  position:relative;
+  margin-top:9px; padding-top:9px;
+  border-top:1px solid var(--line-3);
+}
+.fbd-et{
+  display:block; margin-bottom:7px;
+  font-family:var(--yazi-kod); font-size:8.5px;
+  letter-spacing:.07em; text-transform:uppercase; color:var(--ink-dim);
+}
