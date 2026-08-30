@@ -48,17 +48,46 @@ const GUNCELLEME = {
     location.replace(location.pathname + '?y=' + Date.now() + location.hash);
   },
 
-  /* Açılışta sessizce denetler. Yeni sürüm varsa kendini yeniler. */
-  async acilistaDenetle() {
-    /* Yenilenmiş sayfada tekrar denetlemeyelim, sonsuz döngü olmasın */
-    if (location.search.includes('y=')) return false;
+  /* Döngü koruması. Anahtar "hangi sürümden hangisine" — çünkü asıl
+     tehlike şu: yenile, yine aynı eski sürümle aç, yine yenile. Aynı
+     geçişi ikinci kez denemiyoruz.
 
+     Hedef sürümü tek başına anahtar yapmak yetmiyor: kullanıcı geçmişte
+     birden çok eski belgeye geri dönebiliyor, her biri farklı sürümden
+     aynı hedefe gidiyor ve hepsinin yenilenmesi gerekiyor.
+
+     Eskiden koruma "adreste ?y= varsa hiç denetleme" biçimindeydi. Döngüyü
+     engelliyordu ama yan etkisi ağırdı: güncelleme sonrası adres hep ?y=
+     içerdiği için, geçmişteki bir ?y= girdisine geri dönüldüğünde denetim
+     hiç çalışmıyor ve kullanıcı eski sürümde kalıyordu. */
+  BAYRAK: 'ns.yenilemeDenendi',
+
+  gecis(uzak) {
+    return APP.version + '>' + uzak;
+  },
+
+  denendiMi(uzak) {
+    try { return sessionStorage.getItem(this.BAYRAK) === this.gecis(uzak); }
+    catch (e) { return false; }
+  },
+
+  denendiYaz(uzak) {
+    try { sessionStorage.setItem(this.BAYRAK, this.gecis(uzak)); } catch (e) {}
+  },
+
+  /* Açılışta sessizce denetler. Yeni sürüm varsa kendini yeniler.
+     Geri tuşuyla dönülen eski belgede de çalışıyor — asıl işi o. */
+  async acilistaDenetle() {
     const uzak = await this.uzakSurum();
-    if (uzak && this.daha_yeni(uzak, APP.version)) {
-      await this.yenile();
-      return true;
-    }
-    return false;
+    if (!uzak || !this.daha_yeni(uzak, APP.version)) return false;
+
+    /* Aynı geçişi bir kez denedik ve hâlâ buradaysak sunucu ya da ara
+       önbellek ısrarcı; tekrar yenilemek sayfayı döngüye sokar. */
+    if (this.denendiMi(uzak)) return false;
+    this.denendiYaz(uzak);
+
+    await this.yenile();
+    return true;
   },
 
   /* Ayarlar'daki "Güncellemeleri denetle" düğmesi. */

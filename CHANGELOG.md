@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.118.1
+- **Geri tuşunda eski sürüme düşme gerçekten düzeltildi.** v0.116.1'deki denemem yanlış teşhise dayanıyordu: sorunun bfcache olduğunu sanmıştım, oysa geri dönülen sayfa `persisted=false` ile, yani **HTTP önbelleğinden normal yükleme** olarak geliyor. O düzeltme hiç çalışmıyordu.
+- **Asıl sebep sürüm denetiminin kendi korumasıydı.** Güncelleme sonrası adres `?y=…` içeriyor ve denetim "adreste `?y=` varsa hiç bakma" diyordu — sonsuz döngüyü engellemek için. Ama geçmişte kalan bir `?y=` girdisine geri dönüldüğünde de denetim çalışmıyor, kullanıcı eski sürümde kalıyordu.
+- **Koruma sürüm geçişine bağlandı.** Artık her açılışta denetim yapılıyor; döngü, "aynı sürümden aynı hedefe ikinci kez yenileme" engellenerek önleniyor. Böylece geçmişteki her eski belge kendini yenileyebiliyor, ısrarcı bir sunucu da sayfayı döngüye sokamıyor.
+- Üç sürümlü bir deneme sunucusuyla doğrulandı: art arda iki güncellemeden sonra geri tuşuyla dönülen her eski sayfa en yeni sürüme çıkıyor. Sürekli "yeni var" diyen ama eski dosya veren bir sunucuda ise sayfa **iki yüklemede duruyor**, döngüye girmiyor.
+
 ## v0.118.0
 - **Yol haritası zigzag merdivenden kare ızgaraya geçti.** Üstte üç kart, ortada dirsek, altta üç kart, en altta yatay **Güncellemeler** bandı. Merdivende kartlar ilerledikçe yer değiştiriyordu; artık yedi aşama hep aynı yerde duruyor, göz aradığını aynı köşede buluyor.
 - **Aradaki dirsek sabit.** Izgara sabit olduğu için okun da ölçülmesi gerekmiyor: kartların yerini `getBoundingClientRect` ile ölçen ve her ekran değişiminde yeniden çizen mekanizma tamamen kalktı. Üçüncü aşama bitince ok yeşile dönüyor.
