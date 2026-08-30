@@ -6453,3 +6453,32 @@ a.ya:active, button.ya:not([disabled]):active{ transform:scale(.97); }
    sıradakinin — hepsi kırmızı olunca ekran uyarı tablosuna dönüyordu. */
 .ya.eksik .ya-alt{ color:var(--st-dev-t); }
 .ya.eksik .ya-dur{ color:var(--st-dev-t); }
+
+/* --------------------------------------------------------------------------
+   Sayfa önizlemesi — kendi ekranı
+   Künye satırlarının altına küçük bir kutu koymak yerine tam ekran:
+   müşteriye gösterirken telefonu uzatabilmek lazım, minik kutuda hiçbir şey
+   okunmuyor.
+   -------------------------------------------------------------------------- */
+
+.onz-cihaz{ display:flex; gap:6px; margin-bottom:10px; }
+.onz-c{
+  padding:7px 13px; border-radius:999px; cursor:pointer;
+  border:1px solid var(--line);
+  font-family:inherit; font-size:11.5px; color:var(--ink-soft);
+  background:linear-gradient(180deg, var(--surface-2), var(--kart-alt));
+  box-shadow:inset 0 1px 0 var(--isik);
+}
+/* Seçili cihaz metal — kırmızı ana eyleme ait. */
+.onz-c.sec{
+  border-color:transparent; font-weight:600; color:#12100e;
+  background:linear-gradient(180deg, var(--metal-2), #a29a94);
+}
+.onz-tam{
+  padding:12px;
+  border:1px solid var(--line); border-radius:var(--radius-lg);
+  background:var(--yuva-2, var(--yuva));
+  box-shadow:inset 0 1px 0 var(--isik);
+}
+/* Telefon kipinde önizleme daralıyor: gerçek en boy oranı korunsun. */
+.onz-tam.telefon .onz-goz{ max-width:260px; margin:0 auto; }

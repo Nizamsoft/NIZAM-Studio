@@ -3247,6 +3247,7 @@ function yapiAkisi(p, d) {
   if (t.mod === 'anlat') return anlatEkrani(p, t);
   if (t.mod === 'roller') return rolEkrani(p, t);
   if (t.mod === 'mkural' && t.modul) return modulKuralEkrani(p, t);
+  if (t.mod === 'onizle' && t.odak) return onizlemeEkrani(p, t);
   if (t.dal && t.odak && t.sayfalar.includes(t.odak)) return duzenEkrani(p, t);
   t.mod = 'agac';
   t.dal = null;
@@ -3422,6 +3423,9 @@ function agacEkrani(p, t) {
           DAL_RENK[a.anahtar] || '#8d8378', ICON.etiket, a.ad,
           dalOzeti(k, a.anahtar), !kunyeAdimTam(k, a.anahtar), 'agac-dal',
           `data-proje="${p.id}" data-sayfa="${esc(acik)}" data-ad="${a.anahtar}"`)).join('')
+      + agacSatir('#4fa8c9', ICON.goz, 'Önizlemeyi aç',
+          'Bu sayfa müşterinin ekranında nasıl görünecek?',
+          false, 'agac-onizle', `data-proje="${p.id}"`)
       + `<button class="ags sil" type="button" data-eylem="agac-sayfa-sil"
                  data-proje="${p.id}" data-ad="${esc(acik)}">
           <span class="ags-ik">${svg(ICON.kapat, 14)}</span>
@@ -3496,10 +3500,48 @@ function yapiGeri(t) {
   if (t.mod === 'anlat') { t.mod = 'agac'; if (!t.sayfalar.length) t.modul = ''; return true; }
   if (t.mod === 'roller') { t.mod = 'agac'; rollariKaydet(DB.proje(rota().id)); return true; }
   if (t.mod === 'mkural') { t.mod = 'agac'; t.dal = null; return true; }
+  if (t.mod === 'onizle') { t.mod = 'agac'; return true; }
   if (t.dal)   { t.dal = null; return true; }
   if (t.odak)  { t.odak = null; return true; }
   if (t.modul) { t.modul = ''; t.sayfalar = []; t.kunye = {}; return true; }
   return false;
+}
+
+/* Sayfanın önizlemesi kendi ekranında. Künye satırlarının altına küçük bir
+   kutu olarak koymak yerine tam ekran: müşteriye gösterirken telefonu
+   uzatabilmek lazım, minik kutuda hiçbir şey okunmuyor. */
+function onizlemeEkrani(p, t) {
+  const sayfa = t.odak;
+  const k     = yapiKunye(t, sayfa);
+  const tp    = SAYFA_TURU.find(x => x.ad === k.tur);
+
+  ONIZLEME_MENU  = t.modul ? [t.modul, 'Rapor', 'Ayar'] : null;
+  ONIZLEME_SAYFA = t.sayfalar.length ? t.sayfalar : null;
+  ONIZLEME_EKRAN = tp ? tp.ekran : 'liste';
+  ONIZLEME_ADIM  = 'kunye';
+  ONIZLEME_KUNYE = (k.tur || (k.alanlar || []).length)
+    ? Object.assign({ sayfa }, k) : null;
+
+  const tel = ONIZLEME_CIHAZ === 'telefon';
+  const govde = agacBaslik('#4fa8c9', ICON.goz, t.modul, sayfa,
+                           tp ? tp.ad : '—', 'ekran')
+    + `<div class="onz-cihaz">
+        ${['web', 'telefon'].map(c => `
+          <button class="onz-c ${ONIZLEME_CIHAZ === c ? 'sec' : ''}" type="button"
+                  data-eylem="onizle-cihaz" data-proje="${p.id}" data-deger="${c}"
+            >${c === 'web' ? 'Bilgisayar' : 'Telefon'}</button>`).join('')}
+      </div>`
+    + (ONIZLEME_KUNYE
+        ? `<div class="onz-tam ${tel ? 'telefon' : ''}"><div class="onz-goz">
+            ${onizlemeIc(p, p.palet)}</div></div>
+           ${(k.alanlar || []).length ? '' :
+             '<p class="dz-ipucu">Sütunlar örnek — alanları girince kendi adların gelir</p>'}`
+        : `<div class="dz-onizleme bos"><span class="dz-bos">${svg(ICON.katman, 20)}
+            <i>Önce ekranın türünü ya da alanlarını gir — önizleme o zaman canlanır.</i>
+          </span></div>`);
+
+  return agacKabuk(p, yolCipleri([{ ad: p.firma }, { ad: t.modul }, { ad: sayfa }]),
+                   govde, '');
 }
 
 /* Anlat: önizleme yok, yalnız metin ve iki düğme. */
@@ -9036,6 +9078,18 @@ async function eylemCalistir(el) {
   }
 
   /* ---- Yapı akışı ---- */
+  if (e === 'agac-onizle') {
+    const pr = DB.proje(el.dataset.proje);
+    if (pr) { yapiTaslak(pr).mod = 'onizle'; render(); }
+    return;
+  }
+
+  if (e === 'onizle-cihaz') {
+    ONIZLEME_CIHAZ = el.dataset.deger === 'telefon' ? 'telefon' : 'web';
+    render();
+    return;
+  }
+
   if (e === 'yapi-akis-ac') {
     const pr = DB.proje(el.dataset.proje);
     if (pr) { yapiTaslak(pr); YAPI_ACIK[pr.id] = true; render(); }

@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.123.0
+- **Sayfa önizlemesi geldi.** Künye ekranındaki **"Önizlemeyi aç"** satırı, o sayfanın müşterinin ekranında nasıl görüneceğini gösteren tam ekranı açıyor. Girdiğin alanlar gerçekten sütun oluyor, seçtiğin ekran türü yerleşimi belirliyor, projenin renk paleti uygulanıyor.
+- **Küçük kutu değil, kendi ekranı:** künye satırlarının altına sıkıştırılmış bir kutuda hiçbir şey okunmuyordu. Müşteriye gösterirken telefonu uzatabilmek gerekiyor.
+- **Bilgisayar / Telefon** anahtarı: aynı sayfanın iki cihazdaki hâli. Seçili olan metal — kırmızı ana eyleme ait.
+- Ekran türü ya da alan girilmemişse önizleme uydurma veri çizmiyor, ne eksik olduğunu söylüyor.
+
 ## v0.122.0
 - **Modül ağacı üç kademeye ayrıldı:** modüller → bir modülün sayfaları → bir sayfanın künyesi. Eskiden hepsi tek ekranda iç içe açılıyordu; dikey çizgiler ve girintiler derinlik arttıkça okunmaz oluyordu. Artık her kademe kendi ekranı ve tepesinde nereden geldiğini söyleyen kart duruyor — sayfanın geri kalanıyla aynı dil.
 - **Modüller ve sayfalar kare kartta:** yol haritasıyla aynı ölçü, aynı durum dili. **Kırmızı yalnız sıradaki kartta** — hepsi kırmızı olunca ekran uyarı tablosuna dönüyor ve "önce hangisi" kayboluyor; kalan eksikler sarı alt yazıyla duruyor.
