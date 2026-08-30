@@ -1941,39 +1941,6 @@ html { background: var(--bg); }
 a.sayfa-dug { text-decoration: none; }
 
 /* Depo durağının tepesindeki modül adı satırı. */
-.kur-ad { display: grid; grid-template-columns: auto 1fr; gap: 3px 10px;
-          align-items: baseline; padding: 13px 15px; margin-bottom: 12px;
-          border: 1px dashed var(--line-parlak); border-radius: 16px;
-          background: var(--yuva); cursor: pointer;
-          transition: border-color .16s ease; }
-.kur-ad:hover { border-color: var(--metal-1); }
-.kur-ad-et { font-size: 11.5px; color: var(--ink-faint); }
-.kur-ad b { font-family: var(--yazi-baslik); font-size: 14.5px; color: var(--ink-strong); }
-.kur-ad b.eksik { font-family: inherit; font-size: 12.5px; font-weight: 500;
-                  color: var(--uyari, #d0a13c); }
-.kur-ad i { grid-column: 1 / -1; font-style: normal; font-size: 10.5px;
-            color: var(--ink-dim); line-height: 1.5; }
-
-/* Depo ve sohbet durağı — iki kapı, ikisi de bir kez açılır. */
-.kur-kart { padding: 15px 15px 13px; margin-bottom: 12px; border-radius: 16px;
-            border: 1px solid var(--line-2); background: var(--yuva); }
-.kur-kart.bitti { border-color: color-mix(in srgb, #3d9970 40%, var(--line-2)); }
-.kur-bas { display: flex; align-items: center; gap: 11px; margin-bottom: 4px; }
-.kur-no {
-  flex: 0 0 26px; height: 26px; border-radius: 999px; display: grid; place-items: center;
-  background: linear-gradient(180deg, var(--surface-3), var(--kart-alt));
-  font-family: var(--yazi-baslik); font-size: 12px; font-weight: 700; color: var(--ink-dim);
-  box-shadow: inset 0 0 0 1px var(--line);
-}
-.kur-kart.bitti .kur-no { background: linear-gradient(180deg, #5cbf92, #2f7a58);
-                          color: #08150f; box-shadow: none; }
-.kur-bas b { flex: 1; font-family: var(--yazi-baslik); font-size: 14.5px;
-             color: var(--ink-strong); }
-.kur-rozet { font-size: 9px; letter-spacing: .07em; text-transform: uppercase;
-             font-weight: 700; color: var(--ink-dim); }
-.kur-kart.bitti .kur-rozet { color: #5cbf92; }
-.kur-kart > p { margin: 0 0 11px 37px; font-size: 11.5px; line-height: 1.6;
-                color: var(--ink-dim); }
 .kur-dug { display: flex; gap: 8px; margin-left: 37px; }
 .kur-dug .sayfa-dug { margin: 0; height: 42px; font-size: 13px; }
 .kur-deger { display: flex; align-items: center; gap: 7px; margin: 11px 0 0 37px;
@@ -5952,3 +5919,50 @@ button.fb-cp:active{ transform:scale(.94); }
   font-family:var(--yazi-kod); font-size:8.5px;
   letter-spacing:.07em; text-transform:uppercase; color:var(--ink-dim);
 }
+
+/* --------------------------------------------------------------------------
+   Kurulum — firma sayfasının Yer kartı içinde
+   Depo ve Claude Code adımları standartlar sayfasındaki araç kartlarının
+   aynısı (.std-arac / .sa-kart). Burada yalnız kart içine oturması için
+   gereken farklar var: eski kurulum sayfasında bu satırlar 37 piksel içeriden
+   başlıyordu, kartın içinde o girinti yersiz.
+   -------------------------------------------------------------------------- */
+
+.fb-kart .std-arac{ margin-bottom:9px; }
+.fb-kart .sa-kart{ padding:12px 11px 13px; gap:9px; }
+.fb-kart .sa-ikon{ flex:0 0 36px; width:36px; height:36px; }
+
+/* Depo adresi yokken ikinci kart basılamaz: adres olmadan Claude Code en son
+   kullanılan depoyu açıyor ve yanlış depoda çalışmaya başlanıyor. */
+.sa-kart[disabled]{ cursor:default; }
+
+/* Her iki adım da bitti: bağlantı çizgisi baştan sona yeşil. */
+.std-arac.bitti .sa-bag i{ background:linear-gradient(90deg, var(--st-done), var(--st-done)); }
+.std-arac.bitti .sa-bag em{ color:var(--st-done-t); }
+
+/* Adres ve onay satırları kart içinde kutulanıyor; sayfadaki hâlleri
+   girintiliydi. */
+.fb-kart .kur-deger,
+.fb-kart .kur-onay{
+  margin:0 0 8px;
+  padding:9px 11px;
+  border:1px solid var(--line-3); border-radius:11px;
+  background:var(--yuva);
+  font-size:11.5px;
+}
+.fb-kart .kur-onay{ margin-bottom:0; }
+.fb-kart .kur-deger b{ margin-left:auto; font-family:var(--yazi-kod); font-size:11px; }
+.fb-kart .kur-onay.on{ border-color:rgba(69,163,123,.34); color:var(--ink-strong); }
+.fb-kart .kur-kutu{
+  flex:0 0 19px; width:19px; height:19px; border:0; border-radius:6px;
+  background:var(--surface-2); box-shadow:inset 0 0 0 1px var(--line);
+}
+.fb-kart .kur-onay.on .kur-kutu{
+  color:#0f1a15; background:linear-gradient(180deg, var(--st-done-t), var(--st-done));
+  box-shadow:none;
+}
+
+/* Dokunulabilir künye satırı — modül adı gibi yerinde düzenlenenler. */
+.fb-s.dokun{ cursor:pointer; }
+.fb-s.dokun:active{ transform:scale(.99); }
+.fb-s.dokun:focus-visible{ outline:2px solid var(--metal-1); outline-offset:2px; border-radius:8px; }

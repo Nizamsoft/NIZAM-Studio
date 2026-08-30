@@ -743,21 +743,23 @@ function logolariGoster() {
   });
 }
 
-/* Proje içindeki sekiz durak. Adres, ad ve içeriği tek yerde tanımlı.
+/* Proje içindeki yedi durak. Adres, ad ve içeriği tek yerde tanımlı.
    Sıra önemli: projeDuraklari() dizisi bununla indeks indeks eşleşiyor. */
 const DURAKLAR = {
-  firma:      { no: 1, ad: 'Firma bilgileri',    ciz: firmaSayfasi },
-  kurulum:    { no: 2, ad: 'Depo ve sohbet',     ciz: kurulumSayfasi },
+  /* Firma bilgileri tek başına bir durak değildi: içeriği sihirbazda zaten
+     giriliyor, `bitti` sabit true'ydu — kimsenin bitirdiği bir iş yoktu.
+     Depo ve sohbet buraya katılınca gerçek bir bitiş çizgisi kazandı. */
+  firma:      { no: 1, ad: 'Firma ve kurulum',   ciz: firmaSayfasi },
   /* Yapı tasarımdan önce: ChatGPT ekranları çizerken hangi modüllerin ve
      sayfaların olduğunu bilmeli. Bilmezse altı genel ekran çiziyor; künye
      elindeyken gerçek modülleri, gerçek alanları ve o işe ait simgeleri
      çiziyor. Bağımlılık bu yönde. */
-  yapi:       { no: 3, ad: 'Yapıyı kurma',       ciz: yapiSayfasi },
-  tasarim:    { no: 4, ad: 'Tasarımı belirleme', ciz: tasarimSayfasi },
-  beta:       { no: 5, ad: 'Beta',               ciz: betaSayfasi },
-  gelistirme: { no: 6, ad: 'Geliştirme',         ciz: gelistirmeSayfasi },
-  final:      { no: 7, ad: 'Final',              ciz: finalSayfasi },
-  guncelleme: { no: 8, ad: 'Güncellemeler',      ciz: guncellemeSayfasi },
+  yapi:       { no: 2, ad: 'Yapıyı kurma',       ciz: yapiSayfasi },
+  tasarim:    { no: 3, ad: 'Tasarımı belirleme', ciz: tasarimSayfasi },
+  beta:       { no: 4, ad: 'Beta',               ciz: betaSayfasi },
+  gelistirme: { no: 5, ad: 'Geliştirme',         ciz: gelistirmeSayfasi },
+  final:      { no: 6, ad: 'Final',              ciz: finalSayfasi },
+  guncelleme: { no: 7, ad: 'Güncellemeler',      ciz: guncellemeSayfasi },
 };
 
 function durakSayfasi(projeId, anahtar) {
@@ -853,13 +855,17 @@ function fbSerit(p, d) {
 
 /* Künye satırı: renkli simge, üstte etiket, altta değer. Değer yoksa
    satır kaybolmuyor — sarı "girilmedi" yazıyor ki eksik göze çarpsın. */
-function kunyeSatiri(renk, ikon, etiket, deger) {
+function kunyeSatiri(renk, ikon, etiket, deger, eylem, projeId) {
+  const etiketler = eylem
+    ? `class="fb-s dokun" style="--ki:${renk}" data-eylem="${eylem}" data-proje="${projeId}"
+       role="button" tabindex="0"`
+    : `class="fb-s" style="--ki:${renk}"`;
   return `
-    <span class="fb-s" style="--ki:${renk}">
+    <span ${etiketler}>
       <span class="fb-si">${svg(ikon, 13)}</span>
       <span class="fb-syazi">
         <i>${esc(etiket)}</i>
-        <b class="${deger ? '' : 'eksik'}">${esc(deger || 'girilmedi')}</b>
+        <b class="${deger ? '' : 'eksik'}">${esc(deger || (eylem ? 'dokun, yaz' : 'girilmedi'))}</b>
       </span>
     </span>`;
 }
@@ -920,6 +926,63 @@ function fbCip(renk, ikon, ic, eylem, projeId, adres) {
 /* Kartlar soruya göre gruplanıyor: İş ne yapıyoruz, Kişiler kim, Yer nerede
    duruyor. Takvim "ne zaman" olduğu için künyeden çıkıp kendi şeridine geçti;
    Durum silindi — kahramandaki yüzdeyle aynı şeyi söylüyordu. */
+/* Kurulumun iki adımı, standartlar sayfasının kart dilinde: yan yana iki kart,
+   aralarında bağlantı çizgisi, sıra ilerledikçe kırmızı karo yeşile dönüyor.
+   GitHub düğmesi doğrudan GitHub'ı açıyor; Claude düğmesi promptu yalnızca
+   panoya alıyor — Claude'u kullanıcı kendi açıyor (standartlardaki gibi). */
+const TANISMA_KOPYALANDI = {};
+
+function kurulumAraclari(p) {
+  const slug   = depoSlug(p.repo);
+  const depo   = !!p.repo;
+  const kopya  = !!TANISMA_KOPYALANDI[p.id];
+
+  return `
+    <div class="std-arac ${depo && kopya ? 'bitti' : depo ? 'adim2' : ''}">
+      <a class="sa-kart ${depo ? 'kopyalandi' : 'ana'}" target="_blank" rel="noopener"
+         ${depo ? '' : `data-depo-ac="${p.id}"`}
+         href="${depo
+           ? 'https://github.com/' + esc(slug)
+           : 'https://github.com/new?name=' + encodeURIComponent(depoAdi(p))
+             + '&description=' + encodeURIComponent(projeAdi(p) + ' · NIZAM Studio')
+             + '&visibility=private'}">
+        <span class="sa-ust">
+          <span class="sa-ikon">${svg(depo ? ICON.tik : ICON.dal, 18)}</span>
+          <span class="sa-adim">1</span>
+        </span>
+        <span class="sa-yazi">
+          <span class="sa-ad">${depo ? 'Depo hazır' : 'GitHub deposu'}</span>
+          <span class="sa-alt">${depo ? 'Depoyu aç' : 'GitHub\'da açar'}</span>
+        </span>
+      </a>
+
+      <span class="sa-bag"><i></i><em>${svg(ICON.chevron, 13)}</em></span>
+
+      <button class="sa-kart ${!depo ? 'bekliyor' : kopya ? 'kopyalandi' : 'sirada'}"
+              type="button" data-eylem="tanisma-prompt" data-proje="${p.id}"
+              ${depo ? '' : 'disabled'}>
+        <span class="sa-ust">
+          <span class="sa-ikon">${svg(kopya ? ICON.tik : ICON.dosya, 18)}</span>
+          <span class="sa-adim">2</span>
+        </span>
+        <span class="sa-yazi">
+          <span class="sa-ad">${kopya ? 'Prompt panoda' : 'Claude Code promptu'}</span>
+          <span class="sa-alt">${kopya ? 'Claude Code\'da yapıştır' : 'Panoya kopyalar'}</span>
+        </span>
+      </button>
+    </div>
+
+    <div class="kur-deger" data-eylem="repo" data-proje="${p.id}" role="button" tabindex="0">
+      ${svg(ICON.dal, 13)} Adres
+      ${p.repo ? `<b class="mono">${esc(p.repo)}</b>`
+               : '<b class="eksik">dokun, yapıştır</b>'}
+    </div>
+
+    <label class="kur-onay ${(p.palet || {}).sohbetAcildi ? 'on' : ''}"
+           data-eylem="sohbet-onay" data-proje="${p.id}" role="button" tabindex="0">
+      <span class="kur-kutu">${svg(ICON.tik, 12)}</span> Oturumu açtım</label>`;
+}
+
 function firmaSayfasi(p, d) {
   const dil  = (DIL_SECENEK.find(x => x.kod === p.dil) || {}).ad;
   const para = (PARA_SECENEK.find(x => x.kod === p.para) || {}).ad;
@@ -971,13 +1034,11 @@ function firmaSayfasi(p, d) {
     <div class="fb-kg tek">
       ${kunyeSatiri('#4fa8c9', ICON.bulut,   'Veri katmanı', pl.veriKatmani)}
       ${kunyeSatiri('#5fb37f', ICON.anahtar, 'Alan adı',     pl.alanAdi)}
+      ${kunyeSatiri('#c48a5c', ICON.katman,  'Modül adı',    pl.modulAdi, 'modul-adi', p.id)}
     </div>
-    <div class="fb-ayrac">
-      <div class="fb-cip">
-        ${fbCip('#c48a5c', ICON.dal, p.repo ? `<b class="mono">${esc(p.repo)}</b>`
-          : '<b class="eksik">depo eklenmedi</b>', 'repo', p.id)}
-        ${fbCip('#9b7fd4', ICON.dosya, '<b class="mono">NIZAM.md</b>', 'kimlik', p.id)}
-      </div>
+    <div class="fb-ayrac">${kurulumAraclari(p)}</div>
+    <div class="fb-cip" style="margin-top:9px">
+      ${fbCip('#9b7fd4', ICON.dosya, '<b class="mono">NIZAM.md</b>', 'kimlik', p.id)}
     </div>
     <div class="adim-not">${svg(ICON.info, 13)}
       <span>Yığın, barındırma, veri ve biçim kuralları Nizam standardı —
@@ -1061,7 +1122,7 @@ function rolOku(kutu) {
     .filter(Boolean);
 }
 
-/* 2 · Tasarımı belirleme */
+/* 3 · Tasarımı belirleme */
 /* Adım durumu proje başına hatırlanır: geri gelince kaldığın yerde açılır. */
 const TASARIM_YER = {};
 
@@ -2933,7 +2994,7 @@ function tasarimOnizleme(alan, ad) {
   return `<span class="on-sm sm-${sinif}">${yol}</span>`;
 }
 
-/* 3 · Yapıyı kurma */
+/* 2 · Yapıyı kurma */
 function yapiSayfasi(p, d) {
   const moduller = DB.modulleri(p.id);
   const gercek   = moduller.filter(m => m.ad !== GENEL_MODUL);
@@ -3832,7 +3893,7 @@ function yapiIleriTazele(pr) {
   if (alt) alt.textContent = dalOzeti(k, t.dal);
 }
 
-/* 6 · Geliştirme — iki ayrı yön.
+/* 5 · Geliştirme — iki ayrı yön.
    Beta çıktıktan sonra gelen istekler iki türlü olur: yalnız bu programı
    ilgilendiren iş (görev açılır) ve "bütün programlarda böyle olsun" isteği
    (Studio'nun standardına girer, oradan her programa yayılır).
@@ -4056,80 +4117,7 @@ async function depoAdresiTamamla(p) {
     'Depo adresi yazıldı: ' + adres);
 }
 
-/* 2 · Depo ve sohbet — koda başlamadan önce açılan iki kapı.
-   Studio tarayıcıda çalışıyor; GitHub jetonu tutmuyoruz. Bunun yerine
-   hazır doldurulmuş sayfayı açıp adresi geri istiyoruz. */
-function kurulumSayfasi(p, d) {
-  const pl = p.palet || {};
-  const sohbet = !!pl.sohbetAcildi;
-  const tik = svg(ICON.tik, 12);
-
-  const kart = (no, bitti, ad, aciklama, govde) => `
-    <div class="kur-kart ${bitti ? 'bitti' : ''}">
-      <div class="kur-bas">
-        <span class="kur-no">${bitti ? tik : no}</span>
-        <b>${esc(ad)}</b>
-        <span class="kur-rozet">${bitti ? 'tamam' : 'sırada'}</span>
-      </div>
-      <p>${aciklama}</p>
-      ${govde}
-    </div>`;
-
-  return sayfaHero(p, d)
-    + `<div class="kur-ad" data-eylem="modul-adi" data-proje="${p.id}"
-            role="button" tabindex="0">
-        <span class="kur-ad-et">Modül adı</span>
-        ${pl.modulAdi ? `<b>${esc(pl.modulAdi)}</b>`
-                      : '<b class="eksik">dokun, yaz</b>'}
-        <i>Depo adı ve bütün başlıklar firmanın yanına bunu ekler.</i>
-      </div>`
-    + kart(1, !!p.repo, 'GitHub deposu',
-        p.repo
-          ? 'Depo kuruldu. Düğme artık deponun kendisine götürür.'
-          : 'Kod buraya gidecek. Adı firmadan türetilir, depo gizli açılır. '
-            + 'Sen kurup geri dönünce adresi kendimiz yazarız.', `
-      <div class="kur-dug">${p.repo
-        ? `<a class="sayfa-dug ikincil" target="_blank" rel="noopener"
-              href="https://github.com/${esc(depoSlug(p.repo))}">
-            ${svg(ICON.katman, 15)} Depoyu aç</a>`
-        : `<a class="sayfa-dug" target="_blank" rel="noopener"
-              data-depo-ac="${p.id}"
-              href="https://github.com/new?name=${encodeURIComponent(depoAdi(p))
-              }&description=${encodeURIComponent(projeAdi(p) + ' · NIZAM Studio')
-              }&visibility=private">
-            ${svg(ICON.katman, 15)} GitHub'da aç</a>`}
-      </div>
-      <div class="kur-deger" data-eylem="repo" data-proje="${p.id}"
-           role="button" tabindex="0">
-        ${svg(ICON.katman, 13)} Adres
-        ${p.repo ? `<b class="mono">${esc(p.repo)}</b>`
-                 : '<b class="eksik">dokun, yapıştır</b>'}</div>`)
-
-    + kart(2, sohbet, 'Claude Code oturumu',
-        p.repo
-          ? 'Claude Code açılır, deposu <b>' + esc(depoSlug(p.repo) || '—')
-            + '</b> olarak seçili gelir. Tanıtım panoya alınır: firma, ürün ve '
-            + 'teknik standart — yapıştırıp gönderirsin. Claude NIZAM.md\'yi kurup '
-            + 'bekler; tasarım ve yapı sonraki duraklarda gidecek.'
-          : '<b class="eksik">Önce depo adresini kaydet.</b> Claude Code yeni oturumu '
-            + 'en son kullandığın depoyla açabiliyor — adres olmadan yanlış depoda '
-            + 'çalışmaya başlarsın.', `
-      <div class="kur-dug">
-        <a class="sayfa-dug ${sohbet || !p.repo ? 'ikincil' : ''}" target="_blank"
-           rel="noopener" data-pano="tanisma" data-proje="${p.id}"
-           href="https://claude.ai/code/new${depoSlug(p.repo)
-             ? '?repositories=' + encodeURIComponent(depoSlug(p.repo)) : ''}">
-          ${svg(ICON.katman, 15)} Claude Code'da aç</a>
-      </div>
-      <label class="kur-onay ${sohbet ? 'on' : ''}" data-eylem="sohbet-onay"
-             data-proje="${p.id}" role="button" tabindex="0">
-        <span class="kur-kutu">${tik}</span> Oturumu açtım</label>`)
-
-    + `<div class="note note-kucuk">${svg(ICON.info, 15)}
-        <span>İkisi de bitince <b>Tasarımı belirleme</b> durağı sıraya girer.</span></div>`;
-}
-
-/* Beta, Final ve Güncellemeler kartları — kurulum durağıyla aynı dil. */
+/* Beta, Final ve Güncellemeler kartları — kurulum kartlarıyla aynı dil. */
 function durakKarti(no, bitti, ad, aciklama, govde, rozet) {
   return `
     <div class="kur-kart ${bitti ? 'bitti' : ''}">
@@ -4143,7 +4131,7 @@ function durakKarti(no, bitti, ad, aciklama, govde, rozet) {
     </div>`;
 }
 
-/* 5 · Beta — ilk çalışan sürüm. Son blok gider, Claude kurar, sen denersin. */
+/* 4 · Beta — ilk çalışan sürüm. Son blok gider, Claude kurar, sen denersin. */
 function betaSayfasi(p, d) {
   const pl = p.palet || {};
   const cikti = !!pl.betaCikti;
@@ -4200,7 +4188,7 @@ function betaSayfasi(p, d) {
         <span>Studio deponun içini göremiyor; beta çıktığını sen işaretliyorsun.</span></div>`;
 }
 
-/* 7 · Final — görevler bitti, teslim. */
+/* 6 · Final — görevler bitti, teslim. */
 function finalSayfasi(p, d) {
   const pl = p.palet || {};
   const verildi = !!pl.finalVerildi;
@@ -4226,7 +4214,7 @@ function finalSayfasi(p, d) {
         <span>Finalden sonra gelen istekler <b>Güncellemeler</b> durağında yürür.</span></div>`;
 }
 
-/* 8 · Güncellemeler — proje yaşadıkça açık kalan durak. */
+/* 7 · Güncellemeler — proje yaşadıkça açık kalan durak. */
 function guncellemeSayfasi(p, d) {
   const gorevler = DB.gorevleri({ proje: p.id }).filter(g => g.durum !== 'tamamlandi');
 
@@ -4289,19 +4277,13 @@ function projeDuraklari(p) {
 
   return [
     {
-      ad: 'Firma bilgileri',
-      bitti: true,
-      ozet: [p.sektor, PLATFORM_ADI[p.platform] || '—', VERI_ADI[p.veri] || '—']
-        .filter(Boolean).join(' · '),
-    },
-    {
-      ad: 'Depo ve sohbet',
-      bitti: !!p.repo && !!(p.palet && p.palet.sohbetAcildi),
+      ad: 'Firma ve kurulum',
+      bitti: !!p.repo && !!pl0.sohbetAcildi,
       ozet: p.repo
-        ? ((p.palet && p.palet.sohbetAcildi)
+        ? (pl0.sohbetAcildi
             ? p.repo
             : 'Depo hazır. Sıra Claude Code oturumunu açmakta.')
-        : 'Kod nereye gidecek, iş hangi sohbette yürüyecek — ikisi de burada.',
+        : 'Künye girildi. Kod nereye gidecek, iş hangi sohbette yürüyecek?',
     },
     {
       ad: 'Yapıyı kurma',
@@ -4367,7 +4349,7 @@ function durakKilitli(projeId, anahtar) {
   return simdi !== -1 && sira > simdi;
 }
 
-const DURAK_IKON = ['kisi', 'folder', 'gAltyapi', 'gTasarim', 'goz', 'kalem', 'bayrak', 'saat'];
+const DURAK_IKON = ['kisi', 'gAltyapi', 'gTasarim', 'goz', 'kalem', 'bayrak', 'saat'];
 
 function projeYolu(p) {
   const duraklar = projeDuraklari(p);
@@ -5833,7 +5815,7 @@ async function sihirbazKaydet() {
     sihirbazKapat();
     sayaclariYaz();
     toast(SIHIRBAZ.firma.trim() + ' kuruldu.');
-    location.hash = '#/projeler/' + id + '/kurulum';
+    location.hash = '#/projeler/' + id + '/firma';
     render();
   } catch (e) {
     toast(e.message, 'hata');
@@ -8366,6 +8348,27 @@ async function eylemCalistir(el) {
     STD_KOPYALANDI = true;
     render();
     toast('Prompt panoda — Claude\'a yapıştır.', 'basari');
+    return;
+  }
+
+  /* Claude açılmıyor: prompt panoya alınıp kart yeşile dönüyor, kullanıcı
+     Claude Code'u kendi açıp yapıştırıyor — standartlardaki prompt kartıyla
+     aynı davranış. */
+  if (e === 'tanisma-prompt') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    let metin;
+    try { metin = PROMPT.tanisma(pr.id); }
+    catch (h) { toast('Prompt üretilemedi: ' + h.message, 'hata'); return; }
+    if (!metin || !metin.trim()) {
+      toast('Prompt boş çıktı — önce depo adresini kaydet.', 'uyari');
+      return;
+    }
+    const oldu = await panoyaKopyala(metin);
+    if (!oldu) { toast('Kopyalanamadı.', 'hata'); return; }
+    TANISMA_KOPYALANDI[pr.id] = true;
+    render();
+    toast('Prompt panoda — Claude Code\'a yapıştır.', 'basari');
     return;
   }
 

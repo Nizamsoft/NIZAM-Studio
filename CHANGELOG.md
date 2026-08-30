@@ -1,5 +1,15 @@
 # Değişiklik Günlüğü
 
+## v0.112.0
+- **2. aşama 1'e katıldı: aşama sayısı 8'den 7'ye indi.** "Depo ve sohbet" ayrı bir durak olmaktan çıktı, 1. aşamanın adı **"Firma ve kurulum"** oldu.
+- **Asıl kazanç sayı değil:** 1. aşama kodda `bitti: true` sabitti — hep yeşil görünüyor, kimsenin bitirdiği bir iş olmuyordu. Artık gerçek bir bitiş çizgisi var: **depo adresi kayıtlı + "Oturumu açtım" işaretli.**
+- **Kurulum adımları Yer kartının içinde**, standartlar sayfasının araç kartlarıyla aynı dilde: yan yana iki kart, aralarında bağlantı çizgisi, sıra ilerledikçe kırmızı karo yeşile dönüyor.
+- **1. kart — GitHub deposu.** Basınca doğrudan `github.com/new` açılıyor; depo adı ve açıklaması dolu, gizli seçili. Adres kaydedilince kart yeşile dönüp "Depo hazır · Depoyu aç" oluyor.
+- **2. kart — Claude Code promptu.** Basınca tanıtım promptu **yalnızca panoya alınıyor; Claude açılmıyor.** Kart yeşile dönüp "Prompt panoda · Claude Code'da yapıştır" yazıyor. Standartlardaki prompt kartıyla birebir aynı davranış — Claude'u sen açıyorsun.
+- Depo adresi yokken 2. kart soluk ve basılamaz: adres olmadan Claude Code en son kullanılan depoyu açıyor, yanlış depoda çalışmaya başlanıyor.
+- **Modül adı** Yer kartına dokunulabilir bir künye satırı olarak girdi — depo adı ondan türetiliyor.
+- Sihirbaz proje kurunca artık `/firma` adresine atıyor; `/kurulum` adresi kalktı. Durak simgeleri ve kilit zinciri bir kaydı. Kayıtlı veri etkilenmedi.
+
 ## v0.111.0
 - **Firma bilgileri kartları soruya göre gruplandı.** Künye/Yetkili/Teknik yerine **İş** (ne yapıyoruz), **Kişiler** (kim), **Yer** (nerede duruyor). Sayfaya bakan bu üç soruyu sırayla okuyor.
 - **Takvim künyeden çıkıp kendi ince şeridine geçti.** "Ne zaman" ayrı bir soru; künyenin dibindeki alt satırda saklı kalıyordu. Şerit aşama şeridinin hemen altında: ray, iki tarih ve büyük punto kalan gün. Gecikince gün sayısı kırmızıya dönüyor.
