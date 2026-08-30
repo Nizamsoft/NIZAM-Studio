@@ -131,3 +131,20 @@ window.addEventListener('pageshow', olay => {
   if (!olay.persisted) return;   /* normal açılışta zaten boot denetliyor */
   GUNCELLEME.acilistaDenetle();
 });
+
+/* Yenileme adresindeki `?y=` damgası geçmişte birikmesin. Damga yalnızca
+   önbelleği atlatmak için var; sayfa yüklendikten sonra işi bitiyor.
+
+   Birikirse zararı şu: her damgalı adres geçmişte ayrı bir girdi oluyor ve
+   o girdiye geri dönüldüğünde tarayıcı HTML'i kendi önbelleğinden veriyor —
+   yani o günkü eski sürüm ekrana geliyor. Adresi temizleyince geri dönüş
+   sade `/#/...` adresine oluyor, o da ağdan tazeleniyor.
+
+   Belge zaten yüklendi; `replaceState` yalnızca geçmişteki kaydı düzeltiyor,
+   yeniden istek yapmıyor. */
+(function damgayiTemizle() {
+  if (!location.search.includes('y=')) return;
+  try {
+    history.replaceState(history.state, '', location.pathname + location.hash);
+  } catch (e) { /* eski tarayıcı: damga kalsın, hayati değil */ }
+})();

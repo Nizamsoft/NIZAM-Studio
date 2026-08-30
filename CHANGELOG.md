@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.118.2
+- **Yenileme damgası artık geçmişte birikmiyor.** Güncelleme sonrası adres `?y=<zaman>` içeriyordu; damga yalnızca önbelleği atlatmak için gerekli ve sayfa yüklendiği anda işi bitiyor. Sayfa açılır açılmaz `replaceState` ile adres sade `/#/...` hâline getiriliyor — belge zaten yüklü olduğu için yeniden istek yapılmıyor.
+- **Geri tuşu sorununun son parçası buydu.** Her damgalı adres geçmişte ayrı bir girdi oluyordu; o girdiye dönüldüğünde tarayıcı HTML'i kendi önbelleğinden veriyor, yani o günkü eski sürüm ekrana geliyordu. Adres sadeleşince proje sayfasından projeler sayfasına dönüş **aynı belgede** kalıyor — hiç yeniden yükleme olmuyor, sürüm de değişmiyor.
+- 0.116.1 ile 0.118.1 arasında gerçek bir sürüm geçişi kurulup ölçüldü: güncelleme sonrası adres `/#/projeler/abc`, ardından üç geri hareketi de aynı sürümde kalıyor.
+- Not: bu düzeltmeden önce oluşmuş damgalı geçmiş girdileri eski kodu taşıdığı için kendiliğinden düzelmiyor. Uygulamayı bir kez tamamen kapatıp açmak o girdileri temizliyor.
+
 ## v0.118.1
 - **Geri tuşunda eski sürüme düşme gerçekten düzeltildi.** v0.116.1'deki denemem yanlış teşhise dayanıyordu: sorunun bfcache olduğunu sanmıştım, oysa geri dönülen sayfa `persisted=false` ile, yani **HTTP önbelleğinden normal yükleme** olarak geliyor. O düzeltme hiç çalışmıyordu.
 - **Asıl sebep sürüm denetiminin kendi korumasıydı.** Güncelleme sonrası adres `?y=…` içeriyor ve denetim "adreste `?y=` varsa hiç bakma" diyordu — sonsuz döngüyü engellemek için. Ama geçmişte kalan bir `?y=` girdisine geri dönüldüğünde de denetim çalışmıyor, kullanıcı eski sürümde kalıyordu.
