@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.112.1
+- **"Oturumu açtım" onay kutusu kalktı.** Claude Code promptuna basmak zaten oturumu açmak demek: prompt panoya alınıyor, kart yeşile dönüyor ve aşama aynı anda tamamlanıyor. Kullanıcıya aynı şeyi iki kere söyletmeye gerek yok — kopyalayıp Claude Code'a gitmekten başka yapacak bir şey yok.
+
 ## v0.112.0
 - **2. aşama 1'e katıldı: aşama sayısı 8'den 7'ye indi.** "Depo ve sohbet" ayrı bir durak olmaktan çıktı, 1. aşamanın adı **"Firma ve kurulum"** oldu.
 - **Asıl kazanç sayı değil:** 1. aşama kodda `bitti: true` sabitti — hep yeşil görünüyor, kimsenin bitirdiği bir iş olmuyordu. Artık gerçek bir bitiş çizgisi var: **depo adresi kayıtlı + "Oturumu açtım" işaretli.**

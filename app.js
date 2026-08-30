@@ -930,12 +930,13 @@ function fbCip(renk, ikon, ic, eylem, projeId, adres) {
    aralarında bağlantı çizgisi, sıra ilerledikçe kırmızı karo yeşile dönüyor.
    GitHub düğmesi doğrudan GitHub'ı açıyor; Claude düğmesi promptu yalnızca
    panoya alıyor — Claude'u kullanıcı kendi açıyor (standartlardaki gibi). */
-const TANISMA_KOPYALANDI = {};
-
 function kurulumAraclari(p) {
-  const slug   = depoSlug(p.repo);
-  const depo   = !!p.repo;
-  const kopya  = !!TANISMA_KOPYALANDI[p.id];
+  const slug  = depoSlug(p.repo);
+  const depo  = !!p.repo;
+  /* Promptu kopyalamak oturumu açmak demek: ayrı bir "Oturumu açtım" kutusu
+     kullanıcıya aynı şeyi iki kere söyletiyordu. Kopyalayıp Claude Code'a
+     gitmeden başka yapacak bir şey yok. */
+  const kopya = !!(p.palet || {}).sohbetAcildi;
 
   return `
     <div class="std-arac ${depo && kopya ? 'bitti' : depo ? 'adim2' : ''}">
@@ -976,11 +977,7 @@ function kurulumAraclari(p) {
       ${svg(ICON.dal, 13)} Adres
       ${p.repo ? `<b class="mono">${esc(p.repo)}</b>`
                : '<b class="eksik">dokun, yapıştır</b>'}
-    </div>
-
-    <label class="kur-onay ${(p.palet || {}).sohbetAcildi ? 'on' : ''}"
-           data-eylem="sohbet-onay" data-proje="${p.id}" role="button" tabindex="0">
-      <span class="kur-kutu">${svg(ICON.tik, 12)}</span> Oturumu açtım</label>`;
+    </div>`;
 }
 
 function firmaSayfasi(p, d) {
@@ -8366,10 +8363,11 @@ async function eylemCalistir(el) {
     }
     const oldu = await panoyaKopyala(metin);
     if (!oldu) { toast('Kopyalanamadı.', 'hata'); return; }
-    TANISMA_KOPYALANDI[pr.id] = true;
-    render();
-    toast('Prompt panoda — Claude Code\'a yapıştır.', 'basari');
-    return;
+    /* Kopyalama aynı zamanda aşamayı bitiriyor: bundan sonrası Claude Code'da
+       geçiyor, Studio'nun bekleyeceği başka bir işaret yok. */
+    return isYap(() => DB.paletKaydet(pr.id,
+      Object.assign({}, pr.palet || {}, { sohbetAcildi: true })),
+      'Prompt panoda — Claude Code\'a yapıştır.');
   }
 
   if (e === 'standart-ice-aktar') return standartIceAktar();
@@ -8525,15 +8523,6 @@ async function eylemCalistir(el) {
     return isYap(() => DB.paletKaydet(pr.id,
       Object.assign({}, pl, { finalVerildi: !pl.finalVerildi })),
       pl.finalVerildi ? 'İşaret kaldırıldı.' : 'Final sürüm verildi.');
-  }
-
-  if (e === 'sohbet-onay') {
-    const pr = DB.proje(el.dataset.proje);
-    if (!pr) return;
-    const pl = pr.palet || {};
-    return isYap(() => DB.paletKaydet(pr.id,
-      Object.assign({}, pl, { sohbetAcildi: !pl.sohbetAcildi })),
-      pl.sohbetAcildi ? 'İşaret kaldırıldı.' : 'Sohbet açıldı olarak işaretlendi.');
   }
 
   if (e === 'repo') {
