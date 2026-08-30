@@ -5789,3 +5789,83 @@ button.fb-cp:active{ transform:scale(.94); }
 }
 
 .fb-kart .adim-not{ margin-top:10px; }
+
+/* --------------------------------------------------------------------------
+   Firma düzenleme penceresi — sayfayla aynı kart dili
+   Alanlar `.fb-kart` içine giriyor: düzenlerken de sayfadaki üç kartı
+   görüyorsun. Gri kutular yerine ikon + etiket + alt çizgi.
+   -------------------------------------------------------------------------- */
+
+.fbd-kart{ margin-bottom:8px; padding:10px 12px; }
+.fbd-kart .fb-ust{ margin-bottom:8px; }
+.fbd-say{ font-family:var(--yazi-kod); font-size:9.5px; color:var(--ink-dim); }
+
+/* Yazılan alan */
+.fbd-al{ position:relative; display:flex; align-items:center; gap:9px; padding:5px 0; cursor:text; }
+.fbd-al + .fbd-al{ border-top:1px solid var(--line-3); }
+.fbd-si{
+  flex:0 0 26px;
+  width:26px; height:26px;
+  display:flex; align-items:center; justify-content:center;
+  border-radius:8px; color:var(--ki);
+  background:color-mix(in srgb, var(--ki) 13%, transparent);
+  transition:box-shadow .16s var(--ease);
+}
+.fbd-yz{ position:relative; flex:1; min-width:0; }
+.fbd-yz i{
+  display:block; font-style:normal; line-height:1.3;
+  font-size:9px; letter-spacing:.07em; text-transform:uppercase; color:var(--ink-dim);
+}
+/* Kutu yok: yazı doğrudan çizginin üstünde duruyor. */
+.fbd-yz input{
+  display:block; width:100%; height:26px; padding:0;
+  border:0; background:transparent;
+  color:var(--ink-strong);
+  font-family:var(--yazi-baslik); font-weight:600; font-size:13.5px;
+}
+.fbd-yz input:focus{ outline:none; }
+.fbd-yz input.mono{ font-family:var(--yazi-kod); font-weight:400; font-size:12.5px; }
+.fbd-yz input::placeholder{
+  color:var(--metal-1); font-family:var(--yazi-govde); font-weight:400; font-size:12.5px;
+}
+/* Tarih seçicisinin yerleşik simgesi koyu zeminde okunsun. */
+.fbd-yz input[type="date"]{ color-scheme:dark; }
+
+.fbd-cizgi{
+  position:absolute; left:35px; right:0; bottom:2px;
+  height:1px; background:var(--line-3);
+  transition:background .16s var(--ease), height .16s var(--ease);
+}
+/* Nerede yazdığın belli olsun: odaklanınca çizgi ve simge alanın rengine döner. */
+.fbd-al:focus-within .fbd-cizgi{
+  height:1.5px;
+  background:linear-gradient(90deg, var(--ki), transparent 70%);
+}
+.fbd-al:focus-within .fbd-si{ box-shadow:0 0 0 1px color-mix(in srgb, var(--ki) 40%, transparent); }
+
+/* Seçim satırı */
+.fbd-sec{ position:relative; padding:7px 0; }
+.fbd-sec + .fbd-sec,
+.fbd-al + .fbd-sec,
+.fbd-sec + .fbd-al{ border-top:1px solid var(--line-3); }
+.fbd-set{ display:flex; align-items:center; gap:8px; margin-bottom:6px; }
+.fbd-set .fbd-si{ flex:0 0 22px; width:22px; height:22px; }
+.fbd-set > span:last-child{
+  font-size:9px; letter-spacing:.07em; text-transform:uppercase; color:var(--ink-dim);
+}
+.fbd-cipler{ display:flex; flex-wrap:wrap; gap:6px; padding-left:30px; }
+.fbd-cp{
+  padding:6px 11px; border-radius:999px; cursor:pointer;
+  border:1px solid var(--line);
+  font-family:var(--yazi-govde); font-size:11.5px; color:var(--ink-soft);
+  background:linear-gradient(180deg, var(--surface-2), var(--kart-alt));
+  box-shadow:inset 0 1px 0 var(--isik);
+  transition:transform .16s var(--yay);
+}
+.fbd-cp:active{ transform:scale(.94); }
+/* Seçili rozet metal, kırmızı değil: kırmızı yalnız Kaydet'te kalıyor. */
+.fbd-cp.on{
+  border-color:transparent; font-weight:600; color:#12100e;
+  background:linear-gradient(180deg, var(--metal-2), #a29a94);
+  box-shadow:0 6px 14px -8px rgba(0,0,0,.9);
+}

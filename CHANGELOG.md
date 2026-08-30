@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü
 
+## v0.109.0
+- **Depo ve kimlik dosyası Teknik kartına taşındı.** İkisi de kodun nereye gittiğiyle ilgili, yetkili kişiyle değil. Yetkili kartında artık yalnız kişi ve ona ulaşma yolları var; başlığı da "Yetkili kişi" oldu.
+- **Firma bilgileri düzenleme penceresi sayfayla aynı dile geçti.** Sekiz alanı alt alta dizen düz liste yerine sayfadaki üç kartın aynısı: Künye, Yetkili kişi, Takvim.
+- **Gri kutular kalktı.** 44 piksellik giriş kutuları yerine renkli simge + etiket + alt çizgi; yazı doğrudan çizginin üstünde. Odaklanınca hem simge hem çizgi o alanın rengine dönüyor — nerede yazdığın belli.
+- **Sektör, arayüz dili ve para birimi rozet oldu.** Seçili rozet metal, kırmızı değil: kırmızı yalnız Kaydet düğmesinde kalıyor.
+- Kart başlıklarının sağında **kaç alan dolu** yazıyor (2/3 gibi) ve yazdıkça anında güncelleniyor.
+- Ölçüldü: pencerenin boyu kısalmıyor (779 → 818 piksel) — kart çerçeveleri alanlardan kazanılanı geri alıyor. Kazanç yerde değil, hangi bilginin nereye gittiğinin görünmesinde.
+
 ## v0.108.0
 - **1. adım "Firma bilgileri" dashboard'a döndü.** Tepede firma kartına yüklenen işletme görseli tam genişlikte, üstünde proje adı ve rozetler; kartlar görselin 30 piksel üstüne biniyor ki arada boş bant kalmasın. Görsel yoksa kahraman kısalıp projenin kendi rengine düşüyor — boş bir görsel yeri açılmıyor.
 - **Yedi kutu üç karta indi.** Sektör, platform, veritabanı, durum, arayüz dili ve para birimi tek **Künye** kartında iki sütunlu ızgarada; teslim rayı da ayrı kart açmaya değmediği için onun altında.

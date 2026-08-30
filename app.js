@@ -932,7 +932,7 @@ function firmaSayfasi(p, d) {
     </div>
     ${fbTakvim(p)}`);
 
-  const yetkili = fbKart('var(--fb-kisi)', ICON.kisi, 'Yetkili ve bağlantılar',
+  const yetkili = fbKart('var(--fb-kisi)', ICON.kisi, 'Yetkili kişi',
     'firma-duzenle', p.id, `
     <div class="fb-kisi">
       <span class="fb-av" style="${renkDegiskenleri(p.renk)}">${esc(basHarf(p.yetkili || '?'))}</span>
@@ -947,9 +947,6 @@ function firmaSayfasi(p, d) {
         'tel:' + p.telefon.replace(/\s/g, '')) : ''}
       ${p.eposta ? fbCip('#4fa8c9', ICON.mail, 'E-posta', '', '', 'mailto:' + p.eposta) : ''}
       ${alt ? fbCip('#b8b2ad', ICON.kopya, 'Kopyala', 'yetkili-kopyala', p.id) : ''}
-      ${fbCip('#c48a5c', ICON.dal, p.repo ? `<b class="mono">${esc(p.repo)}</b>`
-        : '<b class="eksik">depo eklenmedi</b>', 'repo', p.id)}
-      ${fbCip('#9b7fd4', ICON.dosya, '<b class="mono">NIZAM.md</b>', 'kimlik', p.id)}
     </div>`);
 
   const teknik = fbKart('var(--fb-teknik)', ICON.ayar, 'Teknik', 'teknik-duzenle', p.id, `
@@ -964,6 +961,9 @@ function firmaSayfasi(p, d) {
         ? esc(pl.veriKatmani) : '<b class="eksik">veri katmanı yok</b>')}
       ${fbCip('#5fb37f', ICON.anahtar, pl.alanAdi
         ? `<b class="mono">${esc(pl.alanAdi)}</b>` : '<b class="eksik">alan adı yok</b>')}
+      ${fbCip('#c48a5c', ICON.dal, p.repo ? `<b class="mono">${esc(p.repo)}</b>`
+        : '<b class="eksik">depo eklenmedi</b>', 'repo', p.id)}
+      ${fbCip('#9b7fd4', ICON.dosya, '<b class="mono">NIZAM.md</b>', 'kimlik', p.id)}
     </div>
     <div class="adim-not">${svg(ICON.info, 13)}
       <span>Yığın, barındırma, veri ve biçim kuralları Nizam standardı —
@@ -6840,6 +6840,52 @@ function sablonDuzenle(id) {
 /* Firma bilgilerini sonradan düzenleme.
    Sihirbazda girilen bilgiler ilk kurulumda kaybolmuş olabilir (sütunlar
    sonradan eklendi) ya da zamanla değişir — yetkili kişi ayrılır, tarih kayar. */
+/* Düzenleme penceresi sayfanın kendisiyle aynı dili konuşuyor: aynı üç kart,
+   aynı renkli simgeler. Gri kutular yerine ikon + etiket + alt çizgi —
+   odaklanınca çizgi ve simge o alanın rengine dönüyor. */
+
+/* Yazılan alan. `mono` tarih ve numara gibi sabit genişlik isteyenler için. */
+function fdAlan(renk, ikon, etiket, id, deger, yer, tur, uzunluk, mono) {
+  return `
+    <label class="fbd-al" style="--ki:${renk}">
+      <span class="fbd-si">${svg(ikon, 13)}</span>
+      <span class="fbd-yz">
+        <i>${esc(etiket)}</i>
+        <input class="${mono ? 'mono' : ''}" type="${tur || 'text'}" id="${id}"
+               value="${esc(deger || '')}" placeholder="${esc(yer || '')}"
+               maxlength="${uzunluk || 80}" autocomplete="off"
+               ${tur === 'email' ? 'autocapitalize="off" spellcheck="false"' : ''}>
+      </span>
+      <span class="fbd-cizgi"></span>
+    </label>`;
+}
+
+/* Seçim satırı: ikon + etiket, altında rozetler. Seçili olan metal —
+   kırmızı yalnız Kaydet'te kalsın diye. */
+function fdSecim(renk, ikon, etiket, tur, liste, secili) {
+  return `
+    <div class="fbd-sec" style="--ki:${renk}">
+      <span class="fbd-set"><span class="fbd-si">${svg(ikon, 12)}</span>
+        <span>${esc(etiket)}</span></span>
+      <div class="fbd-cipler">
+        ${liste.map(x => `<button class="fbd-cp ${secili === x.kod ? 'on' : ''}" type="button"
+          data-fd="${tur}" data-deger="${esc(x.kod)}">${esc(x.ad)}</button>`).join('')}
+      </div>
+    </div>`;
+}
+
+function fdKart(renk, ikon, baslik, ic) {
+  return `
+    <div class="fb-kart fbd-kart" style="--kr:${renk}">
+      <div class="fb-ust">
+        <span class="fb-ik">${svg(ikon, 14)}</span>
+        <span class="fb-bas">${esc(baslik)}</span>
+        <span class="fbd-say" data-fdsay="${esc(baslik)}"></span>
+      </div>
+      ${ic}
+    </div>`;
+}
+
 function firmaDuzenle(projeId) {
   modalHepsiniKapat();
   const p = DB.proje(projeId);
@@ -6849,57 +6895,51 @@ function firmaDuzenle(projeId) {
   let dil    = p.dil  || 'tr';
   let para   = p.para || 'TRY';
 
-  const serit = (tur, liste, secili) => `
-    <div class="secenek-serit">
-      ${liste.map(x => `<button class="ss ${secili === x.kod ? 'sec' : ''}"
-        data-fd="${tur}" data-deger="${x.kod}" type="button">${esc(x.ad)}</button>`).join('')}
-    </div>`;
+  const sektorler = DB.sektorler.map(x => ({ kod: x.ad, ad: x.ad }));
 
   modalAc(`
     ${modalBaslik(ICON.folder, 'Firma bilgileri', 'Bu bilgiler promptlara ve kimlik dosyasına girer.')}
 
-    <div class="field">
-      <span>Sektör <em class="ipucu">modül önerisini belirler</em></span>
-      <div class="pullar">
-        ${DB.sektorler.map(x => `<button class="pul ${sektor === x.ad ? 'sec' : ''}"
-           data-fd="sektor" data-deger="${esc(x.ad)}" type="button">${esc(x.ad)}</button>`).join('')}
-      </div>
-      ${DB.sektorler.length ? '' : '<p class="ipucu" style="margin-top:8px">Sektör listesi boş — Ayarlar → Sektörler\'den ekleyebilirsin.</p>'}
-    </div>
+    ${fdKart('var(--fb-kunye)', ICON.etiket, 'Künye',
+      (sektorler.length
+        ? fdSecim('#8fae4a', ICON.dukkan, 'Sektör', 'sektor', sektorler, sektor)
+        : `<p class="ipucu">Sektör listesi boş — Ayarlar → Sektörler'den ekleyebilirsin.</p>`)
+      + fdSecim('#b8926b', ICON.dil,  'Arayüz dili', 'dil',  DIL_SECENEK,  dil)
+      + fdSecim('#9b7fd4', ICON.para, 'Para birimi', 'para', PARA_SECENEK, para))}
 
-    <label class="field">
-      <span>Yetkili kişi</span>
-      <input type="text" id="fd-yetkili" value="${esc(p.yetkili || '')}"
-             placeholder="Örn. Mehmet Yılmaz" maxlength="60" autocomplete="off">
-    </label>
-    <label class="field">
-      <span>Telefon</span>
-      <input type="tel" id="fd-telefon" value="${esc(p.telefon || '')}"
-             placeholder="0532 000 00 00" maxlength="24" autocomplete="off">
-    </label>
-    <label class="field">
-      <span>E-posta</span>
-      <input type="email" id="fd-eposta" value="${esc(p.eposta || '')}"
-             placeholder="ornek@firma.com" maxlength="80"
-             autocomplete="off" autocapitalize="off" spellcheck="false">
-    </label>
+    ${fdKart('var(--fb-kisi)', ICON.kisi, 'Yetkili kişi',
+      fdAlan('#c4a05c', ICON.kisi,    'Ad soyad', 'fd-yetkili', p.yetkili,
+             'Örn. Mehmet Yılmaz', 'text', 60)
+      + fdAlan('#5fb37f', ICON.telefon, 'Telefon', 'fd-telefon', p.telefon,
+             '0532 000 00 00', 'tel', 24, true)
+      + fdAlan('#4fa8c9', ICON.mail,    'E-posta', 'fd-eposta', p.eposta,
+             'ornek@firma.com', 'email', 80, true))}
 
-    <div class="field"><span>Dil</span>${serit('dil', DIL_SECENEK, dil)}</div>
-    <div class="field"><span>Para birimi</span>${serit('para', PARA_SECENEK, para)}</div>
-
-    <label class="field">
-      <span>Başlangıç</span>
-      <input type="date" id="fd-baslangic" value="${esc(p.baslangic || '')}">
-    </label>
-    <label class="field">
-      <span>Teslim hedefi <em class="ipucu">isteğe bağlı</em></span>
-      <input type="date" id="fd-teslim" value="${esc(p.teslim || '')}">
-    </label>
+    ${fdKart('#c8973f', ICON.takvim, 'Takvim',
+      fdAlan('#c8973f', ICON.takvim, 'Başlangıç', 'fd-baslangic', p.baslangic,
+             '', 'date', 10, true)
+      + fdAlan('#5fb37f', ICON.bayrak, 'Teslim hedefi', 'fd-teslim', p.teslim,
+             'isteğe bağlı', 'date', 10, true))}
 
     <div class="modal-alt">
       <button class="btn btn-ghost" data-fd="iptal" type="button">Vazgeç</button>
       <button class="btn btn-primary" data-fd="kaydet" type="button"><span>Kaydet</span></button>
     </div>`, kutu => {
+
+    /* Kart başlığındaki sayaç yazarken de doğru kalsın diye her değişimde
+       yeniden sayılıyor; açılışta bir kez çağrılıyor. */
+    const sayaclariTazele = () => {
+      const dolu = [
+        ['Künye',        [sektorler.length ? sektor : null, dil, para].filter(x => x !== null)],
+        ['Yetkili kişi', ['fd-yetkili', 'fd-telefon', 'fd-eposta'].map(id => $('#' + id, kutu).value.trim())],
+        ['Takvim',       ['fd-baslangic', 'fd-teslim'].map(id => $('#' + id, kutu).value.trim())],
+      ];
+      dolu.forEach(([ad, degerler]) => {
+        const et = $(`[data-fdsay="${ad}"]`, kutu);
+        if (et) et.textContent = `${degerler.filter(Boolean).length}/${degerler.length}`;
+      });
+    };
+
     $$('[data-fd]', kutu).forEach(el => el.addEventListener('click', () => {
       const t = el.dataset.fd;
       const d = el.dataset.deger;
@@ -6909,9 +6949,13 @@ function firmaDuzenle(projeId) {
       if (t === 'dil')    dil = d;
       if (t === 'para')   para = d;
 
-      $$(`[data-fd="${t}"]`, kutu).forEach(x => x.classList.toggle('sec',
+      $$(`[data-fd="${t}"]`, kutu).forEach(x => x.classList.toggle('on',
         t === 'sektor' ? x.dataset.deger === sektor : x === el));
+      sayaclariTazele();
     }));
+
+    $$('.fbd-yz input', kutu).forEach(el => el.addEventListener('input', sayaclariTazele));
+    sayaclariTazele();
 
     $('[data-fd="iptal"]', kutu).addEventListener('click', modalKapat);
 
@@ -6939,6 +6983,8 @@ function firmaDuzenle(projeId) {
         toast(h.message, 'hata');
       }
     });
+
+    setTimeout(() => { const i = $('#fd-yetkili', kutu); if (i) i.focus(); }, 40);
   }, 'genis');
 }
 
