@@ -1,5 +1,15 @@
 # Değişiklik Günlüğü
 
+## v0.116.0
+- **Aşamalar konuşulan yere göre bölündü.** 1. aşama **"Marka kimliği"** oldu — müşteriyle konuşarak doldurduğun taraf. 2. aşama **"Kurulum ve yapı"** — klavye başında doldurduğun taraf. İkisi karışıkken hangi kafayla oturulacağı belli olmuyordu.
+- **1 · Marka kimliği:** tek kart. Firma adı, telefon, e-posta, sektör; ayracın altında logo, proje rengi ve **işletme görseli**. Tasarım görselleri (G1, G2…) 3. aşamada kaldı — onlar ChatGPT'ye tarif için gidiyor, markanın parçası değil.
+- **2 · Kurulum ve yapı:** dört kart. **Ürün** (platform, veritabanı, arayüz dili, para birimi) · **Roller** · **Yer** (veri katmanı, alan adı, modül adı, depo, kimlik dosyası, sohbet adı + kurulum ve yayın şeritleri) · **Modüller**. Takvim şeridi de buraya taşındı: teslim planı kurulumun parçası.
+- **Modül kurma akışı artık kartın altında.** 2. aşamaya girince doğrudan ağaç açılmıyor; önce kurulum kartları geliyor, "Modül kur" ile akış açılıyor, "Kapat" ile geri dönülüyor.
+- **Düzenleme penceresi ikiye ayrıldı:** **Marka** (firma, iletişim, sektör) ve **Kurulum** (ürün, roller, yer, takvim). Her pencere kendi aşamasının kartlarını taşıyor.
+- **Platform ve veritabanı ilk kez düzenlenebilir oldu.** Sihirbaz artık sormuyordu, düzenleme penceresinde de yoktu — sütun varsayılanına mahkûmdular.
+- Sihirbaz dil ve para birimini varsayılanla yazmayı bıraktı; platform ve veritabanı sütunda `not null` olduğu için Ürün kartı "doldurdum" işaretini paletten okuyor. İkisi de aynı amaca hizmet ediyor: kart dolu görünüp kullanıcı hiç bakmasın diye değil, sorulsun diye.
+- Bitiş çizgileri yenilendi: 1. aşama **ad + telefon + e-posta + sektör** ile bitiyor (logo isteğe bağlı), 2. aşama **depo + sohbet + modül + sayfa** ile.
+
 ## v0.115.0
 - **Sihirbaz beş adımdan tek ekrana indi.** Artık yalnız **firma adı** soruluyor. Uzun form kullanıcıyı yoruyordu ve geçiştirme cevapları geliyordu — sektör boş, takvim boş, roller varsayılan. "Projeyi kur"a basıldığı anda proje açılıyor ve doğrudan **Firma ve kurulum** sayfası geliyor.
 - **Sorular kartlara taşındı.** Sektör, platform, veritabanı, dil, para → **İş**. Yetkili, iletişim, roller → **Kişiler**. Veri katmanı, alan adı, modül adı, depo → **Yer**. Takvim kendi şeridinde. Modüller 2. aşamaya (Yapıyı kurma) bırakıldı — zaten orada kuruluyor.
