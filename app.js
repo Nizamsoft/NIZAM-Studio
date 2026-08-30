@@ -427,7 +427,7 @@ const VIEWS = {
         'Silinmiş veya arşive alınmış olabilir.', 'Projelere dön', 'projelere')}</div>`;
     }
 
-    return projeKunyesi(proje) + projeYolu(proje);
+    return projeYolu(proje);
   },
 
   /* ---------- Diğerleri ---------- */
@@ -3129,10 +3129,12 @@ function yapiSayfasi(p, d) {
   return `<div class="fb-govde">`
     + adimBasligi(p, d, biten + '/' + adimlar.length)
     + fbTakvimSeridi(p)
+    /* Proje sayfasıyla birebir aynı ızgara: üç sütun, aynı kare ölçüsü.
+       Dört adımda son satırda tek kart kalıyor — soldan başlıyor. */
     + `<div class="ya-harita">
-        <div class="ya-satir iki">${[0, 1].map(kart).join('')}</div>
-        ${yolOku(adimlar[1].bitti)}
-        <div class="ya-satir iki">${[2, 3].map(kart).join('')}</div>
+        <div class="ya-satir">${[0, 1, 2].map(kart).join('')}</div>
+        ${yolOku(adimlar[2].bitti)}
+        <div class="ya-satir">${[3].map(kart).join('')}</div>
       </div>`
     + `</div>`;
 }
@@ -4389,25 +4391,28 @@ function guncellemeSayfasi(p, d) {
 
 /* Ekranın tepesi: logo, firma adı, platform ve tek ilerleme çubuğu.
    Dört ayrı istatistik kartının yerini aldı — rakamlar zaten durakların içinde. */
+/* Proje sayfasının tepesi. Aşama sayfalarındaki başlık kartıyla aynı
+   ölçüde: iki sayfanın tek farkı kartın içeriği olsun, düzeni değil.
+   Aşamaya basınca o kartın yerini aşamanın kendi kartı alıyor. */
 function projeKunyesi(p) {
   const s = DB.sayim(p.id);
   const adres = DB.logoAdres[p.id];
+  const alt = [p.sektor, PLATFORM_ADI[p.platform] || p.platform,
+               VERI_ADI[p.veri] || p.veri].filter(Boolean).map(esc).join(' · ');
 
   return `
-    <div class="kunye">
-      <span class="kunye-logo ${adres ? 'yukleniyor' : ''}"
+    <div class="pk">
+      <span class="pk-logo ${adres ? 'yukleniyor' : ''}"
             ${adres ? `data-logo="${esc(adres)}"` : ''}>
         <span class="logo-harf">${esc(basHarf(p.firma))}</span>
         ${adres ? '<span class="donen"></span>' : ''}
       </span>
-      <span class="kunye-yazi">
-        <h2>${esc(projeAdi(p))}</h2>
-        <p>${[p.sektor, PLATFORM_ADI[p.platform] || p.platform, VERI_ADI[p.veri] || p.veri]
-              .filter(Boolean).map(esc).join(' · ')}</p>
+      <span class="pk-yz">
+        <span class="pk-ad">${esc(projeAdi(p))}</span>
+        <span class="pk-alt">${alt}</span>
       </span>
-      <span class="kunye-pct mono">%${s.yuzde}</span>
-    </div>
-    <div class="kunye-bar"><i style="width:${s.yuzde}%"></i></div>`;
+      <span class="pk-yuz"><b>%${s.yuzde}</b><i>tamam</i></span>
+    </div>`;
 }
 
 /* Projenin beş durağı. Durum veriden okunur, elle girilmez. */
@@ -4550,12 +4555,16 @@ function projeYolu(p) {
   const kart = i => asamaKarti(p, duraklar[i], i, simdi, anahtarlar[i]);
   const son  = duraklar.length - 1;   /* Güncellemeler: proje yaşadıkça açık */
 
-  return `
-    <div class="ya-harita">
+  /* Üç sütun, kareler aynı ölçüde. Son satır tek kart: soldan başlıyor,
+     yol soldan sağa akmaya devam ediyor. */
+  return projeKunyesi(p)
+    + fbTakvimSeridi(p)
+    + `<div class="ya-harita">
       <div class="ya-satir">${[0, 1, 2].map(kart).join('')}</div>
       ${yolOku(duraklar[2] && duraklar[2].bitti)}
       <div class="ya-satir">${[3, 4, 5].map(kart).join('')}</div>
-      <div class="ya-son">${kart(son)}</div>
+      ${yolOku(duraklar[5] && duraklar[5].bitti)}
+      <div class="ya-satir">${kart(son)}</div>
     </div>
 
     <div class="genel">

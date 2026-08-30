@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.121.0
+- **Proje sayfası ile aşama sayfaları aynı düzene girdi.** İkisinin tek farkı tepedeki kartın içeriği: proje sayfasında künye (logo, firma adı, künye satırı, yüzde), aşama sayfasında o aşamanın kendi kartı — aynı renk, aynı simge, aynı ad. Bir aşamaya basınca kart kaybolmuyor, tepede kalıyor.
+- **Teslim takvimi iki sayfada da aynı yerde:** başlığın hemen altında. Hangi sayfada olursan ol teslim tarihi aynı noktada.
+- **Izgara üç sütun ve kareler aynı ölçüde** (121 × 121). Yol haritası 3 + 3 + 1, kurulum aşaması 3 + 1 diziliyor; son satır soldan başlıyor, yol soldan sağa akmaya devam ediyor.
+- **Güncellemeler artık yatay bant değil**, ötekilerle aynı kare — "birebir aynı ölçü" kuralı bozulmasın diye. Satırlar arasındaki dirsek ikinci satırdan üçüncüye de iniyor.
+
 ## v0.120.0
 - **"Nereye kuralım?" ile "Kurulum" tek adımda birleşti.** İkisi aynı sorunun iki yarısıydı: biri yeri söylüyor, öteki kuruyor. Adres girilir girilmez kurulum düğmeleri hemen altında duruyor — iki pencere arasında gidip gelmek bitti.
 - **Kurulum aşaması beş adımdan dörde indi ve ızgara 2 × 2 oldu.** Beş adımın tek sayı olmasından doğan boş yuva kapandı: 01 Ne yapıyoruz · 02 Kim kullanacak · 03 Nereye kuralım · 04 Hangi ekranlar.

@@ -6005,19 +6005,6 @@ button.fb-cp:active{ transform:scale(.94); }
 
 .ya-harita{ position:relative; }
 .ya-satir{ display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:9px; }
-/* Kurulum aşaması dört adım: ikişerli iki satır, boş yuva kalmıyor. */
-.ya-satir.iki{ grid-template-columns:repeat(2, minmax(0, 1fr)); }
-.ya-son{ margin-top:9px; }
-/* Güncellemeler tek başına: kare değil, yatay bant. Proje yaşadıkça açık
-   kalan tek durak — ötekilerle aynı sırada değil, altta duruyor. */
-.ya-son .ya{
-  aspect-ratio:auto;
-  flex-direction:row-reverse; align-items:center; gap:11px;
-  padding:13px 12px;
-}
-.ya-son .ya-ust{ flex:0 0 auto; }
-.ya-son .ya-yz{ flex:1; }
-
 /* Aşama kartı: kare. Numara ve durum üstte, ad ve durum yazısı altta. */
 .ya{
   position:relative; overflow:hidden; min-width:0;
@@ -6250,3 +6237,63 @@ a.ya:active, button.ya:not([disabled]):active{ transform:scale(.97); }
 }
 .mk2.bitti .mk2-no{ color:var(--st-done-t); }
 .mk2.bekliyor{ opacity:.45; }
+
+
+/* --------------------------------------------------------------------------
+   Proje künye kartı — yol haritasının tepesi
+   Aşama başlığıyla (.bs2) aynı ölçüde: iki sayfanın tek farkı kartın içeriği
+   olsun, düzeni değil. Aşamaya basınca bu kartın yerini o aşamanın kartı alıyor.
+   -------------------------------------------------------------------------- */
+
+.pk{
+  position:relative; overflow:hidden;
+  display:flex; align-items:center; gap:13px;
+  margin-bottom:11px; padding:14px;
+  border:1px solid var(--line); border-radius:18px;
+  background:linear-gradient(180deg, var(--kart-ust), var(--kart-alt));
+  box-shadow:0 3px 6px -3px rgba(0,0,0,.8),
+             0 30px 55px -28px rgba(0,0,0,.95),
+             inset 0 1px 0 rgba(255,255,255,.09);
+}
+.pk::before{
+  content:''; position:absolute; top:-60%; left:-14%; width:56%; height:200%;
+  background:linear-gradient(101deg, rgba(255,255,255,.07), transparent 58%);
+  pointer-events:none;
+}
+.pk-logo{
+  position:relative; flex:0 0 54px;
+  width:54px; height:54px;
+  display:flex; align-items:center; justify-content:center;
+  border-radius:16px; overflow:hidden;
+  background:linear-gradient(140deg, var(--surface-3), var(--kart-alt));
+  background-size:cover; background-position:center;
+  box-shadow:0 10px 22px -12px rgba(0,0,0,.9), inset 0 1px 0 rgba(255,255,255,.1);
+}
+.pk-logo .logo-harf{
+  font-family:var(--yazi-baslik); font-weight:700; font-size:18px; color:var(--ink-soft);
+}
+/* Logo inince harf gizleniyor. Yükleyici `.foto` dışındaki karolara
+   `dolu` sınıfını veriyor — kontrol ettim, `resimli` yalnız avatarda. */
+.pk-logo.dolu .logo-harf{ opacity:0; }
+.pk-yz{ position:relative; flex:1; min-width:0; }
+.pk-ad{
+  display:block; line-height:1.2;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  font-family:var(--yazi-baslik); font-weight:700; font-size:17px;
+  letter-spacing:-.015em; color:var(--ink-strong);
+}
+.pk-alt{
+  display:block; margin-top:3px;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  font-size:10.5px; color:var(--ink-dim);
+}
+.pk-yuz{ position:relative; flex:0 0 auto; text-align:right; }
+.pk-yuz b{
+  display:block; line-height:1;
+  font-family:var(--yazi-baslik); font-weight:700; font-size:17px; color:var(--ink-soft);
+}
+.pk-yuz i{
+  display:block; margin-top:3px; font-style:normal;
+  font-family:var(--yazi-kod); font-size:8.5px;
+  letter-spacing:.07em; text-transform:uppercase; color:var(--ink-dim);
+}
