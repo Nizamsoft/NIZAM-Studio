@@ -775,12 +775,14 @@ const DURAKLAR = {
      dolduruyorsun (marka, iletişim, sektör, logo), 2'yi klavye başında
      (ürün, roller, depo, modüller). İkisi karışıkken hangi kafayla
      oturulacağı belli olmuyordu. */
-  firma:      { no: 1, ad: 'Marka kimliği',      ciz: firmaSayfasi },
+  firma:      { no: 1, ad: 'Marka kimliği',      ciz: firmaSayfasi,
+                renk: '#c4a05c', ikon: 'etiket' },
   /* Yapı tasarımdan önce: ChatGPT ekranları çizerken hangi modüllerin ve
      sayfaların olduğunu bilmeli. Bilmezse altı genel ekran çiziyor; künye
      elindeyken gerçek modülleri, gerçek alanları ve o işe ait simgeleri
      çiziyor. Bağımlılık bu yönde. */
-  yapi:       { no: 2, ad: 'Kurulum ve yapı',    ciz: yapiSayfasi },
+  yapi:       { no: 2, ad: 'Kurulum ve yapı',    ciz: yapiSayfasi,
+                renk: '#8fae4a', ikon: 'gAltyapi' },
   tasarim:    { no: 3, ad: 'Tasarımı belirleme', ciz: tasarimSayfasi },
   beta:       { no: 4, ad: 'Beta',               ciz: betaSayfasi },
   gelistirme: { no: 5, ad: 'Geliştirme',         ciz: gelistirmeSayfasi },
@@ -836,47 +838,35 @@ function bolumBas(ad) {
    sonra üç kart. Önceki hâlinde yedi ayrı kutu vardı; aynı bilgi tek
    ızgaraya sığıyor ve her satırın kendi simgesi var. */
 
-/* Kahraman: proje kartındaki G0 görseli, üstünde firma adı ve rozetler.
-   Görsel yoksa projenin kendi rengine düşer — boş bir görsel yeri açılmaz. */
-function firmaKahraman(p) {
-  const gor = gorselAdresi(p, 'G0');
-  const s   = DB.sayim(p.id);
-  const rozet = [p.sektor, `%${s.yuzde} tamam`].filter(Boolean);
+/* Adım başlığı — sayfanın tepesi. Eskiden burada işletme görseli vardı ama
+   o görsel marka kartının içinde zaten duruyor; tepede ikinci kez göstermek
+   ekranın en değerli yerini tekrara harcıyordu.
+
+   Kart ötekilerden bilerek daha iri: 56 piksellik renkli karo, 19 puntoluk
+   başlık ve zeminde adımın rengiyle yayılan hafif ışık. Ötekiler 28 piksel
+   karo ve 12,5 punto — sayfanın neyle ilgili olduğu ilk bakışta okunuyor. */
+function adimBasligi(p, d, sayac) {
+  const duraklar = projeDuraklari(p);
+  const su   = d.no - 1;
+  const renk = d.renk || 'var(--metal-2)';
+  const ikon = ICON[d.ikon] || ICON.bayrak;
 
   return `
-    <div class="fb-hero ${gor ? '' : 'renkli'}" style="${renkDegiskenleri(p.renk)}">
-      ${gor ? `<img src="${esc(gor)}" alt="" decoding="async" fetchpriority="high">` : ''}
-      ${AUTH.yonetici ? `<button class="fb-i" data-eylem="proje-gorsel" data-id="${p.id}"
-        type="button" aria-label="${gor ? 'Görseli değiştir' : 'Görsel ekle'}">i</button>` : ''}
-      <span class="fb-hyz">
-        <span class="fb-had">${esc(projeAdi(p))}</span>
-        <span class="fb-rozet">
-          ${rozet.map((x, i) => `<span class="fb-rz ${i === 0 && p.sektor ? 'marka' : ''}">
-            ${svg(i === 0 && p.sektor ? ICON.etiket : ICON.bayrak, 11)}${esc(x)}</span>`).join('')}
+    <div class="bs2" style="--kr:${renk}">
+      <span class="bs2-ik">${svg(ikon, 26)}</span>
+      <span class="bs2-yz">
+        <span class="bs2-firma">${esc(projeAdi(p))}</span>
+        <span class="bs2-ad">${esc(d.ad)}</span>
+        <span class="bs2-alt">
+          <span class="bs2-say">${duraklar.length} aşamanın ${d.no}.'si</span>
+          <span class="bs2-nk">
+            ${duraklar.map((x, i) => `<i class="${
+              i === su ? 'su' : x.bitti ? 'bitti' : ''}"></i>`).join('')}
+          </span>
+          ${sayac ? `<span class="bs2-say">· ${esc(sayac)}</span>` : ''}
         </span>
       </span>
-    </div>`;
-}
-
-/* Aşama şeridi: metal plaka + aşama adı + sekiz nokta.
-   Noktalar yol haritasındaki oklarla aynı dili konuşuyor — biten yeşil,
-   şimdiki uzun metal, sıradakiler boş. */
-function fbSerit(p, d, sayac) {
-  const duraklar = projeDuraklari(p);
-  const su = d.no - 1;
-
-  return `
-    <div class="fb-serit">
-      <span class="fb-no mono">${String(d.no).padStart(2, '0')}</span>
-      <span class="fb-syz">
-        <span class="fb-set">${svg(ICON.bayrak, 11)}
-          ${duraklar.length} aşamanın ${d.no}.'si</span>
-        <span class="fb-sad">${esc(d.ad)}</span>
-      </span>
-      <span class="fb-nk">
-        ${duraklar.map((x, i) => `<i class="${i === su ? 'su' : x.bitti ? 'bitti' : ''}"></i>`).join('')}
-      </span>
-      ${sayac ? `<span class="fb-ssay mono">${esc(sayac)}</span>` : ''}
+      <span class="bs2-no mono">${String(d.no).padStart(2, '0')}</span>
     </div>`;
 }
 
@@ -1140,8 +1130,8 @@ function firmaSayfasi(p, d) {
       </button>
     </div>`, dolu + '/4');
 
-  return firmaKahraman(p) + `<div class="fb-govde">`
-    + fbSerit(p, d) + marka
+  return `<div class="fb-govde">`
+    + adimBasligi(p, d, dolu + '/4') + marka
     + `</div>`;
 }
 
@@ -3168,8 +3158,8 @@ function yapiSayfasi(p, d) {
   const biten = adimlar.filter(a => a.bitti).length;
   const kart  = i => kurulumAdimi(p, adimlar[i], i === simdi);
 
-  return firmaKahraman(p) + `<div class="fb-govde">`
-    + fbSerit(p, d, biten + '/' + adimlar.length)
+  return `<div class="fb-govde">`
+    + adimBasligi(p, d, biten + '/' + adimlar.length)
     + fbTakvimSeridi(p)
     + `<div class="ya-harita">
         <div class="ya-satir">${[0, 1, 2].map(kart).join('')}</div>

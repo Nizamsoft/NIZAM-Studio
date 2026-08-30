@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.119.0
+- **1. ve 2. aşamanın tepesindeki işletme görseli kalktı.** O görsel marka kartının içinde zaten duruyordu; tepede ikinci kez göstermek ekranın en değerli yerini tekrara harcıyordu.
+- **Yerine adımın kendi başlığı geldi.** Büyük renkli simge, aşama adı, firma adı ve ilerleme noktaları. Kart bilerek ötekilerden iri: **56 piksellik karo** (ötekiler 28), **19 puntoluk başlık** (ötekiler 12,5) ve zeminde adımın rengiyle yayılan hafif ışık. Sayfanın neyle ilgili olduğu ilk bakışta okunuyor.
+- **Her aşamanın kendi simgesi ve rengi var:** 01 marka etiketi (altın), 02 katman simgesi (zeytin). Simgeler `DURAKLAR` tanımına girdi, sonraki aşamalara da eklenebilir.
+- Eski kahraman ve aşama şeridi kuralları tamamen kaldırıldı — görsel yükleme zaten marka kartındaki işletme görseli düğmesinden yapılıyor.
+
 ## v0.118.2
 - **Yenileme damgası artık geçmişte birikmiyor.** Güncelleme sonrası adres `?y=<zaman>` içeriyordu; damga yalnızca önbelleği atlatmak için gerekli ve sayfa yüklendiği anda işi bitiyor. Sayfa açılır açılmaz `replaceState` ile adres sade `/#/...` hâline getiriliyor — belge zaten yüklü olduğu için yeniden istek yapılmıyor.
 - **Geri tuşu sorununun son parçası buydu.** Her damgalı adres geçmişte ayrı bir girdi oluyordu; o girdiye dönüldüğünde tarayıcı HTML'i kendi önbelleğinden veriyor, yani o günkü eski sürüm ekrana geliyordu. Adres sadeleşince proje sayfasından projeler sayfasına dönüş **aynı belgede** kalıyor — hiç yeniden yükleme olmuyor, sürüm de değişmiyor.
