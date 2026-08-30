@@ -1,5 +1,15 @@
 # Değişiklik Günlüğü
 
+## v0.108.0
+- **1. adım "Firma bilgileri" dashboard'a döndü.** Tepede firma kartına yüklenen işletme görseli tam genişlikte, üstünde proje adı ve rozetler; kartlar görselin 30 piksel üstüne biniyor ki arada boş bant kalmasın. Görsel yoksa kahraman kısalıp projenin kendi rengine düşüyor — boş bir görsel yeri açılmıyor.
+- **Yedi kutu üç karta indi.** Sektör, platform, veritabanı, durum, arayüz dili ve para birimi tek **Künye** kartında iki sütunlu ızgarada; teslim rayı da ayrı kart açmaya değmediği için onun altında.
+- **Bağlantılar ayrı bölüm değil.** Telefon, e-posta, kopyala, depo ve NIZAM.md, yetkili kartının altındaki rozet sırasında.
+- **Roller küçüldü ve ikonlandı.** En geniş yetki kalkan, en dar kilit, aradakiler kişi simgesiyle; veri katmanı ve alan adı da aynı sıradan rozet. Her künye satırının kendi renkli simgesi var — sayfa yazı listesi değil, simge tablosu gibi okunuyor.
+- **Hangi aşamada olduğun artık başlık boyutunda.** Görselle kartların arasında kendi şeridi var: metal `01` plakası, "8 aşamanın 1.'si" ve sağda sekiz noktalı ilerleme — biten yeşil, şimdiki uzun metal. Küçük köşe rozeti okunmuyordu.
+- Girilmemiş her değer **sarı "girilmedi"** yazıyor; satır kaybolmuyor, eksik göze çarpıyor.
+- Görselin sağ üstündeki **i** düğmesi burada da var: işletme görselini proje kartına gitmeden değiştiriyor.
+- Kahraman yazılarının kontrastı ölçüldü: firma adı 8,0, rozetler 14'ün üstünde. Marka rozetinin altın saydamlığı görselin parlak yerinde 4,98'de kalıyordu — altına koyu taban kondu.
+
 ## v0.107.1
 - Sayfa geçişinde yeni ekranın aşağıdan gelme payı **7 pikselden 9 piksele** çıktı. Süre ve eğri aynı; hareket biraz daha atak. Ölçüldüğünde iki ayarın ortası arasındaki fark 0,1 piksel — gözle ayırt edilmiyor, karar hissi seviyeydi.
 

@@ -5498,3 +5498,294 @@ a:hover { color: var(--red-ink); }
 
 /* Sayfanın üç sorusu */
 .dal2 .d .yz i { white-space: normal; }
+
+/* ==========================================================================
+   1 · FİRMA BİLGİLERİ — DASHBOARD
+   Tepede işletme görseli, altında aşama şeridi, sonra üç kart. Eski hâlinde
+   yedi ayrı kutu vardı; aynı bilgi tek ızgaraya sığıyor. Sınıfların hepsi
+   `fb-` önekli: `.as`, `.dk`, `.kisi` gibi adlar başka bileşenlerin.
+   ========================================================================== */
+
+:root{
+  --fb-kunye:#7d93b8;
+  --fb-kisi:#c4a05c;
+  --fb-teknik:#8fae4a;
+}
+
+/* ---------- Kahraman ---------- */
+
+/* Görsel tam genişlikte; kartlar 30px üstüne biniyor ki arada boş bant
+   kalmasın — ızgara görselin içinden çıkıyor gibi dursun. */
+.fb-hero{
+  position:relative;
+  height:172px;
+  margin:calc(var(--ust) * -1) calc(var(--yan) * -1) -30px;
+  overflow:hidden;
+}
+.fb-hero img{ width:100%; height:100%; object-fit:cover; display:block; }
+
+/* Perdenin ölçüsü proje kartında ölçüldü: bu geçişte firma adının kontrastı
+   çizimin en parlak yerinde bile 7'nin üstünde kalıyor. */
+.fb-hero::after{
+  content:'';
+  position:absolute; inset:0;
+  background:linear-gradient(180deg,
+    rgba(10,9,8,.30) 0%, rgba(10,9,8,.05) 26%,
+    rgba(10,9,8,.55) 58%, rgba(10,9,8,.92) 84%, var(--bg) 100%);
+}
+
+/* Görsel yoksa boş bir yer açılmıyor: kahraman kısalıp projenin rengine düşüyor. */
+.fb-hero.renkli{
+  height:120px;
+  background:linear-gradient(150deg, var(--p1), var(--p2) 42%, var(--bg) 100%);
+}
+.fb-hero.renkli::after{
+  background:linear-gradient(180deg, rgba(10,9,8,.20), rgba(10,9,8,.75) 62%, var(--bg) 100%);
+}
+
+.fb-hyz{ position:absolute; left:14px; right:14px; bottom:44px; z-index:2; }
+.fb-had{
+  display:block;
+  font-family:var(--yazi-baslik); font-weight:700; font-size:18px;
+  letter-spacing:-.015em; color:#fff;
+  text-shadow:0 2px 12px rgba(0,0,0,.7);
+}
+.fb-rozet{ display:flex; flex-wrap:wrap; gap:5px; margin-top:6px; }
+.fb-rz{
+  display:inline-flex; align-items:center; gap:5px;
+  padding:3px 9px; border-radius:999px;
+  font-size:9.5px; color:#fff;
+  background:rgba(10,9,8,.62);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.22);
+}
+.fb-rz svg{ width:11px; height:11px; }
+/* Marka rozeti görselin parlak yerine denk gelebiliyor: altın saydamlık
+   tek başına 4.98'de kalıyordu, koyu taban 9'un üstüne çıkarıyor. */
+.fb-rz.marka{
+  background:rgba(52,38,14,.78);
+  box-shadow:inset 0 0 0 1px rgba(196,160,92,.6);
+}
+
+/* Görseli değiştiren "i" — proje kartındakinin aynısı. */
+.fb-i{
+  position:absolute; top:12px; right:12px; z-index:3;
+  width:26px; height:26px; padding:0;
+  display:flex; align-items:center; justify-content:center;
+  border:0; border-radius:999px; cursor:pointer;
+  font-family:var(--yazi-baslik); font-weight:700; font-size:12px;
+  color:#fff; background:rgba(8,7,6,.6);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.26);
+  transition:transform .16s var(--yay), background .16s var(--ease);
+}
+.fb-i:active{ transform:scale(.9); background:rgba(8,7,6,.82); }
+
+.fb-govde{ position:relative; z-index:3; }
+
+/* ---------- Aşama şeridi ---------- */
+
+/* Hangi aşamada olduğumuz sayfanın en okunur ikinci satırı: metal plaka,
+   aşama adı ve sekiz nokta. Küçük köşe rozetiyle bu okunmuyordu. */
+.fb-serit{
+  position:relative;
+  display:flex; align-items:center; gap:11px;
+  margin-bottom:10px; padding:10px 12px;
+  border:1px solid var(--line); border-radius:var(--radius-lg);
+  background:linear-gradient(180deg, var(--kart-ust), var(--kart-alt));
+  box-shadow:0 2px 4px -2px rgba(0,0,0,.75),
+             0 18px 32px -22px rgba(0,0,0,.95),
+             inset 0 1px 0 var(--isik);
+  overflow:hidden;
+}
+.fb-serit::before{
+  content:'';
+  position:absolute; top:-55%; left:-16%; width:52%; height:190%;
+  background:linear-gradient(101deg, rgba(255,255,255,.05), transparent 60%);
+  pointer-events:none;
+}
+.fb-no{
+  position:relative;
+  flex:0 0 40px; height:40px;
+  display:flex; align-items:center; justify-content:center;
+  border-radius:12px;
+  font-family:var(--yazi-baslik); font-weight:700; font-size:17px;
+  letter-spacing:-.02em; color:#12100e;
+  background:linear-gradient(180deg, var(--metal-2), var(--metal-1));
+  box-shadow:0 8px 18px -10px rgba(0,0,0,.9),
+             inset 0 1px 0 rgba(255,255,255,.5);
+}
+.fb-syz{ position:relative; flex:1; min-width:0; }
+.fb-set{
+  display:flex; align-items:center; gap:6px;
+  font-family:var(--yazi-kod); font-size:9px;
+  letter-spacing:.1em; text-transform:uppercase; color:var(--ink-dim);
+}
+.fb-set svg{ width:11px; height:11px; }
+.fb-sad{
+  display:block; margin-top:2px;
+  font-family:var(--yazi-baslik); font-weight:700; font-size:15px;
+  letter-spacing:-.01em; color:var(--ink-strong);
+}
+.fb-nk{ position:relative; display:flex; align-items:center; gap:4px; }
+.fb-nk i{
+  display:block; width:7px; height:7px; border-radius:999px;
+  background:var(--bar-bos);
+  box-shadow:inset 0 0 0 1px var(--line-3);
+}
+.fb-nk i.bitti{
+  background:linear-gradient(180deg, var(--st-done-t), var(--st-done));
+  box-shadow:none;
+}
+.fb-nk i.su{
+  width:20px; border-radius:999px;
+  background:linear-gradient(90deg, var(--metal-1), var(--metal-2));
+  box-shadow:none;
+}
+
+/* ---------- Kartlar ---------- */
+
+.fb-kart{
+  position:relative; overflow:hidden;
+  margin-bottom:10px; padding:11px 12px 12px;
+  border:1px solid var(--line); border-radius:var(--radius-lg);
+  background:linear-gradient(180deg, var(--kart-ust), var(--kart-alt));
+  box-shadow:0 2px 4px -2px rgba(0,0,0,.75),
+             0 16px 30px -22px rgba(0,0,0,.95),
+             inset 0 1px 0 var(--isik);
+}
+.fb-kart::before{
+  content:'';
+  position:absolute; top:-55%; left:-16%; width:58%; height:190%;
+  background:linear-gradient(101deg, rgba(255,255,255,.05), transparent 60%);
+  pointer-events:none;
+}
+.fb-ust{ position:relative; display:flex; align-items:center; gap:9px; margin-bottom:11px; }
+.fb-ik{
+  flex:0 0 28px;
+  width:28px; height:28px;
+  display:flex; align-items:center; justify-content:center;
+  border-radius:9px; color:var(--kr);
+  background:linear-gradient(180deg,
+    color-mix(in srgb, var(--kr) 22%, transparent),
+    color-mix(in srgb, var(--kr) 9%, transparent));
+  border:1px solid color-mix(in srgb, var(--kr) 32%, transparent);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.09);
+}
+.fb-bas{
+  flex:1; min-width:0;
+  font-family:var(--yazi-baslik); font-weight:600; font-size:12.5px;
+  color:var(--ink-strong);
+}
+.fb-kalem{
+  flex:0 0 26px;
+  width:26px; height:26px; padding:0;
+  display:flex; align-items:center; justify-content:center;
+  border:1px solid var(--line-3); border-radius:8px; cursor:pointer;
+  color:var(--ink-dim); background:var(--yuva);
+  transition:transform .16s var(--yay), color .16s var(--ease);
+}
+.fb-kalem:active{ transform:scale(.9); color:var(--ink-soft); }
+
+/* ---------- Künye ızgarası ---------- */
+
+.fb-kg{ position:relative; display:grid; grid-template-columns:1fr 1fr; gap:2px 10px; }
+.fb-s{ display:flex; align-items:center; gap:9px; min-width:0; padding:7px 0; }
+.fb-si{
+  flex:0 0 22px;
+  width:22px; height:22px;
+  display:flex; align-items:center; justify-content:center;
+  border-radius:7px; color:var(--ki);
+  background:color-mix(in srgb, var(--ki) 13%, transparent);
+}
+.fb-syazi{ min-width:0; }
+.fb-syazi i{
+  display:block; font-style:normal; line-height:1.3;
+  font-size:9px; letter-spacing:.07em; text-transform:uppercase;
+  color:var(--ink-dim);
+}
+.fb-syazi b{
+  display:block; line-height:1.35;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  font-family:var(--yazi-baslik); font-weight:600; font-size:12.5px;
+  color:var(--ink-strong);
+}
+.fb-syazi b.eksik{ color:var(--st-dev-t); font-weight:500; }
+
+/* ---------- Takvim rayı ---------- */
+
+.fb-tkv{ position:relative; margin-top:10px; padding-top:10px; border-top:1px solid var(--line-3); }
+.fb-ray{
+  height:5px; border-radius:999px; overflow:hidden;
+  background:var(--bar-bos);
+  box-shadow:inset 0 1px 2px rgba(0,0,0,.6);
+}
+.fb-ray i{
+  display:block; height:100%; border-radius:999px;
+  background:linear-gradient(90deg, var(--metal-1), var(--metal-2));
+}
+.fb-talt{
+  display:flex; align-items:center; justify-content:space-between;
+  margin-top:7px;
+  font-family:var(--yazi-kod); font-size:9.5px; color:var(--ink-dim);
+}
+.fb-talt span{ display:inline-flex; align-items:center; gap:5px; }
+.fb-talt svg{ width:11px; height:11px; }
+.fb-talt em{
+  font-style:normal;
+  font-family:var(--yazi-baslik); font-weight:600; font-size:11px;
+  color:var(--st-dev-t);
+}
+.fb-talt .gecikti em{ color:var(--red-ink); }
+
+/* ---------- Yetkili ---------- */
+
+.fb-kisi{ position:relative; display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+.fb-av{
+  flex:0 0 38px;
+  width:38px; height:38px;
+  display:flex; align-items:center; justify-content:center;
+  border-radius:11px;
+  font-family:var(--yazi-baslik); font-weight:700; font-size:13px; color:#fff;
+  background:linear-gradient(140deg, var(--p1), var(--p2));
+  box-shadow:0 8px 18px -10px var(--pk), inset 0 1px 0 rgba(255,255,255,.24);
+}
+.fb-kyz{ flex:1; min-width:0; }
+.fb-kyz b{
+  display:block;
+  font-family:var(--yazi-baslik); font-weight:600; font-size:13.5px;
+  color:var(--ink-strong);
+}
+.fb-kyz b.eksik{ color:var(--st-dev-t); font-weight:500; }
+.fb-kyz i{
+  display:block; margin-top:1px; font-style:normal;
+  font-size:10px; line-height:1.45; color:var(--ink-dim);
+}
+
+/* ---------- Rozet sırası ----------
+   Bağlantılar, roller ve teknik alanlar hepsi bu sırada: ayrı kart açmaya
+   değmeyen tek satırlık bilgiler. */
+
+.fb-cip{ position:relative; display:flex; flex-wrap:wrap; gap:6px; }
+.fb-cp{
+  display:inline-flex; align-items:center; gap:6px;
+  max-width:100%; padding:6px 11px;
+  border:1px solid var(--line); border-radius:999px;
+  font-family:var(--yazi-govde); font-size:10.5px; text-align:left;
+  color:var(--ink-soft); text-decoration:none;
+  background:linear-gradient(180deg, var(--surface-2), var(--kart-alt));
+  box-shadow:inset 0 1px 0 var(--isik);
+}
+button.fb-cp{ cursor:pointer; transition:transform .16s var(--yay); }
+button.fb-cp:active{ transform:scale(.94); }
+.fb-cp svg{ flex:0 0 12px; width:12px; height:12px; color:var(--ci, var(--ink-faint)); }
+.fb-cp b{
+  min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  font-family:var(--yazi-kod); font-weight:400; font-size:10px; color:var(--ink-strong);
+}
+.fb-cp b.eksik{ font-family:var(--yazi-govde); color:var(--st-dev-t); }
+.fb-cp em{
+  font-style:normal;
+  font-family:var(--yazi-baslik); font-weight:700; font-size:11px;
+  color:var(--ci, var(--ink-strong));
+}
+
+.fb-kart .adim-not{ margin-top:10px; }

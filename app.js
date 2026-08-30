@@ -213,6 +213,44 @@ const ICON = {
     d: '<circle cx="12" cy="12" r="9"></circle>',
     c: '<circle cx="12" cy="12" r="9"></circle><path d="M12 7.5v.01"></path><path d="M8 10.2c2.6.7 5.4.7 8 0M12 10.6V15m0 0l-2.2 3.6M12 15l2.2 3.6"></path>',
   },
+  /* --- Firma bilgileri künyesi. Her satırın kendi simgesi olsun diye:
+     hepsi aynı simgeyken ızgara yazı listesine dönüyordu. --- */
+  etiket: {
+    d: '<path d="M11 3H4v7l10 10 7-7z"></path>',
+    c: '<path d="M11 3H4v7l10 10 7-7L11 3z"></path><circle cx="7.6" cy="6.6" r="1.2"></circle>',
+  },
+  dil: {
+    d: '<circle cx="12" cy="12" r="9"></circle>',
+    c: '<circle cx="12" cy="12" r="9"></circle><path d="M3 12h18M12 3a15 15 0 0 1 0 18 15 15 0 0 1 0-18z"></path>',
+  },
+  para: {
+    d: '<circle cx="12" cy="12" r="9"></circle>',
+    c: '<circle cx="12" cy="12" r="9"></circle><path d="M14.5 9a3 3 0 1 0-2.5 6M9.5 10.5h5M9.5 13.5h5"></path>',
+  },
+  bulut: {
+    d: '<path d="M7.5 18h9.2a3.8 3.8 0 0 0 .4-7.6A5.4 5.4 0 0 0 6.9 10a4 4 0 0 0 .6 8z"></path>',
+    c: '<path d="M7.5 18h9.2a3.8 3.8 0 0 0 .4-7.6A5.4 5.4 0 0 0 6.9 10a4 4 0 0 0 .6 8z"></path>',
+  },
+  takvim: {
+    d: '<rect x="3.5" y="5" width="17" height="15" rx="2.4"></rect>',
+    c: '<rect x="3.5" y="5" width="17" height="15" rx="2.4"></rect><path d="M3.5 9.6h17M8 3v3.6M16 3v3.6"></path>',
+  },
+  dukkan: {
+    d: '<path d="M4 9.5h16V20H4z"></path>',
+    c: '<path d="M3 9.5 4.8 4h14.4L21 9.5M4.5 9.5V20h15V9.5M9.5 20v-4.6h5V20"></path>',
+  },
+  dal: {
+    d: '<circle cx="6.5" cy="6" r="2.2"></circle><circle cx="6.5" cy="18" r="2.2"></circle><circle cx="17.5" cy="7.5" r="2.2"></circle>',
+    c: '<circle cx="6.5" cy="6" r="2.2"></circle><circle cx="6.5" cy="18" r="2.2"></circle><circle cx="17.5" cy="7.5" r="2.2"></circle><path d="M6.5 8.2v7.6M17.5 9.7c0 3.4-2.6 4.6-6.2 5.4"></path>',
+  },
+  dosya: {
+    d: '<path d="M13 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9z"></path>',
+    c: '<path d="M13 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9l-6-6z"></path><path d="M13 3v6h6"></path>',
+  },
+  anahtar: {
+    d: '<circle cx="8" cy="12" r="3.4"></circle>',
+    c: '<circle cx="8" cy="12" r="3.4"></circle><path d="M11.4 12H21M18 12v3M15 12v2.2"></path>',
+  },
   arti:    '<path d="M12 5v14M5 12h14"></path>',
   tik:     '<path d="M5 12l5 5L20 7"></path>',
   kapat:   '<path d="M6 6l12 12M18 6L6 18"></path>',
@@ -765,41 +803,178 @@ function bolumBas(ad) {
   return `<div class="bl"><span>${esc(ad)}</span><i></i></div>`;
 }
 
-/* 1 · Firma bilgileri */
+/* ---------- 1 · Firma bilgileri ----------
+   Bu durak bir dashboard: tepede işletme görseli, altında aşama şeridi,
+   sonra üç kart. Önceki hâlinde yedi ayrı kutu vardı; aynı bilgi tek
+   ızgaraya sığıyor ve her satırın kendi simgesi var. */
+
+/* Kahraman: proje kartındaki G0 görseli, üstünde firma adı ve rozetler.
+   Görsel yoksa projenin kendi rengine düşer — boş bir görsel yeri açılmaz. */
+function firmaKahraman(p) {
+  const gor = gorselAdresi(p, 'G0');
+  const s   = DB.sayim(p.id);
+  const rozet = [p.sektor, `%${s.yuzde} tamam`].filter(Boolean);
+
+  return `
+    <div class="fb-hero ${gor ? '' : 'renkli'}" style="${renkDegiskenleri(p.renk)}">
+      ${gor ? `<img src="${esc(gor)}" alt="" decoding="async" fetchpriority="high">` : ''}
+      ${AUTH.yonetici ? `<button class="fb-i" data-eylem="proje-gorsel" data-id="${p.id}"
+        type="button" aria-label="${gor ? 'Görseli değiştir' : 'Görsel ekle'}">i</button>` : ''}
+      <span class="fb-hyz">
+        <span class="fb-had">${esc(projeAdi(p))}</span>
+        <span class="fb-rozet">
+          ${rozet.map((x, i) => `<span class="fb-rz ${i === 0 && p.sektor ? 'marka' : ''}">
+            ${svg(i === 0 && p.sektor ? ICON.etiket : ICON.bayrak, 11)}${esc(x)}</span>`).join('')}
+        </span>
+      </span>
+    </div>`;
+}
+
+/* Aşama şeridi: metal plaka + aşama adı + sekiz nokta.
+   Noktalar yol haritasındaki oklarla aynı dili konuşuyor — biten yeşil,
+   şimdiki uzun metal, sıradakiler boş. */
+function fbSerit(p, d) {
+  const duraklar = projeDuraklari(p);
+  const su = d.no - 1;
+
+  return `
+    <div class="fb-serit">
+      <span class="fb-no mono">${String(d.no).padStart(2, '0')}</span>
+      <span class="fb-syz">
+        <span class="fb-set">${svg(ICON.bayrak, 11)}
+          ${duraklar.length} aşamanın ${d.no}.'si</span>
+        <span class="fb-sad">${esc(d.ad)}</span>
+      </span>
+      <span class="fb-nk">
+        ${duraklar.map((x, i) => `<i class="${i === su ? 'su' : x.bitti ? 'bitti' : ''}"></i>`).join('')}
+      </span>
+    </div>`;
+}
+
+/* Künye satırı: renkli simge, üstte etiket, altta değer. Değer yoksa
+   satır kaybolmuyor — sarı "girilmedi" yazıyor ki eksik göze çarpsın. */
+function kunyeSatiri(renk, ikon, etiket, deger) {
+  return `
+    <span class="fb-s" style="--ki:${renk}">
+      <span class="fb-si">${svg(ikon, 13)}</span>
+      <span class="fb-syazi">
+        <i>${esc(etiket)}</i>
+        <b class="${deger ? '' : 'eksik'}">${esc(deger || 'girilmedi')}</b>
+      </span>
+    </span>`;
+}
+
+function fbKart(renk, ikon, baslik, eylem, projeId, ic) {
+  return `
+    <div class="fb-kart" style="--kr:${renk}">
+      <div class="fb-ust">
+        <span class="fb-ik">${svg(ikon, 14)}</span>
+        <span class="fb-bas">${esc(baslik)}</span>
+        ${AUTH.yonetici && eylem ? `<button class="fb-kalem" type="button"
+          data-eylem="${eylem}" data-proje="${projeId}"
+          aria-label="${esc(baslik)} düzenle">${svg(ICON.kalem, 13)}</button>` : ''}
+      </div>
+      ${ic}
+    </div>`;
+}
+
+/* Takvim rayı künye kartının altında: ayrı takvim kartı açmaya değmiyor,
+   iki tarih ve bir çubuktan ibaret. */
+function fbTakvim(p) {
+  if (!p.baslangic && !p.teslim) return '';
+
+  const bas   = p.baslangic ? new Date(p.baslangic) : null;
+  const son   = p.teslim ? new Date(p.teslim) : null;
+  const bugun = new Date(bugunTarih());
+
+  let yuzde = 0, orta = bas ? 'Başladı' : 'Teslim bekliyor', gecikti = false;
+  if (bas && son && son > bas) {
+    yuzde = Math.max(0, Math.min(100, Math.round((bugun - bas) / (son - bas) * 100)));
+    const kalan = Math.round((son - bugun) / 86400000);
+    gecikti = kalan < 0;
+    orta = kalan >= 0 ? `<em>${kalan} gün</em> kaldı` : `<em>${-kalan} gün</em> geçti`;
+  }
+
+  return `
+    <div class="fb-tkv">
+      ${bas && son ? `<div class="fb-ray"><i style="width:${yuzde}%"></i></div>` : ''}
+      <div class="fb-talt">
+        <span>${svg(ICON.takvim, 11)}${bas ? esc(gunYaz(p.baslangic)) : '—'}</span>
+        <span class="${gecikti ? 'gecikti' : ''}">${svg(ICON.saat, 11)}${orta}</span>
+        <span>${son ? esc(gunYaz(p.teslim)) : '—'}${svg(ICON.bayrak, 11)}</span>
+      </div>
+    </div>`;
+}
+
+function fbCip(renk, ikon, ic, eylem, projeId, adres) {
+  const govde = `${svg(ikon, 12)}${ic}`;
+  if (adres) return `<a class="fb-cp" style="--ci:${renk}" href="${esc(adres)}">${govde}</a>`;
+  if (eylem) return `<button class="fb-cp" style="--ci:${renk}" type="button"
+    data-eylem="${eylem}" data-proje="${projeId}">${govde}</button>`;
+  return `<span class="fb-cp" style="--ci:${renk}">${govde}</span>`;
+}
+
 function firmaSayfasi(p, d) {
   const dil  = (DIL_SECENEK.find(x => x.kod === p.dil) || {}).ad;
   const para = (PARA_SECENEK.find(x => x.kod === p.para) || {}).ad;
+  const pl   = p.palet || {};
+  const roller = rolListesi(pl.roller);
+  const alt = [p.telefon, p.eposta].filter(Boolean).length;
 
-  return sayfaHero(p, d)
-    + yetkiliKarti(p)
-    + bolumBas('Ürün') + `
-      <div class="ikili">
-        <div class="tkutu">
-          <span class="ik">${svg(ICON.katman, 14)}</span>
-          <b>Platform</b><u>${esc(PLATFORM_ADI[p.platform] || '—')}</u>
-        </div>
-        <div class="tkutu">
-          <span class="ik">${svg(ICON.kova, 14)}</span>
-          <b>Veritabanı</b><u>${esc(VERI_ADI[p.veri] || '—')}</u>
-        </div>
-      </div>`
-    + takvimBolumu(p)
-    + bolumBas('Diğer') + `
-      <div class="satirlar">
-        <div class="sr">${svg(ICON.info, 15)} Dil ve para
-          <b>${dil || para ? esc([dil, para].filter(Boolean).join(' · ')) : '—'}</b></div>
-        <div class="sr" data-eylem="repo" data-proje="${p.id}" role="button" tabindex="0">
-          ${svg(ICON.katman, 15)} Depo
-          ${p.repo ? `<b class="mono">${esc(p.repo)}</b>` : '<b class="eksik">eklenmedi</b>'}</div>
-        <div class="sr" data-eylem="kimlik" data-proje="${p.id}" role="button" tabindex="0">
-          ${svg(ICON.kopya, 15)} Kimlik dosyası <b>NIZAM.md</b></div>
-      </div>`
-    + bolumBas('Teknik') + teknikBolumu(p)
+  const kunye = fbKart('var(--fb-kunye)', ICON.etiket, 'Künye', 'firma-duzenle', p.id, `
+    <div class="fb-kg">
+      ${kunyeSatiri('#8fae4a', ICON.dukkan,  'Sektör',      p.sektor)}
+      ${kunyeSatiri('#7d93b8', ICON.katman,  'Platform',    PLATFORM_ADI[p.platform])}
+      ${kunyeSatiri('#3fa694', ICON.gVeri,   'Veritabanı',  VERI_ADI[p.veri])}
+      ${kunyeSatiri('#c8973f', ICON.gAnimasyon, 'Durum',    DURUM_ADI[p.durum])}
+      ${kunyeSatiri('#b8926b', ICON.dil,     'Arayüz dili', dil)}
+      ${kunyeSatiri('#9b7fd4', ICON.para,    'Para birimi', para)}
+    </div>
+    ${fbTakvim(p)}`);
+
+  const yetkili = fbKart('var(--fb-kisi)', ICON.kisi, 'Yetkili ve bağlantılar',
+    'firma-duzenle', p.id, `
+    <div class="fb-kisi">
+      <span class="fb-av" style="${renkDegiskenleri(p.renk)}">${esc(basHarf(p.yetkili || '?'))}</span>
+      <span class="fb-kyz">
+        <b class="${p.yetkili ? '' : 'eksik'}">${esc(p.yetkili || 'Yetkili girilmemiş')}</b>
+        <i>${alt ? esc([p.telefon, p.eposta].filter(Boolean).join(' · '))
+                 : 'İş sırasında soru çıkarsa kime soracağın belli olsun.'}</i>
+      </span>
+    </div>
+    <div class="fb-cip">
+      ${p.telefon ? fbCip('#5fb37f', ICON.telefon, 'Ara', '', '',
+        'tel:' + p.telefon.replace(/\s/g, '')) : ''}
+      ${p.eposta ? fbCip('#4fa8c9', ICON.mail, 'E-posta', '', '', 'mailto:' + p.eposta) : ''}
+      ${alt ? fbCip('#b8b2ad', ICON.kopya, 'Kopyala', 'yetkili-kopyala', p.id) : ''}
+      ${fbCip('#c48a5c', ICON.dal, p.repo ? `<b class="mono">${esc(p.repo)}</b>`
+        : '<b class="eksik">depo eklenmedi</b>', 'repo', p.id)}
+      ${fbCip('#9b7fd4', ICON.dosya, '<b class="mono">NIZAM.md</b>', 'kimlik', p.id)}
+    </div>`);
+
+  const teknik = fbKart('var(--fb-teknik)', ICON.ayar, 'Teknik', 'teknik-duzenle', p.id, `
+    <div class="fb-cip">
+      ${roller.length
+        ? roller.slice().reverse().map((r, i) => fbCip(
+            i === 0 ? '#d8a63f' : i === roller.length - 1 ? '#7d93b8' : '#3fa694',
+            i === 0 ? ICON.gGuvenlik : i === roller.length - 1 ? ICON.kilit : ICON.kisi,
+            `<em>${roller.length - i}</em>${esc(r)}`)).join('')
+        : fbCip('#d8a63f', ICON.gGuvenlik, '<b class="eksik">rol belirlenmedi</b>')}
+      ${fbCip('#4fa8c9', ICON.bulut, pl.veriKatmani
+        ? esc(pl.veriKatmani) : '<b class="eksik">veri katmanı yok</b>')}
+      ${fbCip('#5fb37f', ICON.anahtar, pl.alanAdi
+        ? `<b class="mono">${esc(pl.alanAdi)}</b>` : '<b class="eksik">alan adı yok</b>')}
+    </div>
+    <div class="adim-not">${svg(ICON.info, 13)}
+      <span>Yığın, barındırma, veri ve biçim kuralları Nizam standardı —
+      sorulmaz, prompta olduğu gibi yazılır.</span></div>`);
+
+  return firmaKahraman(p) + `<div class="fb-govde">`
+    + fbSerit(p, d) + kunye + yetkili + teknik
     + (AUTH.yonetici ? `
       <button class="sayfa-dug" data-eylem="firma-duzenle" data-proje="${p.id}" type="button">
-        ${svg(ICON.kalem, 15)} Bilgileri düzenle</button>
-      <button class="sayfa-dug ikincil" data-eylem="teknik-duzenle" data-proje="${p.id}" type="button">
-        ${svg(ICON.ayar, 15)} Teknik bilgileri düzenle</button>` : '');
+        ${svg(ICON.kalem, 15)} Bilgileri düzenle</button>` : '')
+    + `</div>`;
 }
 
 /* ---------- Rol merdiveni ----------
@@ -866,27 +1041,6 @@ function rolOku(kutu) {
     .filter(Boolean);
 }
 
-/* Projeye özel teknik alanlar. Standart olanlar sorulmaz — onlar prompta
-   doğrudan yazılıyor, burada yalnız projeye göre değişenler duruyor. */
-function teknikBolumu(p) {
-  const pl = p.palet || {};
-  const roller = rolListesi(pl.roller);
-  return (roller.length ? `
-    <div class="rol-goster">${roller.slice().reverse().map((r, i) => `
-      <span class="rg"><b>${roller.length - i}</b>${esc(r)}
-        ${i === 0 ? '<u>en geniş</u>' : i === roller.length - 1 ? '<u>en dar</u>' : ''}</span>`).join('')}
-    </div>` : `
-    <div class="satirlar"><div class="sr">Roller <b class="eksik">belirlenmedi</b></div></div>`)
-    + `<div class="satirlar">${TEKNIK_ALAN.filter(a => a.tur !== 'katman').map(a => `
-    <div class="sr">${esc(a.ad)}
-      ${pl[a.anahtar] ? `<b>${esc(pl[a.anahtar])}</b>`
-                      : '<b class="eksik">belirlenmedi</b>'}</div>`).join('')}
-    </div>
-    <div class="adim-not">${svg(ICON.info, 13)}
-      <span>Yığın, barındırma, veri ve biçim kuralları Nizam standardı —
-      sorulmaz, prompta olduğu gibi yazılır.</span></div>`;
-}
-
 /* Dört alanı tek pencerede düzenle. */
 function teknikDuzenle(projeId) {
   modalHepsiniKapat();
@@ -943,75 +1097,6 @@ function teknikDuzenle(projeId) {
     });
     setTimeout(() => { const i = $('[data-tk]', kutu); if (i) i.focus(); }, 40);
   });
-}
-
-function yetkiliKarti(p) {
-  if (!p.yetkili && !p.telefon && !p.eposta) {
-    return bolumBas('Yetkili kişi') + `
-      <div class="bos-kutu">
-        ${svg(ICON.kisi, 18)}
-        <span>Yetkili kişi girilmemiş. İş sırasında soru çıkarsa kime soracağın belli olsun.</span>
-      </div>`;
-  }
-
-  const alt = [p.telefon, p.eposta].filter(Boolean).join(' · ');
-
-  return bolumBas('Yetkili kişi') + `
-    <div class="kisi-kart" style="${renkDegiskenleri(p.renk)}">
-      <div class="kk-ust">
-        <span class="kk-av">${esc(basHarf(p.yetkili || '?'))}</span>
-        <span class="kk-ad">
-          <b>${esc(p.yetkili || 'Adı girilmemiş')}</b>
-          ${alt ? `<i>${esc(alt)}</i>` : ''}
-        </span>
-      </div>
-      <div class="kk-eylem">
-        ${p.telefon ? `<a class="ke" href="tel:${esc(p.telefon.replace(/\s/g, ''))}">
-          ${svg(ICON.telefon, 14)} Ara</a>` : ''}
-        ${p.eposta ? `<a class="ke" href="mailto:${esc(p.eposta)}">
-          ${svg(ICON.mail, 14)} Mail</a>` : ''}
-        <button class="ke" data-eylem="yetkili-kopyala" data-proje="${p.id}" type="button">
-          ${svg(ICON.kopya, 14)} Kopyala</button>
-      </div>
-    </div>`;
-}
-
-/* Takvim: tarih satırı okumaktan hızlı — çubuk bugünün nerede olduğunu gösteriyor. */
-function takvimBolumu(p) {
-  if (!p.baslangic && !p.teslim) {
-    return bolumBas('Takvim') + `
-      <div class="bos-kutu">
-        ${svg(ICON.info, 18)}
-        <span>Tarih girilmemiş. Teslim tarihi koyarsan geciken projeler ayrı gösterilir.</span>
-      </div>`;
-  }
-
-  const bas = p.baslangic ? new Date(p.baslangic) : null;
-  const son = p.teslim ? new Date(p.teslim) : null;
-  const bugun = new Date(bugunTarih());
-
-  let yuzde = 0, ust = '', sag = '';
-  if (bas && son && son > bas) {
-    yuzde = Math.max(0, Math.min(100, Math.round((bugun - bas) / (son - bas) * 100)));
-    const kalan = Math.round((son - bugun) / 86400000);
-    ust = kalan >= 0 ? `${kalan} gün kaldı` : `${-kalan} gün geçti`;
-    sag = `%${yuzde} geçti`;
-  } else {
-    ust = bas ? 'Başladı' : 'Teslim bekliyor';
-  }
-
-  return bolumBas('Takvim') + `
-    <div class="takvim" style="${renkDegiskenleri(p.renk)}">
-      <div class="tk-ust">
-        <b class="${son && bugun > son ? 'gecikti' : ''}">${esc(ust)}</b>
-        ${sag ? `<em>${esc(sag)}</em>` : ''}
-      </div>
-      ${bas && son ? `<div class="ray"><i style="width:${yuzde}%"></i><b style="left:${yuzde}%"></b></div>` : ''}
-      <div class="tk-uc">
-        <span>Başlangıç<b>${bas ? esc(gunYaz(p.baslangic)) : '—'}</b></span>
-        <span>Teslim<b>${son ? esc(gunYaz(p.teslim)) : '—'}</b></span>
-      </div>
-    </div>`;
 }
 
 /* 2 · Tasarımı belirleme */
