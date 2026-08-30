@@ -1,5 +1,12 @@
 # Değişiklik Günlüğü
 
+## v0.122.0
+- **Modül ağacı üç kademeye ayrıldı:** modüller → bir modülün sayfaları → bir sayfanın künyesi. Eskiden hepsi tek ekranda iç içe açılıyordu; dikey çizgiler ve girintiler derinlik arttıkça okunmaz oluyordu. Artık her kademe kendi ekranı ve tepesinde nereden geldiğini söyleyen kart duruyor — sayfanın geri kalanıyla aynı dil.
+- **Modüller ve sayfalar kare kartta:** yol haritasıyla aynı ölçü, aynı durum dili. **Kırmızı yalnız sıradaki kartta** — hepsi kırmızı olunca ekran uyarı tablosuna dönüyor ve "önce hangisi" kayboluyor; kalan eksikler sarı alt yazıyla duruyor.
+- **Modül kuralları ve künye dalları satır kart.** İki kelimelik başlık ve bir satır özet için kare israftı.
+- **Roller kartı ağaçtan kalktı** — 02. adımda zaten soruluyor; iki yerde durması hangisinin geçerli olduğunu belirsiz bırakıyordu.
+- Logo halkası ve dikey bağlantı çizgileri kaldırıldı; hiyerarşiyi kırıntı yolu ve tepedeki kart anlatıyor.
+
 ## v0.121.1
 - **Aşama başlığı ile proje künyesi artık birebir aynı ölçüde** — ikisi de 84 piksel yüksekliğinde, 54 piksellik karo, iki satır yazı ve sağda değer + etiketi. Aşama kartında üçüncü bir satır vardı, kartı künyeden uzun yapıyordu; ilerleme noktaları firma adının yanına alındı ve satır kalktı.
 - Sağ sütun künyedeki yüzdeyle aynı yerde: **4/4 · adım**.

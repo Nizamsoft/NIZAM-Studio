@@ -6395,3 +6395,61 @@ a.ya:active, button.ya:not([disabled]):active{ transform:scale(.97); }
   font-family:var(--yazi-kod); font-size:8.5px;
   letter-spacing:.07em; text-transform:uppercase; color:var(--ink-dim);
 }
+
+/* --------------------------------------------------------------------------
+   Modül ağacı — üç kademe
+   Modüller → bir modülün sayfaları → bir sayfanın künyesi. Her kademe kendi
+   ekranı; hiyerarşiyi dikey çizgi ve girintiyle değil, tepedeki kartla
+   anlatıyoruz. Derinlik arttıkça girintili ağaç okunmaz oluyordu.
+   -------------------------------------------------------------------------- */
+
+/* Satır kart: iki kelimelik başlık, bir satır özet. */
+.ags{
+  position:relative;
+  display:flex; align-items:center; gap:10px; width:100%;
+  margin-bottom:9px; padding:11px 12px;
+  border:1px solid var(--line); border-radius:var(--radius-lg);
+  text-align:left; font-family:inherit; color:inherit; cursor:pointer;
+  background:linear-gradient(180deg, var(--kart-ust), var(--kart-alt));
+  box-shadow:0 2px 4px -2px rgba(0,0,0,.75), inset 0 1px 0 var(--isik);
+  transition:transform .16s var(--yay);
+}
+.ags:active{ transform:scale(.99); }
+/* Eksik satır sarı çerçeveli: doldurulmamış olan göze çarpsın. */
+.ags.eksik{ border-color:rgba(216,166,63,.32); }
+.ags-ik{
+  flex:0 0 30px;
+  width:30px; height:30px;
+  display:flex; align-items:center; justify-content:center;
+  border-radius:9px; color:var(--ki, var(--ink-soft));
+  background:color-mix(in srgb, var(--ki, var(--ink-faint)) 14%, transparent);
+}
+.ags-yz{ flex:1; min-width:0; }
+.ags-yz b{
+  display:block;
+  font-family:var(--yazi-baslik); font-weight:600; font-size:12.5px;
+  color:var(--ink-strong);
+}
+.ags-yz i{
+  display:block; margin-top:2px; font-style:normal;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  font-size:10.5px; color:var(--ink-dim);
+}
+.ags-ok{ flex:0 0 auto; display:flex; color:var(--ink-dim); }
+/* Kaldırma satırı: kırmızı değil — kırmızı ana eyleme ait. */
+.ags.sil{ border-style:dashed; color:var(--ink-dim); }
+.ags.sil .ags-ik{ color:var(--ink-dim); background:var(--yuva); }
+.ags.sil .ags-yz b{ color:var(--ink-soft); font-weight:500; }
+
+/* Ekleme karesi: kesik çerçeve, artı işareti. */
+.ya.kesik{ border-style:dashed; opacity:.72; }
+.ya.kesik .ya-dur{ background:var(--yuva); box-shadow:inset 0 0 0 1px var(--line-3); }
+
+/* Ağaç kabuğunun kendi çerçevesi kalktı: kademeler zaten kartlardan oluşuyor,
+   dıştaki kart ikinci bir çerçeve ekliyordu. */
+.dk-yol{ margin-bottom:10px; }
+
+/* Sırası gelmemiş eksik kart: nötr çerçeve, sarı alt yazı. Kırmızı yalnız
+   sıradakinin — hepsi kırmızı olunca ekran uyarı tablosuna dönüyordu. */
+.ya.eksik .ya-alt{ color:var(--st-dev-t); }
+.ya.eksik .ya-dur{ color:var(--st-dev-t); }
