@@ -620,6 +620,26 @@ const VIEWS = {
         </div>
       </div>` : ''}
 
+    ${AUTH.yonetici ? `
+      <div class="section">
+        <span class="label">Yayın</span>
+        <div class="card">
+          <div class="row-list">
+            <div class="row" data-eylem="kok-alan" role="button" tabindex="0">
+              <div class="row-main">
+                <span class="row-title">Kök alan adı</span>
+                <span class="row-sub">${kokAlan()
+                  ? 'Her projeye firma adından alt alan türetilir'
+                  : 'Yazılmazsa alan adı adımı Ayarlar\'a yollar'}</span>
+              </div>
+              <span class="row-val">${kokAlan()
+                ? `<b class="mono">${esc(kokAlan())}</b>`
+                : '<b class="eksik">yazılmadı</b>'} ${svg(ICON.kalem, 13)}</span>
+            </div>
+          </div>
+        </div>
+      </div>` : ''}
+
     <div class="section">
       <span class="label">Kütüphane</span>
       <div class="card">
@@ -939,41 +959,97 @@ function kurulumAraclari(p) {
      kullanıcıya aynı şeyi iki kere söyletiyordu. */
   const kopya = !!pl.sohbetAcildi;
   const isim  = String(pl.sohbetAdi || '').trim();
+  const alan  = String(pl.alanAdi || '').trim();
+  const yayin = !!pl.yayinda;
+
+  /* Kart: bağlantıysa <a>, eylemse <button>. */
+  const kart = (no, hal, ikon, ad, altYazi, eylem, adres) => {
+    const ic = `
+      <span class="sa-ust">
+        <span class="sa-ikon">${svg(ikon, 18)}</span>
+        <span class="sa-adim">${no}</span>
+      </span>
+      <span class="sa-yazi">
+        <span class="sa-ad">${ad}</span>
+        <span class="sa-alt">${altYazi}</span>
+      </span>`;
+    if (adres) {
+      return `<a class="sa-kart ${hal}" target="_blank" rel="noopener"
+        ${eylem ? `data-${eylem}="${p.id}"` : ''} href="${adres}">${ic}</a>`;
+    }
+    return `<button class="sa-kart ${hal}" type="button"
+      data-eylem="${eylem}" data-proje="${p.id}"
+      ${hal === 'bekliyor' ? 'disabled' : ''}>${ic}</button>`;
+  };
+
+  const bag = `<span class="sa-bag"><i></i><em>${svg(ICON.chevron, 13)}</em></span>`;
+
+  const depoAdresi = depo
+    ? 'https://github.com/' + esc(slug)
+    : 'https://github.com/new?name=' + encodeURIComponent(depoAdi(p))
+      + '&description=' + encodeURIComponent(projeAdi(p) + ' · NIZAM Studio')
+      + '&visibility=private';
 
   return `
+    <span class="fb-et">Kurulum</span>
     <div class="std-arac ${isim ? 'bitti' : depo ? 'adim2' : ''}">
-      <a class="sa-kart ${depo ? 'kopyalandi' : 'ana'}" target="_blank" rel="noopener"
-         ${depo ? '' : `data-depo-ac="${p.id}"`}
-         href="${depo
-           ? 'https://github.com/' + esc(slug)
-           : 'https://github.com/new?name=' + encodeURIComponent(depoAdi(p))
-             + '&description=' + encodeURIComponent(projeAdi(p) + ' · NIZAM Studio')
-             + '&visibility=private'}">
-        <span class="sa-ust">
-          <span class="sa-ikon">${svg(depo ? ICON.tik : ICON.dal, 18)}</span>
-          <span class="sa-adim">1</span>
-        </span>
-        <span class="sa-yazi">
-          <span class="sa-ad">${depo ? 'Depo hazır' : 'GitHub deposu'}</span>
-          <span class="sa-alt">${depo ? 'Depoyu aç' : 'GitHub\'da açar'}</span>
-        </span>
-      </a>
+      ${kart(1, depo ? 'kopyalandi' : 'ana', depo ? ICON.tik : ICON.dal,
+             depo ? 'Depo hazır' : 'GitHub deposu',
+             depo ? 'Depoyu aç' : 'GitHub\'da açar',
+             depo ? '' : 'depo-ac', depoAdresi)}
+      ${bag}
+      ${kart(2, !depo ? 'bekliyor' : kopya ? 'kopyalandi' : 'sirada',
+             kopya ? ICON.tik : ICON.dosya,
+             isim ? 'Sohbet hazır' : kopya ? 'Prompt panoda' : 'Claude Code promptu',
+             isim ? esc(isim) : kopya ? 'Sohbet adını yaz' : 'Panoya kopyalar',
+             'tanisma-prompt')}
+    </div>
 
-      <span class="sa-bag"><i></i><em>${svg(ICON.chevron, 13)}</em></span>
-
-      <button class="sa-kart ${!depo ? 'bekliyor' : kopya ? 'kopyalandi' : 'sirada'}"
-              type="button" data-eylem="tanisma-prompt" data-proje="${p.id}"
-              ${depo ? '' : 'disabled'}>
-        <span class="sa-ust">
-          <span class="sa-ikon">${svg(kopya ? ICON.tik : ICON.dosya, 18)}</span>
-          <span class="sa-adim">2</span>
-        </span>
-        <span class="sa-yazi">
-          <span class="sa-ad">${isim ? 'Sohbet hazır' : kopya ? 'Prompt panoda' : 'Claude Code promptu'}</span>
-          <span class="sa-alt">${isim ? esc(isim)
-            : kopya ? 'Sohbet adını yaz' : 'Panoya kopyalar'}</span>
-        </span>
-      </button>
+    ${/* Yayın sırası koda bağlı: Pages boş depoda açılmıyor, o yüzden 4. kart
+          sohbet kurulmadan (yani ilk commit gelmeden) açılmıyor. */ ''}
+    <span class="fb-et" style="margin-top:11px">Yayın</span>
+    <div class="std-arac ${yayin ? 'bitti' : alan ? 'adim2' : ''}">
+      ${kart(3, !isim ? 'bekliyor' : alan ? 'kopyalandi' : 'sirada',
+             alan ? ICON.tik : ICON.dil,
+             alan ? 'Alan adı hazır' : 'Alan adı kaydı',
+             alan ? esc(alan) : 'Namecheap\'te açar',
+             'alan-kaydi')}
+      ${bag}
+      ${alan && !yayin
+        ? `<a class="sa-kart sirada" target="_blank" rel="noopener"
+             data-pages-ac="${p.id}" data-alan-kopya="${esc(alan)}"
+             href="https://github.com/${esc(slug)}/settings/pages">
+            <span class="sa-ust">
+              <span class="sa-ikon">${svg(ICON.bulut, 18)}</span>
+              <span class="sa-adim">4</span>
+            </span>
+            <span class="sa-yazi">
+              <span class="sa-ad">GitHub Pages</span>
+              <span class="sa-alt">Pages ayarlarını açar</span>
+            </span>
+          </a>`
+        : yayin
+        ? `<a class="sa-kart kopyalandi" target="_blank" rel="noopener"
+             href="https://${esc(alan)}">
+            <span class="sa-ust">
+              <span class="sa-ikon">${svg(ICON.tik, 18)}</span>
+              <span class="sa-adim">4</span>
+            </span>
+            <span class="sa-yazi">
+              <span class="sa-ad">Yayında</span>
+              <span class="sa-alt">Siteyi aç</span>
+            </span>
+          </a>`
+        : `<span class="sa-kart bekliyor">
+            <span class="sa-ust">
+              <span class="sa-ikon">${svg(ICON.bulut, 18)}</span>
+              <span class="sa-adim">4</span>
+            </span>
+            <span class="sa-yazi">
+              <span class="sa-ad">GitHub Pages</span>
+              <span class="sa-alt">Pages ayarlarını açar</span>
+            </span>
+          </span>`}
     </div>`;
 }
 
@@ -1039,7 +1115,7 @@ function firmaSayfasi(p, d) {
       ${kunyeSatiri('#9b7fd4', ICON.kopya,    'Sohbet adı',   pl.sohbetAdi,
                     pl.sohbetAcildi ? 'sohbet-adi' : '', p.id, !pl.sohbetAcildi)}
     </div>
-    <div class="fb-ayrac">${kurulumAraclari(p)}</div>`);
+    <div class="fb-ayrac fb-kurulum">${kurulumAraclari(p)}</div>`);
 
   /* Alttaki genel "Bilgileri düzenle" düğmesi kalktı: her kartın kendi
      kalemi zaten aynı pencereyi açıyor. */
@@ -3997,6 +4073,39 @@ function depoSlug(repo) {
 /* GitHub kullanıcı/organizasyon adı. Depo adını zaten biz üretiyoruz;
    eksik olan tek parça sahibi. Bir kez öğrenip hatırlıyoruz — gizli bir
    şey değil, herkese açık bir ad. */
+/* Kök alan adı ayarda bir kere yazılıyor: her projede tekrar sormak yerine
+   alt alanı firma adından türetiyoruz. Depo sahibiyle aynı mantık. */
+const KOK_ALAN_ANAHTAR = 'ns.kokAlan';
+
+function kokAlan() {
+  try { return localStorage.getItem(KOK_ALAN_ANAHTAR) || ''; }
+  catch (h) { return ''; }
+}
+
+function kokAlanYaz(deger) {
+  const temiz = String(deger || '').trim().toLowerCase()
+    .replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/.*$/, '');
+  try {
+    if (temiz) localStorage.setItem(KOK_ALAN_ANAHTAR, temiz);
+    else localStorage.removeItem(KOK_ALAN_ANAHTAR);
+  } catch (h) { /* önemsiz */ }
+}
+
+/* Projenin alt alanı. Firma adının tamamı uzun ve okunmaz çıkıyor
+   ("merkezefendikoftecisi"); ilk iki kelime hem ayırt edici hem kısa. */
+function altAlan(p) {
+  const kelimeler = asciiye(p && p.firma).split(/[^A-Za-z0-9]+/).filter(Boolean);
+  return kelimeler.slice(0, 2).join('').toLowerCase().slice(0, 30);
+}
+
+/* Önerilen tam adres. Kök alan adı yazılmamışsa boş döner — o zaman
+   kullanıcıyı Ayarlar'a yolluyoruz. */
+function onerilenAlanAdi(p) {
+  const kok = kokAlan();
+  const alt = altAlan(p);
+  return kok && alt ? alt + '.' + kok : '';
+}
+
 const DEPO_SAHIBI_ANAHTAR = 'ns.depoSahibi';
 
 function depoSahibi() {
@@ -4136,27 +4245,21 @@ function betaSayfasi(p, d) {
   const kunyeVar = Object.keys(pl.kunye || {}).length > 0;
 
   const yayin = pl.alanAdi || '';
-  const beklenen = pagesAdresi(p);
 
   return sayfaHero(p, d)
-    + durakKarti(1, !!yayin, 'Yayın adresi',
-        'Uygulamayı deneyeceğin adres. GitHub\'da <b>Settings → Pages</b>\'i aç, '
-        + '<b>Deploy from a branch</b> · <b class="mono">main</b> · <b class="mono">/ (root)</b> '
-        + 'seç ve kaydet. Buraya dönünce adresi kendimiz yazarız.'
-        + (slug ? '' : ' <b class="eksik">Önce depo adresini kaydet.</b>'), `
-      <div class="kur-dug">${slug ? `
-        <a class="sayfa-dug ${yayin ? 'ikincil' : ''}" target="_blank" rel="noopener"
-           data-pages-ac="${p.id}"
-           href="https://github.com/${esc(slug)}/settings/pages">
-          ${svg(ICON.katman, 15)} Pages ayarlarını aç</a>` : ''}
-      </div>
-      <div class="kur-deger" data-eylem="alan-adi" data-proje="${p.id}"
-           role="button" tabindex="0">
-        ${svg(ICON.katman, 13)} Adres
-        ${yayin ? `<b class="mono">${esc(yayin)}</b>`
-                : '<b class="eksik">dokun, yapıştır</b>'}</div>`)
+    /* Alan adı ve Pages kurulumu 1. aşamaya taşındı: DNS'in yayılması ve
+       sertifikanın çıkması zaman aldığı için erken kurulması gerekiyor.
+       Burada yalnız sonucu gösteriyoruz. */
+    + (yayin ? `
+      <div class="kur-deger duz">${svg(ICON.bulut, 13)} Yayın adresi
+        <b class="mono"><a target="_blank" rel="noopener"
+          href="https://${esc(yayin)}">${esc(yayin)}</a></b></div>` : `
+      <div class="bos-kutu">${svg(ICON.bulut, 18)}
+        <span>Yayın adresi yok. <b>Firma ve kurulum</b> durağındaki
+        <b>Yayın</b> adımlarını tamamla — DNS'in yayılması zaman alıyor,
+        erken kurmak lazım.</span></div>`)
 
-    + durakKarti(2, cikti, '3. blok: modüller ve sayfalar',
+    + durakKarti(1, cikti, '3. blok: modüller ve sayfalar',
         (kunyeVar
           ? 'Sayfa künyeleri, modül kuralları ve beş aşamalı kurulum talimatı '
             + 'panoya alınır. Claude Code oturumuna yapıştır — kod bu blokla başlar.'
@@ -4172,7 +4275,7 @@ function betaSayfasi(p, d) {
       <button class="promptu-gor" type="button" data-eylem="yapi-blok-gor"
               data-proje="${p.id}">Bloğu gör</button>`)
 
-    + durakKarti(3, cikti, 'Beta çıktı',
+    + durakKarti(2, cikti, 'Beta çıktı',
         'Claude beş aşamayı bitirip <b class="mono">main</b> dalına gönderdiğinde '
         + 'uygulamayı dene. Gördüğün eksikleri not al — sonraki durakta görev olarak '
         + 'açacaksın.', `
@@ -6470,6 +6573,64 @@ function kisiSor(mevcut) {
    METİN PENCERESİ — prompt ve kimlik dosyası
    ========================================================================== */
 
+/* Namecheap kaydının hazır hâli. Dört satır, her birinin kendi kopyala
+   düğmesi; altta doğrudan o alan adının DNS sayfasına giden düğme. */
+function alanKaydiPenceresi(p) {
+  const kok  = kokAlan();
+  const alt  = altAlan(p);
+  const tam  = onerilenAlanAdi(p);
+  const hedef = (depoSahibi() || 'kullaniciadin').toLowerCase() + '.github.io';
+
+  const satir = (etiket, deger) => `
+    <div class="ak-s">
+      <span class="ak-et">${esc(etiket)}</span>
+      <span class="ak-dg mono">${esc(deger)}</span>
+      <button class="ak-kop" type="button" data-ak-kopya="${esc(deger)}"
+              aria-label="${esc(etiket)} kopyala">${svg(ICON.kopya, 12)}</button>
+    </div>`;
+
+  modalAc(`
+    ${modalBaslik(ICON.dil, 'Alan adı kaydı',
+      'Namecheap → Advanced DNS → Add New Record. Değerler hazır, kopyalayıp yapıştır.')}
+    <div class="fb-kart" style="--kr:#5fb37f">
+      ${satir('Type',  'CNAME Record')}
+      ${satir('Host',  alt)}
+      ${satir('Value', hedef)}
+      ${satir('TTL',   'Automatic')}
+    </div>
+    <a class="sayfa-dug" target="_blank" rel="noopener"
+       href="https://ap.www.namecheap.com/domains/domaincontrolpanel/${esc(kok)}/advancedns">
+      ${svg(ICON.dil, 15)} Namecheap'te aç</a>
+    <div class="fbd-not">${svg(ICON.info, 13)}
+      <span>Kaydettikten sonra buraya dön ve <b>Alan adı</b> satırına
+      <b class="mono">${esc(tam)}</b> yaz. DNS'in yayılması 10–30 dakika sürebilir.</span></div>
+    <div class="modal-alt">
+      <button class="btn btn-ghost" data-ak="kapat" type="button">Kapat</button>
+      <button class="btn btn-primary" data-ak="yaz" type="button">
+        <span>Alan adını yaz</span></button>
+    </div>`, kutu => {
+    $$('[data-ak-kopya]', kutu).forEach(b => b.addEventListener('click', async () => {
+      const ok = await panoyaKopyala(b.dataset.akKopya);
+      b.classList.toggle('oldu', ok);
+      toast(ok ? 'Kopyalandı.' : 'Kopyalanamadı.', ok ? 'basari' : 'hata');
+    }));
+    $('[data-ak="kapat"]', kutu).addEventListener('click', modalKapat);
+    $('[data-ak="yaz"]', kutu).addEventListener('click', async () => {
+      modalKapat();
+      const adres = await metinSor({
+        baslik: 'Alan adı',
+        aciklama: 'Namecheap kaydını açtıysan bu adres birazdan çalışmaya başlar.',
+        deger: tam,
+        yerTutucu: 'merkezefendi.nizamsoftware.com',
+        buton: 'Kaydet',
+      });
+      if (adres === null) return;
+      await isYap(() => DB.paletKaydet(p.id,
+        Object.assign({}, p.palet || {}, { alanAdi: adres })), 'Alan adı kaydedildi.');
+    });
+  }, 'genis');
+}
+
 function metinPenceresi({ baslik, aciklama, metin, dosya, geri, ac }) {
   modalAc(`
     ${modalBaslik(ICON.kopya, baslik, aciklama)}
@@ -8467,6 +8628,42 @@ async function eylemCalistir(el) {
       Object.assign({}, pr.palet || {}, { alanAdi: adres })), 'Yayın adresi kaydedildi.');
   }
 
+  /* Namecheap'e yazılacak kayıt hazır duruyor: satır satır kopyalanıyor ve
+     düğme doğrudan o alan adının Advanced DNS sayfasını açıyor. Studio kaydı
+     kendi yazamıyor — Namecheap API'si sunucu ve anahtar istiyor. */
+  if (e === 'alan-kaydi') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const kok = kokAlan();
+    if (!kok) {
+      toast('Önce Ayarlar\'da kök alan adını yaz.', 'uyari');
+      return adreseGit('#/ayarlar');
+    }
+    return alanKaydiPenceresi(pr);
+  }
+
+  if (e === 'yayin-onay') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    return isYap(() => DB.paletKaydet(pr.id,
+      Object.assign({}, pr.palet || {}, { yayinda: true })), 'Yayında olarak işaretlendi.');
+  }
+
+  if (e === 'kok-alan') {
+    const deger = await metinSor({
+      baslik: 'Kök alan adı',
+      aciklama: 'Projelerin alt alan alacağı adres. Studio her projeye firma '
+              + 'adından bir alt alan türetiyor: örneğin kofte.' + (kokAlan() || 'alanadin.com') + '.',
+      deger: kokAlan(),
+      yerTutucu: 'nizamsoftware.com',
+      buton: 'Kaydet',
+    });
+    if (deger === null) return;
+    kokAlanYaz(deger);
+    render();
+    return toast(deger.trim() ? 'Kök alan adı kaydedildi.' : 'Kök alan adı silindi.');
+  }
+
   if (e === 'sohbet-adi') {
     const pr = DB.proje(el.dataset.proje);
     if (!pr) return;
@@ -9897,7 +10094,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const el = e.target.closest('[data-depo-ac]');
     if (el) DEPO_BEKLIYOR[el.dataset.depoAc] = true;
     const pg = e.target.closest('[data-pages-ac]');
-    if (pg) PAGES_BEKLIYOR[pg.dataset.pagesAc] = true;
+    if (pg) {
+      PAGES_BEKLIYOR[pg.dataset.pagesAc] = true;
+      /* Custom domain kutusuna yapıştırılacak adres hazır olsun. */
+      if (pg.dataset.alanKopya) {
+        panoyaKopyala(pg.dataset.alanKopya);
+        toast('Adres panoda — Custom domain kutusuna yapıştır.', 'basari');
+      }
+    }
   });
 
   /* Uygulamaya dönüldüğünde bekleyen depo varsa adresi doldur. Depo adını
@@ -9914,7 +10118,16 @@ document.addEventListener('DOMContentLoaded', () => {
     Object.keys(PAGES_BEKLIYOR).forEach(pid => {
       const pr = DB.proje(pid);
       delete PAGES_BEKLIYOR[pid];
-      if (pr && !(pr.palet || {}).alanAdi) yayinAdresiTamamla(pr);
+      if (!pr) return;
+      const pl = pr.palet || {};
+      if (!pl.alanAdi) yayinAdresiTamamla(pr);
+      /* Adres zaten yazılıysa Pages'e gidilmesinin tek sebebi custom domain'i
+         kaydetmek — dönüşte durağı yayında sayıyoruz. */
+      else if (!pl.yayinda) {
+        DB.paletKaydet(pr.id, Object.assign({}, pl, { yayinda: true }))
+          .then(() => render())
+          .catch(() => { /* çevrimdışıysa bir dahaki sefere */ });
+      }
     });
   });
 

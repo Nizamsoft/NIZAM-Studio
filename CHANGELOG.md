@@ -1,5 +1,14 @@
 # Değişiklik Günlüğü
 
+## v0.114.0
+- **Alan adı ve yayın kurulumu Yer grubuna geldi.** Kurulum şeridi ikiden dörde çıktı, iki sıra hâlinde: **Kurulum** (depo → sohbet) ve **Yayın** (alan adı → GitHub Pages).
+- **3 · Alan adı kaydı.** Basınca açılan pencerede Namecheap'e yazılacak dört değer hazır duruyor — Type, Host, Value, TTL — her birinin kendi kopyala düğmesiyle. Alttaki düğme doğrudan **o alan adının Advanced DNS sayfasını** açıyor. Dönünce "Alan adını yaz" ile künye satırına geçiyor.
+- **4 · GitHub Pages.** Alan adını panoya alıp deponun `Settings → Pages` sayfasını açıyor. Dönüşte durak "yayında" işaretleniyor ve kart siteye giden bağlantıya dönüyor.
+- **Kök alan adı Ayarlar'a bir kere yazılıyor** (Yayın bölümü). Studio her projeye firma adının ilk iki kelimesinden alt alan türetiyor: "Merkez Efendi Köftecisi" → `merkezefendi`. Yazılmamışsa 3. kart Ayarlar'a yolluyor.
+- **Sıralama koda bağlı:** 4. kart, 2. kart bitmeden açılmıyor. GitHub boş depoda Pages açtırmıyor; ilk commit tanışma promptuyla geliyor.
+- **Beta'daki kurulum kontrolleri kalktı.** Alan adı ve Pages orada duruyordu, ama DNS'in yayılması ve sertifikanın çıkması zaman alıyor — erken kurulması gerekiyor. Beta'da artık tek satır var: yayın adresi ve siteye giden bağlantı.
+- Tam otomatik değil, bilerek: Namecheap API'si sunucu ve gizli anahtar istiyor, Studio ise tarayıcıda çalışıyor. Değerleri hazırlayıp doğru sayfayı açmak elle yazılacak her şeyi ortadan kaldırıyor.
+
 ## v0.113.2
 - **NIZAM.md künye satırına geçti.** Kartların altındaki ayrı rozet kalktı; kimlik dosyası artık Alan adı ve Modül adı ile aynı ızgarada, aynı biçimde duruyor. Dokununca içeriği yine açılıyor. Yer kartında artık tek bir liste var: veri katmanı, alan adı, modül adı, depo, kimlik dosyası, sohbet adı.
 
