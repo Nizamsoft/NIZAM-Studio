@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## v0.113.1
+- Firma sayfasının altındaki **"Bilgileri düzenle" düğmesi kalktı** — her kartın kendi kalemi zaten aynı pencereyi açıyor.
+- Yer kartının dibindeki **yığın/barındırma standardı açıklaması kalktı**: her açılışta okunacak bir şey değil, sayfayı uzatıyordu.
+
 ## v0.113.0
 - **Depo adresi künye satırına çıktı.** Kartların altındaki ayrı adres kutusu kalktı; depo artık Modül adı ve Alan adı ile aynı ızgarada, aynı biçimde duruyor. Dokununca adres soruluyor.
 - **Yeni künye satırı: Sohbet adı.** Claude Code oturumunu hangi adla açtığın buraya yazılıyor — sonra hangi sohbete döneceğini aramadan buluyorsun.

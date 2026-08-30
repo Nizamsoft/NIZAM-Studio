@@ -1039,16 +1039,12 @@ function firmaSayfasi(p, d) {
     <div class="fb-ayrac">${kurulumAraclari(p)}</div>
     <div class="fb-cip" style="margin-top:9px">
       ${fbCip('#9b7fd4', ICON.dosya, '<b class="mono">NIZAM.md</b>', 'kimlik', p.id)}
-    </div>
-    <div class="adim-not">${svg(ICON.info, 13)}
-      <span>Yığın, barındırma, veri ve biçim kuralları Nizam standardı —
-      sorulmaz, prompta olduğu gibi yazılır.</span></div>`);
+    </div>`);
 
+  /* Alttaki genel "Bilgileri düzenle" düğmesi kalktı: her kartın kendi
+     kalemi zaten aynı pencereyi açıyor. */
   return firmaKahraman(p) + `<div class="fb-govde">`
     + fbSerit(p, d) + fbTakvimSeridi(p) + is + kisiler + yer
-    + (AUTH.yonetici ? `
-      <button class="sayfa-dug" data-eylem="firma-duzenle" data-proje="${p.id}" type="button">
-        ${svg(ICON.kalem, 15)} Bilgileri düzenle</button>` : '')
     + `</div>`;
 }
 
