@@ -861,7 +861,7 @@ function firmaKahraman(p) {
 /* Aşama şeridi: metal plaka + aşama adı + sekiz nokta.
    Noktalar yol haritasındaki oklarla aynı dili konuşuyor — biten yeşil,
    şimdiki uzun metal, sıradakiler boş. */
-function fbSerit(p, d) {
+function fbSerit(p, d, sayac) {
   const duraklar = projeDuraklari(p);
   const su = d.no - 1;
 
@@ -876,6 +876,7 @@ function fbSerit(p, d) {
       <span class="fb-nk">
         ${duraklar.map((x, i) => `<i class="${i === su ? 'su' : x.bitti ? 'bitti' : ''}"></i>`).join('')}
       </span>
+      ${sayac ? `<span class="fb-ssay mono">${esc(sayac)}</span>` : ''}
     </div>`;
 }
 
@@ -949,7 +950,8 @@ function fbTakvimSeridi(p) {
   }
 
   return `
-    <div class="fb-tks ${gecikti ? 'gecikti' : ''}">
+    <div class="fb-tks ${gecikti ? 'gecikti' : ''}" data-eylem="adim-takvim"
+         data-proje="${p.id}" role="button" tabindex="0">
       <span class="fb-tsi">${svg(ICON.saat, 13)}</span>
       <span class="fb-torta">
         ${bas && son ? `<span class="fb-tray"><i style="width:${yuzde}%"></i></span>` : ''}
@@ -3086,12 +3088,71 @@ function tasarimOnizleme(alan, ad) {
 }
 
 /* 2 · Yapıyı kurma */
-/* 2 · Kurulum ve yapı — klavye başında doldurulan taraf. Ürünü tarif et,
-   rolleri belirle, yeri kur, modülleri ekle. Takvim de burada: teslim
-   planı kurulumun parçası, markanın değil. */
+/* 2 · Kurulum ve yapı — klavye başında doldurulan taraf.
+   Beş adım, kurulum sırasına dizili. Boş adım şeritte küçük kart; dolan adım
+   bilgileri anlatan tam genişlikte karta dönüşüyor ve yukarı geçiyor. Böylece
+   üst taraf "yapılanlar", alt taraf "yapılacaklar" oluyor.
+
+   Başlıklar soru, terimler gündelik: "platform" değil "nerede çalışacak",
+   "alan adı" değil "internet adresi". Bu ekranı yazılım bilmeyen biri de
+   baştan sona götürebilmeli. */
+
+/* Boş adımın şeritteki küçük kartı. Sırası gelmemiş adım basılamıyor:
+   atlamalı doldurunca sonraki adımın sorusu havada kalıyor. */
+function adimKarti(p, a, sirada) {
+  return `
+    <button class="sa-kart ${sirada ? 'ana' : 'bekliyor'}" type="button"
+            data-eylem="${a.eylem}" data-proje="${p.id}" ${sirada ? '' : 'disabled'}>
+      <span class="sa-ust">
+        <span class="sa-ikon">${svg(a.ikon, 18)}</span>
+        <span class="sa-adim">${a.no}</span>
+      </span>
+      <span class="sa-yazi">
+        <span class="sa-ad">${esc(a.ad)}</span>
+        <span class="sa-alt">${esc(a.ozet)}</span>
+      </span>
+    </button>`;
+}
+
+/* Kalan adımların şeridi: ikişerli satırlar, aralarında bağlantı çizgisi.
+   Tek kalan son kart satırın tamamını alıyor. */
+function adimSeridi(p, kalan) {
+  if (!kalan.length) return '';
+  const ok   = `<span class="sa-bag"><i></i><em>${svg(ICON.chevron, 13)}</em></span>`;
+  const inis = `<span class="as-in">${svg(ICON.chevron, 13)}</span>`;
+
+  let ic = '';
+  for (let i = 0; i < kalan.length; i += 2) {
+    if (i) ic += inis;
+    const sol = adimKarti(p, kalan[i], i === 0);
+    const sag = kalan[i + 1] ? adimKarti(p, kalan[i + 1], false) : null;
+    ic += sag ? sol + ok + sag : `<span class="tam">${sol}</span>`;
+  }
+  return `<span class="fb-et" style="margin-top:14px">Sırada</span>
+    <div class="as5">${ic}</div>`;
+}
+
+/* Dolu adımın ayrıntı kartı. Numarası sağda, başlıkta yeşil tik. */
+function adimAyrinti(p, a) {
+  return `
+    <div class="fb-kart" style="--kr:${a.renk}">
+      <div class="fb-ust">
+        <span class="fb-tik">${svg(ICON.tik, 13)}</span>
+        <span class="fb-ik">${svg(a.ikon, 14)}</span>
+        <span class="fb-bas">${esc(a.ad)}</span>
+        <span class="fbd-say tam mono">${a.no}</span>
+        ${AUTH.yonetici ? `<button class="fb-kalem" type="button"
+          data-eylem="${a.eylem}" data-proje="${p.id}"
+          aria-label="${esc(a.ad)} düzenle">${svg(ICON.kalem, 13)}</button>` : ''}
+      </div>
+      ${a.not ? `<span class="fb-soru">${a.not}</span>` : ''}
+      ${a.ic}
+    </div>`;
+}
+
 function yapiSayfasi(p, d) {
   /* Modül kurma akışı açıksa ekranı o alıyor; "Kapat" taslağı silince
-     buradaki kurulum kartlarına geri dönülüyor. */
+     buradaki kurulum adımlarına geri dönülüyor. */
   if (AUTH.yonetici && YAPI_TASLAK[p.id]) return yapiAkisi(p, d);
 
   const moduller = DB.modulleri(p.id);
@@ -3102,75 +3163,80 @@ function yapiSayfasi(p, d) {
   const para = (PARA_SECENEK.find(x => x.kod === p.para) || {}).ad;
   const roller = rolListesi(pl.roller);
 
-  /* Platform ve veritabanı sütunda NOT NULL — varsayılanla geliyorlar.
-     Kullanıcının gerçekten baktığını `urunOnay` söylüyor; olmadan kart
-     davet hâlinde duruyor ve niçin sorulduğunu anlatıyor. */
-  const urunAlan = [PLATFORM_ADI[p.platform], VERI_ADI[p.veri], dil, para];
-  const urunDolu = pl.urunOnay ? urunAlan.filter(Boolean).length : 0;
-  const yerDolu  = [pl.veriKatmani, pl.alanAdi, pl.modulAdi].filter(Boolean).length;
+  /* Platform ve veritabanı sütunda `not null` — hep dolu geliyorlar. Adımın
+     gerçekten görüldüğünü dil ve para birimi söylüyor; onları sihirbaz
+     yazmıyor. Eski projelerde `urunOnay` işareti yok, oradan da bakıyoruz. */
+  const urunTam = !!(dil && para) || !!pl.urunOnay;
+  const yerTam  = !!pl.modulAdi && !!pl.veriKatmani && !!pl.alanAdi;
+  const kurTam  = !!p.repo && !!String(pl.sohbetAdi || '').trim() && !!pl.yayinda;
 
-  const urun = urunDolu === 0
-    ? fbBosKart('var(--fb-kunye)', ICON.katman, 'Ürün', '0/4',
-        'Ne yapıyoruz? Platform, veritabanı, arayüz dili ve para birimi — '
-        + '<b>promptun ilk satırları</b> bunlardan çıkıyor.',
-        'kurulum-duzenle', p.id, true)
-    : fbKart('var(--fb-kunye)', ICON.katman, 'Ürün', 'kurulum-duzenle', p.id, `
-    <div class="fb-kg">
-      ${kunyeSatiri('#7d93b8', ICON.katman, 'Platform',    PLATFORM_ADI[p.platform])}
-      ${kunyeSatiri('#3fa694', ICON.gVeri,  'Veritabanı',  VERI_ADI[p.veri])}
-      ${kunyeSatiri('#b8926b', ICON.dil,    'Arayüz dili', dil)}
-      ${kunyeSatiri('#c8973f', ICON.para,   'Para birimi', para)}
-    </div>`, urunDolu + '/4');
+  const adimlar = [
+    {
+      no: '01', renk: 'var(--fb-kunye)', ikon: ICON.katman, eylem: 'adim-urun',
+      ad: 'Ne yapıyoruz?', ozet: 'Nerede çalışacak, hangi dilde',
+      bitti: urunTam,
+      ic: `<div class="fb-kg tek">
+        ${kunyeSatiri('#7d93b8', ICON.katman, 'Nerede çalışacak', PLATFORM_ADI[p.platform])}
+        ${kunyeSatiri('#3fa694', ICON.gVeri,  'Veriler',          VERI_ADI[p.veri])}
+        ${kunyeSatiri('#b8926b', ICON.dil,    'Uygulama dili',    dil)}
+        ${kunyeSatiri('#c8973f', ICON.para,   'Para birimi',      para)}
+      </div>`,
+    },
+    {
+      no: '02', renk: '#d8a63f', ikon: ICON.gGuvenlik, eylem: 'adim-roller',
+      ad: 'Kim kullanacak?', ozet: 'Yetki katmanları',
+      bitti: roller.length > 0,
+      not: 'En üstteki katman, alttakinin gördüğü her şeyi görür.',
+      ic: `<div class="fb-cip">
+        ${roller.slice().reverse().map((r, i) => fbCip(
+          i === 0 ? '#d8a63f' : i === roller.length - 1 ? '#7d93b8' : '#3fa694',
+          i === 0 ? ICON.gGuvenlik : i === roller.length - 1 ? ICON.kilit : ICON.kisi,
+          `<em>${roller.length - i}</em>${esc(r)}`)).join('')}
+      </div>`,
+    },
+    {
+      no: '03', renk: '#4fa8c9', ikon: ICON.bulut, eylem: 'adim-yer',
+      ad: 'Nereye kuralım?', ozet: 'Adres ve paket adı',
+      bitti: yerTam,
+      ic: `<div class="fb-kg tek">
+        ${kunyeSatiri('#c48a5c', ICON.katman,  'Bu paketin adı',        pl.modulAdi)}
+        ${kunyeSatiri('#4fa8c9', ICON.bulut,   'Veriler nerede duracak', pl.veriKatmani)}
+        ${kunyeSatiri('#5fb37f', ICON.anahtar, 'İnternet adresi',       pl.alanAdi)}
+      </div>`,
+    },
+    {
+      no: '04', renk: '#8fae4a', ikon: ICON.dal, eylem: 'adim-kurulum',
+      ad: 'Kurulum', ozet: 'Depo, sohbet, adres, yayın',
+      bitti: kurTam,
+      not: 'Dört düğme, sırayla.',
+      ic: `<div class="fb-kurulum">${kurulumAraclari(p)}</div>
+      <div class="fb-kg tek fb-ayrac">
+        ${kunyeSatiri('#b8926b', ICON.dal,   'Kod deposu',    depoSlug(p.repo) || p.repo,
+                      'repo', p.id, false, 'dokun, yapıştır')}
+        ${kunyeSatiri('#9b7fd4', ICON.dosya, 'Proje kimliği', 'NIZAM.md', 'kimlik', p.id)}
+      </div>`,
+    },
+    {
+      no: '05', renk: '#8fae4a', ikon: ICON.gAltyapi, eylem: 'yapi-akis-ac',
+      ad: 'Hangi ekranlar olacak?', ozet: 'Gelir, gider, cari',
+      bitti: gercek.length > 0 && s.sayfa > 0,
+      not: 'Her ekranın alanları birlikte kuruluyor.',
+      ic: `<div class="fb-cip">
+        ${gercek.map(m => fbCip('#8fae4a', ICON.gAltyapi,
+          `${esc(m.ad)} <b class="mono">${DB.sayfalari(m.id).length}</b>`)).join('')}
+        ${AUTH.yonetici ? fbCip('#b8b2ad', ICON.arti, 'Ekran ekle', 'modul-ekle', p.id) : ''}
+      </div>`,
+    },
+  ];
 
-  const rolKarti = roller.length === 0
-    ? fbBosKart('#d8a63f', ICON.gGuvenlik, 'Roller', '0 katman',
-        'Uygulamayı kaç katman insan kullanacak? '
-        + '<b>Veritabanı güvenlik kuralları</b> bu listeye göre yazılıyor.',
-        'kurulum-duzenle', p.id, urunDolu > 0)
-    : fbKart('#d8a63f', ICON.gGuvenlik, 'Roller', 'kurulum-duzenle', p.id, `
-    <span class="fb-et">Uygulamayı kaç katman insan kullanacak?</span>
-    <div class="fb-cip">
-      ${roller.slice().reverse().map((r, i) => fbCip(
-        i === 0 ? '#d8a63f' : i === roller.length - 1 ? '#7d93b8' : '#3fa694',
-        i === 0 ? ICON.gGuvenlik : i === roller.length - 1 ? ICON.kilit : ICON.kisi,
-        `<em>${roller.length - i}</em>${esc(r)}`)).join('')}
-    </div>`, roller.length + ' katman');
-
-  const yer = yerDolu === 0 && !p.repo
-    ? fbBosKart('#4fa8c9', ICON.bulut, 'Yer', '0/3',
-        'Kod nereye gidecek, site hangi adreste açılacak, veri nerede duracak? '
-        + 'Depo ve Claude Code oturumu da buradan kuruluyor.',
-        'kurulum-duzenle', p.id, roller.length > 0)
-    : fbKart('#4fa8c9', ICON.bulut, 'Yer', 'kurulum-duzenle', p.id, `
-    <div class="fb-kg tek">
-      ${kunyeSatiri('#4fa8c9', ICON.bulut,   'Veri katmanı', pl.veriKatmani)}
-      ${kunyeSatiri('#5fb37f', ICON.anahtar, 'Alan adı',     pl.alanAdi)}
-      ${kunyeSatiri('#c48a5c', ICON.katman,  'Modül adı',    pl.modulAdi, 'modul-adi', p.id)}
-      ${kunyeSatiri('#b8926b', ICON.dal,     'Depo',         p.repo,      'repo',      p.id,
-                    false, 'dokun, yapıştır')}
-      ${kunyeSatiri('#4fa8c9', ICON.dosya,   'Kimlik dosyası', 'NIZAM.md', 'kimlik', p.id)}
-      ${kunyeSatiri('#9b7fd4', ICON.kopya,   'Sohbet adı',   pl.sohbetAdi,
-                    pl.sohbetAcildi ? 'sohbet-adi' : '', p.id, !pl.sohbetAcildi)}
-    </div>
-    <div class="fb-ayrac fb-kurulum">${kurulumAraclari(p)}</div>`, yerDolu + '/3');
-
-  const modulKarti2 = gercek.length === 0
-    ? fbBosKart('#8fae4a', ICON.gAltyapi, 'Modüller', '0 modül',
-        'Hangi ekranlar olacak? Her modülün sayfaları ve künyeleri birlikte '
-        + 'kuruluyor — tasarım bunun üstüne oturuyor.',
-        'yapi-akis-ac', p.id, !!p.repo)
-    : fbKart('#8fae4a', ICON.gAltyapi, 'Modüller', '', '', `
-    <div class="fb-cip">
-      ${gercek.map(m => fbCip('#8fae4a', ICON.gAltyapi,
-        `${esc(m.ad)} <b class="mono">${DB.sayfalari(m.id).length}</b>`)).join('')}
-    </div>
-    ${AUTH.yonetici ? `<div class="fb-cip" style="margin-top:9px">
-      ${fbCip('#b8b2ad', ICON.arti, 'Modül ekle', 'modul-ekle', p.id)}
-      ${fbCip('#b8b2ad', ICON.katman, 'Yapıyı düzenle', 'yapi-akis-ac', p.id)}
-    </div>` : ''}`, gercek.length + ' modül · ' + s.sayfa + ' sayfa');
+  const bitmis = adimlar.filter(a => a.bitti);
+  const kalan  = adimlar.filter(a => !a.bitti);
 
   return firmaKahraman(p) + `<div class="fb-govde">`
-    + fbSerit(p, d) + fbTakvimSeridi(p) + urun + rolKarti + yer + modulKarti2
+    + fbSerit(p, d, bitmis.length + '/' + adimlar.length)
+    + fbTakvimSeridi(p)
+    + bitmis.map(a => adimAyrinti(p, a)).join('')
+    + adimSeridi(p, kalan)
     + `</div>`;
 }
 
@@ -6977,9 +7043,99 @@ function markaDuzenle(projeId) {
   }, 'genis');
 }
 
-/* 2 · Kurulum ve yapı. Platform ve veritabanı da burada: sihirbaz artık
-   sormuyor, tek düzenlenebilir yerleri burası. */
-function kurulumDuzenle(projeId) {
+/* Kurulum adımlarının pencereleri. Tek büyük pencere yerine dört küçük:
+   adım kartına basınca yalnız o adımın soruları çıkıyor. Yazılım bilmeyen
+   biri için tek soruya odaklanmak, uzun formu taramaktan kolay. */
+
+/* Etiket nesnesini seçim şeridinin beklediği biçime çevirir. */
+const secimListesi = obje => Object.keys(obje).map(k => ({ kod: k, ad: obje[k] }));
+
+/* 01 · Ne yapıyoruz? */
+function adimUrun(projeId) {
+  modalHepsiniKapat();
+  const p = DB.proje(projeId);
+  if (!p) return;
+
+  let platform = p.platform || 'ikisi';
+  let vt       = p.veri || 'sifirdan';
+  let dil      = p.dil  || 'tr';
+  let para     = p.para || 'TRY';
+
+  modalAc(`
+    ${modalBaslik(ICON.katman, 'Ne yapıyoruz?', 'Bu dört cevap promptun ilk satırlarına giriyor.')}
+    ${fdKart('var(--fb-kunye)', ICON.katman, 'Ürün',
+      fdSecim('#7d93b8', ICON.katman, 'Nerede çalışacak', 'platform', secimListesi(PLATFORM_ADI), platform)
+      + fdSecim('#3fa694', ICON.gVeri, 'Veriler',        'vt',       secimListesi(VERI_ADI),     vt)
+      + fdSecim('#b8926b', ICON.dil,   'Uygulama dili',  'dil',      DIL_SECENEK,         dil)
+      + fdSecim('#c8973f', ICON.para,  'Para birimi',    'para',     PARA_SECENEK,        para))}
+    <div class="modal-alt">
+      <button class="btn btn-ghost" data-au="iptal" type="button">Vazgeç</button>
+      <button class="btn btn-primary" data-au="kaydet" type="button"><span>Kaydet</span></button>
+    </div>`, kutu => {
+    kutu.addEventListener('click', ev => {
+      const t = ev.target.closest('[data-fd]');
+      if (!t) return;
+      const tur = t.dataset.fd, dg = t.dataset.deger;
+      if (tur === 'platform') platform = dg;
+      if (tur === 'vt')       vt = dg;
+      if (tur === 'dil')      dil = dg;
+      if (tur === 'para')     para = dg;
+      $$(`[data-fd="${tur}"]`, kutu).forEach(x => x.classList.toggle('on', x === t));
+    });
+    $('[data-au="iptal"]', kutu).addEventListener('click', modalKapat);
+    $('[data-au="kaydet"]', kutu).addEventListener('click', async () => {
+      const yazi = $('[data-au="kaydet"] span', kutu);
+      yazi.textContent = 'Kaydediliyor…';
+      try {
+        await DB.projeGuncelle(projeId, { platform, veri: vt, dil, para });
+        /* Platform ve veritabanı sütunda hep dolu; adımın görüldüğünü
+           ayrıca işaretliyoruz ki kart boş görünmesin. */
+        await DB.paletKaydet(projeId, Object.assign({}, p.palet || {}, { urunOnay: true }));
+        modalKapat(); render(); toast('Kaydedildi.', 'basari');
+      } catch (h) { yazi.textContent = 'Kaydet'; toast(h.message, 'hata'); }
+    });
+  }, 'genis');
+}
+
+/* 02 · Kim kullanacak? */
+function adimRoller(projeId) {
+  modalHepsiniKapat();
+  const p = DB.proje(projeId);
+  if (!p) return;
+  const pl = p.palet || {};
+
+  modalAc(`
+    ${modalBaslik(ICON.gGuvenlik, 'Kim kullanacak?',
+      'Uygulamayı kaç katman insan kullanacak? Veritabanı güvenlik kuralları buna göre yazılıyor.')}
+    ${fdKart('#d8a63f', ICON.gGuvenlik, 'Yetki katmanları', rolMerdiveni(pl.roller, 'tk'))}
+    <div class="modal-alt">
+      <button class="btn btn-ghost" data-ar="iptal" type="button">Vazgeç</button>
+      <button class="btn btn-primary" data-ar="kaydet" type="button"><span>Kaydet</span></button>
+    </div>`, kutu => {
+    rolBagla(kutu);
+    const tazele = () => {
+      const r = $('[data-fdsay="Yetki katmanları"]', kutu);
+      if (r) r.textContent = rolOku(kutu).length + ' katman';
+    };
+    kutu.addEventListener('click', () => setTimeout(tazele, 0));
+    kutu.addEventListener('input', tazele);
+    tazele();
+    $('[data-ar="iptal"]', kutu).addEventListener('click', modalKapat);
+    $('[data-ar="kaydet"]', kutu).addEventListener('click', async () => {
+      const roller = rolOku(kutu);
+      if (!roller.length) return toast('En az bir katman yaz.', 'uyari');
+      const yazi = $('[data-ar="kaydet"] span', kutu);
+      yazi.textContent = 'Kaydediliyor…';
+      try {
+        await DB.paletKaydet(projeId, Object.assign({}, pl, { roller }));
+        modalKapat(); render(); toast('Kaydedildi.', 'basari');
+      } catch (h) { yazi.textContent = 'Kaydet'; toast(h.message, 'hata'); }
+    });
+  }, 'genis');
+}
+
+/* 03 · Nereye kuralım? */
+function adimYer(projeId) {
   modalHepsiniKapat();
   const p = DB.proje(projeId);
   if (!p) return;
@@ -6987,116 +7143,101 @@ function kurulumDuzenle(projeId) {
   const pl   = p.palet || {};
   const alan = a => TEKNIK_ALAN.find(x => x.anahtar === a) || {};
   const veri = alan('veriKatmani');
-  const adres = alan('alanAdi');
-
-  let platform = p.platform || 'ikisi';
-  let vt       = p.veri || 'sifirdan';
-  let dil      = p.dil  || 'tr';
-  let para     = p.para || 'TRY';
-
   const veriSecili = pl.veriKatmani || veri.varsayilan;
-  const liste = obje => Object.keys(obje).map(k => ({ kod: k, ad: obje[k] }));
 
   modalAc(`
-    ${modalBaslik(ICON.ayar, 'Kurulum', 'Bu yazılım nasıl kurulacak?')}
-
-    ${fdKart('var(--fb-kunye)', ICON.katman, 'Ürün',
-      fdSecim('#7d93b8', ICON.katman, 'Platform',    'platform', liste(PLATFORM_ADI), platform)
-      + fdSecim('#3fa694', ICON.gVeri, 'Veritabanı', 'vt',       liste(VERI_ADI),     vt)
-      + fdSecim('#b8926b', ICON.dil,   'Arayüz dili', 'dil',     DIL_SECENEK,         dil)
-      + fdSecim('#c8973f', ICON.para,  'Para birimi', 'para',    PARA_SECENEK,        para))}
-
-    ${fdKart('#d8a63f', ICON.gGuvenlik, 'Roller', rolMerdiveni(pl.roller, 'tk'))}
-
+    ${modalBaslik(ICON.bulut, 'Nereye kuralım?', 'Paketin adı, verilerin yeri ve internet adresi.')}
     ${fdKart('#4fa8c9', ICON.bulut, 'Yer',
-      `<div class="fbd-sec" style="--ki:#4fa8c9">
+      fdAlan('#c48a5c', ICON.katman, 'Bu paketin adı', 'ay-modul', pl.modulAdi,
+             'Örn. Muhasebe', 'text', 60, false, 'data-tk="modulAdi"')
+      + `<div class="fbd-sec" style="--ki:#4fa8c9">
         <span class="fbd-set"><span class="fbd-si">${svg(ICON.bulut, 12)}</span>
-          <span>${esc(veri.ad)}</span></span>
+          <span>Veriler nerede duracak</span></span>
         <div class="fbd-cipler">
           ${(veri.secim || []).map(x => `<button class="fbd-cp ${veriSecili === x ? 'on' : ''}"
             type="button" data-tks="veriKatmani" data-deger="${esc(x)}">${esc(x)}</button>`).join('')}
         </div>
         <input type="hidden" data-tk="veriKatmani" value="${esc(veriSecili)}">
       </div>`
-      + fdAlan('#5fb37f', ICON.anahtar, adres.ad, 'tk-alanAdi', pl.alanAdi,
-               adres.ornek, 'text', 200, true, 'data-tk="alanAdi"')
+      + fdAlan('#5fb37f', ICON.anahtar, 'İnternet adresi', 'ay-alan', pl.alanAdi,
+               onerilenAlanAdi(p) || 'kubban.nizamsoft.com', 'text', 200, true,
+               'data-tk="alanAdi"')
       + fdNot(veri.alt))}
-
-    ${fdKart('#c8973f', ICON.takvim, 'Takvim',
-      fdAlan('#c8973f', ICON.takvim, 'Başlangıç', 'kd-baslangic', p.baslangic,
-             '', 'date', 10, true)
-      + fdAlan('#5fb37f', ICON.bayrak, 'Teslim hedefi', 'kd-teslim', p.teslim,
-             'isteğe bağlı', 'date', 10, true)
-      + fdNot('Teslim tarihi girilirse geciken projeler listede ayrı gösteriliyor.'))}
-
     <div class="modal-alt">
-      <button class="btn btn-ghost" data-kd="iptal" type="button">Vazgeç</button>
-      <button class="btn btn-primary" data-kd="kaydet" type="button"><span>Kaydet</span></button>
+      <button class="btn btn-ghost" data-ay="iptal" type="button">Vazgeç</button>
+      <button class="btn btn-primary" data-ay="kaydet" type="button"><span>Kaydet</span></button>
     </div>`, kutu => {
-    rolBagla(kutu);
-    const deger = id => { const e = $('#' + id, kutu); return e ? e.value.trim() : ''; };
-
-    const sayaclariTazele = () => {
-      const u = $('[data-fdsay="Ürün"]', kutu);
-      if (u) u.textContent = '4/4';
-      const r = $('[data-fdsay="Roller"]', kutu);
-      if (r) r.textContent = rolOku(kutu).length + ' katman';
+    const tazele = () => {
       const y = $('[data-fdsay="Yer"]', kutu);
-      if (y) y.textContent = [deger('tk-alanAdi'),
-        $('[data-tk="veriKatmani"]', kutu).value].filter(Boolean).length + '/2';
-      const t = $('[data-fdsay="Takvim"]', kutu);
-      if (t) t.textContent = ['kd-baslangic', 'kd-teslim'].filter(deger).length + '/2';
+      if (!y) return;
+      y.textContent = $$('[data-tk]', kutu).filter(x => x.value.trim()).length + '/3';
     };
-
     kutu.addEventListener('click', ev => {
-      const t = ev.target.closest('[data-fd]');
-      if (t) {
-        const tur = t.dataset.fd, dg = t.dataset.deger;
-        if (tur === 'platform') platform = dg;
-        if (tur === 'vt')       vt = dg;
-        if (tur === 'dil')      dil = dg;
-        if (tur === 'para')     para = dg;
-        $$(`[data-fd="${tur}"]`, kutu).forEach(x => x.classList.toggle('on', x === t));
-      }
       const v = ev.target.closest('[data-tks]');
       if (v) {
         const gizli = $('[data-tk="' + v.dataset.tks + '"]', kutu);
         if (gizli) gizli.value = v.dataset.deger;
         v.parentElement.querySelectorAll('.fbd-cp').forEach(x => x.classList.toggle('on', x === v));
       }
-      setTimeout(sayaclariTazele, 0);
+      setTimeout(tazele, 0);
     });
-    kutu.addEventListener('input', sayaclariTazele);
-    sayaclariTazele();
-
-    $('[data-kd="iptal"]', kutu).addEventListener('click', modalKapat);
-    $('[data-kd="kaydet"]', kutu).addEventListener('click', async () => {
-      const palet = Object.assign({}, pl, { urunOnay: true });
+    kutu.addEventListener('input', tazele);
+    tazele();
+    $('[data-ay="iptal"]', kutu).addEventListener('click', modalKapat);
+    $('[data-ay="kaydet"]', kutu).addEventListener('click', async () => {
+      const palet = Object.assign({}, pl);
       $$('[data-tk]', kutu).forEach(el => {
         const v = el.value.trim();
         if (v) palet[el.dataset.tk] = v; else delete palet[el.dataset.tk];
       });
-      const roller = rolOku(kutu);
-      if (roller.length) palet.roller = roller; else delete palet.roller;
+      const yazi = $('[data-ay="kaydet"] span', kutu);
+      yazi.textContent = 'Kaydediliyor…';
+      try {
+        await DB.paletKaydet(projeId, palet);
+        modalKapat(); render(); toast('Kaydedildi.', 'basari');
+      } catch (h) { yazi.textContent = 'Kaydet'; toast(h.message, 'hata'); }
+    });
+    setTimeout(() => { const i = $('#ay-modul', kutu); if (i) i.focus(); }, 40);
+  }, 'genis');
+}
 
-      const yazi = $('[data-kd="kaydet"] span', kutu);
+/* Takvim şeridinin kendi küçük penceresi. */
+function adimTakvim(projeId) {
+  modalHepsiniKapat();
+  const p = DB.proje(projeId);
+  if (!p) return;
+
+  modalAc(`
+    ${modalBaslik(ICON.takvim, 'Takvim', 'İş ne zaman başladı, ne zaman teslim edilecek?')}
+    ${fdKart('#c8973f', ICON.takvim, 'Tarihler',
+      fdAlan('#c8973f', ICON.takvim, 'Başlangıç', 'at-baslangic', p.baslangic,
+             '', 'date', 10, true)
+      + fdAlan('#5fb37f', ICON.bayrak, 'Teslim hedefi', 'at-teslim', p.teslim,
+             'isteğe bağlı', 'date', 10, true)
+      + fdNot('Teslim tarihi girilirse geciken projeler listede ayrı gösteriliyor.'))}
+    <div class="modal-alt">
+      <button class="btn btn-ghost" data-at="iptal" type="button">Vazgeç</button>
+      <button class="btn btn-primary" data-at="kaydet" type="button"><span>Kaydet</span></button>
+    </div>`, kutu => {
+    const deger = id => { const e = $('#' + id, kutu); return e ? e.value.trim() : ''; };
+    const tazele = () => {
+      const t = $('[data-fdsay="Tarihler"]', kutu);
+      if (t) t.textContent = ['at-baslangic', 'at-teslim'].filter(deger).length + '/2';
+    };
+    kutu.addEventListener('input', tazele);
+    tazele();
+    $('[data-at="iptal"]', kutu).addEventListener('click', modalKapat);
+    $('[data-at="kaydet"]', kutu).addEventListener('click', async () => {
+      const yazi = $('[data-at="kaydet"] span', kutu);
       yazi.textContent = 'Kaydediliyor…';
       try {
         await DB.projeGuncelle(projeId, {
-          platform, veri: vt, dil, para,
-          baslangic: deger('kd-baslangic') || null,
-          teslim:    deger('kd-teslim') || null,
+          baslangic: deger('at-baslangic') || null,
+          teslim:    deger('at-teslim') || null,
         });
-        await DB.paletKaydet(projeId, palet);
-        modalKapat();
-        render();
-        toast('Kurulum bilgileri güncellendi.', 'basari');
-      } catch (h) {
-        yazi.textContent = 'Kaydet';
-        toast(h.message, 'hata');
-      }
+        modalKapat(); render(); toast('Takvim güncellendi.', 'basari');
+      } catch (h) { yazi.textContent = 'Kaydet'; toast(h.message, 'hata'); }
     });
-    setTimeout(() => { const i = $('#tk-alanAdi', kutu); if (i) i.focus(); }, 40);
   }, 'genis');
 }
 
@@ -8393,7 +8534,13 @@ async function eylemCalistir(el) {
   }
 
   if (e === 'marka-duzenle')   return markaDuzenle(el.dataset.proje);
-  if (e === 'kurulum-duzenle') return kurulumDuzenle(el.dataset.proje);
+  if (e === 'adim-urun')     return adimUrun(el.dataset.proje);
+  if (e === 'adim-roller')   return adimRoller(el.dataset.proje);
+  if (e === 'adim-yer')      return adimYer(el.dataset.proje);
+  if (e === 'adim-takvim')   return adimTakvim(el.dataset.proje);
+  /* 04 · Kurulum'un kendi penceresi yok: kartın içindeki dört düğme zaten
+     işi yapıyor, kalem de oraya götürüyor. */
+  if (e === 'adim-kurulum')  return toast('Karttaki düğmeleri sırayla kullan.', 'uyari');
 
   if (e === 'marka-renk') {
     const pr = DB.proje(el.dataset.proje);

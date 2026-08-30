@@ -1,5 +1,15 @@
 # Değişiklik Günlüğü
 
+## v0.117.0
+- **Kurulum aşaması beş numaralı adıma bölündü, kurulum sırasına dizildi:** 01 Ne yapıyoruz? · 02 Kim kullanacak? · 03 Nereye kuralım? · 04 Kurulum · 05 Hangi ekranlar olacak?
+- **Boş adım küçük kart, dolan adım ayrıntı kartı.** Boş adımlar altta "Sırada" şeridinde ikişerli duruyor; doldurulan adım şeritten çıkıp yukarıya, bilgileri anlatan tam genişlikte karta dönüşüyor. Üst taraf yapılanlar, alt taraf yapılacaklar.
+- **Atlamalı doldurma kapandı.** Sırası gelmemiş adım soluk ve basılamıyor — "nereye kuralım" sorusunun cevabı, ne yaptığını bilmeden verilemiyor.
+- **Terimler gündelik dile çevrildi.** Platform → *nerede çalışacak* · Veritabanı → *veriler* · Arayüz dili → *uygulama dili* · Veri katmanı → *veriler nerede duracak* · Alan adı → *internet adresi* · Modül adı → *bu paketin adı* · Depo → *kod deposu* · Kimlik dosyası → *proje kimliği*. Başlıklar da soru oldu.
+- **Tek büyük düzenleme penceresi dörde bölündü.** Her adım kartı yalnız kendi sorularını açıyor: Ürün, Roller, Yer ve Takvim. Uzun formu taramak yerine tek soruya odaklanılıyor.
+- **Takvim şeridi dokunulabilir** — üstündeki şeride basınca tarih penceresi açılıyor.
+- Aşama şeridinde adım sayacı: **3/5**.
+- Düzeltme: eski projelerde "Ürün 0/4" görünüyordu. Platform ve veritabanı sütunda `not null` olduğu için kartın "görüldü" işaretini ayrıca tutuyorduk, ama o işaret eski projelerde yok. Artık uygulama dili ve para birimi girilmişse adım dolu sayılıyor — eski projeler kendiliğinden düzeliyor.
+
 ## v0.116.1
 - **Düzeltme: güncelledikten sonra geri basınca eski sürüm geliyordu.** Geri tuşuyla dönülen sayfa tarayıcının bfcache'inden geliyor — betikler baştan çalışmıyor, dolayısıyla açılıştaki sürüm denetimi de çalışmıyor. Eski belge `app.js?v=<eski>` yüklediği için ekrana gerçekten eski sürüm geliyordu. Artık `pageshow` olayı bfcache dönüşünü yakalayıp denetimi tekrarlıyor; eski sürüm bulunursa sayfa kendini yeniliyor. `?y=` adresindeki sayfada denetim yine yapılmıyor — sonsuz döngü olmasın.
 
