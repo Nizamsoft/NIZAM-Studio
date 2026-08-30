@@ -4324,58 +4324,110 @@ const DURAK_IKON = ['kisi', 'folder', 'gAltyapi', 'gTasarim', 'goz', 'kalem', 'b
 
 function projeYolu(p) {
   const duraklar = projeDuraklari(p);
-  /* Şimdiki durak: bitmemiş ilk durak. Son durak hiç bitmediği için
-     proje tamamlandığında imleç orada kalır — doğrusu da bu. */
+  /* Şimdiki durak: bitmemiş ilk durak. Hepsi bitmişse -1 döner; o zaman
+     merdiven baştan sona yeşil ve kilitli kalmaz. */
   const simdi = duraklar.findIndex(d => !d.bitti);
   const anahtarlar = Object.keys(DURAKLAR);
+  const son = simdi === -1 ? duraklar.length - 1 : simdi;
+  const biten = duraklar.filter(d => d.bitti).length;
+  const yuzde = Math.round(biten / duraklar.length * 100);
 
-  /* Sıra YILANKAVİ: 1-2 soldan sağa, 3-4 sağdan sola. Böylece aşağı inen ok
-     geldiğin kartın tam altında duruyor. Normal okuma sırasında ok iki
-     sütunun ortasında havada kalıyor, nereden nereye gittiği anlaşılmıyordu. */
-  const kart = (d, i, sutun, satir) => {
-    const durum = d.bitti ? 'bitti' : (i === simdi ? 'simdi' : 'kilitli');
-    const etiket = d.bitti ? 'tamam' : (i === simdi ? 'şimdi burada' : d.ozet);
-    const ic = `
-      <span class="ad-ust">
-        <span class="ad-ikon">${svg(d.bitti ? ICON.tik : ICON[DURAK_IKON[i]], 18)}</span>
-        ${durum === 'kilitli'
-          ? `<span class="ad-kilit">${svg(ICON.kilit, 13)}</span>`
-          : `<span class="ad-no mono">${String(i + 1).padStart(2, '0')}</span>`}
+  /* Merdiven: tamamlananlar dönüşümlü sola ve sağa yaslanıyor, şimdiki adım
+     tam genişlikte dışarı çıkıyor. Kart %76 — kalan boşluk okun dönmesi için. */
+  const basamak = duraklar.slice(0, son + 1).map((d, i) => {
+    const su  = i === simdi;
+    const sag = !su && i % 2 === 1;
+    return `<div class="satir ${sag ? 'sag' : ''}">
+      <a class="bs-kart ${su ? 'simdi' : ''}" href="#/projeler/${p.id}/${anahtarlar[i]}">
+        <span class="bs-ikon">${svg(su ? ICON[DURAK_IKON[i]] : ICON.tik, 17)}</span>
+        <span class="bs-no mono">${String(i + 1).padStart(2, '0')}</span>
+        <span class="bs-yz">
+          <span class="bs-ad">${esc(d.ad)}</span>
+          ${su ? `<span class="bs-ozet">${esc(d.ozet)}</span>` : ''}
+          <span class="bs-durum">${su ? 'şimdi burada' : 'tamam'}</span>
+          ${d.rozet ? `<span class="yeni-rozet">${d.rozet} yeni</span>` : ''}
+        </span>
+      </a></div>`;
+  }).join('');
+
+  /* Kilitliler küçük ve ızgarada: sırası gelmemiş adımları büyük kartla
+     göstermek ekranı gereksiz uzatıyor. Kilit sıkı — bunlar bağlantı değil. */
+  const kilitli = simdi === -1 ? [] : duraklar.slice(simdi + 1);
+  const sut = Math.max(1, Math.min(3, kilitli.length));
+  const kutu = kilitli.map((d, j) => `
+    <div class="kl-kart">
+      <span class="kl-ust">
+        <span class="kl-no mono">${String(simdi + 2 + j).padStart(2, '0')}</span>
+        <span class="kl-kilit">${svg(ICON.kilit, 13)}</span>
       </span>
-      <span class="ad-yz">
-        <span class="ad-ad">${esc(d.ad)}</span>
-        <span class="ad-alt">${esc(etiket)}</span>
-        ${d.rozet ? `<span class="yeni-rozet">${d.rozet} yeni</span>` : ''}
-      </span>`;
-    const yer = `style="grid-column:${sutun};grid-row:${satir}"`;
-    /* Kilitli adıma girilmiyor: bağlantı değil, düz kutu. */
-    return durum === 'kilitli'
-      ? `<span class="ad-kart kilitli" ${yer} aria-disabled="true">${ic}</span>`
-      : `<a class="ad-kart ${durum}" ${yer} href="#/projeler/${p.id}/${anahtarlar[i]}">${ic}</a>`;
-  };
+      <span class="kl-ad">${esc(d.ad)}</span>
+      ${d.rozet ? `<span class="yeni-rozet">${d.rozet} yeni</span>` : ''}
+    </div>`).join('');
 
-  /* Bir bağ, kendinden önceki adım bittiyse yeşile dönüyor. Koşul yalnız
-     bu: `simdi`ye bakmak gerekmiyor ve zararlı — her şey bitince `simdi`
-     -1 oluyordu ve hiçbir bağ yeşile dönmüyordu. */
-  const bag = (i, sutun, satir, sinif) =>
-    `<span class="bag ${sinif} ${duraklar[i - 1] && duraklar[i - 1].bitti ? 'gecti' : ''}"
-           style="grid-column:${sutun};grid-row:${satir}"><i></i><em>${svg(ICON.chevron, 13)}</em></span>`;
+  return `
+    <div class="merdiven">
+      <svg class="oklar" aria-hidden="true"></svg>
+      <div class="basamaklar">${basamak}</div>
+      ${kilitli.length ? `<div class="kilitliler"
+        style="grid-template-columns:repeat(${sut},minmax(0,1fr))">${kutu}</div>` : ''}
+    </div>
+
+    <div class="genel">
+      <div class="genel-ust"><b>Adımlar</b><u class="mono">%${yuzde}</u></div>
+      <div class="genel-ray"><i style="width:${yuzde}%"></i></div>
+      <div class="genel-alt mono">${biten} / ${duraklar.length} tamamlandı</div>
+    </div>`;
+}
+
+/* Okları kartların gerçek yerinden çizer. Elle çizilmiş sabit bir şekil
+   değil: ekran genişliği değişince dirsekler de değişiyor. */
+function merdivenOklari() {
+  const m = $('.merdiven');
+  if (!m) return;
+  const svgEl = $('.oklar', m);
+  if (!svgEl) return;
+
+  const kartlar = $$('.bs-kart', m);
+  const kilit   = $$('.kl-kart', m);
+  const mk = m.getBoundingClientRect();
+  if (!mk.width) return;
+
+  svgEl.setAttribute('viewBox', `0 0 ${mk.width} ${mk.height}`);
+  svgEl.setAttribute('width', mk.width);
+  svgEl.setAttribute('height', mk.height);
+
+  const kutu = el => {
+    const r = el.getBoundingClientRect();
+    return { l: r.x - mk.x, r: r.x - mk.x + r.width, t: r.y - mk.y,
+             b: r.y - mk.y + r.height, ox: r.x - mk.x + r.width / 2 };
+  };
+  const uc = (x, y, sinif) =>
+    `<path class="basucu ${sinif}" d="M ${x - 4} ${y - 5} L ${x} ${y} L ${x + 4} ${y - 5} Z"></path>`;
 
   let ic = '';
-  for (let s = 0; s * 2 < duraklar.length; s++) {
-    const ters  = s % 2 === 1;
-    const satir = s * 2 + 1;
-    const sol = ters ? 3 : 1, sag = ters ? 1 : 3;
-    const a = s * 2, b = s * 2 + 1;
-
-    ic += kart(duraklar[a], a, sol, satir);
-    if (duraklar[b]) {
-      ic += bag(b, 2, satir, ters ? 'ters' : '');
-      ic += kart(duraklar[b], b, sag, satir);
-      if (duraklar[b + 1]) ic += bag(b + 1, sag, satir + 1, 'dikey');
-    }
+  for (let i = 0; i < kartlar.length - 1; i++) {
+    const a = kutu(kartlar[i]), b = kutu(kartlar[i + 1]);
+    const ax = a.l < 4 ? a.r - 26 : a.l + 26;
+    const bx = b.l < 4 ? b.l + 26 : b.r - 26;
+    const oy = (a.b + b.t) / 2;
+    const yon = bx > ax ? 8 : -8;
+    ic += `<path class="iz" d="M ${ax} ${a.b} L ${ax} ${oy - 8}
+             Q ${ax} ${oy} ${ax + yon} ${oy}
+             L ${bx - yon} ${oy}
+             Q ${bx} ${oy} ${bx} ${oy + 8} L ${bx} ${b.t - 6}"></path>` + uc(bx, b.t - 1, '');
   }
-  return `<div class="adimlar">${ic}</div>`;
+  /* Kilitliye giden oklar kesikli ve gri: yol oraya varmadı. Yalnız ilk
+     satıra çiziliyor — alt satırlara ok çekmek kutuların üstünü çiziyordu. */
+  if (kartlar.length && kilit.length) {
+    const s = kutu(kartlar[kartlar.length - 1]);
+    kilit.slice(0, 3).forEach(k => {
+      const b = kutu(k);
+      if (b.t < s.b) return;
+      ic += `<path class="iz bekleyen" d="M ${b.ox} ${s.b + 4} L ${b.ox} ${b.t - 6}"></path>`
+          + uc(b.ox, b.t - 1, 'bekleyen');
+    });
+  }
+  svgEl.innerHTML = ic;
 }
 
 
@@ -4982,6 +5034,10 @@ function render() {
   requestAnimationFrame(onizlemeSigdir);
   yapiBaglari();
   yolIziKaydir();
+  merdivenOklari();
+  /* Bir kare sonra bir daha: sayfa geçiş animasyonu sürerken ölçülen kutu
+     gerçek boyunda olmuyor, dirsekler yanlış yere düşüyordu. */
+  requestAnimationFrame(merdivenOklari);
 
   const logout = $('#btn-logout');
   if (logout) logout.addEventListener('click', signOut);
@@ -9732,6 +9788,14 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   egilmeyiBagla();
+
+  /* Ekran döndüğünde ya da pencere değiştiğinde dirsekler yeniden çiziliyor.
+     Kare isteğiyle kısılıyor: boyut değişimi saniyede onlarca kez geliyor. */
+  let okKare = 0;
+  addEventListener('resize', () => {
+    cancelAnimationFrame(okKare);
+    okKare = requestAnimationFrame(merdivenOklari);
+  });
 
   $$('#user-chip, #user-tile').forEach(el =>
     el.addEventListener('click', hesapMenusu));

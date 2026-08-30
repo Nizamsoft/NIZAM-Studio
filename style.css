@@ -2332,95 +2332,123 @@ a.durak:active { transform: scale(.99); transition: transform .1s var(--ease); }
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .35), 0 0 18px -3px rgba(229, 52, 42, .8);
 }
 
-/* Proje adımları: iki sütun, aralarında standartlar kartındaki bağ şeridi ---
-   Eski hâli soldan kesikli çizgili bir listeydi; adımlar kart oldu.
+/* Proje adımları: zigzag akış -----------------------------------------------
+   Tamamlananlar dönüşümlü sola ve sağa yaslanan bir merdiven, aralarında
+   dirsekli yeşil oklar. Şimdiki adım merdivenin dışına çıkıp tam genişliğe
+   yayılıyor — bir satırlık özeti de sığıyor, göz doğrudan oraya gidiyor.
+   Sırası gelmemiş adımlar altta küçük ve kesik çerçeveli: sekiz adımı büyük
+   kartla göstermek ekranı gereksiz uzatıyordu. */
+.merdiven { position: relative; }
+.oklar { position: absolute; inset: 0; z-index: 0; pointer-events: none; overflow: visible; }
+.oklar path { fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.oklar .iz { stroke: var(--st-done); }
+.oklar .iz.bekleyen { stroke: var(--line-2); stroke-dasharray: 3 5; }
+.oklar .basucu { fill: var(--st-done); stroke: none; }
+.oklar .basucu.bekleyen { fill: var(--line-2); }
 
-   Sıra YILANKAVİ: 1-2 soldan sağa, 3-4 sağdan sola. Böylece aşağı inen ok
-   geldiğin kartın tam altında duruyor. Normal okuma sırasında ok iki sütunun
-   ortasında havada kalıyor, nereden nereye gittiği anlaşılmıyordu. */
-.adimlar { display: grid; grid-template-columns: 1fr 20px 1fr; align-items: stretch; }
+/* Satır arası boşluk okun DÖNMESİ için: bitişik dururken dirsek sıkışıyor
+   ve ok bir çizgi lekesine dönüyor. */
+.basamaklar { position: relative; z-index: 1; display: flex; flex-direction: column; gap: 26px; }
+.satir { display: flex; }
+.satir.sag { justify-content: flex-end; }
 
-.bag { position: relative; display: flex; align-items: center; justify-content: center; }
-.bag i {
-  display: block; width: 100%; height: 1px; background: var(--line);
-  transition: background .3s var(--ease);
-}
-.bag em { position: absolute; display: flex; color: var(--ink-dim);
-          transition: color .3s var(--ease); }
-.bag em svg { width: 13px; height: 13px; }
-/* Geçilen bağ yeşile dönüyor: yolun nereye kadar geldiğini iz söylüyor. */
-.bag.gecti i  { background: var(--st-done); }
-.bag.gecti em { color: var(--st-done-t); }
-
-.bag.dikey { height: 24px; }
-.bag.dikey i { width: 1px; height: 100%; }
-.bag.dikey em svg { transform: rotate(90deg); }
-/* Sağdan sola akan satırlarda yatay ok da dönüyor. */
-.bag.ters em svg { transform: rotate(180deg); }
-
-.ad-kart {
-  position: relative; overflow: hidden;
-  display: flex; flex-direction: column; align-items: flex-start; gap: 9px;
-  padding: 12px 12px 13px; border-radius: var(--radius-lg);
-  border: 1px solid var(--line); text-decoration: none; cursor: pointer;
+.bs-kart {
+  position: relative; overflow: hidden; display: flex; align-items: center; gap: 11px;
+  width: 76%; padding: 11px 13px; border-radius: var(--radius-lg); text-decoration: none;
+  border: 1px solid var(--line); color: var(--ink);
   background: linear-gradient(180deg, var(--kart-ust), var(--kart-alt));
-  color: var(--ink); font-family: var(--yazi-govde);
   box-shadow: 0 2px 4px -2px rgba(0, 0, 0, .75),
-              0 16px 30px -20px rgba(0, 0, 0, .95),
+              0 14px 26px -20px rgba(0, 0, 0, .95),
               inset 0 1px 0 var(--isik);
-  transition: transform .3s var(--yay), box-shadow .3s var(--ease), border-color .2s var(--ease);
+  transition: transform .12s var(--ease), border-color .2s var(--ease);
 }
-.ad-kart::before {
-  content: ''; position: absolute; top: -55%; left: -16%; width: 62%; height: 190%;
+.bs-kart::before {
+  content: ''; position: absolute; top: -55%; left: -16%; width: 56%; height: 190%;
   background: linear-gradient(101deg, rgba(255, 255, 255, .05), transparent 60%);
   pointer-events: none;
 }
-.ad-kart:active { transform: translateY(-1px) scale(.985); transition-duration: .1s; }
-.ad-kart:focus-visible { outline: 2px solid var(--metal-1); outline-offset: 2px; }
+.bs-kart:active { transform: scale(.99); }
+.bs-kart:focus-visible { outline: 2px solid var(--metal-1); outline-offset: 2px; }
 
-.ad-ust { position: relative; display: flex; align-items: center;
-          justify-content: space-between; width: 100%; }
-.ad-ikon {
+.bs-ikon {
   position: relative; display: flex; align-items: center; justify-content: center;
-  flex: 0 0 36px; width: 36px; height: 36px; border-radius: 11px;
-  background: linear-gradient(180deg, var(--surface-3), var(--kart-alt));
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .07), inset 0 1px 0 rgba(255, 255, 255, .10);
-  color: var(--ink-soft);
-}
-.ad-no { font-size: 9.5px; color: var(--ink-dim); letter-spacing: .06em; }
-.ad-kilit { display: flex; color: var(--ink-dim); }
-.ad-yz { position: relative; width: 100%; }
-/* Başlığa iki satırlık sabit yer: "Tasarımı belirleme" iki satıra sürerken
-   "Beta" bir satırda kalıyor ve kartların iç hizası kayıyordu. */
-.ad-ad {
-  display: block; font-family: var(--yazi-baslik); font-weight: 600; font-size: 12.5px;
-  line-height: 1.3; min-height: calc(1.3em * 2);
-  color: var(--ink-strong); letter-spacing: -.005em;
-}
-.ad-alt {
-  display: block; margin-top: 2px; font-size: 10px; color: var(--ink-dim);
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-
-.ad-kart.bitti { border-color: rgba(69, 163, 123, .30); }
-.ad-kart.bitti .ad-ikon {
+  flex: 0 0 34px; width: 34px; height: 34px; border-radius: 999px;
   background: linear-gradient(180deg, var(--st-done-t), var(--st-done)); color: #08150f;
   box-shadow: 0 8px 18px -9px rgba(69, 163, 123, .7), inset 0 1px 0 rgba(255, 255, 255, .32);
 }
-.ad-kart.bitti .ad-alt { color: var(--st-done-t); }
+.bs-ikon svg { stroke-width: 2.6; }
+.bs-no { position: relative; font-size: 14px; color: var(--ink-soft); }
+.bs-yz { position: relative; flex: 1; min-width: 0; }
+.bs-ad {
+  display: block; font-family: var(--yazi-baslik); font-weight: 600; font-size: 13px;
+  color: var(--ink-strong); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.bs-durum {
+  display: block; margin-top: 1px; font-family: var(--yazi-baslik); font-size: 9.5px;
+  font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--st-done-t);
+}
 
 /* Kırmızı burada "şimdi buradasın" demek — aynı anda yalnız bir kart. */
-.ad-kart.simdi { border-color: var(--red-cizgi); }
-.ad-kart.simdi .ad-ikon {
-  background: linear-gradient(180deg, var(--red-acik), var(--red)); color: #fff;
-  box-shadow: 0 8px 20px -8px rgba(229, 52, 42, .8), inset 0 1px 0 rgba(255, 255, 255, .28);
+.bs-kart.simdi {
+  width: 100%; padding: 13px; border-color: var(--red-cizgi);
+  box-shadow: 0 2px 4px -2px rgba(0, 0, 0, .75),
+              0 16px 30px -18px rgba(0, 0, 0, .95),
+              0 0 0 1px rgba(229, 52, 42, .10),
+              inset 0 1px 0 var(--isik);
 }
-.ad-kart.simdi .ad-alt { color: var(--red-ink); }
+.bs-kart.simdi .bs-ikon {
+  background: linear-gradient(180deg, var(--red-acik), var(--red)); color: #fff;
+  box-shadow: 0 8px 20px -8px rgba(229, 52, 42, .85), inset 0 1px 0 rgba(255, 255, 255, .28);
+}
+.bs-kart.simdi .bs-ikon svg { stroke-width: 1.9; }
+.bs-kart.simdi .bs-ad { font-size: 14px; }
+.bs-kart.simdi .bs-ozet {
+  display: block; margin-top: 2px; font-size: 10.5px; color: var(--ink-soft);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.bs-kart.simdi .bs-durum { color: var(--red-ink); margin-top: 3px; }
 
-/* Kilitli adıma girilmiyor: bağlantı değil, düz kutu. */
-.ad-kart.kilitli { opacity: .45; cursor: default; }
-.ad-kart.kilitli .ad-ikon { background: linear-gradient(180deg, var(--surface-2), var(--yuva)); }
-.ad-kart.kilitli:active { transform: none; }
+.kilitliler { position: relative; z-index: 1; display: grid; gap: 9px; margin-top: 34px; }
+.kl-kart {
+  position: relative; display: flex; flex-direction: column; gap: 7px;
+  padding: 11px 11px 12px; border-radius: 12px;
+  border: 1px dashed var(--line-2); background: rgba(28, 27, 25, .5);
+}
+.kl-ust { display: flex; align-items: center; justify-content: space-between; }
+.kl-no { font-size: 12.5px; color: var(--ink-dim); }
+.kl-kilit { display: flex; color: var(--ink-dim); }
+.kl-ad {
+  font-family: var(--yazi-baslik); font-weight: 600; font-size: 11.5px;
+  color: var(--ink-faint); line-height: 1.3;
+}
+.kl-kart .yeni-rozet { align-self: flex-start; }
+
+/* Adım ilerlemesi. Üstteki künye çubuğu GÖREVLERİN yüzdesini gösteriyor,
+   bu ADIMLARIN — iki ayrı sayı, o yüzden başlığı "Adımlar". */
+.genel {
+  margin-top: 16px; padding: 12px 13px 13px; border-radius: var(--radius-lg);
+  border: 1px solid var(--line);
+  background: linear-gradient(180deg, var(--kart-ust), var(--kart-alt));
+  box-shadow: inset 0 1px 0 var(--isik);
+}
+.genel-ust { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 9px; }
+.genel-ust b { font-family: var(--yazi-baslik); font-weight: 600; font-size: 12.5px; color: var(--ink-strong); }
+.genel-ust u {
+  text-decoration: none; font-family: var(--yazi-baslik); font-weight: 700; font-size: 15px;
+  color: var(--ink-strong);
+}
+.genel-ray {
+  height: 5px; border-radius: 999px; background: var(--bar-bos); overflow: hidden;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, .6);
+}
+/* Metal gradyan — kırmızı değil. Dolu kırmızı bir çubuk "tehlike" diye
+   okunuyor, oysa anlatmak istediği şey ilerleme. */
+.genel-ray i {
+  display: block; height: 100%; border-radius: 999px;
+  background: linear-gradient(90deg, var(--metal-1), var(--metal-2));
+  box-shadow: 0 0 10px rgba(200, 210, 220, .22);
+}
+.genel-alt { margin-top: 7px; font-size: 10px; color: var(--ink-dim); }
 
   margin-top: 12px; padding: 12px 14px 12px 17px; border-radius: 15px;
   background: linear-gradient(180deg, var(--surface-3), var(--kart-alt));

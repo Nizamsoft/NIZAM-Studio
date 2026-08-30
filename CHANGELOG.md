@@ -1,5 +1,14 @@
 # Değişiklik Günlüğü
 
+## v0.107.0
+- **Proje adımları zigzag akışına geçti.** Tamamlanan adımlar dönüşümlü sola ve sağa yaslanan bir merdiven, aralarında dirsekli yeşil oklar. Kart genişliği %76 — kalan boşluk okun dönmesi için.
+- **Şimdiki adım merdivenin dışına çıkıp tam genişliğe yayılıyor** ve kırmızı: bir satırlık özeti de sığıyor, göz doğrudan oraya gidiyor.
+- **Sırası gelmemiş adımlar altta küçük ve kesik çerçeveli bir ızgarada.** Sekiz adımı büyük kartla göstermek ekranı gereksiz uzatıyordu. Kilit sıkı — bunlar bağlantı bile değil, adresle de açılmıyorlar.
+- Şimdiki adımdan kilitlilere **kesikli gri oklar** iniyor: yol oraya varmadı.
+- Oklar kartların **gerçek yerinden** çiziliyor; elle çizilmiş sabit bir şekil değil, ekran döndüğünde ya da genişlik değiştiğinde dirsekler de değişiyor. Yeniden çizim kare isteğiyle kısılıyor.
+- Altta **adım ilerlemesi**: "4 / 8 tamamlandı". Üstteki künye çubuğu görevlerin yüzdesini gösteriyor, bu adımlarınkini — iki ayrı sayı olduğu için başlığı "Adımlar".
+- İlerleme çubuğu **metal gradyan**, kırmızı değil: dolu kırmızı bir çubuk "tehlike" diye okunuyor, oysa anlatmak istediği şey ilerleme.
+
 ## v0.106.0
 - **Projenin sekiz adımı kart oldu.** Soldan kesikli çizgili liste yerine iki sütunlu kartlar; aralarında Standartlar sayfasındaki bağ şeridi — ince çizgi, ortasında ok.
 - **Geçilen her bağ yeşile dönüyor.** Yolun nereye kadar geldiğini iz söylüyor, nerede durduğunu kırmızı kart.
