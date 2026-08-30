@@ -1578,7 +1578,7 @@ html { background: var(--bg); }
    zengin bir çapraz geçiş yapabiliyordu ama her seferinde tüm sayfanın iki
    tam ekran görüntüsünü alıyordu — telefonda bunun bedeli animasyonun
    kendisinden büyük. */
-@keyframes viewIn { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: none; } }
+@keyframes viewIn { from { opacity: 0; transform: translateY(9px); } to { opacity: 1; transform: none; } }
 .view.swap { animation: viewIn .24s var(--ease) both; }
 
 /* Alt çubuk yalnızca dar ekranlarda görünür */

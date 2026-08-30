@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.107.1
+- Sayfa geçişinde yeni ekranın aşağıdan gelme payı **7 pikselden 9 piksele** çıktı. Süre ve eğri aynı; hareket biraz daha atak. Ölçüldüğünde iki ayarın ortası arasındaki fark 0,1 piksel — gözle ayırt edilmiyor, karar hissi seviyeydi.
+
 ## v0.107.0
 - **Proje adımları zigzag akışına geçti.** Tamamlanan adımlar dönüşümlü sola ve sağa yaslanan bir merdiven, aralarında dirsekli yeşil oklar. Kart genişliği %76 — kalan boşluk okun dönmesi için.
 - **Şimdiki adım merdivenin dışına çıkıp tam genişliğe yayılıyor** ve kırmızı: bir satırlık özeti de sığıyor, göz doğrudan oraya gidiyor.
