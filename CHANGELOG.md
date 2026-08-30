@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## v0.119.1
+- **Düzeltme: Kurulum ve yapı aşamasına girince kurulum ızgarası yerine modül ağacı açılıyordu.** Sebep, ağacın açık olup olmadığının ayrı tutulmamasıydı: bir kez "Ekranları kur" diyen kullanıcının taslağı bellekte kalıyor ve aşamaya her girişinde ağacı geri getiriyordu.
+- **Görünüm durumu veriden ayrıldı.** Taslak yarım kalan işi saklamaya devam ediyor; ağacın açık olması artık ayrı bir bayrak. Aşamadan çıkınca bayrak siliniyor, taslak duruyor — geri gelindiğinde kurulum ızgarası açılıyor ama yaptığın iş kaybolmuyor. Tasarım durağında zaten aynı kural işliyordu.
+
 ## v0.119.0
 - **1. ve 2. aşamanın tepesindeki işletme görseli kalktı.** O görsel marka kartının içinde zaten duruyordu; tepede ikinci kez göstermek ekranın en değerli yerini tekrara harcıyordu.
 - **Yerine adımın kendi başlığı geldi.** Büyük renkli simge, aşama adı, firma adı ve ilerleme noktaları. Kart bilerek ötekilerden iri: **56 piksellik karo** (ötekiler 28), **19 puntoluk başlık** (ötekiler 12,5) ve zeminde adımın rengiyle yayılan hafif ışık. Sayfanın neyle ilgili olduğu ilk bakışta okunuyor.

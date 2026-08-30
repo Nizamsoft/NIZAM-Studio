@@ -3112,7 +3112,7 @@ function kurulumAdimi(p, a, sirada) {
 function yapiSayfasi(p, d) {
   /* Modül kurma akışı açıksa ekranı o alıyor; "Kapat" taslağı silince
      buradaki kurulum ızgarasına geri dönülüyor. */
-  if (AUTH.yonetici && YAPI_TASLAK[p.id]) return yapiAkisi(p, d);
+  if (AUTH.yonetici && YAPI_ACIK[p.id]) return yapiAkisi(p, d);
 
   const moduller = DB.modulleri(p.id);
   const gercek   = moduller.filter(m => m.ad !== GENEL_MODUL);
@@ -3178,6 +3178,12 @@ const YAPI_TASLAK = {};
 /* Rol merdiveni taslağı: her tuşta veritabanına yazmıyoruz,
    ekrandan çıkarken bir kez kaydediliyor. */
 const ROL_TASLAK = {};
+
+/* Modül ağacı açık mı. Taslaktan ayrı tutuluyor: taslak yarım kalan işi
+   saklıyor, bu bayrak yalnız "şu an ağaç ekranındayım" diyor. Aynı şey
+   olsalardı bir kez modül kuran kullanıcı aşamaya her girişinde kurulum
+   ızgarasını değil ağacı görürdü. */
+const YAPI_ACIK = {};
 
 function yapiTaslak(p) {
   if (!YAPI_TASLAK[p.id]) {
@@ -5113,6 +5119,13 @@ function render() {
      yarım kalan adımın içine değil, haritanın başına düşülsün. */
   if (sayfa !== 'tasarim') {
     Object.keys(TASARIM_MOD).forEach(k => { delete TASARIM_MOD[k]; });
+  }
+
+  /* Kurulum durağından çıkıldıysa modül ağacı kapanır — aynı sebeple:
+     geri gelindiğinde ağacın içine değil kurulum ızgarasına düşülsün.
+     Taslak silinmiyor, yarım kalan iş duruyor. */
+  if (sayfa !== 'yapi') {
+    Object.keys(YAPI_ACIK).forEach(k => { delete YAPI_ACIK[k]; });
   }
 
   /* Üstte iki satır: firma adı sabit, altında bulunduğun sayfanın adı. */
@@ -9024,11 +9037,12 @@ async function eylemCalistir(el) {
   /* ---- Yapı akışı ---- */
   if (e === 'yapi-akis-ac') {
     const pr = DB.proje(el.dataset.proje);
-    if (pr) { yapiTaslak(pr); render(); }
+    if (pr) { yapiTaslak(pr); YAPI_ACIK[pr.id] = true; render(); }
     return;
   }
 
   if (e === 'yapi-kapat') {
+    delete YAPI_ACIK[el.dataset.proje];
     delete YAPI_TASLAK[el.dataset.proje];
     ONIZLEME_MENU = ONIZLEME_SAYFA = ONIZLEME_KUNYE = null;
     render();
@@ -10169,7 +10183,7 @@ document.addEventListener('DOMContentLoaded', () => {
     /* Yapı ağacında bir kat yukarı çıkar; başka yerde tarayıcı geçmişinde
        bir adım geri gider. Sabit bir hedefe atlamak "geri" değil. */
     const { key, id, durak } = rota();
-    if (durak === 'yapi' && YAPI_TASLAK[id] && yapiGeri(YAPI_TASLAK[id])) {
+    if (durak === 'yapi' && YAPI_ACIK[id] && yapiGeri(YAPI_TASLAK[id])) {
       render();
       return;
     }
