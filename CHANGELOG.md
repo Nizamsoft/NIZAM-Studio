@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü
 
+## v0.118.0
+- **Yol haritası zigzag merdivenden kare ızgaraya geçti.** Üstte üç kart, ortada dirsek, altta üç kart, en altta yatay **Güncellemeler** bandı. Merdivende kartlar ilerledikçe yer değiştiriyordu; artık yedi aşama hep aynı yerde duruyor, göz aradığını aynı köşede buluyor.
+- **Aradaki dirsek sabit.** Izgara sabit olduğu için okun da ölçülmesi gerekmiyor: kartların yerini `getBoundingClientRect` ile ölçen ve her ekran değişiminde yeniden çizen mekanizma tamamen kalktı. Üçüncü aşama bitince ok yeşile dönüyor.
+- **Kurulum aşaması da aynı ızgaraya geçti.** Beş adım kare kart; basınca o adımın penceresi açılıyor. Uzun ayrıntı kartları kalktı, sayfa bir ekrana sığıyor. Biten adımın alt satırında özeti yazıyor: "Web · Mobil · Türkçe", "4 katman yetki", "Yayında".
+- **04 · Kurulum'un kendi penceresi açıldı** — dört düğme (depo, sohbet, adres, yayın) ve kod deposu ile proje kimliği satırları orada.
+- Durum üç renkte: **yeşil tik** bitti · **kırmızı göz** şimdi burada · **kesik çerçeve + kilit** sırası gelmedi. Kilitli aşama bağlantı bile değil.
+- Sınıf adları `.ya-` önekine alındı: `.ak-` karar bileşenlerinin, `.yol` da görsel ada haritasınındı — ikisi de çakışıyordu.
+
 ## v0.117.0
 - **Kurulum aşaması beş numaralı adıma bölündü, kurulum sırasına dizildi:** 01 Ne yapıyoruz? · 02 Kim kullanacak? · 03 Nereye kuralım? · 04 Kurulum · 05 Hangi ekranlar olacak?
 - **Boş adım küçük kart, dolan adım ayrıntı kartı.** Boş adımlar altta "Sırada" şeridinde ikişerli duruyor; doldurulan adım şeritten çıkıp yukarıya, bilgileri anlatan tam genişlikte karta dönüşüyor. Üst taraf yapılanlar, alt taraf yapılacaklar.

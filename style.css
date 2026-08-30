@@ -6121,3 +6121,112 @@ button.fb-cp:active{ transform:scale(.94); }
 /* Sırası gelmemiş adım basılamıyor: atlamalı doldurunca sonraki adımın
    sorusu havada kalıyor ("nereye kuralım" için önce ne yaptığını bilmeli). */
 .sa-kart[disabled]{ cursor:default; }
+
+
+
+/* --------------------------------------------------------------------------
+   Aşama ızgarası — yol haritası ve kurulum adımları
+   Üstte üç kart, ortada dirsek, altta üç kart. Zigzag merdivende kartlar
+   ilerledikçe yer değiştiriyordu; burada aşamalar hep aynı yerde duruyor ve
+   göz aradığını aynı köşede buluyor. `.ak-` öneki karar bileşenlerinin,
+   `.yol` da görsel ada haritasının — bu yüzden `.ya-`.
+   -------------------------------------------------------------------------- */
+
+.ya-harita{ position:relative; }
+.ya-satir{ display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:9px; }
+.ya-son{ margin-top:9px; }
+/* Güncellemeler tek başına: kare değil, yatay bant. Proje yaşadıkça açık
+   kalan tek durak — ötekilerle aynı sırada değil, altta duruyor. */
+.ya-son .ya{
+  aspect-ratio:auto;
+  flex-direction:row-reverse; align-items:center; gap:11px;
+  padding:13px 12px;
+}
+.ya-son .ya-ust{ flex:0 0 auto; }
+.ya-son .ya-yz{ flex:1; }
+
+/* Aşama kartı: kare. Numara ve durum üstte, ad ve durum yazısı altta. */
+.ya{
+  position:relative; overflow:hidden; min-width:0;
+  display:flex; flex-direction:column; justify-content:space-between;
+  aspect-ratio:1 / 1;
+  padding:11px 10px;
+  border:1px solid var(--line); border-radius:var(--radius-lg);
+  text-align:left; text-decoration:none; color:inherit;
+  background:linear-gradient(180deg, var(--kart-ust), var(--kart-alt));
+  box-shadow:0 2px 4px -2px rgba(0,0,0,.7),
+             0 18px 34px -22px rgba(0,0,0,.95),
+             inset 0 1px 0 var(--isik);
+  transition:transform .16s var(--yay);
+}
+.ya::before{
+  content:''; position:absolute; top:-55%; left:-16%; width:62%; height:190%;
+  background:linear-gradient(101deg, rgba(255,255,255,.05), transparent 60%);
+  pointer-events:none;
+}
+button.ya{ font-family:inherit; cursor:pointer; }
+button.ya[disabled]{ cursor:default; }
+a.ya:active, button.ya:not([disabled]):active{ transform:scale(.97); }
+
+.ya-ust{
+  position:relative;
+  display:flex; align-items:center; justify-content:space-between; gap:6px;
+}
+.ya-no{ white-space:nowrap; font-size:11px; color:var(--ink-dim); }
+.ya-rozet{
+  display:inline-block; margin-left:6px; padding:2px 7px;
+  border-radius:999px; white-space:nowrap;
+  font-family:var(--yazi-kod); font-size:8px; letter-spacing:.05em;
+  color:#a9c3ee; background:rgba(91,141,239,.18);
+  box-shadow:inset 0 0 0 1px rgba(91,141,239,.4);
+}
+.ya-dur{
+  flex:0 0 24px;
+  width:24px; height:24px;
+  display:flex; align-items:center; justify-content:center;
+  border-radius:999px; color:var(--ink-dim);
+  background:var(--yuva); box-shadow:inset 0 0 0 1px var(--line-3);
+}
+.ya-yz{ position:relative; min-width:0; }
+.ya-ad{
+  display:block; line-height:1.3;
+  font-family:var(--yazi-baslik); font-weight:600; font-size:12.5px;
+  color:var(--ink-strong);
+}
+.ya-alt{
+  display:block; margin-top:3px;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  font-family:var(--yazi-kod); font-size:8.5px;
+  letter-spacing:.07em; text-transform:uppercase; color:var(--ink-dim);
+}
+
+.ya.bitti{ border-color:rgba(69,163,123,.30); }
+.ya.bitti .ya-no,
+.ya.bitti .ya-alt{ color:var(--st-done-t); }
+.ya.bitti .ya-dur{
+  color:#08150f;
+  background:linear-gradient(180deg, var(--st-done-t), var(--st-done));
+  box-shadow:0 6px 14px -8px rgba(69,163,123,.6);
+}
+
+.ya.simdi{ border-color:var(--red-cizgi); }
+.ya.simdi .ya-alt{ color:var(--red-ink); }
+.ya.simdi .ya-dur{
+  color:#fff;
+  background:linear-gradient(180deg, var(--red-acik), var(--red));
+  box-shadow:0 8px 18px -8px rgba(229,52,42,.75);
+}
+
+/* Kilitli adım bağlantı değil: soluk, kesik çerçeve, dokunulmuyor. */
+.ya.kilitli{ opacity:.45; border-style:dashed; cursor:default; }
+
+/* Satırlar arası dirsek. Izgara sabit olduğu için ok da sabit —
+   zigzagdaki gibi kartların yerini ölçmeye gerek yok. */
+.ya-bosluk{ position:relative; height:34px; }
+.ya-ok{
+  position:absolute; inset:0; width:100%; height:100%;
+  fill:none; stroke:var(--line); stroke-width:1.5;
+}
+.ya-ok.gecti{ stroke:var(--st-done); }
+.ya-ok .uc{ stroke:var(--line-2); }
+.ya-ok.gecti .uc{ stroke:var(--st-done-t); }

@@ -3097,62 +3097,31 @@ function tasarimOnizleme(alan, ad) {
    "alan adı" değil "internet adresi". Bu ekranı yazılım bilmeyen biri de
    baştan sona götürebilmeli. */
 
-/* Boş adımın şeritteki küçük kartı. Sırası gelmemiş adım basılamıyor:
-   atlamalı doldurunca sonraki adımın sorusu havada kalıyor. */
-function adimKarti(p, a, sirada) {
+/* Kurulum adımı da yol haritasındaki kare kartın aynısı: numara, durum,
+   ad ve tek satır özet. Basınca o adımın penceresi açılıyor — bilgiler
+   orada. Sırası gelmemiş adım basılamıyor: atlamalı doldurunca sonraki
+   adımın sorusu havada kalıyor. */
+function kurulumAdimi(p, a, sirada) {
+  const hal  = a.bitti ? 'bitti' : sirada ? 'simdi' : 'kilitli';
+  const ikon = a.bitti ? ICON.tik : sirada ? ICON.goz : ICON.kilit;
+
   return `
-    <button class="sa-kart ${sirada ? 'ana' : 'bekliyor'}" type="button"
-            data-eylem="${a.eylem}" data-proje="${p.id}" ${sirada ? '' : 'disabled'}>
-      <span class="sa-ust">
-        <span class="sa-ikon">${svg(a.ikon, 18)}</span>
-        <span class="sa-adim">${a.no}</span>
+    <button class="ya ${hal}" type="button" data-eylem="${a.eylem}" data-proje="${p.id}"
+            ${a.bitti || sirada ? '' : 'disabled'}>
+      <span class="ya-ust">
+        <span class="ya-no mono">${a.no}</span>
+        <span class="ya-dur">${svg(ikon, 13)}</span>
       </span>
-      <span class="sa-yazi">
-        <span class="sa-ad">${esc(a.ad)}</span>
-        <span class="sa-alt">${esc(a.ozet)}</span>
+      <span class="ya-yz">
+        <span class="ya-ad">${esc(a.ad)}</span>
+        <span class="ya-alt">${esc(a.bitti ? a.deger : a.ozet)}</span>
       </span>
     </button>`;
 }
 
-/* Kalan adımların şeridi: ikişerli satırlar, aralarında bağlantı çizgisi.
-   Tek kalan son kart satırın tamamını alıyor. */
-function adimSeridi(p, kalan) {
-  if (!kalan.length) return '';
-  const ok   = `<span class="sa-bag"><i></i><em>${svg(ICON.chevron, 13)}</em></span>`;
-  const inis = `<span class="as-in">${svg(ICON.chevron, 13)}</span>`;
-
-  let ic = '';
-  for (let i = 0; i < kalan.length; i += 2) {
-    if (i) ic += inis;
-    const sol = adimKarti(p, kalan[i], i === 0);
-    const sag = kalan[i + 1] ? adimKarti(p, kalan[i + 1], false) : null;
-    ic += sag ? sol + ok + sag : `<span class="tam">${sol}</span>`;
-  }
-  return `<span class="fb-et" style="margin-top:14px">Sırada</span>
-    <div class="as5">${ic}</div>`;
-}
-
-/* Dolu adımın ayrıntı kartı. Numarası sağda, başlıkta yeşil tik. */
-function adimAyrinti(p, a) {
-  return `
-    <div class="fb-kart" style="--kr:${a.renk}">
-      <div class="fb-ust">
-        <span class="fb-tik">${svg(ICON.tik, 13)}</span>
-        <span class="fb-ik">${svg(a.ikon, 14)}</span>
-        <span class="fb-bas">${esc(a.ad)}</span>
-        <span class="fbd-say tam mono">${a.no}</span>
-        ${AUTH.yonetici ? `<button class="fb-kalem" type="button"
-          data-eylem="${a.eylem}" data-proje="${p.id}"
-          aria-label="${esc(a.ad)} düzenle">${svg(ICON.kalem, 13)}</button>` : ''}
-      </div>
-      ${a.not ? `<span class="fb-soru">${a.not}</span>` : ''}
-      ${a.ic}
-    </div>`;
-}
-
 function yapiSayfasi(p, d) {
   /* Modül kurma akışı açıksa ekranı o alıyor; "Kapat" taslağı silince
-     buradaki kurulum adımlarına geri dönülüyor. */
+     buradaki kurulum ızgarasına geri dönülüyor. */
   if (AUTH.yonetici && YAPI_TASLAK[p.id]) return yapiAkisi(p, d);
 
   const moduller = DB.modulleri(p.id);
@@ -3167,76 +3136,46 @@ function yapiSayfasi(p, d) {
      gerçekten görüldüğünü dil ve para birimi söylüyor; onları sihirbaz
      yazmıyor. Eski projelerde `urunOnay` işareti yok, oradan da bakıyoruz. */
   const urunTam = !!(dil && para) || !!pl.urunOnay;
-  const yerTam  = !!pl.modulAdi && !!pl.veriKatmani && !!pl.alanAdi;
-  const kurTam  = !!p.repo && !!String(pl.sohbetAdi || '').trim() && !!pl.yayinda;
 
   const adimlar = [
-    {
-      no: '01', renk: 'var(--fb-kunye)', ikon: ICON.katman, eylem: 'adim-urun',
-      ad: 'Ne yapıyoruz?', ozet: 'Nerede çalışacak, hangi dilde',
+    { no: '01', eylem: 'adim-urun',   ad: 'Ne yapıyoruz?',
+      ozet: 'Nerede çalışacak, hangi dilde',
       bitti: urunTam,
-      ic: `<div class="fb-kg tek">
-        ${kunyeSatiri('#7d93b8', ICON.katman, 'Nerede çalışacak', PLATFORM_ADI[p.platform])}
-        ${kunyeSatiri('#3fa694', ICON.gVeri,  'Veriler',          VERI_ADI[p.veri])}
-        ${kunyeSatiri('#b8926b', ICON.dil,    'Uygulama dili',    dil)}
-        ${kunyeSatiri('#c8973f', ICON.para,   'Para birimi',      para)}
-      </div>`,
-    },
-    {
-      no: '02', renk: '#d8a63f', ikon: ICON.gGuvenlik, eylem: 'adim-roller',
-      ad: 'Kim kullanacak?', ozet: 'Yetki katmanları',
+      deger: [PLATFORM_ADI[p.platform], dil].filter(Boolean).join(' · ') },
+
+    { no: '02', eylem: 'adim-roller', ad: 'Kim kullanacak?',
+      ozet: 'Yetki katmanları',
       bitti: roller.length > 0,
-      not: 'En üstteki katman, alttakinin gördüğü her şeyi görür.',
-      ic: `<div class="fb-cip">
-        ${roller.slice().reverse().map((r, i) => fbCip(
-          i === 0 ? '#d8a63f' : i === roller.length - 1 ? '#7d93b8' : '#3fa694',
-          i === 0 ? ICON.gGuvenlik : i === roller.length - 1 ? ICON.kilit : ICON.kisi,
-          `<em>${roller.length - i}</em>${esc(r)}`)).join('')}
-      </div>`,
-    },
-    {
-      no: '03', renk: '#4fa8c9', ikon: ICON.bulut, eylem: 'adim-yer',
-      ad: 'Nereye kuralım?', ozet: 'Adres ve paket adı',
-      bitti: yerTam,
-      ic: `<div class="fb-kg tek">
-        ${kunyeSatiri('#c48a5c', ICON.katman,  'Bu paketin adı',        pl.modulAdi)}
-        ${kunyeSatiri('#4fa8c9', ICON.bulut,   'Veriler nerede duracak', pl.veriKatmani)}
-        ${kunyeSatiri('#5fb37f', ICON.anahtar, 'İnternet adresi',       pl.alanAdi)}
-      </div>`,
-    },
-    {
-      no: '04', renk: '#8fae4a', ikon: ICON.dal, eylem: 'adim-kurulum',
-      ad: 'Kurulum', ozet: 'Depo, sohbet, adres, yayın',
-      bitti: kurTam,
-      not: 'Dört düğme, sırayla.',
-      ic: `<div class="fb-kurulum">${kurulumAraclari(p)}</div>
-      <div class="fb-kg tek fb-ayrac">
-        ${kunyeSatiri('#b8926b', ICON.dal,   'Kod deposu',    depoSlug(p.repo) || p.repo,
-                      'repo', p.id, false, 'dokun, yapıştır')}
-        ${kunyeSatiri('#9b7fd4', ICON.dosya, 'Proje kimliği', 'NIZAM.md', 'kimlik', p.id)}
-      </div>`,
-    },
-    {
-      no: '05', renk: '#8fae4a', ikon: ICON.gAltyapi, eylem: 'yapi-akis-ac',
-      ad: 'Hangi ekranlar olacak?', ozet: 'Gelir, gider, cari',
+      deger: roller.length + ' katman yetki' },
+
+    { no: '03', eylem: 'adim-yer',    ad: 'Nereye kuralım?',
+      ozet: 'Adres ve paket adı',
+      bitti: !!pl.modulAdi && !!pl.veriKatmani && !!pl.alanAdi,
+      deger: pl.alanAdi || '' },
+
+    { no: '04', eylem: 'adim-kurulum', ad: 'Kurulum',
+      ozet: 'Depo, sohbet, adres, yayın',
+      bitti: !!p.repo && !!String(pl.sohbetAdi || '').trim() && !!pl.yayinda,
+      deger: 'Yayında' },
+
+    { no: '05', eylem: 'yapi-akis-ac', ad: 'Hangi ekranlar olacak?',
+      ozet: 'Gelir, gider, cari',
       bitti: gercek.length > 0 && s.sayfa > 0,
-      not: 'Her ekranın alanları birlikte kuruluyor.',
-      ic: `<div class="fb-cip">
-        ${gercek.map(m => fbCip('#8fae4a', ICON.gAltyapi,
-          `${esc(m.ad)} <b class="mono">${DB.sayfalari(m.id).length}</b>`)).join('')}
-        ${AUTH.yonetici ? fbCip('#b8b2ad', ICON.arti, 'Ekran ekle', 'modul-ekle', p.id) : ''}
-      </div>`,
-    },
+      deger: gercek.length + ' ekran · ' + s.sayfa + ' sayfa' },
   ];
 
-  const bitmis = adimlar.filter(a => a.bitti);
-  const kalan  = adimlar.filter(a => !a.bitti);
+  const simdi = adimlar.findIndex(a => !a.bitti);
+  const biten = adimlar.filter(a => a.bitti).length;
+  const kart  = i => kurulumAdimi(p, adimlar[i], i === simdi);
 
   return firmaKahraman(p) + `<div class="fb-govde">`
-    + fbSerit(p, d, bitmis.length + '/' + adimlar.length)
+    + fbSerit(p, d, biten + '/' + adimlar.length)
     + fbTakvimSeridi(p)
-    + bitmis.map(a => adimAyrinti(p, a)).join('')
-    + adimSeridi(p, kalan)
+    + `<div class="ya-harita">
+        <div class="ya-satir">${[0, 1, 2].map(kart).join('')}</div>
+        ${yolOku(adimlar[2].bitti)}
+        <div class="ya-satir">${[3, 4].map(kart).join('')}</div>
+      </div>`
     + `</div>`;
 }
 
@@ -4597,54 +4536,62 @@ function durakKilitli(projeId, anahtar) {
 
 const DURAK_IKON = ['kisi', 'gAltyapi', 'gTasarim', 'goz', 'kalem', 'bayrak', 'saat'];
 
+/* Aşama kartı: kare, yeri sabit. Zigzag merdivende kartlar ilerledikçe yer
+   değiştiriyordu; gözün aradığı aşamayı her seferinde yeniden bulmak
+   gerekiyordu. Burada 01 hep sol üstte. */
+function asamaKarti(p, d, i, simdi, anahtar) {
+  const su      = i === simdi;
+  const kilitli = simdi !== -1 && i > simdi;
+  const hal     = d.bitti ? 'bitti' : su ? 'simdi' : 'kilitli';
+  const ikon    = d.bitti ? ICON.tik : su ? ICON.goz : ICON.kilit;
+
+  const ic = `
+    <span class="ya-ust">
+      <span class="ya-no mono">${String(i + 1).padStart(2, '0')}${
+        d.rozet ? `<span class="ya-rozet">${d.rozet}</span>` : ''}</span>
+      <span class="ya-dur">${svg(ikon, 13)}</span>
+    </span>
+    <span class="ya-yz">
+      <span class="ya-ad">${esc(d.ad)}</span>
+      <span class="ya-alt">${d.bitti ? 'tamam' : su ? 'şimdi burada' : 'kilitli'}</span>
+    </span>`;
+
+  /* Kilitli adım bağlantı bile değil: adresle de açılmıyor. */
+  return kilitli
+    ? `<span class="ya ${hal}">${ic}</span>`
+    : `<a class="ya ${hal}" href="#/projeler/${p.id}/${anahtar}">${ic}</a>`;
+}
+
+/* İki satır arasındaki dirsek: üst satırın sonundan alt satırın başına.
+   Izgara sabit olduğu için ok da sabit — ölçmeye gerek yok. */
+function yolOku(yesil) {
+  return `
+    <div class="ya-bosluk">
+      <svg viewBox="0 0 300 34" preserveAspectRatio="none" aria-hidden="true"
+           class="ya-ok ${yesil ? 'gecti' : ''}">
+        <path d="M250 0 L250 12 Q250 17 245 17 L55 17 Q50 17 50 22 L50 30"></path>
+        <path class="uc" d="M45 25 L50 31 L55 25"></path>
+      </svg>
+    </div>`;
+}
+
 function projeYolu(p) {
   const duraklar = projeDuraklari(p);
-  /* Şimdiki durak: bitmemiş ilk durak. Hepsi bitmişse -1 döner; o zaman
-     merdiven baştan sona yeşil ve kilitli kalmaz. */
+  /* Şimdiki durak: bitmemiş ilk durak. Hepsi bitmişse -1. */
   const simdi = duraklar.findIndex(d => !d.bitti);
   const anahtarlar = Object.keys(DURAKLAR);
-  const son = simdi === -1 ? duraklar.length - 1 : simdi;
   const biten = duraklar.filter(d => d.bitti).length;
   const yuzde = Math.round(biten / duraklar.length * 100);
 
-  /* Merdiven: tamamlananlar dönüşümlü sola ve sağa yaslanıyor, şimdiki adım
-     tam genişlikte dışarı çıkıyor. Kart %76 — kalan boşluk okun dönmesi için. */
-  const basamak = duraklar.slice(0, son + 1).map((d, i) => {
-    const su  = i === simdi;
-    const sag = !su && i % 2 === 1;
-    return `<div class="satir ${sag ? 'sag' : ''}">
-      <a class="bs-kart ${su ? 'simdi' : ''}" href="#/projeler/${p.id}/${anahtarlar[i]}">
-        <span class="bs-ikon">${svg(su ? ICON[DURAK_IKON[i]] : ICON.tik, 17)}</span>
-        <span class="bs-no mono">${String(i + 1).padStart(2, '0')}</span>
-        <span class="bs-yz">
-          <span class="bs-ad">${esc(d.ad)}</span>
-          ${su ? `<span class="bs-ozet">${esc(d.ozet)}</span>` : ''}
-          <span class="bs-durum">${su ? 'şimdi burada' : 'tamam'}</span>
-          ${d.rozet ? `<span class="yeni-rozet">${d.rozet} yeni</span>` : ''}
-        </span>
-      </a></div>`;
-  }).join('');
-
-  /* Kilitliler küçük ve ızgarada: sırası gelmemiş adımları büyük kartla
-     göstermek ekranı gereksiz uzatıyor. Kilit sıkı — bunlar bağlantı değil. */
-  const kilitli = simdi === -1 ? [] : duraklar.slice(simdi + 1);
-  const sut = Math.max(1, Math.min(3, kilitli.length));
-  const kutu = kilitli.map((d, j) => `
-    <div class="kl-kart">
-      <span class="kl-ust">
-        <span class="kl-no mono">${String(simdi + 2 + j).padStart(2, '0')}</span>
-        <span class="kl-kilit">${svg(ICON.kilit, 13)}</span>
-      </span>
-      <span class="kl-ad">${esc(d.ad)}</span>
-      ${d.rozet ? `<span class="yeni-rozet">${d.rozet} yeni</span>` : ''}
-    </div>`).join('');
+  const kart = i => asamaKarti(p, duraklar[i], i, simdi, anahtarlar[i]);
+  const son  = duraklar.length - 1;   /* Güncellemeler: proje yaşadıkça açık */
 
   return `
-    <div class="merdiven">
-      <svg class="oklar" aria-hidden="true"></svg>
-      <div class="basamaklar">${basamak}</div>
-      ${kilitli.length ? `<div class="kilitliler"
-        style="grid-template-columns:repeat(${sut},minmax(0,1fr))">${kutu}</div>` : ''}
+    <div class="ya-harita">
+      <div class="ya-satir">${[0, 1, 2].map(kart).join('')}</div>
+      ${yolOku(duraklar[2] && duraklar[2].bitti)}
+      <div class="ya-satir">${[3, 4, 5].map(kart).join('')}</div>
+      <div class="ya-son">${kart(son)}</div>
     </div>
 
     <div class="genel">
@@ -4653,61 +4600,6 @@ function projeYolu(p) {
       <div class="genel-alt mono">${biten} / ${duraklar.length} tamamlandı</div>
     </div>`;
 }
-
-/* Okları kartların gerçek yerinden çizer. Elle çizilmiş sabit bir şekil
-   değil: ekran genişliği değişince dirsekler de değişiyor. */
-function merdivenOklari() {
-  const m = $('.merdiven');
-  if (!m) return;
-  const svgEl = $('.oklar', m);
-  if (!svgEl) return;
-
-  const kartlar = $$('.bs-kart', m);
-  const kilit   = $$('.kl-kart', m);
-  const mk = m.getBoundingClientRect();
-  if (!mk.width) return;
-
-  svgEl.setAttribute('viewBox', `0 0 ${mk.width} ${mk.height}`);
-  svgEl.setAttribute('width', mk.width);
-  svgEl.setAttribute('height', mk.height);
-
-  const kutu = el => {
-    const r = el.getBoundingClientRect();
-    return { l: r.x - mk.x, r: r.x - mk.x + r.width, t: r.y - mk.y,
-             b: r.y - mk.y + r.height, ox: r.x - mk.x + r.width / 2 };
-  };
-  const uc = (x, y, sinif) =>
-    `<path class="basucu ${sinif}" d="M ${x - 4} ${y - 5} L ${x} ${y} L ${x + 4} ${y - 5} Z"></path>`;
-
-  let ic = '';
-  for (let i = 0; i < kartlar.length - 1; i++) {
-    const a = kutu(kartlar[i]), b = kutu(kartlar[i + 1]);
-    const ax = a.l < 4 ? a.r - 26 : a.l + 26;
-    const bx = b.l < 4 ? b.l + 26 : b.r - 26;
-    const oy = (a.b + b.t) / 2;
-    const yon = bx > ax ? 8 : -8;
-    ic += `<path class="iz" d="M ${ax} ${a.b} L ${ax} ${oy - 8}
-             Q ${ax} ${oy} ${ax + yon} ${oy}
-             L ${bx - yon} ${oy}
-             Q ${bx} ${oy} ${bx} ${oy + 8} L ${bx} ${b.t - 6}"></path>` + uc(bx, b.t - 1, '');
-  }
-  /* Kilitliye giden oklar kesikli ve gri: yol oraya varmadı. Yalnız ilk
-     satıra çiziliyor — alt satırlara ok çekmek kutuların üstünü çiziyordu. */
-  if (kartlar.length && kilit.length) {
-    const s = kutu(kartlar[kartlar.length - 1]);
-    kilit.slice(0, 3).forEach(k => {
-      const b = kutu(k);
-      if (b.t < s.b) return;
-      ic += `<path class="iz bekleyen" d="M ${b.ox} ${s.b + 4} L ${b.ox} ${b.t - 6}"></path>`
-          + uc(b.ox, b.t - 1, 'bekleyen');
-    });
-  }
-  svgEl.innerHTML = ic;
-}
-
-
-
-
 
 /* ---------- Yapıştırılan cevabı okumak ----------
    Model adı harfi harfine yazmayabilir: eğik tırnak, farklı orta nokta,
@@ -5309,10 +5201,8 @@ function render() {
   requestAnimationFrame(onizlemeSigdir);
   yapiBaglari();
   yolIziKaydir();
-  merdivenOklari();
   /* Bir kare sonra bir daha: sayfa geçiş animasyonu sürerken ölçülen kutu
      gerçek boyunda olmuyor, dirsekler yanlış yere düşüyordu. */
-  requestAnimationFrame(merdivenOklari);
 
   const logout = $('#btn-logout');
   if (logout) logout.addEventListener('click', signOut);
@@ -7201,6 +7091,35 @@ function adimYer(projeId) {
   }, 'genis');
 }
 
+/* 04 · Kurulum. Dört düğme ve iki adres satırı — hepsi tek pencerede.
+   Kartın kendi penceresi olmadan düğmelere ulaşılamıyordu. */
+function adimKurulum(projeId) {
+  modalHepsiniKapat();
+  const p = DB.proje(projeId);
+  if (!p) return;
+
+  modalAc(`
+    ${modalBaslik(ICON.dal, 'Kurulum', 'Dört düğme, sırayla. Her biri gerekli sayfayı açıyor.')}
+    ${fdKart('#8fae4a', ICON.dal, 'Adımlar',
+      `<div class="fb-kurulum">${kurulumAraclari(p)}</div>
+       <div class="fb-kg tek fb-ayrac">
+         ${kunyeSatiri('#b8926b', ICON.dal,   'Kod deposu',    depoSlug(p.repo) || p.repo,
+                       'repo', p.id, false, 'dokun, yapıştır')}
+         ${kunyeSatiri('#9b7fd4', ICON.dosya, 'Proje kimliği', 'NIZAM.md', 'kimlik', p.id)}
+       </div>`)}
+    <div class="modal-alt">
+      <button class="btn btn-ghost" data-ak-i="kapat" type="button">Kapat</button>
+    </div>`, kutu => {
+    $('[data-ak-i="kapat"]', kutu).addEventListener('click', modalKapat);
+    const say = $('[data-fdsay="Adımlar"]', kutu);
+    if (say) {
+      const pl = p.palet || {};
+      say.textContent = [p.repo, pl.sohbetAdi, pl.alanAdi, pl.yayinda]
+        .filter(Boolean).length + '/4';
+    }
+  }, 'genis');
+}
+
 /* Takvim şeridinin kendi küçük penceresi. */
 function adimTakvim(projeId) {
   modalHepsiniKapat();
@@ -8538,9 +8457,7 @@ async function eylemCalistir(el) {
   if (e === 'adim-roller')   return adimRoller(el.dataset.proje);
   if (e === 'adim-yer')      return adimYer(el.dataset.proje);
   if (e === 'adim-takvim')   return adimTakvim(el.dataset.proje);
-  /* 04 · Kurulum'un kendi penceresi yok: kartın içindeki dört düğme zaten
-     işi yapıyor, kalem de oraya götürüyor. */
-  if (e === 'adim-kurulum')  return toast('Karttaki düğmeleri sırayla kullan.', 'uyari');
+  if (e === 'adim-kurulum')  return adimKurulum(el.dataset.proje);
 
   if (e === 'marka-renk') {
     const pr = DB.proje(el.dataset.proje);
@@ -10276,14 +10193,6 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   egilmeyiBagla();
-
-  /* Ekran döndüğünde ya da pencere değiştiğinde dirsekler yeniden çiziliyor.
-     Kare isteğiyle kısılıyor: boyut değişimi saniyede onlarca kez geliyor. */
-  let okKare = 0;
-  addEventListener('resize', () => {
-    cancelAnimationFrame(okKare);
-    okKare = requestAnimationFrame(merdivenOklari);
-  });
 
   $$('#user-chip, #user-tile').forEach(el =>
     el.addEventListener('click', hesapMenusu));
