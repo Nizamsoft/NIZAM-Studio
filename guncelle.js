@@ -92,3 +92,13 @@ function eskileriTemizle() {
     ESKI_ANAHTARLAR.forEach(a => localStorage.removeItem(a));
   } catch (e) {}
 }
+
+/* Geri tuşuyla dönülen sayfa tarayıcının bfcache'inden geliyor: betikler
+   baştan çalışmıyor, dolayısıyla açılıştaki sürüm denetimi de çalışmıyor.
+   Güncelledikten sonra geri basınca eski sürümün ekranı geliyordu — eski
+   belge `app.js?v=<eski>` yüklediği için gerçekten eski sürüm oluyor.
+   `pageshow` bfcache dönüşünde de tetikleniyor; denetimi orada tekrarlıyoruz. */
+window.addEventListener('pageshow', olay => {
+  if (!olay.persisted) return;   /* normal açılışta zaten boot denetliyor */
+  GUNCELLEME.acilistaDenetle();
+});

@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.116.1
+- **Düzeltme: güncelledikten sonra geri basınca eski sürüm geliyordu.** Geri tuşuyla dönülen sayfa tarayıcının bfcache'inden geliyor — betikler baştan çalışmıyor, dolayısıyla açılıştaki sürüm denetimi de çalışmıyor. Eski belge `app.js?v=<eski>` yüklediği için ekrana gerçekten eski sürüm geliyordu. Artık `pageshow` olayı bfcache dönüşünü yakalayıp denetimi tekrarlıyor; eski sürüm bulunursa sayfa kendini yeniliyor. `?y=` adresindeki sayfada denetim yine yapılmıyor — sonsuz döngü olmasın.
+
 ## v0.116.0
 - **Aşamalar konuşulan yere göre bölündü.** 1. aşama **"Marka kimliği"** oldu — müşteriyle konuşarak doldurduğun taraf. 2. aşama **"Kurulum ve yapı"** — klavye başında doldurduğun taraf. İkisi karışıkken hangi kafayla oturulacağı belli olmuyordu.
 - **1 · Marka kimliği:** tek kart. Firma adı, telefon, e-posta, sektör; ayracın altında logo, proje rengi ve **işletme görseli**. Tasarım görselleri (G1, G2…) 3. aşamada kaldı — onlar ChatGPT'ye tarif için gidiyor, markanın parçası değil.
