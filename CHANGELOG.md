@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.120.0
+- **"Nereye kuralım?" ile "Kurulum" tek adımda birleşti.** İkisi aynı sorunun iki yarısıydı: biri yeri söylüyor, öteki kuruyor. Adres girilir girilmez kurulum düğmeleri hemen altında duruyor — iki pencere arasında gidip gelmek bitti.
+- **Kurulum aşaması beş adımdan dörde indi ve ızgara 2 × 2 oldu.** Beş adımın tek sayı olmasından doğan boş yuva kapandı: 01 Ne yapıyoruz · 02 Kim kullanacak · 03 Nereye kuralım · 04 Hangi ekranlar.
+- **Dört kurulum kartı tek satırda.** Eskiden 2 + 2 iki ayrı şeritti (kurulum ve yayın); ikisi de aynı zincirin halkası olduğu için tek şeride indi. Kartlar küçüldü — karo 36'dan 28 piksele, başlık tek kelimeye: **Depo · Sohbet · Adres · Yayın**. Dördü 412 piksellik ekranda 76'şar piksele sığıyor.
+- Durum dili aynı kaldı: yeşil tik bitti, kırmızı karo sırada, soluk olan bekliyor. Kod deposu ve proje kimliği satırları şeridin altında.
+
 ## v0.119.1
 - **Düzeltme: Kurulum ve yapı aşamasına girince kurulum ızgarası yerine modül ağacı açılıyordu.** Sebep, ağacın açık olup olmadığının ayrı tutulmamasıydı: bir kez "Ekranları kur" diyen kullanıcının taslağı bellekte kalıyor ve aşamaya her girişinde ağacı geri getiriyordu.
 - **Görünüm durumu veriden ayrıldı.** Taslak yarım kalan işi saklamaya devam ediyor; ağacın açık olması artık ayrı bir bayrak. Aşamadan çıkınca bayrak siliniyor, taslak duruyor — geri gelindiğinde kurulum ızgarası açılıyor ama yaptığın iş kaybolmuyor. Tasarım durağında zaten aynı kural işliyordu.

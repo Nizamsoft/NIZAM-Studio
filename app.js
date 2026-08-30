@@ -969,38 +969,36 @@ function fbCip(renk, ikon, ic, eylem, projeId, adres) {
    aralarında bağlantı çizgisi, sıra ilerledikçe kırmızı karo yeşile dönüyor.
    GitHub düğmesi doğrudan GitHub'ı açıyor; Claude düğmesi promptu yalnızca
    panoya alıyor — Claude'u kullanıcı kendi açıyor (standartlardaki gibi). */
+/* Kurulumun dört adımı tek satırda. Eskiden iki ayrı şeritti (kurulum ve
+   yayın); ikisi de aynı zincirin halkası olduğu için tek şeride indi.
+   Kartlar buna göre küçüldü: 28 piksellik karo, tek kelimelik başlık,
+   alt yazı yok — dördü 412 piksellik ekranda 82'şer piksele sığıyor. */
 function kurulumAraclari(p) {
   const pl    = p.palet || {};
   const slug  = depoSlug(p.repo);
   const depo  = !!p.repo;
-  /* Promptu kopyalamak oturumu açmak demek: ayrı bir "Oturumu açtım" kutusu
-     kullanıcıya aynı şeyi iki kere söyletiyordu. */
   const kopya = !!pl.sohbetAcildi;
   const isim  = String(pl.sohbetAdi || '').trim();
   const alan  = String(pl.alanAdi || '').trim();
   const yayin = !!pl.yayinda;
 
-  /* Kart: bağlantıysa <a>, eylemse <button>. */
-  const kart = (no, hal, ikon, ad, altYazi, eylem, adres) => {
+  const kart = (no, hal, ikon, ad, eylem, adres, ek) => {
     const ic = `
-      <span class="sa-ust">
-        <span class="sa-ikon">${svg(ikon, 18)}</span>
-        <span class="sa-adim">${no}</span>
+      <span class="mk2-ust">
+        <span class="mk2-ik">${svg(hal === 'bitti' ? ICON.tik : ikon, 14)}</span>
+        <span class="mk2-no mono">${no}</span>
       </span>
-      <span class="sa-yazi">
-        <span class="sa-ad">${ad}</span>
-        <span class="sa-alt">${altYazi}</span>
-      </span>`;
+      <span class="mk2-ad">${esc(ad)}</span>`;
     if (adres) {
-      return `<a class="sa-kart ${hal}" target="_blank" rel="noopener"
-        ${eylem ? `data-${eylem}="${p.id}"` : ''} href="${adres}">${ic}</a>`;
+      return `<a class="mk2 ${hal}" target="_blank" rel="noopener" ${ek || ''}
+        href="${adres}">${ic}</a>`;
     }
-    return `<button class="sa-kart ${hal}" type="button"
+    return `<button class="mk2 ${hal}" type="button"
       data-eylem="${eylem}" data-proje="${p.id}"
       ${hal === 'bekliyor' ? 'disabled' : ''}>${ic}</button>`;
   };
 
-  const bag = `<span class="sa-bag"><i></i><em>${svg(ICON.chevron, 13)}</em></span>`;
+  const bag = `<span class="s4-bag"><i></i><em>${svg(ICON.chevron, 11)}</em></span>`;
 
   const depoAdresi = depo
     ? 'https://github.com/' + esc(slug)
@@ -1009,65 +1007,36 @@ function kurulumAraclari(p) {
       + '&visibility=private';
 
   return `
-    <span class="fb-et">Kurulum</span>
-    <div class="std-arac ${isim ? 'bitti' : depo ? 'adim2' : ''}">
-      ${kart(1, depo ? 'kopyalandi' : 'ana', depo ? ICON.tik : ICON.dal,
-             depo ? 'Depo hazır' : 'GitHub deposu',
-             depo ? 'Depoyu aç' : 'GitHub\'da açar',
-             depo ? '' : 'depo-ac', depoAdresi)}
+    <div class="s4 ${yayin ? 'bitti' : ''}">
+      ${kart('1', depo ? 'bitti' : 'sirada', ICON.dal, 'Depo', '',
+             depoAdresi, depo ? '' : `data-depo-ac="${p.id}"`)}
       ${bag}
-      ${kart(2, !depo ? 'bekliyor' : kopya ? 'kopyalandi' : 'sirada',
-             kopya ? ICON.tik : ICON.dosya,
-             isim ? 'Sohbet hazır' : kopya ? 'Prompt panoda' : 'Claude Code promptu',
-             isim ? esc(isim) : kopya ? 'Sohbet adını yaz' : 'Panoya kopyalar',
+      ${kart('2', !depo ? 'bekliyor' : isim ? 'bitti' : 'sirada',
+             ICON.dosya, isim ? 'Sohbet' : kopya ? 'Sohbet adı' : 'Sohbet',
              'tanisma-prompt')}
-    </div>
-
-    ${/* Yayın sırası koda bağlı: Pages boş depoda açılmıyor, o yüzden 4. kart
-          sohbet kurulmadan (yani ilk commit gelmeden) açılmıyor. */ ''}
-    <span class="fb-et" style="margin-top:11px">Yayın</span>
-    <div class="std-arac ${yayin ? 'bitti' : alan ? 'adim2' : ''}">
-      ${kart(3, !isim ? 'bekliyor' : alan ? 'kopyalandi' : 'sirada',
-             alan ? ICON.tik : ICON.dil,
-             alan ? 'Alan adı hazır' : 'Alan adı kaydı',
-             alan ? esc(alan) : 'Namecheap\'te açar',
-             'alan-kaydi')}
+      ${bag}
+      ${kart('3', !isim ? 'bekliyor' : alan ? 'bitti' : 'sirada',
+             ICON.dil, 'Adres', 'alan-kaydi')}
       ${bag}
       ${alan && !yayin
-        ? `<a class="sa-kart sirada" target="_blank" rel="noopener"
+        ? `<a class="mk2 sirada" target="_blank" rel="noopener"
              data-pages-ac="${p.id}" data-alan-kopya="${esc(alan)}"
              href="https://github.com/${esc(slug)}/settings/pages">
-            <span class="sa-ust">
-              <span class="sa-ikon">${svg(ICON.bulut, 18)}</span>
-              <span class="sa-adim">4</span>
-            </span>
-            <span class="sa-yazi">
-              <span class="sa-ad">GitHub Pages</span>
-              <span class="sa-alt">Pages ayarlarını açar</span>
-            </span>
-          </a>`
+            <span class="mk2-ust">
+              <span class="mk2-ik">${svg(ICON.bulut, 14)}</span>
+              <span class="mk2-no mono">4</span></span>
+            <span class="mk2-ad">Yayın</span></a>`
         : yayin
-        ? `<a class="sa-kart kopyalandi" target="_blank" rel="noopener"
-             href="https://${esc(alan)}">
-            <span class="sa-ust">
-              <span class="sa-ikon">${svg(ICON.tik, 18)}</span>
-              <span class="sa-adim">4</span>
-            </span>
-            <span class="sa-yazi">
-              <span class="sa-ad">Yayında</span>
-              <span class="sa-alt">Siteyi aç</span>
-            </span>
-          </a>`
-        : `<span class="sa-kart bekliyor">
-            <span class="sa-ust">
-              <span class="sa-ikon">${svg(ICON.bulut, 18)}</span>
-              <span class="sa-adim">4</span>
-            </span>
-            <span class="sa-yazi">
-              <span class="sa-ad">GitHub Pages</span>
-              <span class="sa-alt">Pages ayarlarını açar</span>
-            </span>
-          </span>`}
+        ? `<a class="mk2 bitti" target="_blank" rel="noopener" href="https://${esc(alan)}">
+            <span class="mk2-ust">
+              <span class="mk2-ik">${svg(ICON.tik, 14)}</span>
+              <span class="mk2-no mono">4</span></span>
+            <span class="mk2-ad">Yayında</span></a>`
+        : `<span class="mk2 bekliyor">
+            <span class="mk2-ust">
+              <span class="mk2-ik">${svg(ICON.bulut, 14)}</span>
+              <span class="mk2-no mono">4</span></span>
+            <span class="mk2-ad">Yayın</span></span>`}
     </div>`;
 }
 
@@ -3138,17 +3107,16 @@ function yapiSayfasi(p, d) {
       bitti: roller.length > 0,
       deger: roller.length + ' katman yetki' },
 
+    /* "Nereye kuralım" ile kurulum aynı sorunun iki yarısı: biri yeri
+       söylüyor, öteki kuruyor. Tek adımda birleşince ızgara da 2×2 oluyor
+       ve beş adımın tek sayı olmasından doğan boş yuva kapanıyor. */
     { no: '03', eylem: 'adim-yer',    ad: 'Nereye kuralım?',
-      ozet: 'Adres ve paket adı',
-      bitti: !!pl.modulAdi && !!pl.veriKatmani && !!pl.alanAdi,
+      ozet: 'Adres, paket adı, kurulum',
+      bitti: !!pl.modulAdi && !!pl.veriKatmani && !!pl.alanAdi
+             && !!p.repo && !!String(pl.sohbetAdi || '').trim() && !!pl.yayinda,
       deger: pl.alanAdi || '' },
 
-    { no: '04', eylem: 'adim-kurulum', ad: 'Kurulum',
-      ozet: 'Depo, sohbet, adres, yayın',
-      bitti: !!p.repo && !!String(pl.sohbetAdi || '').trim() && !!pl.yayinda,
-      deger: 'Yayında' },
-
-    { no: '05', eylem: 'yapi-akis-ac', ad: 'Hangi ekranlar olacak?',
+    { no: '04', eylem: 'yapi-akis-ac', ad: 'Hangi ekranlar olacak?',
       ozet: 'Gelir, gider, cari',
       bitti: gercek.length > 0 && s.sayfa > 0,
       deger: gercek.length + ' ekran · ' + s.sayfa + ' sayfa' },
@@ -3162,9 +3130,9 @@ function yapiSayfasi(p, d) {
     + adimBasligi(p, d, biten + '/' + adimlar.length)
     + fbTakvimSeridi(p)
     + `<div class="ya-harita">
-        <div class="ya-satir">${[0, 1, 2].map(kart).join('')}</div>
-        ${yolOku(adimlar[2].bitti)}
-        <div class="ya-satir">${[3, 4].map(kart).join('')}</div>
+        <div class="ya-satir iki">${[0, 1].map(kart).join('')}</div>
+        ${yolOku(adimlar[1].bitti)}
+        <div class="ya-satir iki">${[2, 3].map(kart).join('')}</div>
       </div>`
     + `</div>`;
 }
@@ -7039,7 +7007,8 @@ function adimYer(projeId) {
   const veriSecili = pl.veriKatmani || veri.varsayilan;
 
   modalAc(`
-    ${modalBaslik(ICON.bulut, 'Nereye kuralım?', 'Paketin adı, verilerin yeri ve internet adresi.')}
+    ${modalBaslik(ICON.bulut, 'Nereye kuralım?',
+      'Önce yeri söyle, sonra dört düğmeyle kur.')}
     ${fdKart('#4fa8c9', ICON.bulut, 'Yer',
       fdAlan('#c48a5c', ICON.katman, 'Bu paketin adı', 'ay-modul', pl.modulAdi,
              'Örn. Muhasebe', 'text', 60, false, 'data-tk="modulAdi"')
@@ -7055,7 +7024,16 @@ function adimYer(projeId) {
       + fdAlan('#5fb37f', ICON.anahtar, 'İnternet adresi', 'ay-alan', pl.alanAdi,
                onerilenAlanAdi(p) || 'kubban.nizamsoft.com', 'text', 200, true,
                'data-tk="alanAdi"')
-      + fdNot(veri.alt))}
+      + fdNot(veri.alt)
+      + `<div class="fbd-ayrac">
+          <span class="fbd-et">Kurulum</span>
+          ${kurulumAraclari(p)}
+          <div class="fb-kg tek" style="margin-top:11px">
+            ${kunyeSatiri('#b8926b', ICON.dal,   'Kod deposu',
+                          depoSlug(p.repo) || p.repo, 'repo', p.id, false, 'dokun, yapıştır')}
+            ${kunyeSatiri('#9b7fd4', ICON.dosya, 'Proje kimliği', 'NIZAM.md', 'kimlik', p.id)}
+          </div>
+        </div>`)}
     <div class="modal-alt">
       <button class="btn btn-ghost" data-ay="iptal" type="button">Vazgeç</button>
       <button class="btn btn-primary" data-ay="kaydet" type="button"><span>Kaydet</span></button>
@@ -7091,35 +7069,6 @@ function adimYer(projeId) {
       } catch (h) { yazi.textContent = 'Kaydet'; toast(h.message, 'hata'); }
     });
     setTimeout(() => { const i = $('#ay-modul', kutu); if (i) i.focus(); }, 40);
-  }, 'genis');
-}
-
-/* 04 · Kurulum. Dört düğme ve iki adres satırı — hepsi tek pencerede.
-   Kartın kendi penceresi olmadan düğmelere ulaşılamıyordu. */
-function adimKurulum(projeId) {
-  modalHepsiniKapat();
-  const p = DB.proje(projeId);
-  if (!p) return;
-
-  modalAc(`
-    ${modalBaslik(ICON.dal, 'Kurulum', 'Dört düğme, sırayla. Her biri gerekli sayfayı açıyor.')}
-    ${fdKart('#8fae4a', ICON.dal, 'Adımlar',
-      `<div class="fb-kurulum">${kurulumAraclari(p)}</div>
-       <div class="fb-kg tek fb-ayrac">
-         ${kunyeSatiri('#b8926b', ICON.dal,   'Kod deposu',    depoSlug(p.repo) || p.repo,
-                       'repo', p.id, false, 'dokun, yapıştır')}
-         ${kunyeSatiri('#9b7fd4', ICON.dosya, 'Proje kimliği', 'NIZAM.md', 'kimlik', p.id)}
-       </div>`)}
-    <div class="modal-alt">
-      <button class="btn btn-ghost" data-ak-i="kapat" type="button">Kapat</button>
-    </div>`, kutu => {
-    $('[data-ak-i="kapat"]', kutu).addEventListener('click', modalKapat);
-    const say = $('[data-fdsay="Adımlar"]', kutu);
-    if (say) {
-      const pl = p.palet || {};
-      say.textContent = [p.repo, pl.sohbetAdi, pl.alanAdi, pl.yayinda]
-        .filter(Boolean).length + '/4';
-    }
   }, 'genis');
 }
 
@@ -8460,7 +8409,6 @@ async function eylemCalistir(el) {
   if (e === 'adim-roller')   return adimRoller(el.dataset.proje);
   if (e === 'adim-yer')      return adimYer(el.dataset.proje);
   if (e === 'adim-takvim')   return adimTakvim(el.dataset.proje);
-  if (e === 'adim-kurulum')  return adimKurulum(el.dataset.proje);
 
   if (e === 'marka-renk') {
     const pr = DB.proje(el.dataset.proje);
