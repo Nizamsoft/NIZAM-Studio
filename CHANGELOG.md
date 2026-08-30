@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü
 
+## v0.110.0
+- **Teknik bilgiler penceresi de kart diline geçti.** Üç ayrı blok yerine iki kart: **Altyapı** (veri katmanı ve alan adı — ikisi de "nerede duracak" sorusu) ve **Roller**.
+- **Rol merdiveni ikonlandı.** En geniş yetki kalkan, en dar kilit, aradakiler kişi — sayfadaki rol rozetleriyle aynı simgeler. Gri kutular kalktı; satırlar çizgiyle ayrılıyor, odaklanınca simge ve çizgi o katmanın rengine dönüyor.
+- **Katman sayısı düğmeleri kırmızıdan metale döndü.** Kırmızı yalnız logo, ana buton, aktif menü ve "Acil" için; burada seçim işaretiydi.
+- Merdiven üç yerde kullanılıyor (teknik penceresi, yapı ağacındaki Roller ekranı, yeni proje sihirbazı) — üçü de aynı anda yeni görünüşe geçti, iki ayrı merdiven kalmasın diye.
+- **Uzun açıklamalar kart dibindeki not kutusuna indi.** Alan adının ve veri katmanının ne işe yaradığı artık etiketin yanını şişirmiyor.
+- Kart başlıklarında canlı sayaç: Altyapı'da kaç alan dolu, Roller'de kaç katman var.
+
 ## v0.109.0
 - **Depo ve kimlik dosyası Teknik kartına taşındı.** İkisi de kodun nereye gittiğiyle ilgili, yetkili kişiyle değil. Yetkili kartında artık yalnız kişi ve ona ulaşma yolları var; başlığı da "Yetkili kişi" oldu.
 - **Firma bilgileri düzenleme penceresi sayfayla aynı dile geçti.** Sekiz alanı alt alta dizen düz liste yerine sayfadaki üç kartın aynısı: Künye, Yetkili kişi, Takvim.

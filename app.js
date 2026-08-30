@@ -985,27 +985,33 @@ function rolMerdiveni(roller, onek) {
   const n = liste.length || 2;
   return `
     <div class="rol-kat" data-rol-onek="${onek}">
-      <div class="secenek-serit ufak rol-sayi">
+      <div class="fbd-cipler rol-sayi">
         ${[2, 3, 4, 5].map(k => `
-          <button class="ss ${k === n ? 'sec' : ''}" type="button"
+          <button class="fbd-cp ${k === n ? 'on' : ''}" type="button"
                   data-rol-sayi="${k}">${k} katman</button>`).join('')}
       </div>
       <div class="rol-liste">
         ${Array.from({ length: n }, (_, i) => {
           const sira = n - 1 - i;                      /* üstten alta çiz */
+          const ust  = sira === n - 1;
+          const dar  = sira === 0;
           const ad = liste[sira] || (ROL_ORNEK[n] || [])[sira] || '';
+          /* Simgeler sayfadaki rol rozetleriyle aynı: en geniş kalkan,
+             en dar kilit, aradakiler kişi. */
           return `
-            <label class="rol-satir ${sira === n - 1 ? 'ust' : ''}">
-              <span class="rol-no">${sira + 1}</span>
+            <label class="rol-satir ${ust ? 'ust' : ''}"
+                   style="--ki:${ust ? '#d8a63f' : dar ? '#7d93b8' : '#3fa694'}">
+              <span class="fbd-si">${svg(ust ? ICON.gGuvenlik : dar ? ICON.kilit : ICON.kisi, 13)}</span>
+              <span class="rol-no mono">${sira + 1}</span>
               <input type="text" data-rol="${sira}" value="${esc(ad)}"
                      placeholder="${esc((ROL_ORNEK[n] || [])[sira] || 'Rol adı')}"
                      maxlength="40" autocomplete="off">
-              ${sira === n - 1 ? '<em>en geniş</em>'
-                : sira === 0 ? '<em>en dar</em>' : ''}
+              ${ust ? '<em>en geniş</em>' : dar ? '<em>en dar</em>' : ''}
+              <span class="fbd-cizgi"></span>
             </label>`;
         }).join('')}
       </div>
-      <i class="rol-not">Üstteki katman, alttakinin gördüğü her şeyi görür.</i>
+      ${fdNot('Üstteki katman, alttakinin gördüğü her şeyi görür.')}
     </div>`;
 }
 
@@ -1041,44 +1047,70 @@ function rolOku(kutu) {
     .filter(Boolean);
 }
 
-/* Dört alanı tek pencerede düzenle. */
+/* Teknik penceresi de firma penceresiyle aynı dilde: iki kart. Veri katmanı
+   ve alan adı birlikte (ikisi de "nerede duracak" sorusu), roller kendi
+   kartında çünkü içinde merdiven var. */
 function teknikDuzenle(projeId) {
   modalHepsiniKapat();
   const p = DB.proje(projeId);
   if (!p) return;
   const pl = p.palet || {};
+  const alan = a => TEKNIK_ALAN.find(x => x.anahtar === a) || {};
+
+  const veri = alan('veriKatmani');
+  const ad   = alan('alanAdi');
+  const secili = pl.veriKatmani || veri.varsayilan;
 
   modalAc(`
     ${modalBaslik(ICON.ayar, 'Teknik bilgiler', 'Bu projeye özel olanlar.')}
-    ${TEKNIK_ALAN.map(a => a.tur === 'secim' ? `
-      <div class="field">
-        <span>${esc(a.ad)} <i class="ipucu">${esc(a.alt)}</i></span>
-        <div class="secenek-serit">${a.secim.map(x => `
-          <button class="ss ${(pl[a.anahtar] || a.varsayilan) === x ? 'sec' : ''}"
-                  type="button" data-tks="${a.anahtar}" data-deger="${esc(x)}">${esc(x)}</button>`).join('')}
+
+    ${fdKart('var(--fb-teknik)', ICON.ayar, 'Altyapı',
+      `<div class="fbd-sec" style="--ki:#4fa8c9">
+        <span class="fbd-set"><span class="fbd-si">${svg(ICON.bulut, 12)}</span>
+          <span>${esc(veri.ad)}</span></span>
+        <div class="fbd-cipler">
+          ${(veri.secim || []).map(x => `<button class="fbd-cp ${secili === x ? 'on' : ''}"
+            type="button" data-tks="veriKatmani" data-deger="${esc(x)}">${esc(x)}</button>`).join('')}
         </div>
-        <input type="hidden" data-tk="${a.anahtar}" value="${esc(pl[a.anahtar] || a.varsayilan)}">
-      </div>` : a.tur === 'katman' ? `
-      <div class="field">
-        <span>${esc(a.ad)} <i class="ipucu">${esc(a.alt)}</i></span>
-        ${rolMerdiveni(pl[a.anahtar], 'tk')}
-      </div>` : `
-      <label class="field">
-        <span>${esc(a.ad)} <i class="ipucu">${esc(a.alt)}</i></span>
-        <input type="text" data-tk="${a.anahtar}" value="${esc(pl[a.anahtar] || '')}"
-               placeholder="${esc(a.ornek)}" maxlength="200" autocomplete="off">
-      </label>`).join('')}
+        <input type="hidden" data-tk="veriKatmani" value="${esc(secili)}">
+      </div>`
+      + fdAlan('#5fb37f', ICON.anahtar, ad.ad, 'tk-alanAdi', pl.alanAdi,
+               ad.ornek, 'text', 200, true, 'data-tk="alanAdi"')
+      + fdNot(veri.alt))}
+
+    ${fdKart('#d8a63f', ICON.gGuvenlik, 'Roller', rolMerdiveni(pl.roller, 'tk'))}
+
     <div class="modal-alt">
       <button class="btn btn-ghost" data-tk-i="iptal" type="button">Vazgeç</button>
       <button class="btn btn-primary" data-tk-i="kaydet" type="button"><span>Kaydet</span></button>
     </div>`, kutu => {
     rolBagla(kutu);
-    /* Seçim şeridi gizli alana yazıyor; kaydetme yolu tek kalsın. */
-    $$('[data-tks]', kutu).forEach(d => d.addEventListener('click', () => {
-      const gizli = $('[data-tk="' + d.dataset.tks + '"]', kutu);
-      if (gizli) gizli.value = d.dataset.deger;
-      d.parentElement.querySelectorAll('.ss').forEach(x => x.classList.toggle('sec', x === d));
-    }));
+
+    /* Kart başlıklarındaki sayaç: Altyapı'da kaç alan dolu, Roller'de kaç katman.
+       Merdiven kendini yeniden çizdiği için sayaç olaydan sonra okunuyor. */
+    const sayaclariTazele = () => {
+      const dolu = [$('[data-tk="veriKatmani"]', kutu), $('[data-tk="alanAdi"]', kutu)]
+        .filter(x => x && x.value.trim()).length;
+      const a = $('[data-fdsay="Altyapı"]', kutu);
+      if (a) a.textContent = dolu + '/2';
+      const r = $('[data-fdsay="Roller"]', kutu);
+      if (r) r.textContent = rolOku(kutu).length + ' katman';
+    };
+
+    /* Seçim rozeti gizli alana yazıyor; kaydetme yolu tek kalsın. */
+    kutu.addEventListener('click', ev => {
+      const d = ev.target.closest('[data-tks]');
+      if (d) {
+        const gizli = $('[data-tk="' + d.dataset.tks + '"]', kutu);
+        if (gizli) gizli.value = d.dataset.deger;
+        d.parentElement.querySelectorAll('.fbd-cp').forEach(x => x.classList.toggle('on', x === d));
+      }
+      /* Katman sayısı değişince merdiven yeniden çiziliyor; sayaç ondan sonra. */
+      if (d || ev.target.closest('[data-rol-sayi]')) setTimeout(sayaclariTazele, 0);
+    });
+    kutu.addEventListener('input', sayaclariTazele);
+    sayaclariTazele();
+
     $('[data-tk-i="iptal"]', kutu).addEventListener('click', modalKapat);
     $('[data-tk-i="kaydet"]', kutu).addEventListener('click', async () => {
       const yeni = Object.assign({}, pl);
@@ -1095,8 +1127,8 @@ function teknikDuzenle(projeId) {
         modalKapat(); render(); toast('Teknik bilgiler kaydedildi.');
       } catch (h) { yazi.textContent = 'Kaydet'; toast(h.message, 'hata'); }
     });
-    setTimeout(() => { const i = $('[data-tk]', kutu); if (i) i.focus(); }, 40);
-  });
+    setTimeout(() => { const i = $('#tk-alanAdi', kutu); if (i) i.focus(); }, 40);
+  }, 'genis');
 }
 
 /* 2 · Tasarımı belirleme */
@@ -6845,7 +6877,7 @@ function sablonDuzenle(id) {
    odaklanınca çizgi ve simge o alanın rengine dönüyor. */
 
 /* Yazılan alan. `mono` tarih ve numara gibi sabit genişlik isteyenler için. */
-function fdAlan(renk, ikon, etiket, id, deger, yer, tur, uzunluk, mono) {
+function fdAlan(renk, ikon, etiket, id, deger, yer, tur, uzunluk, mono, ek) {
   return `
     <label class="fbd-al" style="--ki:${renk}">
       <span class="fbd-si">${svg(ikon, 13)}</span>
@@ -6853,11 +6885,17 @@ function fdAlan(renk, ikon, etiket, id, deger, yer, tur, uzunluk, mono) {
         <i>${esc(etiket)}</i>
         <input class="${mono ? 'mono' : ''}" type="${tur || 'text'}" id="${id}"
                value="${esc(deger || '')}" placeholder="${esc(yer || '')}"
-               maxlength="${uzunluk || 80}" autocomplete="off"
+               maxlength="${uzunluk || 80}" autocomplete="off" ${ek || ''}
                ${tur === 'email' ? 'autocapitalize="off" spellcheck="false"' : ''}>
       </span>
       <span class="fbd-cizgi"></span>
     </label>`;
+}
+
+/* Kart dibindeki açıklama. Uzun metinler etiketin yanına sığmıyor, satırı
+   şişiriyordu; buraya inince alan sırası dar ve okunur kalıyor. */
+function fdNot(yazi) {
+  return `<div class="fbd-not">${svg(ICON.info, 13)}<span>${esc(yazi)}</span></div>`;
 }
 
 /* Seçim satırı: ikon + etiket, altında rozetler. Seçili olan metal —

@@ -4441,30 +4441,6 @@ ekran planı.
    Satırlar kart oldu: eskiden etiketler girdiyi ittiği için her satır
    farklı genişlikteydi, merdiven merdiven gibi durmuyordu. */
 .rol-kat { display: block; }
-.rol-sayi { margin-bottom: 12px; }
-.rol-sayi .ss.sec { background: var(--red-soft); border-color: var(--red-cizgi);
-                    color: var(--red-ink); font-weight: 600; }
-.rol-liste { display: flex; flex-direction: column; gap: 7px; }
-.rol-satir {
-  display: flex; align-items: center; gap: 10px; padding: 7px 10px 7px 7px;
-  border: 1px solid var(--line); background: var(--surface-2);
-  border-radius: var(--radius-sm);
-}
-.rol-satir.ust { border-color: var(--metal-1); }
-.rol-no {
-  flex: 0 0 auto; width: 24px; height: 24px; border-radius: 8px;
-  display: grid; place-items: center; font-size: 11px; font-weight: 700;
-  font-family: var(--yazi-baslik); background: var(--surface-3); color: var(--ink-soft);
-}
-.rol-satir.ust .rol-no { background: var(--metal-1); color: var(--ink-strong); }
-.rol-satir input { flex: 1; min-width: 0; height: 34px; padding: 0;
-                   background: transparent; border: 0;
-                   font-size: 13.5px; font-weight: 600; }
-.rol-satir input:focus { background: transparent; }
-.rol-satir em { flex: 0 0 auto; font-style: normal; font-size: 9.5px;
-                letter-spacing: .04em; text-transform: uppercase; color: var(--ink-dim); }
-.rol-not { display: block; margin-top: 10px; font-style: normal;
-           font-size: 10.5px; color: var(--ink-dim); }
 
 /* Tarih alanları: native kontrol koyu arayüze uysun, ikisi yan yana dursun. */
 .field input[type="date"] { color-scheme: dark; }
@@ -5869,3 +5845,56 @@ button.fb-cp:active{ transform:scale(.94); }
   background:linear-gradient(180deg, var(--metal-2), #a29a94);
   box-shadow:0 6px 14px -8px rgba(0,0,0,.9);
 }
+
+/* Kart dibindeki açıklama: uzun metin etiketin yanına sığmıyordu. */
+.fbd-not{
+  position:relative; display:flex; gap:7px;
+  margin-top:9px; padding:8px 10px;
+  border:1px solid var(--line-3); border-radius:10px;
+  background:var(--yuva);
+  font-size:10.5px; line-height:1.6; color:var(--ink-dim);
+}
+.fbd-not svg{ flex:0 0 13px; width:13px; height:13px; margin-top:2px; }
+
+/* --------------------------------------------------------------------------
+   Rol merdiveni — düzenleme penceresiyle aynı dil
+   Üç yerde kullanılıyor (teknik penceresi, yapı ağacı, sihirbaz); üçü de
+   tek görünüşe geçsin diye bileşenin kendisi değişti. Simgeler sayfadaki
+   rol rozetleriyle aynı: en geniş kalkan, en dar kilit, aradakiler kişi.
+   -------------------------------------------------------------------------- */
+
+.rol-sayi{ margin-bottom:9px; }
+.rol-liste{ display:flex; flex-direction:column; gap:0; }
+.rol-satir{
+  position:relative;
+  display:flex; align-items:center; gap:9px;
+  padding:5px 0; cursor:text;
+  border:0; background:none; border-radius:0;
+}
+.rol-satir + .rol-satir{ border-top:1px solid var(--line-3); }
+.rol-no{
+  flex:0 0 auto; width:14px;
+  display:block; text-align:right;
+  font-family:var(--yazi-kod); font-size:10px; font-weight:400;
+  background:none; color:var(--ink-dim);
+}
+.rol-satir.ust .rol-no{ background:none; color:var(--ink-dim); }
+.rol-satir input{
+  flex:1; min-width:0; height:26px; padding:0;
+  border:0; background:transparent;
+  color:var(--ink-strong);
+  font-family:var(--yazi-baslik); font-weight:600; font-size:13.5px;
+}
+.rol-satir input:focus{ outline:none; background:transparent; }
+.rol-satir input::placeholder{
+  color:var(--metal-1); font-family:var(--yazi-govde); font-weight:400; font-size:12.5px;
+}
+.rol-satir em{
+  flex:0 0 auto; font-style:normal;
+  font-size:8.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-dim);
+}
+.rol-satir:focus-within .fbd-cizgi{
+  height:1.5px;
+  background:linear-gradient(90deg, var(--ki), transparent 70%);
+}
+.rol-satir:focus-within .fbd-si{ box-shadow:0 0 0 1px color-mix(in srgb, var(--ki) 40%, transparent); }
