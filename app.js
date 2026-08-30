@@ -851,22 +851,27 @@ function adimBasligi(p, d, sayac) {
   const renk = d.renk || 'var(--metal-2)';
   const ikon = ICON[d.ikon] || ICON.bayrak;
 
+  /* Yapı proje künyesiyle birebir aynı: 54 piksellik karo, iki satır yazı,
+     sağda değer ve etiketi. İki sayfanın tek farkı içerik olsun, ölçü değil.
+     İlerleme noktaları firma adının yanına alındı — üçüncü satır kartı
+     künyeden uzun yapıyordu. */
   return `
     <div class="bs2" style="--kr:${renk}">
       <span class="bs2-ik">${svg(ikon, 26)}</span>
       <span class="bs2-yz">
-        <span class="bs2-firma">${esc(projeAdi(p))}</span>
-        <span class="bs2-ad">${esc(d.ad)}</span>
-        <span class="bs2-alt">
-          <span class="bs2-say">${duraklar.length} aşamanın ${d.no}.'si</span>
+        <span class="bs2-firma">
+          <span class="bs2-ad2">${esc(projeAdi(p))}</span>
           <span class="bs2-nk">
             ${duraklar.map((x, i) => `<i class="${
               i === su ? 'su' : x.bitti ? 'bitti' : ''}"></i>`).join('')}
           </span>
-          ${sayac ? `<span class="bs2-say">· ${esc(sayac)}</span>` : ''}
         </span>
+        <span class="bs2-ad">${esc(d.ad)}</span>
       </span>
-      <span class="bs2-no mono">${String(d.no).padStart(2, '0')}</span>
+      <span class="bs2-sag">
+        <b class="mono">${esc(sayac || String(d.no).padStart(2, '0'))}</b>
+        <i>${sayac ? 'adım' : 'aşama'}</i>
+      </span>
     </div>`;
 }
 

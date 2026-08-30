@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## v0.121.1
+- **Aşama başlığı ile proje künyesi artık birebir aynı ölçüde** — ikisi de 84 piksel yüksekliğinde, 54 piksellik karo, iki satır yazı ve sağda değer + etiketi. Aşama kartında üçüncü bir satır vardı, kartı künyeden uzun yapıyordu; ilerleme noktaları firma adının yanına alındı ve satır kalktı.
+- Sağ sütun künyedeki yüzdeyle aynı yerde: **4/4 · adım**.
+- Temizlik: eski aşama başlığı kuralları dosyada ikinci bir kopya olarak duruyor ve yenisini eziyordu — kaldırıldı.
+
 ## v0.121.0
 - **Proje sayfası ile aşama sayfaları aynı düzene girdi.** İkisinin tek farkı tepedeki kartın içeriği: proje sayfasında künye (logo, firma adı, künye satırı, yüzde), aşama sayfasında o aşamanın kendi kartı — aynı renk, aynı simge, aynı ad. Bir aşamaya basınca kart kaybolmuyor, tepede kalıyor.
 - **Teslim takvimi iki sayfada da aynı yerde:** başlığın hemen altında. Hangi sayfada olursan ol teslim tarihi aynı noktada.

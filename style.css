@@ -6095,15 +6095,14 @@ a.ya:active, button.ya:not([disabled]):active{ transform:scale(.97); }
 /* --------------------------------------------------------------------------
    Adım başlığı — sayfanın tepesi
    İşletme görselinin yerini aldı: o görsel marka kartının içinde zaten
-   duruyor, tepede ikinci kez göstermek ekranın en değerli yerini tekrara
-   harcıyordu. Kart bilerek ötekilerden iri — sayfanın neyle ilgili olduğu
-   ilk bakışta okunsun diye.
+   duruyor. Ölçüsü proje künyesiyle (.pk) birebir aynı — iki sayfanın tek
+   farkı kartın içeriği olsun, düzeni değil.
    -------------------------------------------------------------------------- */
 
 .bs2{
   position:relative; overflow:hidden;
-  display:flex; align-items:center; gap:14px;
-  margin-bottom:11px; padding:16px 15px;
+  display:flex; align-items:center; gap:13px;
+  margin-bottom:11px; padding:14px;
   border:1px solid color-mix(in srgb, var(--kr) 26%, var(--line));
   border-radius:18px;
   background:
@@ -6119,12 +6118,11 @@ a.ya:active, button.ya:not([disabled]):active{ transform:scale(.97); }
   background:linear-gradient(101deg, rgba(255,255,255,.07), transparent 58%);
   pointer-events:none;
 }
-/* İhtişamın birinci parçası: 56 piksellik renkli karo (ötekiler 28). */
 .bs2-ik{
-  position:relative; flex:0 0 56px;
-  width:56px; height:56px;
+  position:relative; flex:0 0 54px;
+  width:54px; height:54px;
   display:flex; align-items:center; justify-content:center;
-  border-radius:17px; color:var(--kr);
+  border-radius:16px; color:var(--kr);
   background:linear-gradient(180deg,
     color-mix(in srgb, var(--kr) 26%, transparent),
     color-mix(in srgb, var(--kr) 10%, transparent));
@@ -6133,23 +6131,20 @@ a.ya:active, button.ya:not([disabled]):active{ transform:scale(.97); }
              0 12px 26px -14px color-mix(in srgb, var(--kr) 70%, transparent);
 }
 .bs2-yz{ position:relative; flex:1; min-width:0; }
-.bs2-firma{
-  display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+/* Üst satır: firma adı ve yanında aşama noktaları. */
+.bs2-firma{ display:flex; align-items:center; gap:8px; min-width:0; }
+.bs2-ad2{
+  min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
   font-family:var(--yazi-kod); font-size:8.5px;
   letter-spacing:.11em; text-transform:uppercase; color:var(--ink-dim);
 }
-/* İkinci parça: 19 punto (ötekiler 12,5). */
 .bs2-ad{
-  display:block; margin-top:3px; line-height:1.15;
-  font-family:var(--yazi-baslik); font-weight:700; font-size:19px;
+  display:block; margin-top:3px; line-height:1.2;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  font-family:var(--yazi-baslik); font-weight:700; font-size:17px;
   letter-spacing:-.015em; color:var(--ink-strong);
 }
-.bs2-alt{ display:flex; align-items:center; flex-wrap:wrap; gap:9px; margin-top:8px; }
-.bs2-say{
-  font-family:var(--yazi-kod); font-size:9px;
-  letter-spacing:.07em; text-transform:uppercase; color:var(--ink-dim);
-}
-.bs2-nk{ display:flex; gap:4px; align-items:center; }
+.bs2-nk{ flex:0 0 auto; display:flex; gap:4px; align-items:center; }
 .bs2-nk i{
   display:block; width:6px; height:6px; border-radius:999px;
   background:var(--bar-bos); box-shadow:inset 0 0 0 1px var(--line-3);
@@ -6163,10 +6158,113 @@ a.ya:active, button.ya:not([disabled]):active{ transform:scale(.97); }
   background:linear-gradient(90deg, var(--metal-1), var(--metal-2));
   box-shadow:none;
 }
-.bs2-no{
-  position:relative; flex:0 0 auto; align-self:flex-start;
-  font-size:11px; color:var(--ink-dim);
+/* Sağ sütun künyedeki yüzdeyle aynı yerde ve aynı ölçüde. */
+.bs2-sag{ position:relative; flex:0 0 auto; text-align:right; }
+.bs2-sag b{
+  display:block; line-height:1;
+  font-family:var(--yazi-baslik); font-weight:700; font-size:17px; color:var(--ink-soft);
 }
+.bs2-sag i{
+  display:block; margin-top:3px; font-style:normal;
+  font-family:var(--yazi-kod); font-size:8.5px;
+  letter-spacing:.07em; text-transform:uppercase; color:var(--ink-dim);
+}
+
+/* --------------------------------------------------------------------------
+   Aşama ızgarası — yol haritası ve kurulum adımları
+   Üstte üç kart, ortada dirsek, altta üç kart. Zigzag merdivende kartlar
+   ilerledikçe yer değiştiriyordu; burada aşamalar hep aynı yerde duruyor ve
+   göz aradığını aynı köşede buluyor. `.ak-` öneki karar bileşenlerinin,
+   `.yol` da görsel ada haritasının — bu yüzden `.ya-`.
+   -------------------------------------------------------------------------- */
+
+.ya-harita{ position:relative; }
+.ya-satir{ display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:9px; }
+/* Aşama kartı: kare. Numara ve durum üstte, ad ve durum yazısı altta. */
+.ya{
+  position:relative; overflow:hidden; min-width:0;
+  display:flex; flex-direction:column; justify-content:space-between;
+  aspect-ratio:1 / 1;
+  padding:11px 10px;
+  border:1px solid var(--line); border-radius:var(--radius-lg);
+  text-align:left; text-decoration:none; color:inherit;
+  background:linear-gradient(180deg, var(--kart-ust), var(--kart-alt));
+  box-shadow:0 2px 4px -2px rgba(0,0,0,.7),
+             0 18px 34px -22px rgba(0,0,0,.95),
+             inset 0 1px 0 var(--isik);
+  transition:transform .16s var(--yay);
+}
+.ya::before{
+  content:''; position:absolute; top:-55%; left:-16%; width:62%; height:190%;
+  background:linear-gradient(101deg, rgba(255,255,255,.05), transparent 60%);
+  pointer-events:none;
+}
+button.ya{ font-family:inherit; cursor:pointer; }
+button.ya[disabled]{ cursor:default; }
+a.ya:active, button.ya:not([disabled]):active{ transform:scale(.97); }
+
+.ya-ust{
+  position:relative;
+  display:flex; align-items:center; justify-content:space-between; gap:6px;
+}
+.ya-no{ white-space:nowrap; font-size:11px; color:var(--ink-dim); }
+.ya-rozet{
+  display:inline-block; margin-left:6px; padding:2px 7px;
+  border-radius:999px; white-space:nowrap;
+  font-family:var(--yazi-kod); font-size:8px; letter-spacing:.05em;
+  color:#a9c3ee; background:rgba(91,141,239,.18);
+  box-shadow:inset 0 0 0 1px rgba(91,141,239,.4);
+}
+.ya-dur{
+  flex:0 0 24px;
+  width:24px; height:24px;
+  display:flex; align-items:center; justify-content:center;
+  border-radius:999px; color:var(--ink-dim);
+  background:var(--yuva); box-shadow:inset 0 0 0 1px var(--line-3);
+}
+.ya-yz{ position:relative; min-width:0; }
+.ya-ad{
+  display:block; line-height:1.3;
+  font-family:var(--yazi-baslik); font-weight:600; font-size:12.5px;
+  color:var(--ink-strong);
+}
+.ya-alt{
+  display:block; margin-top:3px;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  font-family:var(--yazi-kod); font-size:8.5px;
+  letter-spacing:.07em; text-transform:uppercase; color:var(--ink-dim);
+}
+
+.ya.bitti{ border-color:rgba(69,163,123,.30); }
+.ya.bitti .ya-no,
+.ya.bitti .ya-alt{ color:var(--st-done-t); }
+.ya.bitti .ya-dur{
+  color:#08150f;
+  background:linear-gradient(180deg, var(--st-done-t), var(--st-done));
+  box-shadow:0 6px 14px -8px rgba(69,163,123,.6);
+}
+
+.ya.simdi{ border-color:var(--red-cizgi); }
+.ya.simdi .ya-alt{ color:var(--red-ink); }
+.ya.simdi .ya-dur{
+  color:#fff;
+  background:linear-gradient(180deg, var(--red-acik), var(--red));
+  box-shadow:0 8px 18px -8px rgba(229,52,42,.75);
+}
+
+/* Kilitli adım bağlantı değil: soluk, kesik çerçeve, dokunulmuyor. */
+.ya.kilitli{ opacity:.45; border-style:dashed; cursor:default; }
+
+/* Satırlar arası dirsek. Izgara sabit olduğu için ok da sabit —
+   zigzagdaki gibi kartların yerini ölçmeye gerek yok. */
+.ya-bosluk{ position:relative; height:34px; }
+.ya-ok{
+  position:absolute; inset:0; width:100%; height:100%;
+  fill:none; stroke:var(--line); stroke-width:1.5;
+}
+.ya-ok.gecti{ stroke:var(--st-done); }
+.ya-ok .uc{ stroke:var(--line-2); }
+.ya-ok.gecti .uc{ stroke:var(--st-done-t); }
 
 
 /* --------------------------------------------------------------------------
