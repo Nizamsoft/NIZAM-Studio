@@ -855,17 +855,18 @@ function fbSerit(p, d) {
 
 /* Künye satırı: renkli simge, üstte etiket, altta değer. Değer yoksa
    satır kaybolmuyor — sarı "girilmedi" yazıyor ki eksik göze çarpsın. */
-function kunyeSatiri(renk, ikon, etiket, deger, eylem, projeId) {
-  const etiketler = eylem
+function kunyeSatiri(renk, ikon, etiket, deger, eylem, projeId, pasif, bosYazi) {
+  const etiketler = eylem && !pasif
     ? `class="fb-s dokun" style="--ki:${renk}" data-eylem="${eylem}" data-proje="${projeId}"
        role="button" tabindex="0"`
-    : `class="fb-s" style="--ki:${renk}"`;
+    : `class="fb-s ${pasif ? 'pasif' : ''}" style="--ki:${renk}"`;
   return `
     <span ${etiketler}>
       <span class="fb-si">${svg(ikon, 13)}</span>
       <span class="fb-syazi">
         <i>${esc(etiket)}</i>
-        <b class="${deger ? '' : 'eksik'}">${esc(deger || (eylem ? 'dokun, yaz' : 'girilmedi'))}</b>
+        <b class="${deger ? '' : pasif ? 'bos' : 'eksik'}">${esc(deger || bosYazi
+          || (pasif ? 'promptu kopyalayınca' : eylem ? 'dokun, yaz' : 'girilmedi'))}</b>
       </span>
     </span>`;
 }
@@ -931,15 +932,16 @@ function fbCip(renk, ikon, ic, eylem, projeId, adres) {
    GitHub düğmesi doğrudan GitHub'ı açıyor; Claude düğmesi promptu yalnızca
    panoya alıyor — Claude'u kullanıcı kendi açıyor (standartlardaki gibi). */
 function kurulumAraclari(p) {
+  const pl    = p.palet || {};
   const slug  = depoSlug(p.repo);
   const depo  = !!p.repo;
   /* Promptu kopyalamak oturumu açmak demek: ayrı bir "Oturumu açtım" kutusu
-     kullanıcıya aynı şeyi iki kere söyletiyordu. Kopyalayıp Claude Code'a
-     gitmeden başka yapacak bir şey yok. */
-  const kopya = !!(p.palet || {}).sohbetAcildi;
+     kullanıcıya aynı şeyi iki kere söyletiyordu. */
+  const kopya = !!pl.sohbetAcildi;
+  const isim  = String(pl.sohbetAdi || '').trim();
 
   return `
-    <div class="std-arac ${depo && kopya ? 'bitti' : depo ? 'adim2' : ''}">
+    <div class="std-arac ${isim ? 'bitti' : depo ? 'adim2' : ''}">
       <a class="sa-kart ${depo ? 'kopyalandi' : 'ana'}" target="_blank" rel="noopener"
          ${depo ? '' : `data-depo-ac="${p.id}"`}
          href="${depo
@@ -967,16 +969,11 @@ function kurulumAraclari(p) {
           <span class="sa-adim">2</span>
         </span>
         <span class="sa-yazi">
-          <span class="sa-ad">${kopya ? 'Prompt panoda' : 'Claude Code promptu'}</span>
-          <span class="sa-alt">${kopya ? 'Claude Code\'da yapıştır' : 'Panoya kopyalar'}</span>
+          <span class="sa-ad">${isim ? 'Sohbet hazır' : kopya ? 'Prompt panoda' : 'Claude Code promptu'}</span>
+          <span class="sa-alt">${isim ? esc(isim)
+            : kopya ? 'Sohbet adını yaz' : 'Panoya kopyalar'}</span>
         </span>
       </button>
-    </div>
-
-    <div class="kur-deger" data-eylem="repo" data-proje="${p.id}" role="button" tabindex="0">
-      ${svg(ICON.dal, 13)} Adres
-      ${p.repo ? `<b class="mono">${esc(p.repo)}</b>`
-               : '<b class="eksik">dokun, yapıştır</b>'}
     </div>`;
 }
 
@@ -1032,6 +1029,12 @@ function firmaSayfasi(p, d) {
       ${kunyeSatiri('#4fa8c9', ICON.bulut,   'Veri katmanı', pl.veriKatmani)}
       ${kunyeSatiri('#5fb37f', ICON.anahtar, 'Alan adı',     pl.alanAdi)}
       ${kunyeSatiri('#c48a5c', ICON.katman,  'Modül adı',    pl.modulAdi, 'modul-adi', p.id)}
+      ${kunyeSatiri('#b8926b', ICON.dal,      'Depo',         p.repo,      'repo',      p.id,
+                    false, 'dokun, yapıştır')}
+      ${/* Sohbet adı ancak prompt panoya alındıktan sonra sorulabilir:
+            öncesinde ortada isim verilecek bir sohbet yok. */ ''}
+      ${kunyeSatiri('#9b7fd4', ICON.dosya,    'Sohbet adı',   pl.sohbetAdi,
+                    pl.sohbetAcildi ? 'sohbet-adi' : '', p.id, !pl.sohbetAcildi)}
     </div>
     <div class="fb-ayrac">${kurulumAraclari(p)}</div>
     <div class="fb-cip" style="margin-top:9px">
@@ -4275,11 +4278,13 @@ function projeDuraklari(p) {
   return [
     {
       ad: 'Firma ve kurulum',
-      bitti: !!p.repo && !!pl0.sohbetAcildi,
+      bitti: !!p.repo && !!String(pl0.sohbetAdi || '').trim(),
       ozet: p.repo
-        ? (pl0.sohbetAcildi
-            ? p.repo
-            : 'Depo hazır. Sıra Claude Code oturumunu açmakta.')
+        ? (String(pl0.sohbetAdi || '').trim()
+            ? p.repo + ' · ' + pl0.sohbetAdi
+            : pl0.sohbetAcildi
+              ? 'Prompt panoda. Sohbeti açıp adını yaz.'
+              : 'Depo hazır. Sıra Claude Code oturumunu açmakta.')
         : 'Künye girildi. Kod nereye gidecek, iş hangi sohbette yürüyecek?',
     },
     {
@@ -8464,6 +8469,22 @@ async function eylemCalistir(el) {
     delete PAGES_BEKLIYOR[pr.id];
     return isYap(() => DB.paletKaydet(pr.id,
       Object.assign({}, pr.palet || {}, { alanAdi: adres })), 'Yayın adresi kaydedildi.');
+  }
+
+  if (e === 'sohbet-adi') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const ad = await metinSor({
+      baslik: 'Claude Code sohbeti',
+      aciklama: 'Oturumu hangi adla açtın? Sonra hangi sohbete döneceğini '
+              + 'aramadan bulursun.',
+      deger: (pr.palet || {}).sohbetAdi || '',
+      yerTutucu: depoAdi(pr),
+      buton: 'Kaydet',
+    });
+    if (ad === null) return;
+    return isYap(() => DB.paletKaydet(pr.id,
+      Object.assign({}, pr.palet || {}, { sohbetAdi: ad })), 'Sohbet adı kaydedildi.');
   }
 
   if (e === 'yapi-blok-gor') {

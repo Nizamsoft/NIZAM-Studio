@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü
 
+## v0.113.0
+- **Depo adresi künye satırına çıktı.** Kartların altındaki ayrı adres kutusu kalktı; depo artık Modül adı ve Alan adı ile aynı ızgarada, aynı biçimde duruyor. Dokununca adres soruluyor.
+- **Yeni künye satırı: Sohbet adı.** Claude Code oturumunu hangi adla açtığın buraya yazılıyor — sonra hangi sohbete döneceğini aramadan buluyorsun.
+- **Sohbet adı satırı prompt kopyalanana kadar pasif:** soluk duruyor ve "promptu kopyalayınca" yazıyor. Ortada adı verilecek bir sohbet yokken sormak anlamsız.
+- **2. kartın üç hâli oldu:** "Claude Code promptu" → basınca "Prompt panoda · Sohbet adını yaz" → isim girilince **"Sohbet hazır"** ve altında sohbetin adı.
+- **Aşamanın bitiş çizgisi artık sohbet adı.** Depo adresi + sohbet adı yazıldığında 1. aşama tamamlanıyor; "prompt panoda" yarı yol.
+- Düzeltme: tek simgeli araç kartlarında karo boş görünüyordu. Kural iki simgeli standartlar kartı için yazılmıştı, `:last-child` tek simgeye denk gelip onu gizliyordu.
+
 ## v0.112.1
 - **"Oturumu açtım" onay kutusu kalktı.** Claude Code promptuna basmak zaten oturumu açmak demek: prompt panoya alınıyor, kart yeşile dönüyor ve aşama aynı anda tamamlanıyor. Kullanıcıya aynı şeyi iki kere söyletmeye gerek yok — kopyalayıp Claude Code'a gitmekten başka yapacak bir şey yok.
 

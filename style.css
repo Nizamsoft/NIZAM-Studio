@@ -2917,8 +2917,8 @@ a.durak:active { transform: scale(.99); transition: transform .1s var(--ease); }
 /* Birinci kartın karosunda iki simge üst üste: kopya ve tik. Yalnız burada
    iki tane var, o yüzden kural `.ana` altında — ikinci kartta tek simge
    `:last-child` olurdu ve gizlenirdi. */
-.sa-kart.ana .sa-ikon svg { position: absolute; transition: opacity .2s var(--ease), transform .3s var(--yay); }
-.sa-kart.ana .sa-ikon svg:last-child { opacity: 0; transform: scale(.4) rotate(-25deg); }
+.sa-kart.ana .sa-ikon svg:not(:only-child) { position: absolute; transition: opacity .2s var(--ease), transform .3s var(--yay); }
+.sa-kart.ana .sa-ikon svg:nth-child(2) { opacity: 0; transform: scale(.4) rotate(-25deg); }
 
 .sa-adim {
   display: flex; align-items: center; justify-content: center;
@@ -2955,8 +2955,8 @@ a.durak:active { transform: scale(.99); transition: transform .1s var(--ease); }
   color: #0f1a15;
   box-shadow: 0 8px 18px -8px rgba(69, 163, 123, .6), inset 0 1px 0 rgba(255, 255, 255, .3);
 }
-.sa-kart.kopyalandi .sa-ikon svg:first-child { opacity: 0; transform: scale(.4); }
-.sa-kart.kopyalandi .sa-ikon svg:last-child  { opacity: 1; transform: none; }
+.sa-kart.kopyalandi .sa-ikon svg:first-child:not(:only-child) { opacity: 0; transform: scale(.4); }
+.sa-kart.kopyalandi .sa-ikon svg:nth-child(2) { opacity: 1; transform: none; }
 .sa-kart.kopyalandi .sa-alt  { color: var(--st-done-t); }
 .sa-kart.kopyalandi .sa-adim { color: var(--st-done-t); box-shadow: inset 0 0 0 1px rgba(69, 163, 123, .4); }
 
@@ -5940,15 +5940,12 @@ button.fb-cp:active{ transform:scale(.94); }
 .std-arac.bitti .sa-bag i{ background:linear-gradient(90deg, var(--st-done), var(--st-done)); }
 .std-arac.bitti .sa-bag em{ color:var(--st-done-t); }
 
-/* Adres satırı kart içinde kutulanıyor; sayfadaki hâli girintiliydi. */
-.fb-kart .kur-deger{
-  margin:0;
-  padding:9px 11px;
-  border:1px solid var(--line-3); border-radius:11px;
-  background:var(--yuva);
-  font-size:11.5px;
+/* Sırası gelmemiş künye satırı: sohbet adı, prompt panoya alınana kadar
+   soluk ve dokunulamaz — ortada adı verilecek bir sohbet yok. */
+.fb-s.pasif{ opacity:.45; cursor:default; }
+.fb-syazi b.bos{
+  font-family:var(--yazi-govde); font-weight:400; font-size:11.5px; color:var(--ink-dim);
 }
-.fb-kart .kur-deger b{ margin-left:auto; font-family:var(--yazi-kod); font-size:11px; }
 
 /* Dokunulabilir künye satırı — modül adı gibi yerinde düzenlenenler. */
 .fb-s.dokun{ cursor:pointer; }
