@@ -1649,6 +1649,9 @@ html { background: var(--bg); }
 
 .sh-sayfa { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 0 16px; }
 
+/* Sihirbaz tek adıma indi: adım şeridi çizilmiyor, onun üstteki payını
+   içeriğin kendisi veriyor. */
+.sh-sayfa > .sh-icerik:first-child { padding-top: 20px; }
 .sh-serit { display: flex; gap: 5px; padding: 14px 0 20px; flex-shrink: 0; }
 .sh-serit i { flex: 1; height: 3px; border-radius: 2px; background: var(--surface-3); }
 .sh-serit i.ok { background: linear-gradient(90deg, #5cbf92, #3f9871); }
@@ -5984,3 +5987,38 @@ button.fb-cp:active{ transform:scale(.94); }
 .modal-kutu .fb-kart{ margin-bottom:12px; box-shadow:inset 0 1px 0 var(--isik); }
 .modal-kutu .sayfa-dug{ margin:0; }
 .modal-kutu .fbd-not{ margin-top:10px; }
+
+/* --------------------------------------------------------------------------
+   Boş kartın davet hâli
+   Sihirbaz tek soruya indi; kalan bilgiler burada, kart kart doldurularak
+   giriliyor. Kesik çerçeve "burası henüz boş" diyor, gerekçe niçin
+   sorulduğunu söylüyor — sebebini bilmeyen kullanıcı geçiştiriyor.
+   -------------------------------------------------------------------------- */
+
+.fb-bos{ border-style:dashed; border-color:var(--line-2); padding-bottom:16px; }
+/* Sırası gelmemiş kart soluk ama kilitli değil: sıra önerisi, yasak değil. */
+.fb-bos.sonra{ opacity:.45; }
+.fb-neden{
+  position:relative;
+  margin:0 0 11px;
+  font-size:11.5px; line-height:1.6; color:var(--ink-dim);
+}
+.fb-neden b{ color:var(--ink-soft); font-weight:600; }
+.fb-doldur{
+  position:relative;
+  display:inline-flex; align-items:center; gap:7px;
+  height:38px; padding:0 16px;
+  border:0; border-radius:11px; cursor:pointer;
+  font-family:var(--yazi-baslik); font-weight:600; font-size:12.5px; color:#fff;
+  background:linear-gradient(180deg, var(--red-acik), var(--red));
+  box-shadow:0 10px 22px -10px rgba(229,52,42,.8), inset 0 1px 0 rgba(255,255,255,.26);
+  transition:transform .16s var(--yay);
+}
+.fb-doldur:active{ transform:scale(.96); }
+/* Sırası gelmemiş kartın düğmesi kırmızı değil: ekranda tek kırmızı eylem olsun. */
+.fb-doldur.sonra{
+  color:var(--ink-dim);
+  background:linear-gradient(180deg, var(--surface-3), var(--kart-alt));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.1);
+}
+.fbd-say.tam{ color:var(--st-done-t); }

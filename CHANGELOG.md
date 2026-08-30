@@ -1,5 +1,14 @@
 # Değişiklik Günlüğü
 
+## v0.115.0
+- **Sihirbaz beş adımdan tek ekrana indi.** Artık yalnız **firma adı** soruluyor. Uzun form kullanıcıyı yoruyordu ve geçiştirme cevapları geliyordu — sektör boş, takvim boş, roller varsayılan. "Projeyi kur"a basıldığı anda proje açılıyor ve doğrudan **Firma ve kurulum** sayfası geliyor.
+- **Sorular kartlara taşındı.** Sektör, platform, veritabanı, dil, para → **İş**. Yetkili, iletişim, roller → **Kişiler**. Veri katmanı, alan adı, modül adı, depo → **Yer**. Takvim kendi şeridinde. Modüller 2. aşamaya (Yapıyı kurma) bırakıldı — zaten orada kuruluyor.
+- **Boş kartın davet hâli geldi:** kesik çerçeve, tek satır **gerekçe** ve kırmızı **Doldur** düğmesi. Gerekçe kasıtlı — "sektör" diye sorunca geçiştiriliyor, *"promptun ilk satırları bundan çıkıyor"* deyince dolduruluyor.
+- **Sırası gelmemiş kart soluk ama kilitli değil.** Sıra önerisi bu; isteyen atlayıp doğrudan doldurabiliyor. Ekranda tek kırmızı eylem kalsın diye bekleyen kartın düğmesi metal.
+- **Kart başlıklarında sayaç:** 0/5 → 5/5. Kart dolunca bugünkü künye hâline dönüşüyor.
+- **Marka satırı açıldı.** Logo ve renk sihirbazdan kalktı, **İş** kartında tek satırda toplandı: dokununca logo yükleme ya da renk seçme çıkıyor.
+- Düzeltme: `ICON.boya` tanımlı değildi — proje menüsündeki "Rengi değiştir" satırının karosu boş çiziliyordu. Simge eklendi.
+
 ## v0.114.0
 - **Alan adı ve yayın kurulumu Yer grubuna geldi.** Kurulum şeridi ikiden dörde çıktı, iki sıra hâlinde: **Kurulum** (depo → sohbet) ve **Yayın** (alan adı → GitHub Pages).
 - **3 · Alan adı kaydı.** Basınca açılan pencerede Namecheap'e yazılacak dört değer hazır duruyor — Type, Host, Value, TTL — her birinin kendi kopyala düğmesiyle. Alttaki düğme doğrudan **o alan adının Advanced DNS sayfasını** açıyor. Dönünce "Alan adını yaz" ile künye satırına geçiyor.

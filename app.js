@@ -251,6 +251,11 @@ const ICON = {
     d: '<circle cx="8" cy="12" r="3.4"></circle>',
     c: '<circle cx="8" cy="12" r="3.4"></circle><path d="M11.4 12H21M18 12v3M15 12v2.2"></path>',
   },
+  /* Renk seçimi. İki yerde kullanılıyordu ama tanımı yoktu — karo boş çıkıyordu. */
+  boya: {
+    d: '<path d="M12 3a9 9 0 0 0 0 18c1.1 0 1.7-.8 1.7-1.6 0-1.3-1-1.7-1-2.7 0-.8.6-1.4 1.5-1.4H16a5 5 0 0 0 5-5c0-4-4-7.3-9-7.3z"></path>',
+    c: '<path d="M12 3a9 9 0 0 0 0 18c1.1 0 1.7-.8 1.7-1.6 0-1.3-1-1.7-1-2.7 0-.8.6-1.4 1.5-1.4H16a5 5 0 0 0 5-5c0-4-4-7.3-9-7.3z"></path><path d="M7.5 12v.01M10 8.5v.01M14.5 7.5v.01M17.5 11v.01"></path>',
+  },
   arti:    '<path d="M12 5v14M5 12h14"></path>',
   tik:     '<path d="M5 12l5 5L20 7"></path>',
   kapat:   '<path d="M6 6l12 12M18 6L6 18"></path>',
@@ -891,12 +896,32 @@ function kunyeSatiri(renk, ikon, etiket, deger, eylem, projeId, pasif, bosYazi) 
     </span>`;
 }
 
-function fbKart(renk, ikon, baslik, eylem, projeId, ic) {
+/* Boş kartın davet hâli. Üç parçası var: ne olduğu, NEDEN gerektiği ve
+   doldur düğmesi. Gerekçe önemli — "sektör" diye sorunca kullanıcı
+   geçiştiriyor, "promptun ilk satırları bundan çıkıyor" deyince dolduruyor.
+   Sırası gelmemiş kart soluk ama kilitli değil: sıra önerisi, yasak değil. */
+function fbBosKart(renk, ikon, baslik, sayac, gerekce, eylem, projeId, sirada) {
+  return `
+    <div class="fb-kart fb-bos ${sirada ? '' : 'sonra'}" style="--kr:${renk}">
+      <div class="fb-ust">
+        <span class="fb-ik">${svg(ikon, 14)}</span>
+        <span class="fb-bas">${esc(baslik)}</span>
+        <span class="fbd-say">${esc(sayac)}</span>
+      </div>
+      <p class="fb-neden">${gerekce}</p>
+      <button class="fb-doldur ${sirada ? '' : 'sonra'}" type="button"
+              data-eylem="${eylem}" data-proje="${projeId}">
+        ${svg(sirada ? ICON.kalem : ICON.saat, 14)} ${sirada ? 'Doldur' : 'Sırada'}</button>
+    </div>`;
+}
+
+function fbKart(renk, ikon, baslik, eylem, projeId, ic, sayac) {
   return `
     <div class="fb-kart" style="--kr:${renk}">
       <div class="fb-ust">
         <span class="fb-ik">${svg(ikon, 14)}</span>
         <span class="fb-bas">${esc(baslik)}</span>
+        ${sayac ? `<span class="fbd-say tam">${esc(sayac)}</span>` : ''}
         ${AUTH.yonetici && eylem ? `<button class="fb-kalem" type="button"
           data-eylem="${eylem}" data-proje="${projeId}"
           aria-label="${esc(baslik)} düzenle">${svg(ICON.kalem, 13)}</button>` : ''}
@@ -1060,18 +1085,41 @@ function firmaSayfasi(p, d) {
   const roller = rolListesi(pl.roller);
   const alt = [p.telefon, p.eposta].filter(Boolean).length;
 
-  const is = fbKart('var(--fb-kunye)', ICON.etiket, 'İş', 'firma-duzenle', p.id, `
+  /* Kart doldu mu: her kartın kendi asgarisi var. Sihirbaz artık yalnız
+     firma adını soruyor, gerisi burada dolduruluyor — hangi kartın sırada
+     olduğunu bu sayımlar belirliyor. */
+  const isAlan   = [p.sektor, PLATFORM_ADI[p.platform], VERI_ADI[p.veri], dil, para];
+  const isDolu   = isAlan.filter(Boolean).length;
+  const kisiDolu = [p.yetkili, alt, roller.length].filter(Boolean).length;
+  const yerDolu  = [pl.veriKatmani, pl.alanAdi, pl.modulAdi].filter(Boolean).length;
+
+  const isTam   = isDolu   === isAlan.length;
+  const kisiTam = kisiDolu === 3;
+
+  const is = isDolu === 0
+    ? fbBosKart('var(--fb-kunye)', ICON.etiket, 'İş', '0/5',
+        'Ne yapıyoruz? Sektör, platform ve veritabanı — <b>promptun ilk '
+        + 'satırları</b> bunlardan çıkıyor.', 'firma-duzenle', p.id, true)
+    : fbKart('var(--fb-kunye)', ICON.etiket, 'İş', 'firma-duzenle', p.id, `
     <div class="fb-kg">
       ${kunyeSatiri('#8fae4a', ICON.dukkan, 'Sektör',      p.sektor)}
       ${kunyeSatiri('#7d93b8', ICON.katman, 'Platform',    PLATFORM_ADI[p.platform])}
       ${kunyeSatiri('#3fa694', ICON.gVeri,  'Veritabanı',  VERI_ADI[p.veri])}
       ${kunyeSatiri('#b8926b', ICON.dil,    'Arayüz dili', dil)}
       ${kunyeSatiri('#c8973f', ICON.para,   'Para birimi', para)}
-    </div>`);
+      ${kunyeSatiri('#9b7fd4', ICON.gTasarim, 'Marka',
+        (DB.logoAdres[p.id] ? 'Logo var' : 'Logo yok') + ' · ' + renkAdi(p.renk),
+        'marka', p.id)}
+    </div>`, isDolu + '/' + isAlan.length);
 
   /* Müşteri tarafındaki kişi ve uygulama tarafındaki rol katmanları aynı
      soruya cevap veriyor: kim. Ayraç ikisini ayırıyor. */
-  const kisiler = fbKart('var(--fb-kisi)', ICON.kisi, 'Kişiler', 'firma-duzenle', p.id, `
+  const kisiler = kisiDolu === 0
+    ? fbBosKart('var(--fb-kisi)', ICON.kisi, 'Kişiler', '0/3',
+        'Soru çıkarsa kime soracağız, uygulamayı kaç katman insan kullanacak? '
+        + 'Veritabanı güvenlik kuralları rollere göre yazılıyor.',
+        'firma-duzenle', p.id, isTam)
+    : fbKart('var(--fb-kisi)', ICON.kisi, 'Kişiler', 'firma-duzenle', p.id, `
     <div class="fb-kisi">
       <span class="fb-av" style="${renkDegiskenleri(p.renk)}">${esc(basHarf(p.yetkili || '?'))}</span>
       <span class="fb-kyz">
@@ -1096,26 +1144,31 @@ function firmaSayfasi(p, d) {
               `<em>${roller.length - i}</em>${esc(r)}`)).join('')
           : fbCip('#d8a63f', ICON.gGuvenlik, '<b class="eksik">rol belirlenmedi</b>')}
       </div>
-    </div>`);
+    </div>`, kisiDolu + '/3');
 
-  /* Veri, site ve kod — üçü de "nerede duruyor" sorusu. Depo ve kimlik
-     dosyası düzenlenmiyor, gidilecek yer; ayracın altında duruyorlar. */
-  const yer = fbKart('#4fa8c9', ICON.bulut, 'Yer', 'firma-duzenle', p.id, `
+  /* Veri, site ve kod — üçü de "nerede duruyor" sorusu. Kurulum şeridi de
+     burada: depo ve sohbet kod nereye gidecek sorusunun devamı. */
+  const yer = yerDolu === 0 && !p.repo
+    ? fbBosKart('#4fa8c9', ICON.bulut, 'Yer', '0/3',
+        'Kod nereye gidecek, site hangi adreste açılacak, veri nerede duracak? '
+        + 'Depo ve Claude Code oturumu da buradan kuruluyor.',
+        'firma-duzenle', p.id, kisiTam)
+    : fbKart('#4fa8c9', ICON.bulut, 'Yer', 'firma-duzenle', p.id, `
     <div class="fb-kg tek">
       ${kunyeSatiri('#4fa8c9', ICON.bulut,   'Veri katmanı', pl.veriKatmani)}
       ${kunyeSatiri('#5fb37f', ICON.anahtar, 'Alan adı',     pl.alanAdi)}
       ${kunyeSatiri('#c48a5c', ICON.katman,  'Modül adı',    pl.modulAdi, 'modul-adi', p.id)}
-      ${kunyeSatiri('#b8926b', ICON.dal,      'Depo',         p.repo,      'repo',      p.id,
+      ${kunyeSatiri('#b8926b', ICON.dal,     'Depo',         p.repo,      'repo',      p.id,
                     false, 'dokun, yapıştır')}
       ${/* Kimlik dosyası elle girilmiyor, Studio üretiyor — ama yeri burası:
             deponun neyi taşıdığını söyleyen satır. Dokununca içeriği açılır. */ ''}
-      ${kunyeSatiri('#4fa8c9', ICON.dosya,    'Kimlik dosyası', 'NIZAM.md', 'kimlik', p.id)}
+      ${kunyeSatiri('#4fa8c9', ICON.dosya,   'Kimlik dosyası', 'NIZAM.md', 'kimlik', p.id)}
       ${/* Sohbet adı ancak prompt panoya alındıktan sonra sorulabilir:
             öncesinde ortada isim verilecek bir sohbet yok. */ ''}
-      ${kunyeSatiri('#9b7fd4', ICON.kopya,    'Sohbet adı',   pl.sohbetAdi,
+      ${kunyeSatiri('#9b7fd4', ICON.kopya,   'Sohbet adı',   pl.sohbetAdi,
                     pl.sohbetAcildi ? 'sohbet-adi' : '', p.id, !pl.sohbetAcildi)}
     </div>
-    <div class="fb-ayrac fb-kurulum">${kurulumAraclari(p)}</div>`);
+    <div class="fb-ayrac fb-kurulum">${kurulumAraclari(p)}</div>`, yerDolu + '/3');
 
   /* Alttaki genel "Bilgileri düzenle" düğmesi kalktı: her kartın kendi
      kalemi zaten aynı pencereyi açıyor. */
@@ -5497,7 +5550,10 @@ const SIHIRBAZ = {
   kaydediyor: false,
 };
 
-const SIHIRBAZ_ADIM = 5;
+/* Sihirbaz tek soru soruyor: firma adı. Beş adımlık form kullanıcıyı
+   yoruyordu ve geçiştirme cevapları geliyordu — sektör "yok", takvim boş.
+   Gerisi Firma sayfasında, kart kart, gerekçesiyle birlikte soruluyor. */
+const SIHIRBAZ_ADIM = 1;
 
 function sihirbaziAc() {
   modalHepsiniKapat();
@@ -5543,13 +5599,7 @@ function sihirbazCiz() {
 }
 
 function sihirbazHtml() {
-  const a   = SIHIRBAZ.adim;
-  const son = a === SIHIRBAZ_ADIM;
-
-  const govde = [
-    sihirbazFirma, sihirbazYetkili, sihirbazUrun,
-    sihirbazModul, sihirbazOzet,
-  ][a - 1]();
+  const govde = sihirbazFirma();
 
   return `
     <div class="sh-tepe">
@@ -5557,23 +5607,15 @@ function sihirbazHtml() {
         ${svg(ICON.kapat, 15)}
       </button>
       <span class="sh-ad">Yeni Proje</span>
-      <span class="sh-say mono">${a} / ${SIHIRBAZ_ADIM}</span>
     </div>
 
     <div class="sh-sayfa">
-      <div class="sh-serit">
-        ${Array.from({ length: SIHIRBAZ_ADIM }, (_, i) =>
-          `<i class="${i < a - 1 ? 'ok' : i === a - 1 ? 'simdi' : ''}"></i>`).join('')}
-      </div>
-
       <div class="sh-icerik">${govde}</div>
 
       <div class="sh-dip">
-        <button class="btn btn-ghost" data-sb="${a === 1 ? 'kapat' : 'geri'}" type="button">
-          ${a === 1 ? 'Vazgeç' : 'Geri'}
-        </button>
-        <button class="btn btn-primary" data-sb="${son ? 'kaydet' : 'ileri'}" type="button">
-          <span>${son ? 'Projeyi Oluştur' : 'Devam'}</span>
+        <button class="btn btn-ghost" data-sb="kapat" type="button">Vazgeç</button>
+        <button class="btn btn-primary" data-sb="kaydet" type="button">
+          <span>Projeyi kur</span>
         </button>
       </div>
     </div>`;
@@ -5587,187 +5629,18 @@ function shBaslik(ikon, baslik, alt) {
     </div>`;
 }
 
-/* 1 · Firma */
+/* Tek soru. Sektör, logo, renk, yetkili, takvim, platform ve modüller
+   Firma sayfasındaki kartlara taşındı — orada niçin sorulduğu da yazıyor. */
 function sihirbazFirma() {
-  const sektorler = DB.sektorler;
-  const renkler = Object.keys(PROJE_RENK).map(k =>
-    `<button class="renk ${SIHIRBAZ.renk === k ? 'sec' : ''}" data-sb="renk" data-deger="${k}"
-       style="${renkStil(k)}" type="button" aria-label="${k}"></button>`).join('');
-
-  return shBaslik(ICON.folder, 'Firma', 'Projenin kimliği. Bir kez girilir, her işe taşınır.') + `
+  return shBaslik(ICON.folder, 'Firma',
+    'Tek şey soruyoruz. Gerisini proje sayfasında, adım adım dolduracaksın.') + `
     <label class="field">
       <span>Firma adı</span>
       <input type="text" id="sb-firma" value="${esc(SIHIRBAZ.firma)}"
              placeholder="Örn. Aydın Yapı" autocomplete="off" maxlength="60">
     </label>
-
-    <div class="field">
-      <span>Sektör <em class="ipucu">modül önerisini belirler</em></span>
-      <div class="pullar">
-        ${sektorler.map(x => `<button class="pul ${SIHIRBAZ.sektor === x.ad ? 'sec' : ''}"
-           data-sb="sektor" data-deger="${esc(x.ad)}" type="button">${esc(x.ad)}</button>`).join('')}
-        ${AUTH.yonetici ? `<button class="pul yeni" data-sb="sektor-ekle" type="button">
-          ${svg(ICON.arti, 12)} Yeni sektör</button>` : ''}
-      </div>
-      ${sektorler.length ? '' : `<p class="ipucu" style="margin-top:8px">
-        Sektör listesi boş. "Yeni sektör" ile ekleyebilir ya da bu adımı boş geçebilirsin.</p>`}
-    </div>
-
-    <div class="field">
-      <span>Logo <em class="ipucu">isteğe bağlı</em></span>
-      <div class="mk-ust">
-        <span class="mk-logo buyuk ${SIHIRBAZ.logoOnizleme ? 'dolu' : ''}"
-              ${SIHIRBAZ.logoOnizleme ? `style="background-image:url('${SIHIRBAZ.logoOnizleme}')"` : ''}
-              data-sb="logo" role="button" tabindex="0">
-          ${SIHIRBAZ.logoOnizleme ? '' : svg(ICON.folder, 20)}
-        </span>
-        <span class="mk-yazi">
-          <b>${SIHIRBAZ.logo ? esc(SIHIRBAZ.logo.name) : 'Logo seç'}</b>
-          <i>${SIHIRBAZ.logo ? 'Değiştirmek için dokun' : 'Renk paletini bundan üreteceğiz'}</i>
-        </span>
-      </div>
-    </div>
-
-    <div class="field">
-      <span>Proje rengi</span>
-      <div class="renkler">${renkler}</div>
-    </div>`;
-}
-
-/* 2 · Yetkili kişi */
-function sihirbazYetkili() {
-  return shBaslik(ICON.kisi, 'Yetkili ve takvim',
-    'Soru çıkarsa kime soracağız, iş ne zaman teslim edilecek.') + `
-    <label class="field">
-      <span>Ad soyad</span>
-      <input type="text" id="sb-yetkili" value="${esc(SIHIRBAZ.yetkili)}"
-             placeholder="Örn. Mehmet Yılmaz" autocomplete="off" maxlength="60">
-    </label>
-    <label class="field">
-      <span>Telefon</span>
-      <input type="tel" id="sb-telefon" value="${esc(SIHIRBAZ.telefon)}"
-             placeholder="0532 000 00 00" autocomplete="off" maxlength="24">
-    </label>
-    <label class="field">
-      <span>E-posta <em class="ipucu">isteğe bağlı</em></span>
-      <input type="email" id="sb-eposta" value="${esc(SIHIRBAZ.eposta)}"
-             placeholder="ornek@firma.com" autocomplete="off"
-             autocapitalize="off" spellcheck="false" maxlength="80">
-    </label>
-
-    <div class="tarih-ikili">
-      <label class="field">
-        <span>Başlangıç</span>
-        <input type="date" id="sb-baslangic" value="${esc(SIHIRBAZ.baslangic)}">
-      </label>
-      <label class="field">
-        <span>Teslim <em class="ipucu">isteğe bağlı</em></span>
-        <input type="date" id="sb-teslim" value="${esc(SIHIRBAZ.teslim)}">
-      </label>
-    </div>
-
-    <div class="note note-kucuk">
-      ${svg(ICON.info, 15)}
-      <span>Kişi bilgileri yalnızca senin görebileceğin yerde durur — prompta
-      girmez. Teslim tarihi girersen Panel'de <b>geciken projeler</b> ayrılır.</span>
-    </div>`;
-}
-
-/* 3 · Ürün */
-function sihirbazUrun() {
-  const platform = [
-    ['web',   'Web',          'Tarayıcıda çalışır'],
-    ['mobil', 'Mobil',        'Telefon uygulaması'],
-    ['ikisi', 'İkisi birden', 'Web + mobil, ortak veri'],
-  ];
-  const veri = [
-    ['sifirdan', 'Sıfırdan kurulacak',        'Şemayı biz tasarlayacağız'],
-    ['bagli',    'Hazır bir yere bağlanacak', 'Müşterinin sistemi var'],
-  ];
-
-  return shBaslik(ICON.katman, 'Ne yapılacak?', 'Bu iki cevap üretilecek sayfaları belirler.') + `
-    <div class="field">
-      <span>Nerede kullanılacak</span>
-      <div class="secim">${platform.map(([d, ad, alt]) =>
-        secimSatiri('platform', d, ad, alt, SIHIRBAZ.platform === d)).join('')}</div>
-    </div>
-    <div class="field">
-      <span>Veritabanı</span>
-      <div class="secim">${veri.map(([d, ad, alt]) =>
-        secimSatiri('veri', d, ad, alt, SIHIRBAZ.veri === d)).join('')}</div>
-    </div>`;
-}
-
-/* 4 · Modüller */
-function sihirbazModul() {
-  const sablonlar = DB.modulSablonlari();
-  const sektor = DB.sektorler.find(x => x.ad === SIHIRBAZ.sektor);
-  const onerilen = (sektor && sektor.moduller) || [];
-
-  const alt = onerilen.length
-    ? `${esc(SIHIRBAZ.sektor)} seçtiğin için bazıları önden işaretlendi.`
-    : 'Seçtiklerin sayfalarıyla birlikte kurulur.';
-
-  return shBaslik(ICON.katman, 'Hangi bölümler olacak?', alt) + `
-    ${sablonlar.length ? `<div class="secim">${sablonlar.map(m => {
-      const secili = SIHIRBAZ.moduller.includes(m.ad);
-      const oneri  = onerilen.includes(m.ad);
-      return `
-        <div class="satir sec-satir ${secili ? 'sec' : ''}" data-sb="modul" data-deger="${esc(m.ad)}"
-             role="button" tabindex="0">
-          <span class="sec-yazi">
-            <b>${esc(m.ad)}</b>
-            <i>${(m.sayfalar || []).length} sayfa</i>
-          </span>
-          ${oneri ? '<span class="onerildi">önerildi</span>' : ''}
-          <span class="kare">${secili ? svg(ICON.tik, 12) : ''}</span>
-        </div>`;
-    }).join('')}</div>` : `
-      <div class="card">${empty(ICON.katman, 'Şablon yok',
-        'Ayarlar → Modül Şablonları\'ndan ekleyebilirsin. Boş geçersen proje yalnızca Proje Geneli ile kurulur.')}</div>`}
-
-    <div class="note note-kucuk">
-      ${svg(ICON.info, 15)}
-      <span>Her projeye ayrıca bir <b>Proje Geneli</b> kovası eklenir —
-      modüle bağlanamayan işler oraya düşer.</span>
-    </div>`;
-}
-
-/* 5 · Özet */
-function sihirbazOzet() {
-  const sablonlar = DB.modulSablonlari();
-  const sayfa = SIHIRBAZ.moduller.reduce((t, ad) => {
-    const m = sablonlar.find(x => x.ad === ad);
-    return t + ((m && m.sayfalar || []).length);
-  }, 0);
-
-  const dil  = (DIL_SECENEK.find(x => x.kod === SIHIRBAZ.dil) || {}).ad || '—';
-  const para = (PARA_SECENEK.find(x => x.kod === SIHIRBAZ.para) || {}).ad || '—';
-
-  const satir = (ad, deger) => deger
-    ? `<div class="os">${ad} <b>${esc(deger)}</b></div>` : '';
-
-  return shBaslik(ICON.tik, 'Her şey doğru mu?',
-    'Onaylarsan proje modülleri ve sayfalarıyla kurulur.') + `
-    <div class="ozet-kutu">
-      ${satir('Firma', SIHIRBAZ.firma || '—')}
-      ${satir('Sektör', SIHIRBAZ.sektor)}
-      ${satir('Yetkili', [SIHIRBAZ.yetkili, SIHIRBAZ.telefon].filter(Boolean).join(' · '))}
-      ${satir('Platform', PLATFORM_ADI[SIHIRBAZ.platform])}
-      ${satir('Veri', VERI_ADI[SIHIRBAZ.veri])}
-      ${satir('Dil / Para', dil + ' · ' + para)}
-      ${satir('Takvim', [SIHIRBAZ.baslangic, SIHIRBAZ.teslim].filter(Boolean).map(gunYaz).join(' → '))}
-      ${satir('Bölümler', SIHIRBAZ.moduller.join(' · ') || 'yok')}
-      ${satir('Kurulacak', sayfa ? sayfa + ' sayfa' : 'yalnızca Proje Geneli')}
-    </div>`;
-}
-
-/* Tek seçimlik satır — platform ve veritabanı adımlarında kullanılıyor. */
-function secimSatiri(alan, deger, ad, alt, secili) {
-  return `<button class="sc ${secili ? 'sec' : ''}" data-sb="${alan}" data-deger="${deger}" type="button">
-    <span class="sc-yazi"><span class="sc-ad">${ad}</span><span class="sc-alt">${alt}</span></span>
-    <span class="tik">${secili ? svg(ICON.tik, 13) : ''}</span>
-  </button>`;
+    <p class="ipucu">Sektör, platform, yetkili ve takvim sonraki ekranda —
+      her biri niçin gerektiğiyle birlikte.</p>`;
 }
 
 function sihirbazBagla(kutu) {
@@ -8439,6 +8312,26 @@ async function eylemCalistir(el) {
   if (e === 'firma-duzenle')  return firmaDuzenle(el.dataset.proje);
 
   if (e === 'logo-yukle')    return logoSec(el.dataset.proje);
+
+  /* Logo ve renk sihirbazdan kalktı; ikisi de markanın parçası, tek satırdan
+     yönetiliyor. */
+  if (e === 'marka') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const sec = await secenekSor('Marka', [
+      { anahtar: 'logo', ad: DB.logoAdres[pr.id] ? 'Logoyu değiştir' : 'Logo yükle',
+        ikon: ICON.folder, alt: 'Kartlarda ve promptta görünür' },
+      { anahtar: 'renk', ad: 'Rengi değiştir', ikon: ICON.boya,
+        alt: renkAdi(pr.renk) },
+    ]);
+    if (sec === 'logo') return logoSec(pr.id);
+    if (sec === 'renk') {
+      const renk = await renkSor(pr.renk);
+      if (!renk || renk === pr.renk) return;
+      return isYap(() => DB.projeGuncelle(pr.id, { renk }), 'Renk güncellendi.');
+    }
+    return;
+  }
   if (e === 'isletme-gorseli') return isletmeGorseliSec(el.dataset.proje);
   /* Kartın sağ üstündeki "i": aynı G0 yuvasına yüklüyor. Ayrı bir kart
      görseli tutmuyoruz — ikinci bir görseli her proje için ayrıca üretip
@@ -9632,6 +9525,15 @@ function saydam(hex, a) {
 }
 
 /* Bir projenin renk değişkenleri. Kartın ve üst çubuğun rengi buradan gelir. */
+const RENK_ADI = {
+  metal: 'Metal', yesil: 'Yeşil', mor: 'Mor', altin: 'Altın',
+  mavi: 'Mavi', gul: 'Gül', lacive: 'Lacivert',
+};
+
+function renkAdi(anahtar) {
+  return RENK_ADI[anahtar] || 'Metal';
+}
+
 function renkDegiskenleri(anahtar) {
   const [k, d] = PROJE_RENK[anahtar] || PROJE_RENK.metal;
   return `--p1:${k};--p2:${d};--pl:${acikla(k, .38)};--pg:${saydam(k, .15)};--pk:${saydam(k, .45)}`;
