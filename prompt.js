@@ -551,10 +551,15 @@ const PROMPT = {
   },
 
   /* ---------- İhtiyaç çözümlemesi ----------
-     Her projede aynı on dört kararı sormak yanlıştı. Bu prompt künyeyi
-     Claude'a veriyor, o da hangi kararın bu projede gerektiğini, ne
-     önerdiğini ve sayfa sayfa neyin nasıl görünmesi gerektiğini söylüyor.
-     Studio karar vermiyor; soruyu daraltıyor. */
+     Her projede aynı on dört kararı sormak yanlıştı. Bu prompt hangi kararın
+     bu projede gerektiğini, ne önerildiğini ve sayfa sayfa neyin nasıl
+     görünmesi gerektiğini soruyor. Studio karar vermiyor; soruyu daraltıyor.
+
+     Künyenin tamamı burada yok: aynı sohbete modül çözümlemesi zaten
+     yapıştırıldı ve NIZAM.md depoda duruyor. Tekrar basmak promptun üçte
+     ikisini kaplıyor ve tasarım sorusunu veri tablosunun altında bırakıyordu.
+     Tasarım kararı için gereken tek şey ekranların listesi: ne tür ekran,
+     kaç alan, hangi öbekte. */
   ihtiyac(projeId) {
     const p = DB.proje(projeId);
     if (!p) return '';
@@ -563,9 +568,10 @@ const PROMPT = {
 
     const s = [];
     s.push('# ' + projeAdi(p) + ' — tasarım ihtiyaç çözümlemesi', '');
-    s.push('Bu programın **ne olduğunu** aşağıda veriyorum: modülleri, sayfaları,');
-    s.push('her sayfanın künyesi. Senden **nasıl görünmesi gerektiğine** dair üç');
-    s.push('şey istiyorum. Kod yazma, dosya değiştirme — yalnız sondaki bloğu ver.', '');
+    s.push('Bu modülü bu sohbette zaten konuştuk; künyeyi tekrar yazmıyorum —');
+    s.push('gerekirse yukarıya ya da depodaki `NIZAM.md`ye bak. Şimdi sorduğum');
+    s.push('şey **nasıl görüneceği**. Kod yazma, dosya değiştirme — yalnız');
+    s.push('sondaki bloğu ver.', '');
 
     s.push('## Program');
     s.push(hiza('Firma', p.firma));
@@ -575,9 +581,24 @@ const PROMPT = {
     if (roller.length) s.push(hiza('Roller', roller.join(' · ')));
     s.push('');
 
-    const kunye = PROMPT.kunyeBlogu(p);
-    if (kunye) { s.push(kunye, ''); }
-    else {
+    /* Tek satırlık ekran listesi: tasarım kararı için gereken yoğunluk.
+       Ne tür ekran, kaç kayıt, kaç alan — "tablo gerekir mi" sorusunun
+       cevabı bu üçünde. */
+    const kunye = pl.kunye || {};
+    const adlar = Object.keys(kunye);
+    if (adlar.length) {
+      s.push('## Ekranlar', '');
+      s.push('`sayfa · öbek · tür · beklenen kayıt · alan sayısı`', '');
+      adlar.forEach(tam => {
+        const k = kunye[tam] || {};
+        const sf = tam.split(' · ').pop();
+        const par = [k.grup || 'Diğer', (k.tur || 'belirsiz').toLocaleLowerCase('tr'),
+                     k.olcek ? k.olcek.toLocaleLowerCase('tr') + ' kayıt' : '',
+                     (k.alanlar || []).length + ' alan'].filter(Boolean);
+        s.push(`- **${sf}** — ${par.join(' · ')}`);
+      });
+      s.push('');
+    } else {
       s.push('> **Künye yok.** Yapı durağı tamamlanmamış. Elindeki azla karar ver,');
       s.push('> emin olmadığın başlığı `gerek: true` bırak — soru sorulmaya devam etsin.', '');
     }
@@ -603,13 +624,14 @@ const PROMPT = {
     s.push('   sorulmayacak ve koda da girmeyecek. Emin değilsen `true` bırak;');
     s.push('   fazladan soru, eksik özellikten iyidir.', '');
     s.push('**2 · Ne öneriyorsun.** `gerek: true` olan her başlık için bir');
-    s.push('   seçenek öner ve **künyeden gerekçe göster** — "22 sayfanın 9\'u');
-    s.push('   tablo" gibi. Genel geçer cümle yazma. Öneri seçim yerine');
-    s.push('   geçmiyor; kullanıcı görüp kendi dokunacak.', '');
+    s.push('   seçenek öner ve **ekran listesinden gerekçe göster** — "sekiz');
+    s.push('   ekranın beşi liste ve çok kayıtlı" gibi. Genel geçer cümle');
+    s.push('   yazma. Öneri seçim yerine geçmiyor; kullanıcı görüp kendi');
+    s.push('   dokunacak.', '');
     s.push('**3 · Eksik gördüğün başlık.** Studio\'nun listesinde olmayan ama bu');
     s.push('   programda karar verilmesi gereken bir şey varsa kendin aç —');
-    s.push('   en az iki seçenekle. Uydurma; künyede karşılığı olsun.', '');
-    s.push('**4 · Sayfa sayfa tasarım.** Her sayfa için: neyin nerede duracağı,');
+    s.push('   en az iki seçenekle. Uydurma; ekranlarda karşılığı olsun.', '');
+    s.push('**4 · Sayfa sayfa tasarım.** Yukarıdaki ekranlar için: neyin nerede duracağı,');
     s.push('   hangi bileşenlerin gerektiği ve **o sayfada bir görsel gerekiyorsa**');
     s.push('   nerede ve ne olduğu. Bu liste ChatGPT\'ye gidecek ve tam o');
     s.push('   görseller üretilecek — "genel bir simge" deme, ne çizileceğini yaz.', '');

@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## v0.128.2
+- **İhtiyaç promptu sadeleşti: sadece tasarım soruyor.** Künyenin tamamını yeniden basıyordu — aynı sohbete modül çözümlemesi zaten yapıştırılmıştı ve `NIZAM.md` depoda duruyor. Tekrar yazmak promptun üçte ikisini kaplıyor ve tasarım sorusunu veri tablosunun altında bırakıyordu.
+- Yerine tek satırlık ekran listesi geldi: `sayfa · öbek · tür · beklenen kayıt · alan sayısı`. Tasarım kararı için gereken yoğunluk bu — "tablo gerekir mi" sorusunun cevabı bu üç sayıda.
+- Gerekçe isteği de buna göre değişti: "künyeden gerekçe göster" yerine "ekran listesinden gerekçe göster".
+
 ## v0.128.1
 - **Proje sayfasında "Tasarımı belirleme" bitmediği hâlde yeşil duruyordu.** Aşamanın bittiğini tarife bakarak ölçüyordu; aşamada artık beş ada var ve ihtiyaç çözümlemesi de kararlar da bitmemişti. Ölçüt haritayla aynı yerden okunuyor: beş ada da bitmeden aşama bitmiş sayılmıyor.
 - **Tasarım haritasında adalar kilitli zincire girdi.** Sırası gelmeyen ada kesik çerçeveli ve basılamaz — ihtiyaç çözümlemesi kalan kararların kapsamını belirlediği için sıra artık zorunlu. Biten adaya geri dönülebiliyor.
