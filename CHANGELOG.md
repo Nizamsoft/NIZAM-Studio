@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.125.0
+- **Modülün sayfaları türlerine göre öbeklendi:** Listeler · Formlar · Detaylar · Panolar · Takvimler · Ayarlar. Yirmi iki sayfa düz bir ızgarada aranmıyordu; her öbeğin başlığında kaç sayfa olduğu da yazıyor.
+- **Türü seçilmemiş sayfalar en altta** kendi öbeğinde toplanıyor — hangilerinin eksik olduğu tek bakışta görünüyor.
+- Numaralar öbeğe göre değil **baştan sona** devam ediyor: "22 sayfa" sayısı bozulmuyor, bir sayfayı numarasıyla aramak da mümkün kalıyor.
+- "Sayfa ekle" karesi kendi **Ekle** başlığının altına geçti; öbeklerin arasında kaybolmuyor.
+
 ## v0.124.1
 - **04. adımın adı "Hangi ekranlar olacak?" yerine "Modüller" oldu.** Ekranın kendisi zaten modül kuruyor; "ekran" demek sayfalarla karışıyordu. Özeti de "Hangi bölümler olacak", sayacı "1 modül · 24 sayfa".
 

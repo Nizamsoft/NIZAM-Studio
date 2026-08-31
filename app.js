@@ -3447,21 +3447,40 @@ function agacEkrani(p, t) {
           (mk.kural || '').trim()
             || 'bütün modülde geçerli bir kural varsa yaz — isteğe bağlı',
           false, 'agac-modul-kural', `data-proje="${p.id}"`)
-      + `<div class="ya-satir">
-          ${(() => {
-            /* Kırmızı yalnız sıradaki sayfada: hepsi kırmızı olunca ekran
-               uyarı tablosuna dönüyor ve "önce hangisi" kayboluyor. */
-            const ilkEksik = t.sayfalar.findIndex(sf => !kunyeTam(t.kunye[sf]));
-            return t.sayfalar.map((sf, i) => agacKare(
-            String(i + 1).padStart(2, '0'),
-            kunyeTam(t.kunye[sf]) ? 'bitti' : i === ilkEksik ? 'simdi' : 'eksik',
-            sf, agacSayfaAlt(t.kunye[sf] || {}), 'agac-sayfa',
-            `data-proje="${p.id}" data-ad="${esc(sf)}"`)).join('');
-          })()}
-          ${agacKare('', 'kesik', 'Sayfa ekle', '', 'yapi-sayfa-yaz',
-            `data-proje="${p.id}"`)}
-        </div>
-      <button class="ags sil" type="button" data-eylem="agac-modul-sil"
+      + (() => {
+          /* Yirmi sayfa düz bir ızgarada aranmıyor. Sayfalar türlerine göre
+             öbekleniyor: panolar, listeler, formlar… Numaralar öbeğe göre
+             değil baştan sona devam ediyor — "22 sayfa" sayısı bozulmasın.
+
+             Kırmızı yalnız sıradaki sayfada: hepsi kırmızı olunca ekran
+             uyarı tablosuna dönüyor ve "önce hangisi" kayboluyor. */
+          const cogul = { 'Liste': 'Listeler', 'Form': 'Formlar',
+            'Detay': 'Detaylar', 'Panel': 'Panolar', 'Takvim': 'Takvimler',
+            'Ayarlar': 'Ayarlar' };
+          const ilkEksik = t.sayfalar.findIndex(sf => !kunyeTam(t.kunye[sf]));
+          const sira = SAYFA_TURU.map(x => x.ad).concat(['']);
+
+          const obek = {};
+          t.sayfalar.forEach((sf, i) => {
+            const tur = (t.kunye[sf] || {}).tur || '';
+            (obek[tur] = obek[tur] || []).push({ sf, i });
+          });
+
+          return sira.filter(tur => obek[tur]).map(tur => `
+            <span class="fb-et">${esc(cogul[tur] || 'Türü seçilmedi')}
+              · ${obek[tur].length}</span>
+            <div class="ya-satir">
+              ${obek[tur].map(({ sf, i }) => agacKare(
+                String(i + 1).padStart(2, '0'),
+                kunyeTam(t.kunye[sf]) ? 'bitti' : i === ilkEksik ? 'simdi' : 'eksik',
+                sf, agacSayfaAlt(t.kunye[sf] || {}), 'agac-sayfa',
+                `data-proje="${p.id}" data-ad="${esc(sf)}"`)).join('')}
+            </div>`).join('')
+            + `<span class="fb-et">Ekle</span>
+               <div class="ya-satir">${agacKare('', 'kesik', 'Sayfa ekle', '',
+                 'yapi-sayfa-yaz', `data-proje="${p.id}"`)}</div>`;
+        })()
+      + `<button class="ags sil" type="button" data-eylem="agac-modul-sil"
               data-proje="${p.id}" data-ad="${esc(t.modul)}">
         <span class="ags-ik">${svg(ICON.kapat, 14)}</span>
         <span class="ags-yz"><b>Modülü kaldır</b>
