@@ -261,7 +261,7 @@ const PROMPT = {
     s.push('## Sırada ne var');
     s.push('Bundan sonra sana iki blok daha yapıştıracağım (2/3 ve 3/3):');
     s.push('');
-    s.push('1. **Tasarım kararları** — palet, yazı tipleri ve arayüz kararları.');
+    s.push('1. **Tasarım sistemi** — renk, tipografi, bileşenler, simge dili, iskeletler.');
     s.push('2. **Modüller, sayfalar ve künyeleri** — hangi ekranlar olacak, her');
     s.push('   birinde hangi alanlar duracak, kim ne yapabilecek.');
     s.push('');
@@ -281,7 +281,7 @@ const PROMPT = {
     if (!p) return '';
 
     const s = [];
-    s.push('# ' + projeAdi(p) + ' — Görsel dil (2/3)', '');
+    s.push('# ' + projeAdi(p) + ' — Tasarım sistemi (2/3)', '');
 
     const slug = depoSlug(p.repo);
     if (slug) {
@@ -292,14 +292,22 @@ const PROMPT = {
     }
 
     s.push('Tanıtımdan sonraki **ilk blok** bu. Uygulamanın nasıl görüneceği');
-    s.push('burada yazıyor. Sonuncusu modüller, sayfalar ve künyeleri olacak.');
-    s.push('');
-    s.push('Bu blokta iki iş var: **görselleri depoya indirmek** ve görsel dili');
-    s.push('`NIZAM.md`\'ye yazmak. **Uygulama kodu yazmanı hâlâ istemiyorum.**');
+    s.push('burada yazıyor: renk, tipografi, ölçüler, bileşenler, simge dili ve');
+    s.push('sayfa iskeletleri. Sonuncusu modüller, sayfalar ve künyeleri olacak.');
     s.push('');
 
     const gorsel = PROMPT.gorselBlogu(p);
-    if (gorsel) { s.push(gorsel); s.push(''); }
+    if (gorsel) {
+      s.push('Bu blokta iki iş var: **görselleri depoya indirmek** ve tasarım');
+      s.push('sistemini `NIZAM.md`\'ye yazmak. **Uygulama kodu yazmanı hâlâ');
+      s.push('istemiyorum.**', '');
+      s.push(gorsel); s.push('');
+    } else {
+      s.push('Tek iş var: **tasarım sistemini `NIZAM.md`\'ye yazmak.**');
+      s.push('İndirilecek dosya yok — simgeler kodda SVG olarak çizilecek,');
+      s.push('nasıl çizileceği aşağıda yazıyor. **Uygulama kodu yazmanı hâlâ');
+      s.push('istemiyorum.**', '');
+    }
 
     const dil = PROMPT.gorselDilBlogu(p);
     if (dil) { s.push(dil); s.push(''); }
@@ -320,24 +328,35 @@ const PROMPT = {
       s.push('   saat geçerli — ilk işin bu olsun.');
     }
     s.push(n++ + '. `NIZAM.md` içindeki `## Tasarım kararları` başlığının altındaki');
-    s.push('   *"henüz belirlenmedi"* satırını sil; görsel dili, görsel');
-    s.push('   yerleşimini ve arayüz kararlarını oraya yaz. Renk kodlarını');
-    s.push('   olduğu gibi aktar.');
+    s.push('   *"henüz belirlenmedi"* satırını sil; yukarıdaki her şeyi oraya');
+    s.push('   yaz — renk kodları, yazı tipleri ve ölçekleri, köşe ve boşluk');
+    s.push('   değerleri, bileşen tarifleri, simge dili ve listesi, sayfa');
+    s.push('   iskeletleri, arayüz kararları. **Sayıları olduğu gibi aktar**,');
+    s.push('   yuvarlama, kendi ölçünü koyma.');
+    s.push(n++ + '. Renk ve ölçüleri `NIZAM.md`de tek bir değişken listesi olarak');
+    s.push('   yaz — kod yazarken oradan okunacak, her ekranda yeniden');
+    s.push('   tanımlanmayacak.');
     s.push(n++ + '. Tek commit\'le **`main` dalına** gönder. Commit mesajı:');
-    s.push('   `[' + TASK_PREFIX + '-0] Görsel dil`.');
+    s.push('   `[' + TASK_PREFIX + '-0] Tasarım sistemi`.');
     s.push(n++ + '. Dur ve bekle. Sıradaki ve son blok: modüller, sayfalar ve künyeleri.');
     s.push('');
 
     s.push('## Şunları yapma');
     s.push('- **Uygulama kodu yazma.** Ekran, bileşen, CSS dosyası — hiçbiri.');
-    s.push('- **Görsel dili yorumlama.** Tarifte ne yazıyorsa o; "daha modern');
+    s.push('- **Tasarım sistemini yorumlama.** Ne yazıyorsa o; "daha modern');
     s.push('  olur" diye değiştirme, eksik gördüğünü uydurma, sor.');
-    s.push('- **Görsel üretme ya da yerine başkasını koyma.** Bir adres');
-    s.push('  açılmıyorsa dur ve söyle.');
+    s.push('- **Simge çizme.** Şimdi değil. Nasıl çizileceğini not al; kodu');
+    s.push('  yazarken çizeceksin.');
+    if (gorsel) {
+      s.push('- **Görsel üretme ya da yerine başkasını koyma.** Bir adres');
+      s.push('  açılmıyorsa dur ve söyle.');
+    }
     s.push('- **Sayfa ya da modül uydurma.** Hangi ekranların olacağı hâlâ belli değil.');
     s.push('- **Bu oturuma başka depo ekleme.** Tek depo, tek oturum.');
     s.push('');
-    s.push('Görseller indi ve yazıldıysa tek cümleyle onayla ve bekle.');
+    s.push(gorsel
+      ? 'Görseller indi ve yazıldıysa tek cümleyle onayla ve bekle.'
+      : 'Yazıldıysa tek cümleyle onayla ve bekle.');
 
     return s.join('\n');
   },

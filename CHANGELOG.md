@@ -1,5 +1,12 @@
 # Değişiklik Günlüğü
 
+## v0.130.2
+- **2. blok eski akıştan kalma cümleler taşıyordu.** "Bu blokta iki iş var: görselleri depoya indirmek…" diyordu ama indirilecek görsel kalmadı; başlığı da hâlâ "Görsel dil" idi. Blok artık taşıdığı şeye göre konuşuyor: tasarım sistemi — renk, tipografi, ölçüler, bileşenler, simge dili ve sayfa iskeletleri.
+- Claude'a ne yazacağı açıkça sayıldı: renk kodları, yazı ölçekleri, köşe ve boşluk değerleri, on üç bileşen tarifi, simge listesi, sayfa iskeletleri. **Sayılar olduğu gibi aktarılacak** — yuvarlanmayacak.
+- Yeni bir madde: renk ve ölçüler `NIZAM.md`de **tek bir değişken listesi** olarak yazılacak; her ekranda yeniden tanımlanmayacak.
+- "Simge çizme — şimdi değil" uyarısı eklendi: simgeler kodu yazarken SVG olarak çizilecek, bu blokta yalnız tarifleri saklanıyor.
+- Görsel indirme uyarıları yalnız indirilecek görsel varsa yazılıyor.
+
 ## v0.130.1
 - **"Adayı bitir" dendiğinde 3. adanın kilidi açılmıyordu.** Görsel dünyanın bittiğini ölçen satır hâlâ eski akışa bakıyordu: serbest metin tarif ve dolu görsel yuvaları arıyordu. İkisi de bir önceki sürümde kalkmıştı, o yüzden ada hiçbir zaman bitmiş sayılmıyor ve sonraki ada kilitli kalıyordu. Ölçüt tek yere alındı — adanın kendi durumu.
 - Proje sayfasındaki "Tasarımı belirleme" özeti de aynı eski ölçütten okuyordu; artık bulunduğun adıma göre konuşuyor: çözümleme yoksa Claude'a git, sistem yoksa ChatGPT'ye git, sistem geldiyse kalan kararlar.
