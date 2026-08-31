@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## v0.134.1
+- **Uygulama açılmıyordu: tasarım durağı dışında her sayfa boş geliyordu.** `render()` içinde artık var olmayan bir sabit temizleniyordu (`GORSEL_EKRAN` — görsel dünyanın alt ekranları v0.130.0'da kalkmıştı, temizlik satırı kalmıştı). Hata çizimden önce patladığı için ekran boş kalıyor, alt çubuk ölüyor ve artı düğmesi kayboluyordu. Satır silindi.
+- **Boş ekran bir daha sessiz kalmayacak.** Çizim patlarsa artık hatanın kendisi ekrana yazılıyor: hangi sayfa, hangi mesaj, yığın izinin ilk satırları ve "Hatayı kopyala" düğmesi. Telefonda konsol yok; boş ekrana bakmakla hata mesajını okumak arasında dağlar var.
+- Hata olsa bile alt çubuk ve gezinme çalışmaya devam ediyor — çizim `try` içine alındı, `render()` sonuna kadar yürüyor.
+
 ## v0.134.0
 - **Beta durağı kart diline geçti.** Uzun açıklama blokları ve alt alta büyük düğmeler gitti; yerine dört kare kart geldi: `01 3. blok` · `02 Veritabanı` · `03 Beş aşama` · `04 Beta çıktı`. Diğer aşamalarla aynı ızgara, aynı ölçü, aynı durum dili.
 - Aşamanın kendi rengi ve simgesi oldu: turuncu `#c9753c` ve şimşek — ilk çalışan sürüm.

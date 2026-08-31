@@ -5747,6 +5747,27 @@ function empty(icon, title, text, butonYazi = null, eylem = null) {
   </div>`;
 }
 
+/* Çizim hatası — boş ekran yerine ne olduğunu söyleyen kutu. Mesaj ve
+   yığın izinin ilk satırı yeter: hangi fonksiyonda patladığını gösteriyor. */
+function cizimHatasi(h, nerede) {
+  const iz = String((h && h.stack) || '').split('\n').slice(0, 3)
+    .map(x => x.trim()).filter(Boolean).join('\n');
+  return `
+    <div class="card">
+      <div class="note uyari">${svg(ICON.uyari, 15)}
+        <span><b>Bu ekran çizilemedi.</b> Uygulamanın geri kalanı çalışıyor —
+        alt çubuktan başka bir sayfaya geçebilirsin.</span></div>
+      <div class="hata-iz">
+        <b>${esc(String(nerede || '—'))}</b>
+        <pre>${esc(String((h && h.message) || h))}</pre>
+        ${iz ? `<pre class="soluk">${esc(iz)}</pre>` : ''}
+      </div>
+      <button class="sayfa-dug ikincil" type="button" data-eylem="hata-kopyala"
+              data-metin="${esc(String((h && h.message) || h) + '\n' + iz)}">
+        ${svg(ICON.kopya, 15)} Hatayı kopyala</button>
+    </div>`;
+}
+
 function hataKutusu(mesaj) {
   return `<div class="card">
     <div class="empty">
@@ -6056,7 +6077,6 @@ function render() {
   if (sayfa !== 'tasarim') {
     Object.keys(TASARIM_MOD).forEach(k => { delete TASARIM_MOD[k]; });
     Object.keys(IHTIYAC_EKRAN).forEach(k => { delete IHTIYAC_EKRAN[k]; });
-    Object.keys(GORSEL_EKRAN).forEach(k => { delete GORSEL_EKRAN[k]; });
   }
   /* Beta adası da öyle: geri gelindiğinde kareler açılsın. */
   if (sayfa !== 'beta') {
@@ -6119,10 +6139,17 @@ function render() {
   const dikey = gecis ? 0 : view.scrollTop;
   const yatay = gecis ? [] : $$('.raf', view).map(r => r.scrollLeft);
 
-  view.innerHTML = sayfa ? durakSayfasi(id, sayfa)
-                 : kova  ? VIEWS.projeKovasi(kova)
-                 : detay ? VIEWS.projeDetay(id)
-                 : VIEWS[key]();
+  /* Çizim patlarsa ekran boş kalıyor ve altındaki satırlar hiç çalışmıyordu:
+     alt çubuk ölüyor, artı düğmesi kayboluyor, kullanıcı bomboş bir sayfaya
+     bakıyordu. Telefonda konsol da yok. Artık hata ekrana yazılıyor. */
+  try {
+    view.innerHTML = sayfa ? durakSayfasi(id, sayfa)
+                   : kova  ? VIEWS.projeKovasi(kova)
+                   : detay ? VIEWS.projeDetay(id)
+                   : VIEWS[key]();
+  } catch (h) {
+    view.innerHTML = cizimHatasi(h, sayfa || kova || key);
+  }
   view.scrollTop = dikey;
   if (yatay.length) $$('.raf', view).forEach((r, i) => { r.scrollLeft = yatay[i] || 0; });
   view.classList.remove('swap');
@@ -9805,6 +9832,12 @@ async function eylemCalistir(el) {
     return isYap(() => DB.paletKaydet(pr.id,
       Object.assign({}, pl, { blokVerildi: !pl.blokVerildi })),
       pl.blokVerildi ? 'İşaret kaldırıldı.' : 'Blok verildi.');
+  }
+
+  if (e === 'hata-kopyala') {
+    panoyaKopyala(el.dataset.metin || '');
+    toast('Hata panoya alındı.', 'basari');
+    return;
   }
 
   if (e === 'sql-nasil') return sqlNasilAc(el.dataset.proje);

@@ -3297,6 +3297,21 @@ a.durak:active { transform: scale(.99); transition: transform .1s var(--ease); }
 .kaynak span { font-size: 11px; line-height: 1.5; color: var(--ink-faint); }
 .kaynak b { color: var(--st-check-t); font-weight: 600; }
 
+/* Çizim hatası kutusu — telefonda konsol yok, hata ekranda yazıyor. */
+.hata-iz { margin: 10px 0; }
+.hata-iz b {
+  display: block; margin-bottom: 6px;
+  font-family: var(--yazi-kod); font-size: 10px;
+  letter-spacing: .08em; text-transform: uppercase; color: var(--ink-dim);
+}
+.hata-iz pre {
+  margin: 0 0 6px; padding: 10px 11px; border-radius: 10px;
+  border: 1px solid var(--line-3); background: var(--kod-bg);
+  font: 11.5px/1.5 var(--yazi-kod); color: var(--red-ink);
+  white-space: pre-wrap; word-break: break-word;
+}
+.hata-iz pre.soluk { color: var(--ink-dim); font-size: 10.5px; }
+
 /* --------------------------------------------------------------------------
    Veritabanı kurulumu
    Bağlantı kurulum adımında toplanıyor, SQL'i kullanıcı çalıştırıyor.
