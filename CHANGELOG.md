@@ -1,5 +1,14 @@
 # Değişiklik Günlüğü
 
+## v0.129.1
+- **Tasarlanacak ekranlar artık altı genel rol değil, modülün gerçek sayfaları.** Roller sayfalarla "o türden en çok alanı olan" diye eşleştiriliyordu ve saçmalıyordu: Panel rolüne gerçek panel yerine "Nakit Akış", Ayarlar rolüne uygulamanın ayar ekranı yerine "Ödeme Yöntemleri" bir tanım sayfası düşüyordu. En çok alan en önemli ekran demek değil.
+- **Hangi sayfaların kendi tasarımını hak ettiğini Claude seçiyor.** İhtiyaç çözümlemesi bloğuna `ekranlar` bölümü eklendi: dört ile yedi arası, en önemliden başlayarak, her biri gerekçesiyle. Kalan sayfalar bu ekranların diliyle kurulacak.
+- Ekran listesi artık şöyle okunuyor: `Dashboard · Hesaplar · Hesap Defteri · Nakit Akış Raporu · Giriş · Ayarlar`. Giriş ve Ayarlar künyede yok ama her uygulamada var — listeye Studio ekliyor.
+- **"Ekranları düzenle" eklendi.** Modülün bütün sayfaları işaretlemeli bir listede; Claude'un seçimi başlangıç, son söz kullanıcının. Modülü bilen kişi, bir kural değil.
+- Her ekranın promptu artık o sayfanın kendi künyesini taşıyor: türü, beklenen kayıt, alanları, yapısı ve Claude'un yerleşim notu. "Liste ekranı çiz" değil, "Hesap Defteri ekranını çiz: tarih, açıklama, borç, alacak, bakiye".
+- Izgara sabit 3+3 olmaktan çıktı; ekran sayısı kaç olursa olsun üçerli satırlara sarıyor.
+- Görsel dünyayı sıfırlama ve yeni bir çözümleme aktarmak elle yapılmış ekran seçimini de temizliyor — eski seçim yeni listeye yapışıp kalmasın.
+
 ## v0.129.0
 - **Görsel dünya adım adıma bölündü.** ChatGPT'ye altı ekranı tek promptta çizdirmek dağıtıyordu: birini yapıp ötekini unutuyor ya da hepsini yüzeysel bırakıyordu. Ada artık dört kare kart, her biri tek iş: `01 Malzeme` · `02 Görsel dil` · `03 Ekranlar` · `04 Görseller`.
 - **02 Görsel dil ekran çizmiyor** — yalnız renk, yazı, doku, simge, köşe, boşluk istiyor. Dil oturmadan ekran çizdirmek boşa işti; ChatGPT'nin dağıldığı yer de tam orasıydı.

@@ -1643,17 +1643,19 @@ function gorselAltEkran(p) {
 
   if (nerede === 'ekranlar') {
     return `<div class="akis gorsel">
-      ${gorselAltBaslik(p, 'Ekranlar', g.onayli + '/' + EKRAN_ROL.length, 'ekran', null)}
+      ${gorselAltBaslik(p, 'Ekranlar', g.onayli + '/' + g.roller.length, 'ekran', null)}
       <div class="akis-alt">${ekranListesi(p)}</div>
     </div>`;
   }
   const anahtar = nerede.slice(6);
-  const rol = EKRAN_ROL.find(x => x.anahtar === anahtar);
+  const hepsi = tasarimEkranlari(p);
+  const rol = hepsi.find(x => x.anahtar === anahtar);
   if (!rol) { GORSEL_EKRAN[p.id] = 'ekranlar'; return gorselAltEkran(p); }
-  const sira = EKRAN_ROL.findIndex(x => x.anahtar === anahtar) + 1;
+  const sira = hepsi.findIndex(x => x.anahtar === anahtar) + 1;
   return `<div class="akis gorsel">
-    ${gorselAltBaslik(p, ekranRolAdi(p, rol),
-      String(sira).padStart(2, '0') + '/0' + EKRAN_ROL.length, 'ekran', 'Ekranlar')}
+    ${gorselAltBaslik(p, rol.ad,
+      String(sira).padStart(2, '0') + '/' + String(hepsi.length).padStart(2, '0'),
+      'ekran', 'Ekranlar')}
     <div class="akis-alt">${ekranSayfasi(p, anahtar)}</div>
   </div>`;
 }
@@ -1877,7 +1879,8 @@ function gorselAdaDurumu(p) {
   const dil   = pl.dil;
   const tarif = String(pl.tarif || '').trim();
   const ek    = pl.ekranlar || {};
-  const onayli = EKRAN_ROL.filter(r => ek[r.anahtar] && ek[r.anahtar].onay).length;
+  const hepsi = tasarimEkranlari(p);
+  const onayli = hepsi.filter(r => ek[r.anahtar] && ek[r.anahtar].onay).length;
   const yuvalar = (pl.gorseller || []).filter(y => y.no !== 'G0');
   const dolu  = yuvalar.filter(y => y.yol).length;
   /* Eski projelerde `dil` yok, serbest metin `tarif` var; ikisi de dili
@@ -1892,8 +1895,10 @@ function gorselAdaDurumu(p) {
       ozet: dilGecerli(dil) ? 'blok alındı' : tarif ? 'tarif var' : 'bekliyor',
       kilit: !(!!logo && !!isl) },
     { ad: 'Ekranlar', eylem: 'gorsel-ekranlar',
-      bitti: onayli >= EKRAN_ROL.length,
-      ozet: onayli ? onayli + '/' + EKRAN_ROL.length + ' onaylandı' : 'bekliyor',
+      bitti: hepsi.length > 0 && onayli >= hepsi.length,
+      ozet: hepsi.length
+        ? (onayli ? onayli + '/' + hepsi.length + ' onaylandı' : hepsi.length + ' ekran')
+        : 'ekran seçilmedi',
       kilit: !dilVar },
     { ad: 'Görseller', eylem: 'gorsel-yuvalar',
       bitti: yuvalar.length > 0 && dolu === yuvalar.length,
@@ -2114,13 +2119,13 @@ const GORSEL_EKRAN = {};
    ChatGPT'ye altısını birden çizdirmek dağıtıyordu. */
 function ekranDurumu(p) {
   const ek = (p.palet || {}).ekranlar || {};
-  const roller = EKRAN_ROL.map(r => {
+  const roller = tasarimEkranlari(p).map(r => {
     const e = ek[r.anahtar] || null;
     return { rol: r, kayit: e, onay: !!(e && e.onay),
              blok: e ? (e.bloklar || []).length : 0 };
   });
   const simdi = roller.findIndex(x => !x.onay);
-  return { roller, simdi, tam: simdi < 0,
+  return { roller, simdi, tam: roller.length > 0 && simdi < 0,
            onayli: roller.filter(x => x.onay).length };
 }
 
@@ -2144,31 +2149,56 @@ function ekranListesi(p) {
           <span class="ya-dur">${svg(ikon, 13)}</span>
         </span>
         <span class="ya-yz">
-          <span class="ya-ad">${esc(ekranRolAdi(p, x.rol))}</span>
+          <span class="ya-ad">${esc(x.rol.ad)}</span>
           <span class="ya-alt">${esc(alt)}</span>
         </span>
       </button>`;
   };
 
+  if (!g.roller.length) {
+    return `<div class="gd-kaydir">
+      <div class="bos-kutu">${svg(ICON.resim, 18)}
+        <span>Tasarlanacak ekran seçilmemiş. <b>01 İhtiyaç çözümlemesi</b>nde
+        Claude hangi sayfaların kendi tasarımını hak ettiğini söylüyor —
+        ya da aşağıdan elle seç.</span></div>
+      ${ekranDuzenleDugmesi(p)}
+    </div>`;
+  }
+
+  /* Üçerli satırlar; son satır eksik kalabilir, ızgara soldan doluyor. */
+  const satirlar = [];
+  for (let i = 0; i < g.roller.length; i += 3) {
+    satirlar.push([i, i + 1, i + 2].filter(x => x < g.roller.length));
+  }
+
   return `<div class="gd-kaydir">
     <div class="kaynak">${svg(ICON.arama, 13)}
-      <span><b>Altı rol, gerçek sayfalarla dolduruldu.</b> Her ekran ayrı
-        prompt, ayrı blok — ChatGPT tek iş yapıyor.</span></div>
+      <span><b>Ekranlar modülün gerçek sayfaları.</b> Hangilerinin kendi
+        tasarımını hak ettiğini Claude seçti; her ekran ayrı prompt, ayrı
+        blok — ChatGPT tek iş yapıyor.</span></div>
     <div class="ya-harita">
-      <div class="ya-satir">${[0, 1, 2].map(kart).join('')}</div>
-      ${yolOku(g.roller[2].onay)}
-      <div class="ya-satir">${[3, 4, 5].map(kart).join('')}</div>
+      ${satirlar.map((satir, si) => `
+        ${si ? yolOku(g.roller[satir[0] - 1].onay) : ''}
+        <div class="ya-satir">${satir.map(kart).join('')}</div>`).join('')}
     </div>
+    ${ekranDuzenleDugmesi(p)}
   </div>`;
+}
+
+function ekranDuzenleDugmesi(p) {
+  return `
+    <div class="obk"><span class="obk-ad">Liste</span><i class="obk-cizgi"></i></div>
+    ${agacSatir('var(--metal-2)', ICON.kalem, 'Ekranları düzenle',
+      'Hangi sayfalar tasarlansın — son söz senin', false, 'ekran-secim',
+      `data-proje="${p.id}"`)}`;
 }
 
 /* Bir ekranın kendi sayfası: prompt, blok, karşılaştırma, onay. */
 function ekranSayfasi(p, anahtar) {
-  const rol = EKRAN_ROL.find(x => x.anahtar === anahtar);
+  const rol = tasarimEkranlari(p).find(x => x.anahtar === anahtar);
   if (!rol) return '';
   const e = ((p.palet || {}).ekranlar || {})[anahtar] || null;
-  const sayfa = ekranRolSayfasi(p, rol);
-  const notu = (((p.palet || {}).cozum || {}).sayfalar || {})[sayfa];
+  const notu = rol.notu;
 
   return `<div class="gd-kaydir">
     ${e && (e.bloklar || []).length ? `
@@ -2186,9 +2216,8 @@ function ekranSayfasi(p, anahtar) {
         <ol>${e.bloklar.map(b => `<li><b>${esc(b.ad)}</b>${
           b.tur ? ` <u>${esc(b.tur)}</u>` : ''}${b.not ? ' — ' + esc(b.not) : ''}</li>`).join('')}</ol>
       </div>` : `
-      <div class="kaynak">${svg(ICON.arama, 13)}
-        <span><b>${esc(rol.alt)}</b>${sayfa ? ' Bu programda karşılığı: <b>'
-          + esc(sayfa) + '</b>.' : ''}</span></div>
+      ${rol.alt ? `<div class="kaynak">${svg(ICON.arama, 13)}
+        <span>${esc(rol.alt)}</span></div>` : ''}
       ${notu && notu.yerlesim ? `<div class="tn">
         <div class="tn-bas"><b>Yerleşim</b><span class="tn-rz">Claude</span></div>
         <p>${esc(notu.yerlesim)}</p>
@@ -8299,6 +8328,9 @@ function ihtiyacAktar(projeId) {
           <div class="row"><div class="row-main">
             <span class="row-title">Sayfa notu</span></div>
             <span class="row-val">${Object.keys(cozum.sayfalar).length}</span></div>
+          <div class="row"><div class="row-main">
+            <span class="row-title">Tasarlanacak ekran</span></div>
+            <span class="row-val">${cozum.ekranlar.length || '—'}</span></div>
         </div></div>`;
     };
 
@@ -8317,6 +8349,9 @@ function ihtiyacAktar(projeId) {
            gerek yok. Numaralar bir kez veriliyor ve değişmiyor. */
         const yeni = Object.assign({}, pl, { cozum, cozumIstendi: true });
         yeni.gorseller = yuvalariEsle(yeni);
+        /* Yeni çözümleme yeni bir ekran listesi demek: elle yapılmış eski
+           seçim yapışıp kalmasın. */
+        delete yeni.ekranSecim;
         await DB.paletKaydet(projeId, yeni);
         modalKapat();
         toast('Çözümleme alındı — ' + Object.keys(cozum.sayfalar).length
@@ -8447,12 +8482,12 @@ function dilAktar(projeId) {
 function ekranAktar(projeId, anahtar) {
   modalHepsiniKapat();
   const p = DB.proje(projeId);
-  const rol = EKRAN_ROL.find(x => x.anahtar === anahtar);
+  const rol = p ? tasarimEkranlari(p).find(x => x.anahtar === anahtar) : null;
   if (!p || !rol) return;
   const pl = p.palet || {};
 
   modalAc(`
-    ${modalBaslik(ICON.ice, ekranRolAdi(p, rol),
+    ${modalBaslik(ICON.ice, rol.ad,
       'ChatGPT\'nin bu ekran için verdiği bloğu bırak. Studio bloğu geri '
       + 'çizip resimle karşılaştırmanı sağlayacak.')}
     <label class="field">
@@ -8503,6 +8538,67 @@ function ekranAktar(projeId, anahtar) {
         yazi.textContent = 'Aktar'; dugme.disabled = false;
         toast(h.message, 'hata');
       }
+    });
+  });
+}
+
+/* Hangi sayfalar tasarlanacak. Claude'un seçimi başlangıç, son söz burada:
+   modülü bilen kullanıcı, "en çok alanı olan sayfa" gibi bir kural değil. */
+function ekranSecimAc(projeId) {
+  modalHepsiniKapat();
+  const p = DB.proje(projeId);
+  if (!p) return;
+  const pl = p.palet || {};
+  const secili = ekranSecimi(p);
+  const sayfalar = projeSayfalari(p);
+  const nedenler = {};
+  ((pl.cozum || {}).ekranlar || []).forEach(x => {
+    if (x && x.sayfa) nedenler[x.sayfa] = x.neden || '';
+  });
+  const notlar = (pl.cozum || {}).sayfalar || {};
+
+  const satir = (anahtar, ad, alt, rozet) => `
+    <label class="es-satir ${secili.indexOf(anahtar) > -1 ? 'on' : ''}">
+      <input type="checkbox" data-es="${esc(anahtar)}"
+             ${secili.indexOf(anahtar) > -1 ? 'checked' : ''}>
+      <span class="es-yz"><b>${esc(ad)}</b>${alt ? `<i>${esc(alt)}</i>` : ''}</span>
+      ${rozet ? `<span class="es-rz">${esc(rozet)}</span>` : ''}
+    </label>`;
+
+  modalAc(`
+    ${modalBaslik(ICON.resim, 'Ekranları düzenle',
+      'Bütün sayfaları çizdirmiyoruz. Programın karakterini taşıyan, '
+      + 'birbirinden farklı görünen ekranları seç.')}
+    <div class="es-liste">
+      <span class="label">Modülün sayfaları</span>
+      ${sayfalar.length
+        ? sayfalar.map(sf => satir(sf, sf,
+            nedenler[sf] || ((notlar[sf] || {}).yerlesim || '').slice(0, 70),
+            nedenler[sf] ? 'Claude' : notlar[sf] ? 'not var' : '')).join('')
+        : `<div class="bos-kutu">${svg(ICON.katman, 18)}
+            <span>Modül künyesi yok.</span></div>`}
+      <span class="label">Uygulamanın kendi ekranları</span>
+      ${KABUK_EKRAN.map(x => satir(x.anahtar, x.ad, x.alt, '')).join('')}
+    </div>
+    <div class="modal-alt">
+      <button class="btn btn-ghost" data-es-i="iptal" type="button">Vazgeç</button>
+      <button class="btn btn-primary" data-es-i="kaydet" type="button"><span>Kaydet</span></button>
+    </div>`, kutu => {
+    $$('[data-es]', kutu).forEach(x => x.addEventListener('change', () => {
+      x.closest('.es-satir').classList.toggle('on', x.checked);
+    }));
+    $('[data-es-i="iptal"]', kutu).addEventListener('click', modalKapat);
+    $('[data-es-i="kaydet"]', kutu).addEventListener('click', async () => {
+      /* Sıra ekrandaki sırayla: sayfalar künye sırasında, kabuk sonda. */
+      const yeni = $$('[data-es]', kutu).filter(x => x.checked).map(x => x.dataset.es);
+      const dugme = $('[data-es-i="kaydet"] span', kutu);
+      dugme.textContent = 'Yazılıyor…';
+      try {
+        await DB.paletKaydet(projeId, Object.assign({}, pl, { ekranSecim: yeni }));
+        modalKapat();
+        toast(yeni.length + ' ekran seçildi.', 'basari');
+        render();
+      } catch (h) { dugme.textContent = 'Kaydet'; toast(h.message, 'hata'); }
     });
   });
 }
@@ -8813,10 +8909,17 @@ function ihtiyacOku(metin) {
     sayfalar[kis(sf.sayfa, 60)] = kayit;
   });
 
-  if (!Object.keys(kararlar).length && !yeni.length && !Object.keys(sayfalar).length) {
+  /* Hangi sayfaların kendi tasarımını hak ettiği. Sıra tasarlanma sırası. */
+  const ekranlar = (Array.isArray(o.ekranlar) ? o.ekranlar : [])
+    .filter(x => x && x.sayfa)
+    .slice(0, 12)
+    .map(x => ({ sayfa: kis(x.sayfa, 60), neden: kis(x.neden, 240) }));
+
+  if (!Object.keys(kararlar).length && !yeni.length
+      && !Object.keys(sayfalar).length && !ekranlar.length) {
     return null;
   }
-  return { kararlar, yeni, sayfalar, zaman: new Date().toISOString() };
+  return { kararlar, yeni, sayfalar, ekranlar, zaman: new Date().toISOString() };
 }
 
 /* Okunan çözümlemeyi taslağa yazar. Kullanıcının elle girdiği bir şey
@@ -9622,6 +9725,7 @@ async function eylemCalistir(el) {
       (su && su.slice(0, 6) === 'ekran:') ? 'ekranlar' : null;
     return render();
   }
+  if (e === 'ekran-secim') return ekranSecimAc(el.dataset.proje);
   if (e === 'dil-aktar')   return dilAktar(el.dataset.proje);
   if (e === 'ekran-aktar') return ekranAktar(el.dataset.proje, el.dataset.ad);
 
@@ -9636,7 +9740,7 @@ async function eylemCalistir(el) {
     /* Onaylanınca sıradaki ekrana geçiyoruz: zincirde ilerlemek için
        geri çıkıp tekrar girmek gereksiz sürtünme. */
     const sonraki = !kayit.onay
-      ? EKRAN_ROL.find(r => !(ek[r.anahtar] && ek[r.anahtar].onay))
+      ? tasarimEkranlari(pr).find(r => !(ek[r.anahtar] && ek[r.anahtar].onay))
       : null;
     return isYap(() => DB.paletKaydet(pr.id, Object.assign({}, pl, { ekranlar: ek })),
       kayit.onay ? 'Onay kaldırıldı.' : 'Onaylandı.',
@@ -9682,6 +9786,7 @@ async function eylemCalistir(el) {
     delete GORSEL_EKRAN[pr.id];
     const temiz = Object.assign({}, pl, { tarif: '', dil: null, ekranlar: {},
       gorseller: g0 ? [g0] : [] });
+    delete temiz.ekranSecim;
     /* Yuvalar çözümlemeden yeniden açılıyor; elle silmeye gerek yok. */
     temiz.gorseller = yuvalariEsle(temiz);
     return isYap(() => DB.paletKaydet(pr.id, temiz), 'Görsel dünya sıfırlandı.');

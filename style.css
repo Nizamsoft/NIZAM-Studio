@@ -3347,6 +3347,32 @@ a.durak:active { transform: scale(.99); transition: transform .1s var(--ease); }
 .kaynak span { font-size: 11px; line-height: 1.5; color: var(--ink-faint); }
 .kaynak b { color: var(--st-check-t); font-weight: 600; }
 
+/* Ekran seçimi penceresi — hangi sayfalar tasarlanacak. */
+.es-liste { max-height: 52vh; overflow-y: auto; overscroll-behavior: contain; }
+.es-liste .label { display: block; margin: 12px 0 6px; }
+.es-liste .label:first-child { margin-top: 0; }
+.es-satir {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 11px; margin-bottom: 6px;
+  border: 1px solid var(--line-2); border-radius: 12px;
+  background: var(--yuva-2); cursor: pointer;
+}
+.es-satir.on { border-color: rgba(69, 163, 123, .38); background: rgba(69, 163, 123, .07); }
+.es-satir input { flex: 0 0 auto; width: 17px; height: 17px; accent-color: var(--st-done); }
+.es-yz { flex: 1; min-width: 0; }
+.es-yz b { display: block; font-family: var(--yazi-baslik); font-size: 13px; color: var(--ink-strong); }
+.es-yz i {
+  display: block; margin-top: 2px; font-style: normal; font-size: 10.5px;
+  line-height: 1.4; color: var(--ink-dim);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.es-rz {
+  flex: 0 0 auto; padding: 3px 8px; border-radius: 999px;
+  font-family: var(--yazi-kod); font-size: 8px;
+  letter-spacing: .08em; text-transform: uppercase;
+  color: var(--st-check-t); background: rgba(107, 147, 232, .14);
+}
+
 /* Onay düğmesi — "uyuşuyor" demek bir karar, yeşil. */
 .sayfa-dug.yesil {
   border-color: rgba(69, 163, 123, .42); color: #08150f;

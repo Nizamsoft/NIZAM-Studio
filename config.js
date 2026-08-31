@@ -7,7 +7,7 @@ const APP = {
   name:     'NIZAM | Studio',
   short:    'NIZAM Studio',
   owner:    'Nizam Soft',
-  version: 'v0.129.0',
+  version: 'v0.129.1',
   build:    '2026-08-28',
   /* Studio'nun kendi deposu — "bütün programlarda geçerli olsun"
      istekleri buraya gider. */
@@ -435,47 +435,70 @@ function cozumOnerisi(p, anahtar) {
   return ham && ham.oneri ? { oneri: String(ham.oneri), neden: String(ham.neden || '') } : null;
 }
 
-/* ---- Görsel dünya: altı ekran rolü ----
-   ChatGPT'ye altı ekranı tek promptta çizdirmek dağıtıyordu: birini yapıp
-   ötekini unutuyor ya da hepsini yüzeysel bırakıyordu. Artık her rol kendi
-   promptu, kendi bloğu. Roller sabit; adları projenin gerçek sayfalarıyla
-   dolduruluyor — "Liste" değil "Giderler". */
-const EKRAN_ROL = [
-  { anahtar: 'panel',   ad: 'Panel',        tur: 'Panel',
-    alt: 'Açılışta karşılayan ekran; kısayol kartları ve günün özeti.' },
-  { anahtar: 'liste',   ad: 'Liste',        tur: 'Liste',
-    alt: 'En çok bakılan ekran; arama, filtre, satırlar, ana eylem.' },
-  { anahtar: 'form',    ad: 'Kayıt girişi', tur: 'Form',
-    alt: 'Alan etiketleri, kutular, kaydet düğmesi.' },
-  { anahtar: 'bos',     ad: 'Boş durum',    tur: 'Liste',
-    alt: 'Hiç kayıt yokken liste ekranı ne diyor.' },
-  { anahtar: 'giris',   ad: 'Giriş',        tur: '',
+/* ---- Görsel dünya: hangi ekranlar tasarlanacak ----
+   Önce altı genel rol vardı (Panel · Liste · Form · Boş durum · Giriş ·
+   Ayarlar) ve roller sayfalarla "o türden en çok alanı olan" diye
+   eşleştiriliyordu. Yanlıştı: en çok alan en önemli ekran demek değil, bir
+   tanım sayfası da Ayarlar ekranı değil. Artık ekranlar modülün gerçek
+   sayfaları — hangilerinin kendi tasarımını hak ettiğini ihtiyaç
+   çözümlemesinde Claude söylüyor, son söz kullanıcının. */
+
+/* Künyede olmayan ama her uygulamada bulunan ekranlar. `@` öneki bunları
+   sayfa adlarından ayırıyor. */
+const KABUK_EKRAN = [
+  { anahtar: '@giris',   ad: 'Giriş',
     alt: 'E-posta ve şifre; uygulamaya girilen ilk ekran.' },
-  { anahtar: 'ayarlar', ad: 'Ayarlar',      tur: 'Ayarlar',
-    alt: 'Satır satır seçenek listesi.' },
+  { anahtar: '@ayarlar', ad: 'Ayarlar',
+    alt: 'Uygulamanın kendi ayarları — satır satır seçenek listesi.' },
 ];
 
-/* Rolü projenin gerçek bir sayfasıyla eşle. Bulamazsa rol adıyla kalıyor:
-   uydurma sayfa adı vermek promptu yanıltıyor. */
-function ekranRolSayfasi(p, rol) {
-  const kunye = ((p && p.palet) || {}).kunye || {};
-  const adlar = Object.keys(kunye);
-  if (!adlar.length || !rol.tur) return '';
-  /* Aynı türden birden çok sayfa varsa en çok alanı olan seçiliyor:
-     tasarımı en zorlayan ekran o. */
-  let en = '', enAlan = -1;
-  adlar.forEach(tam => {
-    const k = kunye[tam] || {};
-    if (k.tur !== rol.tur) return;
-    const n = (k.alanlar || []).length;
-    if (n > enAlan) { enAlan = n; en = tam.split(' · ').pop(); }
-  });
-  return en;
+/* Modülün bütün sayfaları, künye sırasıyla. */
+function projeSayfalari(p) {
+  return Object.keys(((p && p.palet) || {}).kunye || {})
+    .map(tam => tam.split(' · ').pop());
 }
 
-function ekranRolAdi(p, rol) {
-  const sf = ekranRolSayfasi(p, rol);
-  return sf && sf !== rol.ad ? rol.ad + ' · ' + sf : rol.ad;
+/* Tasarlanacak ekranların anahtar listesi. Kullanıcı düzenlediyse onunki,
+   yoksa Claude'un seçimi, o da yoksa not yazdığı sayfalar. */
+function ekranSecimi(p) {
+  const pl = (p && p.palet) || {};
+  if (Array.isArray(pl.ekranSecim)) return pl.ekranSecim;
+
+  const c = pl.cozum || {};
+  const sayfalar = projeSayfalari(p);
+  let secim = [];
+  if (Array.isArray(c.ekranlar) && c.ekranlar.length) {
+    secim = c.ekranlar.map(x => (x && x.sayfa) || '').filter(x => sayfalar.indexOf(x) > -1);
+  }
+  /* Claude ekran listesi vermediyse not yazdığı sayfalar aynı işi görüyor:
+     zaten "notu hak eden sayfaya yaz" demiştik. */
+  if (!secim.length) {
+    secim = Object.keys(c.sayfalar || {}).filter(x => sayfalar.indexOf(x) > -1);
+  }
+  return secim.concat(KABUK_EKRAN.map(x => x.anahtar));
+}
+
+/* Ekranların tam künyesi: ad, açıklama, sayfa künyesi, Claude'un notu. */
+function tasarimEkranlari(p) {
+  const pl = (p && p.palet) || {};
+  const kunye = pl.kunye || {};
+  const notlar = (pl.cozum || {}).sayfalar || {};
+  const nedenler = {};
+  ((pl.cozum || {}).ekranlar || []).forEach(x => {
+    if (x && x.sayfa) nedenler[x.sayfa] = x.neden || '';
+  });
+
+  return ekranSecimi(p).map(anahtar => {
+    const kabuk = KABUK_EKRAN.find(x => x.anahtar === anahtar);
+    if (kabuk) return Object.assign({ sayfa: '', kunye: null, notu: null }, kabuk);
+    const tam = Object.keys(kunye).find(x => x.split(' · ').pop() === anahtar);
+    const k = tam ? kunye[tam] : null;
+    return {
+      anahtar, ad: anahtar, sayfa: anahtar,
+      alt: nedenler[anahtar] || (k && k.amac) || '',
+      kunye: k, notu: notlar[anahtar] || null,
+    };
+  });
 }
 
 /* Görsel dil bloğu geçerli mi? En az renk ve yazı gelmeli — gerisi

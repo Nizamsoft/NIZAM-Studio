@@ -73,7 +73,8 @@ const PROMPT = {
      tahmin etmesin diye buraya olduğu gibi giriyor. */
   ekranBlogu(proje) {
     const ek = ((proje && proje.palet) || {}).ekranlar || {};
-    const anahtarlar = EKRAN_ROL.filter(r => ek[r.anahtar] && (ek[r.anahtar].bloklar || []).length);
+    const anahtarlar = tasarimEkranlari(proje)
+      .filter(r => ek[r.anahtar] && (ek[r.anahtar].bloklar || []).length);
     if (!anahtarlar.length) return '';
 
     const s = ['## Ekran Yerleşimleri'];
@@ -81,7 +82,7 @@ const PROMPT = {
     s.push('aşağıya yerleşim sırasıdır; kendi sıranı kurma.');
     anahtarlar.forEach(r => {
       const e = ek[r.anahtar];
-      s.push('', `### ${e.ekran || ekranRolAdi(proje, r)}`);
+      s.push('', `### ${e.ekran || r.ad}`);
       e.bloklar.forEach((b, i) => {
         s.push(`${i + 1}. **${b.ad}**${b.tur ? ` _(${b.tur})_` : ''}${b.not ? ' — ' + b.not : ''}`);
       });
@@ -678,7 +679,7 @@ const PROMPT = {
       s.push('');
     });
 
-    s.push('## Senden istediğim dört şey', '');
+    s.push('## Senden istediğim beş şey', '');
     s.push('**1 · Hangi karar gerekli.** Yukarıdaki her başlık için `gerek`');
     s.push('   yaz. Bu programda karşılığı yoksa `false` — o başlık hiç');
     s.push('   sorulmayacak ve koda da girmeyecek. Emin değilsen `true` bırak;');
@@ -697,6 +698,13 @@ const PROMPT = {
     s.push('   görseller üretilecek — "genel bir simge" deme, ne çizileceğini yaz.', '');
     s.push('   Her sayfaya not yazmak zorunda değilsin: sıradan bir liste');
     s.push('   ekranıysa atla. Notu hak eden sayfalara yaz.', '');
+    s.push('**5 · Hangi ekranlar tasarlansın.** Bütün sayfaları ChatGPT\'ye');
+    s.push('   tek tek çizdirmeyeceğiz. Sen seç: bu programın **karakterini**');
+    s.push('   taşıyan, birbirinden gerçekten farklı görünen ekranlar hangileri?');
+    s.push('   Dört ile yedi arası, **en önemliden başlayarak** sırala. Kalan');
+    s.push('   sayfalar bu ekranların diliyle kurulacak.', '');
+    s.push('   Giriş ve Ayarlar ekranlarını **yazma** — onları uygulama zaten');
+    s.push('   listenin sonuna ekliyor.', '');
 
     s.push('## Cevabın', '');
     s.push('Tek bir JSON bloğu. Öncesinde ve sonrasında açıklama yazma —');
@@ -719,6 +727,12 @@ const PROMPT = {
     s.push('      "oneri": "Sıkı",');
     s.push('      "neden": "Aylık gider satırı 200\'ü geçiyor." }');
     s.push('  ],');
+    s.push('  "ekranlar": [');
+    s.push('    { "sayfa": "Dashboard",     "neden": "Açılış ekranı; bütün dilin tonunu o kuruyor." },');
+    s.push('    { "sayfa": "Hesaplar",      "neden": "Kart ızgarası — listeden farklı bir düzen." },');
+    s.push('    { "sayfa": "Hesap Defteri", "neden": "Yoğun tablo; satır ve rakam hizası burada çözülmeli." },');
+    s.push('    { "sayfa": "Nakit Akış",    "neden": "Grafik ağırlıklı; tek örneği bu." }');
+    s.push('  ],');
     s.push('  "sayfalar": [');
     s.push('    { "sayfa": "Giderler",');
     s.push('      "yerlesim": "Üstte ay seçici ve toplam kartı yan yana; altında gider satırları. En altta sabit toplam satırı.",');
@@ -733,7 +747,9 @@ const PROMPT = {
     s.push('**Kurallar**');
     s.push('- `anahtar` yukarıdaki listeden birebir gelsin; uydurma anahtar yazma.');
     s.push('- Her başlık için bir satır olsun — atladığın başlık "gerekli" sayılır.');
-    s.push('- `sayfa` künyedeki sayfa adıyla birebir aynı olsun.');
+    s.push('- `sayfa` künyedeki sayfa adıyla birebir aynı olsun — hem `ekranlar`');
+    s.push('  hem `sayfalar` bölümünde.');
+    s.push('- `ekranlar` sırası tasarlanma sırasıdır; en önemlisi başta.');
     s.push('- Görsel gerekmeyen sayfada `gorseller` boş kalsın; uydurma.');
     s.push('- Türkçe yaz. Tırnakları düz tırnak kullan.');
 
@@ -1009,31 +1025,33 @@ const PROMPT = {
   /* 03 · Tek ekran. Görsel dil zaten sohbette; tekrar yazmıyoruz. */
   gorselEkran(projeId, anahtar) {
     const p = DB.proje(projeId);
-    const rol = EKRAN_ROL.find(x => x.anahtar === anahtar);
-    if (!p || !rol) return '';
-    const pl = p.palet || {};
-    const sayfa = ekranRolSayfasi(p, rol);
-    const kunye = pl.kunye || {};
-    const tam = Object.keys(kunye).find(x => x.split(' · ').pop() === sayfa);
-    const k = tam ? (kunye[tam] || {}) : {};
-    const notu = ((pl.cozum || {}).sayfalar || {})[sayfa];
-    const sira = EKRAN_ROL.findIndex(x => x.anahtar === anahtar) + 1;
+    if (!p) return '';
+    const hepsi = tasarimEkranlari(p);
+    const ek = hepsi.find(x => x.anahtar === anahtar);
+    if (!ek) return '';
+    const k = ek.kunye || {};
+    const notu = ek.notu;
+    const sira = hepsi.findIndex(x => x.anahtar === anahtar) + 1;
 
     const s = [];
-    s.push('# ' + ekranRolAdi(p, rol) + ' ekranı', '');
-    s.push(`Altı ekranın **${sira}.'si**. Görsel dili yukarıda konuştuk —`);
-    s.push('tekrar yazmıyorum, aynısını kullan. Şimdi **yalnız bu ekranı**');
-    s.push('çiz. Ötekileri sonra ayrı ayrı isteyeceğim.', '');
+    s.push('# ' + ek.ad + ' ekranı', '');
+    s.push(`Tasarlanacak ${hepsi.length} ekranın **${sira}.'si**. Görsel dili`);
+    s.push('yukarıda konuştuk — tekrar yazmıyorum, aynısını kullan. Şimdi');
+    s.push('**yalnız bu ekranı** çiz. Ötekileri sonra ayrı ayrı isteyeceğim.', '');
     s.push('> **Tek ekran, dikey telefon çerçevesi.** Yan yana varyant dizme,');
     s.push('> masaüstü çizme, "bonus olarak şunu da yaptım" deme.', '');
 
     s.push('## Bu ekran ne', '');
-    s.push('- ' + rol.alt);
-    if (sayfa) s.push(`- Bu programda karşılığı: **${sayfa}**`);
-    if (k.amac) s.push('- ' + k.amac);
+    if (ek.alt) s.push('- ' + ek.alt);
+    if (k.tur)   s.push(`- Ekran türü: **${k.tur}**`);
     if (k.olcek) s.push(`- Beklenen kayıt: **${k.olcek}** — listeyi buna göre kur.`);
     if ((k.alanlar || []).length) {
-      s.push('- Görünen alanlar: ' + k.alanlar.slice(0, 8).map(a => a.ad).join(' · '));
+      s.push('- Görünen alanlar: ' + k.alanlar.slice(0, 10).map(a => a.ad).join(' · '));
+    }
+    if ((k.kalip || []).length) {
+      const adlar = k.kalip.map(x => (KALIP.find(y => y.anahtar === x) || {}).ad)
+        .filter(Boolean);
+      if (adlar.length) s.push('- Yapı: ' + adlar.join(' · '));
     }
     s.push('');
 
@@ -1063,12 +1081,12 @@ const PROMPT = {
     s.push('yukarıdan aşağıya blok blok anlat:', '');
     s.push('```json');
     s.push('{');
-    s.push(`  "ekran": "${ekranRolAdi(p, rol)}",`);
+    s.push(`  "ekran": "${ek.ad}",`);
     s.push('  "bloklar": [');
     s.push('    { "ad": "Ay seçici",      "tur": "serit",    "not": "tam genişlik, vurgu zemin" },');
     s.push('    { "ad": "Toplam kartı",   "tur": "kart",     "not": "vurgu rengi, büyük rakam mono" },');
     s.push('    { "ad": "Filtre çipleri", "tur": "cip",      "not": "yatay kaydırma" },');
-    s.push('    { "ad": "Gider satırları","tur": "tablo",    "not": "sıkı satır, tutar sağda mono" },');
+    s.push('    { "ad": "Hareket satırları","tur": "tablo",  "not": "sıkı satır, tutar sağda mono" },');
     s.push('    { "ad": "Sabit toplam",   "tur": "altSerit", "not": "ekranın dibinde sabit" }');
     s.push('  ]');
     s.push('}');
