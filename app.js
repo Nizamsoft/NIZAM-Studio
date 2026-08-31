@@ -7762,8 +7762,15 @@ function cozumlemeOku(metin) {
      sayfa nesnelerininki de sayılıyor, o yüzden brace aramaya değil
      ayrıştırmanın başarısına bakıyoruz. Bir de `{` ile birlikte ilk anahtarın
      açılış tırnağı düşüyor: `modul": "..."` → `"modul": "..."`. */
-  if (!o && /^\s*"?\w+"\s*:/.test(govde)) {
-    o = dene('{' + govde.replace(/^\s*(\w+)"\s*:/, '"$1":').replace(/[,\s]+$/, '') + '}');
+  /* `o` dolu ama `sayfalar` yoksa yanlış parçayı okumuşuz demektir: dış
+     parantez düştüğünde ilk sayfa nesnesi tek başına geçerli JSON oluyor
+     ve ayrıştırma "başarılı" görünüyor. Onarımı o durumda da deniyoruz. */
+  if ((!o || !Array.isArray(o.sayfalar)) && /^\s*"?\w+"\s*:/.test(govde)) {
+    const govdeIc = govde.replace(/^\s*(\w+)"\s*:/, '"$1":').replace(/[,\s]+$/, '');
+    /* Kapanış parantezi kimi zaman seçime giriyor, kimi zaman girmiyor:
+       ikisini de deniyoruz. Kendimiz ekleyip zaten varsa iki kapanış
+       çıkıyor ve okuma yine patlıyordu. */
+    o = dene('{' + govdeIc) || dene('{' + govdeIc + '}');
   }
   if (!o) return null;
   if (!o || !Array.isArray(o.sayfalar) || !o.sayfalar.length) return null;

@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## v0.126.2
+- **Eksik parantez onarımı gerçek blokla sınanınca iki açık verdi, ikisi de kapatıldı.** Kapanış parantezi kimi zaman seçime giriyor kimi zaman girmiyor; kendimiz eklediğimizde zaten varsa iki kapanış çıkıyor ve okuma yine patlıyordu — artık iki biçim de deneniyor.
+- İkincisi daha sinsiydi: dış parantez düşünce **ilk sayfa nesnesi tek başına geçerli JSON oluyor** ve ayrıştırma "başarılı" görünüyordu, onarım hiç çalışmıyordu. Artık okunan nesnede `sayfalar` yoksa yanlış parçayı okuduğumuzu anlayıp onarım deneniyor.
+- Yedi giriş biçimiyle sınandı: 22 sayfalık gerçek blok, kapanışsız gövde, kıvrık tırnak, düz blok, kod çitli blok okunuyor; çöp metin ve boş sayfa listesi reddediliyor.
+
 ## v0.126.1
 - **Telefondan yapıştırılan blok artık okunuyor.** iOS düz tırnakları kıvrık tırnağa çeviriyor (`"` → `“`) ve `JSON.parse` patlıyordu; seçim sırasında baştaki `{` ile ilk anahtarın açılış tırnağı da düşebiliyordu. Üçü de okunurken toparlanıyor — kullanıcıya "tırnaklarını düzelt" demek çözüm değil.
 - Bölünmez boşluk ve uzun tire de normale çevriliyor.
