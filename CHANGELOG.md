@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## v0.130.1
+- **"Adayı bitir" dendiğinde 3. adanın kilidi açılmıyordu.** Görsel dünyanın bittiğini ölçen satır hâlâ eski akışa bakıyordu: serbest metin tarif ve dolu görsel yuvaları arıyordu. İkisi de bir önceki sürümde kalkmıştı, o yüzden ada hiçbir zaman bitmiş sayılmıyor ve sonraki ada kilitli kalıyordu. Ölçüt tek yere alındı — adanın kendi durumu.
+- Proje sayfasındaki "Tasarımı belirleme" özeti de aynı eski ölçütten okuyordu; artık bulunduğun adıma göre konuşuyor: çözümleme yoksa Claude'a git, sistem yoksa ChatGPT'ye git, sistem geldiyse kalan kararlar.
+
 ## v0.130.0
 - **Tasarımı belirleme beş adadan üçe indi:** `01 İhtiyaç çözümlemesi` · `02 Görsel dünya` · `03 Kararlar`. Ekran ekran çizdirme ve görsel yükleme tamamen kalktı. Bu aşamanın işi çalışan bir betaya yetecek kadar tasarım; profesyonel cila betadan sonra.
 - **ChatGPT artık ekran değil sistem veriyor.** Tek prompt, tek levha: palet, düğmeler, kart, tablo satırı, çipler, boş durum ve simgeler yan yana. Dönen blok on üç bileşen tarifi, simge dili ve **beş sayfa iskeleti** (Panel · Liste · Form · Rapor · Ayarlar) taşıyor. 22 sayfa için 22 tasarım değil, bir sistem ve beş iskelet.

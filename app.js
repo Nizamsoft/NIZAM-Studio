@@ -1247,12 +1247,11 @@ function adimBitti(p, i) {
   /* İhtiyaç adası: çözümleme geldi mi? Kararların cevaplanması bu adanın
      işi değil — o kararlar kendi adalarında soruluyor. */
   if (adim.tur === 'ihtiyac') return !!pl.cozum;
-  /* Görsel dünya adası: tarif geldi ve tarifin istediği bütün görseller
-     yuvalara kondu mu? Yarım bırakılmışsa ada bitmiş sayılmıyor. */
-  if (adim.tur === 'gorsel') {
-    const y = pl.gorseller || [];
-    return !!String(pl.tarif || '').trim() && y.length > 0 && y.every(x => x.yol);
-  }
+  /* Görsel dünya adası: iki adımı da bitti mi? Ölçüt tek yerde —
+     `gorselAdaDurumu`. Eskiden burada ayrıca tarif ve dolu görsel yuvası
+     aranıyordu; ikisi de kalktı ama bu satır kalmıştı, ada hiç bitmiyor
+     ve sonraki adanın kilidi açılmıyordu. */
+  if (adim.tur === 'gorsel') return gorselAdaDurumu(p).tam;
   const onaylanan = (Array.isArray(pl.bitenAdim) ? pl.bitenAdim : [])
     .concat(ONAY_TASLAK[p.id] || []);
   if (onaylanan.indexOf(adim.anahtar) > -1) return true;
@@ -4998,13 +4997,9 @@ function projeDuraklari(p) {
   const s        = DB.sayim(p.id);
   const moduller = DB.modulleri(p.id);
   const gercek   = moduller.filter(m => m.ad !== GENEL_MODUL).length;
-  /* Tasarım artık paletle değil tarifle bitiyor: tarif geldi ve tarifin
-     istediği bütün görseller yuvalara kondu mu? */
-  const pl0     = p.palet || {};
-  const yuva    = pl0.gorseller || [];
-  const gorselTam = yuva.length > 0 && yuva.every(y => y.yol);
-  const tarifVar = !!String(pl0.tarif || '').trim() && gorselTam;
-  /* Aşamanın bittiğini haritayla aynı yerden okuyoruz: beş ada da bitmeden
+  const pl0 = p.palet || {};
+  const gd  = gorselAdaDurumu(p);
+  /* Aşamanın bittiğini haritayla aynı yerden okuyoruz: her ada bitmeden
      yeşil görünüyordu ve "burası tamam" diye atlanıyordu. */
   const tasarimTam = obekleriKur(p).filter(o => o.ad !== 'Bitiş')
     .every(o => adaDurumu(p, o).tam);
@@ -5033,13 +5028,15 @@ function projeDuraklari(p) {
       ad: 'Tasarımı belirleme',
       bitti: tasarimTam,
       rozet: yeniKararlar(p.palet).length,
-      ozet: tarifVar
-        ? 'Görsel dil hazır · ' + yuva.length + ' görsel.'
-        : String(pl0.tarif || '').trim()
-          ? 'Tarif geldi. Sıra görselleri yuvalara koymakta.'
-          : gercek
-          ? 'İşletme görselini yükle, promptu ChatGPT\'ye ver, tarifi yapıştır.'
-          : 'Önce modülü kur — ChatGPT neyi tasarlayacağını künyeden okuyor.',
+      ozet: tasarimTam
+        ? 'Tasarım sistemi ve kararlar hazır.'
+        : gd.dilVar
+          ? 'Sistem alındı. Sıra kalan kararlarda.'
+          : !pl0.cozum
+            ? gercek
+              ? 'Claude künyeye baksın: hangi kararlar gerekli, hangi simgeler.'
+              : 'Önce modülü kur — çözümleme künyeden okuyor.'
+            : 'İşletme görselini yükle, promptu ChatGPT\'ye ver, sistemi yapıştır.',
     },
     {
       ad: 'Beta',
