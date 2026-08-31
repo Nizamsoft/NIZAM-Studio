@@ -153,6 +153,9 @@ const PROMPT = {
     s.push('');
     s.push('- **anon key gizli değildir** — tarayıcıya iniyor, depoda durması');
     s.push('  normal. Veriyi satır güvenliği (RLS) koruyor.');
+    s.push('- Anahtar `sb_publishable_…` ile başlıyorsa Supabase\'in **yeni**');
+    s.push('  biçimidir; eski `eyJhbG…` JWT ile aynı işi görür. `supabase-js`');
+    s.push('  sürümünün bu biçimi desteklediğinden emin ol, gerekiyorsa güncelle.');
     s.push('- **service_role anahtarını isteme ve kullanma.** Sana verilmedi;');
     s.push('  gerektiğini düşünüyorsan tasarım yanlıştır, dur ve sor.');
     s.push('- **Cihaz-içi deneme hesabı açma.** Giriş ilk günden Supabase Auth');

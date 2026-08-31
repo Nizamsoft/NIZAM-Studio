@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## v0.133.1
+- **anon key ipucu eski biçimi gösteriyordu.** Supabase yeni anahtar biçimine geçti: `sb_publishable_…`. Kutudaki örnek metin ikisini de gösteriyor.
+- 1. blok, anahtar yeni biçimdeyse `supabase-js` sürümünün bunu desteklediğinden emin olmasını söylüyor — eski istemci sürümü yeni anahtarı tanımıyor ve bağlantı sessizce düşüyor.
+
 ## v0.133.0
 - **Supabase bağlantısı artık en başta soruluyor.** Bağlantı sonradan verilince kod önce cihaz-içi bir deneme hesabıyla yazılıyor, sonra sökülüp Supabase'e bağlanıyordu — iki kez iş, iki kez hata riski. `Kurulum ve yapı → Nereye kuralım?` adımına **Veritabanı** bölümü eklendi: "Supabase'de proje aç" düğmesi, proje adresi ve anon key. Veri katmanı yerel seçiliyse bölüm hiç görünmüyor.
 - `service_role` anahtarı istenmiyor ve uyarısı yazılı: anon key tarayıcıya zaten iniyor, veriyi satır güvenliği koruyor — depoda durması normal.

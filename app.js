@@ -7929,7 +7929,7 @@ function adimYer(projeId) {
                    'https://xxxx.supabase.co', 'text', 120, true,
                    'data-tk="supabaseUrl" spellcheck="false" autocapitalize="off"')}
           ${fdAlan('#3ecf8e', ICON.anahtar, 'anon key', 'ay-sb-key', pl.supabaseAnon,
-                   'eyJhbGciOiJIUzI1NiIs…', 'text', 400, true,
+                   'sb_publishable_… ya da eyJhbG…', 'text', 400, true,
                    'data-tk="supabaseAnon" spellcheck="false" autocapitalize="off"')}
           <div class="note uyari">${svg(ICON.uyari, 15)}
             <span><b>service_role</b> anahtarını buraya yazma. anon key
