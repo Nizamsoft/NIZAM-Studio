@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.127.1
+- **Tasarım aşamasında geri oku aşamadan dışarı atıyordu.** Kabuk'ta bir karardayken geri basınca harita yerine gelinen sayfaya (çoğunlukla Modüller) düşülüyordu: harita ile karar ekranı aynı adresi paylaşıyor, geçmişte iki ayrı giriş yok, ok da doğrudan tarayıcı geçmişine gidiyordu. Artık önce bir kat yukarı çıkıyor — karardan haritaya, haritadan aşamanın dışına. Yapı ağacında zaten böyleydi.
+
 ## v0.127.0
 - **3. aşama "Tasarımı belirleme" yeni kart diline geçti — hem sayfası hem içi.** Aşamaya girince artık kurulum sayfasıyla birebir aynı ızgara açılıyor: üstte aşama kartı, altında dört kare (Görsel dünya · Kabuk · Davranış · Sistem), en altta "Bütün kararları gör" satırı. Biten yeşil, sıradaki kırmızı, kalanlar sakin — kurulumdaki durum dilinin aynısı.
 - Aşamanın kendi rengi ve simgesi oldu: mavi `#5f86c4` ve palet simgesi. 1. aşama altın, 2. aşama yeşildi; üçü artık ilk bakışta ayrılıyor.

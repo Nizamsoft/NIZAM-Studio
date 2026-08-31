@@ -10351,11 +10351,22 @@ document.addEventListener('DOMContentLoaded', () => {
     if (el) { e.preventDefault(); eylemCalistir(el); }
   });
 
-  $('#btn-back').addEventListener('click', () => {
+  $('#btn-back').addEventListener('click', async () => {
     /* Yapı ağacında bir kat yukarı çıkar; başka yerde tarayıcı geçmişinde
        bir adım geri gider. Sabit bir hedefe atlamak "geri" değil. */
     const { key, id, durak } = rota();
     if (durak === 'yapi' && YAPI_ACIK[id] && yapiGeri(YAPI_TASLAK[id])) {
+      render();
+      return;
+    }
+    /* Tasarımda karar ekranı ile harita aynı adresi paylaşıyor: geçmişte iki
+       ayrı giriş yok. Geri okunu doğrudan history'ye bırakınca aşamanın
+       içinden çıkıp gelinen sayfaya (çoğunlukla modüller) düşülüyordu.
+       Önce bir kat yukarı: karar ekranından haritaya. */
+    if (durak === 'tasarim' && TASARIM_MOD[id] === 'adim') {
+      TASARIM_MOD[id] = 'harita';
+      const pr = DB.proje(id);
+      if (pr) await onaylariYaz(pr);
       render();
       return;
     }
