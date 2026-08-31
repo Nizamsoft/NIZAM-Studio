@@ -1989,26 +1989,6 @@ a.sayfa-dug { text-decoration: none; }
 .sk-ad { display: inline-block; margin-top: 6px; font-family: var(--yazi-kod); font-size: 11px;
          color: var(--ink-soft); padding: 3px 8px; border-radius: 6px; background: var(--surface); }
 .sk-liste .sayfa-dug { margin: -2px 0 2px 33px; width: calc(100% - 33px); }
-
-/* Görsel dünya adasının kendi başlığı ve şeridi — genel adım şeridinin
-   yerine geçiyor. O şerit kalan bütün kararları sayıyor; tek adımlık bu
-   adada "1 / 15" yazınca yanıltıyordu. */
-.ada-bas { display: flex; align-items: center; gap: 11px; padding: 12px 0 0; }
-.ab-no {
-  width: 30px; height: 30px; border-radius: 50%; flex: 0 0 30px;
-  background: var(--red); color: #fff; border: none; cursor: pointer;
-  display: grid; place-items: center; font-family: var(--yazi-kod); font-size: 12px;
-}
-.ab-no.tam { background: var(--st-done); color: #0d1a14; }
-.ab-yz { flex: 1; min-width: 0; }
-.ab-yz b { display: block; font-family: var(--yazi-baslik); font-size: 17px; color: var(--ink-strong); }
-.ab-yz i { display: block; font-style: normal; font-size: 11.5px; color: var(--ink-faint); margin-top: 2px; }
-.ab-say { font-size: 11px; color: var(--ink-dim); }
-.ada-serit { display: flex; gap: 4px; padding: 10px 0 2px; }
-.ada-serit i { flex: 1; height: 3px; border-radius: 2px; background: var(--surface-3); }
-.ada-serit i.on { background: var(--metal-2); }
-.ada-serit i.simdi { background: var(--red); }
-
 /* Kapalı adım satırı — biten ya da sırası gelmemiş. */
 .ada-satir {
   display: flex; align-items: center; gap: 11px; width: 100%; text-align: left;
@@ -2035,19 +2015,10 @@ a.sayfa-dug { text-decoration: none; }
 .ada-acik .kur-kart:not(.bitti) .kur-no { background: var(--red); color: #fff; }
 .ada-acik .kur-kart:not(.bitti) .kur-rozet { color: var(--red-ink-soft); }
 
-/* Haritanın altındaki özet satırı — "Bitiş" artık bir ada değil. */
-.ada-ozet {
-  display: flex; align-items: center; justify-content: center; gap: 8px;
-  width: 100%; margin-top: 6px; padding: 13px; border-radius: 14px;
-  border: 1px dashed var(--line-parlak); background: transparent;
-  color: var(--ink-soft); font-family: var(--yazi-govde); font-size: 13px; font-weight: 600;
-  cursor: pointer;
-}
-.ada-ozet:active { transform: scale(.99); }
-
 /* Ada bitmeden "Adayı bitir" öne çıkmasın; bitince yeşile dönsün. */
 .ag.ileri.sonuk { opacity: .45; }
-.ag.ileri.tam { background: var(--st-done); border-color: var(--st-done); color: #0d1a14; }
+.ag.ileri.tam { background: var(--st-done); border-color: var(--st-done); color: #0d1a14;
+                box-shadow: inset 0 1px 0 rgba(255, 255, 255, .18); }
 
 /* ==========================================================================
    GÖRSEL DÜNYA
@@ -2147,26 +2118,7 @@ a.sayfa-dug { text-decoration: none; }
 .yv-cb i { display: block; height: 100%; border-radius: 3px;
            background: linear-gradient(90deg, var(--metal-1), var(--metal-2)); }
 
-/* Tasarım haritası — öbekler ada ada. Durak yolunun aynı dili. */
-.ada-sar { padding: 2px 0 10px; }
-.ada-ust { display: flex; align-items: center; gap: 11px; margin-bottom: 18px; }
-.ada-ust b { flex: 1; font-family: var(--yazi-baslik); font-size: 17px;
-             color: var(--ink-strong); }
-.ada-cubuk { flex: 0 0 84px; height: 5px; border-radius: 3px;
-             background: var(--surface-3); overflow: hidden; }
-.ada-cubuk i { display: block; height: 100%; border-radius: 3px;
-               background: linear-gradient(90deg, var(--metal-1), var(--metal-2)); }
-.ada-yuzde { font-size: 11px; color: var(--ink-dim); }
-
 .durak.ada { padding-bottom: 14px; }
-.ada-kart {
-  display: flex; align-items: center; gap: 11px; width: 100%; text-align: left;
-  padding: 11px 13px; border: 1px solid var(--line-2); border-radius: 14px;
-  background: var(--yuva); cursor: pointer; font-family: inherit;
-  transition: border-color .16s ease, background .16s ease;
-}
-.ada-kart:hover { border-color: var(--metal-1); }
-.ada-kart:active { transform: scale(.99); }
 .durak.bitti .ada-kart { background: transparent; }
 .durak.simdi .ada-kart {
   border-color: var(--red-cizgi); background: var(--red-soft);
@@ -2176,15 +2128,7 @@ a.sayfa-dug { text-decoration: none; }
   0%, 100% { box-shadow: 0 0 0 0 rgba(229, 52, 42, .34); }
   60%      { box-shadow: 0 0 0 6px rgba(229, 52, 42, 0); }
 }
-.ada-yazi { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-.ada-yazi b { font-family: var(--yazi-baslik); font-size: 14px; color: var(--ink); }
-.ada-yazi i { font-style: normal; font-size: 10.5px; color: var(--ink-dim); line-height: 1.45; }
-.ada-sag { flex: 0 0 auto; display: flex; flex-direction: column;
-           align-items: flex-end; gap: 3px; }
-.ada-say { font-size: 10.5px; color: var(--ink-faint); }
 .durak.bitti .ada-say { color: #5cbf92; }
-.ada-durum { font-size: 9px; letter-spacing: .07em; text-transform: uppercase;
-             color: var(--ink-dim); font-weight: 600; }
 .durak.simdi .ada-durum { color: var(--red-ink); }
 
 /* Öbek rozeti artık haritaya dönüş düğmesi. */
@@ -3227,50 +3171,67 @@ a.durak:active { transform: scale(.99); transition: transform .1s var(--ease); }
   font-size: 9.5px; font-weight: 600; letter-spacing: .3px; color: var(--ink-faint);
 }
 
+/* Seçenekler ızgara: yatay raf üç seçenekten sonra sağa taşıyor ve
+   kaydırılabildiği görünmüyordu. Sığmayan satırlar aşağı sarıyor, taşan
+   kısım rafın kendi içinde kayıyor (bkz. .akis-alt > .raf). */
 .raf {
-  display: flex; gap: 10px; overflow-x: auto; overflow-y: hidden;
-  padding: 8px var(--yan) 8px; margin: 0 calc(var(--yan) * -1);
-  -webkit-overflow-scrolling: touch;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 8px; padding: 4px 0 2px;
   scrollbar-width: none;
 }
 .raf::-webkit-scrollbar { display: none; }
 
+/* Kart dili sayfanın geri kalanıyla ortak: aynı degrade, aynı gölge,
+   seçilen yeşil — biten kare kartlarla aynı işaret. */
 .bsc {
-  flex: 0 0 auto; width: 104px;
-  padding: 9px; border: 1px solid var(--line); border-radius: 14px;
-  background: var(--yuva); cursor: pointer; position: relative;
-  font-family: inherit; color: inherit;
-  transition: border-color .16s var(--ease), background .16s var(--ease);
+  position: relative; overflow: hidden; min-width: 0;
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 9px 8px 10px;
+  border: 1px solid var(--line); border-radius: 12px;
+  text-align: left; font-family: inherit; color: inherit; cursor: pointer;
+  background: linear-gradient(180deg, var(--kart-ust), var(--kart-alt));
+  box-shadow: 0 2px 4px -2px rgba(0, 0, 0, .7), inset 0 1px 0 var(--isik);
+  transition: border-color .16s var(--ease), transform .16s var(--yay);
 }
+.bsc::before {
+  content: ""; position: absolute; top: -60%; left: -16%; width: 58%; height: 200%;
+  background: linear-gradient(101deg, rgba(255, 255, 255, .05), transparent 60%);
+  pointer-events: none;
+}
+.bsc:not(:disabled):active { transform: scale(.96); }
 .bsc:disabled { cursor: default; opacity: .75; }
 
 /* Sıfırla — seçenek değil eylem, o yüzden kesik çerçeve ve tik rozeti yok. */
 .bsc.sifir {
-  width: 72px; background: transparent;
+  background: transparent; box-shadow: none;
   border-style: dashed; border-color: var(--line-2);
 }
-.bsc.sifir .bon { background: transparent; }
+.bsc.sifir::before { display: none; }
+.bsc.sifir .bon { background: transparent; box-shadow: none; }
 .bsc.sifir:disabled { opacity: .34; }
 .on-sifir { flex: 1; display: grid; place-items: center; color: var(--ink-faint); }
 .bsc.sifir:not(:disabled) .on-sifir { color: var(--ink-soft); }
 .bsc-ad {
-  display: block; margin-top: 8px; text-align: center;
-  font-size: 11px; color: var(--ink-soft);
+  position: relative; display: block;
+  font-family: var(--yazi-baslik); font-weight: 600; font-size: 11.5px;
+  line-height: 1.25; color: var(--ink-soft);
 }
-.bsc.on { background: var(--surface-2); border-color: var(--metal-2); }
-.bsc.on .bsc-ad { color: var(--ink); font-weight: 600; }
+.bsc.on { border-color: rgba(69, 163, 123, .42); }
+.bsc.on .bsc-ad { color: var(--st-done-t); }
 .bsc.on::after {
-  content: ""; position: absolute; top: -5px; right: -5px;
+  content: ""; position: absolute; top: 6px; right: 6px;
   width: 17px; height: 17px; border-radius: 50%;
-  background: var(--metal-2); border: 2px solid var(--bg);
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23171614' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'><path d='M5 13l4 4L19 7'/></svg>");
+  background: linear-gradient(180deg, var(--st-done-t), var(--st-done));
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23081510' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'><path d='M5 13l4 4L19 7'/></svg>");
   background-size: 11px; background-repeat: no-repeat; background-position: center;
 }
 
 /* Önizleme gövdesi — tüm çizimler bunun içinde yaşar. */
 .bon {
-  display: flex; height: 66px; border-radius: 9px; overflow: hidden;
+  position: relative;
+  display: flex; height: 58px; border-radius: 8px; overflow: hidden;
   background: var(--yuva-2); padding: 8px;
+  box-shadow: inset 0 0 0 1px var(--line-3);
 }
 .bon .ln { display: block; height: 5px; border-radius: 3px; background: var(--line-parlak); }
 .bon .ln.b { background: var(--metal-1); }
@@ -3871,36 +3832,32 @@ ekran planı.
 
 .adim-serit { flex: 0 0 auto; }
 
-/* Öbek başlığı: numara rozeti + ad + tek satır gerekçe. */
-.as-obek { display: flex; align-items: center; gap: 10px; }
-.as-rozet {
-  flex: 0 0 auto; width: 26px; height: 26px; border-radius: 9px;
-  display: grid; place-items: center;
-  background: var(--surface-3); border: 1px solid var(--line-parlak);
-  font-family: var(--yazi-baslik); font-size: 12px; font-weight: 700; color: var(--ink);
+/* Kart altındaki satır: nereden geldiğin ve iki kısayol. */
+.as-alt { display: flex; align-items: center; gap: 8px; margin-top: 1px; }
+.as-yol { flex: 0 1 auto; min-width: 0; margin-right: auto;
+          display: flex; align-items: center; gap: 5px; overflow: hidden; }
+.as-yol s { flex: 0 0 auto; text-decoration: none; color: var(--ink-dim); font-size: 11px; }
+.as-not {
+  flex: 1; min-width: 0; text-align: right;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: 10.5px; color: var(--ink-dim);
 }
-.as-ad { flex: 1; min-width: 0; }
-.as-ad b { display: block; font-family: var(--yazi-baslik); font-size: 13.5px;
-           color: var(--ink-strong); letter-spacing: -.1px; }
-.as-ad i { display: block; font-style: normal; font-size: 10.5px; color: var(--ink-dim);
-           margin-top: 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ab-kararlar {
   flex: 0 0 auto; width: 30px; height: 30px; display: grid; place-items: center;
   padding: 0; border-radius: 10px; cursor: pointer;
   border: 1px solid var(--line-2); background: var(--yuva); color: var(--ink-soft);
 }
 
-/* Noktalar öbek öbek: aradaki boşluk bölüm sınırını gösterir. */
-.as-noktalar { display: flex; gap: 7px; margin-top: 10px; }
-.as-grup { display: flex; gap: 2px; min-width: 0; }
-.as-noktalar button { flex: 1; min-width: 3px; padding: 6px 0 0; border: 0;
-                      background: transparent; cursor: pointer; }
+/* Noktalar yalnız bu adayı sayıyor: nerede olduğunu harita söylüyor,
+   burada kaç karar kaldığı önemli. */
+.as-noktalar { display: flex; gap: 4px; margin-top: 9px; }
+.as-noktalar button,
+.as-noktalar span { flex: 1; min-width: 3px; padding: 5px 0 0; border: 0;
+                    background: transparent; cursor: pointer; }
+.as-noktalar span { cursor: default; }
 .as-noktalar i { display: block; height: 3px; border-radius: 2px; background: var(--line-2); }
 .as-noktalar .gecti i { background: var(--metal-1); }
-.as-noktalar .on i { background: var(--metal-2); }
-.as-grup.suan i { box-shadow: 0 0 0 1px color-mix(in srgb, var(--metal-2) 26%, transparent); }
-.as-sayac { margin-top: 6px; text-align: right; font-family: "IBM Plex Mono", monospace;
-            font-size: 10px; color: var(--ink-faint); }
+.as-noktalar .on i { background: var(--kr, var(--metal-2)); }
 
 /* Önizleme: kalan boşluğun tamamını alır, içindeki uygulama sığacak kadar küçülür. */
 .onz-satir {
@@ -4004,12 +3961,18 @@ ekran planı.
 .ag { display: flex; align-items: center; justify-content: center; gap: 6px;
       padding: 13px 16px; border-radius: 13px; cursor: pointer;
       font-family: var(--yazi-baslik); font-size: 13px; font-weight: 600;
-      border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); }
-.ag.geri { flex: 0 0 auto; color: var(--ink-soft); }
+      border: 1px solid var(--line); color: var(--ink-soft);
+      background: linear-gradient(180deg, var(--kart-ust), var(--kart-alt));
+      box-shadow: inset 0 1px 0 var(--isik); }
+.ag.geri { flex: 0 0 auto; }
 .ag.geri svg { transform: rotate(180deg); }
 .ag.geri:disabled { opacity: .38; cursor: default; }
-.ag.ileri { flex: 1; background: var(--surface-3); border-color: var(--line-parlak); }
-.ag.ileri.hazir { background: var(--metal-2); border-color: var(--metal-2); color: #171614; }
+/* İleri bu ekranın ana düğmesi — kırmızının izinli olduğu dört yerden biri. */
+.ag.ileri { flex: 1; color: #fff;
+            border-color: rgba(229, 52, 42, .42);
+            background: linear-gradient(180deg, var(--red-acik), var(--red));
+            box-shadow: 0 10px 22px -12px rgba(229, 52, 42, .8),
+                        inset 0 1px 0 rgba(255, 255, 255, .22); }
 .ag svg { flex: 0 0 auto; }
 
 /* Kararlar paneli — adımdan çıkmadan hepsine bakmak için. */
@@ -4697,8 +4660,10 @@ a:hover { color: var(--red-ink); }
 
 /* Yeni karar kipindeki İleri: normal akışa değil, özete/sıradaki yeniye gider. */
 .ag.ileri.yeni {
+  color: var(--ink);
   border-color: color-mix(in srgb, #5b8def 55%, transparent);
   background: color-mix(in srgb, #5b8def 16%, var(--yuva));
+  box-shadow: inset 0 1px 0 var(--isik);
 }
 
 /* ==========================================================================
@@ -4790,7 +4755,8 @@ a:hover { color: var(--red-ink); }
 @media (max-height: 700px) { .akis.yapi .onz-satir { min-height: 178px; } }
 
 /* Özet adımında ileri gidilecek yer yok: düğme kurulumun kendisi. */
-.ag.ileri.kur { background: var(--red); border-color: var(--red); color: #fff; }
+.ag.ileri.kur { background: linear-gradient(180deg, var(--red-acik), var(--red));
+                border-color: var(--red); color: #fff; }
 .ag.ileri.kur svg { opacity: 1; }
 .ag.ileri.kur:disabled { opacity: .45; }
 
@@ -5996,103 +5962,6 @@ button.fb-cp:active{ transform:scale(.94); }
 
 
 /* --------------------------------------------------------------------------
-   Aşama ızgarası — yol haritası ve kurulum adımları
-   Üstte üç kart, ortada dirsek, altta üç kart. Zigzag merdivende kartlar
-   ilerledikçe yer değiştiriyordu; burada aşamalar hep aynı yerde duruyor ve
-   göz aradığını aynı köşede buluyor. `.ak-` öneki karar bileşenlerinin,
-   `.yol` da görsel ada haritasının — bu yüzden `.ya-`.
-   -------------------------------------------------------------------------- */
-
-.ya-harita{ position:relative; }
-.ya-satir{ display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:9px; }
-/* Aşama kartı: kare. Numara ve durum üstte, ad ve durum yazısı altta. */
-.ya{
-  position:relative; overflow:hidden; min-width:0;
-  display:flex; flex-direction:column; justify-content:space-between;
-  aspect-ratio:1 / 1;
-  padding:11px 10px;
-  border:1px solid var(--line); border-radius:var(--radius-lg);
-  text-align:left; text-decoration:none; color:inherit;
-  background:linear-gradient(180deg, var(--kart-ust), var(--kart-alt));
-  box-shadow:0 2px 4px -2px rgba(0,0,0,.7),
-             0 18px 34px -22px rgba(0,0,0,.95),
-             inset 0 1px 0 var(--isik);
-  transition:transform .16s var(--yay);
-}
-.ya::before{
-  content:''; position:absolute; top:-55%; left:-16%; width:62%; height:190%;
-  background:linear-gradient(101deg, rgba(255,255,255,.05), transparent 60%);
-  pointer-events:none;
-}
-button.ya{ font-family:inherit; cursor:pointer; }
-button.ya[disabled]{ cursor:default; }
-a.ya:active, button.ya:not([disabled]):active{ transform:scale(.97); }
-
-.ya-ust{
-  position:relative;
-  display:flex; align-items:center; justify-content:space-between; gap:6px;
-}
-.ya-no{ white-space:nowrap; font-size:11px; color:var(--ink-dim); }
-.ya-rozet{
-  display:inline-block; margin-left:6px; padding:2px 7px;
-  border-radius:999px; white-space:nowrap;
-  font-family:var(--yazi-kod); font-size:8px; letter-spacing:.05em;
-  color:#a9c3ee; background:rgba(91,141,239,.18);
-  box-shadow:inset 0 0 0 1px rgba(91,141,239,.4);
-}
-.ya-dur{
-  flex:0 0 24px;
-  width:24px; height:24px;
-  display:flex; align-items:center; justify-content:center;
-  border-radius:999px; color:var(--ink-dim);
-  background:var(--yuva); box-shadow:inset 0 0 0 1px var(--line-3);
-}
-.ya-yz{ position:relative; min-width:0; }
-.ya-ad{
-  display:block; line-height:1.3;
-  font-family:var(--yazi-baslik); font-weight:600; font-size:12.5px;
-  color:var(--ink-strong);
-}
-.ya-alt{
-  display:block; margin-top:3px;
-  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
-  font-family:var(--yazi-kod); font-size:8.5px;
-  letter-spacing:.07em; text-transform:uppercase; color:var(--ink-dim);
-}
-
-.ya.bitti{ border-color:rgba(69,163,123,.30); }
-.ya.bitti .ya-no,
-.ya.bitti .ya-alt{ color:var(--st-done-t); }
-.ya.bitti .ya-dur{
-  color:#08150f;
-  background:linear-gradient(180deg, var(--st-done-t), var(--st-done));
-  box-shadow:0 6px 14px -8px rgba(69,163,123,.6);
-}
-
-.ya.simdi{ border-color:var(--red-cizgi); }
-.ya.simdi .ya-alt{ color:var(--red-ink); }
-.ya.simdi .ya-dur{
-  color:#fff;
-  background:linear-gradient(180deg, var(--red-acik), var(--red));
-  box-shadow:0 8px 18px -8px rgba(229,52,42,.75);
-}
-
-/* Kilitli adım bağlantı değil: soluk, kesik çerçeve, dokunulmuyor. */
-.ya.kilitli{ opacity:.45; border-style:dashed; cursor:default; }
-
-/* Satırlar arası dirsek. Izgara sabit olduğu için ok da sabit —
-   zigzagdaki gibi kartların yerini ölçmeye gerek yok. */
-.ya-bosluk{ position:relative; height:34px; }
-.ya-ok{
-  position:absolute; inset:0; width:100%; height:100%;
-  fill:none; stroke:var(--line); stroke-width:1.5;
-}
-.ya-ok.gecti{ stroke:var(--st-done); }
-.ya-ok .uc{ stroke:var(--line-2); }
-.ya-ok.gecti .uc{ stroke:var(--st-done-t); }
-
-
-/* --------------------------------------------------------------------------
    Adım başlığı — sayfanın tepesi
    İşletme görselinin yerini aldı: o görsel marka kartının içinde zaten
    duruyor. Ölçüsü proje künyesiyle (.pk) birebir aynı — iki sayfanın tek
@@ -6169,6 +6038,18 @@ a.ya:active, button.ya:not([disabled]):active{ transform:scale(.97); }
   font-family:var(--yazi-kod); font-size:8.5px;
   letter-spacing:.07em; text-transform:uppercase; color:var(--ink-dim);
 }
+
+/* İnce kip — tasarım adım ekranı. O ekran kaydırılmıyor ve 84 piksellik kart
+   önizlemeyle seçim rafını sıkıştırıyordu: aynı kart, aynı renk, 56 piksel.
+   Karo aynı zamanda haritaya dönüş düğmesi. */
+.bs2.ince{ padding:9px 12px; gap:10px; border-radius:15px; margin-bottom:9px; }
+.bs2.ince .bs2-ik{
+  flex:0 0 38px; width:38px; height:38px; border-radius:12px;
+  padding:0; cursor:pointer; font-family:inherit;
+}
+.bs2.ince .bs2-ik:active{ transform:scale(.94); }
+.bs2.ince .bs2-ad{ font-size:14px; margin-top:2px; }
+.bs2.ince .bs2-sag b{ font-size:14px; }
 
 /* --------------------------------------------------------------------------
    Aşama ızgarası — yol haritası ve kurulum adımları

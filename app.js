@@ -783,7 +783,8 @@ const DURAKLAR = {
      çiziyor. Bağımlılık bu yönde. */
   yapi:       { no: 2, ad: 'Kurulum ve yapı',    ciz: yapiSayfasi,
                 renk: '#8fae4a', ikon: 'gAltyapi' },
-  tasarim:    { no: 3, ad: 'Tasarımı belirleme', ciz: tasarimSayfasi },
+  tasarim:    { no: 3, ad: 'Tasarımı belirleme', ciz: tasarimSayfasi,
+                renk: '#5f86c4', ikon: 'gTasarim' },
   beta:       { no: 4, ad: 'Beta',               ciz: betaSayfasi },
   gelistirme: { no: 5, ad: 'Geliştirme',         ciz: gelistirmeSayfasi },
   final:      { no: 6, ad: 'Final',              ciz: finalSayfasi },
@@ -1255,49 +1256,67 @@ function adaDurumu(p, o) {
   return { biten, toplam: o.satir.length, tam: biten >= o.satir.length };
 }
 
-/* Bir ekranda tek karar: üstte adım çubuğu, ortada önizleme, altta seçim.
-   Sayfa kaydırılmaz — üç parça ekrana sığacak şekilde bölüşür. */
-/* Tasarım haritası — ada ada. Her öbek bir ada; biten yeşil, sıradaki
-   kırmızı ve nabız atar. Sıra zorunlu değil, ileri adaya da dokunulabilir. */
+/* Tasarım haritası — kurulum sayfasıyla birebir aynı ızgara.
+   Her öbek bir kare: biten yeşil, sıradaki kırmızı, kalanlar sakin.
+   Sıra zorunlu değil; kurulumun aksine ileri adaya da dokunulabilir,
+   o yüzden kart hiç kilitlenmiyor. */
+function tasarimAdasi(p, o, x, no, sirada) {
+  const hal  = x.tam ? 'bitti' : sirada ? 'simdi' : 'eksik';
+  const ikon = x.tam ? ICON.tik : sirada ? ICON.goz : ICON.kalem;
+  /* Tek adımlık adada "0/1" gürültü: orada yalnız durum yazılıyor. */
+  const tek  = o.satir.length === 1;
+  const alt  = x.tam    ? (tek ? 'hazır' : x.toplam + ' karar verildi')
+             : sirada   ? (tek ? 'sıradaki' : x.biten + '/' + x.toplam + ' · sıradaki')
+             : tek      ? 'bekliyor'
+             : x.biten + '/' + x.toplam;
+  return `
+    <button class="ya ${hal}" type="button" data-eylem="tasarim-ada"
+            data-proje="${p.id}" data-deger="${o.satir[0]}">
+      <span class="ya-ust">
+        <span class="ya-no mono">${no}</span>
+        <span class="ya-dur">${svg(ikon, 13)}</span>
+      </span>
+      <span class="ya-yz">
+        <span class="ya-ad">${esc(o.ad)}</span>
+        <span class="ya-alt">${esc(alt)}</span>
+      </span>
+    </button>`;
+}
+
 function tasarimHaritasi(p, d) {
-  /* Özet bir ada değil, bitişte bir bakış. Haritada 5. ada gibi durunca
+  /* Özet bir ada değil, bitişte bir bakış. Izgarada 5. kare gibi durunca
      "daha bir ada var" hissi veriyordu; aşağıya satır olarak indi. */
   const obekler = obekleriKur().filter(o => o.ad !== 'Bitiş');
   const ozetNo  = TASARIM_ADIM.findIndex(a => a.tur === 'ozet');
   const durumlar = obekler.map(o => adaDurumu(p, o));
   const simdi = durumlar.findIndex(x => !x.tam);
+  const biten = durumlar.filter(x => x.tam).length;
+  const karar = durumlar.reduce((t, x) => t + x.toplam, 0);
 
-  const toplam = durumlar.reduce((t, x) => t + x.toplam, 0);
-  const biten  = durumlar.reduce((t, x) => t + x.biten, 0);
-  const yuzde  = toplam ? Math.round(biten / toplam * 100) : 0;
+  const kart = i => tasarimAdasi(p, obekler[i], durumlar[i],
+                                 String(i + 1).padStart(2, '0'), i === simdi);
 
-  return `<div class="ada-sar">
-    <div class="ada-ust">
-      <b>Tasarım haritası</b>
-      <span class="ada-cubuk"><i style="width:${yuzde}%"></i></span>
-      <span class="ada-yuzde mono">%${yuzde}</span>
-    </div>
-    <div class="yol">${obekler.map((o, i) => {
-      const x = durumlar[i];
-      const durum = x.tam ? 'bitti' : i === simdi ? 'simdi' : 'bekliyor';
-      return `<div class="durak ada ${durum}">
-        <span class="durak-no">${x.tam ? svg(ICON.tik, 13) : i + 1}</span>
-        <button class="ada-kart" type="button" data-eylem="tasarim-ada"
-                data-proje="${p.id}" data-deger="${o.satir[0]}">
-          <span class="ada-yazi"><b>${esc(o.ad)}</b><i>${esc(o.not)}</i></span>
-          <span class="ada-sag">
-            <span class="ada-say mono">${x.biten}/${x.toplam}</span>
-            <span class="ada-durum">${
-              x.tam ? 'bitti' : i === simdi ? 'sıradaki' : ''}</span>
-          </span></button>
-      </div>`;
-    }).join('')}</div>
-    <button class="ada-ozet" type="button" data-eylem="tasarim-ada"
-            data-proje="${p.id}" data-deger="${ozetNo}">
-      ${svg(ICON.katman, 15)} Bütün kararları gör</button>
-  </div>`;
+  /* Üç sütun, dört ada: üstte üç, dirsek, altta bir — kurulum sayfasının
+     aynısı. Öbek sayısı değişirse ızgara kendi kendine sarıyor. */
+  const ust  = obekler.map((o, i) => i).slice(0, 3);
+  const kalan = obekler.map((o, i) => i).slice(3);
+
+  return `<div class="fb-govde">`
+    + adimBasligi(p, d, biten + '/' + obekler.length)
+    + `<div class="ya-harita">
+        <div class="ya-satir">${ust.map(kart).join('')}</div>
+        ${kalan.length ? yolOku(durumlar[2] && durumlar[2].tam) : ''}
+        ${kalan.length ? `<div class="ya-satir">${kalan.map(kart).join('')}</div>` : ''}
+      </div>`
+    + sayfaObekBasligi('Bitiş', karar)
+    + agacSatir('var(--metal-2)', ICON.katman, 'Bütün kararları gör',
+        'Prompta yazılacak kararlar tek listede', false, 'tasarim-ada',
+        `data-proje="${p.id}" data-deger="${ozetNo}"`)
+    + `</div>`;
 }
 
+/* Bir ekranda tek karar: üstte ada kartı, ortada önizleme, altta seçim.
+   Sayfa kaydırılmaz — parçalar ekrana sığacak şekilde bölüşür. */
 function tasarimSayfasi(p, d) {
   if (TASARIM_MOD[p.id] !== 'adim') return tasarimHaritasi(p, d);
   const no    = adimNo(p);
@@ -1348,36 +1367,57 @@ function tasarimSayfasi(p, d) {
   </div>`;
 }
 
-/* Üstteki şerit: öbek adı, sayaç, Kararlar düğmesi ve ilerleme noktaları. */
+/* Adım ekranının tepesi. Eskiden ince bir şeritti ve sayfanın geri kalanıyla
+   ortak bir dili yoktu; artık aşama kartının kendisi duruyor — yalnız alçak
+   kipte, çünkü bu ekran kaydırılmıyor ve 84 piksel çok yer yiyordu.
+   Noktalar da bütün akışı değil yalnız bu adayı sayıyor: nerede olduğunu
+   harita söylüyor, burada kaç karar kaldığı önemli. */
 function adimSeridi(p, no, adim) {
-  /* Noktalar öbek öbek ayrılır: hangi bölümdesin ve kaç bölüm kaldı görünür. */
   const yeniler = yeniKararlar(p.palet).map(a => a.anahtar);
   const obekler = obekleriKur();
-  const suObek = obekler.findIndex(o => o.satir.includes(no));
+  const suObek  = obekler.findIndex(o => o.satir.includes(no));
+  const obek    = obekler[suObek] || { satir: [no] };
+  const yer     = obek.satir.indexOf(no);
+  const ozet    = adim.tur === 'ozet';
+  const d       = DURAKLAR.tasarim;
 
   return `
-    <div class="adim-serit">
-      <div class="as-obek">
-        <button class="as-rozet" type="button" title="Haritaya dön"
-                data-eylem="tasarim-adim" data-proje="${p.id}"
-                data-deger="-2">${suObek + 1}</button>
-        <span class="as-ad"><b>${esc(adim.obek)}</b><i>${esc(adim.obekNot || '')}</i></span>
+    <div class="adim-serit" style="--kr:${d.renk}">
+      <div class="bs2 ince">
+        <button class="bs2-ik" type="button" title="Haritaya dön"
+                data-eylem="tasarim-adim" data-proje="${p.id}" data-deger="-2">
+          ${svg(ICON[d.ikon], 19)}</button>
+        <span class="bs2-yz">
+          <span class="bs2-firma"><span class="bs2-ad2">${esc(d.ad)}</span></span>
+          <span class="bs2-ad">${esc(adim.obek)}</span>
+        </span>
+        <span class="bs2-sag">
+          <b class="mono">${ozet ? TUM_TASARIM.length
+            : String(yer + 1).padStart(2, '0') + '/' + String(obek.satir.length).padStart(2, '0')}</b>
+          <i>karar</i>
+        </span>
+      </div>
+      <div class="as-alt">
+        <span class="as-yol">
+          <button class="yi" type="button" data-eylem="tasarim-adim"
+                  data-proje="${p.id}" data-deger="-2">Harita</button>
+          <s>›</s>
+          <button class="yi son" type="button" disabled>${esc(adim.obek)}</button>
+        </span>
         ${yeniler.length && !yeniler.includes(adim.anahtar) ? `
           <button class="as-yeni" type="button" data-eylem="yeni-karar-git"
                   data-proje="${p.id}"
                   title="Sonradan eklenen kararlara git">${yeniler.length} yeni</button>` : ''}
-        <button class="ab-kararlar" type="button" data-eylem="kararlar" data-proje="${p.id}">
-          ${svg(ICON.katman, 14)}</button>
+        <button class="ab-kararlar" type="button" data-eylem="kararlar" data-proje="${p.id}"
+                title="Verilen bütün kararlar">${svg(ICON.katman, 14)}</button>
       </div>
-      <div class="as-noktalar">${obekler.map((o, oi) => `
-        <span class="as-grup ${oi === suObek ? 'suan' : oi < suObek ? 'gecti' : ''}"
-              style="flex:${o.satir.length}">${o.satir.map(i => `
-          <button class="${i === no ? 'on' : i < no ? 'gecti' : ''}${
-                    yeniler.includes(TASARIM_ADIM[i].anahtar) ? ' yeni' : ''}" type="button"
-                  data-eylem="tasarim-adim" data-proje="${p.id}" data-deger="${i}"
-                  title="${esc(TASARIM_ADIM[i].ad)}"><i></i></button>`).join('')}</span>`).join('')}
-      </div>
-      <div class="as-sayac">${no + 1} / ${TASARIM_ADIM.length}</div>
+      ${obek.satir.length < 2 ? '' : `
+      <div class="as-noktalar">${obek.satir.map(i => `
+        <button class="${i === no ? 'on' : i < no ? 'gecti' : ''}${
+                  yeniler.includes(TASARIM_ADIM[i].anahtar) ? ' yeni' : ''}" type="button"
+                data-eylem="tasarim-adim" data-proje="${p.id}" data-deger="${i}"
+                title="${esc(TASARIM_ADIM[i].ad)}"><i></i></button>`).join('')}
+      </div>`}
     </div>`;
 }
 
@@ -1485,24 +1525,43 @@ function gorselAdaDurumu(p) {
   return { adimlar, simdi, tam: simdi < 0, logo, isl, tarif, yuvalar, dolu };
 }
 
-/* Ada başlığı — kendi dört adımını sayar. Kalan kararları sayan genel
-   şerit burada "1 / 15" diyordu ve bu ada tek adım olduğu için yanıltıyordu. */
+/* Görsel dünya adasının başlığı — kalan adımlarla aynı kart, yalnız sayacı
+   kendi dört adımını sayıyor. Genel şerit burada "1 / 15" diyordu ve bu ada
+   tek adım olduğu için yanıltıyordu. */
 function gorselAdaBasligi(p) {
-  const d = gorselAdaDurumu(p);
-  const biten = d.adimlar.filter(a => a.bitti).length;
+  const g = gorselAdaDurumu(p);
+  const biten = g.adimlar.filter(a => a.bitti).length;
+  const d = DURAKLAR.tasarim;
 
-  return `<div class="ada-bas">
-    <button class="ab-no ${d.tam ? 'tam' : ''}" type="button" title="Haritaya dön"
-            data-eylem="tasarim-adim" data-proje="${p.id}" data-deger="-2">
-      ${d.tam ? svg(ICON.tik, 13) : '1'}</button>
-    <span class="ab-yz"><b>Görsel dünya</b>
-      <i>${d.tam
-        ? 'Görsel dil hazır · ' + d.yuvalar.length + ' görsel.'
-        : 'Uygulamanın bütün havası bu adadan çıkıyor.'}</i></span>
-    <span class="ab-say mono">${biten}/${d.adimlar.length}</span>
-  </div>
-  <div class="ada-serit">${d.adimlar.map((a, i) =>
-    `<i class="${a.bitti ? 'on' : i === d.simdi ? 'simdi' : ''}"></i>`).join('')}</div>`;
+  return `
+    <div class="adim-serit" style="--kr:${d.renk}">
+      <div class="bs2 ince">
+        <button class="bs2-ik" type="button" title="Haritaya dön"
+                data-eylem="tasarim-adim" data-proje="${p.id}" data-deger="-2">
+          ${svg(ICON[d.ikon], 19)}</button>
+        <span class="bs2-yz">
+          <span class="bs2-firma"><span class="bs2-ad2">${esc(d.ad)}</span></span>
+          <span class="bs2-ad">Görsel dünya</span>
+        </span>
+        <span class="bs2-sag">
+          <b class="mono">${biten}/${g.adimlar.length}</b><i>adım</i>
+        </span>
+      </div>
+      <div class="as-alt">
+        <span class="as-yol">
+          <button class="yi" type="button" data-eylem="tasarim-adim"
+                  data-proje="${p.id}" data-deger="-2">Harita</button>
+          <s>›</s>
+          <button class="yi son" type="button" disabled>Görsel dünya</button>
+        </span>
+        <span class="as-not">${g.tam
+          ? g.yuvalar.length + ' görsel hazır'
+          : 'Uygulamanın havası buradan çıkıyor'}</span>
+      </div>
+      <div class="as-noktalar">${g.adimlar.map((a, i) => `
+        <span class="${a.bitti ? 'gecti' : i === g.simdi ? 'on' : ''}"><i></i></span>`).join('')}
+      </div>
+    </div>`;
 }
 
 /* Ada gövdesi — aynı anda tek kart açık. Biten adımlar özetiyle kapanır,

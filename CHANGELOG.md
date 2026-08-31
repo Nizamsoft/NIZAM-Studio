@@ -1,5 +1,14 @@
 # Değişiklik Günlüğü
 
+## v0.127.0
+- **3. aşama "Tasarımı belirleme" yeni kart diline geçti — hem sayfası hem içi.** Aşamaya girince artık kurulum sayfasıyla birebir aynı ızgara açılıyor: üstte aşama kartı, altında dört kare (Görsel dünya · Kabuk · Davranış · Sistem), en altta "Bütün kararları gör" satırı. Biten yeşil, sıradaki kırmızı, kalanlar sakin — kurulumdaki durum dilinin aynısı.
+- Aşamanın kendi rengi ve simgesi oldu: mavi `#5f86c4` ve palet simgesi. 1. aşama altın, 2. aşama yeşildi; üçü artık ilk bakışta ayrılıyor.
+- **Karar ekranının tepesindeki ince şerit gitti, yerine aşama kartı geldi** — ama alçak kipte (56 piksel), çünkü o ekran kaydırılmıyor ve 84 piksel önizlemeyle seçim rafını sıkıştırıyordu. Kartın karosu aynı zamanda haritaya dönüş düğmesi.
+- Noktalar artık bütün akışı değil yalnız bulunduğun adayı sayıyor; tek adımlık adada hiç çıkmıyor. Nerede olduğunu harita söylüyor, burada kaç karar kaldığı önemli.
+- **Seçenek rafı ızgaraya döndü.** Yatay kaydırmada üçüncü seçenekten sonrası sağa taşıyor ve kaydırılabildiği görünmüyordu. Kartlar sayfanın geri kalanıyla aynı malzemeye geçti: aynı degrade, aynı gölge, seçilen yeşil çerçeve ve köşede tik. Aynı raf modül künyesindeki ekran türü ve kalıp seçiminde de kullanılıyor, orası da düzeldi.
+- İleri düğmesi bu ekranın ana düğmesi olarak kırmızıya geçti; "Adayı bitir" bitmeden sönük, bitince yeşil kalmaya devam ediyor.
+- **`style.css` içinde `.ya-` ızgara bloğu iki kez yazılıydı** — 90 satır birebir kopya, ikincisi birinciyi eziyordu. Kopya silindi. Eski ada haritasından kalan 25 ölü kural da temizlendi.
+
 ## v0.126.3
 - **Kurulumdan sonra modülün "0 sayfa" görünmesi giderildi.** Yapı taslağı doğarken modülün yalnız adı konuyor, sayfaları yüklenmiyordu; ekran modülü açık ama boş gösteriyor, geri çıkıp tekrar girince düzeliyordu. Artık ad konurken sayfalar ve künyeler de yükleniyor.
 - Veri henüz gelmemişse modül açılmıyor: yanlış bir "boş modül" göstermek yerine veri gelince açılıyor.
