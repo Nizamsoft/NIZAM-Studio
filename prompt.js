@@ -395,14 +395,19 @@ const PROMPT = {
     const s = ['## Arayüz Kararları'];
     s.push('Bir ekran görüntüsünde görünmeyen kararlar. Görsel dil bunları');
     s.push('söylemiyor; ben seçtim. Kendi biçimini uydurma.');
+    if (pl.cozum) {
+      s.push('');
+      s.push('> Bu listede yalnız **bu projede gereken** başlıklar var. Burada');
+      s.push('> geçmeyen bir özelliği kendiliğinden ekleme.');
+    }
 
-    TASARIM_GRUP.forEach(g => {
+    tasarimGruplari(proje).forEach(g => {
       if (!g.alanlar.length) return;
       s.push('', `### ${g.ad}`);
       g.alanlar.forEach(a => {
         const adlar = bicimSecim(pl, a);
         if (!adlar.length) { s.push(`- **${a.ad}: yok**`); return; }
-        s.push(`- **${a.ad}: ${adlar.join(' + ')}**`);
+        s.push(`- **${a.ad}: ${adlar.join(' + ')}**${a.claude ? ' _(bu projeye özel başlık)_' : ''}`);
         adlar.forEach(ad => {
           const sc = a.secim.find(x => x.ad === ad);
           if (sc) s.push(`  - ${sc.ad}: ${sc.tarif}`);
@@ -528,7 +533,128 @@ const PROMPT = {
         });
         if ((f.kural || '').trim()) s.push(`  - Kural: ${f.kural}`);
       }
+      /* Claude'un tasarım notu — künyenin "ne" dediği yere "nasıl görünecek"
+         eklenir. İkisini ayrı bölümlere koyunca AI birini okuyup diğerini
+         atlıyordu. */
+      const tn = ((pl.cozum || {}).sayfalar || {})[ad.split(' · ').pop()];
+      if (tn) {
+        s.push('- **Tasarım notu:**');
+        if (tn.yerlesim) s.push(`  - Yerleşim: ${tn.yerlesim}`);
+        if ((tn.bilesenler || []).length)
+          s.push(`  - Bileşenler: ${tn.bilesenler.join(' · ')}`);
+        (tn.gorseller || []).forEach(g =>
+          s.push(`  - Görsel — ${g.yer}: ${g.ne}`));
+        if (tn.not) s.push(`  - ${tn.not}`);
+      }
     });
+    return s.join('\n');
+  },
+
+  /* ---------- İhtiyaç çözümlemesi ----------
+     Her projede aynı on dört kararı sormak yanlıştı. Bu prompt künyeyi
+     Claude'a veriyor, o da hangi kararın bu projede gerektiğini, ne
+     önerdiğini ve sayfa sayfa neyin nasıl görünmesi gerektiğini söylüyor.
+     Studio karar vermiyor; soruyu daraltıyor. */
+  ihtiyac(projeId) {
+    const p = DB.proje(projeId);
+    if (!p) return '';
+    const pl = p.palet || {};
+    const roller = rolListesi(pl.roller);
+
+    const s = [];
+    s.push('# ' + projeAdi(p) + ' — tasarım ihtiyaç çözümlemesi', '');
+    s.push('Bu programın **ne olduğunu** aşağıda veriyorum: modülleri, sayfaları,');
+    s.push('her sayfanın künyesi. Senden **nasıl görünmesi gerektiğine** dair üç');
+    s.push('şey istiyorum. Kod yazma, dosya değiştirme — yalnız sondaki bloğu ver.', '');
+
+    s.push('## Program');
+    s.push(hiza('Firma', p.firma));
+    if (modulAdi(p)) s.push(hiza('Ürün', modulAdi(p)));
+    if (p.sektor)    s.push(hiza('Sektör', p.sektor));
+    s.push(hiza('Platform', PLATFORM_ADI[p.platform] || '—'));
+    if (roller.length) s.push(hiza('Roller', roller.join(' · ')));
+    s.push('');
+
+    const kunye = PROMPT.kunyeBlogu(p);
+    if (kunye) { s.push(kunye, ''); }
+    else {
+      s.push('> **Künye yok.** Yapı durağı tamamlanmamış. Elindeki azla karar ver,');
+      s.push('> emin olmadığın başlığı `gerek: true` bırak — soru sorulmaya devam etsin.', '');
+    }
+
+    /* Studio'nun sabit listesi. Claude neyi eleyeceğini bilmek için hem
+       başlıkları hem seçenekleri görmeli. */
+    s.push('## Studio\'nun karar başlıkları');
+    s.push('Bunlar bugün **her projede** soruluyor. Hangisi bu programda');
+    s.push('gerçekten gerekli, hangisi boşuna soruluyor — sen söyleyeceksin.', '');
+    TASARIM_GRUP.forEach(g => {
+      if (!g.alanlar.length) return;
+      s.push(`### ${g.ad}`);
+      g.alanlar.forEach(a => {
+        s.push(`- \`${a.anahtar}\` — **${a.ad}**: ${a.alt}`);
+        s.push(`  Seçenekler: ${a.secim.map(x => x.ad).join(' | ')}`);
+      });
+      s.push('');
+    });
+
+    s.push('## Senden istediğim dört şey', '');
+    s.push('**1 · Hangi karar gerekli.** Yukarıdaki her başlık için `gerek`');
+    s.push('   yaz. Bu programda karşılığı yoksa `false` — o başlık hiç');
+    s.push('   sorulmayacak ve koda da girmeyecek. Emin değilsen `true` bırak;');
+    s.push('   fazladan soru, eksik özellikten iyidir.', '');
+    s.push('**2 · Ne öneriyorsun.** `gerek: true` olan her başlık için bir');
+    s.push('   seçenek öner ve **künyeden gerekçe göster** — "22 sayfanın 9\'u');
+    s.push('   tablo" gibi. Genel geçer cümle yazma. Öneri seçim yerine');
+    s.push('   geçmiyor; kullanıcı görüp kendi dokunacak.', '');
+    s.push('**3 · Eksik gördüğün başlık.** Studio\'nun listesinde olmayan ama bu');
+    s.push('   programda karar verilmesi gereken bir şey varsa kendin aç —');
+    s.push('   en az iki seçenekle. Uydurma; künyede karşılığı olsun.', '');
+    s.push('**4 · Sayfa sayfa tasarım.** Her sayfa için: neyin nerede duracağı,');
+    s.push('   hangi bileşenlerin gerektiği ve **o sayfada bir görsel gerekiyorsa**');
+    s.push('   nerede ve ne olduğu. Bu liste ChatGPT\'ye gidecek ve tam o');
+    s.push('   görseller üretilecek — "genel bir simge" deme, ne çizileceğini yaz.', '');
+    s.push('   Her sayfaya not yazmak zorunda değilsin: sıradan bir liste');
+    s.push('   ekranıysa atla. Notu hak eden sayfalara yaz.', '');
+
+    s.push('## Cevabın', '');
+    s.push('Tek bir JSON bloğu. Öncesinde ve sonrasında açıklama yazma —');
+    s.push('kullanıcı bunu olduğu gibi kopyalayıp Studio\'ya yapıştıracak.', '');
+    s.push('```json');
+    s.push('{');
+    s.push('  "kararlar": [');
+    s.push('    { "anahtar": "genislik", "gerek": true, "oneri": "Tam genişlik",');
+    s.push('      "neden": "22 sayfanın 9\'u tablo; dar kolon fatura satırını kırar." },');
+    s.push('    { "anahtar": "iceaktarma", "gerek": false,');
+    s.push('      "neden": "Veriler elle giriliyor, dosyadan toplu alım yok." }');
+    s.push('  ],');
+    s.push('  "yeni": [');
+    s.push('    { "obek": "Kabuk", "ad": "Tablo yoğunluğu",');
+    s.push('      "soru": "Satırlar ne kadar sık olsun?",');
+    s.push('      "secim": [');
+    s.push('        { "ad": "Sıkı", "tarif": "Satır yüksekliği 34px; ekrana çok kayıt sığar." },');
+    s.push('        { "ad": "Ferah", "tarif": "Satır yüksekliği 52px; okuması kolay, az kayıt." }');
+    s.push('      ],');
+    s.push('      "oneri": "Sıkı",');
+    s.push('      "neden": "Aylık gider satırı 200\'ü geçiyor." }');
+    s.push('  ],');
+    s.push('  "sayfalar": [');
+    s.push('    { "sayfa": "Giderler",');
+    s.push('      "yerlesim": "Üstte ay seçici ve toplam kartı yan yana; altında gider satırları. En altta sabit toplam satırı.",');
+    s.push('      "bilesenler": ["Özet kartı", "Filtre şeridi", "Tablo", "Sabit toplam satırı"],');
+    s.push('      "gorseller": [');
+    s.push('        { "yer": "Boş durum", "ne": "Fiş ve makbuz çizimi — henüz gider girilmemişken ortada durur." }');
+    s.push('      ],');
+    s.push('      "not": "Tutar sütunu sağa hizalı ve mono." }');
+    s.push('  ]');
+    s.push('}');
+    s.push('```', '');
+    s.push('**Kurallar**');
+    s.push('- `anahtar` yukarıdaki listeden birebir gelsin; uydurma anahtar yazma.');
+    s.push('- Her başlık için bir satır olsun — atladığın başlık "gerekli" sayılır.');
+    s.push('- `sayfa` künyedeki sayfa adıyla birebir aynı olsun.');
+    s.push('- Görsel gerekmeyen sayfada `gorseller` boş kalsın; uydurma.');
+    s.push('- Türkçe yaz. Tırnakları düz tırnak kullan.');
+
     return s.join('\n');
   },
 

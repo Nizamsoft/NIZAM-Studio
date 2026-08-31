@@ -1,5 +1,15 @@
 # Değişiklik Günlüğü
 
+## v0.128.0
+- **Tasarım aşamasına yeni bir 01 adası geldi: İhtiyaç çözümlemesi.** Her projede aynı on dört kararı sormak yanlıştı — 22 sayfalık bir muhasebe modülünde tam genişlik ve sıkı tablo şart, tek ekranlık bir randevu uygulamasında o soru boşuna soruluyordu. Artık künye Claude'a gidiyor, hangi kararın bu projede gerektiğini o söylüyor.
+- Claude üç şey döndürüyor: **hangi karar gerekli** (gereksiz görülen akıştan düşüyor ve prompta hiç yazılmıyor), **her karara öneri ve künyeden gerekçe**, ve **eksik gördüğü başlığı kendi açıyor** — "Tablo yoğunluğu", "Yazdırma" gibi, seçenekleriyle birlikte.
+- **Dördüncüsü sayfa sayfa tasarım notu:** her sayfa için neyin nerede duracağı, hangi bileşenlerin gerektiği ve o sayfada bir görsel gerekiyorsa nerede ve ne olduğu. Bu notlar sayfa künyesinin yanına, aynı bölüme yazılıyor — AI ekranı tahmin etmiyor. Görsel listesi ChatGPT'ye giden görsel dünya promptunu da besliyor: altı genel ekran yerine bu programın gerçek görselleri isteniyor.
+- **Öneri seçim yerine geçmiyor.** Kartta mavi "öneri" rozeti çıkıyor, gerekçe altta bir satır duruyor, ilerlemek için kullanıcı dokunuyor. Claude yanılırsa akış onun kararıyla sürmüyor.
+- **Adaların içi de kare karta döndü.** Görsel dünya ve ihtiyaç adasındaki adımlar satır olmaktan çıktı: kurulum sayfasındaki ızgaranın aynısı, sırası gelmeyen kilitli — kesik çerçeve, basılamaz. Biten adıma geri dönülebiliyor.
+- Adım listesi artık sabit değil: `tasarimAdimlari(p)` projeye göre kuruluyor. Haritadaki sayaçlar, özet, çelişki denetimi ve prompt bloğu hepsi aynı listeden okuyor.
+- Yapıştırılan JSON bloğunun onarımı (kıvrık tırnak, düşen dış parantez, eksik kapanış) tek yere alındı; modül çözümlemesi ve ihtiyaç çözümlemesi aynı okuyucuyu kullanıyor — birinde düzelen ötekinde de düzeliyor.
+- **Çözümleme yapılmayan projede hiçbir şey değişmiyor:** on dört karar aynen soruluyor, öneri gelmiyor, hiçbir başlık elenmiyor.
+
 ## v0.127.1
 - **Tasarım aşamasında geri oku aşamadan dışarı atıyordu.** Kabuk'ta bir karardayken geri basınca harita yerine gelinen sayfaya (çoğunlukla Modüller) düşülüyordu: harita ile karar ekranı aynı adresi paylaşıyor, geçmişte iki ayrı giriş yok, ok da doğrudan tarayıcı geçmişine gidiyordu. Artık önce bir kat yukarı çıkıyor — karardan haritaya, haritadan aşamanın dışına. Yapı ağacında zaten böyleydi.
 

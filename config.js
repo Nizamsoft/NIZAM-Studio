@@ -7,7 +7,7 @@ const APP = {
   name:     'NIZAM | Studio',
   short:    'NIZAM Studio',
   owner:    'Nizam Soft',
-  version: 'v0.127.1',
+  version: 'v0.128.0',
   build:    '2026-08-28',
   /* Studio'nun kendi deposu — "bütün programlarda geçerli olsun"
      istekleri buraya gider. */
@@ -289,6 +289,16 @@ const TASARIM_GRUP = AKIS_OBEK.map(o => ({
 }));
 
 const TASARIM_ADIM = [
+  /* Her projede aynı on dört kararı sormak yanlıştı: yirmi iki sayfalık bir
+     muhasebe modülünde tam genişlik ve sıkı tablo şart, tek ekranlık bir
+     randevu uygulamasında o soru boşuna soruluyor. Claude künyeye bakıp
+     hangi kararın bu projede gerektiğini söylüyor, eksik gördüğü başlığı
+     kendi açıyor ve sayfa sayfa yerleşim notu veriyor. Sonuç `palet.cozum`
+     içinde; akış listesini `tasarimAdimlari(p)` ondan kuruyor. */
+  { anahtar: 'ihtiyac', ad: 'İhtiyaç çözümlemesi', tur: 'ihtiyac', ekran: 'panel',
+    obek: 'İhtiyaç çözümlemesi',
+    obekNot: 'Claude künyeye bakıp hangi kararların gerektiğine karar veriyor.',
+    aciklama: 'Promptu Claude Code\'a ver, dönen çözümlemeyi yapıştır.' },
   /* Uygulamanın bütün görünüşü bu adadan çıkıyor: logo ve işletme görseli
      ChatGPT'ye gidiyor, dönen tarif renk, yüzey, simge, tipografi ve hangi
      görselin nerede duracağını söylüyor. Studio karar vermiyor, taşıyor. */
@@ -306,6 +316,124 @@ const TASARIM_ADIM = [
     obekNot: 'Verilen bütün kararlar tek listede.',
     aciklama: 'Verilen bütün kararlar. Prompta bu yazılacak.' },
 ]);
+
+/* ---- Claude'un çözümlemesi ----
+   `palet.cozum` = { kararlar: {anahtar: {gerek, oneri, neden}},
+                     yeni: [...], sayfalar: {sayfa: {...}}, zaman }
+   Çözümleme yoksa hiçbir şey değişmez: eski projeler bugünkü on dört kararla
+   yürümeye devam eder. */
+
+const COZUM_OBEK = AKIS_OBEK.map(o => o.ad);
+
+/* Claude'un açtığı başlığı Studio'nun alan biçimine çevirir. Anahtar addan
+   türetiliyor: çözümleme yenilendiğinde sıra değişse bile verilmiş karar
+   yerinde kalsın. */
+function cozumAlani(y) {
+  if (!y || !y.ad) return null;
+  const secim = (y.secim || [])
+    .filter(x => x && x.ad)
+    .map(x => ({ ad: String(x.ad).trim().slice(0, 40), tarif: String(x.tarif || '').trim() }));
+  /* Tek seçenekli başlık karar değil, dayatma: soru sorulmaz. */
+  if (secim.length < 2) return null;
+  const ad = String(y.ad).trim().slice(0, 40);
+  const slug = ad.toLocaleLowerCase('tr')
+    .replace(/[ıİ]/g, 'i').replace(/[ğĞ]/g, 'g').replace(/[üÜ]/g, 'u')
+    .replace(/[şŞ]/g, 's').replace(/[öÖ]/g, 'o').replace(/[çÇ]/g, 'c')
+    .replace(/[^a-z0-9]+/g, '');
+  if (!slug) return null;
+  return {
+    anahtar: 'x_' + slug, ad,
+    alt: String(y.soru || ad).trim().slice(0, 140),
+    varsayilan: secim[0].ad, ekran: 'panel', secim,
+    /* Varsayılana düşmüyor: Claude'un önerisi seçim yerine geçmesin diye
+       hiçbir seçenek işaretli gelmiyor, kullanıcı dokunana kadar boş. */
+    bos: true,
+    /* Studio'nun listesinden gelmedi: özet ve promptta böyle işaretleniyor. */
+    claude: true,
+  };
+}
+
+/* Bu projenin Claude'dan gelen başlıkları. */
+function cozumYeniAlanlar(p) {
+  const c = ((p && p.palet) || {}).cozum;
+  if (!c || !Array.isArray(c.yeni)) return [];
+  const gorulen = {};
+  return c.yeni.map(y => {
+    const al = cozumAlani(y);
+    if (!al || gorulen[al.anahtar]) return null;
+    gorulen[al.anahtar] = 1;
+    al.obek = COZUM_OBEK.indexOf(y.obek) > -1 ? y.obek : COZUM_OBEK[0];
+    return al;
+  }).filter(Boolean);
+}
+
+/* Studio'nun listesi + bu projeye özel başlıklar. Seçim yazan ve okuyan
+   her yer bunu kullanıyor; yoksa Claude'un açtığı başlığa dokunulamıyor. */
+function tasarimAlanlari(p) {
+  const ek = cozumYeniAlanlar(p);
+  return ek.length ? TUM_TASARIM.concat(ek) : TUM_TASARIM;
+}
+
+function tasarimAlani(p, anahtar) {
+  return tasarimAlanlari(p).find(a => a.anahtar === anahtar) || null;
+}
+
+/* Akış listesi. Gereksiz görülen karar düşer, Claude'un açtığı başlık kendi
+   öbeğinin sonuna girer. Çözümleme yoksa sabit liste aynen döner. */
+function tasarimAdimlari(p) {
+  const c = ((p && p.palet) || {}).cozum;
+  if (!c) return TASARIM_ADIM;
+
+  const kar = c.kararlar || {};
+  const ek  = {};
+  cozumYeniAlanlar(p).forEach(al => {
+    (ek[al.obek] = ek[al.obek] || []).push({
+      anahtar: al.anahtar, ad: al.ad, alan: al, ekran: 'panel',
+      obek: al.obek, obekNot: '', aciklama: al.alt,
+    });
+  });
+
+  const dizi = [];
+  let onceki = null;
+  TASARIM_ADIM.forEach(a => {
+    /* Öbek değişirken bir öncekinin ekleri araya girsin. */
+    if (onceki && a.obek !== onceki && ek[onceki]) {
+      dizi.push.apply(dizi, ek[onceki]);
+      delete ek[onceki];
+    }
+    onceki = a.obek;
+    const k = kar[a.anahtar];
+    if (a.alan && k && k.gerek === false) return;
+    dizi.push(a);
+  });
+  return dizi;
+}
+
+/* Özet ve prompt aynı öbeklemeyi kullansın diye akıştan türetiliyor —
+   elenen başlık ikisinde de görünmez, Claude'un açtığı ikisinde de görünür. */
+function tasarimGruplari(p) {
+  const adimlar = tasarimAdimlari(p).filter(a => a.alan);
+  const gruplar = [];
+  adimlar.forEach(a => {
+    const son = gruplar[gruplar.length - 1];
+    if (son && son.ad === a.obek) son.alanlar.push(a.alan);
+    else gruplar.push({ anahtar: a.obek.toLocaleLowerCase('tr'), ad: a.obek, alanlar: [a.alan] });
+  });
+  return gruplar;
+}
+
+/* Bir kararın Claude önerisi — "seçildi" saymıyoruz, yalnız gösteriyoruz. */
+function cozumOnerisi(p, anahtar) {
+  const c = ((p && p.palet) || {}).cozum;
+  if (!c) return null;
+  const k = (c.kararlar || {})[anahtar];
+  if (k && k.oneri) return { oneri: String(k.oneri), neden: String(k.neden || '') };
+  const ham = (c.yeni || []).find(x => {
+    const al = cozumAlani(x);
+    return al && al.anahtar === anahtar;
+  });
+  return ham && ham.oneri ? { oneri: String(ham.oneri), neden: String(ham.neden || '') } : null;
+}
 
 /* ---- Nizam teknik standardı — TOHUM ve YEDEK ----
    Standardın yaşadığı yer artık Supabase'deki `standards` tablosu; oraya
