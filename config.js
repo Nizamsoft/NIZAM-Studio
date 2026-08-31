@@ -7,7 +7,7 @@ const APP = {
   name:     'NIZAM | Studio',
   short:    'NIZAM Studio',
   owner:    'Nizam Soft',
-  version: 'v0.132.1',
+  version: 'v0.133.0',
   build:    '2026-08-28',
   /* Studio'nun kendi deposu — "bütün programlarda geçerli olsun"
      istekleri buraya gider. */
@@ -678,6 +678,13 @@ function bicimSecim(palet, alan) {
 }
 
 const GENEL_MODUL = 'Proje Geneli';
+
+/* Veri sunucuda mı duruyor? Seçeneğin metni "Supabase (bulut)" — üç ayrı
+   yerde `=== 'Supabase'` diye kontrol edilince hiçbiri tutmuyordu. Ölçüt
+   tek yerde: yerel değilse sunucu. */
+function sunuculuMu(p) {
+  return ((p && p.palet) || {}).veriKatmani !== 'Yerel tarayıcı';
+}
 
 /* ---- Sayfa künyesi ----
    AI'ın ekranı tahmin etmeden kurabilmesi için gereken en küçük bilgi:

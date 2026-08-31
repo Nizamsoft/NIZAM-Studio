@@ -262,6 +262,9 @@ const ICON = {
   ev:      '<path d="M3 10.5 12 4l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"></path>',
   kilit:   '<rect x="5" y="10" width="14" height="10" rx="2"></rect>'
          + '<path d="M8 10V7a4 4 0 0 1 8 0v3"></path>',
+  /* Dışarı açılan bağlantı: Supabase, GitHub, Namecheap. */
+  disari:  '<path d="M14 4h6v6M20 4l-9 9"></path>'
+         + '<path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"></path>',
   /* İhtiyaç çözümlemesi: bakıp anlama işi — büyüteç. */
   arama:   '<circle cx="11" cy="11" r="6.4"></circle><path d="M15.8 15.8L20.5 20.5"></path>',
   resim:   '<rect x="3" y="5" width="18" height="14" rx="2"></rect>'
@@ -3684,8 +3687,13 @@ function yapiSayfasi(p, d) {
        ve beş adımın tek sayı olmasından doğan boş yuva kapanıyor. */
     { no: '03', eylem: 'adim-yer',    ad: 'Nereye kuralım?',
       ozet: 'Adres, paket adı, kurulum',
+      /* Supabase seçildiyse bağlantı da girilmiş olmalı: kod ilk günden
+         gerçek veritabanına yazsın, sonradan sökülüp bağlanmasın. */
       bitti: !!pl.modulAdi && !!pl.veriKatmani && !!pl.alanAdi
-             && !!p.repo && !!String(pl.sohbetAdi || '').trim() && !!pl.yayinda,
+             && !!p.repo && !!String(pl.sohbetAdi || '').trim() && !!pl.yayinda
+             && (!sunuculuMu(p)
+                 || (!!String(pl.supabaseUrl || '').trim()
+                     && !!String(pl.supabaseAnon || '').trim())),
       deger: pl.alanAdi || '' },
 
     { no: '04', eylem: 'yapi-akis-ac', ad: 'Modüller',
@@ -5021,9 +5029,10 @@ function betaSayfasi(p, d) {
       <button class="promptu-gor" type="button" data-eylem="yapi-blok-gor"
               data-proje="${p.id}">Bloğu gör</button>`)
 
+    + sqlKarti(p)
     + asamaIzgarasi(p)
 
-    + durakKarti(3, cikti, 'Beta çıktı',
+    + durakKarti(4, cikti, 'Beta çıktı',
         'Beş aşama bitip <b class="mono">main</b> dalına gittiğinde uygulamayı '
         + 'dene. Gördüğün eksikleri not al — sonraki durakta görev olarak '
         + 'açacaksın.', `
@@ -5036,6 +5045,47 @@ function betaSayfasi(p, d) {
         işaretliyorsun.</span></div>`;
 }
 
+/* Veritabanı kurulumu — kod yazılmadan önce. Bağlantı bilgisi kurulum
+   adımında toplandı; SQL şemasını 3. blok üretiyor, çalıştıran kullanıcı.
+   Claude Code Supabase'e bağlanamaz. */
+function sqlKarti(p) {
+  const pl = p.palet || {};
+  if (!sunuculuMu(p)) return '';
+  const kuruldu = !!pl.sqlKuruldu;
+  const bagli = !!String(pl.supabaseUrl || '').trim()
+             && !!String(pl.supabaseAnon || '').trim();
+
+  return durakKarti(2, kuruldu, 'Veritabanını kur',
+    bagli
+      ? 'Claude 3. blokla birlikte <b class="mono">sql/01-tablolar.sql</b> '
+        + 'dosyasını da yazıyor — tablolar, ilişkiler ve satır güvenliği (RLS) '
+        + 'içinde. Supabase\'de bir kere çalıştır.'
+      : '<b class="eksik">Supabase bağlantısı girilmemiş.</b> <b>Kurulum ve yapı</b> '
+        + 'durağındaki <b>Nereye kuralım?</b> adımına proje adresini ve anon '
+        + 'anahtarını yaz — kod ilk günden gerçek veritabanına yazsın.', `
+    <div class="kur-dug">
+      <a class="sayfa-dug ${bagli ? '' : 'ikincil'}" target="_blank" rel="noopener"
+         href="${bagli ? esc(sqlEditorAdresi(pl.supabaseUrl)) : 'https://supabase.com/dashboard'}">
+        ${svg(ICON.disari, 15)} SQL editörünü aç</a>
+    </div>
+    <div class="kur-dug">
+      <button class="sayfa-dug ikincil" type="button" data-eylem="sql-nasil"
+              data-proje="${p.id}">${svg(ICON.info, 15)} Nasıl yapılır?</button>
+    </div>
+    <label class="kur-onay ${kuruldu ? 'on' : ''}" data-eylem="sql-onay"
+           data-proje="${p.id}" role="button" tabindex="0">
+      <span class="kur-kutu">${svg(ICON.tik, 12)}</span> Tabloları kurdum</label>`,
+    kuruldu ? 'tamam' : (bagli ? 'sırada' : 'eksik'));
+}
+
+/* Proje adresinden SQL editörünün adresi. Adres `https://xxxx.supabase.co`
+   biçiminde; panel adresi proje kimliğiyle kuruluyor. */
+function sqlEditorAdresi(url) {
+  const es = String(url || '').match(/https?:\/\/([a-z0-9-]+)\.supabase\.co/i);
+  return es ? 'https://supabase.com/dashboard/project/' + es[1] + '/sql/new'
+            : 'https://supabase.com/dashboard';
+}
+
 /* Beş aşama, kilitli zincir. Her aşama **ayrı Claude Code oturumu**:
    tek oturumda beşini yaparsan konuşma binlerce satıra çıkıyor ve her yeni
    mesajda tamamı yeniden gönderiliyor. Studio deponun içini göremediği için
@@ -5045,11 +5095,14 @@ function asamaIzgarasi(p) {
   const biten = Array.isArray(pl.asama) ? pl.asama : [];
   const simdi = KURULUM_ADIM.findIndex((a, i) => biten.indexOf(i) < 0);
   const tam = simdi < 0;
+  /* Tablolar kurulmadan kod yazdırmak: ikinci aşamada veriye bağlanacak
+     yer yok, üçüncüde kayıt yazılacak tablo yok. */
+  const sqlBekliyor = sunuculuMu(p) && !pl.sqlKuruldu;
 
   const kart = i => {
     const a = KURULUM_ADIM[i];
     const bitti = biten.indexOf(i) > -1;
-    const kilit = !bitti && simdi > -1 && i > simdi;
+    const kilit = !bitti && (sqlBekliyor || (simdi > -1 && i > simdi));
     const hal = bitti ? 'bitti' : kilit ? 'kilitli' : i === simdi ? 'simdi' : 'eksik';
     const ikon = bitti ? ICON.tik : kilit ? ICON.kilit
                : i === simdi ? ICON.goz : ICON.kalem;
@@ -5062,13 +5115,14 @@ function asamaIzgarasi(p) {
         </span>
         <span class="ya-yz">
           <span class="ya-ad">${esc(a.ad)}</span>
-          <span class="ya-alt">${esc(bitti ? 'bitti' : kilit ? 'kilitli'
+          <span class="ya-alt">${esc(bitti ? 'bitti'
+            : kilit ? (sqlBekliyor ? 'veritabanı bekliyor' : 'kilitli')
             : i === simdi ? 'sıradaki' : 'bekliyor')}</span>
         </span>
       </button>`;
   };
 
-  return durakKarti(2, tam, 'Beş aşama',
+  return durakKarti(3, tam, 'Beş aşama',
     'Kod tek seferde yazılmıyor. Her aşama <b>ayrı Claude Code oturumu</b> — '
     + 'oturum uzadıkça her mesajda bütün konuşma yeniden gidiyor. Karta bas, '
     + 'kısa komutu kopyala, yeni oturumda yapıştır.', `
@@ -5077,6 +5131,45 @@ function asamaIzgarasi(p) {
       ${yolOku(biten.indexOf(2) > -1)}
       <div class="ya-satir">${[3, 4].map(kart).join('')}</div>
     </div>`, tam ? 'tamam' : (biten.length + '/' + KURULUM_ADIM.length));
+}
+
+/* SQL nasıl çalıştırılır. Studio kullanıcının Supabase'ini göremiyor;
+   depo, alan adı ve yayın adımlarındaki gibi işaretlemeyle ilerliyor. */
+function sqlNasilAc(projeId) {
+  modalHepsiniKapat();
+  const p = DB.proje(projeId);
+  if (!p) return;
+  const pl = p.palet || {};
+  const adres = sqlEditorAdresi(pl.supabaseUrl);
+
+  const adim = (no, ic) => `
+    <div class="adm"><b>${no}</b><span>${ic}</span></div>`;
+
+  modalAc(`
+    ${modalBaslik(ICON.gVeri, 'Tabloları kur',
+      'Claude SQL dosyasını yazdı; çalıştıran sensin. Claude Code senin '
+      + 'Supabase\'ine bağlanamıyor.')}
+    <div class="adm-l">
+      ${adim(1, 'Depodaki <b class="mono">sql/01-tablolar.sql</b> dosyasını aç, '
+        + 'içeriğini kopyala.')}
+      ${adim(2, 'Aşağıdaki düğmeyle Supabase <b>SQL Editor</b> sayfasını aç.')}
+      ${adim(3, 'Yapıştır ve <b>Run</b>\'a bas. Hata çıkarsa metni Claude\'a '
+        + 'göster, düzeltsin.')}
+      ${adim(4, '<b>Table Editor</b>\'de tabloların geldiğini gör, buraya dönüp '
+        + 'işaretle.')}
+    </div>
+    <div class="kur-dug">
+      <a class="sayfa-dug" target="_blank" rel="noopener" href="${esc(adres)}">
+        ${svg(ICON.disari, 15)} SQL editörünü aç</a>
+    </div>
+    <div class="note">${svg(ICON.info, 15)}
+      <span>Şema değişirse Claude yeni bir SQL dosyası yazar; onu da aynı
+      yerde çalıştırırsın. Var olan tabloya dokunmadan ekleme yapar.</span></div>
+    <div class="modal-alt">
+      <button class="btn btn-ghost" data-sq="kapat" type="button">Kapat</button>
+    </div>`, kutu => {
+    $('[data-sq="kapat"]', kutu).addEventListener('click', modalKapat);
+  });
 }
 
 /* Bir aşamanın penceresi: kısa komut ve "bitti" işareti. */
@@ -7822,6 +7915,27 @@ function adimYer(projeId) {
                onerilenAlanAdi(p) || 'kubban.nizamsoft.com', 'text', 200, true,
                'data-tk="alanAdi"')
       + fdNot(veri.alt)
+      /* Bağlantı en başta soruluyor: sonradan gelirse kod önce cihaz-içi
+         deneme hesabıyla yazılıyor, sonra sökülüp Supabase'e bağlanıyor.
+         İki kez iş, iki kez hata. */
+      + `<div class="fbd-ayrac vt ${veriSecili === 'Yerel tarayıcı' ? 'gizli' : ''}">
+          <span class="fbd-et">Veritabanı</span>
+          <div class="kur-dug">
+            <a class="sayfa-dug ikincil" target="_blank" rel="noopener"
+               href="https://supabase.com/dashboard/new">
+              ${svg(ICON.disari, 15)} Supabase'de proje aç</a>
+          </div>
+          ${fdAlan('#3ecf8e', ICON.gVeri, 'Proje adresi', 'ay-sb-url', pl.supabaseUrl,
+                   'https://xxxx.supabase.co', 'text', 120, true,
+                   'data-tk="supabaseUrl" spellcheck="false" autocapitalize="off"')}
+          ${fdAlan('#3ecf8e', ICON.anahtar, 'anon key', 'ay-sb-key', pl.supabaseAnon,
+                   'eyJhbGciOiJIUzI1NiIs…', 'text', 400, true,
+                   'data-tk="supabaseAnon" spellcheck="false" autocapitalize="off"')}
+          <div class="note uyari">${svg(ICON.uyari, 15)}
+            <span><b>service_role</b> anahtarını buraya yazma. anon key
+            tarayıcıya zaten iniyor, veriyi satır güvenliği (RLS) koruyor —
+            o normal.</span></div>
+        </div>`
       + `<div class="fbd-ayrac">
           <span class="fbd-et">Kurulum</span>
           ${kurulumAraclari(p)}
@@ -7838,7 +7952,11 @@ function adimYer(projeId) {
     const tazele = () => {
       const y = $('[data-fdsay="Yer"]', kutu);
       if (!y) return;
-      y.textContent = $$('[data-tk]', kutu).filter(x => x.value.trim()).length + '/3';
+      /* Supabase seçili değilken bağlantı alanları sayılmıyor. */
+      const sb = $('[data-tk="veriKatmani"]', kutu).value !== 'Yerel tarayıcı';
+      const alanlar = $$('[data-tk]', kutu)
+        .filter(x => sb || ['supabaseUrl', 'supabaseAnon'].indexOf(x.dataset.tk) < 0);
+      y.textContent = alanlar.filter(x => x.value.trim()).length + '/' + alanlar.length;
     };
     kutu.addEventListener('click', ev => {
       const v = ev.target.closest('[data-tks]');
@@ -7846,6 +7964,10 @@ function adimYer(projeId) {
         const gizli = $('[data-tk="' + v.dataset.tks + '"]', kutu);
         if (gizli) gizli.value = v.dataset.deger;
         v.parentElement.querySelectorAll('.fbd-cp').forEach(x => x.classList.toggle('on', x === v));
+        const vt = $('.fbd-ayrac.vt', kutu);
+        if (vt && v.dataset.tks === 'veriKatmani') {
+          vt.classList.toggle('gizli', v.dataset.deger === 'Yerel tarayıcı');
+        }
       }
       setTimeout(tazele, 0);
     });
@@ -9584,6 +9706,16 @@ async function eylemCalistir(el) {
   }
 
   if (e === 'asama-ac') return asamaAc(el.dataset.proje, Number(el.dataset.deger));
+  if (e === 'sql-nasil') return sqlNasilAc(el.dataset.proje);
+
+  if (e === 'sql-onay') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const pl = pr.palet || {};
+    return isYap(() => DB.paletKaydet(pr.id,
+      Object.assign({}, pl, { sqlKuruldu: !pl.sqlKuruldu })),
+      pl.sqlKuruldu ? 'İşaret kaldırıldı.' : 'Veritabanı kuruldu.');
+  }
 
   if (e === 'dil-aktar') return dilAktar(el.dataset.proje);
 

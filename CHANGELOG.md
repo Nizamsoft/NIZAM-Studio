@@ -1,5 +1,14 @@
 # Değişiklik Günlüğü
 
+## v0.133.0
+- **Supabase bağlantısı artık en başta soruluyor.** Bağlantı sonradan verilince kod önce cihaz-içi bir deneme hesabıyla yazılıyor, sonra sökülüp Supabase'e bağlanıyordu — iki kez iş, iki kez hata riski. `Kurulum ve yapı → Nereye kuralım?` adımına **Veritabanı** bölümü eklendi: "Supabase'de proje aç" düğmesi, proje adresi ve anon key. Veri katmanı yerel seçiliyse bölüm hiç görünmüyor.
+- `service_role` anahtarı istenmiyor ve uyarısı yazılı: anon key tarayıcıya zaten iniyor, veriyi satır güvenliği koruyor — depoda durması normal.
+- Bağlantı **1. bloktan itibaren** her prompta giriyor: `js/yapilandirma.js` içine yazılacak, başka dosyaya kopyalanmayacak. Bilgi girilmemişse blok "deneme hesabı uydurma, dur ve sor" diyor.
+- **3. blok artık SQL şemasını da üretiyor** — `sql/01-tablolar.sql`: künyedeki alanlardan tablolar, foreign key'ler, indeksler ve her tabloda RLS. Baştan sona yeniden çalıştırılabilir yazılıyor, çünkü çalıştıran Claude değil kullanıcı.
+- **Beta durağına `Veritabanını kur` kartı geldi**, 3. blok ile beş aşamanın arasına. SQL editörünü açan düğme (proje adresinden doğrudan o projenin editörüne gidiyor), dört adımlık "nasıl yapılır" penceresi ve "Tabloları kurdum" işareti. **Tablolar kurulmadan beş aşama kilitli** — ikinci aşamada bağlanacak veri, üçüncüde yazılacak tablo yok.
+- Aşama promptlarına bir kural daha: **deneme hesabı ya da sahte veri uydurma** — bağlantı yapılandırmada, tablolar Supabase'de.
+- **Bir hata yakalandı:** veri katmanı seçeneğinin metni `Supabase (bulut)`, kod ise üç yerde `=== 'Supabase'` diye bakıyordu — hiçbiri tutmazdı. Ölçüt tek yere alındı: yerel değilse sunuculu.
+
 ## v0.132.1
 - **Logo hiçbir bloğa girmiyordu.** Sihirbazda alınıyor, Studio'da duruyor, ama promptlarda geçmediği için kodu yazan onu göremiyordu — açılışta, giriş kartında ve üst çubukta amblemin yeri boş bırakılıyordu. Artık 2. blokta ilk sırada, indirilecek imzalı adresiyle.
 - Nereye konacağı da yazılı: açılış ekranı, giriş kartı, üst çubuk amblemi, favicon ve PWA simgesi. "Yeniden çizme, sadeleştirme, rengini değiştirme — gereken boyutlarda kendi kopyalarını üret ama çizimi bozma."

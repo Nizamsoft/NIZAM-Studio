@@ -128,6 +128,38 @@ const PROMPT = {
     return s.join('\n');
   },
 
+  /* ---- Supabase bağlantısı ----
+     Bağlantı kurulum adımında toplanıyor ve ilk bloktan itibaren gidiyor:
+     sonradan verilirse kod önce cihaz-içi bir deneme hesabıyla yazılıyor,
+     sonra sökülüp bağlanıyor. anon key tarayıcıya zaten iniyor, gizli
+     değil; gizli olan service_role Studio'da hiç istenmiyor. */
+  baglantiBlogu(proje) {
+    const pl = (proje && proje.palet) || {};
+    if (!sunuculuMu(proje)) return '';
+    const url = String(pl.supabaseUrl || '').trim();
+    const anon = String(pl.supabaseAnon || '').trim();
+
+    const s = ['## Supabase Bağlantısı'];
+    if (!url || !anon) {
+      s.push('> **Bağlantı bilgisi henüz girilmedi.** Deneme hesabı ya da');
+      s.push('> geçici bir bağlantı **uydurma**; veriye dokunan bir iş');
+      s.push('> geldiğinde dur ve bana sor.');
+      return s.join('\n');
+    }
+    s.push('Bunları `js/yapilandirma.js` içine yaz ve **her yerden oradan oku.**');
+    s.push('Başka dosyaya kopyalama, ikinci bir yapılandırma açma.', '');
+    s.push(hiza('Proje adresi', url));
+    s.push(hiza('anon key', anon));
+    s.push('');
+    s.push('- **anon key gizli değildir** — tarayıcıya iniyor, depoda durması');
+    s.push('  normal. Veriyi satır güvenliği (RLS) koruyor.');
+    s.push('- **service_role anahtarını isteme ve kullanma.** Sana verilmedi;');
+    s.push('  gerektiğini düşünüyorsan tasarım yanlıştır, dur ve sor.');
+    s.push('- **Cihaz-içi deneme hesabı açma.** Giriş ilk günden Supabase Auth');
+    s.push('  ile olsun.');
+    return s.join('\n');
+  },
+
   /* ---- Tasarımla ilgili standart satırları ----
      ChatGPT'ye standardı vermiyorduk; o da üst çubuğu, alt menüyü ve
      gezinmeyi kendi kafasına göre tarif edip standardın karşısına
@@ -334,6 +366,9 @@ const PROMPT = {
     s.push(PROMPT.teknikBlogu(p));
     s.push('');
 
+    const baglanti = PROMPT.baglantiBlogu(p);
+    if (baglanti) { s.push(baglanti); s.push(''); }
+
     s.push('## Şimdi ne yapacaksın', '');
     s.push('Kimlik tek dosyada tutulmuyor: yirmi iki sayfalık bir modülde o');
     s.push('dosya iki bin satıra çıkıyor ve her oturum baştan okumak zorunda');
@@ -533,9 +568,26 @@ const PROMPT = {
     KURULUM_ADIM.forEach((a, i) => s.push(`   - [ ] ${i + 1}. ${a.ad}`));
     s.push('   ```');
     s.push('   Altına "Son oturumda ne yapıldı" diye boş bir bölüm aç.', '');
-    s.push('**4 · `NIZAM.md`** içindeki `## Dosyalar` listesini güncelle.', '');
-    s.push('**5 ·** Tek commit\'le **`main` dalına** gönder:');
-    s.push('   `[' + TASK_PREFIX + '-0] Sayfalar ve kararlar`', '');
+    const bg = PROMPT.baglantiBlogu(p);
+    if (bg) {
+      s.push('**4 · `sql/01-tablolar.sql`** — künyedeki alanlardan veritabanı');
+      s.push('   şemasını yaz: tablolar, sütun türleri, foreign key\'ler,');
+      s.push('   indeksler ve **her tabloda satır güvenliği (RLS)**. Sonuna');
+      s.push('   yetki tablolarını da ekle.', '');
+      s.push('   > Dosya **baştan sona bir kerede çalıştırılabilir** olsun:');
+      s.push('   > `create table if not exists`, `drop policy if exists` gibi');
+      s.push('   > yeniden çalıştırmaya dayanıklı yaz. Ben Supabase\'in SQL');
+      s.push('   > editörüne yapıştırıp çalıştıracağım — sen çalıştıramazsın.', '');
+      s.push('   > `js/yapilandirma.js` dosyasını da aç ve yukarıdaki bağlantı');
+      s.push('   > bilgilerini yaz. Kod ilk günden gerçek veritabanına bağlansın.', '');
+      s.push('**5 · `NIZAM.md`** içindeki `## Dosyalar` listesini güncelle.', '');
+      s.push('**6 ·** Tek commit\'le **`main` dalına** gönder:');
+      s.push('   `[' + TASK_PREFIX + '-0] Sayfalar, kararlar ve şema`', '');
+    } else {
+      s.push('**4 · `NIZAM.md`** içindeki `## Dosyalar` listesini güncelle.', '');
+      s.push('**5 ·** Tek commit\'le **`main` dalına** gönder:');
+      s.push('   `[' + TASK_PREFIX + '-0] Sayfalar ve kararlar`', '');
+    }
     s.push('**6 ·** Dur. Bundan sonra her aşama için sana **ayrı oturumda**');
     s.push('   kısa bir komut vereceğim; gereken dosyayı kendin açacaksın.', '');
 
@@ -575,7 +627,7 @@ const PROMPT = {
     s.push('- `nizam/tasarim.md` — renk, ölçü, bileşen ve iskeletler');
     s.push('- `nizam/sayfalar.md` — bu aşamada dokunacağın sayfaların künyesi');
     s.push('- `nizam/kararlar.md` — arayüz kararları ve verilmiş cevaplar');
-    s.push('- `NIZAM.md` — teknik standart', '');
+    s.push('- `NIZAM.md` — teknik standart ve Supabase bağlantısı', '');
     s.push('> **Sayfalar dosyasının tamamını okuma.** Bu aşamada hangi');
     s.push('> sayfalara dokunacaksan yalnız onların bölümünü aç.', '');
 
@@ -591,7 +643,10 @@ const PROMPT = {
     s.push('  yazmayan bir şey gerekiyorsa uydurma, sor.');
     s.push('- **Künyede olmayan alan, sayfa ya da modül ekleme.**');
     s.push('- Renk ve ölçüleri tek değişken dosyasından oku; ekranda');
-    s.push('  yeniden tanımlama.', '');
+    s.push('  yeniden tanımlama.');
+    s.push('- **Deneme hesabı ya da sahte veri uydurma.** Bağlantı');
+    s.push('  `js/yapilandirma.js` içinde; tablolar Supabase\'de kurulu.');
+    s.push('  Bir şey eksikse dur ve sor.', '');
 
     s.push('## Bitirince', '');
     s.push('1. `nizam/durum.md` içinde bu aşamayı işaretle ve "Son oturumda ne');
