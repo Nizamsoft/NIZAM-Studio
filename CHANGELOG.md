@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## v0.126.3
+- **Kurulumdan sonra modülün "0 sayfa" görünmesi giderildi.** Yapı taslağı doğarken modülün yalnız adı konuyor, sayfaları yüklenmiyordu; ekran modülü açık ama boş gösteriyor, geri çıkıp tekrar girince düzeliyordu. Artık ad konurken sayfalar ve künyeler de yükleniyor.
+- Veri henüz gelmemişse modül açılmıyor: yanlış bir "boş modül" göstermek yerine veri gelince açılıyor.
+
 ## v0.126.2
 - **Eksik parantez onarımı gerçek blokla sınanınca iki açık verdi, ikisi de kapatıldı.** Kapanış parantezi kimi zaman seçime giriyor kimi zaman girmiyor; kendimiz eklediğimizde zaten varsa iki kapanış çıkıyor ve okuma yine patlıyordu — artık iki biçim de deneniyor.
 - İkincisi daha sinsiydi: dış parantez düşünce **ilk sayfa nesnesi tek başına geçerli JSON oluyor** ve ayrıştırma "başarılı" görünüyordu, onarım hiç çalışmıyordu. Artık okunan nesnede `sayfalar` yoksa yanlış parçayı okuduğumuzu anlayıp onarım deneniyor.

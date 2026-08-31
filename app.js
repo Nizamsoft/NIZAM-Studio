@@ -3162,13 +3162,22 @@ const YAPI_ACIK = {};
 
 function yapiTaslak(p) {
   if (!YAPI_TASLAK[p.id]) {
-    YAPI_TASLAK[p.id] = { yer: 0, modul: modulAdi(p), anlat: '', kararlar: [],
+    YAPI_TASLAK[p.id] = { yer: 0, modul: '', anlat: '', kararlar: [],
                           baglantilar: [], hazirVeri: [], ciktilar: [],
                           mod: 'agac', odak: null, dal: null, duzelt: null,
                           mk: { roller: [], eylemler: [], yetki: {}, kural: '' },
                           sayfalar: [], kunye: {} };
   }
-  return YAPI_TASLAK[p.id];
+  const t = YAPI_TASLAK[p.id];
+  /* Taslak doğarken yalnız modülün adı konuyordu; sayfaları gelmediği için
+     ekran "0 sayfa" gösteriyor, geri çıkıp girince düzeliyordu. Veri hazırsa
+     adı koyarken sayfaları da yükle. */
+  if (!t.acildi && DB.yuklendi) {
+    t.acildi = true;
+    const ad = modulAdi(p);
+    if (ad) modulYukle(p, t, ad);
+  }
+  return t;
 }
 
 /* Modülün sayfalarını ve künyelerini taslağa yükler. */
