@@ -44,6 +44,11 @@ const PROMPT = {
         s.push('', '**Yazı**');
         if (y.baslik) s.push(`- Başlık: ${y.baslik}`);
         if (y.metin)  s.push(`- Metin: ${y.metin}`);
+        if (y.yedek) {
+          s.push(`- **Çevrimdışı yedek: ${y.yedek}**`);
+          s.push('  Yazı tipi dosyalarını servis işçisi önbelleğe alsın;');
+          s.push('  alamıyorsa bu yedeğe düşülür, ekran bozulmaz.');
+        }
         Object.keys(y.olcek || {}).forEach(k =>
           s.push(`- ${k}: ${y.olcek[k]} (boyut/satır, px)`));
       }
@@ -53,7 +58,8 @@ const PROMPT = {
         Object.keys(ko).forEach(k => s.push(`- Köşe · ${k}: ${ko[k]}px`));
         if (d.bosluk) s.push(`- Boşluk birimi: ${d.bosluk}px — bütün aralıklar bunun katı.`);
       }
-      const ek = [['golge', 'Gölge'], ['doku', 'Doku'], ['amblem', 'Amblem']];
+      const ek = [['golge', 'Gölge'], ['doku', 'Doku'], ['amblem', 'Amblem'],
+                  ['bosDurumGorseli', 'Boş durum görseli']];
       const varEk = ek.filter(x => d[x[0]]);
       if (varEk.length) {
         s.push('', '**Malzeme**');
@@ -61,7 +67,28 @@ const PROMPT = {
       }
       if (d.durum && Object.keys(d.durum).length) {
         s.push('', '**Durum renkleri**');
-        Object.keys(d.durum).forEach(k => s.push(`- ${k}: \`${d.durum[k]}\``));
+        Object.keys(d.durum).forEach(k => {
+          const m = (d.durumMetin || {})[k];
+          s.push(`- ${k}: \`${d.durum[k]}\`${m ? ` — üstündeki yazı \`${m}\`` : ''}`);
+        });
+      }
+
+      /* Kontrast: hangi renk metin olur, hangisi olmaz. En sık yapılan
+         erişilebilirlik hatası zayıf kontrastlı rengi yazıya uygulamak. */
+      const kn = d.kontrast || {};
+      if ((kn.metneUygun || []).length || (kn.yalnizCizgi || []).length) {
+        s.push('', '**Kontrast** — ölçüldü, tahmin değil.');
+        if ((kn.metneUygun || []).length)
+          s.push(`- Metin olarak kullanılabilir: ${kn.metneUygun.join(' · ')}`);
+        if ((kn.yalnizCizgi || []).length) {
+          s.push(`- **Yalnız çizgi, kenar ve dolgu:** ${kn.yalnizCizgi.join(' · ')}`);
+          s.push('  Bu renkleri yazıya uygulama — 4.5:1 kuralını karşılamıyorlar.');
+        }
+      }
+
+      if (d.grafik && Object.keys(d.grafik).length) {
+        s.push('', '**Grafik**');
+        Object.keys(d.grafik).forEach(k => s.push(`- ${k}: ${d.grafik[k]}`));
       }
 
       /* Bileşenler kodun asıl işi: her biri tek cümle, sayı içeriyor.
@@ -99,6 +126,34 @@ const PROMPT = {
     s.push('Renk ve ölçüler tek yerde değişken olarak tanımlansın; her ekranda');
     s.push('yeniden yazılmasın. Bir ekranda uyguladığın kural bütün ekranlarda aynı.');
     return s.join('\n');
+  },
+
+  /* ---- Tasarımla ilgili standart satırları ----
+     ChatGPT'ye standardı vermiyorduk; o da üst çubuğu, alt menüyü ve
+     gezinmeyi kendi kafasına göre tarif edip standardın karşısına
+     geçiyordu. Görülen sekiz çakışmanın hepsi bu eksiklikten. */
+  TASARIM_GRUBU: ['Tasarım', 'Animasyon', 'Erişilebilirlik', 'Biçim', 'Optimizasyon'],
+
+  tasarimStandardi(proje) {
+    const satir = [];
+    DB.standartGruplari(standartListesi()).forEach(g => {
+      if (PROMPT.TASARIM_GRUBU.indexOf(g.ad) < 0) return;
+      /* Biçim `teknikBlogu` ile aynı: alan · başlık, altında kural.
+         Standart satırlarında ayrı bir "değer" alanı yok — başlık zaten
+         kararı söylüyor, tarif nedenini. */
+      g.alanlar.forEach(a => a.liste.forEach(st => {
+        if (!st.ad || !st.tarif) return;
+        satir.push(`- **${a.ad} · ${st.ad}**`);
+        satir.push('  - ' + String(st.tarif).replace(/\n+/g, ' '));
+      }));
+    });
+    if (!satir.length) return '';
+
+    const s = ['## Nizam Standardı — bunlara uy'];
+    s.push('Bunlar bütün Nizam programlarında geçerli. **Karşısına geçme,');
+    s.push('alternatif önerme.** Tasarımını bunların üstüne kur; bir satırla');
+    s.push('çelişiyorsan bloğu verme, önce bana sor.', '');
+    return s.concat(satir).join('\n');
   },
 
   /* ---- Claude'un sorduğu, kullanıcının cevapladığı ----
@@ -772,6 +827,10 @@ const PROMPT = {
     s.push('   kullanıcı" gibi genel simge yazma; **bu işin kendi nesneleri**');
     s.push('   olsun: hesap, defter, fatura, kasa, mizan… On ile yirmi arası.');
     s.push('   Bu liste ChatGPT\'ye gidecek, tam onları çizecek.', '');
+    s.push('   **Künyede karşılığı olmayan simge yazma.** Her simge için o');
+    s.push('   nesnenin hangi sayfada geçtiğini `ne` alanında söyle; sayfayı');
+    s.push('   gösteremiyorsan o simge gerekmiyor demektir. Arayüzün kendi');
+    s.push('   simgelerini de unutma: geri oku, arama, kapatma, ekle.', '');
 
     s.push('## Cevabın', '');
     s.push('Tek bir JSON bloğu. Öncesinde ve sonrasında açıklama yazma —');
@@ -1074,6 +1133,33 @@ const PROMPT = {
     s.push(hiza('Platform', PLATFORM_ADI[p.platform] || '—'));
     s.push('');
 
+    /* Sayfa türleri künyeden geliyor: iskelet listesi uydurulmasın.
+       Geniş tablo ve tablo içi giriş sayıları da burada — ChatGPT bunları
+       görmeden "tam genişlik tablo" deyip telefonu unutuyordu. */
+    const kunye = pl.kunye || {};
+    const kAdlar = Object.keys(kunye);
+    if (kAdlar.length) {
+      const tur = {};
+      let genis = 0;
+      kAdlar.forEach(x => {
+        const k = kunye[x] || {};
+        const t = k.tur || 'Belirsiz';
+        tur[t] = (tur[t] || 0) + 1;
+        if ((k.alanlar || []).length >= 7) genis += 1;
+      });
+      s.push('## Bu programın ekranları', '');
+      s.push(`${kAdlar.length} sayfa var. Türlere göre:`, '');
+      Object.keys(tur).forEach(t => s.push(`- **${t}** — ${tur[t]} sayfa`));
+      s.push('');
+      s.push('**İskeletleri bu türlerden kur.** Listede olmayan bir tür için');
+      s.push('iskelet yazma; her türe bir iskelet yaz, hiçbirini atlama.', '');
+      if (genis) {
+        s.push(`> **${genis} sayfada yedi ya da daha çok sütun var.** Telefon`);
+        s.push('> genişliğine sığmaz. Tablonun dar ekranda ne olacağını —');
+        s.push('> hangi sütunun nereye gideceğini — açıkça yaz.', '');
+      }
+    }
+
     if (simgeler.length) {
       s.push('## Gereken simgeler', '');
       s.push('Bu programın ekranlarında şu simgeler kullanılacak. Levhada');
@@ -1082,6 +1168,9 @@ const PROMPT = {
       simgeler.forEach(x => s.push(`- **${x.ad}**${x.ne ? ' — ' + x.ne : ''}`));
       s.push('');
     }
+
+    const std = PROMPT.tasarimStandardi(p);
+    if (std) { s.push(std, ''); }
 
     s.push('## Nasıl bir dil istiyorum', '');
     s.push('**1 · İşin kendisinden çıksın.** Hazır tasarım sistemi rengi değil,');
@@ -1102,21 +1191,32 @@ const PROMPT = {
     s.push('```json');
     s.push('{');
     s.push('  "renk": { "vurgu": "#8F2D22", "ikinci": "#C9A227", "zemin": "#E8DCC8",');
-    s.push('            "yuzey": "#FFFDF8", "metin": "#2C2620" },');
+    s.push('            "yuzey": "#FFFDF8", "metin": "#2C2620", "cizgi": "#E0D6C4",');
+    s.push('            "kontur": "#A66A32" },');
     s.push('  "durum": { "basari": "#3F7D57", "uyari": "#C9821F", "hata": "#B4342A" },');
+    s.push('  "durumMetin": { "basari": "#2A5C40", "uyari": "#8A5810", "hata": "#8A2018" },');
+    s.push('  "kontrast": { "metneUygun": ["vurgu", "metin", "hata"],');
+    s.push('                "yalnizCizgi": ["ikinci", "uyari"] },');
     s.push('  "yazi": { "baslik": "Playfair Display", "metin": "Inter",');
+    s.push('            "yedek": "Georgia, serif · system-ui, sans-serif",');
     s.push('            "olcek": { "h1": "24/28", "h2": "18/24", "govde": "15/22", "kucuk": "13/18" } },');
     s.push('  "kose": { "kart": 18, "dugme": 14, "kutu": 10 },');
     s.push('  "bosluk": 8,');
     s.push('  "golge": "0 6px 14px -8px rgba(0,0,0,.35)",');
-    s.push('  "doku": "Kağıt greni, %6 opaklık, dikişsiz",');
+    s.push('  "doku": "Kağıt greni %6 — CSS ile, tekrarlayan degrade; görsel dosya yok",');
     s.push('  "amblem": "Logo etrafında ince bakır çerçeve, altında slogan",');
+    s.push('  "grafik": { "birincil": "#8F2D22", "ikincil": "#3A6D9C",');
+    s.push('              "beklenen": "kesikli çizgi, %55 opaklık",');
+    s.push('              "sifirCizgisi": "#C6BBA6 1px", "eksiBolge": "#B4342A %10 dolgu" },');
+    s.push('  "bosDurumGorseli": "Kodda SVG olarak çizilir, dosya yok — simge diliyle aynı",');
     s.push('');
     s.push('  "bilesenler": {');
     s.push('    "ustCubuk":  "56px, zemin rengi, altında 1px bakır çizgi; solda başlık, sağda avatar çipi",');
     s.push('    "altMenu":   "64px, yüzey rengi, seçili simge vurgu renginde ve altında 2px çizgi",');
     s.push('    "kart":      "Yüzey rengi, 18px köşe, 1px #E0D6C4 kenar, yumuşak tek katman gölge, 12px iç boşluk",');
-    s.push('    "tablo":     "Satır 34px, başlık satırı büyük harf 11px, ayırıcı 1px #E9E1D2, rakam sağa hizalı mono, zebra yok",');
+    s.push('    "tablo":     "Satır 36px, başlık satırı büyük harf 11px, ayırıcı 1px #E0D6C4, rakam sağa hizalı mono, zebra yok",');
+    s.push('    "tabloIcGiris": "Satır içinde giriş kutusu varsa satır 44px\'e çıkar, kutu 36px kalır",');
+    s.push('    "tabloDarEkran": "560px altında tablo kart satırına döner: ilk sütun başlık, tutar sağda, kalanlar altta küçük yazı",');
     s.push('    "liste":     "56px satır, solda 32px simge, ortada iki satır yazı, sağda değer",');
     s.push('    "form":      "Etiket üstte 13px, kutu 44px, 10px köşe, odakta 2px vurgu çerçeve",');
     s.push('    "dugme":     "Birincil: vurgu dolgu, beyaz yazı, 14px köşe, 44px. İkincil: çerçeveli, saydam.",');
@@ -1142,9 +1242,20 @@ const PROMPT = {
     s.push('}');
     s.push('```', '');
     s.push('- Renkler **hex** olsun, isim değil.');
+    s.push('- **Kullandığın her rengi `renk` içine koy.** Bileşen tarifinde geçip');
+    s.push('  listede olmayan renk kodda tek başına kalmış sabit olur.');
+    s.push('- **Kontrastı sen ölç.** Yüzey rengi üzerinde 4.5:1\'i karşılamayan');
+    s.push('  rengi `yalnizCizgi` listesine koy; metin olarak kullanılmayacak.');
+    s.push('  Durum rozetlerinin üstündeki yazı için `durumMetin` ver.');
     s.push('- `bilesenler` ve `iskelet` değerleri **tek cümle**, sayı içersin.');
-    s.push('- `iskelet` anahtarları künyedeki ekran türleridir; hepsini doldur.');
+    s.push('- `iskelet` anahtarları **yukarıdaki ekran türleridir**; hepsini doldur,');
+    s.push('  listede olmayan tür uydurma.');
     s.push('- `simge.liste` içinde yukarıda istediğim **bütün simgeler** olsun.');
+    s.push('- **Bileşen tarifleri birbiriyle çelişmesin.** Bir ölçüyü iki yerde');
+    s.push('  yazacaksan iki yerde de aynı sayıyı yaz.');
+    s.push('- **Dosya üretme.** Ne doku görseli, ne illüstrasyon, ne yazı tipi');
+    s.push('  dosyası. Her şey kodda çizilecek; yazı tipleri için çevrimdışında');
+    s.push('  düşülecek yedeği `yazi.yedek` içinde ver.');
 
     return s.join('\n');
   },

@@ -8263,11 +8263,28 @@ function dilOku(metin) {
     if (n >= 0 && n < 100) kose[kis(k, 12)] = n;
   });
 
-  const durum = {};
-  Object.keys(o.durum || {}).slice(0, 6).forEach(k => {
-    const v = kis((o.durum || {})[k], 30);
-    if (v) durum[kis(k, 16)] = v;
-  });
+  const kucukNesne = (h, n, uz) => {
+    const c = {};
+    Object.keys(h || {}).slice(0, n).forEach(k => {
+      const v = kis(h[k], uz);
+      if (v) c[kis(k, 20)] = v;
+    });
+    return c;
+  };
+  const durum      = kucukNesne(o.durum, 6, 30);
+  const durumMetin = kucukNesne(o.durumMetin, 6, 30);
+  const grafik     = kucukNesne(o.grafik, 8, 120);
+
+  /* Hangi renk metin olarak kullanılabilir. ChatGPT ölçüyor, Studio
+     taşıyor: kontrastı zayıf bir rengin metne uygulanması en sık
+     görülen erişilebilirlik hatası. */
+  const kon = o.kontrast || {};
+  const kontrast = {
+    metneUygun: (Array.isArray(kon.metneUygun) ? kon.metneUygun : [])
+      .slice(0, 10).map(x => kis(x, 20)).filter(Boolean),
+    yalnizCizgi: (Array.isArray(kon.yalnizCizgi) ? kon.yalnizCizgi : [])
+      .slice(0, 10).map(x => kis(x, 20)).filter(Boolean),
+  };
 
   /* Bileşenler kodun asıl işi. Anahtar adını kısıtlamıyoruz: ChatGPT
      listede olmayan bir bileşen tarif ederse o da işe yarıyor. */
@@ -8297,13 +8314,15 @@ function dilOku(metin) {
   });
 
   return {
-    renk, durum,
-    yazi: { baslik: kis(yaziH.baslik, 60), metin: kis(yaziH.metin, 60), olcek },
+    renk, durum, durumMetin, kontrast, grafik,
+    yazi: { baslik: kis(yaziH.baslik, 60), metin: kis(yaziH.metin, 60),
+            yedek: kis(yaziH.yedek, 120), olcek },
     kose,
     bosluk: (parseInt(o.bosluk, 10) > 0 && parseInt(o.bosluk, 10) < 64)
       ? parseInt(o.bosluk, 10) : 0,
-    golge: kis(o.golge, 120), doku: kis(o.doku, 200),
+    golge: kis(o.golge, 120), doku: kis(o.doku, 240),
     amblem: kis(o.amblem, 200),
+    bosDurumGorseli: kis(o.bosDurumGorseli, 240),
     bilesenler, simge, iskelet,
     zaman: new Date().toISOString(),
   };

@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü
 
+## v0.131.1
+- **Tasarım sistemi promptu Nizam standartlarını taşımıyordu.** ChatGPT üst çubuğu, alt menüyü ve gezinmeyi kendi kafasına göre tarif edip standardın karşısına geçiyordu — bir denetimde çıkan sekiz çakışmanın hepsi bu eksiklikten. Artık standardın tasarımla ilgili satırları (Tasarım · Animasyon · Erişilebilirlik · Biçim · Optimizasyon) prompta giriyor: "bunlara uy, çelişiyorsan bloğu verme, önce sor".
+- **Künyedeki gerçek ekran türleri prompta girdi.** Sayfa türleri ve her türden kaç sayfa olduğu yazılıyor; iskeletler bu listeden kuruluyor. Eskiden künyede olmayan bir tür (Rapor) uydurulabiliyordu.
+- Yedi ya da daha çok sütunlu sayfa varsa prompt bunu sayıyla söylüyor ve **tablonun dar ekranda ne olacağını** açıkça istiyor.
+- **Blok şeması genişledi:** ara renkler (bileşen tarifinde geçip listede olmayan renk kodda tek başına sabit kalıyordu), durum rozetlerinin üstündeki yazı tonu, **kontrast beyanı** (hangi renk metin olur, hangisi yalnız çizgi), grafik paleti, dokunun nasıl uygulanacağı, boş durum görselinin kaynağı, yazı tiplerinin çevrimdışı yedeği, tablo içi giriş satırı ve dar ekran davranışı.
+- Yeni kurallar: **kullandığın her rengi listeye koy** · **kontrastı sen ölç** · **bileşen tarifleri birbiriyle çelişmesin** · **dosya üretme** — doku, illüstrasyon ve simge kodda çizilecek.
+- İhtiyaç promptu simge listesinde sıkılaştı: her simgenin hangi sayfada geçtiği yazılacak, gösterilemiyorsa o simge gerekmiyor. Arayüzün kendi simgeleri (geri oku, arama, kapatma, ekle) da isteniyor.
+
 ## v0.131.0
 - **Claude artık tahmin edip geçmiyor, soruyor.** İhtiyaç çözümlemesi bloğuna `sorular` bölümü eklendi: künyede yazmayan ama kod yazılırken karar gerektiren her şey — "Fatura numarasını sistem mi versin?", "Kapanan hesap silinebilsin mi, pasife mi alınsın?". Nedenini de yazıyor: künyede neyi görüp o soruyu sorduğunu.
 - **İhtiyaç adasına beşinci kart: `Claude'un soruları`.** Sihirbaz gibi işliyor — bir soruyu cevaplayınca sıradaki cevapsız soru kendiliğinden açılıyor. Claude seçenek verdiyse çipe dokunuyorsun, vermediyse kendi cümleni yazıyorsun; seçenekler yetmiyorsa yine yazabiliyorsun.
