@@ -1,5 +1,16 @@
 # Değişiklik Günlüğü
 
+## v0.129.0
+- **Görsel dünya adım adıma bölündü.** ChatGPT'ye altı ekranı tek promptta çizdirmek dağıtıyordu: birini yapıp ötekini unutuyor ya da hepsini yüzeysel bırakıyordu. Ada artık dört kare kart, her biri tek iş: `01 Malzeme` · `02 Görsel dil` · `03 Ekranlar` · `04 Görseller`.
+- **02 Görsel dil ekran çizmiyor** — yalnız renk, yazı, doku, simge, köşe, boşluk istiyor. Dil oturmadan ekran çizdirmek boşa işti; ChatGPT'nin dağıldığı yer de tam orasıydı.
+- **03 Ekranlar altı rol, kilitli zincir.** Roller projenin gerçek sayfalarıyla dolduruluyor: "Liste" değil **Liste · Giderler**, "Form" değil **Kayıt girişi · Gider ekle**. Her rolün kendi promptu ve kendi bloğu var; promptun içinde o sayfanın alanları ve Claude'un yerleşim notu duruyor.
+- **Her adım bir JSON bloğuyla bitiyor, Studio bloğu geri çiziyor.** ChatGPT önce resmi çizip sonra JSON'a döktüğü için ikisi ayrışabiliyor; kod bloktan yazılacağı için bu fark önemli. Ekran sayfasında ChatGPT'nin resmi ile Studio'nun bloktan çizdiği tel çizim yan yana duruyor — uyuşmuyorsa blok yanlış demektir, onaylamadan geri gönderiyorsun.
+- **Görsel yuvaları artık Claude'un sayfa notlarından açılıyor.** ChatGPT'nin YERLEŞİM satırlarını ayrıştıran kırılgan adım kalktı: "Giderler boş durumunda fiş çizimi" bilgisi zaten ihtiyaç çözümlemesinde vardı. Numara bir kez veriliyor ve değişmiyor — yüklenen dosya yanlış yuvaya bağlanmasın.
+- **Koda giden prompt değer taşıyor.** "Sıcak kırmızı, yumuşak köşe" yerine `#8F2D22`, `köşe 18px`, `boşluk 8px`. Altı ekranın blok yerleşimi de aynı bloktan `NIZAM.md`ye ve görev promptuna giriyor.
+- Yükleme yalnız `04 Görseller`de kaldı: onlar uygulamanın içinde duracak gerçek çizimler, JSON yerlerine geçmiyor.
+- Görsel dünyayı sıfırlama artık dili ve ekran bloklarını da temizliyor; yuvalar çözümlemeden yeniden açılıyor.
+- Eski projeler bozulmuyor: `dil` bloğu olmayan ama serbest metin tarifi olan proje dili var sayılıyor ve tarif prompta aynen giriyor.
+
 ## v0.128.2
 - **İhtiyaç promptu sadeleşti: sadece tasarım soruyor.** Künyenin tamamını yeniden basıyordu — aynı sohbete modül çözümlemesi zaten yapıştırılmıştı ve `NIZAM.md` depoda duruyor. Tekrar yazmak promptun üçte ikisini kaplıyor ve tasarım sorusunu veri tablosunun altında bırakıyordu.
 - Yerine tek satırlık ekran listesi geldi: `sayfa · öbek · tür · beklenen kayıt · alan sayısı`. Tasarım kararı için gereken yoğunluk bu — "tablo gerekir mi" sorusunun cevabı bu üç sayıda.

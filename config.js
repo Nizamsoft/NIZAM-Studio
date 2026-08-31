@@ -7,7 +7,7 @@ const APP = {
   name:     'NIZAM | Studio',
   short:    'NIZAM Studio',
   owner:    'Nizam Soft',
-  version: 'v0.128.2',
+  version: 'v0.129.0',
   build:    '2026-08-28',
   /* Studio'nun kendi deposu — "bütün programlarda geçerli olsun"
      istekleri buraya gider. */
@@ -434,6 +434,65 @@ function cozumOnerisi(p, anahtar) {
   });
   return ham && ham.oneri ? { oneri: String(ham.oneri), neden: String(ham.neden || '') } : null;
 }
+
+/* ---- Görsel dünya: altı ekran rolü ----
+   ChatGPT'ye altı ekranı tek promptta çizdirmek dağıtıyordu: birini yapıp
+   ötekini unutuyor ya da hepsini yüzeysel bırakıyordu. Artık her rol kendi
+   promptu, kendi bloğu. Roller sabit; adları projenin gerçek sayfalarıyla
+   dolduruluyor — "Liste" değil "Giderler". */
+const EKRAN_ROL = [
+  { anahtar: 'panel',   ad: 'Panel',        tur: 'Panel',
+    alt: 'Açılışta karşılayan ekran; kısayol kartları ve günün özeti.' },
+  { anahtar: 'liste',   ad: 'Liste',        tur: 'Liste',
+    alt: 'En çok bakılan ekran; arama, filtre, satırlar, ana eylem.' },
+  { anahtar: 'form',    ad: 'Kayıt girişi', tur: 'Form',
+    alt: 'Alan etiketleri, kutular, kaydet düğmesi.' },
+  { anahtar: 'bos',     ad: 'Boş durum',    tur: 'Liste',
+    alt: 'Hiç kayıt yokken liste ekranı ne diyor.' },
+  { anahtar: 'giris',   ad: 'Giriş',        tur: '',
+    alt: 'E-posta ve şifre; uygulamaya girilen ilk ekran.' },
+  { anahtar: 'ayarlar', ad: 'Ayarlar',      tur: 'Ayarlar',
+    alt: 'Satır satır seçenek listesi.' },
+];
+
+/* Rolü projenin gerçek bir sayfasıyla eşle. Bulamazsa rol adıyla kalıyor:
+   uydurma sayfa adı vermek promptu yanıltıyor. */
+function ekranRolSayfasi(p, rol) {
+  const kunye = ((p && p.palet) || {}).kunye || {};
+  const adlar = Object.keys(kunye);
+  if (!adlar.length || !rol.tur) return '';
+  /* Aynı türden birden çok sayfa varsa en çok alanı olan seçiliyor:
+     tasarımı en zorlayan ekran o. */
+  let en = '', enAlan = -1;
+  adlar.forEach(tam => {
+    const k = kunye[tam] || {};
+    if (k.tur !== rol.tur) return;
+    const n = (k.alanlar || []).length;
+    if (n > enAlan) { enAlan = n; en = tam.split(' · ').pop(); }
+  });
+  return en;
+}
+
+function ekranRolAdi(p, rol) {
+  const sf = ekranRolSayfasi(p, rol);
+  return sf && sf !== rol.ad ? rol.ad + ' · ' + sf : rol.ad;
+}
+
+/* Görsel dil bloğu geçerli mi? En az renk ve yazı gelmeli — gerisi
+   eksik kalabilir, Studio boş satırı göstermiyor. */
+function dilGecerli(d) {
+  return !!(d && d.renk && typeof d.renk === 'object'
+            && Object.keys(d.renk).length >= 3);
+}
+
+/* Palet sırası: kartta ve promptta hep aynı sırada okunsun. */
+const DIL_RENK = [
+  ['vurgu',  'Vurgu'],
+  ['ikinci', 'İkinci'],
+  ['zemin',  'Zemin'],
+  ['yuzey',  'Yüzey'],
+  ['metin',  'Metin'],
+];
 
 /* ---- Nizam teknik standardı — TOHUM ve YEDEK ----
    Standardın yaşadığı yer artık Supabase'deki `standards` tablosu; oraya

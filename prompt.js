@@ -20,17 +20,74 @@ const PROMPT = {
      buraya olduğu gibi giriyor. Studio karar vermiyor, taşıyor. */
   gorselDilBlogu(proje) {
     const pl = (proje && proje.palet) || {};
-    const t = String(pl.tarif || '').trim();
-    if (!t) return '';
+    const d  = pl.dil;
+    const t  = String(pl.tarif || '').trim();
+    if (!dilGecerli(d) && !t) return '';
 
     const s = ['## Görsel Dil'];
-    s.push('Bu tarifi ben yazmadım, tasarımı yapan çıkardı. **Olduğu gibi uygula.**');
+    s.push('Bunu ben yazmadım, tasarımı yapan çıkardı. **Olduğu gibi uygula.**');
     s.push('Renk tahmin etme, yazı tipi değiştirme, kendi ölçünü koyma.');
     s.push('');
-    s.push(t);
-    s.push('');
+
+    /* Yeni akış blok veriyor: değerler tam, tahmine yer yok. Eski projelerde
+       yalnız serbest metin tarif var; o da olduğu gibi geçiyor. */
+    if (dilGecerli(d)) {
+      s.push('**Renk**');
+      DIL_RENK.forEach(([anahtar, ad]) => {
+        if (d.renk[anahtar]) s.push(`- ${ad}: \`${d.renk[anahtar]}\``);
+      });
+      Object.keys(d.renk).forEach(k => {
+        if (!DIL_RENK.some(x => x[0] === k)) s.push(`- ${k}: \`${d.renk[k]}\``);
+      });
+      const y = d.yazi || {};
+      if (y.baslik || y.metin) {
+        s.push('', '**Yazı**');
+        if (y.baslik) s.push(`- Başlık: ${y.baslik}`);
+        if (y.metin)  s.push(`- Metin: ${y.metin}`);
+        Object.keys(y.olcek || {}).forEach(k =>
+          s.push(`- ${k}: ${y.olcek[k]} (boyut/satır, px)`));
+      }
+      const ko = d.kose || {};
+      if (Object.keys(ko).length || d.bosluk) {
+        s.push('', '**Ölçü**');
+        Object.keys(ko).forEach(k => s.push(`- Köşe · ${k}: ${ko[k]}px`));
+        if (d.bosluk) s.push(`- Boşluk birimi: ${d.bosluk}px — bütün aralıklar bunun katı.`);
+      }
+      const ek = [['golge', 'Gölge'], ['doku', 'Doku'], ['simge', 'Simge'], ['amblem', 'Amblem']];
+      const varEk = ek.filter(x => d[x[0]]);
+      if (varEk.length) {
+        s.push('', '**Malzeme**');
+        varEk.forEach(([k, ad]) => s.push(`- ${ad}: ${d[k]}`));
+      }
+      s.push('');
+    }
+    if (t) { s.push(t, ''); }
+
     s.push('Renk ve ölçüler tek yerde değişken olarak tanımlansın; her ekranda');
     s.push('yeniden yazılmasın. Bir ekranda uyguladığın kural bütün ekranlarda aynı.');
+    return s.join('\n');
+  },
+
+  /* ---- Ekran yerleşimleri ----
+     Altı ekran tek tek tasarlandı; her biri blok blok anlatıldı. AI ekranı
+     tahmin etmesin diye buraya olduğu gibi giriyor. */
+  ekranBlogu(proje) {
+    const ek = ((proje && proje.palet) || {}).ekranlar || {};
+    const anahtarlar = EKRAN_ROL.filter(r => ek[r.anahtar] && (ek[r.anahtar].bloklar || []).length);
+    if (!anahtarlar.length) return '';
+
+    const s = ['## Ekran Yerleşimleri'];
+    s.push('Her ekran ayrı ayrı tasarlandı. Blokların **sırası** yukarıdan');
+    s.push('aşağıya yerleşim sırasıdır; kendi sıranı kurma.');
+    anahtarlar.forEach(r => {
+      const e = ek[r.anahtar];
+      s.push('', `### ${e.ekran || ekranRolAdi(proje, r)}`);
+      e.bloklar.forEach((b, i) => {
+        s.push(`${i + 1}. **${b.ad}**${b.tur ? ` _(${b.tur})_` : ''}${b.not ? ' — ' + b.not : ''}`);
+      });
+    });
+    s.push('');
+    s.push('Bu altı ekran örnektir; kalan sayfalar aynı dille kurulacak.');
     return s.join('\n');
   },
 
@@ -237,10 +294,13 @@ const PROMPT = {
     const dil = PROMPT.gorselDilBlogu(p);
     if (dil) { s.push(dil); s.push(''); }
     else {
-      s.push('> **Görsel dil tarifi yok.** Studio\'da Görsel dünya adası');
+      s.push('> **Görsel dil yok.** Studio\'da Görsel dünya adası');
       s.push('> tamamlanmamış. Renk ve biçim uydurma — bana sor.');
       s.push('');
     }
+
+    const ekranlar = PROMPT.ekranBlogu(p);
+    if (ekranlar) { s.push(ekranlar); s.push(''); }
 
     s.push(PROMPT.tasarimBlogu(p));
     s.push('');
@@ -868,324 +928,203 @@ const PROMPT = {
      Buradan çıkan iki metin de müşteri deposuna değil, bir sohbete gider;
      depo uyarısı yok, kod talimatı yok. */
 
-  /* 1 · Tasarım promptu — logo ve işletme görseliyle birlikte verilir. */
-  gorselTasarim(projeId) {
+  /* ---------- Görsel dünya: üç ayrı prompt ----------
+     Altı ekranı tek promptta çizdirmek ChatGPT'yi dağıtıyordu: birini yapıp
+     ötekini unutuyor, ya da hepsini yüzeysel çiziyordu. Üçe bölündü:
+     önce yalnız görsel dil (ekran yok), sonra ekran ekran, en sonda
+     uygulamanın içinde duracak görseller. Her adım tek iş.
+
+     Her prompt sonunda bir JSON bloğu istiyor: Studio bloğu geri çizip
+     kullanıcıya ChatGPT'nin resmiyle yan yana gösteriyor. Uyuşmazsa blok
+     resmi anlatmıyor demektir — kod bloktan yazılacağı için bu fark önemli. */
+
+  /* Ortak açılış: bunu bir uygulamaya yapıştıracağım uyarısı. */
+  blokUyarisi(s) {
+    s.push('> ### Bloğu metin olarak ver');
+    s.push('> Bunu bir uygulamaya yapıştıracağım; **düz metin** okuyor,');
+    s.push('> resim okumuyor. Bloğu tasarlanmış bir tabaka ya da tablo');
+    s.push('> görseli olarak **çizme**. Kod bloğu içinde, kopyalanıp');
+    s.push('> yapıştırılabilir metin olarak ver. Tırnakları düz tırnak yap.');
+    s.push('');
+  },
+
+  /* 02 · Görsel dil — ekran çizmiyor. Dil oturmadan ekran çizdirmek boşa iş. */
+  gorselDil(projeId) {
     const p = DB.proje(projeId);
     if (!p) return '';
-    const pl = p.palet || {};
-    const roller = rolListesi(pl.roller);
 
     const s = [];
-    s.push('# ' + projeAdi(p) + ' — görsel dünya', '');
-
+    s.push('# ' + projeAdi(p) + ' — görsel dil', '');
     s.push('Sana iki görsel veriyorum: **birincisi firmanın logosu**,');
-    s.push('**ikincisi işletmenin kendisi**. Bu ikisinden bir görsel dil çıkar');
-    s.push('ve aşağıdaki altı ekranı tasarla. Hepsi tek dünyadan çıksın —');
-    s.push('renk, doku, simge biçimi ve tipografi bütün ekranlarda aynı olsun.', '');
+    s.push('**ikincisi işletmenin kendisi**. Bu ikisinden bir görsel dil çıkar.', '');
+    s.push('> **Ekran çizme.** Panel, liste, form — hiçbirini. Onları sonra');
+    s.push('> tek tek isteyeceğim. Şimdi yalnız **dil**: renk, yazı, doku,');
+    s.push('> simge, köşe, gölge. Bir tane küçük örnek levha çizebilirsin —');
+    s.push('> palet şeridi, yazı örneği, bir düğme. O kadar.', '');
 
     s.push('## Firma');
     s.push(hiza('Firma', p.firma));
     if (modulAdi(p)) s.push(hiza('Ürün', modulAdi(p)));
     if (p.sektor)    s.push(hiza('Sektör', p.sektor));
     s.push(hiza('Platform', PLATFORM_ADI[p.platform] || '—'));
-    if (roller.length) s.push(hiza('Roller', roller.join(' · ')));
     s.push('');
 
-    /* Yapı durağı tasarımdan önce geliyor. Ama tam künyeyi vermek geri
-       tepiyordu: promptun üçte birini kaplayıp ekranı veri tablosuna
-       çeviriyor, atmosferi eziyordu. Kısa özet yeter — tasarımcının
-       bilmesi gereken hangi ekranlar var ve ne görünüyor. */
-    const ekranlar = PROMPT.ekranOzeti(p);
-    s.push('## Tasarlayacağın altı ekran');
-    s.push('**Hepsi telefon.** Her ekran dikey bir telefon çerçevesi içinde,');
-    s.push('yan yana dizili. Masaüstü çizme; sol kenar menüsü, geniş tablo,');
-    s.push('çok sütunlu pano yok. Masaüstüne bu dil sonra taşınacak.', '');
-    s.push('1. **Panel** — açılışta karşılayan ekran; kısayol kartları ve günün özeti.');
-    s.push('2. **Liste** — en çok bakılan ekran; arama, filtre, satırlar, ana eylem.');
-    s.push('3. **Kayıt girişi** — form; alan etiketleri, kutular, kaydet düğmesi.');
-    s.push('4. **Boş durum** — hiç kayıt yokken liste ekranı ne diyor.');
-    s.push('5. **Giriş ekranı** — e-posta ve şifre; uygulamaya girilen ilk ekran.');
-    s.push('6. **Ayarlar** — satır satır seçenek listesi.');
-    s.push('');
+    s.push('## Nasıl bir dil istiyorum', '');
+    s.push('**1 · İşin kendisinden çıksın.** Hazır tasarım sistemi rengi değil,');
+    s.push('   bu işletmenin rengi. Logodaki ve fotoğraftaki malzemeye bak:');
+    s.push('   ahşap mı, bakır mı, tuğla mı, kâğıt mı.');
+    s.push('**2 · Doku olsun.** Düz dolgu bırakma. Kart zemininde kâğıt greni,');
+    s.push('   ekran arkasında dikişsiz bir doku — %5-8, okunurluğu bozmayacak.');
+    s.push('**3 · Simge dili işe özel.** Hazır simge setine benzeyen çizim değil;');
+    s.push('   bu işin kendi nesneleri. Kaç renk, çizgi kalınlığı, arkasında');
+    s.push('   zemin var mı — hepsini söyle.');
+    s.push('**4 · Sayı ver.** "Yumuşak köşe" değil `18px`. "Sıcak kırmızı" değil');
+    s.push('   `#8F2D22`. Kod bu değerlerden yazılacak.', '');
 
-    if (ekranlar) {
-      s.push('### Bu programın ekranları');
-      s.push('Yukarıdaki altı rolü **bu programın gerçek ekranlarıyla** doldur:');
-      s.push('panelin kartları bu sayfalar olsun, liste ekranı bunlardan birini');
-      s.push('göstersin, form onun kayıt girişi olsun. Uydurma ekran ekleme.', '');
-      s.push(ekranlar);
-      s.push('');
-      s.push('Simgeleri de bunlara göre çiz: her ekran için o işi anlatan bir');
-      s.push('simge gerekiyor — genel "belge, ayar, kullanıcı" değil.', '');
-      s.push('> **Ama altı ekran altı kalsın.** Bütün sayfaları ayrı ayrı çizme;');
-      s.push('> yukarıdaki altı rolü doldur, gerisi aynı dille kurulacak.', '');
-    } else {
-      s.push('> **Ekran künyesi yok.** Yapı durağı tamamlanmamış, hangi');
-      s.push('> ekranların olacağını bilmiyorum. Altı ekranı genel hâliyle çiz;');
-      s.push('> modül adı uydurma, örnek olduğunu belli et.', '');
-    }
+    PROMPT.blokUyarisi(s);
 
-    s.push('## Kalite çıtası — en önemli bölüm');
-    s.push('Temiz ve düzgün bir ekran yetmiyor. Aşağıdaki **altı katman**');
-    s.push('olmadan tasarım yarım sayılır. Her birini uygula:', '');
-
-    s.push('**1 · Açılış görseli.** Panel düz bir renk şeridiyle başlamaz.');
-    s.push('   Tam genişlik bir görselle açılır, içerik sayfası büyük bir köşe');
-    s.push('   yarıçapıyla onun **üstüne biner**. Görselin altına, yazının');
-    s.push('   okunacağı yere perde koy.');
-    s.push('**2 · İşe özel simgeler.** Hazır simge setine benzeyen çizim verme.');
-    s.push('   Bu işin **kendi nesnelerini** çiz — kasap için satır ve terazi,');
-    s.push('   kuruyemişçi için çuval ve kavanoz, lokanta için tencere ve ocak.');
-    s.push('   Tek renk çizgi değil: paletten iki üç renk kullan, arkalarına');
-    s.push('   yumuşak bir daire zemin koy.');
-    s.push('**3 · Doku.** Düz dolgu bırakma. Kart zemininde kâğıt greni,');
-    s.push('   ekran arkasında dikişsiz bir doku olsun — hafif, %5-8 civarı,');
-    s.push('   okunurluğu bozmayacak kadar.');
-    s.push('**4 · Amblem ve süsleme.** Logoyu kutuya sıkıştırma; çevresine');
-    s.push('   markaya yakışan bir çerçeve kur. Altına bir satır slogan koy.');
-    s.push('   Bölüm başlıklarının altına ince çizgi, kart köşelerine küçük');
-    s.push('   bir işaret gibi tekrar eden bir motif bırak.');
-    s.push('**5 · Derinlik.** Her şey tek düzlemde durmasın. Yumuşak ve');
-    s.push('   katmanlı gölge kullan; sayfa görselin üstünde, kart sayfanın');
-    s.push('   üstünde dursun. Sert kutu gölgesi değil, geniş ve düşük opaklıklı.');
-    s.push('**6 · Tipografi ölçeği.** Serif yazı tipini aksesuar gibi kullanma.');
-    s.push('   Panel selamlaması ve bölüm başlıkları **gerçek boyutta** serif');
-    s.push('   olsun (28-32px), gövde sans kalsın. Boyut basamakları belirgin');
-    s.push('   olsun, her şey 14-16px arasında sıkışmasın.', '');
-
-    s.push('Çıta şu: bu ekranlar bir **yönetim paneli** gibi değil, bir');
-    s.push('**butik otel ya da el yapımı marka uygulaması** gibi görünmeli.');
-    s.push('İş verisi her zaman önde ve okunaklı — ama arkasında bir dünya olsun.', '');
-
-    s.push('### Şunları yapma');
-    s.push('- **Masaüstü paneli çizme.** Sol kenar menüsü, geniş tablo, çok');
-    s.push('  sütunlu pano — hiçbiri. Altı ekran da telefon.');
-    s.push('- **Ekranı veri tablosuna çevirme.** Program muhasebe bile olsa');
-    s.push('  ekran sayı yığını değil: her ekranda nefes, başlık ve doku olsun.');
-    s.push('  Rakamlar önemlidir ama ekranın tamamı rakamdan ibaret olamaz.');
-    s.push('- Beyaz zemin üstünde beyaz kart. En az bir tonluk fark olsun.');
-    s.push('- Renkli bir şeritten ibaret üst başlık.');
-    s.push('- Material, Lucide, Feather gibi hazır setlerden çıkmış görünen simge.');
-    s.push('- Hazır yönetim paneli şablonu havası.');
-    s.push('- Süs uğruna okunurluğu bozmak: metin kontrastı her yerde 4.5:1.', '');
-
-    s.push('## Görselleri sen üret');
-    s.push('Tasarımın gerektirdiği görselleri **kendin üret** ve her birine sıra');
-    s.push('numarası ver. Ama iki görsel **bende var, onları üretme**:');
-    s.push('');
-    s.push('- **Logo.** Sana yukarıda verdim; uygulama onu ayrı katman olarak');
-    s.push('  çiziyor. Yeniden çizersen asıl logodan sapar ve iki logo üst üste');
-    s.push('  biner. Ekranlarda kullan, ama varlık olarak sayma.');
-    s.push('- **İşletme görseli — `G1`.** O da benden geldi. Kullanmak istersen');
-    s.push('  numarası odur, yeniden üretme.');
-    s.push('');
-    s.push('- **İki ayrı simge dili kur.** Büyük yerlerde (hızlı işlem kartları,');
-    s.push('  boş durum) zengin, gölgeli, çok renkli illüstrasyon simgeler;');
-    s.push('  alt çubuk, liste satırları ve form alanlarında sade, **tek renk**,');
-    s.push('  ince çizgi simgeler. İkincisi tek renk olmalı çünkü aktif sekmede');
-    s.push('  rengi kodla değiştireceğiz.');
-    s.push('- Doku ve zemin dikişsiz döşenebilsin.');
-    s.push('- Metnin üstüne gelen her görselde perde ya da karartma olsun;');
-    s.push('  yazı kontrastı en az **4.5:1** kalmalı.');
-    s.push('');
-
-    s.push('## Uyacağın kurallar');
-    s.push('- Arayüz dili **Türkçe**. Para `₺` (12.400,00), tarih `22.05.2025`.');
-    s.push('- Dokunma hedefi en az **44×44px**.');
-    s.push('- Logonun rengini, biçimini ve oranını değiştirme.');
-    s.push('- Bu bir **iş uygulaması**: gün boyu kullanılacak. Süs okunurluğu');
-    s.push('  bozmasın, veri her zaman önde olsun.');
-    s.push('- Ekranları telefon ölçüsünde tasarla; masaüstünde aynı dil geniş');
-    s.push('  ekrana taşınacak.');
-    s.push('');
-
-    s.push('## Nasıl teslim edeceksin — bu bölüm zorunlu');
-    s.push('Hepsini **tek bir tabakada** ver: solda altı ekran numaralı ve');
-    s.push('başlıklı, sağda bir **Stil ve Varlık Listesi** paneli.');
-    s.push('**Panel olmadan tasarım eksiktir** — bir sonraki adımda senden');
-    s.push('tarifi isteyeceğim ve renk kodlarını oradan okuyacağım.');
-    s.push('Panelde şunlar olsun:', '');
-    s.push('- **Görseller** — ürettiğin her görselin küçük hâli, altında');
-    s.push('  numarası (`G1`, `G2`…) ve tek satırlık ne olduğu');
-    s.push('- **İkon seti** — bütün simgeler bir arada, tek SVG');
-    s.push('- **Doku / zemin** — dikişsiz örneğin bir karesi');
-    s.push('- **Renk paleti** — kutucuklar ve altında hex kodları');
-    s.push('- **Yazı tipleri** — başlık ve gövde, örnek satırlarıyla');
-    s.push('- **Yuvarlama** — köşe yarıçapı değeri');
-    s.push('- **Bileşen örnekleri** — birincil ve ikincil düğme, durum etiketleri,');
-    s.push('  giriş alanı', '');
-    s.push('> Bileşen örnekleri panelde **görünsün** ama bir sonraki adımda');
-    s.push('> varlık listesine girmeyecek: düğme ve etiket kodla çiziliyor,');
-    s.push('> dosya olarak istenmiyor.', '');
-
-    s.push('Beğenmezsem söyleyeceğim, düzelteceksin. Anlaştıktan sonra senden');
-    s.push('iki şey isteyeceğim: **bunu nasıl yaptığının tarifi** ve');
-    s.push('**ekranlarda kullandığın görsellerin tek tek dosya hâli**.');
-    s.push('O yüzden ekranları çizerken kullandığın her görseli — hero,');
-    s.push('illüstrasyon, ikon seti, doku, süsleme — sonradan ayrı ayrı');
-    s.push('çıkarabileceğin şekilde kur. Sonra "yeniden çizeyim" olmayacak;');
-    s.push('aynısını isteyeceğim.');
+    s.push('## Cevabın', '');
+    s.push('Önce küçük örnek levhayı çiz, sonra **tek JSON bloğu** ver:', '');
+    s.push('```json');
+    s.push('{');
+    s.push('  "renk": { "vurgu": "#8F2D22", "ikinci": "#C9A227", "zemin": "#E8DCC8",');
+    s.push('            "yuzey": "#FFFDF8", "metin": "#2C2620" },');
+    s.push('  "yazi": { "baslik": "Playfair Display", "metin": "Inter",');
+    s.push('            "olcek": { "h1": "24/28", "h2": "18/24", "govde": "15/22", "kucuk": "13/18" } },');
+    s.push('  "kose": { "kart": 18, "dugme": 14, "kutu": 10 },');
+    s.push('  "bosluk": 8,');
+    s.push('  "golge": "0 6px 14px -8px rgba(0,0,0,.35)",');
+    s.push('  "doku": "Kağıt greni, %6 opaklık, dikişsiz",');
+    s.push('  "simge": "İki katman, sıcak zemin daire, 1.8px çizgi",');
+    s.push('  "amblem": "Logo etrafında ince bakır çerçeve, altında slogan"');
+    s.push('}');
+    s.push('```', '');
+    s.push('- Renkler **hex** olsun, isim değil.');
+    s.push('- `olcek` değerleri `boyut/satır` biçiminde, px.');
+    s.push('- `kose` ve `bosluk` sayı (px), tırnaksız.');
 
     return s.join('\n');
   },
 
-  /* 2 · Tarif promptu — tasarım beğenildikten sonra verilir.
-     Çıktı Studio'ya yapıştırılıyor; YERLEŞİM bölümü boru işaretiyle
-     ayrılmış olmalı ki yuvalar kendiliğinden açılabilsin. */
-  gorselTarif(projeId) {
+  /* 03 · Tek ekran. Görsel dil zaten sohbette; tekrar yazmıyoruz. */
+  gorselEkran(projeId, anahtar) {
     const p = DB.proje(projeId);
-    if (!p) return '';
+    const rol = EKRAN_ROL.find(x => x.anahtar === anahtar);
+    if (!p || !rol) return '';
+    const pl = p.palet || {};
+    const sayfa = ekranRolSayfasi(p, rol);
+    const kunye = pl.kunye || {};
+    const tam = Object.keys(kunye).find(x => x.split(' · ').pop() === sayfa);
+    const k = tam ? (kunye[tam] || {}) : {};
+    const notu = ((pl.cozum || {}).sayfalar || {})[sayfa];
+    const sira = EKRAN_ROL.findIndex(x => x.anahtar === anahtar) + 1;
 
     const s = [];
-    s.push('Tasarımı beğendim. Şimdi **bunu nasıl yaptığını yaz** — başka biri');
-    s.push('aynı dili hiç görmediği ekranlarda tekrarlayabilsin diye.', '');
+    s.push('# ' + ekranRolAdi(p, rol) + ' ekranı', '');
+    s.push(`Altı ekranın **${sira}.'si**. Görsel dili yukarıda konuştuk —`);
+    s.push('tekrar yazmıyorum, aynısını kullan. Şimdi **yalnız bu ekranı**');
+    s.push('çiz. Ötekileri sonra ayrı ayrı isteyeceğim.', '');
+    s.push('> **Tek ekran, dikey telefon çerçevesi.** Yan yana varyant dizme,');
+    s.push('> masaüstü çizme, "bonus olarak şunu da yaptım" deme.', '');
 
-    s.push('> ### Metin olarak yaz — tabaka çizme');
-    s.push('> Bunu bir uygulamaya yapıştıracağım; **düz metin** okuyor,');
-    s.push('> resim okumuyor. Tarifi tasarlanmış bir tabaka, tablo görseli ya');
-    s.push('> da rehber sayfası olarak **çizme**. Kod bloğu içinde, kopyalanıp');
-    s.push('> yapıştırılabilir metin olarak ver.');
+    s.push('## Bu ekran ne', '');
+    s.push('- ' + rol.alt);
+    if (sayfa) s.push(`- Bu programda karşılığı: **${sayfa}**`);
+    if (k.amac) s.push('- ' + k.amac);
+    if (k.olcek) s.push(`- Beklenen kayıt: **${k.olcek}** — listeyi buna göre kur.`);
+    if ((k.alanlar || []).length) {
+      s.push('- Görünen alanlar: ' + k.alanlar.slice(0, 8).map(a => a.ad).join(' · '));
+    }
     s.push('');
 
-    s.push('İki bölüm istiyorum, **tam olarak bu başlıklarla**:', '');
+    if (notu) {
+      s.push('## Yerleşim — bunu ben belirledim', '');
+      if (notu.yerlesim) s.push(notu.yerlesim);
+      if ((notu.bilesenler || []).length) {
+        s.push('', '**Bileşenler:** ' + notu.bilesenler.join(' · '));
+      }
+      if (notu.not) s.push('', '> ' + notu.not);
+      (notu.gorseller || []).forEach(g =>
+        s.push('', `**Görsel — ${g.yer}:** ${g.ne}`));
+      s.push('');
+    }
 
-    s.push('```');
-    s.push('## GÖRSEL DİL');
-    s.push('Renk: ana, ikincil, vurgu, zemin, metin — hex kodlarıyla ve hangisi nerede');
-    s.push('Yüzey: kart zemini, köşe yarıçapı, kenarlık');
-    s.push('Doku: hangi yüzeyde hangi doku, opaklığı ne');
-    s.push('Derinlik: gölge değerleri ve neyin neyin üstünde durduğu');
-    s.push('Tipografi: başlık ve gövde yazı tipi, ağırlık, boyut basamakları (px)');
-    s.push('Simge: çizim biçimi, çizgi kalınlığı, kaç renk, arkasında zemin var mı');
-    s.push('Amblem: logo çerçevesi, slogan, tekrar eden süsleme motifi');
-    s.push('Açılış: panelin tepesi nasıl kurulur — görsel, perde, içeriğin binmesi');
-    s.push('Boşluk: temel birim ve kart içi / kartlar arası ölçüler');
-    s.push('Başlık düzeni: bölüm başlıkları nasıl görünür');
-    s.push('Alt çubuk: zemin, simge rengi, ortadaki düğme');
-    s.push('');
-    s.push('## YERLEŞİM');
-    s.push('G1 | gorsel-1.jpg | Panel açılışı | Tam genişlik 260px, üstüne koyudan şeffafa perde');
-    s.push('G2 | gorsel-2.png | Zemin dokusu | Bütün ekranların arkasında, %6 opaklık, dikişsiz');
-    s.push('```');
-    s.push('');
+    s.push('## Kalite çıtası', '');
+    s.push('- **Gerçek içerik yaz.** "Lorem ipsum", "Başlık 1", "Örnek kayıt" yok —');
+    s.push('  bu işletmenin gerçek kalemleri, gerçek tutarları, gerçek tarihleri.');
+    s.push('- **Doku ve derinlik.** Düz dolgu bırakma; dilde ne konuştuysak o.');
+    s.push('- **Simgeler işe özel.** Hazır set çizme.');
+    s.push('- **Boş yer bırakma.** Ekranın altı yarım kalmasın.', '');
 
-    s.push('### YERLEŞİM biçimi — buna harfiyen uy');
-    s.push('Her satır tek görsel, **dört alan, aralarında boru işareti** `|`:');
-    s.push('');
-    s.push('`numara | dosya adı | nerede | nasıl duracağı`');
-    s.push('');
-    s.push('- **numara**: `G1`, `G2`… ürettiğin sırayla. `G1` benim verdiğim');
-    s.push('  işletme görselidir; kullanmadıysan onu yazma.');
-    s.push('- **Logoyu YERLEŞİM\'e yazma ve üretme.** Logo Studio\'dan geliyor,');
-    s.push('  uygulama onu kendi çiziyor. Ekranlarda kullandın, orası doğru —');
-    s.push('  ama bir varlık dosyası olarak istemiyorum.');
-    s.push('- **dosya adı**: `gorsel-1.jpg` gibi, küçük harf, Türkçe harf yok.');
-    s.push('  Uzantıyı amaca göre seç: illüstrasyon ve doku `.png`, arayüz');
-    s.push('  simgesi ve süsleme `.svg`. Burada yazdığın ad bağlayıcı: görseli');
-    s.push('  aynı adla üreteceksin, uygulama o adla arayacak.');
-    s.push('- **İki simge setini ayrı satır yaz.** Örnek:');
-    s.push('  `G4 | ikon-buyuk.png | Hızlı işlem kartları | Bakır illüstrasyon, 256px, saydam`');
-    s.push('  `G5 | ikon-arayuz.svg | Alt çubuk ve liste satırları | Tek renk, currentColor`');
-    s.push('- **nerede**: kısa ad — "Panel açılışı", "Giriş ekranı zemini".');
-    s.push('- **nasıl duracağı**: ölçü, perde, opaklık — tek cümle.');
-    s.push('- Satır başına `-` ya da numara koyma, tabloya çevirme.');
-    s.push('');
+    PROMPT.blokUyarisi(s);
 
-    s.push('### YERLEŞİM\'e neyi yazmayacaksın');
-    s.push('Varlık listesi yalnız **gerçekten dosya olması gereken** şeylerdir:');
-    s.push('fotoğraf, illüstrasyon, doku, simge seti, süsleme motifi.', '');
-    s.push('- **Arayüz parçalarını yazma.** Düğme, durum etiketi, giriş alanı,');
-    s.push('  sekme, çip, aç-kapa anahtarı — bunlar kodla çiziliyor. Renkli bir');
-    s.push('  hap ve içinde yazı; görsele çevrilirse yazı resme gömülür,');
-    s.push('  ölçeklenmez, rengi değişmez. Stil panelinde örneklerini');
-    s.push('  gösterdin, doğrusu o — ama varlık değiller.');
-    s.push('- **Logoyu yazma.** Studio\'dan geliyor.');
-    s.push('- Kullanmadığın bir görseli yazma.', '');
-
-    s.push('### Şunları yapma');
-    s.push('- Kod yazma. Ne CSS ne HTML — bu bir tarif, uygulama değil.');
-    s.push('- İki başlığın dışına bölüm ekleme.');
-    s.push('- "Duruma göre", "tercihen" gibi belirsiz ifade kullanma; kararı ver.');
-    s.push('- **İkinci bir liste açma.** Tek YERLEŞİM, tek numaralandırma,');
-    s.push('  `G1`\'den başlayıp kesintisiz. Sonradan aklına gelen varlık olursa');
-    s.push('  listeyi baştan yaz, yanına ikinci liste ekleme — hangisinin');
-    s.push('  geçerli olduğu anlaşılmıyor.');
-    s.push('');
-
-    s.push('## Sonra görselleri ver — bu bölüm zorunlu');
-    s.push('Tarif tek başına işe yaramıyor: kodu yazacak olan görselleri de');
-    s.push('almalı. İki bölümü verdikten **hemen sonra**, sormadan, beklemeden');
-    s.push('`YERLEŞİM` listesindeki **her görseli tek tek üret**.', '');
-
-    s.push('> ### Yeniden tasarlama — çıkar');
-    s.push('> Bu görselleri tasarımda **zaten çizdin** (yeni bir sohbetteysek:');
-    s.push('> yukarıda ekli tasarım tabakasında). Şimdi yapacağın şey');
-    s.push('> yeni bir görsel üretmek değil, ekranlarda kullandığın görseli');
-    s.push('> tek dosya hâlinde **çıkarmak**. Aynı çizim dili, aynı renkler,');
-    s.push('> aynı ışık, aynı malzeme hissi. Sadeleştirme, moderniz etme,');
-    s.push('> "daha kullanışlı olur" diye başka bir üsluba geçme.');
-    s.push('> ');
-    s.push('> **Özellikle ikon setinde.** Ekranlarda hangi çizim diliyle');
-    s.push('> çizdiysen — gölgeli mi, hacimli mi, kaç renkli, hangi malzeme —');
-    s.push('> dosyada da o dil olacak. Düz iki renkli geometrik simgeye');
-    s.push('> çevirme. Küçük boyutta okunması için yeterince büyük ve net');
-    s.push('> üret; üslubu değiştirerek çözme.');
-    s.push('');
-
-    s.push('### Sırayla ver — hepsini bir seferde deneme');
-    s.push('Bir mesajda **tek görsel**. Verdikten sonra tek satırla');
-    s.push('*"kaldı: G4, G6"* diye yaz ve dur. Ben **"devam"** diyeceğim,');
-    s.push('sıradakine geçeceksin. Hepsini bir seferde üretmeye kalkışınca');
-    s.push('yarıda kesiliyor ve eksik görsel fark edilmiyor.', '');
-
-    s.push('- Görselin başında numarası ve dosya adı yazsın: `G2 · gorsel-2.jpg`.');
-    s.push('- **Dosya adı YERLEŞİM\'de yazdığıyla birebir aynı olsun.** Uzantıyı');
-    s.push('  değiştirme; listede `.svg` yazan `.png` olarak gelmesin.');
-    s.push('- **Bana dosyanın kendisini ver.** İndirilebilir dosya ya da kod');
-    s.push('  bloğu; çalışma alanındaki yol (`/mnt/data/...`) işime yaramıyor,');
-    s.push('  onu indiremiyorum.', '');
-
-    s.push('### Biçim amaca göre seçilir');
-    s.push('- **İllüstrasyon, fotoğraf, doku, gölgeli/çok renkli simge → PNG.**');
-    s.push('  Saydam zemin, en az 256×256. Bunları SVG olarak üretmeye');
-    s.push('  çalışma: gölge ve malzeme hissi vektörde ya kayboluyor ya da');
-    s.push('  dosya devleşiyor. Sen de kolaya kaçıp düz simgeye çeviriyorsun —');
-    s.push('  **çevirme**, PNG ver.');
-    s.push('- **Arayüz simgesi (alt çubuk, liste, form) → SVG.** Tek renk,');
-    s.push('  gölgesiz, ince çizgi. Tek dosya; her simge kendi');
-    s.push('  `<symbol id="ikon-siparis">` öğesinde. **Dosyada renk gömülü');
-    s.push('  olmasın** (`currentColor` kullan) — aktif sekmede rengi kodla');
-    s.push('  değiştireceğiz.');
-    s.push('- **Süsleme, çerçeve, ayırıcı → SVG.** Tek ya da iki renk, sade.');
-    s.push('- **Doku gerçekten dikişsiz olsun.** İçine çerçeve, kenarlık, köşe');
-    s.push('  süsü ya da ortası parlak vinyet **koyma** — bunlar döşenince');
-    s.push('  ızgara gibi tekrar eder. Doku her yerinde aynı yoğunlukta,');
-    s.push('  kenarları birbirine geçen bir karo olmalı.');
-    s.push('- İllüstrasyonların zemini **gerçekten saydam** olsun. Arkasına');
-    s.push('  açık renk leke, kâğıt parçası ya da yumuşak gölge **pişirme** —');
-    s.push('  koyu zeminde kirli bir bulut gibi görünüyor.');
-    s.push('- **Görsellerin içine yazı gömme.** Logo, slogan, etiket, başlık,');
-    s.push('  sahte tablo satırı — hiçbiri. Uygulama yazıyı kendi çiziyor;');
-    s.push('  gömülü olursa üst üste biner ve ölçeklenince bulanıklaşır.');
-    s.push('- **Kanvas görselin kendisi kadar olsun.** Küçük bir motifi kocaman');
-    s.push('  boş tuvalin ortasına koyma; kırpılmış ver.');
-    s.push('- Örnek, yer tutucu, "burada şöyle bir görsel olacak" gibi şeyler');
-    s.push('  gönderme. Gerçek dosyayı üret.');
-    s.push('- Bir görseli üretemiyorsan sessizce atlama: hangisi ve neden,');
-    s.push('  tek cümleyle söyle.');
-    s.push('- **Logoyu ve `G1` işletme görselini üretme.** İkisi de bende;');
-    s.push('  onlar için dosya bekleme, sıraya da koyma.', '');
-
-    s.push('Hepsi bittiğinde tek satırla onayla: kaç görsel verdin ve');
-    s.push('numaraları ne. Ben bunları uygulamadaki yuvalarına koyacağım.');
+    s.push('## Cevabın', '');
+    s.push('Ekranı çiz, sonra **tek JSON bloğu** ver — çizdiğin ekranı');
+    s.push('yukarıdan aşağıya blok blok anlat:', '');
+    s.push('```json');
+    s.push('{');
+    s.push(`  "ekran": "${ekranRolAdi(p, rol)}",`);
+    s.push('  "bloklar": [');
+    s.push('    { "ad": "Ay seçici",      "tur": "serit",    "not": "tam genişlik, vurgu zemin" },');
+    s.push('    { "ad": "Toplam kartı",   "tur": "kart",     "not": "vurgu rengi, büyük rakam mono" },');
+    s.push('    { "ad": "Filtre çipleri", "tur": "cip",      "not": "yatay kaydırma" },');
+    s.push('    { "ad": "Gider satırları","tur": "tablo",    "not": "sıkı satır, tutar sağda mono" },');
+    s.push('    { "ad": "Sabit toplam",   "tur": "altSerit", "not": "ekranın dibinde sabit" }');
+    s.push('  ]');
+    s.push('}');
+    s.push('```', '');
+    s.push('- `tur` şunlardan biri: `serit` · `kart` · `liste` · `tablo` · `form`');
+    s.push('  · `cip` · `dugme` · `gorsel` · `bos` · `altSerit`');
+    s.push('- Bloklar **çizdiğin sırayla**, yukarıdan aşağıya.');
+    s.push('- **Çizdiğini yaz**, çizmek istediğini değil. Uygulama bu bloğu');
+    s.push('  geri çizip senin resminle yan yana koyacak; uymazsa fark edilir.');
 
     return s.join('\n');
   },
 
-  /* ---------- Geliştirme durağı: iki ayrı yön ---------- */
+  /* 04 · Uygulamanın içinde duracak görseller. Ne gerektiğini Claude
+     söyledi; ChatGPT'nin metnini ayrıştırmıyoruz. */
+  gorselListesi(projeId) {
+    const p = DB.proje(projeId);
+    if (!p) return '';
+    const pl = p.palet || {};
+    const eksik = (pl.gorseller || []).filter(y => y.no !== 'G0' && !y.yol);
 
-  /* Program geliştirmesi — Studio'ya sonradan eklenen teknik standartları
-     bu programa taşır. Yalnız o programın deposunda çalışır. */
+    const s = [];
+    s.push('# ' + projeAdi(p) + ' — uygulamanın görselleri', '');
+    s.push('Ekranları çizdik. Şimdi o ekranlarda kullandığın görselleri');
+    s.push('**tek tek dosya hâlinde** istiyorum — uygulamanın içine gerçekten');
+    s.push('bunlar konacak.', '');
+
+    s.push('> **Yeniden tasarlama, çıkar.** Bu görselleri ekranlarda zaten');
+    s.push('> çizdin. Aynı çizim dili, aynı renkler, aynı ışık, aynı malzeme.');
+    s.push('> Sadeleştirme, "daha modern olur" diye başka üsluba geçme —');
+    s.push('> özellikle simgelerde. Küçük boyutta okunsun diye yeterince');
+    s.push('> büyük ve net üret; üslubu değiştirerek çözme.', '');
+
+    if (!eksik.length) {
+      s.push('> **Eksik görsel yok.** Bütün yuvalar dolu.');
+      return s.join('\n');
+    }
+
+    s.push('## İstediğim görseller', '');
+    s.push('**Sırayla ver, hepsini bir seferde deneme.** Birini ver, indireyim,');
+    s.push('sonra "sıradaki" diyeceğim.', '');
+    eksik.forEach(y => {
+      s.push(`### ${y.no} — ${y.ad}`);
+      if (y.tarif) s.push(y.tarif);
+      s.push(`Dosya adı: \`${y.dosya}\``);
+      s.push('');
+    });
+
+    s.push('## Biçim', '');
+    s.push('- Arka planı **saydam** olsun (PNG), zemin rengi gömme.');
+    s.push('- Tek nesne, kenarlarda boşluk bırak — kırpılmaya karşı.');
+    s.push('- Ekran görüntüsü verme; **yalnız görselin kendisi**.');
+
+    return s.join('\n');
+  },
+
   programGelistirme(projeId) {
     const p = DB.proje(projeId);
     if (!p) return '';
@@ -1379,6 +1318,8 @@ const PROMPT = {
     s.push(PROMPT.teknikBlogu(proje)); s.push('');
     const dilMetni = PROMPT.gorselDilBlogu(proje);
     if (dilMetni) { s.push(dilMetni); s.push(''); }
+    const ekranMetni = PROMPT.ekranBlogu(proje);
+    if (ekranMetni) { s.push(ekranMetni); s.push(''); }
     /* Kimlik dosyasında adres değil yerleşim dursun — imzalı adres bir
        saatte ölür, depoya yazılırsa yanıltıcı olur. */
     const yerlesim = ((proje.palet || {}).gorseller || []).filter(y => y.yol && y.no !== 'G0');
