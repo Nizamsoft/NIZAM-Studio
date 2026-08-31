@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## v0.134.3
+- **SQL dosyası düz metin olarak açılıyor.** GitHub'ın mobil görünümünde "raw kopyala" düğmesi yok; dosya görünümünden metni almak mümkün değildi. Bağlantı `/blob/` yerine `/raw/` adresine gidiyor — düz metinde uzun basıp "Tümünü Seç" çalışıyor. Adım metni de bunu söylüyor.
+- Uzun dosyada bilgisayardan yapmanın daha kolay olduğu not olarak eklendi; aynı iki adres orada da geçerli.
+
 ## v0.134.2
 - **SQL dosyasını Studio açıyor artık.** "Depodaki `sql/01-tablolar.sql` dosyasını bul" demek yetmiyordu — kullanıcı GitHub'da klasör klasör arıyordu. Veritabanı penceresinde iki numaralı düğme: **1 · SQL dosyasını aç** (deponun o dosyasına doğrudan gider, sağ üstteki kopyala simgesiyle tamamı panoya alınır) ve **2 · SQL editörünü aç**.
 - Studio dosyanın içeriğini okuyamıyor — depo özel ve GitHub anahtarı yok — ama adresini biliyor. Aramak yerine götürüyor.

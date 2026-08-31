@@ -5222,8 +5222,11 @@ function sqlNasilAc(projeId) {
      Ama adresini biliyoruz — kullanıcıyı klasör klasör aratmak yerine
      doğrudan dosyaya götürüyoruz. */
   const slug = depoSlug(p.repo);
+  /* `/raw/` düz metin açıyor: GitHub'ın mobil görünümünde "kopyala"
+     düğmesi yok, dosya görünümünden metni almak mümkün değil. Düz metinde
+     uzun basıp "Tümünü Seç" çalışıyor. */
   const sqlAdres = slug
-    ? 'https://github.com/' + slug + '/blob/main/' + SQL_DOSYA : '';
+    ? 'https://github.com/' + slug + '/raw/main/' + SQL_DOSYA : '';
 
   const adim = (no, ic) => `
     <div class="adm"><b>${no}</b><span>${ic}</span></div>`;
@@ -5236,8 +5239,8 @@ function sqlNasilAc(projeId) {
       <span><b>Supabase bağlantısı girilmemiş.</b> <b>Kurulum ve yapı →
       Nereye kuralım?</b> adımına proje adresini ve anon anahtarını yaz.</span></div>`}
     <div class="adm-l">
-      ${adim(1, '<b>SQL dosyasını aç</b> — GitHub\'da açılır, sağ üstteki '
-        + 'kopyala simgesine bas, dosyanın tamamı panoya gider.')}
+      ${adim(1, '<b>SQL dosyasını aç</b> — düz metin olarak açılır. '
+        + 'Metne <b>uzun bas</b> → <b>Tümünü Seç</b> → <b>Kopyala</b>.')}
       ${adim(2, '<b>SQL editörünü aç</b> — Supabase açılır.')}
       ${adim(3, 'Yapıştır ve <b>Run</b>\'a bas. Hata çıkarsa metni Claude\'a '
         + 'göster, düzeltsin.')}
@@ -5259,8 +5262,9 @@ function sqlNasilAc(projeId) {
            data-proje="${p.id}" role="button" tabindex="0">
       <span class="kur-kutu">${svg(ICON.tik, 12)}</span> Tabloları kurdum</label>
     <div class="note note-kucuk">${svg(ICON.info, 15)}
-      <span>Şema değişirse Claude yeni bir SQL dosyası yazar; onu da aynı
-      yerde çalıştırırsın.</span></div>
+      <span>Dosya uzunsa bilgisayardan yapmak daha kolay — aynı iki adres,
+      orada seçip kopyalamak zahmetsiz. Şema sonradan değişirse Claude yeni
+      bir SQL dosyası yazar, onu da aynı yerde çalıştırırsın.</span></div>
     <div class="modal-alt">
       <button class="btn btn-ghost" data-sq="kapat" type="button">Kapat</button>
     </div>`, kutu => {
