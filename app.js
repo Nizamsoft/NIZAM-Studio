@@ -793,7 +793,8 @@ const DURAKLAR = {
                 renk: '#8fae4a', ikon: 'gAltyapi' },
   tasarim:    { no: 3, ad: 'Tasarımı belirleme', ciz: tasarimSayfasi,
                 renk: '#5f86c4', ikon: 'gTasarim' },
-  beta:       { no: 4, ad: 'Beta',               ciz: betaSayfasi },
+  beta:       { no: 4, ad: 'Beta',               ciz: betaSayfasi,
+                renk: '#c9753c', ikon: 'gOptimizasyon' },
   gelistirme: { no: 5, ad: 'Geliştirme',         ciz: gelistirmeSayfasi },
   final:      { no: 6, ad: 'Final',              ciz: finalSayfasi },
   guncelleme: { no: 7, ad: 'Güncellemeler',      ciz: guncellemeSayfasi },
@@ -4993,116 +4994,67 @@ function durakKarti(no, bitti, ad, aciklama, govde, rozet) {
 /* 4 · Beta — ilk çalışan sürüm. Son blok gider, Claude kurar, sen denersin. */
 function betaSayfasi(p, d) {
   const pl = p.palet || {};
-  const cikti = !!pl.betaCikti;
-  const slug = depoSlug(p.repo);
-  /* Künye Yapı durağındaki "Kur" ile yazılıyor; yoksa blok yarım çıkar. */
   const kunyeVar = Object.keys(pl.kunye || {}).length > 0;
-
   const yayin = pl.alanAdi || '';
+  const sunuculu = sunuculuMu(p);
+  const biten = Array.isArray(pl.asama) ? pl.asama : [];
 
-  return sayfaHero(p, d)
-    /* Alan adı ve Pages kurulumu 1. aşamaya taşındı: DNS'in yayılması ve
-       sertifikanın çıkması zaman aldığı için erken kurulması gerekiyor.
-       Burada yalnız sonucu gösteriyoruz. */
+  /* Ada içindeyken kareler değil o adanın ekranı çiziliyor. */
+  if (BETA_EKRAN[p.id] === 'asamalar') return betaAsamaEkrani(p, d);
+
+  const adimlar = [
+    { no: '01', eylem: 'beta-blok', ad: '3. blok',
+      ozet: 'Künyeler ve şema',
+      bitti: !!pl.blokVerildi,
+      deger: kunyeVar ? 'verildi' : 'künye yok' },
+    { no: '02', eylem: 'beta-vt', ad: 'Veritabanı',
+      ozet: 'Tabloları kur',
+      bitti: !sunuculu || !!pl.sqlKuruldu,
+      deger: !sunuculu ? 'gerekmiyor' : 'kuruldu' },
+    { no: '03', eylem: 'beta-asamalar', ad: 'Beş aşama',
+      ozet: biten.length + '/' + KURULUM_ADIM.length + ' yazıldı',
+      bitti: biten.length >= KURULUM_ADIM.length,
+      deger: KURULUM_ADIM.length + ' aşama' },
+    { no: '04', eylem: 'beta-cikti', ad: 'Beta çıktı',
+      ozet: 'Dene ve işaretle',
+      bitti: !!pl.betaCikti,
+      deger: 'denendi' },
+  ];
+
+  const simdi = adimlar.findIndex(a => !a.bitti);
+  const bitenSay = adimlar.filter(a => a.bitti).length;
+  const kart = i => kurulumAdimi(p, adimlar[i], i === simdi);
+
+  return `<div class="fb-govde">`
+    + adimBasligi(p, d, bitenSay + '/' + adimlar.length)
     + (yayin ? `
       <div class="kur-deger duz">${svg(ICON.bulut, 13)} Yayın adresi
         <b class="mono"><a target="_blank" rel="noopener"
           href="https://${esc(yayin)}">${esc(yayin)}</a></b></div>` : `
       <div class="bos-kutu">${svg(ICON.bulut, 18)}
-        <span>Yayın adresi yok. <b>Firma ve kurulum</b> durağındaki
-        <b>Yayın</b> adımlarını tamamla — DNS'in yayılması zaman alıyor,
-        erken kurmak lazım.</span></div>`)
-
-    + durakKarti(1, cikti, '3. blok: modüller ve sayfalar',
-        (kunyeVar
-          ? 'Sayfa künyeleri ve modül kuralları panoya alınır. Claude Code '
-            + 'oturumuna yapıştır — <b>depoya yazılır</b>, kod henüz yazılmaz.'
-          : '<b class="eksik">Sayfa künyesi yok.</b> Önce <b>Yapıyı kurma</b> '
-            + 'durağında modülü kur; blok o zaman dolu çıkar.')
-        + (yayin ? '' : ' <b class="eksik">Önce yayın adresini kaydet</b> — '
-            + 'Claude uygulamayı hangi adrese kuracağını bilmeli.'), `
-      <div class="kur-dug">
-        ${promptBaglantisi({ tur: 'yapi', proje: p.id, slug: depoSlug(p.repo),
-          ikincil: !(kunyeVar && yayin),
-          yazi: '3. blok — kopyala ve Claude Code\'da aç', kapali: !yayin })}
-      </div>
-      <button class="promptu-gor" type="button" data-eylem="yapi-blok-gor"
-              data-proje="${p.id}">Bloğu gör</button>`)
-
-    + sqlKarti(p)
-    + asamaIzgarasi(p)
-
-    + durakKarti(4, cikti, 'Beta çıktı',
-        'Beş aşama bitip <b class="mono">main</b> dalına gittiğinde uygulamayı '
-        + 'dene. Gördüğün eksikleri not al — sonraki durakta görev olarak '
-        + 'açacaksın.', `
-      <label class="kur-onay ${cikti ? 'on' : ''}" data-eylem="beta-onay"
-             data-proje="${p.id}" role="button" tabindex="0">
-        <span class="kur-kutu">${svg(ICON.tik, 12)}</span> Beta çıktı, denedim</label>`)
-
-    + `<div class="note note-kucuk">${svg(ICON.info, 15)}
-        <span>Studio deponun içini göremiyor; aşamaları ve betayı sen
-        işaretliyorsun.</span></div>`;
+        <span>Yayın adresi yok. <b>Kurulum ve yapı</b> durağındaki
+        <b>Yayın</b> adımını tamamla.</span></div>`)
+    + `<div class="ya-harita">
+        <div class="ya-satir">${[0, 1, 2].map(kart).join('')}</div>
+        ${yolOku(adimlar[2].bitti)}
+        <div class="ya-satir">${[3].map(kart).join('')}</div>
+      </div>`
+    + `</div>`;
 }
 
-/* Veritabanı kurulumu — kod yazılmadan önce. Bağlantı bilgisi kurulum
-   adımında toplandı; SQL şemasını 3. blok üretiyor, çalıştıran kullanıcı.
-   Claude Code Supabase'e bağlanamaz. */
-function sqlKarti(p) {
-  const pl = p.palet || {};
-  if (!sunuculuMu(p)) return '';
-  const kuruldu = !!pl.sqlKuruldu;
-  const bagli = !!String(pl.supabaseUrl || '').trim()
-             && !!String(pl.supabaseAnon || '').trim();
+/* Adanın içi: beş aşama, kilitli zincir. Kurulum sayfasındaki ızgaranın
+   aynısı — her aşama ayrı Claude Code oturumu. */
+const BETA_EKRAN = {};
 
-  return durakKarti(2, kuruldu, 'Veritabanını kur',
-    bagli
-      ? 'Claude 3. blokla birlikte <b class="mono">sql/01-tablolar.sql</b> '
-        + 'dosyasını da yazıyor — tablolar, ilişkiler ve satır güvenliği (RLS) '
-        + 'içinde. Supabase\'de bir kere çalıştır.'
-      : '<b class="eksik">Supabase bağlantısı girilmemiş.</b> <b>Kurulum ve yapı</b> '
-        + 'durağındaki <b>Nereye kuralım?</b> adımına proje adresini ve anon '
-        + 'anahtarını yaz — kod ilk günden gerçek veritabanına yazsın.', `
-    <div class="kur-dug">
-      <a class="sayfa-dug ${bagli ? '' : 'ikincil'}" target="_blank" rel="noopener"
-         href="${bagli ? esc(sqlEditorAdresi(pl.supabaseUrl)) : 'https://supabase.com/dashboard'}">
-        ${svg(ICON.disari, 15)} SQL editörünü aç</a>
-    </div>
-    <div class="kur-dug">
-      <button class="sayfa-dug ikincil" type="button" data-eylem="sql-nasil"
-              data-proje="${p.id}">${svg(ICON.info, 15)} Nasıl yapılır?</button>
-    </div>
-    <label class="kur-onay ${kuruldu ? 'on' : ''}" data-eylem="sql-onay"
-           data-proje="${p.id}" role="button" tabindex="0">
-      <span class="kur-kutu">${svg(ICON.tik, 12)}</span> Tabloları kurdum</label>`,
-    kuruldu ? 'tamam' : (bagli ? 'sırada' : 'eksik'));
-}
-
-/* Proje adresinden SQL editörünün adresi. Adres `https://xxxx.supabase.co`
-   biçiminde; panel adresi proje kimliğiyle kuruluyor. */
-function sqlEditorAdresi(url) {
-  const es = String(url || '').match(/https?:\/\/([a-z0-9-]+)\.supabase\.co/i);
-  return es ? 'https://supabase.com/dashboard/project/' + es[1] + '/sql/new'
-            : 'https://supabase.com/dashboard';
-}
-
-/* Beş aşama, kilitli zincir. Her aşama **ayrı Claude Code oturumu**:
-   tek oturumda beşini yaparsan konuşma binlerce satıra çıkıyor ve her yeni
-   mesajda tamamı yeniden gönderiliyor. Studio deponun içini göremediği için
-   biten aşamayı kullanıcı işaretliyor. */
-function asamaIzgarasi(p) {
+function betaAsamaEkrani(p, d) {
   const pl = p.palet || {};
   const biten = Array.isArray(pl.asama) ? pl.asama : [];
   const simdi = KURULUM_ADIM.findIndex((a, i) => biten.indexOf(i) < 0);
-  const tam = simdi < 0;
-  /* Tablolar kurulmadan kod yazdırmak: ikinci aşamada veriye bağlanacak
-     yer yok, üçüncüde kayıt yazılacak tablo yok. */
-  const sqlBekliyor = sunuculuMu(p) && !pl.sqlKuruldu;
 
   const kart = i => {
     const a = KURULUM_ADIM[i];
     const bitti = biten.indexOf(i) > -1;
-    const kilit = !bitti && (sqlBekliyor || (simdi > -1 && i > simdi));
+    const kilit = !bitti && simdi > -1 && i > simdi;
     const hal = bitti ? 'bitti' : kilit ? 'kilitli' : i === simdi ? 'simdi' : 'eksik';
     const ikon = bitti ? ICON.tik : kilit ? ICON.kilit
                : i === simdi ? ICON.goz : ICON.kalem;
@@ -5115,22 +5067,141 @@ function asamaIzgarasi(p) {
         </span>
         <span class="ya-yz">
           <span class="ya-ad">${esc(a.ad)}</span>
-          <span class="ya-alt">${esc(bitti ? 'bitti'
-            : kilit ? (sqlBekliyor ? 'veritabanı bekliyor' : 'kilitli')
+          <span class="ya-alt">${esc(bitti ? 'bitti' : kilit ? 'kilitli'
             : i === simdi ? 'sıradaki' : 'bekliyor')}</span>
         </span>
       </button>`;
   };
 
-  return durakKarti(3, tam, 'Beş aşama',
-    'Kod tek seferde yazılmıyor. Her aşama <b>ayrı Claude Code oturumu</b> — '
-    + 'oturum uzadıkça her mesajda bütün konuşma yeniden gidiyor. Karta bas, '
-    + 'kısa komutu kopyala, yeni oturumda yapıştır.', `
-    <div class="ya-harita">
-      <div class="ya-satir">${[0, 1, 2].map(kart).join('')}</div>
-      ${yolOku(biten.indexOf(2) > -1)}
-      <div class="ya-satir">${[3, 4].map(kart).join('')}</div>
-    </div>`, tam ? 'tamam' : (biten.length + '/' + KURULUM_ADIM.length));
+  return `<div class="akis gorsel">
+    <div class="adim-serit" style="--kr:${d.renk}">
+      <div class="bs2 ince">
+        <button class="bs2-ik" type="button" title="Beta'ya dön"
+                data-eylem="beta-geri" data-proje="${p.id}">
+          ${svg(ICON[d.ikon], 19)}</button>
+        <span class="bs2-yz">
+          <span class="bs2-firma"><span class="bs2-ad2">BETA</span></span>
+          <span class="bs2-ad">Beş aşama</span>
+        </span>
+        <span class="bs2-sag"><b class="mono">${biten.length}/${KURULUM_ADIM.length}</b>
+          <i>aşama</i></span>
+      </div>
+      <div class="as-alt">
+        <span class="as-yol">
+          <button class="yi" type="button" data-eylem="beta-geri"
+                  data-proje="${p.id}">Beta</button>
+          <s>›</s>
+          <button class="yi son" type="button" disabled>Beş aşama</button>
+        </span>
+      </div>
+    </div>
+    <div class="akis-alt">
+      <div class="gd-kaydir">
+        <div class="kaynak">${svg(ICON.arama, 13)}
+          <span><b>Her aşama ayrı Claude Code oturumu.</b> Oturum uzadıkça her
+            mesajda bütün konuşma yeniden gidiyor. Karta bas, kısa komutu
+            kopyala, yeni oturumda yapıştır.</span></div>
+        <div class="ya-harita">
+          <div class="ya-satir">${[0, 1, 2].map(kart).join('')}</div>
+          ${yolOku(biten.indexOf(2) > -1)}
+          <div class="ya-satir">${[3, 4].map(kart).join('')}</div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* Beta adımlarının pencereleri. Sayfa kart ızgarası oldu; açıklama ve
+   düğmeler karta basınca açılan pencerede duruyor — kurulum adımlarının
+   aynısı. */
+
+/* 01 · 3. blok — künyeler, kararlar ve SQL şeması. */
+function betaBlokAc(projeId) {
+  modalHepsiniKapat();
+  const p = DB.proje(projeId);
+  if (!p) return;
+  const pl = p.palet || {};
+  const kunyeVar = Object.keys(pl.kunye || {}).length > 0;
+  const yayin = pl.alanAdi || '';
+  const sunuculu = sunuculuMu(p);
+
+  modalAc(`
+    ${modalBaslik(ICON.katman, '3. blok — modüller ve sayfalar',
+      'Üç bloğun sonuncusu. Depoya yazılır, kod henüz yazılmaz.')}
+    ${kunyeVar ? '' : `<div class="note uyari">${svg(ICON.uyari, 15)}
+      <span><b>Sayfa künyesi yok.</b> Önce <b>Kurulum ve yapı</b> durağında
+      modülü kur; blok o zaman dolu çıkar.</span></div>`}
+    ${yayin ? '' : `<div class="note uyari">${svg(ICON.uyari, 15)}
+      <span><b>Yayın adresi yok.</b> Claude uygulamayı hangi adrese
+      kuracağını bilmeli.</span></div>`}
+    <div class="adm-l">
+      <div class="adm"><b>1</b><span><b class="mono">nizam/sayfalar.md</b> —
+        modül kuralları ve sayfa künyeleri</span></div>
+      <div class="adm"><b>2</b><span><b class="mono">nizam/kararlar.md</b> —
+        yetki kuralları ve verilmiş cevaplar</span></div>
+      ${sunuculu ? `<div class="adm"><b>3</b><span><b class="mono">sql/01-tablolar.sql</b>
+        — tablolar, ilişkiler ve satır güvenliği</span></div>` : ''}
+      <div class="adm"><b>${sunuculu ? 4 : 3}</b><span><b class="mono">nizam/durum.md</b>
+        — beş aşama, hepsi bekliyor</span></div>
+    </div>
+    <div class="kur-dug">
+      ${promptBaglantisi({ tur: 'yapi', proje: p.id, slug: depoSlug(p.repo),
+        ikincil: !(kunyeVar && yayin),
+        yazi: 'Kopyala ve Claude Code\'da aç', kapali: !yayin })}
+    </div>
+    <div class="kur-dug">
+      <button class="sayfa-dug ikincil" type="button" data-eylem="yapi-blok-gor"
+              data-proje="${p.id}">${svg(ICON.goz, 15)} Bloğu gör</button>
+    </div>
+    <label class="kur-onay ${pl.blokVerildi ? 'on' : ''}" data-eylem="beta-blok-onay"
+           data-proje="${p.id}" role="button" tabindex="0">
+      <span class="kur-kutu">${svg(ICON.tik, 12)}</span> Bloğu verdim, dosyalar yazıldı</label>
+    <div class="modal-alt">
+      <button class="btn btn-ghost" data-bb="kapat" type="button">Kapat</button>
+    </div>`, kutu => {
+    $('[data-bb="kapat"]', kutu).addEventListener('click', modalKapat);
+  });
+}
+
+/* 04 · Beta çıktı. */
+function betaCiktiAc(projeId) {
+  modalHepsiniKapat();
+  const p = DB.proje(projeId);
+  if (!p) return;
+  const pl = p.palet || {};
+  const yayin = pl.alanAdi || '';
+
+  modalAc(`
+    ${modalBaslik(ICON.gOptimizasyon, 'Beta çıktı',
+      'Beş aşama bitip main dalına gittiğinde uygulamayı dene.')}
+    <div class="adm-l">
+      <div class="adm"><b>1</b><span>Yayın adresini aç, gerçek verilerle dene.</span></div>
+      <div class="adm"><b>2</b><span>Telefonda ve bilgisayarda ayrı ayrı bak.</span></div>
+      <div class="adm"><b>3</b><span>Gördüğün eksikleri not al — sonraki durakta
+        <b>görev</b> olarak açacaksın.</span></div>
+    </div>
+    ${yayin ? `<div class="kur-dug">
+      <a class="sayfa-dug" target="_blank" rel="noopener"
+         href="https://${esc(yayin)}">${svg(ICON.disari, 15)} Uygulamayı aç</a>
+    </div>` : ''}
+    <label class="kur-onay ${pl.betaCikti ? 'on' : ''}" data-eylem="beta-onay"
+           data-proje="${p.id}" role="button" tabindex="0">
+      <span class="kur-kutu">${svg(ICON.tik, 12)}</span> Beta çıktı, denedim</label>
+    <div class="note note-kucuk">${svg(ICON.info, 15)}
+      <span>Studio deponun içini göremiyor; adımları sen işaretliyorsun.</span></div>
+    <div class="modal-alt">
+      <button class="btn btn-ghost" data-bc="kapat" type="button">Kapat</button>
+    </div>`, kutu => {
+    $('[data-bc="kapat"]', kutu).addEventListener('click', modalKapat);
+  });
+}
+
+/* SQL nasıl çalıştırılır./* Proje adresinden SQL editörünün adresi. Adres `https://xxxx.supabase.co`
+   biçiminde; panel adresi proje kimliğiyle kuruluyor. */
+function sqlEditorAdresi(url) {
+  const es = String(url || '').match(/https?:\/\/([a-z0-9-]+)\.supabase\.co/i);
+  return es ? 'https://supabase.com/dashboard/project/' + es[1] + '/sql/new'
+            : 'https://supabase.com/dashboard';
 }
 
 /* SQL nasıl çalıştırılır. Studio kullanıcının Supabase'ini göremiyor;
@@ -5141,14 +5212,19 @@ function sqlNasilAc(projeId) {
   if (!p) return;
   const pl = p.palet || {};
   const adres = sqlEditorAdresi(pl.supabaseUrl);
+  const bagli = !!String(pl.supabaseUrl || '').trim()
+             && !!String(pl.supabaseAnon || '').trim();
 
   const adim = (no, ic) => `
     <div class="adm"><b>${no}</b><span>${ic}</span></div>`;
 
   modalAc(`
-    ${modalBaslik(ICON.gVeri, 'Tabloları kur',
+    ${modalBaslik(ICON.gVeri, 'Veritabanını kur',
       'Claude SQL dosyasını yazdı; çalıştıran sensin. Claude Code senin '
       + 'Supabase\'ine bağlanamıyor.')}
+    ${bagli ? '' : `<div class="note uyari">${svg(ICON.uyari, 15)}
+      <span><b>Supabase bağlantısı girilmemiş.</b> <b>Kurulum ve yapı →
+      Nereye kuralım?</b> adımına proje adresini ve anon anahtarını yaz.</span></div>`}
     <div class="adm-l">
       ${adim(1, 'Depodaki <b class="mono">sql/01-tablolar.sql</b> dosyasını aç, '
         + 'içeriğini kopyala.')}
@@ -5159,12 +5235,15 @@ function sqlNasilAc(projeId) {
         + 'işaretle.')}
     </div>
     <div class="kur-dug">
-      <a class="sayfa-dug" target="_blank" rel="noopener" href="${esc(adres)}">
-        ${svg(ICON.disari, 15)} SQL editörünü aç</a>
+      <a class="sayfa-dug ${bagli ? '' : 'ikincil'}" target="_blank" rel="noopener"
+         href="${esc(adres)}">${svg(ICON.disari, 15)} SQL editörünü aç</a>
     </div>
-    <div class="note">${svg(ICON.info, 15)}
+    <label class="kur-onay ${pl.sqlKuruldu ? 'on' : ''}" data-eylem="sql-onay"
+           data-proje="${p.id}" role="button" tabindex="0">
+      <span class="kur-kutu">${svg(ICON.tik, 12)}</span> Tabloları kurdum</label>
+    <div class="note note-kucuk">${svg(ICON.info, 15)}
       <span>Şema değişirse Claude yeni bir SQL dosyası yazar; onu da aynı
-      yerde çalıştırırsın. Var olan tabloya dokunmadan ekleme yapar.</span></div>
+      yerde çalıştırırsın.</span></div>
     <div class="modal-alt">
       <button class="btn btn-ghost" data-sq="kapat" type="button">Kapat</button>
     </div>`, kutu => {
@@ -5977,6 +6056,11 @@ function render() {
   if (sayfa !== 'tasarim') {
     Object.keys(TASARIM_MOD).forEach(k => { delete TASARIM_MOD[k]; });
     Object.keys(IHTIYAC_EKRAN).forEach(k => { delete IHTIYAC_EKRAN[k]; });
+    Object.keys(GORSEL_EKRAN).forEach(k => { delete GORSEL_EKRAN[k]; });
+  }
+  /* Beta adası da öyle: geri gelindiğinde kareler açılsın. */
+  if (sayfa !== 'beta') {
+    Object.keys(BETA_EKRAN).forEach(k => { delete BETA_EKRAN[k]; });
   }
 
   /* Kurulum durağından çıkıldıysa modül ağacı kapanır — aynı sebeple:
@@ -6006,7 +6090,7 @@ function render() {
   /* Adım akışları kaydırılmaz: üç parça ekrana bölüşür. Yapı durağı ancak
      akış açıkken sabit; kurulu modül listesi normal kaydırılan sayfadır. */
   $('#view').classList.toggle('sabit',
-    sayfa === 'tasarim' || sayfa === 'yapi');
+    sayfa === 'tasarim' || sayfa === 'yapi' || sayfa === 'beta');
   ustEylemYaz(key, detay, id);
   artiYaz(key, detay, id);
   /* Geri oku hiç kaybolmuyor: gidilecek bir yer yoksa yalnız soluyor ve
@@ -9706,12 +9790,30 @@ async function eylemCalistir(el) {
   }
 
   if (e === 'asama-ac') return asamaAc(el.dataset.proje, Number(el.dataset.deger));
+  if (e === 'beta-blok')     return betaBlokAc(el.dataset.proje);
+  if (e === 'beta-vt')       return sqlNasilAc(el.dataset.proje);
+  if (e === 'beta-cikti')    return betaCiktiAc(el.dataset.proje);
+  if (e === 'beta-asamalar') { BETA_EKRAN[el.dataset.proje] = 'asamalar';
+                               render(); $('#view').scrollTop = 0; return; }
+  if (e === 'beta-geri')     { BETA_EKRAN[el.dataset.proje] = null; return render(); }
+
+  if (e === 'beta-blok-onay') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const pl = pr.palet || {};
+    modalKapat();
+    return isYap(() => DB.paletKaydet(pr.id,
+      Object.assign({}, pl, { blokVerildi: !pl.blokVerildi })),
+      pl.blokVerildi ? 'İşaret kaldırıldı.' : 'Blok verildi.');
+  }
+
   if (e === 'sql-nasil') return sqlNasilAc(el.dataset.proje);
 
   if (e === 'sql-onay') {
     const pr = DB.proje(el.dataset.proje);
     if (!pr) return;
     const pl = pr.palet || {};
+    modalKapat();
     return isYap(() => DB.paletKaydet(pr.id,
       Object.assign({}, pl, { sqlKuruldu: !pl.sqlKuruldu })),
       pl.sqlKuruldu ? 'İşaret kaldırıldı.' : 'Veritabanı kuruldu.');
@@ -10003,6 +10105,7 @@ async function eylemCalistir(el) {
     const pr = DB.proje(el.dataset.proje);
     if (!pr) return;
     const pl = pr.palet || {};
+    modalKapat();
     return isYap(() => DB.paletKaydet(pr.id,
       Object.assign({}, pl, { betaCikti: !pl.betaCikti })),
       pl.betaCikti ? 'İşaret kaldırıldı.' : 'Beta çıktı olarak işaretlendi.');
@@ -11465,6 +11568,11 @@ document.addEventListener('DOMContentLoaded', () => {
        ayrı giriş yok. Geri okunu doğrudan history'ye bırakınca aşamanın
        içinden çıkıp gelinen sayfaya (çoğunlukla modüller) düşülüyordu.
        Önce bir kat yukarı: karar ekranından haritaya. */
+    if (durak === 'beta' && BETA_EKRAN[id]) {
+      BETA_EKRAN[id] = null;
+      render();
+      return;
+    }
     if (durak === 'tasarim' && IHTIYAC_EKRAN[id]) {
       const su = IHTIYAC_EKRAN[id];
       IHTIYAC_EKRAN[id] = (su.slice(0, 6) === 'sayfa:') ? 'sayfalar' : null;

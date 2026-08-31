@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü
 
+## v0.134.0
+- **Beta durağı kart diline geçti.** Uzun açıklama blokları ve alt alta büyük düğmeler gitti; yerine dört kare kart geldi: `01 3. blok` · `02 Veritabanı` · `03 Beş aşama` · `04 Beta çıktı`. Diğer aşamalarla aynı ızgara, aynı ölçü, aynı durum dili.
+- Aşamanın kendi rengi ve simgesi oldu: turuncu `#c9753c` ve şimşek — ilk çalışan sürüm.
+- **Açıklamalar karta basınca açılan pencereye taşındı.** 3. blok penceresi hangi dosyaların yazılacağını dört madde hâlinde sayıyor, veritabanı penceresi SQL'i çalıştırmanın dört adımını, beta penceresi neyi deneyeceğini. Sayfada yalnız kareler ve tek satırlık yayın adresi kalıyor.
+- **Beş aşama kendi ekranına taşındı** — karta basınca açılıyor, kilitli zincir orada. Geri oku bir kat yukarı çıkarıyor.
+- 3. blok için "bloğu verdim, dosyalar yazıldı" işareti eklendi: Studio deponun içini göremiyor, adımın bittiğini kullanıcı söylüyor.
+- Beta çıktı penceresine "Uygulamayı aç" düğmesi eklendi — yayın adresine doğrudan gidiyor.
+
 ## v0.133.1
 - **anon key ipucu eski biçimi gösteriyordu.** Supabase yeni anahtar biçimine geçti: `sb_publishable_…`. Kutudaki örnek metin ikisini de gösteriyor.
 - 1. blok, anahtar yeni biçimdeyse `supabase-js` sürümünün bunu desteklediğinden emin olmasını söylüyor — eski istemci sürümü yeni anahtarı tanımıyor ve bağlantı sessizce düşüyor.
