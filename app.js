@@ -1405,6 +1405,9 @@ function ihtiyacDurumu(p) {
   const yeni   = c ? cozumYeniAlanlar(p).length : 0;
   const sayfa  = c ? Object.keys(c.sayfalar || {}).length : 0;
   const simge  = c ? (c.simgeler || []).length : 0;
+  const sorular = (c && c.sorular) || [];
+  const cevaplar = pl.cevaplar || {};
+  const cevapli = sorular.filter(x => (cevaplar[x.soru] || '').trim()).length;
   const kalan  = tasarimAdimlari(p).filter(a => a.alan).length;
 
   const adimlar = [
@@ -1418,9 +1421,19 @@ function ihtiyacDurumu(p) {
       ozet: c ? (yeni ? kalan + ' · ' + yeni + ' yeni' : kalan + ' karar') : 'bekliyor' },
     { ad: 'Sayfa tasarımları', eylem: 'ihtiyac-sayfalar', bitti: !!c && sayfa > 0,
       kilit: !c, ozet: c ? (sayfa ? sayfa + ' sayfa' : 'not verilmedi') : 'bekliyor' },
+    /* Claude'un takıldıkları. Cevaplanmadan ada bitmiyor: yanlış tahmin
+       sonradan söküp yeniden yazmak demek. */
+    { ad: 'Claude\'un soruları', eylem: 'ihtiyac-sorular',
+      bitti: !!c && (!sorular.length || cevapli >= sorular.length),
+      kilit: !c,
+      ozet: !c ? 'bekliyor'
+        : !sorular.length ? 'soru yok'
+        : cevapli >= sorular.length ? sorular.length + ' cevaplandı'
+        : cevapli + '/' + sorular.length + ' cevaplandı' },
   ];
   const simdi = adimlar.findIndex(a => !a.bitti);
-  return { adimlar, simdi, tam: simdi < 0, cozum: c, elenen, yeni, sayfa, simge, kalan };
+  return { adimlar, simdi, tam: simdi < 0, cozum: c, elenen, yeni, sayfa, simge,
+           sorular, cevapli, kalan };
 }
 
 /* Ada başlığı — görsel dünyayla aynı kart, kendi sayacıyla. */
@@ -1479,7 +1492,7 @@ function ihtiyacGovdesi(p) {
     <div class="ya-harita">
       <div class="ya-satir">${[0, 1, 2].map(kart).join('')}</div>
       ${yolOku(g.adimlar[2].bitti)}
-      <div class="ya-satir">${[3].map(kart).join('')}</div>
+      <div class="ya-satir">${[3, 4].map(kart).join('')}</div>
     </div>
     ${g.cozum ? ihtiyacOzetKarti(p, g) : ihtiyacBosKutu()}
   </div>`;
@@ -1502,6 +1515,7 @@ function ihtiyacOzetKarti(p, g) {
     <div class="tk-satir"><b>Claude'un açtığı</b><span>${g.yeni}</span></div>
     <div class="tk-satir"><b>Sayfa notu</b><span>${g.sayfa}</span></div>
     <div class="tk-satir"><b>Gereken simge</b><span>${g.simge}</span></div>
+    <div class="tk-satir"><b>Soru</b><span>${g.cevapli}/${g.sorular.length}</span></div>
     ${tarih ? `<div class="tk-satir"><b>Alındı</b><span>${esc(tarih)}</span></div>` : ''}
     <button class="promptu-gor" type="button" data-eylem="ihtiyac-yapistir"
             data-proje="${p.id}">Çözümlemeyi yenile</button>
@@ -1583,6 +1597,104 @@ function ihtiyacSayfaListesi(p) {
   return `<div class="gd-kaydir">${govde}</div>`;
 }
 
+/* ---------- 05 · Claude'un soruları ----------
+   Künyede yazmayan ama kod yazılırken karar gerektiren şeyler. Sihirbaz
+   gibi: bir soruyu cevaplayınca sıradaki kendiliğinden açılıyor. */
+function ihtiyacSorulari(p) {
+  const g = ihtiyacDurumu(p);
+  const cevaplar = (p.palet || {}).cevaplar || {};
+  if (!g.sorular.length) {
+    return `<div class="gd-kaydir">
+      <div class="bos-kutu">${svg(ICON.arama, 18)}
+        <span>Claude'un takıldığı bir şey olmamış — künye yeterince açık.</span></div>
+    </div>`;
+  }
+
+  return `<div class="gd-kaydir">
+    <div class="kaynak">${svg(ICON.arama, 13)}
+      <span><b>Bunları Claude sordu.</b> Künyede yazmayan ama kod yazılırken
+        karar gerektiren şeyler. Cevapladıkça her bloğa giriyor — ikinci kez
+        sorulmuyor.</span></div>
+    ${g.sorular.map((x, i) => {
+      const c = (cevaplar[x.soru] || '').trim();
+      return `
+        <button class="cs ${c ? 'bitti' : ''}" type="button"
+                data-eylem="ihtiyac-soru" data-proje="${p.id}" data-deger="${i}">
+          <span class="cs-no">${c ? svg(ICON.tik, 12) : i + 1}</span>
+          <span class="cs-yz">
+            <b>${esc(x.soru)}</b>
+            ${x.neden ? `<i>${esc(x.neden)}</i>` : ''}
+            ${c ? `<u>${esc(c)}</u>` : ''}
+          </span>
+          <span class="cs-ok">${svg(ICON.chevron, 13)}</span>
+        </button>`;
+    }).join('')}
+  </div>`;
+}
+
+/* Tek sorunun cevap penceresi. Seçenek varsa çip, yoksa metin; ikisi de
+   olabilir — Claude'un seçenekleri yetmezse kendi cümleni yazıyorsun. */
+function ihtiyacSoruAc(projeId, i) {
+  modalHepsiniKapat();
+  const p = DB.proje(projeId);
+  if (!p) return;
+  const pl = p.palet || {};
+  const sorular = ((pl.cozum || {}).sorular) || [];
+  const x = sorular[i];
+  if (!x) return;
+  const cevaplar = pl.cevaplar || {};
+  const su = (cevaplar[x.soru] || '').trim();
+
+  modalAc(`
+    ${modalBaslik(ICON.arama, 'Claude soruyor', x.neden || '')}
+    <p class="cs-soru">${esc(x.soru)}</p>
+    ${(x.secim || []).length ? `
+      <div class="ky-cipler">
+        ${x.secim.map(y => `
+          <button class="cip-sec ${su === y ? 'on' : ''}" type="button"
+                  data-sc="${esc(y)}">${esc(y)}</button>`).join('')}
+      </div>` : ''}
+    <label class="field">
+      <span>${(x.secim || []).length ? 'Ya da kendi cümlen' : 'Cevabın'}</span>
+      <textarea id="sr-metin" rows="3" spellcheck="false"
+        placeholder="Gündelik dille yaz — yazılımcıya değil, işi bilene anlatır gibi.">${
+          (x.secim || []).indexOf(su) > -1 ? '' : esc(su)}</textarea>
+    </label>
+    <div class="modal-alt">
+      <button class="btn btn-ghost" data-sr="iptal" type="button">Vazgeç</button>
+      <button class="btn btn-primary" data-sr="kaydet" type="button"><span>Kaydet</span></button>
+    </div>`, kutu => {
+    const alan = $('#sr-metin', kutu);
+    $$('[data-sc]', kutu).forEach(b => b.addEventListener('click', () => {
+      $$('[data-sc]', kutu).forEach(y => y.classList.toggle('on', y === b));
+      alan.value = '';
+    }));
+    alan.addEventListener('input', () => {
+      if (alan.value.trim()) $$('[data-sc]', kutu).forEach(y => y.classList.remove('on'));
+    });
+    if (!(x.secim || []).length) setTimeout(() => alan.focus(), 40);
+
+    $('[data-sr="iptal"]', kutu).addEventListener('click', modalKapat);
+    $('[data-sr="kaydet"]', kutu).addEventListener('click', async () => {
+      const cip = $('[data-sc].on', kutu);
+      const cevap = alan.value.trim() || (cip ? cip.dataset.sc : '');
+      const dugme = $('[data-sr="kaydet"] span', kutu);
+      dugme.textContent = 'Yazılıyor…';
+      const yeni = Object.assign({}, cevaplar);
+      if (cevap) yeni[x.soru] = cevap; else delete yeni[x.soru];
+      try {
+        await DB.paletKaydet(projeId, Object.assign({}, pl, { cevaplar: yeni }));
+        modalKapat();
+        /* Sihirbaz: cevaplanınca sıradaki cevapsız soru kendiliğinden açılsın. */
+        const sonraki = sorular.findIndex((y, j) => j > i && !(yeni[y.soru] || '').trim());
+        render();
+        if (cevap && sonraki > -1) setTimeout(() => ihtiyacSoruAc(projeId, sonraki), 220);
+        else if (cevap) toast('Bütün sorular cevaplandı.', 'basari');
+      } catch (h) { dugme.textContent = 'Kaydet'; toast(h.message, 'hata'); }
+    });
+  });
+}
+
 /* Bir sayfanın tasarım notu. */
 function ihtiyacSayfaNotu(p, sf) {
   const n = (((p.palet || {}).cozum || {}).sayfalar || {})[sf];
@@ -1645,6 +1757,13 @@ function ihtiyacEkrani(p) {
     return `<div class="akis gorsel">
       ${ihtiyacAltBaslik(p, 'Kararlar', g.kalan, 'karar')}
       <div class="akis-alt">${ihtiyacKararEkrani(p)}</div>
+    </div>`;
+  }
+  if (nerede === 'sorular') {
+    return `<div class="akis gorsel">
+      ${ihtiyacAltBaslik(p, 'Claude\'un soruları',
+        g.cevapli + '/' + g.sorular.length, 'soru')}
+      <div class="akis-alt">${ihtiyacSorulari(p)}</div>
     </div>`;
   }
   if (nerede === 'sayfalar') {
@@ -8086,6 +8205,9 @@ function ihtiyacAktar(projeId) {
           <div class="row"><div class="row-main">
             <span class="row-title">Gereken simge</span></div>
             <span class="row-val">${cozum.simgeler.length || '—'}</span></div>
+          <div class="row"><div class="row-main">
+            <span class="row-title">Claude'un sorusu</span></div>
+            <span class="row-val">${cozum.sorular.length || '—'}</span></div>
         </div></div>`;
     };
 
@@ -8518,6 +8640,17 @@ function ihtiyacOku(metin) {
     sayfalar[kis(sf.sayfa, 60)] = kayit;
   });
 
+  /* Claude'un takıldıkları. Bir kez sorulup bir kez cevaplanıyor; cevap
+     her bloğa ve kimlik dosyasına giriyor ki ikinci kez sorulmasın. */
+  const sorular = (Array.isArray(o.sorular) ? o.sorular : [])
+    .filter(x => x && x.soru)
+    .slice(0, 12)
+    .map(x => ({
+      soru: kis(x.soru, 200), neden: kis(x.neden, 300),
+      secim: (Array.isArray(x.secim) ? x.secim : [])
+        .filter(Boolean).slice(0, 6).map(y => kis(y, 60)),
+    }));
+
   /* Hangi simgeler gerekiyor. Liste ChatGPT'ye gidiyor: tam onları çiziyor,
      kodu yazan da onları SVG olarak çiziyor — dosya taşımıyoruz. */
   const simgeler = (Array.isArray(o.simgeler) ? o.simgeler : [])
@@ -8525,11 +8658,12 @@ function ihtiyacOku(metin) {
     .slice(0, 24)
     .map(x => ({ ad: kis(x.ad, 24), ne: kis(x.ne, 160) }));
 
-  if (!Object.keys(kararlar).length && !yeni.length
-      && !Object.keys(sayfalar).length && !simgeler.length) {
+  if (!Object.keys(kararlar).length && !yeni.length && !Object.keys(sayfalar).length
+      && !simgeler.length && !sorular.length) {
     return null;
   }
-  return { kararlar, yeni, sayfalar, simgeler, zaman: new Date().toISOString() };
+  return { kararlar, yeni, sayfalar, simgeler, sorular,
+           zaman: new Date().toISOString() };
 }
 
 /* Okunan çözümlemeyi taslağa yazar. Kullanıcının elle girdiği bir şey
@@ -9317,6 +9451,27 @@ async function eylemCalistir(el) {
   if (e === 'gorsel-adim') {
     const i = Number(el.dataset.deger);
     GORSEL_ADIM[el.dataset.proje] = (GORSEL_ADIM[el.dataset.proje] === i) ? null : i;
+    return render();
+  }
+
+  /* ---------- İhtiyaç çözümlemesi ---------- */
+  if (e === 'ihtiyac-prompt')   return ihtiyacPromptu(el.dataset.proje);
+  if (e === 'ihtiyac-yapistir') return ihtiyacAktar(el.dataset.proje);
+  if (e === 'ihtiyac-kararlar') { IHTIYAC_EKRAN[el.dataset.proje] = 'kararlar';
+                                  render(); $('#view').scrollTop = 0; return; }
+  if (e === 'ihtiyac-sayfalar') { IHTIYAC_EKRAN[el.dataset.proje] = 'sayfalar';
+                                  render(); $('#view').scrollTop = 0; return; }
+  if (e === 'ihtiyac-sorular')  { IHTIYAC_EKRAN[el.dataset.proje] = 'sorular';
+                                  render(); $('#view').scrollTop = 0; return; }
+  if (e === 'ihtiyac-sayfa')    { IHTIYAC_EKRAN[el.dataset.proje] = 'sayfa:' + el.dataset.ad;
+                                  render(); $('#view').scrollTop = 0; return; }
+  if (e === 'ihtiyac-soru')     return ihtiyacSoruAc(el.dataset.proje,
+                                       Number(el.dataset.deger));
+  if (e === 'ihtiyac-geri') {
+    /* Bir kat yukarı: sayfa notundan sayfa ızgarasına, oradan karelere. */
+    const su = IHTIYAC_EKRAN[el.dataset.proje];
+    IHTIYAC_EKRAN[el.dataset.proje] =
+      (su && su.slice(0, 6) === 'sayfa:') ? 'sayfalar' : null;
     return render();
   }
 

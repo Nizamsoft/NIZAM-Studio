@@ -101,6 +101,32 @@ const PROMPT = {
     return s.join('\n');
   },
 
+  /* ---- Claude'un sorduğu, kullanıcının cevapladığı ----
+     Künyede yazmayan ama kod yazılırken karar gerektiren şeyler. Bir kez
+     soruldu, bir kez cevaplandı; her bloğa ve kimlik dosyasına giriyor ki
+     ikinci kez sorulmasın. */
+  cevapBlogu(proje) {
+    const pl = (proje && proje.palet) || {};
+    const sorular = ((pl.cozum || {}).sorular) || [];
+    const cevaplar = pl.cevaplar || {};
+    const dolu = sorular.filter(x => (cevaplar[x.soru] || '').trim());
+    if (!dolu.length) return '';
+
+    const s = ['## Sorduklarının Cevabı'];
+    s.push('Bunları sen sormuştun, ben cevapladım. **Karar verilmiştir** —');
+    s.push('yeniden sorma, aksini uygulama.', '');
+    dolu.forEach(x => {
+      s.push(`- **${x.soru}**`);
+      s.push(`  → ${cevaplar[x.soru].trim()}`);
+    });
+    const bos = sorular.length - dolu.length;
+    if (bos) {
+      s.push('', `> ${bos} soru henüz cevaplanmadı. Onlara denk gelirsen`);
+      s.push('> **uydurma — dur ve sor.**');
+    }
+    return s.join('\n');
+  },
+
   /* ---- Görsel yerleşimi ----
      Hangi görsel nerede duracak ve dosyası nereden inecek. Adresler imzalı
      ve bir saat geçerli — blok kopyalandıktan sonra bekletilmemeli. */
@@ -321,6 +347,9 @@ const PROMPT = {
     s.push(PROMPT.tasarimBlogu(p));
     s.push('');
 
+    const cevap = PROMPT.cevapBlogu(p);
+    if (cevap) { s.push(cevap); s.push(''); }
+
     s.push('## Şimdi ne yapacaksın');
     let n = 1;
     if (gorsel) {
@@ -353,6 +382,8 @@ const PROMPT = {
     }
     s.push('- **Sayfa ya da modül uydurma.** Hangi ekranların olacağı hâlâ belli değil.');
     s.push('- **Bu oturuma başka depo ekleme.** Tek depo, tek oturum.');
+    s.push('- **Emin olmadığını uydurma.** Takıldığın bir şey varsa dur ve sor;');
+    s.push('  sonradan söküp yeniden yazmaktan iyidir.');
     s.push('');
     s.push(gorsel
       ? 'Görseller indi ve yazıldıysa tek cümleyle onayla ve bekle.'
@@ -401,6 +432,9 @@ const PROMPT = {
     s.push(PROMPT.kurulumBlogu());
     s.push('');
 
+    const cevap = PROMPT.cevapBlogu(p);
+    if (cevap) { s.push(cevap); s.push(''); }
+
     s.push('## Şimdi ne yapacaksın');
     s.push('1. `NIZAM.md` içindeki `## Modüller ve sayfalar` başlığının altındaki');
     s.push('   *"henüz belirlenmedi"* satırını sil, yukarıdaki künyeleri oraya yaz.');
@@ -417,7 +451,8 @@ const PROMPT = {
     s.push('  zaten depoda; yerlerini değiştirme, yenisini üretme.');
     s.push('- **Künyede olmayan alan, sayfa ya da modül ekleme.** Alan listesi o');
     s.push('  sayfanın veritabanı tablosudur; eksik gördüğün bir şey varsa sor.');
-;
+    s.push('- **Emin olmadığını uydurma.** Künyede yazmayan bir karar gerekiyorsa');
+    s.push('  dur ve sor; yanlış tahmin sonradan söküp yeniden yazmak demek.');
     s.push('- **Beş aşamayı birleştirme.** Hepsini bir seferde yazarsan ters giden');
     s.push('  şey 5000 satır sonra anlaşılır.');
     s.push('- **Bu oturuma başka depo ekleme.** Tek depo, tek oturum.');
@@ -705,7 +740,7 @@ const PROMPT = {
       s.push('');
     });
 
-    s.push('## Senden istediğim beş şey', '');
+    s.push('## Senden istediğim altı şey', '');
     s.push('**1 · Hangi karar gerekli.** Yukarıdaki her başlık için `gerek`');
     s.push('   yaz. Bu programda karşılığı yoksa `false` — o başlık hiç');
     s.push('   sorulmayacak ve koda da girmeyecek. Emin değilsen `true` bırak;');
@@ -724,6 +759,14 @@ const PROMPT = {
     s.push('   görseller üretilecek — "genel bir simge" deme, ne çizileceğini yaz.', '');
     s.push('   Her sayfaya not yazmak zorunda değilsin: sıradan bir liste');
     s.push('   ekranıysa atla. Notu hak eden sayfalara yaz.', '');
+    s.push('**6 · Emin olmadıkların.** Künyede yazmayan ama kod yazılırken');
+    s.push('   **karar vermek zorunda kalacağın** her şeyi sor. Tahmin edip');
+    s.push('   geçme — yanlış tahmin sonradan söküp yeniden yazmak demek.');
+    s.push('   Soruyu **gündelik dille** yaz, teknik terim kullanma; cevabı');
+    s.push('   veren kişi yazılımcı değil. Nedenini de yaz: künyede neyi');
+    s.push('   görüp bu soruyu sorduğunu. Cevabı birkaç seçeneğe sığıyorsa');
+    s.push('   seçenekleri de ver — kullanıcı dokunup geçsin.');
+    s.push('   Üç ile sekiz arası; her şeyi sorma, gerçekten takıldıklarını sor.', '');
     s.push('**5 · Hangi simgeler gerekiyor.** Bu programın ekranlarında hangi');
     s.push('   nesnelerin simgesi çizilecek — künyeden çıkar. "Belge, ayar,');
     s.push('   kullanıcı" gibi genel simge yazma; **bu işin kendi nesneleri**');
@@ -751,6 +794,16 @@ const PROMPT = {
     s.push('      "oneri": "Sıkı",');
     s.push('      "neden": "Aylık gider satırı 200\'ü geçiyor." }');
     s.push('  ],');
+    s.push('  "sorular": [');
+    s.push('    { "soru": "Fatura numarasını sistem mi versin, elle mi girilsin?",');
+    s.push('      "neden": "Künyede \'Fatura No\' alanı var ama kimin doldurduğu yazmıyor.",');
+    s.push('      "secim": ["Sistem versin", "Elle girilsin", "İkisi de olsun"] },');
+    s.push('    { "soru": "Kapanan bir hesap silinebilsin mi, pasife mi alınsın?",');
+    s.push('      "neden": "Mali kayıt; silme geri alınamaz olabilir.",');
+    s.push('      "secim": ["Pasife alınsın", "Silinebilsin"] },');
+    s.push('    { "soru": "Hesap Defteri açılırken hangi tarih aralığı gelsin?",');
+    s.push('      "neden": "Aylık 200+ satır var; hepsini açmak yavaş olur." }');
+    s.push('  ],');
     s.push('  "simgeler": [');
     s.push('    { "ad": "hesap",  "ne": "Hesap kartı — cari ve banka hesapları listesinde" },');
     s.push('    { "ad": "defter", "ne": "Hesap defteri — hareket listesi başlığında" },');
@@ -773,6 +826,7 @@ const PROMPT = {
     s.push('- Her başlık için bir satır olsun — atladığın başlık "gerekli" sayılır.');
     s.push('- `sayfa` künyedeki sayfa adıyla birebir aynı olsun.');
     s.push('- `simgeler` içindeki `ad` tek kelime ve küçük harf olsun.');
+    s.push('- `sorular` içinde `secim` isteğe bağlı: cevap serbest metinse yazma.');
     s.push('- Görsel gerekmeyen sayfada `gorseller` boş kalsın; uydurma.');
     s.push('- Türkçe yaz. Tırnakları düz tırnak kullan.');
 
@@ -1496,6 +1550,8 @@ const PROMPT = {
     s.push(PROMPT.teknikBlogu(proje)); s.push('');
     const dilMetni = PROMPT.gorselDilBlogu(proje);
     if (dilMetni) { s.push(dilMetni); s.push(''); }
+    const cevapMetni = PROMPT.cevapBlogu(proje);
+    if (cevapMetni) { s.push(cevapMetni); s.push(''); }
     /* Kimlik dosyasında adres değil yerleşim dursun — imzalı adres bir
        saatte ölür, depoya yazılırsa yanıltıcı olur. */
     const yerlesim = ((proje.palet || {}).gorseller || []).filter(y => y.yol && y.no !== 'G0');

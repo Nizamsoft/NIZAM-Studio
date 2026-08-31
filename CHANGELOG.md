@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü
 
+## v0.131.0
+- **Claude artık tahmin edip geçmiyor, soruyor.** İhtiyaç çözümlemesi bloğuna `sorular` bölümü eklendi: künyede yazmayan ama kod yazılırken karar gerektiren her şey — "Fatura numarasını sistem mi versin?", "Kapanan hesap silinebilsin mi, pasife mi alınsın?". Nedenini de yazıyor: künyede neyi görüp o soruyu sorduğunu.
+- **İhtiyaç adasına beşinci kart: `Claude'un soruları`.** Sihirbaz gibi işliyor — bir soruyu cevaplayınca sıradaki cevapsız soru kendiliğinden açılıyor. Claude seçenek verdiyse çipe dokunuyorsun, vermediyse kendi cümleni yazıyorsun; seçenekler yetmiyorsa yine yazabiliyorsun.
+- **Cevaplar bir kez veriliyor, her yere gidiyor.** 2/3 ve 3/3 bloklarına, `NIZAM.md` kimlik dosyasına — "Sorduklarının Cevabı · Karar verilmiştir, yeniden sorma" başlığıyla. Cevaplanmamış soru varsa blok bunu da söylüyor: "onlara denk gelirsen uydurma, dur ve sor".
+- Bütün sorular cevaplanmadan ada bitmiyor. Yanlış tahmin sonradan söküp yeniden yazmak demek; bir kere sorup bir kere cevaplamak ucuz.
+- 2/3 ve 3/3 bloklarının "şunları yapma" listesine bir madde daha: **emin olmadığını uydurma, dur ve sor.**
+- **Regresyon düzeltildi:** ihtiyaç adasının kart eylemleri (prompt, yapıştır, kararlar, sayfa tasarımları, geri) bir önceki temizlikte silinmişti — kartlara basınca hiçbir şey olmuyordu. Hepsi geri kondu.
+
 ## v0.130.2
 - **2. blok eski akıştan kalma cümleler taşıyordu.** "Bu blokta iki iş var: görselleri depoya indirmek…" diyordu ama indirilecek görsel kalmadı; başlığı da hâlâ "Görsel dil" idi. Blok artık taşıdığı şeye göre konuşuyor: tasarım sistemi — renk, tipografi, ölçüler, bileşenler, simge dili ve sayfa iskeletleri.
 - Claude'a ne yazacağı açıkça sayıldı: renk kodları, yazı ölçekleri, köşe ve boşluk değerleri, on üç bileşen tarifi, simge listesi, sayfa iskeletleri. **Sayılar olduğu gibi aktarılacak** — yuvarlanmayacak.
