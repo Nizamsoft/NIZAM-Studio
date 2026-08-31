@@ -7,7 +7,7 @@ const APP = {
   name:     'NIZAM | Studio',
   short:    'NIZAM Studio',
   owner:    'Nizam Soft',
-  version: 'v0.129.1',
+  version: 'v0.130.0',
   build:    '2026-08-28',
   /* Studio'nun kendi deposu — "bütün programlarda geçerli olsun"
      istekleri buraya gider. */
@@ -100,7 +100,8 @@ const GRUP_SIMGE = {
    denetler. Her satır: [alan, değer] + [alan, değer] + neden.
    Görünüşe dair çelişkiler kalktı — onlara artık tarif karar veriyor. */
 const CELISKI = [
-  [['iceaktarma', 'Yok'], ['yedek', 'Yedek + değişiklik kaydı'], 'Dosya girişi yokken dosya yedeği tutarsız kalır.'],
+  [['iceaktarma', 'Yok'], ['yedek', 'Yedek al / yükle'],
+   'Dosya girişi hiç yokken dosya yedeği tek başına tutarsız kalıyor.'],
 ];
 
 
@@ -121,36 +122,6 @@ const YERLESIM_ALAN = [
       { ad: 'Üst sekme',     tarif: 'Modülün sayfaları üstte yatay sekme olur.', tel: ['sekme', 'liste'] },
       { ad: 'Açılır seçici', tarif: 'Başlığa dokununca sayfa listesi açılır. Az yer kaplar.', tel: ['ustSecici', 'liste'] },
       { ad: 'Kart ızgarası', tarif: 'Modüle girince sayfalar kart ızgarası olarak karşılar.', tel: ['izgara'] },
-    ],
-  },
-  {
-    anahtar: 'yoliz', ad: 'Yol izi', alt: 'Kullanıcı nerede olduğunu nereden anlasın?',
-    varsayilan: 'Geri oku + başlık', ekran: 'detay',
-    secim: [
-      { ad: 'Yok',               tarif: 'Yol izi yok; başlık yeterli sayılır.', tel: ['ust', 'blok'] },
-      { ad: 'Üstte metin',       tarif: 'Başlığın üstünde "Ana Sayfa › Raporlar" biçiminde ince yazı.', tel: ['yolMetin', 'ust', 'blok'] },
-      { ad: 'Geri oku + başlık', tarif: 'Solda geri oku, yanında sayfa adı. Telefonda en anlaşılır olan.', tel: ['ustGeri', 'blok'] },
-      { ad: 'Sekmeyle',          tarif: 'Yol izi yerine üst sekmeler konumu gösterir.', tel: ['ust', 'sekme', 'blok'] },
-    ],
-  },
-  {
-    anahtar: 'kullanicimenu', ad: 'Kullanıcı menüsü', alt: 'Kullanıcı kendi hesabına nereden ulaşsın?',
-    varsayilan: 'Sağ üstte çip', ekran: 'panel',
-    secim: [
-      { ad: 'Sağ üstte çip',   tarif: 'Avatar + ad + rol bir arada; dokununca menü açılır.', tel: ['ustCip', 'blok'] },
-      { ad: 'Sağ üstte avatar',tarif: 'Yalnız yuvarlak fotoğraf; ad yok.', tel: ['ustAvatar', 'blok'] },
-      { ad: 'Yan menü altında',tarif: 'Menünün en altında kullanıcı satırı.', tel: ['yanKisi'] },
-      { ad: 'Ayarlar içinde',  tarif: 'Üst çubukta hiç yok; hesap işleri Ayarlar ekranında.', tel: ['ust', 'grupluListe'] },
-    ],
-  },
-  {
-    anahtar: 'destek', ad: 'Destek ve istek', alt: 'Kullanıcı sorununu nereden iletsin?',
-    varsayilan: 'Üst çubukta', ekran: 'panel',
-    secim: [
-      { ad: 'Yok',            tarif: 'Uygulama içinden destek yolu yok.', tel: ['ust', 'blok'] },
-      { ad: 'Üst çubukta',    tarif: 'Üst çubukta soru işareti düğmesi; basınca istek penceresi.', tel: ['ustSoru', 'blok'] },
-      { ad: 'Ayarlar içinde', tarif: 'Ayarlar listesinde "İstek ve öneri" satırı.', tel: ['grupluListe'] },
-      { ad: 'Sağ altta yüzen',tarif: 'Sağ altta küçük yüzen destek düğmesi.', tel: ['blok', 'fab'] },
     ],
   },
   {
@@ -177,35 +148,6 @@ const YERLESIM_ALAN = [
 /* ---- Durumlar: ekran doluyken değil, boşken ve beklerken. ---- */
 const DURUM_ALAN = [
   {
-    anahtar: 'hata', ad: 'Hata ekranı', alt: 'Bir şey ters gidince ne görünsün?',
-    varsayilan: 'Simge + tekrar dene', ekran: 'hata',
-    secim: [
-      { ad: 'Sade yazı',           tarif: 'Ortada tek satır hata metni.', tel: ['bosYazi'] },
-      { ad: 'Simge + tekrar dene', tarif: 'Uyarı simgesi, ne olduğunu anlatan cümle ve "Tekrar dene" düğmesi.', tel: ['hataSimge'] },
-      { ad: 'Tam sayfa',           tarif: 'Büyük simge, açıklama, "Tekrar dene" ve "Geri dön" düğmeleri.', tel: ['hataTam'] },
-    ],
-  },
-  {
-    anahtar: 'islemsonuc', ad: 'İşlem sonucu', alt: 'Kaydetme ya da gönderme bitince ne olsun?',
-    varsayilan: 'Toast', ekran: 'form',
-    secim: [
-      { ad: 'Toast',           tarif: 'Kısa bir mesaj belirir, birkaç saniyede kaybolur.', tel: ['form', 'seritAlt'] },
-      { ad: 'Tik animasyonu',  tarif: 'Ortada büyüyen onay işareti, sonra ekran kapanır.', tel: ['tik'] },
-      { ad: 'İlerleme çubuğu', tarif: 'Uzun işlemde yüzdeli çubuk ve adım yazısı.', tel: ['ilerleme', 'form'] },
-      { ad: 'Sonuç ekranı',    tarif: 'Tam sayfa "Gönderildi" ekranı; ne yapıldığını özetler.', tel: ['bosDugme'] },
-    ],
-  },
-  {
-    anahtar: 'bildirim', ad: 'Bildirim', alt: 'Uyarı ve onay mesajları nerede çıksın?',
-    varsayilan: 'Alttan kart', ekran: 'liste',
-    secim: [
-      { ad: 'Üstte şerit',    tarif: 'Sayfanın tepesinde tam genişlik şerit; kalıcı uyarılar için.', tel: ['seritUst', 'liste'] },
-      { ad: 'Alttan kart',    tarif: 'Alttan kayan kart, birkaç saniyede kaybolur.', tel: ['liste', 'seritAlt'] },
-      { ad: 'Sağ üstte',      tarif: 'Sağ üst köşede yığılan kartlar. Masaüstü alışkanlığı.', tel: ['liste', 'sagUst'], masaustu: true },
-      { ad: 'Ortada pencere', tarif: 'Ekranı durduran pencere. Yalnız kritik uyarılar için.', tel: ['liste', 'pencere'] },
-    ],
-  },
-  {
     anahtar: 'onaysil', ad: 'Onay & silme', alt: 'Silme nasıl olsun?',
     varsayilan: 'Geri al şeridi', ekran: 'liste',
     secim: [
@@ -222,37 +164,18 @@ const ACILIS_ALAN = [
 
 /* ---- Hareket: uygulamayı canlandıran katman. Kodda en son yazılır. ---- */
 const HAREKET_ALAN = [
-  {
-    anahtar: 'hareketMiktari', ad: 'Hareket miktarı', alt: 'Genel olarak ne kadar hareket olsun?',
-    varsayilan: 'Az', ekran: 'liste',
-    secim: [
-      { ad: 'Yok',    tarif: 'Bütün animasyonlar kapalı. Eski cihazlar ve erişilebilirlik için.', tel: ['hmYok'] },
-      { ad: 'Az',     tarif: 'Yalnız geçiş ve dokunma tepkisi; süreler 160-220ms.', tel: ['hmAz'] },
-      { ad: 'Normal', tarif: 'Liste girişi ve açılmalar da animasyonlu; süreler 220-320ms.', tel: ['hmNormal'] },
-      { ad: 'Bol',    tarif: 'Sayı sayma, parlama ve yaylanma dahil. Gösterişli ama yorabilir.', tel: ['hmBol'] },
-    ],
-  },
 ];
 
 /* ---- Sistem: uygulamanın kendi bakımı ---- */
 const SISTEM_ALAN = [
   {
-    anahtar: 'guncelleme', ad: 'Güncelleme', alt: 'Yeni sürüm kullanıcıya nasıl ulaşsın?',
-    varsayilan: 'Güncelle düğmesi', ekran: 'ayarlar',
-    secim: [
-      { ad: 'Yok',              tarif: 'Kullanıcı sayfayı kendi yeniler.', tel: ['ust', 'blok'] },
-      { ad: 'Üstte rozet',      tarif: 'Yeni sürüm varsa üst çubukta küçük nokta belirir.', tel: ['ustRozet', 'blok'] },
-      { ad: 'Güncelle düğmesi', tarif: 'Ayarlarda "Uygulamayı güncelle" düğmesi ve altında sürüm etiketi.', tel: ['grupluListe', 'sonDugme'] },
-      { ad: 'Sürüm ekranı',     tarif: 'Ayrı ekran: güncel sürüm, yayın durumu ve sürüm geçmişi.', tel: ['ust', 'kart3', 'liste'] },
-    ],
-  },
-  {
-    anahtar: 'yedek', ad: 'Yedek ve kayıt geçmişi', alt: 'Veri güvenliği ve iz sürme.',
+    /* Değişiklik kaydı burada sorulmuyor: "Her zaman tutulur" teknik
+       standartta duruyor, iki yerde sormak çelişki üretiyordu. */
+    anahtar: 'yedek', ad: 'Yedek ekranı', alt: 'Ayarlarda yedek al / yükle olsun mu?',
     varsayilan: 'Yedek al / yükle', ekran: 'ayarlar',
     secim: [
-      { ad: 'Yok',                    tarif: 'Yedekleme ekranı yok; veritabanı yedeği yeterli sayılır.', tel: ['grupluListe'] },
-      { ad: 'Yedek al / yükle',       tarif: 'Ayarlarda dosyaya yedek alma ve geri yükleme.', tel: ['ikiDugme', 'grupluListe'] },
-      { ad: 'Yedek + değişiklik kaydı', tarif: 'Ayrıca kimin neyi ne zaman değiştirdiğini gösteren liste.', tel: ['ikiDugme', 'liste'] },
+      { ad: 'Yok',              tarif: 'Yedekleme ekranı yok; veritabanı yedeği yeterli sayılır.', tel: ['grupluListe'] },
+      { ad: 'Yedek al / yükle', tarif: 'Ayarlarda dosyaya yedek alma ve geri yükleme.', tel: ['ikiDugme', 'grupluListe'] },
     ],
   },
 ];
@@ -267,16 +190,14 @@ const TUM_TASARIM = YERLESIM_ALAN.concat(TASARIM_ALAN, ACILIS_ALAN, DURUM_ALAN, 
    uç durumlar ve sistem işleri. Bir öbek içinde önizleme ekranı olabildiğince
    sabit kalır — boşuna zıplamasın. */
 const AKIS_OBEK = [
-  /* Görünüşe dair her şeye Görsel dünya adasındaki tarif karar veriyor.
-     Burada kalanların ortak özelliği: bir ekran görüntüsünde görünmezler.
-     Masaüstü genişliği telefon tasarımında yok, hareket miktarı durağan
-     resimde yok, bildirimin nereye çıktığı davranıştır. */
-  { ad: 'Kabuk', not: 'Ekranı saran çatı. Telefon tasarımında görünmeyen kısmı.',
-    alanlar: ['genislik', 'sayfalistesi', 'yoliz', 'kullanicimenu', 'destek'] },
-  { ad: 'Davranış', not: 'İş ters gittiğinde ve kullanıcı bir şey yaptığında ne olur.',
-    alanlar: ['bildirim', 'islemsonuc', 'hata', 'onaysil', 'iceaktarma'] },
-  { ad: 'Sistem', not: 'Uygulamanın kendi bakımı ve hareket miktarı.',
-    alanlar: ['guncelleme', 'yedek', 'hareketMiktari'] },
+  /* Üç öbek vardı — Kabuk, Davranış, Sistem — ve on üç karar sorulurdu.
+     Sekizinin ev usulü çıktı: yol izi, kullanıcı menüsü, bildirim, işlem
+     sonucu, hata ekranı, hareket miktarı, güncelleme ve destek artık Nizam
+     standardında sabit; her prompta kendiliğinden giriyor, kimseye
+     sorulmuyor. Kalan beşi projeden projeye gerçekten değişiyor, o yüzden
+     tek adada toplandı. */
+  { ad: 'Kararlar', not: 'Bir çizimde görünmeyen, projeye göre değişen kararlar.',
+    alanlar: ['genislik', 'sayfalistesi', 'onaysil', 'iceaktarma', 'yedek'] },
 ];
 
 
@@ -435,78 +356,27 @@ function cozumOnerisi(p, anahtar) {
   return ham && ham.oneri ? { oneri: String(ham.oneri), neden: String(ham.neden || '') } : null;
 }
 
-/* ---- Görsel dünya: hangi ekranlar tasarlanacak ----
-   Önce altı genel rol vardı (Panel · Liste · Form · Boş durum · Giriş ·
-   Ayarlar) ve roller sayfalarla "o türden en çok alanı olan" diye
-   eşleştiriliyordu. Yanlıştı: en çok alan en önemli ekran demek değil, bir
-   tanım sayfası da Ayarlar ekranı değil. Artık ekranlar modülün gerçek
-   sayfaları — hangilerinin kendi tasarımını hak ettiğini ihtiyaç
-   çözümlemesinde Claude söylüyor, son söz kullanıcının. */
-
-/* Künyede olmayan ama her uygulamada bulunan ekranlar. `@` öneki bunları
-   sayfa adlarından ayırıyor. */
-const KABUK_EKRAN = [
-  { anahtar: '@giris',   ad: 'Giriş',
-    alt: 'E-posta ve şifre; uygulamaya girilen ilk ekran.' },
-  { anahtar: '@ayarlar', ad: 'Ayarlar',
-    alt: 'Uygulamanın kendi ayarları — satır satır seçenek listesi.' },
-];
-
-/* Modülün bütün sayfaları, künye sırasıyla. */
-function projeSayfalari(p) {
-  return Object.keys(((p && p.palet) || {}).kunye || {})
-    .map(tam => tam.split(' · ').pop());
-}
-
-/* Tasarlanacak ekranların anahtar listesi. Kullanıcı düzenlediyse onunki,
-   yoksa Claude'un seçimi, o da yoksa not yazdığı sayfalar. */
-function ekranSecimi(p) {
-  const pl = (p && p.palet) || {};
-  if (Array.isArray(pl.ekranSecim)) return pl.ekranSecim;
-
-  const c = pl.cozum || {};
-  const sayfalar = projeSayfalari(p);
-  let secim = [];
-  if (Array.isArray(c.ekranlar) && c.ekranlar.length) {
-    secim = c.ekranlar.map(x => (x && x.sayfa) || '').filter(x => sayfalar.indexOf(x) > -1);
-  }
-  /* Claude ekran listesi vermediyse not yazdığı sayfalar aynı işi görüyor:
-     zaten "notu hak eden sayfaya yaz" demiştik. */
-  if (!secim.length) {
-    secim = Object.keys(c.sayfalar || {}).filter(x => sayfalar.indexOf(x) > -1);
-  }
-  return secim.concat(KABUK_EKRAN.map(x => x.anahtar));
-}
-
-/* Ekranların tam künyesi: ad, açıklama, sayfa künyesi, Claude'un notu. */
-function tasarimEkranlari(p) {
-  const pl = (p && p.palet) || {};
-  const kunye = pl.kunye || {};
-  const notlar = (pl.cozum || {}).sayfalar || {};
-  const nedenler = {};
-  ((pl.cozum || {}).ekranlar || []).forEach(x => {
-    if (x && x.sayfa) nedenler[x.sayfa] = x.neden || '';
-  });
-
-  return ekranSecimi(p).map(anahtar => {
-    const kabuk = KABUK_EKRAN.find(x => x.anahtar === anahtar);
-    if (kabuk) return Object.assign({ sayfa: '', kunye: null, notu: null }, kabuk);
-    const tam = Object.keys(kunye).find(x => x.split(' · ').pop() === anahtar);
-    const k = tam ? kunye[tam] : null;
-    return {
-      anahtar, ad: anahtar, sayfa: anahtar,
-      alt: nedenler[anahtar] || (k && k.amac) || '',
-      kunye: k, notu: notlar[anahtar] || null,
-    };
-  });
-}
-
-/* Görsel dil bloğu geçerli mi? En az renk ve yazı gelmeli — gerisi
-   eksik kalabilir, Studio boş satırı göstermiyor. */
+/* Tasarım sistemi bloğu geçerli mi? En az renk gelmeli — gerisi eksik
+   kalabilir, Studio boş satırı göstermiyor. */
 function dilGecerli(d) {
   return !!(d && d.renk && typeof d.renk === 'object'
             && Object.keys(d.renk).length >= 3);
 }
+
+/* Bileşenler ve iskeletler — kartta ve promptta hep aynı sırada okunsun.
+   Sayfa iskeleti künyedeki `tur` ile aynı adı taşıyor: Studio hangi
+   sayfanın hangi iskelete düştüğünü zaten biliyor. */
+const DIL_BILESEN = [
+  ['ustCubuk',  'Üst çubuk'],  ['altMenu',   'Alt menü'],
+  ['kart',      'Kart'],       ['tablo',     'Tablo'],
+  ['liste',     'Liste satırı'], ['form',    'Form alanı'],
+  ['dugme',     'Düğme'],      ['cip',       'Çip'],
+  ['rozet',     'Rozet'],      ['arama',     'Arama'],
+  ['bosDurum',  'Boş durum'],  ['bildirimK', 'Bildirim'],
+  ['pencere',   'Pencere'],
+];
+
+const DIL_ISKELET = ['Panel', 'Liste', 'Form', 'Rapor', 'Ayarlar'];
 
 /* Palet sırası: kartta ve promptta hep aynı sırada okunsun. */
 const DIL_RENK = [

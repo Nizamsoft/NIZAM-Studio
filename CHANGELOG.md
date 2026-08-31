@@ -1,5 +1,16 @@
 # Değişiklik Günlüğü
 
+## v0.130.0
+- **Tasarımı belirleme beş adadan üçe indi:** `01 İhtiyaç çözümlemesi` · `02 Görsel dünya` · `03 Kararlar`. Ekran ekran çizdirme ve görsel yükleme tamamen kalktı. Bu aşamanın işi çalışan bir betaya yetecek kadar tasarım; profesyonel cila betadan sonra.
+- **ChatGPT artık ekran değil sistem veriyor.** Tek prompt, tek levha: palet, düğmeler, kart, tablo satırı, çipler, boş durum ve simgeler yan yana. Dönen blok on üç bileşen tarifi, simge dili ve **beş sayfa iskeleti** (Panel · Liste · Form · Rapor · Ayarlar) taşıyor. 22 sayfa için 22 tasarım değil, bir sistem ve beş iskelet.
+- Prompta açıkça yazıldı: **navigasyon düzenine ChatGPT karar vermiyor** — sayfaların yan menüde mi üst sekmede mi duracağı Studio'nun kararı. ChatGPT üst çubuğun ve alt menünün nasıl *göründüğünü* söylüyor. İki taraf çakışmıyor.
+- **Görsel yükleme kalktı.** Claude hangi simgelerin gerektiğini söylüyor, ChatGPT simge dilini tarif ediyor, kodu yazan onları **SVG olarak çiziyor**. Dosya taşımıyoruz. Logo ve işletme görseli duruyor — onlar ChatGPT'ye giden girdi.
+- **On üç karardan sekizi Nizam standardına taşındı.** Yol izi, kullanıcı menüsü, bildirim, işlem sonucu, hata ekranı, hareket miktarı ve güncelleme artık her projede aynı; destek başlığı ise `Geliştirme istekleri` standardıyla aynı işi yapıyordu, silindi. Kalan beşi — genişlik, sayfa listesi, onay & silme, içe aktarma, yedek ekranı — projeden projeye gerçekten değişiyor.
+- Kabuk · Davranış · Sistem üç ayrı ada olmaktan çıkıp tek **Kararlar** adasında toplandı. Claude'un elediklerinden sonra tipik olarak dört-altı kart kalıyor: iki dakika.
+- `Yedek` başlığından "değişiklik kaydı" seçeneği çıktı — `Değişiklik kaydı · Her zaman tutulur` teknik standartta zaten duruyordu, iki yerde sormak çelişki üretiyordu.
+- İhtiyaç çözümlemesi artık **gereken simgelerin listesini** de veriyor: künyeden çıkarılan, bu işe ait nesneler (hesap · defter · fatura · kasa). Liste ChatGPT promptuna giriyor.
+- Görev promptu ve `NIZAM.md` bileşen tariflerini, simge listesini ve sayfa iskeletlerini olduğu gibi taşıyor — AI ekranı tahmin etmiyor.
+
 ## v0.129.1
 - **Tasarlanacak ekranlar artık altı genel rol değil, modülün gerçek sayfaları.** Roller sayfalarla "o türden en çok alanı olan" diye eşleştiriliyordu ve saçmalıyordu: Panel rolüne gerçek panel yerine "Nakit Akış", Ayarlar rolüne uygulamanın ayar ekranı yerine "Ödeme Yöntemleri" bir tanım sayfası düşüyordu. En çok alan en önemli ekran demek değil.
 - **Hangi sayfaların kendi tasarımını hak ettiğini Claude seçiyor.** İhtiyaç çözümlemesi bloğuna `ekranlar` bölümü eklendi: dört ile yedi arası, en önemliden başlayarak, her biri gerekçesiyle. Kalan sayfalar bu ekranların diliyle kurulacak.

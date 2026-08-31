@@ -3277,56 +3277,6 @@ a.durak:active { transform: scale(.99); transition: transform .1s var(--ease); }
   box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .25);
 }
 
-/* ChatGPT'nin resmi ile Studio'nun çizimi yan yana. */
-.kars { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-bottom: 10px; }
-.kars figure { margin: 0; min-width: 0; }
-.kars figcaption {
-  display: block; margin-bottom: 5px;
-  font-family: var(--yazi-kod); font-size: 8px;
-  letter-spacing: .09em; text-transform: uppercase; color: var(--ink-dim);
-}
-.kutu {
-  border: 1px solid var(--line-2); border-radius: 11px;
-  background: var(--kod-bg); padding: 7px; height: 158px;
-  display: flex; align-items: center; justify-content: center; overflow: hidden;
-}
-.kutu.gpt { background: repeating-conic-gradient(#1a1918 0 25%, #151412 0 50%) 0 0 / 12px 12px; }
-.kutu.gpt span { font-size: 10px; line-height: 1.5; text-align: center; color: var(--ink-dim); padding: 0 6px; }
-
-/* Tel çizim — bloğun kendi renkleriyle. Ölçü değil sıra ve tür veriyor. */
-.wf {
-  width: 100%; height: 100%; border-radius: 7px; padding: 6px;
-  display: flex; flex-direction: column; gap: 5px; overflow: hidden;
-}
-.wf-bar  { flex: 0 0 14px; border-radius: 4px; }
-.wf-alt  { margin-top: auto; flex: 0 0 20px; border-radius: 8px; }
-.wf-dg   { flex: 0 0 16px; border-radius: 8px; align-self: stretch; }
-.wf-gr   { flex: 0 0 30px; border-radius: 6px; opacity: .35; }
-.wf-kart {
-  flex: 0 0 auto; border-radius: 8px; padding: 6px;
-  display: flex; flex-direction: column; gap: 4px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, .09);
-}
-.wf-kart i { display: block; height: 5px; border-radius: 3px; opacity: .55; }
-.wf-liste, .wf-form { display: flex; flex-direction: column; gap: 4px; }
-.wf-liste u { display: block; height: 8px; border-radius: 3px; opacity: .22; }
-.wf-form u { display: block; height: 12px; border-radius: 4px; opacity: .15; }
-.wf-cip { display: flex; gap: 4px; }
-.wf-cip i { display: block; flex: 1; height: 10px; border-radius: 999px; opacity: .22; }
-.wf-bos { flex: 1; border: 1px dashed; border-radius: 8px; opacity: .3; }
-
-/* Bloktaki yerleşim listesi */
-.blk { margin-bottom: 10px; }
-.blk-et {
-  display: block; margin-bottom: 6px;
-  font-family: var(--yazi-kod); font-size: 8.5px;
-  letter-spacing: .1em; text-transform: uppercase; color: var(--ink-dim);
-}
-.blk ol { margin: 0; padding: 0 0 0 20px; }
-.blk li { font-size: 11.5px; line-height: 1.6; color: var(--ink-soft); }
-.blk li b { color: var(--ink-strong); font-weight: 600; }
-.blk li u { text-decoration: none; font-family: var(--yazi-kod); font-size: 10px; color: var(--ink-dim); }
-
 /* "İkisi uyuşuyor mu?" — karar sorusu, uyarı değil: amber. */
 .soru {
   display: flex; gap: 8px; align-items: flex-start;
@@ -3347,37 +3297,27 @@ a.durak:active { transform: scale(.99); transition: transform .1s var(--ease); }
 .kaynak span { font-size: 11px; line-height: 1.5; color: var(--ink-faint); }
 .kaynak b { color: var(--st-check-t); font-weight: 600; }
 
-/* Ekran seçimi penceresi — hangi sayfalar tasarlanacak. */
-.es-liste { max-height: 52vh; overflow-y: auto; overscroll-behavior: contain; }
-.es-liste .label { display: block; margin: 12px 0 6px; }
-.es-liste .label:first-child { margin-top: 0; }
-.es-satir {
-  display: flex; align-items: center; gap: 10px;
-  padding: 10px 11px; margin-bottom: 6px;
-  border: 1px solid var(--line-2); border-radius: 12px;
-  background: var(--yuva-2); cursor: pointer;
+/* Bileşenler ve iskeletler — kartın alt yarısı. Her satır tek cümle;
+   kodun asıl işi bunlar. */
+.dil-et {
+  display: block; margin: 13px 0 6px;
+  font-family: var(--yazi-kod); font-size: 8.5px;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--ink-dim);
 }
-.es-satir.on { border-color: rgba(69, 163, 123, .38); background: rgba(69, 163, 123, .07); }
-.es-satir input { flex: 0 0 auto; width: 17px; height: 17px; accent-color: var(--st-done); }
-.es-yz { flex: 1; min-width: 0; }
-.es-yz b { display: block; font-family: var(--yazi-baslik); font-size: 13px; color: var(--ink-strong); }
-.es-yz i {
-  display: block; margin-top: 2px; font-style: normal; font-size: 10.5px;
-  line-height: 1.4; color: var(--ink-dim);
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+.dil-p { margin: 0 0 6px; font-size: 11.5px; line-height: 1.5; color: var(--ink-soft); }
+.dil-bl { display: flex; flex-direction: column; gap: 5px; }
+.dil-b {
+  padding: 8px 10px; border-radius: 10px;
+  border: 1px solid var(--line-3); background: var(--yuva);
 }
-.es-rz {
-  flex: 0 0 auto; padding: 3px 8px; border-radius: 999px;
-  font-family: var(--yazi-kod); font-size: 8px;
-  letter-spacing: .08em; text-transform: uppercase;
-  color: var(--st-check-t); background: rgba(107, 147, 232, .14);
+.dil-b b {
+  display: block; margin-bottom: 2px;
+  font-family: var(--yazi-baslik); font-size: 11.5px; color: var(--ink-strong);
 }
+.dil-b span { font-size: 11px; line-height: 1.5; color: var(--ink-faint); }
 
-/* Onay düğmesi — "uyuşuyor" demek bir karar, yeşil. */
-.sayfa-dug.yesil {
-  border-color: rgba(69, 163, 123, .42); color: #08150f;
-  background: linear-gradient(180deg, var(--st-done-t), var(--st-done));
-}
+/* Görsel dünya iki adıma indi: ızgara iki sütun. */
+.ya-satir.iki { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 
 /* --------------------------------------------------------------------------
    İhtiyaç çözümlemesi
