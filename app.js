@@ -1269,18 +1269,20 @@ function adaDurumu(p, o) {
    Her öbek bir kare: biten yeşil, sıradaki kırmızı, kalanlar sakin.
    Sıra zorunlu değil; kurulumun aksine ileri adaya da dokunulabilir,
    o yüzden kart hiç kilitlenmiyor. */
-function tasarimAdasi(p, o, x, no, sirada) {
-  const hal  = x.tam ? 'bitti' : sirada ? 'simdi' : 'eksik';
-  const ikon = x.tam ? ICON.tik : sirada ? ICON.goz : ICON.kalem;
+function tasarimAdasi(p, o, x, no, sirada, kilit) {
+  const hal  = x.tam ? 'bitti' : kilit ? 'kilitli' : sirada ? 'simdi' : 'eksik';
+  const ikon = x.tam ? ICON.tik : kilit ? ICON.kilit
+             : sirada ? ICON.goz : ICON.kalem;
   /* Tek adımlık adada "0/1" gürültü: orada yalnız durum yazılıyor. */
   const tek  = o.satir.length === 1;
   const alt  = x.tam    ? (tek ? 'hazır' : x.toplam + ' karar verildi')
+             : kilit    ? 'kilitli'
              : sirada   ? (tek ? 'sıradaki' : x.biten + '/' + x.toplam + ' · sıradaki')
              : tek      ? 'bekliyor'
              : x.biten + '/' + x.toplam;
   return `
-    <button class="ya ${hal}" type="button" data-eylem="tasarim-ada"
-            data-proje="${p.id}" data-deger="${o.satir[0]}">
+    <button class="ya ${hal}" type="button" ${kilit ? 'disabled' : ''}
+            data-eylem="tasarim-ada" data-proje="${p.id}" data-deger="${o.satir[0]}">
       <span class="ya-ust">
         <span class="ya-no mono">${no}</span>
         <span class="ya-dur">${svg(ikon, 13)}</span>
@@ -1302,8 +1304,12 @@ function tasarimHaritasi(p, d) {
   const biten = durumlar.filter(x => x.tam).length;
   const karar = tasarimAdimlari(p).filter(a => a.alan).length;
 
+  /* Zincir: bir ada ancak kendinden öncekiler bittiyse açılır. İhtiyaç
+     çözümlemesi kalanların kapsamını belirlediği için sıra artık zorunlu —
+     eskiden ileri adaya da dokunulabiliyordu. */
   const kart = i => tasarimAdasi(p, obekler[i], durumlar[i],
-                                 String(i + 1).padStart(2, '0'), i === simdi);
+                                 String(i + 1).padStart(2, '0'), i === simdi,
+                                 !durumlar[i].tam && simdi > -1 && i > simdi);
 
   /* Üç sütun, dört ada: üstte üç, dirsek, altta bir — kurulum sayfasının
      aynısı. Öbek sayısı değişirse ızgara kendi kendine sarıyor. */
@@ -1975,6 +1981,10 @@ function gorselDunyaGovdesi(p) {
     ${govde[acik] ? `<div class="ada-acik">${
       govde[acik]().replace('>sırada<', '>şimdi<')}</div>` : ''}
     ${d.tam ? tarifKarti(p) : ''}
+    ${(d.tarif || d.yuvalar.length) && AUTH.yonetici ? `
+      <button class="tumSifir" type="button" data-eylem="gorsel-sifirla"
+              data-proje="${p.id}">
+        ${svg(ICON.geriAl, 15)} Görsel dünyayı sıfırla</button>` : ''}
   </div>`;
 }
 
@@ -4949,6 +4959,10 @@ function projeDuraklari(p) {
   const yuva    = pl0.gorseller || [];
   const gorselTam = yuva.length > 0 && yuva.every(y => y.yol);
   const tarifVar = !!String(pl0.tarif || '').trim() && gorselTam;
+  /* Aşamanın bittiğini haritayla aynı yerden okuyoruz: beş ada da bitmeden
+     yeşil görünüyordu ve "burası tamam" diye atlanıyordu. */
+  const tasarimTam = obekleriKur(p).filter(o => o.ad !== 'Bitiş')
+    .every(o => adaDurumu(p, o).tam);
 
   return [
     {
@@ -4972,7 +4986,7 @@ function projeDuraklari(p) {
     },
     {
       ad: 'Tasarımı belirleme',
-      bitti: tarifVar,
+      bitti: tasarimTam,
       rozet: yeniKararlar(p.palet).length,
       ozet: tarifVar
         ? 'Görsel dil hazır · ' + yuva.length + ' görsel.'
@@ -9164,6 +9178,29 @@ async function eylemCalistir(el) {
     IHTIYAC_EKRAN[el.dataset.proje] =
       (su && su.slice(0, 6) === 'sayfa:') ? 'sayfalar' : null;
     return render();
+  }
+
+  /* Görsel dünyayı sıfırla — tarif ve ChatGPT'nin ürettiği yuvalar gider.
+     Logo ve işletme görseli kalıyor: onlar kullanıcının kendi yüklediği
+     malzeme, yeniden istemek gereksiz sürtünme. */
+  if (e === 'gorsel-sifirla') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const pl = pr.palet || {};
+    const yuva = pl.gorseller || [];
+    const uretilen = yuva.filter(y => y.no !== 'G0').length;
+    const ok = await onaySor({
+      baslik: 'Görsel dünya sıfırlansın mı?',
+      mesaj: `Tarif ve ${uretilen} görsel yuvası silinecek; sıfırdan `
+           + 'başlayacaksın. Logo ve işletme görseli duruyor — onları '
+           + 'Malzeme adımından değiştirebilirsin.',
+      buton: 'Sıfırla',
+    });
+    if (!ok) return;
+    const g0 = yuva.find(y => y.no === 'G0');
+    delete GORSEL_ADIM[pr.id];
+    return isYap(() => DB.paletKaydet(pr.id, Object.assign({}, pl,
+      { tarif: '', gorseller: g0 ? [g0] : [] })), 'Görsel dünya sıfırlandı.');
   }
 
   if (e === 'tarif-aktar')   return tarifAktar(el.dataset.proje);

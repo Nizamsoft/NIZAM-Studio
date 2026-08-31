@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## v0.128.1
+- **Proje sayfasında "Tasarımı belirleme" bitmediği hâlde yeşil duruyordu.** Aşamanın bittiğini tarife bakarak ölçüyordu; aşamada artık beş ada var ve ihtiyaç çözümlemesi de kararlar da bitmemişti. Ölçüt haritayla aynı yerden okunuyor: beş ada da bitmeden aşama bitmiş sayılmıyor.
+- **Tasarım haritasında adalar kilitli zincire girdi.** Sırası gelmeyen ada kesik çerçeveli ve basılamaz — ihtiyaç çözümlemesi kalan kararların kapsamını belirlediği için sıra artık zorunlu. Biten adaya geri dönülebiliyor.
+- **Görsel dünyayı sıfırlama düğmesi eklendi.** Tarif ve ChatGPT'nin ürettiği yuvalar siliniyor, sıfırdan başlanabiliyor. Logo ve işletme görseli duruyor — onlar kullanıcının kendi yüklediği malzeme, yeniden istemek gereksiz sürtünme.
+
 ## v0.128.0
 - **Tasarım aşamasına yeni bir 01 adası geldi: İhtiyaç çözümlemesi.** Her projede aynı on dört kararı sormak yanlıştı — 22 sayfalık bir muhasebe modülünde tam genişlik ve sıkı tablo şart, tek ekranlık bir randevu uygulamasında o soru boşuna soruluyordu. Artık künye Claude'a gidiyor, hangi kararın bu projede gerektiğini o söylüyor.
 - Claude üç şey döndürüyor: **hangi karar gerekli** (gereksiz görülen akıştan düşüyor ve prompta hiç yazılmıyor), **her karara öneri ve künyeden gerekçe**, ve **eksik gördüğü başlığı kendi açıyor** — "Tablo yoğunluğu", "Yazdırma" gibi, seçenekleriyle birlikte.
