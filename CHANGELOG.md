@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.132.1
+- **Logo hiçbir bloğa girmiyordu.** Sihirbazda alınıyor, Studio'da duruyor, ama promptlarda geçmediği için kodu yazan onu göremiyordu — açılışta, giriş kartında ve üst çubukta amblemin yeri boş bırakılıyordu. Artık 2. blokta ilk sırada, indirilecek imzalı adresiyle.
+- Nereye konacağı da yazılı: açılış ekranı, giriş kartı, üst çubuk amblemi, favicon ve PWA simgesi. "Yeniden çizme, sadeleştirme, rengini değiştirme — gereken boyutlarda kendi kopyalarını üret ama çizimi bozma."
+- `NIZAM.md` kimlik dosyasının görsel listesine de `logo.png` satırı eklendi.
+- Görsel yuvası olmayan projede 2. blok artık "indirilecek dosya yok" derken logoyu unutmuyor; metinler `nizam/tasarim.md` bölünmesine göre düzeltildi.
+
 ## v0.132.0
 - **Kimlik dosyası bölündü.** Yirmi iki sayfalık bir modülde `NIZAM.md` iki bin satıra çıkıyor ve her Claude Code oturumu onu baştan okumak zorunda kalıyordu. Artık beş dosya: `CLAUDE.md` (20 satırlık indeks, Claude Code her oturumda kendiliğinden okuyor), `NIZAM.md` (proje kimliği ve teknik standart), `nizam/tasarim.md`, `nizam/sayfalar.md`, `nizam/kararlar.md`, `nizam/durum.md`. Bir görevde yalnız gereken dosya açılıyor.
 - Üç blok da kendi dosyasını dolduruyor: 1. blok iskeleti kurar, 2. blok `tasarim.md`, 3. blok `sayfalar.md` + `kararlar.md` + `durum.md`.

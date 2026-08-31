@@ -190,12 +190,28 @@ const PROMPT = {
     /* G0 ChatGPT'ye giden kaynak görsel; tarif ona yer verdiyse zaten
        başka bir numarayla listede. İki kez indirtmenin anlamı yok. */
     const yuvalar = (pl.gorseller || []).filter(y => y.yol && y.no !== 'G0');
-    if (!yuvalar.length) return '';
+    /* Logo sihirbazda alınıyor ve Studio'da duruyordu ama hiçbir bloğa
+       girmiyordu: kodu yazan onu göremediği için açılışta, girişte ve üst
+       çubukta yerini boş bırakıyordu. Artık ilk sırada. */
+    const logo = ((typeof DB !== 'undefined' && DB.logoAdres) || {})[proje.id] || '';
+    if (!yuvalar.length && !logo) return '';
 
     const s = ['## Görseller'];
     s.push('Aşağıdaki görselleri **indir ve depoya koy**. Her birinin nerede');
     s.push('kullanılacağı yazıyor; başka yere koyma, kırpma, rengini değiştirme.');
     s.push('');
+    if (logo) {
+      s.push('### Logo');
+      s.push(hiza('Dosya', 'logo.png'));
+      s.push(hiza('Yer', 'Açılış ekranı, giriş kartı, üst çubuktaki amblem, '
+        + 'favicon ve PWA simgesi'));
+      s.push(hiza('İndir', logo));
+      s.push('');
+      s.push('Firmanın kendi logosu — **yeniden çizme, sadeleştirme, rengini');
+      s.push('değiştirme.** Simge boyutlarında (16-512px) net görünsün diye');
+      s.push('gereken yerde kendi kopyalarını üret ama çizimi bozma.');
+      s.push('');
+    }
     yuvalar.forEach(y => {
       s.push('### ' + y.no + ' · ' + (y.ad || 'Görsel'));
       s.push(hiza('Dosya', y.dosya));
@@ -390,15 +406,15 @@ const PROMPT = {
 
     const gorsel = PROMPT.gorselBlogu(p);
     if (gorsel) {
-      s.push('Bu blokta iki iş var: **görselleri depoya indirmek** ve tasarım');
-      s.push('sistemini `NIZAM.md`\'ye yazmak. **Uygulama kodu yazmanı hâlâ');
-      s.push('istemiyorum.**', '');
+      s.push('Bu blokta iki iş var: **logo ve görselleri depoya indirmek** ve');
+      s.push('tasarım sistemini `nizam/tasarim.md`\'ye yazmak. **Uygulama kodu');
+      s.push('yazmanı hâlâ istemiyorum.**', '');
       s.push(gorsel); s.push('');
     } else {
-      s.push('Tek iş var: **tasarım sistemini `NIZAM.md`\'ye yazmak.**');
-      s.push('İndirilecek dosya yok — simgeler kodda SVG olarak çizilecek,');
-      s.push('nasıl çizileceği aşağıda yazıyor. **Uygulama kodu yazmanı hâlâ');
-      s.push('istemiyorum.**', '');
+      s.push('Tek iş var: **tasarım sistemini `nizam/tasarim.md`\'ye yazmak.**');
+      s.push('İndirilecek dosya yok — simgeler ve illüstrasyonlar kodda SVG');
+      s.push('olarak çizilecek, nasıl çizileceği aşağıda yazıyor. **Uygulama');
+      s.push('kodu yazmanı hâlâ istemiyorum.**', '');
     }
 
     const dil = PROMPT.gorselDilBlogu(p);
@@ -419,8 +435,8 @@ const PROMPT = {
     s.push('## Şimdi ne yapacaksın');
     let n = 1;
     if (gorsel) {
-      s.push(n++ + '. Yukarıdaki görselleri indir, depo köküne koy. Adresler bir');
-      s.push('   saat geçerli — ilk işin bu olsun.');
+      s.push(n++ + '. Yukarıdaki logo ve görselleri indir, depo köküne koy.');
+      s.push('   Adresler **bir saat** geçerli — ilk işin bu olsun.');
     }
     s.push(n++ + '. `nizam/tasarim.md` içindeki *"henüz belirlenmedi"* satırını');
     s.push('   sil; yukarıdaki her şeyi oraya');
@@ -1739,8 +1755,13 @@ const PROMPT = {
     /* Kimlik dosyasında adres değil yerleşim dursun — imzalı adres bir
        saatte ölür, depoya yazılırsa yanıltıcı olur. */
     const yerlesim = ((proje.palet || {}).gorseller || []).filter(y => y.yol && y.no !== 'G0');
-    if (yerlesim.length) {
+    const logoVar = !!((typeof DB !== 'undefined' && DB.logoAdres) || {})[proje.id];
+    if (yerlesim.length || logoVar) {
       s.push('## Görseller', '');
+      if (logoVar) {
+        s.push('- **logo.png** — firmanın logosu: açılış, giriş, üst çubuk '
+             + 'amblemi, favicon ve PWA simgesi. Yeniden çizilmez.');
+      }
       yerlesim.forEach(y => s.push(`- **${y.no} · ${y.dosya}** — ${y.ad}${y.tarif ? ': ' + y.tarif : ''}`));
       s.push('');
     }
