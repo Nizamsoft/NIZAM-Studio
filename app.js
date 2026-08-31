@@ -3121,10 +3121,10 @@ function yapiSayfasi(p, d) {
              && !!p.repo && !!String(pl.sohbetAdi || '').trim() && !!pl.yayinda,
       deger: pl.alanAdi || '' },
 
-    { no: '04', eylem: 'yapi-akis-ac', ad: 'Hangi ekranlar olacak?',
-      ozet: 'Gelir, gider, cari',
+    { no: '04', eylem: 'yapi-akis-ac', ad: 'Modüller',
+      ozet: 'Hangi bölümler olacak',
       bitti: gercek.length > 0 && s.sayfa > 0,
-      deger: gercek.length + ' ekran · ' + s.sayfa + ' sayfa' },
+      deger: gercek.length + ' modül · ' + s.sayfa + ' sayfa' },
   ];
 
   const simdi = adimlar.findIndex(a => !a.bitti);
@@ -3471,7 +3471,7 @@ function agacEkrani(p, t) {
 
   /* ---------- 1 · Modüller ---------- */
   const govde = agacBaslik('#8fae4a', ICON.gAltyapi, projeAdi(p),
-                           'Hangi ekranlar olacak?', String(modeller.length), 'modül')
+                           'Modüller', String(modeller.length), 'modül')
     + `<div class="ya-satir">
         ${(() => {
           const tamlik = modeller.map(ad => {

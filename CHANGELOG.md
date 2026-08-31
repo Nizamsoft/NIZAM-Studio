@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.124.1
+- **04. adımın adı "Hangi ekranlar olacak?" yerine "Modüller" oldu.** Ekranın kendisi zaten modül kuruyor; "ekran" demek sayfalarla karışıyordu. Özeti de "Hangi bölümler olacak", sayacı "1 modül · 24 sayfa".
+
 ## v0.124.0
 - **Yetkilendirme tasarım anından uygulamanın içine taşındı.** "Kimler görür" ve "kim ne yapabilir" soruları modül kurallarından kalktı. Sebebi: müşterinin ekibi zamanla değişiyor; her işe alımda Studio'ya dönüp yeniden kod yazdırmak anlamsız.
 - **Prompta "Yetkiler ekranı" şartı eklendi.** Teslim edilen uygulamada admin: kullanıcı ekler/siler, her kullanıcıya rol katmanı atar, hangi katmanın hangi sayfayı görüp hangi işi yapabileceğini açıp kapatır. Ekranı yalnız en üst katman görür; kendi katmanını düşüremez, son admini silemez. Varsayılan: en üst katman her şeyi yapar, altındakiler yalnız görür.
