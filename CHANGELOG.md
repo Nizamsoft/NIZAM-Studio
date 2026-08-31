@@ -1,5 +1,12 @@
 # Değişiklik Günlüğü
 
+## v0.124.0
+- **Yetkilendirme tasarım anından uygulamanın içine taşındı.** "Kimler görür" ve "kim ne yapabilir" soruları modül kurallarından kalktı. Sebebi: müşterinin ekibi zamanla değişiyor; her işe alımda Studio'ya dönüp yeniden kod yazdırmak anlamsız.
+- **Prompta "Yetkiler ekranı" şartı eklendi.** Teslim edilen uygulamada admin: kullanıcı ekler/siler, her kullanıcıya rol katmanı atar, hangi katmanın hangi sayfayı görüp hangi işi yapabileceğini açıp kapatır. Ekranı yalnız en üst katman görür; kendi katmanını düşüremez, son admini silemez. Varsayılan: en üst katman her şeyi yapar, altındakiler yalnız görür.
+- **İzinler veritabanında tutuluyor ve RLS bu tabloyu okuyor** — arayüzde düğmeyi gizlemek yetmiyor, sunucu tarafında da engelleniyor. Veri yerel tarayıcıdaysa sunucu olmadığı için Yetkiler ekranı yalnız arayüzü biçimlendiriyor.
+- **Modül kuralları "Ortak kural"a indi:** geriye yalnız bütün modülde geçerli iş kuralı kaldı, o da isteğe bağlı. "Kur" düğmesi artık ona bağlı değil — kuralı olmayan modül de kurulabiliyor.
+- Rol merdiveni (02. adım) duruyor: uygulamanın hangi katmanlara sahip olacağını Studio söylüyor, kimin hangi katmanda olacağını uygulamadaki admin belirliyor.
+
 ## v0.123.0
 - **Sayfa önizlemesi geldi.** Künye ekranındaki **"Önizlemeyi aç"** satırı, o sayfanın müşterinin ekranında nasıl görüneceğini gösteren tam ekranı açıyor. Girdiğin alanlar gerçekten sütun oluyor, seçtiğin ekran türü yerleşimi belirliyor, projenin renk paleti uygulanıyor.
 - **Küçük kutu değil, kendi ekranı:** künye satırlarının altına sıkıştırılmış bir kutuda hiçbir şey okunmuyordu. Müşteriye gösterirken telefonu uzatabilmek gerekiyor.

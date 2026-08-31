@@ -355,6 +355,37 @@ const PROMPT = {
     });
     s.push('Her aşamanın içinde "Uygulama sırası" bölümündeki sırayı izle.');
     s.push('Bir sonraki görevde bu kararlar aynen geçerli olacak.');
+    s.push('');
+    s.push(PROMPT.yetkiBlogu());
+    return s.join('\n');
+  },
+
+  /* Yetki tasarım anında değil, uygulamanın içinde yönetiliyor. Müşterinin
+     ekibi zamanla değişiyor; her işe alımda geliştiriciye dönüp kod
+     yazdırmak anlamsız. Studio yalnız katmanların ne olduğunu söylüyor,
+     kimin hangi katmanda olacağını uygulamadaki admin belirliyor. */
+  yetkiBlogu() {
+    const s = ['### Yetkiler ekranı — uygulamanın içinde'];
+    s.push('');
+    s.push('Kimin neyi görebileceğini ve yapabileceğini **kodda sabitleme.**');
+    s.push('Uygulamada bir **Yetkiler** ekranı olacak, yetkiyi oradan admin');
+    s.push('yönetecek. Şunları karşılasın:');
+    s.push('');
+    s.push('- **Kullanıcı listesi.** Admin kullanıcı ekler, siler, pasife alır.');
+    s.push('- **Katman atama.** Her kullanıcıya yukarıdaki rol katmanlarından');
+    s.push('  biri verilir. Üstteki katman, alttakinin gördüğü her şeyi görür.');
+    s.push('- **Modül ve sayfa izinleri.** Her katman için hangi sayfaların');
+    s.push('  görüneceği ve hangi işlerin (ekle, düzenle, sil) yapılabileceği');
+    s.push('  açılıp kapatılabilir olsun.');
+    s.push('- **Yetkiler ekranını yalnız en üst katman görür.** Kendi katmanını');
+    s.push('  düşüremesin, son admini silemesin.');
+    s.push('- **Varsayılan:** en üst katman her şeyi yapar, alt katmanlar');
+    s.push('  yalnız görür. Admin gerekeni açar.');
+    s.push('');
+    s.push('İzinler veritabanında tutulur ve **satır güvenliği (RLS) bu tabloyu');
+    s.push('okur** — arayüzde düğmeyi gizlemek yetmez, sunucu tarafında da');
+    s.push('engellensin. Veri yerel tarayıcıdaysa sunucu yok; o zaman Yetkiler');
+    s.push('ekranı yalnız arayüzü biçimlendirir.');
     return s.join('\n');
   },
 
@@ -401,25 +432,18 @@ const PROMPT = {
     s.push('- **Zorunlu alan** boş kaydedilemez; arayüzde de veritabanında da engelle.');
     s.push('- **Modül kuralları bütün sayfalarda geçerlidir.** Bir sayfada "Bu sayfada');
     s.push('  farklı" satırı varsa yalnız orada modül kuralının yerine geçer.');
-    s.push('- Yetki satırı satır güvenliği (RLS) kuralıdır: yazılı rol ve üstü o işi');
-    s.push('  yapabilir, altındakiler yapamaz.');
+    s.push('- **Yetkiyi burada arama.** Hangi katmanın hangi sayfayı görüp hangi işi');
+    s.push('  yapabileceği uygulamanın kendi Yetkiler ekranından yönetiliyor —');
+    s.push('  aşağıdaki "Yetkiler ekranı" bölümüne bak.');
 
-    /* Modül düzeyi */
+    /* Modül düzeyi iş kuralı. Yetki burada yazılmıyor: kimin neyi görüp
+       yapabileceğini uygulamanın kendi Yetkiler ekranından admin belirliyor. */
     const mkh = pl.modulKunye || {};
     Object.keys(mkh).forEach(m => {
       const mk = mkh[m] || {};
-      if (!(mk.roller || []).length && !(mk.eylemler || []).length) return;
-      s.push('', `### ${m} — modül kuralları`, '');
-      if ((mk.roller || []).length)
-        s.push(`- **Görebilen:** ${mk.roller.join(' · ')}`);
-      if ((mk.eylemler || []).length) {
-        s.push('- **Yapılabilecek işler ve yetkiler:**');
-        mk.eylemler.forEach(ey => {
-          const r = ((mk.yetki || {})[ey] || mk.roller || []);
-          s.push(`  - ${ey} — ${r.length ? r.join(' · ') : 'belirtilmedi'}`);
-        });
-      }
-      if (mk.kural) s.push(`- **Ortak kural:** ${mk.kural}`);
+      if (!mk.kural) return;
+      s.push('', `### ${m} — ortak kural`, '');
+      s.push(`- ${mk.kural}`);
     });
 
     /* Kullanıcının kendi anlatımı ve verdiği cevaplar */
@@ -574,9 +598,6 @@ const PROMPT = {
     s.push('{');
     s.push('  "modul": "Muhasebe Modülü",');
     s.push('  "modulKurallari": {');
-    s.push('    "roller": ["Personel"],');
-    s.push('    "eylemler": ["Ekle", "Düzenle", "Sil", "Ara"],');
-    s.push('    "yetki": { "Ekle": ["Personel"], "Düzenle": ["Amir"], "Sil": ["Yönetici"] },');
     s.push('    "kural": "Bütün sayfalarda geçerli iş kuralı, yoksa boş"');
     s.push('  },');
     s.push('  "sayfalar": [');
@@ -618,8 +639,8 @@ const PROMPT = {
     s.push('- `tur` yalnız: ' + SAYFA_TURU.map(x => x.ad).join(' · '));
     s.push('- Alan `tur` yalnız: ' + ALAN_TURU.map(x => x.ad).join(' · '));
     s.push('- **`modulKurallari` bir kez yazılır, bütün sayfalarda geçerlidir.**');
-    s.push('  Kim görür, hangi işler yapılabilir, hangi işi kim yapar, ortak kural.');
-    s.push('  Sayfaların içinde bunları tekrarlama.');
+    s.push('  Yalnız iş kuralı — yetki yazma. Kimin neyi görüp yapabileceğini');
+    s.push('  uygulamadaki Yetkiler ekranından admin belirliyor.');
     s.push('- `eylemler` şunlar olabilir: ' + SAYFA_EYLEM.join(' · '));
     s.push('  Listede olmayan gerçek bir iş varsa ("Ters kayıt", "Birleştir") onu da');
     s.push('  yazabilirsin — uydurma, gerçekten gerekiyorsa.');

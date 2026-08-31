@@ -3215,10 +3215,16 @@ const KUNYE_ADIM = [
   { anahtar: 'fark',    ad: 'Farklı mı?',       soru: 'Bu sayfa modül kuralından ayrılıyor mu?' },
 ];
 
+/* Yetki soruları buradan kalktı: kim görür ve kim ne yapar artık tasarım
+   anında değil, teslim edilen uygulamanın kendi Yetkiler ekranından
+   belirleniyor. Sebebi basit — müşterinin ekibi zamanla değişiyor, her
+   değişiklikte Studio'ya dönüp yeniden kod yazdırmak anlamsız. Studio
+   yalnız katmanların ne olduğunu söylüyor (02. adım), kimin hangi katmanda
+   olacağını uygulamadaki admin belirliyor.
+
+   Geriye modülün iş kuralı kaldı; onun yetkiyle ilgisi yok. */
 const MODUL_ADIM = [
-  { anahtar: 'roller', ad: 'Kimler görür?',     soru: 'En alttan kim görebilmeli?' },
-  { anahtar: 'yetki',  ad: 'Kim ne yapabilir?', soru: 'Hangi işi hangi rol yapar?' },
-  { anahtar: 'kural',  ad: 'Ortak kurallar',    soru: 'Bütün modülde geçerli kural var mı?' },
+  { anahtar: 'kural', ad: 'Ortak kural', soru: 'Bütün modülde geçerli bir kural var mı?' },
 ];
 
 function kunyeAdimlari() { return KUNYE_ADIM; }
@@ -3291,13 +3297,6 @@ function dalOzeti(k, anahtar) {
 /* Modül kuralları satırının özeti. */
 function modulOzeti(mk, anahtar) {
   mk = mk || {};
-  if (anahtar === 'roller') return (mk.roller || []).length
-    ? mk.roller[0] + ' ve üstü' : 'seçilmedi';
-  if (anahtar === 'yetki') {
-    if (!(mk.eylemler || []).length) return 'hangi işler yapılabilir, seçilmedi';
-    return mk.eylemler.map(ey => ey.toLocaleLowerCase('tr') + ': '
-      + (((mk.yetki || {})[ey] || [])[0] || '—')).join(' · ');
-  }
   return (mk.kural || '').trim() || 'yok';
 }
 
@@ -3398,7 +3397,9 @@ function agacEkrani(p, t) {
   const modeller = kurulu.map(m => m.ad);
   if (t.modul && !modeller.includes(t.modul)) modeller.push(t.modul);
 
-  const tam = t.modul && t.sayfalar.length && modulKunyeTam(t.mk)
+  /* Ortak kural isteğe bağlı — "Kur"u ona bağlamak, kuralı olmayan modülü
+     kurdurmuyordu. */
+  const tam = t.modul && t.sayfalar.length
     && t.sayfalar.every(sf => kunyeTam(t.kunye[sf]));
   const dugmeler = t.modul ? `
     <button class="ag-dug" type="button" data-eylem="agac-anlat" data-proje="${p.id}">
@@ -3442,11 +3443,10 @@ function agacEkrani(p, t) {
     const govde = agacBaslik('#c48a5c', ICON.katman,
                              m ? 'kurulu modül' : 'taslak modül', t.modul,
                              String(t.sayfalar.length), 'sayfa')
-      + agacSatir('#d8a63f', ICON.gGuvenlik, 'Modül kuralları',
-          mk.roller && mk.roller.length
-            ? mk.roller[0] + ' ve üstü görür · ' + modulOzeti(mk, 'yetki')
-            : 'kim görür, kim ne yapar — daha yazılmadı',
-          !modulKunyeTam(mk), 'agac-modul-kural', `data-proje="${p.id}"`)
+      + agacSatir('#d8a63f', ICON.gGuvenlik, 'Ortak kural',
+          (mk.kural || '').trim()
+            || 'bütün modülde geçerli bir kural varsa yaz — isteğe bağlı',
+          false, 'agac-modul-kural', `data-proje="${p.id}"`)
       + `<div class="ya-satir">
           ${(() => {
             /* Kırmızı yalnız sıradaki sayfada: hepsi kırmızı olunca ekran
