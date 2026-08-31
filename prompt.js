@@ -318,18 +318,28 @@ const PROMPT = {
     s.push(PROMPT.teknikBlogu(p));
     s.push('');
 
-    s.push('## Şimdi ne yapacaksın');
-    s.push('1. ' + (slug ? '`' + slug + '` deposunun' : 'Deponun')
-      + ' köküne `NIZAM.md` adında bir dosya aç. İçine yukarıdaki');
-    s.push('   proje bilgilerini ve teknik standardı yaz. Sonuna şu üç boş');
-    s.push('   başlığı ekle: `## Tasarım kararları`, `## Modüller ve sayfalar`,');
-    s.push('   `## Kararlar` — hepsinin altına *"henüz belirlenmedi"* yaz.');
-    s.push('2. Kısa bir `README.md` ekle: firma adı, ürün adı, tek cümle tarif.');
-    s.push('3. Bunları tek commit\'le **`main` dalına** gönder. Commit mesajı:');
+    s.push('## Şimdi ne yapacaksın', '');
+    s.push('Kimlik tek dosyada tutulmuyor: yirmi iki sayfalık bir modülde o');
+    s.push('dosya iki bin satıra çıkıyor ve her oturum baştan okumak zorunda');
+    s.push('kalıyor. Bölüyoruz — her oturum yalnız ihtiyacı olan dosyayı açsın.', '');
+    s.push('**1 · `CLAUDE.md`** — depo köküne, **20 satırı geçmesin.** Yalnız');
+    s.push('   şunlar: firma ve ürün adı, tek cümle tarif, ve diğer dosyaların');
+    s.push('   nerede olduğu. Claude Code bunu her oturumda kendiliğinden');
+    s.push('   okuyor; kısa kalması önemli.', '');
+    s.push('**2 · `NIZAM.md`** — proje kimliği: yukarıdaki proje bilgileri ve');
+    s.push('   teknik standart. Sonuna `## Dosyalar` başlığı ekle ve altında');
+    s.push('   `nizam/` içindeki dosyaları neyin nerede olduğuyla listele.', '');
+    s.push('**3 · `nizam/` klasörü** ve içinde dört boş dosya. Her birinin');
+    s.push('   başına bir başlık ve *"henüz belirlenmedi"* satırı yaz:', '');
+    s.push('   - `nizam/tasarim.md` — renk, tipografi, bileşenler, simgeler, iskeletler');
+    s.push('   - `nizam/sayfalar.md` — modüller ve sayfa künyeleri');
+    s.push('   - `nizam/kararlar.md` — arayüz kararları ve verilmiş cevaplar');
+    s.push('   - `nizam/durum.md` — hangi aşama bitti, ne kaldı', '');
+    s.push('**4 · `README.md`** — kısa: firma adı, ürün adı, tek cümle tarif.', '');
+    s.push('**5 ·** Tek commit\'le **`main` dalına** gönder. Commit mesajı:');
     s.push('   `[' + TASK_PREFIX + '-0] Proje kimliği`. Oturuma ayrı bir dal atanmış');
-    s.push('   olabilir; bu depo yeni, ayrı dala ve pull request\'e gerek yok.');
-    s.push('4. Dur ve bekle.');
-    s.push('');
+    s.push('   olabilir; bu depo yeni, ayrı dala ve pull request\'e gerek yok.', '');
+    s.push('**6 ·** Dur ve bekle.', '');
 
     s.push('## Şunları yapma');
     s.push('- **Uygulama kodu yazma.** Ekran, bileşen, veritabanı şeması, hiçbiri.');
@@ -346,8 +356,9 @@ const PROMPT = {
     s.push('2. **Modüller, sayfalar ve künyeleri** — hangi ekranlar olacak, her');
     s.push('   birinde hangi alanlar duracak, kim ne yapabilecek.');
     s.push('');
-    s.push('Her blok geldiğinde `NIZAM.md` dosyasını büyüteceksin. Uygulama kodu');
-    s.push('ancak ikisi de geldikten sonra, görev görev yazılacak.');
+    s.push('Her blok kendi dosyasını dolduracak: 2. blok `nizam/tasarim.md`,');
+    s.push('3. blok `nizam/sayfalar.md` ve `nizam/kararlar.md`. Uygulama kodu');
+    s.push('ancak ikisi de geldikten sonra, aşama aşama yazılacak.');
     s.push('');
     s.push('Anladıysan tek cümleyle onayla, dosyaları oluştur ve bekle.');
 
@@ -411,15 +422,16 @@ const PROMPT = {
       s.push(n++ + '. Yukarıdaki görselleri indir, depo köküne koy. Adresler bir');
       s.push('   saat geçerli — ilk işin bu olsun.');
     }
-    s.push(n++ + '. `NIZAM.md` içindeki `## Tasarım kararları` başlığının altındaki');
-    s.push('   *"henüz belirlenmedi"* satırını sil; yukarıdaki her şeyi oraya');
+    s.push(n++ + '. `nizam/tasarim.md` içindeki *"henüz belirlenmedi"* satırını');
+    s.push('   sil; yukarıdaki her şeyi oraya');
     s.push('   yaz — renk kodları, yazı tipleri ve ölçekleri, köşe ve boşluk');
     s.push('   değerleri, bileşen tarifleri, simge dili ve listesi, sayfa');
     s.push('   iskeletleri, arayüz kararları. **Sayıları olduğu gibi aktar**,');
     s.push('   yuvarlama, kendi ölçünü koyma.');
-    s.push(n++ + '. Renk ve ölçüleri `NIZAM.md`de tek bir değişken listesi olarak');
-    s.push('   yaz — kod yazarken oradan okunacak, her ekranda yeniden');
-    s.push('   tanımlanmayacak.');
+    s.push(n++ + '. Renk ve ölçüleri **tek bir değişken listesi** olarak yaz —');
+    s.push('   kod yazarken oradan okunacak, her ekranda yeniden tanımlanmayacak.');
+    s.push(n++ + '. `NIZAM.md` içindeki `## Dosyalar` listesinde `tasarim.md`');
+    s.push('   satırını güncelle: artık dolu olduğunu ve neler taşıdığını yaz.');
     s.push(n++ + '. Tek commit\'le **`main` dalına** gönder. Commit mesajı:');
     s.push('   `[' + TASK_PREFIX + '-0] Tasarım sistemi`.');
     s.push(n++ + '. Dur ve bekle. Sıradaki ve son blok: modüller, sayfalar ve künyeleri.');
@@ -484,33 +496,94 @@ const PROMPT = {
     const kunye = PROMPT.kunyeBlogu(p);
     if (kunye) { s.push(kunye); s.push(''); }
 
-    s.push(PROMPT.kurulumBlogu());
+    s.push(PROMPT.yetkiBlogu());
     s.push('');
 
     const cevap = PROMPT.cevapBlogu(p);
     if (cevap) { s.push(cevap); s.push(''); }
 
-    s.push('## Şimdi ne yapacaksın');
-    s.push('1. `NIZAM.md` içindeki `## Modüller ve sayfalar` başlığının altındaki');
-    s.push('   *"henüz belirlenmedi"* satırını sil, yukarıdaki künyeleri oraya yaz.');
-    s.push('2. Yukarıdaki **beş aşamayı** sırayla uygula. Her aşamanın sonunda dur,');
-    s.push('   ne yaptığını özetle ve bana denetmeden sonrakine geçme.');
-    s.push('3. Her aşamayı ayrı commit\'le **`main` dalına** gönder. Commit mesajı');
-    s.push('   `[' + TASK_PREFIX + '-0] <aşama adı>` biçiminde olsun.');
-    s.push('4. Beş aşama bitince haber ver — ben deneyip eksikleri görev olarak');
-    s.push('   açacağım, sonra tek tek geleceğiz.');
-    s.push('');
+    s.push('## Şimdi ne yapacaksın', '');
+    s.push('**Kod yazma.** Bu blok da bilgi taşıyor; kod aşama aşama, ayrı');
+    s.push('oturumlarda yazılacak.', '');
+    s.push('**1 · `nizam/sayfalar.md`** — *"henüz belirlenmedi"* satırını sil,');
+    s.push('   yukarıdaki modül kurallarını ve sayfa künyelerini oraya yaz.');
+    s.push('   Her sayfa kendi `###` başlığı altında dursun ki tek sayfa');
+    s.push('   aranıp bulunabilsin.', '');
+    s.push('**2 · `nizam/kararlar.md`** — Yetkiler ekranı kuralları ve varsa');
+    s.push('   verilmiş cevaplar oraya.', '');
+    s.push('**3 · `nizam/durum.md`** — beş aşamayı liste hâlinde yaz, hepsi');
+    s.push('   *bekliyor* olarak. Biçim:', '');
+    s.push('   ```');
+    KURULUM_ADIM.forEach((a, i) => s.push(`   - [ ] ${i + 1}. ${a.ad}`));
+    s.push('   ```');
+    s.push('   Altına "Son oturumda ne yapıldı" diye boş bir bölüm aç.', '');
+    s.push('**4 · `NIZAM.md`** içindeki `## Dosyalar` listesini güncelle.', '');
+    s.push('**5 ·** Tek commit\'le **`main` dalına** gönder:');
+    s.push('   `[' + TASK_PREFIX + '-0] Sayfalar ve kararlar`', '');
+    s.push('**6 ·** Dur. Bundan sonra her aşama için sana **ayrı oturumda**');
+    s.push('   kısa bir komut vereceğim; gereken dosyayı kendin açacaksın.', '');
 
     s.push('## Şunları yapma');
-    s.push('- **Görsel dili değiştirme.** 2. bloktaki tarif neyse o. Görseller');
-    s.push('  zaten depoda; yerlerini değiştirme, yenisini üretme.');
+    s.push('- **Uygulama kodu yazma.** Bu blok bilgi taşıyor; kod sırada.');
+    s.push('- **Görsel dili değiştirme.** `nizam/tasarim.md` neyse o.');
     s.push('- **Künyede olmayan alan, sayfa ya da modül ekleme.** Alan listesi o');
     s.push('  sayfanın veritabanı tablosudur; eksik gördüğün bir şey varsa sor.');
     s.push('- **Emin olmadığını uydurma.** Künyede yazmayan bir karar gerekiyorsa');
     s.push('  dur ve sor; yanlış tahmin sonradan söküp yeniden yazmak demek.');
-    s.push('- **Beş aşamayı birleştirme.** Hepsini bir seferde yazarsan ters giden');
-    s.push('  şey 5000 satır sonra anlaşılır.');
     s.push('- **Bu oturuma başka depo ekleme.** Tek depo, tek oturum.');
+
+    return s.join('\n');
+  },
+
+  /* ---------- Aşama promptu ----------
+     Kod beş aşamada yazılıyor ve her aşama **ayrı oturumda**: tek oturumda
+     beşini yaparsan konuşma binlerce satıra çıkıyor, her yeni mesajda
+     tamamı yeniden gönderiliyor ve model yavaşlıyor. Bu prompt kısa —
+     bilgiyi taşımıyor, nereden okunacağını söylüyor. */
+  asama(projeId, no) {
+    const p = DB.proje(projeId);
+    const a = KURULUM_ADIM[no];
+    if (!p || !a) return '';
+    const slug = depoSlug(p.repo);
+
+    const s = [];
+    s.push(`# Aşama ${no + 1} — ${a.ad}`, '');
+    if (slug) {
+      s.push('> ### Depo: `' + slug + '`');
+      s.push('> Bu oturum yalnız bu depoya bağlı olmalı. Deposu farklıysa dur');
+      s.push('> ve söyle.', '');
+    }
+    s.push('Bu **yeni bir oturum**. Proje bilgisi depoda duruyor; ben burada');
+    s.push('tekrar yazmıyorum. Şunları oku:', '');
+    s.push('- `nizam/durum.md` — nerede kaldığımız');
+    s.push('- `nizam/tasarim.md` — renk, ölçü, bileşen ve iskeletler');
+    s.push('- `nizam/sayfalar.md` — bu aşamada dokunacağın sayfaların künyesi');
+    s.push('- `nizam/kararlar.md` — arayüz kararları ve verilmiş cevaplar');
+    s.push('- `NIZAM.md` — teknik standart', '');
+    s.push('> **Sayfalar dosyasının tamamını okuma.** Bu aşamada hangi');
+    s.push('> sayfalara dokunacaksan yalnız onların bölümünü aç.', '');
+
+    s.push('## Bu aşamada yapılacaklar', '');
+    a.yap.forEach(x => s.push('- ' + x));
+    s.push('');
+    s.push(`> **Bitince bana test ettir:** ${a.test}`, '');
+
+    s.push('## Kurallar', '');
+    s.push('- **Yalnız bu aşama.** Sonraki aşamanın işine girme; ters giden');
+    s.push('  şey beş bin satır sonra değil, burada anlaşılsın.');
+    s.push('- **Tasarım kararı verme.** `nizam/tasarim.md` neyse o. Orada');
+    s.push('  yazmayan bir şey gerekiyorsa uydurma, sor.');
+    s.push('- **Künyede olmayan alan, sayfa ya da modül ekleme.**');
+    s.push('- Renk ve ölçüleri tek değişken dosyasından oku; ekranda');
+    s.push('  yeniden tanımlama.', '');
+
+    s.push('## Bitirince', '');
+    s.push('1. `nizam/durum.md` içinde bu aşamayı işaretle ve "Son oturumda ne');
+    s.push('   yapıldı" bölümünü güncelle — sonraki oturum oradan devam edecek.');
+    s.push('2. Tek commit\'le **`main` dalına** gönder:');
+    s.push(`   \`[${TASK_PREFIX}-0] ${a.ad}\``);
+    s.push('3. Ne yaptığını birkaç cümleyle özetle ve dur. Sonraki aşamayı');
+    s.push('   yeni bir oturumda açacağım.');
 
     return s.join('\n');
   },

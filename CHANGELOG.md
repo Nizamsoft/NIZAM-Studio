@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü
 
+## v0.132.0
+- **Kimlik dosyası bölündü.** Yirmi iki sayfalık bir modülde `NIZAM.md` iki bin satıra çıkıyor ve her Claude Code oturumu onu baştan okumak zorunda kalıyordu. Artık beş dosya: `CLAUDE.md` (20 satırlık indeks, Claude Code her oturumda kendiliğinden okuyor), `NIZAM.md` (proje kimliği ve teknik standart), `nizam/tasarim.md`, `nizam/sayfalar.md`, `nizam/kararlar.md`, `nizam/durum.md`. Bir görevde yalnız gereken dosya açılıyor.
+- Üç blok da kendi dosyasını dolduruyor: 1. blok iskeleti kurar, 2. blok `tasarim.md`, 3. blok `sayfalar.md` + `kararlar.md` + `durum.md`.
+- **Kod artık 3. blokta başlamıyor.** Beş aşama o bloğun içinden çıktı; her aşama kendi kısa promptuyla **ayrı bir Claude Code oturumunda** yazılıyor. Tek oturumda beşini yapmak konuşmayı binlerce satıra çıkarıyor ve her yeni mesajda tamamı yeniden gönderiliyordu.
+- **Beta durağına beş aşama ızgarası geldi** — kilitli zincir, kurulum sayfasındaki kart diliyle. Karta basınca o aşamanın kısa komutu ve ne yapılacağı çıkıyor; "yeni oturum aç" düğmesi yeni bir Claude Code oturumu açıyor. Studio deponun içini göremediği için biten aşamayı kullanıcı işaretliyor.
+- Aşama promptu bilgi taşımıyor, **nereden okunacağını söylüyor**: `durum.md` nerede kaldığımızı, `tasarim.md` ölçüleri, `sayfalar.md` o aşamada dokunulacak sayfaların künyesini. "Sayfalar dosyasının tamamını okuma" uyarısı da içinde.
+- Her aşama bitince Claude `durum.md`'yi güncelliyor — sonraki oturum nereden devam edeceğini oradan öğreniyor.
+
 ## v0.131.1
 - **Tasarım sistemi promptu Nizam standartlarını taşımıyordu.** ChatGPT üst çubuğu, alt menüyü ve gezinmeyi kendi kafasına göre tarif edip standardın karşısına geçiyordu — bir denetimde çıkan sekiz çakışmanın hepsi bu eksiklikten. Artık standardın tasarımla ilgili satırları (Tasarım · Animasyon · Erişilebilirlik · Biçim · Optimizasyon) prompta giriyor: "bunlara uy, çelişiyorsan bloğu verme, önce sor".
 - **Künyedeki gerçek ekran türleri prompta girdi.** Sayfa türleri ve her türden kaç sayfa olduğu yazılıyor; iskeletler bu listeden kuruluyor. Eskiden künyede olmayan bir tür (Rapor) uydurulabiliyordu.

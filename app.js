@@ -5007,8 +5007,8 @@ function betaSayfasi(p, d) {
 
     + durakKarti(1, cikti, '3. blok: modüller ve sayfalar',
         (kunyeVar
-          ? 'Sayfa künyeleri, modül kuralları ve beş aşamalı kurulum talimatı '
-            + 'panoya alınır. Claude Code oturumuna yapıştır — kod bu blokla başlar.'
+          ? 'Sayfa künyeleri ve modül kuralları panoya alınır. Claude Code '
+            + 'oturumuna yapıştır — <b>depoya yazılır</b>, kod henüz yazılmaz.'
           : '<b class="eksik">Sayfa künyesi yok.</b> Önce <b>Yapıyı kurma</b> '
             + 'durağında modülü kur; blok o zaman dolu çıkar.')
         + (yayin ? '' : ' <b class="eksik">Önce yayın adresini kaydet</b> — '
@@ -5021,16 +5021,105 @@ function betaSayfasi(p, d) {
       <button class="promptu-gor" type="button" data-eylem="yapi-blok-gor"
               data-proje="${p.id}">Bloğu gör</button>`)
 
-    + durakKarti(2, cikti, 'Beta çıktı',
-        'Claude beş aşamayı bitirip <b class="mono">main</b> dalına gönderdiğinde '
-        + 'uygulamayı dene. Gördüğün eksikleri not al — sonraki durakta görev olarak '
+    + asamaIzgarasi(p)
+
+    + durakKarti(3, cikti, 'Beta çıktı',
+        'Beş aşama bitip <b class="mono">main</b> dalına gittiğinde uygulamayı '
+        + 'dene. Gördüğün eksikleri not al — sonraki durakta görev olarak '
         + 'açacaksın.', `
       <label class="kur-onay ${cikti ? 'on' : ''}" data-eylem="beta-onay"
              data-proje="${p.id}" role="button" tabindex="0">
         <span class="kur-kutu">${svg(ICON.tik, 12)}</span> Beta çıktı, denedim</label>`)
 
     + `<div class="note note-kucuk">${svg(ICON.info, 15)}
-        <span>Studio deponun içini göremiyor; beta çıktığını sen işaretliyorsun.</span></div>`;
+        <span>Studio deponun içini göremiyor; aşamaları ve betayı sen
+        işaretliyorsun.</span></div>`;
+}
+
+/* Beş aşama, kilitli zincir. Her aşama **ayrı Claude Code oturumu**:
+   tek oturumda beşini yaparsan konuşma binlerce satıra çıkıyor ve her yeni
+   mesajda tamamı yeniden gönderiliyor. Studio deponun içini göremediği için
+   biten aşamayı kullanıcı işaretliyor. */
+function asamaIzgarasi(p) {
+  const pl = p.palet || {};
+  const biten = Array.isArray(pl.asama) ? pl.asama : [];
+  const simdi = KURULUM_ADIM.findIndex((a, i) => biten.indexOf(i) < 0);
+  const tam = simdi < 0;
+
+  const kart = i => {
+    const a = KURULUM_ADIM[i];
+    const bitti = biten.indexOf(i) > -1;
+    const kilit = !bitti && simdi > -1 && i > simdi;
+    const hal = bitti ? 'bitti' : kilit ? 'kilitli' : i === simdi ? 'simdi' : 'eksik';
+    const ikon = bitti ? ICON.tik : kilit ? ICON.kilit
+               : i === simdi ? ICON.goz : ICON.kalem;
+    return `
+      <button class="ya ${hal}" type="button" ${kilit ? 'disabled' : ''}
+              data-eylem="asama-ac" data-proje="${p.id}" data-deger="${i}">
+        <span class="ya-ust">
+          <span class="ya-no mono">${String(i + 1).padStart(2, '0')}</span>
+          <span class="ya-dur">${svg(ikon, 13)}</span>
+        </span>
+        <span class="ya-yz">
+          <span class="ya-ad">${esc(a.ad)}</span>
+          <span class="ya-alt">${esc(bitti ? 'bitti' : kilit ? 'kilitli'
+            : i === simdi ? 'sıradaki' : 'bekliyor')}</span>
+        </span>
+      </button>`;
+  };
+
+  return durakKarti(2, tam, 'Beş aşama',
+    'Kod tek seferde yazılmıyor. Her aşama <b>ayrı Claude Code oturumu</b> — '
+    + 'oturum uzadıkça her mesajda bütün konuşma yeniden gidiyor. Karta bas, '
+    + 'kısa komutu kopyala, yeni oturumda yapıştır.', `
+    <div class="ya-harita">
+      <div class="ya-satir">${[0, 1, 2].map(kart).join('')}</div>
+      ${yolOku(biten.indexOf(2) > -1)}
+      <div class="ya-satir">${[3, 4].map(kart).join('')}</div>
+    </div>`, tam ? 'tamam' : (biten.length + '/' + KURULUM_ADIM.length));
+}
+
+/* Bir aşamanın penceresi: kısa komut ve "bitti" işareti. */
+function asamaAc(projeId, i) {
+  modalHepsiniKapat();
+  const p = DB.proje(projeId);
+  const a = KURULUM_ADIM[i];
+  if (!p || !a) return;
+  const pl = p.palet || {};
+  const biten = Array.isArray(pl.asama) ? pl.asama : [];
+  const bitti = biten.indexOf(i) > -1;
+
+  modalAc(`
+    ${modalBaslik(ICON.gAltyapi, (i + 1) + '. ' + a.ad,
+      'Bunu yeni bir Claude Code oturumunda aç. Komut kısa — bilgiyi '
+      + 'taşımıyor, depodaki dosyaları gösteriyor.')}
+    <span class="label">Bu aşamada</span>
+    <div class="card"><div class="row-list">
+      ${a.yap.map(x => `<div class="row"><div class="row-main">
+        <span class="row-title">${esc(x)}</span></div></div>`).join('')}
+    </div></div>
+    <div class="note">${svg(ICON.goz, 15)}
+      <span><b>Bitince dene:</b> ${esc(a.test)}</span></div>
+    <div class="kur-dug">
+      ${promptBaglantisi({ tur: 'asama:' + i, proje: p.id, hedef: 'claude-yeni',
+        slug: depoSlug(p.repo), yazi: 'Kopyala ve yeni oturum aç' })}
+    </div>
+    <label class="kur-onay ${bitti ? 'on' : ''}" data-as="bitti" role="button" tabindex="0">
+      <span class="kur-kutu">${svg(ICON.tik, 12)}</span> Bu aşama bitti</label>
+    <div class="modal-alt">
+      <button class="btn btn-ghost" data-as="kapat" type="button">Kapat</button>
+    </div>`, kutu => {
+    $('[data-as="kapat"]', kutu).addEventListener('click', modalKapat);
+    $('[data-as="bitti"]', kutu).addEventListener('click', async () => {
+      const yeni = bitti ? biten.filter(x => x !== i) : biten.concat(i);
+      try {
+        await DB.paletKaydet(projeId, Object.assign({}, pl, { asama: yeni }));
+        modalKapat();
+        render();
+        toast(bitti ? 'İşaret kaldırıldı.' : (i + 1) + '. aşama bitti.', 'basari');
+      } catch (h) { toast(h.message, 'hata'); }
+    });
+  });
 }
 
 /* 6 · Final — görevler bitti, teslim. */
@@ -9494,6 +9583,8 @@ async function eylemCalistir(el) {
     return render();
   }
 
+  if (e === 'asama-ac') return asamaAc(el.dataset.proje, Number(el.dataset.deger));
+
   if (e === 'dil-aktar') return dilAktar(el.dataset.proje);
 
   /* Tasarım sistemini sıfırla — logo ve işletme görseli duruyor, onlar
@@ -11151,8 +11242,9 @@ document.addEventListener('DOMContentLoaded', () => {
     /* Ekran promptları rol adıyla birlikte geliyor: `gorselEkran:panel`.
        Altı ayrı anahtar tanımlamak yerine önekten ayırıyoruz. */
     const pano = el.dataset.pano || '';
-    const uret = pano.indexOf('gorselEkran:') === 0
-      ? (proje => PROMPT.gorselEkran(proje.id, pano.slice(12)))
+    /* Aşama promptları sıra numarasıyla geliyor: `asama:2`. */
+    const uret = pano.indexOf('asama:') === 0
+      ? (proje => PROMPT.asama(proje.id, Number(pano.slice(6))))
       : PANO_PROMPT[pano];
     /* Projesiz prompt da var (standart ekleme) — o zaman data-proje boş. */
     if (!uret || (el.dataset.proje && !pr)) return;
