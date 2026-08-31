@@ -6,3 +6,8 @@ node_modules/
 *.log
 .vscode/
 .idea/
+
+# Geliştirme sırasında açılan tek seferlik deneme sayfaları
+_t.html
+_test*.html
+std.txt
