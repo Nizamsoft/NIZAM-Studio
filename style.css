@@ -6482,3 +6482,32 @@ a.ya:active, button.ya:not([disabled]):active{ transform:scale(.97); }
 }
 /* Telefon kipinde önizleme daralıyor: gerçek en boy oranı korunsun. */
 .onz-tam.telefon .onz-goz{ max-width:260px; margin:0 auto; }
+
+/* --------------------------------------------------------------------------
+   Sayfa öbeği başlığı
+   Öbekleri Claude veriyor ("Raporlar", "Ayarlar"). Eski küçük gri etiket
+   yirmi sayfalık yığının içinde kayboluyordu: ad büyüdü, sayı rozete girdi,
+   sağa ince bir çizgi çekildi — öbeğin nerede başladığı bir bakışta belli.
+   -------------------------------------------------------------------------- */
+
+.obk{
+  display:flex; align-items:center; gap:9px;
+  margin:16px 2px 9px;
+}
+.obk:first-child{ margin-top:2px; }
+.obk-ad{
+  flex:0 0 auto;
+  font-family:var(--yazi-baslik); font-weight:600; font-size:13.5px;
+  letter-spacing:-.005em; color:var(--ink-strong);
+}
+.obk-say{
+  flex:0 0 auto;
+  min-width:20px; padding:2px 7px;
+  border-radius:999px; text-align:center;
+  font-size:10px; color:var(--ink-soft);
+  background:var(--yuva); box-shadow:inset 0 0 0 1px var(--line-3);
+}
+.obk-cizgi{
+  flex:1; min-width:0; height:1px;
+  background:linear-gradient(90deg, var(--line), transparent);
+}

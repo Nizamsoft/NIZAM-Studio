@@ -3199,7 +3199,7 @@ function modulYukle(p, t, ad) {
 function yapiKunye(t, sayfa) {
   if (!t.kunye[sayfa]) {
     t.kunye[sayfa] = { amac: '', tur: '', olcek: '', kalip: [], kalipCevap: {},
-                       ayniKayit: '', alanlar: [],
+                       grup: '', ayniKayit: '', alanlar: [],
                        /* Yalnız modül kuralından ayrılıyorsa dolar. */
                        fark: { roller: [], eylemler: [], yetki: {}, kural: '' } };
   }
@@ -3375,6 +3375,18 @@ function agacKare(no, hal, ad, alt, eylem, veri) {
     </button>`;
 }
 
+/* Öbek başlığı. Eski küçük gri etiket sayfa yığınının içinde kayboluyordu:
+   adı büyüttük, sayıyı rozete aldık, sağa da ince bir çizgi çektik —
+   öbeğin nerede başladığı bir bakışta belli olsun. */
+function sayfaObekBasligi(ad, sayi) {
+  return `
+    <div class="obk">
+      <span class="obk-ad">${esc(ad)}</span>
+      ${sayi ? `<span class="obk-say mono">${sayi}</span>` : ''}
+      <i class="obk-cizgi"></i>
+    </div>`;
+}
+
 /* Satır kart — modül kuralları ve künye dalları gibi kısa bilgiler için.
    Kare israf olurdu: iki kelimelik başlık ve bir satır özet. */
 function agacSatir(renk, ikon, ad, alt, eksik, eylem, veri) {
@@ -3448,36 +3460,39 @@ function agacEkrani(p, t) {
             || 'bütün modülde geçerli bir kural varsa yaz — isteğe bağlı',
           false, 'agac-modul-kural', `data-proje="${p.id}"`)
       + (() => {
-          /* Yirmi sayfa düz bir ızgarada aranmıyor. Sayfalar türlerine göre
-             öbekleniyor: panolar, listeler, formlar… Numaralar öbeğe göre
-             değil baştan sona devam ediyor — "22 sayfa" sayısı bozulmasın.
+          /* Yirmi sayfa düz bir ızgarada aranmıyor. Öbekleri Claude veriyor
+             ("Raporlar", "Ayarlar", "Panolar"): sayfa türünden daha anlamlı,
+             çünkü işe göre ayırıyor. Öbek sırası Claude'un verdiği sıra —
+             o da bir karar, alfabeye çevirip bozmuyoruz. Öbeğin içi ise
+             alfabetik: yirmi sayfada gözle aramak ancak öyle mümkün.
 
              Kırmızı yalnız sıradaki sayfada: hepsi kırmızı olunca ekran
              uyarı tablosuna dönüyor ve "önce hangisi" kayboluyor. */
-          const cogul = { 'Liste': 'Listeler', 'Form': 'Formlar',
-            'Detay': 'Detaylar', 'Panel': 'Panolar', 'Takvim': 'Takvimler',
-            'Ayarlar': 'Ayarlar' };
           const ilkEksik = t.sayfalar.findIndex(sf => !kunyeTam(t.kunye[sf]));
-          const sira = SAYFA_TURU.map(x => x.ad).concat(['']);
 
+          const sira = [];
           const obek = {};
           t.sayfalar.forEach((sf, i) => {
-            const tur = (t.kunye[sf] || {}).tur || '';
-            (obek[tur] = obek[tur] || []).push({ sf, i });
+            const g = ((t.kunye[sf] || {}).grup || '').trim() || 'Diğer';
+            if (!obek[g]) { obek[g] = []; sira.push(g); }
+            obek[g].push({ sf, i });
           });
+          /* "Diğer" hep en sonda: adı konmamış olan aranan değil, kalan. */
+          sira.sort((a, b) => (a === 'Diğer') - (b === 'Diğer'));
 
-          return sira.filter(tur => obek[tur]).map(tur => `
-            <span class="fb-et">${esc(cogul[tur] || 'Türü seçilmedi')}
-              · ${obek[tur].length}</span>
+          return sira.map(g => `
+            ${sayfaObekBasligi(g, obek[g].length)}
             <div class="ya-satir">
-              ${obek[tur].map(({ sf, i }) => agacKare(
-                String(i + 1).padStart(2, '0'),
-                kunyeTam(t.kunye[sf]) ? 'bitti' : i === ilkEksik ? 'simdi' : 'eksik',
-                sf, agacSayfaAlt(t.kunye[sf] || {}), 'agac-sayfa',
-                `data-proje="${p.id}" data-ad="${esc(sf)}"`)).join('')}
+              ${obek[g].slice()
+                .sort((a, b) => a.sf.localeCompare(b.sf, 'tr'))
+                .map(({ sf, i }) => agacKare(
+                  String(i + 1).padStart(2, '0'),
+                  kunyeTam(t.kunye[sf]) ? 'bitti' : i === ilkEksik ? 'simdi' : 'eksik',
+                  sf, agacSayfaAlt(t.kunye[sf] || {}), 'agac-sayfa',
+                  `data-proje="${p.id}" data-ad="${esc(sf)}"`)).join('')}
             </div>`).join('')
-            + `<span class="fb-et">Ekle</span>
-               <div class="ya-satir">${agacKare('', 'kesik', 'Sayfa ekle', '',
+            + sayfaObekBasligi('Ekle', 0)
+            + `<div class="ya-satir">${agacKare('', 'kesik', 'Sayfa ekle', '',
                  'yapi-sayfa-yaz', `data-proje="${p.id}"`)}</div>`;
         })()
       + `<button class="ags sil" type="button" data-eylem="agac-modul-sil"
@@ -7750,25 +7765,10 @@ function cozumlemeOku(metin) {
 /* Okunan çözümlemeyi taslağa yazar. Kullanıcının elle girdiği bir şey
    varsa üstüne yazmıyoruz: soru sormadan veri kaybettirmek olur. */
 function cozumlemeUygula(t, cozum, p) {
-  const roller = rolListesi((p.palet || {}).roller);
-  /* Modül kuralları bir kez: kim görür, hangi işler, kim yapar, ortak kural. */
+  /* Modül düzeyinde yalnız ortak iş kuralı okunuyor: yetki artık tasarım
+     anında değil, uygulamanın Yetkiler ekranından belirleniyor. */
   const mkg = cozum.modulKurallari || {};
-  t.mk = t.mk || { roller: [], eylemler: [], yetki: {}, kural: '' };
-  if (!(t.mk.roller || []).length) {
-    const gelen = (mkg.roller || []).filter(r => roller.includes(r));
-    const taban = gelen.length ? Math.min(...gelen.map(r => roller.indexOf(r))) : 0;
-    t.mk.roller = roller.slice(taban);
-  }
-  if (!(t.mk.eylemler || []).length && Array.isArray(mkg.eylemler)) {
-    t.mk.eylemler = mkg.eylemler.filter(x => typeof x === 'string' && x.trim())
-      .map(x => x.trim()).slice(0, 14);
-  }
-  t.mk.eylemler.forEach(ey => {
-    if (t.mk.yetki[ey]) return;
-    const gelen = ((mkg.yetki || {})[ey] || []).filter(r => t.mk.roller.includes(r));
-    const taban = gelen.length ? Math.min(...gelen.map(r => t.mk.roller.indexOf(r))) : 0;
-    t.mk.yetki[ey] = t.mk.roller.slice(taban);
-  });
+  t.mk = t.mk || { kural: '' };
   if (!t.mk.kural && mkg.kural) t.mk.kural = mkg.kural;
   if (!t.modul && cozum.modul) t.modul = cozum.modul;
   t.kararlar    = cozum.kararlar || [];
@@ -7780,6 +7780,9 @@ function cozumlemeUygula(t, cozum, p) {
     const k = yapiKunye(t, sf.ad);
     if (!k.amac) k.amac = sf.amac || '';
     if (!k.tur)  k.tur  = (SAYFA_TURU.find(x => x.ad === sf.tur) || {}).ad || '';
+    /* Öbeği Claude belirliyor: "Raporlar", "Ayarlar", "Panolar" gibi. Sayfa
+       türünden (Liste/Form) daha anlamlı, çünkü işe göre ayırıyor. */
+    if (!k.grup && typeof sf.grup === 'string') k.grup = sf.grup.trim().slice(0, 40);
     if (!k.alanlar.length && Array.isArray(sf.alanlar)) {
       k.alanlar = sf.alanlar.filter(a => a && a.ad).map(a => ({
         ad: a.ad,

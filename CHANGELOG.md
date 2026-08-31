@@ -1,5 +1,12 @@
 # Değişiklik Günlüğü
 
+## v0.126.0
+- **Sayfa öbeklerini artık Claude belirliyor.** Künye bloğuna `grup` alanı eklendi; prompt işe göre öbek istiyor — "Kayıtlar", "Raporlar", "Panolar", "Tanımlar", "Ayarlar" gibi. Sayfa türüne (Liste/Form) göre öbeklemek teknik bir ayrımdı, kullanıcının aradığı ayrım bu değil.
+- **Öbek sırası Claude'un verdiği sıra:** menüde görüneceği düzeni o kuruyor — önce günlük kullanılanlar, en sona ayarlar. Alfabeye çevirip bu kararı bozmuyoruz. Öbeği olmayan sayfalar **"Diğer"** başlığıyla en altta.
+- **Öbeğin içi alfabetik.** Yirmi sayfa arasında gözle aramak ancak öyle mümkün.
+- **Öbek başlığı yeniden tasarlandı:** eski küçük gri etiket sayfa yığınının içinde kayboluyordu. Ad 13,5 puntoya çıktı, sayı rozete girdi, sağa ince bir çizgi çekildi — öbeğin nerede başladığı bir bakışta belli.
+- Temizlik: modül kurallarındaki ölü rol/yetki yazımı kaldırıldı. Yetki v0.124.0'da uygulamanın Yetkiler ekranına taşınmıştı ama çözümleme hâlâ kimsenin okumadığı rol listeleri üretiyordu.
+
 ## v0.125.0
 - **Modülün sayfaları türlerine göre öbeklendi:** Listeler · Formlar · Detaylar · Panolar · Takvimler · Ayarlar. Yirmi iki sayfa düz bir ızgarada aranmıyordu; her öbeğin başlığında kaç sayfa olduğu da yazıyor.
 - **Türü seçilmemiş sayfalar en altta** kendi öbeğinde toplanıyor — hangilerinin eksik olduğu tek bakışta görünüyor.

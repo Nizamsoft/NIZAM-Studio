@@ -603,6 +603,7 @@ const PROMPT = {
     s.push('  "sayfalar": [');
     s.push('    {');
     s.push('      "ad": "Hesaplar",');
+    s.push('      "grup": "Kayıtlar",');
     s.push('      "amac": "Tek cümleyle bu ekran ne işe yarar",');
     s.push('      "tur": "Liste",');
     s.push('      "olcek": "Orta",');
@@ -636,6 +637,11 @@ const PROMPT = {
     s.push('### Blok kuralları');
     s.push('- `modul`: modülün adı. Ben söylediysem onu yaz, söylemediysem kısa');
     s.push('  ve Türkçe bir ad öner ("Muhasebe Modülü", "Sipariş Takibi").');
+    s.push('- `grup`: sayfanın hangi öbeğe ait olduğu. Sen belirle — işe göre,');
+    s.push('  türe göre değil: "Kayıtlar", "Raporlar", "Panolar", "Tanımlar",');
+    s.push('  "Ayarlar" gibi. Kısa ve Türkçe olsun, 2-6 öbeği geçme,');
+    s.push('  her sayfaya bir öbek ver. Öbekleri kullanıcının menüde göreceği');
+    s.push('  sırayla yaz: önce günlük kullanılanlar, en sona ayarlar.');
     s.push('- `tur` yalnız: ' + SAYFA_TURU.map(x => x.ad).join(' · '));
     s.push('- Alan `tur` yalnız: ' + ALAN_TURU.map(x => x.ad).join(' · '));
     s.push('- **`modulKurallari` bir kez yazılır, bütün sayfalarda geçerlidir.**');
