@@ -5196,7 +5196,11 @@ function betaCiktiAc(projeId) {
   });
 }
 
-/* SQL nasıl çalıştırılır./* Proje adresinden SQL editörünün adresi. Adres `https://xxxx.supabase.co`
+/* SQL nasıl çalıştırılır./* Şema dosyasının depodaki yeri. 3. blok bu adı söylüyor; Studio da aynı
+   adı gösteriyor — iki yerde yazılmasın diye tek sabit. */
+const SQL_DOSYA = 'sql/01-tablolar.sql';
+
+/* Proje adresinden SQL editörünün adresi. Adres `https://xxxx.supabase.co`
    biçiminde; panel adresi proje kimliğiyle kuruluyor. */
 function sqlEditorAdresi(url) {
   const es = String(url || '').match(/https?:\/\/([a-z0-9-]+)\.supabase\.co/i);
@@ -5214,6 +5218,12 @@ function sqlNasilAc(projeId) {
   const adres = sqlEditorAdresi(pl.supabaseUrl);
   const bagli = !!String(pl.supabaseUrl || '').trim()
              && !!String(pl.supabaseAnon || '').trim();
+  /* Dosyayı Studio okuyamıyor: depo özel ve elimizde GitHub anahtarı yok.
+     Ama adresini biliyoruz — kullanıcıyı klasör klasör aratmak yerine
+     doğrudan dosyaya götürüyoruz. */
+  const slug = depoSlug(p.repo);
+  const sqlAdres = slug
+    ? 'https://github.com/' + slug + '/blob/main/' + SQL_DOSYA : '';
 
   const adim = (no, ic) => `
     <div class="adm"><b>${no}</b><span>${ic}</span></div>`;
@@ -5226,17 +5236,24 @@ function sqlNasilAc(projeId) {
       <span><b>Supabase bağlantısı girilmemiş.</b> <b>Kurulum ve yapı →
       Nereye kuralım?</b> adımına proje adresini ve anon anahtarını yaz.</span></div>`}
     <div class="adm-l">
-      ${adim(1, 'Depodaki <b class="mono">sql/01-tablolar.sql</b> dosyasını aç, '
-        + 'içeriğini kopyala.')}
-      ${adim(2, 'Aşağıdaki düğmeyle Supabase <b>SQL Editor</b> sayfasını aç.')}
+      ${adim(1, '<b>SQL dosyasını aç</b> — GitHub\'da açılır, sağ üstteki '
+        + 'kopyala simgesine bas, dosyanın tamamı panoya gider.')}
+      ${adim(2, '<b>SQL editörünü aç</b> — Supabase açılır.')}
       ${adim(3, 'Yapıştır ve <b>Run</b>\'a bas. Hata çıkarsa metni Claude\'a '
         + 'göster, düzeltsin.')}
       ${adim(4, '<b>Table Editor</b>\'de tabloların geldiğini gör, buraya dönüp '
         + 'işaretle.')}
     </div>
     <div class="kur-dug">
+      ${sqlAdres ? `
+        <a class="sayfa-dug" target="_blank" rel="noopener" href="${esc(sqlAdres)}">
+          ${svg(ICON.dosya, 15)} 1 · SQL dosyasını aç</a>`
+      : `<button class="sayfa-dug ikincil" type="button" disabled>
+          ${svg(ICON.dosya, 15)} Depo adresi yok</button>`}
+    </div>
+    <div class="kur-dug">
       <a class="sayfa-dug ${bagli ? '' : 'ikincil'}" target="_blank" rel="noopener"
-         href="${esc(adres)}">${svg(ICON.disari, 15)} SQL editörünü aç</a>
+         href="${esc(adres)}">${svg(ICON.disari, 15)} 2 · SQL editörünü aç</a>
     </div>
     <label class="kur-onay ${pl.sqlKuruldu ? 'on' : ''}" data-eylem="sql-onay"
            data-proje="${p.id}" role="button" tabindex="0">

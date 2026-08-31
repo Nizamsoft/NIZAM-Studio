@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## v0.134.2
+- **SQL dosyasını Studio açıyor artık.** "Depodaki `sql/01-tablolar.sql` dosyasını bul" demek yetmiyordu — kullanıcı GitHub'da klasör klasör arıyordu. Veritabanı penceresinde iki numaralı düğme: **1 · SQL dosyasını aç** (deponun o dosyasına doğrudan gider, sağ üstteki kopyala simgesiyle tamamı panoya alınır) ve **2 · SQL editörünü aç**.
+- Studio dosyanın içeriğini okuyamıyor — depo özel ve GitHub anahtarı yok — ama adresini biliyor. Aramak yerine götürüyor.
+- Dosya yolu tek sabitte (`SQL_DOSYA`): 3. blok neyi söylüyorsa Studio da onu gösteriyor.
+
 ## v0.134.1
 - **Uygulama açılmıyordu: tasarım durağı dışında her sayfa boş geliyordu.** `render()` içinde artık var olmayan bir sabit temizleniyordu (`GORSEL_EKRAN` — görsel dünyanın alt ekranları v0.130.0'da kalkmıştı, temizlik satırı kalmıştı). Hata çizimden önce patladığı için ekran boş kalıyor, alt çubuk ölüyor ve artı düğmesi kayboluyordu. Satır silindi.
 - **Boş ekran bir daha sessiz kalmayacak.** Çizim patlarsa artık hatanın kendisi ekrana yazılıyor: hangi sayfa, hangi mesaj, yığın izinin ilk satırları ve "Hatayı kopyala" düğmesi. Telefonda konsol yok; boş ekrana bakmakla hata mesajını okumak arasında dağlar var.
