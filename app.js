@@ -7741,11 +7741,31 @@ function anlatAktarAc(projeId) {
 function cozumlemeOku(metin) {
   const ham = String(metin || '');
   const cit = ham.match(/```(?:json)?\s*([\s\S]*?)```/);
-  const govde = cit ? cit[1] : ham;
+  /* Telefondan yapıştırırken iOS düz tırnakları kıvrık tırnağa çeviriyor
+     ve JSON.parse patlıyor. Aynı şekilde satır başındaki `{` de bazen
+     seçime girmiyor. İkisini de burada toparlıyoruz — kullanıcıya
+     "tırnaklarını düzelt" demek çözüm değil. */
+  let govde = (cit ? cit[1] : ham)
+    .replace(/[\u201C\u201D\u201E\u00AB\u00BB]/g, '"')   /* kıvrık çift tırnak */
+    .replace(/[\u2018\u2019\u201A]/g, "'")                 /* kıvrık tek tırnak */
+    .replace(/[\u00A0\u2007\u202F]/g, ' ')                 /* bölünmez boşluk */
+    .replace(/[\u2013\u2014]/g, '-');                       /* uzun tire */
+
+  const dene = metin => {
+    try { return JSON.parse(metin); } catch (h) { return null; }
+  };
+
   const bas = govde.indexOf('{'), son = govde.lastIndexOf('}');
-  if (bas < 0 || son <= bas) return null;
-  let o;
-  try { o = JSON.parse(govde.slice(bas, son + 1)); } catch (h) { return null; }
+  let o = (bas >= 0 && son > bas) ? dene(govde.slice(bas, son + 1)) : null;
+
+  /* Dış süslü parantez düşmüş olabilir. Metnin içinde `{` bulunması yanıltıcı:
+     sayfa nesnelerininki de sayılıyor, o yüzden brace aramaya değil
+     ayrıştırmanın başarısına bakıyoruz. Bir de `{` ile birlikte ilk anahtarın
+     açılış tırnağı düşüyor: `modul": "..."` → `"modul": "..."`. */
+  if (!o && /^\s*"?\w+"\s*:/.test(govde)) {
+    o = dene('{' + govde.replace(/^\s*(\w+)"\s*:/, '"$1":').replace(/[,\s]+$/, '') + '}');
+  }
+  if (!o) return null;
   if (!o || !Array.isArray(o.sayfalar) || !o.sayfalar.length) return null;
   return {
     modul: typeof o.modul === 'string' ? o.modul.trim() : '',

@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.126.1
+- **Telefondan yapıştırılan blok artık okunuyor.** iOS düz tırnakları kıvrık tırnağa çeviriyor (`"` → `“`) ve `JSON.parse` patlıyordu; seçim sırasında baştaki `{` ile ilk anahtarın açılış tırnağı da düşebiliyordu. Üçü de okunurken toparlanıyor — kullanıcıya "tırnaklarını düzelt" demek çözüm değil.
+- Bölünmez boşluk ve uzun tire de normale çevriliyor.
+- **Dış parantezin düştüğü metinde artık `{` aranmıyor**, ayrıştırmanın başarısına bakılıyor: sayfa nesnelerinin kendi `{` işaretleri onarımı engelliyordu. Blok normal okunursa hiçbir şey değişmiyor, ancak okunamazsa onarım deneniyor.
+- Altı giriş biçimiyle sınandı: kıvrık tırnak, eksik parantez, kod çitli blok, düz blok, çöp metin ve boş sayfa listesi — dördü okunuyor, ikisi doğru şekilde reddediliyor.
+
 ## v0.126.0
 - **Sayfa öbeklerini artık Claude belirliyor.** Künye bloğuna `grup` alanı eklendi; prompt işe göre öbek istiyor — "Kayıtlar", "Raporlar", "Panolar", "Tanımlar", "Ayarlar" gibi. Sayfa türüne (Liste/Form) göre öbeklemek teknik bir ayrımdı, kullanıcının aradığı ayrım bu değil.
 - **Öbek sırası Claude'un verdiği sıra:** menüde görüneceği düzeni o kuruyor — önce günlük kullanılanlar, en sona ayarlar. Alfabeye çevirip bu kararı bozmuyoruz. Öbeği olmayan sayfalar **"Diğer"** başlığıyla en altta.
