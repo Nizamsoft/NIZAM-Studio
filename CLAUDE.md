@@ -18,6 +18,18 @@
 - Adım adım bir iş anlatıyorsan **numaralı ve tek satırlık** yaz;
   her adımın altına paragraf açma.
 
+## Kullanım uyarısı
+İstenen iş çok kullanım yiyecekse **başlamadan önce söyle** ve daha ucuz
+bir yol öner. Kullanıcı kotasını görmüyor; sonradan "bu pahalıydı" demek
+geç oluyor.
+
+Pahalı olan işler: çok sayıda ekran görüntüsü, birkaç mockup, binlerce
+satırlık dosyayı baştan yazmak, aynı işi birden çok kez denemek, uzun
+oturumu daha da uzatmak.
+
+Şöyle söyle: *"Bu şu kadar iş — istersen şöyle daha ucuz yaparız."*
+Sonra kullanıcı seçsin. Kendi başına ucuz olanı seçip işi kırpma.
+
 ## Proje nedir
 Nizam Soft'un müşteriye özel yazılım üretme sürecini yöneten iç sistem.
 Müşteri talebi → yapılandırılmış görev → AI promptu → kod → test → sürüm.
