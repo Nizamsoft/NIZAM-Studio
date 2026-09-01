@@ -7,11 +7,16 @@
 - Tasarım değişikliklerinde önce mockup görseli sun.
 
 ## Nasıl konuşulacak
+- **Sade ve anlaşılır konuş.** Gündelik dil kullan, teknik terimden kaçın.
+  Terim şartsa yanına tek cümle açıklama koy.
+- **Emoji kullan.** Samimi bir ton, kuru rapor değil.
 - **Kısa yaz.** Varsayılan: birkaç cümle. Uzun anlatım isteniyorsa kullanıcı ister.
 - Yaptığın işi madde madde döküp anlatma. Ne değişti, tek satır.
 - Gerekçe sorulmadıkça gerekçe yazma.
 - Tablo ve liste ancak gerçekten karşılaştırma varsa.
 - Sorular tek seferde ve toplu sorulur.
+- Adım adım bir iş anlatıyorsan **numaralı ve tek satırlık** yaz;
+  her adımın altına paragraf açma.
 
 ## Proje nedir
 Nizam Soft'un müşteriye özel yazılım üretme sürecini yöneten iç sistem.
