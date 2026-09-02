@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## v0.134.4
+- **Kurulum şeridi açık pencerede yenilenmiyordu.** GitHub'da depo açıp geri dönünce adres yazılıyor ama pencere eski hâlinde kalıyordu; kullanıcı "Vazgeç" deyip yeniden açmak zorundaydı. `render()` yalnız `#view` çiziyor, pencere ayrı katmanda duruyor. Şerit artık yerinde yenileniyor.
+- **Sohbet adımı hiç bitmiyordu.** Kare her basışta promptu kopyalıyordu; sohbet adını soran akış vardı ama o kareye bağlanmamıştı, yani adı girmenin yolu yoktu. Prompt kopyalandıktan sonra kare adı soruyor.
+- Zincir baştan sona denendi: depo yazılınca kare yeşile dönüyor, prompt kopyalanınca "Sohbet adı" oluyor, ad girilince bitiyor ve Adres sıraya geçiyor.
+
 ## v0.134.3
 - **SQL dosyası düz metin olarak açılıyor.** GitHub'ın mobil görünümünde "raw kopyala" düğmesi yok; dosya görünümünden metni almak mümkün değildi. Bağlantı `/blob/` yerine `/raw/` adresine gidiyor — düz metinde uzun basıp "Tümünü Seç" çalışıyor. Adım metni de bunu söylüyor.
 - Uzun dosyada bilgisayardan yapmanın daha kolay olduğu not olarak eklendi; aynı iki adres orada da geçerli.

@@ -1021,14 +1021,18 @@ function kurulumAraclari(p) {
       + '&description=' + encodeURIComponent(projeAdi(p) + ' · NIZAM Studio')
       + '&visibility=private';
 
+  /* Kimlik: pencere açıkken arkadaki veri değişirse (GitHub'dan dönüş,
+     prompt kopyalama) `render()` bu şeridi yerinde yeniliyor. */
   return `
-    <div class="s4 ${yayin ? 'bitti' : ''}">
+    <div class="s4 ${yayin ? 'bitti' : ''}" id="kurulum-serit" data-proje="${p.id}">
       ${kart('1', depo ? 'bitti' : 'sirada', ICON.dal, 'Depo', '',
              depoAdresi, depo ? '' : `data-depo-ac="${p.id}"`)}
       ${bag}
+      ${/* Prompt kopyalandıktan sonra kare adı soruyor. Eskiden hep promptu
+            kopyalıyordu: adı girmenin yolu yoktu, adım hiç bitmiyordu. */''}
       ${kart('2', !depo ? 'bekliyor' : isim ? 'bitti' : 'sirada',
              ICON.dosya, isim ? 'Sohbet' : kopya ? 'Sohbet adı' : 'Sohbet',
-             'tanisma-prompt')}
+             kopya ? 'sohbet-adi' : 'tanisma-prompt')}
       ${bag}
       ${kart('3', !isim ? 'bekliyor' : alan ? 'bitti' : 'sirada',
              ICON.dil, 'Adres', 'alan-kaydi')}
@@ -6173,6 +6177,16 @@ function render() {
   }
   view.scrollTop = dikey;
   if (yatay.length) $$('.raf', view).forEach((r, i) => { r.scrollLeft = yatay[i] || 0; });
+
+  /* Açık pencere kendini yenilemiyordu: `render()` yalnız `#view`'i çiziyor,
+     pencere ayrı bir katmanda duruyor. GitHub'dan dönüp depo adresi
+     yazıldığında kurulum şeridi eski hâlinde kalıyor, kullanıcı pencereyi
+     kapatıp açmak zorunda kalıyordu. Şeridi yerinde yeniliyoruz. */
+  const serit = document.getElementById('kurulum-serit');
+  if (serit) {
+    const sp = DB.proje(serit.dataset.proje);
+    if (sp) serit.outerHTML = kurulumAraclari(sp);
+  }
   view.classList.remove('swap');
 
   if (gecis) {
