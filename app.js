@@ -6762,12 +6762,13 @@ async function sihirbazKaydet() {
       },
     });
 
-    /* Roller tasarım kararlarıyla aynı yerde saklanıyor; ayrı sütun gerekmez.
-       Görülen sürüm de burada damgalanıyor: yeni proje bugünün kararlarıyla
-       kuruluyor, "yeni karar" rozeti yalnız eski projelerde çıksın. */
+    /* Görülen sürüm burada damgalanıyor: yeni proje bugünün kararlarıyla
+       kuruluyor, "yeni karar" rozeti yalnız eski projelerde çıksın.
+       Roller artık sihirbazda sorulmuyor — dil/para gibi boş kalsın,
+       "Kim kullanacak?" kartı sorsun. Sabit varsayılanı buradan yazarsak
+       kart hiç sorulmadan tamamlanmış görünüyordu. */
     try {
-      await DB.paletKaydet(id, Object.assign({ gorulenSurum: APP.version },
-        rolListesi(SIHIRBAZ.roller).length ? { roller: rolListesi(SIHIRBAZ.roller) } : {}));
+      await DB.paletKaydet(id, { gorulenSurum: APP.version });
     } catch (h) { /* kritik değil, Firma durağından sonra girilebilir */ }
 
     /* Logo ancak proje kurulduktan sonra yüklenebilir: dosya adı projenin

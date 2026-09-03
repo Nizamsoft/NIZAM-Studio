@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.134.7
+- **"Kim kullanacak?" adımı hiç sorulmadan tamamlanmış görünüyordu.** Sihirbaz artık bu soruyu sormuyor ama arka planda hâlâ sabit bir varsayılan (Personel, Yönetici) yazıp kaydediyordu — dil ve para biriminde daha önce düzeltilen hata, roller alanında unutulmuştu. Yeni projeler artık roller boş kuruluyor, adım gerçekten cevaplanana kadar bitmiş sayılmıyor.
+
 ## v0.134.6
 - **"Sohbet" karesine basınca yalnızca kısa bir bildirim çıkıyordu.** Prompt kopyalanınca kullanıcı sırada ne olduğunu bilmiyordu. Artık kopyalandıktan sonra üç adımı gösteren bir pencere açılıyor: Claude Code'u aç, yapıştır ve gönder, Studio'ya dönüp aynı kareye tekrar bas.
 
