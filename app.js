@@ -8121,7 +8121,12 @@ function adimYer(projeId) {
     tazele();
     $('[data-ay="iptal"]', kutu).addEventListener('click', modalKapat);
     $('[data-ay="kaydet"]', kutu).addEventListener('click', async () => {
-      const palet = Object.assign({}, pl);
+      /* Pencere açık dururken "Yayın" karesi arka planda kendi kaydını
+         yapabiliyor (GitHub'dan dönüşte). `pl` pencere açılış anının
+         görüntüsü olduğu için o kaydı burada eskisiyle ezmeyelim —
+         kaydetmeden hemen önce projenin o anki halini tazeleyelim. */
+      const guncel = DB.proje(projeId);
+      const palet = Object.assign({}, (guncel && guncel.palet) || pl);
       $$('[data-tk]', kutu).forEach(el => {
         const v = el.value.trim();
         if (v) palet[el.dataset.tk] = v; else delete palet[el.dataset.tk];

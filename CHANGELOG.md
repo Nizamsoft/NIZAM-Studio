@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.134.5
+- **"Nereye kuralım?" penceresinde Kaydet, "Yayında" işaretini siliyordu.** Pencere açıkken "Yayın" karesi arka planda kendi kaydını yapıyor (GitHub'dan dönüşte); ama ana Kaydet düğmesi pencerenin açılış anındaki eski bilgiyle yazıyordu, bu da az önceki "yayında" kaydının üzerine yazıp siliyordu. Kaydet artık projenin o anki güncel halini alıp onun üzerine yazıyor.
+
 ## v0.134.4
 - **Kurulum şeridi açık pencerede yenilenmiyordu.** GitHub'da depo açıp geri dönünce adres yazılıyor ama pencere eski hâlinde kalıyordu; kullanıcı "Vazgeç" deyip yeniden açmak zorundaydı. `render()` yalnız `#view` çiziyor, pencere ayrı katmanda duruyor. Şerit artık yerinde yenileniyor.
 - **Sohbet adımı hiç bitmiyordu.** Kare her basışta promptu kopyalıyordu; sohbet adını soran akış vardı ama o kareye bağlanmamıştı, yani adı girmenin yolu yoktu. Prompt kopyalandıktan sonra kare adı soruyor.
