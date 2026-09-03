@@ -6781,6 +6781,10 @@ async function sihirbazKaydet() {
     sihirbazKapat();
     sayaclariYaz();
     toast(SIHIRBAZ.firma.trim() + ' kuruldu.');
+    /* Doğrudan marka sayfasına atlıyoruz ama projenin kendi ana ekranı
+       (yedi duraklı harita) geçmişte hiç yer almasın istemiyoruz — yoksa
+       "geri" oradan atlayıp doğrudan Projeler listesine düşüyordu. */
+    history.pushState(null, '', '#/projeler/' + id);
     location.hash = '#/projeler/' + id + '/firma';
     render();
   } catch (e) {
@@ -7873,6 +7877,8 @@ function markaDuzenle(projeId) {
 
   let sektor = p.sektor || '';
   const sektorler = DB.sektorler.map(x => ({ kod: x.ad, ad: x.ad }));
+  const logo   = DB.logoAdres[p.id];
+  const gorsel = gorselAdresi(p, 'G0');
 
   modalAc(`
     ${modalBaslik(ICON.etiket, 'Marka kimliği', 'Bu bilgiler promptlara ve kimlik dosyasına girer.')}
@@ -7892,10 +7898,37 @@ function markaDuzenle(projeId) {
       + fdNot('Sektör modül önerisini belirliyor: aynı işi yapan firmalara '
             + 'benzer ekranlar gerekiyor.'))}
 
+    ${/* Logo ve işletme görseli eskiden yalnız sayfanın kendisinde
+          yükleniyordu: kullanıcı bilgileri kaydedip pencereden çıkmak,
+          sonra ayrı bir düğme bulup görsel eklemek zorundaydı. Aynı
+          eylemler burada — tıklanınca hemen yükleniyor, pencereyi
+          kapatmaya gerek yok. */ ''}
+    <div class="fbd-ayrac">
+      <span class="fbd-et">Marka</span>
+      <div class="fb-marka">
+        <button class="fb-logo ${logo ? 'dolu' : ''}" type="button"
+                data-eylem="logo-yukle" data-proje="${p.id}"
+                ${logo ? `data-logo="${esc(logo)}"` : ''}>
+          ${logo ? '' : svg(ICON.etiket, 17)}
+        </button>
+        <span class="fb-myz">
+          <i>Logo</i>
+          <b class="${logo ? '' : 'eksik'}">${logo ? 'Yüklendi' : 'dokun, yükle'}</b>
+        </span>
+      </div>
+      <button class="fb-gorsel ${gorsel ? 'dolu' : ''}" type="button"
+              data-eylem="proje-gorsel" data-id="${p.id}">
+        ${gorsel ? `<img src="${esc(gorsel)}" alt="" decoding="async">` : ''}
+        <span class="fb-gyz">${svg(gorsel ? ICON.tik : ICON.arti, 13)}
+          ${gorsel ? 'İşletme görseli' : 'İşletme görseli ekle'}</span>
+      </button>
+    </div>
+
     <div class="modal-alt">
       <button class="btn btn-ghost" data-md="iptal" type="button">Vazgeç</button>
       <button class="btn btn-primary" data-md="kaydet" type="button"><span>Kaydet</span></button>
     </div>`, kutu => {
+    logolariGoster();
     const deger = id => { const e = $('#' + id, kutu); return e ? e.value.trim() : ''; };
 
     const sayaclariTazele = () => {

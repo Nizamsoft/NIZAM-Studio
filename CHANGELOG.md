@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## v0.134.8
+- **Yeni proje kurulunca "geri" doğrudan Projeler listesine atlıyordu.** Sihirbaz projeyi kurar kurmaz Marka kimliği sayfasına atlıyor, projenin kendi ana ekranı (yedi duraklı harita) geçmişte hiç yer almıyordu. Artık o ekran da geçmişe ekleniyor, "geri" önce oraya dönüyor.
+- **Marka kimliği penceresinde logo ve işletme görseli yüklenemiyordu.** Bilgileri kaydedip pencereden çıkmak, sonra ayrı bir düğme aramak gerekiyordu. Logo ve görsel yükleme artık aynı pencerede — pencereyi kapatmadan ekleniyor.
+
 ## v0.134.7
 - **"Kim kullanacak?" adımı hiç sorulmadan tamamlanmış görünüyordu.** Sihirbaz artık bu soruyu sormuyor ama arka planda hâlâ sabit bir varsayılan (Personel, Yönetici) yazıp kaydediyordu — dil ve para biriminde daha önce düzeltilen hata, roller alanında unutulmuştu. Yeni projeler artık roller boş kuruluyor, adım gerçekten cevaplanana kadar bitmiş sayılmıyor.
 
