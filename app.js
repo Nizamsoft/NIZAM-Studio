@@ -3692,13 +3692,8 @@ function yapiSayfasi(p, d) {
        ve beş adımın tek sayı olmasından doğan boş yuva kapanıyor. */
     { no: '03', eylem: 'adim-yer',    ad: 'Nereye kuralım?',
       ozet: 'Adres, paket adı, kurulum',
-      /* Supabase seçildiyse bağlantı da girilmiş olmalı: kod ilk günden
-         gerçek veritabanına yazsın, sonradan sökülüp bağlanmasın. */
-      bitti: !!pl.modulAdi && !!pl.veriKatmani && !!pl.alanAdi
-             && !!p.repo && !!String(pl.sohbetAdi || '').trim() && !!pl.yayinda
-             && (!sunuculuMu(p)
-                 || (!!String(pl.supabaseUrl || '').trim()
-                     && !!String(pl.supabaseAnon || '').trim())),
+      bitti: yerDolu(p) && !!pl.alanAdi
+             && !!p.repo && !!String(pl.sohbetAdi || '').trim() && !!pl.yayinda,
       deger: pl.alanAdi || '' },
 
     { no: '04', eylem: 'yapi-akis-ac', ad: 'Modüller',
@@ -8090,20 +8085,33 @@ function sohbetYonlendir(p) {
   });
 }
 
-/* 03 · Nereye kuralım? */
-function adimYer(projeId) {
-  modalHepsiniKapat();
+/* Yer yarısı bitti mi: paket adı, veri katmanı ve (sunuculuysa) Supabase
+   bağlantısı. Adres burada yok — o "Kurulum" karelerinin işi. */
+function yerDolu(p) {
+  const pl = p.palet || {};
+  return !!pl.modulAdi && !!pl.veriKatmani
+    && (!sunuculuMu(p)
+        || (!!String(pl.supabaseUrl || '').trim() && !!String(pl.supabaseAnon || '').trim()));
+}
+
+/* 03 · Nereye kuralım? — iki ayrı pencere art arda: önce Yer (paket adı,
+   veri katmanı), sonra Kurulum (depo, sohbet, adres, yayın). İkisi aynı
+   pencerede aynı anda hem yazı hem dış bağlantı karışıklığı yaratıyordu.
+   Yer zaten doluysa (kart daha önce bir kez cevaplandıysa) doğrudan
+   Kuruluma geçiyoruz — aynı formu ikinci kez göstermeye gerek yok. */
+function adimYer(projeId, zorla) {
   const p = DB.proje(projeId);
   if (!p) return;
+  if (!zorla && yerDolu(p)) return adimKurulum(projeId);
 
+  modalHepsiniKapat();
   const pl   = p.palet || {};
   const alan = a => TEKNIK_ALAN.find(x => x.anahtar === a) || {};
   const veri = alan('veriKatmani');
   const veriSecili = pl.veriKatmani || veri.varsayilan;
 
   modalAc(`
-    ${modalBaslik(ICON.bulut, 'Nereye kuralım?',
-      'Önce yeri söyle, sonra dört düğmeyle kur.')}
+    ${modalBaslik(ICON.bulut, 'Nereye kuralım?', 'Önce yeri söyle.')}
     ${fdKart('#4fa8c9', ICON.bulut, 'Yer',
       fdAlan('#c48a5c', ICON.katman, 'Bu paketin adı', 'ay-modul', pl.modulAdi,
              'Örn. Muhasebe', 'text', 60, false, 'data-tk="modulAdi"')
@@ -8116,9 +8124,6 @@ function adimYer(projeId) {
         </div>
         <input type="hidden" data-tk="veriKatmani" value="${esc(veriSecili)}">
       </div>`
-      + fdAlan('#5fb37f', ICON.anahtar, 'İnternet adresi', 'ay-alan', pl.alanAdi,
-               onerilenAlanAdi(p) || 'kubban.nizamsoft.com', 'text', 200, true,
-               'data-tk="alanAdi"')
       + fdNot(veri.alt)
       /* Bağlantı en başta soruluyor: sonradan gelirse kod önce cihaz-içi
          deneme hesabıyla yazılıyor, sonra sökülüp Supabase'e bağlanıyor.
@@ -8140,19 +8145,10 @@ function adimYer(projeId) {
             <span><b>service_role</b> anahtarını buraya yazma. anon key
             tarayıcıya zaten iniyor, veriyi satır güvenliği (RLS) koruyor —
             o normal.</span></div>
-        </div>`
-      + `<div class="fbd-ayrac">
-          <span class="fbd-et">Kurulum</span>
-          ${kurulumAraclari(p)}
-          <div class="fb-kg tek" style="margin-top:11px">
-            ${kunyeSatiri('#b8926b', ICON.dal,   'Kod deposu',
-                          depoSlug(p.repo) || p.repo, 'repo', p.id, false, 'dokun, yapıştır')}
-            ${kunyeSatiri('#9b7fd4', ICON.dosya, 'Proje kimliği', 'NIZAM.md', 'kimlik', p.id)}
-          </div>
         </div>`)}
     <div class="modal-alt">
       <button class="btn btn-ghost" data-ay="iptal" type="button">Vazgeç</button>
-      <button class="btn btn-primary" data-ay="kaydet" type="button"><span>Kaydet</span></button>
+      <button class="btn btn-primary" data-ay="kaydet" type="button"><span>Devam et</span></button>
     </div>`, kutu => {
     const tazele = () => {
       const y = $('[data-fdsay="Yer"]', kutu);
@@ -8180,10 +8176,10 @@ function adimYer(projeId) {
     tazele();
     $('[data-ay="iptal"]', kutu).addEventListener('click', modalKapat);
     $('[data-ay="kaydet"]', kutu).addEventListener('click', async () => {
-      /* Pencere açık dururken "Yayın" karesi arka planda kendi kaydını
-         yapabiliyor (GitHub'dan dönüşte). `pl` pencere açılış anının
-         görüntüsü olduğu için o kaydı burada eskisiyle ezmeyelim —
-         kaydetmeden hemen önce projenin o anki halini tazeleyelim. */
+      /* Pencere açık dururken arka planda başka bir kayıt olabilir (ör.
+         Yayın karesi). `pl` pencere açılış anının görüntüsü olduğu için
+         o kaydı burada eskisiyle ezmeyelim — projenin o anki halini
+         tazeleyip üzerine yazalım. */
       const guncel = DB.proje(projeId);
       const palet = Object.assign({}, (guncel && guncel.palet) || pl);
       $$('[data-tk]', kutu).forEach(el => {
@@ -8194,10 +8190,37 @@ function adimYer(projeId) {
       yazi.textContent = 'Kaydediliyor…';
       try {
         await DB.paletKaydet(projeId, palet);
-        modalKapat(); render(); toast('Kaydedildi.', 'basari');
-      } catch (h) { yazi.textContent = 'Kaydet'; toast(h.message, 'hata'); }
+        modalKapat(); render();
+        adimKurulum(projeId);
+      } catch (h) { yazi.textContent = 'Devam et'; toast(h.message, 'hata'); }
     });
     setTimeout(() => { const i = $('#ay-modul', kutu); if (i) i.focus(); }, 40);
+  }, 'genis');
+}
+
+/* Yerin ikinci yarısı: depo, sohbet, adres, yayın. Adres burada — dört
+   düğmeden biri — çünkü Namecheap'e yazılacak CNAME kaydını da rehberli
+   gösteren tek yer bu; "Yer" penceresindeki serbest metin kutusu aynı
+   alanı (alanAdi) ikinci kez soruyordu, kaldırıldı. */
+function adimKurulum(projeId) {
+  modalHepsiniKapat();
+  const p = DB.proje(projeId);
+  if (!p) return;
+
+  modalAc(`
+    ${modalBaslik(ICON.bulut, 'Kurulum', 'Dört düğmeyle kur.')}
+    ${kurulumAraclari(p)}
+    <div class="fb-kg tek" style="margin-top:11px">
+      ${kunyeSatiri('#b8926b', ICON.dal,   'Kod deposu',
+                    depoSlug(p.repo) || p.repo, 'repo', p.id, false, 'dokun, yapıştır')}
+      ${kunyeSatiri('#9b7fd4', ICON.dosya, 'Proje kimliği', 'NIZAM.md', 'kimlik', p.id)}
+    </div>
+    <div class="modal-alt">
+      <button class="btn btn-ghost" data-ak2="yer" type="button">Yer bilgilerini düzenle</button>
+      <button class="btn btn-primary" data-ak2="kapat" type="button"><span>Kapat</span></button>
+    </div>`, kutu => {
+    $('[data-ak2="kapat"]', kutu).addEventListener('click', modalKapat);
+    $('[data-ak2="yer"]', kutu).addEventListener('click', () => adimYer(projeId, true));
   }, 'genis');
 }
 

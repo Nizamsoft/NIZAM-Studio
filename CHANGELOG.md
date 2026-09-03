@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## v0.134.9
+- **"Nereye kuralım?" iki ayrı pencere oldu.** Tek pencerede hem bilgi yazma hem dış bağlantılara (GitHub, Namecheap) tıklama karışıyordu. Artık önce "Yer" (paket adı, veri katmanı) dolduruluyor, Devam et'e basınca "Kurulum" (depo, sohbet, adres, yayın) ayrı pencerede açılıyor. Yer zaten doluysa doğrudan Kuruluma geçiliyor.
+- **İnternet adresi iki yerden ayrı ayrı yazılıyordu.** "Yer" penceresindeki serbest metin kutusu ile "Adres" karesindeki Namecheap rehberli akışı aynı alanı (alanAdi) dolduruyordu. Serbest kutu kaldırıldı — adres artık yalnızca rehberli "Adres" karesinden giriliyor.
+
 ## v0.134.8
 - **Yeni proje kurulunca "geri" doğrudan Projeler listesine atlıyordu.** Sihirbaz projeyi kurar kurmaz Marka kimliği sayfasına atlıyor, projenin kendi ana ekranı (yedi duraklı harita) geçmişte hiç yer almıyordu. Artık o ekran da geçmişe ekleniyor, "geri" önce oraya dönüyor.
 - **Marka kimliği penceresinde logo ve işletme görseli yüklenemiyordu.** Bilgileri kaydedip pencereden çıkmak, sonra ayrı bir düğme aramak gerekiyordu. Logo ve görsel yükleme artık aynı pencerede — pencereyi kapatmadan ekleniyor.
