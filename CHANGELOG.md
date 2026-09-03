@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.134.6
+- **"Sohbet" karesine basınca yalnızca kısa bir bildirim çıkıyordu.** Prompt kopyalanınca kullanıcı sırada ne olduğunu bilmiyordu. Artık kopyalandıktan sonra üç adımı gösteren bir pencere açılıyor: Claude Code'u aç, yapıştır ve gönder, Studio'ya dönüp aynı kareye tekrar bas.
+
 ## v0.134.5
 - **"Nereye kuralım?" penceresinde Kaydet, "Yayında" işaretini siliyordu.** Pencere açıkken "Yayın" karesi arka planda kendi kaydını yapıyor (GitHub'dan dönüşte); ama ana Kaydet düğmesi pencerenin açılış anındaki eski bilgiyle yazıyordu, bu da az önceki "yayında" kaydının üzerine yazıp siliyordu. Kaydet artık projenin o anki güncel halini alıp onun üzerine yazıyor.
 

@@ -8031,6 +8031,31 @@ function adimRoller(projeId) {
   }, 'genis');
 }
 
+/* Tanışma promptu panoya alındıktan sonraki üç adımı gösteren küçük
+   pencere — "sohbet-adi" karesi de bu ekranın devamı olduğu için burada
+   hatırlatılıyor. */
+function sohbetYonlendir(p) {
+  const adim = (no, ic) => `<div class="adm"><b>${no}</b><span>${ic}</span></div>`;
+  modalAc(`
+    ${modalBaslik(ICON.dosya, 'Prompt panoda', 'Sırada Claude Code var.')}
+    <div class="adm-l">
+      ${adim(1, '<b>Claude Code\'u aç</b> — aşağıdaki düğmeyle.')}
+      ${adim(2, '<b>Yapıştır ve gönder.</b> Claude depoyu kurup kodu yazacak.')}
+      ${adim(3, 'Sohbet başlayınca <b>Studio\'ya dön</b>, aynı kareye tekrar '
+        + 'bas — bu kez sohbete verdiğin adı soracak.')}
+    </div>
+    <div class="kur-dug">
+      <a class="sayfa-dug" target="_blank" rel="noopener"
+         href="${esc(claudeAdresi(depoSlug(p.repo), true))}">
+        ${svg(ICON.disari, 15)} Claude Code'u aç</a>
+    </div>
+    <div class="modal-alt">
+      <button class="btn btn-primary" data-sy="kapat" type="button"><span>Tamam</span></button>
+    </div>`, kutu => {
+    $('[data-sy="kapat"]', kutu).addEventListener('click', modalKapat);
+  });
+}
+
 /* 03 · Nereye kuralım? */
 function adimYer(projeId) {
   modalHepsiniKapat();
@@ -9963,9 +9988,9 @@ async function eylemCalistir(el) {
     return;
   }
 
-  /* Claude açılmıyor: prompt panoya alınıp kart yeşile dönüyor, kullanıcı
-     Claude Code'u kendi açıp yapıştırıyor — standartlardaki prompt kartıyla
-     aynı davranış. */
+  /* Kopyalamak yeterli değildi: toast göz ardı edilince kullanıcı panoda
+     ne olduğunu, nereye yapıştıracağını unutuyordu. Kopyalandıktan sonra
+     üç adımı gösteren küçük bir pencereyle yönlendiriyoruz. */
   if (e === 'tanisma-prompt') {
     const pr = DB.proje(el.dataset.proje);
     if (!pr) return;
@@ -9980,9 +10005,11 @@ async function eylemCalistir(el) {
     if (!oldu) { toast('Kopyalanamadı.', 'hata'); return; }
     /* Kopyalama aynı zamanda aşamayı bitiriyor: bundan sonrası Claude Code'da
        geçiyor, Studio'nun bekleyeceği başka bir işaret yok. */
-    return isYap(() => DB.paletKaydet(pr.id,
-      Object.assign({}, pr.palet || {}, { sohbetAcildi: true })),
-      'Prompt panoda — Claude Code\'a yapıştır.');
+    try {
+      await DB.paletKaydet(pr.id, Object.assign({}, pr.palet || {}, { sohbetAcildi: true }));
+    } catch (h) { /* kritik değil, kare tekrar basılabilir */ }
+    render();
+    return sohbetYonlendir(pr);
   }
 
   if (e === 'standart-ice-aktar') return standartIceAktar();
