@@ -7958,7 +7958,10 @@ function markaDuzenle(projeId) {
           sektor:  sektor || null,
         });
         modalKapat();
-        render();
+        /* Bu sayfada tek kart var; kaydedince burada kalmanın anlamı yok —
+           bir sonraki durağın kilidi açılmış olabilir, ana harita (duraklar
+           ekranı) oraya dönsün. */
+        location.hash = '#/projeler/' + projeId;
         toast('Marka bilgileri güncellendi.', 'basari');
       } catch (h) {
         yazi.textContent = 'Kaydet';
