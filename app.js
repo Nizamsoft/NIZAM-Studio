@@ -5359,6 +5359,19 @@ function guncellemeSayfasi(p, d) {
           ${svg(ICON.katman, 15)} Adres
           ${p.repo ? `<b class="mono">${esc(p.repo)}</b>` : '<b class="eksik">eklenmedi</b>'}</div>
       </div>`
+    /* Tek kişi geliştiriyorsa modül seçme, atama gibi adımlar gereksiz
+       yavaşlatıcı — burası tek satırda görevi "Proje Geneli" kovasına
+       düşürüyor. Detaylı atama gerekiyorsa görevi açıp elle taşınabilir. */
+    + bolumBas('Hızlı güncelleme') + `
+      <div class="card">
+        <label class="field" style="margin-bottom:0">
+          <span>Ne yapılacak</span>
+          <input type="text" id="hg-metin" placeholder="Örn. Stok listesine tarih filtresi ekle"
+                 maxlength="120" autocomplete="off">
+        </label>
+        <button class="sayfa-dug" type="button" data-eylem="hizli-gorev" data-proje="${p.id}">
+          ${svg(ICON.arti, 15)} Ekle</button>
+      </div>`
     + bolumBas('Açık istekler')
     + (gorevler.length
         ? `<div class="card liste">${gorevler.slice(0, 12).map(gorevKarti).join('')}</div>`
@@ -10311,6 +10324,21 @@ async function eylemCalistir(el) {
       pl.finalVerildi ? 'İşaret kaldırıldı.' : 'Final sürüm verildi.');
   }
 
+  if (e === 'hizli-gorev') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const alan = $('#hg-metin');
+    const baslik = alan ? alan.value.trim() : '';
+    if (!baslik) { toast('Önce ne yapılacağını yaz.', 'uyari'); if (alan) alan.focus(); return; }
+    const genel = DB.modulleri(pr.id).find(m => m.ad === GENEL_MODUL);
+    if (!genel) { toast('Proje Geneli kovası bulunamadı.', 'hata'); return; }
+    return isYap(() => DB.gorevOlustur({
+      proje_id: pr.id, modul_id: genel.id, sayfa_id: null,
+      baslik, aciklama: '', oncelik: 'normal',
+      atanan: AUTH.user ? AUTH.user.id : null, standartlar: [],
+    }), 'Görev eklendi.');
+  }
+
   if (e === 'repo') {
     const projeId = el.dataset.proje || rota().id;
     const proje = DB.proje(projeId);
@@ -11697,6 +11725,14 @@ document.addEventListener('DOMContentLoaded', () => {
     el.classList.add('kopyalandi');
     if (yazi) yazi.textContent = (el.dataset.hedef || 'Sohbet') + ' açılıyor…';
     toast('Prompt panoda — ' + (el.dataset.hedef || 'sohbet') + '\'e yapıştır.', 'basari');
+  });
+
+  /* Hızlı güncelleme kutusu: sayfa her render'da yeniden çizildiği için
+     tek elemanlık dinleyici kalıcı olmuyor — belgeye bağlı, hep çalışıyor. */
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Enter' || !e.target.closest('#hg-metin')) return;
+    const btn = $('[data-eylem="hizli-gorev"]');
+    if (btn) btn.click();
   });
 
   /* "GitHub'da aç"a dokunuldu: kullanıcı dönünce adresi kendimiz yazacağız. */

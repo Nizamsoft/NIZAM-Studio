@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.134.13
+- **Güncellemeler sayfasına "Hızlı güncelleme" kutusu eklendi.** Tek kişi geliştiriyorsa modül seçme, atama gibi adımlarla uğraşmak gereksiz — kutuya yazıp Ekle'ye (ya da Enter'a) basınca görev otomatik "Proje Geneli" kovasına, kendine atanmış olarak düşüyor. Detaylı atama gerekiyorsa görev açılıp elle düzenlenebiliyor; eski "Yeni görev" formu da aynen duruyor.
+
 ## v0.134.12
 - **"Geliştirmeye ihtiyaç yok" işaretlense de Final durağı kilitli kalıyordu.** Final sayfası hâlâ eski şartı (en az bir görev bitmiş olmalı) kontrol ediyordu, yeni işareti bilmiyordu. İkisi artık aynı ortak kuralı (`gelistirmeBitti`) paylaşıyor.
 
