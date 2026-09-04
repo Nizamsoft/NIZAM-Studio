@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.134.11
+- **Geliştirme aşaması, hiç görev açılmadan asla bitmiyordu.** Beta kusursuz çıksa bile ilerlemek için uydurma bir görev açmak gerekiyordu. "Yalnız bu programda olsun" kartına, hiç görev yokken görünen bir **"Geliştirmeye ihtiyaç yok"** kutusu eklendi — işaretlenince aşama görevsiz de tamamlanmış sayılıyor.
+
 ## v0.134.10
 - **Marka kimliği kaydedilince aynı sayfada kalıyordu.** Bu sayfada tek kart var; kaydettikten sonra orada kalmanın anlamı yoktu, bir sonraki durağın kilidi açılmış olabiliyordu. Kaydet artık ana harita (duraklar) ekranına dönüyor.
 

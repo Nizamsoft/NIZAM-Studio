@@ -4726,6 +4726,7 @@ function yapiIleriTazele(pr) {
    Üçüncü kart o yayılımın bu programa düşen ucudur. */
 function gelistirmeSayfasi(p, d) {
   const s = DB.sayim(p.id);
+  const pl = p.palet || {};
   const gorevler = DB.gorevleri({ proje: p.id });
   const dev  = gorevler.filter(g => g.durum === 'gelistiriliyor').length;
   const kont = gorevler.filter(g => g.durum === 'kontrolde').length;
@@ -4770,14 +4771,20 @@ function gelistirmeSayfasi(p, d) {
       </div>
       <div class="kur-deger duz">${svg(ICON.katman, 13)} Hedef depo <b class="mono">${esc(APP.depo)}</b></div>`)
 
-    + durakKarti(2, s.gorev > 0, 'Yalnız bu programda olsun',
+    + durakKarti(2, s.gorev > 0 || !!pl.gelistirmeGerekYok, 'Yalnız bu programda olsun',
         'Betayı denerken gördüğün eksikler. Her biri bir görev; görevden '
         + `<b class="mono">[${TASK_PREFIX}-x]</b> etiketli prompt çıkar.`, `
       <div class="kur-dug">
         <button class="sayfa-dug ${yeniStd.length ? 'ikincil' : ''}" type="button"
                 data-eylem="gorev-ekle" data-proje="${p.id}">
           ${svg(ICON.arti, 15)} Görev ekle</button>
-      </div>`)
+      </div>`
+      /* Görev açılınca bu seçenek anlamsızlaşıyor: gizlemek yerine kaldırıp
+         gösterme yeter, altta kalan görev listesi zaten devam ediyor. */
+      + (s.gorev === 0 ? `
+      <label class="kur-onay ${pl.gelistirmeGerekYok ? 'on' : ''}" data-eylem="gelistirme-gerek-yok"
+             data-proje="${p.id}" role="button" tabindex="0">
+        <span class="kur-kutu">${svg(ICON.tik, 12)}</span> Geliştirmeye ihtiyaç yok</label>` : ''))
 
     + bolumBas('Açık işler')
     + (gorevler.length
@@ -5446,12 +5453,18 @@ function projeDuraklari(p) {
         : 'Son bloğu Claude\'a ver, ilk çalışan sürümü kursun; sen dene.',
     },
     {
+      /* Görev yoksa tek çıkış "geliştirmeye ihtiyaç yok" işareti — beta
+         kusursuz çıkabilir, o zaman uydurma bir görev açmaya gerek yok.
+         Görev açılınca bu işaretin anlamı kalmıyor: bitmiş sayılmak için
+         hepsinin bitmesi gerekiyor, eski işareti ayrıca temizlemeye gerek yok. */
       ad: 'Geliştirme',
-      bitti: s.gorev > 0 && s.bitmis === s.gorev,
+      bitti: s.gorev > 0 ? s.bitmis === s.gorev : !!(p.palet && p.palet.gelistirmeGerekYok),
       rozet: yeniStandartlar(p.palet).length,
       ozet: s.gorev
         ? `${s.bitmis}/${s.gorev} görev bitti`
-        : 'Betayı denerken gördüğün eksikleri görev olarak aç.',
+        : (p.palet && p.palet.gelistirmeGerekYok)
+          ? 'Geliştirmeye ihtiyaç yok.'
+          : 'Betayı denerken gördüğün eksikleri görev olarak aç.',
     },
     {
       ad: 'Final',
@@ -9975,6 +9988,15 @@ async function eylemCalistir(el) {
     return isYap(() => DB.paletKaydet(pr.id,
       Object.assign({}, pl, { sqlKuruldu: !pl.sqlKuruldu })),
       pl.sqlKuruldu ? 'İşaret kaldırıldı.' : 'Veritabanı kuruldu.');
+  }
+
+  if (e === 'gelistirme-gerek-yok') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const pl = pr.palet || {};
+    return isYap(() => DB.paletKaydet(pr.id,
+      Object.assign({}, pl, { gelistirmeGerekYok: !pl.gelistirmeGerekYok })),
+      pl.gelistirmeGerekYok ? 'İşaret kaldırıldı.' : 'Geliştirmeye ihtiyaç yok olarak işaretlendi.');
   }
 
   if (e === 'dil-aktar') return dilAktar(el.dataset.proje);
