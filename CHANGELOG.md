@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.134.12
+- **"Geliştirmeye ihtiyaç yok" işaretlense de Final durağı kilitli kalıyordu.** Final sayfası hâlâ eski şartı (en az bir görev bitmiş olmalı) kontrol ediyordu, yeni işareti bilmiyordu. İkisi artık aynı ortak kuralı (`gelistirmeBitti`) paylaşıyor.
+
 ## v0.134.11
 - **Geliştirme aşaması, hiç görev açılmadan asla bitmiyordu.** Beta kusursuz çıksa bile ilerlemek için uydurma bir görev açmak gerekiyordu. "Yalnız bu programda olsun" kartına, hiç görev yokken görünen bir **"Geliştirmeye ihtiyaç yok"** kutusu eklendi — işaretlenince aşama görevsiz de tamamlanmış sayılıyor.
 

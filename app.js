@@ -5326,7 +5326,7 @@ function finalSayfasi(p, d) {
   const pl = p.palet || {};
   const verildi = !!pl.finalVerildi;
   const s = DB.sayim(p.id);
-  const hazir = s.gorev > 0 && s.bitmis === s.gorev;
+  const hazir = gelistirmeBitti(p);
 
   return sayfaHero(p, d) + `
     <div class="takvim" style="${renkDegiskenleri(p.renk)}">
@@ -5335,7 +5335,8 @@ function finalSayfasi(p, d) {
     </div>`
     + durakKarti(1, verildi, 'Final sürüm',
         hazir || verildi
-          ? 'Bütün görevler bitti. Son bir kez dene, sonra müşteriye teslim et.'
+          ? (s.gorev > 0 ? 'Bütün görevler bitti.' : 'Geliştirmeye ihtiyaç yoktu.')
+            + ' Son bir kez dene, sonra müşteriye teslim et.'
           : '<b class="eksik">Önce açık görevleri bitir.</b> Final, geliştirme '
             + 'durağındaki bütün görevler tamamlandığında verilir.', `
       <label class="kur-onay ${verildi ? 'on' : ''} ${hazir || verildi ? '' : 'pasif'}"
@@ -5399,6 +5400,14 @@ function projeKunyesi(p) {
     </div>`;
 }
 
+/* Geliştirme durağı bitti mi: görev varsa hepsi bitmiş olmalı, yoksa
+   "ihtiyaç yok" işareti yeterli. Final sayfası da aynı şartı soruyor —
+   tek yerde tutulmazsa ikisi ayrı düşer (biri güncellenir, öteki unutulur). */
+function gelistirmeBitti(p) {
+  const s = DB.sayim(p.id);
+  return s.gorev > 0 ? s.bitmis === s.gorev : !!(p.palet && p.palet.gelistirmeGerekYok);
+}
+
 /* Projenin beş durağı. Durum veriden okunur, elle girilmez. */
 function projeDuraklari(p) {
   const s        = DB.sayim(p.id);
@@ -5458,7 +5467,7 @@ function projeDuraklari(p) {
          Görev açılınca bu işaretin anlamı kalmıyor: bitmiş sayılmak için
          hepsinin bitmesi gerekiyor, eski işareti ayrıca temizlemeye gerek yok. */
       ad: 'Geliştirme',
-      bitti: s.gorev > 0 ? s.bitmis === s.gorev : !!(p.palet && p.palet.gelistirmeGerekYok),
+      bitti: gelistirmeBitti(p),
       rozet: yeniStandartlar(p.palet).length,
       ozet: s.gorev
         ? `${s.bitmis}/${s.gorev} görev bitti`
