@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.134.16
+- **"Program temeli" aşaması gerçek içeriğe kavuştu.** Eskiden "Kurulum ve yapı" durağının içinde dağınık duran üç karar — program adı, kim kullanacak (roller), veriler nerede duracak (Supabase/Yerel) — artık kendi aşamasında, tek pencerede birlikte soruluyor. "Ne yapıyoruz?" (platform/dil/para) adımı tamamen kaldırıldı, bu alanlar sabit. "Kurulum ve yapı" artık sadece Bağlantılar (depo/sohbet/adres/yayın) ve Modülleri içeriyor.
+
 ## v0.134.15
 - **Yeni aşama planının ilk adımı: isimlendirme.** "Marka kimliği" → "Firma bilgileri" oldu. "Program temeli", "Bağlantılar" ve "Nizam kurulum paketi" akışa taslak (içeriksiz) durak olarak eklendi — şimdilik sadece yerlerini gösteriyorlar, "yakında" yazıyor, akışı kilitlemiyorlar. Gerçek içerikleri (bugün "Kurulum ve yapı" durağının içinde birleşik duran alanlar) ayrı bir adımda buraya taşınacak. Durak sayısı 7'den 10'a çıktığına göre ana haritadaki kare ızgarası da (üçerli satırlar) durak sayısına göre kendini ayarlıyor artık.
 

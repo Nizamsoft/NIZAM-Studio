@@ -779,12 +779,13 @@ function logolariGoster() {
 /* Proje içindeki durak dizisi. Adres, ad ve içeriği tek yerde tanımlı.
    Sıra önemli: projeDuraklari() dizisi bununla indeks indeks eşleşiyor.
 
-   program/baglantilar/kurulumpaketi henüz taslak — akışta yerlerini
-   görelim diye eklendi, içleri kurulmadı (yakindaSayfasi). Gerçek
-   içerikleri (bugün "Kurulum ve yapı" durağının içinde birleşik duran
-   program ayarları, depo/sohbet/adres/yayın, sabit iskelet) oraya
-   taşınınca bu üçü gerçek ekranlara kavuşacak. O güne kadar `bitti`
-   hep true — akışı kilitlemesinler diye. */
+   baglantilar/kurulumpaketi henüz taslak — akışta yerlerini görelim diye
+   eklendi, içleri kurulmadı (yakindaSayfasi). Gerçek içerikleri (bugün
+   "Kurulum ve yapı" durağının içinde duran depo/sohbet/adres/yayın ve
+   sabit iskelet) oraya taşınınca bu ikisi gerçek ekranlara kavuşacak.
+   O güne kadar `bitti` hep true — akışı kilitlemesinler diye.
+   program (Program temeli) artık gerçek: paket adı, roller, veri katmanı
+   eskiden "Kurulum ve yapı"nın içindeydi, buraya taşındı. */
 const DURAKLAR = {
   /* Aşamalar konuşulan yere göre bölündü: 1'i müşteriyle konuşarak
      dolduruyorsun (marka, iletişim, sektör, logo), 2'yi klavye başında
@@ -792,7 +793,7 @@ const DURAKLAR = {
      oturulacağı belli olmuyordu. */
   firma:      { no: 1, ad: 'Firma bilgileri',    ciz: firmaSayfasi,
                 renk: '#c4a05c', ikon: 'etiket' },
-  program:        { no: 2, ad: 'Program temeli',        ciz: yakindaSayfasi },
+  program:        { no: 2, ad: 'Program temeli',        ciz: programSayfasi },
   baglantilar:    { no: 3, ad: 'Bağlantılar',           ciz: yakindaSayfasi },
   kurulumpaketi:  { no: 4, ad: 'Nizam kurulum paketi',  ciz: yakindaSayfasi },
   /* Yapı tasarımdan önce: ChatGPT ekranları çizerken hangi modüllerin ve
@@ -1139,6 +1140,32 @@ function firmaSayfasi(p, d) {
 
   return `<div class="fb-govde">`
     + adimBasligi(p, d, dolu + '/4') + marka
+    + `</div>`;
+}
+
+/* 2 · Program temeli — bu paketin adı, kim kullanacak, verisi nerede
+   duracak. Eskiden "Kurulum ve yapı" durağının içindeydi (Yer + Kim
+   kullanacak? ayrı ayrı); tek karar oldukları için tek karta indi. */
+function programSayfasi(p, d) {
+  const pl = p.palet || {};
+  const roller = rolListesi(pl.roller);
+  const dolu = [!!pl.modulAdi, roller.length > 0, !!pl.veriKatmani].filter(Boolean).length;
+
+  const kart = dolu <= 1
+    ? fbBosKart('#4fa8c9', ICON.katman, 'Program temeli', dolu + '/3',
+        'Bu paketin adı, kim kullanacak, verisi nerede duracak? '
+        + '<b>Kod bu kararlara göre yazılıyor.</b>',
+        'program-duzenle', p.id, true)
+    : fbKart('#4fa8c9', ICON.katman, 'Program temeli', 'program-duzenle', p.id, `
+    <div class="fb-kg tek">
+      ${kunyeSatiri('#c48a5c', ICON.katman, 'Program adı', pl.modulAdi, '', p.id, true, 'girilmedi')}
+      ${kunyeSatiri('#d8a63f', ICON.gGuvenlik, 'Kim kullanacak',
+                    roller.length ? roller.length + ' katman' : '', '', p.id, true, 'girilmedi')}
+      ${kunyeSatiri('#3ecf8e', ICON.gVeri, 'Veriler nerede', pl.veriKatmani, '', p.id, true, 'girilmedi')}
+    </div>`, dolu + '/3');
+
+  return `<div class="fb-govde">`
+    + adimBasligi(p, d, dolu + '/3') + kart
     + `</div>`;
 }
 
@@ -3686,36 +3713,18 @@ function yapiSayfasi(p, d) {
   const gercek   = moduller.filter(m => m.ad !== GENEL_MODUL);
   const s  = DB.sayim(p.id);
   const pl = p.palet || {};
-  const dil  = (DIL_SECENEK.find(x => x.kod === p.dil) || {}).ad;
-  const para = (PARA_SECENEK.find(x => x.kod === p.para) || {}).ad;
-  const roller = rolListesi(pl.roller);
 
-  /* Platform ve veritabanı sütunda `not null` — hep dolu geliyorlar. Adımın
-     gerçekten görüldüğünü dil ve para birimi söylüyor; onları sihirbaz
-     yazmıyor. Eski projelerde `urunOnay` işareti yok, oradan da bakıyoruz. */
-  const urunTam = !!(dil && para) || !!pl.urunOnay;
-
+  /* "Ne yapıyoruz?" ve "Kim kullanacak?" kalktı — platform/dil/para artık
+     sabit, roller "Program temeli" durağına taşındı. Burada yalnız
+     bağlantılar (depo/sohbet/adres/yayın) ve modüller kalıyor. */
   const adimlar = [
-    { no: '01', eylem: 'adim-urun',   ad: 'Ne yapıyoruz?',
-      ozet: 'Nerede çalışacak, hangi dilde',
-      bitti: urunTam,
-      deger: [PLATFORM_ADI[p.platform], dil].filter(Boolean).join(' · ') },
-
-    { no: '02', eylem: 'adim-roller', ad: 'Kim kullanacak?',
-      ozet: 'Yetki katmanları',
-      bitti: roller.length > 0,
-      deger: roller.length + ' katman yetki' },
-
-    /* "Nereye kuralım" ile kurulum aynı sorunun iki yarısı: biri yeri
-       söylüyor, öteki kuruyor. Tek adımda birleşince ızgara da 2×2 oluyor
-       ve beş adımın tek sayı olmasından doğan boş yuva kapanıyor. */
-    { no: '03', eylem: 'adim-yer',    ad: 'Nereye kuralım?',
-      ozet: 'Adres, paket adı, kurulum',
-      bitti: yerDolu(p) && !!pl.alanAdi
-             && !!p.repo && !!String(pl.sohbetAdi || '').trim() && !!pl.yayinda,
+    { no: '01', eylem: 'adim-kurulum', ad: 'Bağlantılar',
+      ozet: 'Depo, sohbet, adres, yayın',
+      bitti: !!p.repo && !!String(pl.sohbetAdi || '').trim()
+             && !!pl.alanAdi && !!pl.yayinda,
       deger: pl.alanAdi || '' },
 
-    { no: '04', eylem: 'yapi-akis-ac', ad: 'Modüller',
+    { no: '02', eylem: 'yapi-akis-ac', ad: 'Modüller',
       ozet: 'Hangi bölümler olacak',
       bitti: gercek.length > 0 && s.sayfa > 0,
       deger: gercek.length + ' modül · ' + s.sayfa + ' sayfa' },
@@ -3728,12 +3737,8 @@ function yapiSayfasi(p, d) {
   return `<div class="fb-govde">`
     + adimBasligi(p, d, biten + '/' + adimlar.length)
     + fbTakvimSeridi(p)
-    /* Proje sayfasıyla birebir aynı ızgara: üç sütun, aynı kare ölçüsü.
-       Dört adımda son satırda tek kart kalıyor — soldan başlıyor. */
     + `<div class="ya-harita">
-        <div class="ya-satir">${[0, 1, 2].map(kart).join('')}</div>
-        ${yolOku(adimlar[2].bitti)}
-        <div class="ya-satir">${[3].map(kart).join('')}</div>
+        <div class="ya-satir">${adimlar.map((_, i) => kart(i)).join('')}</div>
       </div>`
     + `</div>`;
 }
@@ -5465,7 +5470,14 @@ function projeDuraklari(p) {
       ozet: [p.sektor, p.telefon, p.eposta].filter(Boolean).join(' · ')
         || 'Firma kim, kime ulaşacağız, hangi işi yapıyor?',
     },
-    taslakDurak('Program temeli'),
+    {
+      ad: 'Program temeli',
+      bitti: yerDolu(p) && rolListesi(pl0.roller).length > 0,
+      ozet: pl0.modulAdi
+        ? [pl0.modulAdi, rolListesi(pl0.roller).length + ' katman', pl0.veriKatmani]
+            .filter(Boolean).join(' · ')
+        : 'Bu paketin adı, kim kullanacak, verisi nerede duracak?',
+    },
     taslakDurak('Bağlantılar'),
     taslakDurak('Nizam kurulum paketi'),
     {
@@ -5473,12 +5485,12 @@ function projeDuraklari(p) {
          Depo ve sohbet de burada — kurulum bu durağın işi. */
       ad: 'Kurulum ve yapı',
       bitti: !!p.repo && !!String(pl0.sohbetAdi || '').trim()
-             && gercek > 0 && s.sayfa > 0,
+             && !!pl0.alanAdi && !!pl0.yayinda && gercek > 0 && s.sayfa > 0,
       ozet: gercek && s.sayfa
         ? `${gercek} modül · ${s.sayfa} sayfa`
         : p.repo
           ? 'Depo hazır. Sıra modülleri kurmakta.'
-          : 'Ürünü tarif et, rolleri belirle, depoyu kur, modülleri ekle.',
+          : 'Depoyu kur, sohbeti başlat, modülleri ekle.',
     },
     {
       ad: 'Tasarımı belirleme',
@@ -8071,96 +8083,10 @@ function markaDuzenle(projeId) {
   }, 'genis');
 }
 
-/* Kurulum adımlarının pencereleri. Tek büyük pencere yerine dört küçük:
-   adım kartına basınca yalnız o adımın soruları çıkıyor. Yazılım bilmeyen
-   biri için tek soruya odaklanmak, uzun formu taramaktan kolay. */
-
-/* Etiket nesnesini seçim şeridinin beklediği biçime çevirir. */
-const secimListesi = obje => Object.keys(obje).map(k => ({ kod: k, ad: obje[k] }));
-
-/* 01 · Ne yapıyoruz? */
-function adimUrun(projeId) {
-  modalHepsiniKapat();
-  const p = DB.proje(projeId);
-  if (!p) return;
-
-  let platform = p.platform || 'ikisi';
-  let vt       = p.veri || 'sifirdan';
-  let dil      = p.dil  || 'tr';
-  let para     = p.para || 'TRY';
-
-  modalAc(`
-    ${modalBaslik(ICON.katman, 'Ne yapıyoruz?', 'Bu dört cevap promptun ilk satırlarına giriyor.')}
-    ${fdKart('var(--fb-kunye)', ICON.katman, 'Ürün',
-      fdSecim('#7d93b8', ICON.katman, 'Nerede çalışacak', 'platform', secimListesi(PLATFORM_ADI), platform)
-      + fdSecim('#3fa694', ICON.gVeri, 'Veriler',        'vt',       secimListesi(VERI_ADI),     vt)
-      + fdSecim('#b8926b', ICON.dil,   'Uygulama dili',  'dil',      DIL_SECENEK,         dil)
-      + fdSecim('#c8973f', ICON.para,  'Para birimi',    'para',     PARA_SECENEK,        para))}
-    <div class="modal-alt">
-      <button class="btn btn-ghost" data-au="iptal" type="button">Vazgeç</button>
-      <button class="btn btn-primary" data-au="kaydet" type="button"><span>Kaydet</span></button>
-    </div>`, kutu => {
-    kutu.addEventListener('click', ev => {
-      const t = ev.target.closest('[data-fd]');
-      if (!t) return;
-      const tur = t.dataset.fd, dg = t.dataset.deger;
-      if (tur === 'platform') platform = dg;
-      if (tur === 'vt')       vt = dg;
-      if (tur === 'dil')      dil = dg;
-      if (tur === 'para')     para = dg;
-      $$(`[data-fd="${tur}"]`, kutu).forEach(x => x.classList.toggle('on', x === t));
-    });
-    $('[data-au="iptal"]', kutu).addEventListener('click', modalKapat);
-    $('[data-au="kaydet"]', kutu).addEventListener('click', async () => {
-      const yazi = $('[data-au="kaydet"] span', kutu);
-      yazi.textContent = 'Kaydediliyor…';
-      try {
-        await DB.projeGuncelle(projeId, { platform, veri: vt, dil, para });
-        /* Platform ve veritabanı sütunda hep dolu; adımın görüldüğünü
-           ayrıca işaretliyoruz ki kart boş görünmesin. */
-        await DB.paletKaydet(projeId, Object.assign({}, p.palet || {}, { urunOnay: true }));
-        modalKapat(); render(); toast('Kaydedildi.', 'basari');
-      } catch (h) { yazi.textContent = 'Kaydet'; toast(h.message, 'hata'); }
-    });
-  }, 'genis');
-}
-
-/* 02 · Kim kullanacak? */
-function adimRoller(projeId) {
-  modalHepsiniKapat();
-  const p = DB.proje(projeId);
-  if (!p) return;
-  const pl = p.palet || {};
-
-  modalAc(`
-    ${modalBaslik(ICON.gGuvenlik, 'Kim kullanacak?',
-      'Uygulamayı kaç katman insan kullanacak? Veritabanı güvenlik kuralları buna göre yazılıyor.')}
-    ${fdKart('#d8a63f', ICON.gGuvenlik, 'Yetki katmanları', rolMerdiveni(pl.roller, 'tk'))}
-    <div class="modal-alt">
-      <button class="btn btn-ghost" data-ar="iptal" type="button">Vazgeç</button>
-      <button class="btn btn-primary" data-ar="kaydet" type="button"><span>Kaydet</span></button>
-    </div>`, kutu => {
-    rolBagla(kutu);
-    const tazele = () => {
-      const r = $('[data-fdsay="Yetki katmanları"]', kutu);
-      if (r) r.textContent = rolOku(kutu).length + ' katman';
-    };
-    kutu.addEventListener('click', () => setTimeout(tazele, 0));
-    kutu.addEventListener('input', tazele);
-    tazele();
-    $('[data-ar="iptal"]', kutu).addEventListener('click', modalKapat);
-    $('[data-ar="kaydet"]', kutu).addEventListener('click', async () => {
-      const roller = rolOku(kutu);
-      if (!roller.length) return toast('En az bir katman yaz.', 'uyari');
-      const yazi = $('[data-ar="kaydet"] span', kutu);
-      yazi.textContent = 'Kaydediliyor…';
-      try {
-        await DB.paletKaydet(projeId, Object.assign({}, pl, { roller }));
-        modalKapat(); render(); toast('Kaydedildi.', 'basari');
-      } catch (h) { yazi.textContent = 'Kaydet'; toast(h.message, 'hata'); }
-    });
-  }, 'genis');
-}
+/* Kurulum adımlarının pencereleri. Tek büyük pencere yerine küçük
+   pencereler: adım kartına basınca yalnız o adımın soruları çıkıyor.
+   Yazılım bilmeyen biri için tek soruya odaklanmak, uzun formu
+   taramaktan kolay. */
 
 /* Tanışma promptu panoya alındıktan sonraki üç adımı gösteren küçük
    pencere — "sohbet-adi" karesi de bu ekranın devamı olduğu için burada
@@ -8196,26 +8122,24 @@ function yerDolu(p) {
         || (!!String(pl.supabaseUrl || '').trim() && !!String(pl.supabaseAnon || '').trim()));
 }
 
-/* 03 · Nereye kuralım? — iki ayrı pencere art arda: önce Yer (paket adı,
-   veri katmanı), sonra Kurulum (depo, sohbet, adres, yayın). İkisi aynı
-   pencerede aynı anda hem yazı hem dış bağlantı karışıklığı yaratıyordu.
-   Yer zaten doluysa (kart daha önce bir kez cevaplandıysa) doğrudan
-   Kuruluma geçiyoruz — aynı formu ikinci kez göstermeye gerek yok. */
-function adimYer(projeId, zorla) {
+/* 2 · Program temeli — paket adı, veri katmanı/Supabase ve kim kullanacak
+   (roller). Eskiden "Nereye kuralım?"ın yarısıydı (Yer) + ayrı bir "Kim
+   kullanacak?" adımıydı; ikisi de "bu paket ne, kim girecek, verisi
+   nerede" kararının parçası olduğu için tek pencerede birleşti. */
+function programDuzenle(projeId) {
+  modalHepsiniKapat();
   const p = DB.proje(projeId);
   if (!p) return;
-  if (!zorla && yerDolu(p)) return adimKurulum(projeId);
-
-  modalHepsiniKapat();
   const pl   = p.palet || {};
   const alan = a => TEKNIK_ALAN.find(x => x.anahtar === a) || {};
   const veri = alan('veriKatmani');
   const veriSecili = pl.veriKatmani || veri.varsayilan;
 
   modalAc(`
-    ${modalBaslik(ICON.bulut, 'Nereye kuralım?', 'Önce yeri söyle.')}
-    ${fdKart('#4fa8c9', ICON.bulut, 'Yer',
-      fdAlan('#c48a5c', ICON.katman, 'Bu paketin adı', 'ay-modul', pl.modulAdi,
+    ${modalBaslik(ICON.katman, 'Program temeli',
+      'Bu paket ne, kim kullanacak, verisi nerede duracak?')}
+    ${fdKart('#4fa8c9', ICON.bulut, 'Program',
+      fdAlan('#c48a5c', ICON.katman, 'Program adı', 'pg-modul', pl.modulAdi,
              'Örn. Muhasebe', 'text', 60, false, 'data-tk="modulAdi"')
       + `<div class="fbd-sec" style="--ki:#4fa8c9">
         <span class="fbd-set"><span class="fbd-si">${svg(ICON.bulut, 12)}</span>
@@ -8237,10 +8161,10 @@ function adimYer(projeId, zorla) {
                href="https://supabase.com/dashboard/new">
               ${svg(ICON.disari, 15)} Supabase'de proje aç</a>
           </div>
-          ${fdAlan('#3ecf8e', ICON.gVeri, 'Proje adresi', 'ay-sb-url', pl.supabaseUrl,
+          ${fdAlan('#3ecf8e', ICON.gVeri, 'Proje adresi', 'pg-sb-url', pl.supabaseUrl,
                    'https://xxxx.supabase.co', 'text', 120, true,
                    'data-tk="supabaseUrl" spellcheck="false" autocapitalize="off"')}
-          ${fdAlan('#3ecf8e', ICON.anahtar, 'anon key', 'ay-sb-key', pl.supabaseAnon,
+          ${fdAlan('#3ecf8e', ICON.anahtar, 'anon key', 'pg-sb-key', pl.supabaseAnon,
                    'sb_publishable_… ya da eyJhbG…', 'text', 400, true,
                    'data-tk="supabaseAnon" spellcheck="false" autocapitalize="off"')}
           <div class="note uyari">${svg(ICON.uyari, 15)}
@@ -8248,18 +8172,23 @@ function adimYer(projeId, zorla) {
             tarayıcıya zaten iniyor, veriyi satır güvenliği (RLS) koruyor —
             o normal.</span></div>
         </div>`)}
+    ${fdKart('#d8a63f', ICON.gGuvenlik, 'Kim kullanacak', rolMerdiveni(pl.roller, 'pg'))}
     <div class="modal-alt">
-      <button class="btn btn-ghost" data-ay="iptal" type="button">Vazgeç</button>
-      <button class="btn btn-primary" data-ay="kaydet" type="button"><span>Devam et</span></button>
+      <button class="btn btn-ghost" data-pg="iptal" type="button">Vazgeç</button>
+      <button class="btn btn-primary" data-pg="kaydet" type="button"><span>Kaydet</span></button>
     </div>`, kutu => {
+    rolBagla(kutu);
     const tazele = () => {
-      const y = $('[data-fdsay="Yer"]', kutu);
-      if (!y) return;
-      /* Supabase seçili değilken bağlantı alanları sayılmıyor. */
-      const sb = $('[data-tk="veriKatmani"]', kutu).value !== 'Yerel tarayıcı';
-      const alanlar = $$('[data-tk]', kutu)
-        .filter(x => sb || ['supabaseUrl', 'supabaseAnon'].indexOf(x.dataset.tk) < 0);
-      y.textContent = alanlar.filter(x => x.value.trim()).length + '/' + alanlar.length;
+      const y = $('[data-fdsay="Program"]', kutu);
+      if (y) {
+        /* Supabase seçili değilken bağlantı alanları sayılmıyor. */
+        const sb = $('[data-tk="veriKatmani"]', kutu).value !== 'Yerel tarayıcı';
+        const alanlar = $$('[data-tk]', kutu)
+          .filter(x => sb || ['supabaseUrl', 'supabaseAnon'].indexOf(x.dataset.tk) < 0);
+        y.textContent = alanlar.filter(x => x.value.trim()).length + '/' + alanlar.length;
+      }
+      const r = $('[data-fdsay="Kim kullanacak"]', kutu);
+      if (r) r.textContent = rolOku(kutu).length + ' katman';
     };
     kutu.addEventListener('click', ev => {
       const v = ev.target.closest('[data-tks]');
@@ -8276,27 +8205,34 @@ function adimYer(projeId, zorla) {
     });
     kutu.addEventListener('input', tazele);
     tazele();
-    $('[data-ay="iptal"]', kutu).addEventListener('click', modalKapat);
-    $('[data-ay="kaydet"]', kutu).addEventListener('click', async () => {
-      /* Pencere açık dururken arka planda başka bir kayıt olabilir (ör.
-         Yayın karesi). `pl` pencere açılış anının görüntüsü olduğu için
-         o kaydı burada eskisiyle ezmeyelim — projenin o anki halini
-         tazeleyip üzerine yazalım. */
+    $('[data-pg="iptal"]', kutu).addEventListener('click', modalKapat);
+    $('[data-pg="kaydet"]', kutu).addEventListener('click', async () => {
+      const roller = rolOku(kutu);
+      if (!roller.length) return toast('En az bir katman yaz.', 'uyari');
+      /* Pencere açık dururken arka planda başka bir kayıt olabilir. `pl`
+         pencere açılış anının görüntüsü olduğu için o kaydı burada
+         eskisiyle ezmeyelim — projenin o anki halini tazeleyip üzerine
+         yazalım. */
       const guncel = DB.proje(projeId);
       const palet = Object.assign({}, (guncel && guncel.palet) || pl);
       $$('[data-tk]', kutu).forEach(el => {
         const v = el.value.trim();
         if (v) palet[el.dataset.tk] = v; else delete palet[el.dataset.tk];
       });
-      const yazi = $('[data-ay="kaydet"] span', kutu);
+      palet.roller = roller;
+      const yazi = $('[data-pg="kaydet"] span', kutu);
       yazi.textContent = 'Kaydediliyor…';
       try {
         await DB.paletKaydet(projeId, palet);
-        modalKapat(); render();
-        adimKurulum(projeId);
-      } catch (h) { yazi.textContent = 'Devam et'; toast(h.message, 'hata'); }
+        modalKapat();
+        /* Bu sayfada tek kart var; kaydedince burada kalmanın anlamı yok —
+           bir sonraki durağın kilidi açılmış olabilir, ana harita oraya
+           dönsün. */
+        location.hash = '#/projeler/' + projeId;
+        toast('Program temeli kaydedildi.', 'basari');
+      } catch (h) { yazi.textContent = 'Kaydet'; toast(h.message, 'hata'); }
     });
-    setTimeout(() => { const i = $('#ay-modul', kutu); if (i) i.focus(); }, 40);
+    setTimeout(() => { const i = $('#pg-modul', kutu); if (i) i.focus(); }, 40);
   }, 'genis');
 }
 
@@ -8310,7 +8246,7 @@ function adimKurulum(projeId) {
   if (!p) return;
 
   modalAc(`
-    ${modalBaslik(ICON.bulut, 'Kurulum', 'Dört düğmeyle kur.')}
+    ${modalBaslik(ICON.bulut, 'Bağlantılar', 'Dört düğmeyle kur.')}
     ${kurulumAraclari(p)}
     <div class="fb-kg tek" style="margin-top:11px">
       ${kunyeSatiri('#b8926b', ICON.dal,   'Kod deposu',
@@ -8318,11 +8254,9 @@ function adimKurulum(projeId) {
       ${kunyeSatiri('#9b7fd4', ICON.dosya, 'Proje kimliği', 'NIZAM.md', 'kimlik', p.id)}
     </div>
     <div class="modal-alt">
-      <button class="btn btn-ghost" data-ak2="yer" type="button">Yer bilgilerini düzenle</button>
       <button class="btn btn-primary" data-ak2="kapat" type="button"><span>Kapat</span></button>
     </div>`, kutu => {
     $('[data-ak2="kapat"]', kutu).addEventListener('click', modalKapat);
-    $('[data-ak2="yer"]', kutu).addEventListener('click', () => adimYer(projeId, true));
   }, 'genis');
 }
 
@@ -9991,11 +9925,10 @@ async function eylemCalistir(el) {
     return;
   }
 
-  if (e === 'marka-duzenle')   return markaDuzenle(el.dataset.proje);
-  if (e === 'adim-urun')     return adimUrun(el.dataset.proje);
-  if (e === 'adim-roller')   return adimRoller(el.dataset.proje);
-  if (e === 'adim-yer')      return adimYer(el.dataset.proje);
-  if (e === 'adim-takvim')   return adimTakvim(el.dataset.proje);
+  if (e === 'marka-duzenle')    return markaDuzenle(el.dataset.proje);
+  if (e === 'program-duzenle')  return programDuzenle(el.dataset.proje);
+  if (e === 'adim-kurulum')     return adimKurulum(el.dataset.proje);
+  if (e === 'adim-takvim')      return adimTakvim(el.dataset.proje);
 
   if (e === 'marka-renk') {
     const pr = DB.proje(el.dataset.proje);
