@@ -794,7 +794,7 @@ const DURAKLAR = {
   firma:      { no: 1, ad: 'Firma bilgileri',    ciz: firmaSayfasi,
                 renk: '#c4a05c', ikon: 'etiket' },
   program:        { no: 2, ad: 'Program temeli',        ciz: programSayfasi },
-  baglantilar:    { no: 3, ad: 'Bağlantılar',           ciz: yakindaSayfasi },
+  baglantilar:    { no: 3, ad: 'Bağlantılar',           ciz: baglantilarSayfasi },
   kurulumpaketi:  { no: 4, ad: 'Nizam kurulum paketi',  ciz: yakindaSayfasi },
   /* Yapı tasarımdan önce: ChatGPT ekranları çizerken hangi modüllerin ve
      sayfaların olduğunu bilmeli. Bilmezse altı genel ekran çiziyor; künye
@@ -1166,6 +1166,25 @@ function programSayfasi(p, d) {
 
   return `<div class="fb-govde">`
     + adimBasligi(p, d, dolu + '/3') + kart
+    + `</div>`;
+}
+
+/* 3 · Bağlantılar — depo, sohbet, adres, yayın. Aynı dört kare eskiden
+   "Kurulum ve yapı" durağının içinde bir pencereydi (adimKurulum); artık
+   kendi başına bir aşama, doğrudan sayfada — açıp kapamaya gerek yok. */
+function baglantilarSayfasi(p, d) {
+  const pl = p.palet || {};
+  const biten = [!!p.repo, !!String(pl.sohbetAdi || '').trim(), !!pl.alanAdi, !!pl.yayinda]
+    .filter(Boolean).length;
+
+  return `<div class="fb-govde">`
+    + adimBasligi(p, d, biten + '/4')
+    + kurulumAraclari(p)
+    + `<div class="fb-kg tek" style="margin-top:11px">
+        ${kunyeSatiri('#b8926b', ICON.dal,   'Kod deposu',
+                      depoSlug(p.repo) || p.repo, 'repo', p.id, false, 'dokun, yapıştır')}
+        ${kunyeSatiri('#9b7fd4', ICON.dosya, 'Proje kimliği', 'NIZAM.md', 'kimlik', p.id)}
+      </div>`
     + `</div>`;
 }
 
@@ -3712,19 +3731,12 @@ function yapiSayfasi(p, d) {
   const moduller = DB.modulleri(p.id);
   const gercek   = moduller.filter(m => m.ad !== GENEL_MODUL);
   const s  = DB.sayim(p.id);
-  const pl = p.palet || {};
 
-  /* "Ne yapıyoruz?" ve "Kim kullanacak?" kalktı — platform/dil/para artık
-     sabit, roller "Program temeli" durağına taşındı. Burada yalnız
-     bağlantılar (depo/sohbet/adres/yayın) ve modüller kalıyor. */
+  /* "Ne yapıyoruz?", "Kim kullanacak?" ve "Bağlantılar" kalktı — sırasıyla
+     sabit değerlere döndü, "Program temeli"ye taşındı ve kendi durağını
+     aldı. Burada tek adım kaldı: modüller. */
   const adimlar = [
-    { no: '01', eylem: 'adim-kurulum', ad: 'Bağlantılar',
-      ozet: 'Depo, sohbet, adres, yayın',
-      bitti: !!p.repo && !!String(pl.sohbetAdi || '').trim()
-             && !!pl.alanAdi && !!pl.yayinda,
-      deger: pl.alanAdi || '' },
-
-    { no: '02', eylem: 'yapi-akis-ac', ad: 'Modüller',
+    { no: '01', eylem: 'yapi-akis-ac', ad: 'Modüller',
       ozet: 'Hangi bölümler olacak',
       bitti: gercek.length > 0 && s.sayfa > 0,
       deger: gercek.length + ' modül · ' + s.sayfa + ' sayfa' },
@@ -5478,19 +5490,23 @@ function projeDuraklari(p) {
             .filter(Boolean).join(' · ')
         : 'Bu paketin adı, kim kullanacak, verisi nerede duracak?',
     },
-    taslakDurak('Bağlantılar'),
+    {
+      ad: 'Bağlantılar',
+      bitti: !!p.repo && !!String(pl0.sohbetAdi || '').trim()
+             && !!pl0.alanAdi && !!pl0.yayinda,
+      ozet: p.repo
+        ? (pl0.alanAdi ? 'Depo, sohbet ve adres hazır. Sıra yayında.' : 'Depo hazır. Sıra adres ve yayında.')
+        : 'Depo, sohbet, adres ve yayın burada kurulacak.',
+    },
     taslakDurak('Nizam kurulum paketi'),
     {
-      /* Modül tek başına yetmez: sayfası olmayan modül boş kutudur.
-         Depo ve sohbet de burada — kurulum bu durağın işi. */
+      /* Sıra kilitli olduğu için bu durağa gelindiğinde Bağlantılar zaten
+         bitmiş oluyor — burada tekrar depo/sohbet kontrolü gerekmiyor. */
       ad: 'Kurulum ve yapı',
-      bitti: !!p.repo && !!String(pl0.sohbetAdi || '').trim()
-             && !!pl0.alanAdi && !!pl0.yayinda && gercek > 0 && s.sayfa > 0,
+      bitti: gercek > 0 && s.sayfa > 0,
       ozet: gercek && s.sayfa
         ? `${gercek} modül · ${s.sayfa} sayfa`
-        : p.repo
-          ? 'Depo hazır. Sıra modülleri kurmakta.'
-          : 'Depoyu kur, sohbeti başlat, modülleri ekle.',
+        : 'Hangi modüller ve sayfalar olacak?',
     },
     {
       ad: 'Tasarımı belirleme',
@@ -8236,30 +8252,6 @@ function programDuzenle(projeId) {
   }, 'genis');
 }
 
-/* Yerin ikinci yarısı: depo, sohbet, adres, yayın. Adres burada — dört
-   düğmeden biri — çünkü Namecheap'e yazılacak CNAME kaydını da rehberli
-   gösteren tek yer bu; "Yer" penceresindeki serbest metin kutusu aynı
-   alanı (alanAdi) ikinci kez soruyordu, kaldırıldı. */
-function adimKurulum(projeId) {
-  modalHepsiniKapat();
-  const p = DB.proje(projeId);
-  if (!p) return;
-
-  modalAc(`
-    ${modalBaslik(ICON.bulut, 'Bağlantılar', 'Dört düğmeyle kur.')}
-    ${kurulumAraclari(p)}
-    <div class="fb-kg tek" style="margin-top:11px">
-      ${kunyeSatiri('#b8926b', ICON.dal,   'Kod deposu',
-                    depoSlug(p.repo) || p.repo, 'repo', p.id, false, 'dokun, yapıştır')}
-      ${kunyeSatiri('#9b7fd4', ICON.dosya, 'Proje kimliği', 'NIZAM.md', 'kimlik', p.id)}
-    </div>
-    <div class="modal-alt">
-      <button class="btn btn-primary" data-ak2="kapat" type="button"><span>Kapat</span></button>
-    </div>`, kutu => {
-    $('[data-ak2="kapat"]', kutu).addEventListener('click', modalKapat);
-  }, 'genis');
-}
-
 /* Takvim şeridinin kendi küçük penceresi. */
 function adimTakvim(projeId) {
   modalHepsiniKapat();
@@ -9927,7 +9919,6 @@ async function eylemCalistir(el) {
 
   if (e === 'marka-duzenle')    return markaDuzenle(el.dataset.proje);
   if (e === 'program-duzenle')  return programDuzenle(el.dataset.proje);
-  if (e === 'adim-kurulum')     return adimKurulum(el.dataset.proje);
   if (e === 'adim-takvim')      return adimTakvim(el.dataset.proje);
 
   if (e === 'marka-renk') {

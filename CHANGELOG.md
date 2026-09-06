@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.134.17
+- **"Bağlantılar" aşaması gerçek içeriğe kavuştu.** Depo, sohbet, adres, yayın kareleri eskiden "Kurulum ve yapı" durağının içinde bir pencereydi; artık kendi aşamasında, doğrudan sayfada — açıp kapamaya gerek yok. "Kurulum ve yapı" durağı sadeleşti, artık sadece Modülleri içeriyor.
+
 ## v0.134.16
 - **"Program temeli" aşaması gerçek içeriğe kavuştu.** Eskiden "Kurulum ve yapı" durağının içinde dağınık duran üç karar — program adı, kim kullanacak (roller), veriler nerede duracak (Supabase/Yerel) — artık kendi aşamasında, tek pencerede birlikte soruluyor. "Ne yapıyoruz?" (platform/dil/para) adımı tamamen kaldırıldı, bu alanlar sabit. "Kurulum ve yapı" artık sadece Bağlantılar (depo/sohbet/adres/yayın) ve Modülleri içeriyor.
 
