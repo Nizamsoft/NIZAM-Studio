@@ -1051,7 +1051,7 @@ function kurulumAraclari(p) {
              kopya ? 'sohbet-adi' : 'tanisma-prompt')}
       ${bag}
       ${kart('3', !isim ? 'bekliyor' : alan ? 'bitti' : 'sirada',
-             ICON.dil, 'Adres', 'alan-kaydi')}
+             ICON.dil, 'Adres', 'alan-adi')}
       ${bag}
       ${alan && !yayin
         ? `<a class="mk2 sirada" target="_blank" rel="noopener"
@@ -1181,6 +1181,8 @@ function baglantilarSayfasi(p, d) {
                       depoSlug(p.repo) || p.repo, 'repo', p.id, false, 'dokun, yapıştır')}
         ${kunyeSatiri('#9b7fd4', ICON.dosya, 'Proje kimliği', 'NIZAM.md', 'kimlik', p.id)}
       </div>`
+    + `<button class="promptu-gor" type="button" data-eylem="alan-kaydi" data-proje="${p.id}">
+        Özel alan adı bağlamak istersen (Namecheap)</button>`
     + `</div>`;
 }
 

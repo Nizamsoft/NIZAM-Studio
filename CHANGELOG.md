@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.134.19
+- **"Bağlantılar"daki Adres kartı Namecheap'i zorunlu kılıyordu.** Kart, kök alan adı Ayarlar'da tanımlı değilse hata verip Namecheap kaydı açtırıyordu — sadece GitHub Pages'in verdiği `...github.io/ProjeAdi` adresiyle devam etmek isteyenler için yol yoktu. Artık tek soru: adres, varsayılan olarak github.io önerisiyle geliyor, tek Kaydet'le bitiyor. Özel alan adı isteyenler için Namecheap kaydı altta isteğe bağlı bir düğmeye taşındı.
+
 ## v0.134.18
 - **"Nizam kurulum paketi" aşaması gerçek içeriğe kavuştu.** Sabit iskelet promptu (Nizam Standardı + `CLAUDE.md`/`NIZAM.md`/`nizam/` klasörü) zaten "Bağlantılar" durağındaki Sohbet adımıyla Claude'a gidiyordu; buraya yeni bir kopyalama eklenmedi, sadece Claude bitirince işaretlenecek bir "Kuruldu" onayı kondu — Studio depoya bakamadığı için (SQL kurulumundaki gibi) elle onaylanıyor.
 
