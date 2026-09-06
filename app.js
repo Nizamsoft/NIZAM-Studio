@@ -779,13 +779,9 @@ function logolariGoster() {
 /* Proje içindeki durak dizisi. Adres, ad ve içeriği tek yerde tanımlı.
    Sıra önemli: projeDuraklari() dizisi bununla indeks indeks eşleşiyor.
 
-   baglantilar/kurulumpaketi henüz taslak — akışta yerlerini görelim diye
-   eklendi, içleri kurulmadı (yakindaSayfasi). Gerçek içerikleri (bugün
-   "Kurulum ve yapı" durağının içinde duran depo/sohbet/adres/yayın ve
-   sabit iskelet) oraya taşınınca bu ikisi gerçek ekranlara kavuşacak.
-   O güne kadar `bitti` hep true — akışı kilitlemesinler diye.
-   program (Program temeli) artık gerçek: paket adı, roller, veri katmanı
-   eskiden "Kurulum ve yapı"nın içindeydi, buraya taşındı. */
+   program/baglantilar/kurulumpaketi eskiden "Kurulum ve yapı" durağının
+   içindeydi (paket adı+roller+veri katmanı, depo/sohbet/adres/yayın, sabit
+   iskelet); tek karar oldukları için ayrı duraklara taşındı. */
 const DURAKLAR = {
   /* Aşamalar konuşulan yere göre bölündü: 1'i müşteriyle konuşarak
      dolduruyorsun (marka, iletişim, sektör, logo), 2'yi klavye başında
@@ -795,7 +791,7 @@ const DURAKLAR = {
                 renk: '#c4a05c', ikon: 'etiket' },
   program:        { no: 2, ad: 'Program temeli',        ciz: programSayfasi },
   baglantilar:    { no: 3, ad: 'Bağlantılar',           ciz: baglantilarSayfasi },
-  kurulumpaketi:  { no: 4, ad: 'Nizam kurulum paketi',  ciz: yakindaSayfasi },
+  kurulumpaketi:  { no: 4, ad: 'Nizam kurulum paketi',  ciz: kurulumPaketiSayfasi },
   /* Yapı tasarımdan önce: ChatGPT ekranları çizerken hangi modüllerin ve
      sayfaların olduğunu bilmeli. Bilmezse altı genel ekran çiziyor; künye
      elindeyken gerçek modülleri, gerçek alanları ve o işe ait simgeleri
@@ -1186,6 +1182,25 @@ function baglantilarSayfasi(p, d) {
         ${kunyeSatiri('#9b7fd4', ICON.dosya, 'Proje kimliği', 'NIZAM.md', 'kimlik', p.id)}
       </div>`
     + `</div>`;
+}
+
+/* 4 · Nizam kurulum paketi — sabit iskelet. Prompt zaten gitti: Bağlantılar'daki
+   "Sohbet" adımı bitmeden bu durağa gelinmiyor, o adım tanışma promptunu
+   (Nizam Standardı + CLAUDE.md/NIZAM.md/nizam/ klasörü) zaten Claude'a
+   kopyalattı. Burada tek iş, Claude gerçekten kurunca bunu işaretlemek —
+   Studio depoya bakamadığı için elle onay gerekiyor (SQL kurulumundaki gibi). */
+function kurulumPaketiSayfasi(p, d) {
+  const pl = p.palet || {};
+
+  return sayfaHero(p, d)
+    + durakKarti(1, !!pl.kurulumKuruldu, 'Sabit iskelet',
+        'Tanışma promptu <b>Bağlantılar</b> durağındaki Sohbet adımıyla '
+        + 'Claude\'a gitti. Claude <b class="mono">CLAUDE.md</b>, '
+        + '<b class="mono">NIZAM.md</b> ve <b class="mono">nizam/</b> '
+        + 'klasörünü kurunca aşağıdan işaretle.', `
+      <label class="kur-onay ${pl.kurulumKuruldu ? 'on' : ''}" data-eylem="kurulum-paketi-onay"
+             data-proje="${p.id}" role="button" tabindex="0">
+        <span class="kur-kutu">${svg(ICON.tik, 12)}</span> Kuruldu</label>`);
 }
 
 /* ---------- Rol merdiveni ----------
@@ -5470,10 +5485,6 @@ function projeDuraklari(p) {
   const tasarimTam = obekleriKur(p).filter(o => o.ad !== 'Bitiş')
     .every(o => adaDurumu(p, o).tam);
 
-  /* program/baglantilar/kurulumpaketi taslak durakların ortak satırı:
-     içleri kurulana kadar hep bitmiş sayılıyorlar, akışı kilitlemesinler. */
-  const taslakDurak = ad => ({ ad, bitti: true, ozet: 'Henüz kurulmadı — sırada.' });
-
   return [
     {
       /* Logo isteğe bağlı: markanın kendisi ad, iletişim ve sektörle kuruluyor. */
@@ -5498,7 +5509,13 @@ function projeDuraklari(p) {
         ? (pl0.alanAdi ? 'Depo, sohbet ve adres hazır. Sıra yayında.' : 'Depo hazır. Sıra adres ve yayında.')
         : 'Depo, sohbet, adres ve yayın burada kurulacak.',
     },
-    taslakDurak('Nizam kurulum paketi'),
+    {
+      ad: 'Nizam kurulum paketi',
+      bitti: !!pl0.kurulumKuruldu,
+      ozet: pl0.kurulumKuruldu
+        ? 'Sabit iskelet kuruldu.'
+        : 'Claude tanışma promptuyla iskeleti kursun, sonra işaretle.',
+    },
     {
       /* Sıra kilitli olduğu için bu durağa gelindiğinde Bağlantılar zaten
          bitmiş oluyor — burada tekrar depo/sohbet kontrolü gerekmiyor. */
@@ -9998,6 +10015,15 @@ async function eylemCalistir(el) {
     return isYap(() => DB.paletKaydet(pr.id,
       Object.assign({}, pl, { sqlKuruldu: !pl.sqlKuruldu })),
       pl.sqlKuruldu ? 'İşaret kaldırıldı.' : 'Veritabanı kuruldu.');
+  }
+
+  if (e === 'kurulum-paketi-onay') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const pl = pr.palet || {};
+    return isYap(() => DB.paletKaydet(pr.id,
+      Object.assign({}, pl, { kurulumKuruldu: !pl.kurulumKuruldu })),
+      pl.kurulumKuruldu ? 'İşaret kaldırıldı.' : 'Sabit iskelet kuruldu olarak işaretlendi.');
   }
 
   if (e === 'gelistirme-gerek-yok') {

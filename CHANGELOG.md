@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.134.18
+- **"Nizam kurulum paketi" aşaması gerçek içeriğe kavuştu.** Sabit iskelet promptu (Nizam Standardı + `CLAUDE.md`/`NIZAM.md`/`nizam/` klasörü) zaten "Bağlantılar" durağındaki Sohbet adımıyla Claude'a gidiyordu; buraya yeni bir kopyalama eklenmedi, sadece Claude bitirince işaretlenecek bir "Kuruldu" onayı kondu — Studio depoya bakamadığı için (SQL kurulumundaki gibi) elle onaylanıyor.
+
 ## v0.134.17
 - **"Bağlantılar" aşaması gerçek içeriğe kavuştu.** Depo, sohbet, adres, yayın kareleri eskiden "Kurulum ve yapı" durağının içinde bir pencereydi; artık kendi aşamasında, doğrudan sayfada — açıp kapamaya gerek yok. "Kurulum ve yapı" durağı sadeleşti, artık sadece Modülleri içeriyor.
 
