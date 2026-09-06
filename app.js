@@ -776,29 +776,48 @@ function logolariGoster() {
   });
 }
 
-/* Proje içindeki yedi durak. Adres, ad ve içeriği tek yerde tanımlı.
-   Sıra önemli: projeDuraklari() dizisi bununla indeks indeks eşleşiyor. */
+/* Proje içindeki durak dizisi. Adres, ad ve içeriği tek yerde tanımlı.
+   Sıra önemli: projeDuraklari() dizisi bununla indeks indeks eşleşiyor.
+
+   program/baglantilar/kurulumpaketi henüz taslak — akışta yerlerini
+   görelim diye eklendi, içleri kurulmadı (yakindaSayfasi). Gerçek
+   içerikleri (bugün "Kurulum ve yapı" durağının içinde birleşik duran
+   program ayarları, depo/sohbet/adres/yayın, sabit iskelet) oraya
+   taşınınca bu üçü gerçek ekranlara kavuşacak. O güne kadar `bitti`
+   hep true — akışı kilitlemesinler diye. */
 const DURAKLAR = {
   /* Aşamalar konuşulan yere göre bölündü: 1'i müşteriyle konuşarak
      dolduruyorsun (marka, iletişim, sektör, logo), 2'yi klavye başında
      (ürün, roller, depo, modüller). İkisi karışıkken hangi kafayla
      oturulacağı belli olmuyordu. */
-  firma:      { no: 1, ad: 'Marka kimliği',      ciz: firmaSayfasi,
+  firma:      { no: 1, ad: 'Firma bilgileri',    ciz: firmaSayfasi,
                 renk: '#c4a05c', ikon: 'etiket' },
+  program:        { no: 2, ad: 'Program temeli',        ciz: yakindaSayfasi },
+  baglantilar:    { no: 3, ad: 'Bağlantılar',           ciz: yakindaSayfasi },
+  kurulumpaketi:  { no: 4, ad: 'Nizam kurulum paketi',  ciz: yakindaSayfasi },
   /* Yapı tasarımdan önce: ChatGPT ekranları çizerken hangi modüllerin ve
      sayfaların olduğunu bilmeli. Bilmezse altı genel ekran çiziyor; künye
      elindeyken gerçek modülleri, gerçek alanları ve o işe ait simgeleri
      çiziyor. Bağımlılık bu yönde. */
-  yapi:       { no: 2, ad: 'Kurulum ve yapı',    ciz: yapiSayfasi,
+  yapi:       { no: 5, ad: 'Kurulum ve yapı',    ciz: yapiSayfasi,
                 renk: '#8fae4a', ikon: 'gAltyapi' },
-  tasarim:    { no: 3, ad: 'Tasarımı belirleme', ciz: tasarimSayfasi,
+  tasarim:    { no: 6, ad: 'Tasarımı belirleme', ciz: tasarimSayfasi,
                 renk: '#5f86c4', ikon: 'gTasarim' },
-  beta:       { no: 4, ad: 'Beta',               ciz: betaSayfasi,
+  beta:       { no: 7, ad: 'Beta',               ciz: betaSayfasi,
                 renk: '#c9753c', ikon: 'gOptimizasyon' },
-  gelistirme: { no: 5, ad: 'Geliştirme',         ciz: gelistirmeSayfasi },
-  final:      { no: 6, ad: 'Final',              ciz: finalSayfasi },
-  guncelleme: { no: 7, ad: 'Güncellemeler',      ciz: guncellemeSayfasi },
+  gelistirme: { no: 8, ad: 'Geliştirme',         ciz: gelistirmeSayfasi },
+  final:      { no: 9, ad: 'Final',              ciz: finalSayfasi },
+  guncelleme: { no: 10, ad: 'Güncellemeler',     ciz: guncellemeSayfasi },
 };
+
+/* Henüz içi kurulmamış aşamalar için geçici sayfa — yalnız akışta yerini
+   göstermek için var. */
+function yakindaSayfasi(p, d) {
+  return sayfaHero(p, d)
+    + `<div class="bos-kutu">${svg(ICON.kalem, 18)}
+        <span><b>${esc(d.ad)}</b> — bu aşamanın içeriği henüz kurulmadı,
+        şimdilik sadece akışta yerini gösteriyor.</span></div>`;
+}
 
 function durakSayfasi(projeId, anahtar) {
   if (YUKLENIYOR) return iskeletler(4);
@@ -1059,7 +1078,7 @@ function kurulumAraclari(p) {
     </div>`;
 }
 
-/* 1 · Marka kimliği — müşteriyle konuşurken öğrendiklerin. Teknik karar yok:
+/* 1 · Firma bilgileri — müşteriyle konuşurken öğrendiklerin. Teknik karar yok:
    firma kim, kime ulaşacağız, hangi işi yapıyor, markası neye benziyor. */
 function firmaSayfasi(p, d) {
   const alt   = [p.telefon, p.eposta].filter(Boolean).length;
@@ -1068,11 +1087,11 @@ function firmaSayfasi(p, d) {
   const dolu  = [p.firma, p.telefon, p.eposta, p.sektor].filter(Boolean).length;
 
   const marka = dolu <= 1
-    ? fbBosKart('var(--fb-kisi)', ICON.etiket, 'Marka kimliği ve bilgileri', dolu + '/4',
+    ? fbBosKart('var(--fb-kisi)', ICON.etiket, 'Firma bilgileri', dolu + '/4',
         'Firma kim, soru çıkarsa kime ulaşacağız, hangi işi yapıyor? '
         + '<b>Promptun ilk satırları</b> ve kimlik dosyası bunlardan çıkıyor.',
         'marka-duzenle', p.id, true)
-    : fbKart('var(--fb-kisi)', ICON.etiket, 'Marka kimliği ve bilgileri',
+    : fbKart('var(--fb-kisi)', ICON.etiket, 'Firma bilgileri',
       'marka-duzenle', p.id, `
     <div class="fb-kisi">
       <span class="fb-av" style="${renkDegiskenleri(p.renk)}">${esc(basHarf(p.firma))}</span>
@@ -5434,14 +5453,21 @@ function projeDuraklari(p) {
   const tasarimTam = obekleriKur(p).filter(o => o.ad !== 'Bitiş')
     .every(o => adaDurumu(p, o).tam);
 
+  /* program/baglantilar/kurulumpaketi taslak durakların ortak satırı:
+     içleri kurulana kadar hep bitmiş sayılıyorlar, akışı kilitlemesinler. */
+  const taslakDurak = ad => ({ ad, bitti: true, ozet: 'Henüz kurulmadı — sırada.' });
+
   return [
     {
       /* Logo isteğe bağlı: markanın kendisi ad, iletişim ve sektörle kuruluyor. */
-      ad: 'Marka kimliği',
+      ad: 'Firma bilgileri',
       bitti: !!p.firma && !!p.telefon && !!p.eposta && !!p.sektor,
       ozet: [p.sektor, p.telefon, p.eposta].filter(Boolean).join(' · ')
         || 'Firma kim, kime ulaşacağız, hangi işi yapıyor?',
     },
+    taslakDurak('Program temeli'),
+    taslakDurak('Bağlantılar'),
+    taslakDurak('Nizam kurulum paketi'),
     {
       /* Modül tek başına yetmez: sayfası olmayan modül boş kutudur.
          Depo ve sohbet de burada — kurulum bu durağın işi. */
@@ -5568,19 +5594,25 @@ function projeYolu(p) {
   const yuzde = Math.round(biten / duraklar.length * 100);
 
   const kart = i => asamaKarti(p, duraklar[i], i, simdi, anahtarlar[i]);
-  const son  = duraklar.length - 1;   /* Güncellemeler: proje yaşadıkça açık */
 
-  /* Üç sütun, kareler aynı ölçüde. Son satır tek kart: soldan başlıyor,
-     yol soldan sağa akmaya devam ediyor. */
+  /* Üç sütun, kareler aynı ölçüde. Durak sayısı sabit değil (10 oldu,
+     yarın yine değişebilir) — satırları üçer üçer kendimiz bölüyoruz,
+     son satır eksik kalabilir, soldan başlar. */
+  const satirlar = [];
+  for (let i = 0; i < duraklar.length; i += 3) {
+    satirlar.push(Array.from(
+      { length: Math.min(3, duraklar.length - i) }, (_, k) => i + k));
+  }
+
+  const harita = satirlar.map((satir, i) => {
+    const son = satir[satir.length - 1];
+    return `<div class="ya-satir">${satir.map(kart).join('')}</div>`
+      + (i < satirlar.length - 1 ? yolOku(duraklar[son] && duraklar[son].bitti) : '');
+  }).join('');
+
   return projeKunyesi(p)
     + fbTakvimSeridi(p)
-    + `<div class="ya-harita">
-      <div class="ya-satir">${[0, 1, 2].map(kart).join('')}</div>
-      ${yolOku(duraklar[2] && duraklar[2].bitti)}
-      <div class="ya-satir">${[3, 4, 5].map(kart).join('')}</div>
-      ${yolOku(duraklar[5] && duraklar[5].bitti)}
-      <div class="ya-satir">${kart(son)}</div>
-    </div>
+    + `<div class="ya-harita">${harita}</div>
 
     <div class="genel">
       <div class="genel-ust"><b>Adımlar</b><u class="mono">%${yuzde}</u></div>
@@ -6843,8 +6875,8 @@ async function sihirbazKaydet() {
     sihirbazKapat();
     sayaclariYaz();
     toast(SIHIRBAZ.firma.trim() + ' kuruldu.');
-    /* Doğrudan marka sayfasına atlıyoruz ama projenin kendi ana ekranı
-       (yedi duraklı harita) geçmişte hiç yer almasın istemiyoruz — yoksa
+    /* Doğrudan firma bilgileri sayfasına atlıyoruz ama projenin kendi ana
+       ekranı (duraklı harita) geçmişte hiç yer almasın istemiyoruz — yoksa
        "geri" oradan atlayıp doğrudan Projeler listesine düşüyordu. */
     history.pushState(null, '', '#/projeler/' + id);
     location.hash = '#/projeler/' + id + '/firma';
@@ -7931,7 +7963,7 @@ function fdKart(renk, ikon, baslik, ic) {
    aşamalar ayrıldı: marka müşteriyle konuşulan taraf, kurulum klavye
    başındaki taraf. */
 
-/* 1 · Marka kimliği */
+/* 1 · Firma bilgileri */
 function markaDuzenle(projeId) {
   modalHepsiniKapat();
   const p = DB.proje(projeId);
@@ -7943,7 +7975,7 @@ function markaDuzenle(projeId) {
   const gorsel = gorselAdresi(p, 'G0');
 
   modalAc(`
-    ${modalBaslik(ICON.etiket, 'Marka kimliği', 'Bu bilgiler promptlara ve kimlik dosyasına girer.')}
+    ${modalBaslik(ICON.etiket, 'Firma bilgileri', 'Bu bilgiler promptlara ve kimlik dosyasına girer.')}
 
     ${fdKart('var(--fb-kisi)', ICON.etiket, 'Firma',
       fdAlan('#c4a05c', ICON.etiket,  'Firma adı', 'md-firma', p.firma,

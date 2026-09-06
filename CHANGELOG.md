@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.134.15
+- **Yeni aşama planının ilk adımı: isimlendirme.** "Marka kimliği" → "Firma bilgileri" oldu. "Program temeli", "Bağlantılar" ve "Nizam kurulum paketi" akışa taslak (içeriksiz) durak olarak eklendi — şimdilik sadece yerlerini gösteriyorlar, "yakında" yazıyor, akışı kilitlemiyorlar. Gerçek içerikleri (bugün "Kurulum ve yapı" durağının içinde birleşik duran alanlar) ayrı bir adımda buraya taşınacak. Durak sayısı 7'den 10'a çıktığına göre ana haritadaki kare ızgarası da (üçerli satırlar) durak sayısına göre kendini ayarlıyor artık.
+
 ## v0.134.14
 - **"+" ile proje eklerken artık "Gerçek proje" mi "Test güncelleme" mi diye soruyor.** Mevcut kurulum akışına dokunulmadı — ikisi de şimdilik birebir aynı şekilde kuruluyor. Test projeleri listede ve kendi sayfasında küçük bir "Test" rozetiyle işaretleniyor. Test'i gerçeğin yerine geçirme mekanizması henüz yok, ayrı bir iş.
 
