@@ -5406,7 +5406,8 @@ function projeKunyesi(p) {
         ${adres ? '<span class="donen"></span>' : ''}
       </span>
       <span class="pk-yz">
-        <span class="pk-ad">${esc(projeAdi(p))}</span>
+        <span class="pk-ad">${esc(projeAdi(p))}
+          ${(p.palet || {}).projeTuru === 'test' ? '<span class="pill dev">Test</span>' : ''}</span>
         <span class="pk-alt">${alt}</span>
       </span>
       <span class="pk-yuz"><b>%${s.yuzde}</b><i>tamam</i></span>
@@ -5638,6 +5639,7 @@ function projeKarti(p, i = 0) {
             <span class="proje-ad">${esc(projeAdi(p))}</span>
             <span class="proje-meta">${PLATFORM_ADI[p.platform] || p.platform}</span>
           </span>
+          ${(p.palet || {}).projeTuru === 'test' ? '<span class="pill dev">Test</span>' : ''}
           <span class="pill ${durumSinif(p.durum)}">${DURUM_ADI[p.durum] || p.durum}</span>
         </div>
         <div class="proje-orta">
@@ -6574,8 +6576,37 @@ const SIHIRBAZ = {
    Gerisi Firma sayfasında, kart kart, gerekçesiyle birlikte soruluyor. */
 const SIHIRBAZ_ADIM = 1;
 
+/* "+" ile önce ne kuracağını soruyoruz: gerçek proje mi, test güncelleme
+   mi. İkisi de şu an birebir aynı akıştan geçiyor — tek fark, projenin
+   üstüne yapıştırılan etiket. Test'i gerçeğin yerine geçirme mekanizması
+   henüz yok, o ayrı bir iş; burada sadece işaretleniyor. */
 function sihirbaziAc() {
   modalHepsiniKapat();
+  modalAc(`
+    ${modalBaslik(ICON.katman, 'Nereye kuralım?', 'Bu projeyi ne için açıyorsun?')}
+    <div class="secim">
+      <div class="satir sec-satir" data-sb0-tur="gercek" role="button" tabindex="0">
+        <span class="sec-yazi"><b>Gerçek proje</b><i>Müşteriye teslim edilecek asıl proje</i></span>
+      </div>
+      <div class="satir sec-satir" data-sb0-tur="test" role="button" tabindex="0">
+        <span class="sec-yazi"><b>Test güncelleme</b>
+          <i>Denemeler için — şimdilik gerçek projeyle birebir aynı kurulur</i></span>
+      </div>
+    </div>
+    <div class="modal-alt">
+      <button class="btn btn-ghost" data-sb0="kapat" type="button">Vazgeç</button>
+    </div>`, kutu => {
+    $('[data-sb0="kapat"]', kutu).addEventListener('click', modalKapat);
+    kutu.addEventListener('click', ev => {
+      const t = ev.target.closest('[data-sb0-tur]');
+      if (!t) return;
+      modalKapat();
+      sihirbaziBaslat(t.dataset.sb0Tur);
+    });
+  });
+}
+
+function sihirbaziBaslat(tur) {
   Object.assign(SIHIRBAZ, {
     adim: 1, firma: '', sektor: '', renk: 'yesil',
     logo: null, logoOnizleme: '',
@@ -6585,6 +6616,7 @@ function sihirbaziAc() {
     roller: ['Personel', 'Yönetici'],
     baslangic: bugunTarih(), teslim: '',
     moduller: [], kaydediyor: false,
+    tur: tur === 'test' ? 'test' : 'gercek',
   });
   sihirbazAc();
 }
@@ -6798,7 +6830,7 @@ async function sihirbazKaydet() {
        "Kim kullanacak?" kartı sorsun. Sabit varsayılanı buradan yazarsak
        kart hiç sorulmadan tamamlanmış görünüyordu. */
     try {
-      await DB.paletKaydet(id, { gorulenSurum: APP.version });
+      await DB.paletKaydet(id, { gorulenSurum: APP.version, projeTuru: SIHIRBAZ.tur || 'gercek' });
     } catch (h) { /* kritik değil, Firma durağından sonra girilebilir */ }
 
     /* Logo ancak proje kurulduktan sonra yüklenebilir: dosya adı projenin

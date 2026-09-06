@@ -7,8 +7,8 @@ const APP = {
   name:     'NIZAM | Studio',
   short:    'NIZAM Studio',
   owner:    'Nizam Soft',
-  version: 'v0.134.13',
-  build:    '2026-09-03',
+  version: 'v0.134.14',
+  build:    '2026-09-06',
   /* Studio'nun kendi deposu — "bütün programlarda geçerli olsun"
      istekleri buraya gider. */
   depo:    'Nizamsoft/NIZAM-Studio',

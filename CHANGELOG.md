@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.134.14
+- **"+" ile proje eklerken artık "Gerçek proje" mi "Test güncelleme" mi diye soruyor.** Mevcut kurulum akışına dokunulmadı — ikisi de şimdilik birebir aynı şekilde kuruluyor. Test projeleri listede ve kendi sayfasında küçük bir "Test" rozetiyle işaretleniyor. Test'i gerçeğin yerine geçirme mekanizması henüz yok, ayrı bir iş.
+
 ## v0.134.13
 - **Güncellemeler sayfasına "Hızlı güncelleme" kutusu eklendi.** Tek kişi geliştiriyorsa modül seçme, atama gibi adımlarla uğraşmak gereksiz — kutuya yazıp Ekle'ye (ya da Enter'a) basınca görev otomatik "Proje Geneli" kovasına, kendine atanmış olarak düşüyor. Detaylı atama gerekiyorsa görev açılıp elle düzenlenebiliyor; eski "Yeni görev" formu da aynen duruyor.
 
