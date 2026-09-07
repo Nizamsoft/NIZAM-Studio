@@ -1108,19 +1108,20 @@ function baglantilarSayfasi(p, d) {
   const sunuculu    = sunuculuMu(p);
   const namecheapMi = pl.alanTuru === 'namecheap';
   const supabaseTam = !!String(pl.supabaseUrl || '').trim() && !!String(pl.supabaseAnon || '').trim();
-  const githubTam   = !!p.repo && !!pl.yayinda;
+  const depoTam     = !!p.repo;
+  const yayinTam    = !!pl.yayinda;
   const sohbetAdi   = String(pl.sohbetAdi || '').trim();
 
-  const bagDolu = [githubTam, !!sohbetAdi].concat(sunuculu ? [supabaseTam] : [])
+  const bagDolu = [depoTam, !!sohbetAdi, yayinTam].concat(sunuculu ? [supabaseTam] : [])
     .concat(namecheapMi ? [!!pl.namecheapBaglandi] : []).filter(Boolean).length;
-  const bagToplam = 2 + (sunuculu ? 1 : 0) + (namecheapMi ? 1 : 0);
+  const bagToplam = 3 + (sunuculu ? 1 : 0) + (namecheapMi ? 1 : 0);
 
   const biten = bagDolu + (pl.kurulumKuruldu ? 1 : 0);
   const toplam = bagToplam + 1;
 
   const kart = bagDolu === 0
     ? fbBosKart('#b8926b', ICON.dal, 'Bağlantılar', bagDolu + '/' + bagToplam,
-        'GitHub, Claude'
+        'GitHub, Claude, Yayın'
         + (sunuculu ? ', Supabase' : '') + (namecheapMi ? ', Namecheap' : '')
         + ' — programın çalışması için gereken bağlantılar. '
         + '<b>Her biri kendi ekranında, sırayla.</b>',
@@ -1128,8 +1129,10 @@ function baglantilarSayfasi(p, d) {
     : fbKart('#b8926b', ICON.dal, 'Bağlantılar', 'baglanti-duzenle', p.id, `
     <div class="fb-kg tek">
       ${kunyeSatiri('#b8926b', ICON.dal,   'GitHub',
-                    githubTam ? (depoSlug(p.repo) || 'Bağlandı') : '', '', p.id, true, 'bağlı değil')}
+                    depoTam ? (depoSlug(p.repo) || 'Bağlandı') : '', '', p.id, true, 'bağlı değil')}
       ${kunyeSatiri('#9b7fd4', ICON.dosya, 'Claude', sohbetAdi, '', p.id, true, 'bağlı değil')}
+      ${kunyeSatiri('#b8926b', ICON.dal,   'Yayın',
+                    yayinTam ? (pl.alanAdi || 'Yayında') : '', '', p.id, true, 'bağlı değil')}
       ${sunuculu ? kunyeSatiri('#3ecf8e', ICON.bulut, 'Supabase',
                     supabaseTam ? 'Bağlandı' : '', '', p.id, true, 'bağlı değil') : ''}
       ${namecheapMi ? kunyeSatiri('#c48a5c', ICON.dil, 'Namecheap',
@@ -7370,12 +7373,15 @@ async function programAdimKaydet() {
 
 const BAGLANTI_ADIM = { adim: 1, projeId: null, liste: [] };
 
-const BAGLANTI_ETIKET = { github: 'GitHub', claude: 'Claude', supabase: 'Supabase', namecheap: 'Namecheap' };
-const BAGLANTI_IKON   = { github: 'dal', claude: 'dosya', supabase: 'bulut', namecheap: 'dil' };
+const BAGLANTI_ETIKET = { github: 'GitHub', claude: 'Claude', pages: 'Yayın', supabase: 'Supabase', namecheap: 'Namecheap' };
+const BAGLANTI_IKON   = { github: 'dal', claude: 'dosya', pages: 'dal', supabase: 'bulut', namecheap: 'dil' };
 
+/* Yayın (GitHub Pages) bilerek Claude'dan SONRA geliyor: Claude görevini
+   bitirmeden siteyi yayına almanın anlamı yok. Depo bağlama ile yayın
+   eskiden aynı adımdaydı, sıra yüzünden ayrıldı. */
 function baglantiAdimListesi(p) {
   const pl = p.palet || {};
-  const liste = ['github', 'claude'];
+  const liste = ['github', 'claude', 'pages'];
   if (sunuculuMu(p)) liste.push('supabase');
   if (pl.alanTuru === 'namecheap') liste.push('namecheap');
   return liste;
@@ -7383,8 +7389,9 @@ function baglantiAdimListesi(p) {
 
 function baglantiAdimBittiMi(k, p) {
   const pl = p.palet || {};
-  if (k === 'github')    return !!p.repo && !!pl.yayinda;
+  if (k === 'github')    return !!p.repo;
   if (k === 'claude')    return !!String(pl.sohbetAdi || '').trim();
+  if (k === 'pages')     return !!pl.yayinda;
   if (k === 'supabase')  return !!String(pl.supabaseUrl || '').trim() && !!String(pl.supabaseAnon || '').trim();
   if (k === 'namecheap') return !!pl.namecheapBaglandi;
   return false;
@@ -7441,6 +7448,7 @@ function baglantiAdimHtml(p) {
   const k = liste[BAGLANTI_ADIM.adim - 1];
   const govde = k === 'github' ? baglantiAdimGithub(p)
     : k === 'claude' ? baglantiAdimClaude(p)
+    : k === 'pages' ? baglantiAdimPages(p)
     : k === 'supabase' ? baglantiAdimSupabase(p)
     : baglantiAdimNamecheap(p);
 
@@ -7484,15 +7492,13 @@ function baDurum(baslik, alt) {
     </div>`;
 }
 
-/* 1 · GitHub — depo bağlama ve yayına alma aynı adımda, eskiden olduğu
-   gibi iki aşamalı: önce depo, sonra Pages. İkisi de sekmeden dönünce
-   DEPO_BEKLIYOR/PAGES_BEKLIYOR üzerinden kendiliğinden tamamlanıyor. */
+/* 1 · GitHub — yalnız depo bağlama. Yayına alma (Pages) eskiden aynı
+   adımdaydı; Claude'dan sonraya alınınca ayrı adım oldu (bkz. aşağıdaki
+   Yayın adımı). Sekmeden dönünce DEPO_BEKLIYOR üzerinden kendiliğinden
+   tamamlanıyor. */
 function baglantiAdimGithub(p) {
-  const pl    = p.palet || {};
-  const slug  = depoSlug(p.repo);
-  const depo  = !!p.repo;
-  const alan  = String(pl.alanAdi || '').trim();
-  const yayin = !!pl.yayinda;
+  const slug = depoSlug(p.repo);
+  const depo = !!p.repo;
 
   const depoAdresi = depo
     ? 'https://github.com/' + esc(slug)
@@ -7500,25 +7506,17 @@ function baglantiAdimGithub(p) {
       + '&description=' + encodeURIComponent(projeAdi(p) + ' · NIZAM Studio')
       + '&visibility=private';
 
-  const durum = yayin ? baDurum('Bağlantı kuruldu', alan || slug)
-    : depo ? `<p class="ipucu" style="margin-bottom:12px">✓ Depo bağlandı: <b class="mono">${esc(slug)}</b></p>` : '';
-
-  const buton = yayin ? ''
-    : !depo
-      ? `<a class="sayfa-dug" target="_blank" rel="noopener" data-depo-ac="${p.id}" href="${depoAdresi}">
-          ${svg(ICON.dal, 15)} GitHub'da depo aç</a>`
-      : `<a class="sayfa-dug" target="_blank" rel="noopener" data-pages-ac="${p.id}"
-           ${alan ? `data-alan-kopya="${esc(alan)}"` : ''}
-           href="https://github.com/${esc(slug)}/settings/pages">
-          ${svg(ICON.dal, 15)} GitHub Pages'i aç</a>`;
+  const durum = depo ? baDurum('Bağlantı kuruldu', slug) : '';
+  const buton = depo ? '' : `<a class="sayfa-dug" target="_blank" rel="noopener" data-depo-ac="${p.id}" href="${depoAdresi}">
+      ${svg(ICON.dal, 15)} GitHub'da depo aç</a>`;
 
   return shBaslik(ICON.dal, 'GitHub\'a bağlan',
-    'Kodun barındığı ve yayına alındığı yer. Depo bağlanınca Claude Code buradan görev alır.')
+    'Kodun barındığı yer. Depo bağlanınca Claude Code buradan görev alır.')
     + durum + buton
     + baOzellikler([
       'Kod güvenle, sürüm geçmişiyle saklanır',
       'Claude Code görevleri buradan alır',
-      'Yayına almak (GitHub Pages) tek adımda buradan olur',
+      'Yayına alma, Claude görevi bitirince bir sonraki adımlarda',
     ]);
 }
 
@@ -7551,7 +7549,37 @@ function baglantiAdimClaude(p) {
     ]);
 }
 
-/* 3 · Supabase — gerçek adres ve anahtar, otomatik algılanamaz; alanlar
+/* 3 · Yayın (GitHub Pages) — bilerek Claude'dan sonra: kod daha
+   yazılmadan siteyi yayına almanın anlamı yok. Sekmeden dönünce
+   PAGES_BEKLIYOR üzerinden kendiliğinden tamamlanıyor, elle tik yok. */
+function baglantiAdimPages(p) {
+  const pl    = p.palet || {};
+  const slug  = depoSlug(p.repo);
+  const depo  = !!p.repo;
+  const alan  = String(pl.alanAdi || '').trim();
+  const yayin = !!pl.yayinda;
+
+  const durum = yayin ? baDurum('Bağlantı kuruldu', alan || slug) : '';
+
+  const buton = !depo
+    ? `<p class="ipucu" style="margin-bottom:14px">Önce GitHub adımından depo bağlanmalı.</p>`
+    : yayin ? ''
+      : `<a class="sayfa-dug" target="_blank" rel="noopener" data-pages-ac="${p.id}"
+           ${alan ? `data-alan-kopya="${esc(alan)}"` : ''}
+           href="https://github.com/${esc(slug)}/settings/pages">
+          ${svg(ICON.dal, 15)} GitHub Pages'i aç</a>`;
+
+  return shBaslik(ICON.dal, 'Yayına al',
+    'Claude görevi bitirince kodun canlıya çıktığı yer. GitHub Pages tek adımda açılıyor.')
+    + durum + buton
+    + baOzellikler([
+      'Ek sunucu kurulumu gerekmez',
+      'Depo güncellenince adres kendiliğinden yenilenir',
+      'Adres kendiliğinden yazılır, elle girmene gerek yok',
+    ]);
+}
+
+/* 4 · Supabase — gerçek adres ve anahtar, otomatik algılanamaz; alanlar
    burada, "Kaydet" `supabase-baglan` eylemine gidiyor. */
 function baglantiAdimSupabase(p) {
   const pl  = p.palet || {};
@@ -7583,7 +7611,7 @@ function baglantiAdimSupabase(p) {
     ]);
 }
 
-/* 4 · Namecheap — DNS kaydı + alan adı, eskiden ayrı bir pencereydi
+/* 5 · Namecheap — DNS kaydı + alan adı, eskiden ayrı bir pencereydi
    (`alanKaydiPenceresi`), şimdi adımın kendisi. "Alan adını yaz"
    `namecheap-baglan` eylemine gidiyor. */
 function baglantiAdimNamecheap(p) {

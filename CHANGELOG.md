@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.134.33
+- **"Yayına al" (GitHub Pages) Bağlantılar sihirbazında GitHub'dan ayrılıp Claude'dan sonraya alındı.** Eskiden depo bağlama ve yayına alma aynı adımdaydı; artık sıra GitHub → Claude → Yayın → (varsa) Supabase → (varsa) Namecheap. Gerekçe: Claude görevi bitirmeden siteyi yayına almanın anlamı yok.
+
 ## v0.134.32
 - **Aşama listesinde Firma bilgileri, Program temeli ve Bağlantılar ve temel'e dokununca artık aradaki özet durak sayfası açılmıyor, doğrudan sihirbaz açılıyor.** Eskiden satıra dokununca "Doldur"/"Düzenle" düğmeli bir ara sayfa çıkıyordu, sihirbazı açmak için ikinci bir dokunuş gerekiyordu — o ara adım kalktı.
 
