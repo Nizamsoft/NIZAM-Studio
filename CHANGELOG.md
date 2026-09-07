@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## v0.134.30
+- **Program temeli'ne 4. adım eklendi: Alan adı.** "Sadece github.io" mu, "Namecheap ile özel alan adı" mı — karar burada, artı/eksi listeli iki kart hâlinde (Veriler nerede adımıyla aynı dil).
+- **Bağlantılar ve temel kareleri yeniden adlandırıldı ve dinamikleşti: GitHub, Claude, Supabase, Namecheap.** "Adres" ve "Yayın" kareleri kaldırıldı — GitHub karesi artık repo bağlamayı ve GitHub Pages'i açmayı tek karede topluyor; github.io seçiliyse adres kendiliğinden yazılıyor. Supabase karesi yalnız Program temeli'nde Supabase seçildiyse, Namecheap karesi yalnız "özel alan adı" seçildiyse görünüyor — ikisi de dokununca küçük bir pencere açıyor (eskiden Supabase sayfanın içinde açık bir formdu).
+
 ## v0.134.29
 - **"Katman sayısı" düğmeleri (2/3/4/5 katman) yeniden tasarlandı.** Eskiden küçük, metal dolgulu pillerdi. Şimdi mockup'taki gibi dört eşit sütun, büyük dokunma alanı; seçili olan dolmuyor, yalnız sarı çerçeve ve parıltı alıyor.
 

@@ -1007,10 +1007,12 @@ function fbCip(renk, ikon, ic, eylem, projeId, adres) {
    aralarında bağlantı çizgisi, sıra ilerledikçe kırmızı karo yeşile dönüyor.
    GitHub düğmesi doğrudan GitHub'ı açıyor; Claude düğmesi promptu yalnızca
    panoya alıyor — Claude'u kullanıcı kendi açıyor (standartlardaki gibi). */
-/* Kurulumun dört adımı tek satırda. Eskiden iki ayrı şeritti (kurulum ve
-   yayın); ikisi de aynı zincirin halkası olduğu için tek şeride indi.
-   Kartlar buna göre küçüldü: 28 piksellik karo, tek kelimelik başlık,
-   alt yazı yok — dördü 412 piksellik ekranda 82'şer piksele sığıyor. */
+/* Kurulumun kareleri tek satırda — sayısı sabit değil. GitHub karesi depo
+   bağlamayı ve yayına almayı tek karede topluyor (eskiden ayrı "Adres" ve
+   "Yayın" kareleriydi). Adres yalnız github.io yolunda burada kendiliğinden
+   yazılıyor; Program temeli'nde "Namecheap" seçildiyse o iş ayrı bir
+   Namecheap karesinin işi. Supabase karesi de yalnız Program temeli'nde
+   Supabase seçildiyse görünüyor — ikisi de karar orada, bağlantı burada. */
 function kurulumAraclari(p) {
   const pl    = p.palet || {};
   const slug  = depoSlug(p.repo);
@@ -1019,6 +1021,9 @@ function kurulumAraclari(p) {
   const isim  = String(pl.sohbetAdi || '').trim();
   const alan  = String(pl.alanAdi || '').trim();
   const yayin = !!pl.yayinda;
+  const supabaseGerek  = sunuculuMu(p);
+  const namecheapGerek = pl.alanTuru === 'namecheap';
+  const supabaseTam    = !!String(pl.supabaseUrl || '').trim() && !!String(pl.supabaseAnon || '').trim();
 
   const kart = (no, hal, ikon, ad, eylem, adres, ek) => {
     const ic = `
@@ -1044,41 +1049,44 @@ function kurulumAraclari(p) {
       + '&description=' + encodeURIComponent(projeAdi(p) + ' · NIZAM Studio')
       + '&visibility=private';
 
+  const githubKare = !depo
+    ? kart('1', 'sirada', ICON.dal, 'GitHub', '', depoAdresi, `data-depo-ac="${p.id}"`)
+    : yayin
+      ? kart('1', 'bitti', ICON.dal, 'GitHub', '', alan ? 'https://' + esc(alan) : depoAdresi)
+      : `<a class="mk2 sirada" target="_blank" rel="noopener"
+           data-pages-ac="${p.id}" ${alan ? `data-alan-kopya="${esc(alan)}"` : ''}
+           href="https://github.com/${esc(slug)}/settings/pages">
+          <span class="mk2-ust">
+            <span class="mk2-ik">${svg(ICON.dal, 14)}</span>
+            <span class="mk2-no mono">1</span></span>
+          <span class="mk2-ad">GitHub</span></a>`;
+
+  /* Prompt kopyalandıktan sonra kare adı soruyor. Eskiden hep promptu
+     kopyalıyordu: adı girmenin yolu yoktu, adım hiç bitmiyordu. */
+  const claudeKare = kart('2', !depo ? 'bekliyor' : isim ? 'bitti' : 'sirada',
+    ICON.dosya, isim ? 'Claude' : kopya ? 'Sohbet adı' : 'Claude',
+    kopya ? 'sohbet-adi' : 'tanisma-prompt');
+
+  const ekstra = [];
+  if (supabaseGerek) {
+    ekstra.push(kart(String(ekstra.length + 3), !depo ? 'bekliyor' : supabaseTam ? 'bitti' : 'sirada',
+      ICON.bulut, 'Supabase', 'supabase-baglan'));
+  }
+  if (namecheapGerek) {
+    ekstra.push(kart(String(ekstra.length + 3), !depo ? 'bekliyor' : pl.namecheapBaglandi ? 'bitti' : 'sirada',
+      ICON.dil, 'Namecheap', 'alan-kaydi'));
+  }
+
+  const tumu = [githubKare, claudeKare].concat(ekstra);
+  const tumuBitti = depo && yayin
+    && (!supabaseGerek || supabaseTam)
+    && (!namecheapGerek || !!pl.namecheapBaglandi);
+
   /* Kimlik: pencere açıkken arkadaki veri değişirse (GitHub'dan dönüş,
      prompt kopyalama) `render()` bu şeridi yerinde yeniliyor. */
   return `
-    <div class="s4 ${yayin ? 'bitti' : ''}" id="kurulum-serit" data-proje="${p.id}">
-      ${kart('1', depo ? 'bitti' : 'sirada', ICON.dal, 'Depo', '',
-             depoAdresi, depo ? '' : `data-depo-ac="${p.id}"`)}
-      ${bag}
-      ${/* Prompt kopyalandıktan sonra kare adı soruyor. Eskiden hep promptu
-            kopyalıyordu: adı girmenin yolu yoktu, adım hiç bitmiyordu. */''}
-      ${kart('2', !depo ? 'bekliyor' : isim ? 'bitti' : 'sirada',
-             ICON.dosya, isim ? 'Sohbet' : kopya ? 'Sohbet adı' : 'Sohbet',
-             kopya ? 'sohbet-adi' : 'tanisma-prompt')}
-      ${bag}
-      ${kart('3', !isim ? 'bekliyor' : alan ? 'bitti' : 'sirada',
-             ICON.dil, 'Adres', 'alan-adi')}
-      ${bag}
-      ${alan && !yayin
-        ? `<a class="mk2 sirada" target="_blank" rel="noopener"
-             data-pages-ac="${p.id}" data-alan-kopya="${esc(alan)}"
-             href="https://github.com/${esc(slug)}/settings/pages">
-            <span class="mk2-ust">
-              <span class="mk2-ik">${svg(ICON.bulut, 14)}</span>
-              <span class="mk2-no mono">4</span></span>
-            <span class="mk2-ad">Yayın</span></a>`
-        : yayin
-        ? `<a class="mk2 bitti" target="_blank" rel="noopener" href="https://${esc(alan)}">
-            <span class="mk2-ust">
-              <span class="mk2-ik">${svg(ICON.tik, 14)}</span>
-              <span class="mk2-no mono">4</span></span>
-            <span class="mk2-ad">Yayında</span></a>`
-        : `<span class="mk2 bekliyor">
-            <span class="mk2-ust">
-              <span class="mk2-ik">${svg(ICON.bulut, 14)}</span>
-              <span class="mk2-no mono">4</span></span>
-            <span class="mk2-ad">Yayın</span></span>`}
+    <div class="s4 ${tumuBitti ? 'bitti' : ''}" id="kurulum-serit" data-proje="${p.id}">
+      ${tumu.map((k, i) => (i ? bag : '') + k).join('')}
     </div>`;
 }
 
@@ -1172,24 +1180,24 @@ function programSayfasi(p, d) {
     + `</div>`;
 }
 
-/* 3 · Bağlantılar ve temel — depo, sohbet, adres, yayın + (Supabase seçiliyse)
-   Supabase bağlantısı + sabit iskelet onayı. Dört kare eskiden "Kurulum ve
-   yapı" durağının içinde bir pencereydi (adimKurulum); artık kendi başına
-   bir aşama, doğrudan sayfada — açıp kapamaya gerek yok. Sabit iskelet
-   (eski "Nizam kurulum paketi" durağı) buraya katlandı: tanışma promptu
-   Sohbet adımıyla zaten gidiyor, geriye Claude'un kurduğunu işaretlemek
-   kalıyor. Supabase bağlantısı da buraya taşındı: Program temeli'nde yalnız
-   "Supabase mi Yerel mi" kararı veriliyor, gerçek adres+anon key burada. */
+/* 3 · Bağlantılar ve temel — GitHub, Claude, (seçiliyse) Supabase ve
+   Namecheap kareleri + sabit iskelet onayı. Kareler artık dinamik: kaç
+   tanesi göründüğü Program temeli'ndeki iki karara bağlı (veri katmanı,
+   alan adı türü) — karar orada, bağlantı burada. Sabit iskelet (eski
+   "Nizam kurulum paketi" durağı) buraya katlandı: tanışma promptu Claude
+   karesiyle zaten gidiyor, geriye Claude'un kurduğunu işaretlemek kalıyor. */
 function baglantilarSayfasi(p, d) {
   const pl = p.palet || {};
-  const sunuculu = sunuculuMu(p);
+  const sunuculu    = sunuculuMu(p);
+  const namecheapMi = pl.alanTuru === 'namecheap';
   const supabaseTam = !!String(pl.supabaseUrl || '').trim() && !!String(pl.supabaseAnon || '').trim();
 
-  const biten = [!!p.repo, !!String(pl.sohbetAdi || '').trim(), !!pl.alanAdi, !!pl.yayinda]
+  const biten = [!!p.repo, !!String(pl.sohbetAdi || '').trim(), !!pl.yayinda]
     .concat(sunuculu ? [supabaseTam] : [])
+    .concat(namecheapMi ? [!!pl.namecheapBaglandi] : [])
     .concat([!!pl.kurulumKuruldu])
     .filter(Boolean).length;
-  const toplam = sunuculu ? 6 : 5;
+  const toplam = 4 + (sunuculu ? 1 : 0) + (namecheapMi ? 1 : 0);
 
   return `<div class="fb-govde">`
     + adimBasligi(p, d, biten + '/' + toplam)
@@ -1199,38 +1207,8 @@ function baglantilarSayfasi(p, d) {
                       depoSlug(p.repo) || p.repo, 'repo', p.id, false, 'dokun, yapıştır')}
         ${kunyeSatiri('#9b7fd4', ICON.dosya, 'Proje kimliği', 'NIZAM.md', 'kimlik', p.id)}
       </div>`
-    + `<button class="promptu-gor" type="button" data-eylem="alan-kaydi" data-proje="${p.id}">
-        Özel alan adı bağlamak istersen (Namecheap)</button>`
-    + (sunuculu ? supabaseBaglantiKarti(p, 5) : '')
-    + kurulumPaketiKarti(p, sunuculu ? 6 : 5)
+    + kurulumPaketiKarti(p, sunuculu || namecheapMi ? 5 : 4)
     + `</div>`;
-}
-
-/* Supabase bağlantısı — Program temeli'nde "Supabase" seçilince görünür.
-   Karar orada, gerçek adres+anon key burada: "Bağlantılar" durağı zaten
-   projenin dış bağlantılarını topladığı yer. */
-function supabaseBaglantiKarti(p, no) {
-  const pl = p.palet || {};
-  const tam = !!String(pl.supabaseUrl || '').trim() && !!String(pl.supabaseAnon || '').trim();
-  return durakKarti(no, tam, 'Supabase bağlantısı',
-      'Program temeli\'nde veri katmanı olarak Supabase seçildi. Projeyi '
-      + '<a target="_blank" rel="noopener" href="https://supabase.com/dashboard/new">'
-      + 'supabase.com</a> üzerinden aç, adresini ve anon key\'ini buraya yaz.', `
-    <label class="field"><span>Proje adresi</span>
-      <input type="text" id="bl-sb-url" value="${esc(pl.supabaseUrl || '')}"
-             placeholder="https://xxxx.supabase.co" autocomplete="off"
-             spellcheck="false" autocapitalize="off"></label>
-    <label class="field"><span>anon key</span>
-      <input type="text" id="bl-sb-key" value="${esc(pl.supabaseAnon || '')}"
-             placeholder="sb_publishable_… ya da eyJhbG…" autocomplete="off"
-             spellcheck="false" autocapitalize="off"></label>
-    <div class="note uyari">${svg(ICON.uyari, 15)}
-      <span><b>service_role</b> anahtarını buraya yazma. anon key tarayıcıya zaten
-      iniyor, veriyi satır güvenliği (RLS) koruyor — o normal.</span></div>
-    <div class="kur-dug">
-      <button class="sayfa-dug" type="button" data-eylem="supabase-baglan"
-              data-proje="${p.id}">Kaydet</button>
-    </div>`);
 }
 
 /* Sabit iskelet onayı — tanışma promptu (Nizam Standardı + CLAUDE.md/NIZAM.md/
@@ -5557,7 +5535,8 @@ function projeDuraklari(p) {
       bitti: !!p.repo && !!String(pl0.sohbetAdi || '').trim()
              && !!pl0.alanAdi && !!pl0.yayinda && !!pl0.kurulumKuruldu
              && (!sunuculuMu(p) || (!!String(pl0.supabaseUrl || '').trim()
-                                     && !!String(pl0.supabaseAnon || '').trim())),
+                                     && !!String(pl0.supabaseAnon || '').trim()))
+             && (pl0.alanTuru !== 'namecheap' || !!pl0.namecheapBaglandi),
       ozet: !p.repo
         ? 'Depo, sohbet, adres ve yayın burada kurulacak.'
         : !pl0.yayinda
@@ -7154,12 +7133,12 @@ async function sihirbazKaydet() {
 
 const PROGRAM_ADIM = {
   adim: 1, projeId: null,
-  modulAdi: '', veriKatmani: '',
+  modulAdi: '', veriKatmani: '', alanTuru: 'githubio',
   roller: ['Personel', 'Yönetici'],
   kaydediyor: false,
 };
 
-const PROGRAM_ADIMLAR = ['Program', 'Kim kullanacak', 'Veriler'];
+const PROGRAM_ADIMLAR = ['Program', 'Kim kullanacak', 'Veriler', 'Alan adı'];
 
 function programDuzenleAc(projeId) {
   modalHepsiniKapat();
@@ -7171,6 +7150,7 @@ function programDuzenleAc(projeId) {
     adim: 1, projeId,
     modulAdi: pl.modulAdi || '',
     veriKatmani: pl.veriKatmani || varsayilan,
+    alanTuru: pl.alanTuru === 'namecheap' ? 'namecheap' : 'githubio',
     roller: rolListesi(pl.roller).length ? rolListesi(pl.roller) : ['Personel', 'Yönetici'],
     kaydediyor: false,
   });
@@ -7199,7 +7179,8 @@ function programAdimCiz() {
 function programAdimHtml() {
   const govde = PROGRAM_ADIM.adim === 1 ? programAdim1()
     : PROGRAM_ADIM.adim === 2 ? programAdim2()
-    : programAdim3();
+    : PROGRAM_ADIM.adim === 3 ? programAdim3()
+    : programAdim4();
 
   const geri = PROGRAM_ADIM.adim > 1
     ? `<button class="btn btn-ghost" data-pa="geri" type="button">← Geri</button>`
@@ -7298,6 +7279,56 @@ function programAdim3() {
       bir sonraki durakta — <b>Bağlantılar ve temel</b>'de — gireceksin.</p>` : ''}`;
 }
 
+/* 4 · Alan adı — yalnız karar. Namecheap seçilirse gerçek DNS kaydı ve alan
+   adı Bağlantılar ve temel durağındaki Namecheap karesinde giriliyor; bu
+   karar olmadan Bağlantılar kaç kare göstereceğini bilemiyor. */
+const ALAN_TURU_KARTI = {
+  githubio: {
+    ad: 'Sadece github.io', ikon: 'bulut', renk: '#3ecf8e', onerilen: true,
+    ozellikler: [
+      { iyi: true, yazi: 'Hiç kurulum gerektirmez' },
+      { iyi: true, yazi: 'Testler için hızlı' },
+      { iyi: false, yazi: 'Adres uzun (...github.io/proje)' },
+    ],
+  },
+  namecheap: {
+    ad: 'Namecheap ile özel alan adı', ikon: 'dil', renk: '#c48a5c', onerilen: false,
+    ozellikler: [
+      { iyi: true, yazi: 'Kendi alan adın (örn. firma.com)' },
+      { iyi: true, yazi: 'Müşteriye teslimde daha profesyonel' },
+      { iyi: false, yazi: 'DNS kaydı gerekir, 10-30 dk sürebilir' },
+    ],
+  },
+};
+
+function programAdim4() {
+  const secili = PROGRAM_ADIM.alanTuru;
+  return shBaslik(ICON.dil, 'Alan adı nasıl olacak?',
+    'Uygulama hangi adresten açılacak? Sonra istersen değiştirebilirsin.') + `
+    <div class="pa-veri-liste">
+      ${Object.keys(ALAN_TURU_KARTI).map(k => {
+        const kart = ALAN_TURU_KARTI[k];
+        return `
+        <label class="pa-veri-kart ${secili === k ? 'on' : ''}" style="--ki:${kart.renk}"
+               data-pa="alan-turu" data-deger="${esc(k)}">
+          <span class="pa-veri-ust">
+            <span class="pa-veri-ik">${svg(ICON[kart.ikon], 18)}</span>
+            <span class="pa-veri-ad">${esc(kart.ad)}</span>
+            ${kart.onerilen ? '<span class="pa-veri-rozet">Önerilen</span>' : ''}
+            <span class="pa-veri-radyo"></span>
+          </span>
+          <span class="pa-veri-oz-liste">
+            ${kart.ozellikler.map(o => `<span class="pa-veri-oz ${o.iyi ? 'iyi' : 'kotu'}">
+              ${svg(o.iyi ? ICON.tik : ICON.kapat, 11)} ${esc(o.yazi)}</span>`).join('')}
+          </span>
+        </label>`;
+      }).join('')}
+    </div>
+    <p class="ipucu">${secili === 'namecheap'
+      ? 'Namecheap DNS kaydını bir sonraki durakta — Bağlantılar ve temel\'de — gireceksin.'
+      : 'Adres depo bağlanınca kendiliğinden yazılacak, ayrıca bir şey girmene gerek yok.'}</p>`;
+}
+
 function programAdimBagla(kutu) {
   const yaz = () => {
     const al = id => { const e = $('#' + id, kutu); return e ? e.value : null; };
@@ -7321,7 +7352,8 @@ function programAdimBagla(kutu) {
       if (t === 'kaydet') { yaz(); return programAdimKaydet(); }
 
       yaz();
-      if (t === 'veri') PROGRAM_ADIM.veriKatmani = d;
+      if (t === 'veri')      PROGRAM_ADIM.veriKatmani = d;
+      if (t === 'alan-turu') PROGRAM_ADIM.alanTuru     = d;
       programAdimCiz();
     });
   });
@@ -7362,6 +7394,13 @@ async function programAdimKaydet() {
       delete palet.supabaseUrl;
       delete palet.supabaseAnon;
     }
+    /* github.io'ya dönülünce eski Namecheap bağlantısı da anlamsızlaşıyor —
+       adres depo bağlanınca kendiliğinden yeniden yazılacak. */
+    if (PROGRAM_ADIM.alanTuru !== 'namecheap' && palet.namecheapBaglandi) {
+      delete palet.alanAdi;
+      delete palet.namecheapBaglandi;
+    }
+    palet.alanTuru = PROGRAM_ADIM.alanTuru;
     palet.roller = PROGRAM_ADIM.roller;
 
     const projeId = PROGRAM_ADIM.projeId;
@@ -8023,6 +8062,51 @@ function kisiSor(mevcut) {
   });
 }
 
+/* Supabase karesine dokununca açılan küçük pencere — proje adresi ve
+   anon key. Program temeli'nde veri katmanı olarak Supabase seçilince
+   Bağlantılar'da bu kare çıkıyor; karar orada, bağlantı burada. */
+function supabaseBaglanModal(projeId) {
+  modalHepsiniKapat();
+  const p = DB.proje(projeId);
+  if (!p) return;
+  const pl = p.palet || {};
+
+  modalAc(`
+    ${modalBaslik(ICON.bulut, 'Supabase', 'Proje adresini ve anon key\'ini gir.')}
+    <label class="field"><span>Proje adresi</span>
+      <input type="text" id="sbm-url" value="${esc(pl.supabaseUrl || '')}"
+             placeholder="https://xxxx.supabase.co" autocomplete="off"
+             spellcheck="false" autocapitalize="off"></label>
+    <label class="field"><span>anon key</span>
+      <input type="text" id="sbm-key" value="${esc(pl.supabaseAnon || '')}"
+             placeholder="sb_publishable_… ya da eyJhbG…" autocomplete="off"
+             spellcheck="false" autocapitalize="off"></label>
+    <div class="note uyari">${svg(ICON.uyari, 15)}
+      <span><b>service_role</b> anahtarını buraya yazma. anon key tarayıcıya zaten
+      iniyor, veriyi satır güvenliği (RLS) koruyor — o normal.</span></div>
+    <div class="modal-alt">
+      <button class="btn btn-ghost" data-sbm="iptal" type="button">Vazgeç</button>
+      <button class="btn btn-primary" data-sbm="kaydet" type="button"><span>Kaydet</span></button>
+    </div>`, kutu => {
+    $('[data-sbm="iptal"]', kutu).addEventListener('click', modalKapat);
+    $('[data-sbm="kaydet"]', kutu).addEventListener('click', async () => {
+      const url = $('#sbm-url', kutu).value.trim();
+      const key = $('#sbm-key', kutu).value.trim();
+      if (!url || !key) return toast('İkisini de yaz.', 'uyari');
+      const yazi = $('[data-sbm="kaydet"] span', kutu);
+      yazi.textContent = 'Kaydediliyor…';
+      try {
+        const guncel = DB.proje(projeId);
+        await DB.paletKaydet(projeId, Object.assign({}, (guncel && guncel.palet) || {},
+          { supabaseUrl: url, supabaseAnon: key }));
+        modalKapat();
+        toast('Supabase bağlantısı kaydedildi.', 'basari');
+        render();
+      } catch (h) { yazi.textContent = 'Kaydet'; toast(h.message, 'hata'); }
+    });
+  });
+}
+
 /* ==========================================================================
    METİN PENCERESİ — prompt ve kimlik dosyası
    ========================================================================== */
@@ -8079,8 +8163,10 @@ function alanKaydiPenceresi(p) {
         buton: 'Kaydet',
       });
       if (adres === null) return;
+      const guncel = DB.proje(p.id);
       await isYap(() => DB.paletKaydet(p.id,
-        Object.assign({}, p.palet || {}, { alanAdi: adres })), 'Alan adı kaydedildi.');
+        Object.assign({}, (guncel && guncel.palet) || {}, { alanAdi: adres, namecheapBaglandi: true })),
+        'Alan adı kaydedildi.');
     });
   }, 'genis');
 }
@@ -10245,17 +10331,7 @@ async function eylemCalistir(el) {
       pl.kurulumKuruldu ? 'İşaret kaldırıldı.' : 'Sabit iskelet kuruldu olarak işaretlendi.');
   }
 
-  if (e === 'supabase-baglan') {
-    const pr = DB.proje(el.dataset.proje);
-    if (!pr) return;
-    const url = ($('#bl-sb-url') || {}).value || '';
-    const key = ($('#bl-sb-key') || {}).value || '';
-    if (!url.trim() || !key.trim()) return toast('İkisini de yaz.', 'uyari');
-    const pl = pr.palet || {};
-    return isYap(() => DB.paletKaydet(pr.id,
-      Object.assign({}, pl, { supabaseUrl: url.trim(), supabaseAnon: key.trim() })),
-      'Supabase bağlantısı kaydedildi.');
-  }
+  if (e === 'supabase-baglan') return supabaseBaglanModal(el.dataset.proje);
 
   if (e === 'gelistirme-gerek-yok') {
     const pr = DB.proje(el.dataset.proje);
@@ -10439,22 +10515,6 @@ async function eylemCalistir(el) {
     if (ad === null) return;
     return isYap(() => DB.paletKaydet(pr.id,
       Object.assign({}, pr.palet || {}, { modulAdi: ad })), 'Modül adı kaydedildi.');
-  }
-
-  if (e === 'alan-adi') {
-    const pr = DB.proje(el.dataset.proje);
-    if (!pr) return;
-    const adres = await metinSor({
-      baslik: 'Yayın adresi',
-      aciklama: 'Uygulamanın açılacağı adres. Prompta da yazılır.',
-      deger: (pr.palet || {}).alanAdi || pagesAdresi(pr),
-      yerTutucu: 'nizamsoft.github.io/NIZAMSOFT-KisiselButce',
-      buton: 'Kaydet',
-    });
-    if (adres === null) return;
-    delete PAGES_BEKLIYOR[pr.id];
-    return isYap(() => DB.paletKaydet(pr.id,
-      Object.assign({}, pr.palet || {}, { alanAdi: adres })), 'Yayın adresi kaydedildi.');
   }
 
   /* Namecheap'e yazılacak kayıt hazır duruyor: satır satır kopyalanıyor ve
@@ -12011,9 +12071,12 @@ document.addEventListener('DOMContentLoaded', () => {
       delete PAGES_BEKLIYOR[pid];
       if (!pr) return;
       const pl = pr.palet || {};
-      if (!pl.alanAdi) yayinAdresiTamamla(pr);
-      /* Adres zaten yazılıysa Pages'e gidilmesinin tek sebebi custom domain'i
-         kaydetmek — dönüşte durağı yayında sayıyoruz. */
+      /* Namecheap seçilmişse adres github.io'ya değil, Namecheap karesinden
+         gelecek özel alan adına yazılmalı — burada hiç dokunmuyoruz. */
+      if (!pl.alanAdi && pl.alanTuru !== 'namecheap') yayinAdresiTamamla(pr);
+      /* Adres zaten yazılıysa (ya da Namecheap bekleniyorsa) Pages'e
+         gidilmesinin tek sebebi custom domain'i kaydetmek — dönüşte
+         durağı yayında sayıyoruz. */
       else if (!pl.yayinda) {
         DB.paletKaydet(pr.id, Object.assign({}, pl, { yayinda: true }))
           .then(() => render())
