@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.134.24
+- **"Yeni Proje" sihirbazı 3 adıma çıktı, "proje adı" tekrarı kalktı.** Eskiden sihirbaz tek soru soruyordu (Firma adı), geri kalanı proje içindeki Firma bilgileri durağına bırakılıyordu — açılınca aynı bilgiler tekrar soruluyormuş gibi hissettiriyordu. Artık sihirbaz üç adımda (Firma bilgileri → Sektör seçimi → Marka ve görseller) tam olarak Firma bilgileri durağının sorduklarını soruyor; "Projeyi Tamamla"ya basınca proje bu bilgilerle kuruluyor ve durak zaten tamamlanmış oluyor, doğrudan 8 aşamalı ekrana dönülüyor.
+
 ## v0.134.23
 - **Aşama ikonları (özellikle Firma bilgileri) kutunun içinde sağa kaymış duruyordu.** Sebebi kırpma değil, PNG'lerdeki gözle görünmeyen (alpha≈1) tozlu kenar pikselleriydi — kırpma bunları da "içerik" sayıp kutuyu gereğinden geniş tutuyordu, küçültünce görünen şekil kaymış gibi duruyordu. Eşiksiz kırpma yerine eşikli (gerçekten görünen piksel) kırpmayla yeniden işlendi; artık hepsi kutuda tam ortalı.
 

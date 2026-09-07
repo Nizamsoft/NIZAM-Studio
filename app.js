@@ -6617,10 +6617,12 @@ const SIHIRBAZ = {
   firma: '',
   sektor: '',
   renk: 'yesil',
-  /* Logo dosyası bellekte tutuluyor; proje kurulduktan sonra yükleniyor,
-     çünkü dosya adı projenin kimliği. */
+  /* Logo ve işletme görseli bellekte tutuluyor; proje kurulduktan sonra
+     yükleniyor, çünkü dosya adı projenin kimliği. */
   logo: null,
   logoOnizleme: '',
+  gorsel: null,
+  gorselOnizleme: '',
   yetkili: '',
   telefon: '',
   eposta: '',
@@ -6635,10 +6637,10 @@ const SIHIRBAZ = {
   kaydediyor: false,
 };
 
-/* Sihirbaz tek soru soruyor: firma adı. Beş adımlık form kullanıcıyı
-   yoruyordu ve geçiştirme cevapları geliyordu — sektör "yok", takvim boş.
-   Gerisi Firma sayfasında, kart kart, gerekçesiyle birlikte soruluyor. */
-const SIHIRBAZ_ADIM = 1;
+/* Sihirbaz üç adımda tam olarak Firma bilgileri durağının sorduklarını
+   soruyor: proje kurulurken ayrıca "proje adı" sormuyoruz — firma adı zaten
+   bu üçünün ilk sorusu. Sonunda proje bu bilgilerle kuruluyor, Firma
+   bilgileri durağı ekstra bir şey yapmadan tamamlanmış oluyor. */
 
 /* "+" ile önce ne kuracağını soruyoruz: gerçek proje mi, test güncelleme
    mi. İkisi de şu an birebir aynı akıştan geçiyor — tek fark, projenin
@@ -6674,6 +6676,7 @@ function sihirbaziBaslat(tur) {
   Object.assign(SIHIRBAZ, {
     adim: 1, firma: '', sektor: '', renk: 'yesil',
     logo: null, logoOnizleme: '',
+    gorsel: null, gorselOnizleme: '',
     yetkili: '', telefon: '', eposta: '',
     platform: 'ikisi', veri: 'sifirdan',
     dil: 'tr', para: 'TRY',
@@ -6699,8 +6702,9 @@ function sihirbazKapat() {
   const el = $('#sihirbaz');
   if (!el) return;
   if (SIHIRBAZ.logoOnizleme) URL.revokeObjectURL(SIHIRBAZ.logoOnizleme);
-  SIHIRBAZ.logo = null;
-  SIHIRBAZ.logoOnizleme = '';
+  if (SIHIRBAZ.gorselOnizleme) URL.revokeObjectURL(SIHIRBAZ.gorselOnizleme);
+  SIHIRBAZ.logo = null; SIHIRBAZ.logoOnizleme = '';
+  SIHIRBAZ.gorsel = null; SIHIRBAZ.gorselOnizleme = '';
   el.classList.remove('acik');
   setTimeout(() => el.remove(), 260);
 }
@@ -6713,8 +6717,19 @@ function sihirbazCiz() {
   requestAnimationFrame(() => el.classList.add('acik'));
 }
 
+const SIHIRBAZ_ADIMLAR = ['Firma', 'Sektör', 'Marka'];
+
 function sihirbazHtml() {
-  const govde = sihirbazFirma();
+  const govde = SIHIRBAZ.adim === 1 ? sihirbazAdimFirma()
+    : SIHIRBAZ.adim === 2 ? sihirbazAdimSektor()
+    : sihirbazAdimMarka();
+
+  const geri = SIHIRBAZ.adim > 1
+    ? `<button class="btn btn-ghost" data-sb="geri" type="button">← Geri</button>`
+    : `<button class="btn btn-ghost" data-sb="kapat" type="button">Vazgeç</button>`;
+  const ileri = SIHIRBAZ.adim < SIHIRBAZ_ADIMLAR.length
+    ? `<button class="btn btn-primary" data-sb="ileri" type="button"><span>Devam Et →</span></button>`
+    : `<button class="btn btn-primary" data-sb="kaydet" type="button"><span>Projeyi Tamamla ✓</span></button>`;
 
   return `
     <div class="sh-tepe">
@@ -6725,15 +6740,28 @@ function sihirbazHtml() {
     </div>
 
     <div class="sh-sayfa">
-      <div class="sh-icerik">${govde}</div>
-
-      <div class="sh-dip">
-        <button class="btn btn-ghost" data-sb="kapat" type="button">Vazgeç</button>
-        <button class="btn btn-primary" data-sb="kaydet" type="button">
-          <span>Projeyi kur</span>
-        </button>
+      <div class="sh-icerik">
+        ${sihirbazAdimlar()}
+        ${govde}
       </div>
+
+      <div class="sh-dip">${geri}${ileri}</div>
     </div>`;
+}
+
+/* Sayaçlı adım göstergesi: geçilen adım tik, şimdiki adım numarasıyla
+   dolu, sıradaki soluk. Aynı renk dili "Beta ve geliştirme"deki durum
+   rengiyle (sarı) — henüz bitmemiş ama sürüyor. */
+function sihirbazAdimlar() {
+  return `<div class="sh-adimlar">${SIHIRBAZ_ADIMLAR.map((ad, i) => {
+    const n = i + 1;
+    const hal = n < SIHIRBAZ.adim ? 'done' : n === SIHIRBAZ.adim ? 'simdi' : '';
+    return (i ? '<span class="sh-adim-cizgi"></span>' : '')
+      + `<span class="sh-adim ${hal}">
+          <span class="sh-adim-no">${hal === 'done' ? svg(ICON.tik, 13) : n}</span>
+          <i>${esc(ad)}</i>
+        </span>`;
+  }).join('')}</div>`;
 }
 
 function shBaslik(ikon, baslik, alt) {
@@ -6744,18 +6772,66 @@ function shBaslik(ikon, baslik, alt) {
     </div>`;
 }
 
-/* Tek soru. Sektör, logo, renk, yetkili, takvim, platform ve modüller
-   Firma sayfasındaki kartlara taşındı — orada niçin sorulduğu da yazıyor. */
-function sihirbazFirma() {
-  return shBaslik(ICON.folder, 'Firma',
-    'Tek şey soruyoruz. Gerisini proje sayfasında, adım adım dolduracaksın.') + `
+/* 1 · Firma bilgileri — proje kurulurken ayrıca "proje adı" sormuyoruz,
+   firma adı burada zaten soruluyor. */
+function sihirbazAdimFirma() {
+  return shBaslik(ICON.etiket, 'Firma bilgileri',
+    'Projenizi oluşturmak için temel bilgileri girelim.') + `
     <label class="field">
       <span>Firma adı</span>
       <input type="text" id="sb-firma" value="${esc(SIHIRBAZ.firma)}"
              placeholder="Örn. Aydın Yapı" autocomplete="off" maxlength="60">
     </label>
-    <p class="ipucu">Sektör, platform, yetkili ve takvim sonraki ekranda —
-      her biri niçin gerektiğiyle birlikte.</p>`;
+    <label class="field">
+      <span>Telefon</span>
+      <input type="tel" id="sb-telefon" value="${esc(SIHIRBAZ.telefon)}"
+             placeholder="0532 000 00 00" autocomplete="off" maxlength="24">
+    </label>
+    <label class="field">
+      <span>E-posta</span>
+      <input type="email" id="sb-eposta" value="${esc(SIHIRBAZ.eposta)}"
+             placeholder="ornek@firma.com" autocomplete="off" maxlength="80">
+    </label>
+    <p class="ipucu">Bu bilgiler daha sonra da düzenlenebilir.</p>`;
+}
+
+/* 2 · Sektör seçimi — sektöre göre önerilen modüller SIHIRBAZ.moduller'e
+   düşüyor, proje o modüllerle kuruluyor. */
+function sihirbazAdimSektor() {
+  const sektorler = DB.sektorler;
+  return shBaslik(ICON.dukkan, 'Sektör seçimi', 'Firmanız hangi sektörde hizmet veriyor?') + `
+    <div class="sh-sektor-izgara">
+      ${sektorler.map(s => `
+        <button type="button" class="sh-sektor ${SIHIRBAZ.sektor === s.ad ? 'on' : ''}"
+                data-sb="sektor" data-deger="${esc(s.ad)}">
+          ${SIHIRBAZ.sektor === s.ad ? `<span class="sh-sektor-tik">${svg(ICON.tik, 11)}</span>` : ''}
+          <span class="sh-sektor-ik">${svg(ICON.dukkan, 17)}</span>
+          <span>${esc(s.ad)}</span>
+        </button>`).join('')}
+      <button type="button" class="sh-sektor sh-sektor-ekle" data-sb="sektor-ekle">
+        <span class="sh-sektor-ik">${svg(ICON.arti, 17)}</span>
+        <span>Yeni ekle</span>
+      </button>
+    </div>
+    <p class="ipucu">Sektör seçimi, proje şablonlarını ve önerileri size özel hale getirir.</p>`;
+}
+
+/* 3 · Marka ve görseller — ikisi de bellekte bekliyor, proje kurulunca
+   yükleniyor (dosya adı projenin kimliği, önce id gerekiyor). */
+function sihirbazAdimMarka() {
+  return shBaslik(ICON.resim, 'Marka ve görseller',
+    'Marka kimliğinizi ekleyerek projenizi tamamlayın.') + `
+    <span class="fbd-et">Logo</span>
+    <button type="button" class="sb-yukle ${SIHIRBAZ.logoOnizleme ? 'dolu' : ''}" data-sb="logo"
+      ${SIHIRBAZ.logoOnizleme ? `style="background-image:url('${esc(SIHIRBAZ.logoOnizleme)}')"` : ''}>
+      ${SIHIRBAZ.logoOnizleme ? '' : `${svg(ICON.bulut, 20)}<b>Logo yükle</b><i>PNG, JPG (Maks. 5MB)</i>`}
+    </button>
+    <span class="fbd-et" style="margin-top:16px">İşletme görseli</span>
+    <button type="button" class="sb-yukle genis ${SIHIRBAZ.gorselOnizleme ? 'dolu' : ''}" data-sb="gorsel"
+      ${SIHIRBAZ.gorselOnizleme ? `style="background-image:url('${esc(SIHIRBAZ.gorselOnizleme)}')"` : ''}>
+      ${SIHIRBAZ.gorselOnizleme ? '' : `${svg(ICON.bulut, 20)}<b>İşletme görseli ekle</b><i>Restoran görselleri, menü, vitrin vb.</i>`}
+    </button>
+    <p class="ipucu">Görseller, projenizin ön yüzünde ve paylaşım alanlarında kullanılacaktır.</p>`;
 }
 
 function sihirbazBagla(kutu) {
@@ -6785,6 +6861,7 @@ function sihirbazBagla(kutu) {
       if (t === 'ileri') { yaz(); if (!sihirbazDenetle()) return; SIHIRBAZ.adim++; return sihirbazCiz(); }
       if (t === 'kaydet') { yaz(); return sihirbazKaydet(); }
       if (t === 'logo')   return sihirbazLogoSec();
+      if (t === 'gorsel') return sihirbazGorselSec();
       if (t === 'sektor-ekle') { yaz(); return sihirbazSektorEkle(); }
 
       yaz();
@@ -6831,6 +6908,28 @@ function sihirbazLogoSec() {
     if (SIHIRBAZ.logoOnizleme) URL.revokeObjectURL(SIHIRBAZ.logoOnizleme);
     SIHIRBAZ.logo = dosya;
     SIHIRBAZ.logoOnizleme = URL.createObjectURL(dosya);
+    sihirbazCiz();
+  });
+
+  alan.click();
+}
+
+function sihirbazGorselSec() {
+  const alan = document.createElement('input');
+  alan.type = 'file';
+  alan.accept = 'image/*';
+  alan.style.display = 'none';
+  document.body.appendChild(alan);
+
+  alan.addEventListener('change', () => {
+    const dosya = alan.files && alan.files[0];
+    alan.remove();
+    if (!dosya) return;
+    if (dosya.size > 4 * 1024 * 1024) { toast('Dosya 4 MB\'ı geçmesin.', 'hata'); return; }
+
+    if (SIHIRBAZ.gorselOnizleme) URL.revokeObjectURL(SIHIRBAZ.gorselOnizleme);
+    SIHIRBAZ.gorsel = dosya;
+    SIHIRBAZ.gorselOnizleme = URL.createObjectURL(dosya);
     sihirbazCiz();
   });
 
@@ -6897,21 +6996,33 @@ async function sihirbazKaydet() {
       await DB.paletKaydet(id, { gorulenSurum: APP.version, projeTuru: SIHIRBAZ.tur || 'gercek' });
     } catch (h) { /* kritik değil, Firma durağından sonra girilebilir */ }
 
-    /* Logo ancak proje kurulduktan sonra yüklenebilir: dosya adı projenin
-       kimliği. Yükleme patlarsa proje yine duruyor, logo sonradan eklenir. */
+    /* Logo ve işletme görseli ancak proje kurulduktan sonra yüklenebilir:
+       dosya adı projenin kimliği. Yükleme patlarsa proje yine duruyor,
+       görseller sonradan Firma bilgileri durağından eklenir. */
     if (SIHIRBAZ.logo) {
       try { await DB.logoYukle(id, SIHIRBAZ.logo); }
       catch (h) { toast('Proje kuruldu ama logo yüklenemedi — ' + h.message, 'uyari'); }
+    }
+    if (SIHIRBAZ.gorsel) {
+      try {
+        const pr = DB.proje(id);
+        const pl = (pr && pr.palet) || {};
+        const gorseller = (pl.gorseller || []).concat([{
+          no: 'G0', ad: 'İşletme görseli',
+          tarif: 'İşletmeyi anlatan görsel — konseptin kaynağı.',
+          dosya: 'isletme.jpg', yol: '', boyut: 0, tur: '',
+        }]);
+        await DB.paletKaydet(id, Object.assign({}, pl, { gorseller }));
+        await DB.gorselYukle(id, 'G0', SIHIRBAZ.gorsel);
+      } catch (h) { toast('Proje kuruldu ama işletme görseli yüklenemedi — ' + h.message, 'uyari'); }
     }
 
     sihirbazKapat();
     sayaclariYaz();
     toast(SIHIRBAZ.firma.trim() + ' kuruldu.');
-    /* Doğrudan firma bilgileri sayfasına atlıyoruz ama projenin kendi ana
-       ekranı (duraklı harita) geçmişte hiç yer almasın istemiyoruz — yoksa
-       "geri" oradan atlayıp doğrudan Projeler listesine düşüyordu. */
-    history.pushState(null, '', '#/projeler/' + id);
-    location.hash = '#/projeler/' + id + '/firma';
+    /* Firma bilgileri durağı zaten bu ekranda dolduruldu — proje kurulunca
+       durak haritasına dönüyoruz, tekrar firma sayfasına girmeye gerek yok. */
+    location.hash = '#/projeler/' + id;
     render();
   } catch (e) {
     toast(e.message, 'hata');
