@@ -5563,6 +5563,13 @@ function yolOku(yesil) {
     </div>`;
 }
 
+/* Firma bilgileri, Program temeli ve Bağlantılar ve temel tam ekran
+   sihirbazla dolduruluyor — satıra dokununca aradaki özet durak sayfası
+   (Doldur/Düzenle düğmeli kart) atlanıp doğrudan sihirbaz açılıyor. */
+const ASAMA_SIHIRBAZ_EYLEM = {
+  firma: 'marka-duzenle', program: 'program-duzenle', baglantilar: 'baglanti-duzenle',
+};
+
 /* Aşama satırı: dikey liste, yeri sabit. Solda numara + kendi ikonu
    (ikon/asama/ altındaki PNG, CSS mask ile boyanıyor — gri kilitli,
    yeşil şimdiki/biten), ortada ad + sabit açıklama, sağda durum ve ok. */
@@ -5587,8 +5594,12 @@ function asamaSatiri(p, d, i, simdi, anahtar) {
     <span class="asr-chev">${svg(ICON.chevron, 15)}</span>`;
 
   /* Kilitli adım bağlantı bile değil: adresle de açılmıyor. */
-  return kilitli
-    ? `<span class="asr ${hal}">${ic}</span>`
+  if (kilitli) return `<span class="asr ${hal}">${ic}</span>`;
+
+  const sihirbazEylem = ASAMA_SIHIRBAZ_EYLEM[anahtar];
+  return sihirbazEylem
+    ? `<a class="asr ${hal}" href="#/projeler/${p.id}/${anahtar}"
+         data-eylem="${sihirbazEylem}" data-proje="${p.id}">${ic}</a>`
     : `<a class="asr ${hal}" href="#/projeler/${p.id}/${anahtar}">${ic}</a>`;
 }
 

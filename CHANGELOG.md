@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.134.32
+- **Aşama listesinde Firma bilgileri, Program temeli ve Bağlantılar ve temel'e dokununca artık aradaki özet durak sayfası açılmıyor, doğrudan sihirbaz açılıyor.** Eskiden satıra dokununca "Doldur"/"Düzenle" düğmeli bir ara sayfa çıkıyordu, sihirbazı açmak için ikinci bir dokunuş gerekiyordu — o ara adım kalktı.
+
 ## v0.134.31
 - **Bağlantılar ve temel artık dört ayrı tam ekran adım: GitHub, Claude, Supabase, Namecheap.** Küçük kareler kalktı; "Düzenle"ye dokununca Firma bilgileri/Program temeli sihirbazlarıyla aynı dilde bir ekran açılıyor, her bağlantı kendi sayfasında sırayla. GitHub ve Claude eskisi gibi sekmeden dönünce kendiliğinden yeşile dönüyor — elle "kuruldu" tiki yok. Supabase ve Namecheap'te gerçek bilgi (adres/anahtar, alan adı) gerektiği için o alanlar artık ayrı bir pencere yerine doğrudan adımın içinde.
 
