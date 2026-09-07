@@ -1773,6 +1773,25 @@ html { background: var(--bg); }
 .pa-veri-oz.kotu{ color:var(--ink-faint); }
 .pa-veri-oz.kotu svg{ color:var(--red-ink); }
 
+/* Bağlantılar sihirbazı — her adımın altındaki avantaj listesi (hepsi
+   zaten avantaj, artı/eksi ayrımı yok) ve bağlantı kurulduğunda çıkan
+   yeşil durum şeridi. */
+.ba-oz-liste{ display:flex; flex-direction:column; gap:8px; margin:18px 0 4px; }
+.ba-oz{ display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--ink-soft); }
+.ba-oz svg{ flex:0 0 auto; color:var(--st-done-t); }
+
+.ba-durum{
+  display:flex; align-items:center; gap:11px; margin-bottom:14px; padding:13px 14px;
+  border-radius:var(--radius-lg); border:1px solid var(--done-cizgi); background:var(--done-soft);
+}
+.ba-durum-ik{
+  flex:0 0 30px; width:30px; height:30px; border-radius:999px;
+  display:flex; align-items:center; justify-content:center;
+  background:linear-gradient(180deg, var(--st-done-t), var(--st-done)); color:#04170e;
+}
+.ba-durum b{ display:block; font-size:12.5px; color:var(--ink-strong); }
+.ba-durum i{ display:block; font-style:normal; font-size:11px; color:var(--ink-dim); margin-top:1px; word-break:break-all; }
+
 /* Sektör pulları */
 .pullar { display: flex; flex-wrap: wrap; gap: 7px; }
 .pul {
@@ -6613,76 +6632,6 @@ a.asr:active{ transform:scale(.99); }
 
 .asr-chev{ flex:0 0 auto; color:var(--ink-dim); }
 .asr.kilitli .asr-chev{ visibility:hidden; }
-
-/* --------------------------------------------------------------------------
-   Kurulumun dört adımı — tek satır
-   Eskiden iki ayrı şeritti (kurulum ve yayın); ikisi de aynı zincirin
-   halkası olduğu için tek şeride indi. Kartlar buna göre küçüldü: 28
-   piksellik karo, tek kelimelik başlık, alt yazı yok. Dördü 412 piksellik
-   ekranda 82'şer piksele sığıyor.
-   -------------------------------------------------------------------------- */
-
-.s4{
-  display:grid;
-  grid-template-columns:1fr 12px 1fr 12px 1fr 12px 1fr;
-  align-items:stretch;
-}
-.s4-bag{ position:relative; display:flex; align-items:center; justify-content:center; }
-.s4-bag i{
-  display:block; width:100%; height:1px;
-  background:linear-gradient(90deg, var(--line), var(--line-3));
-}
-.s4-bag em{ position:absolute; display:flex; color:var(--ink-dim); }
-.s4.bitti .s4-bag i{ background:var(--st-done); }
-.s4.bitti .s4-bag em{ color:var(--st-done-t); }
-
-.mk2{
-  position:relative; overflow:hidden; min-width:0;
-  display:flex; flex-direction:column; align-items:flex-start; gap:7px;
-  padding:9px 7px 10px;
-  border:1px solid var(--line); border-radius:12px;
-  text-align:left; text-decoration:none; color:inherit;
-  font-family:inherit; cursor:pointer;
-  background:linear-gradient(180deg, var(--kart-ust), var(--kart-alt));
-  box-shadow:0 2px 4px -2px rgba(0,0,0,.7),
-             0 14px 26px -18px rgba(0,0,0,.95),
-             inset 0 1px 0 var(--isik);
-  transition:transform .16s var(--yay);
-}
-.mk2:not([disabled]):active{ transform:scale(.95); }
-.mk2[disabled]{ cursor:default; }
-.mk2-ust{
-  position:relative;
-  display:flex; align-items:center; justify-content:space-between; width:100%;
-}
-.mk2-ik{
-  display:flex; align-items:center; justify-content:center;
-  width:28px; height:28px; border-radius:9px;
-  color:var(--ink-soft);
-  background:linear-gradient(180deg, var(--surface-3), var(--kart-alt));
-  box-shadow:inset 0 0 0 1px rgba(255,255,255,.07);
-}
-.mk2-no{ font-size:9px; color:var(--ink-dim); }
-.mk2-ad{
-  position:relative; line-height:1.28;
-  font-family:var(--yazi-baslik); font-weight:600; font-size:10.5px;
-  color:var(--ink-strong);
-}
-/* Sırası gelen adım kırmızı karo — ekranda tek kırmızı o. */
-.mk2.sirada{ border-color:rgba(229,52,42,.30); }
-.mk2.sirada .mk2-ik{
-  color:#fff;
-  background:linear-gradient(180deg, var(--red-acik), var(--red));
-  box-shadow:0 6px 14px -7px rgba(229,52,42,.75);
-}
-.mk2.bitti{ border-color:rgba(69,163,123,.30); }
-.mk2.bitti .mk2-ik{
-  color:#08150f;
-  background:linear-gradient(180deg, var(--st-done-t), var(--st-done));
-}
-.mk2.bitti .mk2-no{ color:var(--st-done-t); }
-.mk2.bekliyor{ opacity:.45; }
-
 
 /* --------------------------------------------------------------------------
    Proje künye kartı — yol haritasının tepesi

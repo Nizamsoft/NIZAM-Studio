@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.134.31
+- **Bağlantılar ve temel artık dört ayrı tam ekran adım: GitHub, Claude, Supabase, Namecheap.** Küçük kareler kalktı; "Düzenle"ye dokununca Firma bilgileri/Program temeli sihirbazlarıyla aynı dilde bir ekran açılıyor, her bağlantı kendi sayfasında sırayla. GitHub ve Claude eskisi gibi sekmeden dönünce kendiliğinden yeşile dönüyor — elle "kuruldu" tiki yok. Supabase ve Namecheap'te gerçek bilgi (adres/anahtar, alan adı) gerektiği için o alanlar artık ayrı bir pencere yerine doğrudan adımın içinde.
+
 ## v0.134.30
 - **Program temeli'ne 4. adım eklendi: Alan adı.** "Sadece github.io" mu, "Namecheap ile özel alan adı" mı — karar burada, artı/eksi listeli iki kart hâlinde (Veriler nerede adımıyla aynı dil).
 - **Bağlantılar ve temel kareleri yeniden adlandırıldı ve dinamikleşti: GitHub, Claude, Supabase, Namecheap.** "Adres" ve "Yayın" kareleri kaldırıldı — GitHub karesi artık repo bağlamayı ve GitHub Pages'i açmayı tek karede topluyor; github.io seçiliyse adres kendiliğinden yazılıyor. Supabase karesi yalnız Program temeli'nde Supabase seçildiyse, Namecheap karesi yalnız "özel alan adı" seçildiyse görünüyor — ikisi de dokununca küçük bir pencere açıyor (eskiden Supabase sayfanın içinde açık bir formdu).

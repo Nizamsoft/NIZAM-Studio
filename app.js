@@ -1003,93 +1003,6 @@ function fbCip(renk, ikon, ic, eylem, projeId, adres) {
 /* Kartlar soruya göre gruplanıyor: İş ne yapıyoruz, Kişiler kim, Yer nerede
    duruyor. Takvim "ne zaman" olduğu için künyeden çıkıp kendi şeridine geçti;
    Durum silindi — kahramandaki yüzdeyle aynı şeyi söylüyordu. */
-/* Kurulumun iki adımı, standartlar sayfasının kart dilinde: yan yana iki kart,
-   aralarında bağlantı çizgisi, sıra ilerledikçe kırmızı karo yeşile dönüyor.
-   GitHub düğmesi doğrudan GitHub'ı açıyor; Claude düğmesi promptu yalnızca
-   panoya alıyor — Claude'u kullanıcı kendi açıyor (standartlardaki gibi). */
-/* Kurulumun kareleri tek satırda — sayısı sabit değil. GitHub karesi depo
-   bağlamayı ve yayına almayı tek karede topluyor (eskiden ayrı "Adres" ve
-   "Yayın" kareleriydi). Adres yalnız github.io yolunda burada kendiliğinden
-   yazılıyor; Program temeli'nde "Namecheap" seçildiyse o iş ayrı bir
-   Namecheap karesinin işi. Supabase karesi de yalnız Program temeli'nde
-   Supabase seçildiyse görünüyor — ikisi de karar orada, bağlantı burada. */
-function kurulumAraclari(p) {
-  const pl    = p.palet || {};
-  const slug  = depoSlug(p.repo);
-  const depo  = !!p.repo;
-  const kopya = !!pl.sohbetAcildi;
-  const isim  = String(pl.sohbetAdi || '').trim();
-  const alan  = String(pl.alanAdi || '').trim();
-  const yayin = !!pl.yayinda;
-  const supabaseGerek  = sunuculuMu(p);
-  const namecheapGerek = pl.alanTuru === 'namecheap';
-  const supabaseTam    = !!String(pl.supabaseUrl || '').trim() && !!String(pl.supabaseAnon || '').trim();
-
-  const kart = (no, hal, ikon, ad, eylem, adres, ek) => {
-    const ic = `
-      <span class="mk2-ust">
-        <span class="mk2-ik">${svg(hal === 'bitti' ? ICON.tik : ikon, 14)}</span>
-        <span class="mk2-no mono">${no}</span>
-      </span>
-      <span class="mk2-ad">${esc(ad)}</span>`;
-    if (adres) {
-      return `<a class="mk2 ${hal}" target="_blank" rel="noopener" ${ek || ''}
-        href="${adres}">${ic}</a>`;
-    }
-    return `<button class="mk2 ${hal}" type="button"
-      data-eylem="${eylem}" data-proje="${p.id}"
-      ${hal === 'bekliyor' ? 'disabled' : ''}>${ic}</button>`;
-  };
-
-  const bag = `<span class="s4-bag"><i></i><em>${svg(ICON.chevron, 11)}</em></span>`;
-
-  const depoAdresi = depo
-    ? 'https://github.com/' + esc(slug)
-    : 'https://github.com/new?name=' + encodeURIComponent(depoAdi(p))
-      + '&description=' + encodeURIComponent(projeAdi(p) + ' · NIZAM Studio')
-      + '&visibility=private';
-
-  const githubKare = !depo
-    ? kart('1', 'sirada', ICON.dal, 'GitHub', '', depoAdresi, `data-depo-ac="${p.id}"`)
-    : yayin
-      ? kart('1', 'bitti', ICON.dal, 'GitHub', '', alan ? 'https://' + esc(alan) : depoAdresi)
-      : `<a class="mk2 sirada" target="_blank" rel="noopener"
-           data-pages-ac="${p.id}" ${alan ? `data-alan-kopya="${esc(alan)}"` : ''}
-           href="https://github.com/${esc(slug)}/settings/pages">
-          <span class="mk2-ust">
-            <span class="mk2-ik">${svg(ICON.dal, 14)}</span>
-            <span class="mk2-no mono">1</span></span>
-          <span class="mk2-ad">GitHub</span></a>`;
-
-  /* Prompt kopyalandıktan sonra kare adı soruyor. Eskiden hep promptu
-     kopyalıyordu: adı girmenin yolu yoktu, adım hiç bitmiyordu. */
-  const claudeKare = kart('2', !depo ? 'bekliyor' : isim ? 'bitti' : 'sirada',
-    ICON.dosya, isim ? 'Claude' : kopya ? 'Sohbet adı' : 'Claude',
-    kopya ? 'sohbet-adi' : 'tanisma-prompt');
-
-  const ekstra = [];
-  if (supabaseGerek) {
-    ekstra.push(kart(String(ekstra.length + 3), !depo ? 'bekliyor' : supabaseTam ? 'bitti' : 'sirada',
-      ICON.bulut, 'Supabase', 'supabase-baglan'));
-  }
-  if (namecheapGerek) {
-    ekstra.push(kart(String(ekstra.length + 3), !depo ? 'bekliyor' : pl.namecheapBaglandi ? 'bitti' : 'sirada',
-      ICON.dil, 'Namecheap', 'alan-kaydi'));
-  }
-
-  const tumu = [githubKare, claudeKare].concat(ekstra);
-  const tumuBitti = depo && yayin
-    && (!supabaseGerek || supabaseTam)
-    && (!namecheapGerek || !!pl.namecheapBaglandi);
-
-  /* Kimlik: pencere açıkken arkadaki veri değişirse (GitHub'dan dönüş,
-     prompt kopyalama) `render()` bu şeridi yerinde yeniliyor. */
-  return `
-    <div class="s4 ${tumuBitti ? 'bitti' : ''}" id="kurulum-serit" data-proje="${p.id}">
-      ${tumu.map((k, i) => (i ? bag : '') + k).join('')}
-    </div>`;
-}
-
 /* 1 · Firma bilgileri — müşteriyle konuşurken öğrendiklerin. Teknik karar yok:
    firma kim, kime ulaşacağız, hangi işi yapıyor, markası neye benziyor. */
 function firmaSayfasi(p, d) {
@@ -1181,27 +1094,51 @@ function programSayfasi(p, d) {
 }
 
 /* 3 · Bağlantılar ve temel — GitHub, Claude, (seçiliyse) Supabase ve
-   Namecheap kareleri + sabit iskelet onayı. Kareler artık dinamik: kaç
-   tanesi göründüğü Program temeli'ndeki iki karara bağlı (veri katmanı,
-   alan adı türü) — karar orada, bağlantı burada. Sabit iskelet (eski
-   "Nizam kurulum paketi" durağı) buraya katlandı: tanışma promptu Claude
-   karesiyle zaten gidiyor, geriye Claude'un kurduğunu işaretlemek kalıyor. */
+   Namecheap + sabit iskelet onayı. Kaç bağlantı gerektiği Program
+   temeli'ndeki iki karara bağlı (veri katmanı, alan adı türü) — karar
+   orada, bağlantı burada. Her bağlantı artık kendi tam ekran adımında:
+   `baglantiDuzenleAc` sihirbazı açıyor, GitHub/Claude adımları eskisi gibi
+   sekmeden dönünce kendiliğinden yeşile dönüyor (bkz. DEPO_BEKLIYOR/
+   PAGES_BEKLIYOR), Supabase/Namecheap adımlarında gerçek veri giriliyor.
+   Sabit iskelet (eski "Nizam kurulum paketi" durağı) buraya katlandı:
+   tanışma promptu Claude adımıyla zaten gidiyor, geriye Claude'un
+   kurduğunu işaretlemek kalıyor. */
 function baglantilarSayfasi(p, d) {
   const pl = p.palet || {};
   const sunuculu    = sunuculuMu(p);
   const namecheapMi = pl.alanTuru === 'namecheap';
   const supabaseTam = !!String(pl.supabaseUrl || '').trim() && !!String(pl.supabaseAnon || '').trim();
+  const githubTam   = !!p.repo && !!pl.yayinda;
+  const sohbetAdi   = String(pl.sohbetAdi || '').trim();
 
-  const biten = [!!p.repo, !!String(pl.sohbetAdi || '').trim(), !!pl.yayinda]
-    .concat(sunuculu ? [supabaseTam] : [])
-    .concat(namecheapMi ? [!!pl.namecheapBaglandi] : [])
-    .concat([!!pl.kurulumKuruldu])
-    .filter(Boolean).length;
-  const toplam = 4 + (sunuculu ? 1 : 0) + (namecheapMi ? 1 : 0);
+  const bagDolu = [githubTam, !!sohbetAdi].concat(sunuculu ? [supabaseTam] : [])
+    .concat(namecheapMi ? [!!pl.namecheapBaglandi] : []).filter(Boolean).length;
+  const bagToplam = 2 + (sunuculu ? 1 : 0) + (namecheapMi ? 1 : 0);
+
+  const biten = bagDolu + (pl.kurulumKuruldu ? 1 : 0);
+  const toplam = bagToplam + 1;
+
+  const kart = bagDolu === 0
+    ? fbBosKart('#b8926b', ICON.dal, 'Bağlantılar', bagDolu + '/' + bagToplam,
+        'GitHub, Claude'
+        + (sunuculu ? ', Supabase' : '') + (namecheapMi ? ', Namecheap' : '')
+        + ' — programın çalışması için gereken bağlantılar. '
+        + '<b>Her biri kendi ekranında, sırayla.</b>',
+        'baglanti-duzenle', p.id, true)
+    : fbKart('#b8926b', ICON.dal, 'Bağlantılar', 'baglanti-duzenle', p.id, `
+    <div class="fb-kg tek">
+      ${kunyeSatiri('#b8926b', ICON.dal,   'GitHub',
+                    githubTam ? (depoSlug(p.repo) || 'Bağlandı') : '', '', p.id, true, 'bağlı değil')}
+      ${kunyeSatiri('#9b7fd4', ICON.dosya, 'Claude', sohbetAdi, '', p.id, true, 'bağlı değil')}
+      ${sunuculu ? kunyeSatiri('#3ecf8e', ICON.bulut, 'Supabase',
+                    supabaseTam ? 'Bağlandı' : '', '', p.id, true, 'bağlı değil') : ''}
+      ${namecheapMi ? kunyeSatiri('#c48a5c', ICON.dil, 'Namecheap',
+                    pl.namecheapBaglandi ? (pl.alanAdi || 'Bağlandı') : '', '', p.id, true, 'bağlı değil') : ''}
+    </div>`, bagDolu + '/' + bagToplam);
 
   return `<div class="fb-govde">`
     + adimBasligi(p, d, biten + '/' + toplam)
-    + kurulumAraclari(p)
+    + kart
     + `<div class="fb-kg tek" style="margin-top:11px">
         ${kunyeSatiri('#b8926b', ICON.dal,   'Kod deposu',
                       depoSlug(p.repo) || p.repo, 'repo', p.id, false, 'dokun, yapıştır')}
@@ -6297,15 +6234,6 @@ function render() {
   view.scrollTop = dikey;
   if (yatay.length) $$('.raf', view).forEach((r, i) => { r.scrollLeft = yatay[i] || 0; });
 
-  /* Açık pencere kendini yenilemiyordu: `render()` yalnız `#view`'i çiziyor,
-     pencere ayrı bir katmanda duruyor. GitHub'dan dönüp depo adresi
-     yazıldığında kurulum şeridi eski hâlinde kalıyor, kullanıcı pencereyi
-     kapatıp açmak zorunda kalıyordu. Şeridi yerinde yeniliyoruz. */
-  const serit = document.getElementById('kurulum-serit');
-  if (serit) {
-    const sp = DB.proje(serit.dataset.proje);
-    if (sp) serit.outerHTML = kurulumAraclari(sp);
-  }
   view.classList.remove('swap');
 
   if (gecis) {
@@ -7420,6 +7348,304 @@ async function programAdimKaydet() {
 }
 
 /* ==========================================================================
+   BAĞLANTILAR VE TEMEL — her bağlantı kendi tam ekran adımında. Aynı
+   `.sihirbaz`/`.sh-*` kalıbı, ama adım şeridi sayı değil servis ikonu
+   gösteriyor (bilerek ayrı bir çizim — sihirbazAdimlar'ı genelleştirmek
+   risk, bu ayrı ve küçük). GitHub/Claude adımları DEPO_BEKLIYOR/
+   PAGES_BEKLIYOR ile aynen çalışıyor: sekmeden dönünce kendiliğinden
+   yeşile döner, elle "kuruldu" tiki yok. Supabase/Namecheap gerçek veri
+   istediği için kendi alanları ve "Kaydet" düğmesiyle burada duruyor.
+   ========================================================================== */
+
+const BAGLANTI_ADIM = { adim: 1, projeId: null, liste: [] };
+
+const BAGLANTI_ETIKET = { github: 'GitHub', claude: 'Claude', supabase: 'Supabase', namecheap: 'Namecheap' };
+const BAGLANTI_IKON   = { github: 'dal', claude: 'dosya', supabase: 'bulut', namecheap: 'dil' };
+
+function baglantiAdimListesi(p) {
+  const pl = p.palet || {};
+  const liste = ['github', 'claude'];
+  if (sunuculuMu(p)) liste.push('supabase');
+  if (pl.alanTuru === 'namecheap') liste.push('namecheap');
+  return liste;
+}
+
+function baglantiAdimBittiMi(k, p) {
+  const pl = p.palet || {};
+  if (k === 'github')    return !!p.repo && !!pl.yayinda;
+  if (k === 'claude')    return !!String(pl.sohbetAdi || '').trim();
+  if (k === 'supabase')  return !!String(pl.supabaseUrl || '').trim() && !!String(pl.supabaseAnon || '').trim();
+  if (k === 'namecheap') return !!pl.namecheapBaglandi;
+  return false;
+}
+
+function baglantiDuzenleAc(projeId) {
+  modalHepsiniKapat();
+  const p = DB.proje(projeId);
+  if (!p) return;
+  Object.assign(BAGLANTI_ADIM, { adim: 1, projeId, liste: baglantiAdimListesi(p) });
+  const el = document.createElement('div');
+  el.id = 'baglanti-adim';
+  el.className = 'sihirbaz';
+  document.body.appendChild(el);
+  baglantiAdimCiz();
+}
+
+function baglantiAdimKapat() {
+  const el = $('#baglanti-adim');
+  if (!el) return;
+  el.classList.remove('acik');
+  setTimeout(() => el.remove(), 260);
+}
+
+/* Kimlik: pencere açıkken arkadaki veri değişirse (GitHub'dan dönüş, prompt
+   kopyalama, Supabase/Namecheap kaydı) bu fonksiyon çağrılıp adım yerinde
+   yenileniyor — `render()` yalnız `#view`'i çiziyor, pencere ayrı katmanda. */
+function baglantiAdimCiz() {
+  const el = $('#baglanti-adim');
+  if (!el) return;
+  const p = DB.proje(BAGLANTI_ADIM.projeId);
+  if (!p) return baglantiAdimKapat();
+  if (BAGLANTI_ADIM.adim > BAGLANTI_ADIM.liste.length) BAGLANTI_ADIM.adim = BAGLANTI_ADIM.liste.length;
+  el.innerHTML = baglantiAdimHtml(p);
+  baglantiAdimBagla(el, p);
+  requestAnimationFrame(() => el.classList.add('acik'));
+}
+
+function baglantiAdimlarSerit(liste, simdi, p) {
+  return `<div class="sh-adimlar">${liste.map((k, i) => {
+    const n = i + 1;
+    const bitti = baglantiAdimBittiMi(k, p);
+    const hal = bitti ? 'done' : n === simdi ? 'simdi' : '';
+    return (i ? '<span class="sh-adim-cizgi"></span>' : '')
+      + `<span class="sh-adim ${hal}">
+          <span class="sh-adim-no">${svg(bitti ? ICON.tik : ICON[BAGLANTI_IKON[k]], bitti ? 13 : 14)}</span>
+          <i>${esc(BAGLANTI_ETIKET[k])}</i>
+        </span>`;
+  }).join('')}</div>`;
+}
+
+function baglantiAdimHtml(p) {
+  const liste = BAGLANTI_ADIM.liste;
+  const k = liste[BAGLANTI_ADIM.adim - 1];
+  const govde = k === 'github' ? baglantiAdimGithub(p)
+    : k === 'claude' ? baglantiAdimClaude(p)
+    : k === 'supabase' ? baglantiAdimSupabase(p)
+    : baglantiAdimNamecheap(p);
+
+  const geri = BAGLANTI_ADIM.adim > 1
+    ? `<button class="btn btn-ghost" data-ba="geri" type="button">← Geri</button>`
+    : `<button class="btn btn-ghost" data-ba="kapat" type="button">Vazgeç</button>`;
+  const ileri = BAGLANTI_ADIM.adim < liste.length
+    ? `<button class="btn btn-primary" data-ba="ileri" type="button"><span>Devam Et →</span></button>`
+    : `<button class="btn btn-primary" data-ba="kapat" type="button"><span>Bitti ✓</span></button>`;
+
+  return `
+    <div class="sh-tepe">
+      <button class="sh-kapat" data-ba="kapat" type="button" aria-label="Kapat">
+        ${svg(ICON.kapat, 15)}
+      </button>
+      <span class="sh-ad">Bağlantılar ve temel</span>
+    </div>
+
+    <div class="sh-sayfa">
+      <div class="sh-icerik">
+        ${baglantiAdimlarSerit(liste, BAGLANTI_ADIM.adim, p)}
+        ${govde}
+      </div>
+
+      <div class="sh-dip">${geri}${ileri}</div>
+    </div>`;
+}
+
+/* Küçük yeşil tik listesi — mockup'taki gibi ama artı/eksi ayrımı yok,
+   burada hepsi zaten avantaj. */
+function baOzellikler(liste) {
+  return `<div class="ba-oz-liste">${liste.map(x =>
+    `<span class="ba-oz">${svg(ICON.tik, 12)} ${esc(x)}</span>`).join('')}</div>`;
+}
+
+function baDurum(baslik, alt) {
+  return `
+    <div class="ba-durum">
+      <span class="ba-durum-ik">${svg(ICON.tik, 15)}</span>
+      <span><b>${esc(baslik)}</b>${alt ? `<i>${esc(alt)}</i>` : ''}</span>
+    </div>`;
+}
+
+/* 1 · GitHub — depo bağlama ve yayına alma aynı adımda, eskiden olduğu
+   gibi iki aşamalı: önce depo, sonra Pages. İkisi de sekmeden dönünce
+   DEPO_BEKLIYOR/PAGES_BEKLIYOR üzerinden kendiliğinden tamamlanıyor. */
+function baglantiAdimGithub(p) {
+  const pl    = p.palet || {};
+  const slug  = depoSlug(p.repo);
+  const depo  = !!p.repo;
+  const alan  = String(pl.alanAdi || '').trim();
+  const yayin = !!pl.yayinda;
+
+  const depoAdresi = depo
+    ? 'https://github.com/' + esc(slug)
+    : 'https://github.com/new?name=' + encodeURIComponent(depoAdi(p))
+      + '&description=' + encodeURIComponent(projeAdi(p) + ' · NIZAM Studio')
+      + '&visibility=private';
+
+  const durum = yayin ? baDurum('Bağlantı kuruldu', alan || slug)
+    : depo ? `<p class="ipucu" style="margin-bottom:12px">✓ Depo bağlandı: <b class="mono">${esc(slug)}</b></p>` : '';
+
+  const buton = yayin ? ''
+    : !depo
+      ? `<a class="sayfa-dug" target="_blank" rel="noopener" data-depo-ac="${p.id}" href="${depoAdresi}">
+          ${svg(ICON.dal, 15)} GitHub'da depo aç</a>`
+      : `<a class="sayfa-dug" target="_blank" rel="noopener" data-pages-ac="${p.id}"
+           ${alan ? `data-alan-kopya="${esc(alan)}"` : ''}
+           href="https://github.com/${esc(slug)}/settings/pages">
+          ${svg(ICON.dal, 15)} GitHub Pages'i aç</a>`;
+
+  return shBaslik(ICON.dal, 'GitHub\'a bağlan',
+    'Kodun barındığı ve yayına alındığı yer. Depo bağlanınca Claude Code buradan görev alır.')
+    + durum + buton
+    + baOzellikler([
+      'Kod güvenle, sürüm geçmişiyle saklanır',
+      'Claude Code görevleri buradan alır',
+      'Yayına almak (GitHub Pages) tek adımda buradan olur',
+    ]);
+}
+
+/* 2 · Claude — tanışma promptu kopyalanınca sohbet adı soruluyor, aynen
+   eskisi gibi (`tanisma-prompt` / `sohbet-adi` eylemleri). */
+function baglantiAdimClaude(p) {
+  const pl    = p.palet || {};
+  const depo  = !!p.repo;
+  const kopya = !!pl.sohbetAcildi;
+  const isim  = String(pl.sohbetAdi || '').trim();
+
+  const durum = isim ? baDurum('Bağlantı kuruldu', isim) : '';
+
+  const buton = !depo
+    ? `<p class="ipucu" style="margin-bottom:14px">Önce GitHub adımından depo bağlanmalı.</p>`
+    : isim ? ''
+      : kopya
+        ? `<button class="sayfa-dug" type="button" data-eylem="sohbet-adi" data-proje="${p.id}">
+            ${svg(ICON.dosya, 15)} Sohbete ad ver</button>`
+        : `<button class="sayfa-dug" type="button" data-eylem="tanisma-prompt" data-proje="${p.id}">
+            ${svg(ICON.dosya, 15)} Claude ile bağlan</button>`;
+
+  return shBaslik(ICON.dosya, 'Claude\'a bağlan',
+    'Depoyu Claude Code\'a tanıtan ilk prompt. Kimlik dosyasını ve kurulumu buradan alır.')
+    + durum + buton
+    + baOzellikler([
+      'Nizam Standardı ve kimlik dosyası otomatik kurulur',
+      'Görevler doğrudan bu sohbette işlenir',
+      'Sonra hangi sohbete döneceğini adıyla bulursun',
+    ]);
+}
+
+/* 3 · Supabase — gerçek adres ve anahtar, otomatik algılanamaz; alanlar
+   burada, "Kaydet" `supabase-baglan` eylemine gidiyor. */
+function baglantiAdimSupabase(p) {
+  const pl  = p.palet || {};
+  const url = String(pl.supabaseUrl || '').trim();
+  const key = String(pl.supabaseAnon || '').trim();
+
+  const durum = (url && key) ? baDurum('Bağlantı kuruldu', url) : '';
+
+  return shBaslik(ICON.bulut, 'Supabase\'e bağlan',
+    'Programın verisinin, girişin ve gerçek zamanlı güncellemelerin tutulduğu yer.')
+    + durum
+    + `<label class="field"><span>Proje adresi</span>
+        <input type="text" id="ba-sb-url" value="${esc(url)}"
+               placeholder="https://xxxx.supabase.co" autocomplete="off"
+               spellcheck="false" autocapitalize="off"></label>
+      <label class="field"><span>anon key</span>
+        <input type="text" id="ba-sb-key" value="${esc(key)}"
+               placeholder="sb_publishable_… ya da eyJhbG…" autocomplete="off"
+               spellcheck="false" autocapitalize="off"></label>
+      <button class="sayfa-dug" type="button" data-eylem="supabase-baglan" data-proje="${p.id}">
+        ${svg(ICON.bulut, 15)} Kaydet</button>
+      <div class="note uyari">${svg(ICON.uyari, 15)}
+        <span><b>service_role</b> anahtarını buraya yazma. anon key tarayıcıya zaten
+        iniyor, veriyi satır güvenliği (RLS) koruyor — o normal.</span></div>`
+    + baOzellikler([
+      'Veriler her cihazdan aynı anda görünür',
+      'Girişler ve yetkiler buradan yönetilir',
+      'Yedekleme ve güvenlik Supabase tarafında',
+    ]);
+}
+
+/* 4 · Namecheap — DNS kaydı + alan adı, eskiden ayrı bir pencereydi
+   (`alanKaydiPenceresi`), şimdi adımın kendisi. "Alan adını yaz"
+   `namecheap-baglan` eylemine gidiyor. */
+function baglantiAdimNamecheap(p) {
+  const pl  = p.palet || {};
+  const kok = kokAlan();
+
+  if (!kok) {
+    return shBaslik(ICON.dil, 'Namecheap ile alan adı',
+      'Programın kendi adresinden açılması için DNS kaydı ve alan adı.')
+      + `<div class="note uyari">${svg(ICON.uyari, 15)}
+          <span>Önce <a href="#/ayarlar">Ayarlar</a>'da kök alan adını yaz.</span></div>`;
+  }
+
+  const alt    = altAlan(p);
+  const tam    = onerilenAlanAdi(p);
+  const hedef  = (depoSahibi() || 'kullaniciadin').toLowerCase() + '.github.io';
+  const alanAdi = String(pl.alanAdi || '').trim();
+  const baglandi = !!pl.namecheapBaglandi;
+
+  const satir = (etiket, deger) => `
+    <div class="ak-s">
+      <span class="ak-et">${esc(etiket)}</span>
+      <span class="ak-dg mono">${esc(deger)}</span>
+      <button class="ak-kop" type="button" data-ak-kopya="${esc(deger)}"
+              aria-label="${esc(etiket)} kopyala">${svg(ICON.kopya, 12)}</button>
+    </div>`;
+
+  const durum = baglandi ? baDurum('Bağlantı kuruldu', alanAdi) : '';
+
+  const govde = baglandi ? '' : `
+    <div class="fb-kart" style="--kr:#5fb37f">
+      ${satir('Type',  'CNAME Record')}
+      ${satir('Host',  alt)}
+      ${satir('Value', hedef)}
+      ${satir('TTL',   'Automatic')}
+    </div>
+    <a class="sayfa-dug ikincil" target="_blank" rel="noopener"
+       href="https://ap.www.namecheap.com/domains/domaincontrolpanel/${esc(kok)}/advancedns">
+      ${svg(ICON.dil, 15)} Namecheap'te aç</a>
+    <button class="sayfa-dug" type="button" data-eylem="namecheap-baglan" data-proje="${p.id}">
+      ${svg(ICON.tik, 15)} Alan adını yaz</button>
+    <div class="fbd-not">${svg(ICON.info, 13)}
+      <span>Kaydı Namecheap'te oluşturduktan sonra <b>Alan adını yaz</b>'a dokun ve
+      <b class="mono">${esc(tam)}</b> yaz. DNS'in yayılması 10–30 dakika sürebilir.</span></div>`;
+
+  return shBaslik(ICON.dil, 'Namecheap ile alan adı',
+    'Programın kendi adresinden açılması için DNS kaydı ve alan adı.')
+    + durum + govde
+    + baOzellikler([
+      'Müşteriye kendi alan adından teslim edilir',
+      'github.io yerine kısa, akılda kalan adres',
+      'Kayıt bir kez yapılır, bundan sonra kendiliğinden çalışır',
+    ]);
+}
+
+function baglantiAdimBagla(kutu, p) {
+  $$('[data-ak-kopya]', kutu).forEach(b => b.addEventListener('click', async () => {
+    const ok = await panoyaKopyala(b.dataset.akKopya);
+    b.classList.toggle('oldu', ok);
+    toast(ok ? 'Kopyalandı.' : 'Kopyalanamadı.', ok ? 'basari' : 'hata');
+  }));
+
+  $$('[data-ba]', kutu).forEach(el => {
+    el.addEventListener('click', () => {
+      const t = el.dataset.ba;
+      if (t === 'kapat') return baglantiAdimKapat();
+      if (t === 'geri')  { BAGLANTI_ADIM.adim--; return baglantiAdimCiz(); }
+      if (t === 'ileri') { BAGLANTI_ADIM.adim++; return baglantiAdimCiz(); }
+    });
+  });
+}
+
+/* ==========================================================================
    MODAL
    ========================================================================== */
 
@@ -8062,114 +8288,9 @@ function kisiSor(mevcut) {
   });
 }
 
-/* Supabase karesine dokununca açılan küçük pencere — proje adresi ve
-   anon key. Program temeli'nde veri katmanı olarak Supabase seçilince
-   Bağlantılar'da bu kare çıkıyor; karar orada, bağlantı burada. */
-function supabaseBaglanModal(projeId) {
-  modalHepsiniKapat();
-  const p = DB.proje(projeId);
-  if (!p) return;
-  const pl = p.palet || {};
-
-  modalAc(`
-    ${modalBaslik(ICON.bulut, 'Supabase', 'Proje adresini ve anon key\'ini gir.')}
-    <label class="field"><span>Proje adresi</span>
-      <input type="text" id="sbm-url" value="${esc(pl.supabaseUrl || '')}"
-             placeholder="https://xxxx.supabase.co" autocomplete="off"
-             spellcheck="false" autocapitalize="off"></label>
-    <label class="field"><span>anon key</span>
-      <input type="text" id="sbm-key" value="${esc(pl.supabaseAnon || '')}"
-             placeholder="sb_publishable_… ya da eyJhbG…" autocomplete="off"
-             spellcheck="false" autocapitalize="off"></label>
-    <div class="note uyari">${svg(ICON.uyari, 15)}
-      <span><b>service_role</b> anahtarını buraya yazma. anon key tarayıcıya zaten
-      iniyor, veriyi satır güvenliği (RLS) koruyor — o normal.</span></div>
-    <div class="modal-alt">
-      <button class="btn btn-ghost" data-sbm="iptal" type="button">Vazgeç</button>
-      <button class="btn btn-primary" data-sbm="kaydet" type="button"><span>Kaydet</span></button>
-    </div>`, kutu => {
-    $('[data-sbm="iptal"]', kutu).addEventListener('click', modalKapat);
-    $('[data-sbm="kaydet"]', kutu).addEventListener('click', async () => {
-      const url = $('#sbm-url', kutu).value.trim();
-      const key = $('#sbm-key', kutu).value.trim();
-      if (!url || !key) return toast('İkisini de yaz.', 'uyari');
-      const yazi = $('[data-sbm="kaydet"] span', kutu);
-      yazi.textContent = 'Kaydediliyor…';
-      try {
-        const guncel = DB.proje(projeId);
-        await DB.paletKaydet(projeId, Object.assign({}, (guncel && guncel.palet) || {},
-          { supabaseUrl: url, supabaseAnon: key }));
-        modalKapat();
-        toast('Supabase bağlantısı kaydedildi.', 'basari');
-        render();
-      } catch (h) { yazi.textContent = 'Kaydet'; toast(h.message, 'hata'); }
-    });
-  });
-}
-
 /* ==========================================================================
    METİN PENCERESİ — prompt ve kimlik dosyası
    ========================================================================== */
-
-/* Namecheap kaydının hazır hâli. Dört satır, her birinin kendi kopyala
-   düğmesi; altta doğrudan o alan adının DNS sayfasına giden düğme. */
-function alanKaydiPenceresi(p) {
-  const kok  = kokAlan();
-  const alt  = altAlan(p);
-  const tam  = onerilenAlanAdi(p);
-  const hedef = (depoSahibi() || 'kullaniciadin').toLowerCase() + '.github.io';
-
-  const satir = (etiket, deger) => `
-    <div class="ak-s">
-      <span class="ak-et">${esc(etiket)}</span>
-      <span class="ak-dg mono">${esc(deger)}</span>
-      <button class="ak-kop" type="button" data-ak-kopya="${esc(deger)}"
-              aria-label="${esc(etiket)} kopyala">${svg(ICON.kopya, 12)}</button>
-    </div>`;
-
-  modalAc(`
-    ${modalBaslik(ICON.dil, 'Alan adı kaydı',
-      'Namecheap → Advanced DNS → Add New Record. Değerler hazır, kopyalayıp yapıştır.')}
-    <div class="fb-kart" style="--kr:#5fb37f">
-      ${satir('Type',  'CNAME Record')}
-      ${satir('Host',  alt)}
-      ${satir('Value', hedef)}
-      ${satir('TTL',   'Automatic')}
-    </div>
-    <a class="sayfa-dug" target="_blank" rel="noopener"
-       href="https://ap.www.namecheap.com/domains/domaincontrolpanel/${esc(kok)}/advancedns">
-      ${svg(ICON.dil, 15)} Namecheap'te aç</a>
-    <div class="fbd-not">${svg(ICON.info, 13)}
-      <span>Kaydettikten sonra buraya dön ve <b>Alan adı</b> satırına
-      <b class="mono">${esc(tam)}</b> yaz. DNS'in yayılması 10–30 dakika sürebilir.</span></div>
-    <div class="modal-alt">
-      <button class="btn btn-ghost" data-ak="kapat" type="button">Kapat</button>
-      <button class="btn btn-primary" data-ak="yaz" type="button">
-        <span>Alan adını yaz</span></button>
-    </div>`, kutu => {
-    $$('[data-ak-kopya]', kutu).forEach(b => b.addEventListener('click', async () => {
-      const ok = await panoyaKopyala(b.dataset.akKopya);
-      b.classList.toggle('oldu', ok);
-      toast(ok ? 'Kopyalandı.' : 'Kopyalanamadı.', ok ? 'basari' : 'hata');
-    }));
-    $('[data-ak="kapat"]', kutu).addEventListener('click', modalKapat);
-    $('[data-ak="yaz"]', kutu).addEventListener('click', async () => {
-      modalKapat();
-      const adres = await metinSor({
-        baslik: 'Alan adı',
-        aciklama: 'Namecheap kaydını açtıysan bu adres birazdan çalışmaya başlar.',
-        deger: tam,
-        yerTutucu: 'merkezefendi.nizamsoftware.com',
-        buton: 'Kaydet',
-      });
-      if (adres === null) return;
-      const guncel = DB.proje(p.id);
-      await isYap(() => DB.paletKaydet(p.id,
-        Object.assign({}, (guncel && guncel.palet) || {}, { alanAdi: adres, namecheapBaglandi: true })),
-        'Alan adı kaydedildi.');
-    });
-  }, 'genis');
-}
 
 function metinPenceresi({ baslik, aciklama, metin, dosya, geri, ac }) {
   modalAc(`
@@ -10241,6 +10362,7 @@ async function eylemCalistir(el) {
 
   if (e === 'marka-duzenle')    return firmaDuzenleAc(el.dataset.proje);
   if (e === 'program-duzenle')  return programDuzenleAc(el.dataset.proje);
+  if (e === 'baglanti-duzenle') return baglantiDuzenleAc(el.dataset.proje);
   if (e === 'adim-takvim')      return adimTakvim(el.dataset.proje);
 
   if (e === 'marka-renk') {
@@ -10331,7 +10453,15 @@ async function eylemCalistir(el) {
       pl.kurulumKuruldu ? 'İşaret kaldırıldı.' : 'Sabit iskelet kuruldu olarak işaretlendi.');
   }
 
-  if (e === 'supabase-baglan') return supabaseBaglanModal(el.dataset.proje);
+  if (e === 'supabase-baglan') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const url = ($('#ba-sb-url') || {}).value || '';
+    const key = ($('#ba-sb-key') || {}).value || '';
+    if (!url.trim() || !key.trim()) return toast('İkisini de yaz.', 'uyari');
+    return isYap(() => DB.paletKaydet(pr.id, Object.assign({}, pr.palet || {},
+      { supabaseUrl: url.trim(), supabaseAnon: key.trim() })), 'Supabase bağlantısı kaydedildi.');
+  }
 
   if (e === 'gelistirme-gerek-yok') {
     const pr = DB.proje(el.dataset.proje);
@@ -10434,6 +10564,7 @@ async function eylemCalistir(el) {
       await DB.paletKaydet(pr.id, Object.assign({}, pr.palet || {}, { sohbetAcildi: true }));
     } catch (h) { /* kritik değil, kare tekrar basılabilir */ }
     render();
+    if ($('#baglanti-adim')) baglantiAdimCiz();
     return sohbetYonlendir(pr);
   }
 
@@ -10520,15 +10651,21 @@ async function eylemCalistir(el) {
   /* Namecheap'e yazılacak kayıt hazır duruyor: satır satır kopyalanıyor ve
      düğme doğrudan o alan adının Advanced DNS sayfasını açıyor. Studio kaydı
      kendi yazamıyor — Namecheap API'si sunucu ve anahtar istiyor. */
-  if (e === 'alan-kaydi') {
+  if (e === 'namecheap-baglan') {
     const pr = DB.proje(el.dataset.proje);
     if (!pr) return;
-    const kok = kokAlan();
-    if (!kok) {
-      toast('Önce Ayarlar\'da kök alan adını yaz.', 'uyari');
-      return adreseGit('#/ayarlar');
-    }
-    return alanKaydiPenceresi(pr);
+    const adres = await metinSor({
+      baslik: 'Alan adı',
+      aciklama: 'Namecheap kaydını açtıysan bu adres birazdan çalışmaya başlar.',
+      deger: onerilenAlanAdi(pr),
+      yerTutucu: 'merkezefendi.nizamsoftware.com',
+      buton: 'Kaydet',
+    });
+    if (adres === null) return;
+    const guncel = DB.proje(pr.id);
+    return isYap(() => DB.paletKaydet(pr.id,
+      Object.assign({}, (guncel && guncel.palet) || {}, { alanAdi: adres, namecheapBaglandi: true })),
+      'Alan adı kaydedildi.');
   }
 
   if (e === 'yayin-onay') {
@@ -11445,6 +11582,9 @@ async function isYap(fn, basariMesaji, sonra) {
     if (sonra) sonra();
     sayaclariYaz();
     render();
+    /* Bağlantılar sihirbazı ayrı bir katmanda duruyor, `render()` onu
+       yenilemez — burada açıksa elle yeniden çizdiriyoruz. */
+    if ($('#baglanti-adim')) baglantiAdimCiz();
     if (basariMesaji) toast(basariMesaji);
   } catch (err) {
     toast(err.message, 'hata');
@@ -11838,7 +11978,7 @@ async function geriDonunce() {
 
   try { await DB.yukle(); } catch (e) { return; }
   sayaclariYaz();
-  if (!$('.modal-perde') && !$('#sihirbaz') && !$('#program-adim')) render();
+  if (!$('.modal-perde') && !$('#sihirbaz') && !$('#program-adim') && !$('#baglanti-adim')) render();
 }
 
 function hataGoster(mesaj) {
@@ -12079,7 +12219,7 @@ document.addEventListener('DOMContentLoaded', () => {
          durağı yayında sayıyoruz. */
       else if (!pl.yayinda) {
         DB.paletKaydet(pr.id, Object.assign({}, pl, { yayinda: true }))
-          .then(() => render())
+          .then(() => { render(); if ($('#baglanti-adim')) baglantiAdimCiz(); })
           .catch(() => { /* çevrimdışıysa bir dahaki sefere */ });
       }
     });
