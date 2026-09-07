@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## v0.134.25
+- **"Firma bilgileri" durağına Düzenle'yle girince artık aynı sihirbaz ekranı açılıyor.** Eskiden proje kurulurken tam ekran adımlı sihirbaz kullanılıyordu ama sonradan düzenlemek istediğinde eski tek pencereli modal açılıyordu — tutarsızdı. Artık ikisi de aynı ekran: tek fark, son düğme "Projeyi Tamamla" yerine "Kaydet" ve proje yeniden kurulmuyor, güncelleniyor.
+- **"Program temeli" durağı da aynı tam ekran adımlı akışa geçti.** Program adı → Kim kullanacak → Veriler nerede, üç ayrı ekran, aynı sihirbaz dili (numaralı adım göstergesi, İleri/Geri). Eski tek pencereli modal kaldırıldı.
+
 ## v0.134.24
 - **"Yeni Proje" sihirbazı 3 adıma çıktı, "proje adı" tekrarı kalktı.** Eskiden sihirbaz tek soru soruyordu (Firma adı), geri kalanı proje içindeki Firma bilgileri durağına bırakılıyordu — açılınca aynı bilgiler tekrar soruluyormuş gibi hissettiriyordu. Artık sihirbaz üç adımda (Firma bilgileri → Sektör seçimi → Marka ve görseller) tam olarak Firma bilgileri durağının sorduklarını soruyor; "Projeyi Tamamla"ya basınca proje bu bilgilerle kuruluyor ve durak zaten tamamlanmış oluyor, doğrudan 8 aşamalı ekrana dönülüyor.
 

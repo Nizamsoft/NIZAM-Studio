@@ -6614,6 +6614,10 @@ async function veriTazele() {
 
 const SIHIRBAZ = {
   adim: 1,
+  /* duzenle+projeId: mevcut projenin Firma bilgileri durağını düzenlerken
+     dolu. O zaman proje kurulmuyor, güncelleniyor. */
+  duzenle: false,
+  projeId: null,
   firma: '',
   sektor: '',
   renk: 'yesil',
@@ -6674,7 +6678,8 @@ function sihirbaziAc() {
 
 function sihirbaziBaslat(tur) {
   Object.assign(SIHIRBAZ, {
-    adim: 1, firma: '', sektor: '', renk: 'yesil',
+    adim: 1, duzenle: false, projeId: null,
+    firma: '', sektor: '', renk: 'yesil',
     logo: null, logoOnizleme: '',
     gorsel: null, gorselOnizleme: '',
     yetkili: '', telefon: '', eposta: '',
@@ -6684,6 +6689,23 @@ function sihirbaziBaslat(tur) {
     baslangic: bugunTarih(), teslim: '',
     moduller: [], kaydediyor: false,
     tur: tur === 'test' ? 'test' : 'gercek',
+  });
+  sihirbazAc();
+}
+
+/* Firma bilgileri durağına "Düzenle" ile girildiğinde açılan aynı ekran —
+   tek fark: proje zaten var, "kaydet" oluşturmuyor, güncelliyor. */
+function firmaDuzenleAc(projeId) {
+  modalHepsiniKapat();
+  const p = DB.proje(projeId);
+  if (!p) return;
+  Object.assign(SIHIRBAZ, {
+    adim: 1, duzenle: true, projeId,
+    firma: p.firma || '', telefon: p.telefon || '', eposta: p.eposta || '',
+    sektor: p.sektor || '',
+    logo: null, logoOnizleme: DB.logoAdres[p.id] || '',
+    gorsel: null, gorselOnizleme: gorselAdresi(p, 'G0') || '',
+    moduller: [], kaydediyor: false,
   });
   sihirbazAc();
 }
@@ -6729,19 +6751,20 @@ function sihirbazHtml() {
     : `<button class="btn btn-ghost" data-sb="kapat" type="button">Vazgeç</button>`;
   const ileri = SIHIRBAZ.adim < SIHIRBAZ_ADIMLAR.length
     ? `<button class="btn btn-primary" data-sb="ileri" type="button"><span>Devam Et →</span></button>`
-    : `<button class="btn btn-primary" data-sb="kaydet" type="button"><span>Projeyi Tamamla ✓</span></button>`;
+    : `<button class="btn btn-primary" data-sb="kaydet" type="button">
+        <span>${SIHIRBAZ.duzenle ? 'Kaydet ✓' : 'Projeyi Tamamla ✓'}</span></button>`;
 
   return `
     <div class="sh-tepe">
       <button class="sh-kapat" data-sb="kapat" type="button" aria-label="Kapat">
         ${svg(ICON.kapat, 15)}
       </button>
-      <span class="sh-ad">Yeni Proje</span>
+      <span class="sh-ad">${SIHIRBAZ.duzenle ? 'Firma bilgileri' : 'Yeni Proje'}</span>
     </div>
 
     <div class="sh-sayfa">
       <div class="sh-icerik">
-        ${sihirbazAdimlar()}
+        ${sihirbazAdimlar(SIHIRBAZ_ADIMLAR, SIHIRBAZ.adim)}
         ${govde}
       </div>
 
@@ -6751,11 +6774,13 @@ function sihirbazHtml() {
 
 /* Sayaçlı adım göstergesi: geçilen adım tik, şimdiki adım numarasıyla
    dolu, sıradaki soluk. Aynı renk dili "Beta ve geliştirme"deki durum
-   rengiyle (sarı) — henüz bitmemiş ama sürüyor. */
-function sihirbazAdimlar() {
-  return `<div class="sh-adimlar">${SIHIRBAZ_ADIMLAR.map((ad, i) => {
+   rengiyle (sarı) — henüz bitmemiş ama sürüyor. Firma ve Program
+   sihirbazları aynı bileşeni kendi adım listesi ve şimdiki adımıyla
+   çağırıyor. */
+function sihirbazAdimlar(adimlar, simdi) {
+  return `<div class="sh-adimlar">${adimlar.map((ad, i) => {
     const n = i + 1;
-    const hal = n < SIHIRBAZ.adim ? 'done' : n === SIHIRBAZ.adim ? 'simdi' : '';
+    const hal = n < simdi ? 'done' : n === simdi ? 'simdi' : '';
     return (i ? '<span class="sh-adim-cizgi"></span>' : '')
       + `<span class="sh-adim ${hal}">
           <span class="sh-adim-no">${hal === 'done' ? svg(ICON.tik, 13) : n}</span>
@@ -6961,7 +6986,52 @@ async function sihirbazKaydet() {
   SIHIRBAZ.kaydediyor = true;
 
   const btn = $('[data-sb="kaydet"] span');
-  if (btn) btn.textContent = 'Kuruluyor…';
+  if (btn) btn.textContent = SIHIRBAZ.duzenle ? 'Kaydediliyor…' : 'Kuruluyor…';
+
+  if (SIHIRBAZ.duzenle) {
+    try {
+      await DB.projeGuncelle(SIHIRBAZ.projeId, {
+        firma:   SIHIRBAZ.firma.trim(),
+        telefon: SIHIRBAZ.telefon.trim() || null,
+        eposta:  SIHIRBAZ.eposta.trim() || null,
+        sektor:  SIHIRBAZ.sektor || null,
+      });
+      if (SIHIRBAZ.logo) {
+        try { await DB.logoYukle(SIHIRBAZ.projeId, SIHIRBAZ.logo); }
+        catch (h) { toast('Bilgiler kaydedildi ama logo yüklenemedi — ' + h.message, 'uyari'); }
+      }
+      if (SIHIRBAZ.gorsel) {
+        try {
+          const pr = DB.proje(SIHIRBAZ.projeId);
+          const pl = (pr && pr.palet) || {};
+          /* Eski G0 kaydı varsa üstüne değil, yerine yazılıyor — yoksa
+             künyede aynı görsel iki kez listelenirdi. */
+          const gorseller = (pl.gorseller || []).filter(g => g.no !== 'G0').concat([{
+            no: 'G0', ad: 'İşletme görseli',
+            tarif: 'İşletmeyi anlatan görsel — konseptin kaynağı.',
+            dosya: 'isletme.jpg', yol: '', boyut: 0, tur: '',
+          }]);
+          await DB.paletKaydet(SIHIRBAZ.projeId, Object.assign({}, pl, { gorseller }));
+          await DB.gorselYukle(SIHIRBAZ.projeId, 'G0', SIHIRBAZ.gorsel);
+        } catch (h) {
+          toast('Bilgiler kaydedildi ama işletme görseli yüklenemedi — ' + h.message, 'uyari');
+        }
+      }
+      const projeId = SIHIRBAZ.projeId;
+      sihirbazKapat();
+      toast('Firma bilgileri güncellendi.', 'basari');
+      /* Bu durakta tek ekran var; kaydedince burada kalmanın anlamı yok —
+         bir sonraki durağın kilidi açılmış olabilir, ana harita dönsün. */
+      location.hash = '#/projeler/' + projeId;
+      render();
+    } catch (e) {
+      toast(e.message, 'hata');
+      if (btn) btn.textContent = 'Kaydet ✓';
+    } finally {
+      SIHIRBAZ.kaydediyor = false;
+    }
+    return;
+  }
 
   try {
     const sablonlar = DB.modulSablonlari();
@@ -7029,6 +7099,221 @@ async function sihirbazKaydet() {
     if (btn) btn.textContent = 'Projeyi Oluştur';
   } finally {
     SIHIRBAZ.kaydediyor = false;
+  }
+}
+
+/* ==========================================================================
+   PROGRAM TEMELİ — Firma bilgileri sihirbazıyla aynı tam ekran dil, aynı
+   `.sihirbaz`/`.sh-*` kalıbı. Kendi durumu ve iskeleti var çünkü soruları
+   (paket adı, roller, veri katmanı) SIHIRBAZ'ınkiyle hiç örtüşmüyor.
+   ========================================================================== */
+
+const PROGRAM_ADIM = {
+  adim: 1, projeId: null,
+  modulAdi: '', veriKatmani: '', supabaseUrl: '', supabaseAnon: '',
+  roller: ['Personel', 'Yönetici'],
+  kaydediyor: false,
+};
+
+const PROGRAM_ADIMLAR = ['Program', 'Kim kullanacak', 'Veriler'];
+
+function programDuzenleAc(projeId) {
+  modalHepsiniKapat();
+  const p = DB.proje(projeId);
+  if (!p) return;
+  const pl = p.palet || {};
+  const varsayilan = (TEKNIK_ALAN.find(x => x.anahtar === 'veriKatmani') || {}).varsayilan;
+  Object.assign(PROGRAM_ADIM, {
+    adim: 1, projeId,
+    modulAdi: pl.modulAdi || '',
+    veriKatmani: pl.veriKatmani || varsayilan,
+    supabaseUrl: pl.supabaseUrl || '',
+    supabaseAnon: pl.supabaseAnon || '',
+    roller: rolListesi(pl.roller).length ? rolListesi(pl.roller) : ['Personel', 'Yönetici'],
+    kaydediyor: false,
+  });
+  const el = document.createElement('div');
+  el.id = 'program-adim';
+  el.className = 'sihirbaz';
+  document.body.appendChild(el);
+  programAdimCiz();
+}
+
+function programAdimKapat() {
+  const el = $('#program-adim');
+  if (!el) return;
+  el.classList.remove('acik');
+  setTimeout(() => el.remove(), 260);
+}
+
+function programAdimCiz() {
+  const el = $('#program-adim');
+  if (!el) return;
+  el.innerHTML = programAdimHtml();
+  programAdimBagla(el);
+  requestAnimationFrame(() => el.classList.add('acik'));
+}
+
+function programAdimHtml() {
+  const govde = PROGRAM_ADIM.adim === 1 ? programAdim1()
+    : PROGRAM_ADIM.adim === 2 ? programAdim2()
+    : programAdim3();
+
+  const geri = PROGRAM_ADIM.adim > 1
+    ? `<button class="btn btn-ghost" data-pa="geri" type="button">← Geri</button>`
+    : `<button class="btn btn-ghost" data-pa="kapat" type="button">Vazgeç</button>`;
+  const ileri = PROGRAM_ADIM.adim < PROGRAM_ADIMLAR.length
+    ? `<button class="btn btn-primary" data-pa="ileri" type="button"><span>Devam Et →</span></button>`
+    : `<button class="btn btn-primary" data-pa="kaydet" type="button"><span>Kaydet ✓</span></button>`;
+
+  return `
+    <div class="sh-tepe">
+      <button class="sh-kapat" data-pa="kapat" type="button" aria-label="Kapat">
+        ${svg(ICON.kapat, 15)}
+      </button>
+      <span class="sh-ad">Program temeli</span>
+    </div>
+
+    <div class="sh-sayfa">
+      <div class="sh-icerik">
+        ${sihirbazAdimlar(PROGRAM_ADIMLAR, PROGRAM_ADIM.adim)}
+        ${govde}
+      </div>
+
+      <div class="sh-dip">${geri}${ileri}</div>
+    </div>`;
+}
+
+/* 1 · Program adı */
+function programAdim1() {
+  return shBaslik(ICON.katman, 'Program adı', 'Bu paketin/uygulamanın adı ne olacak?') + `
+    <label class="field">
+      <span>Program adı</span>
+      <input type="text" id="pa-modul" value="${esc(PROGRAM_ADIM.modulAdi)}"
+             placeholder="Örn. Muhasebe" autocomplete="off" maxlength="60">
+    </label>
+    <p class="ipucu">Bu ad prompt ve kimlik dosyasında kullanılacak.</p>`;
+}
+
+/* 2 · Kim kullanacak — mevcut rol merdiveni bileşeni aynen kullanılıyor. */
+function programAdim2() {
+  return shBaslik(ICON.gGuvenlik, 'Kim kullanacak?',
+    'Kaç katman var ve en alttan en üste hangi sırayla? Üstteki, alttakinin '
+    + 'gördüğü her şeyi görür.') + rolMerdiveni(PROGRAM_ADIM.roller, 'pa');
+}
+
+/* 3 · Veriler nerede — Supabase seçiliyse bağlantı bilgileri de burada. */
+function programAdim3() {
+  const alan = TEKNIK_ALAN.find(x => x.anahtar === 'veriKatmani') || {};
+  const sunuculu = PROGRAM_ADIM.veriKatmani !== 'Yerel tarayıcı';
+  return shBaslik(ICON.gVeri, 'Veriler nerede duracak?', alan.alt || '') + `
+    <div class="fbd-cipler" style="margin-bottom:16px">
+      ${(alan.secim || []).map(x => `<button class="fbd-cp ${PROGRAM_ADIM.veriKatmani === x ? 'on' : ''}"
+        type="button" data-pa="veri" data-deger="${esc(x)}">${esc(x)}</button>`).join('')}
+    </div>
+    ${sunuculu ? `
+      <div class="kur-dug">
+        <a class="sayfa-dug ikincil" target="_blank" rel="noopener"
+           href="https://supabase.com/dashboard/new">${svg(ICON.disari, 15)} Supabase'de proje aç</a>
+      </div>
+      <label class="field">
+        <span>Proje adresi</span>
+        <input type="text" id="pa-sb-url" value="${esc(PROGRAM_ADIM.supabaseUrl)}"
+               placeholder="https://xxxx.supabase.co" autocomplete="off"
+               spellcheck="false" autocapitalize="off">
+      </label>
+      <label class="field">
+        <span>anon key</span>
+        <input type="text" id="pa-sb-key" value="${esc(PROGRAM_ADIM.supabaseAnon)}"
+               placeholder="sb_publishable_… ya da eyJhbG…" autocomplete="off"
+               spellcheck="false" autocapitalize="off">
+      </label>
+      <div class="note uyari">${svg(ICON.uyari, 15)}
+        <span><b>service_role</b> anahtarını buraya yazma. anon key tarayıcıya zaten
+        iniyor, veriyi satır güvenliği (RLS) koruyor — o normal.</span></div>` : ''}`;
+}
+
+function programAdimBagla(kutu) {
+  const yaz = () => {
+    const al = id => { const e = $('#' + id, kutu); return e ? e.value : null; };
+    if (al('pa-modul')  !== null) PROGRAM_ADIM.modulAdi     = al('pa-modul');
+    if (al('pa-sb-url') !== null) PROGRAM_ADIM.supabaseUrl  = al('pa-sb-url');
+    if (al('pa-sb-key') !== null) PROGRAM_ADIM.supabaseAnon = al('pa-sb-key');
+    if ($('.rol-kat', kutu))      PROGRAM_ADIM.roller       = rolOku(kutu);
+  };
+
+  rolBagla(kutu);
+
+  const ilk = $('#pa-modul', kutu);
+  if (ilk) setTimeout(() => ilk.focus(), 60);
+
+  $$('[data-pa]', kutu).forEach(el => {
+    el.addEventListener('click', () => {
+      const t = el.dataset.pa;
+      const d = el.dataset.deger;
+
+      if (t === 'kapat')  return programAdimKapat();
+      if (t === 'geri')   { yaz(); PROGRAM_ADIM.adim--; return programAdimCiz(); }
+      if (t === 'ileri')  { yaz(); if (!programAdimDenetle()) return; PROGRAM_ADIM.adim++; return programAdimCiz(); }
+      if (t === 'kaydet') { yaz(); return programAdimKaydet(); }
+
+      yaz();
+      if (t === 'veri') PROGRAM_ADIM.veriKatmani = d;
+      programAdimCiz();
+    });
+  });
+}
+
+/* Adım geçilebilir mi? Yalnızca gerçekten şart olanı soruyoruz. */
+function programAdimDenetle() {
+  if (PROGRAM_ADIM.adim === 1 && !PROGRAM_ADIM.modulAdi.trim()) {
+    toast('Program adını yaz.');
+    return false;
+  }
+  if (PROGRAM_ADIM.adim === 2 && !PROGRAM_ADIM.roller.length) {
+    toast('En az bir katman yaz.');
+    return false;
+  }
+  return true;
+}
+
+async function programAdimKaydet() {
+  if (PROGRAM_ADIM.kaydediyor) return;
+  PROGRAM_ADIM.kaydediyor = true;
+
+  const btn = $('[data-pa="kaydet"] span');
+  if (btn) btn.textContent = 'Kaydediliyor…';
+
+  try {
+    /* Pencere açık dururken arka planda başka bir kayıt olabilir; projenin
+       o anki hâlini tazeleyip üzerine yazıyoruz, açılış anının görüntüsünü
+       değil. */
+    const guncel = DB.proje(PROGRAM_ADIM.projeId);
+    const palet = Object.assign({}, (guncel && guncel.palet) || {});
+    palet.modulAdi = PROGRAM_ADIM.modulAdi.trim();
+    palet.veriKatmani = PROGRAM_ADIM.veriKatmani;
+    if (PROGRAM_ADIM.veriKatmani === 'Yerel tarayıcı') {
+      delete palet.supabaseUrl;
+      delete palet.supabaseAnon;
+    } else {
+      if (PROGRAM_ADIM.supabaseUrl.trim())  palet.supabaseUrl  = PROGRAM_ADIM.supabaseUrl.trim();  else delete palet.supabaseUrl;
+      if (PROGRAM_ADIM.supabaseAnon.trim()) palet.supabaseAnon = PROGRAM_ADIM.supabaseAnon.trim(); else delete palet.supabaseAnon;
+    }
+    palet.roller = PROGRAM_ADIM.roller;
+
+    const projeId = PROGRAM_ADIM.projeId;
+    await DB.paletKaydet(projeId, palet);
+    programAdimKapat();
+    toast('Program temeli kaydedildi.', 'basari');
+    /* Bu durakta tek ekran var; kaydedince burada kalmanın anlamı yok —
+       bir sonraki durağın kilidi açılmış olabilir, ana harita dönsün. */
+    location.hash = '#/projeler/' + projeId;
+    render();
+  } catch (h) {
+    toast(h.message, 'hata');
+    if (btn) btn.textContent = 'Kaydet ✓';
+  } finally {
+    PROGRAM_ADIM.kaydediyor = false;
   }
 }
 
@@ -8102,118 +8387,6 @@ function fdKart(renk, ikon, baslik, ic) {
     </div>`;
 }
 
-/* Düzenleme pencereleri sayfalarla aynı gruplarda. İkiye ayrıldılar çünkü
-   aşamalar ayrıldı: marka müşteriyle konuşulan taraf, kurulum klavye
-   başındaki taraf. */
-
-/* 1 · Firma bilgileri */
-function markaDuzenle(projeId) {
-  modalHepsiniKapat();
-  const p = DB.proje(projeId);
-  if (!p) return;
-
-  let sektor = p.sektor || '';
-  const sektorler = DB.sektorler.map(x => ({ kod: x.ad, ad: x.ad }));
-  const logo   = DB.logoAdres[p.id];
-  const gorsel = gorselAdresi(p, 'G0');
-
-  modalAc(`
-    ${modalBaslik(ICON.etiket, 'Firma bilgileri', 'Bu bilgiler promptlara ve kimlik dosyasına girer.')}
-
-    ${fdKart('var(--fb-kisi)', ICON.etiket, 'Firma',
-      fdAlan('#c4a05c', ICON.etiket,  'Firma adı', 'md-firma', p.firma,
-             'Örn. Aydın Yapı', 'text', 60)
-      + fdAlan('#5fb37f', ICON.telefon, 'Telefon', 'md-telefon', p.telefon,
-             '0532 000 00 00', 'tel', 24, true)
-      + fdAlan('#4fa8c9', ICON.mail,    'E-posta', 'md-eposta', p.eposta,
-             'ornek@firma.com', 'email', 80, true))}
-
-    ${fdKart('#8fae4a', ICON.dukkan, 'Sektör',
-      (sektorler.length
-        ? fdSecim('#8fae4a', ICON.dukkan, 'Ne işi yapıyor?', 'sektor', sektorler, sektor)
-        : `<p class="ipucu">Sektör listesi boş — Ayarlar → Sektörler'den ekleyebilirsin.</p>`)
-      + fdNot('Sektör modül önerisini belirliyor: aynı işi yapan firmalara '
-            + 'benzer ekranlar gerekiyor.'))}
-
-    ${/* Logo ve işletme görseli eskiden yalnız sayfanın kendisinde
-          yükleniyordu: kullanıcı bilgileri kaydedip pencereden çıkmak,
-          sonra ayrı bir düğme bulup görsel eklemek zorundaydı. Aynı
-          eylemler burada — tıklanınca hemen yükleniyor, pencereyi
-          kapatmaya gerek yok. */ ''}
-    <div class="fbd-ayrac">
-      <span class="fbd-et">Marka</span>
-      <div class="fb-marka">
-        <button class="fb-logo ${logo ? 'dolu' : ''}" type="button"
-                data-eylem="logo-yukle" data-proje="${p.id}"
-                ${logo ? `data-logo="${esc(logo)}"` : ''}>
-          ${logo ? '' : svg(ICON.etiket, 17)}
-        </button>
-        <span class="fb-myz">
-          <i>Logo</i>
-          <b class="${logo ? '' : 'eksik'}">${logo ? 'Yüklendi' : 'dokun, yükle'}</b>
-        </span>
-      </div>
-      <button class="fb-gorsel ${gorsel ? 'dolu' : ''}" type="button"
-              data-eylem="proje-gorsel" data-id="${p.id}">
-        ${gorsel ? `<img src="${esc(gorsel)}" alt="" decoding="async">` : ''}
-        <span class="fb-gyz">${svg(gorsel ? ICON.tik : ICON.arti, 13)}
-          ${gorsel ? 'İşletme görseli' : 'İşletme görseli ekle'}</span>
-      </button>
-    </div>
-
-    <div class="modal-alt">
-      <button class="btn btn-ghost" data-md="iptal" type="button">Vazgeç</button>
-      <button class="btn btn-primary" data-md="kaydet" type="button"><span>Kaydet</span></button>
-    </div>`, kutu => {
-    logolariGoster();
-    const deger = id => { const e = $('#' + id, kutu); return e ? e.value.trim() : ''; };
-
-    const sayaclariTazele = () => {
-      const f = $('[data-fdsay="Firma"]', kutu);
-      if (f) f.textContent = ['md-firma', 'md-telefon', 'md-eposta'].filter(deger).length + '/3';
-      const sk = $('[data-fdsay="Sektör"]', kutu);
-      if (sk) sk.textContent = sektor ? '1/1' : '0/1';
-    };
-
-    kutu.addEventListener('click', ev => {
-      const t = ev.target.closest('[data-fd="sektor"]');
-      if (!t) return;
-      sektor = sektor === t.dataset.deger ? '' : t.dataset.deger;
-      $$('[data-fd="sektor"]', kutu).forEach(x =>
-        x.classList.toggle('on', x.dataset.deger === sektor));
-      sayaclariTazele();
-    });
-    kutu.addEventListener('input', sayaclariTazele);
-    sayaclariTazele();
-
-    $('[data-md="iptal"]', kutu).addEventListener('click', modalKapat);
-    $('[data-md="kaydet"]', kutu).addEventListener('click', async () => {
-      const ad = deger('md-firma');
-      if (!ad) return toast('Firma adı boş olamaz.', 'uyari');
-      const yazi = $('[data-md="kaydet"] span', kutu);
-      yazi.textContent = 'Kaydediliyor…';
-      try {
-        await DB.projeGuncelle(projeId, {
-          firma:   ad,
-          telefon: deger('md-telefon') || null,
-          eposta:  deger('md-eposta') || null,
-          sektor:  sektor || null,
-        });
-        modalKapat();
-        /* Bu sayfada tek kart var; kaydedince burada kalmanın anlamı yok —
-           bir sonraki durağın kilidi açılmış olabilir, ana harita (duraklar
-           ekranı) oraya dönsün. */
-        location.hash = '#/projeler/' + projeId;
-        toast('Marka bilgileri güncellendi.', 'basari');
-      } catch (h) {
-        yazi.textContent = 'Kaydet';
-        toast(h.message, 'hata');
-      }
-    });
-    setTimeout(() => { const i = $('#md-firma', kutu); if (i) i.focus(); }, 40);
-  }, 'genis');
-}
-
 /* Kurulum adımlarının pencereleri. Tek büyük pencere yerine küçük
    pencereler: adım kartına basınca yalnız o adımın soruları çıkıyor.
    Yazılım bilmeyen biri için tek soruya odaklanmak, uzun formu
@@ -8251,120 +8424,6 @@ function yerDolu(p) {
   return !!pl.modulAdi && !!pl.veriKatmani
     && (!sunuculuMu(p)
         || (!!String(pl.supabaseUrl || '').trim() && !!String(pl.supabaseAnon || '').trim()));
-}
-
-/* 2 · Program temeli — paket adı, veri katmanı/Supabase ve kim kullanacak
-   (roller). Eskiden "Nereye kuralım?"ın yarısıydı (Yer) + ayrı bir "Kim
-   kullanacak?" adımıydı; ikisi de "bu paket ne, kim girecek, verisi
-   nerede" kararının parçası olduğu için tek pencerede birleşti. */
-function programDuzenle(projeId) {
-  modalHepsiniKapat();
-  const p = DB.proje(projeId);
-  if (!p) return;
-  const pl   = p.palet || {};
-  const alan = a => TEKNIK_ALAN.find(x => x.anahtar === a) || {};
-  const veri = alan('veriKatmani');
-  const veriSecili = pl.veriKatmani || veri.varsayilan;
-
-  modalAc(`
-    ${modalBaslik(ICON.katman, 'Program temeli',
-      'Bu paket ne, kim kullanacak, verisi nerede duracak?')}
-    ${fdKart('#4fa8c9', ICON.bulut, 'Program',
-      fdAlan('#c48a5c', ICON.katman, 'Program adı', 'pg-modul', pl.modulAdi,
-             'Örn. Muhasebe', 'text', 60, false, 'data-tk="modulAdi"')
-      + `<div class="fbd-sec" style="--ki:#4fa8c9">
-        <span class="fbd-set"><span class="fbd-si">${svg(ICON.bulut, 12)}</span>
-          <span>Veriler nerede duracak</span></span>
-        <div class="fbd-cipler">
-          ${(veri.secim || []).map(x => `<button class="fbd-cp ${veriSecili === x ? 'on' : ''}"
-            type="button" data-tks="veriKatmani" data-deger="${esc(x)}">${esc(x)}</button>`).join('')}
-        </div>
-        <input type="hidden" data-tk="veriKatmani" value="${esc(veriSecili)}">
-      </div>`
-      + fdNot(veri.alt)
-      /* Bağlantı en başta soruluyor: sonradan gelirse kod önce cihaz-içi
-         deneme hesabıyla yazılıyor, sonra sökülüp Supabase'e bağlanıyor.
-         İki kez iş, iki kez hata. */
-      + `<div class="fbd-ayrac vt ${veriSecili === 'Yerel tarayıcı' ? 'gizli' : ''}">
-          <span class="fbd-et">Veritabanı</span>
-          <div class="kur-dug">
-            <a class="sayfa-dug ikincil" target="_blank" rel="noopener"
-               href="https://supabase.com/dashboard/new">
-              ${svg(ICON.disari, 15)} Supabase'de proje aç</a>
-          </div>
-          ${fdAlan('#3ecf8e', ICON.gVeri, 'Proje adresi', 'pg-sb-url', pl.supabaseUrl,
-                   'https://xxxx.supabase.co', 'text', 120, true,
-                   'data-tk="supabaseUrl" spellcheck="false" autocapitalize="off"')}
-          ${fdAlan('#3ecf8e', ICON.anahtar, 'anon key', 'pg-sb-key', pl.supabaseAnon,
-                   'sb_publishable_… ya da eyJhbG…', 'text', 400, true,
-                   'data-tk="supabaseAnon" spellcheck="false" autocapitalize="off"')}
-          <div class="note uyari">${svg(ICON.uyari, 15)}
-            <span><b>service_role</b> anahtarını buraya yazma. anon key
-            tarayıcıya zaten iniyor, veriyi satır güvenliği (RLS) koruyor —
-            o normal.</span></div>
-        </div>`)}
-    ${fdKart('#d8a63f', ICON.gGuvenlik, 'Kim kullanacak', rolMerdiveni(pl.roller, 'pg'))}
-    <div class="modal-alt">
-      <button class="btn btn-ghost" data-pg="iptal" type="button">Vazgeç</button>
-      <button class="btn btn-primary" data-pg="kaydet" type="button"><span>Kaydet</span></button>
-    </div>`, kutu => {
-    rolBagla(kutu);
-    const tazele = () => {
-      const y = $('[data-fdsay="Program"]', kutu);
-      if (y) {
-        /* Supabase seçili değilken bağlantı alanları sayılmıyor. */
-        const sb = $('[data-tk="veriKatmani"]', kutu).value !== 'Yerel tarayıcı';
-        const alanlar = $$('[data-tk]', kutu)
-          .filter(x => sb || ['supabaseUrl', 'supabaseAnon'].indexOf(x.dataset.tk) < 0);
-        y.textContent = alanlar.filter(x => x.value.trim()).length + '/' + alanlar.length;
-      }
-      const r = $('[data-fdsay="Kim kullanacak"]', kutu);
-      if (r) r.textContent = rolOku(kutu).length + ' katman';
-    };
-    kutu.addEventListener('click', ev => {
-      const v = ev.target.closest('[data-tks]');
-      if (v) {
-        const gizli = $('[data-tk="' + v.dataset.tks + '"]', kutu);
-        if (gizli) gizli.value = v.dataset.deger;
-        v.parentElement.querySelectorAll('.fbd-cp').forEach(x => x.classList.toggle('on', x === v));
-        const vt = $('.fbd-ayrac.vt', kutu);
-        if (vt && v.dataset.tks === 'veriKatmani') {
-          vt.classList.toggle('gizli', v.dataset.deger === 'Yerel tarayıcı');
-        }
-      }
-      setTimeout(tazele, 0);
-    });
-    kutu.addEventListener('input', tazele);
-    tazele();
-    $('[data-pg="iptal"]', kutu).addEventListener('click', modalKapat);
-    $('[data-pg="kaydet"]', kutu).addEventListener('click', async () => {
-      const roller = rolOku(kutu);
-      if (!roller.length) return toast('En az bir katman yaz.', 'uyari');
-      /* Pencere açık dururken arka planda başka bir kayıt olabilir. `pl`
-         pencere açılış anının görüntüsü olduğu için o kaydı burada
-         eskisiyle ezmeyelim — projenin o anki halini tazeleyip üzerine
-         yazalım. */
-      const guncel = DB.proje(projeId);
-      const palet = Object.assign({}, (guncel && guncel.palet) || pl);
-      $$('[data-tk]', kutu).forEach(el => {
-        const v = el.value.trim();
-        if (v) palet[el.dataset.tk] = v; else delete palet[el.dataset.tk];
-      });
-      palet.roller = roller;
-      const yazi = $('[data-pg="kaydet"] span', kutu);
-      yazi.textContent = 'Kaydediliyor…';
-      try {
-        await DB.paletKaydet(projeId, palet);
-        modalKapat();
-        /* Bu sayfada tek kart var; kaydedince burada kalmanın anlamı yok —
-           bir sonraki durağın kilidi açılmış olabilir, ana harita oraya
-           dönsün. */
-        location.hash = '#/projeler/' + projeId;
-        toast('Program temeli kaydedildi.', 'basari');
-      } catch (h) { yazi.textContent = 'Kaydet'; toast(h.message, 'hata'); }
-    });
-    setTimeout(() => { const i = $('#pg-modul', kutu); if (i) i.focus(); }, 40);
-  }, 'genis');
 }
 
 /* Takvim şeridinin kendi küçük penceresi. */
@@ -10032,8 +10091,8 @@ async function eylemCalistir(el) {
     return;
   }
 
-  if (e === 'marka-duzenle')    return markaDuzenle(el.dataset.proje);
-  if (e === 'program-duzenle')  return programDuzenle(el.dataset.proje);
+  if (e === 'marka-duzenle')    return firmaDuzenleAc(el.dataset.proje);
+  if (e === 'program-duzenle')  return programDuzenleAc(el.dataset.proje);
   if (e === 'adim-takvim')      return adimTakvim(el.dataset.proje);
 
   if (e === 'marka-renk') {
@@ -11627,7 +11686,7 @@ async function uygulamayiAc() {
       else await DB.yukle();
     } catch (e) { return; }
     sayaclariYaz();
-    if (!$('.modal-perde') && !$('#sihirbaz') && !$('#onizleme')) render();
+    if (!$('.modal-perde') && !$('#sihirbaz') && !$('#program-adim') && !$('#onizleme')) render();
   });
 
   /* Telefon uygulamayı arka planda dondurunca canlı bağlantı kopuyor ve
@@ -11645,7 +11704,7 @@ async function geriDonunce() {
 
   try { await DB.yukle(); } catch (e) { return; }
   sayaclariYaz();
-  if (!$('.modal-perde') && !$('#sihirbaz')) render();
+  if (!$('.modal-perde') && !$('#sihirbaz') && !$('#program-adim')) render();
 }
 
 function hataGoster(mesaj) {
