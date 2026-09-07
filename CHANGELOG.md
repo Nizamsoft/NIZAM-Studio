@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.134.28
+- **"Kim kullanacak?" satırları da kart görünümüne geçti.** Önceki güncelleme yalnız başlık ekliyordu, satırların kendisi hâlâ eski ince form alanıydı. Şimdi her katman gerçek bir kart: numara ve rol ikonu kutuda, isim kalın, "En dar"/"En geniş" artık pilli bir rozet. Aynı bileşen Yapı ağacındaki roller ekranında da kullanıldığı için orası da güncellendi.
+
 ## v0.134.27
 - **Program temeli sihirbazının 2. ve 3. adımları görsel olarak zenginleşti.** "Kim kullanılacak?" adımına "Katman sayısı"/"Katmanlar" başlıkları eklendi. "Veriler nerede duracak?" artık küçük seçim düğmeleri yerine iki büyük karar kartı: her seçeneğin kendi artı/eksi listesi (Supabase'de "Önerilen" rozeti + 4 artı, Yerel'de 4 eksi) ve seçili olanı gösteren radyo halkası.
 

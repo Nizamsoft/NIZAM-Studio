@@ -6083,23 +6083,30 @@ button.fb-cp:active{ transform:scale(.94); }
    -------------------------------------------------------------------------- */
 
 .rol-sayi{ margin-bottom:9px; padding-left:0; }
-.rol-liste{ display:flex; flex-direction:column; gap:0; }
+.rol-liste{ display:flex; flex-direction:column; gap:8px; }
+/* Kart görünümü: eskiden ince, alt çizgili bir form satırıydı — mockup'taki
+   gibi kutulu, numara+ikon rozetli, "en dar/en geniş" pillli karta çevrildi. */
 .rol-satir{
-  position:relative;
-  display:flex; align-items:center; gap:9px;
-  padding:5px 0; cursor:text;
-  border:0; background:none; border-radius:0;
+  display:flex; align-items:center; gap:10px;
+  padding:10px 12px; cursor:text;
+  border:1px solid var(--line); border-radius:var(--radius-lg);
+  background:linear-gradient(180deg, var(--kart-ust), var(--kart-alt));
 }
-.rol-satir + .rol-satir{ border-top:1px solid var(--line-3); }
+.rol-satir:focus-within{ border-color:var(--ki); box-shadow:0 0 0 1px var(--ki); }
 .rol-no{
-  flex:0 0 auto; width:14px;
-  display:block; text-align:right;
-  font-family:var(--yazi-kod); font-size:10px; font-weight:400;
-  background:none; color:var(--ink-dim);
+  flex:0 0 28px; height:28px; border-radius:9px;
+  display:flex; align-items:center; justify-content:center;
+  font-family:var(--yazi-kod); font-size:11.5px; color:var(--ink-dim);
+  background:var(--yuva); box-shadow:inset 0 0 0 1px var(--line-3);
 }
-.rol-satir.ust .rol-no{ background:none; color:var(--ink-dim); }
+.rol-ik{
+  flex:0 0 28px; width:28px; height:28px; border-radius:9px;
+  display:flex; align-items:center; justify-content:center; color:var(--ki);
+  background:color-mix(in srgb, var(--ki) 15%, transparent);
+}
+.rol-orta{ flex:1; min-width:0; }
 .rol-satir input{
-  flex:1; min-width:0; height:26px; padding:0;
+  display:block; width:100%; padding:0;
   border:0; background:transparent;
   color:var(--ink-strong);
   font-family:var(--yazi-baslik); font-weight:600; font-size:13.5px;
@@ -6108,15 +6115,11 @@ button.fb-cp:active{ transform:scale(.94); }
 .rol-satir input::placeholder{
   color:var(--metal-1); font-family:var(--yazi-govde); font-weight:400; font-size:12.5px;
 }
-.rol-satir em{
-  flex:0 0 auto; font-style:normal;
-  font-size:8.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-dim);
+.rol-rozet{
+  flex:0 0 auto; padding:4px 9px; border-radius:999px;
+  font-size:9px; font-weight:700; letter-spacing:.04em; white-space:nowrap;
+  color:var(--ki); background:color-mix(in srgb, var(--ki) 15%, transparent);
 }
-.rol-satir:focus-within .fbd-cizgi{
-  height:1.5px;
-  background:linear-gradient(90deg, var(--ki), transparent 70%);
-}
-.rol-satir:focus-within .fbd-si{ box-shadow:0 0 0 1px color-mix(in srgb, var(--ki) 40%, transparent); }
 
 /* Düzenleme penceresinde de aynı ayraç. */
 .fbd-ayrac{

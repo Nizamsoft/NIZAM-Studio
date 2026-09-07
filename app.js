@@ -1275,13 +1275,14 @@ function rolMerdiveni(roller, onek) {
           return `
             <label class="rol-satir ${ust ? 'ust' : ''}"
                    style="--ki:${ust ? '#d8a63f' : dar ? '#7d93b8' : '#3fa694'}">
-              <span class="fbd-si">${svg(ust ? ICON.gGuvenlik : dar ? ICON.kilit : ICON.kisi, 13)}</span>
               <span class="rol-no mono">${sira + 1}</span>
-              <input type="text" data-rol="${sira}" value="${esc(ad)}"
-                     placeholder="${esc((ROL_ORNEK[n] || [])[sira] || 'Rol adı')}"
-                     maxlength="40" autocomplete="off">
-              ${ust ? '<em>en geniş</em>' : dar ? '<em>en dar</em>' : ''}
-              <span class="fbd-cizgi"></span>
+              <span class="rol-ik">${svg(ust ? ICON.gGuvenlik : dar ? ICON.kilit : ICON.kisi, 15)}</span>
+              <span class="rol-orta">
+                <input type="text" data-rol="${sira}" value="${esc(ad)}"
+                       placeholder="${esc((ROL_ORNEK[n] || [])[sira] || 'Rol adı')}"
+                       maxlength="40" autocomplete="off">
+              </span>
+              ${ust ? '<span class="rol-rozet">En geniş</span>' : dar ? '<span class="rol-rozet">En dar</span>' : ''}
             </label>`;
         }).join('')}
       </div>
