@@ -1662,6 +1662,13 @@ html { background: var(--bg); }
 
 .sh-icerik { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding-bottom: 12px; }
 
+/* Sihirbaz telefon ekranına göre tasarlandı; masaüstünde `.sihirbaz` tüm
+   pencere genişliğine yayılınca içerik (özellikle görsel kutuları) dev
+   görünüyordu. Genişçe bir sütuna sabitleyip ortalıyoruz — telefonda zaten
+   bundan dar olduğu için görünüm değişmiyor. */
+@media (min-width: 640px) {
+  .sh-tepe, .sh-sayfa { width: 100%; max-width: 480px; margin-left: auto; margin-right: auto; }
+}
 .sh-bas { display: flex; align-items: flex-start; gap: 13px; margin-bottom: 22px; }
 .sh-rozet {
   display: flex; align-items: center; justify-content: center; flex-shrink: 0;
@@ -1724,18 +1731,26 @@ html { background: var(--bg); }
 .sh-sektor-ekle .sh-sektor-ik{ color:inherit; }
 
 /* Logo/görsel yükleme kutuları — proje daha kurulmadan seçilen dosya
-   blob adresiyle önizleniyor, kurulunca gerçekten yükleniyor. */
+   blob adresiyle önizleniyor, kurulunca gerçekten yükleniyor. Logo kare
+   ve küçük (bir simge gibi düşün), işletme görseli yatay bir kart —
+   ikisi de eskiden `width:100%` + sabit piksel yükseklikti; masaüstünde
+   sihirbaz tüm ekran genişliğine yayılınca aynı yükseklik dev, düz bir
+   şerit gibi görünüyordu. */
 .sb-yukle{
   display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px;
-  width:100%; min-height:96px; margin-bottom:6px; padding:16px;
+  width:112px; aspect-ratio:1/1; margin-bottom:6px; padding:10px;
   border-radius:var(--radius-lg); border:1.5px dashed var(--line-2);
   background:var(--yuva); color:var(--ink-dim);
   font-family:inherit; cursor:pointer; text-align:center;
   background-size:cover; background-position:center;
 }
-.sb-yukle b{ font-size:12.5px; color:var(--ink-strong); font-weight:600; }
-.sb-yukle i{ font-style:normal; font-size:10.5px; color:var(--ink-dim); }
-.sb-yukle.dolu{ min-height:120px; border-style:solid; border-color:var(--line-3); }
+.sb-yukle b{ font-size:11.5px; color:var(--ink-strong); font-weight:600; }
+.sb-yukle i{ font-style:normal; font-size:9.5px; color:var(--ink-dim); line-height:1.35; }
+.sb-yukle.dolu{ border-style:solid; border-color:var(--line-3); }
+
+.sb-yukle.genis{ width:100%; aspect-ratio:2.4/1; max-height:170px; padding:16px; }
+.sb-yukle.genis b{ font-size:12.5px; }
+.sb-yukle.genis i{ font-size:10.5px; }
 
 /* Program temeli'nde veri katmanı seçimi — iki büyük kart, her biri kendi
    artı/eksi listesiyle. Küçük pul yerine bunu seçtik çünkü karar tek

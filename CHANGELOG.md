@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.134.34
+- **Sihirbazlardaki (Yeni Proje, Program temeli, Bağlantılar) Logo ve İşletme görseli kutuları düzeltildi.** Logo artık gerçekten kare ve küçük, işletme görseli makul boyutlu yatay bir dikdörtgen — ikisi de eskiden ekran genişliğine yayılan aynı yükseklikte kutulardı, masaüstünde dev bir şerit gibi görünüyordu. Ayrıca tüm sihirbaz ekranı masaüstünde artık bir sütuna sabitlenip ortalanıyor, tam ekran genişliğine yayılmıyor.
+
 ## v0.134.33
 - **"Yayına al" (GitHub Pages) Bağlantılar sihirbazında GitHub'dan ayrılıp Claude'dan sonraya alındı.** Eskiden depo bağlama ve yayına alma aynı adımdaydı; artık sıra GitHub → Claude → Yayın → (varsa) Supabase → (varsa) Namecheap. Gerekçe: Claude görevi bitirmeden siteyi yayına almanın anlamı yok.
 
