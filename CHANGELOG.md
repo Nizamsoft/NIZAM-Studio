@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.134.23
+- **Aşama ikonları (özellikle Firma bilgileri) kutunun içinde sağa kaymış duruyordu.** Sebebi kırpma değil, PNG'lerdeki gözle görünmeyen (alpha≈1) tozlu kenar pikselleriydi — kırpma bunları da "içerik" sayıp kutuyu gereğinden geniş tutuyordu, küçültünce görünen şekil kaymış gibi duruyordu. Eşiksiz kırpma yerine eşikli (gerçekten görünen piksel) kırpmayla yeniden işlendi; artık hepsi kutuda tam ortalı.
+
 ## v0.134.22
 - **Şimdiki durak yeşil değil sarı.** Aşama listesinde "şimdi burada" olan durak bitmemiş olduğu halde yeşil (bitti rengiyle aynı) görünüyordu. Studio'nun "Geliştiriliyor" durum rengiyle (sarı) eşleşti — yeşil artık yalnız gerçekten bitmiş duraklarda.
 
