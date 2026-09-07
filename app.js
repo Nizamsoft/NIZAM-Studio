@@ -1257,9 +1257,9 @@ function rolMerdiveni(roller, onek) {
   return `
     <div class="rol-kat" data-rol-onek="${onek}">
       <span class="fbd-et">Katman sayısı</span>
-      <div class="fbd-cipler rol-sayi">
+      <div class="rol-sayi">
         ${[2, 3, 4, 5].map(k => `
-          <button class="fbd-cp ${k === n ? 'on' : ''}" type="button"
+          <button class="rol-sayi-cp ${k === n ? 'on' : ''}" type="button"
                   data-rol-sayi="${k}">${k} katman</button>`).join('')}
       </div>
       <span class="fbd-et" style="margin-top:14px">Katmanlar</span>

@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.134.29
+- **"Katman sayısı" düğmeleri (2/3/4/5 katman) yeniden tasarlandı.** Eskiden küçük, metal dolgulu pillerdi. Şimdi mockup'taki gibi dört eşit sütun, büyük dokunma alanı; seçili olan dolmuyor, yalnız sarı çerçeve ve parıltı alıyor.
+
 ## v0.134.28
 - **"Kim kullanacak?" satırları da kart görünümüne geçti.** Önceki güncelleme yalnız başlık ekliyordu, satırların kendisi hâlâ eski ince form alanıydı. Şimdi her katman gerçek bir kart: numara ve rol ikonu kutuda, isim kalın, "En dar"/"En geniş" artık pilli bir rozet. Aynı bileşen Yapı ağacındaki roller ekranında da kullanıldığı için orası da güncellendi.
 

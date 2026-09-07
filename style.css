@@ -6082,7 +6082,23 @@ button.fb-cp:active{ transform:scale(.94); }
    rol rozetleriyle aynı: en geniş kalkan, en dar kilit, aradakiler kişi.
    -------------------------------------------------------------------------- */
 
-.rol-sayi{ margin-bottom:9px; padding-left:0; }
+/* Katman sayısı seçici — dört eşit sütun, seçili olan dolmuyor, yalnız
+   sarı çerçeve ve parıltı alıyor (metal dolgu küçük ekranda "kapalı"
+   görünüyordu, mockup'taki gibi çerçeveli seçim daha net okunuyor). */
+.rol-sayi{ display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:8px; margin-bottom:14px; }
+.rol-sayi-cp{
+  padding:14px 4px; border-radius:var(--radius-lg); text-align:center;
+  border:1px solid var(--line); cursor:pointer;
+  font-family:var(--yazi-baslik); font-weight:600; font-size:12.5px; color:var(--ink-strong);
+  background:linear-gradient(180deg, var(--kart-ust), var(--kart-alt));
+  box-shadow:inset 0 1px 0 var(--isik);
+  transition:transform .16s var(--yay);
+}
+.rol-sayi-cp:active{ transform:scale(.96); }
+.rol-sayi-cp.on{
+  border-color:var(--st-dev-t); color:var(--st-dev-t);
+  box-shadow:0 0 0 1px var(--st-dev-t), 0 8px 18px -12px rgba(216,166,63,.6);
+}
 .rol-liste{ display:flex; flex-direction:column; gap:8px; }
 /* Kart görünümü: eskiden ince, alt çizgili bir form satırıydı — mockup'taki
    gibi kutulu, numara+ikon rozetli, "en dar/en geniş" pillli karta çevrildi. */
