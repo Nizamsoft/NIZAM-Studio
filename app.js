@@ -331,6 +331,20 @@ function svg(ikon, boy = 16) {
   return `<svg viewBox="0 0 24 24" style="width:${boy}px;height:${boy}px">${dolgu}${cizgi}</svg>`;
 }
 
+/* Gerçek servis logoları — GitHub/Claude/Supabase/Namecheap. Kendi renkleriyle
+   basılıyorlar, tek renge boyanan aşama ikonlarından (mask-image) farklı
+   teknik: düz `<img>`. Bağlantılar sihirbazında VE Program temeli'ndeki
+   karar kartlarında (Veriler nerede, Alan adı) aynı dosyalar kullanılıyor —
+   "hangi servisi seçtin" hep aynı görselle anlatılsın diye. */
+const SERVIS_LOGO = {
+  github: 'ikon/asama/github.png', claude: 'ikon/asama/claude.png',
+  supabase: 'ikon/asama/supabase.png', namecheap: 'ikon/asama/namecheap.png',
+};
+
+function servisIkon(ad, boy) {
+  return `<img class="servis-ikon" src="${SERVIS_LOGO[ad]}" alt="" width="${boy}" height="${boy}">`;
+}
+
 /* ==========================================================================
    GÖRÜNÜMLER
    ========================================================================== */
@@ -6762,6 +6776,17 @@ function shBaslik(ikon, baslik, alt) {
     </div>`;
 }
 
+/* shBaslik'in gerçek logolu hâli: rozet kırmızı değil beyaz zeminli —
+   logolar kendi rengiyle geliyor, siyah GitHub gibi bir logo kırmızı
+   zeminde kaybolurdu. */
+function shBaslikServis(servisAd, baslik, alt) {
+  return `
+    <div class="sh-bas">
+      <span class="sh-rozet sh-rozet-servis">${servisIkon(servisAd, 26)}</span>
+      <span><h2>${esc(baslik)}</h2><p>${alt}</p></span>
+    </div>`;
+}
+
 /* 1 · Firma bilgileri — proje kurulurken ayrıca "proje adı" sormuyoruz,
    firma adı burada zaten soruluyor. */
 function sihirbazAdimFirma() {
@@ -7175,7 +7200,7 @@ function programAdim2() {
    ekleyip çıkaramıyor), o yüzden burada elle yazmak kırılgan değil. */
 const VERI_KATMANI_KARTI = {
   'Supabase (bulut)': {
-    ikon: 'bulut', renk: '#3ecf8e', onerilen: true,
+    servis: 'supabase', ikon: 'bulut', renk: '#3ecf8e', onerilen: true,
     ozellikler: [
       { iyi: true, yazi: 'Her yerden erişim' },
       { iyi: true, yazi: 'Gerçek zamanlı veri' },
@@ -7205,7 +7230,8 @@ function programAdim3() {
         <label class="pa-veri-kart ${secili === x ? 'on' : ''}" style="--ki:${k.renk}"
                data-pa="veri" data-deger="${esc(x)}">
           <span class="pa-veri-ust">
-            <span class="pa-veri-ik">${svg(ICON[k.ikon], 18)}</span>
+            <span class="pa-veri-ik${k.servis ? ' servis' : ''}">${
+              k.servis ? servisIkon(k.servis, 20) : svg(ICON[k.ikon], 18)}</span>
             <span class="pa-veri-ad">${esc(x)}</span>
             ${k.onerilen ? '<span class="pa-veri-rozet">Önerilen</span>' : ''}
             <span class="pa-veri-radyo"></span>
@@ -7226,7 +7252,7 @@ function programAdim3() {
    karar olmadan Bağlantılar kaç kare göstereceğini bilemiyor. */
 const ALAN_TURU_KARTI = {
   githubio: {
-    ad: 'Sadece github.io', ikon: 'bulut', renk: '#3ecf8e', onerilen: true,
+    ad: 'Sadece github.io', servis: 'github', ikon: 'bulut', renk: '#3ecf8e', onerilen: true,
     ozellikler: [
       { iyi: true, yazi: 'Hiç kurulum gerektirmez' },
       { iyi: true, yazi: 'Testler için hızlı' },
@@ -7234,7 +7260,7 @@ const ALAN_TURU_KARTI = {
     ],
   },
   namecheap: {
-    ad: 'Namecheap ile özel alan adı', ikon: 'dil', renk: '#c48a5c', onerilen: false,
+    ad: 'Namecheap ile özel alan adı', servis: 'namecheap', ikon: 'dil', renk: '#c48a5c', onerilen: false,
     ozellikler: [
       { iyi: true, yazi: 'Kendi alan adın (örn. firma.com)' },
       { iyi: true, yazi: 'Müşteriye teslimde daha profesyonel' },
@@ -7254,7 +7280,8 @@ function programAdim4() {
         <label class="pa-veri-kart ${secili === k ? 'on' : ''}" style="--ki:${kart.renk}"
                data-pa="alan-turu" data-deger="${esc(k)}">
           <span class="pa-veri-ust">
-            <span class="pa-veri-ik">${svg(ICON[kart.ikon], 18)}</span>
+            <span class="pa-veri-ik${kart.servis ? ' servis' : ''}">${
+              kart.servis ? servisIkon(kart.servis, 20) : svg(ICON[kart.ikon], 18)}</span>
             <span class="pa-veri-ad">${esc(kart.ad)}</span>
             ${kart.onerilen ? '<span class="pa-veri-rozet">Önerilen</span>' : ''}
             <span class="pa-veri-radyo"></span>
@@ -7374,7 +7401,8 @@ async function programAdimKaydet() {
 const BAGLANTI_ADIM = { adim: 1, projeId: null, liste: [] };
 
 const BAGLANTI_ETIKET = { github: 'GitHub', claude: 'Claude', pages: 'Yayın', supabase: 'Supabase', namecheap: 'Namecheap' };
-const BAGLANTI_IKON   = { github: 'dal', claude: 'dosya', pages: 'dal', supabase: 'bulut', namecheap: 'dil' };
+/* Yayın adımının kendi servisi yok — hâlâ GitHub, o yüzden aynı logo. */
+const BAGLANTI_SERVIS = { github: 'github', claude: 'claude', pages: 'github', supabase: 'supabase', namecheap: 'namecheap' };
 
 /* Yayın (GitHub Pages) bilerek Claude'dan SONRA geliyor: Claude görevini
    bitirmeden siteyi yayına almanın anlamı yok. Depo bağlama ile yayın
@@ -7435,11 +7463,11 @@ function baglantiAdimlarSerit(liste, simdi, p) {
     const n = i + 1;
     const bitti = baglantiAdimBittiMi(k, p);
     const hal = bitti ? 'done' : n === simdi ? 'simdi' : '';
+    const ikon = bitti
+      ? `<span class="sh-adim-no">${svg(ICON.tik, 13)}</span>`
+      : `<span class="sh-adim-no servis">${servisIkon(BAGLANTI_SERVIS[k], 18)}</span>`;
     return (i ? '<span class="sh-adim-cizgi"></span>' : '')
-      + `<span class="sh-adim ${hal}">
-          <span class="sh-adim-no">${svg(bitti ? ICON.tik : ICON[BAGLANTI_IKON[k]], bitti ? 13 : 14)}</span>
-          <i>${esc(BAGLANTI_ETIKET[k])}</i>
-        </span>`;
+      + `<span class="sh-adim ${hal}">${ikon}<i>${esc(BAGLANTI_ETIKET[k])}</i></span>`;
   }).join('')}</div>`;
 }
 
@@ -7510,7 +7538,7 @@ function baglantiAdimGithub(p) {
   const buton = depo ? '' : `<a class="sayfa-dug" target="_blank" rel="noopener" data-depo-ac="${p.id}" href="${depoAdresi}">
       ${svg(ICON.dal, 15)} GitHub'da depo aç</a>`;
 
-  return shBaslik(ICON.dal, 'GitHub\'a bağlan',
+  return shBaslikServis('github', 'GitHub\'a bağlan',
     'Kodun barındığı yer. Depo bağlanınca Claude Code buradan görev alır.')
     + durum + buton
     + baOzellikler([
@@ -7539,7 +7567,7 @@ function baglantiAdimClaude(p) {
         : `<button class="sayfa-dug" type="button" data-eylem="tanisma-prompt" data-proje="${p.id}">
             ${svg(ICON.dosya, 15)} Claude ile bağlan</button>`;
 
-  return shBaslik(ICON.dosya, 'Claude\'a bağlan',
+  return shBaslikServis('claude', 'Claude\'a bağlan',
     'Depoyu Claude Code\'a tanıtan ilk prompt. Kimlik dosyasını ve kurulumu buradan alır.')
     + durum + buton
     + baOzellikler([
@@ -7569,7 +7597,7 @@ function baglantiAdimPages(p) {
            href="https://github.com/${esc(slug)}/settings/pages">
           ${svg(ICON.dal, 15)} GitHub Pages'i aç</a>`;
 
-  return shBaslik(ICON.dal, 'Yayına al',
+  return shBaslikServis('github', 'Yayına al',
     'Claude görevi bitirince kodun canlıya çıktığı yer. GitHub Pages tek adımda açılıyor.')
     + durum + buton
     + baOzellikler([
@@ -7588,7 +7616,7 @@ function baglantiAdimSupabase(p) {
 
   const durum = (url && key) ? baDurum('Bağlantı kuruldu', url) : '';
 
-  return shBaslik(ICON.bulut, 'Supabase\'e bağlan',
+  return shBaslikServis('supabase', 'Supabase\'e bağlan',
     'Programın verisinin, girişin ve gerçek zamanlı güncellemelerin tutulduğu yer.')
     + durum
     + `<label class="field"><span>Proje adresi</span>
@@ -7619,7 +7647,7 @@ function baglantiAdimNamecheap(p) {
   const kok = kokAlan();
 
   if (!kok) {
-    return shBaslik(ICON.dil, 'Namecheap ile alan adı',
+    return shBaslikServis('namecheap', 'Namecheap ile alan adı',
       'Programın kendi adresinden açılması için DNS kaydı ve alan adı.')
       + `<div class="note uyari">${svg(ICON.uyari, 15)}
           <span>Önce <a href="#/ayarlar">Ayarlar</a>'da kök alan adını yaz.</span></div>`;
@@ -7657,7 +7685,7 @@ function baglantiAdimNamecheap(p) {
       <span>Kaydı Namecheap'te oluşturduktan sonra <b>Alan adını yaz</b>'a dokun ve
       <b class="mono">${esc(tam)}</b> yaz. DNS'in yayılması 10–30 dakika sürebilir.</span></div>`;
 
-  return shBaslik(ICON.dil, 'Namecheap ile alan adı',
+  return shBaslikServis('namecheap', 'Namecheap ile alan adı',
     'Programın kendi adresinden açılması için DNS kaydı ve alan adı.')
     + durum + govde
     + baOzellikler([

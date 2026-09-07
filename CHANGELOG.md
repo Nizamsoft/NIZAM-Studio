@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.134.35
+- **Gerçek GitHub/Claude/Supabase/Namecheap logoları uygulamaya girdi.** Bağlantılar sihirbazının hem üstteki rozetinde hem adım şeridinde artık kendi logoları var (sırası gelmemiş adımlar gri, şimdiki renkli). Aynı logolar Program temeli'ndeki karar kartlarında da kullanılıyor: Veriler nerede'de Supabase, Alan adı'nda github.io ve Namecheap.
+
 ## v0.134.34
 - **Sihirbazlardaki (Yeni Proje, Program temeli, Bağlantılar) Logo ve İşletme görseli kutuları düzeltildi.** Logo artık gerçekten kare ve küçük, işletme görseli makul boyutlu yatay bir dikdörtgen — ikisi de eskiden ekran genişliğine yayılan aynı yükseklikte kutulardı, masaüstünde dev bir şerit gibi görünüyordu. Ayrıca tüm sihirbaz ekranı masaüstünde artık bir sütuna sabitlenip ortalanıyor, tam ekran genişliğine yayılmıyor.
 

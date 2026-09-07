@@ -21,7 +21,7 @@
    Bir resim yeniden yüklenince eski kopya önbellekte kalırdı; uygulama
    `postMessage({ tip: 'unut', yol })` gönderiyor, o kayıt siliniyor. */
 
-const CACHE = 'nizam-studio-v0.134.34';
+const CACHE = 'nizam-studio-v0.134.35';
 
 /* Resimler AYRI ve SÜRÜMSÜZ bir önbellekte duruyor.
 
