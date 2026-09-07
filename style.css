@@ -6444,9 +6444,11 @@ a.ya:active, button.ya:not([disabled]):active{ transform:scale(.97); }
 }
 a.asr:active{ transform:scale(.99); }
 .asr.kilitli{ opacity:.5; cursor:default; }
+/* Şimdiki durak bitmiş değil, o yüzden yeşil değil — "Geliştiriliyor"
+   durum rengiyle (sarı) aynı dili konuşuyor: sürüyor ama bitmedi. */
 .asr.simdi{
-  border-color:var(--st-done-t);
-  box-shadow:0 0 0 1px var(--st-done-t), 0 10px 22px -14px rgba(69,163,123,.6),
+  border-color:var(--st-dev-t);
+  box-shadow:0 0 0 1px var(--st-dev-t), 0 10px 22px -14px rgba(216,166,63,.6),
              inset 0 1px 0 var(--isik);
 }
 
@@ -6455,9 +6457,8 @@ a.asr:active{ transform:scale(.99); }
   border-radius:9px; font-size:11.5px; color:var(--ink-dim);
   background:var(--yuva); box-shadow:inset 0 0 0 1px var(--line-3);
 }
-.asr.bitti .asr-no, .asr.simdi .asr-no{
-  color:var(--st-done-t); box-shadow:inset 0 0 0 1px rgba(69,163,123,.35);
-}
+.asr.bitti .asr-no{ color:var(--st-done-t); box-shadow:inset 0 0 0 1px rgba(69,163,123,.35); }
+.asr.simdi .asr-no{ color:var(--st-dev-t); box-shadow:inset 0 0 0 1px rgba(216,166,63,.35); }
 
 .asr-ikon{
   flex:0 0 44px; width:44px; height:44px; border-radius:12px;
@@ -6471,7 +6472,8 @@ a.asr:active{ transform:scale(.99); }
   -webkit-mask-repeat:no-repeat; mask-repeat:no-repeat;
   -webkit-mask-position:center; mask-position:center;
 }
-.asr.bitti .asr-ikon-img, .asr.simdi .asr-ikon-img{ background-color:var(--st-done-t); }
+.asr.bitti .asr-ikon-img{ background-color:var(--st-done-t); }
+.asr.simdi .asr-ikon-img{ background-color:var(--st-dev-t); }
 
 .asr-yz{ flex:1 1 auto; min-width:0; }
 .asr-ad{
@@ -6496,7 +6498,7 @@ a.asr:active{ transform:scale(.99); }
   box-shadow:0 6px 14px -8px rgba(69,163,123,.6);
 }
 .asr.simdi .asr-durum{
-  background:transparent; box-shadow:0 0 0 2px var(--st-done-t);
+  background:transparent; box-shadow:0 0 0 2px var(--st-dev-t);
 }
 
 .asr-chev{ flex:0 0 auto; color:var(--ink-dim); }

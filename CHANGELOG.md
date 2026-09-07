@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.134.22
+- **Şimdiki durak yeşil değil sarı.** Aşama listesinde "şimdi burada" olan durak bitmemiş olduğu halde yeşil (bitti rengiyle aynı) görünüyordu. Studio'nun "Geliştiriliyor" durum rengiyle (sarı) eşleşti — yeşil artık yalnız gerçekten bitmiş duraklarda.
+
 ## v0.134.21
 - **Proje aşamaları ekranı dikey listeye döndü, ikonlar geldi.** Üçerli kare ızgara yerini tek sütunlu satır listesine bıraktı: solda numara + durağın kendi ikonu (`ikon/asama/` — building, kod, zincir, kutu, tüp, palet, roket, döngü), ortada ad + sabit açıklama, sağda durum (tik/boş halka/kilit) ve ok. İkonlar tek gri PNG olarak yükleniyor; rengi (gri kilitli, yeşil şimdiki/biten) CSS mask ile veriliyor — durum başına ayrı dosya gerekmiyor. Yüklenen PNG'ler kırpılıp 256px'e küçültüldü (2,3 MB → ~190 KB).
 
