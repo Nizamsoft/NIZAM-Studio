@@ -1172,19 +1172,27 @@ function programSayfasi(p, d) {
     + `</div>`;
 }
 
-/* 3 · Bağlantılar ve temel — depo, sohbet, adres, yayın + sabit iskelet onayı.
-   Dört kare eskiden "Kurulum ve yapı" durağının içinde bir pencereydi
-   (adimKurulum); artık kendi başına bir aşama, doğrudan sayfada — açıp
-   kapamaya gerek yok. Sabit iskelet (eski "Nizam kurulum paketi" durağı)
-   buraya katlandı: tanışma promptu Sohbet adımıyla zaten gidiyor, geriye
-   Claude'un kurduğunu işaretlemek kalıyor. */
+/* 3 · Bağlantılar ve temel — depo, sohbet, adres, yayın + (Supabase seçiliyse)
+   Supabase bağlantısı + sabit iskelet onayı. Dört kare eskiden "Kurulum ve
+   yapı" durağının içinde bir pencereydi (adimKurulum); artık kendi başına
+   bir aşama, doğrudan sayfada — açıp kapamaya gerek yok. Sabit iskelet
+   (eski "Nizam kurulum paketi" durağı) buraya katlandı: tanışma promptu
+   Sohbet adımıyla zaten gidiyor, geriye Claude'un kurduğunu işaretlemek
+   kalıyor. Supabase bağlantısı da buraya taşındı: Program temeli'nde yalnız
+   "Supabase mi Yerel mi" kararı veriliyor, gerçek adres+anon key burada. */
 function baglantilarSayfasi(p, d) {
   const pl = p.palet || {};
-  const biten = [!!p.repo, !!String(pl.sohbetAdi || '').trim(), !!pl.alanAdi, !!pl.yayinda,
-                 !!pl.kurulumKuruldu].filter(Boolean).length;
+  const sunuculu = sunuculuMu(p);
+  const supabaseTam = !!String(pl.supabaseUrl || '').trim() && !!String(pl.supabaseAnon || '').trim();
+
+  const biten = [!!p.repo, !!String(pl.sohbetAdi || '').trim(), !!pl.alanAdi, !!pl.yayinda]
+    .concat(sunuculu ? [supabaseTam] : [])
+    .concat([!!pl.kurulumKuruldu])
+    .filter(Boolean).length;
+  const toplam = sunuculu ? 6 : 5;
 
   return `<div class="fb-govde">`
-    + adimBasligi(p, d, biten + '/5')
+    + adimBasligi(p, d, biten + '/' + toplam)
     + kurulumAraclari(p)
     + `<div class="fb-kg tek" style="margin-top:11px">
         ${kunyeSatiri('#b8926b', ICON.dal,   'Kod deposu',
@@ -1193,17 +1201,45 @@ function baglantilarSayfasi(p, d) {
       </div>`
     + `<button class="promptu-gor" type="button" data-eylem="alan-kaydi" data-proje="${p.id}">
         Özel alan adı bağlamak istersen (Namecheap)</button>`
-    + kurulumPaketiKarti(p)
+    + (sunuculu ? supabaseBaglantiKarti(p, 5) : '')
+    + kurulumPaketiKarti(p, sunuculu ? 6 : 5)
     + `</div>`;
+}
+
+/* Supabase bağlantısı — Program temeli'nde "Supabase" seçilince görünür.
+   Karar orada, gerçek adres+anon key burada: "Bağlantılar" durağı zaten
+   projenin dış bağlantılarını topladığı yer. */
+function supabaseBaglantiKarti(p, no) {
+  const pl = p.palet || {};
+  const tam = !!String(pl.supabaseUrl || '').trim() && !!String(pl.supabaseAnon || '').trim();
+  return durakKarti(no, tam, 'Supabase bağlantısı',
+      'Program temeli\'nde veri katmanı olarak Supabase seçildi. Projeyi '
+      + '<a target="_blank" rel="noopener" href="https://supabase.com/dashboard/new">'
+      + 'supabase.com</a> üzerinden aç, adresini ve anon key\'ini buraya yaz.', `
+    <label class="field"><span>Proje adresi</span>
+      <input type="text" id="bl-sb-url" value="${esc(pl.supabaseUrl || '')}"
+             placeholder="https://xxxx.supabase.co" autocomplete="off"
+             spellcheck="false" autocapitalize="off"></label>
+    <label class="field"><span>anon key</span>
+      <input type="text" id="bl-sb-key" value="${esc(pl.supabaseAnon || '')}"
+             placeholder="sb_publishable_… ya da eyJhbG…" autocomplete="off"
+             spellcheck="false" autocapitalize="off"></label>
+    <div class="note uyari">${svg(ICON.uyari, 15)}
+      <span><b>service_role</b> anahtarını buraya yazma. anon key tarayıcıya zaten
+      iniyor, veriyi satır güvenliği (RLS) koruyor — o normal.</span></div>
+    <div class="kur-dug">
+      <button class="sayfa-dug" type="button" data-eylem="supabase-baglan"
+              data-proje="${p.id}">Kaydet</button>
+    </div>`);
 }
 
 /* Sabit iskelet onayı — tanışma promptu (Nizam Standardı + CLAUDE.md/NIZAM.md/
    nizam/ klasörü) Sohbet adımıyla zaten Claude'a gitti. Burada tek iş, Claude
    gerçekten kurunca bunu işaretlemek — Studio depoya bakamadığı için elle
    onay gerekiyor (SQL kurulumundaki gibi). */
-function kurulumPaketiKarti(p) {
+function kurulumPaketiKarti(p, no) {
   const pl = p.palet || {};
-  return durakKarti(5, !!pl.kurulumKuruldu, 'Sabit iskelet',
+  return durakKarti(no, !!pl.kurulumKuruldu, 'Sabit iskelet',
       'Tanışma promptu Sohbet adımıyla Claude\'a gitti. Claude '
       + '<b class="mono">CLAUDE.md</b>, <b class="mono">NIZAM.md</b> ve '
       + '<b class="mono">nizam/</b> klasörünü kurunca aşağıdan işaretle.', `
@@ -5300,8 +5336,8 @@ function sqlNasilAc(projeId) {
       'Claude SQL dosyasını yazdı; çalıştıran sensin. Claude Code senin '
       + 'Supabase\'ine bağlanamıyor.')}
     ${bagli ? '' : `<div class="note uyari">${svg(ICON.uyari, 15)}
-      <span><b>Supabase bağlantısı girilmemiş.</b> <b>Program temeli</b>
-      adımına proje adresini ve anon anahtarını yaz.</span></div>`}
+      <span><b>Supabase bağlantısı girilmemiş.</b> <b>Bağlantılar ve temel</b>
+      durağına proje adresini ve anon anahtarını yaz.</span></div>`}
     <div class="adm-l">
       ${adim(1, '<b>SQL dosyasını aç</b> — düz metin olarak açılır. '
         + 'Metne <b>uzun bas</b> → <b>Tümünü Seç</b> → <b>Kopyala</b>.')}
@@ -5510,10 +5546,14 @@ function projeDuraklari(p) {
     },
     {
       /* Eski "Nizam kurulum paketi" durağı buraya katlandı: dört karenin
-         yanına beşinci şart olarak sabit iskelet onayı eklendi. */
+         yanına sabit iskelet onayı eklendi. Supabase seçiliyse gerçek
+         bağlantı (adres+anon key) de burada — karar Program temeli'nde,
+         bağlantı burada. */
       ad: 'Bağlantılar ve temel',
       bitti: !!p.repo && !!String(pl0.sohbetAdi || '').trim()
-             && !!pl0.alanAdi && !!pl0.yayinda && !!pl0.kurulumKuruldu,
+             && !!pl0.alanAdi && !!pl0.yayinda && !!pl0.kurulumKuruldu
+             && (!sunuculuMu(p) || (!!String(pl0.supabaseUrl || '').trim()
+                                     && !!String(pl0.supabaseAnon || '').trim())),
       ozet: !p.repo
         ? 'Depo, sohbet, adres ve yayın burada kurulacak.'
         : !pl0.yayinda
@@ -7110,7 +7150,7 @@ async function sihirbazKaydet() {
 
 const PROGRAM_ADIM = {
   adim: 1, projeId: null,
-  modulAdi: '', veriKatmani: '', supabaseUrl: '', supabaseAnon: '',
+  modulAdi: '', veriKatmani: '',
   roller: ['Personel', 'Yönetici'],
   kaydediyor: false,
 };
@@ -7127,8 +7167,6 @@ function programDuzenleAc(projeId) {
     adim: 1, projeId,
     modulAdi: pl.modulAdi || '',
     veriKatmani: pl.veriKatmani || varsayilan,
-    supabaseUrl: pl.supabaseUrl || '',
-    supabaseAnon: pl.supabaseAnon || '',
     roller: rolListesi(pl.roller).length ? rolListesi(pl.roller) : ['Personel', 'Yönetici'],
     kaydediyor: false,
   });
@@ -7202,7 +7240,9 @@ function programAdim2() {
     + 'gördüğü her şeyi görür.') + rolMerdiveni(PROGRAM_ADIM.roller, 'pa');
 }
 
-/* 3 · Veriler nerede — Supabase seçiliyse bağlantı bilgileri de burada. */
+/* 3 · Veriler nerede — yalnız karar. Supabase seçilirse gerçek bağlantı
+   (adres+anon key) Bağlantılar ve temel durağında giriliyor; ikisini aynı
+   yerde sormak "Bağlantılar" durağının işini burada tekrarlamak olurdu. */
 function programAdim3() {
   const alan = TEKNIK_ALAN.find(x => x.anahtar === 'veriKatmani') || {};
   const sunuculu = PROGRAM_ADIM.veriKatmani !== 'Yerel tarayıcı';
@@ -7211,35 +7251,15 @@ function programAdim3() {
       ${(alan.secim || []).map(x => `<button class="fbd-cp ${PROGRAM_ADIM.veriKatmani === x ? 'on' : ''}"
         type="button" data-pa="veri" data-deger="${esc(x)}">${esc(x)}</button>`).join('')}
     </div>
-    ${sunuculu ? `
-      <div class="kur-dug">
-        <a class="sayfa-dug ikincil" target="_blank" rel="noopener"
-           href="https://supabase.com/dashboard/new">${svg(ICON.disari, 15)} Supabase'de proje aç</a>
-      </div>
-      <label class="field">
-        <span>Proje adresi</span>
-        <input type="text" id="pa-sb-url" value="${esc(PROGRAM_ADIM.supabaseUrl)}"
-               placeholder="https://xxxx.supabase.co" autocomplete="off"
-               spellcheck="false" autocapitalize="off">
-      </label>
-      <label class="field">
-        <span>anon key</span>
-        <input type="text" id="pa-sb-key" value="${esc(PROGRAM_ADIM.supabaseAnon)}"
-               placeholder="sb_publishable_… ya da eyJhbG…" autocomplete="off"
-               spellcheck="false" autocapitalize="off">
-      </label>
-      <div class="note uyari">${svg(ICON.uyari, 15)}
-        <span><b>service_role</b> anahtarını buraya yazma. anon key tarayıcıya zaten
-        iniyor, veriyi satır güvenliği (RLS) koruyor — o normal.</span></div>` : ''}`;
+    ${sunuculu ? `<p class="ipucu">Supabase bağlantısını (proje adresi, anon key)
+      bir sonraki durakta — <b>Bağlantılar ve temel</b>'de — gireceksin.</p>` : ''}`;
 }
 
 function programAdimBagla(kutu) {
   const yaz = () => {
     const al = id => { const e = $('#' + id, kutu); return e ? e.value : null; };
-    if (al('pa-modul')  !== null) PROGRAM_ADIM.modulAdi     = al('pa-modul');
-    if (al('pa-sb-url') !== null) PROGRAM_ADIM.supabaseUrl  = al('pa-sb-url');
-    if (al('pa-sb-key') !== null) PROGRAM_ADIM.supabaseAnon = al('pa-sb-key');
-    if ($('.rol-kat', kutu))      PROGRAM_ADIM.roller       = rolOku(kutu);
+    if (al('pa-modul') !== null) PROGRAM_ADIM.modulAdi = al('pa-modul');
+    if ($('.rol-kat', kutu))     PROGRAM_ADIM.roller   = rolOku(kutu);
   };
 
   rolBagla(kutu);
@@ -7292,12 +7312,12 @@ async function programAdimKaydet() {
     const palet = Object.assign({}, (guncel && guncel.palet) || {});
     palet.modulAdi = PROGRAM_ADIM.modulAdi.trim();
     palet.veriKatmani = PROGRAM_ADIM.veriKatmani;
+    /* Yerel'e dönülünce eski Supabase bağlantısı da anlamsızlaşıyor —
+       kararı burada değiştirdik, kalıntı bağlantıyı da burada temizliyoruz.
+       Supabase seçilirse bağlantı Bağlantılar ve temel durağında giriliyor. */
     if (PROGRAM_ADIM.veriKatmani === 'Yerel tarayıcı') {
       delete palet.supabaseUrl;
       delete palet.supabaseAnon;
-    } else {
-      if (PROGRAM_ADIM.supabaseUrl.trim())  palet.supabaseUrl  = PROGRAM_ADIM.supabaseUrl.trim();  else delete palet.supabaseUrl;
-      if (PROGRAM_ADIM.supabaseAnon.trim()) palet.supabaseAnon = PROGRAM_ADIM.supabaseAnon.trim(); else delete palet.supabaseAnon;
     }
     palet.roller = PROGRAM_ADIM.roller;
 
@@ -8417,13 +8437,12 @@ function sohbetYonlendir(p) {
   });
 }
 
-/* Yer yarısı bitti mi: paket adı, veri katmanı ve (sunuculuysa) Supabase
-   bağlantısı. Adres burada yok — o "Kurulum" karelerinin işi. */
+/* Program temeli yarısı bitti mi: paket adı ve veri katmanı kararı.
+   Supabase'in gerçek bağlantısı (adres+anon key) artık Bağlantılar ve
+   temel durağının işi — karar burada, bağlantı orada. */
 function yerDolu(p) {
   const pl = p.palet || {};
-  return !!pl.modulAdi && !!pl.veriKatmani
-    && (!sunuculuMu(p)
-        || (!!String(pl.supabaseUrl || '').trim() && !!String(pl.supabaseAnon || '').trim()));
+  return !!pl.modulAdi && !!pl.veriKatmani;
 }
 
 /* Takvim şeridinin kendi küçük penceresi. */
@@ -10181,6 +10200,18 @@ async function eylemCalistir(el) {
     return isYap(() => DB.paletKaydet(pr.id,
       Object.assign({}, pl, { kurulumKuruldu: !pl.kurulumKuruldu })),
       pl.kurulumKuruldu ? 'İşaret kaldırıldı.' : 'Sabit iskelet kuruldu olarak işaretlendi.');
+  }
+
+  if (e === 'supabase-baglan') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const url = ($('#bl-sb-url') || {}).value || '';
+    const key = ($('#bl-sb-key') || {}).value || '';
+    if (!url.trim() || !key.trim()) return toast('İkisini de yaz.', 'uyari');
+    const pl = pr.palet || {};
+    return isYap(() => DB.paletKaydet(pr.id,
+      Object.assign({}, pl, { supabaseUrl: url.trim(), supabaseAnon: key.trim() })),
+      'Supabase bağlantısı kaydedildi.');
   }
 
   if (e === 'gelistirme-gerek-yok') {

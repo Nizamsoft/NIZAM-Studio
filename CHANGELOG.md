@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.134.26
+- **Supabase bağlantısı Program temeli'nden Bağlantılar ve temel'e taşındı.** Program temeli artık yalnız kararı soruyor: Supabase mi, Yerel tarayıcı mı. Supabase seçilirse gerçek bağlantı (proje adresi + anon key) "Bağlantılar ve temel" durağında, diğer bağlantılarla (depo/sohbet/adres/yayın/sabit iskelet) yan yana giriliyor — Yerel seçilirse hiç sorulmuyor.
+
 ## v0.134.25
 - **"Firma bilgileri" durağına Düzenle'yle girince artık aynı sihirbaz ekranı açılıyor.** Eskiden proje kurulurken tam ekran adımlı sihirbaz kullanılıyordu ama sonradan düzenlemek istediğinde eski tek pencereli modal açılıyordu — tutarsızdı. Artık ikisi de aynı ekran: tek fark, son düğme "Projeyi Tamamla" yerine "Kaydet" ve proje yeniden kurulmuyor, güncelleniyor.
 - **"Program temeli" durağı da aynı tam ekran adımlı akışa geçti.** Program adı → Kim kullanacak → Veriler nerede, üç ayrı ekran, aynı sihirbaz dili (numaralı adım göstergesi, İleri/Geri). Eski tek pencereli modal kaldırıldı.
