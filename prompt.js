@@ -1777,8 +1777,8 @@ const PROMPT = {
     s.push('  Kontrolde, Tamamlandı.');
     s.push('');
 
-    s.push('Bittiğinde Studio\'yu güncelleyip her programın Geliştirme durağında');
-    s.push('bu standardı göreceğim; oradan tek tek uygulatacağım.');
+    s.push('Bittiğinde Studio\'yu güncelleyip her programın Beta ve geliştirme');
+    s.push('durağında bu standardı göreceğim; oradan tek tek uygulatacağım.');
 
     return s.join('\n');
   },

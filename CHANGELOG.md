@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.134.20
+- **Aşama sayısı 10'dan 8'e indi.** "Nizam kurulum paketi" (sabit iskelet onayı) "Bağlantılar ve temel" durağının içine katlandı; "Geliştirme" (görev/kontrol sistemi) "Beta" durağının içine katlandı ve durak "Beta ve geliştirme" oldu — kontroller artık orada yapılıyor. "Tasarımı belirleme" → "Profesyonel tasarım", eski "Güncellemeler" → "Geliştirme" olarak yeniden adlandırıldı. Yeni sıra: Firma bilgileri · Program temeli · Bağlantılar ve temel · Kurulum ve yapı · Beta ve geliştirme · Profesyonel tasarım · Final · Geliştirme. Ayrıca "Beta" sayfasındaki ve SQL kurulum penceresindeki birkaç eski durak adı referansı (kaldırılan "Kurulum ve yapı → Nereye kuralım?" gibi) güncel adlarla değiştirildi.
+
 ## v0.134.19
 - **"Bağlantılar"daki Adres kartı Namecheap'i zorunlu kılıyordu.** Kart, kök alan adı Ayarlar'da tanımlı değilse hata verip Namecheap kaydı açtırıyordu — sadece GitHub Pages'in verdiği `...github.io/ProjeAdi` adresiyle devam etmek isteyenler için yol yoktu. Artık tek soru: adres, varsayılan olarak github.io önerisiyle geliyor, tek Kaydet'le bitiyor. Özel alan adı isteyenler için Namecheap kaydı altta isteğe bağlı bir düğmeye taşındı.
 

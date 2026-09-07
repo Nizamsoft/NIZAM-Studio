@@ -779,32 +779,31 @@ function logolariGoster() {
 /* Proje içindeki durak dizisi. Adres, ad ve içeriği tek yerde tanımlı.
    Sıra önemli: projeDuraklari() dizisi bununla indeks indeks eşleşiyor.
 
-   program/baglantilar/kurulumpaketi eskiden "Kurulum ve yapı" durağının
-   içindeydi (paket adı+roller+veri katmanı, depo/sohbet/adres/yayın, sabit
-   iskelet); tek karar oldukları için ayrı duraklara taşındı. */
+   8 durak: program eskiden "Kurulum ve yapı"nın içindeydi (paket adı+roller+
+   veri katmanı), ayrı durağa taşındı. Bağlantılar, eski "Nizam kurulum
+   paketi"ni (sabit iskelet onayı) içine aldı. Beta, eski "Geliştirme"yi
+   (görev/kontrol sistemi) içine aldı — kontroller artık beta aşamasında. */
 const DURAKLAR = {
   /* Aşamalar konuşulan yere göre bölündü: 1'i müşteriyle konuşarak
      dolduruyorsun (marka, iletişim, sektör, logo), 2'yi klavye başında
      (ürün, roller, depo, modüller). İkisi karışıkken hangi kafayla
      oturulacağı belli olmuyordu. */
-  firma:      { no: 1, ad: 'Firma bilgileri',    ciz: firmaSayfasi,
-                renk: '#c4a05c', ikon: 'etiket' },
-  program:        { no: 2, ad: 'Program temeli',        ciz: programSayfasi },
-  baglantilar:    { no: 3, ad: 'Bağlantılar',           ciz: baglantilarSayfasi },
-  kurulumpaketi:  { no: 4, ad: 'Nizam kurulum paketi',  ciz: kurulumPaketiSayfasi },
+  firma:       { no: 1, ad: 'Firma bilgileri',       ciz: firmaSayfasi,
+                 renk: '#c4a05c', ikon: 'etiket' },
+  program:     { no: 2, ad: 'Program temeli',        ciz: programSayfasi },
+  baglantilar: { no: 3, ad: 'Bağlantılar ve temel',  ciz: baglantilarSayfasi },
   /* Yapı tasarımdan önce: ChatGPT ekranları çizerken hangi modüllerin ve
      sayfaların olduğunu bilmeli. Bilmezse altı genel ekran çiziyor; künye
      elindeyken gerçek modülleri, gerçek alanları ve o işe ait simgeleri
      çiziyor. Bağımlılık bu yönde. */
-  yapi:       { no: 5, ad: 'Kurulum ve yapı',    ciz: yapiSayfasi,
-                renk: '#8fae4a', ikon: 'gAltyapi' },
-  tasarim:    { no: 6, ad: 'Tasarımı belirleme', ciz: tasarimSayfasi,
-                renk: '#5f86c4', ikon: 'gTasarim' },
-  beta:       { no: 7, ad: 'Beta',               ciz: betaSayfasi,
-                renk: '#c9753c', ikon: 'gOptimizasyon' },
-  gelistirme: { no: 8, ad: 'Geliştirme',         ciz: gelistirmeSayfasi },
-  final:      { no: 9, ad: 'Final',              ciz: finalSayfasi },
-  guncelleme: { no: 10, ad: 'Güncellemeler',     ciz: guncellemeSayfasi },
+  yapi:        { no: 4, ad: 'Kurulum ve yapı',       ciz: yapiSayfasi,
+                 renk: '#8fae4a', ikon: 'gAltyapi' },
+  beta:        { no: 5, ad: 'Beta ve geliştirme',    ciz: betaSayfasi,
+                 renk: '#c9753c', ikon: 'gOptimizasyon' },
+  tasarim:     { no: 6, ad: 'Profesyonel tasarım',   ciz: tasarimSayfasi,
+                 renk: '#5f86c4', ikon: 'gTasarim' },
+  final:       { no: 7, ad: 'Final',                 ciz: finalSayfasi },
+  guncelleme:  { no: 8, ad: 'Geliştirme',            ciz: guncellemeSayfasi },
 };
 
 /* Henüz içi kurulmamış aşamalar için geçici sayfa — yalnız akışta yerini
@@ -1165,16 +1164,19 @@ function programSayfasi(p, d) {
     + `</div>`;
 }
 
-/* 3 · Bağlantılar — depo, sohbet, adres, yayın. Aynı dört kare eskiden
-   "Kurulum ve yapı" durağının içinde bir pencereydi (adimKurulum); artık
-   kendi başına bir aşama, doğrudan sayfada — açıp kapamaya gerek yok. */
+/* 3 · Bağlantılar ve temel — depo, sohbet, adres, yayın + sabit iskelet onayı.
+   Dört kare eskiden "Kurulum ve yapı" durağının içinde bir pencereydi
+   (adimKurulum); artık kendi başına bir aşama, doğrudan sayfada — açıp
+   kapamaya gerek yok. Sabit iskelet (eski "Nizam kurulum paketi" durağı)
+   buraya katlandı: tanışma promptu Sohbet adımıyla zaten gidiyor, geriye
+   Claude'un kurduğunu işaretlemek kalıyor. */
 function baglantilarSayfasi(p, d) {
   const pl = p.palet || {};
-  const biten = [!!p.repo, !!String(pl.sohbetAdi || '').trim(), !!pl.alanAdi, !!pl.yayinda]
-    .filter(Boolean).length;
+  const biten = [!!p.repo, !!String(pl.sohbetAdi || '').trim(), !!pl.alanAdi, !!pl.yayinda,
+                 !!pl.kurulumKuruldu].filter(Boolean).length;
 
   return `<div class="fb-govde">`
-    + adimBasligi(p, d, biten + '/4')
+    + adimBasligi(p, d, biten + '/5')
     + kurulumAraclari(p)
     + `<div class="fb-kg tek" style="margin-top:11px">
         ${kunyeSatiri('#b8926b', ICON.dal,   'Kod deposu',
@@ -1183,26 +1185,23 @@ function baglantilarSayfasi(p, d) {
       </div>`
     + `<button class="promptu-gor" type="button" data-eylem="alan-kaydi" data-proje="${p.id}">
         Özel alan adı bağlamak istersen (Namecheap)</button>`
+    + kurulumPaketiKarti(p)
     + `</div>`;
 }
 
-/* 4 · Nizam kurulum paketi — sabit iskelet. Prompt zaten gitti: Bağlantılar'daki
-   "Sohbet" adımı bitmeden bu durağa gelinmiyor, o adım tanışma promptunu
-   (Nizam Standardı + CLAUDE.md/NIZAM.md/nizam/ klasörü) zaten Claude'a
-   kopyalattı. Burada tek iş, Claude gerçekten kurunca bunu işaretlemek —
-   Studio depoya bakamadığı için elle onay gerekiyor (SQL kurulumundaki gibi). */
-function kurulumPaketiSayfasi(p, d) {
+/* Sabit iskelet onayı — tanışma promptu (Nizam Standardı + CLAUDE.md/NIZAM.md/
+   nizam/ klasörü) Sohbet adımıyla zaten Claude'a gitti. Burada tek iş, Claude
+   gerçekten kurunca bunu işaretlemek — Studio depoya bakamadığı için elle
+   onay gerekiyor (SQL kurulumundaki gibi). */
+function kurulumPaketiKarti(p) {
   const pl = p.palet || {};
-
-  return sayfaHero(p, d)
-    + durakKarti(1, !!pl.kurulumKuruldu, 'Sabit iskelet',
-        'Tanışma promptu <b>Bağlantılar</b> durağındaki Sohbet adımıyla '
-        + 'Claude\'a gitti. Claude <b class="mono">CLAUDE.md</b>, '
-        + '<b class="mono">NIZAM.md</b> ve <b class="mono">nizam/</b> '
-        + 'klasörünü kurunca aşağıdan işaretle.', `
-      <label class="kur-onay ${pl.kurulumKuruldu ? 'on' : ''}" data-eylem="kurulum-paketi-onay"
-             data-proje="${p.id}" role="button" tabindex="0">
-        <span class="kur-kutu">${svg(ICON.tik, 12)}</span> Kuruldu</label>`);
+  return durakKarti(5, !!pl.kurulumKuruldu, 'Sabit iskelet',
+      'Tanışma promptu Sohbet adımıyla Claude\'a gitti. Claude '
+      + '<b class="mono">CLAUDE.md</b>, <b class="mono">NIZAM.md</b> ve '
+      + '<b class="mono">nizam/</b> klasörünü kurunca aşağıdan işaretle.', `
+    <label class="kur-onay ${pl.kurulumKuruldu ? 'on' : ''}" data-eylem="kurulum-paketi-onay"
+           data-proje="${p.id}" role="button" tabindex="0">
+      <span class="kur-kutu">${svg(ICON.tik, 12)}</span> Kuruldu</label>`);
 }
 
 /* ---------- Rol merdiveni ----------
@@ -1275,7 +1274,7 @@ function rolOku(kutu) {
     .filter(Boolean);
 }
 
-/* 3 · Tasarımı belirleme */
+/* 6 · Profesyonel tasarım */
 /* Adım durumu proje başına hatırlanır: geri gelince kaldığın yerde açılır. */
 const TASARIM_YER = {};
 
@@ -3708,8 +3707,8 @@ function tasarimOnizleme(alan, ad) {
   return `<span class="on-sm sm-${sinif}">${yol}</span>`;
 }
 
-/* 2 · Yapıyı kurma */
-/* 2 · Kurulum ve yapı — klavye başında doldurulan taraf.
+/* 4 · Yapıyı kurma */
+/* 4 · Kurulum ve yapı — klavye başında doldurulan taraf.
    Beş adım, kurulum sırasına dizili. Boş adım şeritte küçük kart; dolan adım
    bilgileri anlatan tam genişlikte karta dönüşüyor ve yukarı geçiyor. Böylece
    üst taraf "yapılanlar", alt taraf "yapılacaklar" oluyor.
@@ -4772,80 +4771,6 @@ function yapiIleriTazele(pr) {
   if (alt) alt.textContent = dalOzeti(k, t.dal);
 }
 
-/* 5 · Geliştirme — iki ayrı yön.
-   Beta çıktıktan sonra gelen istekler iki türlü olur: yalnız bu programı
-   ilgilendiren iş (görev açılır) ve "bütün programlarda böyle olsun" isteği
-   (Studio'nun standardına girer, oradan her programa yayılır).
-   Üçüncü kart o yayılımın bu programa düşen ucudur. */
-function gelistirmeSayfasi(p, d) {
-  const s = DB.sayim(p.id);
-  const pl = p.palet || {};
-  const gorevler = DB.gorevleri({ proje: p.id });
-  const dev  = gorevler.filter(g => g.durum === 'gelistiriliyor').length;
-  const kont = gorevler.filter(g => g.durum === 'kontrolde').length;
-  const yeniStd = yeniStandartlar(p.palet);
-
-  return sayfaHero(p, d) + `
-    <div class="ikili">
-      <div class="tkutu"><span class="ik">${svg(ICON.kalem, 14)}</span><b>Geliştiriliyor</b>
-        <u style="color:var(--st-dev-t)">${dev}</u></div>
-      <div class="tkutu"><span class="ik">${svg(ICON.check, 14)}</span><b>Kontrolde</b>
-        <u style="color:var(--st-check-t)">${kont}</u></div>
-    </div>
-
-    <div class="takvim" style="${renkDegiskenleri(p.renk)}">
-      <div class="tk-ust"><b>${s.bitmis}/${s.gorev} görev bitti</b><em>%${s.yuzde}</em></div>
-      <div class="ray"><i style="width:${s.yuzde}%"></i><b style="left:${s.yuzde}%"></b></div>
-    </div>`
-
-    + (yeniStd.length ? durakKarti('!', false,
-        yeniStd.length > 1 ? `${yeniStd.length} yeni standart` : 'Yeni standart',
-        'Bu program kurulduktan sonra Nizam standardına eklendi. Promptu ver, '
-        + 'Claude önce <b class="mono">NIZAM.md</b>\'yi sonra kodu güncellesin.', `
-      <div class="std-liste">
-        ${yeniStd.map(st => `
-          <div class="std-satir"><b>${esc(st.alan)}</b><span>${esc(st.ad)}</span></div>`).join('')}
-      </div>
-      <div class="kur-dug">
-        ${promptBaglantisi({ tur: 'standart', proje: p.id, slug: depoSlug(p.repo),
-          yazi: 'Kopyala ve Claude Code\'da aç' })}
-      </div>
-      <button class="promptu-gor" type="button" data-eylem="standart-goruldu"
-              data-proje="${p.id}">Bu programda gerekmiyor, gördüm</button>`) : '')
-
-    + durakKarti(1, false, 'Bütün programlarda olsun',
-        'Gördüğün eksik yalnız bu programın değilse — "hiçbir uygulamada '
-        + 'yakınlaştırma olmasın" gibi — buradan söyle. İstek Studio\'nun teknik '
-        + 'standardına girer, bundan sonraki her program onunla doğar; '
-        + 'mevcut programlar da bu durakta haberi alır.', `
-      <div class="kur-dug">
-        <button class="sayfa-dug ikincil" type="button" data-eylem="studio-istek">
-          ${svg(ICON.kalem, 15)} Studio geliştirmesi yaz</button>
-      </div>
-      <div class="kur-deger duz">${svg(ICON.katman, 13)} Hedef depo <b class="mono">${esc(APP.depo)}</b></div>`)
-
-    + durakKarti(2, s.gorev > 0 || !!pl.gelistirmeGerekYok, 'Yalnız bu programda olsun',
-        'Betayı denerken gördüğün eksikler. Her biri bir görev; görevden '
-        + `<b class="mono">[${TASK_PREFIX}-x]</b> etiketli prompt çıkar.`, `
-      <div class="kur-dug">
-        <button class="sayfa-dug ${yeniStd.length ? 'ikincil' : ''}" type="button"
-                data-eylem="gorev-ekle" data-proje="${p.id}">
-          ${svg(ICON.arti, 15)} Görev ekle</button>
-      </div>`
-      /* Görev açılınca bu seçenek anlamsızlaşıyor: gizlemek yerine kaldırıp
-         gösterme yeter, altta kalan görev listesi zaten devam ediyor. */
-      + (s.gorev === 0 ? `
-      <label class="kur-onay ${pl.gelistirmeGerekYok ? 'on' : ''}" data-eylem="gelistirme-gerek-yok"
-             data-proje="${p.id}" role="button" tabindex="0">
-        <span class="kur-kutu">${svg(ICON.tik, 12)}</span> Geliştirmeye ihtiyaç yok</label>` : ''))
-
-    + bolumBas('Açık işler')
-    + (gorevler.length
-        ? `<div class="card liste">${gorevler.slice(0, 12).map(gorevKarti).join('')}</div>`
-        : `<div class="bos-kutu">${svg(ICON.check, 18)}
-            <span>Henüz görev yok. Yukarıdaki <b>Görev ekle</b> ile aç ya da
-            Yapı durağında sayfadan başla.</span></div>`);
-}
 
 /* Yeni sekmede aç. Üçüncü argüman (windowFeatures) verilirse Safari bunu
    "popup pencere" talebi sayıp engelliyor; _blank zaten noopener demek.
@@ -5050,7 +4975,12 @@ function durakKarti(no, bitti, ad, aciklama, govde, rozet) {
     </div>`;
 }
 
-/* 4 · Beta — ilk çalışan sürüm. Son blok gider, Claude kurar, sen denersin. */
+/* 5 · Beta ve geliştirme — ilk çalışan sürüm, sonra kontroller.
+   Son blok gider, Claude kurar, sen denersin; beta çıktıktan sonra gelen
+   istekler iki türlü olur: yalnız bu programı ilgilendiren iş (görev açılır)
+   ve "bütün programlarda böyle olsun" isteği (Studio'nun standardına girer,
+   oradan her programa yayılır). Eski "Geliştirme" durağı buraya katlandı —
+   kontroller artık beta aşamasında. */
 function betaSayfasi(p, d) {
   const pl = p.palet || {};
   const kunyeVar = Object.keys(pl.kunye || {}).length > 0;
@@ -5084,6 +5014,12 @@ function betaSayfasi(p, d) {
   const bitenSay = adimlar.filter(a => a.bitti).length;
   const kart = i => kurulumAdimi(p, adimlar[i], i === simdi);
 
+  const s = DB.sayim(p.id);
+  const gorevler = DB.gorevleri({ proje: p.id });
+  const dev  = gorevler.filter(g => g.durum === 'gelistiriliyor').length;
+  const kont = gorevler.filter(g => g.durum === 'kontrolde').length;
+  const yeniStd = yeniStandartlar(p.palet);
+
   return `<div class="fb-govde">`
     + adimBasligi(p, d, bitenSay + '/' + adimlar.length)
     + (yayin ? `
@@ -5091,14 +5027,75 @@ function betaSayfasi(p, d) {
         <b class="mono"><a target="_blank" rel="noopener"
           href="https://${esc(yayin)}">${esc(yayin)}</a></b></div>` : `
       <div class="bos-kutu">${svg(ICON.bulut, 18)}
-        <span>Yayın adresi yok. <b>Kurulum ve yapı</b> durağındaki
+        <span>Yayın adresi yok. <b>Bağlantılar ve temel</b> durağındaki
         <b>Yayın</b> adımını tamamla.</span></div>`)
     + `<div class="ya-harita">
         <div class="ya-satir">${[0, 1, 2].map(kart).join('')}</div>
         ${yolOku(adimlar[2].bitti)}
         <div class="ya-satir">${[3].map(kart).join('')}</div>
       </div>`
-    + `</div>`;
+
+    + bolumBas('Geliştirme')
+    + `<div class="ikili">
+      <div class="tkutu"><span class="ik">${svg(ICON.kalem, 14)}</span><b>Geliştiriliyor</b>
+        <u style="color:var(--st-dev-t)">${dev}</u></div>
+      <div class="tkutu"><span class="ik">${svg(ICON.check, 14)}</span><b>Kontrolde</b>
+        <u style="color:var(--st-check-t)">${kont}</u></div>
+    </div>
+
+    <div class="takvim" style="${renkDegiskenleri(p.renk)}">
+      <div class="tk-ust"><b>${s.bitmis}/${s.gorev} görev bitti</b><em>%${s.yuzde}</em></div>
+      <div class="ray"><i style="width:${s.yuzde}%"></i><b style="left:${s.yuzde}%"></b></div>
+    </div>
+
+    ${yeniStd.length ? durakKarti('!', false,
+        yeniStd.length > 1 ? `${yeniStd.length} yeni standart` : 'Yeni standart',
+        'Bu program kurulduktan sonra Nizam standardına eklendi. Promptu ver, '
+        + 'Claude önce <b class="mono">NIZAM.md</b>\'yi sonra kodu güncellesin.', `
+      <div class="std-liste">
+        ${yeniStd.map(st => `
+          <div class="std-satir"><b>${esc(st.alan)}</b><span>${esc(st.ad)}</span></div>`).join('')}
+      </div>
+      <div class="kur-dug">
+        ${promptBaglantisi({ tur: 'standart', proje: p.id, slug: depoSlug(p.repo),
+          yazi: 'Kopyala ve Claude Code\'da aç' })}
+      </div>
+      <button class="promptu-gor" type="button" data-eylem="standart-goruldu"
+              data-proje="${p.id}">Bu programda gerekmiyor, gördüm</button>`) : ''}
+
+    ${durakKarti(1, false, 'Bütün programlarda olsun',
+        'Gördüğün eksik yalnız bu programın değilse — "hiçbir uygulamada '
+        + 'yakınlaştırma olmasın" gibi — buradan söyle. İstek Studio\'nun teknik '
+        + 'standardına girer, bundan sonraki her program onunla doğar; '
+        + 'mevcut programlar da bu durakta haberi alır.', `
+      <div class="kur-dug">
+        <button class="sayfa-dug ikincil" type="button" data-eylem="studio-istek">
+          ${svg(ICON.kalem, 15)} Studio geliştirmesi yaz</button>
+      </div>
+      <div class="kur-deger duz">${svg(ICON.katman, 13)} Hedef depo <b class="mono">${esc(APP.depo)}</b></div>`)}
+
+    ${durakKarti(2, s.gorev > 0 || !!pl.gelistirmeGerekYok, 'Yalnız bu programda olsun',
+        'Betayı denerken gördüğün eksikler. Her biri bir görev; görevden '
+        + `<b class="mono">[${TASK_PREFIX}-x]</b> etiketli prompt çıkar.`, `
+      <div class="kur-dug">
+        <button class="sayfa-dug ${yeniStd.length ? 'ikincil' : ''}" type="button"
+                data-eylem="gorev-ekle" data-proje="${p.id}">
+          ${svg(ICON.arti, 15)} Görev ekle</button>
+      </div>`
+      /* Görev açılınca bu seçenek anlamsızlaşıyor: gizlemek yerine kaldırıp
+         gösterme yeter, altta kalan görev listesi zaten devam ediyor. */
+      + (s.gorev === 0 ? `
+      <label class="kur-onay ${pl.gelistirmeGerekYok ? 'on' : ''}" data-eylem="gelistirme-gerek-yok"
+             data-proje="${p.id}" role="button" tabindex="0">
+        <span class="kur-kutu">${svg(ICON.tik, 12)}</span> Geliştirmeye ihtiyaç yok</label>` : ''))}
+
+    ${bolumBas('Açık işler')}
+    ${gorevler.length
+        ? `<div class="card liste">${gorevler.slice(0, 12).map(gorevKarti).join('')}</div>`
+        : `<div class="bos-kutu">${svg(ICON.check, 18)}
+            <span>Henüz görev yok. Yukarıdaki <b>Görev ekle</b> ile aç ya da
+            Yapı durağında sayfadan başla.</span></div>`}
+    </div>`;
 }
 
 /* Adanın içi: beş aşama, kilitli zincir. Kurulum sayfasındaki ızgaranın
@@ -5295,8 +5292,8 @@ function sqlNasilAc(projeId) {
       'Claude SQL dosyasını yazdı; çalıştıran sensin. Claude Code senin '
       + 'Supabase\'ine bağlanamıyor.')}
     ${bagli ? '' : `<div class="note uyari">${svg(ICON.uyari, 15)}
-      <span><b>Supabase bağlantısı girilmemiş.</b> <b>Kurulum ve yapı →
-      Nereye kuralım?</b> adımına proje adresini ve anon anahtarını yaz.</span></div>`}
+      <span><b>Supabase bağlantısı girilmemiş.</b> <b>Program temeli</b>
+      adımına proje adresini ve anon anahtarını yaz.</span></div>`}
     <div class="adm-l">
       ${adim(1, '<b>SQL dosyasını aç</b> — düz metin olarak açılır. '
         + 'Metne <b>uzun bas</b> → <b>Tümünü Seç</b> → <b>Kopyala</b>.')}
@@ -5374,7 +5371,7 @@ function asamaAc(projeId, i) {
   });
 }
 
-/* 6 · Final — görevler bitti, teslim. */
+/* 7 · Final — görevler bitti, teslim. */
 function finalSayfasi(p, d) {
   const pl = p.palet || {};
   const verildi = !!pl.finalVerildi;
@@ -5390,18 +5387,18 @@ function finalSayfasi(p, d) {
         hazir || verildi
           ? (s.gorev > 0 ? 'Bütün görevler bitti.' : 'Geliştirmeye ihtiyaç yoktu.')
             + ' Son bir kez dene, sonra müşteriye teslim et.'
-          : '<b class="eksik">Önce açık görevleri bitir.</b> Final, geliştirme '
-            + 'durağındaki bütün görevler tamamlandığında verilir.', `
+          : '<b class="eksik">Önce açık görevleri bitir.</b> Final, <b>Beta ve '
+            + 'geliştirme</b> durağındaki bütün görevler tamamlandığında verilir.', `
       <label class="kur-onay ${verildi ? 'on' : ''} ${hazir || verildi ? '' : 'pasif'}"
              ${hazir || verildi ? `data-eylem="final-onay" data-proje="${p.id}"
              role="button" tabindex="0"` : ''}>
         <span class="kur-kutu">${svg(ICON.tik, 12)}</span> Final sürüm verildi</label>`)
 
     + `<div class="note note-kucuk">${svg(ICON.info, 15)}
-        <span>Finalden sonra gelen istekler <b>Güncellemeler</b> durağında yürür.</span></div>`;
+        <span>Finalden sonra gelen istekler <b>Geliştirme</b> durağında yürür.</span></div>`;
 }
 
-/* 7 · Güncellemeler — proje yaşadıkça açık kalan durak. */
+/* 8 · Geliştirme (eski Güncellemeler) — proje yaşadıkça açık kalan durak. */
 function guncellemeSayfasi(p, d) {
   const gorevler = DB.gorevleri({ proje: p.id }).filter(g => g.durum !== 'tamamlandi');
 
@@ -5504,19 +5501,18 @@ function projeDuraklari(p) {
         : 'Bu paketin adı, kim kullanacak, verisi nerede duracak?',
     },
     {
-      ad: 'Bağlantılar',
+      /* Eski "Nizam kurulum paketi" durağı buraya katlandı: dört karenin
+         yanına beşinci şart olarak sabit iskelet onayı eklendi. */
+      ad: 'Bağlantılar ve temel',
       bitti: !!p.repo && !!String(pl0.sohbetAdi || '').trim()
-             && !!pl0.alanAdi && !!pl0.yayinda,
-      ozet: p.repo
-        ? (pl0.alanAdi ? 'Depo, sohbet ve adres hazır. Sıra yayında.' : 'Depo hazır. Sıra adres ve yayında.')
-        : 'Depo, sohbet, adres ve yayın burada kurulacak.',
-    },
-    {
-      ad: 'Nizam kurulum paketi',
-      bitti: !!pl0.kurulumKuruldu,
-      ozet: pl0.kurulumKuruldu
-        ? 'Sabit iskelet kuruldu.'
-        : 'Claude tanışma promptuyla iskeleti kursun, sonra işaretle.',
+             && !!pl0.alanAdi && !!pl0.yayinda && !!pl0.kurulumKuruldu,
+      ozet: !p.repo
+        ? 'Depo, sohbet, adres ve yayın burada kurulacak.'
+        : !pl0.yayinda
+          ? (pl0.alanAdi ? 'Depo, sohbet ve adres hazır. Sıra yayında.' : 'Depo hazır. Sıra adres ve yayında.')
+          : pl0.kurulumKuruldu
+            ? 'Bağlantılar hazır, sabit iskelet kuruldu.'
+            : 'Bağlantılar hazır. Sıra sabit iskelette.',
     },
     {
       /* Sıra kilitli olduğu için bu durağa gelindiğinde Bağlantılar zaten
@@ -5528,7 +5524,22 @@ function projeDuraklari(p) {
         : 'Hangi modüller ve sayfalar olacak?',
     },
     {
-      ad: 'Tasarımı belirleme',
+      /* Eski "Geliştirme" durağı buraya katlandı: kontroller artık beta
+         aşamasında. Görev yoksa tek çıkış "geliştirmeye ihtiyaç yok"
+         işareti — beta kusursuz çıkabilir, uydurma görev açmaya gerek yok. */
+      ad: 'Beta ve geliştirme',
+      bitti: !!(p.palet && p.palet.betaCikti) && gelistirmeBitti(p),
+      rozet: yeniStandartlar(p.palet).length,
+      ozet: !(p.palet && p.palet.betaCikti)
+        ? 'Son bloğu Claude\'a ver, ilk çalışan sürümü kursun; sen dene.'
+        : s.gorev
+          ? `${s.bitmis}/${s.gorev} görev bitti`
+          : (p.palet && p.palet.gelistirmeGerekYok)
+            ? 'Geliştirmeye ihtiyaç yok.'
+            : 'Betayı denerken gördüğün eksikleri görev olarak aç.',
+    },
+    {
+      ad: 'Profesyonel tasarım',
       bitti: tasarimTam,
       rozet: yeniKararlar(p.palet).length,
       ozet: tasarimTam
@@ -5542,27 +5553,6 @@ function projeDuraklari(p) {
             : 'İşletme görselini yükle, promptu ChatGPT\'ye ver, sistemi yapıştır.',
     },
     {
-      ad: 'Beta',
-      bitti: !!(p.palet && p.palet.betaCikti),
-      ozet: (p.palet && p.palet.betaCikti)
-        ? 'Beta çıktı, denendi.'
-        : 'Son bloğu Claude\'a ver, ilk çalışan sürümü kursun; sen dene.',
-    },
-    {
-      /* Görev yoksa tek çıkış "geliştirmeye ihtiyaç yok" işareti — beta
-         kusursuz çıkabilir, o zaman uydurma bir görev açmaya gerek yok.
-         Görev açılınca bu işaretin anlamı kalmıyor: bitmiş sayılmak için
-         hepsinin bitmesi gerekiyor, eski işareti ayrıca temizlemeye gerek yok. */
-      ad: 'Geliştirme',
-      bitti: gelistirmeBitti(p),
-      rozet: yeniStandartlar(p.palet).length,
-      ozet: s.gorev
-        ? `${s.bitmis}/${s.gorev} görev bitti`
-        : (p.palet && p.palet.gelistirmeGerekYok)
-          ? 'Geliştirmeye ihtiyaç yok.'
-          : 'Betayı denerken gördüğün eksikleri görev olarak aç.',
-    },
-    {
       ad: 'Final',
       bitti: !!(p.palet && p.palet.finalVerildi),
       ozet: (p.palet && p.palet.finalVerildi)
@@ -5571,7 +5561,7 @@ function projeDuraklari(p) {
     },
     {
       /* Bilerek hiç bitmiyor: proje yaşadıkça yeni istek gelir. */
-      ad: 'Güncellemeler',
+      ad: 'Geliştirme',
       bitti: false,
       ozet: 'Finalden sonra gelen istekler burada yürür.',
     },
