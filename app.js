@@ -1256,11 +1256,14 @@ function rolMerdiveni(roller, onek) {
   const n = liste.length || 2;
   return `
     <div class="rol-kat" data-rol-onek="${onek}">
+      <span class="fbd-et">Katman sayısı</span>
       <div class="fbd-cipler rol-sayi">
         ${[2, 3, 4, 5].map(k => `
           <button class="fbd-cp ${k === n ? 'on' : ''}" type="button"
                   data-rol-sayi="${k}">${k} katman</button>`).join('')}
       </div>
+      <span class="fbd-et" style="margin-top:14px">Katmanlar</span>
+      <p class="ipucu" style="margin:-4px 0 8px">Sıralama yetki seviyesini belirler.</p>
       <div class="rol-liste">
         ${Array.from({ length: n }, (_, i) => {
           const sira = n - 1 - i;                      /* üstten alta çiz */
@@ -1282,7 +1285,7 @@ function rolMerdiveni(roller, onek) {
             </label>`;
         }).join('')}
       </div>
-      ${fdNot('Üstteki katman, alttakinin gördüğü her şeyi görür.')}
+      ${fdNot('Üstteki katman, alttakinin gördüğü her şeyi görür. Katmanları daha sonra düzenleyebilirsin.')}
     </div>`;
 }
 
@@ -7243,15 +7246,54 @@ function programAdim2() {
 /* 3 · Veriler nerede — yalnız karar. Supabase seçilirse gerçek bağlantı
    (adres+anon key) Bağlantılar ve temel durağında giriliyor; ikisini aynı
    yerde sormak "Bağlantılar" durağının işini burada tekrarlamak olurdu. */
+/* Seçeneklerin artı/eksileri sabit metin: TEKNIK_ALAN'daki veriKatmani
+   seçimi zaten yalnız bu iki değeri veriyor (config.js'de tanımlı, kullanıcı
+   ekleyip çıkaramıyor), o yüzden burada elle yazmak kırılgan değil. */
+const VERI_KATMANI_KARTI = {
+  'Supabase (bulut)': {
+    ikon: 'bulut', renk: '#3ecf8e', onerilen: true,
+    ozellikler: [
+      { iyi: true, yazi: 'Her yerden erişim' },
+      { iyi: true, yazi: 'Gerçek zamanlı veri' },
+      { iyi: true, yazi: 'Yedekleme ve güvenlik' },
+      { iyi: true, yazi: 'Bağlantılar ve temel\'de otomatik kurulum' },
+    ],
+  },
+  'Yerel tarayıcı': {
+    ikon: 'katman', renk: '#7d93b8', onerilen: false,
+    ozellikler: [
+      { iyi: false, yazi: 'Sadece bu cihazda çalışır' },
+      { iyi: false, yazi: 'Gerçek zamanlı yok' },
+      { iyi: false, yazi: 'Sunucu gerektirmez' },
+      { iyi: false, yazi: 'Teknik kurulum gerekebilir' },
+    ],
+  },
+};
+
 function programAdim3() {
   const alan = TEKNIK_ALAN.find(x => x.anahtar === 'veriKatmani') || {};
-  const sunuculu = PROGRAM_ADIM.veriKatmani !== 'Yerel tarayıcı';
+  const secili = PROGRAM_ADIM.veriKatmani;
   return shBaslik(ICON.gVeri, 'Veriler nerede duracak?', alan.alt || '') + `
-    <div class="fbd-cipler" style="margin-bottom:16px">
-      ${(alan.secim || []).map(x => `<button class="fbd-cp ${PROGRAM_ADIM.veriKatmani === x ? 'on' : ''}"
-        type="button" data-pa="veri" data-deger="${esc(x)}">${esc(x)}</button>`).join('')}
+    <div class="pa-veri-liste">
+      ${(alan.secim || []).map(x => {
+        const k = VERI_KATMANI_KARTI[x] || { ikon: 'katman', renk: '#7d93b8', ozellikler: [] };
+        return `
+        <label class="pa-veri-kart ${secili === x ? 'on' : ''}" style="--ki:${k.renk}"
+               data-pa="veri" data-deger="${esc(x)}">
+          <span class="pa-veri-ust">
+            <span class="pa-veri-ik">${svg(ICON[k.ikon], 18)}</span>
+            <span class="pa-veri-ad">${esc(x)}</span>
+            ${k.onerilen ? '<span class="pa-veri-rozet">Önerilen</span>' : ''}
+            <span class="pa-veri-radyo"></span>
+          </span>
+          <span class="pa-veri-oz-liste">
+            ${k.ozellikler.map(o => `<span class="pa-veri-oz ${o.iyi ? 'iyi' : 'kotu'}">
+              ${svg(o.iyi ? ICON.tik : ICON.kapat, 11)} ${esc(o.yazi)}</span>`).join('')}
+          </span>
+        </label>`;
+      }).join('')}
     </div>
-    ${sunuculu ? `<p class="ipucu">Supabase bağlantısını (proje adresi, anon key)
+    ${secili !== 'Yerel tarayıcı' ? `<p class="ipucu">Supabase bağlantısını (proje adresi, anon key)
       bir sonraki durakta — <b>Bağlantılar ve temel</b>'de — gireceksin.</p>` : ''}`;
 }
 

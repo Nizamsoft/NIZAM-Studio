@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.134.27
+- **Program temeli sihirbazının 2. ve 3. adımları görsel olarak zenginleşti.** "Kim kullanılacak?" adımına "Katman sayısı"/"Katmanlar" başlıkları eklendi. "Veriler nerede duracak?" artık küçük seçim düğmeleri yerine iki büyük karar kartı: her seçeneğin kendi artı/eksi listesi (Supabase'de "Önerilen" rozeti + 4 artı, Yerel'de 4 eksi) ve seçili olanı gösteren radyo halkası.
+
 ## v0.134.26
 - **Supabase bağlantısı Program temeli'nden Bağlantılar ve temel'e taşındı.** Program temeli artık yalnız kararı soruyor: Supabase mi, Yerel tarayıcı mı. Supabase seçilirse gerçek bağlantı (proje adresi + anon key) "Bağlantılar ve temel" durağında, diğer bağlantılarla (depo/sohbet/adres/yayın/sabit iskelet) yan yana giriliyor — Yerel seçilirse hiç sorulmuyor.
 

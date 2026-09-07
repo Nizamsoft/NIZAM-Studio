@@ -1737,6 +1737,42 @@ html { background: var(--bg); }
 .sb-yukle i{ font-style:normal; font-size:10.5px; color:var(--ink-dim); }
 .sb-yukle.dolu{ min-height:120px; border-style:solid; border-color:var(--line-3); }
 
+/* Program temeli'nde veri katmanı seçimi — iki büyük kart, her biri kendi
+   artı/eksi listesiyle. Küçük pul yerine bunu seçtik çünkü karar tek
+   satırlık değil: sonucu (senkron var mı, sunucu gerekir mi) görmeden
+   seçmek kullanıcıyı geri dönüp pişman ediyordu. */
+.pa-veri-liste{ display:flex; flex-direction:column; gap:10px; margin-bottom:14px; }
+.pa-veri-kart{
+  display:block; padding:14px; border-radius:var(--radius-lg);
+  border:1px solid var(--line); cursor:pointer;
+  background:linear-gradient(180deg, var(--kart-ust), var(--kart-alt));
+}
+.pa-veri-kart.on{ border-color:var(--ki); box-shadow:0 0 0 1px var(--ki); }
+.pa-veri-ust{ display:flex; align-items:center; gap:10px; }
+.pa-veri-ik{
+  flex:0 0 36px; width:36px; height:36px; border-radius:10px;
+  display:flex; align-items:center; justify-content:center;
+  background:var(--yuva); box-shadow:inset 0 0 0 1px var(--line-3); color:var(--ki);
+}
+.pa-veri-ad{ font-family:var(--yazi-baslik); font-weight:600; font-size:13.5px; color:var(--ink-strong); }
+.pa-veri-rozet{
+  padding:2px 8px; border-radius:999px; font-size:9.5px; font-weight:700;
+  color:#241a05; background:linear-gradient(180deg, var(--st-dev-t), var(--st-dev));
+}
+.pa-veri-radyo{
+  flex:0 0 auto; margin-left:auto; width:20px; height:20px; border-radius:999px;
+  box-shadow:inset 0 0 0 2px var(--line-2);
+}
+.pa-veri-kart.on .pa-veri-radyo{
+  box-shadow:inset 0 0 0 6px var(--ki), inset 0 0 0 1px var(--ki);
+}
+.pa-veri-oz-liste{ display:flex; flex-direction:column; gap:5px; margin:12px 0 0 46px; }
+.pa-veri-oz{ display:flex; align-items:center; gap:6px; font-size:11.5px; color:var(--ink-dim); }
+.pa-veri-oz svg{ flex:0 0 auto; }
+.pa-veri-oz.iyi{ color:var(--st-done-t); }
+.pa-veri-oz.kotu{ color:var(--ink-faint); }
+.pa-veri-oz.kotu svg{ color:var(--red-ink); }
+
 /* Sektör pulları */
 .pullar { display: flex; flex-wrap: wrap; gap: 7px; }
 .pul {
