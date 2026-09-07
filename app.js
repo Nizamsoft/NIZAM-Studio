@@ -789,21 +789,29 @@ const DURAKLAR = {
      (ürün, roller, depo, modüller). İkisi karışıkken hangi kafayla
      oturulacağı belli olmuyordu. */
   firma:       { no: 1, ad: 'Firma bilgileri',       ciz: firmaSayfasi,
-                 renk: '#c4a05c', ikon: 'etiket' },
-  program:     { no: 2, ad: 'Program temeli',        ciz: programSayfasi },
-  baglantilar: { no: 3, ad: 'Bağlantılar ve temel',  ciz: baglantilarSayfasi },
+                 renk: '#c4a05c', ikon: 'etiket', resim: 'firma',
+                 aciklama: 'İşletme ve marka bilgilerinizi girin.' },
+  program:     { no: 2, ad: 'Program temeli',        ciz: programSayfasi,
+                 resim: 'program', aciklama: 'Programın amacı ve temel özellikleri.' },
+  baglantilar: { no: 3, ad: 'Bağlantılar ve temel',  ciz: baglantilarSayfasi,
+                 resim: 'baglantilar', aciklama: 'Gerekli bağlantıları ayarlayın.' },
   /* Yapı tasarımdan önce: ChatGPT ekranları çizerken hangi modüllerin ve
      sayfaların olduğunu bilmeli. Bilmezse altı genel ekran çiziyor; künye
      elindeyken gerçek modülleri, gerçek alanları ve o işe ait simgeleri
      çiziyor. Bağımlılık bu yönde. */
   yapi:        { no: 4, ad: 'Kurulum ve yapı',       ciz: yapiSayfasi,
-                 renk: '#8fae4a', ikon: 'gAltyapi' },
+                 renk: '#8fae4a', ikon: 'gAltyapi', resim: 'yapi',
+                 aciklama: 'Kurulum dosyaları ve proje yapısı.' },
   beta:        { no: 5, ad: 'Beta ve geliştirme',    ciz: betaSayfasi,
-                 renk: '#c9753c', ikon: 'gOptimizasyon' },
+                 renk: '#c9753c', ikon: 'gOptimizasyon', resim: 'beta',
+                 aciklama: 'Testler ve geliştirme süreci.' },
   tasarim:     { no: 6, ad: 'Profesyonel tasarım',   ciz: tasarimSayfasi,
-                 renk: '#5f86c4', ikon: 'gTasarim' },
-  final:       { no: 7, ad: 'Final',                 ciz: finalSayfasi },
-  guncelleme:  { no: 8, ad: 'Geliştirme',            ciz: guncellemeSayfasi },
+                 renk: '#5f86c4', ikon: 'gTasarim', resim: 'tasarim',
+                 aciklama: 'Arayüz ve kullanıcı deneyimi.' },
+  final:       { no: 7, ad: 'Final',                 ciz: finalSayfasi,
+                 resim: 'final', aciklama: 'Son kontroller ve yayına hazırlık.' },
+  guncelleme:  { no: 8, ad: 'Geliştirme',            ciz: guncellemeSayfasi,
+                 resim: 'gelistirme', aciklama: 'Yayın sonrası yeni özellikler.' },
 };
 
 /* Henüz içi kurulmamış aşamalar için geçici sayfa — yalnız akışta yerini
@@ -5581,36 +5589,9 @@ function durakKilitli(projeId, anahtar) {
   return simdi !== -1 && sira > simdi;
 }
 
-const DURAK_IKON = ['kisi', 'gAltyapi', 'gTasarim', 'goz', 'kalem', 'bayrak', 'saat'];
-
-/* Aşama kartı: kare, yeri sabit. Zigzag merdivende kartlar ilerledikçe yer
-   değiştiriyordu; gözün aradığı aşamayı her seferinde yeniden bulmak
-   gerekiyordu. Burada 01 hep sol üstte. */
-function asamaKarti(p, d, i, simdi, anahtar) {
-  const su      = i === simdi;
-  const kilitli = simdi !== -1 && i > simdi;
-  const hal     = d.bitti ? 'bitti' : su ? 'simdi' : 'kilitli';
-  const ikon    = d.bitti ? ICON.tik : su ? ICON.goz : ICON.kilit;
-
-  const ic = `
-    <span class="ya-ust">
-      <span class="ya-no mono">${String(i + 1).padStart(2, '0')}${
-        d.rozet ? `<span class="ya-rozet">${d.rozet}</span>` : ''}</span>
-      <span class="ya-dur">${svg(ikon, 13)}</span>
-    </span>
-    <span class="ya-yz">
-      <span class="ya-ad">${esc(d.ad)}</span>
-      <span class="ya-alt">${d.bitti ? 'tamam' : su ? 'şimdi burada' : 'kilitli'}</span>
-    </span>`;
-
-  /* Kilitli adım bağlantı bile değil: adresle de açılmıyor. */
-  return kilitli
-    ? `<span class="ya ${hal}">${ic}</span>`
-    : `<a class="ya ${hal}" href="#/projeler/${p.id}/${anahtar}">${ic}</a>`;
-}
-
 /* İki satır arasındaki dirsek: üst satırın sonundan alt satırın başına.
-   Izgara sabit olduğu için ok da sabit — ölçmeye gerek yok. */
+   Izgara sabit olduğu için ok da sabit — ölçmeye gerek yok. Beta ve karar
+   ızgaralarında (`.ya` kareleri) hâlâ kullanılıyor. */
 function yolOku(yesil) {
   return `
     <div class="ya-bosluk">
@@ -5622,6 +5603,35 @@ function yolOku(yesil) {
     </div>`;
 }
 
+/* Aşama satırı: dikey liste, yeri sabit. Solda numara + kendi ikonu
+   (ikon/asama/ altındaki PNG, CSS mask ile boyanıyor — gri kilitli,
+   yeşil şimdiki/biten), ortada ad + sabit açıklama, sağda durum ve ok. */
+function asamaSatiri(p, d, i, simdi, anahtar) {
+  const su      = i === simdi;
+  const kilitli = simdi !== -1 && i > simdi;
+  const hal     = d.bitti ? 'bitti' : su ? 'simdi' : 'kilitli';
+  const def     = DURAKLAR[anahtar] || {};
+  const durum   = d.bitti ? svg(ICON.tik, 14) : su ? '' : svg(ICON.kilit, 13);
+
+  const ic = `
+    <span class="asr-no mono">${String(i + 1).padStart(2, '0')}</span>
+    <span class="asr-ikon">
+      <span class="asr-ikon-img" style="--ik:url('ikon/asama/${def.resim}.png')"></span>
+    </span>
+    <span class="asr-yz">
+      <span class="asr-ad">${esc(d.ad)}${
+        d.rozet ? `<span class="ya-rozet">${d.rozet}</span>` : ''}</span>
+      <span class="asr-alt">${esc(def.aciklama || '')}</span>
+    </span>
+    <span class="asr-durum">${durum}</span>
+    <span class="asr-chev">${svg(ICON.chevron, 15)}</span>`;
+
+  /* Kilitli adım bağlantı bile değil: adresle de açılmıyor. */
+  return kilitli
+    ? `<span class="asr ${hal}">${ic}</span>`
+    : `<a class="asr ${hal}" href="#/projeler/${p.id}/${anahtar}">${ic}</a>`;
+}
+
 function projeYolu(p) {
   const duraklar = projeDuraklari(p);
   /* Şimdiki durak: bitmemiş ilk durak. Hepsi bitmişse -1. */
@@ -5630,26 +5640,11 @@ function projeYolu(p) {
   const biten = duraklar.filter(d => d.bitti).length;
   const yuzde = Math.round(biten / duraklar.length * 100);
 
-  const kart = i => asamaKarti(p, duraklar[i], i, simdi, anahtarlar[i]);
-
-  /* Üç sütun, kareler aynı ölçüde. Durak sayısı sabit değil (10 oldu,
-     yarın yine değişebilir) — satırları üçer üçer kendimiz bölüyoruz,
-     son satır eksik kalabilir, soldan başlar. */
-  const satirlar = [];
-  for (let i = 0; i < duraklar.length; i += 3) {
-    satirlar.push(Array.from(
-      { length: Math.min(3, duraklar.length - i) }, (_, k) => i + k));
-  }
-
-  const harita = satirlar.map((satir, i) => {
-    const son = satir[satir.length - 1];
-    return `<div class="ya-satir">${satir.map(kart).join('')}</div>`
-      + (i < satirlar.length - 1 ? yolOku(duraklar[son] && duraklar[son].bitti) : '');
-  }).join('');
+  const liste = duraklar.map((d, i) => asamaSatiri(p, d, i, simdi, anahtarlar[i])).join('');
 
   return projeKunyesi(p)
     + fbTakvimSeridi(p)
-    + `<div class="ya-harita">${harita}</div>
+    + `<div class="asr-liste">${liste}</div>
 
     <div class="genel">
       <div class="genel-ust"><b>Adımlar</b><u class="mono">%${yuzde}</u></div>

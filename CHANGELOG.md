@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.134.21
+- **Proje aşamaları ekranı dikey listeye döndü, ikonlar geldi.** Üçerli kare ızgara yerini tek sütunlu satır listesine bıraktı: solda numara + durağın kendi ikonu (`ikon/asama/` — building, kod, zincir, kutu, tüp, palet, roket, döngü), ortada ad + sabit açıklama, sağda durum (tik/boş halka/kilit) ve ok. İkonlar tek gri PNG olarak yükleniyor; rengi (gri kilitli, yeşil şimdiki/biten) CSS mask ile veriliyor — durum başına ayrı dosya gerekmiyor. Yüklenen PNG'ler kırpılıp 256px'e küçültüldü (2,3 MB → ~190 KB).
+
 ## v0.134.20
 - **Aşama sayısı 10'dan 8'e indi.** "Nizam kurulum paketi" (sabit iskelet onayı) "Bağlantılar ve temel" durağının içine katlandı; "Geliştirme" (görev/kontrol sistemi) "Beta" durağının içine katlandı ve durak "Beta ve geliştirme" oldu — kontroller artık orada yapılıyor. "Tasarımı belirleme" → "Profesyonel tasarım", eski "Güncellemeler" → "Geliştirme" olarak yeniden adlandırıldı. Yeni sıra: Firma bilgileri · Program temeli · Bağlantılar ve temel · Kurulum ve yapı · Beta ve geliştirme · Profesyonel tasarım · Final · Geliştirme. Ayrıca "Beta" sayfasındaki ve SQL kurulum penceresindeki birkaç eski durak adı referansı (kaldırılan "Kurulum ve yapı → Nereye kuralım?" gibi) güncel adlarla değiştirildi.
 
