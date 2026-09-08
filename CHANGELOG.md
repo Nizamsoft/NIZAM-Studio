@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.134.37
+- **Supabase adımına "Supabase'de proje aç" düğmesi eklendi.** GitHub/Namecheap adımlarındaki gibi tek dokunuşla Supabase'in yeni proje sayfası açılıyor; adres ve anon key'i nereden alacağını gösteren bir not da eklendi.
+
 ## v0.134.36
 - **"Yeni Proje"ye kopya proje temeli eklendi.** "Gerçek proje / Test güncelleme" sorusundan sonra artık "Sıfırdan Proje / Kopya Proje" soruluyor. Kopya seçilince bitmiş bir proje seçiliyor ve yeni proje onun birebir aynısıyla (firma bilgileri, palet, modül/sayfa yapısı) kuruluyor — görevler hariç. Bu yalnız temel: firma/depo/Supabase gibi kişiye özel alanların değiştirilmesi ayrı bir aşamada gelecek.
 

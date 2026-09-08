@@ -7692,7 +7692,10 @@ function baglantiAdimSupabase(p) {
   return shBaslikServis('supabase', 'Supabase\'e bağlan',
     'Programın verisinin, girişin ve gerçek zamanlı güncellemelerin tutulduğu yer.')
     + durum
-    + `<label class="field"><span>Proje adresi</span>
+    + `<a class="sayfa-dug ikincil" target="_blank" rel="noopener"
+         href="https://supabase.com/dashboard/new">
+        ${svg(ICON.bulut, 15)} Supabase'de proje aç</a>
+      <label class="field"><span>Proje adresi</span>
         <input type="text" id="ba-sb-url" value="${esc(url)}"
                placeholder="https://xxxx.supabase.co" autocomplete="off"
                spellcheck="false" autocapitalize="off"></label>
@@ -7702,6 +7705,9 @@ function baglantiAdimSupabase(p) {
                spellcheck="false" autocapitalize="off"></label>
       <button class="sayfa-dug" type="button" data-eylem="supabase-baglan" data-proje="${p.id}">
         ${svg(ICON.bulut, 15)} Kaydet</button>
+      <div class="fbd-not">${svg(ICON.info, 13)}
+        <span>Proje kurulunca <b>Settings → API</b> sayfasından <b>Project URL</b> ve
+        <b>anon key</b>'i kopyalayıp yukarıya yapıştır.</span></div>
       <div class="note uyari">${svg(ICON.uyari, 15)}
         <span><b>service_role</b> anahtarını buraya yazma. anon key tarayıcıya zaten
         iniyor, veriyi satır güvenliği (RLS) koruyor — o normal.</span></div>`
