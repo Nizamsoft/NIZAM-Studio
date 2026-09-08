@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.134.43
+- **GitHub'ın şablon (generate) sayfası isim parametresini kabul etmiyormuş, düzeltildi.** "Repository name" alanı otomatik dolmuyordu — Studio artık bunu iddia etmiyor, "Yeni depo adı"nı en üstte kopyalanabilir gösterip alana yapıştırman gerektiğini açıkça yazıyor.
+
 ## v0.134.42
 - **Kopya projede GitHub adımı yeniden "generate" (şablon) yoluna döndü.** Kaynak depo GitHub'da "Template repository" işaretliyse (test edildi, çalışıyor) token istemeden tek tıkla dosyalarıyla aynı depoyu kuruyor. İşaretli değilse GitHub boş bir sayfa açıyor; o durumda İçe Aktar (Import) ekranına yapıştırman için kaynak depo adresi ve önerilen yeni isim hâlâ kopyalanabilir gösteriliyor.
 
