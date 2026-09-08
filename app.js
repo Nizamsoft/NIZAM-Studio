@@ -4913,6 +4913,12 @@ function pagesAdresi(p) {
 /* "Pages'i aç"a dokunulan projeler — dönünce adresi kendimiz yazıyoruz. */
 const PAGES_BEKLIYOR = {};
 
+/* "Template repository ayarını açayım"a dokunulan kopya kaynakları —
+   proje henüz kurulmadı, dönünce ayarı açtı sayıp kopyalamayı kendimiz
+   başlatıyoruz. Anahtar kaynak proje id'si, değer o an seçili tur
+   ('gercek'/'test'). */
+const TEMPLATE_BEKLIYOR = {};
+
 async function yayinAdresiTamamla(p) {
   const adres = pagesAdresi(p);
   if (!adres) return;
@@ -6746,7 +6752,9 @@ function templateOnaySor(kaynakId, tur) {
       const t = ev.target.closest('[data-tp]');
       if (!t || t.dataset.tp === 'kapat') return;
       if (t.dataset.tp === 'ac') {
+        TEMPLATE_BEKLIYOR[kaynakId] = tur;
         window.open('https://github.com/' + slug + '/settings', '_blank', 'noopener');
+        modalKapat();
         return;
       }
       modalKapat();
@@ -12444,6 +12452,11 @@ document.addEventListener('DOMContentLoaded', () => {
           .then(() => { render(); if ($('#baglanti-adim')) baglantiAdimCiz(); })
           .catch(() => { /* çevrimdışıysa bir dahaki sefere */ });
       }
+    });
+    Object.keys(TEMPLATE_BEKLIYOR).forEach(kaynakId => {
+      const tur = TEMPLATE_BEKLIYOR[kaynakId];
+      delete TEMPLATE_BEKLIYOR[kaynakId];
+      projeKopyalaVeAc(kaynakId, tur);
     });
   });
 

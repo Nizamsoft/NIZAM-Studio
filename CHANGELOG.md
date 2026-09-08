@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.134.45
+- **"Kapalı, önce açayım" artık kendiliğinden devam ediyor.** GitHub'daki Ayarlar sayfasını açıp sekmeye geri döndüğünde, Studio ayarı açtı sayıp kopyalamayı otomatik başlatıyor — ayrıca "Açık, devam et" demene gerek kalmıyor (GitHub/Pages adımlarındaki sekmeden dönünce algılama mantığının aynısı).
+
 ## v0.134.44
 - **Kopya proje kaynağı seçilince "GitHub deposu şablon mu?" sorusu eklendi.** Studio GitHub'daki Template repository ayarını göremediği için doğrudan soruyor: kapalıysa o deponun Ayarlar sayfasını açıyor, işaretleyip döndüğünde "Açık, devam et" ile kopyalamaya geçiliyor.
 
