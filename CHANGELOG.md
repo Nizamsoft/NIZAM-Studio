@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.134.36
+- **"Yeni Proje"ye kopya proje temeli eklendi.** "Gerçek proje / Test güncelleme" sorusundan sonra artık "Sıfırdan Proje / Kopya Proje" soruluyor. Kopya seçilince bitmiş bir proje seçiliyor ve yeni proje onun birebir aynısıyla (firma bilgileri, palet, modül/sayfa yapısı) kuruluyor — görevler hariç. Bu yalnız temel: firma/depo/Supabase gibi kişiye özel alanların değiştirilmesi ayrı bir aşamada gelecek.
+
 ## v0.134.35
 - **Gerçek GitHub/Claude/Supabase/Namecheap logoları uygulamaya girdi.** Bağlantılar sihirbazının hem üstteki rozetinde hem adım şeridinde artık kendi logoları var (sırası gelmemiş adımlar gri, şimdiki renkli). Aynı logolar Program temeli'ndeki karar kartlarında da kullanılıyor: Veriler nerede'de Supabase, Alan adı'nda github.io ve Namecheap.
 

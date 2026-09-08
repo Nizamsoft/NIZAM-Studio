@@ -406,6 +406,71 @@ const DB = {
     return proje.id;
   },
 
+  /* "Kopya proje" — Yeni Proje sihirbazında "Kopya Proje" seçilince
+     çağrılıyor. Kaynak projenin künye/palet/modül/sayfa yapısını birebir
+     kopyalar. Görevler BİLEREK kopyalanmıyor: onlar eski projenin iş
+     geçmişi, yeni projede anlamı yok. Hangi alanların (firma, depo,
+     Supabase, alan adı…) değişmesi gerektiği ayrı bir iş — bu yalnız
+     temel kopyalama; kaynağı `palet.kopyaKaynagi`'nda saklıyoruz ki o iş
+     geldiğinde hangi projeden geldiği kaybolmasın. */
+  async projeKopyala(kaynakId, ek = {}) {
+    yazmaKontrol();
+    const kaynak = this.proje(kaynakId);
+    if (!kaynak) throw new Error('Kopyalanacak proje bulunamadı.');
+
+    const temel = { firma: kaynak.firma, renk: kaynak.renk, repo: kaynak.repo || null, olusturan: AUTH.user.id };
+    const genis = Object.assign({}, temel, {
+      sektor: kaynak.sektor || null, telefon: kaynak.telefon || null, eposta: kaynak.eposta || null,
+      dil: kaynak.dil || null, para: kaynak.para || null,
+      baslangic: kaynak.baslangic || null, teslim: kaynak.teslim || null,
+      logo: kaynak.logo || null,
+    });
+
+    let proje = null, error = null;
+    for (const govde of [genis, temel]) {
+      const sonuc = await AUTH.db.from('projects').insert(govde).select().single();
+      if (!sonuc.error) { proje = sonuc.data; error = null; break; }
+      error = sonuc.error;
+      if (!/column .* does not exist|Could not find the/i.test(error.message || '')) break;
+    }
+    if (!proje) throw new Error(veriHatasi(error));
+
+    try {
+      await this.paletKaydet(proje.id, Object.assign({}, kaynak.palet || {}, {
+        projeTuru: ek.tur === 'test' ? 'test' : 'gercek',
+        gorulenSurum: APP.version,
+        kopyaKaynagi: kaynakId,
+      }));
+    } catch (h) { /* palet tablosu yoksa proje yine kuruldu, boş paletle kalır */ }
+
+    const kaynakModuller = this.modulleri(kaynakId);
+    if (kaynakModuller.length) {
+      const modulKayitlari = kaynakModuller.map(m => (
+        { proje_id: proje.id, ad: m.ad, genel: m.genel, sira: m.sira }));
+      const { data: kurulan, error: mHata } = await AUTH.db
+        .from('modules').insert(modulKayitlari).select();
+      if (mHata) throw new Error(veriHatasi(mHata));
+
+      /* Supabase eklenen satırları gönderdiğimiz sırayla döndürüyor —
+         `projeOlustur` da aynı varsayıma dayanıyor. */
+      const sayfaKayitlari = [];
+      kaynakModuller.forEach((eski, i) => {
+        const yeni = kurulan[i];
+        if (!yeni) return;
+        this.sayfalari(eski.id).forEach(s => {
+          sayfaKayitlari.push({ modul_id: yeni.id, ad: s.ad, sira: s.sira });
+        });
+      });
+      if (sayfaKayitlari.length) {
+        const { error: sHata } = await AUTH.db.from('pages').insert(sayfaKayitlari);
+        if (sHata) throw new Error(veriHatasi(sHata));
+      }
+    }
+
+    await this.tazele('projeler', 'moduller', 'sayfalar');
+    return proje.id;
+  },
+
   async projeGuncelle(id, alanlar) {
     yazmaKontrol();
     const { error } = await AUTH.db.from('projects').update(alanlar).eq('id', id);

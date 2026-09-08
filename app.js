@@ -6650,9 +6650,82 @@ function sihirbaziAc() {
       const t = ev.target.closest('[data-sb0-tur]');
       if (!t) return;
       modalKapat();
-      sihirbaziBaslat(t.dataset.sb0Tur);
+      baslangicTuruSec(t.dataset.sb0Tur);
     });
   });
+}
+
+/* İkinci soru: sıfırdan mı kuruluyor, yoksa bitmiş bir projenin birebir
+   kopyası mı? Kopya şimdilik yalnız ham veriyi taşıyor — firma bilgileri,
+   depo, Supabase gibi kişiye özel alanların değiştirilmesi ayrı bir iş,
+   henüz burada değil (bkz. `DB.projeKopyala` yorumu). */
+function baslangicTuruSec(tur) {
+  modalHepsiniKapat();
+  modalAc(`
+    ${modalBaslik(ICON.katman, 'Nasıl başlayalım?',
+      'Sıfırdan mı kuracağız, yoksa var olan bir projeyi mi kopyalayacağız?')}
+    <div class="secim">
+      <div class="satir sec-satir" data-bt="sifirdan" role="button" tabindex="0">
+        <span class="sec-yazi"><b>Sıfırdan Proje</b><i>Firma bilgileriyle baştan kur</i></span>
+      </div>
+      <div class="satir sec-satir" data-bt="kopya" role="button" tabindex="0">
+        <span class="sec-yazi"><b>Kopya Proje</b><i>Bitmiş bir projenin birebir aynısıyla başla</i></span>
+      </div>
+    </div>
+    <div class="modal-alt">
+      <button class="btn btn-ghost" data-bt="kapat" type="button">Vazgeç</button>
+    </div>`, kutu => {
+    $('[data-bt="kapat"]', kutu).addEventListener('click', modalKapat);
+    kutu.addEventListener('click', ev => {
+      const t = ev.target.closest('[data-bt]');
+      if (!t || t.dataset.bt === 'kapat') return;
+      modalKapat();
+      if (t.dataset.bt === 'kopya') return kopyaKaynagiSec(tur);
+      sihirbaziBaslat(tur);
+    });
+  });
+}
+
+/* Kopya kaynağı seçimi — arşivlenmemiş tüm projeler listelenir. Seçilince
+   proje doğrudan kopyalanıp yol haritasına düşülüyor; Firma bilgileri
+   sihirbazından geçmiyor çünkü zaten dolu geliyor. */
+function kopyaKaynagiSec(tur) {
+  modalHepsiniKapat();
+  const liste = DB.projeler.filter(p => !p.arsiv);
+  if (!liste.length) { toast('Kopyalanacak proje yok.', 'uyari'); return; }
+
+  modalAc(`
+    ${modalBaslik(ICON.kopya, 'Hangi projeden kopyalayalım?',
+      'Yeni proje bunun birebir aynısıyla kurulacak.')}
+    <div class="secim">
+      ${liste.map(p => `
+        <div class="satir sec-satir" data-proje="${p.id}" role="button" tabindex="0">
+          <span class="sec-yazi"><b>${esc(p.firma)}</b><i>${esc(p.sektor || 'Sektör girilmedi')}</i></span>
+        </div>`).join('')}
+    </div>
+    <div class="modal-alt">
+      <button class="btn btn-ghost" data-bt="kapat" type="button">Vazgeç</button>
+    </div>`, kutu => {
+    $('[data-bt="kapat"]', kutu).addEventListener('click', modalKapat);
+    kutu.addEventListener('click', ev => {
+      const t = ev.target.closest('[data-proje]');
+      if (!t) return;
+      modalKapat();
+      projeKopyalaVeAc(t.dataset.proje, tur);
+    });
+  }, 'genis');
+}
+
+async function projeKopyalaVeAc(kaynakId, tur) {
+  try {
+    const id = await DB.projeKopyala(kaynakId, { tur });
+    sayaclariYaz();
+    toast('Proje kopyalandı.', 'basari');
+    location.hash = '#/projeler/' + id;
+    render();
+  } catch (h) {
+    toast(h.message, 'hata');
+  }
 }
 
 function sihirbaziBaslat(tur) {
