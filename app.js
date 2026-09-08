@@ -7612,10 +7612,16 @@ function baglantiAdimGithub(p) {
   const kaynakSlug = kaynak ? depoSlug(kaynak.repo) : '';
   const kopyaMi    = !depo && !!kaynakSlug;
 
+  /* Dönüşte adresi biz hesaplıyoruz (depoAdresiTamamla), GitHub'da ne
+     yazıldığını okumuyoruz — o yüzden GitHub'ın önerdiği isim bizim
+     hesabımızla aynı olmalı. "generate" ekranı varsayılan olarak kaynak
+     deponun adını öneriyor; `name=` ile kendi hesapladığımız isme
+     zorluyoruz ki kullanıcı hiçbir şeyi değiştirmeden "Create" dese de
+     doğru adrese düşelim. */
   const depoAdresi = depo
     ? 'https://github.com/' + esc(slug)
     : kopyaMi
-      ? 'https://github.com/' + esc(kaynakSlug) + '/generate'
+      ? 'https://github.com/' + esc(kaynakSlug) + '/generate?name=' + encodeURIComponent(depoAdi(p))
       : 'https://github.com/new?name=' + encodeURIComponent(depoAdi(p))
         + '&description=' + encodeURIComponent(projeAdi(p) + ' · NIZAM Studio')
         + '&visibility=private';
@@ -7635,7 +7641,8 @@ function baglantiAdimGithub(p) {
     </div>
     <div class="fbd-not">${svg(ICON.info, 13)}
       <span>Açılan sayfa bu deponun birebir aynısıyla yeni bir depo kurar (dosyalar
-      dahil). GitHub izin vermezse (kaynak depo şablon olarak işaretli değildir),
+      dahil), depo adı da doğru gelir — değiştirmeden <b>Create repository</b> demen
+      yeter. GitHub izin vermezse (kaynak depo şablon olarak işaretli değildir),
       yukarıdaki adresi kopyalayıp GitHub'daki
       <a href="https://github.com/new/import" target="_blank" rel="noopener">İçe Aktar</a>
       ekranına yapıştır — o da aynı işi yapar.</span></div>`;
