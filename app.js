@@ -7598,22 +7598,51 @@ function baDurum(baslik, alt) {
    Yayın adımı). Sekmeden dönünce DEPO_BEKLIYOR üzerinden kendiliğinden
    tamamlanıyor. */
 function baglantiAdimGithub(p) {
+  const pl   = p.palet || {};
   const slug = depoSlug(p.repo);
   const depo = !!p.repo;
 
+  /* Kopya projede depo de "aynısından" kurulmalı. GitHub'ın gerçek depo
+     kopyalama yolu şablon (generate) sayfası — kaynak depo GitHub'da
+     "Template repository" işaretliyse tek tıkla dosyalarıyla kopyalıyor.
+     İşaretli değilse GitHub kendisi reddediyor, o zaman tek çıkış İçe
+     Aktar (Import) ekranına adresi elle yapıştırmak — Studio ikisini de
+     anlatıyor, hangisi çalışırsa. */
+  const kaynak     = pl.kopyaKaynagi ? DB.proje(pl.kopyaKaynagi) : null;
+  const kaynakSlug = kaynak ? depoSlug(kaynak.repo) : '';
+  const kopyaMi    = !depo && !!kaynakSlug;
+
   const depoAdresi = depo
     ? 'https://github.com/' + esc(slug)
-    : 'https://github.com/new?name=' + encodeURIComponent(depoAdi(p))
-      + '&description=' + encodeURIComponent(projeAdi(p) + ' · NIZAM Studio')
-      + '&visibility=private';
+    : kopyaMi
+      ? 'https://github.com/' + esc(kaynakSlug) + '/generate'
+      : 'https://github.com/new?name=' + encodeURIComponent(depoAdi(p))
+        + '&description=' + encodeURIComponent(projeAdi(p) + ' · NIZAM Studio')
+        + '&visibility=private';
 
   const durum = depo ? baDurum('Bağlantı kuruldu', slug) : '';
   const buton = depo ? '' : `<a class="sayfa-dug" target="_blank" rel="noopener" data-depo-ac="${p.id}" href="${depoAdresi}">
-      ${svg(ICON.dal, 15)} GitHub'da depo aç</a>`;
+      ${svg(ICON.dal, 15)} ${kopyaMi ? 'GitHub\'a bağlan ve kopyala' : 'GitHub\'da depo aç'}</a>`;
 
-  return shBaslikServis('github', 'GitHub\'a bağlan',
+  const kopyaRehberi = !kopyaMi ? '' : `
+    <div class="fb-kart" style="--kr:#5fb37f">
+      <div class="ak-s">
+        <span class="ak-et">Kaynak depo</span>
+        <span class="ak-dg mono">${esc(kaynakSlug)}</span>
+        <button class="ak-kop" type="button" data-ak-kopya="${esc(kaynakSlug)}"
+                aria-label="Kaynak depo kopyala">${svg(ICON.kopya, 12)}</button>
+      </div>
+    </div>
+    <div class="fbd-not">${svg(ICON.info, 13)}
+      <span>Açılan sayfa bu deponun birebir aynısıyla yeni bir depo kurar (dosyalar
+      dahil). GitHub izin vermezse (kaynak depo şablon olarak işaretli değildir),
+      yukarıdaki adresi kopyalayıp GitHub'daki
+      <a href="https://github.com/new/import" target="_blank" rel="noopener">İçe Aktar</a>
+      ekranına yapıştır — o da aynı işi yapar.</span></div>`;
+
+  return shBaslikServis('github', kopyaMi ? 'GitHub\'a bağlan ve kopyala' : 'GitHub\'a bağlan',
     'Kodun barındığı yer. Depo bağlanınca Claude Code buradan görev alır.')
-    + durum + buton
+    + durum + buton + kopyaRehberi
     + baOzellikler([
       'Kod güvenle, sürüm geçmişiyle saklanır',
       'Claude Code görevleri buradan alır',

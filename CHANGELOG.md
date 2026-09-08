@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.134.39
+- **Kopya projede GitHub adımı artık "GitHub'a bağlan ve kopyala" oluyor.** Düğme kaynak deponun GitHub şablon (generate) sayfasına götürüyor — tek tıkla dosyalarıyla aynı depo kuruluyor. Kaynak depo adresi kopyalanabilir bir satırda gösteriliyor, GitHub şablon kabul etmezse (kaynak depo "template" işaretli değilse) İçe Aktar (Import) ekranına yapıştırman için.
+
 ## v0.134.38
 - **Proje kopyalanınca Bağlantılar ve temel artık sıfırdan başlıyor.** Depo, Claude sohbeti, Supabase bağlantısı, alan adı ve sabit iskelet onayı kopyalanmıyor — her proje kendi deposuna/sunucusuna bağlanmalı. Program adı, roller, veri katmanı, alan türü gibi yapısal kararlar hâlâ kaynaktan geliyor.
 
