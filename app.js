@@ -7602,27 +7602,23 @@ function baglantiAdimGithub(p) {
   const slug = depoSlug(p.repo);
   const depo = !!p.repo;
 
-  /* Kopya projede depo de "aynısından" kurulmalı. GitHub'ın gerçek depo
-     kopyalama yolu şablon (generate) sayfası — kaynak depo GitHub'da
-     "Template repository" işaretliyse tek tıkla dosyalarıyla kopyalıyor.
-     İşaretli değilse GitHub kendisi reddediyor, o zaman tek çıkış İçe
-     Aktar (Import) ekranına adresi elle yapıştırmak — Studio ikisini de
-     anlatıyor, hangisi çalışırsa. */
+  /* Kopya projede depo de "aynısından" kurulmalı. GitHub'ın "generate"
+     (şablon) yolu yalnız kaynak depo "Template repository" işaretliyse
+     çalışıyor — işaretli değilse GitHub sessizce boş bir "New repository"
+     ekranına düşürüyor, hiç hata vermiyor. Bu yüzden varsayılan yol
+     "İçe Aktar" (Import): hiçbir ön ayar istemez, her depoda çalışır.
+     Tek bedeli iki alanı elle yapıştırmak — adres ve isim burada
+     kopyalanabilir gösteriliyor. */
   const kaynak     = pl.kopyaKaynagi ? DB.proje(pl.kopyaKaynagi) : null;
   const kaynakSlug = kaynak ? depoSlug(kaynak.repo) : '';
   const kopyaMi    = !depo && !!kaynakSlug;
+  const yeniAd     = depoAdi(p);
 
-  /* Dönüşte adresi biz hesaplıyoruz (depoAdresiTamamla), GitHub'da ne
-     yazıldığını okumuyoruz — o yüzden GitHub'ın önerdiği isim bizim
-     hesabımızla aynı olmalı. "generate" ekranı varsayılan olarak kaynak
-     deponun adını öneriyor; `name=` ile kendi hesapladığımız isme
-     zorluyoruz ki kullanıcı hiçbir şeyi değiştirmeden "Create" dese de
-     doğru adrese düşelim. */
   const depoAdresi = depo
     ? 'https://github.com/' + esc(slug)
     : kopyaMi
-      ? 'https://github.com/' + esc(kaynakSlug) + '/generate?name=' + encodeURIComponent(depoAdi(p))
-      : 'https://github.com/new?name=' + encodeURIComponent(depoAdi(p))
+      ? 'https://github.com/new/import'
+      : 'https://github.com/new?name=' + encodeURIComponent(yeniAd)
         + '&description=' + encodeURIComponent(projeAdi(p) + ' · NIZAM Studio')
         + '&visibility=private';
 
@@ -7630,22 +7626,23 @@ function baglantiAdimGithub(p) {
   const buton = depo ? '' : `<a class="sayfa-dug" target="_blank" rel="noopener" data-depo-ac="${p.id}" href="${depoAdresi}">
       ${svg(ICON.dal, 15)} ${kopyaMi ? 'GitHub\'a bağlan ve kopyala' : 'GitHub\'da depo aç'}</a>`;
 
+  const kopyaSatir = (etiket, deger) => `
+    <div class="ak-s">
+      <span class="ak-et">${esc(etiket)}</span>
+      <span class="ak-dg mono">${esc(deger)}</span>
+      <button class="ak-kop" type="button" data-ak-kopya="${esc(deger)}"
+              aria-label="${esc(etiket)} kopyala">${svg(ICON.kopya, 12)}</button>
+    </div>`;
+
   const kopyaRehberi = !kopyaMi ? '' : `
     <div class="fb-kart" style="--kr:#5fb37f">
-      <div class="ak-s">
-        <span class="ak-et">Kaynak depo</span>
-        <span class="ak-dg mono">${esc(kaynakSlug)}</span>
-        <button class="ak-kop" type="button" data-ak-kopya="${esc(kaynakSlug)}"
-                aria-label="Kaynak depo kopyala">${svg(ICON.kopya, 12)}</button>
-      </div>
+      ${kopyaSatir('Kaynak depo', kaynakSlug)}
+      ${kopyaSatir('Yeni depo adı', yeniAd)}
     </div>
     <div class="fbd-not">${svg(ICON.info, 13)}
-      <span>Açılan sayfa bu deponun birebir aynısıyla yeni bir depo kurar (dosyalar
-      dahil), depo adı da doğru gelir — değiştirmeden <b>Create repository</b> demen
-      yeter. GitHub izin vermezse (kaynak depo şablon olarak işaretli değildir),
-      yukarıdaki adresi kopyalayıp GitHub'daki
-      <a href="https://github.com/new/import" target="_blank" rel="noopener">İçe Aktar</a>
-      ekranına yapıştır — o da aynı işi yapar.</span></div>`;
+      <span>Açılan sayfada <b>kaynak depo</b> adresini "Your old repository's clone URL"
+      alanına, <b>yeni depo adı</b>nı da "Repository name" alanına yapıştır, sonra
+      <b>Begin import</b> de. Studio dönüşte adresi kendisi yazar.</span></div>`;
 
   return shBaslikServis('github', kopyaMi ? 'GitHub\'a bağlan ve kopyala' : 'GitHub\'a bağlan',
     'Kodun barındığı yer. Depo bağlanınca Claude Code buradan görev alır.')

@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.134.41
+- **Kopya projede GitHub adımı artık "İçe Aktar" (Import) yoluna gidiyor, "generate" (şablon) yoluna değil.** Şablon yolu yalnız kaynak depo GitHub'da "Template repository" işaretliyse çalışıyordu, işaretli değilse sessizce boş bir depo ekranına düşürüyordu — kafa karıştırıcıydı. Import her depoda çalışır: adım artık kaynak depo adresini ve önerilen yeni depo adını ayrı ayrı kopyalanabilir gösteriyor.
+
 ## v0.134.40
 - **"GitHub'a bağlan ve kopyala" artık doğru depo adıyla açılıyor.** GitHub'ın şablon ekranı depo adını kaynak deponun adıyla dolduruyordu — Studio dönüşte adresi kendi hesabıyla yazdığı için isim uyuşmazlığı yanlış adrese düşürüyordu. Artık adres `name=` ile Studio'nun beklediği isimle geliyor, kullanıcı hiçbir şey değiştirmeden "Create repository" dese de doğru sonuç çıkıyor.
 
