@@ -407,18 +407,21 @@ const DB = {
   },
 
   /* "Kopya proje" — Yeni Proje sihirbazında "Kopya Proje" seçilince
-     çağrılıyor. Kaynak projenin künye/palet/modül/sayfa yapısını birebir
-     kopyalar. Görevler BİLEREK kopyalanmıyor: onlar eski projenin iş
-     geçmişi, yeni projede anlamı yok. Hangi alanların (firma, depo,
-     Supabase, alan adı…) değişmesi gerektiği ayrı bir iş — bu yalnız
-     temel kopyalama; kaynağı `palet.kopyaKaynagi`'nda saklıyoruz ki o iş
-     geldiğinde hangi projeden geldiği kaybolmasın. */
+     çağrılıyor. Kaynak projenin künye/palet/modül/sayfa yapısını kopyalar.
+     Bağlantılar ve temel BİLEREK sıfırlanıyor (depo, sohbet, Supabase,
+     alan adı, sabit iskelet) — her proje kendi deposuna/sunucusuna
+     bağlanmalı, ikisi aynı depoyu paylaşamaz. Görevler de kopyalanmıyor:
+     onlar eski projenin iş geçmişi, yeni projede anlamı yok. Firma
+     bilgileri/program adı gibi geri kalan zorunlu değişiklikler ayrı bir
+     iş — kaynağı `palet.kopyaKaynagi`'nda saklıyoruz ki o iş geldiğinde
+     hangi projeden geldiği kaybolmasın. */
   async projeKopyala(kaynakId, ek = {}) {
     yazmaKontrol();
     const kaynak = this.proje(kaynakId);
     if (!kaynak) throw new Error('Kopyalanacak proje bulunamadı.');
 
-    const temel = { firma: kaynak.firma, renk: kaynak.renk, repo: kaynak.repo || null, olusturan: AUTH.user.id };
+    /* Depo bilerek kopyalanmıyor: Bağlantılar ve temel sıfırdan kurulacak. */
+    const temel = { firma: kaynak.firma, renk: kaynak.renk, olusturan: AUTH.user.id };
     const genis = Object.assign({}, temel, {
       sektor: kaynak.sektor || null, telefon: kaynak.telefon || null, eposta: kaynak.eposta || null,
       dil: kaynak.dil || null, para: kaynak.para || null,
@@ -440,6 +443,16 @@ const DB = {
         projeTuru: ek.tur === 'test' ? 'test' : 'gercek',
         gorulenSurum: APP.version,
         kopyaKaynagi: kaynakId,
+        /* Bağlantılar ve temel sıfırdan kurulacak — kaynağın depo, sohbet,
+           Supabase ve alan adı bilgileri yeni projeye taşınmıyor. */
+        sohbetAdi: null,
+        sohbetAcildi: false,
+        supabaseUrl: null,
+        supabaseAnon: null,
+        alanAdi: null,
+        yayinda: false,
+        namecheapBaglandi: false,
+        kurulumKuruldu: false,
       }));
     } catch (h) { /* palet tablosu yoksa proje yine kuruldu, boş paletle kalır */ }
 

@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.134.38
+- **Proje kopyalanınca Bağlantılar ve temel artık sıfırdan başlıyor.** Depo, Claude sohbeti, Supabase bağlantısı, alan adı ve sabit iskelet onayı kopyalanmıyor — her proje kendi deposuna/sunucusuna bağlanmalı. Program adı, roller, veri katmanı, alan türü gibi yapısal kararlar hâlâ kaynaktan geliyor.
+
 ## v0.134.37
 - **Supabase adımına "Supabase'de proje aç" düğmesi eklendi.** GitHub/Namecheap adımlarındaki gibi tek dokunuşla Supabase'in yeni proje sayfası açılıyor; adres ve anon key'i nereden alacağını gösteren bir not da eklendi.
 
