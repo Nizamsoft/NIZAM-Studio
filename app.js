@@ -6711,9 +6711,48 @@ function kopyaKaynagiSec(tur) {
       const t = ev.target.closest('[data-proje]');
       if (!t) return;
       modalKapat();
-      projeKopyalaVeAc(t.dataset.proje, tur);
+      templateOnaySor(t.dataset.proje, tur);
     });
   }, 'genis');
+}
+
+/* Kaynak seçildikten hemen sonra: GitHub'da bu deponun "Template
+   repository" işaretli olup olmadığını Studio bilemez (API'ye bağlı
+   değiliz) — o yüzden doğrudan soruyoruz. Kapalıysa Settings sayfasını
+   açıyoruz, pencere açık kalıyor; işaretleyip döndüğünde "Açık, devam et"
+   diyor. Kaynağın hiç deposu yoksa soru anlamsız, direkt kopyalıyoruz. */
+function templateOnaySor(kaynakId, tur) {
+  const kaynak = DB.proje(kaynakId);
+  const slug = kaynak ? depoSlug(kaynak.repo) : '';
+  if (!slug) return projeKopyalaVeAc(kaynakId, tur);
+
+  modalHepsiniKapat();
+  modalAc(`
+    ${modalBaslik(ICON.dal, 'GitHub deposu şablon mu?',
+      `${esc(slug)} deposunda "Template repository" kapalıysa GitHub adımında kopyalama çalışmaz.`)}
+    <div class="secim">
+      <div class="satir sec-satir" data-tp="ac" role="button" tabindex="0">
+        <span class="sec-yazi"><b>Kapalı, önce açayım</b><i>GitHub'da o deponun Ayarlar sayfasını aç</i></span>
+      </div>
+      <div class="satir sec-satir" data-tp="devam" role="button" tabindex="0">
+        <span class="sec-yazi"><b>Açık, devam et</b><i>Zaten işaretlemiştim</i></span>
+      </div>
+    </div>
+    <div class="modal-alt">
+      <button class="btn btn-ghost" data-tp="kapat" type="button">Vazgeç</button>
+    </div>`, kutu => {
+    $('[data-tp="kapat"]', kutu).addEventListener('click', modalKapat);
+    kutu.addEventListener('click', ev => {
+      const t = ev.target.closest('[data-tp]');
+      if (!t || t.dataset.tp === 'kapat') return;
+      if (t.dataset.tp === 'ac') {
+        window.open('https://github.com/' + slug + '/settings', '_blank', 'noopener');
+        return;
+      }
+      modalKapat();
+      projeKopyalaVeAc(kaynakId, tur);
+    });
+  });
 }
 
 async function projeKopyalaVeAc(kaynakId, tur) {

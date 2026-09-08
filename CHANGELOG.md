@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.134.44
+- **Kopya proje kaynağı seçilince "GitHub deposu şablon mu?" sorusu eklendi.** Studio GitHub'daki Template repository ayarını göremediği için doğrudan soruyor: kapalıysa o deponun Ayarlar sayfasını açıyor, işaretleyip döndüğünde "Açık, devam et" ile kopyalamaya geçiliyor.
+
 ## v0.134.43
 - **GitHub'ın şablon (generate) sayfası isim parametresini kabul etmiyormuş, düzeltildi.** "Repository name" alanı otomatik dolmuyordu — Studio artık bunu iddia etmiyor, "Yeni depo adı"nı en üstte kopyalanabilir gösterip alana yapıştırman gerektiğini açıkça yazıyor.
 
