@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.134.42
+- **Kopya projede GitHub adımı yeniden "generate" (şablon) yoluna döndü.** Kaynak depo GitHub'da "Template repository" işaretliyse (test edildi, çalışıyor) token istemeden tek tıkla dosyalarıyla aynı depoyu kuruyor. İşaretli değilse GitHub boş bir sayfa açıyor; o durumda İçe Aktar (Import) ekranına yapıştırman için kaynak depo adresi ve önerilen yeni isim hâlâ kopyalanabilir gösteriliyor.
+
 ## v0.134.41
 - **Kopya projede GitHub adımı artık "İçe Aktar" (Import) yoluna gidiyor, "generate" (şablon) yoluna değil.** Şablon yolu yalnız kaynak depo GitHub'da "Template repository" işaretliyse çalışıyordu, işaretli değilse sessizce boş bir depo ekranına düşürüyordu — kafa karıştırıcıydı. Import her depoda çalışır: adım artık kaynak depo adresini ve önerilen yeni depo adını ayrı ayrı kopyalanabilir gösteriyor.
 

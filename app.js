@@ -7603,12 +7603,12 @@ function baglantiAdimGithub(p) {
   const depo = !!p.repo;
 
   /* Kopya projede depo de "aynısından" kurulmalı. GitHub'ın "generate"
-     (şablon) yolu yalnız kaynak depo "Template repository" işaretliyse
-     çalışıyor — işaretli değilse GitHub sessizce boş bir "New repository"
-     ekranına düşürüyor, hiç hata vermiyor. Bu yüzden varsayılan yol
-     "İçe Aktar" (Import): hiçbir ön ayar istemez, her depoda çalışır.
-     Tek bedeli iki alanı elle yapıştırmak — adres ve isim burada
-     kopyalanabilir gösteriliyor. */
+     (şablon) yolu en hızlısı — token istemez, tek tık — ama kaynak depo
+     GitHub'da "Template repository" işaretli olmalı (Settings → General,
+     kalıcı ve zararsız bir ayar, bir kere yapılır). İşaretli değilse
+     GitHub sessizce boş bir "New repository" ekranına düşürür; o durumda
+     çıkış yolu İçe Aktar (Import) — ama o da bir erişim token'ı ister.
+     İkisi için de gereken adres/isim burada kopyalanabilir duruyor. */
   const kaynak     = pl.kopyaKaynagi ? DB.proje(pl.kopyaKaynagi) : null;
   const kaynakSlug = kaynak ? depoSlug(kaynak.repo) : '';
   const kopyaMi    = !depo && !!kaynakSlug;
@@ -7617,7 +7617,7 @@ function baglantiAdimGithub(p) {
   const depoAdresi = depo
     ? 'https://github.com/' + esc(slug)
     : kopyaMi
-      ? 'https://github.com/new/import'
+      ? 'https://github.com/' + esc(kaynakSlug) + '/generate?name=' + encodeURIComponent(yeniAd)
       : 'https://github.com/new?name=' + encodeURIComponent(yeniAd)
         + '&description=' + encodeURIComponent(projeAdi(p) + ' · NIZAM Studio')
         + '&visibility=private';
@@ -7640,9 +7640,12 @@ function baglantiAdimGithub(p) {
       ${kopyaSatir('Yeni depo adı', yeniAd)}
     </div>
     <div class="fbd-not">${svg(ICON.info, 13)}
-      <span>Açılan sayfada <b>kaynak depo</b> adresini "Your old repository's clone URL"
-      alanına, <b>yeni depo adı</b>nı da "Repository name" alanına yapıştır, sonra
-      <b>Begin import</b> de. Studio dönüşte adresi kendisi yazar.</span></div>`;
+      <span>Kaynak depo GitHub'da <b>Template repository</b> işaretliyse açılan sayfa
+      token istemeden dosyalarıyla aynı depoyu kurar, isim de doğru gelir — değiştirmeden
+      <b>Create repository</b> demen yeter. İşaretli değilse GitHub boş bir sayfa açar; o
+      zaman yukarıdaki adres ve ismi kopyalayıp GitHub'daki
+      <a href="https://github.com/new/import" target="_blank" rel="noopener">İçe Aktar</a>
+      ekranına yapıştır (bu bir erişim token'ı ister).</span></div>`;
 
   return shBaslikServis('github', kopyaMi ? 'GitHub\'a bağlan ve kopyala' : 'GitHub\'a bağlan',
     'Kodun barındığı yer. Depo bağlanınca Claude Code buradan görev alır.')
