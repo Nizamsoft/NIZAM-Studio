@@ -663,6 +663,17 @@ const VIEWS = {
                 ? `<b class="mono">${esc(kokAlan())}</b>`
                 : '<b class="eksik">yazılmadı</b>'} ${svg(ICON.kalem, 13)}</span>
             </div>
+            <div class="row" data-eylem="supabase-org" role="button" tabindex="0">
+              <div class="row-main">
+                <span class="row-title">Supabase organizasyonu</span>
+                <span class="row-sub">${supabaseOrg()
+                  ? '"Supabase\'de proje aç" doğrudan bu organizasyona gider'
+                  : 'Yazılmazsa Supabase önce yeni organizasyon kurdurur'}</span>
+              </div>
+              <span class="row-val">${supabaseOrg()
+                ? `<b class="mono">${esc(supabaseOrg())}</b>`
+                : '<b class="eksik">yazılmadı</b>'} ${svg(ICON.kalem, 13)}</span>
+            </div>
           </div>
         </div>
       </div>` : ''}
@@ -4810,6 +4821,26 @@ function kokAlanYaz(deger) {
   } catch (h) { /* önemsiz */ }
 }
 
+/* Supabase organizasyon kodu ayarda bir kere yazılıyor — yazılmazsa
+   "Supabase'de proje aç" düğmesi Supabase'in genel /new adresine gider ve
+   Supabase önce "yeni organizasyon kur" diye sorar. Kod yazılınca doğrudan
+   o organizasyonun içinde proje açma ekranına düşüyor. Kök alan adıyla
+   aynı mantık: depoSahibi/kokAlan gibi bir kere sorulur, hep hatırlanır. */
+const SUPABASE_ORG_ANAHTAR = 'ns.supabaseOrg';
+
+function supabaseOrg() {
+  try { return localStorage.getItem(SUPABASE_ORG_ANAHTAR) || ''; }
+  catch (h) { return ''; }
+}
+
+function supabaseOrgYaz(deger) {
+  const temiz = String(deger || '').trim();
+  try {
+    if (temiz) localStorage.setItem(SUPABASE_ORG_ANAHTAR, temiz);
+    else localStorage.removeItem(SUPABASE_ORG_ANAHTAR);
+  } catch (h) { /* önemsiz */ }
+}
+
 /* Projenin alt alanı. Firma adının tamamı uzun ve okunmaz çıkıyor
    ("merkezefendikoftecisi"); ilk iki kelime hem ayırt edici hem kısa. */
 function altAlan(p) {
@@ -7770,16 +7801,29 @@ function baglantiAdimSupabase(p) {
   const pl  = p.palet || {};
   const url = String(pl.supabaseUrl || '').trim();
   const key = String(pl.supabaseAnon || '').trim();
+  const org = supabaseOrg();
 
   const durum = (url && key) ? baDurum('Bağlantı kuruldu', url) : '';
+
+  /* Organizasyon kodu yazılmadıysa Supabase önce "yeni organizasyon kur"
+     diye soruyor — Ayarlar'daki satırla bir kere yazılınca bu adres
+     doğrudan o organizasyonun içinde proje açma ekranına düşüyor. */
+  const acHref = org
+    ? 'https://supabase.com/dashboard/new/' + encodeURIComponent(org)
+    : 'https://supabase.com/dashboard/new';
+  const orgNotu = org ? '' : `
+    <p class="ipucu" style="margin:-4px 0 12px">Her seferinde "yeni organizasyon
+    kur" sormasın diye <a href="#/ayarlar">Ayarlar</a>'da Supabase organizasyon
+    kodunu bir kez yaz.</p>`;
 
   return shBaslikServis('supabase', 'Supabase\'e bağlan',
     'Programın verisinin, girişin ve gerçek zamanlı güncellemelerin tutulduğu yer.')
     + durum
     + `<a class="sayfa-dug ikincil" target="_blank" rel="noopener"
-         href="https://supabase.com/dashboard/new">
-        ${svg(ICON.bulut, 15)} Supabase'de proje aç</a>
-      <label class="field"><span>Proje adresi</span>
+         href="${esc(acHref)}">
+        ${svg(ICON.bulut, 15)} Supabase'de proje aç</a>`
+    + orgNotu
+    + `<label class="field"><span>Proje adresi</span>
         <input type="text" id="ba-sb-url" value="${esc(url)}"
                placeholder="https://xxxx.supabase.co" autocomplete="off"
                spellcheck="false" autocapitalize="off"></label>
@@ -10918,6 +10962,21 @@ async function eylemCalistir(el) {
     kokAlanYaz(deger);
     render();
     return toast(deger.trim() ? 'Kök alan adı kaydedildi.' : 'Kök alan adı silindi.');
+  }
+
+  if (e === 'supabase-org') {
+    const deger = await metinSor({
+      baslik: 'Supabase organizasyonu',
+      aciklama: 'Supabase\'de sol üstten organizasyonuna tıkla; adres çubuğundaki '
+              + 'dashboard/org/ sonrasındaki kodu buraya yapıştır.',
+      deger: supabaseOrg(),
+      yerTutucu: 'örn. abcdefghijklmnopqrst',
+      buton: 'Kaydet',
+    });
+    if (deger === null) return;
+    supabaseOrgYaz(deger);
+    render();
+    return toast(deger.trim() ? 'Supabase organizasyonu kaydedildi.' : 'Supabase organizasyonu silindi.');
   }
 
   if (e === 'sohbet-adi') {

@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.134.46
+- **"Supabase'de proje aç" artık yeni organizasyon kurdurmuyor.** Ayarlar → Yayın'a "Supabase organizasyonu" satırı eklendi — bir kez organizasyon kodunu yazınca düğme doğrudan o organizasyonun içinde proje açma ekranına gidiyor (kök alan adıyla aynı mantık).
+
 ## v0.134.45
 - **"Kapalı, önce açayım" artık kendiliğinden devam ediyor.** GitHub'daki Ayarlar sayfasını açıp sekmeye geri döndüğünde, Studio ayarı açtı sayıp kopyalamayı otomatik başlatıyor — ayrıca "Açık, devam et" demene gerek kalmıyor (GitHub/Pages adımlarındaki sekmeden dönünce algılama mantığının aynısı).
 
