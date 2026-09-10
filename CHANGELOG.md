@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.134.47
+- **Kritik hata düzeltildi: kopya proje silinince orijinalin logosu/görselleri de siliniyordu.** Kopyalama, logo ve görsel dosyalarının depo yolunu (aynı fiziksel dosyayı) birebir kopyalıyordu — iki proje aynı dosyayı paylaşınca biri silinince dosya gerçekten depodan gidiyor, diğer proje de görselini kaybediyordu. Artık kopyada logo hiç taşınmıyor, görsel yuvaları (hangi görsel gerekiyor bilgisi) kalıyor ama dosya yolu boş geliyor — her proje kendi dosyasını yükler, paylaşım riski kalmadı.
+
 ## v0.134.46
 - **"Supabase'de proje aç" artık yeni organizasyon kurdurmuyor.** Ayarlar → Yayın'a "Supabase organizasyonu" satırı eklendi — bir kez organizasyon kodunu yazınca düğme doğrudan o organizasyonun içinde proje açma ekranına gidiyor (kök alan adıyla aynı mantık).
 

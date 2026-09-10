@@ -414,19 +414,26 @@ const DB = {
      onlar eski projenin iş geçmişi, yeni projede anlamı yok. Firma
      bilgileri/program adı gibi geri kalan zorunlu değişiklikler ayrı bir
      iş — kaynağı `palet.kopyaKaynagi`'nda saklıyoruz ki o iş geldiğinde
-     hangi projeden geldiği kaybolmasın. */
+     hangi projeden geldiği kaybolmasın.
+
+     Logo ve görsel dosyaları da BİLEREK kopyalanmıyor — yalnız referans
+     (storage yolu) kopyalansaydı iki proje aynı fiziksel dosyayı
+     paylaşırdı; biri silinince `projeSil` o dosyayı depodan gerçekten
+     kaldırıyor ve diğer proje de görselini kaybediyordu. Yuva bilgisi
+     (no/ad/tarif) kalıyor, sadece dosya kendisi boş geliyor — yeniden
+     yüklenmesi gerekiyor. */
   async projeKopyala(kaynakId, ek = {}) {
     yazmaKontrol();
     const kaynak = this.proje(kaynakId);
     if (!kaynak) throw new Error('Kopyalanacak proje bulunamadı.');
 
-    /* Depo bilerek kopyalanmıyor: Bağlantılar ve temel sıfırdan kurulacak. */
+    /* Depo ve logo bilerek kopyalanmıyor: Bağlantılar ve temel sıfırdan
+       kurulacak, logo da aynı fiziksel dosyayı paylaşmasın diye. */
     const temel = { firma: kaynak.firma, renk: kaynak.renk, olusturan: AUTH.user.id };
     const genis = Object.assign({}, temel, {
       sektor: kaynak.sektor || null, telefon: kaynak.telefon || null, eposta: kaynak.eposta || null,
       dil: kaynak.dil || null, para: kaynak.para || null,
       baslangic: kaynak.baslangic || null, teslim: kaynak.teslim || null,
-      logo: kaynak.logo || null,
     });
 
     let proje = null, error = null;
@@ -439,6 +446,7 @@ const DB = {
     if (!proje) throw new Error(veriHatasi(error));
 
     try {
+      const kaynakGorseller = (kaynak.palet && kaynak.palet.gorseller) || [];
       await this.paletKaydet(proje.id, Object.assign({}, kaynak.palet || {}, {
         projeTuru: ek.tur === 'test' ? 'test' : 'gercek',
         gorulenSurum: APP.version,
@@ -453,6 +461,9 @@ const DB = {
         yayinda: false,
         namecheapBaglandi: false,
         kurulumKuruldu: false,
+        /* Yuvalar kalıyor (hangi görsel gerekiyor bilgisi), dosya yolu
+           kalmıyor — aksi hâlde iki proje aynı depodaki dosyayı paylaşır. */
+        gorseller: kaynakGorseller.map(g => Object.assign({}, g, { yol: '', boyut: 0, tur: '' })),
       }));
     } catch (h) { /* palet tablosu yoksa proje yine kuruldu, boş paletle kalır */ }
 
