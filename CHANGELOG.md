@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.134.49
+- **"Sabit iskelet kuruldu" onayı kaldırıldı.** Bağlantılar ve temel aşaması artık yalnız GitHub, Claude, Yayın (varsa Supabase/Namecheap) bağlanınca bitiyor — sihirbazı bitirmek yeterli, ayrı bir "Kuruldu" kutusu işaretlemeye gerek yok.
+
 ## v0.134.48
 - **"Kurulum ve yapı" sadeleşti.** Ekrana girer girmez modül ağacı açılıyor — eskiden araya giren "Modüller" özet kartına bir kez daha dokunmak gerekiyordu, o adım kalktı.
 - **Ölü kod temizlendi.** Ağaç sistemine geçilmeden önceki eski modül/sayfa listesi ekranı ve ona bağlı hiçbir yerden çağrılmayan fonksiyonlar (yaklaşık 300 satır) kaldırıldı — davranışta değişiklik yok, yalnız bakımı kolaylaştırıyor.

@@ -1139,9 +1139,6 @@ function baglantilarSayfasi(p, d) {
     .concat(namecheapMi ? [!!pl.namecheapBaglandi] : []).filter(Boolean).length;
   const bagToplam = 3 + (sunuculu ? 1 : 0) + (namecheapMi ? 1 : 0);
 
-  const biten = bagDolu + (pl.kurulumKuruldu ? 1 : 0);
-  const toplam = bagToplam + 1;
-
   const kart = bagDolu === 0
     ? fbBosKart('#b8926b', ICON.dal, 'Bağlantılar', bagDolu + '/' + bagToplam,
         'GitHub, Claude, Yayın'
@@ -1163,30 +1160,14 @@ function baglantilarSayfasi(p, d) {
     </div>`, bagDolu + '/' + bagToplam);
 
   return `<div class="fb-govde">`
-    + adimBasligi(p, d, biten + '/' + toplam)
+    + adimBasligi(p, d, bagDolu + '/' + bagToplam)
     + kart
     + `<div class="fb-kg tek" style="margin-top:11px">
         ${kunyeSatiri('#b8926b', ICON.dal,   'Kod deposu',
                       depoSlug(p.repo) || p.repo, 'repo', p.id, false, 'dokun, yapıştır')}
         ${kunyeSatiri('#9b7fd4', ICON.dosya, 'Proje kimliği', 'NIZAM.md', 'kimlik', p.id)}
       </div>`
-    + kurulumPaketiKarti(p, sunuculu || namecheapMi ? 5 : 4)
     + `</div>`;
-}
-
-/* Sabit iskelet onayı — tanışma promptu (Nizam Standardı + CLAUDE.md/NIZAM.md/
-   nizam/ klasörü) Sohbet adımıyla zaten Claude'a gitti. Burada tek iş, Claude
-   gerçekten kurunca bunu işaretlemek — Studio depoya bakamadığı için elle
-   onay gerekiyor (SQL kurulumundaki gibi). */
-function kurulumPaketiKarti(p, no) {
-  const pl = p.palet || {};
-  return durakKarti(no, !!pl.kurulumKuruldu, 'Sabit iskelet',
-      'Tanışma promptu Sohbet adımıyla Claude\'a gitti. Claude '
-      + '<b class="mono">CLAUDE.md</b>, <b class="mono">NIZAM.md</b> ve '
-      + '<b class="mono">nizam/</b> klasörünü kurunca aşağıdan işaretle.', `
-    <label class="kur-onay ${pl.kurulumKuruldu ? 'on' : ''}" data-eylem="kurulum-paketi-onay"
-           data-proje="${p.id}" role="button" tabindex="0">
-      <span class="kur-kutu">${svg(ICON.tik, 12)}</span> Kuruldu</label>`);
 }
 
 /* ---------- Rol merdiveni ----------
@@ -5494,13 +5475,14 @@ function projeDuraklari(p) {
         : 'Bu paketin adı, kim kullanacak, verisi nerede duracak?',
     },
     {
-      /* Eski "Nizam kurulum paketi" durağı buraya katlandı: dört karenin
-         yanına sabit iskelet onayı eklendi. Supabase seçiliyse gerçek
-         bağlantı (adres+anon key) de burada — karar Program temeli'nde,
-         bağlantı burada. */
+      /* Eski "Nizam kurulum paketi" durağı buraya katlandı. Supabase
+         seçiliyse gerçek bağlantı (adres+anon key) de burada — karar
+         Program temeli'nde, bağlantı burada. Sabit iskelet onayı (eski
+         "Kuruldu" kutusu) kalktı: Studio depoya bakamadığı için elle
+         onaylatmak gereksiz bir sürtünmeydi, sihirbazı bitirmek yetiyor. */
       ad: 'Bağlantılar ve temel',
       bitti: !!p.repo && !!String(pl0.sohbetAdi || '').trim()
-             && !!pl0.alanAdi && !!pl0.yayinda && !!pl0.kurulumKuruldu
+             && !!pl0.alanAdi && !!pl0.yayinda
              && (!sunuculuMu(p) || (!!String(pl0.supabaseUrl || '').trim()
                                      && !!String(pl0.supabaseAnon || '').trim()))
              && (pl0.alanTuru !== 'namecheap' || !!pl0.namecheapBaglandi),
@@ -5508,9 +5490,7 @@ function projeDuraklari(p) {
         ? 'Depo, sohbet, adres ve yayın burada kurulacak.'
         : !pl0.yayinda
           ? (pl0.alanAdi ? 'Depo, sohbet ve adres hazır. Sıra yayında.' : 'Depo hazır. Sıra adres ve yayında.')
-          : pl0.kurulumKuruldu
-            ? 'Bağlantılar hazır, sabit iskelet kuruldu.'
-            : 'Bağlantılar hazır. Sıra sabit iskelette.',
+          : 'Bağlantılar hazır.',
     },
     {
       /* Sıra kilitli olduğu için bu durağa gelindiğinde Bağlantılar zaten
@@ -10482,15 +10462,6 @@ async function eylemCalistir(el) {
     return isYap(() => DB.paletKaydet(pr.id,
       Object.assign({}, pl, { sqlKuruldu: !pl.sqlKuruldu })),
       pl.sqlKuruldu ? 'İşaret kaldırıldı.' : 'Veritabanı kuruldu.');
-  }
-
-  if (e === 'kurulum-paketi-onay') {
-    const pr = DB.proje(el.dataset.proje);
-    if (!pr) return;
-    const pl = pr.palet || {};
-    return isYap(() => DB.paletKaydet(pr.id,
-      Object.assign({}, pl, { kurulumKuruldu: !pl.kurulumKuruldu })),
-      pl.kurulumKuruldu ? 'İşaret kaldırıldı.' : 'Sabit iskelet kuruldu olarak işaretlendi.');
   }
 
   if (e === 'supabase-baglan') {

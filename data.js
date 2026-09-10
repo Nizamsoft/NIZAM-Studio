@@ -460,7 +460,6 @@ const DB = {
         alanAdi: null,
         yayinda: false,
         namecheapBaglandi: false,
-        kurulumKuruldu: false,
         /* Yuvalar kalıyor (hangi görsel gerekiyor bilgisi), dosya yolu
            kalmıyor — aksi hâlde iki proje aynı depodaki dosyayı paylaşır. */
         gorseller: kaynakGorseller.map(g => Object.assign({}, g, { yol: '', boyut: 0, tur: '' })),
