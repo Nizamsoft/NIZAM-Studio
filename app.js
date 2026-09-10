@@ -49,8 +49,6 @@ function rota() {
 let YUKLENIYOR     = false;
 let GOREV_FILTRE   = '';
 let SON_EKRAN      = '';
-const ACIK_MODUL    = new Set();
-const ACIK_SAYFA    = new Set();
 const ACIK_STANDART = new Set();
 /* Gruplar akordeon: aynı anda yalnızca biri açık kalır. */
 let ACIK_GRUP = null;
@@ -3731,9 +3729,10 @@ function kurulumAdimi(p, a, sirada) {
 }
 
 function yapiSayfasi(p, d) {
-  /* Modül kurma akışı açıksa ekranı o alıyor; "Kapat" taslağı silince
-     buradaki kurulum ızgarasına geri dönülüyor. */
-  if (AUTH.yonetici && YAPI_ACIK[p.id]) return yapiAkisi(p, d);
+  /* Yönetici için ara ekran yok: girer girmez ağaç açılıyor. Eskiden burada
+     tek kartlık bir özet duruyordu ve ağacı açmak için ona bir kez daha
+     dokunmak gerekiyordu — gereksiz bir tık. */
+  if (AUTH.yonetici) { YAPI_ACIK[p.id] = true; return yapiAkisi(p, d); }
 
   const moduller = DB.modulleri(p.id);
   const gercek   = moduller.filter(m => m.ad !== GENEL_MODUL);
@@ -4890,29 +4889,6 @@ function modulAdiSor(p) {
   });
 }
 
-/* Proje ekranından modül silme. Ağaçtaki yolla aynı işi yapsın diye
-   ortak: görev kontrolü, onay, palet temizliği. */
-async function modulKaldir(el, id) {
-  const modul = DB.moduller.find(m => m.id === id);
-  const pr = modul ? DB.proje(modul.proje_id) : null;
-  const ad = el.dataset.ad || (modul && modul.ad) || 'Modül';
-
-  if (pr) {
-    const gorev = modulGorevSayisi(pr, id);
-    if (gorev) return toast('Bu modülde ' + gorev + ' görev var, önce onları taşı.', 'hata');
-  }
-  if (!await onaySor({
-    baslik: 'Modül silinsin mi?',
-    mesaj: `"${ad}" modülü, sayfaları ve künyeleri silinecek. Bu işlem geri alınamaz.`,
-  })) return;
-
-  ACIK_MODUL.delete(id);
-  return isYap(async () => {
-    await DB.modulSil(id);
-    if (pr) await modulPaletTemizle(pr, ad);
-  }, 'Modül silindi.');
-}
-
 /* Modül silinince palet üç yerde iz bırakıyor: sayfa künyeleri, anlatım
    ve modül kuralları. Temizlenmezse silinmiş modül prompta yazılmaya
    devam ediyor — kunyeBlogu palete bakıyor, veritabanına değil. */
@@ -5744,82 +5720,6 @@ function projeKarti(p, i = 0) {
         </div>
       </div>
     </div>`;
-}
-
-function modulKarti(m, i = 0) {
-  const s     = DB.modulSayim(m.id);
-  const acik  = ACIK_MODUL.has(m.id);
-  const sayfalar = DB.sayfalari(m.id);
-
-  return `
-    <div class="card modul ${m.genel ? 'modul-genel' : ''}" style="--i:${i}">
-      <div class="modul-bas ${acik ? 'acik' : ''}" data-eylem="modul-ac" data-id="${m.id}" role="button" tabindex="0">
-        <span class="chev">${svg(ICON.chevron, 15)}</span>
-        <span class="modul-ikon">${svg(m.genel ? ICON.kova : ICON.katman, 16)}</span>
-        <span class="modul-yazi">
-          <span class="modul-ad">${esc(m.ad)}</span>
-          <span class="modul-alt">${m.genel
-            ? `Modüle bağlanmayan işler · ${s.gorev} görev`
-            : `${s.sayfa} sayfa · ${s.gorev} görev`}</span>
-        </span>
-        <span class="modul-bar">
-          <span class="bar"><i style="width:${s.yuzde}%"></i></span>
-          <span class="modul-pct mono">%${s.yuzde}</span>
-        </span>
-        ${AUTH.yonetici && !m.genel ? `<button class="mini-btn" data-eylem="modul-menu" data-id="${m.id}"
-          data-ad="${esc(m.ad)}" type="button" aria-label="Modül seçenekleri">${svg(ICON.nokta, 15)}</button>` : ''}
-      </div>
-
-      ${acik ? `
-        <div class="sayfalar">
-          ${m.genel ? kovaGorevleri(m) : ''}
-          ${sayfalar.map(sf => sayfaSatiri(sf)).join('')}
-
-          ${!sayfalar.length && !m.genel
-            ? `<div class="sayfa-bos">Henüz sayfa yok.</div>` : ''}
-
-          ${AUTH.yonetici && !m.genel ? `
-            <div class="sayfa-ekle" data-eylem="sayfa-ekle" data-id="${m.id}" role="button" tabindex="0">
-              ${svg(ICON.arti, 14)}<span>Sayfa ekle</span>
-            </div>` : ''}
-
-        </div>` : ''}
-    </div>`;
-}
-
-/* Bir sayfa satırı ve — açıksa — altındaki görevler */
-function sayfaSatiri(sf) {
-  const s     = DB.sayfaSayim(sf.id);
-  const acik  = ACIK_SAYFA.has(sf.id);
-  const gorevler = DB.gorevleri({ sayfa: sf.id });
-
-  return `
-    <div class="sayfa ${acik ? 'acik' : ''}" data-eylem="sayfa-ac" data-id="${sf.id}" role="button" tabindex="0">
-      <span class="sayfa-chev">${svg(ICON.chevron, 12)}</span>
-      <span class="sayfa-nokta" style="background:${sayfaRengi(gorevler)}"></span>
-      <span class="sayfa-ad">${esc(sf.ad)}</span>
-      <span class="sayfa-say mono">${s.bitmis}/${s.gorev}</span>
-      ${AUTH.yonetici ? `<button class="mini-btn" data-eylem="sayfa-sil" data-id="${sf.id}"
-         data-ad="${esc(sf.ad)}" type="button" aria-label="Sayfayı sil">${svg(ICON.cop, 14)}</button>` : ''}
-    </div>
-    ${acik ? `
-      ${gorevler.map(g => gorevSatiri(g)).join('')}
-      ${!gorevler.length ? `<div class="gorev-bos">Bu sayfada görev yok.</div>` : ''}
-      ${AUTH.yonetici ? `
-        <div class="gorev-ekle" data-eylem="gorev-ekle" data-sayfa="${sf.id}" data-modul="${sf.modul_id}"
-             role="button" tabindex="0">${svg(ICON.arti, 13)}<span>Görev ekle</span></div>` : ''}
-    ` : ''}`;
-}
-
-/* "Proje Geneli" kovası — sayfası yok, doğrudan görev alır */
-function kovaGorevleri(m) {
-  const gorevler = DB.gorevleri({ modul: m.id });
-  return `
-    ${gorevler.map(g => gorevSatiri(g)).join('')}
-    ${!gorevler.length ? `<div class="gorev-bos">Bu kova sayfa tutmaz — modüle bağlanamayan işler buraya düşer.</div>` : ''}
-    ${AUTH.yonetici ? `
-      <div class="gorev-ekle" data-eylem="gorev-ekle" data-modul="${m.id}" role="button" tabindex="0">
-        ${svg(ICON.arti, 13)}<span>Görev ekle</span></div>` : ''}`;
 }
 
 /* Ağaç içindeki tek satırlık görev */
@@ -8069,53 +7969,6 @@ function listeSor(baslik, secenekler, yazAd) {
   });
 }
 
-/* Modül seçimi — ağaçtaki modül düğümünden açılır. */
-function modulSecAc(projeId) {
-  modalHepsiniKapat();
-  const p = DB.proje(projeId);
-  if (!p) return;
-  const t = yapiTaslak(p);
-  const kurulu = DB.modulleri(p.id).filter(m => m.ad !== GENEL_MODUL);
-  const sablon = DB.modulSablonlari().filter(m => !kurulu.some(x => x.ad === m.ad));
-
-  const satir = (ad, alt) => `
-    <div class="satir sec-satir ${t.modul === ad ? 'sec' : ''}" data-ms="${esc(ad)}"
-         role="button" tabindex="0">
-      <span class="sec-yazi"><b>${esc(ad)}</b><i>${esc(alt)}</i></span>
-      <span class="kare">${t.modul === ad ? svg(ICON.tik, 12) : ''}</span>
-    </div>`;
-
-  modalAc(`
-    ${modalBaslik(ICON.katman, 'Modül', 'Kurulu bir modülü düzenle ya da yeni bir tane kur.')}
-    <div class="secim">
-      ${kurulu.map(m => satir(m.ad, DB.sayfalari(m.id).length + ' sayfa · kurulu')).join('')}
-      ${sablon.map(m => satir(m.ad, (m.sayfalar || []).length + ' sayfa hazır')).join('')}
-    </div>
-    <div class="modal-alt">
-      <button class="btn btn-ghost" data-ms-yaz="1" type="button">Kendim yazayım</button>
-      <button class="btn btn-ghost" data-ms="iptal" type="button">Vazgeç</button>
-    </div>`, kutu => {
-    $$('[data-ms]', kutu).forEach(el => {
-      if (el.dataset.ms === 'iptal') { el.addEventListener('click', modalKapat); return; }
-      el.addEventListener('click', () => { modalKapat(); modulSec(p, el.dataset.ms); });
-    });
-    $('[data-ms-yaz]', kutu).addEventListener('click', async () => {
-      modalKapat();
-      const ad = await metinSor({ baslik: 'Modül adı', yerTutucu: 'Örn. Muhasebe',
-                                  buton: 'Kur' });
-      if (ad) modulSec(p, ad);
-    });
-  });
-}
-
-/* Modül seçilince sayfaları ve varsa künyeleri yüklenir. */
-function modulSec(p, ad) {
-  const t = yapiTaslak(p);
-  t.odak = null;
-  modulYukle(p, t, ad);
-  render();
-}
-
 /* Onay kutusu — silme gibi geri alınamaz işler için */
 function onaySor({ baslik, mesaj, buton = 'Sil' }) {
   return new Promise(resolve => {
@@ -8522,8 +8375,6 @@ async function yeniGorevKaydet() {
       standartlar: YENI.standartlar,
     });
     YENI._baslik = YENI._aciklama = '';
-    if (YENI.sayfa) ACIK_SAYFA.add(YENI.sayfa);
-    if (YENI.modul) ACIK_MODUL.add(YENI.modul);
     modalKapat(); sayaclariYaz(); render(); toast('Görev oluşturuldu.', 'basari');
   } catch (e) {
     toast(e.message, 'hata');
@@ -8656,81 +8507,6 @@ function standartSor(mevcut) {
 /* ==========================================================================
    MODÜL ŞABLONLARI
    ========================================================================== */
-
-/* Projeye modül eklerken: ad, sayfalar ve istersen kütüphaneye de kaydet. */
-function modulEkleAc(projeId) {
-  modalHepsiniKapat();
-
-  modalAc(`
-    ${modalBaslik(ICON.katman, 'Yeni modül', 'Hazır bir şablon adı yazarsan sayfaları kendiliğinden dolar.')}
-
-    <label class="field">
-      <span>Modül adı</span>
-      <input type="text" id="me-ad" placeholder="Örn. Sipariş" maxlength="60" autocomplete="off" list="me-sablonlar">
-      <datalist id="me-sablonlar">
-        ${DB.modulSablonlari().map(m => `<option value="${esc(m.ad)}"></option>`).join('')}
-      </datalist>
-    </label>
-
-    <label class="field">
-      <span>Sayfalar <em class="ipucu">her satıra bir sayfa</em></span>
-      <textarea id="me-sayfalar" rows="6" spellcheck="false"
-                placeholder="Sipariş Listesi&#10;Sipariş Oluştur&#10;Sipariş Detayı"></textarea>
-    </label>
-
-    <label class="onay-satir">
-      <input type="checkbox" id="me-sablon">
-      <span>
-        <b>Nizam varsayılanlarına ekle</b>
-        <i>Bundan sonraki projelerde hazır seçenek olarak çıksın</i>
-      </span>
-    </label>
-
-    <div class="modal-alt">
-      <button class="btn btn-ghost" data-me="iptal" type="button">Vazgeç</button>
-      <button class="btn btn-primary" data-me="ekle" type="button"><span>Ekle</span></button>
-    </div>`, kutu => {
-    const adAlan = $('#me-ad', kutu);
-    const sfAlan = $('#me-sayfalar', kutu);
-
-    /* Ad bilinen bir şablonla eşleşirse sayfaları doldur — üstünde oynayabilir. */
-    adAlan.addEventListener('input', () => {
-      if (sfAlan.dataset.elle === '1') return;
-      const s = DB.modulSablonlari().find(m =>
-        m.ad.toLocaleLowerCase('tr') === adAlan.value.trim().toLocaleLowerCase('tr'));
-      sfAlan.value = s ? (s.sayfalar || []).join('\n') : '';
-    });
-    sfAlan.addEventListener('input', () => { sfAlan.dataset.elle = '1'; });
-
-    setTimeout(() => adAlan.focus(), 40);
-    $('[data-me="iptal"]', kutu).addEventListener('click', modalKapat);
-
-    $('[data-me="ekle"]', kutu).addEventListener('click', async () => {
-      const ad = adAlan.value.trim();
-      if (!ad) { toast('Modül adı yaz.'); return; }
-
-      const sayfalar = sfAlan.value.split(/\r?\n/).map(x => x.trim()).filter(Boolean);
-      const kutuphaneye = $('#me-sablon', kutu).checked;
-
-      const yazi = $('[data-me="ekle"] span', kutu);
-      yazi.textContent = 'Ekleniyor…';
-      try {
-        await DB.modulEkle(projeId, ad, sayfalar);
-        if (kutuphaneye) {
-          const varOlan = DB.sablonlar.find(m =>
-            m.ad.toLocaleLowerCase('tr') === ad.toLocaleLowerCase('tr'));
-          await DB.sablonKaydet(varOlan ? varOlan.id : null, { ad, sayfalar });
-        }
-        modalKapat();
-        render();
-        toast(kutuphaneye ? ad + ' eklendi ve varsayılanlara kaydedildi.' : ad + ' eklendi.', 'basari');
-      } catch (h) {
-        yazi.textContent = 'Ekle';
-        toast(h.message, 'hata');
-      }
-    });
-  });
-}
 
 /* Sektör: ad ve o sektörde önden işaretlenecek modüller. */
 function sektorDuzenle(id) {
@@ -10449,16 +10225,6 @@ async function eylemCalistir(el) {
   if (e === 'projelere') { location.hash = '#/projeler'; return; }
   if (e === 'proje-ac')  { location.hash = '#/projeler/' + id; return; }
 
-  if (e === 'modul-ac') {
-    ACIK_MODUL.has(id) ? ACIK_MODUL.delete(id) : ACIK_MODUL.add(id);
-    return render();
-  }
-
-  if (e === 'sayfa-ac') {
-    ACIK_SAYFA.has(id) ? ACIK_SAYFA.delete(id) : ACIK_SAYFA.add(id);
-    return render();
-  }
-
   if (e === 'gorev-ac')   return gorevKartiAc(id);
 
   if (e === 'gorev-ekle') return yeniGorevAc({
@@ -11162,24 +10928,6 @@ async function eylemCalistir(el) {
     return;
   }
 
-  if (e === 'modul-menu') {
-    const sec = await secenekSor(el.dataset.ad, [
-      { anahtar: 'ad',  ad: 'Adı değiştir', ikon: ICON.kalem },
-      { anahtar: 'sil', ad: 'Modülü sil',   ikon: ICON.cop, alt: 'Sayfaları da gider', tehlike: true },
-    ]);
-    if (!sec) return;
-
-    if (sec === 'ad') {
-      const ad = await metinSor({ baslik: 'Modül adı', deger: el.dataset.ad, buton: 'Kaydet' });
-      if (!ad || ad === el.dataset.ad) return;
-      return isYap(() => DB.adDegistir('modules', id, ad), 'Ad güncellendi.');
-    }
-
-    return modulKaldir(el, id);
-  }
-
-  if (e === 'modul-ekle') return modulEkleAc(el.dataset.proje || el.dataset.id || rota().id);
-
   /* ---- Yapı ağacı ---- */
   if (e === 'agac-modul-ac') {
     const pr = DB.proje(el.dataset.proje);
@@ -11283,8 +11031,6 @@ async function eylemCalistir(el) {
     return;
   }
 
-  if (e === 'agac-modul') return modulSecAc(el.dataset.proje);
-
   if (e === 'agac-modul-sil') {
     const pr = DB.proje(el.dataset.proje);
     if (!pr) return;
@@ -11349,14 +11095,6 @@ async function eylemCalistir(el) {
   if (e === 'yapi-akis-ac') {
     const pr = DB.proje(el.dataset.proje);
     if (pr) { yapiTaslak(pr); YAPI_ACIK[pr.id] = true; render(); }
-    return;
-  }
-
-  if (e === 'yapi-kapat') {
-    delete YAPI_ACIK[el.dataset.proje];
-    delete YAPI_TASLAK[el.dataset.proje];
-    ONIZLEME_MENU = ONIZLEME_SAYFA = ONIZLEME_KUNYE = null;
-    render();
     return;
   }
 
@@ -11838,28 +11576,6 @@ async function eylemCalistir(el) {
     return isYap(() => DB.sablonSil(id), 'Şablon kaldırıldı.');
   }
 
-  if (e === 'modul-ad') {
-    const ad = await metinSor({ baslik: 'Modül adı', deger: el.dataset.ad, buton: 'Kaydet' });
-    if (!ad || ad === el.dataset.ad) return;
-    return isYap(() => DB.adDegistir('modules', id, ad), 'Ad güncellendi.');
-  }
-
-  if (e === 'modul-sil') return modulKaldir(el, id);
-
-  if (e === 'sayfa-ekle') {
-    const ad = await metinSor({ baslik: 'Yeni sayfa', yerTutucu: 'Örn. Sipariş Detayı', buton: 'Ekle' });
-    if (!ad) return;
-    return isYap(() => DB.sayfaEkle(id, ad), 'Sayfa eklendi.');
-  }
-
-  if (e === 'sayfa-sil') {
-    const ok = await onaySor({
-      baslik: 'Sayfa silinsin mi?',
-      mesaj: `"${el.dataset.ad}" sayfası silinecek.`,
-    });
-    if (!ok) return;
-    return isYap(() => DB.sayfaSil(id), 'Sayfa silindi.');
-  }
 }
 
 /* Veri değiştiren işleri tek yerden çalıştır: hata olursa bildir, olmazsa yenile. */
@@ -12201,7 +11917,7 @@ async function signOut() {
   DB.gorevler = []; DB.hareketler = []; DB.kisiler = [];
   DB.yuklendi = false; DB.hata = null;
   DB.standartlar = []; DB.gorevStandart = [];
-  ACIK_MODUL.clear(); ACIK_SAYFA.clear(); ACIK_STANDART.clear();
+  ACIK_STANDART.clear();
   DB.canliDur();
   DB.onbellekSil();
   document.removeEventListener('visibilitychange', geriDonunce);

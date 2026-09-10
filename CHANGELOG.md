@@ -1,6 +1,9 @@
 # Değişiklik Günlüğü
 
-## v0.134.47
+## v0.134.48
+- **"Kurulum ve yapı" sadeleşti.** Ekrana girer girmez modül ağacı açılıyor — eskiden araya giren "Modüller" özet kartına bir kez daha dokunmak gerekiyordu, o adım kalktı.
+- **Ölü kod temizlendi.** Ağaç sistemine geçilmeden önceki eski modül/sayfa listesi ekranı ve ona bağlı hiçbir yerden çağrılmayan fonksiyonlar (yaklaşık 300 satır) kaldırıldı — davranışta değişiklik yok, yalnız bakımı kolaylaştırıyor.
+- **Prompt.js'de kopyalama artığı düzeltildi.** Çözümleme promptunun bir bölümü yanlışlıkla iki kez tanımlanmıştı; tekrar silindi.
 - **Kritik hata düzeltildi: kopya proje silinince orijinalin logosu/görselleri de siliniyordu.** Kopyalama, logo ve görsel dosyalarının depo yolunu (aynı fiziksel dosyayı) birebir kopyalıyordu — iki proje aynı dosyayı paylaşınca biri silinince dosya gerçekten depodan gidiyor, diğer proje de görselini kaybediyordu. Artık kopyada logo hiç taşınmıyor, görsel yuvaları (hangi görsel gerekiyor bilgisi) kalıyor ama dosya yolu boş geliyor — her proje kendi dosyasını yükler, paylaşım riski kalmadı.
 
 ## v0.134.46
