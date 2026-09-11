@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## v0.134.50
+- **"Kurulum ve yapı" artık modül seçtirmiyor.** Aşamaya girince doğrudan "Nasıl bir program istediğini anlat" ekranı açılıyor — modül ekle, modül seç gibi ayrı bir ekran kalmadı. Claude'un verdiği bloğu yapıştırınca yapı kendiliğinden kuruluyor.
+- **Tek bölüm varken harita gösterilmiyor.** Program tek bölümden oluşuyorsa (çoğu proje böyle) direkt o bölümün sayfa listesine düşülüyor. Claude soru-cevap sonunda gerçekten ayrı iki alan olduğuna karar verirse ancak o zaman bölüm haritası görünüyor.
+- **İlk bölümün adı sorulmuyor** — program zaten Program temeli'nde adlandırılmıştı, o ad kullanılıyor. İkinci bir bölüm açıldığında (Claude ayırırsa) ayırt edici bir ad soruluyor.
+
 ## v0.134.49
 - **"Sabit iskelet kuruldu" onayı kaldırıldı.** Bağlantılar ve temel aşaması artık yalnız GitHub, Claude, Yayın (varsa Supabase/Namecheap) bağlanınca bitiyor — sihirbazı bitirmek yeterli, ayrı bir "Kuruldu" kutusu işaretlemeye gerek yok.
 

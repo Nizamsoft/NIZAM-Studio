@@ -3767,13 +3767,16 @@ function yapiTaslak(p) {
                           sayfalar: [], kunye: {} };
   }
   const t = YAPI_TASLAK[p.id];
-  /* Taslak doğarken yalnız modülün adı konuyordu; sayfaları gelmediği için
-     ekran "0 sayfa" gösteriyor, geri çıkıp girince düzeliyordu. Veri hazırsa
-     adı koyarken sayfaları da yükle. */
+  /* İlk açılışta modül sayısına göre yönlen: hiç modül yoksa haritanın
+     gösterecek bir şeyi yok, direkt anlatma ekranına düş. Tek modül varsa
+     kullanıcı hiçbir zaman "hangi modül" diye seçmesin diye otomatik
+     seçilip sayfaları gösterilir. İkiden fazlaysa (Claude öyle kurmayı
+     uygun gördüyse) seçim gerçekten gerekli, o zaman harita kalır. */
   if (!t.acildi && DB.yuklendi) {
     t.acildi = true;
-    const ad = modulAdi(p);
-    if (ad) modulYukle(p, t, ad);
+    const gercek = DB.modulleri(p.id).filter(m => m.ad !== GENEL_MODUL);
+    if (gercek.length === 1) modulYukle(p, t, gercek[0].ad);
+    else if (!gercek.length) t.mod = 'anlat';
   }
   return t;
 }
@@ -4099,8 +4102,12 @@ function agacEkrani(p, t) {
                   `data-proje="${p.id}" data-ad="${esc(sf)}"`)).join('')}
             </div>`).join('')
             + sayfaObekBasligi('Ekle', 0)
-            + `<div class="ya-satir">${agacKare('', 'kesik', 'Sayfa ekle', '',
-                 'yapi-sayfa-yaz', `data-proje="${p.id}"`)}</div>`;
+            + `<div class="ya-satir">
+                ${agacKare('', 'kesik', 'Sayfa ekle', '',
+                  'yapi-sayfa-yaz', `data-proje="${p.id}"`)}
+                ${agacKare('', 'kesik', 'Anlat, ekle', 'yeni bir bölüm anlatıp kursun',
+                  'agac-yeni-modul', `data-proje="${p.id}"`)}
+              </div>`;
         })()
       + `<button class="ags sil" type="button" data-eylem="agac-modul-sil"
               data-proje="${p.id}" data-ad="${esc(t.modul)}">
@@ -4130,21 +4137,37 @@ function agacEkrani(p, t) {
             `data-proje="${p.id}" data-ad="${esc(ad)}"`);
         }).join('');
         })()}
-        ${agacKare('', 'kesik', 'Yeni modül', 'anlat, kursun', 'agac-yeni-modul',
+        ${agacKare('', 'kesik', 'Yeni bölüm', 'anlat, kursun', 'agac-yeni-modul',
           `data-proje="${p.id}"`)}
       </div>`;
   return agacKabuk(p, yolCipleri(basamak), govde, '');
 }
 
 /* Ağaçta bir kat yukarı: dal → sayfa → modül → firma. */
-function yapiGeri(t) {
-  if (t.mod === 'anlat') { t.mod = 'agac'; if (!t.sayfalar.length) t.modul = ''; return true; }
-  if (t.mod === 'roller') { t.mod = 'agac'; rollariKaydet(DB.proje(rota().id)); return true; }
+function yapiGeri(t, projeId) {
+  if (t.mod === 'anlat') {
+    /* Anlattan vazgeçildi. Hiç bölüm yoksa gösterecek harita da yok —
+       aşamadan tamamen çık. Bir bölüm varsa ona, ikiden fazlaysa haritaya
+       dön; "yarım kalan yeni bölüm" denemesi hiçbirini bozmasın. */
+    const gercek = DB.modulleri(projeId).filter(m => m.ad !== GENEL_MODUL);
+    if (!gercek.length) return false;
+    t.mod = 'agac';
+    if (gercek.length === 1) modulYukle(DB.proje(projeId), t, gercek[0].ad);
+    else t.modul = '';
+    return true;
+  }
+  if (t.mod === 'roller') { t.mod = 'agac'; rollariKaydet(DB.proje(projeId)); return true; }
   if (t.mod === 'mkural') { t.mod = 'agac'; t.dal = null; return true; }
   if (t.mod === 'onizle') { t.mod = 'agac'; return true; }
   if (t.dal)   { t.dal = null; return true; }
   if (t.odak)  { t.odak = null; return true; }
-  if (t.modul) { t.modul = ''; t.sayfalar = []; t.kunye = {}; return true; }
+  if (t.modul) {
+    /* Tek modül varken haritayı göstermenin anlamı yok — kullanıcı zaten
+       "hangi modül" diye bir seçim yapmadı, göstersek de yapmayacak. */
+    const cokMi = DB.modulleri(projeId).filter(m => m.ad !== GENEL_MODUL).length > 1;
+    t.modul = ''; t.sayfalar = []; t.kunye = {};
+    return cokMi;
+  }
   return false;
 }
 
@@ -4185,15 +4208,17 @@ function onizlemeEkrani(p, t) {
                    govde, '');
 }
 
-/* Anlat: önizleme yok, yalnız metin ve iki düğme. */
+/* Anlat: önizleme yok, yalnız metin ve iki düğme. Modül adı hiç sorulmuyor —
+   Claude soru-cevabın sonunda kendi karar veriyor: tek bölüm mü yeter, yoksa
+   gerçekten ayrı iki alan mı var. Studio yalnız gelen bloğu kuruyor. */
 function anlatEkrani(p, t) {
   const dolu = (t.anlat || '').trim().length > 20;
   const govde = `
-    ${balon('Bu modülde ne olacağını anlat. Konuşur gibi yaz — ekranlar, '
+    ${balon('Nasıl bir program istediğini anlat. Konuşur gibi yaz — ekranlar, '
       + 'tutulacak bilgiler, neyin neyi etkilediği.',
-      'Promptu Claude\'a ver; o sana sorar, anlaşınca bloğu verir.')}
+      'Promptu Claude\'a ver; o sana sorar, her şeyi öğrenince bloğu verir.')}
     <textarea class="anl-kutu" data-anlat="${p.id}"
-      placeholder="Örn. Muhasebe modülünde hesaplar sayfası olacak. 100-Kasa, 102-Banka gibi ana hesaplar, altlarında 102.01 gibi alt hesaplar…">${esc(t.anlat || '')}</textarea>
+      placeholder="Örn. Bir muhasebe programı istiyorum. Hesaplar sayfası olacak. 100-Kasa, 102-Banka gibi ana hesaplar, altlarında 102.01 gibi alt hesaplar…">${esc(t.anlat || '')}</textarea>
     <div class="anl-dug">
       ${dolu
         ? `<a target="_blank" rel="noopener" data-pano="cozumleme" data-proje="${p.id}"
@@ -4204,11 +4229,11 @@ function anlatEkrani(p, t) {
         ${svg(ICON.ice, 15)} Cevabı yapıştır</button>
     </div>
     <p class="anl-not">Claude önce sana soru soracak. Anlaştıktan sonra verdiği bloğu
-      buraya yapıştır — modül, sayfalar ve künyeler kendiliğinden kurulur.</p>`;
+      buraya yapıştır — yapı kendiliğinden kurulur.</p>`;
 
   return agacKabuk(p, yolCipleri([
     { ad: p.firma, eylem: 'agac-koke', proje: p.id },
-    { ad: t.modul || 'Yeni modül' },
+    { ad: t.modul || 'Anlat' },
   ]), govde, '');
 }
 
@@ -9486,13 +9511,20 @@ function anlatAktarAc(projeId) {
       if (!cozum) return;
       cozumlemeUygula(t, cozum, p);
       modalKapat();
-      /* Blokta modül adı yoksa (eski biçim) sorulur. Pencere kapanışıyla
-         çakışmasın diye bir kare bekliyoruz. */
       if (!t.modul) {
-        await new Promise(r => setTimeout(r, 260));
-        t.modul = await metinSor({ baslik: 'Modülün adı',
-          aciklama: 'Blokta yazmıyordu, sen yaz.', yerTutucu: 'Örn. Muhasebe Modülü',
-          buton: 'Tamam', deger: '' }) || 'Yeni Modül';
+        const digerVarMi = DB.modulleri(p.id).some(m => m.ad !== GENEL_MODUL);
+        if (!digerVarMi) {
+          /* İlk ve tek bölüm: ayrıca isim sorup kullanıcıyı yormaya gerek
+             yok, program zaten adını Program temeli'nde almıştı. */
+          t.modul = modulAdi(p) || 'Program';
+        } else {
+          /* İkinci bölüm: aynı adı kullanamayız, ayırt edici bir ad gerek.
+             Pencere kapanışıyla çakışmasın diye bir kare bekliyoruz. */
+          await new Promise(r => setTimeout(r, 260));
+          t.modul = await metinSor({ baslik: 'Bu bölümün adı',
+            aciklama: 'Blokta yazmıyordu, sen yaz.', yerTutucu: 'Örn. İnsan Kaynakları',
+            buton: 'Tamam', deger: '' }) || 'Yeni bölüm';
+        }
       }
       /* Aktarımdan sonra ağaca dön: sonucu görmesi gereken yer orası. */
       t.mod = 'agac'; t.odak = null; t.dal = null;
@@ -10953,10 +10985,22 @@ async function eylemCalistir(el) {
     if (!pr) return;
     const t = yapiTaslak(pr);
     if (t.mod === 'roller') { t.mod = 'agac'; await rollariKaydet(pr); render(); return; }
-    /* Firma çipi: modülden çıkıp modül listesine döner. */
-    if (t.mod === 'anlat') { t.mod = 'agac'; if (!t.sayfalar.length) t.modul = ''; }
+    /* Firma çipi: modülden çıkıp modül listesine döner — ama tek (ya da
+       hiç) modül varken haritanın gösterecek bir şeyi yok, o zaman
+       modülde (ya da anlatta) kal. */
+    if (t.mod === 'anlat') {
+      const gercek = DB.modulleri(pr.id).filter(m => m.ad !== GENEL_MODUL);
+      if (gercek.length) {
+        t.mod = 'agac';
+        if (gercek.length === 1) modulYukle(pr, t, gercek[0].ad); else t.modul = '';
+      }
+    }
     else if (t.dal) { t.dal = null; }
-    else { t.modul = ''; t.odak = null; }
+    else {
+      const cokMi = DB.modulleri(pr.id).filter(m => m.ad !== GENEL_MODUL).length > 1;
+      t.odak = null;
+      if (cokMi) t.modul = '';
+    }
     render();
     return;
   }
@@ -12216,7 +12260,7 @@ document.addEventListener('DOMContentLoaded', () => {
     /* Yapı ağacında bir kat yukarı çıkar; başka yerde tarayıcı geçmişinde
        bir adım geri gider. Sabit bir hedefe atlamak "geri" değil. */
     const { key, id, durak } = rota();
-    if (durak === 'yapi' && YAPI_ACIK[id] && yapiGeri(YAPI_TASLAK[id])) {
+    if (durak === 'yapi' && YAPI_ACIK[id] && yapiGeri(YAPI_TASLAK[id], id)) {
       render();
       return;
     }

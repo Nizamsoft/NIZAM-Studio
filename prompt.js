@@ -1045,9 +1045,15 @@ const PROMPT = {
      yapıştırılıyor — paletteki döngünün aynısı. */
   cozumleme(proje, taslak) {
     const roller = rolListesi((proje.palet || {}).roller);
+    /* Kaç bölüme (Studio'daki adıyla "modül") ayrılacağına ben karar
+       vermiyorum, Claude veriyor — soru-cevabın sonunda bütün resmi gören
+       o. Bu yüzden var olan bölümleri de söylüyorum: anlattığım şey
+       bunlardan birine mi giriyor yoksa gerçekten yeni bir alan mı, onu
+       da kendisi ayırt etsin. */
+    const digerBolumler = DB.modulleri(proje.id).filter(m => m.ad !== GENEL_MODUL);
     const s = [];
-    s.push('Bir iş yazılımının bir modülünü kuruyorum. Aşağıda ne olacağını');
-    s.push('kendi cümlelerimle anlattım.');
+    s.push('Bir iş yazılımı kuruyorum. Aşağıda ne olacağını kendi cümlelerimle');
+    s.push('anlattım.');
     s.push('');
     s.push('**Önce bana soru sor.** Anlatımımda karar verilmemiş ne varsa tek tek');
     s.push('sor, cevaplarımı bekle. Emin olmadan yapıyı kurma, varsayım yapma.');
@@ -1061,8 +1067,23 @@ const PROMPT = {
     s.push('');
     s.push('## Firma');
     s.push(`${proje.firma}${proje.sektor ? ' · ' + proje.sektor : ''}`);
-    s.push(`Modül: ${taslak.modul || '—'}`);
     if (roller.length) s.push(`Roller (alttan üste): ${roller.join(' · ')}`);
+    if (digerBolumler.length) {
+      s.push('');
+      s.push('## Zaten kurulu bölümler');
+      digerBolumler.forEach(m => s.push('- ' + m.ad));
+      s.push('Anlattığım şey bunlardan biriyle ilgiliyse `modul` alanına aynı adı');
+      s.push('yaz, oraya ekleme yapılsın. Gerçekten ayrı bir alansa yeni bir ad ver.');
+    }
+    s.push('');
+    s.push('## Kaç bölüme ayrılacak');
+    s.push('Genelde **tek bölüm yeterli** — gereksiz yere bölme. Yalnız');
+    s.push('anlattığım iş gerçekten birbirinden bağımsız birkaç büyük alansa');
+    s.push('(ör. "Muhasebe" ile "İnsan Kaynakları" gibi, biri bitmeden');
+    s.push('diğeri anlaşılmayan değil, ayrı ayrı da kurulabilecek iki dünya)');
+    s.push('birden fazla bölüm açabilirsin. O zaman bile hepsini birden verme:');
+    s.push('önce ilk bölümün bloğunu ver, ben onu uygulamaya işleyip sana');
+    s.push('haber veririm, sonra ikincisine geçeriz.');
 
     /* Veri katmanı buraya girmezse Claude kurallara RLS yazıyor —
        sunucusuz projede karşılığı yok. */
