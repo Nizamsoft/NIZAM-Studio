@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.134.51
+- **"Kurulum ve yapı" tek seferlik bir işe döndü.** Kur'unca "Modülü kaldır", "Sayfa ekle" ve "Anlat, ekle" düğmeleri kalkıyor — anlat, Claude'un bloğunu yapıştır, kur, bu aşamadaki iş bitiyor. Sonradan bir şey eklemek ayrı bir aşamanın işi olacak.
+
 ## v0.134.50
 - **"Kurulum ve yapı" artık modül seçtirmiyor.** Aşamaya girince doğrudan "Nasıl bir program istediğini anlat" ekranı açılıyor — modül ekle, modül seç gibi ayrı bir ekran kalmadı. Claude'un verdiği bloğu yapıştırınca yapı kendiliğinden kuruluyor.
 - **Tek bölüm varken harita gösterilmiyor.** Program tek bölümden oluşuyorsa (çoğu proje böyle) direkt o bölümün sayfa listesine düşülüyor. Claude soru-cevap sonunda gerçekten ayrı iki alan olduğuna karar verirse ancak o zaman bölüm haritası görünüyor.

@@ -4023,7 +4023,11 @@ function agacEkrani(p, t) {
      kurdurmuyordu. */
   const tam = t.modul && t.sayfalar.length
     && t.sayfalar.every(sf => kunyeTam(t.kunye[sf]));
-  const dugmeler = t.modul ? `
+  /* Kurulduktan sonra bu aşamada hiçbir işlem kalmıyor — yalnız kurulan
+     yapı görülür. "Anlatım" ve "Kur" düğmeleri de yalnız taslak henüz
+     kurulmamışken (ilk anlat → yapıştır → kur döngüsünde) görünüyor. */
+  const kuruluMu = t.modul && kurulu.some(x => x.ad === t.modul);
+  const dugmeler = (t.modul && !kuruluMu) ? `
     <button class="ag-dug" type="button" data-eylem="agac-anlat" data-proje="${p.id}">
       ${svg(ICON.kopya, 15)} Anlatım</button>
     <button class="ag-dug ana" type="button" ${tam ? '' : 'disabled'}
@@ -4048,11 +4052,7 @@ function agacEkrani(p, t) {
           `data-proje="${p.id}" data-sayfa="${esc(acik)}" data-ad="${a.anahtar}"`)).join('')
       + agacSatir('#4fa8c9', ICON.goz, 'Önizlemeyi aç',
           'Bu sayfa müşterinin ekranında nasıl görünecek?',
-          false, 'agac-onizle', `data-proje="${p.id}"`)
-      + `<button class="ags sil" type="button" data-eylem="agac-sayfa-sil"
-                 data-proje="${p.id}" data-ad="${esc(acik)}">
-          <span class="ags-ik">${svg(ICON.kapat, 14)}</span>
-          <span class="ags-yz"><b>Bu sayfayı kaldır</b></span></button>`;
+          false, 'agac-onizle', `data-proje="${p.id}"`);
     return agacKabuk(p, yolCipleri(basamak), govde, dugmeler);
   }
 
@@ -4069,6 +4069,9 @@ function agacEkrani(p, t) {
           (mk.kural || '').trim()
             || 'bütün modülde geçerli bir kural varsa yaz — isteğe bağlı',
           false, 'agac-modul-kural', `data-proje="${p.id}"`)
+      /* Sayfa ekle/kaldır, modül kaldır — bilerek yok. Bu aşamada iş tek
+         seferlik: anlat, Claude'un bloğunu yapıştır, kur, bitti. Eksik ya
+         da fazla bir şey varsa sonraki aşamada ele alınacak. */
       + (() => {
           /* Yirmi sayfa düz bir ızgarada aranmıyor. Öbekleri Claude veriyor
              ("Raporlar", "Ayarlar", "Panolar"): sayfa türünden daha anlamlı,
@@ -4100,20 +4103,8 @@ function agacEkrani(p, t) {
                   kunyeTam(t.kunye[sf]) ? 'bitti' : i === ilkEksik ? 'simdi' : 'eksik',
                   sf, agacSayfaAlt(t.kunye[sf] || {}), 'agac-sayfa',
                   `data-proje="${p.id}" data-ad="${esc(sf)}"`)).join('')}
-            </div>`).join('')
-            + sayfaObekBasligi('Ekle', 0)
-            + `<div class="ya-satir">
-                ${agacKare('', 'kesik', 'Sayfa ekle', '',
-                  'yapi-sayfa-yaz', `data-proje="${p.id}"`)}
-                ${agacKare('', 'kesik', 'Anlat, ekle', 'yeni bir bölüm anlatıp kursun',
-                  'agac-yeni-modul', `data-proje="${p.id}"`)}
-              </div>`;
-        })()
-      + `<button class="ags sil" type="button" data-eylem="agac-modul-sil"
-              data-proje="${p.id}" data-ad="${esc(t.modul)}">
-        <span class="ags-ik">${svg(ICON.kapat, 14)}</span>
-        <span class="ags-yz"><b>Modülü kaldır</b>
-          <i>${bitmis}/${t.sayfalar.length} sayfa hazırdı</i></span></button>`;
+            </div>`).join('');
+        })();
     return agacKabuk(p, yolCipleri(basamak), govde, dugmeler);
   }
 
@@ -4137,8 +4128,6 @@ function agacEkrani(p, t) {
             `data-proje="${p.id}" data-ad="${esc(ad)}"`);
         }).join('');
         })()}
-        ${agacKare('', 'kesik', 'Yeni bölüm', 'anlat, kursun', 'agac-yeni-modul',
-          `data-proje="${p.id}"`)}
       </div>`;
   return agacKabuk(p, yolCipleri(basamak), govde, '');
 }
@@ -4893,25 +4882,6 @@ function modulAdiSor(p) {
     yerTutucu: 'Örn. Kişisel Bütçe',
     buton: 'Kaydet',
   });
-}
-
-/* Modül silinince palet üç yerde iz bırakıyor: sayfa künyeleri, anlatım
-   ve modül kuralları. Temizlenmezse silinmiş modül prompta yazılmaya
-   devam ediyor — kunyeBlogu palete bakıyor, veritabanına değil. */
-async function modulPaletTemizle(pr, ad) {
-  const pl = Object.assign({}, pr.palet || {});
-  const kn = Object.assign({}, pl.kunye || {});
-  Object.keys(kn).forEach(x => { if (x.startsWith(ad + ' · ')) delete kn[x]; });
-  const an = Object.assign({}, pl.anlatim || {});
-  delete an[ad];
-  const mkh = Object.assign({}, pl.modulKunye || {});
-  delete mkh[ad];
-  await DB.paletKaydet(pr.id, Object.assign(pl, { kunye: kn, anlatim: an, modulKunye: mkh }));
-}
-
-/* Modülde görev varsa silme: görevler yetim kalır (modul_id null'a düşer). */
-function modulGorevSayisi(pr, modulId) {
-  return DB.gorevleri({ proje: pr.id }).filter(g => g.modul_id === modulId).length;
 }
 
 /* GitHub Pages'in bu depo için üreteceği adres.
@@ -10944,17 +10914,6 @@ async function eylemCalistir(el) {
     return;
   }
 
-  if (e === 'agac-yeni-modul') {
-    const pr = DB.proje(el.dataset.proje);
-    if (!pr) return;
-    const t = yapiTaslak(pr);
-    /* Yeni modül elle kurulmuyor: anlatıp Claude'un bloğunu yapıştırıyoruz. */
-    t.modul = ''; t.sayfalar = []; t.kunye = {}; t.anlat = '';
-    t.kararlar = []; t.baglantilar = []; t.hazirVeri = []; t.ciktilar = [];
-    t.odak = null; t.dal = null; t.mod = 'anlat';
-    render();
-    return;
-  }
 
   if (e === 'agac-modul-ad') {
     const pr = DB.proje(el.dataset.proje);
@@ -11046,54 +11005,6 @@ async function eylemCalistir(el) {
     return;
   }
 
-  if (e === 'agac-modul-sil') {
-    const pr = DB.proje(el.dataset.proje);
-    if (!pr) return;
-    const t = yapiTaslak(pr);
-    const kurulu = DB.modulleri(pr.id).find(m => m.ad === el.dataset.ad);
-    const gorev = kurulu ? modulGorevSayisi(pr, kurulu.id) : 0;
-    if (gorev) return toast('Bu modülde ' + gorev + ' görev var, önce onları taşı.', 'hata');
-    if (!await onaySor({
-      baslik: el.dataset.ad + ' kaldırılsın mı?',
-      mesaj: kurulu
-        ? 'Modül, sayfaları ve künyeleri silinir. Bu geri alınamaz.'
-        : 'Henüz kurulmadı; taslak silinir.',
-      buton: 'Kaldır' })) return;
-
-    if (kurulu) {
-      try {
-        await DB.modulSil(kurulu.id);
-        await modulPaletTemizle(pr, el.dataset.ad);
-      } catch (err) { return toast(err.message, 'hata'); }
-    }
-    /* Taslağın tamamı sıfırlanmalı: kalan mk/bağlantı bir sonraki modüle sızıyordu. */
-    t.modul = ''; t.sayfalar = []; t.kunye = {}; t.odak = null; t.dal = null;
-    t.anlat = ''; t.kararlar = [];
-    t.mk = { roller: [], eylemler: [], yetki: {}, kural: '' };
-    t.baglantilar = []; t.hazirVeri = []; t.ciktilar = [];
-    toast(el.dataset.ad + ' kaldırıldı.');
-    render();
-    return;
-  }
-
-  if (e === 'agac-sayfa-sil') {
-    const pr = DB.proje(el.dataset.proje);
-    if (!pr) return;
-    const ad = el.dataset.ad;
-    const t = yapiTaslak(pr);
-    const kurulu = DB.modulleri(pr.id).find(m => m.ad === t.modul);
-    if (kurulu && DB.sayfalari(kurulu.id).some(x => x.ad === ad))
-      return toast('Kurulmuş sayfa buradan kaldırılamaz.', 'hata');
-    if (!await onaySor({ baslik: ad + ' kaldırılsın mı?',
-      mesaj: 'Künyesi de silinir. Henüz kurulmadığı için veri kaybı olmaz.',
-      buton: 'Kaldır' })) return;
-    t.sayfalar = t.sayfalar.filter(x => x !== ad);
-    delete t.kunye[ad];
-    t.odak = null;
-    render();
-    return;
-  }
-
   /* ---- Yapı akışı ---- */
   if (e === 'agac-onizle') {
     const pr = DB.proje(el.dataset.proje);
@@ -11159,18 +11070,6 @@ async function eylemCalistir(el) {
     const t = yapiTaslak(pr), ad = el.dataset.ad;
     const i = t.sayfalar.indexOf(ad);
     if (i > -1) t.sayfalar.splice(i, 1); else t.sayfalar.push(ad);
-    render();
-    return;
-  }
-
-  if (e === 'yapi-sayfa-yaz') {
-    const pr = DB.proje(el.dataset.proje);
-    if (!pr) return;
-    const ad = await metinSor({ baslik: 'Sayfa adı', yerTutucu: 'Örn. Sipariş Detayı',
-                                buton: 'Ekle' });
-    if (!ad) return;
-    const t = yapiTaslak(pr);
-    if (!t.sayfalar.includes(ad)) t.sayfalar.push(ad);
     render();
     return;
   }
