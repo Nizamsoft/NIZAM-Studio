@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.135.5
+- **5 aşama ve görev promptu, bağlantı bilgisini yanlış dosyada gösteriyordu.** "NIZAM.md — teknik standart ve Supabase bağlantısı" diyordu, ama bağlantı hiç NIZAM.md'ye yazılmıyor — gerçek yeri `js/yapilandirma.js`. Artık okuma listesinde doğru dosya var.
+- **"Modülü güncelle", çok modüllü projede yanlış modülü etiketliyordu.** Hangi modülü açtığına bakmadan hep ilk modülü örnek gösteriyordu; JSON'u kopyalayınca cevap yanlış modüle dosyalanabilirdi. Artık açık olan modülü kendisi taşıyor.
+- **"Beta güncelleme" promptunun örnek JSON'u da aynı riski taşıyordu.** Gerçek bir modül adını örnek diye gösteriyordu, Claude'un kopyalaması ihtimaline karşı artık düz bir yer tutucu ("İlgili modülün adı") ve doğru modülü kayıtlı yapıdan bulma talimatı var.
+- **`hiza()` "Proje adresi" etiketini kırpıyordu.** 12 harfli etiket 11 haneye sığdırılıyordu, "Proje adres:" çıkıyordu. Hizalama payı büyütüldü.
+
 ## v0.135.4
 - **Görev kartındaki "Prompt Kopyala" çöküyordu.** `PROMPT.gorev()` fonksiyonu bir önceki tasarımdan (v0.68) beri silinmişti ama düğme hâlâ onu çağırıyordu — tıklayınca hata veriyordu. Yeniden yazıldı: artık güncel nizam/ dosya yapısına uygun, kısa bir görev promptu üretiyor.
 - **Sayfa künyesindeki "kim görebilir" notu ile Yetkiler ekranı çelişiyordu.** Künye "bu sayfayı yalnız X görsün" diye sabit bir kural yazdırıyordu, hemen altındaki Yetkiler ekranı bloğu ise "kodda sabitleme" diyordu. Artık künyedeki not "varsayılan" olarak işaretleniyor — Yetkiler ekranının veritabanına başlangıç değeri olarak yazılıyor, admin sonra değiştirebiliyor.

@@ -4067,7 +4067,7 @@ function agacEkrani(p, t) {
      bulursa aynı çözümleme bloğuyla tamamlıyor, var olanın üstüne yazmıyor. */
   const kuruluMu = t.modul && kurulu.some(x => x.ad === t.modul);
   const dugmeler = kuruluMu ? `
-    <a class="ag-dug" target="_blank" rel="noopener" data-pano="modulGuncelle"
+    <a class="ag-dug" target="_blank" rel="noopener" data-pano="modulGuncelle:${encodeURIComponent(t.modul)}"
        data-proje="${p.id}" data-hedef="Claude Code" href="${esc(claudeAdresi(depoSlug(p.repo), false))}">
       ${svg(ICON.kopya, 15)} Modülü güncelle</a>
     <button class="ag-dug ana" type="button" data-eylem="anlat-aktar" data-proje="${p.id}">
@@ -11979,6 +11979,8 @@ document.addEventListener('DOMContentLoaded', () => {
     /* Aşama promptları sıra numarasıyla geliyor: `asama:2`. */
     const uret = pano.indexOf('asama:') === 0
       ? (proje => PROMPT.asama(proje.id, Number(pano.slice(6))))
+      : pano.indexOf('modulGuncelle:') === 0
+      ? (proje => PROMPT.modulGuncelle(proje.id, decodeURIComponent(pano.slice(14))))
       : PANO_PROMPT[pano];
     /* Projesiz prompt da var (standart ekleme) — o zaman data-proje boş. */
     if (!uret || (el.dataset.proje && !pr)) return;

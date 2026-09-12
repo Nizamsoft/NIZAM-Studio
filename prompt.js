@@ -648,7 +648,9 @@ const PROMPT = {
     s.push('- `nizam/tasarim.md` — renk, ölçü, bileşen ve iskeletler');
     s.push('- `nizam/sayfalar.md` — bu aşamada dokunacağın sayfaların künyesi');
     s.push('- `nizam/kararlar.md` — arayüz kararları ve verilmiş cevaplar');
-    s.push('- `NIZAM.md` — teknik standart' + (sunuculuMu(p) ? ' ve Supabase bağlantısı' : ''), '');
+    s.push('- `NIZAM.md` — teknik standart');
+    if (sunuculuMu(p)) s.push('- `js/yapilandirma.js` — Supabase bağlantısı');
+    s.push('');
     s.push('> **Sayfalar dosyasının tamamını okuma.** Bu aşamada hangi');
     s.push('> sayfalara dokunacaksan yalnız onların bölümünü aç.', '');
 
@@ -716,7 +718,9 @@ const PROMPT = {
     s.push('- `nizam/tasarim.md` — renk, ölçü, bileşen ve iskeletler');
     s.push('- `nizam/sayfalar.md` — ' + yerYaz(modul, sayfa) + ' bölümünün künyesi');
     s.push('- `nizam/kararlar.md` — arayüz kararları ve verilmiş cevaplar');
-    s.push('- `NIZAM.md` — teknik standart' + (sunuculuMu(p) ? ' ve bağlantı bilgisi' : ''), '');
+    s.push('- `NIZAM.md` — teknik standart');
+    if (sunuculuMu(p)) s.push('- `js/yapilandirma.js` — Supabase bağlantısı');
+    s.push('');
     s.push('> **Sayfalar dosyasının tamamını okuma.** Yalnız bu görevin ilgili');
     s.push('> bölümünü aç.', '');
 
@@ -1345,11 +1349,16 @@ const PROMPT = {
      bulursa aynı çözümleme bloğuyla tamamlıyor — var olan hiçbir şeyin
      üstüne yazmıyor, yalnız eksiği dolduruyor. cozumlemeOku/Uygula aynen
      kullanılıyor: biçim tıpatıp aynı. */
-  modulGuncelle(projeId) {
+  modulGuncelle(projeId, hedefModul) {
     const p = DB.proje(projeId);
     if (!p) return '';
-    const modul = DB.modulleri(p.id).find(m => m.ad !== GENEL_MODUL);
-    const ad = (modul && modul.ad) || modulAdi(p) || 'Program';
+    /* Açık olan modül belliyse onu güncelle; belirtilmezse (eski çağrılar)
+       ilk gerçek modüle düş — çok modüllü projede yanlış modülü etiketleyip
+       cevabı yanlış yere dosyalatmasın. */
+    const modul = hedefModul
+      ? DB.modulleri(p.id).find(m => m.ad === hedefModul)
+      : DB.modulleri(p.id).find(m => m.ad !== GENEL_MODUL);
+    const ad = (modul && modul.ad) || hedefModul || modulAdi(p) || 'Program';
     const slug = depoSlug(p.repo);
 
     const s = [];
@@ -1413,8 +1422,6 @@ const PROMPT = {
     if (!p) return '';
     const metin = String(istek || '').trim();
     if (!metin) return '';
-    const modul = DB.modulleri(p.id).find(m => m.ad !== GENEL_MODUL);
-    const ad = (modul && modul.ad) || modulAdi(p) || 'Program';
     const slug = depoSlug(p.repo);
     const yayin = (p.palet || {}).alanAdi;
 
@@ -1444,10 +1451,12 @@ const PROMPT = {
 
     s.push('## Yapı değiştiyse vereceğin blok');
     s.push('Yalnız yeni olanı yaz — zaten kayıtlı sayfa ya da alanı tekrar etme.');
+    s.push('Proje birden çok modüllüyse `modul` alanına **ilgili gerçek modülün');
+    s.push('adını** yaz — yukarıdaki kayıtlı yapıdan bul, örnekteki adı kopyalama.');
     s.push('');
     s.push('```json');
     s.push('{');
-    s.push(`  "modul": "${ad}",`);
+    s.push('  "modul": "İlgili modülün adı",');
     s.push('  "sayfalar": [');
     s.push('    {');
     s.push('      "ad": "Yeni ya da güncellenen sayfanın adı",');
@@ -1820,7 +1829,7 @@ const PROMPT = {
 /* ---------- Yardımcılar ---------- */
 
 function hiza(etiket, deger) {
-  return (etiket + '          ').slice(0, 11) + ': ' + deger;
+  return (etiket + '            ').slice(0, 12) + ': ' + deger;
 }
 
 function yerYaz(modul, sayfa) {
