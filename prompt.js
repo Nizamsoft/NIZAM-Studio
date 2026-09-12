@@ -293,11 +293,19 @@ const PROMPT = {
         a.liste.forEach(st => {
           /* Sunucusuz projede `yerel` metni tarifin yerine geçer. Yalnız
              yerelde anlamı olan satırlar (Yedek gibi) sunuculu projede
-             boş kalır ve hiç yazılmaz. */
-          const t = (yerel && st.yerel) ? st.yerel : st.tarif;
+             boş kalır ve hiç yazılmaz. Başlık da `yerel`den okunmalı —
+             yoksa başlık bulut varsayımında kalıp açıklamayla çelişiyordu
+             ("Giriş · E-posta + şifre" başlığı, altında "Yerel PIN" yazısı). */
+          const yerelMi = yerel && st.yerel;
+          const t = yerelMi ? st.yerel : st.tarif;
           if (!t) return;
-          satir.push('- **' + a.ad + ' · ' + st.ad + '**');
-          satir.push('  - ' + String(t).replace(/\n+/g, ' '));
+          /* `yerel` alanı "Değer. Açıklama" biçiminde tek metin — tohumda
+             da (standartTohum) aynı şekilde birleştiriliyor. */
+          const nokta = yerelMi ? String(st.yerel).indexOf('. ') : -1;
+          const baslik = nokta > -1 ? st.yerel.slice(0, nokta) : (yerelMi ? st.yerel : st.ad);
+          const aciklama = nokta > -1 ? st.yerel.slice(nokta + 2) : (yerelMi ? '' : t);
+          satir.push('- **' + a.ad + ' · ' + baslik + '**');
+          if (aciklama) satir.push('  - ' + String(aciklama).replace(/\n+/g, ' '));
         });
       });
       if (!satir.length) return;

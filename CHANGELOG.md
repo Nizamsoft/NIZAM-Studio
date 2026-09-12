@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.134.54
+- **Nizam Standardı'ndaki başlık/açıklama çelişkisi düzeltildi.** Proje "yerel" (sunucusuz) seçildiğinde Giriş, Veri, Gerçek zamanlı ve Dosya saklama satırlarının başlığı hâlâ bulut varsayımını gösteriyordu (ör. "Giriş · E-posta + şifre") ama açıklaması doğru şekilde yerele dönüyordu ("Yerel PIN") — ikisi çelişiyordu. Artık başlık da açıklamayla aynı kaynaktan okunuyor.
+
 ## v0.134.53
 - Sektör seçimindeki "Yeni ekle" düğmesi "Diğer" oldu.
 
