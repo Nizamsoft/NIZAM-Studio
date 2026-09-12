@@ -1,6 +1,9 @@
 # Değişiklik Günlüğü
 
-## v0.135.13
+## v0.135.14
+- **"Görsel dünya" kaldırıldı, yerine 5 sabit tasarım yönü geldi.** Eski sistemde ChatGPT logo ve işletme görselinden bir "tasarım sistemi" (renk/tipografi/bileşen bloğu) çıkarıyor, Studio bunu koda taşıyordu. Yeni planda bu adım gereksiz: artık 5 sabit ChatGPT promptu var (Marka Renkli, Minimal, Koyu+Gradyan, Sıcak, Kurumsal) — her biri projenin gerçek ekran görüntüsünü alıp yalnız görsel dili değiştiriyor. Müşteri beğendiği yönü seçiyor, gerçek uygulama artık Studio dışında (doğrudan Claude Code sohbetiyle) yapılıyor.
+- **Profesyonel tasarım durağı tek sayfaya indi.** Harita/adım/ada sistemi tamamen kalktı; 5 yön kartı tek ekranda, her birinde kopyala düğmesi ve mockup yükleme alanı var. Müşterinin seçtiği yön işaretlenip iş bitince "Profesyonel tasarım tamamlandı" ile kapatılıyor.
+- **Ölü kod temizliği.** Görsel dünya'nın render zinciri, tasarım tarifi okuma/yazma fonksiyonları ve bunlara özel CSS kaldırıldı.
 - **"İhtiyaç çözümlemesi" kaldırıldı.** Profesyonel tasarım durağında Claude'a "hangi karar bu projede gerekli" diye sorduran ayrı bir aşama vardı (sayfa listesi, içe aktarma, genişlik, onay & silme, yedek ekranı). Artık gerek yok — bu beş karar Nizam Standardı'na kalıcı kural olarak yazılacak ve her prompta zaten `teknikBlogu()` üzerinden otomatik giriyor. Durak artık yalnız iki adımdan oluşuyor: Görsel dünya ve Özet.
 - **Tek ada kaldığı için harita ekranı atlanıyor.** Eskiden birden çok "ada" arasında seçim yapılan bir harita vardı; geriye tek gerçek ada (Görsel dünya) kaldığı için artık doğrudan adımın içine giriliyor.
 - **Ölü kod temizliği.** İhtiyaç çözümlemesiyle birlikte kullanılan görselli seçim rafı, karar önizlemeleri ve "YENİ" rozet mekanizmasının artık hiç tetiklenmeyen parçaları da kaldırıldı.

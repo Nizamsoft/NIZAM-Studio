@@ -7,7 +7,7 @@ const APP = {
   name:     'NIZAM | Studio',
   short:    'NIZAM Studio',
   owner:    'Nizam Soft',
-  version: 'v0.135.13',
+  version: 'v0.135.14',
   build:    '2026-09-12',
   /* Studio'nun kendi deposu — "bütün programlarda geçerli olsun"
      istekleri buraya gider. */
@@ -94,57 +94,52 @@ const GRUP_SIMGE = {
 };
 
 
-/* Tasarım durağının akışı: artık iki gerçek adım kaldı. Sayfa listesi,
-   içe aktarma, genişlik, silme onayı ve yedek ekranı gibi eskiden proje
-   proje sorulan beş karar Nizam Standardı'na kalıcı kural olarak yazıldı
-   (bkz. Ayarlar > Nizam Standartları) — İhtiyaç çözümlemesi'nin işi bitti,
-   her prompta zaten `teknikBlogu()` üzerinden otomatik giriyor. */
-const TASARIM_ADIM = [
-  /* Uygulamanın bütün görünüşü bu adadan çıkıyor: logo ve işletme görseli
-     ChatGPT'ye gidiyor, dönen tarif renk, yüzey, simge, tipografi ve hangi
-     görselin nerede duracağını söylüyor. Studio karar vermiyor, taşıyor. */
-  { anahtar: 'gorsel', ad: 'Görsel dünya', tur: 'gorsel', ekran: 'panel',
-    obek: 'Görsel dünya',
-    obekNot: 'Logo ve işletme görselinden çıkan tarif. Bütün ekranlar buna uyar.',
-    aciklama: 'Promptu ChatGPT\'ye ver, dönen tarifi yapıştır, görselleri yerine koy.' },
-  { anahtar: 'ozet', ad: 'Özet', tur: 'ozet', ekran: 'panel', obek: 'Bitiş',
-    obekNot: 'Görsel dünyanın özeti ve son blok.',
-    aciklama: 'Görsel dünya tarifinin özeti. Prompta bu yazılacak.' },
-];
-
-function tasarimAdimlari(p) {
-  return TASARIM_ADIM;
-}
-
-/* Tasarım sistemi bloğu geçerli mi? En az renk gelmeli — gerisi eksik
-   kalabilir, Studio boş satırı göstermiyor. */
-function dilGecerli(d) {
-  return !!(d && d.renk && typeof d.renk === 'object'
-            && Object.keys(d.renk).length >= 3);
-}
-
-/* Bileşenler ve iskeletler — kartta ve promptta hep aynı sırada okunsun.
-   Sayfa iskeleti künyedeki `tur` ile aynı adı taşıyor: Studio hangi
-   sayfanın hangi iskelete düştüğünü zaten biliyor. */
-const DIL_BILESEN = [
-  ['ustCubuk',  'Üst çubuk'],  ['altMenu',   'Alt menü'],
-  ['kart',      'Kart'],       ['tablo',     'Tablo'],
-  ['liste',     'Liste satırı'], ['form',    'Form alanı'],
-  ['dugme',     'Düğme'],      ['cip',       'Çip'],
-  ['rozet',     'Rozet'],      ['arama',     'Arama'],
-  ['bosDurum',  'Boş durum'],  ['bildirimK', 'Bildirim'],
-  ['pencere',   'Pencere'],
-];
-
-const DIL_ISKELET = ['Panel', 'Liste', 'Form', 'Rapor', 'Ayarlar'];
-
-/* Palet sırası: kartta ve promptta hep aynı sırada okunsun. */
-const DIL_RENK = [
-  ['vurgu',  'Vurgu'],
-  ['ikinci', 'İkinci'],
-  ['zemin',  'Zemin'],
-  ['yuzey',  'Yüzey'],
-  ['metin',  'Metin'],
+/* Tasarım durağı: "Görsel dünya" ve onun tasarım-tarifi sistemi (dil/renk/
+   bileşen bloğu) kaldırıldı — eski sistemden kalmaydı, yeni plana uymuyordu.
+   Yerine 5 sabit ChatGPT promptu geldi: her biri projenin gerçek ekran
+   görüntüsünü girdi alıp yalnız görsel dili değiştiriyor, içerik aynı
+   kalıyor. Müşteri beğendiğini seçiyor; gerisi (gerçek renk/tipografi
+   uygulaması) artık Studio dışında, doğrudan Claude Code sohbetiyle yapılıyor. */
+const TASARIM_YON = [
+  { anahtar: 'marka', ad: 'Marka Renkli / Fotoğraflı', renk: '#c9753c',
+    ozet: 'Fotoğraflı kahraman alanı, tek vurgu rengi, markanın kendi paleti.',
+    prompt: 'Ekteki mobil ve masaüstü ekran görüntüleri {FIRMA}\'nin gerçek '
+      + 'uygulaması. İçeriği, kartları, menüyü olduğu gibi koru — sadece görsel '
+      + 'dili değiştir: {SEKTOR} uygun bir marka paleti seç, üstte büyük '
+      + 'fotoğraflı/gradyanlı bir kahraman alanı ekle, tek vurgu rengi kullan. '
+      + 'Hem mobil hem masaüstü versiyonunu ayrı ayrı çiz.' },
+  { anahtar: 'minimal', ad: 'Minimal / Düz', renk: '#8fae4a',
+    ozet: 'Bol beyaz boşluk, düz ikonlar, süssüz ve sade.',
+    prompt: 'Ekteki mobil ve masaüstü ekran görüntüleri {FIRMA}\'nin gerçek '
+      + 'uygulaması. İçeriği, kartları, menüyü olduğu gibi koru — sadece görsel '
+      + 'dili değiştir: bol beyaz boşluk, tek sakin vurgu rengi, düz (çizgi) '
+      + 'ikonlar, gölgesiz ya da çok hafif gölgeli kartlar, ince kenarlıklar. '
+      + 'Süsten arınmış, sade bir iş aracı hissi olsun. Hem mobil hem masaüstü '
+      + 'versiyonunu ayrı ayrı çiz.' },
+  { anahtar: 'koyu', ad: 'Koyu + Gradyan', renk: '#5f86c4',
+    ozet: 'Koyu zemin, canlı gradyan vurgu, camsı kartlar.',
+    prompt: 'Ekteki mobil ve masaüstü ekran görüntüleri {FIRMA}\'nin gerçek '
+      + 'uygulaması. İçeriği, kartları, menüyü olduğu gibi koru — sadece görsel '
+      + 'dili değiştir: koyu zemin, canlı bir gradyan (mor-mavi ya da '
+      + 'turuncu-pembe gibi) vurgu, camsı/yarı saydam kartlar, ince parlayan '
+      + 'kenarlıklar. Modern ve teknolojik bir his olsun. Hem mobil hem '
+      + 'masaüstü versiyonunu ayrı ayrı çiz.' },
+  { anahtar: 'sicak', ad: 'Sıcak / Oyunbaz', renk: '#c4a05c',
+    ozet: 'Yuvarlak hatlar, pastel renkler, samimi bir his.',
+    prompt: 'Ekteki mobil ve masaüstü ekran görüntüleri {FIRMA}\'nin gerçek '
+      + 'uygulaması. İçeriği, kartları, menüyü olduğu gibi koru — sadece görsel '
+      + 'dili değiştir: yuvarlak hatlı kartlar ve butonlar, sıcak/pastel bir '
+      + 'renk paleti, samimi ve yuvarlak bir yazı tipi hissi, ikonlar dolu ve '
+      + 'dostane görünsün. Günlük kullanım hissi olsun, soğuk/kurumsal '
+      + 'durmasın. Hem mobil hem masaüstü versiyonunu ayrı ayrı çiz.' },
+  { anahtar: 'kurumsal', ad: 'Kurumsal / Ciddi', renk: '#6b7178',
+    ozet: 'Sakin palet, düzenli ızgara, kurumsal güven hissi.',
+    prompt: 'Ekteki mobil ve masaüstü ekran görüntüleri {FIRMA}\'nin gerçek '
+      + 'uygulaması. İçeriği, kartları, menüyü olduğu gibi koru — sadece görsel '
+      + 'dili değiştir: sakin/kısık bir palet (lacivert, gri, tek az kullanılan '
+      + 'vurgu rengi), düzenli ızgara hizalaması, sade ve geometrik başlık '
+      + 'tipografisi. Veri yoğun ama derli toplu, kurumsal bir güven hissi '
+      + 'olsun. Hem mobil hem masaüstü versiyonunu ayrı ayrı çiz.' },
 ];
 
 /* ---- Nizam teknik standardı — TOHUM ve YEDEK ----
