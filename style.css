@@ -511,6 +511,11 @@ button { font-family: inherit; color: inherit; }
   -webkit-overflow-scrolling: touch;
 }
 
+/* Aşama ekranlarının (Firma/Program/Bağlantılar/Kurulum/Beta) gövde
+   sarmalayıcısı — panel zeminindeki ofis fotoğrafının (z-index:0) üstünde
+   kalması için. */
+.fb-govde { position: relative; z-index: 3; }
+
 
 
 /* ==========================================================================

@@ -54,8 +54,6 @@ const ACIK_STANDART = new Set();
 let ACIK_GRUP = null;
 let ACIK_SABLON = null;
 let LOGO_ZAMANLAYICI = null;
-/* Projeler ekranındaki bölümler. Varsayılanı kod belirler, kullanıcı değiştirir. */
-const ACIK_PROJE_BOLUM = {};
 
 /* ---------- İkonlar ---------- */
 
@@ -4940,18 +4938,6 @@ function depoSahibiYaz(slug) {
 /* "GitHub'da aç"a dokunulan projeler. Kullanıcı dönünce adresi kendimiz
    yazıyoruz — depo adı bizden çıktığı için tahmin değil. */
 const DEPO_BEKLIYOR = {};
-
-/* Modül adı: "Kişisel Bütçe" gibi ürün adı. Depo adına ve bütün
-   başlıklara firmanın yanına tireyle ekleniyor. */
-function modulAdiSor(p) {
-  return metinSor({
-    baslik: 'Modül adı',
-    aciklama: 'Firmanın yanına tireyle eklenir: ' + p.firma + ' - …',
-    deger: modulAdi(p),
-    yerTutucu: 'Örn. Kişisel Bütçe',
-    buton: 'Kaydet',
-  });
-}
 
 /* GitHub Pages'in bu depo için üreteceği adres.
    "nizamsoft/NIZAMSOFT-KisiselButce" → "nizamsoft.github.io/NIZAMSOFT-KisiselButce" */
@@ -10669,15 +10655,6 @@ async function eylemCalistir(el) {
     });
   }
 
-  if (e === 'modul-adi') {
-    const pr = DB.proje(el.dataset.proje);
-    if (!pr) return;
-    const ad = await modulAdiSor(pr);
-    if (ad === null) return;
-    return isYap(() => DB.paletKaydet(pr.id,
-      Object.assign({}, pr.palet || {}, { modulAdi: ad })), 'Modül adı kaydedildi.');
-  }
-
   /* Namecheap'e yazılacak kayıt hazır duruyor: satır satır kopyalanıyor ve
      düğme doğrudan o alan adının Advanced DNS sayfasını açıyor. Studio kaydı
      kendi yazamıyor — Namecheap API'si sunucu ve anahtar istiyor. */
@@ -10696,13 +10673,6 @@ async function eylemCalistir(el) {
     return isYap(() => DB.paletKaydet(pr.id,
       Object.assign({}, (guncel && guncel.palet) || {}, { alanAdi: adres, namecheapBaglandi: true })),
       'Alan adı kaydedildi.');
-  }
-
-  if (e === 'yayin-onay') {
-    const pr = DB.proje(el.dataset.proje);
-    if (!pr) return;
-    return isYap(() => DB.paletKaydet(pr.id,
-      Object.assign({}, pr.palet || {}, { yayinda: true })), 'Yayında olarak işaretlendi.');
   }
 
   if (e === 'kok-alan') {
@@ -10990,56 +10960,6 @@ async function eylemCalistir(el) {
     return;
   }
 
-  if (e === 'yapi-modul') {
-    const pr = DB.proje(el.dataset.proje);
-    if (!pr) return;
-    const t = yapiTaslak(pr), ad = el.dataset.ad;
-    if (t.modul === ad) { t.modul = ''; t.sayfalar = []; t.kunye = {}; }
-    else {
-      t.modul = ad;
-      /* Kurulu modülse mevcut sayfaları ve daha önce girilmiş künyeleri
-         yükleriz: aynı işi ikinci kez yazdırmanın anlamı yok. */
-      const kurulu = DB.modulleri(pr.id).find(m => m.ad === ad);
-      if (kurulu) {
-        t.sayfalar = DB.sayfalari(kurulu.id).map(x => x.ad);
-        const eski = (pr.palet || {}).kunye || {};
-        t.kunye = {};
-        t.sayfalar.forEach(sf => {
-          const k = eski[ad + ' · ' + sf];
-          if (k) t.kunye[sf] = JSON.parse(JSON.stringify(k));
-        });
-      } else {
-        const sb = DB.modulSablonlari().find(m => m.ad === ad);
-        t.sayfalar = ((sb && sb.sayfalar) || []).slice();
-        t.kunye = {};
-      }
-    }
-    render();
-    return;
-  }
-
-  if (e === 'yapi-modul-yaz') {
-    const pr = DB.proje(el.dataset.proje);
-    if (!pr) return;
-    const ad = await metinSor({ baslik: 'Modül adı', yerTutucu: 'Örn. Sipariş',
-                                buton: 'Ekle' });
-    if (!ad) return;
-    const t = yapiTaslak(pr);
-    t.modul = ad;
-    render();
-    return;
-  }
-
-  if (e === 'yapi-sayfa') {
-    const pr = DB.proje(el.dataset.proje);
-    if (!pr) return;
-    const t = yapiTaslak(pr), ad = el.dataset.ad;
-    const i = t.sayfalar.indexOf(ad);
-    if (i > -1) t.sayfalar.splice(i, 1); else t.sayfalar.push(ad);
-    render();
-    return;
-  }
-
   /* ---- Sayfa künyesi ----
      Çip eylemleri render() çağırmıyor: tam çizim kaydırmayı başa alıyordu. */
   if (e === 'yapi-ky-tur') {
@@ -11288,17 +11208,6 @@ async function eylemCalistir(el) {
   }
 
   /* ---- Anlat: çözümleme döngüsü ---- */
-  if (e === 'anlat-prompt') {
-    const pr = DB.proje(el.dataset.proje);
-    if (!pr) return;
-    const t = yapiTaslak(pr);
-    return metinPenceresi({
-      baslik: 'Çözümleme promptu',
-      aciklama: 'Kopyala, Claude\'a yapıştır; dönen bloğu buraya geri getir.',
-      metin: PROMPT.cozumleme(pr, t),
-    });
-  }
-
   if (e === 'anlat-aktar') {
     const pr = DB.proje(el.dataset.proje);
     if (!pr) return;
@@ -11393,13 +11302,6 @@ async function eylemCalistir(el) {
       toast(err.message, 'hata');
     }
     return;
-  }
-
-  if (e === 'proje-bolum') {
-    const ad = el.dataset.ad;
-    const suan = el.classList.contains('acik');
-    ACIK_PROJE_BOLUM[ad] = !suan;
-    return render();
   }
 
   if (e === 'sablon-ac') {
