@@ -1062,6 +1062,79 @@ const PROMPT = {
     return s.join('\n');
   },
 
+  /* ---------- Geliştirme (final sonrası) güncelleme promptu ----------
+     betaIstek ile aynı iskelet, tek fark: final zaten verildi, uygulama
+     müşterinin elinde, gerçek kullanıcı verisi olabilir. O yüzden burada
+     ekstra bir dikkat uyarısı var — beta'da yoktu, çünkü beta'da henüz
+     gerçek veri riski düşük. Yapı bloğu (JSON) aynen betaIstek'le aynı;
+     cozumlemeOku/Uygula ikisini de aynı şekilde okuyor. */
+  guncellemeIstek(projeId, istek) {
+    const p = DB.proje(projeId);
+    if (!p) return '';
+    const metin = String(istek || '').trim();
+    if (!metin) return '';
+    const slug = depoSlug(p.repo);
+    const yayin = (p.palet || {}).alanAdi;
+
+    const s = [];
+    s.push('# ' + projeAdi(p) + ' — güncelleme isteği', '');
+    if (slug) {
+      s.push('> ### Depo: `' + slug + '`');
+      s.push('> Bu oturum yalnız bu depoya bağlı olmalı. Deposu farklıysa dur');
+      s.push('> ve söyle.', '');
+    }
+    if (yayin) {
+      s.push('> ### Yayın adresi: `https://' + yayin + '`');
+      s.push('> Bu, **müşterinin elinde canlı kullanılan** sürüm — beta değil.');
+      s.push('> Var olan veriyi silme ya da göç ettirme gerektiren bir değişiklik');
+      s.push('> yapacaksan önce dur ve söyle, benim onayım olmadan uygulama.');
+      s.push('');
+    }
+    s.push('Final zaten verildi, uygulama yayında ve kullanılıyor. Şu güncelleme');
+    s.push('isteniyor:', '');
+    s.push('> ' + metin.split('\n').join('\n> '));
+    s.push('');
+    s.push('Depoyu incele, gerekeni düzelt ya da ekle. **Var olan hiçbir özelliği');
+    s.push('kırma** — bu istek dışındaki hiçbir şeyi değiştirme.');
+    s.push('');
+    s.push('Eğer bu, programın yapısını da etkiliyorsa — yeni bir sayfa ya da');
+    s.push('yeni bir alan gerekiyorsa — düzeltmenin sonunda **ayrıca** aşağıdaki');
+    s.push('biçimde bir JSON bloğu ver, ben Studio\'ya yapıştıracağım. Yapıyı');
+    s.push('etkilemiyorsa (görsel düzeltme, hata giderme gibi) blok verme.');
+    s.push('');
+    const kunye = PROMPT.kunyeBlogu(p);
+    if (kunye) { s.push('## Kayıtlı yapı (karşılaştırman için)', ''); s.push(kunye); s.push(''); }
+
+    s.push('## Yapı değiştiyse vereceğin blok');
+    s.push('Yalnız yeni olanı yaz — zaten kayıtlı sayfa ya da alanı tekrar etme.');
+    s.push('Proje birden çok modüllüyse `modul` alanına **ilgili gerçek modülün');
+    s.push('adını** yaz — yukarıdaki kayıtlı yapıdan bul, örnekteki adı kopyalama.');
+    s.push('');
+    s.push('```json');
+    s.push('{');
+    s.push('  "modul": "İlgili modülün adı",');
+    s.push('  "sayfalar": [');
+    s.push('    {');
+    s.push('      "ad": "Yeni ya da güncellenen sayfanın adı",');
+    s.push('      "grup": "Kayıtlar",');
+    s.push('      "amac": "Tek cümleyle bu ekran ne işe yarar",');
+    s.push('      "tur": "Liste",');
+    s.push('      "alanlar": [');
+    s.push('        { "ad": "Kod", "tur": "Metin", "zorunlu": true }');
+    s.push('      ]');
+    s.push('    }');
+    s.push('  ]');
+    s.push('}');
+    s.push('```');
+    s.push('');
+    s.push('- `tur` yalnız: ' + SAYFA_TURU.map(x => x.ad).join(' · '));
+    s.push('- Alan `tur` yalnız: ' + ALAN_TURU.map(x => x.ad).join(' · '));
+    s.push('');
+    s.push('Bitirince tek commit\'le **`main` dalına** gönder:');
+    s.push(`   \`[${TASK_PREFIX}-0] Güncelleme\``);
+    return s.join('\n');
+  },
+
   /* ---------- Görsel dünya: ChatGPT'ye giden iki prompt ----------
      Studio kod tarafını Claude'a, görünüş tarafını ChatGPT'ye veriyor.
      Buradan çıkan iki metin de müşteri deposuna değil, bir sohbete gider;

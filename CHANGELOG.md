@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## v0.135.20
+- **Final durağı sadeleşti.** Tek satırlık onay kutusu yerine büyük bir "Final ver" düğmesi ve altında "Hata veya güncelleme bildir" düğmesi geldi. Sorunsuzsa final veriliyor (onay istiyor); bir sorun varsa not yazılıyor, notlar altta listeleniyor ve tek tek kaldırılabiliyor.
+- **Geliştirme durağındaki "Hızlı güncelleme" kutusu, prompt üreten bir akışla değişti.** Eskiden yazılan başlık doğrudan bir göreve dönüşüyordu, hiçbir prompt üretmiyordu. Artık Beta durağındaki akışın aynısı: güncelleme isteğini yaz, "Kopyala ve aç" ile Claude Code'a gönder — prompt hem canlı/üretim uygulaması olduğuna dair bir uyarı taşıyor hem de yapı değiştiyse aynı JSON bloğunu istiyor, "JSON varsa yükle" ile içeri alınıyor.
+
 ## v0.135.19
 - **Görsel isteği promptu, mockup'ta zaten olan bir öğeyi sıfırdan yeniden tarif ediyordu.** Claude Code'a "ekteki görselin dilini tarif et" demek yetmiyordu — canlı bir testte mockup'taki illüstrasyonu (kadın figürü) baştan uydurma bir açıklamayla (renk kodları, poz vb.) yeniden anlattı, bu da ChatGPT'nin farklı bir görsel üretmesine yol açıyordu. Artık prompt iki durumu ayırıyor: mockup'ta zaten görünen bir öğe için "ekteki görseldeki bunu birebir aynısıyla izole PNG olarak ver" deniyor; yalnız mockup'ta hiç görünmeyen yeni bir öğe için tarif isteniyor.
 

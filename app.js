@@ -3466,6 +3466,22 @@ function yapiBaglari() {
       }
     });
   }
+  /* Geliştirme durağındaki güncelleme kutusu — aynı imleç-koruma mantığı. */
+  const guncellemeIstek = $('[data-guncelleme-istek]');
+  if (guncellemeIstek && !guncellemeIstek.dataset.bagli) {
+    guncellemeIstek.dataset.bagli = '1';
+    guncellemeIstek.addEventListener('input', () => {
+      const projeId = guncellemeIstek.dataset.guncellemeIstek;
+      GUNCELLEME_ISTEK[projeId] = guncellemeIstek.value;
+      const acik = guncellemeIstek.value.trim().length > 20;
+      if (acik !== !!$('[data-pano="guncellemeIstek"]')) {
+        const yer = guncellemeIstek.selectionStart;
+        render();
+        const yeni = $('[data-guncelleme-istek]');
+        if (yeni) { yeni.focus(); try { yeni.setSelectionRange(yer, yer); } catch (h) {} }
+      }
+    });
+  }
   $$('[data-ky]').forEach(el => {
     if (el.dataset.bagli) return;
     el.dataset.bagli = '1';
@@ -3692,20 +3708,6 @@ async function depoAdresiTamamla(p) {
   const adres = 'github.com/' + sahip + '/' + depoAdi(p);
   await isYap(() => DB.projeGuncelle(p.id, { repo: adres }),
     'Depo adresi yazıldı: ' + adres);
-}
-
-/* Beta, Final ve Güncellemeler kartları — kurulum kartlarıyla aynı dil. */
-function durakKarti(no, bitti, ad, aciklama, govde, rozet) {
-  return `
-    <div class="kur-kart ${bitti ? 'bitti' : ''}">
-      <div class="kur-bas">
-        <span class="kur-no">${bitti ? svg(ICON.tik, 12) : no}</span>
-        <b>${esc(ad)}</b>
-        <span class="kur-rozet">${esc(rozet || (bitti ? 'tamam' : 'sırada'))}</span>
-      </div>
-      <p>${aciklama}</p>
-      ${govde}
-    </div>`;
 }
 
 /* 5 · Beta ve geliştirme — iki bölüm.
@@ -4017,10 +4019,11 @@ function sqlEditorAdresi(url) {
 }
 
 
-/* 7 · Final — görevler bitti, teslim. */
+/* 7 · Final — görevler bitti, incele, ya final ver ya da bulduğunu not et. */
 function finalSayfasi(p, d) {
   const pl = p.palet || {};
   const verildi = !!pl.finalVerildi;
+  const notlar = Array.isArray(pl.finalNotlar) ? pl.finalNotlar : [];
   const s = DB.sayim(p.id);
   const hazir = gelistirmeBitti(p);
 
@@ -4029,24 +4032,45 @@ function finalSayfasi(p, d) {
       <div class="tk-ust"><b>${s.bitmis}/${s.gorev} görev bitti</b><em>%${s.yuzde}</em></div>
       <div class="ray"><i style="width:${s.yuzde}%"></i><b style="left:${s.yuzde}%"></b></div>
     </div>`
-    + durakKarti(1, verildi, 'Final sürüm',
-        hazir || verildi
+    + `<div class="card">
+        <p class="fb-neden">${hazir || verildi
           ? (s.gorev > 0 ? 'Bütün görevler bitti.' : 'Geliştirmeye ihtiyaç yoktu.')
-            + ' Son bir kez dene, sonra müşteriye teslim et.'
+            + ' Uygulamayı son bir kez dene — sorunsuzsa final ver, bir şey bulursan bildir.'
           : '<b class="eksik">Önce açık görevleri bitir.</b> Final, <b>Beta ve '
-            + 'geliştirme</b> durağındaki bütün görevler tamamlandığında verilir.', `
-      <label class="kur-onay ${verildi ? 'on' : ''} ${hazir || verildi ? '' : 'pasif'}"
-             ${hazir || verildi ? `data-eylem="final-onay" data-proje="${p.id}"
-             role="button" tabindex="0"` : ''}>
-        <span class="kur-kutu">${svg(ICON.tik, 12)}</span> Final sürüm verildi</label>`)
-
+            + 'geliştirme</b> durağındaki bütün görevler tamamlandığında verilebilir.'}</p>
+        ${verildi
+          ? `<div class="kur-deger duz">${svg(ICON.tik, 13)} Final sürüm verildi</div>`
+          : `<button class="sayfa-dug" type="button" data-eylem="final-onay"
+                     data-proje="${p.id}" ${hazir ? '' : 'disabled'}>
+               ${svg(ICON.bayrak, 16)} Final ver</button>`}
+        <button class="sayfa-dug ikincil" type="button" data-eylem="final-not-ekle"
+                data-proje="${p.id}">
+          ${svg(ICON.uyari, 15)} Hata veya güncelleme bildir</button>
+      </div>`
+    + (notlar.length ? bolumBas('Bildirilen notlar') + `
+        <div class="card liste">
+          ${notlar.map((n, i) => `
+            <div class="sr">
+              <span style="flex:1">${esc(n)}</span>
+              <button class="mini-link tehlike" type="button" data-eylem="final-not-sil"
+                      data-proje="${p.id}" data-deger="${i}" aria-label="Notu sil">
+                ${svg(ICON.cop, 13)}</button>
+            </div>`).join('')}
+        </div>` : '')
     + `<div class="note note-kucuk">${svg(ICON.info, 15)}
         <span>Finalden sonra gelen istekler <b>Geliştirme</b> durağında yürür.</span></div>`;
 }
 
-/* 8 · Geliştirme (eski Güncellemeler) — proje yaşadıkça açık kalan durak. */
+/* 8 · Geliştirme (eski Güncellemeler) — proje yaşadıkça açık kalan durak.
+   Final verildikten sonra buraya düşülür. Beta'daki "anlat, prompt oluştur,
+   Claude'a yapıştır" akışının aynısı — yalnız artık canlı bir uygulama
+   olduğu için prompt ekstra bir dikkat uyarısı taşıyor (bkz. guncellemeIstek). */
+const GUNCELLEME_ISTEK = {};
+
 function guncellemeSayfasi(p, d) {
   const gorevler = DB.gorevleri({ proje: p.id }).filter(g => g.durum !== 'tamamlandi');
+  const istek = GUNCELLEME_ISTEK[p.id] || '';
+  const dolu = istek.trim().length > 20;
 
   return sayfaHero(p, d)
     + bolumBas('Depo') + `
@@ -4055,18 +4079,22 @@ function guncellemeSayfasi(p, d) {
           ${svg(ICON.katman, 15)} Adres
           ${p.repo ? `<b class="mono">${esc(p.repo)}</b>` : '<b class="eksik">eklenmedi</b>'}</div>
       </div>`
-    /* Tek kişi geliştiriyorsa modül seçme, atama gibi adımlar gereksiz
-       yavaşlatıcı — burası tek satırda görevi "Proje Geneli" kovasına
-       düşürüyor. Detaylı atama gerekiyorsa görevi açıp elle taşınabilir. */
-    + bolumBas('Hızlı güncelleme') + `
+    + bolumBas('Güncelleme isteği') + `
       <div class="card">
-        <label class="field" style="margin-bottom:0">
-          <span>Ne yapılacak</span>
-          <input type="text" id="hg-metin" placeholder="Örn. Stok listesine tarih filtresi ekle"
-                 maxlength="120" autocomplete="off">
-        </label>
-        <button class="sayfa-dug" type="button" data-eylem="hizli-gorev" data-proje="${p.id}">
-          ${svg(ICON.arti, 15)} Ekle</button>
+        <textarea class="anl-kutu" data-guncelleme-istek="${p.id}"
+           placeholder="Örn. Stok listesine tarih filtresi ekle">${esc(istek)}</textarea>
+        <div class="anl-dug">
+          ${dolu
+            ? `<a target="_blank" rel="noopener" data-pano="guncellemeIstek" data-proje="${p.id}"
+                 data-hedef="Claude Code" href="${esc(claudeAdresi(depoSlug(p.repo)))}">
+                 ${svg(ICON.kopya, 15)} Kopyala ve aç</a>`
+            : `<button type="button" disabled>${svg(ICON.kopya, 15)} Prompt oluştur</button>`}
+          <button class="ana" type="button" data-eylem="anlat-aktar" data-proje="${p.id}">
+            ${svg(ICON.ice, 15)} JSON varsa yükle</button>
+        </div>
+        <p class="anl-not">Claude güncellemeyi yapar. Bu değişiklik yapıyı da (yeni
+          sayfa ya da alan) etkiliyorsa sonunda bir JSON bloğu verir — onu
+          yukarıdaki <b>JSON varsa yükle</b> ile yapıştır.</p>
       </div>`
     + bolumBas('Açık istekler')
     + (gorevler.length
@@ -7555,6 +7583,7 @@ const PANO_PROMPT = {
   cozumleme:     p => PROMPT.cozumleme(p, yapiTaslak(p)),
   modulGuncelle: p => PROMPT.modulGuncelle(p.id),
   betaIstek:     p => PROMPT.betaIstek(p.id, BETA_ISTEK[p.id] || ''),
+  guncellemeIstek: p => PROMPT.guncellemeIstek(p.id, GUNCELLEME_ISTEK[p.id] || ''),
   yapi:          p => PROMPT.yapi(p.id),
   /* Projesiz: bir programda doğan kuralı standarda çeviren prompt. */
   standartEkle:  () => PROMPT.standartEkle(),
@@ -8838,24 +8867,44 @@ async function eylemCalistir(el) {
     const pr = DB.proje(el.dataset.proje);
     if (!pr) return;
     const pl = pr.palet || {};
+    if (pl.finalVerildi) {
+      return isYap(() => DB.paletKaydet(pr.id,
+        Object.assign({}, pl, { finalVerildi: false })), 'İşaret kaldırıldı.');
+    }
+    if (!await onaySor({
+      baslik: 'Final verilsin mi?',
+      mesaj: 'Uygulamayı denedin ve sorunsuz bulduğunda onayla. Bundan sonraki '
+           + 'istekler Geliştirme durağında yürür.',
+      buton: 'Eminim',
+    })) return;
     return isYap(() => DB.paletKaydet(pr.id,
-      Object.assign({}, pl, { finalVerildi: !pl.finalVerildi })),
-      pl.finalVerildi ? 'İşaret kaldırıldı.' : 'Final sürüm verildi.');
+      Object.assign({}, pl, { finalVerildi: true })), 'Final sürüm verildi.');
   }
 
-  if (e === 'hizli-gorev') {
+  if (e === 'final-not-ekle') {
     const pr = DB.proje(el.dataset.proje);
     if (!pr) return;
-    const alan = $('#hg-metin');
-    const baslik = alan ? alan.value.trim() : '';
-    if (!baslik) { toast('Önce ne yapılacağını yaz.', 'uyari'); if (alan) alan.focus(); return; }
-    const genel = DB.modulleri(pr.id).find(m => m.ad === GENEL_MODUL);
-    if (!genel) { toast('Proje Geneli kovası bulunamadı.', 'hata'); return; }
-    return isYap(() => DB.gorevOlustur({
-      proje_id: pr.id, modul_id: genel.id, sayfa_id: null,
-      baslik, aciklama: '', oncelik: 'normal',
-      atanan: AUTH.user ? AUTH.user.id : null, standartlar: [],
-    }), 'Görev eklendi.');
+    const not = await metinSor({
+      baslik: 'Hata ya da güncelleme bildir',
+      aciklama: 'Ne değişmesi gerektiğini yaz — liste hâlinde burada kalacak.',
+      yerTutucu: 'Örn. Stok listesinde tarih filtresi çalışmıyor.',
+      buton: 'Ekle', cok: true,
+    });
+    if (!not) return;
+    const pl = pr.palet || {};
+    const notlar = (Array.isArray(pl.finalNotlar) ? pl.finalNotlar : []).concat(not);
+    return isYap(() => DB.paletKaydet(pr.id,
+      Object.assign({}, pl, { finalNotlar: notlar })), 'Not eklendi.');
+  }
+
+  if (e === 'final-not-sil') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const pl = pr.palet || {};
+    const notlar = (Array.isArray(pl.finalNotlar) ? pl.finalNotlar : [])
+      .filter((_, i) => i !== Number(el.dataset.deger));
+    return isYap(() => DB.paletKaydet(pr.id,
+      Object.assign({}, pl, { finalNotlar: notlar })), 'Not kaldırıldı.');
   }
 
   if (e === 'repo') {
@@ -10035,14 +10084,6 @@ document.addEventListener('DOMContentLoaded', () => {
     el.classList.add('kopyalandi');
     if (yazi) yazi.textContent = (el.dataset.hedef || 'Sohbet') + ' açılıyor…';
     toast('Prompt panoda — ' + (el.dataset.hedef || 'sohbet') + '\'e yapıştır.', 'basari');
-  });
-
-  /* Hızlı güncelleme kutusu: sayfa her render'da yeniden çizildiği için
-     tek elemanlık dinleyici kalıcı olmuyor — belgeye bağlı, hep çalışıyor. */
-  document.addEventListener('keydown', e => {
-    if (e.key !== 'Enter' || !e.target.closest('#hg-metin')) return;
-    const btn = $('[data-eylem="hizli-gorev"]');
-    if (btn) btn.click();
   });
 
   /* "GitHub'da aç"a dokunuldu: kullanıcı dönünce adresi kendimiz yazacağız. */
