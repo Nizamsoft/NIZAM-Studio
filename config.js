@@ -7,7 +7,7 @@ const APP = {
   name:     'NIZAM | Studio',
   short:    'NIZAM Studio',
   owner:    'Nizam Soft',
-  version: 'v0.135.8',
+  version: 'v0.135.9',
   build:    '2026-09-12',
   /* Studio'nun kendi deposu — "bütün programlarda geçerli olsun"
      istekleri buraya gider. */
@@ -520,6 +520,9 @@ const YEREL_STANDART = {
     + 'silinirse kayıtlar da gider — yedeği kullanıcı alır.'],
   'Gerçek zamanlı': ['Yok',
     'Tek cihaz, tek kullanıcı. Eşitlenecek başka bir yer yok.'],
+  'Çevrimdışı': ['Gerek yok',
+    'Yazma kuyruğu ve çakışma çözümü, senkronize edilecek bir sunucu olunca '
+    + 'anlam kazanır. Burada tek cihaz var — yazdığın an kalıcı, kuyruk yok.'],
   'Değişiklik kaydı': ['Yerelde tutulur',
     'Ne, ne zaman değişti cihazda kaydedilir ve Ayarlar\'da listelenir. '
     + '"Kim" yok — uygulamayı tek kişi kullanıyor.'],

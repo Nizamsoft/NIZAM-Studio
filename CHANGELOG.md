@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## v0.135.9
+- **Yerel projede roller hâlâ RLS'e bağlanıyordu.** Teknik standardın "Bu projeye özel" bölümü, roller yazılınca proje sunucusuz olsa bile "Yetki veritabanı kurallarıyla (RLS) uygulanır" diyordu. Artık yerel projede "yetki yalnız arayüzde uygulanır" diyor.
+- **"Çevrimdışı" satırının yerel karşılığı yoktu.** Teknik standardın Nizam Standardı çekirdeğindeki "Çevrimdışı" maddesinin sunucusuz proje karşılığı hiç tanımlanmamıştı — yerel projede de bulut'a özgü "yazma kuyruğa girer, çakışırsa son yazan kazanır" metni çıkıyordu. Artık "gerek yok, tek cihaz var" diyor.
+
 ## v0.135.8
 - **"Kopyala ve Claude Code'da aç" düğmelerinin çoğu depoyu seçmiyordu.** Yalnız ilk bağlantı (proje kurulurken) doğru depoyu önceden seçiyordu; "Modülü güncelle", "Anlatım" çözümleme, Beta güncelleme ve görev promptu düğmeleri düz `claude.ai/code` adresine gidiyordu — depo seçili gelmiyor, kullanıcı elle seçmek zorunda kalıyordu. Artık hepsi doğru depoyu önceden seçerek açılıyor.
 

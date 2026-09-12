@@ -320,7 +320,11 @@ const PROMPT = {
         s.push(`- **${a.ad}:** ${r.length} katman, en alttan en üste:`);
         r.forEach((ad, i) => s.push(`  ${i + 1}. ${ad}`));
         s.push('  - Üstteki katman, alttakinin gördüğü her şeyi görür.');
-        s.push('  - Yetki veritabanı kurallarıyla (RLS) uygulanır, yalnız arayüzde gizlemekle değil.');
+        if (yerel) {
+          s.push('  - Sunucu yok: yetki yalnız arayüzde uygulanır, veritabanı kuralı yazılamaz.');
+        } else {
+          s.push('  - Yetki veritabanı kurallarıyla (RLS) uygulanır, yalnız arayüzde gizlemekle değil.');
+        }
       });
     }
     const eksik = TEKNIK_ALAN.filter(a => !pl[a.anahtar] && a.anahtar !== 'veriKatmani');
