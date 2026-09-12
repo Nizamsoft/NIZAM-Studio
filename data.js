@@ -752,9 +752,8 @@ const DB = {
   /* Yapıştırılan kuralları yazar. Aynı alan+başlık varsa üzerine yazar,
      yoksa ekler. Tek tek gider ki hangisinin patladığı belli olsun.
 
-     Her yazılan satır bu sürümle damgalanıyor: damga, daha önce kurulmuş
-     programların Geliştirme durağında "yeni standart" olarak çıkmasını
-     sağlıyor (bkz. yeniStandartlar). */
+     Her yazılan satır bu sürümle damgalanıyor: hangi standardın ne zaman
+     eklendiğini gösterir. */
   async standartlarIceAktar(kayitlar) {
     yazmaKontrol();
     let eklenen = 0, guncellenen = 0;

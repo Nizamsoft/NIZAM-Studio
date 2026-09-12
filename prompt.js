@@ -1294,6 +1294,73 @@ const PROMPT = {
     return s.join('\n');
   },
 
+  /* ---------- Beta güncelleme promptu ----------
+     Beta ve geliştirme'de aşama/görev takibi yok: yayına giren uygulama
+     denenip eksik ya da güncellenmesi gereken bir şey bulunca yazılıyor,
+     Claude düzeltiyor. Yapıyı da etkiliyorsa (yeni sayfa/alan) modül
+     güncellemesiyle aynı bloğu veriyor — cozumlemeOku/Uygula aynen okuyor. */
+  betaIstek(projeId, istek) {
+    const p = DB.proje(projeId);
+    if (!p) return '';
+    const metin = String(istek || '').trim();
+    if (!metin) return '';
+    const modul = DB.modulleri(p.id).find(m => m.ad !== GENEL_MODUL);
+    const ad = (modul && modul.ad) || modulAdi(p) || 'Program';
+    const slug = depoSlug(p.repo);
+    const yayin = (p.palet || {}).alanAdi;
+
+    const s = [];
+    s.push('# ' + projeAdi(p) + ' — güncelleme', '');
+    if (slug) {
+      s.push('> ### Depo: `' + slug + '`');
+      s.push('> Bu oturum yalnız bu depoya bağlı olmalı. Deposu farklıysa dur');
+      s.push('> ve söyle.', '');
+    }
+    if (yayin) {
+      s.push('> ### Yayın adresi: `https://' + yayin + '`');
+      s.push('> Denediğim canlı sürüm bu adres.', '');
+    }
+    s.push('Yayındaki uygulamayı denedim. Şunu buldum / şunu istiyorum:', '');
+    s.push('> ' + metin.split('\n').join('\n> '));
+    s.push('');
+    s.push('Depoyu incele, gerekeni düzelt ya da ekle.');
+    s.push('');
+    s.push('Eğer bu, programın yapısını da etkiliyorsa — yeni bir sayfa ya da');
+    s.push('yeni bir alan gerekiyorsa — düzeltmenin sonunda **ayrıca** aşağıdaki');
+    s.push('biçimde bir JSON bloğu ver, ben Studio\'ya yapıştıracağım. Yapıyı');
+    s.push('etkilemiyorsa (görsel düzeltme, hata giderme gibi) blok verme.');
+    s.push('');
+    const kunye = PROMPT.kunyeBlogu(p);
+    if (kunye) { s.push('## Kayıtlı yapı (karşılaştırman için)', ''); s.push(kunye); s.push(''); }
+
+    s.push('## Yapı değiştiyse vereceğin blok');
+    s.push('Yalnız yeni olanı yaz — zaten kayıtlı sayfa ya da alanı tekrar etme.');
+    s.push('');
+    s.push('```json');
+    s.push('{');
+    s.push(`  "modul": "${ad}",`);
+    s.push('  "sayfalar": [');
+    s.push('    {');
+    s.push('      "ad": "Yeni ya da güncellenen sayfanın adı",');
+    s.push('      "grup": "Kayıtlar",');
+    s.push('      "amac": "Tek cümleyle bu ekran ne işe yarar",');
+    s.push('      "tur": "Liste",');
+    s.push('      "alanlar": [');
+    s.push('        { "ad": "Kod", "tur": "Metin", "zorunlu": true }');
+    s.push('      ]');
+    s.push('    }');
+    s.push('  ]');
+    s.push('}');
+    s.push('```');
+    s.push('');
+    s.push('- `tur` yalnız: ' + SAYFA_TURU.map(x => x.ad).join(' · '));
+    s.push('- Alan `tur` yalnız: ' + ALAN_TURU.map(x => x.ad).join(' · '));
+    s.push('');
+    s.push('Bitirince tek commit\'le **`main` dalına** gönder:');
+    s.push(`   \`[${TASK_PREFIX}-0] Güncelleme\``);
+    return s.join('\n');
+  },
+
   /* Tasarımcıya giden kısa künye. Tam künye (alan türleri, zorunluluk,
      roller, yetkiler) kodu yazacak olan için; tasarımcıya verilince
      promptun üçte birini kaplıyor ve ekranı tabloya çeviriyor. Burada
@@ -1501,61 +1568,6 @@ const PROMPT = {
     return s.join('\n');
   },
 
-  programGelistirme(projeId) {
-    const p = DB.proje(projeId);
-    if (!p) return '';
-
-    const yeniler = yeniStandartlar(p.palet);
-    if (!yeniler.length) return '';
-
-    const pl    = p.palet || {};
-    const yerel = pl.veriKatmani === 'Yerel tarayıcı';
-    const s = [];
-
-    s.push('# ' + projeAdi(p) + ' — standart güncellemesi', '');
-
-    const slug = depoSlug(p.repo);
-    s.push('> ### Depo: ' + (slug ? '`' + slug + '`' : 'kayıtlı değil'));
-    if (slug) {
-      s.push('> Bu oturum yalnız bu depoya bağlı olmalı. Deposu farklıysa dur');
-      s.push('> ve söyle; başka depo ekleme, dosya oluşturma, commit atma.');
-    } else {
-      s.push('> Bu programın deposunu Studio\'ya yazmamışım. Dosyaya dokunmadan');
-      s.push('> önce doğru depoda olduğunu bana sor.');
-    }
-    s.push('');
-
-    s.push('Nizam Soft teknik standardına yeni satır' + (yeniler.length > 1 ? 'lar' : '')
-      + ' eklendi. Bu program o');
-    s.push('satır' + (yeniler.length > 1 ? 'lar' : '') + ' yokken kuruldu; şimdi ona da uygulanacak.', '');
-
-    s.push('## Yeni standart' + (yeniler.length > 1 ? 'lar' : ''), '');
-    yeniler.forEach(st => {
-      s.push('- **' + st.alan + ' · ' + st.ad + '** _(' + st.grup + ')_');
-      const t = (yerel && st.yerel) ? st.yerel : st.tarif;
-      if (t) s.push('  - ' + String(t).replace(/\n+/g, ' '));
-    });
-    s.push('');
-
-    s.push('## Şimdi ne yapacaksın');
-    s.push('1. `NIZAM.md` dosyasını aç. `## Nizam Standardı` başlığının altına');
-    s.push('   yukarıdaki satır' + (yeniler.length > 1 ? 'ları' : 'ı') + ' ekle — kimlik dosyası doğruluk kaynağı,');
-    s.push('   önce orası güncellenir.');
-    s.push('2. Sonra kodda uygula. Bu standart mevcut bir davranışla çakışıyorsa');
-    s.push('   uydurma — dur ve bana sor.');
-    s.push('3. Tek commit yeter. Mesajın başına `[' + TASK_PREFIX + '-0]` yaz ve');
-    s.push('   **`main` dalına** gönder.');
-    s.push('');
-
-    s.push('## Şunları yapma');
-    s.push('- **Başka bir şeye dokunma.** Yalnız bu standart' + (yeniler.length > 1 ? 'lar' : '') + '. Yol üstünde');
-    s.push('  gördüğün eksikleri düzeltme, not olarak yaz.');
-    s.push('- **Tasarım kararlarını değiştirme.**');
-    s.push('- **Bu oturuma başka depo ekleme.**');
-
-    return s.join('\n');
-  },
-
   /* Standart ekleme promptu — bir programda yeni bir kural doğduğunda,
      o değişikliği yapan Claude oturumuna yapıştırılır. Claude kuralı sabit
      bir blok olarak geri verir; blok Studio'ya yapıştırılınca standart
@@ -1617,54 +1629,6 @@ const PROMPT = {
     s.push('');
 
     s.push('Kod yazma, dosya değiştirme, commit atma. Yalnız bloğu ver.');
-
-    return s.join('\n');
-  },
-
-  /* Studio geliştirmesi — "bütün programlarda böyle olsun" isteği.
-     Hedef depo müşterininki değil, Studio'nun kendisi. */
-  studioGelistirme(istek) {
-    const metin = String(istek || '').trim();
-    if (!metin) return '';
-
-    const s = [];
-    s.push('# NIZAM Studio — yeni teknik standart', '');
-
-    s.push('> ### Depo: `' + APP.depo + '`');
-    s.push('> Bu istek tek bir müşteri programı için değil. Studio\'nun kendi');
-    s.push('> deposunda çalış; müşteri deposuna dokunma, bu oturuma başka depo');
-    s.push('> ekleme. Oturum başka bir depodaysa dur ve söyle.');
-    s.push('');
-
-    s.push('## İstek', '');
-    s.push(metin, '');
-
-    s.push('## Ne yapacaksın');
-    s.push('1. Bunu `config.js` içindeki `TEKNIK_STANDART` dizisine yeni bir satır');
-    s.push('   olarak ekle. Biçim: `[ad, değer, not, eklendi]`.');
-    s.push('   - **ad** kısa olsun, iki üç kelime.');
-    s.push('   - **not** neden ve nasıl olduğunu tek paragrafta anlatsın.');
-    s.push('   - **eklendi** bu sürümün bir üstü olsun — damgasız satırı eski');
-    s.push('     programlar hiç duymaz.');
-    s.push('2. Veri yerelde olan projelerde anlamı değişiyorsa `YEREL_STANDART`');
-    s.push('   içine de karşılığını yaz.');
-    s.push('3. Zaten var olan bir satırla çakışıyorsa yeni satır açma — mevcut');
-    s.push('   satırı güncelle ve damgasını bu sürüme çek.');
-    s.push('4. Studio\'nun sürüm işlerini yap: `config.js` içindeki `APP.version`,');
-    s.push('   `CHANGELOG.md` (en yeni üstte), `index.html` içindeki `?v=`');
-    s.push('   numaraları, `sw.js` içindeki `CACHE` adı.');
-    s.push('5. `main` dalına gönder.');
-    s.push('');
-
-    s.push('## Şunları yapma');
-    s.push('- **Kod yazma dışında bir şey kurma.** Bu bir standart satırı; yeni');
-    s.push('  ekran, yeni ayar, yeni tablo istemiyorum.');
-    s.push('- **Görev durumlarını artırma.** Dört tane: Yapılacak, Geliştiriliyor,');
-    s.push('  Kontrolde, Tamamlandı.');
-    s.push('');
-
-    s.push('Bittiğinde Studio\'yu güncelleyip her programın Beta ve geliştirme');
-    s.push('durağında bu standardı göreceğim; oradan tek tek uygulatacağım.');
 
     return s.join('\n');
   },

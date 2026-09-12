@@ -1,5 +1,12 @@
 # Değişiklik Günlüğü
 
+## v0.135.0
+- **"Beta ve geliştirme" baştan tasarlandı, iki bölüme ayrıldı.**
+  - **İlk kurulum:** Kurulum ve yapı'da hazırlanan plan gerçek koda dönüşüyor. Artık kart ızgarası ve ayrı pencereler yerine tek bir sihirbaz var — Bağlantılar ve temel'deki gibi: adım şeridi, "Kopyala ve Claude Code'da aç", bitince "Sıradaki". Sırasıyla: plan depoya yazılır (3. blok), gerekiyorsa veritabanı kurulur, sonra beş aşamada gerçek uygulama kodu yazılır.
+  - **Sürekli geliştirme:** ilk kurulum bitince ekran buna dönüyor. Görev listesi, "Geliştiriliyor/Kontrolde" sayaçları, "Bütün/Yalnız bu programda olsun" kartları kalktı. Yerine: yayın adresine gir, dene, eksik gördüğünü anlat, prompt oluştur, Claude'a yapıştır — yapıyı da etkiliyorsa (yeni sayfa/alan) Claude'un verdiği JSON'u "JSON varsa yükle" ile yapıştır, "Modülü güncelle" ile aynı mekanizma.
+  - Bu aşamanın "bitti" sayılması artık görev sayısına değil, "Beta ve geliştirme bitti" deyip onaylamana bağlı.
+- "Studio geliştirmesi yaz" (bütün programları etkileyen istek) kaldırıldı — standart eklemek zaten Ayarlar'daki Standartlar ekranından yapılabiliyor.
+
 ## v0.134.54
 - **Nizam Standardı'ndaki başlık/açıklama çelişkisi düzeltildi.** Proje "yerel" (sunucusuz) seçildiğinde Giriş, Veri, Gerçek zamanlı ve Dosya saklama satırlarının başlığı hâlâ bulut varsayımını gösteriyordu (ör. "Giriş · E-posta + şifre") ama açıklaması doğru şekilde yerele dönüyordu ("Yerel PIN") — ikisi çelişiyordu. Artık başlık da açıklamayla aynı kaynaktan okunuyor.
 

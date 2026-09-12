@@ -7,7 +7,7 @@ const APP = {
   name:     'NIZAM | Studio',
   short:    'NIZAM Studio',
   owner:    'Nizam Soft',
-  version: 'v0.134.54',
+  version: 'v0.135.0',
   build:    '2026-09-12',
   /* Studio'nun kendi deposu — "bütün programlarda geçerli olsun"
      istekleri buraya gider. */
@@ -644,24 +644,6 @@ function yeniKararlar(palet) {
 function standartListesi() {
   const t = (typeof DB !== 'undefined' && Array.isArray(DB.standartlar)) ? DB.standartlar : [];
   return t.length ? t : standartTohum();
-}
-
-/* Bu proje için henüz duyurulmamış standartlar.
-   Tasarım kararlarından farkı: standardın palette bir değeri yok, seçimi de
-   yok — susturmanın tek yolu "Gördüm" (palet.gorulenStandart).
-   Susturma kaydı satırın id'sini tutar; eski kayıtlar ad tuttuğu için
-   alan ve başlık da eşleşme sayılır, yoksa bir kez "gördüm" denenler
-   geri gelirdi. */
-function yeniStandartlar(palet) {
-  const pl  = palet || {};
-  const tab = surumSayi(pl.gorulenSurum);
-  const gor = Array.isArray(pl.gorulenStandart) ? pl.gorulenStandart : [];
-  const susturuldu = st => gor.indexOf(st.id) >= 0
-    || gor.indexOf(st.alan) >= 0 || gor.indexOf(st.ad) >= 0;
-
-  return standartListesi().filter(st => st.eklendi
-    && surumSayi(st.eklendi) > tab
-    && !susturuldu(st));
 }
 
 function bicimSecim(palet, alan) {
