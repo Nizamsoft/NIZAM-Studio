@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## v0.135.6
+- **"Modülü güncelle" ve "Beta → JSON varsa yükle" kaydedilmiş bilgiyi sessizce siliyordu.** Bu iki akış Claude'dan "ekranlar arası geçiş", "hazır veri" ve "çıktılar" bilgisini hiç istemiyor; ama taslağa yazarken bu 4 alanın üstüne koşulsuz boş dizi yazılıyordu — modülün ilk kurulumda kaydedilmiş bu bilgileri kayboluyordu. Artık yalnız Claude gerçekten bir şey verdiyse üstüne yazılıyor.
+- **Aynı kökten, daha derin bir sorun: modül değiştirince bu bilgiler hiç yenilenmiyordu.** Taslak tek bir proje-içi nesne; bir modülü açtıktan sonra kaydı olmayan başka bir modüle geçilince eski modülün anlatım/karar/geçiş/veri bilgisi yeni modülde de kalıyordu. Artık modül değişince hepsi doğru modülden yeniden yükleniyor ya da temizleniyor.
+- **Çok modüllü projede yanlış modüle yazma riski tam kapanmamıştı.** Bir önceki düzeltme yalnız Claude'a doğru modül adını yazdırıyordu; Studio tarafı hâlâ ekranda en son açık kalan modüle yazıyordu (ör. Kurulum ve yapı'da bir modül açık bırakıp Beta'da başka modül için gelen cevabı yapıştırınca). Artık Claude'un yazdığı modül gerçekten kuruluysa Studio ona geçiyor, o modülün kendi künyesini yükleyip öyle yazıyor.
+
 ## v0.135.5
 - **5 aşama ve görev promptu, bağlantı bilgisini yanlış dosyada gösteriyordu.** "NIZAM.md — teknik standart ve Supabase bağlantısı" diyordu, ama bağlantı hiç NIZAM.md'ye yazılmıyor — gerçek yeri `js/yapilandirma.js`. Artık okuma listesinde doğru dosya var.
 - **"Modülü güncelle", çok modüllü projede yanlış modülü etiketliyordu.** Hangi modülü açtığına bakmadan hep ilk modülü örnek gösteriyordu; JSON'u kopyalayınca cevap yanlış modüle dosyalanabilirdi. Artık açık olan modülü kendisi taşıyor.

@@ -3793,8 +3793,15 @@ function modulYukle(p, t, ad) {
       const k = eski[ad + ' · ' + sf];
       if (k) t.kunye[sf] = JSON.parse(JSON.stringify(k));
     });
+    /* Anlatım yoksa bile alanlar sıfırlanmalı — yoksa başka bir modülden
+       kalan anlat/karar/baglanti/hazirVeri/çıktı burada kalırdı (t tek
+       nesne, projedeki bütün modüller arasında paylaşılıyor). */
     const an = ((p.palet || {}).anlatim || {})[ad];
-    if (an) { t.anlat = an.metin || ''; t.kararlar = an.sorular || []; }
+    t.anlat       = (an && an.metin) || '';
+    t.kararlar    = (an && an.sorular) || [];
+    t.baglantilar = (an && an.baglantilar) || [];
+    t.hazirVeri   = (an && an.hazirVeri) || [];
+    t.ciktilar    = (an && an.ciktilar) || [];
     const mk = ((p.palet || {}).modulKunye || {})[ad];
     t.mk = mk ? JSON.parse(JSON.stringify(mk))
               : { roller: [], eylemler: [], yetki: {}, kural: '' };
@@ -3802,6 +3809,7 @@ function modulYukle(p, t, ad) {
     const sb = DB.modulSablonlari().find(m => m.ad === ad);
     t.sayfalar = ((sb && sb.sayfalar) || []).slice();
     t.kunye = {};
+    t.anlat = ''; t.kararlar = []; t.baglantilar = []; t.hazirVeri = []; t.ciktilar = [];
     t.mk = { roller: [], eylemler: [], yetki: {}, kural: '' };
   }
 }
@@ -9617,13 +9625,25 @@ function cozumlemeUygula(t, cozum, p) {
   /* Modül düzeyinde yalnız ortak iş kuralı okunuyor: yetki artık tasarım
      anında değil, uygulamanın Yetkiler ekranından belirleniyor. */
   const mkg = cozum.modulKurallari || {};
+  /* Modül adı Claude'dan geldiyse ve gerçek, kurulu başka bir modülü
+     gösteriyorsa ona geç — "t" proje başına tek nesne, ekranda en son
+     hangi modül açık kaldıysa o kalıyor (ör. Kurulum ve yapı'da bir modül
+     açık kalmış, Beta'da başka modül için gelen cevap yapıştırılmış).
+     Geçerken o modülün kendi künyesi/anlatımı da yeniden yüklenir; yoksa
+     yeni sayfalar yanlış modülün üstüne yazılırdı. */
+  if (cozum.modul && cozum.modul !== t.modul) {
+    const gercekMi = DB.modulleri(p.id).some(m => m.ad === cozum.modul && m.ad !== GENEL_MODUL);
+    if (gercekMi) modulYukle(p, t, cozum.modul);
+    else if (!t.modul) t.modul = cozum.modul;
+  }
   t.mk = t.mk || { kural: '' };
   if (!t.mk.kural && mkg.kural) t.mk.kural = mkg.kural;
-  if (!t.modul && cozum.modul) t.modul = cozum.modul;
-  t.kararlar    = cozum.kararlar || [];
-  t.baglantilar = cozum.baglantilar || [];
-  t.hazirVeri   = cozum.hazirVeri || [];
-  t.ciktilar    = cozum.ciktilar || [];
+  /* Bu dördü modül güncelleme/beta promptlarında hiç istenmiyor — boş
+     gelirse üstüne yazıp ilk kurulumda kaydedileni silmesin. */
+  if (cozum.kararlar.length)    t.kararlar    = cozum.kararlar;
+  if (cozum.baglantilar.length) t.baglantilar = cozum.baglantilar;
+  if (cozum.hazirVeri.length)   t.hazirVeri   = cozum.hazirVeri;
+  if (cozum.ciktilar.length)    t.ciktilar    = cozum.ciktilar;
   cozum.sayfalar.forEach(sf => {
     if (!t.sayfalar.includes(sf.ad)) t.sayfalar.push(sf.ad);
     const k = yapiKunye(t, sf.ad);
