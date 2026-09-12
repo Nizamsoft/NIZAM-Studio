@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.135.10
+- **Roller yazılmış ama proje sunucusuzsa Yetkiler ekranı yine de tam isteniyordu.** `yetkiBlogu()` ve 5 aşamanın listesi yalnız "roller boş mu" diye bakıyordu, "sunucu var mı" diye hiç bakmıyordu — canlı bir testte Claude tam bunu yakaladı: roller tanımlı ama proje yerel (PIN'li giriş), Yetkiler ekranı için gereken kullanıcı hesabı sistemi zaten kurulamıyor. Artık ikisi de proje sunucusuzsa roller tanımlı olsa bile "tek kullanıcılık" kabul ediyor.
+
 ## v0.135.9
 - **Yerel projede roller hâlâ RLS'e bağlanıyordu.** Teknik standardın "Bu projeye özel" bölümü, roller yazılınca proje sunucusuz olsa bile "Yetki veritabanı kurallarıyla (RLS) uygulanır" diyordu. Artık yerel projede "yetki yalnız arayüzde uygulanır" diyor.
 - **"Çevrimdışı" satırının yerel karşılığı yoktu.** Teknik standardın Nizam Standardı çekirdeğindeki "Çevrimdışı" maddesinin sunucusuz proje karşılığı hiç tanımlanmamıştı — yerel projede de bulut'a özgü "yazma kuyruğa girer, çakışırsa son yazan kazanır" metni çıkıyordu. Artık "gerek yok, tek cihaz var" diyor.

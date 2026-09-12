@@ -790,16 +790,26 @@ const PROMPT = {
      kimin hangi katmanda olacağını uygulamadaki admin belirliyor. */
   yetkiBlogu(proje) {
     const roller = rolListesi(proje && (proje.palet || {}).roller);
+    const sunuculu = proje ? sunuculuMu(proje) : true;
 
-    /* Rol katmanı tanımlanmamışsa proje tek kullanıcılık demektir — admin
-       ekranı, katman, giriş kilidi gibi hiçbir şey buna göre kurulmasın. */
-    if (proje && !roller.length) {
+    /* Rol katmanı tanımlanmamışsa ya da proje sunucusuzsa (yerel projede
+       hesap/kullanıcı sistemi kurulamaz — roller yazılmış olsa bile) proje
+       tek kullanıcılık demektir: admin ekranı, katman, giriş kilidi gibi
+       hiçbir şey buna göre kurulmasın. */
+    if (proje && (!roller.length || !sunuculu)) {
       const s = ['### Giriş ve yetki — yok'];
       s.push('');
-      s.push('Bu projede rol katmanı tanımlanmadı: **tek kullanıcı, giriş');
-      s.push('ekranı yok.** Kullanıcı listesi, katman atama, izin ekranı gibi');
-      s.push('hiçbir şey kurma — herkes uygulamayı açtığında her şeyi görsün');
-      s.push('ve yapabilsin.');
+      if (!sunuculu) {
+        s.push('Bu proje sunucusuz: hesap/kullanıcı sistemi kurulamaz —');
+        s.push('roller tanımlanmış olsa bile **tek kullanıcılık.** Kullanıcı');
+        s.push('listesi, katman atama, izin ekranı gibi hiçbir şey kurma;');
+        s.push('teknik standarttaki yerel girişten (varsa PIN) fazlası gerekmiyor.');
+      } else {
+        s.push('Bu projede rol katmanı tanımlanmadı: **tek kullanıcı, giriş');
+        s.push('ekranı yok.** Kullanıcı listesi, katman atama, izin ekranı gibi');
+        s.push('hiçbir şey kurma — herkes uygulamayı açtığında her şeyi görsün');
+        s.push('ve yapabilsin.');
+      }
       return s.join('\n');
     }
 

@@ -7,7 +7,7 @@ const APP = {
   name:     'NIZAM | Studio',
   short:    'NIZAM Studio',
   owner:    'Nizam Soft',
-  version: 'v0.135.9',
+  version: 'v0.135.10',
   build:    '2026-09-12',
   /* Studio'nun kendi deposu — "bütün programlarda geçerli olsun"
      istekleri buraya gider. */
@@ -618,14 +618,15 @@ const KURULUM_ADIM = [
   },
 ];
 
-/* Roller boşsa proje tek kullanıcılıktır — yetkiBlogu() zaten "giriş yok"
-   diyor. 1. aşamanın "giriş ekranı" ve 4. aşamanın "rolleri bağla" maddesi
-   o zaman çelişki üretiyordu; burada projeye göre ayıklanıyor. Prompt da
-   (asama/kurulumBlogu), Studio'daki aşama kartı da bunu kullanır — ikisi
-   ayrı ayrı çelişkili yazmasın diye tek yerde. */
+/* Roller boşsa ya da proje sunucusuzsa (yerelde hesap sistemi kurulamaz,
+   roller yazılmış olsa bile) proje tek kullanıcılıktır — yetkiBlogu()
+   zaten "giriş yok" diyor. 1. aşamanın "giriş ekranı" ve 4. aşamanın
+   "rolleri bağla" maddesi o zaman çelişki üretiyordu; burada projeye göre
+   ayıklanıyor. Prompt da (asama/kurulumBlogu), Studio'daki aşama kartı da
+   bunu kullanır — ikisi ayrı ayrı çelişkili yazmasın diye tek yerde. */
 function kurulumAdimListesi(proje) {
   const rolluMu = rolListesi((proje && proje.palet || {}).roller).length > 0;
-  if (rolluMu) return KURULUM_ADIM;
+  if (rolluMu && sunuculuMu(proje)) return KURULUM_ADIM;
 
   return KURULUM_ADIM.map((a, i) => {
     if (i === 0) {
