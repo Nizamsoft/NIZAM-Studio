@@ -7,7 +7,7 @@ const APP = {
   name:     'NIZAM | Studio',
   short:    'NIZAM Studio',
   owner:    'Nizam Soft',
-  version: 'v0.135.10',
+  version: 'v0.135.11',
   build:    '2026-09-12',
   /* Studio'nun kendi deposu — "bütün programlarda geçerli olsun"
      istekleri buraya gider. */
@@ -528,9 +528,9 @@ const YEREL_STANDART = {
     + '"Kim" yok — uygulamayı tek kişi kullanıyor.'],
   'Dosya saklama': ['Yerel (IndexedDB)',
     'Eklenen dosyalar da cihazda durur; yedeğe dahil edilir.'],
-  'Giriş': ['Yerel PIN',
-    'Açılışta PIN sorulur, PIN cihazda saklanır. Bu gerçek kimlik doğrulama '
-    + 'değil — meraklı gözlere karşı. Verinin kendisi şifrelenmez.'],
+  'Giriş': ['Yok',
+    'Uygulama açılır açılmaz kullanılır — giriş ekranı, şifre, PIN gibi '
+    + 'hiçbir katman yok. Cihazın sahibi zaten tek kullanıcı.'],
   'Paketler': ['Yok',
     'Dış paket kullanılmaz. Excel gerekiyorsa xlsx. Başka paket eklemeden önce sor.'],
   'Yedek': ['Dosyaya dışa/içe aktarma',

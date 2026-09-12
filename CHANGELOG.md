@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.135.11
+- **Yerel projede PIN kaldırıldı.** "Giriş" standardının sunucusuz karşılığı artık PIN sormuyor — uygulama açılır açılmaz kullanılır, giriş ekranı/şifre/PIN gibi hiçbir katman yok. Bu, her PIN'li projede tekrar eden "PIN kurulumu zorunlu mu, atlanabilir mi" sorusunu da baştan ortadan kaldırıyor.
+
 ## v0.135.10
 - **Roller yazılmış ama proje sunucusuzsa Yetkiler ekranı yine de tam isteniyordu.** `yetkiBlogu()` ve 5 aşamanın listesi yalnız "roller boş mu" diye bakıyordu, "sunucu var mı" diye hiç bakmıyordu — canlı bir testte Claude tam bunu yakaladı: roller tanımlı ama proje yerel (PIN'li giriş), Yetkiler ekranı için gereken kullanıcı hesabı sistemi zaten kurulamıyor. Artık ikisi de proje sunucusuzsa roller tanımlı olsa bile "tek kullanıcılık" kabul ediyor.
 

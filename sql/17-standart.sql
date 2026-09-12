@@ -94,7 +94,7 @@ insert into public.standards (grup, alan, ad, ozet, tarif, yerel, sira) values
 -- ---- Güvenlik ------------------------------------------------------------
 ('Güvenlik', 'Giriş', 'E-posta + şifre', '',
  'Kayıt ekranı yoktur; hesabı yönetici açar.',
- 'Yerel PIN. Açılışta PIN sorulur, PIN cihazda saklanır. Bu gerçek kimlik doğrulama değil — meraklı gözlere karşı. Verinin kendisi şifrelenmez.', 30),
+ 'Yok. Uygulama açılır açılmaz kullanılır — giriş ekranı, şifre, PIN gibi hiçbir katman yok. Cihazın sahibi zaten tek kullanıcı.', 30),
 
 -- ---- Biçim ---------------------------------------------------------------
 ('Biçim', 'Para birimi', '₺ TRY', '',

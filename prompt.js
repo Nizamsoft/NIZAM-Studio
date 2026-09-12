@@ -802,8 +802,8 @@ const PROMPT = {
       if (!sunuculu) {
         s.push('Bu proje sunucusuz: hesap/kullanıcı sistemi kurulamaz —');
         s.push('roller tanımlanmış olsa bile **tek kullanıcılık.** Kullanıcı');
-        s.push('listesi, katman atama, izin ekranı gibi hiçbir şey kurma;');
-        s.push('teknik standarttaki yerel girişten (varsa PIN) fazlası gerekmiyor.');
+        s.push('listesi, katman atama, izin ekranı, giriş ekranı gibi hiçbir');
+        s.push('şey kurma — uygulama açılır açılmaz kullanılır.');
       } else {
         s.push('Bu projede rol katmanı tanımlanmadı: **tek kullanıcı, giriş');
         s.push('ekranı yok.** Kullanıcı listesi, katman atama, izin ekranı gibi');
