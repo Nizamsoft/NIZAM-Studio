@@ -612,8 +612,8 @@ const PROMPT = {
       s.push('**5 ·** Tek commit\'le **`main` dalına** gönder:');
       s.push('   `[' + TASK_PREFIX + '-0] Sayfalar ve kararlar`', '');
     }
-    s.push('**6 ·** Dur. Bundan sonra her aşama için sana **ayrı oturumda**');
-    s.push('   kısa bir komut vereceğim; gereken dosyayı kendin açacaksın.', '');
+    s.push('**6 ·** Dur. Bundan sonra her aşama için sana kısa bir komut');
+    s.push('   vereceğim; gereken dosyayı kendin açacaksın.', '');
 
     s.push('## Şunları yapma');
     s.push('- **Uygulama kodu yazma.** Bu blok bilgi taşıyor; kod sırada.');
@@ -646,8 +646,8 @@ const PROMPT = {
       s.push('> Bu oturum yalnız bu depoya bağlı olmalı. Deposu farklıysa dur');
       s.push('> ve söyle.', '');
     }
-    s.push('Bu **yeni bir oturum**. Proje bilgisi depoda duruyor; ben burada');
-    s.push('tekrar yazmıyorum. Şunları oku:', '');
+    s.push('Proje bilgisi depoda duruyor, ben burada tekrar yazmıyorum —');
+    s.push('konuşma geçmişine değil dosyalara güven. Şunları oku:', '');
     s.push('- `nizam/durum.md` — nerede kaldığımız');
     s.push('- `nizam/tasarim.md` — renk, ölçü, bileşen ve iskeletler');
     s.push('- `nizam/sayfalar.md` — bu aşamada dokunacağın sayfaların künyesi');
@@ -686,8 +686,8 @@ const PROMPT = {
     s.push('   yapıldı" bölümünü güncelle — sonraki oturum oradan devam edecek.');
     s.push('2. Tek commit\'le **`main` dalına** gönder:');
     s.push(`   \`[${TASK_PREFIX}-0] ${a.ad}\``);
-    s.push('3. Ne yaptığını birkaç cümleyle özetle ve dur. Sonraki aşamayı');
-    s.push('   yeni bir oturumda açacağım.');
+    s.push('3. Ne yaptığını birkaç cümleyle özetle ve dur. Sıradaki aşamayı');
+    s.push('   ben başlatacağım.');
 
     return s.join('\n');
   },

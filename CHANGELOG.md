@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.135.12
+- **"Yeni oturum" vurgusu kaldırıldı.** 5 aşama düğmesi artık "Kopyala ve yeni oturum aç" değil "Kopyala ve Claude'u aç" diyor; promptlar da "bu yeni bir oturum", "sonraki aşamayı yeni bir oturumda açacağım" gibi ifadeler kullanmıyor — konuşma geçmişine değil dosyalara güvenmesini söylüyor. Hangi sohbette devam edileceğine geliştirici karar verir, Studio dayatmıyor.
+
 ## v0.135.11
 - **Yerel projede PIN kaldırıldı.** "Giriş" standardının sunucusuz karşılığı artık PIN sormuyor — uygulama açılır açılmaz kullanılır, giriş ekranı/şifre/PIN gibi hiçbir katman yok. Bu, her PIN'li projede tekrar eden "PIN kurulumu zorunlu mu, atlanabilir mi" sorusunu da baştan ortadan kaldırıyor.
 

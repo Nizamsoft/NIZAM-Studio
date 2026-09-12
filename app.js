@@ -5020,7 +5020,7 @@ function betaKurulumOzeti(p, d, liste) {
     + fbBosKart('#5b8def', ICON.gAltyapi, 'İlk kurulum', biten + '/' + liste.length,
         'Kurulum ve yapı\'da hazırlanan plan burada gerçek koda dönüşüyor — önce '
         + 'plan depoya yazılır, sonra beş aşamada uygulama kodu yazılır. '
-        + '<b>Her aşama ayrı Claude Code oturumu</b>, sırayla ilerlenir.',
+        + '<b>Aşamalar sırayla ilerlenir.</b>',
         'kurulum-sihirbazi-ac', p.id, true)
     + `</div>`;
 }
@@ -5268,16 +5268,17 @@ function kurulumAdimSqlGovde(p) {
         <span class="kur-kutu">${svg(ICON.tik, 12)}</span> Tabloları kurdum</label>`;
 }
 
-/* 3-7 · Beş aşamadan biri — gerçek uygulama kodu burada yazılır, her biri
-   ayrı (yeni) Claude Code oturumunda. */
+/* 3-7 · Beş aşamadan biri — gerçek uygulama kodu burada yazılır. Hangi
+   sohbette devam edileceğine geliştirici karar verir; prompt konuşma
+   geçmişine değil depodaki dosyalara güvenecek şekilde yazılıyor, o yüzden
+   ister aynı sohbette ister yeni bir sohbette sorun çıkarmaz. */
 function kurulumAdimAsamaGovde(p, i) {
   const a = kurulumAdimListesi(p)[i];
   const pl = p.palet || {};
   const bitti = (Array.isArray(pl.asama) ? pl.asama : []).indexOf(i) > -1;
 
   return shBaslikServis('claude', (i + 1) + ' · ' + a.ad,
-      'Bunu yeni bir Claude Code oturumunda aç. Komut kısa — bilgiyi '
-      + 'taşımıyor, depodaki dosyaları gösteriyor.')
+      'Komut kısa — bilgiyi taşımıyor, depodaki dosyaları gösteriyor.')
     + `<span class="label">Bu aşamada</span>
        <div class="card"><div class="row-list">
         ${a.yap.map(x => `<div class="row"><div class="row-main">
@@ -5287,7 +5288,7 @@ function kurulumAdimAsamaGovde(p, i) {
         <span><b>Bitince dene:</b> ${esc(a.test)}</span></div>`
     + `<div class="kur-dug">
         ${promptBaglantisi({ tur: 'asama:' + i, proje: p.id, hedef: 'claude-yeni',
-          slug: depoSlug(p.repo), yazi: 'Kopyala ve yeni oturum aç' })}
+          slug: depoSlug(p.repo), yazi: 'Kopyala ve Claude\'u aç' })}
       </div>`
     + `<label class="kur-onay ${bitti ? 'on' : ''}" data-eylem="asama-onay"
              data-proje="${p.id}" data-deger="${i}" role="button" tabindex="0">
