@@ -7,7 +7,7 @@ const APP = {
   name:     'NIZAM | Studio',
   short:    'NIZAM Studio',
   owner:    'Nizam Soft',
-  version: 'v0.135.14',
+  version: 'v0.135.15',
   build:    '2026-09-12',
   /* Studio'nun kendi deposu — "bütün programlarda geçerli olsun"
      istekleri buraya gider. */
@@ -101,45 +101,84 @@ const GRUP_SIMGE = {
    kalıyor. Müşteri beğendiğini seçiyor; gerisi (gerçek renk/tipografi
    uygulaması) artık Studio dışında, doğrudan Claude Code sohbetiyle yapılıyor. */
 const TASARIM_YON = [
-  { anahtar: 'marka', ad: 'Marka Renkli / Fotoğraflı', renk: '#c9753c',
-    ozet: 'Fotoğraflı kahraman alanı, tek vurgu rengi, markanın kendi paleti.',
+  { anahtar: 'marka', ad: 'Editoryal / Fotoğraflı', renk: '#c9753c',
+    ozet: 'Dergi düzeni: iri serif başlık, gerçek fotoğraf, bol boşluk, tek vurgu.',
     prompt: 'Ekteki mobil ve masaüstü ekran görüntüleri {FIRMA}\'nin gerçek '
-      + 'uygulaması. İçeriği, kartları, menüyü olduğu gibi koru — sadece görsel '
-      + 'dili değiştir: {SEKTOR} uygun bir marka paleti seç, üstte büyük '
-      + 'fotoğraflı/gradyanlı bir kahraman alanı ekle, tek vurgu rengi kullan. '
-      + 'Hem mobil hem masaüstü versiyonunu ayrı ayrı çiz.' },
-  { anahtar: 'minimal', ad: 'Minimal / Düz', renk: '#8fae4a',
-    ozet: 'Bol beyaz boşluk, düz ikonlar, süssüz ve sade.',
+      + 'uygulaması. İçeriği, kartları, menüyü olduğu gibi koru, hiçbir öğeyi '
+      + 'ekleme/çıkarma — yalnız görsel dili değiştir. Yön: bir dergi kapağı '
+      + 'gibi editoryal bir kabuk. Başlıkları iri, oturaklı bir **serif** '
+      + 'yazı tipiyle yaz (İnter/Roboto gibi standart bir gövde yazısıyla '
+      + 'birlikte kullan). Gerçek fotoğrafı kahraman alanında büyük ve kesintisiz '
+      + 'göster, üstüne gradyan bindirme; {SEKTOR} uygun **tek** doygun bir '
+      + 'vurgu rengi seç ve bunu yalnız bir-iki küçük vurgulu öğede kullan '
+      + '(altı çizili başlık, tek bir rakam, tek bir ikon) — geri kalan her '
+      + 'şey kırık beyaz/krem zemin ve siyaha yakın metin. Kartlarda gölge '
+      + 'kullanma; bunun yerine üstte ince renkli bir şerit kenarlık olsun, '
+      + 'köşeler hafif yuvarlak (6-8px), gradyan ve camsı efekt yok. Bolca boş '
+      + 'alan bırak, sıkışık durmasın. Hem mobil hem masaüstü versiyonunu ayrı '
+      + 'ayrı çiz.' },
+  { anahtar: 'minimal', ad: 'İsviçre Usulü / Sıfır Süs', renk: '#8fae4a',
+    ozet: 'Fotoğraf yok, keskin köşe, gölgesiz, ızgara temelli, tek renk.',
     prompt: 'Ekteki mobil ve masaüstü ekran görüntüleri {FIRMA}\'nin gerçek '
-      + 'uygulaması. İçeriği, kartları, menüyü olduğu gibi koru — sadece görsel '
-      + 'dili değiştir: bol beyaz boşluk, tek sakin vurgu rengi, düz (çizgi) '
-      + 'ikonlar, gölgesiz ya da çok hafif gölgeli kartlar, ince kenarlıklar. '
-      + 'Süsten arınmış, sade bir iş aracı hissi olsun. Hem mobil hem masaüstü '
+      + 'uygulaması. İçeriği, kartları, menüyü olduğu gibi koru, hiçbir öğeyi '
+      + 'ekleme/çıkarma — yalnız görsel dili değiştir. Yön: katı İsviçre/Bauhaus '
+      + 'usulü minimalizm. **Fotoğrafı tamamen kaldır** — kahraman alanının '
+      + 'yerine yalnız düz bir renk bloğu ve iri, kalın bir sayı ya da geometrik '
+      + 'bir şekil koy. Geometrik, dar aralıklı bir grotesk yazı tipi kullan '
+      + '(Helvetica/Inter tarzı). Renk paleti: bir nötr (siyah/beyaz/gri) ve '
+      + 'yalnız **en önemli tek rakam veya düğme** için kullanılan tek bir '
+      + 'vurgu rengi — başka hiçbir yerde vurgu rengi tekrarlanmasın. **Hiçbir '
+      + 'kartta gölge, gradyan ya da yuvarlatılmış büyük köşe olmasın**; köşeler '
+      + 'keskin ya da en fazla 2px. Kartları ayırmak için gölge yerine ince '
+      + '1px çizgi kullan. Sıkı bir ızgara hizasına otur, boşluklar matematik '
+      + 'gibi eşit. Hem mobil hem masaüstü versiyonunu ayrı ayrı çiz.' },
+  { anahtar: 'koyu', ad: 'Camsı / Karanlık Mod', renk: '#5f86c4',
+    ozet: 'Koyu zemin, buzlu cam kartlar, neon gradyan kenarlık, mono yazı.',
+    prompt: 'Ekteki mobil ve masaüstü ekran görüntüleri {FIRMA}\'nin gerçek '
+      + 'uygulaması. İçeriği, kartları, menüyü olduğu gibi koru, hiçbir öğeyi '
+      + 'ekleme/çıkarma — yalnız görsel dili değiştir. Yön: gerçek '
+      + '**camsı (glassmorphism) karanlık mod**. Zemin neredeyse siyah/çok koyu '
+      + 'lacivert. Her kart yarı saydam, arkası bulanık (buzlu cam) bir yüzey '
+      + 'olsun, kenarında ince, parlayan bir gradyan çerçeve olsun (ör. '
+      + 'mor→camgöbeği ya da pembe→turuncu). Kahraman görselinin arkasına '
+      + 'yumuşak, ışıldayan bir gradyan hâle koy. Bütün sayıları/istatistikleri '
+      + '**tek aralıklı (monospace)** bir yazı tipiyle yaz, sanki bir bilgi '
+      + 'ekranı gibi. İkonlar ince çizgili ve hafif parlayan konturlu olsun, '
+      + 'dolu/siyah ikon kullanma. Köşeler geniş yuvarlak (16-20px). İki '
+      + 'kontrast neon vurgu rengini birlikte kullan, tek renk yetmesin. Hem '
+      + 'mobil hem masaüstü versiyonunu ayrı ayrı çiz.' },
+  { anahtar: 'sicak', ad: 'Yumuşak / Oyunbaz', renk: '#c4a05c',
+    ozet: 'Neumorfik kabartma kartlar, pastel, blob şekiller, düz illüstrasyon.',
+    prompt: 'Ekteki mobil ve masaüstü ekran görüntüleri {FIRMA}\'nin gerçek '
+      + 'uygulaması. İçeriği, kartları, menüyü olduğu gibi koru, hiçbir öğeyi '
+      + 'ekleme/çıkarma — yalnız görsel dili değiştir. Yön: yumuşak ve oyunbaz, '
+      + '**neumorfik (soft-UI)** bir his. Tek renkli sıcak pastel bir zemin '
+      + 'üzerinde her kart kendi zemininden **kabartma gibi** yükseliyormuş '
+      + 'hissi versin — bunu iki yönlü yumuşak gölgeyle (bir açık, bir koyu) '
+      + 'yap, sert kenar çizgisi kullanma. Düğmeler tam yuvarlak (hap biçimi). '
+      + 'Zemine dekoratif, bulanık kenarlı büyük "blob" (amorf damla) şekiller '
+      + 'serpiştir. Gerçek fotoğraf yerine **düz vektör illüstrasyon** kullan: '
+      + 'basit, birkaç renkli, gölgesiz, karikatürsü bir karakter ya da nesne '
+      + 'çizimi — fotogerçekçi görsel değil. Yuvarlak hatlı, kalın, samimi bir '
+      + 'başlık yazı tipi seç (köşeli hiçbir font kullanma). Bütün köşeler çok '
+      + 'yuvarlak, hiçbir yerde keskin çizgi olmasın. Hem mobil hem masaüstü '
       + 'versiyonunu ayrı ayrı çiz.' },
-  { anahtar: 'koyu', ad: 'Koyu + Gradyan', renk: '#5f86c4',
-    ozet: 'Koyu zemin, canlı gradyan vurgu, camsı kartlar.',
+  { anahtar: 'kurumsal', ad: 'Kurumsal / Yoğun Panel', renk: '#6b7178',
+    ozet: 'Fotoğraf yok, KPI şeridi, ince çizgili sıkı tablo, koyu lacivert.',
     prompt: 'Ekteki mobil ve masaüstü ekran görüntüleri {FIRMA}\'nin gerçek '
-      + 'uygulaması. İçeriği, kartları, menüyü olduğu gibi koru — sadece görsel '
-      + 'dili değiştir: koyu zemin, canlı bir gradyan (mor-mavi ya da '
-      + 'turuncu-pembe gibi) vurgu, camsı/yarı saydam kartlar, ince parlayan '
-      + 'kenarlıklar. Modern ve teknolojik bir his olsun. Hem mobil hem '
-      + 'masaüstü versiyonunu ayrı ayrı çiz.' },
-  { anahtar: 'sicak', ad: 'Sıcak / Oyunbaz', renk: '#c4a05c',
-    ozet: 'Yuvarlak hatlar, pastel renkler, samimi bir his.',
-    prompt: 'Ekteki mobil ve masaüstü ekran görüntüleri {FIRMA}\'nin gerçek '
-      + 'uygulaması. İçeriği, kartları, menüyü olduğu gibi koru — sadece görsel '
-      + 'dili değiştir: yuvarlak hatlı kartlar ve butonlar, sıcak/pastel bir '
-      + 'renk paleti, samimi ve yuvarlak bir yazı tipi hissi, ikonlar dolu ve '
-      + 'dostane görünsün. Günlük kullanım hissi olsun, soğuk/kurumsal '
-      + 'durmasın. Hem mobil hem masaüstü versiyonunu ayrı ayrı çiz.' },
-  { anahtar: 'kurumsal', ad: 'Kurumsal / Ciddi', renk: '#6b7178',
-    ozet: 'Sakin palet, düzenli ızgara, kurumsal güven hissi.',
-    prompt: 'Ekteki mobil ve masaüstü ekran görüntüleri {FIRMA}\'nin gerçek '
-      + 'uygulaması. İçeriği, kartları, menüyü olduğu gibi koru — sadece görsel '
-      + 'dili değiştir: sakin/kısık bir palet (lacivert, gri, tek az kullanılan '
-      + 'vurgu rengi), düzenli ızgara hizalaması, sade ve geometrik başlık '
-      + 'tipografisi. Veri yoğun ama derli toplu, kurumsal bir güven hissi '
-      + 'olsun. Hem mobil hem masaüstü versiyonunu ayrı ayrı çiz.' },
+      + 'uygulaması. İçeriği, kartları, menüyü olduğu gibi koru, hiçbir öğeyi '
+      + 'ekleme/çıkarma — yalnız görsel dili değiştir. Yön: ciddi bir kurumsal '
+      + '**yönetim paneli** (Bloomberg/ERP tarzı), tüketici uygulaması gibi '
+      + 'durmasın. **Kahraman fotoğrafını tamamen kaldır**; yerine ince '
+      + 'çizgilerle ayrılmış, küçük mini-grafik (sparkline) içeren dar bir KPI '
+      + 'şeridi koy. Bütün kartlar dikdörtgen, **köşeler keskin ya da en fazla '
+      + '4px**, gölge yok — yalnız 1px ince gri kenarlık. Palet: lacivert/gri '
+      + 'tonları ve yalnız tek, soluk bir vurgu rengi; hiçbir yerde canlı/parlak '
+      + 'renk kullanma. Yazı boyutlarını küçük ve sıkı tut (gövde 12-13px), '
+      + 'satır aralarını dar yap — amaç bol beyaz alan değil, çok bilgiyi düzenli '
+      + 'sığdırmak. Sade, dar (condensed) bir kurumsal sans-serif kullan, '
+      + 'yuvarlak/samimi hiçbir öğe olmasın. Hem mobil hem masaüstü versiyonunu '
+      + 'ayrı ayrı çiz.' },
 ];
 
 /* ---- Nizam teknik standardı — TOHUM ve YEDEK ----

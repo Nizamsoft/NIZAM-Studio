@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## v0.135.15
+- **5 tasarım yönü resmi çakışıyordu.** Her yönün mockup görseli, projenin ilk yüklemede oluşturduğu yuvaya "isletme.jpg" sabit adıyla yazılıyordu — 5 farklı yön aynı depolama yoluna yazınca hepsi aynı dosyayı gösteriyordu, hangi görsel en son yüklenirse 5'inde de o çıkıyordu. Artık her yön kendi dosya adını alıyor; daha önce bozulmuş kayıtlar bir sonraki yüklemede kendiliğinden onarılıyor.
+- **5 promptun çıktısı birbirine çok benziyordu.** Promptlar yalnızca "renk paletini değiştir" diyordu, ChatGPT da hep aynı iskeleti farklı renkte boyuyordu. Promptlar artık her yönü kökten farklı bir görsel dile zorluyor: biri fotoğrafı tamamen kaldırıyor, biri camsı/karanlık mod istiyor, biri neumorfik kabartma kartlar ve düz illüstrasyon istiyor, biri yoğun kurumsal panel istiyor — köşe, gölge, yazı tipi ailesi ve görsel kullanımı (fotoğraf/illüstrasyon/hiçbiri) her birinde farklı.
+
 ## v0.135.14
 - **"Görsel dünya" kaldırıldı, yerine 5 sabit tasarım yönü geldi.** Eski sistemde ChatGPT logo ve işletme görselinden bir "tasarım sistemi" (renk/tipografi/bileşen bloğu) çıkarıyor, Studio bunu koda taşıyordu. Yeni planda bu adım gereksiz: artık 5 sabit ChatGPT promptu var (Marka Renkli, Minimal, Koyu+Gradyan, Sıcak, Kurumsal) — her biri projenin gerçek ekran görüntüsünü alıp yalnız görsel dili değiştiriyor. Müşteri beğendiği yönü seçiyor, gerçek uygulama artık Studio dışında (doğrudan Claude Code sohbetiyle) yapılıyor.
 - **Profesyonel tasarım durağı tek sayfaya indi.** Harita/adım/ada sistemi tamamen kalktı; 5 yön kartı tek ekranda, her birinde kopyala düğmesi ve mockup yükleme alanı var. Müşterinin seçtiği yön işaretlenip iş bitince "Profesyonel tasarım tamamlandı" ile kapatılıyor.

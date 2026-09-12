@@ -7645,13 +7645,21 @@ function gorselSecVeYukle(projeId, no, ad) {
     alan.remove();
     if (!dosya) return;
 
-    /* G0 yuvası tarifle gelmiyor; ilk yüklemede kendimiz açıyoruz. */
+    /* Yuva tarifle gelmiyor; ilk yüklemede kendimiz açıyoruz. Dosya adı
+       `no`'dan türüyor — sabit "isletme.jpg" kullanınca birden çok yuva
+       (5 tasarım yönü gibi) aynı depolama yoluna yazıp birbirinin üstüne
+       geçiyordu; hangisi son yüklenirse hepsinde o görünüyordu. G0'ın adı
+       geriye dönük uyum için aynı kalıyor, ötekiler kendi adını alıyor —
+       ad uyuşmuyorsa (eski bozuk kayıt) yuva burada onarılıyor. */
     const pr = DB.proje(projeId);
     const pl = (pr && pr.palet) || {};
-    if (!(pl.gorseller || []).some(y => y.no === no)) {
-      const yeni = (pl.gorseller || []).concat([{
+    const dosyaAdi = no === 'G0' ? 'isletme.jpg'
+      : no.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '.jpg';
+    const mevcut = (pl.gorseller || []).find(y => y.no === no);
+    if (!mevcut || mevcut.dosya !== dosyaAdi) {
+      const yeni = (pl.gorseller || []).filter(y => y.no !== no).concat([{
         no, ad: ad || 'Görsel', tarif: 'İşletmeyi anlatan görsel — konseptin kaynağı.',
-        dosya: 'isletme.jpg', yol: '', boyut: 0, tur: '',
+        dosya: dosyaAdi, yol: '', boyut: 0, tur: '',
       }]);
       try {
         await DB.paletKaydet(projeId, Object.assign({}, pl, { gorseller: yeni }));
