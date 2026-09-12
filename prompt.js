@@ -392,12 +392,21 @@ const PROMPT = {
     s.push('**2 · `NIZAM.md`** — proje kimliği: yukarıdaki proje bilgileri ve');
     s.push('   teknik standart. Sonuna `## Dosyalar` başlığı ekle ve altında');
     s.push('   `nizam/` içindeki dosyaları neyin nerede olduğuyla listele.', '');
-    s.push('**3 · `nizam/` klasörü** ve içinde dört boş dosya. Her birinin');
-    s.push('   başına bir başlık ve *"henüz belirlenmedi"* satırı yaz:', '');
-    s.push('   - `nizam/tasarim.md` — renk, tipografi, bileşenler, simgeler, iskeletler');
-    s.push('   - `nizam/sayfalar.md` — modüller ve sayfa künyeleri');
-    s.push('   - `nizam/kararlar.md` — arayüz kararları ve verilmiş cevaplar');
-    s.push('   - `nizam/durum.md` — hangi aşama bitti, ne kaldı', '');
+    s.push('**3 · `nizam/` klasörü.**', '');
+    s.push('- `nizam/tasarim.md` — **şimdi gerçekten doldur.** Teknik standarda');
+    s.push('  uyan, basit ve tutarlı bir taslak tasarım sistemi yaz: renk');
+    s.push('  paleti, tipografi, boşluk/ölçü skalası, temel bileşenler (buton,');
+    s.push('  kart, liste, form), ikon üslubu, sayfa iskeletleri, geçişler.');
+    s.push('  **Marka kimliği uydurma** — nötr ve profesyonel bir varsayılan');
+    s.push('  yeter. Bu taslak ileride "Profesyonel tasarım" aşamasında');
+    s.push('  görsellerle, ikonlarla ve gerçek marka rengiyle güncellenecek;');
+    s.push('  şimdilik kod yazmaya yetecek kadar net olsun.');
+    s.push('- `nizam/sayfalar.md` — modüller ve sayfa künyeleri. Başına başlık');
+    s.push('  ve *"henüz belirlenmedi"* satırı yaz.');
+    s.push('- `nizam/kararlar.md` — arayüz kararları ve verilmiş cevaplar.');
+    s.push('  Başına başlık ve *"henüz belirlenmedi"* satırı yaz.');
+    s.push('- `nizam/durum.md` — hangi aşama bitti, ne kaldı. Başına başlık ve');
+    s.push('  *"henüz belirlenmedi"* satırı yaz.', '');
     s.push('**4 · `README.md`** — kısa: firma adı, ürün adı, tek cümle tarif.', '');
     s.push('**5 ·** Tek commit\'le **`main` dalına** gönder. Commit mesajı:');
     s.push('   `[' + TASK_PREFIX + '-0] Proje kimliği`. Oturuma ayrı bir dal atanmış');
@@ -406,7 +415,8 @@ const PROMPT = {
 
     s.push('## Şunları yapma');
     s.push('- **Uygulama kodu yazma.** Ekran, bileşen, veritabanı şeması, hiçbiri.');
-    s.push('- **Tasarım kararı verme.** Renk, yazı tipi, yerleşim — hiçbirini seçme.');
+    s.push('- **Marka kimliği uydurma.** Logo yok, özel renk yok — `nizam/tasarim.md`');
+    s.push('  için nötr bir taslak yeter, gerçek kimlik ileride gelecek.');
     s.push('- **Sayfa ya da modül uydurma.** Hangi ekranların olacağı henüz belli değil.');
     s.push('- **Bu oturuma başka depo ekleme.** Tek depo, tek oturum.');
     s.push('- Eksik gördüğün bir şeyi tahmin etme; not al, sonra sor.');
@@ -419,8 +429,9 @@ const PROMPT = {
     s.push('`nizam/kararlar.md`\'yi o blok dolduracak; uygulama kodu ancak ondan');
     s.push('sonra, aşama aşama yazılacak.');
     s.push('');
-    s.push('> `nizam/tasarim.md` ayrı bir akışta, ayrı bir zamanda dolacak.');
-    s.push('> Şimdilik boş kalabilir — beklemene gerek yok.');
+    s.push('> `nizam/tasarim.md`\'yi az önce doldurdun — bu bir taslak.');
+    s.push('> İleride "Profesyonel tasarım" aşamasında üstüne yazılıp gerçek');
+    s.push('> görsel kimlikle güncellenecek. Şimdilik bu taslakla ilerle.');
     s.push('');
     s.push('Anladıysan tek cümleyle onayla, dosyaları oluştur ve bekle.');
 

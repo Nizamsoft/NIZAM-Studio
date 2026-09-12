@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.135.3
+- **`nizam/tasarim.md` artık boş bırakılmıyor.** Bir önceki sürümde "ayrı bir akışta, ayrı bir zamanda dolacak" denmişti; bu yanlıştı. "1. blok" artık Claude'dan teknik standarda uyan, basit ve nötr bir taslak tasarım sistemi (renk, tipografi, boşluk, temel bileşenler, ikon üslubu) yazmasını istiyor — marka kimliği uydurmadan, sadece kod yazmaya yetecek kadar. Bu taslak ileride **Profesyonel tasarım** aşamasında görsellerle ve gerçek marka kimliğiyle güncellenip yükseltilecek.
+
 ## v0.135.2
 - **Yetkiler ekranı, rol yoksa artık zorlanmıyor.** "Yetkiler ekranı" bloğu (kararlar.md'ye giren yetki talimatı) roller boş bırakılan — yani tek kullanıcılık, giriş ekranı olmayan — projelerde de zorunlu geliyordu. Şimdi roller boşsa yerine kısa bir "giriş yok, tek kullanıcı, herkes her şeyi görür" satırı yazılıyor.
 - **"1. blok" (Bağlantılar) artık olmayan bir tasarım bloğu vaat etmiyor.** Kimlik promptu, kendinden sonra "tasarım (2/3), yapı (3/3)" diye iki blok daha geleceğini söylüyordu; oysa Studio'da bir sonraki gerçek adım doğrudan Kurulum ve yapı'nın kendi bloğu. Metin artık tek bir sonraki blok vaat ediyor, `nizam/tasarim.md`'nin ayrı bir akışta ve ayrı bir zamanda dolacağını belirtiyor.
