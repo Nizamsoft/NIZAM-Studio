@@ -4074,7 +4074,7 @@ function agacEkrani(p, t) {
   const kuruluMu = t.modul && kurulu.some(x => x.ad === t.modul);
   const dugmeler = kuruluMu ? `
     <a class="ag-dug" target="_blank" rel="noopener" data-pano="modulGuncelle:${encodeURIComponent(t.modul)}"
-       data-proje="${p.id}" data-hedef="Claude Code" href="${esc(claudeAdresi(depoSlug(p.repo), false))}">
+       data-proje="${p.id}" data-hedef="Claude Code" href="${esc(claudeAdresi(depoSlug(p.repo)))}">
       ${svg(ICON.kopya, 15)} Modülü güncelle</a>
     <button class="ag-dug ana" type="button" data-eylem="anlat-aktar" data-proje="${p.id}">
       ${svg(ICON.ice, 15)} Cevabı yapıştır</button>`
@@ -4262,7 +4262,7 @@ function anlatEkrani(p, t) {
     <div class="anl-dug">
       ${dolu
         ? `<a target="_blank" rel="noopener" data-pano="cozumleme" data-proje="${p.id}"
-             data-hedef="Claude Code" href="${esc(claudeAdresi(depoSlug(p.repo), false))}">
+             data-hedef="Claude Code" href="${esc(claudeAdresi(depoSlug(p.repo)))}">
              ${svg(ICON.kopya, 15)} Kopyala ve aç</a>`
         : `<button type="button" disabled>${svg(ICON.kopya, 15)} Prompt oluştur</button>`}
       <button class="ana" type="button" data-eylem="anlat-aktar" data-proje="${p.id}">
@@ -5054,7 +5054,7 @@ function betaGelistirmeEkrani(p, d) {
       <div class="anl-dug">
         ${dolu
           ? `<a target="_blank" rel="noopener" data-pano="betaIstek" data-proje="${p.id}"
-               data-hedef="Claude Code" href="${esc(claudeAdresi(depoSlug(p.repo), false))}">
+               data-hedef="Claude Code" href="${esc(claudeAdresi(depoSlug(p.repo)))}">
                ${svg(ICON.kopya, 15)} Kopyala ve aç</a>`
           : `<button type="button" disabled>${svg(ICON.kopya, 15)} Prompt oluştur</button>`}
         <button class="ana" type="button" data-eylem="anlat-aktar" data-proje="${p.id}">
@@ -8069,7 +8069,7 @@ async function gorevEylemi(tip, id, deger) {
       metin: PROMPT.gorev(id),
       dosya: null,
       geri: () => gorevKartiAc(id),
-      ac: { adres: claudeAdresi(gp ? depoSlug(gp.repo) : '', false),
+      ac: { adres: claudeAdresi(gp ? depoSlug(gp.repo) : ''),
             yazi: 'Kopyala ve Claude Code\'da aç' },
     });
   }
@@ -8661,7 +8661,7 @@ function sohbetYonlendir(p) {
     </div>
     <div class="kur-dug">
       <a class="sayfa-dug" target="_blank" rel="noopener"
-         href="${esc(claudeAdresi(depoSlug(p.repo), true))}">
+         href="${esc(claudeAdresi(depoSlug(p.repo)))}">
         ${svg(ICON.disari, 15)} Claude Code'u aç</a>
     </div>
     <div class="modal-alt">
@@ -8869,11 +8869,14 @@ const PANO_PROMPT = {
   standartEkle:  () => PROMPT.standartEkle(),
 };
 
-/* Claude Code adresi. `yeni` yalnız ilk oturumda: sonraki bloklar aynı
-   sohbete yapıştırılıyor, her seferinde /new açmak gereksiz oturum yığıyor
-   (bir kere yaşandı, sohbetleri tek tek arşivlemek gerekti). */
-function claudeAdresi(slug, yeni) {
-  if (!yeni) return 'https://claude.ai/code';
+/* Claude Code adresi. Depo adresi olmadan (`https://claude.ai/code`) hiçbir
+   depo seçili gelmiyordu ve kullanıcı elle seçmek zorunda kalıyordu; artık
+   depo bilgisi varsa her bağlantı `/new?repositories=` ile doğru depoyu
+   önceden seçiyor. Studio zaten her promptu kendi başına yeterli (nizam/
+   dosyalarını okuyarak) yazıyor — ayrı oturumlar açmak sorun değil, aksine
+   her promptun "bu oturum yalnız bu depoya bağlı olmalı" uyarısıyla da
+   tutarlı. */
+function claudeAdresi(slug) {
   return 'https://claude.ai/code/new'
     + (slug ? '?repositories=' + encodeURIComponent(slug) : '');
 }
@@ -8882,8 +8885,8 @@ function claudeAdresi(slug, yeni) {
    ya da doğrudan bir adres. */
 function promptBaglantisi({ tur, proje, yazi, hedef = 'claude', ikincil, kapali, slug }) {
   const adres = hedef === 'chatgpt' ? CHATGPT_ADRES
-    : hedef === 'claude'      ? claudeAdresi(slug, false)
-    : hedef === 'claude-yeni' ? claudeAdresi(slug, true)
+    : hedef === 'claude'      ? claudeAdresi(slug)
+    : hedef === 'claude-yeni' ? claudeAdresi(slug)
     : hedef;
   const ad = hedef === 'chatgpt' ? 'ChatGPT' : 'Claude Code';
   if (kapali) {

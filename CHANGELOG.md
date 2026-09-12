@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.135.8
+- **"Kopyala ve Claude Code'da aç" düğmelerinin çoğu depoyu seçmiyordu.** Yalnız ilk bağlantı (proje kurulurken) doğru depoyu önceden seçiyordu; "Modülü güncelle", "Anlatım" çözümleme, Beta güncelleme ve görev promptu düğmeleri düz `claude.ai/code` adresine gidiyordu — depo seçili gelmiyor, kullanıcı elle seçmek zorunda kalıyordu. Artık hepsi doğru depoyu önceden seçerek açılıyor.
+
 ## v0.135.7
 - **Ölü kod temizliği.** Eski ekranlardan kalan, hiçbir düğmenin artık tetiklemediği 6 işlem kaldırıldı (`modul-adi`, `yayin-onay`, `yapi-modul`, `yapi-modul-yaz`, `yapi-sayfa`, `anlat-prompt`, `proje-bolum`) — yerlerini yeni sihirbaz/ağaç ekranları çoktan almıştı. Kullanılmayan `modulAdiSor`/`ACIK_PROJE_BOLUM` da silindi.
 - **Eksik `.fb-govde` stili geri eklendi.** 1-5 aşama ekranlarının hepsi bu sınıfı kullanıyordu ama tanımı bir önceki tasarım değişikliğinde yanlışlıkla silinmişti — ekran içeriğinin panel zeminindeki fotoğrafın üstünde kalmasını sağlıyor.
