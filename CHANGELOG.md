@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.135.16
+- **"Kopyala ve ChatGPT'de aç" yerine yalnız "Promptu kopyala".** 5 tasarım yönü kartındaki düğme artık ayrı bir ChatGPT sekmesi açmıyor, yalnız promptu panoya kopyalıyor — sohbeti kullanıcı kendi açık ChatGPT sekmesinde sürdürüyor.
+
 ## v0.135.15
 - **5 tasarım yönü resmi çakışıyordu.** Her yönün mockup görseli, projenin ilk yüklemede oluşturduğu yuvaya "isletme.jpg" sabit adıyla yazılıyordu — 5 farklı yön aynı depolama yoluna yazınca hepsi aynı dosyayı gösteriyordu, hangi görsel en son yüklenirse 5'inde de o çıkıyordu. Artık her yön kendi dosya adını alıyor; daha önce bozulmuş kayıtlar bir sonraki yüklemede kendiliğinden onarılıyor.
 - **5 promptun çıktısı birbirine çok benziyordu.** Promptlar yalnızca "renk paletini değiştir" diyordu, ChatGPT da hep aynı iskeleti farklı renkte boyuyordu. Promptlar artık her yönü kökten farklı bir görsel dile zorluyor: biri fotoğrafı tamamen kaldırıyor, biri camsı/karanlık mod istiyor, biri neumorfik kabartma kartlar ve düz illüstrasyon istiyor, biri yoğun kurumsal panel istiyor — köşe, gölge, yazı tipi ailesi ve görsel kullanımı (fotoğraf/illüstrasyon/hiçbiri) her birinde farklı.

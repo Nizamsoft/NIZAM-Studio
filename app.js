@@ -1277,8 +1277,9 @@ function tasarimYonKarti(p, pl, yon) {
         ? gorselYuklemeKatmani(p.id) : ''}
     </div>
     <div class="ty-dug">
-      ${promptBaglantisi({ tur: 'tasarimYonu:' + yon.anahtar, proje: p.id,
-          hedef: 'chatgpt', yazi: 'Kopyala ve ChatGPT\'de aç' })}
+      <button class="sayfa-dug ikincil" type="button" data-eylem="tasarim-yon-kopyala"
+              data-proje="${p.id}" data-alan="${yon.anahtar}">
+        ${svg(ICON.kopya, 15)} Promptu kopyala</button>
       ${AUTH.yonetici ? `
         <button class="sayfa-dug ${secili ? '' : 'ikincil'}" type="button"
                 data-eylem="tasarim-yon-sec" data-proje="${p.id}" data-alan="${yon.anahtar}">
@@ -8477,6 +8478,14 @@ async function eylemCalistir(el) {
     return;
   }
 
+  if (e === 'tasarim-yon-kopyala') {
+    const metin = PROMPT.tasarimYonu(el.dataset.proje, el.dataset.alan);
+    if (!metin) { toast('Prompt oluşturulamadı.', 'hata'); return; }
+    const oldu = await panoyaKopyala(metin);
+    toast(oldu ? 'Prompt panoda — ChatGPT\'ye yapıştır.' : 'Kopyalanamadı.', oldu ? 'basari' : 'hata');
+    return;
+  }
+
   if (e === 'tasarim-yon-sec') {
     const pr = DB.proje(el.dataset.proje);
     if (!pr) return;
@@ -9984,8 +9993,6 @@ document.addEventListener('DOMContentLoaded', () => {
       ? (proje => PROMPT.asama(proje.id, Number(pano.slice(6))))
       : pano.indexOf('modulGuncelle:') === 0
       ? (proje => PROMPT.modulGuncelle(proje.id, decodeURIComponent(pano.slice(14))))
-      : pano.indexOf('tasarimYonu:') === 0
-      ? (proje => PROMPT.tasarimYonu(proje.id, pano.slice(12)))
       : PANO_PROMPT[pano];
     /* Projesiz prompt da var (standart ekleme) — o zaman data-proje boş. */
     if (!uret || (el.dataset.proje && !pr)) return;
