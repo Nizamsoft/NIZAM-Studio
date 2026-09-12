@@ -1079,6 +1079,64 @@ const PROMPT = {
     return yon.prompt.replace(/\{FIRMA\}/g, firma).replace(/\{SEKTOR\}/g, sektor);
   },
 
+  /* Yön seçildikten sonraki ilk Claude Code promptu. Studio artık işin
+     içinde değil — asıl uygulama Claude Code'da doğrudan konuşularak
+     yapılıyor. Bu prompt yalnız kapıyı açıyor: Claude'a hangi görsel/ikon
+     dosyalarına ihtiyacı olduğunu, boyutunu ve depoda nereye koyacağını
+     sorduruyor; klasörleri de kendisi kursun istiyor. */
+  tasarimVarlikIstek(projeId, anahtar) {
+    const p = DB.proje(projeId);
+    if (!p) return '';
+    const yon = TASARIM_YON.find(y => y.anahtar === anahtar);
+
+    const s = [];
+    s.push('# ' + projeAdi(p) + ' — profesyonel tasarıma geçiş', '');
+
+    const slug = depoSlug(p.repo);
+    if (slug) {
+      s.push('> ### Depo: `' + slug + '`');
+      s.push('> Bu oturum yalnız bu depoya bağlı olmalı. Deposu farklıysa dur');
+      s.push('> ve söyle; başka depo ekleme, commit atma.');
+      s.push('');
+    }
+
+    s.push('Uygulama kuruldu ve çalışıyor; şimdi **profesyonel tasarıma geçiş**');
+    s.push('aşamasındayız. Müşteriye 5 farklı görsel yön sunuldu, aşağıdakini seçti:');
+    s.push('');
+    if (yon) {
+      s.push(`**${yon.ad}** — ${yon.ozet}`);
+    } else {
+      s.push('> Yön adı Studio\'da bulunamadı; sohbete eklediğim mockup görseline bak.');
+    }
+    s.push('');
+    s.push('Seçilen yönün mockup görselini bu sohbete **ekli olarak** ekliyorum —');
+    s.push('yoksa dur ve iste, tahmin etme.', '');
+
+    s.push('## Şimdi senden istediğim', '');
+    s.push('**Henüz uygulama kodu yazma.** Önce mevcut kodu ve ekli mockup\'ı');
+    s.push('incele, sonra bana şunu söyle:', '');
+    s.push('1. **Hangi yeni görsel/ikon dosyalarına ihtiyacın var** — mockup\'ta');
+    s.push('   gördüğün ama depoda karşılığı olmayan her illüstrasyon, fotoğraf');
+    s.push('   ya da özel simge için ayrı ayrı say. Kodda SVG olarak çizilebilecek');
+    s.push('   basit ikonları listeye koyma — onları zaten sen çizeceksin.');
+    s.push('2. **Her biri için önerilen boyut ve format** (ör. `1200×800 · webp`,');
+    s.push('   `512×512 · png, saydam zemin`). Nereden kullanacağını da yaz —');
+    s.push('   hangi ekranda, ne kadar yer kaplayacak, ona göre boyut öner.');
+    s.push('3. **Depoda hangi klasöre koyacağını.** Klasör yapısını sen belirle ve');
+    s.push('   **kendin oluştur** (boş kalmasın diye içine kısa bir `README.md`');
+    s.push('   koyabilirsin); benden klasör açmamı isteme, sadece dosyayı');
+    s.push('   nereye sürükleyeceğimi söyle.');
+    s.push('4. Bu üç maddeyi net bir liste hâlinde ver. Söylediğin dosyaları');
+    s.push('   depoya koyduğumda devam edip tasarımı gerçek koda uygulayacaksın —');
+    s.push('   şimdilik yalnız bu listeyi bekliyorum.');
+    s.push('');
+    s.push('Dosya vermeyeceğim bir şey varsa (ör. renk, tipografi, boşluk gibi');
+    s.push('kod içinde çözülecek kararlar) onu listeye koyma — yalnız gerçek');
+    s.push('dosya isteyen şeyleri sor.');
+
+    return s.join('\n');
+  },
+
   /* Standart ekleme promptu — bir programda yeni bir kural doğduğunda,
      o değişikliği yapan Claude oturumuna yapıştırılır. Claude kuralı sabit
      bir blok olarak geri verir; blok Studio'ya yapıştırılınca standart

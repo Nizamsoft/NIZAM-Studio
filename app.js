@@ -1295,6 +1295,20 @@ function tasarimSayfasi(p, d) {
         + 'ekran görüntüsünü alıp farklı bir görsel yön öneriyor.',
         'Dönen görselleri buraya yükle, müşteriye göster, seçtiğini işaretle.')
     + `<div class="ty-izgara">${TASARIM_YON.map(y => tasarimYonKarti(p, pl, y)).join('')}</div>`
+    + (pl.secilenYon ? `
+      <div class="fb-kart" style="--kr:${(TASARIM_YON.find(y => y.anahtar === pl.secilenYon) || {}).renk || 'var(--metal-2)'}">
+        <div class="fb-ust">
+          <span class="fb-ik">${svg(ICON.gTasarim, 14)}</span>
+          <span class="fb-bas">Sıradaki adım</span>
+        </div>
+        <p class="fb-neden">Müşteri <b>${esc((TASARIM_YON.find(y => y.anahtar === pl.secilenYon) || {}).ad || '')}</b>
+          yönünü seçti. Bu promptu kopyala, seçilen yönün mockup görseliyle birlikte
+          Claude Code'a yapıştır — sana hangi görsellerin/ikonların gerektiğini,
+          boyutunu ve depoda nereye koyacağını soracak.</p>
+        <button class="sayfa-dug" type="button" data-eylem="tasarim-varlik-kopyala"
+                data-proje="${p.id}" data-alan="${pl.secilenYon}">
+          ${svg(ICON.kopya, 15)} Promptu kopyala</button>
+      </div>` : '')
     + (AUTH.yonetici ? (pl.tasarimTamamlandi
         ? `<div class="kur-deger duz">${svg(ICON.tik, 13)} Bu aşama tamamlandı</div>`
         : `<button class="sayfa-dug ikincil" type="button" data-eylem="tasarim-tamamlandi"
@@ -8483,6 +8497,15 @@ async function eylemCalistir(el) {
     if (!metin) { toast('Prompt oluşturulamadı.', 'hata'); return; }
     const oldu = await panoyaKopyala(metin);
     toast(oldu ? 'Prompt panoda — ChatGPT\'ye yapıştır.' : 'Kopyalanamadı.', oldu ? 'basari' : 'hata');
+    return;
+  }
+
+  if (e === 'tasarim-varlik-kopyala') {
+    const metin = PROMPT.tasarimVarlikIstek(el.dataset.proje, el.dataset.alan);
+    if (!metin) { toast('Prompt oluşturulamadı.', 'hata'); return; }
+    const oldu = await panoyaKopyala(metin);
+    toast(oldu ? 'Prompt panoda — mockup görseliyle Claude Code\'a yapıştır.' : 'Kopyalanamadı.',
+      oldu ? 'basari' : 'hata');
     return;
   }
 

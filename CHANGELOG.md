@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.135.17
+- **Yön seçilince "Sıradaki adım" kartı çıkıyor.** Müşteri bir tasarım yönünü seçtiğinde tasarım durağının altında yeni bir prompt kopyalama düğmesi beliriyor. Bu prompt Claude Code'a "profesyonel tasarıma geçiş aşamasındayız" diyor, seçilen yönü söylüyor, mockup görselini ekli olarak sohbete eklemesini istiyor — Claude'dan hangi görsel/ikon dosyalarına ihtiyacı olduğunu, boyutunu ve depoda hangi klasöre koyulacağını sormasını, klasörleri de kendi kurmasını istiyor.
+
 ## v0.135.16
 - **"Kopyala ve ChatGPT'de aç" yerine yalnız "Promptu kopyala".** 5 tasarım yönü kartındaki düğme artık ayrı bir ChatGPT sekmesi açmıyor, yalnız promptu panoya kopyalıyor — sohbeti kullanıcı kendi açık ChatGPT sekmesinde sürdürüyor.
 
