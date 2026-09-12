@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.135.18
+- **"Sıradaki adım" promptu artık liste istemiyor, hazır ChatGPT promptu istiyor.** Claude Code'a "bana ne gerektiğini söyle" demek yerine, ihtiyaç olan her görsel/ikon için ayrı, doğrudan ChatGPT'ye yapıştırılabilecek bir prompt yazmasını istiyor. Bu promptların her biri, ekli mockup'ın görsel dilini (renk, çizim/fotoğraf stili, doku, atmosfer) kendi cümleleriyle tarif ediyor — çünkü aynı referans görsel ChatGPT'ye elle verilecek, prompt kendi başına da o stili anlatabilmeli. Her promptun üstünde dosya adı ve depodaki hedef klasör de belirtiliyor.
+
 ## v0.135.17
 - **Yön seçilince "Sıradaki adım" kartı çıkıyor.** Müşteri bir tasarım yönünü seçtiğinde tasarım durağının altında yeni bir prompt kopyalama düğmesi beliriyor. Bu prompt Claude Code'a "profesyonel tasarıma geçiş aşamasındayız" diyor, seçilen yönü söylüyor, mockup görselini ekli olarak sohbete eklemesini istiyor — Claude'dan hangi görsel/ikon dosyalarına ihtiyacı olduğunu, boyutunu ve depoda hangi klasöre koyulacağını sormasını, klasörleri de kendi kurmasını istiyor.
 

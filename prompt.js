@@ -1081,9 +1081,11 @@ const PROMPT = {
 
   /* Yön seçildikten sonraki ilk Claude Code promptu. Studio artık işin
      içinde değil — asıl uygulama Claude Code'da doğrudan konuşularak
-     yapılıyor. Bu prompt yalnız kapıyı açıyor: Claude'a hangi görsel/ikon
-     dosyalarına ihtiyacı olduğunu, boyutunu ve depoda nereye koyacağını
-     sorduruyor; klasörleri de kendisi kursun istiyor. */
+     yapılıyor. Bu prompt kapıyı açıyor ama Claude'dan liste istemiyor:
+     ihtiyaç duyduğu her görsel/ikon için AYRI, kullanıcının doğrudan
+     ChatGPT'ye yapıştırabileceği bir prompt yazmasını istiyor — o prompt
+     ekteki mockup'ın görsel dilini kendi cümleleriyle tarif ediyor,
+     çünkü aynı referans görseli ChatGPT'ye de elle verilecek. */
   tasarimVarlikIstek(projeId, anahtar) {
     const p = DB.proje(projeId);
     if (!p) return '';
@@ -1100,8 +1102,9 @@ const PROMPT = {
       s.push('');
     }
 
-    s.push('Uygulama kuruldu ve çalışıyor; şimdi **profesyonel tasarıma geçiş**');
-    s.push('aşamasındayız. Müşteriye 5 farklı görsel yön sunuldu, aşağıdakini seçti:');
+    s.push('Ekteki görseli incele. **Profesyonel tasarıma geçiş** aşamasındayız —');
+    s.push('uygulamayı şimdi tam olarak bu görseldeki gibi görünür hale getireceğiz.');
+    s.push('Müşteriye 5 farklı görsel yön sunuldu, ekteki mockup şu seçilen yöne ait:');
     s.push('');
     if (yon) {
       s.push(`**${yon.ad}** — ${yon.ozet}`);
@@ -1109,30 +1112,38 @@ const PROMPT = {
       s.push('> Yön adı Studio\'da bulunamadı; sohbete eklediğim mockup görseline bak.');
     }
     s.push('');
-    s.push('Seçilen yönün mockup görselini bu sohbete **ekli olarak** ekliyorum —');
-    s.push('yoksa dur ve iste, tahmin etme.', '');
+    s.push('Bu görseli bu sohbete **ekli olarak** ekliyorum — yoksa dur ve iste,');
+    s.push('tahmin etme.', '');
 
     s.push('## Şimdi senden istediğim', '');
-    s.push('**Henüz uygulama kodu yazma.** Önce mevcut kodu ve ekli mockup\'ı');
-    s.push('incele, sonra bana şunu söyle:', '');
-    s.push('1. **Hangi yeni görsel/ikon dosyalarına ihtiyacın var** — mockup\'ta');
-    s.push('   gördüğün ama depoda karşılığı olmayan her illüstrasyon, fotoğraf');
-    s.push('   ya da özel simge için ayrı ayrı say. Kodda SVG olarak çizilebilecek');
-    s.push('   basit ikonları listeye koyma — onları zaten sen çizeceksin.');
-    s.push('2. **Her biri için önerilen boyut ve format** (ör. `1200×800 · webp`,');
-    s.push('   `512×512 · png, saydam zemin`). Nereden kullanacağını da yaz —');
-    s.push('   hangi ekranda, ne kadar yer kaplayacak, ona göre boyut öner.');
-    s.push('3. **Depoda hangi klasöre koyacağını.** Klasör yapısını sen belirle ve');
-    s.push('   **kendin oluştur** (boş kalmasın diye içine kısa bir `README.md`');
-    s.push('   koyabilirsin); benden klasör açmamı isteme, sadece dosyayı');
-    s.push('   nereye sürükleyeceğimi söyle.');
-    s.push('4. Bu üç maddeyi net bir liste hâlinde ver. Söylediğin dosyaları');
-    s.push('   depoya koyduğumda devam edip tasarımı gerçek koda uygulayacaksın —');
-    s.push('   şimdilik yalnız bu listeyi bekliyorum.');
+    s.push('**Henüz uygulama kodu yazma.** Bu görsele geçmek için gereken her');
+    s.push('görseli ve ikonu **ChatGPT\'den** isteyeceğiz — sen kodu yazmadan önce');
+    s.push('bana o istekleri hazırla:', '');
+    s.push('1. Ekteki mockup\'ı incele, hangi yeni görsel/ikon dosyalarına ihtiyaç');
+    s.push('   olduğunu çıkar — mockup\'ta gördüğün ama depoda karşılığı olmayan');
+    s.push('   her illüstrasyon, fotoğraf ya da özel simge için ayrı ayrı say.');
+    s.push('   Kodda SVG olarak çizilebilecek basit ikonları sayma — onları zaten');
+    s.push('   sen çizeceksin.');
+    s.push('2. **İhtiyacım olan her görsel/ikon için AYRI bir ChatGPT promptu yaz.**');
+    s.push('   Ben o promptu, ekteki mockup görseliyle **birlikte** ChatGPT\'ye');
+    s.push('   vereceğim — bu yüzden her prompt, ekteki görselin görsel dilini');
+    s.push('   (renkler, çizim/fotoğraf stili, doku, atmosfer, çizgi kalınlığı vb.)');
+    s.push('   **kendi cümleleriyle tarif etsin**; "ekteki görsele bak" demek');
+    s.push('   yetmez, ChatGPT\'ye tarif etmeden ne istediğini anlatamayız.');
+    s.push('   Her prompt tam olarak neyin çizileceğini söylesin (ör. "boş antrenman');
+    s.push('   listesi illüstrasyonu", "dumbbell ikonu"), önerilen boyutu ve');
+    s.push('   formatı da (ör. `1200×800 · webp`, `512×512 · png, saydam zemin`)');
+    s.push('   içersin.');
+    s.push('3. Her promptun üstüne, kod bloğundan **önce**, kısa başlık olarak şunu');
+    s.push('   yaz: dosyanın adı ve depoda hangi klasöre konacağı. Klasör yapısını');
+    s.push('   sen belirle ve **kendin oluştur** (boş kalmasın diye içine kısa bir');
+    s.push('   `README.md` koyabilirsin); benden klasör açmamı isteme.');
+    s.push('4. Cevabın: her görsel için `### Dosya adı — depo/klasör/yolu` başlığı,');
+    s.push('   altında kopyalanabilir bir kod bloğu içinde ChatGPT promptu. Kaç');
+    s.push('   görsel gerekiyorsa o kadar blok olsun.');
     s.push('');
-    s.push('Dosya vermeyeceğim bir şey varsa (ör. renk, tipografi, boşluk gibi');
-    s.push('kod içinde çözülecek kararlar) onu listeye koyma — yalnız gerçek');
-    s.push('dosya isteyen şeyleri sor.');
+    s.push('ChatGPT\'den gelen görselleri sana verdiğimde devam edip tasarımı');
+    s.push('gerçek koda uygulayacaksın — şimdilik yalnız bu promptları bekliyorum.');
 
     return s.join('\n');
   },

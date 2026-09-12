@@ -1303,8 +1303,8 @@ function tasarimSayfasi(p, d) {
         </div>
         <p class="fb-neden">Müşteri <b>${esc((TASARIM_YON.find(y => y.anahtar === pl.secilenYon) || {}).ad || '')}</b>
           yönünü seçti. Bu promptu kopyala, seçilen yönün mockup görseliyle birlikte
-          Claude Code'a yapıştır — sana hangi görsellerin/ikonların gerektiğini,
-          boyutunu ve depoda nereye koyacağını soracak.</p>
+          Claude Code'a yapıştır — Claude sana, ihtiyaç olan her görsel/ikon için
+          ChatGPT'ye vereceğin, ayrı ayrı hazır promptlar yazacak.</p>
         <button class="sayfa-dug" type="button" data-eylem="tasarim-varlik-kopyala"
                 data-proje="${p.id}" data-alan="${pl.secilenYon}">
           ${svg(ICON.kopya, 15)} Promptu kopyala</button>
