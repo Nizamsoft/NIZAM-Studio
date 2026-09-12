@@ -484,10 +484,6 @@ const PROMPT = {
       s.push('');
     }
 
-
-    s.push(PROMPT.tasarimBlogu(p));
-    s.push('');
-
     const cevap = PROMPT.cevapBlogu(p);
     if (cevap) { s.push(cevap); s.push(''); }
 
@@ -844,35 +840,6 @@ const PROMPT = {
     return s.join('\n');
   },
 
-  /* Arayüz biçimi — görev promptuna ve NIZAM.md'ye aynı biçimde girer. */
-  tasarimBlogu(proje) {
-    const pl = (proje && proje.palet) || {};
-    const s = ['## Arayüz Kararları'];
-    s.push('Bir ekran görüntüsünde görünmeyen kararlar. Görsel dil bunları');
-    s.push('söylemiyor; ben seçtim. Kendi biçimini uydurma.');
-    if (pl.cozum) {
-      s.push('');
-      s.push('> Bu listede yalnız **bu projede gereken** başlıklar var. Burada');
-      s.push('> geçmeyen bir özelliği kendiliğinden ekleme.');
-    }
-
-    tasarimGruplari(proje).forEach(g => {
-      if (!g.alanlar.length) return;
-      s.push('', `### ${g.ad}`);
-      g.alanlar.forEach(a => {
-        const adlar = bicimSecim(pl, a);
-        if (!adlar.length) { s.push(`- **${a.ad}: yok**`); return; }
-        s.push(`- **${a.ad}: ${adlar.join(' + ')}**${a.claude ? ' _(bu projeye özel başlık)_' : ''}`);
-        adlar.forEach(ad => {
-          const sc = a.secim.find(x => x.ad === ad);
-          if (sc) s.push(`  - ${sc.ad}: ${sc.tarif}`);
-        });
-        if (adlar.length > 1) s.push('  - Bu seçenekler birleşerek uygulanır, biri diğerini iptal etmez.');
-      });
-    });
-    return s.join('\n');
-  },
-
   /* Sayfa künyeleri — AI'ın ekranı tahmin etmeden kurabilmesi için.
      Alan türleri veritabanı sütununu, eylemler düğmeleri belirliyor.
      Roller kodda sabitlenmiyor: Yetkiler ekranının veritabanına yazılan
@@ -1006,171 +973,6 @@ const PROMPT = {
         if (tn.not) s.push(`  - ${tn.not}`);
       }
     });
-    return s.join('\n');
-  },
-
-  /* ---------- İhtiyaç çözümlemesi ----------
-     Her projede aynı on dört kararı sormak yanlıştı. Bu prompt hangi kararın
-     bu projede gerektiğini, ne önerildiğini ve sayfa sayfa neyin nasıl
-     görünmesi gerektiğini soruyor. Studio karar vermiyor; soruyu daraltıyor.
-
-     Künyenin tamamı burada yok: aynı sohbete modül çözümlemesi zaten
-     yapıştırıldı ve NIZAM.md depoda duruyor. Tekrar basmak promptun üçte
-     ikisini kaplıyor ve tasarım sorusunu veri tablosunun altında bırakıyordu.
-     Tasarım kararı için gereken tek şey ekranların listesi: ne tür ekran,
-     kaç alan, hangi öbekte. */
-  ihtiyac(projeId) {
-    const p = DB.proje(projeId);
-    if (!p) return '';
-    const pl = p.palet || {};
-    const roller = rolListesi(pl.roller);
-
-    const s = [];
-    s.push('# ' + projeAdi(p) + ' — tasarım ihtiyaç çözümlemesi', '');
-    s.push('Bu modülü bu sohbette zaten konuştuk; künyeyi tekrar yazmıyorum —');
-    s.push('gerekirse yukarıya ya da depodaki `NIZAM.md`ye bak. Şimdi sorduğum');
-    s.push('şey **nasıl görüneceği**. Kod yazma, dosya değiştirme — yalnız');
-    s.push('sondaki bloğu ver.', '');
-
-    s.push('## Program');
-    s.push(hiza('Firma', p.firma));
-    if (modulAdi(p)) s.push(hiza('Ürün', modulAdi(p)));
-    if (p.sektor)    s.push(hiza('Sektör', p.sektor));
-    s.push(hiza('Platform', PLATFORM_ADI[p.platform] || '—'));
-    if (roller.length) s.push(hiza('Roller', roller.join(' · ')));
-    s.push('');
-
-    /* Tek satırlık ekran listesi: tasarım kararı için gereken yoğunluk.
-       Ne tür ekran, kaç kayıt, kaç alan — "tablo gerekir mi" sorusunun
-       cevabı bu üçünde. */
-    const kunye = pl.kunye || {};
-    const adlar = Object.keys(kunye);
-    if (adlar.length) {
-      s.push('## Ekranlar', '');
-      s.push('`sayfa · öbek · tür · beklenen kayıt · alan sayısı`', '');
-      adlar.forEach(tam => {
-        const k = kunye[tam] || {};
-        const sf = tam.split(' · ').pop();
-        const par = [k.grup || 'Diğer', (k.tur || 'belirsiz').toLocaleLowerCase('tr'),
-                     k.olcek ? k.olcek.toLocaleLowerCase('tr') + ' kayıt' : '',
-                     (k.alanlar || []).length + ' alan'].filter(Boolean);
-        s.push(`- **${sf}** — ${par.join(' · ')}`);
-      });
-      s.push('');
-    } else {
-      s.push('> **Künye yok.** Yapı durağı tamamlanmamış. Elindeki azla karar ver,');
-      s.push('> emin olmadığın başlığı `gerek: true` bırak — soru sorulmaya devam etsin.', '');
-    }
-
-    /* Studio'nun sabit listesi. Claude neyi eleyeceğini bilmek için hem
-       başlıkları hem seçenekleri görmeli. */
-    s.push('## Studio\'nun karar başlıkları');
-    s.push('Bunlar bugün **her projede** soruluyor. Hangisi bu programda');
-    s.push('gerçekten gerekli, hangisi boşuna soruluyor — sen söyleyeceksin.', '');
-    TASARIM_GRUP.forEach(g => {
-      if (!g.alanlar.length) return;
-      s.push(`### ${g.ad}`);
-      g.alanlar.forEach(a => {
-        s.push(`- \`${a.anahtar}\` — **${a.ad}**: ${a.alt}`);
-        s.push(`  Seçenekler: ${a.secim.map(x => x.ad).join(' | ')}`);
-      });
-      s.push('');
-    });
-
-    s.push('## Senden istediğim altı şey', '');
-    s.push('**1 · Hangi karar gerekli.** Yukarıdaki her başlık için `gerek`');
-    s.push('   yaz. Bu programda karşılığı yoksa `false` — o başlık hiç');
-    s.push('   sorulmayacak ve koda da girmeyecek. Emin değilsen `true` bırak;');
-    s.push('   fazladan soru, eksik özellikten iyidir.', '');
-    s.push('**2 · Ne öneriyorsun.** `gerek: true` olan her başlık için bir');
-    s.push('   seçenek öner ve **ekran listesinden gerekçe göster** — "sekiz');
-    s.push('   ekranın beşi liste ve çok kayıtlı" gibi. Genel geçer cümle');
-    s.push('   yazma. Öneri seçim yerine geçmiyor; kullanıcı görüp kendi');
-    s.push('   dokunacak.', '');
-    s.push('**3 · Eksik gördüğün başlık.** Studio\'nun listesinde olmayan ama bu');
-    s.push('   programda karar verilmesi gereken bir şey varsa kendin aç —');
-    s.push('   en az iki seçenekle. Uydurma; ekranlarda karşılığı olsun.', '');
-    s.push('**4 · Sayfa sayfa tasarım.** Yukarıdaki ekranlar için: neyin nerede duracağı,');
-    s.push('   hangi bileşenlerin gerektiği ve **o sayfada bir görsel gerekiyorsa**');
-    s.push('   nerede ve ne olduğu. Bu liste ChatGPT\'ye gidecek ve tam o');
-    s.push('   görseller üretilecek — "genel bir simge" deme, ne çizileceğini yaz.', '');
-    s.push('   Her sayfaya not yazmak zorunda değilsin: sıradan bir liste');
-    s.push('   ekranıysa atla. Notu hak eden sayfalara yaz.', '');
-    s.push('**6 · Emin olmadıkların.** Künyede yazmayan ama kod yazılırken');
-    s.push('   **karar vermek zorunda kalacağın** her şeyi sor. Tahmin edip');
-    s.push('   geçme — yanlış tahmin sonradan söküp yeniden yazmak demek.');
-    s.push('   Soruyu **gündelik dille** yaz, teknik terim kullanma; cevabı');
-    s.push('   veren kişi yazılımcı değil. Nedenini de yaz: künyede neyi');
-    s.push('   görüp bu soruyu sorduğunu. Cevabı birkaç seçeneğe sığıyorsa');
-    s.push('   seçenekleri de ver — kullanıcı dokunup geçsin.');
-    s.push('   Üç ile sekiz arası; her şeyi sorma, gerçekten takıldıklarını sor.', '');
-    s.push('**5 · Hangi simgeler gerekiyor.** Bu programın ekranlarında hangi');
-    s.push('   nesnelerin simgesi çizilecek — künyeden çıkar. "Belge, ayar,');
-    s.push('   kullanıcı" gibi genel simge yazma; **bu işin kendi nesneleri**');
-    s.push('   olsun: hesap, defter, fatura, kasa, mizan… On ile yirmi arası.');
-    s.push('   Bu liste ChatGPT\'ye gidecek, tam onları çizecek.', '');
-    s.push('   **Künyede karşılığı olmayan simge yazma.** Her simge için o');
-    s.push('   nesnenin hangi sayfada geçtiğini `ne` alanında söyle; sayfayı');
-    s.push('   gösteremiyorsan o simge gerekmiyor demektir. Arayüzün kendi');
-    s.push('   simgelerini de unutma: geri oku, arama, kapatma, ekle.', '');
-
-    s.push('## Cevabın', '');
-    s.push('Tek bir JSON bloğu. Öncesinde ve sonrasında açıklama yazma —');
-    s.push('kullanıcı bunu olduğu gibi kopyalayıp Studio\'ya yapıştıracak.', '');
-    s.push('```json');
-    s.push('{');
-    s.push('  "kararlar": [');
-    s.push('    { "anahtar": "genislik", "gerek": true, "oneri": "Tam genişlik",');
-    s.push('      "neden": "22 sayfanın 9\'u tablo; dar kolon fatura satırını kırar." },');
-    s.push('    { "anahtar": "iceaktarma", "gerek": false,');
-    s.push('      "neden": "Veriler elle giriliyor, dosyadan toplu alım yok." }');
-    s.push('  ],');
-    s.push('  "yeni": [');
-    s.push('    { "obek": "Kabuk", "ad": "Tablo yoğunluğu",');
-    s.push('      "soru": "Satırlar ne kadar sık olsun?",');
-    s.push('      "secim": [');
-    s.push('        { "ad": "Sıkı", "tarif": "Satır yüksekliği 34px; ekrana çok kayıt sığar." },');
-    s.push('        { "ad": "Ferah", "tarif": "Satır yüksekliği 52px; okuması kolay, az kayıt." }');
-    s.push('      ],');
-    s.push('      "oneri": "Sıkı",');
-    s.push('      "neden": "Aylık gider satırı 200\'ü geçiyor." }');
-    s.push('  ],');
-    s.push('  "sorular": [');
-    s.push('    { "soru": "Fatura numarasını sistem mi versin, elle mi girilsin?",');
-    s.push('      "neden": "Künyede \'Fatura No\' alanı var ama kimin doldurduğu yazmıyor.",');
-    s.push('      "secim": ["Sistem versin", "Elle girilsin", "İkisi de olsun"] },');
-    s.push('    { "soru": "Kapanan bir hesap silinebilsin mi, pasife mi alınsın?",');
-    s.push('      "neden": "Mali kayıt; silme geri alınamaz olabilir.",');
-    s.push('      "secim": ["Pasife alınsın", "Silinebilsin"] },');
-    s.push('    { "soru": "Hesap Defteri açılırken hangi tarih aralığı gelsin?",');
-    s.push('      "neden": "Aylık 200+ satır var; hepsini açmak yavaş olur." }');
-    s.push('  ],');
-    s.push('  "simgeler": [');
-    s.push('    { "ad": "hesap",  "ne": "Hesap kartı — cari ve banka hesapları listesinde" },');
-    s.push('    { "ad": "defter", "ne": "Hesap defteri — hareket listesi başlığında" },');
-    s.push('    { "ad": "fatura", "ne": "Alış ve satış faturaları ekranında" },');
-    s.push('    { "ad": "kasa",   "ne": "Nakit hareketleri ve kasa sayımı" }');
-    s.push('  ],');
-    s.push('  "sayfalar": [');
-    s.push('    { "sayfa": "Giderler",');
-    s.push('      "yerlesim": "Üstte ay seçici ve toplam kartı yan yana; altında gider satırları. En altta sabit toplam satırı.",');
-    s.push('      "bilesenler": ["Özet kartı", "Filtre şeridi", "Tablo", "Sabit toplam satırı"],');
-    s.push('      "gorseller": [');
-    s.push('        { "yer": "Boş durum", "ne": "Fiş ve makbuz çizimi — henüz gider girilmemişken ortada durur." }');
-    s.push('      ],');
-    s.push('      "not": "Tutar sütunu sağa hizalı ve mono." }');
-    s.push('  ]');
-    s.push('}');
-    s.push('```', '');
-    s.push('**Kurallar**');
-    s.push('- `anahtar` yukarıdaki listeden birebir gelsin; uydurma anahtar yazma.');
-    s.push('- Her başlık için bir satır olsun — atladığın başlık "gerekli" sayılır.');
-    s.push('- `sayfa` künyedeki sayfa adıyla birebir aynı olsun.');
-    s.push('- `simgeler` içindeki `ad` tek kelime ve küçük harf olsun.');
-    s.push('- `sorular` içinde `secim` isteğe bağlı: cevap serbest metinse yazma.');
-    s.push('- Görsel gerekmeyen sayfada `gorseller` boş kalsın; uydurma.');
-    s.push('- Türkçe yaz. Tırnakları düz tırnak kullan.');
-
     return s.join('\n');
   },
 
@@ -1783,7 +1585,6 @@ const PROMPT = {
       yerlesim.forEach(y => s.push(`- **${y.no} · ${y.dosya}** — ${y.ad}${y.tarif ? ': ' + y.tarif : ''}`));
       s.push('');
     }
-    s.push(PROMPT.tasarimBlogu(proje)); s.push('');
     const kunyeMetni2 = PROMPT.kunyeBlogu(proje);
     if (kunyeMetni2) { s.push(kunyeMetni2); s.push(''); }
     s.push(PROMPT.kurulumBlogu(proje)); s.push('');

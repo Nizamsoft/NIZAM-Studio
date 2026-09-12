@@ -7,7 +7,7 @@ const APP = {
   name:     'NIZAM | Studio',
   short:    'NIZAM Studio',
   owner:    'Nizam Soft',
-  version: 'v0.135.12',
+  version: 'v0.135.13',
   build:    '2026-09-12',
   /* Studio'nun kendi deposu — "bütün programlarda geçerli olsun"
      istekleri buraya gider. */
@@ -94,132 +94,12 @@ const GRUP_SIMGE = {
 };
 
 
-/* Birlikte olmayacak seçimler. Prompt bunları yasaklar, Studio yapıştırınca
-   denetler. Her satır: [alan, değer] + [alan, değer] + neden. */
-/* Birlikte olmayacak seçimler. Prompt bunları yasaklar, Studio yapıştırınca
-   denetler. Her satır: [alan, değer] + [alan, değer] + neden.
-   Görünüşe dair çelişkiler kalktı — onlara artık tarif karar veriyor. */
-const CELISKI = [
-  [['iceaktarma', 'Yok'], ['yedek', 'Yedek al / yükle'],
-   'Dosya girişi hiç yokken dosya yedeği tek başına tutarsız kalıyor.'],
-];
-
-
-/* Arayüz biçimi — Tasarımı belirleme durağında görselli seçilir.
-   Değerler projenin `palet` alanında saklanır; ayrı sütun gerekmez.
-   `tarif` doğrudan prompta ve NIZAM.md'ye yazılır: AI ne yapacağını buradan okur.
-   `coklu` olanlarda birden fazla seçilebilir, seçimler birbirine karışır. */
-const TASARIM_ALAN = [
-];
-
-/* ---- Yerleşim: ekranın iskeleti. Neyin nerede durduğu. ---- */
-const YERLESIM_ALAN = [
-  {
-    anahtar: 'sayfalistesi', ad: 'Sayfa listesi', alt: 'Bir modülün sayfaları nasıl listelensin?',
-    varsayilan: 'Üst sekme', ekran: 'sayfalar',
-    secim: [
-      { ad: 'Yan liste',     tarif: 'Modül seçilince solda o modülün sayfaları listelenir.', tel: ['yanInce', 'liste'] },
-      { ad: 'Üst sekme',     tarif: 'Modülün sayfaları üstte yatay sekme olur.', tel: ['sekme', 'liste'] },
-      { ad: 'Açılır seçici', tarif: 'Başlığa dokununca sayfa listesi açılır. Az yer kaplar.', tel: ['ustSecici', 'liste'] },
-      { ad: 'Kart ızgarası', tarif: 'Modüle girince sayfalar kart ızgarası olarak karşılar.', tel: ['izgara'] },
-    ],
-  },
-  {
-    anahtar: 'iceaktarma', ad: 'İçe aktarma', alt: 'Excel ya da dosyadan toplu veri nasıl alınsın?',
-    varsayilan: 'Önizlemeli', ekran: 'ice',
-    secim: [
-      { ad: 'Yok',          tarif: 'Toplu içe aktarma yok; kayıtlar tek tek girilir.', tel: ['blok'] },
-      { ad: 'Basit yükleme',tarif: 'Dosya seç, yükle, biter. Ara ekran yok.', tel: ['dosya', 'sonDugme'] },
-      { ad: 'Önizlemeli',   tarif: 'Yüklemeden önce "N yeni · M mevcut" özeti ve satır listesi gösterilir.', tel: ['dosya', 'ozetSatir', 'liste'] },
-      { ad: 'Eşleştirmeli', tarif: 'Dosyadaki sütunlar alanlarla elle eşleştirilir, sonra önizleme gelir.', tel: ['eslestir', 'sonDugme'] },
-    ],
-  },
-  {
-    anahtar: 'genislik', ad: 'Genişlik', alt: 'Masaüstünde içerik ne kadar yayılsın?',
-    varsayilan: 'Ortada sınırlı', ekran: 'panel', genis: true, masaustu: true,
-    secim: [
-      { ad: 'Tam genişlik',   tarif: 'İçerik ekranın tamamını kullanır. Geniş tablolar için.', tel: ['blokTam'] },
-      { ad: 'Ortada sınırlı', tarif: 'En fazla 1200px, ortalanır. Uzun satırlar okunaklı kalır.', tel: ['blokOrta'] },
-      { ad: 'Sol hizalı',     tarif: 'Sınırlı genişlik ama sola yaslı; sağda boşluk kalır.', tel: ['blokSol'] },
-    ],
-  },
-];
-
-/* ---- Durumlar: ekran doluyken değil, boşken ve beklerken. ---- */
-const DURUM_ALAN = [
-  {
-    anahtar: 'onaysil', ad: 'Onay & silme', alt: 'Silme nasıl olsun?',
-    varsayilan: 'Geri al şeridi', ekran: 'liste',
-    secim: [
-      { ad: 'Pencere ile onay', tarif: '"Emin misin?" penceresi; silmeden önce durdurur.', tel: ['liste', 'pencere'] },
-      { ad: 'Kaydırarak sil',   tarif: 'Satırı yana kaydırınca kırmızı sil düğmesi çıkar.', tel: ['listeKaydir'] },
-      { ad: 'Geri al şeridi',   tarif: 'Hemen siler, altta "Geri al" şeridi çıkar. Soru sormaz.', tel: ['liste', 'geriAl'] },
-    ],
-  },
-];
-
-/* ---- Açılış ve geçiş: uygulamaya girmeden önce ---- */
-const ACILIS_ALAN = [
-];
-
-/* ---- Hareket: uygulamayı canlandıran katman. Kodda en son yazılır. ---- */
-const HAREKET_ALAN = [
-];
-
-/* ---- Sistem: uygulamanın kendi bakımı ---- */
-const SISTEM_ALAN = [
-  {
-    /* Değişiklik kaydı burada sorulmuyor: "Her zaman tutulur" teknik
-       standartta duruyor, iki yerde sormak çelişki üretiyordu. */
-    anahtar: 'yedek', ad: 'Yedek ekranı', alt: 'Ayarlarda yedek al / yükle olsun mu?',
-    varsayilan: 'Yedek al / yükle', ekran: 'ayarlar',
-    secim: [
-      { ad: 'Yok',              tarif: 'Yedekleme ekranı yok; veritabanı yedeği yeterli sayılır.', tel: ['grupluListe'] },
-      { ad: 'Yedek al / yükle', tarif: 'Ayarlarda dosyaya yedek alma ve geri yükleme.', tel: ['ikiDugme', 'grupluListe'] },
-    ],
-  },
-];
-
-/* Üç öbek, üç sekme. Hepsi projenin `palet` alanında saklanır. */
-/* Bütün başlıklar tek dizide — prompt ve çözümleyici bunu gezer. */
-const TUM_TASARIM = YERLESIM_ALAN.concat(TASARIM_ALAN, ACILIS_ALAN, DURUM_ALAN, HAREKET_ALAN, SISTEM_ALAN);
-
-/* ---- Tasarım akışı ----
-   Bir ekranda tek karar. Kaydırma yok.
-   Öbekler dıştan içe: önce malzeme, sonra çatı, sonra ekran ekran, en sonda
-   uç durumlar ve sistem işleri. Bir öbek içinde önizleme ekranı olabildiğince
-   sabit kalır — boşuna zıplamasın. */
-const AKIS_OBEK = [
-  /* Üç öbek vardı — Kabuk, Davranış, Sistem — ve on üç karar sorulurdu.
-     Sekizinin ev usulü çıktı: yol izi, kullanıcı menüsü, bildirim, işlem
-     sonucu, hata ekranı, hareket miktarı, güncelleme ve destek artık Nizam
-     standardında sabit; her prompta kendiliğinden giriyor, kimseye
-     sorulmuyor. Kalan beşi projeden projeye gerçekten değişiyor, o yüzden
-     tek adada toplandı. */
-  { ad: 'Kararlar', not: 'Bir çizimde görünmeyen, projeye göre değişen kararlar.',
-    alanlar: ['genislik', 'sayfalistesi', 'onaysil', 'iceaktarma', 'yedek'] },
-];
-
-
-/* Özet ve prompt aynı öbeklemeyi kullansın diye akıştan türetiliyor;
-   eskiden ayrı bir liste vardı ve ikisi birbirinden kaçıyordu. */
-const TASARIM_GRUP = AKIS_OBEK.map(o => ({
-  anahtar: o.ad.toLowerCase(),
-  ad: o.ad,
-  alanlar: o.alanlar.map(k => TUM_TASARIM.find(a => a.anahtar === k)).filter(Boolean),
-}));
-
+/* Tasarım durağının akışı: artık iki gerçek adım kaldı. Sayfa listesi,
+   içe aktarma, genişlik, silme onayı ve yedek ekranı gibi eskiden proje
+   proje sorulan beş karar Nizam Standardı'na kalıcı kural olarak yazıldı
+   (bkz. Ayarlar > Nizam Standartları) — İhtiyaç çözümlemesi'nin işi bitti,
+   her prompta zaten `teknikBlogu()` üzerinden otomatik giriyor. */
 const TASARIM_ADIM = [
-  /* Her projede aynı on dört kararı sormak yanlıştı: yirmi iki sayfalık bir
-     muhasebe modülünde tam genişlik ve sıkı tablo şart, tek ekranlık bir
-     randevu uygulamasında o soru boşuna soruluyor. Claude künyeye bakıp
-     hangi kararın bu projede gerektiğini söylüyor, eksik gördüğü başlığı
-     kendi açıyor ve sayfa sayfa yerleşim notu veriyor. Sonuç `palet.cozum`
-     içinde; akış listesini `tasarimAdimlari(p)` ondan kuruyor. */
-  { anahtar: 'ihtiyac', ad: 'İhtiyaç çözümlemesi', tur: 'ihtiyac', ekran: 'panel',
-    obek: 'İhtiyaç çözümlemesi',
-    obekNot: 'Claude künyeye bakıp hangi kararların gerektiğine karar veriyor.',
-    aciklama: 'Promptu Claude Code\'a ver, dönen çözümlemeyi yapıştır.' },
   /* Uygulamanın bütün görünüşü bu adadan çıkıyor: logo ve işletme görseli
      ChatGPT'ye gidiyor, dönen tarif renk, yüzey, simge, tipografi ve hangi
      görselin nerede duracağını söylüyor. Studio karar vermiyor, taşıyor. */
@@ -227,133 +107,13 @@ const TASARIM_ADIM = [
     obek: 'Görsel dünya',
     obekNot: 'Logo ve işletme görselinden çıkan tarif. Bütün ekranlar buna uyar.',
     aciklama: 'Promptu ChatGPT\'ye ver, dönen tarifi yapıştır, görselleri yerine koy.' },
-].concat([].concat(...AKIS_OBEK.map(o => o.alanlar.map(k => {
-  const a = TUM_TASARIM.find(x => x.anahtar === k);
-  if (!a) throw new Error('Akışta tanımsız başlık: ' + k);
-  return { anahtar: k, ad: a.ad, alan: a, ekran: a.ekran || 'panel',
-           cihaz: a.cihaz, genis: a.genis, obek: o.ad, obekNot: o.not, aciklama: a.alt };
-})))).concat([
   { anahtar: 'ozet', ad: 'Özet', tur: 'ozet', ekran: 'panel', obek: 'Bitiş',
-    obekNot: 'Verilen bütün kararlar tek listede.',
-    aciklama: 'Verilen bütün kararlar. Prompta bu yazılacak.' },
-]);
+    obekNot: 'Görsel dünyanın özeti ve son blok.',
+    aciklama: 'Görsel dünya tarifinin özeti. Prompta bu yazılacak.' },
+];
 
-/* ---- Claude'un çözümlemesi ----
-   `palet.cozum` = { kararlar: {anahtar: {gerek, oneri, neden}},
-                     yeni: [...], sayfalar: {sayfa: {...}}, zaman }
-   Çözümleme yoksa hiçbir şey değişmez: eski projeler bugünkü on dört kararla
-   yürümeye devam eder. */
-
-const COZUM_OBEK = AKIS_OBEK.map(o => o.ad);
-
-/* Claude'un açtığı başlığı Studio'nun alan biçimine çevirir. Anahtar addan
-   türetiliyor: çözümleme yenilendiğinde sıra değişse bile verilmiş karar
-   yerinde kalsın. */
-function cozumAlani(y) {
-  if (!y || !y.ad) return null;
-  const secim = (y.secim || [])
-    .filter(x => x && x.ad)
-    .map(x => ({ ad: String(x.ad).trim().slice(0, 40), tarif: String(x.tarif || '').trim() }));
-  /* Tek seçenekli başlık karar değil, dayatma: soru sorulmaz. */
-  if (secim.length < 2) return null;
-  const ad = String(y.ad).trim().slice(0, 40);
-  const slug = ad.toLocaleLowerCase('tr')
-    .replace(/[ıİ]/g, 'i').replace(/[ğĞ]/g, 'g').replace(/[üÜ]/g, 'u')
-    .replace(/[şŞ]/g, 's').replace(/[öÖ]/g, 'o').replace(/[çÇ]/g, 'c')
-    .replace(/[^a-z0-9]+/g, '');
-  if (!slug) return null;
-  return {
-    anahtar: 'x_' + slug, ad,
-    alt: String(y.soru || ad).trim().slice(0, 140),
-    varsayilan: secim[0].ad, ekran: 'panel', secim,
-    /* Varsayılana düşmüyor: Claude'un önerisi seçim yerine geçmesin diye
-       hiçbir seçenek işaretli gelmiyor, kullanıcı dokunana kadar boş. */
-    bos: true,
-    /* Studio'nun listesinden gelmedi: özet ve promptta böyle işaretleniyor. */
-    claude: true,
-  };
-}
-
-/* Bu projenin Claude'dan gelen başlıkları. */
-function cozumYeniAlanlar(p) {
-  const c = ((p && p.palet) || {}).cozum;
-  if (!c || !Array.isArray(c.yeni)) return [];
-  const gorulen = {};
-  return c.yeni.map(y => {
-    const al = cozumAlani(y);
-    if (!al || gorulen[al.anahtar]) return null;
-    gorulen[al.anahtar] = 1;
-    al.obek = COZUM_OBEK.indexOf(y.obek) > -1 ? y.obek : COZUM_OBEK[0];
-    return al;
-  }).filter(Boolean);
-}
-
-/* Studio'nun listesi + bu projeye özel başlıklar. Seçim yazan ve okuyan
-   her yer bunu kullanıyor; yoksa Claude'un açtığı başlığa dokunulamıyor. */
-function tasarimAlanlari(p) {
-  const ek = cozumYeniAlanlar(p);
-  return ek.length ? TUM_TASARIM.concat(ek) : TUM_TASARIM;
-}
-
-function tasarimAlani(p, anahtar) {
-  return tasarimAlanlari(p).find(a => a.anahtar === anahtar) || null;
-}
-
-/* Akış listesi. Gereksiz görülen karar düşer, Claude'un açtığı başlık kendi
-   öbeğinin sonuna girer. Çözümleme yoksa sabit liste aynen döner. */
 function tasarimAdimlari(p) {
-  const c = ((p && p.palet) || {}).cozum;
-  if (!c) return TASARIM_ADIM;
-
-  const kar = c.kararlar || {};
-  const ek  = {};
-  cozumYeniAlanlar(p).forEach(al => {
-    (ek[al.obek] = ek[al.obek] || []).push({
-      anahtar: al.anahtar, ad: al.ad, alan: al, ekran: 'panel',
-      obek: al.obek, obekNot: '', aciklama: al.alt,
-    });
-  });
-
-  const dizi = [];
-  let onceki = null;
-  TASARIM_ADIM.forEach(a => {
-    /* Öbek değişirken bir öncekinin ekleri araya girsin. */
-    if (onceki && a.obek !== onceki && ek[onceki]) {
-      dizi.push.apply(dizi, ek[onceki]);
-      delete ek[onceki];
-    }
-    onceki = a.obek;
-    const k = kar[a.anahtar];
-    if (a.alan && k && k.gerek === false) return;
-    dizi.push(a);
-  });
-  return dizi;
-}
-
-/* Özet ve prompt aynı öbeklemeyi kullansın diye akıştan türetiliyor —
-   elenen başlık ikisinde de görünmez, Claude'un açtığı ikisinde de görünür. */
-function tasarimGruplari(p) {
-  const adimlar = tasarimAdimlari(p).filter(a => a.alan);
-  const gruplar = [];
-  adimlar.forEach(a => {
-    const son = gruplar[gruplar.length - 1];
-    if (son && son.ad === a.obek) son.alanlar.push(a.alan);
-    else gruplar.push({ anahtar: a.obek.toLocaleLowerCase('tr'), ad: a.obek, alanlar: [a.alan] });
-  });
-  return gruplar;
-}
-
-/* Bir kararın Claude önerisi — "seçildi" saymıyoruz, yalnız gösteriyoruz. */
-function cozumOnerisi(p, anahtar) {
-  const c = ((p && p.palet) || {}).cozum;
-  if (!c) return null;
-  const k = (c.kararlar || {})[anahtar];
-  if (k && k.oneri) return { oneri: String(k.oneri), neden: String(k.neden || '') };
-  const ham = (c.yeni || []).find(x => {
-    const al = cozumAlani(x);
-    return al && al.anahtar === anahtar;
-  });
-  return ham && ham.oneri ? { oneri: String(ham.oneri), neden: String(ham.neden || '') } : null;
+  return TASARIM_ADIM;
 }
 
 /* Tasarım sistemi bloğu geçerli mi? En az renk gelmeli — gerisi eksik
@@ -644,48 +404,17 @@ function kurulumAdimListesi(proje) {
   });
 }
 
-/* Bir alanın seçili değerleri — her zaman dizi döner.
-   Tek seçimliler tek elemanlı; hiç seçilmemişse varsayılan. */
-/* ---- Sonradan eklenen kararlar ----
-   Yeni bir karar eklendiğinde eski projeler onu fark etmiyordu: 51 adımın
-   içinde kayboluyordu. Karara `eklendi` damgası, projeye de görülen sürüm
-   yazılıyor; ikisi karşılaştırılıp rozet çıkarılıyor. */
-
-function surumSayi(s) {
-  return String(s || 'v0').replace(/^v/, '').split('.')
-    .map(n => parseInt(n, 10) || 0)
-    .reduce((t, n) => t * 1000 + n, 0);
-}
-
 /* Bu proje için henüz görülmemiş yeni kararlar.
-   Yeni açılan projede boş döner: kurulurken görülen sürüm damgalanıyor. */
+   Tasarım durağının kendi kararları (eskiden TUM_TASARIM) kalktığı için
+   işaretleyecek bir şey kalmadı; çağıranlar bozulmasın diye boş dönüyor. */
 function yeniKararlar(palet) {
-  const pl  = palet || {};
-  const tab = surumSayi(pl.gorulenSurum);
-  const gor = Array.isArray(pl.gorulenler) ? pl.gorulenler : [];
-  return TUM_TASARIM.filter(a => a.eklendi
-    && surumSayi(a.eklendi) > tab
-    && !pl[a.anahtar]
-    && gor.indexOf(a.anahtar) < 0);
+  return [];
 }
 
 /* Standardın yaşayan listesi: tablo doluysa o, boşsa koddaki tohum. */
 function standartListesi() {
   const t = (typeof DB !== 'undefined' && Array.isArray(DB.standartlar)) ? DB.standartlar : [];
   return t.length ? t : standartTohum();
-}
-
-function bicimSecim(palet, alan) {
-  const d = (palet || {})[alan.anahtar];
-  /* Tek seçimlide bölmüyoruz: "Sayaç + büyük grafik" gibi adlar artı içeriyor
-     ve bölünürse hiçbir seçeneğe uymayıp varsayılana düşüyordu. */
-  const dizi = Array.isArray(d) ? d
-    : !d ? []
-    : alan.coklu ? String(d).split(/\s*[+,]\s*/)
-    : [String(d)];
-  const gecerli = dizi.filter(x => alan.secim.some(y => y.ad === x));
-  if (!gecerli.length) return alan.bos ? [] : [alan.varsayilan];
-  return alan.coklu ? gecerli : [gecerli[0]];
 }
 
 const GENEL_MODUL = 'Proje Geneli';

@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## v0.135.13
+- **"İhtiyaç çözümlemesi" kaldırıldı.** Profesyonel tasarım durağında Claude'a "hangi karar bu projede gerekli" diye sorduran ayrı bir aşama vardı (sayfa listesi, içe aktarma, genişlik, onay & silme, yedek ekranı). Artık gerek yok — bu beş karar Nizam Standardı'na kalıcı kural olarak yazılacak ve her prompta zaten `teknikBlogu()` üzerinden otomatik giriyor. Durak artık yalnız iki adımdan oluşuyor: Görsel dünya ve Özet.
+- **Tek ada kaldığı için harita ekranı atlanıyor.** Eskiden birden çok "ada" arasında seçim yapılan bir harita vardı; geriye tek gerçek ada (Görsel dünya) kaldığı için artık doğrudan adımın içine giriliyor.
+- **Ölü kod temizliği.** İhtiyaç çözümlemesiyle birlikte kullanılan görselli seçim rafı, karar önizlemeleri ve "YENİ" rozet mekanizmasının artık hiç tetiklenmeyen parçaları da kaldırıldı.
+
 ## v0.135.12
 - **"Yeni oturum" vurgusu kaldırıldı.** 5 aşama düğmesi artık "Kopyala ve yeni oturum aç" değil "Kopyala ve Claude'u aç" diyor; promptlar da "bu yeni bir oturum", "sonraki aşamayı yeni bir oturumda açacağım" gibi ifadeler kullanmıyor — konuşma geçmişine değil dosyalara güvenmesini söylüyor. Hangi sohbette devam edileceğine geliştirici karar verir, Studio dayatmıyor.
 

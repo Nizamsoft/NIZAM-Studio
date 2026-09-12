@@ -1294,16 +1294,11 @@ async function onaylariYaz(p) {
   } catch (h) { /* kritik değil: seçimler zaten palete yazılıyor */ }
 }
 
-/* Bu adıma cevap verilmiş mi? `bicimSecim` cevap yokken varsayılana düştüğü,
-   `bicimAyni` de bilerek seçilen varsayılanı "aynı" saydığı için ikisi de
-   bu soruya cevap vermiyor. Ölçüt: palete yazılmış ya da İleri'yle onaylanmış. */
+/* Bu adıma cevap verilmiş mi? Ölçüt: palete yazılmış ya da İleri'yle onaylanmış. */
 function adimBitti(p, i) {
   const adim = tasarimAdimlari(p)[i];
   if (!adim) return false;
   const pl = p.palet || {};
-  /* İhtiyaç adası: çözümleme geldi mi? Kararların cevaplanması bu adanın
-     işi değil — o kararlar kendi adalarında soruluyor. */
-  if (adim.tur === 'ihtiyac') return !!pl.cozum;
   /* Görsel dünya adası: iki adımı da bitti mi? Ölçüt tek yerde —
      `gorselAdaDurumu`. Eskiden burada ayrıca tarif ve dolu görsel yuvası
      aranıyordu; ikisi de kalktı ama bu satır kalmıştı, ada hiç bitmiyor
@@ -1358,11 +1353,8 @@ function tasarimHaritasi(p, d) {
   const durumlar = obekler.map(o => adaDurumu(p, o));
   const simdi = durumlar.findIndex(x => !x.tam);
   const biten = durumlar.filter(x => x.tam).length;
-  const karar = tasarimAdimlari(p).filter(a => a.alan).length;
 
-  /* Zincir: bir ada ancak kendinden öncekiler bittiyse açılır. İhtiyaç
-     çözümlemesi kalanların kapsamını belirlediği için sıra artık zorunlu —
-     eskiden ileri adaya da dokunulabiliyordu. */
+  /* Zincir: bir ada ancak kendinden öncekiler bittiyse açılır. */
   const kart = i => tasarimAdasi(p, obekler[i], durumlar[i],
                                  String(i + 1).padStart(2, '0'), i === simdi,
                                  !durumlar[i].tam && simdi > -1 && i > simdi);
@@ -1379,9 +1371,9 @@ function tasarimHaritasi(p, d) {
         ${kalan.length ? yolOku(durumlar[2] && durumlar[2].tam) : ''}
         ${kalan.length ? `<div class="ya-satir">${kalan.map(kart).join('')}</div>` : ''}
       </div>`
-    + sayfaObekBasligi('Bitiş', karar)
-    + agacSatir('var(--metal-2)', ICON.katman, 'Bütün kararları gör',
-        'Prompta yazılacak kararlar tek listede', false, 'tasarim-ada',
+    + sayfaObekBasligi('Bitiş')
+    + agacSatir('var(--metal-2)', ICON.katman, 'Özet ve son blok',
+        'Görsel dünya tarifinin özeti, promptta bu yazılacak', false, 'tasarim-ada',
         `data-proje="${p.id}" data-deger="${ozetNo}"`)
     + `</div>`;
 }
@@ -1389,27 +1381,23 @@ function tasarimHaritasi(p, d) {
 /* Bir ekranda tek karar: üstte ada kartı, ortada önizleme, altta seçim.
    Sayfa kaydırılmaz — parçalar ekrana sığacak şekilde bölüşür. */
 function tasarimSayfasi(p, d) {
-  if (TASARIM_MOD[p.id] !== 'adim') return tasarimHaritasi(p, d);
+  /* Geriye tek gerçek ada (Görsel dünya) kaldığı için seçim yapılacak bir
+     harita yok — tek kareli bir ızgara göstermek yerine doğrudan adıma girilir. */
+  const tekAda = obekleriKur(p).filter(o => o.ad !== 'Bitiş').length <= 1;
+  if (!tekAda && TASARIM_MOD[p.id] !== 'adim') return tasarimHaritasi(p, d);
   const no    = adimNo(p);
   const adim  = tasarimAdimlari(p)[no];
   const pl    = p.palet || null;
   const adres = DB.logoAdres[p.id];
   const yon   = AUTH.yonetici;
 
-  /* İhtiyaç adası kendi ekranlarını taşıyor: kareler, kararlar listesi,
-     sayfa ızgarası ve bir sayfanın notu. Dördü de aynı kabukta. */
-  if (adim.tur === 'ihtiyac') return ihtiyacEkrani(p);
-
   let govde, gez;
 
   if (adim.tur === 'gorsel') {
     govde = gorselDunyaGovdesi(p);
 
-  } else if (adim.tur === 'ozet') {
-    govde = `<div class="ozet-kaydir">${tarifSeridi(p)}${tasarimOzeti(p)}</div>`;
-
   } else {
-    govde = adimRafi(p, adim.alan);
+    govde = `<div class="ozet-kaydir">${tarifSeridi(p)}${tasarimOzeti(p)}</div>`;
   }
 
   gez = adimGezinme(p, no, adim);
@@ -1422,426 +1410,16 @@ function tasarimSayfasi(p, d) {
   return `<div class="akis ${adim.tur === 'ozet' ? 'ozet' : ''}${
       gorselAda ? ' gorsel' : ''}">
     ${gorselAda ? gorselAdaBasligi(p) : adimSeridi(p, no, adim)}
-    ${['ozet', 'gorsel'].includes(adim.tur) ? '' : onizlemeSatiri(p, adim)}
     <div class="akis-alt">
       ${gorselAda ? '' : `
       <div class="adim-bas">
         <div class="ab-yazi"><b>${esc(adim.ad)}</b><i>${esc(adim.aciklama)}</i></div>
-        ${yeniKararlar(p.palet).some(a => a.anahtar === adim.anahtar)
-          /* Başlığın içine koyunca satır kırılıp alt satırı aşağı itiyordu:
-             kendi sütununda duruyor. */
-          ? `<button class="ab-yeni" type="button" data-eylem="karar-goruldu"
-                     data-proje="${p.id}" data-alan="${adim.anahtar}"
-                     title="Sonradan eklendi. Rozeti kaldırmak için dokun.">YENİ</button>`
-          : `<span class="ab-tur">${adim.alan
-              ? (adim.alan.coklu ? 'birkaçı' : 'tek seçim') : ''}</span>`}
+        <span class="ab-tur">${adim.alan
+          ? (adim.alan.coklu ? 'birkaçı' : 'tek seçim') : ''}</span>
       </div>`}
       ${govde}
       ${gez}
     </div>
-  </div>`;
-}
-
-/* ==========================================================================
-   İHTİYAÇ ÇÖZÜMLEMESİ
-   Her projede aynı on dört kararı sormak yanlıştı. Claude künyeye bakıp
-   hangi kararın bu projede gerektiğini söylüyor, eksik gördüğü başlığı
-   kendi açıyor ve sayfa sayfa yerleşim notu veriyor. Studio karar
-   vermiyor — soruyu daraltıyor.
-   ========================================================================== */
-
-/* Adanın içinde hangi ekrandayız: null (kareler) · 'kararlar' · 'sayfalar'
-   · bir sayfanın adı. Ada değişince sıfırlanıyor. */
-const IHTIYAC_EKRAN = {};
-
-function ihtiyacDurumu(p) {
-  const pl  = p.palet || {};
-  const c   = pl.cozum || null;
-  const kar = (c && c.kararlar) || {};
-  const elenen = Object.keys(kar).filter(k => kar[k].gerek === false).length;
-  const yeni   = c ? cozumYeniAlanlar(p).length : 0;
-  const sayfa  = c ? Object.keys(c.sayfalar || {}).length : 0;
-  const simge  = c ? (c.simgeler || []).length : 0;
-  const sorular = (c && c.sorular) || [];
-  const cevaplar = pl.cevaplar || {};
-  const cevapli = sorular.filter(x => (cevaplar[x.soru] || '').trim()).length;
-  const kalan  = tasarimAdimlari(p).filter(a => a.alan).length;
-
-  const adimlar = [
-    { ad: 'Promptu ver', eylem: 'ihtiyac-prompt',
-      bitti: !!c, ozet: c ? 'verildi' : pl.cozumIstendi ? 'panoya alındı' : 'Claude Code' },
-    { ad: 'Çözümlemeyi yapıştır', eylem: 'ihtiyac-yapistir',
-      bitti: !!c, ozet: c ? 'okundu' : 'bekliyor',
-      /* Prompt verilmeden yapıştırılacak bir şey yok. */
-      kilit: !c && !pl.cozumIstendi },
-    { ad: 'Kararlar', eylem: 'ihtiyac-kararlar', bitti: !!c, kilit: !c,
-      ozet: c ? (yeni ? kalan + ' · ' + yeni + ' yeni' : kalan + ' karar') : 'bekliyor' },
-    { ad: 'Sayfa tasarımları', eylem: 'ihtiyac-sayfalar', bitti: !!c && sayfa > 0,
-      kilit: !c, ozet: c ? (sayfa ? sayfa + ' sayfa' : 'not verilmedi') : 'bekliyor' },
-    /* Claude'un takıldıkları. Cevaplanmadan ada bitmiyor: yanlış tahmin
-       sonradan söküp yeniden yazmak demek. */
-    { ad: 'Claude\'un soruları', eylem: 'ihtiyac-sorular',
-      bitti: !!c && (!sorular.length || cevapli >= sorular.length),
-      kilit: !c,
-      ozet: !c ? 'bekliyor'
-        : !sorular.length ? 'soru yok'
-        : cevapli >= sorular.length ? sorular.length + ' cevaplandı'
-        : cevapli + '/' + sorular.length + ' cevaplandı' },
-  ];
-  const simdi = adimlar.findIndex(a => !a.bitti);
-  return { adimlar, simdi, tam: simdi < 0, cozum: c, elenen, yeni, sayfa, simge,
-           sorular, cevapli, kalan };
-}
-
-/* Ada başlığı — görsel dünyayla aynı kart, kendi sayacıyla. */
-function ihtiyacBasligi(p, biten, toplam, simdi) {
-  const d = DURAKLAR.tasarim;
-  return `
-    <div class="adim-serit" style="--kr:${d.renk}">
-      <div class="bs2 ince">
-        <button class="bs2-ik" type="button" title="Haritaya dön"
-                data-eylem="tasarim-adim" data-proje="${p.id}" data-deger="-2">
-          ${svg(ICON.arama, 19)}</button>
-        <span class="bs2-yz">
-          <span class="bs2-firma"><span class="bs2-ad2">${esc(d.ad)}</span></span>
-          <span class="bs2-ad">İhtiyaç çözümlemesi</span>
-        </span>
-        <span class="bs2-sag"><b class="mono">${biten}/${toplam}</b><i>adım</i></span>
-      </div>
-      <div class="as-alt">
-        <span class="as-yol">
-          <button class="yi" type="button" data-eylem="tasarim-adim"
-                  data-proje="${p.id}" data-deger="-2">Harita</button>
-          <s>›</s>
-          <button class="yi son" type="button" disabled>İhtiyaç</button>
-        </span>
-      </div>
-      <div class="as-noktalar">${Array.from({ length: toplam }, (x, i) => `
-        <span class="${i < biten ? 'gecti' : i === simdi ? 'on' : ''}"><i></i></span>`).join('')}
-      </div>
-    </div>`;
-}
-
-/* Adanın gövdesi — dört kare kart, kilitli zincir. Kurulum sayfasındaki
-   davranışın aynısı: sırası gelmeyen kesik çerçeveli ve basılamaz. */
-function ihtiyacGovdesi(p) {
-  const g = ihtiyacDurumu(p);
-  const kart = i => {
-    const a = g.adimlar[i];
-    const hal = a.bitti ? 'bitti' : a.kilit ? 'kilitli' : i === g.simdi ? 'simdi' : 'eksik';
-    const ikon = a.bitti ? ICON.tik : a.kilit ? ICON.kilit
-               : i === g.simdi ? ICON.goz : ICON.kalem;
-    return `
-      <button class="ya ${hal}" type="button" ${a.kilit ? 'disabled' : ''}
-              data-eylem="${a.eylem}" data-proje="${p.id}">
-        <span class="ya-ust">
-          <span class="ya-no mono">${String(i + 1).padStart(2, '0')}</span>
-          <span class="ya-dur">${svg(ikon, 13)}</span>
-        </span>
-        <span class="ya-yz">
-          <span class="ya-ad">${esc(a.ad)}</span>
-          <span class="ya-alt">${esc(a.ozet)}</span>
-        </span>
-      </button>`;
-  };
-
-  return `<div class="gd-kaydir">
-    <div class="ya-harita">
-      <div class="ya-satir">${[0, 1, 2].map(kart).join('')}</div>
-      ${yolOku(g.adimlar[2].bitti)}
-      <div class="ya-satir">${[3, 4].map(kart).join('')}</div>
-    </div>
-    ${g.cozum ? ihtiyacOzetKarti(p, g) : ihtiyacBosKutu()}
-  </div>`;
-}
-
-function ihtiyacBosKutu() {
-  return `<div class="bos-kutu">${svg(ICON.arama, 18)}
-    <span>Çözümleme yok. Bütün kararlar soruluyor, öneri gelmiyor.
-      <b>Promptu ver</b> ile başla.</span></div>`;
-}
-
-/* Ne çıktığının bir bakışta özeti. Kararların tamamı 03'te, sayfa notları
-   04'te; burada yalnız sayılar var. */
-function ihtiyacOzetKarti(p, g) {
-  const tarih = g.cozum.zaman ? String(g.cozum.zaman).slice(0, 10) : '';
-  return `<div class="tarif-kart">
-    <div class="tk-bas"><b>Çözümleme</b><span class="tk-rz">Claude</span></div>
-    <div class="tk-satir"><b>Geçerli karar</b><span>${g.kalan}</span></div>
-    <div class="tk-satir"><b>Elenen</b><span>${g.elenen}</span></div>
-    <div class="tk-satir"><b>Claude'un açtığı</b><span>${g.yeni}</span></div>
-    <div class="tk-satir"><b>Sayfa notu</b><span>${g.sayfa}</span></div>
-    <div class="tk-satir"><b>Gereken simge</b><span>${g.simge}</span></div>
-    <div class="tk-satir"><b>Soru</b><span>${g.cevapli}/${g.sorular.length}</span></div>
-    ${tarih ? `<div class="tk-satir"><b>Alındı</b><span>${esc(tarih)}</span></div>` : ''}
-    <button class="promptu-gor" type="button" data-eylem="ihtiyac-yapistir"
-            data-proje="${p.id}">Çözümlemeyi yenile</button>
-  </div>`;
-}
-
-/* ---------- 03 · Kararlar ekranı ---------- */
-function ihtiyacKararEkrani(p) {
-  const c = (p.palet || {}).cozum || {};
-  const kar = c.kararlar || {};
-  const yeniAlan = cozumYeniAlanlar(p);
-  const adimlar = tasarimAdimlari(p);
-
-  const satir = (ad, deger, sinif, neden) => `
-    <div class="coz-sat"><span>${esc(ad)}</span><u class="${sinif}">${esc(deger)}</u></div>
-    ${neden ? `<p class="coz-not">${esc(neden)}</p>` : ''}`;
-
-  const gecerli = adimlar.filter(a => a.alan).map(a => {
-    const k = kar[a.anahtar];
-    const y = yeniAlan.find(x => x.anahtar === a.anahtar);
-    const on = cozumOnerisi(p, a.anahtar);
-    return satir(a.ad, y ? 'yeni başlık' : (on ? on.oneri : '—'),
-      y ? 'yeni' : on ? '' : 'yok', (k && k.neden) || (on && on.neden) || '');
-  }).join('');
-
-  const elenen = Object.keys(kar).filter(x => kar[x].gerek === false).map(x => {
-    const al = TUM_TASARIM.find(a => a.anahtar === x);
-    return al ? satir(al.ad, 'gerekmiyor', 'yok', kar[x].neden) : '';
-  }).join('');
-
-  return `<div class="gd-kaydir">
-    <div class="coz">
-      <div class="coz-bas"><b>Bu projede geçerli</b><span class="coz-rz">Claude</span></div>
-      ${gecerli || '<p class="coz-not">Karar kalmadı.</p>'}
-    </div>
-    ${elenen ? `<div class="coz">
-      <div class="coz-bas"><b>Elenenler</b></div>
-      ${elenen}
-    </div>` : ''}
-  </div>`;
-}
-
-/* ---------- 04 · Sayfa tasarımları ---------- */
-function ihtiyacSayfaListesi(p) {
-  const c = (p.palet || {}).cozum || {};
-  const notlar = c.sayfalar || {};
-  const kunye = (p.palet || {}).kunye || {};
-
-  /* Künyedeki öbekler burada da geçerli: iki ekran aynı sırada okunsun. */
-  const sira = [], obek = {};
-  Object.keys(kunye).forEach(tam => {
-    const sf = tam.split(' · ').pop();
-    const g = ((kunye[tam] || {}).grup || '').trim() || 'Diğer';
-    if (!obek[g]) { obek[g] = []; sira.push(g); }
-    obek[g].push(sf);
-  });
-  /* Künye yoksa yalnız Claude'un yazdığı sayfalar listelensin. */
-  if (!sira.length) { sira.push('Sayfalar'); obek['Sayfalar'] = Object.keys(notlar); }
-  sira.sort((a, b) => (a === 'Diğer') - (b === 'Diğer'));
-
-  let no = 0;
-  const govde = sira.map(g => {
-    const kareler = obek[g].slice().sort((a, b) => a.localeCompare(b, 'tr')).map(sf => {
-      const n = notlar[sf];
-      no += 1;
-      const say = n ? (n.bilesenler || []).length : 0;
-      const gor = n ? (n.gorseller || []).length : 0;
-      const alt = !n ? 'not yok'
-        : [say ? say + ' bileşen' : '', gor ? gor + ' görsel' : ''].filter(Boolean).join(' · ')
-          || 'not var';
-      /* Notu olmayan sayfa açılmıyor: gösterilecek bir şey yok. */
-      return agacKare(String(no).padStart(2, '0'), n ? 'bitti' : 'eksik', sf, alt,
-        'ihtiyac-sayfa',
-        `data-proje="${p.id}" data-ad="${esc(sf)}"${n ? '' : ' disabled'}`);
-    }).join('');
-    return sayfaObekBasligi(g, obek[g].length) + `<div class="ya-satir">${kareler}</div>`;
-  }).join('');
-
-  return `<div class="gd-kaydir">${govde}</div>`;
-}
-
-/* ---------- 05 · Claude'un soruları ----------
-   Künyede yazmayan ama kod yazılırken karar gerektiren şeyler. Sihirbaz
-   gibi: bir soruyu cevaplayınca sıradaki kendiliğinden açılıyor. */
-function ihtiyacSorulari(p) {
-  const g = ihtiyacDurumu(p);
-  const cevaplar = (p.palet || {}).cevaplar || {};
-  if (!g.sorular.length) {
-    return `<div class="gd-kaydir">
-      <div class="bos-kutu">${svg(ICON.arama, 18)}
-        <span>Claude'un takıldığı bir şey olmamış — künye yeterince açık.</span></div>
-    </div>`;
-  }
-
-  return `<div class="gd-kaydir">
-    <div class="kaynak">${svg(ICON.arama, 13)}
-      <span><b>Bunları Claude sordu.</b> Künyede yazmayan ama kod yazılırken
-        karar gerektiren şeyler. Cevapladıkça her bloğa giriyor — ikinci kez
-        sorulmuyor.</span></div>
-    ${g.sorular.map((x, i) => {
-      const c = (cevaplar[x.soru] || '').trim();
-      return `
-        <button class="cs ${c ? 'bitti' : ''}" type="button"
-                data-eylem="ihtiyac-soru" data-proje="${p.id}" data-deger="${i}">
-          <span class="cs-no">${c ? svg(ICON.tik, 12) : i + 1}</span>
-          <span class="cs-yz">
-            <b>${esc(x.soru)}</b>
-            ${x.neden ? `<i>${esc(x.neden)}</i>` : ''}
-            ${c ? `<u>${esc(c)}</u>` : ''}
-          </span>
-          <span class="cs-ok">${svg(ICON.chevron, 13)}</span>
-        </button>`;
-    }).join('')}
-  </div>`;
-}
-
-/* Tek sorunun cevap penceresi. Seçenek varsa çip, yoksa metin; ikisi de
-   olabilir — Claude'un seçenekleri yetmezse kendi cümleni yazıyorsun. */
-function ihtiyacSoruAc(projeId, i) {
-  modalHepsiniKapat();
-  const p = DB.proje(projeId);
-  if (!p) return;
-  const pl = p.palet || {};
-  const sorular = ((pl.cozum || {}).sorular) || [];
-  const x = sorular[i];
-  if (!x) return;
-  const cevaplar = pl.cevaplar || {};
-  const su = (cevaplar[x.soru] || '').trim();
-
-  modalAc(`
-    ${modalBaslik(ICON.arama, 'Claude soruyor', x.neden || '')}
-    <p class="cs-soru">${esc(x.soru)}</p>
-    ${(x.secim || []).length ? `
-      <div class="ky-cipler">
-        ${x.secim.map(y => `
-          <button class="cip-sec ${su === y ? 'on' : ''}" type="button"
-                  data-sc="${esc(y)}">${esc(y)}</button>`).join('')}
-      </div>` : ''}
-    <label class="field">
-      <span>${(x.secim || []).length ? 'Ya da kendi cümlen' : 'Cevabın'}</span>
-      <textarea id="sr-metin" rows="3" spellcheck="false"
-        placeholder="Gündelik dille yaz — yazılımcıya değil, işi bilene anlatır gibi.">${
-          (x.secim || []).indexOf(su) > -1 ? '' : esc(su)}</textarea>
-    </label>
-    <div class="modal-alt">
-      <button class="btn btn-ghost" data-sr="iptal" type="button">Vazgeç</button>
-      <button class="btn btn-primary" data-sr="kaydet" type="button"><span>Kaydet</span></button>
-    </div>`, kutu => {
-    const alan = $('#sr-metin', kutu);
-    $$('[data-sc]', kutu).forEach(b => b.addEventListener('click', () => {
-      $$('[data-sc]', kutu).forEach(y => y.classList.toggle('on', y === b));
-      alan.value = '';
-    }));
-    alan.addEventListener('input', () => {
-      if (alan.value.trim()) $$('[data-sc]', kutu).forEach(y => y.classList.remove('on'));
-    });
-    if (!(x.secim || []).length) setTimeout(() => alan.focus(), 40);
-
-    $('[data-sr="iptal"]', kutu).addEventListener('click', modalKapat);
-    $('[data-sr="kaydet"]', kutu).addEventListener('click', async () => {
-      const cip = $('[data-sc].on', kutu);
-      const cevap = alan.value.trim() || (cip ? cip.dataset.sc : '');
-      const dugme = $('[data-sr="kaydet"] span', kutu);
-      dugme.textContent = 'Yazılıyor…';
-      const yeni = Object.assign({}, cevaplar);
-      if (cevap) yeni[x.soru] = cevap; else delete yeni[x.soru];
-      try {
-        await DB.paletKaydet(projeId, Object.assign({}, pl, { cevaplar: yeni }));
-        modalKapat();
-        /* Sihirbaz: cevaplanınca sıradaki cevapsız soru kendiliğinden açılsın. */
-        const sonraki = sorular.findIndex((y, j) => j > i && !(yeni[y.soru] || '').trim());
-        render();
-        if (cevap && sonraki > -1) setTimeout(() => ihtiyacSoruAc(projeId, sonraki), 220);
-        else if (cevap) toast('Bütün sorular cevaplandı.', 'basari');
-      } catch (h) { dugme.textContent = 'Kaydet'; toast(h.message, 'hata'); }
-    });
-  });
-}
-
-/* Bir sayfanın tasarım notu. */
-function ihtiyacSayfaNotu(p, sf) {
-  const n = (((p.palet || {}).cozum || {}).sayfalar || {})[sf];
-  if (!n) return `<div class="gd-kaydir">${ihtiyacBosKutu()}</div>`;
-
-  return `<div class="gd-kaydir">
-    <div class="tn">
-      <div class="tn-bas"><b>Yerleşim</b><span class="tn-rz">Claude</span></div>
-      <p>${esc(n.yerlesim || 'Yerleşim notu verilmedi.')}</p>
-      ${(n.bilesenler || []).length ? `
-        <span class="tn-et">Bileşenler</span>
-        <div class="tn-cip">${n.bilesenler.map(x => `<span>${esc(x)}</span>`).join('')}</div>` : ''}
-      ${(n.gorseller || []).length ? `
-        <span class="tn-et">Gereken görsel</span>
-        ${n.gorseller.map(gg => `
-          <div class="tn-g">${svg(ICON.resim, 13)}
-            <span><b>${esc(gg.yer)}</b><i>${esc(gg.ne)}</i></span></div>`).join('')}` : ''}
-    </div>
-    ${n.not ? `<div class="tn"><div class="tn-bas"><b>Not</b></div>
-      <p>${esc(n.not)}</p></div>` : ''}
-  </div>`;
-}
-
-/* Alt ekranların ortak başlığı — kareler ekranıyla aynı kart, yol izi uzuyor. */
-function ihtiyacAltBaslik(p, ad, sag, saget) {
-  const d = DURAKLAR.tasarim;
-  return `
-    <div class="adim-serit" style="--kr:${d.renk}">
-      <div class="bs2 ince">
-        <button class="bs2-ik" type="button" title="Adaya dön"
-                data-eylem="ihtiyac-geri" data-proje="${p.id}">
-          ${svg(ICON.arama, 19)}</button>
-        <span class="bs2-yz">
-          <span class="bs2-firma"><span class="bs2-ad2">İHTİYAÇ ÇÖZÜMLEMESİ</span></span>
-          <span class="bs2-ad">${esc(ad)}</span>
-        </span>
-        <span class="bs2-sag"><b class="mono">${esc(String(sag))}</b><i>${esc(saget)}</i></span>
-      </div>
-      <div class="as-alt">
-        <span class="as-yol">
-          <button class="yi" type="button" data-eylem="tasarim-adim"
-                  data-proje="${p.id}" data-deger="-2">Harita</button>
-          <s>›</s>
-          <button class="yi" type="button" data-eylem="ihtiyac-geri"
-                  data-proje="${p.id}">İhtiyaç</button>
-          <s>›</s>
-          <button class="yi son" type="button" disabled>${esc(ad)}</button>
-        </span>
-      </div>
-    </div>`;
-}
-
-/* İhtiyaç adasının kabuğu: hangi alt ekrandaysak onu çiziyor. Alt ekranların
-   kendi alt düğmesi yok — ada karelerine dönmek yol izinden ve karodan. */
-function ihtiyacEkrani(p) {
-  const nerede = IHTIYAC_EKRAN[p.id] || null;
-  const g = ihtiyacDurumu(p);
-
-  if (nerede === 'kararlar') {
-    return `<div class="akis gorsel">
-      ${ihtiyacAltBaslik(p, 'Kararlar', g.kalan, 'karar')}
-      <div class="akis-alt">${ihtiyacKararEkrani(p)}</div>
-    </div>`;
-  }
-  if (nerede === 'sorular') {
-    return `<div class="akis gorsel">
-      ${ihtiyacAltBaslik(p, 'Claude\'un soruları',
-        g.cevapli + '/' + g.sorular.length, 'soru')}
-      <div class="akis-alt">${ihtiyacSorulari(p)}</div>
-    </div>`;
-  }
-  if (nerede === 'sayfalar') {
-    return `<div class="akis gorsel">
-      ${ihtiyacAltBaslik(p, 'Sayfa tasarımları', g.sayfa, 'sayfa')}
-      <div class="akis-alt">${ihtiyacSayfaListesi(p)}</div>
-    </div>`;
-  }
-  if (nerede && nerede.slice(0, 6) === 'sayfa:') {
-    const sf = nerede.slice(6);
-    return `<div class="akis gorsel">
-      ${ihtiyacAltBaslik(p, sf, '01', 'sayfa')}
-      <div class="akis-alt">${ihtiyacSayfaNotu(p, sf)}</div>
-    </div>`;
-  }
-
-  const biten = g.adimlar.filter(a => a.bitti).length;
-  return `<div class="akis gorsel">
-    ${ihtiyacBasligi(p, biten, g.adimlar.length, g.simdi)}
-    <div class="akis-alt">${ihtiyacGovdesi(p)}</div>
-    ${adimGezinme(p, adimNo(p), tasarimAdimlari(p)[adimNo(p)])}
   </div>`;
 }
 
@@ -1857,7 +1435,6 @@ function adimSeridi(p, no, adim) {
   const suObek  = obekler.findIndex(o => o.satir.includes(no));
   const obek    = obekler[suObek] || { satir: [no] };
   const yer     = obek.satir.indexOf(no);
-  const ozet    = adim.tur === 'ozet';
   const d       = DURAKLAR.tasarim;
 
   return `
@@ -1871,9 +1448,8 @@ function adimSeridi(p, no, adim) {
           <span class="bs2-ad">${esc(adim.obek)}</span>
         </span>
         <span class="bs2-sag">
-          <b class="mono">${ozet ? adimlar.filter(a => a.alan).length
-            : String(yer + 1).padStart(2, '0') + '/' + String(obek.satir.length).padStart(2, '0')}</b>
-          <i>karar</i>
+          <b class="mono">${String(yer + 1).padStart(2, '0') + '/' + String(obek.satir.length).padStart(2, '0')}</b>
+          <i>adım</i>
         </span>
       </div>
       <div class="as-alt">
@@ -1883,12 +1459,6 @@ function adimSeridi(p, no, adim) {
           <s>›</s>
           <button class="yi son" type="button" disabled>${esc(adim.obek)}</button>
         </span>
-        ${yeniler.length && !yeniler.includes(adim.anahtar) ? `
-          <button class="as-yeni" type="button" data-eylem="yeni-karar-git"
-                  data-proje="${p.id}"
-                  title="Sonradan eklenen kararlara git">${yeniler.length} yeni</button>` : ''}
-        <button class="ab-kararlar" type="button" data-eylem="kararlar" data-proje="${p.id}"
-                title="Verilen bütün kararlar">${svg(ICON.katman, 14)}</button>
       </div>
       ${obek.satir.length < 2 ? '' : `
       <div class="as-noktalar">${obek.satir.map(i => `
@@ -1925,9 +1495,6 @@ function adimGezinme(p, no, adim) {
     const gd = gorselAdaDurumu(p);
     sonuk = gd.tam ? ' tam' : ' sonuk';
   }
-  if (adim.tur === 'ihtiyac') {
-    sonuk = ihtiyacDurumu(p).tam ? ' tam' : ' sonuk';
-  }
   if (YENI_KIP[p.id] && !son) {
     const kalan = yeniKararlar(p.palet).filter(a => a.anahtar !== adim.anahtar);
     const sira  = kalan.length
@@ -1950,38 +1517,6 @@ function adimGezinme(p, no, adim) {
               data-eylem="tasarim-adim" data-proje="${p.id}" data-deger="${hedef}">
         ${yazi} ${svg(ICON.chevron, 14)}</button>
     </div>`;
-}
-
-/* Tek başlığın rafı. */
-function adimRafi(p, a) {
-  const secili = bicimSecim(p.palet, a);
-  /* Claude'un önerisi seçim yerine geçmiyor: rozet çıkıyor, gerekçe altta
-     duruyor, ilerlemek için kullanıcı dokunuyor. Yanıldığında akış onun
-     kararıyla sürmesin. */
-  const on = cozumOnerisi(p, a.anahtar);
-  return `<div class="raf" data-coklu="${a.coklu ? 1 : 0}">
-    ${a.bos ? '' : `
-      <button class="bsc sifir" type="button"
-              data-eylem="tasarim-sifirla" data-proje="${p.id}" data-alan="${a.anahtar}"
-              ${AUTH.yonetici && !bicimAyni(secili, a) ? '' : 'disabled'}
-              title="${esc(a.ad)} başlığını ${esc(a.varsayilan)} hâline döndürür">
-        <span class="bon"><span class="on-sifir">${svg(ICON.geriAl, 20)}</span></span>
-        <span class="bsc-ad">Sıfırla</span>
-      </button>`}
-    ${a.secim.map(x => `
-      <button class="bsc ${secili.includes(x.ad) ? 'on'
-              : on && on.oneri === x.ad ? 'oner' : ''}" type="button"
-              data-eylem="tasarim-sec" data-proje="${p.id}"
-              data-alan="${a.anahtar}" data-deger="${esc(x.ad)}"
-              ${AUTH.yonetici ? '' : 'disabled'} title="${esc(x.tarif)}">
-        ${on && on.oneri === x.ad && !secili.includes(x.ad)
-          ? '<span class="bsc-rz">öneri</span>' : ''}
-        <span class="bon">${tasarimOnizleme(a.anahtar, x.ad)}</span>
-        <span class="bsc-ad">${esc(x.ad)}</span>
-      </button>`).join('')}
-  </div>
-  ${on && on.neden ? `<div class="oner-not">${svg(ICON.arama, 13)}
-    <span><b>Claude:</b> ${esc(on.neden)}</span></div>` : ''}`;
 }
 
 /* ==========================================================================
@@ -2328,142 +1863,14 @@ function tarifSeridi(p) {
   </div>`;
 }
 
-/* Son adım: bütün kararlar tek listede. */
+/* Son adım: Görsel dünya tarifinin özeti ve son blok. Sayfa listesi, içe
+   aktarma, genişlik, silme onayı, yedek ekranı gibi eskiden burada listelenen
+   kararlar artık Nizam Standardı'nda sabit — burada gösterecek bir şey kalmadı. */
 function tasarimOzeti(p) {
-  const pl = p.palet || {};
-  return tasarimGruplari(p).map(g => bolumBas(g.ad) + `
-    <div class="satirlar">${g.alanlar.map(a => {
-      const d = bicimSecim(pl, a);
-      return `<div class="sr">${esc(a.ad)} <b>${d.length ? esc(d.join(' + ')) : '—'}</b></div>`;
-    }).join('')}</div>`).join('')
-    + celiskiKutusu(p)
-    + (AUTH.yonetici ? `
-      ${promptBaglantisi({ tur: 'tasarim', proje: p.id, slug: depoSlug(p.repo),
-        yazi: '2. blok — kopyala ve Claude Code\'da aç' })}
-      <button class="tumSifir" type="button" data-eylem="tasarim-tum-sifirla" data-proje="${p.id}">
-        ${svg(ICON.geriAl, 15)} Tüm tasarımı sıfırla</button>` : '');
-}
-
-/* Özet adımında çelişki denetimi. Kararları elle verdiğimiz için
-   birbirini iptal eden ikilileri burada yakalıyoruz. */
-function celiskiKutusu(p) {
-  const pl = p.palet || {};
-  const bulunan = [];
-
-  CELISKI.forEach(([[a1, d1], [a2, d2], neden]) => {
-    const b1 = tasarimAlani(p, a1);
-    const b2 = tasarimAlani(p, a2);
-    if (!b1 || !b2) return;
-    if (bicimSecim(pl, b1).includes(d1) && bicimSecim(pl, b2).includes(d2)) {
-      const i1 = tasarimAdimlari(p).findIndex(x => x.anahtar === a1);
-      bulunan.push([`${b1.ad}: ${d1} + ${b2.ad}: ${d2}`, neden, i1]);
-    }
-  });
-
-  /* Yalnız mobil bir projede masaüstü kararı seçilmişse söyle. Seçenek
-     Studio'nun kendi listesinden geldi; uyarısı da Studio'dan gelmeli. */
-  const masaustu = [];
-  if (p.platform === 'mobil') {
-    tasarimAlanlari(p).forEach(a => {
-      const secili = bicimSecim(pl, a);
-      if (a.masaustu && secili.length) {
-        masaustu.push([a.ad + ': ' + secili.join(' + '),
-          'Bu proje yalnız mobil; masaüstü kararının karşılığı yok.',
-          tasarimAdimlari(p).findIndex(x => x.anahtar === a.anahtar)]);
-        return;
-      }
-      (a.secim || []).forEach(sc => {
-        if (sc.masaustu && secili.includes(sc.ad)) {
-          masaustu.push([a.ad + ': ' + sc.ad,
-            'Bu proje yalnız mobil; masaüstü kararının karşılığı yok.',
-            tasarimAdimlari(p).findIndex(x => x.anahtar === a.anahtar)]);
-        }
-      });
-    });
-  }
-  bulunan.push(...masaustu);
-
-  if (!bulunan.length) {
-    return `<div class="adim-not iyi">${svg(ICON.check, 13)}
-      <span>Çelişen karar yok.</span></div>`;
-  }
-
-  return `<div class="celiski">
-    <b>${svg(ICON.uyari, 14)} ${bulunan.length} uyarı</b>
-    ${bulunan.map(([bas, neden, i]) => `
-      <button type="button" data-eylem="tasarim-adim" data-proje="${p.id}" data-deger="${i}">
-        <span>${esc(bas)}</span><i>${esc(neden)}</i></button>`).join('')}
-  </div>`;
-}
-
-/* Adımın kendi ekranını gösteren önizleme. Seçim yapınca anında değişir. */
-function onizlemeSatiri(p, adim) {
-  ONIZLEME_EKRAN = adim.ekran;
-  if (ONIZLEME_ADIM !== adim.anahtar) {
-    ONIZLEME_ADIM = adim.anahtar;
-    ONIZLEME_CIHAZ = adim.cihaz || 'web';
-  }
-  return `
-    <div class="onz-satir"><div class="onz-goz">${onizlemeIc(p, p.palet)}</div></div>`;
-}
-
-/* Verdiğin bütün kararlar, adımdan çıkmadan. Satıra dokunursan o adıma gider. */
-function kararlarAc(projeId) {
-  const p = DB.proje(projeId);
-  if (!p) return;
-  const pl = p.palet || {};
-
-  /* Öbek öbek: her satır bir karar, dokununca o adıma gider. */
-  const adimlar = tasarimAdimlari(p);
-  const obekler = obekleriKur(p, true);
-
-  const govde = obekler.map(o => `
-    <div class="kr-obek">
-      <span class="kr-obek-ad">${esc(o.ad)}</span>
-      ${o.satir.map(i => {
-        const adim = adimlar[i];
-        const d = bicimSecim(pl, adim.alan);
-        return `<button class="kr-sat" type="button" data-kr="${i}">
-          <span>${esc(adim.ad)}</span>
-          <u>${d.length ? esc(d.join(' + ')) : '—'}</u>
-        </button>`;
-      }).join('')}
-    </div>`).join('');
-
-  const el = document.createElement('div');
-  el.id = 'kararlar';
-  el.className = 'onz krp';
-  el.innerHTML = `
-    <div class="onz-tepe">
-      <button class="sh-kapat" type="button" data-kr="kapat">${svg(ICON.kapat, 15)}</button>
-      <span class="onz-ad">Kararlar<u>${adimlar.filter(a => a.alan).length} başlık · ${esc(projeAdi(p))}</u></span>
-    </div>
-    <div class="kr-govde">${govde}</div>`;
-
-  document.body.appendChild(el);
-  document.addEventListener('keydown', kararlarKac);
-  requestAnimationFrame(() => el.classList.add('acik'));
-
-  el.addEventListener('click', ev => {
-    const b = ev.target.closest('[data-kr]');
-    if (!b) return;
-    const d = b.dataset.kr;
-    kararlarKapat();
-    if (d === 'kapat') return;
-    TASARIM_YER[p.id] = Number(d);
-    render();
-    $('#view').scrollTop = 0;
-  });
-}
-
-function kararlarKac(ev) { if (ev.key === 'Escape') kararlarKapat(); }
-
-function kararlarKapat() {
-  const el = $('#kararlar');
-  if (!el) return;
-  document.removeEventListener('keydown', kararlarKac);
-  el.classList.remove('acik');
-  setTimeout(() => el.remove(), 240);
+  return AUTH.yonetici
+    ? promptBaglantisi({ tur: 'tasarim', proje: p.id, slug: depoSlug(p.repo),
+        yazi: '2. blok — kopyala ve Claude Code\'da aç' })
+    : '';
 }
 
 /* ---------- Önizleme: seçimlerin bir arada nasıl durduğu ----------
@@ -2648,12 +2055,10 @@ function onizlemeIc(p, pl) {
   const r = k => pl[k] || varsayilan[k];
   const vurgu = pl.vurgu || (PROJE_RENK[p.renk] || PROJE_RENK.metal)[0];
 
-  const bic0 = {};
-  tasarimAlanlari(p).forEach(a => { bic0[a.anahtar] = bicimSecim(pl, a); });
-  /* Görünüşe dair kararların çoğu kalktı — onlara artık ChatGPT'nin tarifi
-     karar veriyor. Önizleme künye ekranında hâlâ kullanılıyor; olmayan bir
-     başlık sorulunca boş dizi dönüp aşağıdaki varsayılana düşsün. */
-  const bic = new Proxy(bic0, { get: (t, k) => (k in t ? t[k] : []) });
+  /* Görünüşe dair kararlar artık tasarım durağında sorulmuyor — onlara
+     ChatGPT'nin tarifi karar veriyor. Önizleme künye ekranında hâlâ
+     kullanılıyor; her başlık boş dizi dönüp aşağıdaki varsayılana düşsün. */
+  const bic = new Proxy({}, { get: () => [] });
 
   const koseler = {
     'Keskin': ['0', '0'], 'Hafif': ['6px', '6px'], 'Yuvarlak': ['14px', '12px'],
@@ -3365,15 +2770,6 @@ function onizlemeTazele(p, pl) {
   onizlemeSigdir();
 }
 
-/* ---------- Arayüz biçimi: görselli seçim rafları ----------
-   Her seçenek gerçek bir küçük çizim. Yazıyı okuyup hayal etmek gerekmez.
-   Çoklu alanlarda birkaçı birden seçilebilir; en az biri hep açık kalır. */
-
-/* Seçim varsayılanla aynı mı? Aynıysa sıfırlanacak bir şey yok. */
-function bicimAyni(secili, alan) {
-  return secili.length === 1 && secili[0] === alan.varsayilan;
-}
-
 /* ---- Tel çizim: yerleşim ve durum seçeneklerinin küçük iskeleti ----
    Yüzey çizimleriyle karışmasın diye bilerek başka bir dil: kutu değil,
    ekranın planı. Her seçenek config'te bir parça listesi veriyor. */
@@ -3542,137 +2938,6 @@ function telCizim(parcalar) {
     }
   });
   return `<span class="tel-wf">${akis.join('')}${ustu.join('')}</span>`;
-}
-
-function tasarimOnizleme(alan, ad) {
-  /* Yerleşim ve durum seçenekleri tel çizimle anlatılır. */
-  const bilgi = TUM_TASARIM.find(a => a.anahtar === alan);
-  const sec = bilgi && bilgi.secim.find(x => x.ad === ad);
-  if (sec && sec.tel) return telCizim(sec.tel);
-
-  /* "…ekle" başlıkları ana başlığın çizim dilini kullanır. */
-  alan = { kartek: 'kart', tabloek: 'tablo', dugmeek: 'dugme' }[alan] || alan;
-
-  const satirlar = '<i class="ln b o"></i><i class="ln u"></i><i class="ln k"></i>';
-
-  if (alan === 'kart') {
-    const sinif = {
-      'Düz': 'duz', 'Yükseltilmiş': 'yuksek', 'Çizgili': 'cizgi', 'Buzlu cam': 'cam',
-      'Şerit vurgu': 'serit', 'Kağıt': 'kagit', 'Oyulmuş': 'oyuk', 'Işıklı kenar': 'isik',
-      'Degrade': 'degrade', 'Dokulu': 'doku',
-    }[ad];
-    return `<span class="on-kart k-${sinif}">${satirlar}</span>`;
-  }
-
-  if (alan === 'kose') {
-    const b = {
-      'Keskin':   'border-radius:0',
-      'Hafif':    'border-radius:5px',
-      'Yuvarlak': 'border-radius:12px',
-      'Hap':      'border-radius:999px',
-      'Kesik':    'clip-path:polygon(13px 0,100% 0,100% calc(100% - 13px),calc(100% - 13px) 100%,0 100%,0 13px)',
-      'Yaprak':   'border-radius:16px 0 16px 0',
-      'Kaş':      'border-radius:13px 13px 0 0',
-    }[ad];
-    return `<span class="on-kose" style="${b}"></span>`;
-  }
-
-  if (alan === 'yogunluk') {
-    if (ad === 'Karma') {
-      return `<span class="on-yog karma">
-        <em style="gap:3px"><i></i><i></i><i></i></em>
-        <em style="gap:9px"><i></i><i></i></em></span>`;
-    }
-    if (ad === 'Nefesli') {
-      return `<span class="on-yog" style="gap:13px">
-        <em style="gap:3px"><i></i><i></i></em>
-        <em style="gap:3px"><i></i><i></i></em></span>`;
-    }
-    if (ad === 'Kart dizisi') return `<span class="on-kd">${'<i><u></u></i>'.repeat(3)}</span>`;
-    const [say, ara] = { 'Sıkışık': [5, 3], 'Normal': [4, 7], 'Ferah': [3, 12] }[ad];
-    return `<span class="on-yog" style="gap:${ara}px">${'<i></i>'.repeat(say)}</span>`;
-  }
-
-  if (alan === 'tablo') {
-    const h3 = '<i></i><i></i><i></i>';
-    if (ad === 'Kartlı satır') return `<span class="on-tb kartli">${
-      `<u class="r">${h3}</u>`.repeat(4)}</span>`;
-    if (ad === 'Gruplu') return `<span class="on-tb gruplu">
-      <u class="g"><i></i></u><u class="r">${h3}</u><u class="r">${h3}</u>
-      <u class="g"><i></i></u><u class="r">${h3}</u></span>`;
-    if (ad === 'Rakam hizalı') {
-      const r = '<i></i><i></i><i class="rakam"></i>';
-      return `<span class="on-tb t-yatay"><u class="h">${r}</u>${
-        `<u class="r">${r}</u>`.repeat(4)}</span>`;
-    }
-    if (ad === 'Vurgulu sütun') {
-      const r = '<i class="ilk"></i><i></i><i></i>';
-      return `<span class="on-tb t-yatay vurgulu"><u class="h">${r}</u>${
-        `<u class="r">${r}</u>`.repeat(4)}</span>`;
-    }
-    const sinif = { 'Çizgisiz': '', 'Zebra': 't-zebra',
-                    'Yatay çizgi': 't-yatay', 'Tam ızgara': 't-izgara' }[ad];
-    return `<span class="on-tb ${sinif}"><u class="h">${h3}</u>${
-      `<u class="r">${h3}</u>`.repeat(4)}</span>`;
-  }
-
-  if (alan === 'tablomobil') {
-    if (ad === 'Karta dönüş') return `<span class="on-mk">${'<i></i>'.repeat(4)}</span>`;
-    if (ad === 'Yana kaydır') {
-      const h4 = '<i></i><i></i><i></i><i></i>';
-      return `<span class="on-tb t-yatay tasan"><u class="h">${h4}</u>${
-        `<u class="r">${h4}</u>`.repeat(4)}</span>`;
-    }
-    if (ad === 'Sütun gizle') {
-      const r = '<i></i><i class="dar"></i>';
-      return `<span class="on-tb t-yatay"><u class="h">${r}</u>${
-        `<u class="r">${r}</u>`.repeat(4)}</span>`;
-    }
-    if (ad === 'Aç-kapa satır') {
-      return `<span class="on-ak"><i></i><i></i><u></u><i></i></span>`;
-    }
-    if (ad === 'İki satır') {
-      return `<span class="on-is">${'<em><i></i><b></b></em>'.repeat(3)}</span>`;
-    }
-    return `<span class="on-te"><i></i><u></u><i></i></span>`;
-  }
-
-  if (alan === 'dugme') {
-    if (ad === 'İkonlu') {
-      return `<span class="on-dg"><em class="d-dolu ikonlu">
-        <svg viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg>Kaydet</em></span>`;
-    }
-    const sinif = { 'Dolu': 'd-dolu', 'Çizgili': 'd-cizgi', 'Yumuşak': 'd-yumusak',
-                    'Gölgeli': 'd-golge', 'Degrade': 'd-degrade', 'Yazı': 'd-yazi' }[ad];
-    return `<span class="on-dg"><em class="${sinif}">Kaydet</em></span>`;
-  }
-
-  /* Claude'un açtığı başlığın çizimi yok: Studio o seçeneğin nasıl göründüğünü
-     bilmiyor, uydurmuyor da. Seçeneğin adı okunsun diye sade bir yaprak. */
-  if (String(alan).slice(0, 2) === 'x_') {
-    return `<span class="on-serbest"><i></i><i></i><i></i></span>`;
-  }
-
-  /* simge — üç örnek: ev, kişi, arama. Dolu set kendi kapalı biçimlerini
-     kullanır; kontur biçimini doldurmak çirkin sonuç veriyor. */
-  const sinif = { 'Çizgi': 'cizgi', 'Dolu': 'dolu', 'İki katman': 'katman',
-                  'Kalın çizgi': 'kalin', 'Zeminli': 'zemin', 'Elle çizim': 'elle' }[ad];
-  const kontur = [
-    '<path d="M3 10.5 12 4l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/>',
-    '<circle cx="12" cy="8" r="3.5"/><path d="M4.5 20c1-4 4-5.6 7.5-5.6S18.5 16 19.5 20"/>',
-    '<circle cx="11" cy="11" r="6.4"/><path d="M16 16l4.5 4.5"/>',
-  ];
-  const dolgulu = [
-    '<path d="M3 10.5 12 4l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/>',
-    '<circle cx="12" cy="8" r="4"/><path d="M4 20.6c.8-4.5 4-6.4 8-6.4s7.2 1.9 8 6.4z"/>',
-    '<path fill-rule="evenodd" d="M11 3.6a7.4 7.4 0 1 0 4.3 13.4l3.4 3.4a1.5 1.5 0 0 0 2.1-2.1l-3.4-3.4A7.4 7.4 0 0 0 11 3.6zm0 3a4.4 4.4 0 1 1 0 8.8 4.4 4.4 0 0 1 0-8.8z"/>',
-  ];
-  /* Elle çizim: aynı yollar, hafifçe eğik. Titreklik oradan geliyor. */
-  const egim = ['rotate(-6 12 12)', 'rotate(4 12 12)', 'rotate(-3 12 12)'];
-  const yol = (sinif === 'dolu' ? dolgulu : kontur).map((d, i) =>
-    `<svg viewBox="0 0 24 24">${sinif === 'elle' ? `<g transform="${egim[i]}">${d}</g>` : d}</svg>`
-  ).join('');
-  return `<span class="on-sm sm-${sinif}">${yol}</span>`;
 }
 
 /* 4 · Yapıyı kurma */
@@ -6062,7 +5327,6 @@ function render() {
      yarım kalan adımın içine değil, haritanın başına düşülsün. */
   if (sayfa !== 'tasarim') {
     Object.keys(TASARIM_MOD).forEach(k => { delete TASARIM_MOD[k]; });
-    Object.keys(IHTIYAC_EKRAN).forEach(k => { delete IHTIYAC_EKRAN[k]; });
   }
   /* Kurulum durağından çıkıldıysa modül ağacı kapanır — aynı sebeple:
      geri gelindiğinde ağacın içine değil kurulum ızgarasına düşülsün.
@@ -8859,7 +8123,6 @@ function uygulamayiDene(ad) {
 /* Hangi düğme hangi promptu üretir. */
 const PANO_PROMPT = {
   tanisma:       p => PROMPT.tanisma(p.id),
-  ihtiyac:        p => PROMPT.ihtiyac(p.id),
   gorselDil:      p => PROMPT.gorselDil(p.id),
   tasarim:       p => PROMPT.tasarim(p.id),
   cozumleme:     p => PROMPT.cozumleme(p, yapiTaslak(p)),
@@ -9019,125 +8282,6 @@ function gorselSecVeYukle(projeId, no, ad) {
   });
 
   alan.click();
-}
-
-/* Tarifi yapıştır — önizlemede kaç yuva çıktığını gösterir. */
-/* Promptu vermek tek düğmelik iş: kopyala ve Claude Code'da aç. Ayrı bir
-   pencere açmak yerine kartın kendisi bunu yapıyor — ama kare karta
-   `data-pano` koyamıyoruz (kart zaten bir eylem taşıyor), o yüzden küçük
-   bir pencere ile soruyoruz. */
-function ihtiyacPromptu(projeId) {
-  modalHepsiniKapat();
-  const p = DB.proje(projeId);
-  if (!p) return;
-  const kunye = Object.keys((p.palet || {}).kunye || {}).length;
-
-  modalAc(`
-    ${modalBaslik(ICON.arama, 'İhtiyaç promptu',
-      'Claude künyeye bakıp hangi kararların bu projede gerektiğini söyleyecek, '
-      + 'sayfa sayfa yerleşim notu verecek.')}
-    ${kunye ? `<div class="note">${svg(ICON.katman, 15)}
-        <span><b>${kunye} sayfanın künyesi</b> promptun içinde gidiyor.
-        Claude ekranı tahmin etmiyor.</span></div>`
-      : `<div class="note uyari">${svg(ICON.uyari, 15)}
-        <span>Künye yok — Kurulum ve yapı aşaması tamamlanmamış. Çözümleme
-        yüzeysel kalır; önce modülü kurmanı öneririm.</span></div>`}
-    <div class="kur-dug">
-      ${promptBaglantisi({ tur: 'ihtiyac', proje: p.id, slug: depoSlug(p.repo),
-        yazi: 'Kopyala ve Claude Code\'da aç' })}
-    </div>
-    <div class="modal-alt">
-      <button class="btn btn-ghost" data-ip="kapat" type="button">Kapat</button>
-    </div>`, kutu => {
-    $('[data-ip="kapat"]', kutu).addEventListener('click', modalKapat);
-    /* Bağlantıya basılınca pencere kapansın: kullanıcı zaten sekme değiştirdi. */
-    const bag = $('[data-pano]', kutu);
-    if (bag) bag.addEventListener('click', () => setTimeout(modalKapat, 400));
-  });
-}
-
-/* Dönen bloğu okuyup palete yazar. Okuma başarısızsa hiçbir şey yazılmıyor:
-   yarım çözümleme, çözümlemesizlikten kötü. */
-function ihtiyacAktar(projeId) {
-  modalHepsiniKapat();
-  const p = DB.proje(projeId);
-  if (!p) return;
-  const pl = p.palet || {};
-
-  modalAc(`
-    ${modalBaslik(ICON.ice, 'Çözümlemeyi yapıştır',
-      'Claude\'un verdiği bloğu olduğu gibi bırak. Kıvrık tırnak ve eksik '
-      + 'parantez toparlanıyor.')}
-    <label class="field">
-      <span>Yapıştır</span>
-      <textarea id="ic-metin" rows="11" spellcheck="false"
-        placeholder='{ "kararlar": [ … ], "yeni": [ … ], "sayfalar": [ … ] }'></textarea>
-    </label>
-    <div id="ic-onizleme"></div>
-    <div class="modal-alt">
-      <button class="btn btn-ghost" data-ic="iptal" type="button">Vazgeç</button>
-      <button class="btn btn-primary" data-ic="kaydet" type="button" disabled><span>Aktar</span></button>
-    </div>`, kutu => {
-    const alan  = $('#ic-metin', kutu);
-    const on    = $('#ic-onizleme', kutu);
-    const dugme = $('[data-ic="kaydet"]', kutu);
-    let cozum = null;
-
-    const tazele = () => {
-      if (!alan.value.trim()) { on.innerHTML = ''; dugme.disabled = true; return; }
-      cozum = ihtiyacOku(alan.value);
-      dugme.disabled = !cozum;
-      if (!cozum) {
-        on.innerHTML = `<div class="note uyari">${svg(ICON.uyari, 15)}
-          <span>Blok okunamadı. <b>{</b> ile başlayıp <b>}</b> ile biten
-          JSON bekleniyor; Claude\'un verdiği bloğun tamamını al.</span></div>`;
-        return;
-      }
-      const kar = Object.keys(cozum.kararlar);
-      const elenen = kar.filter(k => cozum.kararlar[k].gerek === false).length;
-      on.innerHTML = `<span class="label">Okunan</span>
-        <div class="card"><div class="row-list">
-          <div class="row"><div class="row-main">
-            <span class="row-title">Karar</span></div>
-            <span class="row-val">${kar.length - elenen} geçerli · ${elenen} elendi</span></div>
-          <div class="row"><div class="row-main">
-            <span class="row-title">Claude\'un açtığı başlık</span></div>
-            <span class="row-val">${cozum.yeni.length}</span></div>
-          <div class="row"><div class="row-main">
-            <span class="row-title">Sayfa notu</span></div>
-            <span class="row-val">${Object.keys(cozum.sayfalar).length}</span></div>
-          <div class="row"><div class="row-main">
-            <span class="row-title">Gereken simge</span></div>
-            <span class="row-val">${cozum.simgeler.length || '—'}</span></div>
-          <div class="row"><div class="row-main">
-            <span class="row-title">Claude'un sorusu</span></div>
-            <span class="row-val">${cozum.sorular.length || '—'}</span></div>
-        </div></div>`;
-    };
-
-    alan.addEventListener('input', tazele);
-    setTimeout(() => alan.focus(), 40);
-
-    $('[data-ic="iptal"]', kutu).addEventListener('click', modalKapat);
-    dugme.addEventListener('click', async () => {
-      if (!cozum) return;
-      const yazi = $('[data-ic="kaydet"] span', kutu);
-      yazi.textContent = 'Yazılıyor…';
-      dugme.disabled = true;
-      try {
-        await DB.paletKaydet(projeId,
-          Object.assign({}, pl, { cozum, cozumIstendi: true }));
-        modalKapat();
-        toast('Çözümleme alındı — ' + Object.keys(cozum.sayfalar).length
-          + ' sayfa notu.', 'basari');
-        render();
-      } catch (h) {
-        yazi.textContent = 'Aktar';
-        dugme.disabled = false;
-        toast(h.message, 'hata');
-      }
-    });
-  });
 }
 
 /* Görsel dil bloğu. Renk zorunlu; gerisi eksik gelebilir. */
@@ -9528,84 +8672,6 @@ function cozumlemeOku(metin) {
     hazirVeri: Array.isArray(o.hazirVeri) ? o.hazirVeri.filter(x => x && x.kaynak) : [],
     ciktilar: Array.isArray(o.ciktilar) ? o.ciktilar.filter(x => x && x.ad) : [],
   };
-}
-
-/* ---------- İhtiyaç çözümlemesi okuma ----------
-   Claude üç bölüm döndürüyor: hangi karar gerekli, açtığı yeni başlıklar,
-   sayfa sayfa tasarım notu. Üçü de eksik gelebilir; blok en az birini
-   taşıyorsa okunmuş sayılıyor. */
-function ihtiyacOku(metin) {
-  const o = jsonBlokOku(metin, x =>
-    Array.isArray(x.kararlar) || Array.isArray(x.yeni) || Array.isArray(x.sayfalar));
-  if (!o) return null;
-
-  const kis = (v, n) => String(v == null ? '' : v).trim().slice(0, n);
-
-  const kararlar = {};
-  (Array.isArray(o.kararlar) ? o.kararlar : []).forEach(k => {
-    if (!k || !k.anahtar) return;
-    const anahtar = kis(k.anahtar, 40);
-    /* Uydurma anahtar yazmışsa yok sayılıyor: olmayan bir başlığı elemek
-       ya da ona öneri vermek sessiz bir hata olurdu. */
-    if (!TUM_TASARIM.some(a => a.anahtar === anahtar)) return;
-    kararlar[anahtar] = {
-      gerek: k.gerek !== false,
-      oneri: kis(k.oneri, 60),
-      neden: kis(k.neden, 300),
-    };
-  });
-
-  const yeni = (Array.isArray(o.yeni) ? o.yeni : []).map(y => {
-    if (!y || !y.ad || !Array.isArray(y.secim)) return null;
-    const secim = y.secim.filter(x => x && x.ad)
-      .slice(0, 6)
-      .map(x => ({ ad: kis(x.ad, 40), tarif: kis(x.tarif, 200) }));
-    if (secim.length < 2) return null;
-    return {
-      obek: kis(y.obek, 30), ad: kis(y.ad, 40), soru: kis(y.soru, 140),
-      secim, oneri: kis(y.oneri, 40), neden: kis(y.neden, 300),
-    };
-  }).filter(Boolean).slice(0, 8);
-
-  const sayfalar = {};
-  (Array.isArray(o.sayfalar) ? o.sayfalar : []).forEach(sf => {
-    if (!sf || !sf.sayfa) return;
-    const gorseller = (Array.isArray(sf.gorseller) ? sf.gorseller : [])
-      .filter(g => g && (g.yer || g.ne)).slice(0, 4)
-      .map(g => ({ yer: kis(g.yer, 40) || 'Sayfada', ne: kis(g.ne, 240) }));
-    const bilesenler = (Array.isArray(sf.bilesenler) ? sf.bilesenler : [])
-      .filter(Boolean).slice(0, 10).map(x => kis(x, 40));
-    const kayit = {
-      yerlesim: kis(sf.yerlesim, 600), bilesenler, gorseller, not: kis(sf.not, 400),
-    };
-    if (!kayit.yerlesim && !bilesenler.length && !gorseller.length && !kayit.not) return;
-    sayfalar[kis(sf.sayfa, 60)] = kayit;
-  });
-
-  /* Claude'un takıldıkları. Bir kez sorulup bir kez cevaplanıyor; cevap
-     her bloğa ve kimlik dosyasına giriyor ki ikinci kez sorulmasın. */
-  const sorular = (Array.isArray(o.sorular) ? o.sorular : [])
-    .filter(x => x && x.soru)
-    .slice(0, 12)
-    .map(x => ({
-      soru: kis(x.soru, 200), neden: kis(x.neden, 300),
-      secim: (Array.isArray(x.secim) ? x.secim : [])
-        .filter(Boolean).slice(0, 6).map(y => kis(y, 60)),
-    }));
-
-  /* Hangi simgeler gerekiyor. Liste ChatGPT'ye gidiyor: tam onları çiziyor,
-     kodu yazan da onları SVG olarak çiziyor — dosya taşımıyoruz. */
-  const simgeler = (Array.isArray(o.simgeler) ? o.simgeler : [])
-    .filter(x => x && x.ad)
-    .slice(0, 24)
-    .map(x => ({ ad: kis(x.ad, 24), ne: kis(x.ne, 160) }));
-
-  if (!Object.keys(kararlar).length && !yeni.length && !Object.keys(sayfalar).length
-      && !simgeler.length && !sorular.length) {
-    return null;
-  }
-  return { kararlar, yeni, sayfalar, simgeler, sorular,
-           zaman: new Date().toISOString() };
 }
 
 /* Okunan çözümlemeyi taslağa yazar. Kullanıcının elle girdiği bir şey
@@ -10215,113 +9281,10 @@ async function eylemCalistir(el) {
     return render();
   }
 
-  if (e === 'tasarim-sec') {
-    const pr = DB.proje(el.dataset.proje);
-    const al = tasarimAlani(pr, el.dataset.alan);
-    if (!pr || !al) return;
-
-    const deger = el.dataset.deger;
-    const raf   = el.parentElement;
-    const eski  = bicimSecim(pr.palet, al);
-
-    let yeni;
-    if (!al.coklu) {
-      if (eski[0] === deger) return;
-      yeni = deger;
-    } else if (eski.includes(deger)) {
-      /* Son seçeneği söktürmüyoruz: boş bir başlık AI'ı tahmine iter. */
-      if (eski.length === 1 && !al.bos) { toast('En az bir seçenek açık kalmalı.'); return; }
-      yeni = eski.filter(x => x !== deger);
-    } else {
-      /* Sıra listedeki sıra olsun — "Şerit + Cam" ile "Cam + Şerit" aynı şey. */
-      yeni = al.secim.filter(x => eski.includes(x.ad) || x.ad === deger).map(x => x.ad);
-    }
-
-    /* Beklemeden işaretle: raf anında tepki versin. Yeniden çizmiyoruz,
-       yoksa sayfa tepeye fırlar. Yazma tutmazsa eski işaretler geri gelir. */
-    const isaretle = liste => {
-      $$('.bsc', raf).forEach(b => {
-        if (b.classList.contains('sifir')) { b.disabled = !AUTH.yonetici || bicimAyni(liste, al); return; }
-        b.classList.toggle('on', liste.includes(b.dataset.deger));
-      });
-    };
-    isaretle(Array.isArray(yeni) ? yeni : [yeni]);
-    const gecici = Object.assign({}, pr.palet || {}, { [al.anahtar]: yeni });
-    onizlemeTazele(pr, gecici);
-
-    try {
-      await DB.paletKaydet(pr.id, Object.assign({}, pr.palet || {}, { [al.anahtar]: yeni }));
-      /* İlerlemiyoruz: kullanıcı seçtiğini önizlemede görüp karşılaştırsın.
-         Geçmeye hazır olduğunu İleri düğmesiyle söyler. */
-      const ileri = $('.ag.ileri');
-      if (ileri) ileri.classList.add('hazir');
-    } catch (err) {
-      isaretle(eski);
-      onizlemeTazele(pr, pr.palet);
-      toast(err.message, 'hata');
-    }
-    return;
-  }
-
-  /* Sonradan eklenen karara atla. */
-  if (e === 'yeni-karar-git') {
-    const pr = DB.proje(el.dataset.proje);
-    if (!pr) return;
-    const ilk = yeniKararlar(pr.palet)[0];
-    if (!ilk) return;
-    const yer = tasarimAdimlari(pr).findIndex(a => a.anahtar === ilk.anahtar);
-    if (yer < 0) return;
-    YENI_KIP[pr.id] = true;
-    TASARIM_YER[pr.id] = yer;
-    render();
-    return;
-  }
-
-  /* "Gördüm" — seçim yapmadan rozeti kaldırır. */
-  if (e === 'karar-goruldu') {
-    const pr = DB.proje(el.dataset.proje);
-    if (!pr) return;
-    const pl  = pr.palet || {};
-    const gor = (Array.isArray(pl.gorulenler) ? pl.gorulenler : [])
-      .concat(el.dataset.alan);
-    el.remove();
-    try {
-      await DB.paletKaydet(pr.id, Object.assign({}, pl, { gorulenler: gor }));
-    } catch (err) { toast(err.message, 'hata'); render(); }
-    return;
-  }
-
-  if (e === 'tasarim-sifirla') {
-    const pr = DB.proje(el.dataset.proje);
-    const al = tasarimAlani(pr, el.dataset.alan);
-    if (!pr || !al) return;
-
-    const raf  = el.parentElement;
-    const eski = bicimSecim(pr.palet, al);
-    if (bicimAyni(eski, al)) return;
-
-    const deger = al.coklu ? [al.varsayilan] : al.varsayilan;
-    $$('.bsc', raf).forEach(b => b.classList.toggle('on', b.dataset.deger === al.varsayilan));
-    el.disabled = true;
-    onizlemeTazele(pr, Object.assign({}, pr.palet || {}, { [al.anahtar]: deger }));
-
-    try {
-      await DB.paletKaydet(pr.id, Object.assign({}, pr.palet || {}, { [al.anahtar]: deger }));
-      toast(al.ad + ' sıfırlandı.');
-    } catch (err) {
-      $$('.bsc', raf).forEach(b => b.classList.toggle('on', eski.includes(b.dataset.deger)));
-      el.disabled = false;
-      onizlemeTazele(pr, pr.palet);
-      toast(err.message, 'hata');
-    }
-    return;
-  }
-
   if (e === 'tasarim-ada') {
     const pr = DB.proje(el.dataset.proje);
     if (!pr) return;
     delete GORSEL_ADIM[pr.id];
-    delete IHTIYAC_EKRAN[pr.id];
     TASARIM_MOD[pr.id] = 'adim';
     TASARIM_YER[pr.id] = Number(el.dataset.deger);
     render();
@@ -10351,22 +9314,6 @@ async function eylemCalistir(el) {
     return;
   }
 
-  if (e === 'tasarim-tum-sifirla') {
-    const pr = DB.proje(el.dataset.proje);
-    if (!pr) return;
-    const tamam = await onaySor({
-      baslik: 'Tüm tasarımı sıfırla?',
-      mesaj: `${tasarimAlanlari(pr).length} tasarım kararı varsayılan hâline döner. `
-           + 'Palet, logo ve tema dokunulmadan kalır.',
-      buton: 'Sıfırla',
-    });
-    if (!tamam) return;
-    const yeni = Object.assign({}, pr.palet || {});
-    tasarimAlanlari(pr).forEach(a => { delete yeni[a.anahtar]; });
-    return isYap(() => DB.paletKaydet(pr.id, yeni), 'Tasarım kararları sıfırlandı.');
-  }
-
-  if (e === 'kararlar')    return kararlarAc(el.dataset.proje);
 
   if (e === 'yetkili-kopyala') {
     const pr = DB.proje(el.dataset.proje);
@@ -10401,27 +9348,6 @@ async function eylemCalistir(el) {
   if (e === 'gorsel-adim') {
     const i = Number(el.dataset.deger);
     GORSEL_ADIM[el.dataset.proje] = (GORSEL_ADIM[el.dataset.proje] === i) ? null : i;
-    return render();
-  }
-
-  /* ---------- İhtiyaç çözümlemesi ---------- */
-  if (e === 'ihtiyac-prompt')   return ihtiyacPromptu(el.dataset.proje);
-  if (e === 'ihtiyac-yapistir') return ihtiyacAktar(el.dataset.proje);
-  if (e === 'ihtiyac-kararlar') { IHTIYAC_EKRAN[el.dataset.proje] = 'kararlar';
-                                  render(); $('#view').scrollTop = 0; return; }
-  if (e === 'ihtiyac-sayfalar') { IHTIYAC_EKRAN[el.dataset.proje] = 'sayfalar';
-                                  render(); $('#view').scrollTop = 0; return; }
-  if (e === 'ihtiyac-sorular')  { IHTIYAC_EKRAN[el.dataset.proje] = 'sorular';
-                                  render(); $('#view').scrollTop = 0; return; }
-  if (e === 'ihtiyac-sayfa')    { IHTIYAC_EKRAN[el.dataset.proje] = 'sayfa:' + el.dataset.ad;
-                                  render(); $('#view').scrollTop = 0; return; }
-  if (e === 'ihtiyac-soru')     return ihtiyacSoruAc(el.dataset.proje,
-                                       Number(el.dataset.deger));
-  if (e === 'ihtiyac-geri') {
-    /* Bir kat yukarı: sayfa notundan sayfa ızgarasına, oradan karelere. */
-    const su = IHTIYAC_EKRAN[el.dataset.proje];
-    IHTIYAC_EKRAN[el.dataset.proje] =
-      (su && su.slice(0, 6) === 'sayfa:') ? 'sayfalar' : null;
     return render();
   }
 
@@ -11922,13 +10848,6 @@ document.addEventListener('DOMContentLoaded', () => {
     panoyaKopyala(metin);
     uygulamayiDene(el.dataset.hedef);
 
-    /* İhtiyaç promptu verildi: adım kartı "yapıştırmayı bekliyor"a geçsin.
-       Çözümleme gelene kadar Studio bunu başka türlü bilemiyor. */
-    if (el.dataset.pano === 'ihtiyac' && pr && !(pr.palet || {}).cozumIstendi) {
-      DB.paletKaydet(pr.id, Object.assign({}, pr.palet || {}, { cozumIstendi: true }))
-        .then(render).catch(() => {});
-    }
-
     const yazi = $('.kd-yazi', el);
     el.classList.add('kopyalandi');
     if (yazi) yazi.textContent = (el.dataset.hedef || 'Sohbet') + ' açılıyor…';
@@ -12007,16 +10926,10 @@ document.addEventListener('DOMContentLoaded', () => {
       render();
       return;
     }
-    /* Tasarımda karar ekranı ile harita aynı adresi paylaşıyor: geçmişte iki
+    /* Tasarımda adım ekranı ile harita aynı adresi paylaşıyor: geçmişte iki
        ayrı giriş yok. Geri okunu doğrudan history'ye bırakınca aşamanın
        içinden çıkıp gelinen sayfaya (çoğunlukla modüller) düşülüyordu.
-       Önce bir kat yukarı: karar ekranından haritaya. */
-    if (durak === 'tasarim' && IHTIYAC_EKRAN[id]) {
-      const su = IHTIYAC_EKRAN[id];
-      IHTIYAC_EKRAN[id] = (su.slice(0, 6) === 'sayfa:') ? 'sayfalar' : null;
-      render();
-      return;
-    }
+       Önce bir kat yukarı: adım ekranından haritaya. */
     if (durak === 'tasarim' && TASARIM_MOD[id] === 'adim') {
       TASARIM_MOD[id] = 'harita';
       const pr = DB.proje(id);
