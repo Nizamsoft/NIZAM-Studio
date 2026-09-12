@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## v0.135.2
+- **Yetkiler ekranı, rol yoksa artık zorlanmıyor.** "Yetkiler ekranı" bloğu (kararlar.md'ye giren yetki talimatı) roller boş bırakılan — yani tek kullanıcılık, giriş ekranı olmayan — projelerde de zorunlu geliyordu. Şimdi roller boşsa yerine kısa bir "giriş yok, tek kullanıcı, herkes her şeyi görür" satırı yazılıyor.
+- **"1. blok" (Bağlantılar) artık olmayan bir tasarım bloğu vaat etmiyor.** Kimlik promptu, kendinden sonra "tasarım (2/3), yapı (3/3)" diye iki blok daha geleceğini söylüyordu; oysa Studio'da bir sonraki gerçek adım doğrudan Kurulum ve yapı'nın kendi bloğu. Metin artık tek bir sonraki blok vaat ediyor, `nizam/tasarim.md`'nin ayrı bir akışta ve ayrı bir zamanda dolacağını belirtiyor.
+
 ## v0.135.1
 - **Yetkiler ekranı promptuna "ilk giriş" talimatı eklendi.** Veritabanında hiç kullanıcı yokken normal girişle kimse içeri giremiyordu (kayıt ekranı yok). Artık Claude'a, kodun içine sabit bir kullanıcı adı/şifre gömüp kullanıcı tablosu boşken bunu kabul etmesi ve en üst katmandan içeri alması söyleniyor — ilk gerçek kullanıcı oluşturulunca bu sabit giriş kapanıyor, kalıcı bir arka kapı kalmıyor.
 

@@ -335,9 +335,10 @@ const PROMPT = {
     return s.join('\n');
   },
 
-  /* Depo durağının tanışma promptu. Tasarım (durak 3) ve yapı (durak 4)
-     henüz yapılmadı; buraya onlardan hiçbir şey girmez. Amaç yalnızca
-     depoyu tanıtmak ve NIZAM.md'yi kurmak. */
+  /* Depo durağının tanışma promptu. Yapı (durak 4) henüz yapılmadı; buraya
+     ondan hiçbir şey girmez. Amaç yalnızca depoyu tanıtmak ve NIZAM.md'yi
+     kurmak. Profesyonel tasarım (durak 6) ayrı bir akış — bu promptun
+     zincirine dahil değil. */
   tanisma(projeId) {
     const p = DB.proje(projeId);
     if (!p) return '';
@@ -412,15 +413,14 @@ const PROMPT = {
     s.push('');
 
     s.push('## Sırada ne var');
-    s.push('Bundan sonra sana iki blok daha yapıştıracağım (2/3 ve 3/3):');
+    s.push('Bundan sonra sana bir blok daha yapıştıracağım: **modüller, sayfalar');
+    s.push('ve künyeleri** — hangi ekranlar olacak, her birinde hangi alanlar');
+    s.push('duracak, kim ne yapabilecek. `nizam/sayfalar.md` ve');
+    s.push('`nizam/kararlar.md`\'yi o blok dolduracak; uygulama kodu ancak ondan');
+    s.push('sonra, aşama aşama yazılacak.');
     s.push('');
-    s.push('1. **Tasarım sistemi** — renk, tipografi, bileşenler, simge dili, iskeletler.');
-    s.push('2. **Modüller, sayfalar ve künyeleri** — hangi ekranlar olacak, her');
-    s.push('   birinde hangi alanlar duracak, kim ne yapabilecek.');
-    s.push('');
-    s.push('Her blok kendi dosyasını dolduracak: 2. blok `nizam/tasarim.md`,');
-    s.push('3. blok `nizam/sayfalar.md` ve `nizam/kararlar.md`. Uygulama kodu');
-    s.push('ancak ikisi de geldikten sonra, aşama aşama yazılacak.');
+    s.push('> `nizam/tasarim.md` ayrı bir akışta, ayrı bir zamanda dolacak.');
+    s.push('> Şimdilik boş kalabilir — beklemene gerek yok.');
     s.push('');
     s.push('Anladıysan tek cümleyle onayla, dosyaları oluştur ve bekle.');
 
@@ -528,7 +528,7 @@ const PROMPT = {
     if (!p) return '';
 
     const s = [];
-    s.push('# ' + projeAdi(p) + ' — Modüller ve sayfalar (3/3)', '');
+    s.push('# ' + projeAdi(p) + ' — Modüller ve sayfalar', '');
 
     const slug = depoSlug(p.repo);
     if (slug) {
@@ -558,7 +558,7 @@ const PROMPT = {
     const kunye = PROMPT.kunyeBlogu(p);
     if (kunye) { s.push(kunye); s.push(''); }
 
-    s.push(PROMPT.yetkiBlogu());
+    s.push(PROMPT.yetkiBlogu(p));
     s.push('');
 
     const cevap = PROMPT.cevapBlogu(p);
@@ -671,7 +671,7 @@ const PROMPT = {
   },
 
   /* Kurulum aşamaları — hem görev promptunda hem NIZAM.md'de yazar. */
-  kurulumBlogu() {
+  kurulumBlogu(proje) {
     const s = ['### Nasıl kodlanacak — beş aşama'];
     s.push('');
     s.push('**Hepsini bir seferde yazma.** Aşağıdaki beş aşamaya böl. Her aşamanın');
@@ -688,7 +688,7 @@ const PROMPT = {
     s.push('Her aşamanın içinde "Uygulama sırası" bölümündeki sırayı izle.');
     s.push('Bir sonraki görevde bu kararlar aynen geçerli olacak.');
     s.push('');
-    s.push(PROMPT.yetkiBlogu());
+    s.push(PROMPT.yetkiBlogu(proje));
     return s.join('\n');
   },
 
@@ -696,7 +696,21 @@ const PROMPT = {
      ekibi zamanla değişiyor; her işe alımda geliştiriciye dönüp kod
      yazdırmak anlamsız. Studio yalnız katmanların ne olduğunu söylüyor,
      kimin hangi katmanda olacağını uygulamadaki admin belirliyor. */
-  yetkiBlogu() {
+  yetkiBlogu(proje) {
+    const roller = rolListesi(proje && (proje.palet || {}).roller);
+
+    /* Rol katmanı tanımlanmamışsa proje tek kullanıcılık demektir — admin
+       ekranı, katman, giriş kilidi gibi hiçbir şey buna göre kurulmasın. */
+    if (proje && !roller.length) {
+      const s = ['### Giriş ve yetki — yok'];
+      s.push('');
+      s.push('Bu projede rol katmanı tanımlanmadı: **tek kullanıcı, giriş');
+      s.push('ekranı yok.** Kullanıcı listesi, katman atama, izin ekranı gibi');
+      s.push('hiçbir şey kurma — herkes uygulamayı açtığında her şeyi görsün');
+      s.push('ve yapabilsin.');
+      return s.join('\n');
+    }
+
     const s = ['### Yetkiler ekranı — uygulamanın içinde'];
     s.push('');
     s.push('Kimin neyi görebileceğini ve yapabileceğini **kodda sabitleme.**');
@@ -1683,7 +1697,7 @@ const PROMPT = {
     s.push(PROMPT.tasarimBlogu(proje)); s.push('');
     const kunyeMetni2 = PROMPT.kunyeBlogu(proje);
     if (kunyeMetni2) { s.push(kunyeMetni2); s.push(''); }
-    s.push(PROMPT.kurulumBlogu()); s.push('');
+    s.push(PROMPT.kurulumBlogu(proje)); s.push('');
 
     s.push('## Modüller ve sayfalar');
     moduller.forEach(m => {
