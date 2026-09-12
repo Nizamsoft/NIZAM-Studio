@@ -718,6 +718,13 @@ const PROMPT = {
     s.push('okur** — arayüzde düğmeyi gizlemek yetmez, sunucu tarafında da');
     s.push('engellensin. Veri yerel tarayıcıdaysa sunucu yok; o zaman Yetkiler');
     s.push('ekranı yalnız arayüzü biçimlendirir.');
+    s.push('');
+    s.push('**İlk giriş.** Veritabanında hiç kullanıcı yokken normal girişle kimse');
+    s.push('içeri giremez — kayıt ekranı da yok. Kodun içine sabit bir kullanıcı');
+    s.push('adı ve şifre göm; kullanıcı tablosu boşken giriş ekranı yalnız bu');
+    s.push('bilgiyi kabul etsin ve en üst katmandan içeri alsın. İlk gerçek');
+    s.push('kullanıcı Yetkiler ekranından oluşturulur oluşturulmaz bu sabit giriş');
+    s.push('bir daha çalışmasın — kalıcı bir arka kapı kalmasın.');
     return s.join('\n');
   },
 

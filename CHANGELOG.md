@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.135.1
+- **Yetkiler ekranı promptuna "ilk giriş" talimatı eklendi.** Veritabanında hiç kullanıcı yokken normal girişle kimse içeri giremiyordu (kayıt ekranı yok). Artık Claude'a, kodun içine sabit bir kullanıcı adı/şifre gömüp kullanıcı tablosu boşken bunu kabul etmesi ve en üst katmandan içeri alması söyleniyor — ilk gerçek kullanıcı oluşturulunca bu sabit giriş kapanıyor, kalıcı bir arka kapı kalmıyor.
+
 ## v0.135.0
 - **"Beta ve geliştirme" baştan tasarlandı, iki bölüme ayrıldı.**
   - **İlk kurulum:** Kurulum ve yapı'da hazırlanan plan gerçek koda dönüşüyor. Artık kart ızgarası ve ayrı pencereler yerine tek bir sihirbaz var — Bağlantılar ve temel'deki gibi: adım şeridi, "Kopyala ve Claude Code'da aç", bitince "Sıradaki". Sırasıyla: plan depoya yazılır (3. blok), gerekiyorsa veritabanı kurulur, sonra beş aşamada gerçek uygulama kodu yazılır.
