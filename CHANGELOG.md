@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.135.19
+- **Görsel isteği promptu, mockup'ta zaten olan bir öğeyi sıfırdan yeniden tarif ediyordu.** Claude Code'a "ekteki görselin dilini tarif et" demek yetmiyordu — canlı bir testte mockup'taki illüstrasyonu (kadın figürü) baştan uydurma bir açıklamayla (renk kodları, poz vb.) yeniden anlattı, bu da ChatGPT'nin farklı bir görsel üretmesine yol açıyordu. Artık prompt iki durumu ayırıyor: mockup'ta zaten görünen bir öğe için "ekteki görseldeki bunu birebir aynısıyla izole PNG olarak ver" deniyor; yalnız mockup'ta hiç görünmeyen yeni bir öğe için tarif isteniyor.
+
 ## v0.135.18
 - **"Sıradaki adım" promptu artık liste istemiyor, hazır ChatGPT promptu istiyor.** Claude Code'a "bana ne gerektiğini söyle" demek yerine, ihtiyaç olan her görsel/ikon için ayrı, doğrudan ChatGPT'ye yapıştırılabilecek bir prompt yazmasını istiyor. Bu promptların her biri, ekli mockup'ın görsel dilini (renk, çizim/fotoğraf stili, doku, atmosfer) kendi cümleleriyle tarif ediyor — çünkü aynı referans görsel ChatGPT'ye elle verilecek, prompt kendi başına da o stili anlatabilmeli. Her promptun üstünde dosya adı ve depodaki hedef klasör de belirtiliyor.
 
