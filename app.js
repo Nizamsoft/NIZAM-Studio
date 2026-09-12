@@ -6896,7 +6896,7 @@ function sihirbazAdimSektor() {
         </button>`).join('')}
       <button type="button" class="sh-sektor sh-sektor-ekle" data-sb="sektor-ekle">
         <span class="sh-sektor-ik">${svg(ICON.arti, 17)}</span>
-        <span>Yeni ekle</span>
+        <span>Diğer</span>
       </button>
     </div>
     <p class="ipucu">Sektör seçimi, proje şablonlarını ve önerileri size özel hale getirir.</p>`;
