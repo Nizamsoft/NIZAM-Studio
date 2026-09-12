@@ -1221,6 +1221,71 @@ const PROMPT = {
     return s.join('\n');
   },
 
+  /* ---------- Modül güncelleme promptu ----------
+     Kurulumdan sonra "Kurulum ve yapı"da elle işlem yok; kod ilerledikçe
+     depo ile künye arasında açılan farkın tek köprüsü bu. Claude depoyu
+     kendi inceliyor, künyede hiç yazmayan bir şey (yeni sayfa, yeni alan)
+     bulursa aynı çözümleme bloğuyla tamamlıyor — var olan hiçbir şeyin
+     üstüne yazmıyor, yalnız eksiği dolduruyor. cozumlemeOku/Uygula aynen
+     kullanılıyor: biçim tıpatıp aynı. */
+  modulGuncelle(projeId) {
+    const p = DB.proje(projeId);
+    if (!p) return '';
+    const modul = DB.modulleri(p.id).find(m => m.ad !== GENEL_MODUL);
+    const ad = (modul && modul.ad) || modulAdi(p) || 'Program';
+    const slug = depoSlug(p.repo);
+
+    const s = [];
+    s.push('# ' + projeAdi(p) + ' — modül güncelleme', '');
+    if (slug) {
+      s.push('> ### Depo: `' + slug + '`');
+      s.push('> Bu oturum yalnız bu depoya bağlı olmalı. Deposu farklıysa dur');
+      s.push('> ve söyle.', '');
+    }
+    s.push('Studio\'da bu programın kayıtlı yapısı aşağıda. **Depoyu iyice');
+    s.push('incele** — kodu, sayfaları, veritabanı tablolarını gör — ve bu');
+    s.push('kayıtla karşılaştır.');
+    s.push('');
+    s.push('Kodda olup aşağıda **hiç yazmayan** bir sayfa ya da alan bulursan');
+    s.push('onu tamamla. **Zaten yazan bir şeyi değiştirme**, yalnız eksik');
+    s.push('olanı ekle — bu bir düzeltme değil, tamamlama. Hiçbir eksik');
+    s.push('yoksa bana kısaca "eksik yok" de, blok verme.');
+    s.push('');
+    const kunye = PROMPT.kunyeBlogu(p);
+    if (kunye) { s.push(kunye); s.push(''); }
+    else {
+      s.push('(Henüz kayıtlı bir künye yok — bulduğun her şeyi ekle.)');
+      s.push('');
+    }
+    s.push('## En sonda vereceğin blok');
+    s.push('Eksik gördüğün varsa, yalnız JSON ver — öncesine sonrasına açıklama');
+    s.push('yazma. Zaten yazan sayfa ya da alanı tekrar etme, yalnız eksik olanı');
+    s.push('yaz. Biçim, ilk kurulumdakiyle birebir aynı:');
+    s.push('');
+    s.push('```json');
+    s.push('{');
+    s.push(`  "modul": "${ad}",`);
+    s.push('  "sayfalar": [');
+    s.push('    {');
+    s.push('      "ad": "Eksik olan yeni sayfanın ya da var olan bir sayfanın adı",');
+    s.push('      "grup": "Kayıtlar",');
+    s.push('      "amac": "Tek cümleyle bu ekran ne işe yarar",');
+    s.push('      "tur": "Liste",');
+    s.push('      "alanlar": [');
+    s.push('        { "ad": "Kod", "tur": "Metin", "zorunlu": true }');
+    s.push('      ]');
+    s.push('    }');
+    s.push('  ]');
+    s.push('}');
+    s.push('```');
+    s.push('');
+    s.push('- `tur` yalnız: ' + SAYFA_TURU.map(x => x.ad).join(' · '));
+    s.push('- Alan `tur` yalnız: ' + ALAN_TURU.map(x => x.ad).join(' · '));
+    s.push('- `Seçenek` alanına mutlaka `degerler` yaz.');
+    s.push('- `İlişki` alanına mutlaka `kaynak` yaz (hangi sayfanın kaydı).');
+    return s.join('\n');
+  },
+
   /* Tasarımcıya giden kısa künye. Tam künye (alan türleri, zorunluluk,
      roller, yetkiler) kodu yazacak olan için; tasarımcıya verilince
      promptun üçte birini kaplıyor ve ekranı tabloya çeviriyor. Burada

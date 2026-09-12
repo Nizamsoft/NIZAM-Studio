@@ -3806,6 +3806,44 @@ function modulYukle(p, t, ad) {
   }
 }
 
+/* Taslağı DB'ye yazar: modül yoksa açılır, varsa yalnız eksik sayfalar
+   eklenir (kopya olmasın), künye/anlatım/modül kuralı palete kaydedilir.
+   İlk kurulumda "Kur" düğmesinden, "Modülü güncelle" akışında yapıştırma
+   sonrası kendiliğinden çağrılıyor — ikisi de aynı yazma mantığını kullanır. */
+async function yapiTaslagiKur(pr, t) {
+  const kurulu = DB.modulleri(pr.id).find(m => m.ad === t.modul);
+  if (kurulu) {
+    const varOlan = DB.sayfalari(kurulu.id).map(x => x.ad);
+    for (const sf of t.sayfalar) {
+      if (!varOlan.includes(sf)) await DB.sayfaEkle(kurulu.id, sf);
+    }
+  } else {
+    await DB.modulEkle(pr.id, t.modul, t.sayfalar);
+  }
+  /* Künyeler projenin palet torbasında: ayrı sütun gerekmiyor ve
+     prompt üretilirken oradan okunuyor. */
+  const eski = (pr.palet || {}).kunye || {};
+  const yeni = Object.assign({}, eski);
+  t.sayfalar.forEach(sf => { yeni[t.modul + ' · ' + sf] = t.kunye[sf]; });
+  /* Anlatım ve açık soruların cevapları da saklanır: prompt bunları
+     AI'a aynen veriyor, ikinci kez anlatmaya gerek kalmıyor. */
+  const anlatim = Object.assign({}, (pr.palet || {}).anlatim || {});
+  if ((t.anlat || '').trim() || (t.kararlar || []).length
+      || (t.baglantilar || []).length) {
+    anlatim[t.modul] = {
+      metin: (t.anlat || '').trim(),
+      sorular: (t.kararlar || []).filter(x => x.soru && x.cevap),
+      baglantilar: t.baglantilar || [],
+      hazirVeri: t.hazirVeri || [],
+      ciktilar: t.ciktilar || [],
+    };
+  }
+  const modulKunye = Object.assign({}, (pr.palet || {}).modulKunye || {});
+  modulKunye[t.modul] = JSON.parse(JSON.stringify(t.mk || {}));
+  await DB.paletKaydet(pr.id, Object.assign({}, pr.palet || {},
+    { kunye: yeni, anlatim, modulKunye }));
+}
+
 function yapiKunye(t, sayfa) {
   if (!t.kunye[sayfa]) {
     t.kunye[sayfa] = { amac: '', tur: '', olcek: '', kalip: [], kalipCevap: {},
@@ -4023,11 +4061,18 @@ function agacEkrani(p, t) {
      kurdurmuyordu. */
   const tam = t.modul && t.sayfalar.length
     && t.sayfalar.every(sf => kunyeTam(t.kunye[sf]));
-  /* Kurulduktan sonra bu aşamada hiçbir işlem kalmıyor — yalnız kurulan
-     yapı görülür. "Anlatım" ve "Kur" düğmeleri de yalnız taslak henüz
-     kurulmamışken (ilk anlat → yapıştır → kur döngüsünde) görünüyor. */
+  /* Kurulduktan sonra bu aşamada elle işlem kalmıyor — "Anlatım"/"Kur"
+     yerini "Modülü güncelle"ye bırakıyor. Kod ilerledikçe depo ile künye
+     arasında açılan farkın tek köprüsü bu: Claude depoyu inceleyip eksik
+     bulursa aynı çözümleme bloğuyla tamamlıyor, var olanın üstüne yazmıyor. */
   const kuruluMu = t.modul && kurulu.some(x => x.ad === t.modul);
-  const dugmeler = (t.modul && !kuruluMu) ? `
+  const dugmeler = kuruluMu ? `
+    <a class="ag-dug" target="_blank" rel="noopener" data-pano="modulGuncelle"
+       data-proje="${p.id}" data-hedef="Claude Code" href="${esc(claudeAdresi(depoSlug(p.repo), false))}">
+      ${svg(ICON.kopya, 15)} Modülü güncelle</a>
+    <button class="ag-dug ana" type="button" data-eylem="anlat-aktar" data-proje="${p.id}">
+      ${svg(ICON.ice, 15)} Cevabı yapıştır</button>`
+    : t.modul ? `
     <button class="ag-dug" type="button" data-eylem="agac-anlat" data-proje="${p.id}">
       ${svg(ICON.kopya, 15)} Anlatım</button>
     <button class="ag-dug ana" type="button" ${tam ? '' : 'disabled'}
@@ -8903,6 +8948,7 @@ const PANO_PROMPT = {
   gorselDil:      p => PROMPT.gorselDil(p.id),
   tasarim:       p => PROMPT.tasarim(p.id),
   cozumleme:     p => PROMPT.cozumleme(p, yapiTaslak(p)),
+  modulGuncelle: p => PROMPT.modulGuncelle(p.id),
   yapi:          p => PROMPT.yapi(p.id),
   standart:      p => PROMPT.programGelistirme(p.id),
   /* Projesiz: bir programda doğan kuralı standarda çeviren prompt. */
@@ -9479,6 +9525,9 @@ function anlatAktarAc(projeId) {
     $('[data-cz="iptal"]', kutu).addEventListener('click', modalKapat);
     $('[data-cz="kaydet"]', kutu).addEventListener('click', async () => {
       if (!cozum) return;
+      /* Modül zaten kuruluysa bu bir "Modülü güncelle" yapıştırması: elle
+         "Kur" adımı yok, yapıştırınca doğrudan kaydedilir. */
+      const guncelleMi = t.modul && DB.modulleri(p.id).some(m => m.ad === t.modul);
       cozumlemeUygula(t, cozum, p);
       modalKapat();
       if (!t.modul) {
@@ -9495,6 +9544,15 @@ function anlatAktarAc(projeId) {
             aciklama: 'Blokta yazmıyordu, sen yaz.', yerTutucu: 'Örn. İnsan Kaynakları',
             buton: 'Tamam', deger: '' }) || 'Yeni bölüm';
         }
+      }
+      if (guncelleMi) {
+        try {
+          await yapiTaslagiKur(p, t);
+          delete YAPI_TASLAK[p.id];
+          toast(cozum.sayfalar.length + ' sayfa güncellendi.');
+          render();
+        } catch (err) { toast(err.message, 'hata'); }
+        return;
       }
       /* Aktarımdan sonra ağaca dön: sonucu görmesi gereken yer orası. */
       t.mod = 'agac'; t.odak = null; t.dal = null;
@@ -9635,6 +9693,7 @@ function ihtiyacOku(metin) {
 /* Okunan çözümlemeyi taslağa yazar. Kullanıcının elle girdiği bir şey
    varsa üstüne yazmıyoruz: soru sormadan veri kaybettirmek olur. */
 function cozumlemeUygula(t, cozum, p) {
+  const roller = rolListesi((p.palet || {}).roller);
   /* Modül düzeyinde yalnız ortak iş kuralı okunuyor: yetki artık tasarım
      anında değil, uygulamanın Yetkiler ekranından belirleniyor. */
   const mkg = cozum.modulKurallari || {};
@@ -9653,14 +9712,20 @@ function cozumlemeUygula(t, cozum, p) {
     /* Öbeği Claude belirliyor: "Raporlar", "Ayarlar", "Panolar" gibi. Sayfa
        türünden (Liste/Form) daha anlamlı, çünkü işe göre ayırıyor. */
     if (!k.grup && typeof sf.grup === 'string') k.grup = sf.grup.trim().slice(0, 40);
-    if (!k.alanlar.length && Array.isArray(sf.alanlar)) {
-      k.alanlar = sf.alanlar.filter(a => a && a.ad).map(a => ({
-        ad: a.ad,
-        tur: (ALAN_TURU.find(x => x.ad === a.tur) || ALAN_TURU[0]).ad,
-        zorunlu: !!a.zorunlu,
-        degerler: Array.isArray(a.degerler) ? a.degerler.filter(Boolean) : [],
-        kaynak: a.kaynak || '',
-      }));
+    /* Var olan alan adına dokunulmuyor — yalnız hiç olmayan eklenir. "Modül
+       güncelle" akışı zaten kurulu bir sayfaya sonradan bulunan bir alanı
+       ekleyebilsin diye "hepsi boşsa doldur" değil, alan alan bakılıyor. */
+    if (Array.isArray(sf.alanlar)) {
+      const varOlanAdlar = k.alanlar.map(a => a.ad);
+      sf.alanlar.filter(a => a && a.ad && !varOlanAdlar.includes(a.ad)).forEach(a => {
+        k.alanlar.push({
+          ad: a.ad,
+          tur: (ALAN_TURU.find(x => x.ad === a.tur) || ALAN_TURU[0]).ad,
+          zorunlu: !!a.zorunlu,
+          degerler: Array.isArray(a.degerler) ? a.degerler.filter(Boolean) : [],
+          kaynak: a.kaynak || '',
+        });
+      });
     }
 
     if (!(k.kalip || []).length && Array.isArray(sf.kalip)) {
@@ -11417,38 +11482,7 @@ async function eylemCalistir(el) {
 
     el.disabled = true;
     try {
-      const kurulu = DB.modulleri(pr.id).find(m => m.ad === t.modul);
-      if (kurulu) {
-        /* Modül duruyorsa yalnız yeni sayfalar eklenir; kopya olmasın. */
-        const varOlan = DB.sayfalari(kurulu.id).map(x => x.ad);
-        for (const sf of t.sayfalar) {
-          if (!varOlan.includes(sf)) await DB.sayfaEkle(kurulu.id, sf);
-        }
-      } else {
-        await DB.modulEkle(pr.id, t.modul, t.sayfalar);
-      }
-      /* Künyeler projenin palet torbasında: ayrı sütun gerekmiyor ve
-         prompt üretilirken oradan okunuyor. */
-      const eski = (pr.palet || {}).kunye || {};
-      const yeni = Object.assign({}, eski);
-      t.sayfalar.forEach(sf => { yeni[t.modul + ' · ' + sf] = t.kunye[sf]; });
-      /* Anlatım ve açık soruların cevapları da saklanır: prompt bunları
-         AI'a aynen veriyor, ikinci kez anlatmaya gerek kalmıyor. */
-      const anlatim = Object.assign({}, (pr.palet || {}).anlatim || {});
-      if ((t.anlat || '').trim() || (t.kararlar || []).length
-          || (t.baglantilar || []).length) {
-        anlatim[t.modul] = {
-          metin: (t.anlat || '').trim(),
-          sorular: (t.kararlar || []).filter(x => x.soru && x.cevap),
-          baglantilar: t.baglantilar || [],
-          hazirVeri: t.hazirVeri || [],
-          ciktilar: t.ciktilar || [],
-        };
-      }
-      const modulKunye = Object.assign({}, (pr.palet || {}).modulKunye || {});
-      modulKunye[t.modul] = JSON.parse(JSON.stringify(t.mk || {}));
-      await DB.paletKaydet(pr.id, Object.assign({}, pr.palet || {},
-        { kunye: yeni, anlatim, modulKunye }));
+      await yapiTaslagiKur(pr, t);
       delete YAPI_TASLAK[pr.id];
       ONIZLEME_MENU = ONIZLEME_SAYFA = ONIZLEME_KUNYE = null;
       toast(t.modul + ' hazır · ' + t.sayfalar.length + ' sayfa');

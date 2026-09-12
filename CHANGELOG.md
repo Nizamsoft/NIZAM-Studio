@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## v0.134.52
+- **"Modülü güncelle" eklendi.** Kurulu modül ekranında artık bir düğme var: basınca Claude'a giden bir prompt kopyalanıyor, Claude depoyu inceleyip Studio'da kayıtlı olmayan bir sayfa/alan bulursa tamamlıyor. Verdiği bloğu yapıştırınca (elle "Kur"a basmaya gerek yok) modül kendiliğinden güncelleniyor — var olan hiçbir kayıt değişmiyor, yalnız eksik olan ekleniyor.
+- Bu arada bir eksik giderildi: künyeye yeni bir sayfa eklenirken zaten alanı olan bir sayfaya sonradan bulunan tek bir alan eklenemiyordu (sayfa boş değilse tüm liste atlanıyordu). Artık alan alan bakılıyor.
+
 ## v0.134.51
 - **"Kurulum ve yapı" tek seferlik bir işe döndü.** Kur'unca "Modülü kaldır", "Sayfa ekle" ve "Anlat, ekle" düğmeleri kalkıyor — anlat, Claude'un bloğunu yapıştır, kur, bu aşamadaki iş bitiyor. Sonradan bir şey eklemek ayrı bir aşamanın işi olacak.
 
