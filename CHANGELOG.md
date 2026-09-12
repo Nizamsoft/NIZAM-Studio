@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.135.21
+- **Final notlarına prompt ve tamamlandı tiki eklendi.** Bildirilen her not artık kendi "Prompt oluştur" bağlantısını taşıyor — Beta/Geliştirme durağıyla aynı güncelleme promptunu üretip Claude Code'u açıyor. Notun yanındaki tik, güncelleme yapılınca işaretleniyor; işaretlenen not üstü çizili gösteriliyor ve prompt bağlantısı kayboluyor (iş bitti). Not istenirse yine tamamen silinebiliyor.
+
 ## v0.135.20
 - **Final durağı sadeleşti.** Tek satırlık onay kutusu yerine büyük bir "Final ver" düğmesi ve altında "Hata veya güncelleme bildir" düğmesi geldi. Sorunsuzsa final veriliyor (onay istiyor); bir sorun varsa not yazılıyor, notlar altta listeleniyor ve tek tek kaldırılabiliyor.
 - **Geliştirme durağındaki "Hızlı güncelleme" kutusu, prompt üreten bir akışla değişti.** Eskiden yazılan başlık doğrudan bir göreve dönüşüyordu, hiçbir prompt üretmiyordu. Artık Beta durağındaki akışın aynısı: güncelleme isteğini yaz, "Kopyala ve aç" ile Claude Code'a gönder — prompt hem canlı/üretim uygulaması olduğuna dair bir uyarı taşıyor hem de yapı değiştiyse aynı JSON bloğunu istiyor, "JSON varsa yükle" ile içeri alınıyor.

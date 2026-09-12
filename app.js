@@ -4019,11 +4019,18 @@ function sqlEditorAdresi(url) {
 }
 
 
+/* Final notları — eski kayıtlarda düz metindi; obje biçimine ({metin, tamam})
+   burada düşülüyor ki eski projelerde de çökmesin. */
+function finalNotlariOku(pl) {
+  return (Array.isArray(pl.finalNotlar) ? pl.finalNotlar : [])
+    .map(n => typeof n === 'string' ? { metin: n, tamam: false } : n);
+}
+
 /* 7 · Final — görevler bitti, incele, ya final ver ya da bulduğunu not et. */
 function finalSayfasi(p, d) {
   const pl = p.palet || {};
   const verildi = !!pl.finalVerildi;
-  const notlar = Array.isArray(pl.finalNotlar) ? pl.finalNotlar : [];
+  const notlar = finalNotlariOku(pl);
   const s = DB.sayim(p.id);
   const hazir = gelistirmeBitti(p);
 
@@ -4050,8 +4057,19 @@ function finalSayfasi(p, d) {
     + (notlar.length ? bolumBas('Bildirilen notlar') + `
         <div class="card liste">
           ${notlar.map((n, i) => `
-            <div class="sr">
-              <span style="flex:1">${esc(n)}</span>
+            <div class="sr" style="align-items:flex-start; flex-wrap:wrap">
+              <label class="kur-onay ${n.tamam ? 'on' : ''}" style="margin:0"
+                     data-eylem="final-not-tamam" data-proje="${p.id}" data-deger="${i}"
+                     role="button" tabindex="0" title="Güncelleme tamamlandı">
+                <span class="kur-kutu">${svg(ICON.tik, 12)}</span>
+              </label>
+              <span style="flex:1;min-width:140px;${n.tamam
+                ? 'text-decoration:line-through;color:var(--ink-dim)' : ''}">${esc(n.metin)}</span>
+              ${n.tamam ? '' : `
+                <a target="_blank" rel="noopener" class="mini-link" data-pano="finalNot:${i}"
+                   data-proje="${p.id}" data-hedef="Claude Code"
+                   href="${esc(claudeAdresi(depoSlug(p.repo)))}">
+                  ${svg(ICON.kopya, 13)} Prompt oluştur</a>`}
               <button class="mini-link tehlike" type="button" data-eylem="final-not-sil"
                       data-proje="${p.id}" data-deger="${i}" aria-label="Notu sil">
                 ${svg(ICON.cop, 13)}</button>
@@ -8892,7 +8910,7 @@ async function eylemCalistir(el) {
     });
     if (!not) return;
     const pl = pr.palet || {};
-    const notlar = (Array.isArray(pl.finalNotlar) ? pl.finalNotlar : []).concat(not);
+    const notlar = finalNotlariOku(pl).concat({ metin: not, tamam: false });
     return isYap(() => DB.paletKaydet(pr.id,
       Object.assign({}, pl, { finalNotlar: notlar })), 'Not eklendi.');
   }
@@ -8901,10 +8919,21 @@ async function eylemCalistir(el) {
     const pr = DB.proje(el.dataset.proje);
     if (!pr) return;
     const pl = pr.palet || {};
-    const notlar = (Array.isArray(pl.finalNotlar) ? pl.finalNotlar : [])
-      .filter((_, i) => i !== Number(el.dataset.deger));
+    const notlar = finalNotlariOku(pl).filter((_, i) => i !== Number(el.dataset.deger));
     return isYap(() => DB.paletKaydet(pr.id,
       Object.assign({}, pl, { finalNotlar: notlar })), 'Not kaldırıldı.');
+  }
+
+  if (e === 'final-not-tamam') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const pl = pr.palet || {};
+    const i = Number(el.dataset.deger);
+    const eski = finalNotlariOku(pl)[i];
+    const notlar = finalNotlariOku(pl).map((n, k) =>
+      k === i ? Object.assign({}, n, { tamam: !n.tamam }) : n);
+    return isYap(() => DB.paletKaydet(pr.id, Object.assign({}, pl, { finalNotlar: notlar })),
+      eski && !eski.tamam ? 'Güncelleme tamamlandı.' : 'İşaret kaldırıldı.');
   }
 
   if (e === 'repo') {
@@ -10065,6 +10094,11 @@ document.addEventListener('DOMContentLoaded', () => {
       ? (proje => PROMPT.asama(proje.id, Number(pano.slice(6))))
       : pano.indexOf('modulGuncelle:') === 0
       ? (proje => PROMPT.modulGuncelle(proje.id, decodeURIComponent(pano.slice(14))))
+      /* Final notundan doğan prompt: notun kendi metni Beta/Geliştirme'yle
+         aynı güncelleme promptunu üretiyor, ayrı bir metin motoru gerekmiyor. */
+      : pano.indexOf('finalNot:') === 0
+      ? (proje => PROMPT.guncellemeIstek(proje.id,
+          (finalNotlariOku(proje.palet || {})[Number(pano.slice(9))] || {}).metin || ''))
       : PANO_PROMPT[pano];
     /* Projesiz prompt da var (standart ekleme) — o zaman data-proje boş. */
     if (!uret || (el.dataset.proje && !pr)) return;
