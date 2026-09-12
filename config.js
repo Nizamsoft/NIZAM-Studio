@@ -7,7 +7,7 @@ const APP = {
   name:     'NIZAM | Studio',
   short:    'NIZAM Studio',
   owner:    'Nizam Soft',
-  version: 'v0.135.3',
+  version: 'v0.135.4',
   build:    '2026-09-12',
   /* Studio'nun kendi deposu — "bütün programlarda geçerli olsun"
      istekleri buraya gider. */
@@ -614,6 +614,31 @@ const KURULUM_ADIM = [
         + 'Güncelleme düğmesi gerçekten yeni sürümü getiriyor mu?',
   },
 ];
+
+/* Roller boşsa proje tek kullanıcılıktır — yetkiBlogu() zaten "giriş yok"
+   diyor. 1. aşamanın "giriş ekranı" ve 4. aşamanın "rolleri bağla" maddesi
+   o zaman çelişki üretiyordu; burada projeye göre ayıklanıyor. Prompt da
+   (asama/kurulumBlogu), Studio'daki aşama kartı da bunu kullanır — ikisi
+   ayrı ayrı çelişkili yazmasın diye tek yerde. */
+function kurulumAdimListesi(proje) {
+  const rolluMu = rolListesi((proje && proje.palet || {}).roller).length > 0;
+  if (rolluMu) return KURULUM_ADIM;
+
+  return KURULUM_ADIM.map((a, i) => {
+    if (i === 0) {
+      return Object.assign({}, a, { yap: a.yap.map(x =>
+        x === 'Açılış ekranı ve giriş ekranını yap.'
+          ? 'Açılış ekranını yap — giriş ekranı yok, proje tek kullanıcılık.' : x) });
+    }
+    if (i === 3) {
+      return Object.assign({}, a, {
+        yap: a.yap.filter(x => x !== 'Rolleri ve yetkileri bağla.'),
+        test: a.test.replace(/\s*Yetkisiz kullanıcı neyi göremiyor\?/, ''),
+      });
+    }
+    return a;
+  });
+}
 
 /* Bir alanın seçili değerleri — her zaman dizi döner.
    Tek seçimliler tek elemanlı; hiç seçilmemişse varsayılan. */

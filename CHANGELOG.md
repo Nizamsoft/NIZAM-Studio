@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü
 
+## v0.135.4
+- **Görev kartındaki "Prompt Kopyala" çöküyordu.** `PROMPT.gorev()` fonksiyonu bir önceki tasarımdan (v0.68) beri silinmişti ama düğme hâlâ onu çağırıyordu — tıklayınca hata veriyordu. Yeniden yazıldı: artık güncel nizam/ dosya yapısına uygun, kısa bir görev promptu üretiyor.
+- **Sayfa künyesindeki "kim görebilir" notu ile Yetkiler ekranı çelişiyordu.** Künye "bu sayfayı yalnız X görsün" diye sabit bir kural yazdırıyordu, hemen altındaki Yetkiler ekranı bloğu ise "kodda sabitleme" diyordu. Artık künyedeki not "varsayılan" olarak işaretleniyor — Yetkiler ekranının veritabanına başlangıç değeri olarak yazılıyor, admin sonra değiştirebiliyor.
+- **Yerel (sunucusuz) projelerde 5 aşamalık kod promptu "tablolar Supabase'de kurulu" diyordu.** Artık `sunuculuMu()`'ya bakıyor; yerel projede "veri tarayıcıda tutulur, Supabase yok" diyor.
+- **Roller boşken 1. ve 4. aşama hâlâ giriş ekranı ve rol/yetki bağlama istiyordu.** "Tek kullanıcı, giriş yok" kararıyla çelişiyordu. Artık proje rolsüzse bu maddeler otomatik ayıklanıyor — hem promptta hem Studio'daki aşama kartında.
+- **İki kullanılmayan fonksiyon temizlendi.** `ekranOzeti` (hiç çağrılmıyordu, silindi) ve `temaAcik` (içindeki "müşteri uygulamaları hep açık tema" kuralı hiçbir prompta ulaşmıyordu — kural artık "1. blok"un tasarım taslağı talimatına yazıldı, fonksiyon silindi).
+- **Sayfa künyesi boşken "Kopyala" düğmesi hâlâ tıklanabiliyordu.** Uyarı vardı ama düğme kapanmıyordu; artık künye boşken de kapalı.
+
 ## v0.135.3
 - **`nizam/tasarim.md` artık boş bırakılmıyor.** Bir önceki sürümde "ayrı bir akışta, ayrı bir zamanda dolacak" denmişti; bu yanlıştı. "1. blok" artık Claude'dan teknik standarda uyan, basit ve nötr bir taslak tasarım sistemi (renk, tipografi, boşluk, temel bileşenler, ikon üslubu) yazmasını istiyor — marka kimliği uydurmadan, sadece kod yazmaya yetecek kadar. Bu taslak ileride **Profesyonel tasarım** aşamasında görsellerle ve gerçek marka kimliğiyle güncellenip yükseltilecek.
 

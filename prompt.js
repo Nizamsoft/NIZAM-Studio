@@ -10,10 +10,6 @@
 
 const PROMPT = {
 
-  /* Projenin teması açık mı? Varsayılan koyu. */
-  /* Müşteri uygulamaları hep açık tema. Studio'nun kendi teması ayrı. */
-  temaAcik() { return true; },
-
   /* ---- Görsel dil ----
      Renk, yüzey, tipografi ve simge biçimi artık Studio'da seçilmiyor:
      ChatGPT logo ve işletme görselinden bir tarif çıkarıyor, o tarif
@@ -397,6 +393,8 @@ const PROMPT = {
     s.push('  uyan, basit ve tutarlı bir taslak tasarım sistemi yaz: renk');
     s.push('  paleti, tipografi, boşluk/ölçü skalası, temel bileşenler (buton,');
     s.push('  kart, liste, form), ikon üslubu, sayfa iskeletleri, geçişler.');
+    s.push('  **Açık tema.** Müşteri uygulamaları her zaman açık temadır —');
+    s.push('  koyu tema seçme. (Studio\'nun kendi teması ayrı, bunu etkilemez.)');
     s.push('  **Marka kimliği uydurma** — nötr ve profesyonel bir varsayılan');
     s.push('  yeter. Bu taslak ileride "Profesyonel tasarım" aşamasında');
     s.push('  görsellerle, ikonlarla ve gerçek marka rengiyle güncellenecek;');
@@ -632,8 +630,9 @@ const PROMPT = {
      bilgiyi taşımıyor, nereden okunacağını söylüyor. */
   asama(projeId, no) {
     const p = DB.proje(projeId);
-    const a = KURULUM_ADIM[no];
-    if (!p || !a) return '';
+    if (!p) return '';
+    const a = kurulumAdimListesi(p)[no];
+    if (!a) return '';
     const slug = depoSlug(p.repo);
 
     const s = [];
@@ -649,7 +648,7 @@ const PROMPT = {
     s.push('- `nizam/tasarim.md` — renk, ölçü, bileşen ve iskeletler');
     s.push('- `nizam/sayfalar.md` — bu aşamada dokunacağın sayfaların künyesi');
     s.push('- `nizam/kararlar.md` — arayüz kararları ve verilmiş cevaplar');
-    s.push('- `NIZAM.md` — teknik standart ve Supabase bağlantısı', '');
+    s.push('- `NIZAM.md` — teknik standart' + (sunuculuMu(p) ? ' ve Supabase bağlantısı' : ''), '');
     s.push('> **Sayfalar dosyasının tamamını okuma.** Bu aşamada hangi');
     s.push('> sayfalara dokunacaksan yalnız onların bölümünü aç.', '');
 
@@ -666,9 +665,15 @@ const PROMPT = {
     s.push('- **Künyede olmayan alan, sayfa ya da modül ekleme.**');
     s.push('- Renk ve ölçüleri tek değişken dosyasından oku; ekranda');
     s.push('  yeniden tanımlama.');
-    s.push('- **Deneme hesabı ya da sahte veri uydurma.** Bağlantı');
-    s.push('  `js/yapilandirma.js` içinde; tablolar Supabase\'de kurulu.');
-    s.push('  Bir şey eksikse dur ve sor.', '');
+    if (sunuculuMu(p)) {
+      s.push('- **Deneme hesabı ya da sahte veri uydurma.** Bağlantı');
+      s.push('  `js/yapilandirma.js` içinde; tablolar Supabase\'de kurulu.');
+      s.push('  Bir şey eksikse dur ve sor.', '');
+    } else {
+      s.push('- **Deneme hesabı ya da sahte veri uydurma.** Bu proje sunucusuz');
+      s.push('  — veri tarayıcıda (yerel) tutulur, Supabase yok. Bir şey');
+      s.push('  eksikse dur ve sor.', '');
+    }
 
     s.push('## Bitirince', '');
     s.push('1. `nizam/durum.md` içinde bu aşamayı işaretle ve "Son oturumda ne');
@@ -677,6 +682,74 @@ const PROMPT = {
     s.push(`   \`[${TASK_PREFIX}-0] ${a.ad}\``);
     s.push('3. Ne yaptığını birkaç cümleyle özetle ve dur. Sonraki aşamayı');
     s.push('   yeni bir oturumda açacağım.');
+
+    return s.join('\n');
+  },
+
+  /* ---------- Tek görev promptu ----------
+     Görev kartındaki "Prompt Kopyala" düğmesinden. Beş aşama bittikten
+     sonra proje/modül/sayfa için açılan tek tük görevler için — kimlik
+     tek dosyada tutulmuyor, burada da tekrar yazmıyoruz: Claude nizam/
+     klasöründen okusun. */
+  gorev(gorevId) {
+    const g = DB.gorev(gorevId);
+    if (!g) return '';
+    const p = DB.proje(g.proje_id);
+    if (!p) return '';
+
+    const modul = g.modul_id ? DB.moduller.find(m => m.id === g.modul_id) : null;
+    const sayfa = g.sayfa_id ? DB.sayfalar.find(s => s.id === g.sayfa_id) : null;
+    const stdlar = DB.gorevinStandartlari(gorevId);
+    const no = TASK_PREFIX + '-' + g.no;
+    const slug = depoSlug(p.repo);
+
+    const s = [];
+    s.push(`# Görev ${no} — ${g.baslik}`, '');
+    if (slug) {
+      s.push('> ### Depo: `' + slug + '`');
+      s.push('> Bu oturum yalnız bu depoya bağlı olmalı. Deposu farklıysa dur');
+      s.push('> ve söyle.', '');
+    }
+
+    s.push('Proje bilgisi depoda duruyor; burada tekrar yazmıyorum. Şunları oku:', '');
+    s.push('- `nizam/durum.md` — nerede kaldığımız');
+    s.push('- `nizam/tasarim.md` — renk, ölçü, bileşen ve iskeletler');
+    s.push('- `nizam/sayfalar.md` — ' + yerYaz(modul, sayfa) + ' bölümünün künyesi');
+    s.push('- `nizam/kararlar.md` — arayüz kararları ve verilmiş cevaplar');
+    s.push('- `NIZAM.md` — teknik standart' + (sunuculuMu(p) ? ' ve bağlantı bilgisi' : ''), '');
+    s.push('> **Sayfalar dosyasının tamamını okuma.** Yalnız bu görevin ilgili');
+    s.push('> bölümünü aç.', '');
+
+    s.push('## Görev', '');
+    s.push(hiza('Yeri', yerYaz(modul, sayfa)));
+    if (g.oncelik === 'acil') s.push(hiza('Öncelik', 'ACİL'));
+    s.push('');
+    if (g.aciklama) {
+      s.push('Ne yapılacak:');
+      s.push('> ' + g.aciklama.trim().split('\n').join('\n> '));
+      s.push('');
+    }
+
+    if (stdlar.length) {
+      s.push(stdlar.length === 1 ? '## Kullanılacak Nizam Standardı' : '## Kullanılacak Nizam Standartları', '');
+      stdlar.forEach(st => {
+        s.push(`### ${st.ad}`);
+        s.push(st.tarif || st.ozet || '');
+        s.push('');
+      });
+    }
+
+    s.push('## Kurallar', '');
+    s.push('- **Tasarım kararı verme.** `nizam/tasarim.md` neyse o; yeni renk,');
+    s.push('  yazı tipi ya da bileşen düzeni getirme.');
+    s.push('- **Künyede olmayan alan, sayfa ya da modül ekleme.**');
+    s.push('- **Emin olmadığını uydurma.** Gerekiyorsa dur ve sor.', '');
+
+    s.push('## Bitirince', '');
+    s.push('1. Commit mesajının başına `[' + no + ']` yaz — Studio bu etiketi');
+    s.push('   arayıp görevi kendiliğinden "Kontrolde"ye çekiyor.');
+    s.push('2. `nizam/durum.md`\'yi güncelle: bu görevde ne değişti.');
+    s.push('3. Tek commit\'le **`main` dalına** gönder.');
 
     return s.join('\n');
   },
@@ -690,7 +763,7 @@ const PROMPT = {
     s.push('Onay gelmeden sonraki aşamaya geçme. Bir şey ters gittiyse 5000 satır');
     s.push('sonra değil, o aşamada anlaşılsın.');
     s.push('');
-    KURULUM_ADIM.forEach((a, i) => {
+    kurulumAdimListesi(proje).forEach((a, i) => {
       s.push(`#### ${i + 1}. ${a.ad}`);
       a.yap.forEach(x => s.push(`- ${x}`));
       s.push(`> **Kullanıcıya test ettir:** ${a.test}`);
@@ -783,8 +856,9 @@ const PROMPT = {
   },
 
   /* Sayfa künyeleri — AI'ın ekranı tahmin etmeden kurabilmesi için.
-     Alan türleri veritabanı sütununu, eylemler düğmeleri, roller satır
-     güvenliği kurallarını belirliyor. */
+     Alan türleri veritabanı sütununu, eylemler düğmeleri belirliyor.
+     Roller kodda sabitlenmiyor: Yetkiler ekranının veritabanına yazılan
+     bir varsayılan — admin runtime'da değiştirebiliyor. */
   kunyeBlogu(proje) {
     const pl = (proje && proje.palet) || {};
     const kunye = pl.kunye || {};
@@ -801,9 +875,12 @@ const PROMPT = {
     s.push('- **Zorunlu alan** boş kaydedilemez; arayüzde de veritabanında da engelle.');
     s.push('- **Modül kuralları bütün sayfalarda geçerlidir.** Bir sayfada "Bu sayfada');
     s.push('  farklı" satırı varsa yalnız orada modül kuralının yerine geçer.');
-    s.push('- **Yetkiyi burada arama.** Hangi katmanın hangi sayfayı görüp hangi işi');
+    s.push('- **Yetkiyi koda gömme.** Hangi katmanın hangi sayfayı görüp hangi işi');
     s.push('  yapabileceği uygulamanın kendi Yetkiler ekranından yönetiliyor —');
-    s.push('  aşağıdaki "Yetkiler ekranı" bölümüne bak.');
+    s.push('  aşağıdaki "Yetkiler ekranı" bölümüne bak. Bir sayfada "Görebilen"');
+    s.push('  notu varsa bu bir **varsayılan**: Yetkiler ekranının veritabanına o');
+    s.push('  izni başlangıç değeri olarak yaz, admin sonra değiştirebilsin —');
+    s.push('  kodda "if (rol !== ...)" gibi sabit bir kontrol yazma.');
 
     /* Modül düzeyi iş kuralı. Yetki burada yazılmıyor: kimin neyi görüp
        yapabileceğini uygulamanın kendi Yetkiler ekranından admin belirliyor. */
@@ -889,8 +966,8 @@ const PROMPT = {
       const farkli = (f.roller || []).length || (f.eylemler || []).length
         || Object.keys(f.yetki || {}).length || (f.kural || '').trim();
       if (farkli) {
-        s.push('- **Bu sayfada modül kuralından farklı:**');
-        if ((f.roller || []).length) s.push(`  - Görebilen: ${f.roller.join(' · ')}`);
+        s.push('- **Bu sayfada modül kuralından farklı** (Yetkiler ekranına varsayılan olarak yaz):');
+        if ((f.roller || []).length) s.push(`  - Varsayılan görebilen: ${f.roller.join(' · ')}`);
         (f.eylemler || []).forEach(ey => {
           const r = (f.yetki || {})[ey] || [];
           s.push(`  - ${ey} — ${r.length ? r.join(' · ') : 'yalnız bu sayfada var'}`);
@@ -1390,28 +1467,6 @@ const PROMPT = {
     s.push('');
     s.push('Bitirince tek commit\'le **`main` dalına** gönder:');
     s.push(`   \`[${TASK_PREFIX}-0] Güncelleme\``);
-    return s.join('\n');
-  },
-
-  /* Tasarımcıya giden kısa künye. Tam künye (alan türleri, zorunluluk,
-     roller, yetkiler) kodu yazacak olan için; tasarımcıya verilince
-     promptun üçte birini kaplıyor ve ekranı tabloya çeviriyor. Burada
-     yalnız hangi ekranlar var ve her birinde ne görünüyor. */
-  ekranOzeti(proje) {
-    const kunye = (proje.palet || {}).kunye || {};
-    const adlar = Object.keys(kunye);
-    if (!adlar.length) return '';
-
-    const s = [];
-    adlar.slice(0, 12).forEach(tam => {
-      const k = kunye[tam] || {};
-      const sayfa = tam.split(' · ').pop();
-      const sutun = (k.alanlar || []).slice(0, 4).map(a => a.ad).filter(Boolean);
-      s.push('- **' + sayfa + '**' + (k.tur ? ' _(' + k.tur.toLocaleLowerCase('tr') + ')_' : '')
-        + (k.amac ? ' — ' + k.amac : '')
-        + (sutun.length ? '  \n  Görünen bilgiler: ' + sutun.join(' · ') : ''));
-    });
-    if (adlar.length > 12) s.push('- …ve ' + (adlar.length - 12) + ' ekran daha');
     return s.join('\n');
   },
 

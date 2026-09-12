@@ -5226,7 +5226,7 @@ function kurulumAdimBlokGovde(p) {
     + `<div class="kur-dug">
         ${promptBaglantisi({ tur: 'yapi', proje: p.id, slug: depoSlug(p.repo),
           ikincil: !(kunyeVar && yayin),
-          yazi: 'Kopyala ve Claude Code\'da aç', kapali: !yayin })}
+          yazi: 'Kopyala ve Claude Code\'da aç', kapali: !yayin || !kunyeVar })}
       </div>`
     + `<label class="kur-onay ${pl.blokVerildi ? 'on' : ''}" data-eylem="beta-blok-onay"
              data-proje="${p.id}" role="button" tabindex="0">
@@ -5277,7 +5277,7 @@ function kurulumAdimSqlGovde(p) {
 /* 3-7 · Beş aşamadan biri — gerçek uygulama kodu burada yazılır, her biri
    ayrı (yeni) Claude Code oturumunda. */
 function kurulumAdimAsamaGovde(p, i) {
-  const a = KURULUM_ADIM[i];
+  const a = kurulumAdimListesi(p)[i];
   const pl = p.palet || {};
   const bitti = (Array.isArray(pl.asama) ? pl.asama : []).indexOf(i) > -1;
 
