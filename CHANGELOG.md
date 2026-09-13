@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## v0.135.37
+- **SQL yükleme ve ilk kullanıcı, şablon kopyalarında artık Bağlantılar ve temel'de.** Bir template'in Supabase şeması hazırsa (Templateler'deki kurulum sihirbazına eklenen yeni "SQL" adımında bir GitHub linki tanımlanmışsa), Supabase bağlandıktan hemen sonra iki yeni adım çıkıyor: **Veritabanını kur** (linkteki SQL'i kopyala, yeni projenin SQL Editor'üne yapıştır) ve **İlk kullanıcı** (e-posta+şifre gir, Studio Supabase panelinin doğru sayfasına yönlendirip adım adım anlatıyor). SQL linki tanımlı değilse bu iki adım hiç görünmüyor — eski akış (ilk kullanıcı Kullanıcı ve Yetki durağında) aynen çalışmaya devam ediyor.
+- **İlk kullanıcı artık her zaman Admin — katman seçtirilmiyor.** Rol merdiveninin en üst satırı ("Admin") sabit ve değiştirilemez oldu; katman sayısı kaç olursa olsun en geniş yetkili katman hep bu isimde. Alttaki katmanlar eskisi gibi serbestçe adlandırılıyor.
+- Bu sayede Yetkiler ekranı promptu da sadeleşti: Claude'a artık "kodun içine sabit bir şifre göm" demiyoruz — ilk gerçek admin zaten var olduğu için buna hiç gerek kalmadı, kalıcı bir arka kapı riski de ortadan kalktı.
+
 ## v0.135.36
 - **Templateler'e "Sil" eklendi.** Kurulum sihirbazının üst çubuğunda artık bir çöp kutusu simgesi var — yanlışlıkla oluşmuş ya da artık gerekmeyen bir template'i silmek için Supabase'e inmeye gerek kalmıyor. Kilitli bir template önce Templateler listesindeki kilit simgesinden açılmalı.
 

@@ -1245,14 +1245,16 @@ function baglantilarSayfasi(p, d) {
   const pl = p.palet || {};
   const sunuculu    = sunuculuMu(p);
   const namecheapMi = pl.alanTuru === 'namecheap';
+  const sqlliMi     = sunuculu && !!pl.sablonSqlLink;
   const supabaseTam = !!String(pl.supabaseUrl || '').trim() && !!String(pl.supabaseAnon || '').trim();
   const depoTam     = !!p.repo;
   const yayinTam    = !!pl.yayinda;
   const sohbetAdi   = String(pl.sohbetAdi || '').trim();
 
   const bagDolu = [depoTam, !!sohbetAdi, yayinTam].concat(sunuculu ? [supabaseTam] : [])
+    .concat(sqlliMi ? [!!pl.sqlYuklendi, !!pl.ilkKullaniciEklendi] : [])
     .concat(namecheapMi ? [!!pl.namecheapBaglandi] : []).filter(Boolean).length;
-  const bagToplam = 3 + (sunuculu ? 1 : 0) + (namecheapMi ? 1 : 0);
+  const bagToplam = 3 + (sunuculu ? 1 : 0) + (sqlliMi ? 2 : 0) + (namecheapMi ? 1 : 0);
 
   const kart = bagDolu === 0
     ? fbBosKart('#b8926b', ICON.dal, 'Bağlantılar', bagDolu + '/' + bagToplam,
@@ -1270,6 +1272,10 @@ function baglantilarSayfasi(p, d) {
                     yayinTam ? (pl.alanAdi || 'Yayında') : '', '', p.id, true, 'bağlı değil')}
       ${sunuculu ? kunyeSatiri('#3ecf8e', ICON.bulut, 'Supabase',
                     supabaseTam ? 'Bağlandı' : '', '', p.id, true, 'bağlı değil') : ''}
+      ${sqlliMi ? kunyeSatiri('#3ecf8e', ICON.bulut, 'Veritabanı',
+                    pl.sqlYuklendi ? 'Yüklendi' : '', '', p.id, true, 'bekliyor') : ''}
+      ${sqlliMi ? kunyeSatiri('#a15fc4', ICON.anahtar, 'İlk kullanıcı',
+                    pl.ilkKullaniciEklendi ? 'Açıldı' : '', '', p.id, true, 'bekliyor') : ''}
       ${namecheapMi ? kunyeSatiri('#c48a5c', ICON.dil, 'Namecheap',
                     pl.namecheapBaglandi ? (pl.alanAdi || 'Bağlandı') : '', '', p.id, true, 'bağlı değil') : ''}
     </div>`, bagDolu + '/' + bagToplam);
@@ -1310,7 +1316,10 @@ function rolMerdiveni(roller, onek) {
           const sira = n - 1 - i;                      /* üstten alta çiz */
           const ust  = sira === n - 1;
           const dar  = sira === 0;
-          const ad = liste[sira] || (ROL_ORNEK[n] || [])[sira] || '';
+          /* En üstteki katman her zaman "Admin": ilk kullanıcı hesabı bu
+             adla açılıyor (bkz. Bağlantılar ve temel / Kullanıcı ve Yetki),
+             o yüzden burada sabit ve salt okunur — silinemez, değiştirilemez. */
+          const ad = ust ? 'Admin' : (liste[sira] || (ROL_ORNEK[n] || [])[sira] || '');
           /* Simgeler sayfadaki rol rozetleriyle aynı: en geniş kalkan,
              en dar kilit, aradakiler kişi. */
           return `
@@ -1320,14 +1329,15 @@ function rolMerdiveni(roller, onek) {
               <span class="rol-ik">${svg(ust ? ICON.gGuvenlik : dar ? ICON.kilit : ICON.kisi, 15)}</span>
               <span class="rol-orta">
                 <input type="text" data-rol="${sira}" value="${esc(ad)}"
+                       ${ust ? 'readonly' : ''}
                        placeholder="${esc((ROL_ORNEK[n] || [])[sira] || 'Rol adı')}"
                        maxlength="40" autocomplete="off">
               </span>
-              ${ust ? '<span class="rol-rozet">En geniş</span>' : dar ? '<span class="rol-rozet">En dar</span>' : ''}
+              ${ust ? '<span class="rol-rozet">Sabit</span>' : dar ? '<span class="rol-rozet">En dar</span>' : ''}
             </label>`;
         }).join('')}
       </div>
-      ${fdNot('Üstteki katman, alttakinin gördüğü her şeyi görür. Katmanları daha sonra düzenleyebilirsin.')}
+      ${fdNot('Üstteki katman her zaman Admin. Alttakiler serbestçe adlandırılır, daha sonra da düzenlenebilir.')}
     </div>`;
 }
 
@@ -1339,18 +1349,21 @@ function rolBagla(kutu) {
     const b = ev.target.closest('[data-rol-sayi]');
     if (!b) return;
     const n = Number(b.dataset.rol_sayi || b.dataset.rolSayi);
-    const simdi = rolOku(kutu);
-    const ornek = ROL_ORNEK[n] || [];
+    /* En üstteki "Admin" satırı sabit — sayı hesabına gerçek bir kullanıcı
+       girdisi gibi karışmasın, yoksa sayı artınca ortaya sızabilir. */
+    const simdi = rolOku(kutu).slice(0, -1);
+    const ornek = (ROL_ORNEK[n] || []).slice(0, -1);
     /* Elle yazılmadıysa doğrudan yeni örneğe geç; yazıldıysa adları koru ve
        eksik satırları kullanılmamış örnek adlarıyla doldur. */
-    const eskiOrnek = ROL_ORNEK[simdi.length] || [];
+    const eskiOrnek = (ROL_ORNEK[simdi.length + 1] || []).slice(0, -1);
     const dokunulmus = simdi.some((x, i) => x !== eskiOrnek[i]);
     const yeni = [];
-    for (let i = 0; i < n; i++) {
+    for (let i = 0; i < n - 1; i++) {
       let ad = dokunulmus ? (simdi[i] || '') : (ornek[i] || '');
       if (!ad || yeni.includes(ad)) ad = ornek.find(x => !yeni.includes(x) && !simdi.includes(x)) || '';
       yeni.push(ad);
     }
+    yeni.push('Admin');
     kat.outerHTML = rolMerdiveni(yeni, kat.dataset.rolOnek);
     rolBagla(kutu);
   });
@@ -4351,89 +4364,54 @@ function yetkiKoduKarti(p, pl) {
 }
 
 /* İlk kullanıcının e-posta/şifresi kalıcı değil — yalnız bu ekran açıkken
-   tarayıcı belleğinde durur, onaylanınca (yalnız e-posta+rol) palete yazılıp
-   şifre atılır. Veritabanında düz metin şifre tutmayalım diye. */
-const YETKI_ILK = {};
+   tarayıcı belleğinde durur, onaylanınca (yalnız e-posta) palete yazılıp
+   şifre atılır. Veritabanında düz metin şifre tutmayalım diye.
 
-function yetkiIlkKullaniciModalAc(projeId) {
-  modalHepsiniKapat();
-  const p = DB.proje(projeId);
-  if (!p) return;
-  const pl = p.palet || {};
-  const roller = rolListesi(pl.roller);
-  const enGenis = roller[roller.length - 1] || '';
-  modalAc(`
-    ${modalBaslik(ICON.anahtar, 'İlk kullanıcı', 'Bu bilgiyle hesabı Supabase panelinden sen açacaksın.')}
-    <label class="field">
-      <span>E-posta</span>
-      <input type="email" id="yk-eposta" placeholder="ornek@firma.com" autocomplete="off">
-    </label>
-    <label class="field">
-      <span>Şifre</span>
-      <input type="text" id="yk-sifre" placeholder="En az 6 karakter" autocomplete="off">
-    </label>
-    <label class="field">
-      <span>Katman</span>
-      <div class="ky-cipler" id="yk-rol">
-        ${roller.map(r => `<button class="cip-sec ${r === enGenis ? 'on' : ''}"
-          type="button" data-alt="${esc(r)}">${esc(r)}</button>`).join('')}
-      </div>
-    </label>
-    <div class="modal-alt">
-      <button class="btn btn-ghost" data-m="iptal" type="button">Vazgeç</button>
-      <button class="btn btn-primary" data-m="tamam" type="button"><span>Talimatı oluştur</span></button>
-    </div>`, kutu => {
-    let rol = enGenis;
-    $$('#yk-rol .cip-sec', kutu).forEach(b => b.addEventListener('click', () => {
-      rol = b.dataset.alt;
-      $$('#yk-rol .cip-sec', kutu).forEach(x => x.classList.toggle('on', x === b));
-    }));
-    $('[data-m="iptal"]', kutu).addEventListener('click', modalKapat);
-    $('[data-m="tamam"]', kutu).addEventListener('click', () => {
-      const eposta = $('#yk-eposta', kutu).value.trim();
-      const sifre  = $('#yk-sifre', kutu).value.trim();
-      if (!eposta || !sifre) { toast('E-posta ve şifre gerekli.', 'uyari'); return; }
-      if (sifre.length < 6) { toast('Şifre en az 6 karakter olmalı.', 'uyari'); return; }
-      YETKI_ILK[p.id] = { eposta, sifre, rol };
-      modalKapat();
-      render();
-    });
-  });
-}
+   İlk kullanıcı her zaman "Admin" — katman seçtirilmiyor (bkz. rolMerdiveni'nin
+   sabit üst satırı). İki yerden çağrılabiliyor: şablon kopyalarında Bağlantılar
+   ve temel'de (bkz. baglantiAdimIlkKullanici — SQL zaten yüklendiği için tablo
+   hazır), sıfırdan projelerde ise burada, Kullanıcı ve Yetki durağında (bkz.
+   ilkKullaniciKarti) — hangisi önce tamamlanırsa öteki "yapıldı" göstermeye
+   düşer, aynı palet alanlarını (ilkKullaniciEklendi/ilkKullanici) paylaşırlar. */
+const ILK_KULLANICI = {};
 
 /* Proje adresinden (https://xxxx.supabase.co) dashboard bağlantısı çıkarır.
    Çözülemezse genel dashboard adresine düşer — link yine çalışır, yalnız
    projeyi elle seçmek gerekir. */
-function yetkiSupabasePaneli(pl, yol) {
+function ilkKullaniciSupabasePaneli(pl, yol) {
   const eslesme = String(pl.supabaseUrl || '').match(/^https?:\/\/([a-z0-9-]+)\.supabase\.co/i);
   return eslesme
     ? `https://supabase.com/dashboard/project/${eslesme[1]}${yol}`
     : 'https://supabase.com/dashboard';
 }
 
-function yetkiIlkKullaniciKarti(p, pl) {
+/* Kart/adımın ortak içeriği — dıştaki kabuk (fbKart ya da shBaslikServis)
+   çağırana göre değişir, bkz. ilkKullaniciKarti ve baglantiAdimIlkKullanici. */
+function ilkKullaniciGovde(p, pl) {
   if (pl.ilkKullaniciEklendi) {
     const k = pl.ilkKullanici || {};
-    return fbKart('#a15fc4', ICON.anahtar, 'İlk kullanıcı', null, p.id, `
-      <div class="kur-deger duz">${svg(ICON.tik, 13)}
-        ${esc(k.eposta || '')}${k.rol ? ' — ' + esc(k.rol) : ''}</div>`);
+    return `<div class="kur-deger duz">${svg(ICON.tik, 13)}
+      ${esc(k.eposta || '')} — Admin</div>`;
   }
 
-  const bilgi = YETKI_ILK[p.id];
+  const bilgi = ILK_KULLANICI[p.id];
   if (!bilgi) {
-    return fbKart('#a15fc4', ICON.anahtar, 'İlk kullanıcı', null, p.id, `
-      <p class="fb-neden">Kayıt ekranı yok — ilk hesabı sen, Supabase panelinden
-        elle açacaksın. Önce e-posta, şifre ve katmanını gir.</p>
-      ${AUTH.yonetici ? `<div class="kur-dug">
-        <button class="sayfa-dug" type="button" data-eylem="yetki-ilk-kullanici-ac"
-                data-proje="${p.id}">${svg(ICON.kalem, 15)} Bilgileri gir</button>
-      </div>` : ''}`);
+    return `<p class="fb-neden">Kayıt ekranı yok — ilk hesabı (Admin) sen,
+        Supabase panelinden elle açacaksın. Önce e-posta ve şifresini gir.</p>
+      ${AUTH.yonetici ? `
+        <label class="field"><span>E-posta</span>
+          <input type="email" id="ik-eposta-${p.id}" placeholder="ornek@firma.com" autocomplete="off"></label>
+        <label class="field"><span>Şifre</span>
+          <input type="text" id="ik-sifre-${p.id}" placeholder="En az 6 karakter" autocomplete="off"></label>
+        <div class="kur-dug">
+          <button class="sayfa-dug" type="button" data-eylem="ilk-kullanici-hazirla"
+                  data-proje="${p.id}">${svg(ICON.kalem, 15)} Talimatı oluştur</button>
+        </div>` : ''}`;
   }
 
-  const kullaniciAdres = yetkiSupabasePaneli(pl, '/auth/users');
-  const sqlAdres = yetkiSupabasePaneli(pl, '/sql/new');
-  return fbKart('#a15fc4', ICON.anahtar, 'İlk kullanıcı', null, p.id, `
-    <p class="fb-neden">Sırayla yap, sonra "Ekledim" de:</p>
+  const kullaniciAdres = ilkKullaniciSupabasePaneli(pl, '/auth/users');
+  const sqlAdres = ilkKullaniciSupabasePaneli(pl, '/sql/new');
+  return `<p class="fb-neden">Sırayla yap, sonra "Ekledim" de:</p>
     <ol style="margin:0;padding-left:20px;display:grid;gap:10px;color:var(--ink-soft);font-size:13.5px">
       <li>Supabase panelinde <b>Authentication → Users → Add user</b>'a git;
         e-posta <code>${esc(bilgi.eposta)}</code>, şifre <code>${esc(bilgi.sifre)}</code>
@@ -4441,19 +4419,33 @@ function yetkiIlkKullaniciKarti(p, pl) {
         <a class="mini-link" target="_blank" rel="noopener" href="${esc(kullaniciAdres)}">
           ${svg(ICON.disari, 13)} Panele git</a></li>
       <li><b>SQL Editor</b>'de bu kullanıcı için <code>kullanicilar</code> tablosuna
-        katman satırını ekle — sütun adları Claude'un kurduğu şemaya göre
-        değişebilir, emin değilsen kontrol et. Örnek:
+        Admin satırını ekle — sütun adları şemaya göre değişebilir, emin
+        değilsen kontrol et. Örnek:
         <div class="anl-kutu mono" style="margin-top:6px;padding:8px 10px;font-size:12.5px">insert into kullanicilar (eposta, rol) values
-('${esc(bilgi.eposta)}', '${esc(bilgi.rol)}');</div>
+('${esc(bilgi.eposta)}', 'Admin');</div>
         <a class="mini-link" target="_blank" rel="noopener" href="${esc(sqlAdres)}">
           ${svg(ICON.disari, 13)} SQL Editor'e git</a></li>
     </ol>
     ${AUTH.yonetici ? `<div class="kur-dug">
-      <button class="sayfa-dug" type="button" data-eylem="yetki-ilk-kullanici-onay"
+      <button class="sayfa-dug" type="button" data-eylem="ilk-kullanici-onay"
               data-proje="${p.id}">${svg(ICON.tik, 15)} Ekledim</button>
-      <button class="sayfa-dug ikincil" type="button" data-eylem="yetki-ilk-kullanici-vazgec"
+      <button class="sayfa-dug ikincil" type="button" data-eylem="ilk-kullanici-vazgec"
               data-proje="${p.id}">Vazgeç</button>
-    </div>` : ''}`);
+    </div>` : ''}`;
+}
+
+function ilkKullaniciKarti(p, pl) {
+  return fbKart('#a15fc4', ICON.anahtar, 'İlk kullanıcı', null, p.id, ilkKullaniciGovde(p, pl));
+}
+
+/* Bağlantılar ve temel'deki adım kabuğu — şablon kopyalarında, SQL yüklendikten
+   hemen sonra gösteriliyor (bkz. baglantiAdimListesi). İçerik ilkKullaniciKarti
+   ile birebir aynı, yalnız kabuk farklı (shBaslikServis, fbKart değil). */
+function baglantiAdimIlkKullanici(p) {
+  const pl = p.palet || {};
+  return shBaslikServis('supabase', 'İlk kullanıcı (Admin)',
+      'Uygulamanın ilk yöneticisini şimdi Supabase panelinden aç.')
+    + ilkKullaniciGovde(p, pl);
 }
 
 function yetkiBilgiKarti() {
@@ -4486,7 +4478,7 @@ function yetkiSayfasi(p, d) {
     + yetkiGorevKarti(p, pl)
     + yetkiPromptKarti(p, pl)
     + yetkiKoduKarti(p, pl)
-    + yetkiIlkKullaniciKarti(p, pl)
+    + ilkKullaniciKarti(p, pl)
     + yetkiBilgiKarti()
     + (AUTH.yonetici ? (tamam
         ? `<div class="kur-deger duz">${svg(ICON.tik, 13)} Bu aşama tamamlandı</div>`
@@ -4682,7 +4674,10 @@ function projeDuraklari(p) {
              && !!pl0.alanAdi && !!pl0.yayinda
              && (!sunuculuMu(p) || (!!String(pl0.supabaseUrl || '').trim()
                                      && !!String(pl0.supabaseAnon || '').trim()))
-             && (pl0.alanTuru !== 'namecheap' || !!pl0.namecheapBaglandi),
+             && (pl0.alanTuru !== 'namecheap' || !!pl0.namecheapBaglandi)
+             /* Template'in SQL linki varsa yükleme ve ilk kullanıcı da
+                burada bitmiş olmalı — bkz. baglantiAdimListesi. */
+             && (!pl0.sablonSqlLink || (!!pl0.sqlYuklendi && !!pl0.ilkKullaniciEklendi)),
       ozet: !p.repo
         ? 'Depo, sohbet, adres ve yayın burada kurulacak.'
         : !pl0.yayinda
@@ -6151,16 +6146,19 @@ async function cekirdekAdiSor(kaynakId, tur) {
    bir template'in gerçek bir servise bağlı olması zaten istenmiyor. */
 const CEKIRDEK_KURULUM = { adim: 1, projeId: null };
 
-function cekirdekKurulumListesi() { return ['github', 'claude']; }
+function cekirdekKurulumListesi() { return ['github', 'sql', 'claude']; }
 
 function cekirdekKurulumAdimBittiMi(k, p) {
   if (k === 'github') return !!p.repo;
+  /* SQL linki isteğe bağlı — bir template'in mutlaka veritabanı olması
+     gerekmez, o yüzden bu adım hiç doldurulmasa da geçilebiliyor. */
+  if (k === 'sql')     return !!((p.palet || {}).cekirdek || {}).sqlLink;
   if (k === 'claude')  return !!(p.palet || {}).cekirdekTemizlendi;
   return false;
 }
 
 function cekirdekKurulumEtiket(k) {
-  return { github: 'GitHub', claude: 'Claude' }[k] || '';
+  return { github: 'GitHub', sql: 'SQL', claude: 'Claude' }[k] || '';
 }
 
 function cekirdekKurulumAc(projeId) {
@@ -6210,7 +6208,9 @@ function cekirdekKurulumSerit(liste, simdi, p) {
 
 function cekirdekKurulumHtml(p, liste) {
   const k = liste[CEKIRDEK_KURULUM.adim - 1];
-  const govde = k === 'github' ? baglantiAdimGithub(p) : cekirdekAdimClaudeGovde(p);
+  const govde = k === 'github' ? baglantiAdimGithub(p)
+    : k === 'sql' ? cekirdekAdimSqlGovde(p)
+    : cekirdekAdimClaudeGovde(p);
 
   const geri = CEKIRDEK_KURULUM.adim > 1
     ? `<button class="btn btn-ghost" data-ck="geri" type="button">← Geri</button>`
@@ -6274,7 +6274,26 @@ function cekirdekKurulumBagla(kutu) {
   });
 }
 
-/* 2 · Claude — firma izini kaldırma, tasarımı standarda döndürme ve
+/* 2 · SQL — bu template'ten açılan her müşteri kopyasında, Bağlantılar ve
+   temel'deki Supabase adımından hemen sonra gösterilecek link (bkz.
+   baglantiAdimSql). İsteğe bağlı: her template'in veritabanı olması gerekmez. */
+function cekirdekAdimSqlGovde(p) {
+  const pl = p.palet || {};
+  const mevcut = (pl.cekirdek || {}).sqlLink || '';
+  return shBaslikServis('supabase', 'Kurulum SQL linki',
+      'Bu template\'ten açılan her müşteri kopyasında, Supabase bağlanırken bu link gösterilecek.')
+    + `<label class="field"><span>Birleşik kurulum SQL dosyasının GitHub linki</span>
+        <input type="text" id="ck-sql-link" value="${esc(mevcut)}"
+               placeholder="https://github.com/.../blob/main/....sql"
+               autocomplete="off" spellcheck="false"></label>
+      <div class="kur-dug">
+        <button class="sayfa-dug ikincil" type="button" data-eylem="cekirdek-sql-kaydet"
+                data-proje="${p.id}">${svg(ICON.check, 15)} Kaydet</button>
+      </div>`
+    + (mevcut ? `<div class="kur-deger duz">${svg(ICON.tik, 13)} Kayıtlı</div>` : '');
+}
+
+/* 3 · Claude — firma izini kaldırma, tasarımı standarda döndürme ve
    gerçek bağlantıları koparma promptu (bkz. PROMPT.cekirdekTemizle). */
 function cekirdekAdimClaudeGovde(p) {
   const pl    = p.palet || {};
@@ -7024,9 +7043,12 @@ async function programAdimKaydet() {
 
 const BAGLANTI_ADIM = { adim: 1, projeId: null, liste: [] };
 
-const BAGLANTI_ETIKET = { github: 'GitHub', claude: 'Claude', pages: 'Yayın', supabase: 'Supabase', namecheap: 'Namecheap' };
-/* Yayın adımının kendi servisi yok — hâlâ GitHub, o yüzden aynı logo. */
-const BAGLANTI_SERVIS = { github: 'github', claude: 'claude', pages: 'github', supabase: 'supabase', namecheap: 'namecheap' };
+const BAGLANTI_ETIKET = { github: 'GitHub', claude: 'Claude', pages: 'Yayın', supabase: 'Supabase',
+  sql: 'Veritabanı', ilkKullanici: 'İlk kullanıcı', namecheap: 'Namecheap' };
+/* Yayın adımının kendi servisi yok — hâlâ GitHub, o yüzden aynı logo.
+   SQL ve İlk kullanıcı adımları da Supabase logosunu paylaşıyor. */
+const BAGLANTI_SERVIS = { github: 'github', claude: 'claude', pages: 'github', supabase: 'supabase',
+  sql: 'supabase', ilkKullanici: 'supabase', namecheap: 'namecheap' };
 
 /* Yayın (GitHub Pages) bilerek Claude'dan SONRA geliyor: Claude görevini
    bitirmeden siteyi yayına almanın anlamı yok. Depo bağlama ile yayın
@@ -7040,7 +7062,14 @@ function baglantiAdimListesi(p) {
      bağlanır, Yayın ise kod yazılmadan anlamsız olduğu için sonra gelir. */
   if (sablonMu(p)) {
     const liste = ['github', 'pages'];
-    if (sunuculuMu(p)) liste.push('supabase');
+    if (sunuculuMu(p)) {
+      liste.push('supabase');
+      /* Template'e bir SQL linki tanımlıysa (bkz. Templateler > kurulum
+         sihirbazı) tablolar burada, Supabase bağlanır bağlanmaz yüklenir —
+         ilk kullanıcı (Admin) da bu noktada açılır. Link yoksa eski akış:
+         ilk kullanıcı Kullanıcı ve Yetki durağında sorulur. */
+      if (pl.sablonSqlLink) liste.push('sql', 'ilkKullanici');
+    }
     if (pl.alanTuru === 'namecheap') liste.push('namecheap');
     liste.push('claude');
     return liste;
@@ -7053,11 +7082,13 @@ function baglantiAdimListesi(p) {
 
 function baglantiAdimBittiMi(k, p) {
   const pl = p.palet || {};
-  if (k === 'github')    return !!p.repo;
-  if (k === 'claude')    return !!String(pl.sohbetAdi || '').trim();
-  if (k === 'pages')     return !!pl.yayinda;
-  if (k === 'supabase')  return !!String(pl.supabaseUrl || '').trim() && !!String(pl.supabaseAnon || '').trim();
-  if (k === 'namecheap') return !!pl.namecheapBaglandi;
+  if (k === 'github')       return !!p.repo;
+  if (k === 'claude')       return !!String(pl.sohbetAdi || '').trim();
+  if (k === 'pages')        return !!pl.yayinda;
+  if (k === 'supabase')     return !!String(pl.supabaseUrl || '').trim() && !!String(pl.supabaseAnon || '').trim();
+  if (k === 'sql')          return !!pl.sqlYuklendi;
+  if (k === 'ilkKullanici') return !!pl.ilkKullaniciEklendi;
+  if (k === 'namecheap')    return !!pl.namecheapBaglandi;
   return false;
 }
 
@@ -7114,6 +7145,8 @@ function baglantiAdimHtml(p) {
     : k === 'claude' ? baglantiAdimClaude(p)
     : k === 'pages' ? baglantiAdimPages(p)
     : k === 'supabase' ? baglantiAdimSupabase(p)
+    : k === 'sql' ? baglantiAdimSql(p)
+    : k === 'ilkKullanici' ? baglantiAdimIlkKullanici(p)
     : baglantiAdimNamecheap(p);
 
   const geri = BAGLANTI_ADIM.adim > 1
@@ -7357,6 +7390,30 @@ function baglantiAdimSupabase(p) {
       'Girişler ve yetkiler buradan yönetilir',
       'Yedekleme ve güvenlik Supabase tarafında',
     ]);
+}
+
+/* Şablon kopyalarına özel ara adım: template'in hazır SQL'i (bkz. Templateler
+   > kurulum sihirbazı, `cekirdek.sqlLink`) yeni Supabase projesine yükleniyor.
+   Link her müşteri kopyasında aynı — template'in kendi deposunu gösterir,
+   içerik zaten kopyalandığı için sorun değil. */
+function baglantiAdimSql(p) {
+  const pl = p.palet || {};
+  const link = String(pl.sablonSqlLink || '').trim();
+  const yuklendi = !!pl.sqlYuklendi;
+
+  return shBaslikServis('supabase', 'Veritabanını kur',
+      'Template\'in hazır tablo ve kurallarını yeni Supabase projene yükle.')
+    + (link ? `
+        <a class="sayfa-dug ikincil" target="_blank" rel="noopener" href="${esc(link)}">
+          ${svg(ICON.disari, 15)} SQL dosyasını aç</a>
+        <div class="fbd-not">${svg(ICON.info, 13)}
+          <span>Açılan sayfadaki kodun tamamını kopyala, Supabase projendeki
+          <b>SQL Editor</b>'e yapıştır ve çalıştır (Run).</span></div>
+        <label class="kur-onay ${yuklendi ? 'on' : ''}" data-eylem="sql-yuklendi-onay"
+               data-proje="${p.id}" role="button" tabindex="0">
+          <span class="kur-kutu">${svg(ICON.tik, 12)}</span> SQL'i yükledim</label>`
+      : `<div class="note uyari">${svg(ICON.uyari, 15)}
+          <span>Bu template için SQL linki tanımlanmamış — Templateler'den ekleyebilirsin.</span></div>`);
 }
 
 /* 5 · Namecheap — DNS kaydı + alan adı, eskiden ayrı bir pencereydi
@@ -9548,25 +9605,39 @@ async function eylemCalistir(el) {
     })), 'Kaydedildi.');
   }
 
-  if (e === 'yetki-ilk-kullanici-ac') return yetkiIlkKullaniciModalAc(el.dataset.proje);
-
-  if (e === 'yetki-ilk-kullanici-vazgec') {
-    delete YETKI_ILK[el.dataset.proje];
+  if (e === 'ilk-kullanici-hazirla') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const epostaEl = document.getElementById('ik-eposta-' + pr.id);
+    const sifreEl  = document.getElementById('ik-sifre-' + pr.id);
+    const eposta = epostaEl ? epostaEl.value.trim() : '';
+    const sifre  = sifreEl ? sifreEl.value.trim() : '';
+    if (!eposta || !sifre) { toast('E-posta ve şifre gerekli.', 'uyari'); return; }
+    if (sifre.length < 6) { toast('Şifre en az 6 karakter olmalı.', 'uyari'); return; }
+    ILK_KULLANICI[pr.id] = { eposta, sifre };
     render();
+    if ($('#baglanti-adim')) baglantiAdimCiz();
     return;
   }
 
-  if (e === 'yetki-ilk-kullanici-onay') {
+  if (e === 'ilk-kullanici-vazgec') {
+    delete ILK_KULLANICI[el.dataset.proje];
+    render();
+    if ($('#baglanti-adim')) baglantiAdimCiz();
+    return;
+  }
+
+  if (e === 'ilk-kullanici-onay') {
     const pr = DB.proje(el.dataset.proje);
     if (!pr) return;
-    const bilgi = YETKI_ILK[pr.id];
+    const bilgi = ILK_KULLANICI[pr.id];
     if (!bilgi) return;
     const pl = pr.palet || {};
     return isYap(() => {
-      delete YETKI_ILK[pr.id];
+      delete ILK_KULLANICI[pr.id];
       return DB.paletKaydet(pr.id, Object.assign({}, pl, {
         ilkKullaniciEklendi: true,
-        ilkKullanici: { eposta: bilgi.eposta, rol: bilgi.rol },
+        ilkKullanici: { eposta: bilgi.eposta, rol: 'Admin' },
       }));
     }, 'İlk kullanıcı kaydedildi.');
   }
@@ -9776,6 +9847,14 @@ async function eylemCalistir(el) {
     if (!url.trim() || !key.trim()) return toast('İkisini de yaz.', 'uyari');
     return isYap(() => DB.paletKaydet(pr.id, Object.assign({}, pr.palet || {},
       { supabaseUrl: url.trim(), supabaseAnon: key.trim() })), 'Supabase bağlantısı kaydedildi.');
+  }
+
+  if (e === 'sql-yuklendi-onay') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const pl = pr.palet || {};
+    return isYap(() => DB.paletKaydet(pr.id, Object.assign({}, pl, { sqlYuklendi: !pl.sqlYuklendi })),
+      pl.sqlYuklendi ? 'İşaret kaldırıldı.' : 'Kaydedildi.');
   }
 
   if (e === 'ekibe') { location.hash = '#/ekip'; return; }
@@ -10579,6 +10658,17 @@ async function eylemCalistir(el) {
     return isYap(() => DB.paletKaydet(pr.id,
       Object.assign({}, pl, { cekirdekTemizlendi: true, kilitli: true })),
       'Template hazır ve kilitlendi.');
+  }
+
+  if (e === 'cekirdek-sql-kaydet') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const alan = document.getElementById('ck-sql-link');
+    const link = alan ? alan.value.trim() : '';
+    if (!link) { toast('Önce bir link yaz.', 'uyari'); return; }
+    const pl = pr.palet || {};
+    const cekirdek = Object.assign({}, pl.cekirdek || {}, { sqlLink: link });
+    return isYap(() => DB.paletKaydet(pr.id, Object.assign({}, pl, { cekirdek })), 'Kaydedildi.');
   }
 
   if (e === 'sablon-sil') {

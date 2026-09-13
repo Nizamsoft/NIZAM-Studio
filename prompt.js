@@ -678,12 +678,11 @@ const PROMPT = {
     s.push('engellensin. Veri yerel tarayıcıdaysa sunucu yok; o zaman Yetkiler');
     s.push('ekranı yalnız arayüzü biçimlendirir.');
     s.push('');
-    s.push('**İlk giriş.** Veritabanında hiç kullanıcı yokken normal girişle kimse');
-    s.push('içeri giremez — kayıt ekranı da yok. Kodun içine sabit bir kullanıcı');
-    s.push('adı ve şifre göm; kullanıcı tablosu boşken giriş ekranı yalnız bu');
-    s.push('bilgiyi kabul etsin ve en üst katmandan içeri alsın. İlk gerçek');
-    s.push('kullanıcı Yetkiler ekranından oluşturulur oluşturulmaz bu sabit giriş');
-    s.push('bir daha çalışmasın — kalıcı bir arka kapı kalmasın.');
+    s.push('**İlk giriş.** İlk kullanıcı (Admin) zaten var — Supabase panelinden');
+    s.push('elle açıldı, ilgili tabloda satırı da duruyor. Kodun içine sabit bir');
+    s.push('kullanıcı adı/şifre gömmene gerek yok; Yetkiler ekranı ve giriş bu');
+    s.push('gerçek admin satırını baştan itibaren kullanabilir. Kalıcı bir arka');
+    s.push('kapı bırakma.');
     return s.join('\n');
   },
 

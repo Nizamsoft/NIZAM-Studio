@@ -495,8 +495,11 @@ const DB = {
         /* Şablon kopyası: "Program temeli"nde girilen paket adı ve veri
            katmanı da bu firmaya özel — boş gelip yeniden doldurulmalı.
            Kurulum ve yapı (modül/sayfa) yapısı ise KALIYOR, o üstteki
-           `modulleri`/`sayfalari` kopyalamasından geliyor. */
+           `modulleri`/`sayfalari` kopyalamasından geliyor.
+           `sablonSqlLink`: kaynağın (template'in) kendi `cekirdek.sqlLink`'i —
+           Bağlantılar ve temel'deki SQL/İlk kullanıcı adımları bunu okuyor. */
         sablon,
+        sablonSqlLink: (kaynak.palet && kaynak.palet.cekirdek && kaynak.palet.cekirdek.sqlLink) || null,
         modulAdi: null, roller: null, veriKatmani: null,
         sablonTanimlar: null, sablonDegisimTamamlandi: false,
       } : {}, cekirdek ? {

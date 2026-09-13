@@ -7,7 +7,7 @@ const APP = {
   name:     'NIZAM | Studio',
   short:    'NIZAM Studio',
   owner:    'Nizam Soft',
-  version: 'v0.135.36',
+  version: 'v0.135.37',
   build:    '2026-09-13',
   /* Studio'nun kendi deposu — "bütün programlarda geçerli olsun"
      istekleri buraya gider. */
@@ -334,11 +334,13 @@ const YEREL_STANDART = {
 
 /* Rol katmanları: en alttan en üste. Üstteki, alttakinin yetkilerini de alır.
    Virgüllü liste yerine merdiven — çünkü yetki sırası kodu belirliyor. */
+/* En üstteki katman her zaman "Admin" — ilk kullanıcı hesabı bu adla
+   açılıyor, ladder'da da sabit ve değiştirilemez (bkz. rolMerdiveni). */
 const ROL_ORNEK = {
-  2: ['Personel', 'Yönetici'],
-  3: ['Personel', 'Amir', 'Yönetici'],
-  4: ['Personel', 'Amir', 'Yönetici', 'İşveren'],
-  5: ['Personel', 'Amir', 'Müdür', 'Yönetici', 'İşveren'],
+  2: ['Personel', 'Admin'],
+  3: ['Personel', 'Amir', 'Admin'],
+  4: ['Personel', 'Amir', 'Yönetici', 'Admin'],
+  5: ['Personel', 'Amir', 'Müdür', 'Yönetici', 'Admin'],
 };
 
 /* Kayıtlı değeri her zaman diziye çevirir. */
