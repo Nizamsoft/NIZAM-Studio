@@ -7,7 +7,7 @@ const APP = {
   name:     'NIZAM | Studio',
   short:    'NIZAM Studio',
   owner:    'Nizam Soft',
-  version: 'v0.135.30',
+  version: 'v0.135.31',
   build:    '2026-09-13',
   /* Studio'nun kendi deposu — "bütün programlarda geçerli olsun"
      istekleri buraya gider. */
@@ -217,7 +217,10 @@ const TEKNIK_STANDART = [
   ['Dosya saklama', 'Supabase Storage',
    'Belge ve logolar özel klasörde, imzalı adresle sunulur. Profil fotoğrafı genel olabilir.'],
   ['Giriş', 'E-posta + şifre',
-   'Kayıt ekranı yok; hesabı yönetici açar.'],
+   'Kayıt ekranı yok; hesabı yönetici açar. Perde arkasında yeni hesap '
+   + 'Supabase\'in anon-key ile açık kayıt ucundan açılır ama yetki oradan '
+   + 'gelmez — `kullanicilar` tablosundaki satırdan gelir. Satırı olmayan biri '
+   + 'boş ekran değil, net bir "hesabın tanımlı değil" mesajı görür.'],
   ['Paketler', 'Yalnız Supabase istemcisi',
    'Excel gerekiyorsa xlsx. Başka paket eklemeden önce sor.'],
   ['Para birimi', '₺ TRY', 'Binlik nokta, ondalık virgül: 12.400,00'],

@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.135.31
+- **"Giriş" teknik standardı genişletildi.** Eskiden yalnız "Kayıt ekranı yok; hesabı yönetici açar" yazıyordu. Artık perde arkasındaki gerçek mekanizma da yazıyor: yeni hesap Supabase'in anon-key ile açık kayıt ucundan açılıyor ama yetki `kullanicilar` tablosundaki satırdan geliyor, satırı olmayan biri boş ekran değil net bir "hesabın tanımlı değil" mesajı görüyor. Bundan sonraki her yeni projenin ilk promptunda bu nüans baştan yer alacak.
+
 ## v0.135.30
 - **Template oluşturma eklendi.** Ayarlar > Templateler'de artık bitmiş bir müşteri projesinden yeniden kullanılabilir bir template çıkarılabiliyor: kaynak proje + şablon türü (şu an yalnız Muhasebe) + template adı seçiliyor, GitHub'da aynı kopyalama akışı çalışıyor, sonra Claude'a özel bir **temizleme promptu** gidiyor — firma adı/logo/iletişim gibi her iz kaldırılıp örnek değerlerle değiştiriliyor, tasarım "Profesyonel tasarım" öncesi standart hâline dönüyor, gerçek Supabase gibi bağlantılar sahte değerle koparılıyor (`000000000` + "henüz bağlı değil" notu) — ama modül/sayfa/iş mantığı hiç değişmiyor. Temizlik onaylanınca template otomatik kilitleniyor.
 - Templateler normal Projeler listesinden (kova sayımı, panel, kopya kaynağı seçimi, kilitli projeler listesi) tamamen gizli — kendi bölümünde ayrıca yönetiliyor.
