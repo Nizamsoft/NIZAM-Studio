@@ -895,8 +895,6 @@ const PROMPT = {
     s.push('- Kodlu/hiyerarşik listelerde alt kodun nasıl türediği, kaç kat indiği');
     s.push('- Hesaplanan sütunlar: neye göre, nereden başlayarak');
     s.push('- Seçenek alanlarının alabileceği değerler');
-    s.push('- Bir kaydı kim görebilir, kim değiştirebilir, kim silebilir');
-    s.push('  (bunu modülün tamamı için sor, sayfa sayfa değil)');
     s.push('- Sayfalar arası bağlantı: hangi ekrandan hangisine gidilir');
     s.push('- Kurulurken hazır yüklenmesi gereken liste var mı');
     s.push('- Yazdırılacak ya da dışa verilecek bir belge var mı');
@@ -927,7 +925,7 @@ const PROMPT = {
     s.push('        { "ad": "Durum", "tur": "Seçenek", "degerler": ["Açık", "Kapalı"] },');
     s.push('        { "ad": "Üst Hesap", "tur": "İlişki", "kaynak": "Hesaplar" }');
     s.push('      ],');
-    s.push('      "fark": { "roller": [], "eylemler": [], "yetki": {}, "kural": "" }');
+    s.push('      "fark": { "kural": "" }');
     s.push('    }');
     s.push('  ],');
     s.push('  "baglantilar": [');
@@ -959,12 +957,8 @@ const PROMPT = {
     s.push('- **`modulKurallari` bir kez yazılır, bütün sayfalarda geçerlidir.**');
     s.push('  Yalnız iş kuralı — yetki yazma. Kimin neyi görüp yapabileceğini');
     s.push('  uygulamadaki Yetkiler ekranından admin belirliyor.');
-    s.push('- `eylemler` şunlar olabilir: ' + SAYFA_EYLEM.join(' · '));
-    s.push('  Listede olmayan gerçek bir iş varsa ("Ters kayıt", "Birleştir") onu da');
-    s.push('  yazabilirsin — uydurma, gerçekten gerekiyorsa.');
-    s.push('- `fark` yalnız o sayfa modül kuralından **ayrılıyorsa** dolar.');
-    s.push('  Ör. yalnız işverenin gördüğü bir ayar ekranı, ya da o sayfaya özel bir');
-    s.push('  kural. Ayrılmıyorsa hepsini boş bırak.');
+    s.push('- `fark` yalnız o sayfa modül kuralından **ayrılıyorsa**, kendi iş');
+    s.push('  kuralıyla dolar. Ayrılmıyorsa boş bırak.');
     s.push('- `olcek` yalnız: ' + OLCEK.map(x => x.ad + ' (' + x.alt + ')').join(' · '));
     s.push('  Kullanıcı "1000 hesap olacak" gibi bir şey söylediyse ona göre yaz.');
     s.push('- `ayniKayit`: bu sayfa başka bir sayfayla **aynı kaydı** yazıyorsa o');
@@ -976,11 +970,6 @@ const PROMPT = {
     s.push('  (hesap planı, ürün listesi, il-ilçe). Yoksa boş dizi.');
     s.push('- `ciktilar`: yazdırılacak ya da dışa verilecek belge varsa yaz');
     s.push('  (fiş, fatura, ekstre, rapor). Yoksa boş dizi.');
-    if (roller.length) {
-      s.push('- `roller` ve `yetki` yalnız şu rollerden: ' + roller.join(' · '));
-      s.push('  Roller alttan üste sıralı; alttaki bir rol yazılırsa üstündekiler');
-      s.push('  de o işi yapabilir demektir, hepsini yazmana gerek yok.');
-    }
     s.push('- `Seçenek` alanına mutlaka `degerler` yaz — bana sormadan uydurma.');
     s.push('- `İlişki` alanına mutlaka `kaynak` yaz (hangi sayfanın kaydı).');
     s.push('- Alan adları benim dilimde olsun (Türkçe, insan gibi).');

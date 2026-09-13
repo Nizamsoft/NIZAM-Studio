@@ -2624,14 +2624,13 @@ function modulYukle(p, t, ad) {
     t.hazirVeri   = (an && an.hazirVeri) || [];
     t.ciktilar    = (an && an.ciktilar) || [];
     const mk = ((p.palet || {}).modulKunye || {})[ad];
-    t.mk = mk ? JSON.parse(JSON.stringify(mk))
-              : { roller: [], eylemler: [], yetki: {}, kural: '' };
+    t.mk = mk ? JSON.parse(JSON.stringify(mk)) : { kural: '' };
   } else {
     const sb = DB.modulSablonlari().find(m => m.ad === ad);
     t.sayfalar = ((sb && sb.sayfalar) || []).slice();
     t.kunye = {};
     t.anlat = ''; t.kararlar = []; t.baglantilar = []; t.hazirVeri = []; t.ciktilar = [];
-    t.mk = { roller: [], eylemler: [], yetki: {}, kural: '' };
+    t.mk = { kural: '' };
   }
 }
 
@@ -2678,7 +2677,7 @@ function yapiKunye(t, sayfa) {
     t.kunye[sayfa] = { amac: '', tur: '', olcek: '', kalip: [], kalipCevap: {},
                        grup: '', ayniKayit: '', alanlar: [],
                        /* Yalnız modül kuralından ayrılıyorsa dolar. */
-                       fark: { roller: [], eylemler: [], yetki: {}, kural: '' } };
+                       fark: { kural: '' } };
   }
   return t.kunye[sayfa];
 }
@@ -2712,17 +2711,6 @@ function kunyeAdimTam(k, anahtar) {
   if (anahtar === 'alanlar') return (k.alanlar || []).length > 0
     && k.alanlar.every(a => a.tur !== 'Seçenek' || (a.degerler || []).filter(Boolean).length);
   return true;   /* "farklı mı" isteğe bağlı */
-}
-
-function modulAdimTam(mk, anahtar) {
-  if (anahtar === 'roller') return (mk.roller || []).length > 0;
-  if (anahtar === 'yetki')  return (mk.eylemler || []).length > 0
-    && mk.eylemler.every(x => ((mk.yetki || {})[x] || []).length);
-  return true;
-}
-
-function modulKunyeTam(mk) {
-  return !!mk && MODUL_ADIM.every(a => modulAdimTam(mk, a.anahtar));
 }
 
 function yapiAkisi(p, d) {
@@ -2764,24 +2752,17 @@ function dalOzeti(k, anahtar) {
   if (anahtar === 'alanlar') return (k.alanlar || []).length
     ? k.alanlar.map(a => a.ad).join(' · ') : 'daha yazılmadı';
   const f = (k && k.fark) || {};
-  const p2 = [];
-  if ((f.roller || []).length) p2.push(f.roller[0] + ' ve üstü görür');
-  if ((f.eylemler || []).length) p2.push(f.eylemler.length + ' iş farklı');
-  if ((f.kural || '').trim()) p2.push('kendi kuralı var');
-  return p2.length ? p2.join(' · ') : 'hayır, modül kuralı geçerli';
+  return (f.kural || '').trim() ? 'kendi kuralı var' : 'hayır, modül kuralı geçerli';
 }
 
 /* Modül kuralları satırının özeti. */
-function modulOzeti(mk, anahtar) {
-  mk = mk || {};
-  return (mk.kural || '').trim() || 'yok';
+function modulOzeti(mk) {
+  return ((mk || {}).kural || '').trim() || 'yok';
 }
 
 /* Sayfa modül kuralından ayrılıyor mu? */
 function farkVar(k) {
-  const f = (k && k.fark) || {};
-  return !!((f.roller || []).length || (f.eylemler || []).length
-    || Object.keys(f.yetki || {}).length || (f.kural || '').trim());
+  return !!((k && k.fark && k.fark.kural) || '').trim();
 }
 
 function agacSayfaAlt(k) {
@@ -3249,35 +3230,15 @@ function kunyeGovde(p, t, adim) {
     </div>`;
   }
 
-  /* Farklı mı: modül kuralından ayrılan yerler. */
+  /* Farklı mı: modül kuralından ayrılan yerler. Kimin görebileceği/
+     yapabileceği artık burada sorulmuyor — o, deploy edilen uygulamanın
+     kendi Yetkiler ekranından, admin tarafından, runtime'da yönetiliyor. */
   const mk = t.mk || {};
   const f  = k.fark || {};
-  const roller = rolListesi((p.palet || {}).roller);
-  const tabanRol = (dizi, liste) => dizi.length
-    ? liste.findIndex(r => dizi.includes(r)) : -1;
 
   return `<div class="kunye-kaydir">
     ${balon('Bu sayfa modülün ortak kuralından ayrılıyor mu?',
-            'Dokunmazsan modülün kuralı geçerli: ' + esc(modulOzeti(mk, 'roller'))
-            + ' görür, ' + esc(modulOzeti(mk, 'yetki')) + '.')}
-
-    <div class="ky-bas">Bu sayfayı kimler görsün?</div>
-    <div class="rol-merdiven">${roller.map((r, i) => {
-      const taban = tabanRol(f.roller || [], roller);
-      const sec = taban > -1 && i >= taban;
-      return `<button class="rm ${sec ? 'on' : ''} ${sec && i > taban ? 'oto' : ''}"
-                      type="button" data-eylem="yapi-ky-fark-rol" ${veri} data-ad="${esc(r)}">
-        <span class="rm-kat mono">${i + 1}</span>
-        <span class="rm-ad"><b>${esc(r)}</b><i>${
-          sec ? (i > taban ? 'üstü olduğu için' : 'bu sayfaya özel taban')
-              : 'modül kuralı geçerli'}</i></span>
-        <span class="rm-tik">${sec ? svg(ICON.tik, 11) : ''}</span></button>`;
-    }).join('')}</div>
-
-    ${(f.eylemler || []).length || Object.keys(f.yetki || {}).length ? `
-      <div class="ky-bas">Bu sayfada işler farklı</div>
-      <p class="anl-not">${esc((f.eylemler || []).map(ey =>
-        ey.toLocaleLowerCase('tr') + ': ' + (((f.yetki || {})[ey] || [])[0] || '—')).join(' · '))}</p>` : ''}
+            'Dokunmazsan modülün kuralı geçerli: ' + esc(modulOzeti(mk)) + '.')}
 
     <div class="ky-bas">Bu sayfada kural farklı mı?</div>
     <label class="field ky-alan">
@@ -3357,8 +3318,10 @@ async function rollariKaydet(p) {
   } catch (h) { toast(h.message, 'hata'); }
 }
 
-/* Roller — proje geneli, bir kez. Modül kurallarının "kimler görür"
-   sorusu bu merdivenden besleniyor, o yüzden ağacın en tepesinde duruyor. */
+/* Roller — proje geneli, bir kez. Kimin hangi katmanda olacağını ve hangi
+   katmanın neyi görüp yapabileceğini burada seçmiyoruz — o, deploy edilen
+   uygulamanın kendi Yetkiler ekranından, admin tarafından, runtime'da
+   yönetiliyor. Burada yalnız katmanların adı ve sırası belirleniyor. */
 function rolEkrani(p, t) {
   const roller = ROL_TASLAK[p.id] || rolListesi((p.palet || {}).roller);
 
@@ -3367,8 +3330,8 @@ function rolEkrani(p, t) {
     ${balon('Bu programı kaç katman insan kullanacak?',
             'En altta en dar yetki, en üstte en geniş.')}
     ${rolMerdiveni(roller, 'yp')}
-    <p class="anl-not">Sayfaları kimin göreceğini ve kimin ne yapabileceğini
-      modül kurallarında bu listeden seçeceksin.</p>`;
+    <p class="anl-not">Kim hangi katmanda olacak ve hangi katman neyi
+      yapabilecek, uygulamanın kendi Yetkiler ekranından yönetilir.</p>`;
 
   return agacKabuk(p, yolCipleri([
     { ad: p.firma, eylem: 'agac-koke', proje: p.id },
@@ -3380,57 +3343,19 @@ function rolEkrani(p, t) {
 
 /* Modül kuralları ekranı — üç soru, bir kez. */
 function modulKuralEkrani(p, t) {
-  const mk = t.mk || (t.mk = { roller: [], eylemler: [], yetki: {}, kural: '' });
-  const roller = rolListesi((p.palet || {}).roller);
+  const mk = t.mk || (t.mk = { kural: '' });
   const veri = `data-proje="${p.id}"`;
-  const taban = (mk.roller || []).length
-    ? roller.findIndex(r => mk.roller.includes(r)) : -1;
 
   const govde = `
     <div class="bslk"><b>Modül kuralları</b><em>her sayfada geçerli</em></div>
 
-    <div class="ky-bas">1 · Kimler görür?</div>
-    <p class="ak-ozet">Alttakini seçince üstündekiler kendiliğinden gelir.</p>
-    <div class="rol-merdiven">${roller.map((r, i) => {
-      const sec = taban > -1 && i >= taban;
-      return `<button class="rm ${sec ? 'on' : ''} ${sec && i > taban ? 'oto' : ''}"
-                      type="button" data-eylem="yapi-mk-rol" ${veri} data-ad="${esc(r)}">
-        <span class="rm-kat mono">${i + 1}</span>
-        <span class="rm-ad"><b>${esc(r)}</b><i>${
-          sec ? (i > taban ? roller[i - 1] + '’i gördüğü için' : 'seçtiğin taban')
-              : 'göremez'}</i></span>
-        <span class="rm-tik">${sec ? svg(ICON.tik, 11) : ''}</span></button>`;
-    }).join('')}</div>
-
-    <div class="ky-bas">2 · Neler yapılabilir?</div>
-    <div class="ky-cipler">${SAYFA_EYLEM
-      .concat((mk.eylemler || []).filter(x => !SAYFA_EYLEM.includes(x))).map(x => `
-      <button class="cip-sec ${(mk.eylemler || []).includes(x) ? 'on' : ''}" type="button"
-              data-eylem="yapi-mk-eylem" ${veri} data-ad="${esc(x)}">${esc(x)}</button>`).join('')}
-      <button class="cip-sec ekle" type="button" data-eylem="yapi-mk-eylem-yaz" ${veri}>
-        ${svg(ICON.arti, 12)} Başka</button>
-    </div>
-
-    ${(mk.eylemler || []).length ? `
-      <div class="ky-bas">Hangisini kim yapar?</div>
-      <div class="yetki">${mk.eylemler.map(ey => {
-        const secik = (mk.yetki || {})[ey] || [];
-        const tb = secik.length ? (mk.roller || []).findIndex(r => secik.includes(r)) : -1;
-        return `<div class="yt"><b>${esc(ey)}</b><div class="cipler">
-          ${(mk.roller || []).map((r, i) => `
-            <button class="${tb > -1 && i >= tb ? 'on' : ''}" type="button"
-                    data-eylem="yapi-mk-yetki" ${veri} data-ey="${esc(ey)}"
-                    data-ad="${esc(r)}">${esc(r)}</button>`).join('')}
-        </div></div>`;
-      }).join('')}</div>` : ''}
-
-    <div class="ky-bas">3 · Ortak kural</div>
+    <div class="ky-bas">Ortak kural</div>
     <label class="field ky-alan">
       <input type="text" data-mk="kural" ${veri} value="${esc(mk.kural || '')}"
              maxlength="200" autocomplete="off"
              placeholder="Örn. Onaylanan kayıt değiştirilemez.">
     </label>
-    <p class="anl-not">Bu üçü modülün bütün sayfalarında geçerli. Bir sayfa
+    <p class="anl-not">Modülün bütün sayfalarında geçerli. Bir sayfa
       ayrılıyorsa o sayfanın "Farklı mı?" satırından yazarsın.</p>`;
 
   return agacKabuk(p, yolCipleri([
@@ -8781,7 +8706,6 @@ function cozumlemeOku(metin) {
 /* Okunan çözümlemeyi taslağa yazar. Kullanıcının elle girdiği bir şey
    varsa üstüne yazmıyoruz: soru sormadan veri kaybettirmek olur. */
 function cozumlemeUygula(t, cozum, p) {
-  const roller = rolListesi((p.palet || {}).roller);
   /* Modül düzeyinde yalnız ortak iş kuralı okunuyor: yetki artık tasarım
      anında değil, uygulamanın Yetkiler ekranından belirleniyor. */
   const mkg = cozum.modulKurallari || {};
@@ -8839,17 +8763,10 @@ function cozumlemeUygula(t, cozum, p) {
       k.olcek = (OLCEK.find(x => x.ad === sf.olcek) || {}).ad || '';
     }
     if (!k.ayniKayit && sf.ayniKayit) k.ayniKayit = sf.ayniKayit;
-    /* Sayfaya özel ayrım yalnız blok öyle diyorsa. */
+    /* Sayfaya özel ayrım yalnız blok öyle diyorsa. Kimin görebileceği artık
+       burada okunmuyor — Yetkiler ekranının işi, admin runtime'da yönetiyor. */
     const fk = sf.fark || {};
-    k.fark = k.fark || { roller: [], eylemler: [], yetki: {}, kural: '' };
-    if (!(k.fark.roller || []).length && Array.isArray(fk.roller) && fk.roller.length) {
-      const gelen = fk.roller.filter(r => roller.includes(r));
-      if (gelen.length) k.fark.roller = roller.slice(Math.min(...gelen.map(r => roller.indexOf(r))));
-    }
-    if (!(k.fark.eylemler || []).length && Array.isArray(fk.eylemler)) {
-      k.fark.eylemler = fk.eylemler.filter(x => typeof x === 'string' && x.trim());
-    }
-    if (!Object.keys(k.fark.yetki || {}).length && fk.yetki) k.fark.yetki = fk.yetki;
+    k.fark = k.fark || { kural: '' };
     if (!k.fark.kural && fk.kural) k.fark.kural = fk.kural;
   });
 }
@@ -10127,90 +10044,12 @@ async function eylemCalistir(el) {
     return;
   }
 
-  if (e === 'yapi-mk-rol') {
-    const pr = DB.proje(el.dataset.proje);
-    if (!pr) return;
-    const t = yapiTaslak(pr);
-    const roller = rolListesi((pr.palet || {}).roller);
-    const i2 = roller.indexOf(el.dataset.ad);
-    if (i2 < 0) return;
-    const taban = (t.mk.roller || []).length
-      ? roller.findIndex(r => t.mk.roller.includes(r)) : -1;
-    t.mk.roller = taban === i2 ? [] : roller.slice(i2);
-    Object.keys(t.mk.yetki || {}).forEach(ey => {
-      t.mk.yetki[ey] = (t.mk.yetki[ey] || []).filter(r => t.mk.roller.includes(r));
-      if (!t.mk.yetki[ey].length) t.mk.yetki[ey] = t.mk.roller.slice();
-    });
-    render();
-    return;
-  }
-
-  if (e === 'yapi-mk-eylem') {
-    const pr = DB.proje(el.dataset.proje);
-    if (!pr) return;
-    const t = yapiTaslak(pr);
-    const ad = el.dataset.ad;
-    t.mk.eylemler = t.mk.eylemler || [];
-    const i2 = t.mk.eylemler.indexOf(ad);
-    if (i2 > -1) { t.mk.eylemler.splice(i2, 1); delete t.mk.yetki[ad]; }
-    else { t.mk.eylemler.push(ad); t.mk.yetki[ad] = (t.mk.roller || []).slice(); }
-    render();
-    return;
-  }
-
-  if (e === 'yapi-mk-eylem-yaz') {
-    const pr = DB.proje(el.dataset.proje);
-    if (!pr) return;
-    const ad = await metinSor({ baslik: 'İş', buton: 'Ekle',
-      aciklama: 'Listede olmayan bir iş.', yerTutucu: 'Örn. Ters kayıt' });
-    if (!ad) return;
-    const t = yapiTaslak(pr);
-    if (!(t.mk.eylemler || []).includes(ad)) {
-      t.mk.eylemler = (t.mk.eylemler || []).concat(ad);
-      t.mk.yetki[ad] = (t.mk.roller || []).slice();
-    }
-    render();
-    return;
-  }
-
-  if (e === 'yapi-mk-yetki') {
-    const pr = DB.proje(el.dataset.proje);
-    if (!pr) return;
-    const t = yapiTaslak(pr);
-    const ey = el.dataset.ey;
-    const i2 = (t.mk.roller || []).indexOf(el.dataset.ad);
-    if (i2 < 0) return;
-    const secik = t.mk.yetki[ey] || [];
-    const taban = secik.length ? t.mk.roller.findIndex(r => secik.includes(r)) : -1;
-    t.mk.yetki[ey] = taban === i2 ? [] : t.mk.roller.slice(i2);
-    const satir = el.parentElement;
-    $$('button', satir).forEach((b2, j2) => b2.classList.toggle('on',
-      (t.mk.yetki[ey] || []).includes(t.mk.roller[j2])));
-    return;
-  }
-
   /* ---- Sayfaya özel fark ---- */
-  if (e === 'yapi-ky-fark-rol') {
-    const pr = DB.proje(el.dataset.proje);
-    if (!pr) return;
-    const t = yapiTaslak(pr);
-    const k = yapiKunye(t, el.dataset.sayfa);
-    const roller = rolListesi((pr.palet || {}).roller);
-    const i2 = roller.indexOf(el.dataset.ad);
-    if (i2 < 0) return;
-    k.fark = k.fark || { roller: [], eylemler: [], yetki: {}, kural: '' };
-    const taban = (k.fark.roller || []).length
-      ? roller.findIndex(r => k.fark.roller.includes(r)) : -1;
-    k.fark.roller = taban === i2 ? [] : roller.slice(i2);
-    render();
-    return;
-  }
-
   if (e === 'yapi-ky-fark-sil') {
     const pr = DB.proje(el.dataset.proje);
     if (!pr) return;
     const k = yapiKunye(yapiTaslak(pr), el.dataset.sayfa);
-    k.fark = { roller: [], eylemler: [], yetki: {}, kural: '' };
+    k.fark = { kural: '' };
     render();
     return;
   }

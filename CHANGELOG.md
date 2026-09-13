@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.135.32
+- **"Kurulum ve yapı"daki yarım kalmış "kim görebilir" özelliği tamamen kaldırıldı.** Daha önce yalnızca giriş noktalarının adı/açıklaması değiştirilmişti ("Ortak kural" gibi) ama ekranların içi hâlâ tam bir rol atama arayüzü gösteriyordu — hem modül düzeyinde ("Kimler görür? / Neler yapılabilir? / Hangisini kim yapar?") hem sayfa düzeyinde ("Bu sayfayı kimler görsün?"). Artık ikisi de yalnız düz bir "ortak kural" metin kutusu; kimin neyi görüp yapabileceği tamamen deploy edilen uygulamanın kendi Yetkiler ekranından, admin tarafından, runtime'da yönetiliyor. "Modüller ve sayfalar" promptu da artık bu bilgiyi sormuyor, JSON bloğunda da istemiyor.
+
 ## v0.135.31
 - **"Giriş" teknik standardı genişletildi.** Eskiden yalnız "Kayıt ekranı yok; hesabı yönetici açar" yazıyordu. Artık perde arkasındaki gerçek mekanizma da yazıyor: yeni hesap Supabase'in anon-key ile açık kayıt ucundan açılıyor ama yetki `kullanicilar` tablosundaki satırdan geliyor, satırı olmayan biri boş ekran değil net bir "hesabın tanımlı değil" mesajı görüyor. Bundan sonraki her yeni projenin ilk promptunda bu nüans baştan yer alacak.
 

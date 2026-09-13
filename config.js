@@ -7,7 +7,7 @@ const APP = {
   name:     'NIZAM | Studio',
   short:    'NIZAM Studio',
   owner:    'Nizam Soft',
-  version: 'v0.135.31',
+  version: 'v0.135.32',
   build:    '2026-09-13',
   /* Studio'nun kendi deposu — "bütün programlarda geçerli olsun"
      istekleri buraya gider. */
@@ -615,9 +615,6 @@ const OLCEK = [
   { ad: 'Orta', alt: 'birkaç bin kayıt' },
   { ad: 'Çok', alt: 'on binlerce kayıt' },
 ];
-
-const SAYFA_EYLEM = ['Ekle', 'Düzenle', 'Sil', 'Onayla', 'Ara', 'Filtrele',
-                     'Dışa aktar', 'Yazdır', 'Kopyala', 'İçe aktar', 'Toplu güncelle'];
 
 /* Künye eksikse akış ilerlemez: yarım künye AI'a tahmin ettiriyor. */
 /* Seçilen kalıbın kendi soruları da cevaplanmalı. */
