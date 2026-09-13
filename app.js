@@ -24,17 +24,22 @@ const ROUTES = {
 
 const DEFAULT_ROUTE = 'panel';
 
+/* Bir proje bitmiş sayılır mı: final verildiyse evet — görev yüzdesi
+   %100 olmasa da (görev hiç kullanılmayan bir projede yüzde hep sıfır
+   kalıyordu, final verilse bile "Başlamış" kovasından hiç çıkmıyordu). */
+function projeBittiMi(p) {
+  return !!(p.palet && p.palet.finalVerildi) || DB.sayim(p.id).yuzde >= 100;
+}
+
 /* Projeler ekranının iki kovası. Adres `#/projeler/basmis` — proje kimlikleri
    uuid olduğu için bu iki kelimeyle asla çakışmaz.
 
-   İki kova var, üç değil: bu yüzden "başlamış" ilerlemeye değil BİTMEMİŞ
-   olmaya bakıyor. Yüzdesi sıfır olan projenin gidecek başka yeri yok;
-   ">0" deseydik hiç görevi bitmemiş bir proje ekrandan tamamen kaybolurdu. */
+   İki kova var, üç değil: bu yüzden "başlamış" bitmiş OLMAMAYA bakıyor. */
 const PROJE_KOVASI = {
   basmis: { ad: 'Başlamış Projeler', ikon: 'saat', sinif: 'k-basmis',
-            sec: y => y < 100 },
+            sec: p => !projeBittiMi(p) },
   bitmis: { ad: 'Bitmiş Projeler',   ikon: 'bitti', sinif: 'k-bitmis',
-            sec: y => y >= 100 },
+            sec: p => projeBittiMi(p) },
 };
 
 function rota() {
@@ -385,12 +390,12 @@ const VIEWS = {
         AUTH.yonetici ? 'Yeni Proje' : null, 'sihirbaz')}</div>`;
     }
 
-    /* İki kova. Yüzde elle girilmiyor, görevlerden hesaplanıyor. */
+    /* İki kova. Yüzde elle girilmiyor, görevlerden (ya da final verildiyse
+       doğrudan) hesaplanıyor. */
     const say = {};
     Object.keys(PROJE_KOVASI).forEach(k => { say[k] = 0; });
     DB.projeler.forEach(p => {
-      const y = DB.sayim(p.id).yuzde;
-      Object.keys(PROJE_KOVASI).forEach(k => { if (PROJE_KOVASI[k].sec(y)) say[k]++; });
+      Object.keys(PROJE_KOVASI).forEach(k => { if (PROJE_KOVASI[k].sec(p)) say[k]++; });
     });
 
     /* Sayı sıfırdan sayarak gelmiyor. Kova sayısı bir hareket değil, bir
@@ -420,12 +425,12 @@ const VIEWS = {
     if (DB.hata)    return hataKutusu(DB.hata);
 
     const kv    = PROJE_KOVASI[k];
-    const liste = DB.projeler.filter(p => kv.sec(DB.sayim(p.id).yuzde));
+    const liste = DB.projeler.filter(p => kv.sec(p));
 
     if (!liste.length) {
       return `<div class="card">${empty(ICON[kv.ikon], kv.ad + ' yok',
         k === 'bitmis'
-          ? 'Bir projenin bütün görevleri bitince buraya düşer.'
+          ? 'Final verilen ya da bütün görevleri biten projeler buraya düşer.'
           : 'Yeni Proje sihirbazı firma, renk, platform, veritabanı ve modülleri sorar.',
         AUTH.yonetici && k === 'basmis' ? 'Yeni Proje' : null, 'sihirbaz')}</div>`;
     }

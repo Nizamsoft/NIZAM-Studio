@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.135.24
+- **Final verilen bir proje "Başlamış Projeler" kovasından hiç çıkmıyordu.** Projeler ekranındaki "Başlamış/Bitmiş" ayrımı yalnız görev tamamlanma yüzdesine bakıyordu — görev hiç kullanılmayan bir projede bu yüzde sonsuza dek sıfır kalıyor, final verilse bile proje "Bitmiş"e düşmüyordu. Artık final verilen bir proje, görev yüzdesi ne olursa olsun, doğrudan "Bitmiş Projeler" sayılıyor.
+
 ## v0.135.23
 - **"Geliştirme" durağı, bilerek hiç bitmeyen bir durak olduğu için "Adımlar" ilerlemesini asla %100 yapmıyordu.** Final verilmiş bir proje 7/8 gösteriyordu. Artık "Geliştirme" hem yüzdeye girmiyor hem de final verilmeden listede hiç görünmüyor — finalden sonra doğan ayrı bir aşama olarak ancak o zaman beliriyor. Final verilince proje 7/7 · %100 tamamlanmış sayılıyor.
 
