@@ -687,6 +687,78 @@ const PROMPT = {
     return s.join('\n');
   },
 
+  /* "Kullanıcı ve Yetki" durağının kod-yazma promptu. yetkiBlogu'nun tarif
+     ettiği ekranı gerçekten kurdurur; katman görevleri ve modül/sayfa
+     listesi somut bağlam olarak eklenir. Sonunda istenen JSON, Studio'nun
+     kurulumun bittiğini bilmesi için — palete yazılıyor (bkz. yetki-kod-onayla). */
+  yetkiKur(projeId) {
+    const p = DB.proje(projeId);
+    if (!p) return '';
+    const pl = p.palet || {};
+    const roller = rolListesi(pl.roller);
+    if (!roller.length) return '';
+
+    const s = [];
+    const slug = depoSlug(p.repo);
+    if (slug) {
+      s.push('> ### Depo: `' + slug + '`');
+      s.push('> Bu oturum yalnız bu depoya bağlı olmalı. Deposu farklıysa dur');
+      s.push('> ve söyle; başka depo ekleme, dosya oluşturma, commit atma.');
+      s.push('');
+    }
+    s.push('# Kullanıcı ve Yetki sistemini kur');
+    s.push('');
+    s.push('Bugüne kadar bu projede giriş/rol kavramı yoktu — herkes uygulamayı');
+    s.push('açtığında her şeyi görüyordu. Artık katmanlar belirlendi, sırada');
+    s.push('gerçek kurulum var.');
+    s.push('');
+    s.push('## Katmanlar (dar yetkiden genişe)');
+    s.push('');
+    const gorev = pl.rolGorev || {};
+    roller.forEach((ad, i) => {
+      const g = (gorev[ad] || '').trim();
+      s.push(`${i + 1}. **${ad}**${g ? ' — ' + g : ''}`);
+    });
+    s.push('');
+    s.push(PROMPT.yetkiBlogu(p));
+    s.push('');
+    s.push('## Kullanıcı ekleme mekanizması');
+    s.push('');
+    s.push('- **İlk kullanıcı zaten elle açıldı** — Supabase Authentication');
+    s.push('  panelinden, Studio\'nun dışında. Bu bloğun kapsamında değil.');
+    s.push('- **Sonraki her kullanıcı Yetkiler ekranından, admin tarafından');
+    s.push('  eklenmeli.** Bunun için tarayıcıdan normal `signUp()` çağırma —');
+    s.push('  admin\'in kendi oturumunu bozar. Bunun yerine bir **Edge Function**');
+    s.push('  yaz: `service_role` anahtarı yalnız orada, sunucu tarafında dursun.');
+    s.push('  Admin panelden e-posta + şifre + katman gönderilince bu fonksiyon');
+    s.push('  `auth.admin.createUser()` ile hesabı açsın, `kullanicilar` tablosuna');
+    s.push('  satırını yazsın. Admin\'in kendi oturumu hiç etkilenmesin.');
+
+    if (p.id) {
+      const moduller = DB.modulleri(p.id).filter(m => m.ad !== GENEL_MODUL);
+      if (moduller.length) {
+        s.push('');
+        s.push('## Mevcut modül ve sayfalar');
+        s.push('');
+        moduller.forEach(m => {
+          const sayfalar = DB.sayfalari(m.id).map(sf => sf.ad);
+          s.push(`- **${m.ad}**${sayfalar.length ? ': ' + sayfalar.join(', ') : ''}`);
+        });
+      }
+    }
+
+    s.push('');
+    s.push('## Bitirince');
+    s.push('');
+    s.push('Başka hiçbir şey yazma, yalnızca aşağıdaki bloğu doldurup ver —');
+    s.push('Studio bu bloğu okuyup kurulumun bittiğini anlayacak:');
+    s.push('');
+    s.push('```json');
+    s.push('{ "kuruldu": true, "tablo": "kullanicilar", "edgeFunction": "fonksiyon-adı" }');
+    s.push('```');
+    return s.join('\n');
+  },
+
   /* Sayfa künyeleri — AI'ın ekranı tahmin etmeden kurabilmesi için.
      Alan türleri veritabanı sütununu, eylemler düğmeleri belirliyor.
      Roller kodda sabitlenmiyor: Yetkiler ekranının veritabanına yazılan

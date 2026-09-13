@@ -1,5 +1,14 @@
 # Değişiklik Günlüğü
 
+## v0.135.34
+- **Yeni durak: "Kullanıcı ve Yetki" — Final'den bir önce.** Bu durağa kadar proje tek kullanıcılık davranıyordu, artık gerçek kurulum burada yapılıyor:
+  - **Katmanlar.** Kaç rol olacak ve isimleri ne (rol merdiveni bileşeni ilk kez burada devreye girdi — daha önce hazırlanıp beklemedeydi).
+  - **Her katman ne yapabilir.** Her rol için kısa bir açıklama yazılıyor; bu satırlar aşağıdaki promptun içine birebir giriyor.
+  - **Kodu yazdır.** Tek tuşla Claude'a giden yeni bir prompt (`yetkiKur`) — mevcut Yetkiler ekranı tarifini (`yetkiBlogu`), rollerin görevlerini, projedeki gerçek modül/sayfa listesini ve kullanıcı ekleme mekanizmasının **neden bir Edge Function gerektirdiğini** (admin'in kendi oturumunu bozmadan başkasını eklemesi için) birleştiriyor.
+  - **Kod hazır mı?** Claude'un iş bitince verdiği JSON bloğu buraya yapıştırılıp aktarılıyor.
+  - **İlk kullanıcı.** E-posta, şifre ve katman girilince Studio adım adım bir talimat gösteriyor — Supabase panelinin doğru sayfasına link, orada ne yapılacağı, `kullanicilar` tablosuna satırın nasıl ekleneceği. Şifre veritabanına hiç yazılmıyor, yalnızca bu ekran açıkken tarayıcı belleğinde duruyor.
+  - Tamamlanınca Final durağı açılıyor. Sonraki kullanıcıların artık Studio'dan değil, **uygulamanın kendi Ayarlar → Yetkiler ekranından** ekleneceği ayrıca hatırlatılıyor.
+
 ## v0.135.33
 - **Karar: Yetkilendirme ve kullanıcı ekleme artık tek bir yerde — Final'den bir önceki durakta.** Bu durağa kadar proje tek kullanıcılık davranır: rol/katman kavramı hiçbir yerde sorulmaz, giriş yapan herkes her şeyi görür. Buna göre roller artık "Program temeli"nde de sorulmuyor ("Program → Veriler → Alan adı", üç adım). Bu, daha önce Sıfırdan Proje sihirbazından zaten kaldırılmıştı (yarım kalmıştı — dil/para gibi boş bırakılması gerekirken hâlâ sabit varsayılan yazıp kaydediyordu, o da düzeldi); Kurulum ve yapı'daki erişilemez "Roller" düğümü de tamamen kaldırıldı. Gerçek Yetkiler ekranının kendisi (`yetkiBlogu`) hâlâ mevcut ve hazır — yeni durak kurulana kadar roller boş kaldığı için otomatik olarak "tek kullanıcı" moduna düşüyor.
 - Bu arada bulunan bir başka yarım kalmış temizlik de tamamlandı: hiçbir yerden çağrılmayan `kunyeCumlesi` fonksiyonu kaldırıldı.

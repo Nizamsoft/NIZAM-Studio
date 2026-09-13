@@ -942,9 +942,15 @@ const DURAKLAR = {
   tasarim:     { no: 6, ad: 'Profesyonel tasarım',   ciz: tasarimSayfasi,
                  renk: '#5f86c4', ikon: 'gTasarim', resim: 'tasarim',
                  aciklama: 'Arayüz ve kullanıcı deneyimi.' },
-  final:       { no: 7, ad: 'Final',                 ciz: finalSayfasi,
+  /* Finalden bir önceki durak: bu noktaya kadar proje tek kullanıcılık
+     davranır (bkz. rolMerdiveni üstündeki not). Roller burada tanımlanır,
+     Yetkiler ekranı burada kodlattırılır, ilk kullanıcı burada açılır. */
+  yetki:       { no: 7, ad: 'Kullanıcı ve Yetki',    ciz: yetkiSayfasi,
+                 renk: '#a15fc4', ikon: 'gGuvenlik', resim: 'yetki',
+                 aciklama: 'Katmanlar, yetkiler ve ilk kullanıcı.' },
+  final:       { no: 8, ad: 'Final',                 ciz: finalSayfasi,
                  resim: 'final', aciklama: 'Son kontroller ve yayına hazırlık.' },
-  guncelleme:  { no: 8, ad: 'Geliştirme',            ciz: guncellemeSayfasi,
+  guncelleme:  { no: 9, ad: 'Geliştirme',            ciz: guncellemeSayfasi,
                  resim: 'gelistirme', aciklama: 'Yayın sonrası yeni özellikler.' },
 };
 
@@ -1283,11 +1289,9 @@ function baglantilarSayfasi(p, d) {
    En altta en dar yetki, en üstte en geniş. Sayıyı değiştirince adlar
    korunur; azaltınca üsttekiler düşer, artırınca örnek adla gelir.
 
-   Şu an hiçbir yerden çağrılmıyor: "kaç katman" sorusu Program temeli'nden
-   ve Kurulum ve yapı'dan kaldırıldı, roller artık yalnız "Kullanıcı ekleme
-   ve Yetkilendirme" durağında sorulacak — o durağın içi henüz tasarlanmadı.
-   Bileşen kasıtlı olarak siline değil, kullanılmıyor bırakıldı: o durak
-   kurulunca muhtemelen aynen buradan çağrılacak. */
+   "Kullanıcı ve Yetki" durağı bunu çağırıyor (bkz. yetkiRollerDuzenleAc) —
+   roller artık yalnız orada sorulur, Program temeli'nde ve Kurulum ve
+   yapı'da hiç sorulmuyor. */
 function rolMerdiveni(roller, onek) {
   const liste = rolListesi(roller);
   const n = liste.length || 2;
@@ -4253,6 +4257,245 @@ function sablonDegisimSayfasi(p, d) {
     + `</div>`;
 }
 
+/* ---------- 7 · Kullanıcı ve Yetki ----------
+   Finalden bir önceki durak. Bu noktaya kadar proje tek kullanıcılık
+   davranıyor. Beş parça: katmanlar (rolMerdiveni), her katmanın görevi
+   (serbest metin), promptu Claude'a yazdırma, Claude'un cevabını aktarma,
+   ilk kullanıcının Supabase panelinden elle açılması. */
+
+function yetkiRollerDuzenleAc(projeId) {
+  modalHepsiniKapat();
+  const p = DB.proje(projeId);
+  if (!p) return;
+  const pl = p.palet || {};
+  modalAc(`
+    ${modalBaslik(ICON.gGuvenlik, 'Katmanlar', 'Kaç katman olacak, sırası ne?')}
+    ${rolMerdiveni(pl.roller || [], 'yetki')}
+    <div class="modal-alt">
+      <button class="btn btn-ghost" data-m="iptal" type="button">Vazgeç</button>
+      <button class="btn btn-primary" data-m="tamam" type="button"><span>Kaydet</span></button>
+    </div>`, kutu => {
+    rolBagla(kutu);
+    $('[data-m="iptal"]', kutu).addEventListener('click', modalKapat);
+    $('[data-m="tamam"]', kutu).addEventListener('click', () => {
+      const roller = rolOku(kutu);
+      if (!roller.length) { toast('En az bir katman adı yaz.', 'uyari'); return; }
+      modalKapat();
+      /* İsmi değişen/kaldırılan katmanın eski görev metni miras kalmasın. */
+      const rolGorev = Object.assign({}, pl.rolGorev || {});
+      Object.keys(rolGorev).forEach(ad => { if (!roller.includes(ad)) delete rolGorev[ad]; });
+      isYap(() => DB.paletKaydet(p.id, Object.assign({}, pl, { roller, rolGorev })),
+        'Katmanlar kaydedildi.');
+    });
+  });
+}
+
+function yetkiGorevKarti(p, pl) {
+  const roller = rolListesi(pl.roller);
+  if (!roller.length) return '';
+  const gorev = pl.rolGorev || {};
+  return fbKart('#a15fc4', ICON.kisi, 'Her katman ne yapabilir', null, p.id, `
+    <p class="fb-neden">Kısaca yaz — Claude\'a giden promptun içine bu satırlar
+      birebir girecek.</p>
+    <div class="yk-gorevler">
+      ${roller.slice().reverse().map(ad => `
+        <label class="field">
+          <span>${esc(ad)}</span>
+          <textarea data-yk-gorev="${esc(ad)}" rows="2"
+            placeholder="Örn. her şeyi görür ve onaylar">${esc(gorev[ad] || '')}</textarea>
+        </label>`).join('')}
+    </div>
+    ${AUTH.yonetici ? `<div class="kur-dug">
+      <button class="sayfa-dug ikincil" type="button" data-eylem="yetki-gorev-kaydet"
+              data-proje="${p.id}">${svg(ICON.check, 15)} Kaydet</button>
+    </div>` : ''}`);
+}
+
+function yetkiPromptKarti(p, pl) {
+  const hazir = rolListesi(pl.roller).length > 0;
+  return fbKart('#a15fc4', ICON.kopya, 'Kodu yazdır', null, p.id, `
+    <p class="fb-neden">Claude bu promptla Yetkiler ekranını, katman kontrollerini
+      ve kullanıcı ekleme mekanizmasını (Edge Function) kodlar.</p>
+    <div class="kur-dug">
+      ${hazir
+        ? promptBaglantisi({ tur: 'yetkiKur', proje: p.id, slug: depoSlug(p.repo),
+            hedef: 'claude-yeni', yazi: 'Prompt oluştur ve Claude\'u aç' })
+        : promptBaglantisi({ tur: 'yetkiKur', proje: p.id,
+            yazi: 'Önce katmanları belirle', kapali: true })}
+    </div>`);
+}
+
+function yetkiKoduOku(metin) {
+  return jsonBlokOku(metin, x => !!x && x.kuruldu === true);
+}
+
+function yetkiKoduKarti(p, pl) {
+  if (!rolListesi(pl.roller).length) return '';
+  if (pl.yetkiKodTamamlandi) {
+    return fbKart('#a15fc4', ICON.check, 'Kod hazır', null, p.id, `
+      <div class="kur-deger duz">${svg(ICON.tik, 13)} Claude\'un cevabı aktarıldı</div>`);
+  }
+  if (!AUTH.yonetici) {
+    return fbKart('#a15fc4', ICON.check, 'Kod hazır mı?', null, p.id,
+      `<p class="fb-neden">Claude işini bitirdiğinde yönetici burayı onaylayacak.</p>`);
+  }
+  return fbKart('#a15fc4', ICON.check, 'Kod hazır mı?', null, p.id, `
+    <p class="fb-neden">Claude işi bitirince sana bir JSON bloğu verecek —
+      olduğu gibi buraya yapıştır.</p>
+    <textarea class="anl-kutu" id="yk-json-${p.id}" rows="4"
+      placeholder='{ "kuruldu": true, ... }'></textarea>
+    <div class="kur-dug">
+      <button class="sayfa-dug ikincil" type="button" data-eylem="yetki-kod-onayla"
+              data-proje="${p.id}">${svg(ICON.check, 15)} Aktar</button>
+    </div>`);
+}
+
+/* İlk kullanıcının e-posta/şifresi kalıcı değil — yalnız bu ekran açıkken
+   tarayıcı belleğinde durur, onaylanınca (yalnız e-posta+rol) palete yazılıp
+   şifre atılır. Veritabanında düz metin şifre tutmayalım diye. */
+const YETKI_ILK = {};
+
+function yetkiIlkKullaniciModalAc(projeId) {
+  modalHepsiniKapat();
+  const p = DB.proje(projeId);
+  if (!p) return;
+  const pl = p.palet || {};
+  const roller = rolListesi(pl.roller);
+  const enGenis = roller[roller.length - 1] || '';
+  modalAc(`
+    ${modalBaslik(ICON.anahtar, 'İlk kullanıcı', 'Bu bilgiyle hesabı Supabase panelinden sen açacaksın.')}
+    <label class="field">
+      <span>E-posta</span>
+      <input type="email" id="yk-eposta" placeholder="ornek@firma.com" autocomplete="off">
+    </label>
+    <label class="field">
+      <span>Şifre</span>
+      <input type="text" id="yk-sifre" placeholder="En az 6 karakter" autocomplete="off">
+    </label>
+    <label class="field">
+      <span>Katman</span>
+      <div class="ky-cipler" id="yk-rol">
+        ${roller.map(r => `<button class="cip-sec ${r === enGenis ? 'on' : ''}"
+          type="button" data-alt="${esc(r)}">${esc(r)}</button>`).join('')}
+      </div>
+    </label>
+    <div class="modal-alt">
+      <button class="btn btn-ghost" data-m="iptal" type="button">Vazgeç</button>
+      <button class="btn btn-primary" data-m="tamam" type="button"><span>Talimatı oluştur</span></button>
+    </div>`, kutu => {
+    let rol = enGenis;
+    $$('#yk-rol .cip-sec', kutu).forEach(b => b.addEventListener('click', () => {
+      rol = b.dataset.alt;
+      $$('#yk-rol .cip-sec', kutu).forEach(x => x.classList.toggle('on', x === b));
+    }));
+    $('[data-m="iptal"]', kutu).addEventListener('click', modalKapat);
+    $('[data-m="tamam"]', kutu).addEventListener('click', () => {
+      const eposta = $('#yk-eposta', kutu).value.trim();
+      const sifre  = $('#yk-sifre', kutu).value.trim();
+      if (!eposta || !sifre) { toast('E-posta ve şifre gerekli.', 'uyari'); return; }
+      if (sifre.length < 6) { toast('Şifre en az 6 karakter olmalı.', 'uyari'); return; }
+      YETKI_ILK[p.id] = { eposta, sifre, rol };
+      modalKapat();
+      render();
+    });
+  });
+}
+
+/* Proje adresinden (https://xxxx.supabase.co) dashboard bağlantısı çıkarır.
+   Çözülemezse genel dashboard adresine düşer — link yine çalışır, yalnız
+   projeyi elle seçmek gerekir. */
+function yetkiSupabasePaneli(pl, yol) {
+  const eslesme = String(pl.supabaseUrl || '').match(/^https?:\/\/([a-z0-9-]+)\.supabase\.co/i);
+  return eslesme
+    ? `https://supabase.com/dashboard/project/${eslesme[1]}${yol}`
+    : 'https://supabase.com/dashboard';
+}
+
+function yetkiIlkKullaniciKarti(p, pl) {
+  if (pl.ilkKullaniciEklendi) {
+    const k = pl.ilkKullanici || {};
+    return fbKart('#a15fc4', ICON.anahtar, 'İlk kullanıcı', null, p.id, `
+      <div class="kur-deger duz">${svg(ICON.tik, 13)}
+        ${esc(k.eposta || '')}${k.rol ? ' — ' + esc(k.rol) : ''}</div>`);
+  }
+
+  const bilgi = YETKI_ILK[p.id];
+  if (!bilgi) {
+    return fbKart('#a15fc4', ICON.anahtar, 'İlk kullanıcı', null, p.id, `
+      <p class="fb-neden">Kayıt ekranı yok — ilk hesabı sen, Supabase panelinden
+        elle açacaksın. Önce e-posta, şifre ve katmanını gir.</p>
+      ${AUTH.yonetici ? `<div class="kur-dug">
+        <button class="sayfa-dug" type="button" data-eylem="yetki-ilk-kullanici-ac"
+                data-proje="${p.id}">${svg(ICON.kalem, 15)} Bilgileri gir</button>
+      </div>` : ''}`);
+  }
+
+  const kullaniciAdres = yetkiSupabasePaneli(pl, '/auth/users');
+  const sqlAdres = yetkiSupabasePaneli(pl, '/sql/new');
+  return fbKart('#a15fc4', ICON.anahtar, 'İlk kullanıcı', null, p.id, `
+    <p class="fb-neden">Sırayla yap, sonra "Ekledim" de:</p>
+    <ol style="margin:0;padding-left:20px;display:grid;gap:10px;color:var(--ink-soft);font-size:13.5px">
+      <li>Supabase panelinde <b>Authentication → Users → Add user</b>'a git;
+        e-posta <code>${esc(bilgi.eposta)}</code>, şifre <code>${esc(bilgi.sifre)}</code>
+        yaz, "Auto Confirm User" işaretli olsun.<br>
+        <a class="mini-link" target="_blank" rel="noopener" href="${esc(kullaniciAdres)}">
+          ${svg(ICON.disari, 13)} Panele git</a></li>
+      <li><b>SQL Editor</b>'de bu kullanıcı için <code>kullanicilar</code> tablosuna
+        katman satırını ekle — sütun adları Claude'un kurduğu şemaya göre
+        değişebilir, emin değilsen kontrol et. Örnek:
+        <div class="anl-kutu mono" style="margin-top:6px;padding:8px 10px;font-size:12.5px">insert into kullanicilar (eposta, rol) values
+('${esc(bilgi.eposta)}', '${esc(bilgi.rol)}');</div>
+        <a class="mini-link" target="_blank" rel="noopener" href="${esc(sqlAdres)}">
+          ${svg(ICON.disari, 13)} SQL Editor'e git</a></li>
+    </ol>
+    ${AUTH.yonetici ? `<div class="kur-dug">
+      <button class="sayfa-dug" type="button" data-eylem="yetki-ilk-kullanici-onay"
+              data-proje="${p.id}">${svg(ICON.tik, 15)} Ekledim</button>
+      <button class="sayfa-dug ikincil" type="button" data-eylem="yetki-ilk-kullanici-vazgec"
+              data-proje="${p.id}">Vazgeç</button>
+    </div>` : ''}`);
+}
+
+function yetkiBilgiKarti() {
+  return `<div class="card">
+    <p class="fb-neden">${svg(ICON.info, 14)} Bundan sonra yeni kullanıcı eklemek
+      artık burada değil — uygulamanın kendi <b>Ayarlar → Yetkiler</b> ekranından,
+      admin tarafından yapılacak.</p>
+  </div>`;
+}
+
+function yetkiSayfasi(p, d) {
+  const pl = p.palet || {};
+  const roller = rolListesi(pl.roller);
+  const adimlar = [roller.length > 0, !!pl.yetkiKodTamamlandi, !!pl.ilkKullaniciEklendi];
+  const biten = adimlar.filter(Boolean).length;
+  const tamam = !!pl.yetkiTamamlandi;
+
+  return `<div class="fb-govde">`
+    + adimBasligi(p, d, `${tamam ? adimlar.length : biten}/${adimlar.length}`)
+    + balon('Bu durağa kadar giriş/rol yoktu — herkes uygulamayı açtığında her şeyi görüyordu.',
+        'Katmanları belirle, kodu yazdır, ilk kullanıcıyı ekle — Final burada açılır.')
+    + fbKart('#a15fc4', ICON.gGuvenlik, 'Katmanlar',
+        AUTH.yonetici ? 'yetki-roller-duzenle' : null, p.id,
+        roller.length
+          ? `<div>${roller.slice().reverse().map(ad => `<span style="display:inline-flex;
+              padding:4px 10px;margin:0 6px 6px 0;border-radius:999px;
+              background:var(--surface-2);border:1px solid var(--line);
+              font-size:12.5px;color:var(--ink-soft)">${esc(ad)}</span>`).join('')}</div>`
+          : `<p class="fb-neden">Kaç katman olacak, sıralaması ne — henüz seçilmedi.</p>`)
+    + yetkiGorevKarti(p, pl)
+    + yetkiPromptKarti(p, pl)
+    + yetkiKoduKarti(p, pl)
+    + yetkiIlkKullaniciKarti(p, pl)
+    + yetkiBilgiKarti()
+    + (AUTH.yonetici ? (tamam
+        ? `<div class="kur-deger duz">${svg(ICON.tik, 13)} Bu aşama tamamlandı</div>`
+        : `<button class="sayfa-dug ikincil" type="button" data-eylem="yetki-tamamlandi"
+                    data-proje="${p.id}" ${biten === adimlar.length ? '' : 'disabled'}>
+             ${svg(ICON.check, 15)} Kullanıcı ve Yetki tamamlandı</button>`) : '')
+    + `</div>`;
+}
+
 /* Final notları — eski kayıtlarda düz metindi; obje biçimine ({metin, tamam})
    burada düşülüyor ki eski projelerde de çökmesin. */
 function finalNotlariOku(pl) {
@@ -4260,7 +4503,7 @@ function finalNotlariOku(pl) {
     .map(n => typeof n === 'string' ? { metin: n, tamam: false } : n);
 }
 
-/* 7 · Final — görevler bitti, incele, ya final ver ya da bulduğunu not et. */
+/* 8 · Final — görevler bitti, incele, ya final ver ya da bulduğunu not et. */
 function finalSayfasi(p, d) {
   const pl = p.palet || {};
   const verildi = !!pl.finalVerildi;
@@ -4492,6 +4735,19 @@ function projeDuraklari(p) {
         : pl0.secilenYon
           ? 'Yön seçildi — uygulanınca tamamlandı diye işaretle.'
           : '5 yönü ChatGPT\'ye ver, müşteri hangisini istediğini seçsin.',
+    },
+    {
+      ad: 'Kullanıcı ve Yetki',
+      bitti: !!pl0.yetkiTamamlandi,
+      ozet: pl0.yetkiTamamlandi
+        ? 'Tamamlandı.'
+        : !rolListesi(pl0.roller).length
+          ? 'Kaç katman olacak, kim ne yapabilecek?'
+          : !pl0.yetkiKodTamamlandi
+            ? 'Katmanlar hazır — promptu Claude\'a ver.'
+            : !pl0.ilkKullaniciEklendi
+              ? 'Kod hazır — ilk kullanıcıyı ekle.'
+              : 'Son onayı bekliyor.',
     },
     {
       ad: 'Final',
@@ -8268,6 +8524,7 @@ const PANO_PROMPT = {
   sablonDegisim: p => PROMPT.sablonDegisim(p.id),
   cekirdekTemizle: p => PROMPT.cekirdekTemizle(p.id),
   yapi:          p => PROMPT.yapi(p.id),
+  yetkiKur:      p => PROMPT.yetkiKur(p.id),
   /* Projesiz: bir programda doğan kuralı standarda çeviren prompt. */
   standartEkle:  () => PROMPT.standartEkle(),
 };
@@ -9238,6 +9495,75 @@ async function eylemCalistir(el) {
     })) return;
     return isYap(() => DB.paletKaydet(pr.id,
       Object.assign({}, pl, { tasarimTamamlandi: true })), 'Profesyonel tasarım tamamlandı.');
+  }
+
+  if (e === 'yetki-roller-duzenle') return yetkiRollerDuzenleAc(el.dataset.proje);
+
+  if (e === 'yetki-gorev-kaydet') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const pl = pr.palet || {};
+    const kart = el.closest('.fb-kart');
+    const rolGorev = Object.assign({}, pl.rolGorev || {});
+    $$('[data-yk-gorev]', kart).forEach(t => { rolGorev[t.dataset.ykGorev] = t.value.trim(); });
+    return isYap(() => DB.paletKaydet(pr.id, Object.assign({}, pl, { rolGorev })), 'Kaydedildi.');
+  }
+
+  if (e === 'yetki-kod-onayla') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const alan = document.getElementById('yk-json-' + pr.id);
+    const o = alan && yetkiKoduOku(alan.value);
+    if (!o) {
+      toast('Blok okunamadı. Claude\'un verdiği { … } parçasını olduğu gibi yapıştır.', 'hata');
+      return;
+    }
+    const pl = pr.palet || {};
+    return isYap(() => DB.paletKaydet(pr.id, Object.assign({}, pl, {
+      yetkiKodTamamlandi: true,
+      yetkiKurulumBilgi: { tablo: o.tablo || '', edgeFunction: o.edgeFunction || '' },
+    })), 'Kaydedildi.');
+  }
+
+  if (e === 'yetki-ilk-kullanici-ac') return yetkiIlkKullaniciModalAc(el.dataset.proje);
+
+  if (e === 'yetki-ilk-kullanici-vazgec') {
+    delete YETKI_ILK[el.dataset.proje];
+    render();
+    return;
+  }
+
+  if (e === 'yetki-ilk-kullanici-onay') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const bilgi = YETKI_ILK[pr.id];
+    if (!bilgi) return;
+    const pl = pr.palet || {};
+    return isYap(() => {
+      delete YETKI_ILK[pr.id];
+      return DB.paletKaydet(pr.id, Object.assign({}, pl, {
+        ilkKullaniciEklendi: true,
+        ilkKullanici: { eposta: bilgi.eposta, rol: bilgi.rol },
+      }));
+    }, 'İlk kullanıcı kaydedildi.');
+  }
+
+  if (e === 'yetki-tamamlandi') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const pl = pr.palet || {};
+    if (pl.yetkiTamamlandi) {
+      return isYap(() => DB.paletKaydet(pr.id,
+        Object.assign({}, pl, { yetkiTamamlandi: false })), 'İşaret kaldırıldı.');
+    }
+    if (!rolListesi(pl.roller).length || !pl.yetkiKodTamamlandi || !pl.ilkKullaniciEklendi) return;
+    if (!await onaySor({
+      baslik: 'Kullanıcı ve Yetki tamamlandı mı?',
+      mesaj: 'Katmanlar, kod ve ilk kullanıcı hazır olduğunda onayla — Final açılacak.',
+      buton: 'Eminim',
+    })) return;
+    return isYap(() => DB.paletKaydet(pr.id,
+      Object.assign({}, pl, { yetkiTamamlandi: true })), 'Kullanıcı ve Yetki tamamlandı.');
   }
 
   if (e === 'yetkili-kopyala') {
