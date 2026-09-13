@@ -4034,10 +4034,19 @@ function finalSayfasi(p, d) {
   const s = DB.sayim(p.id);
   const hazir = gelistirmeBitti(p);
 
+  /* Not bildirildiyse üstteki çubuk artık onun tamamlanma durumunu gösterir
+     — bu sayfada asıl takip edilen şey o. Hiç not yoksa projenin genel görev
+     ilerlemesi görünür, en azından boş bir çubuk kalmasın. */
+  const notVar   = notlar.length > 0;
+  const bitmis   = notVar ? notlar.filter(n => n.tamam).length : s.bitmis;
+  const toplam   = notVar ? notlar.length : s.gorev;
+  const yuzde    = toplam ? Math.round(bitmis / toplam * 100) : 0;
+  const etiket   = notVar ? 'not tamamlandı' : 'görev bitti';
+
   return sayfaHero(p, d) + `
     <div class="takvim" style="${renkDegiskenleri(p.renk)}">
-      <div class="tk-ust"><b>${s.bitmis}/${s.gorev} görev bitti</b><em>%${s.yuzde}</em></div>
-      <div class="ray"><i style="width:${s.yuzde}%"></i><b style="left:${s.yuzde}%"></b></div>
+      <div class="tk-ust"><b>${bitmis}/${toplam} ${etiket}</b><em>%${yuzde}</em></div>
+      <div class="ray"><i style="width:${yuzde}%"></i><b style="left:${yuzde}%"></b></div>
     </div>`
     + `<div class="card">
         <p class="fb-neden">${hazir || verildi

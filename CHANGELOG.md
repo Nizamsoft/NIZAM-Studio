@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.135.22
+- **Final sayfasının üstündeki ilerleme çubuğu bildirilen notları hiç saymıyordu.** Not eklenip tamamlandı diye işaretlense bile çubuk projenin genel görev sayacına bakıyordu — görev hiç kullanılmayan bir projede sürekli "0/0" görünüyordu. Artık bildirilmiş not varsa çubuk onların tamamlanma durumunu ("X/Y not tamamlandı") gösteriyor; hiç not yoksa eskisi gibi genel görev ilerlemesine düşüyor.
+
 ## v0.135.21
 - **Final notlarına prompt ve tamamlandı tiki eklendi.** Bildirilen her not artık kendi "Prompt oluştur" bağlantısını taşıyor — Beta/Geliştirme durağıyla aynı güncelleme promptunu üretip Claude Code'u açıyor. Notun yanındaki tik, güncelleme yapılınca işaretleniyor; işaretlenen not üstü çizili gösteriliyor ve prompt bağlantısı kayboluyor (iş bitti). Not istenirse yine tamamen silinebiliyor.
 
