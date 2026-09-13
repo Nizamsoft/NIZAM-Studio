@@ -627,68 +627,80 @@ const PROMPT = {
     return s.join('\n');
   },
 
-  /* Yetki tasarım anında değil, uygulamanın içinde yönetiliyor. Müşterinin
-     ekibi zamanla değişiyor; her işe alımda geliştiriciye dönüp kod
-     yazdırmak anlamsız. Studio yalnız katmanların ne olduğunu söylüyor,
-     kimin hangi katmanda olacağını uygulamadaki admin belirliyor. */
+  /* Kullanıcı ekleme ve katmanlar burada, ilk kurulumda kuruluyor —
+     kısıtlamalar (kim ne yapabilir) ise ayrı, sonraki bir "Yetkilendirme"
+     promptuyla gelecek (bkz. PROMPT.yetkiKur). Bilerek ikiye bölündü: hangi
+     katmanların olduğu ve nasıl kullanıcı ekleneceği baştan belli, ama
+     kısıtlamalar müşteriyle konuşulduktan sonra, ayrı bir görevle netleşiyor —
+     ikisini aynı anda istemek ya tahmin ettirir ya da işi geciktirir. */
   yetkiBlogu(proje) {
     const roller = rolListesi(proje && (proje.palet || {}).roller);
     const sunuculu = proje ? sunuculuMu(proje) : true;
+    const pl = (proje && proje.palet) || {};
 
-    /* Rol katmanı tanımlanmamışsa ya da proje sunucusuzsa (yerel projede
-       hesap/kullanıcı sistemi kurulamaz — roller yazılmış olsa bile) proje
-       tek kullanıcılık demektir: admin ekranı, katman, giriş kilidi gibi
-       hiçbir şey buna göre kurulmasın. */
+    /* Rol katmanı tanımlanmamışsa (eski proje) ya da sunucusuzsa (yerel
+       projede hesap/kullanıcı sistemi kurulamaz) proje tek kullanıcılık
+       demektir: kullanıcı ekleme, katman, giriş kilidi gibi hiçbir şey
+       buna göre kurulmasın. */
     if (proje && (!roller.length || !sunuculu)) {
       const s = ['### Giriş ve yetki — yok'];
       s.push('');
       if (!sunuculu) {
         s.push('Bu proje sunucusuz: hesap/kullanıcı sistemi kurulamaz —');
         s.push('roller tanımlanmış olsa bile **tek kullanıcılık.** Kullanıcı');
-        s.push('listesi, katman atama, izin ekranı, giriş ekranı gibi hiçbir');
-        s.push('şey kurma — uygulama açılır açılmaz kullanılır.');
+        s.push('listesi, katman atama, giriş ekranı gibi hiçbir şey kurma —');
+        s.push('uygulama açılır açılmaz kullanılır.');
       } else {
         s.push('Bu projede rol katmanı tanımlanmadı: **tek kullanıcı, giriş');
-        s.push('ekranı yok.** Kullanıcı listesi, katman atama, izin ekranı gibi');
-        s.push('hiçbir şey kurma — herkes uygulamayı açtığında her şeyi görsün');
-        s.push('ve yapabilsin.');
+        s.push('ekranı yok.** Kullanıcı listesi, katman atama gibi hiçbir şey');
+        s.push('kurma — herkes uygulamayı açtığında her şeyi görsün ve yapsın.');
       }
       return s.join('\n');
     }
 
-    const s = ['### Yetkiler ekranı — uygulamanın içinde'];
+    const s = ['### Kullanıcı ekleme — uygulamanın içinde'];
     s.push('');
-    s.push('Kimin neyi görebileceğini ve yapabileceğini **kodda sabitleme.**');
-    s.push('Uygulamada bir **Yetkiler** ekranı olacak, yetkiyi oradan admin');
-    s.push('yönetecek. Şunları karşılasın:');
+    s.push('Uygulamada bir **Ayarlar → Kullanıcı ekle** ekranı olacak. Kimin');
+    s.push('neyi yapabileceğine **şimdi karar verme** — o, ayrı bir');
+    s.push('"Yetkilendirme" promptuyla sonra gelecek. Şimdi yalnız altyapıyı');
+    s.push('kur:');
     s.push('');
     s.push('- **Kullanıcı listesi.** Admin kullanıcı ekler, siler, pasife alır.');
-    s.push('- **Katman atama.** Her kullanıcıya yukarıdaki rol katmanlarından');
-    s.push('  biri verilir. Üstteki katman, alttakinin gördüğü her şeyi görür.');
-    s.push('- **Modül ve sayfa izinleri.** Her katman için hangi sayfaların');
-    s.push('  görüneceği ve hangi işlerin (ekle, düzenle, sil) yapılabileceği');
-    s.push('  açılıp kapatılabilir olsun.');
-    s.push('- **Yetkiler ekranını yalnız en üst katman görür.** Kendi katmanını');
-    s.push('  düşüremesin, son admini silemesin.');
-    s.push('- **Varsayılan:** en üst katman her şeyi yapar, alt katmanlar');
-    s.push('  yalnız görür. Admin gerekeni açar.');
+    s.push('- **Katman ataması.** Yeni kullanıcı eklenirken şu katmanlardan');
+    s.push('  biri seçilir: ' + roller.map(r => '**' + r + '**').join(', ') + '.');
+    s.push('- **Ekleme mekanizması.** Tarayıcıdan normal `signUp()` çağırma —');
+    s.push('  admin\'in kendi oturumunu bozar. Bunun yerine bir **Edge');
+    s.push('  Function** yaz (`service_role` anahtarı yalnız orada, sunucu');
+    s.push('  tarafında dursun): admin panelden e-posta + şifre + katman');
+    s.push('  gönderilince bu fonksiyon `auth.admin.createUser()` ile hesabı');
+    s.push('  açsın, `kullanicilar` tablosuna satırını yazsın.');
+    s.push('- **Kendi katmanını düşüremesin, son admini silemesin** —');
+    s.push('  bunun dışında bir kısıtlama yok.');
+    s.push('- **RLS şimdilik yalnız "giriş yapmış mı" diye baksın** — katmana');
+    s.push('  göre ayrım yapma. Her katman her sayfayı görür, her işi yapar.');
+    s.push('  "Kim ne yapabilir" sorusu ilerideki "Yetkilendirme" aşamasında');
+    s.push('  cevaplanacak.');
     s.push('');
-    s.push('İzinler veritabanında tutulur ve **satır güvenliği (RLS) bu tabloyu');
-    s.push('okur** — arayüzde düğmeyi gizlemek yetmez, sunucu tarafında da');
-    s.push('engellensin. Veri yerel tarayıcıdaysa sunucu yok; o zaman Yetkiler');
-    s.push('ekranı yalnız arayüzü biçimlendirir.');
-    s.push('');
-    s.push('**İlk giriş.** İlk kullanıcı (Admin) zaten var — Supabase panelinden');
-    s.push('elle açıldı, ilgili tabloda satırı da duruyor. Kodun içine sabit bir');
-    s.push('kullanıcı adı/şifre gömmene gerek yok; Yetkiler ekranı ve giriş bu');
-    s.push('gerçek admin satırını baştan itibaren kullanabilir. Kalıcı bir arka');
-    s.push('kapı bırakma.');
+    if (pl.ilkKullaniciEklendi) {
+      s.push('**İlk giriş.** İlk kullanıcı (Admin) zaten var — Supabase');
+      s.push('panelinden elle açıldı, ilgili tabloda satırı da duruyor. Kodun');
+      s.push('içine sabit bir kullanıcı adı/şifre gömmene gerek yok; giriş');
+      s.push('ekranı bu gerçek admin satırını baştan itibaren kullanabilir.');
+    } else {
+      s.push('**İlk giriş.** Veritabanında hiç kullanıcı yokken normal girişle');
+      s.push('kimse içeri giremez — kayıt ekranı da yok. Kodun içine sabit bir');
+      s.push('kullanıcı adı ve şifre göm; kullanıcı tablosu boşken giriş ekranı');
+      s.push('yalnız bu bilgiyi kabul etsin ve içeri alsın. İlk gerçek kullanıcı');
+      s.push('yukarıdaki Kullanıcı ekle özelliğinden oluşturulur oluşturulmaz');
+      s.push('bu sabit giriş bir daha çalışmasın — kalıcı bir arka kapı kalmasın.');
+    }
     return s.join('\n');
   },
 
-  /* "Kullanıcı ve Yetki" durağının kod-yazma promptu. yetkiBlogu'nun tarif
-     ettiği ekranı gerçekten kurdurur; katman görevleri ve modül/sayfa
-     listesi somut bağlam olarak eklenir. Sonunda istenen JSON, Studio'nun
+  /* "Yetkilendirme" durağının kod-yazma promptu. Kullanıcı ekleme ve
+     katmanlar zaten kurulu (bkz. yetkiBlogu — ilk kurulum promptunun
+     içinde çalıştı); burada yalnız gerçek kısıtlamalar ("kim ne
+     yapabilir") koda işleniyor. Sonunda istenen JSON, Studio'nun
      kurulumun bittiğini bilmesi için — palete yazılıyor (bkz. yetki-kod-onayla). */
   yetkiKur(projeId) {
     const p = DB.proje(projeId);
@@ -705,11 +717,10 @@ const PROMPT = {
       s.push('> ve söyle; başka depo ekleme, dosya oluşturma, commit atma.');
       s.push('');
     }
-    s.push('# Kullanıcı ve Yetki sistemini kur');
+    s.push('# Yetkilendirme');
     s.push('');
-    s.push('Bugüne kadar bu projede giriş/rol kavramı yoktu — herkes uygulamayı');
-    s.push('açtığında her şeyi görüyordu. Artık katmanlar belirlendi, sırada');
-    s.push('gerçek kurulum var.');
+    s.push('Kullanıcı ekleme ve katmanlar zaten kurulu — şu ana kadar her');
+    s.push('katman her şeyi yapabiliyordu. Şimdi gerçek kısıtlamaları uygula:');
     s.push('');
     s.push('## Katmanlar (dar yetkiden genişe)');
     s.push('');
@@ -719,33 +730,29 @@ const PROMPT = {
       s.push(`${i + 1}. **${ad}**${g ? ' — ' + g : ''}`);
     });
     s.push('');
-    s.push(PROMPT.yetkiBlogu(p));
-    s.push('');
-    s.push('## Kullanıcı ekleme mekanizması');
-    s.push('');
-    s.push('- **İlk kullanıcı zaten elle açıldı** — Supabase Authentication');
-    s.push('  panelinden, Studio\'nun dışında. Bu bloğun kapsamında değil.');
-    s.push('- **Sonraki her kullanıcı Yetkiler ekranından, admin tarafından');
-    s.push('  eklenmeli.** Bunun için tarayıcıdan normal `signUp()` çağırma —');
-    s.push('  admin\'in kendi oturumunu bozar. Bunun yerine bir **Edge Function**');
-    s.push('  yaz: `service_role` anahtarı yalnız orada, sunucu tarafında dursun.');
-    s.push('  Admin panelden e-posta + şifre + katman gönderilince bu fonksiyon');
-    s.push('  `auth.admin.createUser()` ile hesabı açsın, `kullanicilar` tablosuna');
-    s.push('  satırını yazsın. Admin\'in kendi oturumu hiç etkilenmesin.');
 
     if (p.id) {
       const moduller = DB.modulleri(p.id).filter(m => m.ad !== GENEL_MODUL);
       if (moduller.length) {
-        s.push('');
         s.push('## Mevcut modül ve sayfalar');
         s.push('');
         moduller.forEach(m => {
           const sayfalar = DB.sayfalari(m.id).map(sf => sf.ad);
           s.push(`- **${m.ad}**${sayfalar.length ? ': ' + sayfalar.join(', ') : ''}`);
         });
+        s.push('');
       }
     }
 
+    s.push('## Nasıl uygula');
+    s.push('');
+    s.push('- Hangi katmanın hangi sayfayı görüp hangi işi (ekle/düzenle/sil)');
+    s.push('  yapabileceğini yukarıdaki tarife göre kodla — ilgisiz düğmeyi/');
+    s.push('  sayfayı arayüzde gizle, **sunucu tarafında da (RLS) aynı kuralı');
+    s.push('  uygula**, yalnız arayüzde gizlemek yetmez.');
+    s.push('- En üstteki katman (Admin) her zaman her şeyi yapabilir.');
+    s.push('- Kendi katmanını düşüremesin, son admini silemesin kuralı zaten');
+    s.push('  kuruluydu — boz-ma.');
     s.push('');
     s.push('## Bitirince');
     s.push('');
@@ -753,7 +760,7 @@ const PROMPT = {
     s.push('Studio bu bloğu okuyup kurulumun bittiğini anlayacak:');
     s.push('');
     s.push('```json');
-    s.push('{ "kuruldu": true, "tablo": "kullanicilar", "edgeFunction": "fonksiyon-adı" }');
+    s.push('{ "kuruldu": true }');
     s.push('```');
     return s.join('\n');
   },

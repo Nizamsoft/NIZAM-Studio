@@ -1,5 +1,12 @@
 # Değişiklik Günlüğü
 
+## v0.135.39
+- **Karar değişti: Katmanlar Program temeli'ne geri döndü, kullanıcı ekleme artık en baştan kuruluyor.**
+  - **Program temeli** artık 4 adım: Program → **Katmanlar** → Veriler → Alan adı. Katman ladder'ı (en üstte sabit "Admin", altına serbest roller) burada dolduruluyor.
+  - **"Kullanıcı ve Yetki" durağı sadece "Yetkilendirme" oldu ve küçüldü.** Katman seçimi ve ilk kullanıcı ekleme artık burada değil — yalnız "her katman ne yapabilir" tanımlanıp Claude'a kısıtlama promptu veriliyor.
+  - **İlk kurulum promptu artık Ayarlar'a bir "Kullanıcı ekle" özelliği kurduruyor** (e-posta+şifre+katman, Edge Function ile) — roller Program temeli'nden geliyor. Başlangıçta **hiçbir kısıtlama yok**: hangi katmanda olursa olsun herkes her şeyi görüp yapabiliyor. Gerçek kısıtlamalar ("Admin her şeye erişsin, Yönetici şunu yapsın, Personel şunu yapsın" gibi) ayrı bir promptla, Yetkilendirme durağında sonradan uygulanıyor.
+  - Şablon kopyalarında Bağlantılar ve temel'deki SQL+ilk kullanıcı akışı aynen duruyor; sıfırdan projelerde ilk kullanıcı artık ilk kurulum promptunun kendi bootstrap girişinden (sabit geçici şifre, ilk gerçek kullanıcı eklenince kapanır) geliyor.
+
 ## v0.135.38
 - **Yeni durak: "Test ve Güncelle" — Değişim ile Profesyonel tasarım arasında.** Yalnızca şablon kopyalarında görünür: normal projelerde bu döngü zaten Beta ve geliştirme'nin içinde, şablon kopyaları ise "Kurulum ve yapı"/"Beta ve geliştirme" yerine "Temel tanımlar"/"Değişim"den geçtiği için bu test-ve-düzelt döngüsünü hiç görmüyordu. Şimdi: uygulamayı gerçek verilerle dene, bulduğun eksik/hatayı bir kutuya yaz, tek tuşla Claude'a giden bir prompt oluşsun. Açık istekler görev olarak da listeleniyor. Normal projelerde bu durak otomatik tamamlanmış sayılıyor, hiç görünmüyor.
 
