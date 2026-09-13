@@ -7,8 +7,8 @@ const APP = {
   name:     'NIZAM | Studio',
   short:    'NIZAM Studio',
   owner:    'Nizam Soft',
-  version: 'v0.135.24',
-  build:    '2026-09-12',
+  version: 'v0.135.25',
+  build:    '2026-09-13',
   /* Studio'nun kendi deposu — "bütün programlarda geçerli olsun"
      istekleri buraya gider. */
   depo:    'Nizamsoft/NIZAM-Studio',
@@ -652,6 +652,15 @@ function kunyeTam(k) {
 const PLATFORM_ADI = { web: 'Web', mobil: 'Mobil', ikisi: 'Web · Mobil' };
 const VERI_ADI     = { sifirdan: 'Sıfırdan veritabanı', mevcut: 'Mevcut veritabanı', excel: "Excel'den taşınacak" };
 const DURUM_ADI    = { yeni: 'Yeni', gelistiriliyor: 'Geliştiriliyor', kontrolde: 'Kontrolde', tamamlandi: 'Tamamlandı' };
+
+/* Muhasebe şablonu — proje kopyalarken seçilebilen tek şablon türü.
+   Bu üç bankanın ekstre yapısı zaten programda hazır kayıtlı; başka bir
+   banka gerekirse "ekle" ile aynı excel-öğret akışından geçiyor. */
+const SABLON_BANKA_HAZIR = [
+  { anahtar: 'garanti', ad: 'Garanti BBVA' },
+  { anahtar: 'kuveyt',  ad: 'Kuveyt Türk' },
+  { anahtar: 'ziraat',  ad: 'Ziraat Bankası' },
+];
 
 /* ==========================================================================
    Görev durumları — dört tane, sırayla ilerler.

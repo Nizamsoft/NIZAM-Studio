@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.135.25
+- **Muhasebe şablonu akışı eklendi.** Proje kopyalarken artık "Bu bir şablon dönüşümü mü?" sorusu çıkıyor. "Muhasebe şablonu" seçilirse: firma bilgileri ve program temeli boş gelir (başka bir firma olduğu için), "Kurulum ve yapı" durağının yerini **Temel tanımlar** (şube/kullanıcı/hesap planı/gider grupları metni + POS okuyucu + bankalar + fatura&kart — hepsi "örnek excel'i Claude'a öğret, cevabı yapıştır" akışıyla), "Beta ve geliştirme" durağının yerini ise **Değişim** alıyor — toplanan her şeyi tek promptla koda işleyen durak. Bağlantılar, Profesyonel tasarım, Final ve Geliştirme durakları değişmeden aynen kullanılıyor. Amaç: yeni bir firmaya muhasebe programı kurarken hızlı, tekrarlanabilir bir yol.
+
 ## v0.135.24
 - **Final verilen bir proje "Başlamış Projeler" kovasından hiç çıkmıyordu.** Projeler ekranındaki "Başlamış/Bitmiş" ayrımı yalnız görev tamamlanma yüzdesine bakıyordu — görev hiç kullanılmayan bir projede bu yüzde sonsuza dek sıfır kalıyor, final verilse bile proje "Bitmiş"e düşmüyordu. Artık final verilen bir proje, görev yüzdesi ne olursa olsun, doğrudan "Bitmiş Projeler" sayılıyor.
 

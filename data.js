@@ -428,9 +428,14 @@ const DB = {
     if (!kaynak) throw new Error('Kopyalanacak proje bulunamadı.');
 
     /* Depo ve logo bilerek kopyalanmıyor: Bağlantılar ve temel sıfırdan
-       kurulacak, logo da aynı fiziksel dosyayı paylaşmasın diye. */
-    const temel = { firma: kaynak.firma, renk: kaynak.renk, olusturan: AUTH.user.id };
-    const genis = Object.assign({}, temel, {
+       kurulacak, logo da aynı fiziksel dosyayı paylaşmasın diye. Şablon
+       kopyasında (ör. muhasebe şablonu) firma kimliği de kopyalanmıyor —
+       kopya başka bir firmaya gidecek, "Firma bilgileri" boş gelmeli. */
+    const sablon = ek.sablon || null;
+    const temel = sablon
+      ? { firma: '', olusturan: AUTH.user.id }
+      : { firma: kaynak.firma, renk: kaynak.renk, olusturan: AUTH.user.id };
+    const genis = sablon ? temel : Object.assign({}, temel, {
       sektor: kaynak.sektor || null, telefon: kaynak.telefon || null, eposta: kaynak.eposta || null,
       dil: kaynak.dil || null, para: kaynak.para || null,
       baslangic: kaynak.baslangic || null, teslim: kaynak.teslim || null,
@@ -463,7 +468,18 @@ const DB = {
         /* Yuvalar kalıyor (hangi görsel gerekiyor bilgisi), dosya yolu
            kalmıyor — aksi hâlde iki proje aynı depodaki dosyayı paylaşır. */
         gorseller: kaynakGorseller.map(g => Object.assign({}, g, { yol: '', boyut: 0, tur: '' })),
-      }));
+      }, sablon ? {
+        /* Şablon kopyası: "Program temeli"nde girilen paket adı, roller ve
+           veri katmanı da bu firmaya özel — boş gelip yeniden doldurulmalı.
+           Kurulum ve yapı (modül/sayfa) yapısı ise KALIYOR, o üstteki
+           `modulleri`/`sayfalari` kopyalamasından geliyor. */
+        sablon,
+        modulAdi: null, roller: null, veriKatmani: null,
+        tasarimTamamlandi: false, secilenYon: null,
+        betaTamamlandi: false, finalVerildi: false, finalNotlar: [],
+        blokVerildi: false, sqlKuruldu: false, asama: [],
+        sablonTanimlar: null, sablonDegisimTamamlandi: false,
+      } : {}));
     } catch (h) { /* palet tablosu yoksa proje yine kuruldu, boş paletle kalır */ }
 
     const kaynakModuller = this.modulleri(kaynakId);

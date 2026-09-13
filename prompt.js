@@ -1135,6 +1135,107 @@ const PROMPT = {
     return s.join('\n');
   },
 
+  /* ---------- Muhasebe şablonu: Temel tanımlar ve Değişim ----------
+     Şablon akışında "Temel tanımlar" durağı depoya hiç dokunmuyor — yalnız
+     bilgi topluyor. POS/banka/fatura adımlarında Claude'dan istenen tek şey
+     örnek Excel'in yapısını anlatması (kod yazmadan); toplanan cevaplar
+     "Değişim" durağında tek promptta koda işleniyor. */
+  sablonOgren(projeId, konu, ipucu) {
+    const p = DB.proje(projeId);
+    if (!p) return '';
+    const slug = depoSlug(p.repo);
+
+    const s = [];
+    s.push('# ' + projeAdi(p) + ' — ' + konu + ' yapısını öğren', '');
+    if (slug) {
+      s.push('> ### Depo: `' + slug + '`');
+      s.push('> Bu oturum yalnız bu depoya bağlı olmalı. Deposu farklıysa dur');
+      s.push('> ve söyle.', '');
+    }
+    s.push('Az sonra sana ' + konu.toLowerCase() + ' için örnek bir Excel');
+    s.push('dosyası vereceğim. **Kod yazma, hiçbir dosyayı değiştirme** — tek');
+    s.push('işin dosyanın yapısını inceleyip bana düz metinle anlatmak.');
+    s.push('');
+    if (ipucu) { s.push('> ' + ipucu, ''); }
+    s.push('Dosyayı incele ve şunları anlat:');
+    s.push('- Kaç satır başlık var, veri hangi satırdan başlıyor');
+    s.push('- Sütunlar sırayla hangi isimde ve ne anlama geliyor');
+    s.push('- Tarih ve tutar gibi alanların formatı nasıl (ör. 12.01.2025,');
+    s.push('  1.234,56)');
+    s.push('- Dikkat çeken, sabit ya da değişken olabilecek bir şey varsa belirt');
+    s.push('');
+    s.push('Kısa ve net anlat, madde madde yeter. JSON ya da kod isteme.');
+    return s.join('\n');
+  },
+
+  /* Değişim: Temel tanımlar'da toplanan her şeyi tek seferde koda işleyen
+     prompt. Genel yapıyı (modül/sayfa) değiştirmiyor, yalnız bu firmaya
+     özel bilgiyi uyguluyor. */
+  sablonDegisim(projeId) {
+    const p = DB.proje(projeId);
+    if (!p) return '';
+    const pl = p.palet || {};
+    const t  = pl.sablonTanimlar || {};
+    const slug = depoSlug(p.repo);
+
+    const s = [];
+    s.push('# ' + projeAdi(p) + ' — şablon özelleştirmesi', '');
+    if (slug) {
+      s.push('> ### Depo: `' + slug + '`');
+      s.push('> Bu oturum yalnız bu depoya bağlı olmalı. Deposu farklıysa dur');
+      s.push('> ve söyle.', '');
+    }
+    s.push('Bu proje bir muhasebe programı şablonundan kopyalandı. Aşağıdaki');
+    s.push('bilgiler bu firmaya özel — bunları koda işle. **Modül, sayfa ve');
+    s.push('genel yapıyı değiştirme**, yalnız aşağıdaki bilgilere göre uyarla.');
+    s.push('');
+
+    if ((t.temel || {}).metin) {
+      s.push('## Temel tanımlar');
+      s.push('> ' + t.temel.metin.trim().split('\n').join('\n> '));
+      s.push('');
+    }
+    if ((t.pos || {}).cevap) {
+      s.push('## POS okuyucu — Excel yapısı');
+      s.push(t.pos.cevap.trim());
+      s.push('');
+    }
+
+    const banka    = t.banka || {};
+    const hazirAd  = SABLON_BANKA_HAZIR
+      .filter(b => (banka.secili || []).indexOf(b.anahtar) > -1).map(b => b.ad);
+    const ekstra   = (banka.ekstra || []).filter(b => (b.ad || '').trim());
+    if (hazirAd.length || ekstra.length) {
+      s.push('## Bankalar');
+      if (hazirAd.length) {
+        s.push('Hazır ekstre yapısı zaten sistemde kayıtlı: ' + hazirAd.join(', ') + '.');
+      }
+      ekstra.forEach(b => {
+        s.push('', '### ' + b.ad + ' — Excel yapısı');
+        s.push((b.cevap || '').trim() || '(açıklama girilmedi)');
+      });
+      s.push('');
+    }
+
+    const fatura = t.fatura || {};
+    if (fatura.parasut === true) {
+      s.push('## Fatura ve kart hareketleri');
+      s.push('Firma Paraşüt kullanıyor — sistemde zaten kurulu Paraşüt');
+      s.push('entegrasyonu geçerli, ek bir şey gerekmiyor.');
+      s.push('');
+    } else if (fatura.parasut === false && (fatura.cevap || '').trim()) {
+      s.push('## Fatura ve kart hareketleri — Excel yapısı');
+      s.push('Firma Paraşüt kullanmıyor, aşağıdaki Excel yapısından okunacak:');
+      s.push(fatura.cevap.trim());
+      s.push('');
+    }
+
+    s.push('Bitirince proje kimlik dosyasını (`nizam/` klasörü) bu bilgilere');
+    s.push('göre güncelle ve tek commit\'le **`main` dalına** gönder:');
+    s.push(`   \`[${TASK_PREFIX}-0] Şablon özelleştirmesi\``);
+    return s.join('\n');
+  },
+
   /* ---------- Görsel dünya: ChatGPT'ye giden iki prompt ----------
      Studio kod tarafını Claude'a, görünüş tarafını ChatGPT'ye veriyor.
      Buradan çıkan iki metin de müşteri deposuna değil, bir sohbete gider;

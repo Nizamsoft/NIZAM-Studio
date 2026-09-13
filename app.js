@@ -809,6 +809,18 @@ function logolariGoster() {
    veri katmanı), ayrı durağa taşındı. Bağlantılar, eski "Nizam kurulum
    paketi"ni (sabit iskelet onayı) içine aldı. Beta, eski "Geliştirme"yi
    (görev/kontrol sistemi) içine aldı — kontroller artık beta aşamasında. */
+/* Proje bir şablon kopyasıysa ("Muhasebe şablonu" vb.) DURAKLAR.yapi ve
+   DURAKLAR.beta yerlerini "Temel tanımlar" ve "Değişim"e bırakıyor. */
+function sablonMu(p) {
+  return !!((p && p.palet) || {}).sablon;
+}
+
+/* DURAKLAR'daki statik durak nesnesinin (ad/aciklama) şablon durumuna göre
+   değişen bir kopyası — sayfa başlığı (adimBasligi) bunu okuyor. */
+function sablonD(d, ad, aciklama) {
+  return Object.assign({}, d, { ad, aciklama });
+}
+
 const DURAKLAR = {
   /* Aşamalar konuşulan yere göre bölündü: 1'i müşteriyle konuşarak
      dolduruyorsun (marka, iletişim, sektör, logo), 2'yi klavye başında
@@ -825,12 +837,21 @@ const DURAKLAR = {
      sayfaların olduğunu bilmeli. Bilmezse altı genel ekran çiziyor; künye
      elindeyken gerçek modülleri, gerçek alanları ve o işe ait simgeleri
      çiziyor. Bağımlılık bu yönde. */
-  yapi:        { no: 4, ad: 'Kurulum ve yapı',       ciz: yapiSayfasi,
+  /* Muhasebe şablonu kopyasında bu iki durağın yerini "Temel tanımlar" ve
+     "Değişim" alıyor — sıra ve numara aynı kalıyor, yalnız içerik değişiyor.
+     Bkz. sablonD(), sablonTanimlarSayfasi(), sablonDegisimSayfasi(). */
+  yapi:        { no: 4, ad: 'Kurulum ve yapı',
+                 ciz: (p, d) => sablonMu(p) ? sablonTanimlarSayfasi(p,
+                   sablonD(d, 'Temel tanımlar', 'Şube, POS, banka ve fatura tanımlarını topla.')) : yapiSayfasi(p, d),
                  renk: '#8fae4a', ikon: 'gAltyapi', resim: 'yapi',
-                 aciklama: 'Kurulum dosyaları ve proje yapısı.' },
-  beta:        { no: 5, ad: 'Beta ve geliştirme',    ciz: betaSayfasi,
+                 aciklama: p => sablonMu(p) ? 'Şube, POS, banka ve fatura tanımlarını topla.'
+                   : 'Kurulum dosyaları ve proje yapısı.' },
+  beta:        { no: 5, ad: 'Beta ve geliştirme',
+                 ciz: (p, d) => sablonMu(p) ? sablonDegisimSayfasi(p,
+                   sablonD(d, 'Değişim', 'Toplanan tanımları koda işle.')) : betaSayfasi(p, d),
                  renk: '#c9753c', ikon: 'gOptimizasyon', resim: 'beta',
-                 aciklama: 'Testler ve geliştirme süreci.' },
+                 aciklama: p => sablonMu(p) ? 'Toplanan tanımları koda işle.'
+                   : 'Testler ve geliştirme süreci.' },
   tasarim:     { no: 6, ad: 'Profesyonel tasarım',   ciz: tasarimSayfasi,
                  renk: '#5f86c4', ikon: 'gTasarim', resim: 'tasarim',
                  aciklama: 'Arayüz ve kullanıcı deneyimi.' },
@@ -4024,6 +4045,279 @@ function sqlEditorAdresi(url) {
 }
 
 
+/* ---------- Muhasebe şablonu: Temel tanımlar sihirbazı ----------
+   Kurulum sihirbazıyla aynı kalıp (yüzen tam ekran katman, adım şeridi,
+   Geri/Devam Et). Dört adımı var: temel bilgi, POS, bankalar, fatura&kart.
+   Üçü aynı işi yapıyor: örnek Excel'i Claude'a öğret, cevabı yapıştır —
+   gerçek koda işleme burada değil, "Değişim" durağında tek promptla oluyor. */
+const SABLON_SIHIRBAZ = { adim: 1, projeId: null };
+
+function sablonTanimlarListesi() { return ['temel', 'pos', 'banka', 'fatura']; }
+
+function sablonTanimlarOku(p) {
+  const t = (p.palet || {}).sablonTanimlar || {};
+  return {
+    temel:  Object.assign({ metin: '' }, t.temel),
+    pos:    Object.assign({ cevap: '' }, t.pos),
+    banka:  Object.assign({ secili: [], ekstra: [] }, t.banka),
+    fatura: Object.assign({ parasut: null, cevap: '' }, t.fatura),
+  };
+}
+
+function sablonTanimlarYaz(pr, kismi) {
+  const t = sablonTanimlarOku(pr);
+  return DB.paletKaydet(pr.id, Object.assign({}, pr.palet || {}, {
+    sablonTanimlar: Object.assign({}, t, kismi),
+  }));
+}
+
+function sablonTanimlarAdimBittiMi(k, p) {
+  const t = sablonTanimlarOku(p);
+  if (k === 'temel')  return !!t.temel.metin.trim();
+  if (k === 'pos')    return !!t.pos.cevap.trim();
+  if (k === 'banka')  return t.banka.secili.length > 0
+    || t.banka.ekstra.some(b => (b.cevap || '').trim());
+  if (k === 'fatura') return t.fatura.parasut === true
+    || (t.fatura.parasut === false && !!t.fatura.cevap.trim());
+  return false;
+}
+
+function sablonTanimlarBittiMi(p) {
+  return sablonTanimlarListesi().every(k => sablonTanimlarAdimBittiMi(k, p));
+}
+
+function sablonTanimlarEtiket(k) {
+  return { temel: 'Temel tanımlar', pos: 'POS okuyucu',
+           banka: 'Bankalar', fatura: 'Fatura & kart' }[k] || '';
+}
+
+/* Durak sayfası: kurulum sihirbazındaki özet karta birebir aynı kalıp —
+   sihirbazı açan tek bir "Doldur" kartı. */
+function sablonTanimlarSayfasi(p, d) {
+  const liste = sablonTanimlarListesi();
+  const biten = liste.filter(k => sablonTanimlarAdimBittiMi(k, p)).length;
+  return `<div class="fb-govde">`
+    + adimBasligi(p, d, biten + '/' + liste.length)
+    + fbBosKart('#8fae4a', ICON.gAltyapi, 'Temel tanımlar', biten + '/' + liste.length,
+        'Bu firmaya özel şube/kullanıcı/hesap planı, POS okuyucu, banka ve fatura & kart '
+        + 'yapılarını burada topluyoruz. <b>Adımlar sırayla ilerlenir.</b>',
+        'sablon-sihirbazi-ac', p.id, true)
+    + `</div>`;
+}
+
+function sablonSihirbaziAc(projeId) {
+  modalHepsiniKapat();
+  const p = DB.proje(projeId);
+  if (!p) return;
+  const liste = sablonTanimlarListesi();
+  const ilkEksik = liste.findIndex(k => !sablonTanimlarAdimBittiMi(k, p));
+  Object.assign(SABLON_SIHIRBAZ, { adim: ilkEksik > -1 ? ilkEksik + 1 : liste.length, projeId });
+  const el = document.createElement('div');
+  el.id = 'sablon-sihirbaz';
+  el.className = 'sihirbaz';
+  document.body.appendChild(el);
+  sablonSihirbaziCiz();
+}
+
+function sablonSihirbaziKapat() {
+  const el = $('#sablon-sihirbaz');
+  if (!el) return;
+  el.classList.remove('acik');
+  setTimeout(() => el.remove(), 260);
+}
+
+function sablonSihirbaziCiz() {
+  const el = $('#sablon-sihirbaz');
+  if (!el) return;
+  const p = DB.proje(SABLON_SIHIRBAZ.projeId);
+  if (!p) return sablonSihirbaziKapat();
+  const liste = sablonTanimlarListesi();
+  if (SABLON_SIHIRBAZ.adim > liste.length) SABLON_SIHIRBAZ.adim = liste.length;
+  el.innerHTML = sablonSihirbaziHtml(p, liste);
+  sablonSihirbaziBagla(el, p);
+  requestAnimationFrame(() => el.classList.add('acik'));
+}
+
+function sablonSihirbaziSerit(liste, simdi, p) {
+  return `<div class="sh-adimlar">${liste.map((k, i) => {
+    const n = i + 1;
+    const bitti = sablonTanimlarAdimBittiMi(k, p);
+    const hal = bitti ? 'done' : n === simdi ? 'simdi' : '';
+    const ikon = bitti ? `<span class="sh-adim-no">${svg(ICON.tik, 13)}</span>`
+                        : `<span class="sh-adim-no">${n}</span>`;
+    return (i ? '<span class="sh-adim-cizgi"></span>' : '')
+      + `<span class="sh-adim ${hal}">${ikon}<i>${esc(sablonTanimlarEtiket(k))}</i></span>`;
+  }).join('')}</div>`;
+}
+
+function sablonSihirbaziHtml(p, liste) {
+  const k = liste[SABLON_SIHIRBAZ.adim - 1];
+  const govde = k === 'temel' ? sablonAdimTemelGovde(p)
+    : k === 'pos'   ? sablonAdimPosGovde(p)
+    : k === 'banka' ? sablonAdimBankaGovde(p)
+    : sablonAdimFaturaGovde(p);
+
+  const geri = SABLON_SIHIRBAZ.adim > 1
+    ? `<button class="btn btn-ghost" data-ss2="geri" type="button">← Geri</button>`
+    : `<button class="btn btn-ghost" data-ss2="kapat" type="button">Kapat</button>`;
+  const ileri = SABLON_SIHIRBAZ.adim < liste.length
+    ? `<button class="btn btn-primary" data-ss2="ileri" type="button"><span>Sıradaki →</span></button>`
+    : `<button class="btn btn-primary" data-ss2="kapat" type="button"><span>Bitti ✓</span></button>`;
+
+  return `
+    <div class="sh-tepe">
+      <button class="sh-kapat" data-ss2="kapat" type="button" aria-label="Kapat">
+        ${svg(ICON.kapat, 15)}
+      </button>
+      <span class="sh-ad">Temel tanımlar</span>
+    </div>
+
+    <div class="sh-sayfa">
+      <div class="sh-icerik">
+        ${sablonSihirbaziSerit(liste, SABLON_SIHIRBAZ.adim, p)}
+        ${govde}
+      </div>
+
+      <div class="sh-dip">${geri}${ileri}</div>
+    </div>`;
+}
+
+function sablonSihirbaziBagla(kutu, p) {
+  $$('[data-ss2]', kutu).forEach(el => {
+    el.addEventListener('click', () => {
+      const t = el.dataset.ss2;
+      if (t === 'kapat') return sablonSihirbaziKapat();
+      if (t === 'geri')  { SABLON_SIHIRBAZ.adim--; return sablonSihirbaziCiz(); }
+      if (t === 'ileri') { SABLON_SIHIRBAZ.adim++; return sablonSihirbaziCiz(); }
+    });
+  });
+}
+
+/* 1 · Temel tanımlar: şube, kullanıcı, hesap planı, gider grupları vb. —
+   düz metin, konuşur gibi yazılıyor, kod tarafı Değişim'de. */
+function sablonAdimTemelGovde(p) {
+  const t = sablonTanimlarOku(p);
+  return shBaslik(ICON.etiket, 'Temel tanımlar',
+      'Şube, kullanıcı, hesap planı, gider grupları — bu firmada varsayılandan '
+      + 'farklı olan ne varsa buraya yaz.')
+    + `<textarea class="anl-kutu" id="sb-temel-metin" rows="6"
+         placeholder="Örn. 2 şube var: Merkez ve Fabrika. Kullanıcılar: ...">${esc(t.temel.metin)}</textarea>`
+    + `<div class="kur-dug">
+        <button class="sayfa-dug" type="button" data-eylem="sablon-temel-kaydet" data-proje="${p.id}">
+          ${svg(ICON.check, 15)} Kaydet</button>
+      </div>`
+    + (t.temel.metin.trim() ? `<div class="kur-deger duz">${svg(ICON.tik, 13)} Kaydedildi</div>` : '');
+}
+
+/* Ortak "Excel yapısını öğret" gövdesi — POS, ekstra banka ve Paraşüt-dışı
+   fatura&kart adımlarının hepsi aynı kalıbı kullanıyor: prompt oluştur,
+   Claude'a ver, cevabı yapıştır. */
+function sablonOgrenGovde(baslik, aciklama, pano, cevap, girdiId, kaydetEylem, p, ekVeri) {
+  return shBaslikServis('claude', baslik, aciklama)
+    + `<div class="kur-dug">
+        ${promptBaglantisi({ tur: pano, proje: p.id, slug: depoSlug(p.repo),
+          hedef: 'claude-yeni', yazi: 'Prompt oluştur ve Claude\'u aç' })}
+      </div>`
+    + `<textarea class="anl-kutu" id="${girdiId}" rows="6"
+         placeholder="Claude'un cevabını buraya yapıştır…">${esc(cevap)}</textarea>`
+    + `<div class="kur-dug">
+        <button class="sayfa-dug" type="button" data-eylem="${kaydetEylem}"
+                data-proje="${p.id}"${ekVeri !== undefined ? ` data-deger="${esc(ekVeri)}"` : ''}>
+          ${svg(ICON.check, 15)} Kaydet</button>
+      </div>`
+    + (cevap.trim() ? `<div class="kur-deger duz">${svg(ICON.tik, 13)} Kaydedildi</div>` : '');
+}
+
+/* 2 · POS okuyucu — örnek excel Claude'a öğretiliyor. */
+function sablonAdimPosGovde(p) {
+  const t = sablonTanimlarOku(p);
+  return sablonOgrenGovde('POS okuyucu', 'POS cihazından çıkan örnek Excel dosyasının '
+    + 'yapısını Claude\'a öğreteceğiz.', 'sablonPos', t.pos.cevap, 'sb-pos-cevap', 'sablon-pos-kaydet', p);
+}
+
+/* 3 · Bankalar: üçü hazır (excel yapısı zaten kayıtlı), geri kalanı yine
+   excel-öğret akışı. */
+function sablonAdimBankaGovde(p) {
+  const t = sablonTanimlarOku(p);
+  const b = t.banka;
+  const kutu = banka => `
+    <label class="kur-onay ${b.secili.indexOf(banka.anahtar) > -1 ? 'on' : ''}"
+           data-eylem="sablon-banka-sec" data-proje="${p.id}" data-deger="${banka.anahtar}"
+           role="button" tabindex="0">
+      <span class="kur-kutu">${svg(ICON.tik, 12)}</span> ${esc(banka.ad)}
+      <i style="margin-left:4px;opacity:.6">— excel yapısı hazır</i></label>`;
+
+  const ekstraGovde = b.ekstra.map((x, i) => `
+    <div class="note" style="margin-top:10px;display:block">
+      <b>${esc(x.ad)}</b>
+      <div class="kur-dug" style="margin-top:8px">
+        ${promptBaglantisi({ tur: 'sablonBanka:' + i, proje: p.id, slug: depoSlug(p.repo),
+          hedef: 'claude-yeni', yazi: 'Prompt oluştur ve Claude\'u aç' })}
+      </div>
+      <textarea class="anl-kutu" id="sb-banka-cevap-${i}" rows="4"
+        placeholder="Claude'un cevabını buraya yapıştır…">${esc(x.cevap || '')}</textarea>
+      <div class="kur-dug" style="margin-top:8px">
+        <button class="sayfa-dug" type="button" data-eylem="sablon-banka-cevap-kaydet"
+                data-proje="${p.id}" data-deger="${i}">${svg(ICON.check, 15)} Kaydet</button>
+        <button class="sayfa-dug ikincil" type="button" data-eylem="sablon-banka-sil"
+                data-proje="${p.id}" data-deger="${i}">${svg(ICON.cop, 15)} Sil</button>
+      </div>
+    </div>`).join('');
+
+  return shBaslik(ICON.gAltyapi, 'Bankalar',
+      'Hangi bankalar kullanılacak? Garanti, Kuveyt Türk ve Ziraat için excel '
+      + 'yapısı zaten sistemde kayıtlı — seçmen yeter. Başka bir banka gerekirse ekle.')
+    + SABLON_BANKA_HAZIR.map(kutu).join('')
+    + ekstraGovde
+    + `<div class="kur-dug" style="margin-top:10px">
+        <button class="sayfa-dug ikincil" type="button" data-eylem="sablon-banka-ekle" data-proje="${p.id}">
+          ${svg(ICON.arti, 15)} Banka ekle</button>
+      </div>`;
+}
+
+/* 4 · Fatura & kart hareketleri — Paraşüt kullanılıyorsa iş yok. */
+function sablonAdimFaturaGovde(p) {
+  const t = sablonTanimlarOku(p);
+  const f = t.fatura;
+  return shBaslik(ICON.etiket, 'Fatura ve kart hareketleri', 'Firma Paraşüt kullanıyor mu?')
+    + `<label class="kur-onay ${f.parasut === true ? 'on' : ''}" data-eylem="sablon-fatura-parasut"
+             data-proje="${p.id}" data-deger="evet" role="button" tabindex="0">
+        <span class="kur-kutu">${svg(ICON.tik, 12)}</span> Evet, Paraşüt kullanıyor</label>`
+    + `<label class="kur-onay ${f.parasut === false ? 'on' : ''}" data-eylem="sablon-fatura-parasut"
+             data-proje="${p.id}" data-deger="hayir" role="button" tabindex="0" style="margin-top:8px">
+        <span class="kur-kutu">${svg(ICON.tik, 12)}</span> Hayır, kullanmıyor</label>`
+    + (f.parasut === false
+        ? `<div style="margin-top:14px">` + sablonOgrenGovde('Fatura ve kart — Excel yapısı',
+            'Fatura ve kart hareketleri için örnek Excel dosyasının yapısını Claude\'a öğreteceğiz.',
+            'sablonFatura', f.cevap, 'sb-fatura-cevap', 'sablon-fatura-kaydet', p) + `</div>`
+        : '');
+}
+
+/* 5 · Değişim — Temel tanımlar'da toplanan her şeyi tek promptla koda
+   işleme durağı. Yapıyı değiştirmiyor, yalnız firmaya özel bilgiyi uyguluyor. */
+function sablonDegisimSayfasi(p, d) {
+  const pl = p.palet || {};
+  const hazir = sablonTanimlarBittiMi(p);
+  const tamamlandi = !!pl.sablonDegisimTamamlandi;
+
+  return `<div class="fb-govde">`
+    + adimBasligi(p, d, '')
+    + shBaslikServis('claude', 'Değişim',
+        'Temel tanımlar\'da toplanan her şey burada tek promptla koda işleniyor.')
+    + (hazir ? '' : `<div class="note uyari">${svg(ICON.uyari, 15)}
+        <span><b>Temel tanımlar bitmedi.</b> Önce o durağı tamamla.</span></div>`)
+    + `<div class="kur-dug">
+        ${promptBaglantisi({ tur: 'sablonDegisim', proje: p.id, slug: depoSlug(p.repo),
+          hedef: 'claude-yeni', yazi: 'Kopyala ve Claude\'u aç', ikincil: !hazir, kapali: !hazir })}
+      </div>`
+    + (tamamlandi
+        ? `<div class="kur-deger duz">${svg(ICON.tik, 13)} Bu aşama tamamlandı</div>`
+        : `<label class="kur-onay" data-eylem="sablon-degisim-onay" data-proje="${p.id}"
+                  role="button" tabindex="0">
+            <span class="kur-kutu">${svg(ICON.tik, 12)}</span> Değişim yapıldı, kontrol ettim</label>`)
+    + `</div>`;
+}
+
 /* Final notları — eski kayıtlarda düz metindi; obje biçimine ({metin, tamam})
    burada düşülüyor ki eski projelerde de çökmesin. */
 function finalNotlariOku(pl) {
@@ -4218,7 +4512,15 @@ function projeDuraklari(p) {
           ? (pl0.alanAdi ? 'Depo, sohbet ve adres hazır. Sıra yayında.' : 'Depo hazır. Sıra adres ve yayında.')
           : 'Bağlantılar hazır.',
     },
-    {
+    pl0.sablon ? {
+      ad: 'Temel tanımlar',
+      bitti: sablonTanimlarBittiMi(p),
+      ozet: (() => {
+        const liste = sablonTanimlarListesi();
+        const biten = liste.filter(k => sablonTanimlarAdimBittiMi(k, p)).length;
+        return biten < liste.length ? `${biten}/${liste.length} adım` : 'Tamamlandı.';
+      })(),
+    } : {
       /* Sıra kilitli olduğu için bu durağa gelindiğinde Bağlantılar zaten
          bitmiş oluyor — burada tekrar depo/sohbet kontrolü gerekmiyor. */
       ad: 'Kurulum ve yapı',
@@ -4227,7 +4529,15 @@ function projeDuraklari(p) {
         ? `${gercek} modül · ${s.sayfa} sayfa`
         : 'Hangi modüller ve sayfalar olacak?',
     },
-    {
+    pl0.sablon ? {
+      ad: 'Değişim',
+      bitti: !!pl0.sablonDegisimTamamlandi,
+      ozet: pl0.sablonDegisimTamamlandi
+        ? 'Tamamlandı.'
+        : sablonTanimlarBittiMi(p)
+          ? 'Toplanan tanımlar hazır — promptu Claude\'a ver.'
+          : 'Önce Temel tanımlar\'ı bitir.',
+    } : {
       /* İki bölüm: ilk kurulum (plan + beş aşama) bitmeden sürekli
          geliştirme ekranı gösterilmiyor (bkz. betaSayfasi). "Bitti" burada
          da kullanıcının elle "Beta ve geliştirme bitti" demesine bağlı. */
@@ -4320,7 +4630,7 @@ function asamaSatiri(p, d, i, simdi, anahtar) {
     <span class="asr-yz">
       <span class="asr-ad">${esc(d.ad)}${
         d.rozet ? `<span class="ya-rozet">${d.rozet}</span>` : ''}</span>
-      <span class="asr-alt">${esc(def.aciklama || '')}</span>
+      <span class="asr-alt">${esc((typeof def.aciklama === 'function' ? def.aciklama(p) : def.aciklama) || '')}</span>
     </span>
     <span class="asr-durum">${durum}</span>
     <span class="asr-chev">${svg(ICON.chevron, 15)}</span>`;
@@ -5342,9 +5652,41 @@ function kopyaKaynagiSec(tur) {
       const t = ev.target.closest('[data-proje]');
       if (!t) return;
       modalKapat();
-      templateOnaySor(t.dataset.proje, tur);
+      sablonSec(t.dataset.proje, tur);
     });
   }, 'genis');
+}
+
+/* Kaynak seçildikten sonra: bu kopya bir şablon dönüşümü mü? Muhasebe
+   şablonu seçilirse proje "Kurulum ve yapı" ve "Beta ve geliştirme"
+   duraklarını değil, o iki durağın yerine geçen "Temel tanımlar" ve
+   "Değişim" sihirbazını gösterir — bkz. DURAKLAR.yapi/beta ve
+   projeDuraklari(). Firma bilgisi de bilerek boş kopyalanır (DB.projeKopyala). */
+function sablonSec(kaynakId, tur) {
+  modalHepsiniKapat();
+  modalAc(`
+    ${modalBaslik(ICON.katman, 'Bu bir şablon dönüşümü mü?',
+      'Şablon seçilirse firma bilgileri boş gelir, kurulum yerine o şablona özel bir sihirbaz açılır.')}
+    <div class="secim">
+      <div class="satir sec-satir" data-ss="muhasebe" role="button" tabindex="0">
+        <span class="sec-yazi"><b>Muhasebe şablonu</b>
+          <i>Firma bilgisi boş gelir, temel tanımlar sihirbazıyla hızlı kurulur</i></span>
+      </div>
+      <div class="satir sec-satir" data-ss="hayir" role="button" tabindex="0">
+        <span class="sec-yazi"><b>Hayır, normal kopya</b><i>Bugüne kadar olduğu gibi</i></span>
+      </div>
+    </div>
+    <div class="modal-alt">
+      <button class="btn btn-ghost" data-ss="kapat" type="button">Vazgeç</button>
+    </div>`, kutu => {
+    $('[data-ss="kapat"]', kutu).addEventListener('click', modalKapat);
+    kutu.addEventListener('click', ev => {
+      const t = ev.target.closest('[data-ss]');
+      if (!t || t.dataset.ss === 'kapat') return;
+      modalKapat();
+      templateOnaySor(kaynakId, tur, t.dataset.ss === 'muhasebe' ? 'muhasebe' : null);
+    });
+  });
 }
 
 /* Kaynak seçildikten hemen sonra: GitHub'da bu deponun "Template
@@ -5352,10 +5694,10 @@ function kopyaKaynagiSec(tur) {
    değiliz) — o yüzden doğrudan soruyoruz. Kapalıysa Settings sayfasını
    açıyoruz, pencere açık kalıyor; işaretleyip döndüğünde "Açık, devam et"
    diyor. Kaynağın hiç deposu yoksa soru anlamsız, direkt kopyalıyoruz. */
-function templateOnaySor(kaynakId, tur) {
+function templateOnaySor(kaynakId, tur, sablon) {
   const kaynak = DB.proje(kaynakId);
   const slug = kaynak ? depoSlug(kaynak.repo) : '';
-  if (!slug) return projeKopyalaVeAc(kaynakId, tur);
+  if (!slug) return projeKopyalaVeAc(kaynakId, tur, sablon);
 
   modalHepsiniKapat();
   modalAc(`
@@ -5377,20 +5719,20 @@ function templateOnaySor(kaynakId, tur) {
       const t = ev.target.closest('[data-tp]');
       if (!t || t.dataset.tp === 'kapat') return;
       if (t.dataset.tp === 'ac') {
-        TEMPLATE_BEKLIYOR[kaynakId] = tur;
+        TEMPLATE_BEKLIYOR[kaynakId] = { tur, sablon };
         window.open('https://github.com/' + slug + '/settings', '_blank', 'noopener');
         modalKapat();
         return;
       }
       modalKapat();
-      projeKopyalaVeAc(kaynakId, tur);
+      projeKopyalaVeAc(kaynakId, tur, sablon);
     });
   });
 }
 
-async function projeKopyalaVeAc(kaynakId, tur) {
+async function projeKopyalaVeAc(kaynakId, tur, sablon) {
   try {
-    const id = await DB.projeKopyala(kaynakId, { tur });
+    const id = await DB.projeKopyala(kaynakId, { tur, sablon });
     sayaclariYaz();
     toast('Proje kopyalandı.', 'basari');
     location.hash = '#/projeler/' + id;
@@ -7622,6 +7964,10 @@ const PANO_PROMPT = {
   modulGuncelle: p => PROMPT.modulGuncelle(p.id),
   betaIstek:     p => PROMPT.betaIstek(p.id, BETA_ISTEK[p.id] || ''),
   guncellemeIstek: p => PROMPT.guncellemeIstek(p.id, GUNCELLEME_ISTEK[p.id] || ''),
+  sablonPos:     p => PROMPT.sablonOgren(p.id, 'POS okuyucu',
+    'POS cihazından alınan hareket dökümü.'),
+  sablonFatura:  p => PROMPT.sablonOgren(p.id, 'Fatura ve kart hareketi', ''),
+  sablonDegisim: p => PROMPT.sablonDegisim(p.id),
   yapi:          p => PROMPT.yapi(p.id),
   /* Projesiz: bir programda doğan kuralı standarda çeviren prompt. */
   standartEkle:  () => PROMPT.standartEkle(),
@@ -8689,6 +9035,99 @@ async function eylemCalistir(el) {
       Object.assign({}, pl, { betaTamamlandi: true })), 'Beta ve geliştirme tamamlandı.');
   }
 
+  if (e === 'sablon-sihirbazi-ac') return sablonSihirbaziAc(el.dataset.proje);
+
+  if (e === 'sablon-temel-kaydet') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const metin = ($('#sb-temel-metin') || {}).value || '';
+    if (!metin.trim()) return toast('Önce bir şey yaz.', 'uyari');
+    return isYap(() => sablonTanimlarYaz(pr, { temel: { metin: metin.trim() } }), 'Kaydedildi.');
+  }
+
+  if (e === 'sablon-pos-kaydet') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const cevap = ($('#sb-pos-cevap') || {}).value || '';
+    if (!cevap.trim()) return toast('Önce Claude\'un cevabını yapıştır.', 'uyari');
+    return isYap(() => sablonTanimlarYaz(pr, { pos: { cevap: cevap.trim() } }), 'Kaydedildi.');
+  }
+
+  if (e === 'sablon-banka-sec') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const t = sablonTanimlarOku(pr);
+    const anahtar = el.dataset.deger;
+    const secili = t.banka.secili.indexOf(anahtar) > -1
+      ? t.banka.secili.filter(x => x !== anahtar)
+      : t.banka.secili.concat(anahtar);
+    return isYap(() => sablonTanimlarYaz(pr, { banka: Object.assign({}, t.banka, { secili }) }));
+  }
+
+  if (e === 'sablon-banka-ekle') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const ad = await metinSor({ baslik: 'Banka adı', buton: 'Ekle', yerTutucu: 'Örn. Akbank' });
+    if (!ad || !ad.trim()) return;
+    const t = sablonTanimlarOku(pr);
+    return isYap(() => sablonTanimlarYaz(pr, { banka: Object.assign({}, t.banka,
+      { ekstra: t.banka.ekstra.concat({ ad: ad.trim(), cevap: '' }) }) }), 'Banka eklendi.');
+  }
+
+  if (e === 'sablon-banka-cevap-kaydet') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const i = Number(el.dataset.deger);
+    const cevap = ($('#sb-banka-cevap-' + i) || {}).value || '';
+    const t = sablonTanimlarOku(pr);
+    const ekstra = t.banka.ekstra.map((x, j) => j === i ? Object.assign({}, x, { cevap: cevap.trim() }) : x);
+    return isYap(() => sablonTanimlarYaz(pr, { banka: Object.assign({}, t.banka, { ekstra }) }), 'Kaydedildi.');
+  }
+
+  if (e === 'sablon-banka-sil') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const i = Number(el.dataset.deger);
+    const t = sablonTanimlarOku(pr);
+    return isYap(() => sablonTanimlarYaz(pr, { banka: Object.assign({}, t.banka,
+      { ekstra: t.banka.ekstra.filter((_, j) => j !== i) }) }), 'Banka kaldırıldı.');
+  }
+
+  if (e === 'sablon-fatura-parasut') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const t = sablonTanimlarOku(pr);
+    return isYap(() => sablonTanimlarYaz(pr,
+      { fatura: Object.assign({}, t.fatura, { parasut: el.dataset.deger === 'evet' }) }));
+  }
+
+  if (e === 'sablon-fatura-kaydet') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const cevap = ($('#sb-fatura-cevap') || {}).value || '';
+    if (!cevap.trim()) return toast('Önce Claude\'un cevabını yapıştır.', 'uyari');
+    const t = sablonTanimlarOku(pr);
+    return isYap(() => sablonTanimlarYaz(pr,
+      { fatura: Object.assign({}, t.fatura, { cevap: cevap.trim() }) }), 'Kaydedildi.');
+  }
+
+  if (e === 'sablon-degisim-onay') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const pl = pr.palet || {};
+    if (pl.sablonDegisimTamamlandi) {
+      return isYap(() => DB.paletKaydet(pr.id,
+        Object.assign({}, pl, { sablonDegisimTamamlandi: false })), 'İşaret kaldırıldı.');
+    }
+    if (!await onaySor({
+      baslik: 'Değişim tamamlandı mı?',
+      mesaj: 'Claude kodu güncelledikten sonra kontrol ettiysen onayla.',
+      buton: 'Eminim',
+    })) return;
+    return isYap(() => DB.paletKaydet(pr.id,
+      Object.assign({}, pl, { sablonDegisimTamamlandi: true })), 'Değişim tamamlandı.');
+  }
+
   if (e === 'supabase-baglan') {
     const pr = DB.proje(el.dataset.proje);
     if (!pr) return;
@@ -9553,6 +9992,7 @@ async function isYap(fn, basariMesaji, sonra) {
        `render()` onları yenilemez — açıksa elle yeniden çizdiriyoruz. */
     if ($('#baglanti-adim')) baglantiAdimCiz();
     if ($('#kurulum-sihirbaz')) kurulumSihirbaziCiz();
+    if ($('#sablon-sihirbaz')) sablonSihirbaziCiz();
     if (basariMesaji) toast(basariMesaji);
   } catch (err) {
     toast(err.message, 'hata');
@@ -10119,6 +10559,13 @@ document.addEventListener('DOMContentLoaded', () => {
       : pano.indexOf('finalNot:') === 0
       ? (proje => PROMPT.guncellemeIstek(proje.id,
           (finalNotlariOku(proje.palet || {})[Number(pano.slice(9))] || {}).metin || ''))
+      /* Ekstra banka promptu: bankanın adı görünsün diye ayrı, PANO_PROMPT
+         sabit anahtarlarla çalışıyor, banka sayısı değişken. */
+      : pano.indexOf('sablonBanka:') === 0
+      ? (proje => {
+          const b = sablonTanimlarOku(proje).banka.ekstra[Number(pano.slice(12))] || {};
+          return PROMPT.sablonOgren(proje.id, (b.ad || 'Banka') + ' ekstresi', '');
+        })
       : PANO_PROMPT[pano];
     /* Projesiz prompt da var (standart ekleme) — o zaman data-proje boş. */
     if (!uret || (el.dataset.proje && !pr)) return;
@@ -10184,9 +10631,9 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
     Object.keys(TEMPLATE_BEKLIYOR).forEach(kaynakId => {
-      const tur = TEMPLATE_BEKLIYOR[kaynakId];
+      const { tur, sablon } = TEMPLATE_BEKLIYOR[kaynakId];
       delete TEMPLATE_BEKLIYOR[kaynakId];
-      projeKopyalaVeAc(kaynakId, tur);
+      projeKopyalaVeAc(kaynakId, tur, sablon);
     });
   });
 
