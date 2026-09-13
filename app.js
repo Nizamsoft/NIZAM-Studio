@@ -19,6 +19,7 @@ const ROUTES = {
   sablonlar:   { title: 'Modül Şablonları',   kisa: 'Şablonlar',   sub: () => sablonAltBaslik() },
   sektorler:   { title: 'Sektörler',           kisa: 'Sektörler',   sub: () => sektorAltBaslik() },
   kilitler:    { title: 'Kilitli Projeler',    kisa: 'Kilit',       sub: () => kilitAltBaslik() },
+  templateler: { title: 'Templateler',         kisa: 'Template',    sub: () => cekirdekAltBaslik() },
   ekip:        { title: 'Ekip',               kisa: 'Ekip',        sub: () => ekipAltBaslik() },
   ayarlar:     { title: 'Ayarlar',            kisa: 'Ayarlar',     sub: () => APP.version + ' · ' + APP.stage },
 };
@@ -42,6 +43,15 @@ const PROJE_KOVASI = {
   bitmis: { ad: 'Bitmiş Projeler',   ikon: 'bitti', sinif: 'k-bitmis',
             sec: p => projeBittiMi(p) },
 };
+
+/* Template — müşteri işi değil, yeniden kullanılacak bir çekirdek proje.
+   ("cekirdek" ismi bilerek: "iskelet" adı zaten yükleme placeholder'ı
+   iskeletler()'de kullanılıyor, karışmasın.) Normal Projeler'den (kova
+   sayımı, kaynak seçimi, sayaçlar) her yerde gizli tutuluyor; kendi
+   "Templateler" bölümünde ayrıca yönetiliyor. */
+function cekirdekMi(p) {
+  return !!((p && p.palet) || {}).cekirdek;
+}
 
 function rota() {
   const p = (location.hash || '').replace(/^#\/?/, '').split('/').filter(Boolean);
@@ -359,7 +369,7 @@ const VIEWS = {
     if (YUKLENIYOR) return iskeletler(4);
     if (DB.hata)    return hataKutusu(DB.hata);
 
-    const p  = DB.projeler;
+    const p  = DB.projeler.filter(x => !cekirdekMi(x));
     const on = (!DB.yuklendi && DB.panelOnbellek) ? DB.panelOnbellek : null;
 
     const dev  = on ? on.dev  : DB.gorevleri({ durum: 'gelistiriliyor' }).length;
@@ -385,7 +395,8 @@ const VIEWS = {
     if (YUKLENIYOR) return iskeletler(6);
     if (DB.hata)    return hataKutusu(DB.hata);
 
-    if (!DB.projeler.length) {
+    const projeler = DB.projeler.filter(p => !cekirdekMi(p));
+    if (!projeler.length) {
       return `<div class="card">${empty(ICON.folder, 'Proje listesi boş',
         'Yeni Proje sihirbazı firma, renk, platform, veritabanı ve modülleri sorar; gerisini kendisi kurar.',
         AUTH.yonetici ? 'Yeni Proje' : null, 'sihirbaz')}</div>`;
@@ -395,7 +406,7 @@ const VIEWS = {
        doğrudan) hesaplanıyor. */
     const say = {};
     Object.keys(PROJE_KOVASI).forEach(k => { say[k] = 0; });
-    DB.projeler.forEach(p => {
+    projeler.forEach(p => {
       Object.keys(PROJE_KOVASI).forEach(k => { if (PROJE_KOVASI[k].sec(p)) say[k]++; });
     });
 
@@ -426,7 +437,7 @@ const VIEWS = {
     if (DB.hata)    return hataKutusu(DB.hata);
 
     const kv    = PROJE_KOVASI[k];
-    const liste = DB.projeler.filter(p => kv.sec(p));
+    const liste = DB.projeler.filter(p => !cekirdekMi(p) && kv.sec(p));
 
     if (!liste.length) {
       return `<div class="card">${empty(ICON[kv.ikon], kv.ad + ' yok',
@@ -572,7 +583,9 @@ const VIEWS = {
     if (YUKLENIYOR) return iskeletler(3);
     if (DB.hata)    return hataKutusu(DB.hata);
 
-    const liste = DB.projeler.filter(p => !p.arsiv);
+    /* Template'ler kendi "Templateler" bölümünde ayrıca yönetiliyor —
+       burada tekrar göstermeye gerek yok. */
+    const liste = DB.projeler.filter(p => !p.arsiv && !cekirdekMi(p));
 
     return `
       <div class="note" style="margin-bottom:12px">
@@ -584,6 +597,36 @@ const VIEWS = {
       ${liste.length
         ? `<div class="card liste">${liste.map(kilitSatiri).join('')}</div>`
         : `<div class="card">${empty(ICON.folder, 'Proje yok', 'Kilitlenecek proje bulunmuyor.')}</div>`}
+    `;
+  },
+
+  /* ---------- Templateler ---------- */
+
+  templateler: () => {
+    if (YUKLENIYOR) return iskeletler(3);
+    if (DB.hata)    return hataKutusu(DB.hata);
+
+    const liste = DB.projeler.filter(p => !p.arsiv && cekirdekMi(p));
+
+    return `
+      <div class="note" style="margin-bottom:12px">
+        ${svg(ICON.info, 15)}
+        <span>Bir template, gerçek bir müşteri projesinden temizlenerek
+        çıkarılır — firma izi kalmaz, tasarım standarda döner. Yeni proje
+        kurarken "Template'ten başlat" ile buradan seçilir.</span>
+      </div>
+
+      ${AUTH.yonetici ? `
+        <div class="standart-arac">
+          <button class="mini-link" data-eylem="template-olustur-ac" type="button">
+            ${svg(ICON.arti, 13)} Template oluştur</button>
+        </div>` : ''}
+
+      ${liste.length
+        ? `<div class="card liste">${liste.map(cekirdekSatiri).join('')}</div>`
+        : `<div class="card">${empty(ICON.katman, 'Template yok',
+            'Bitmiş bir müşteri projesinden temizlenmiş bir taban oluşturabilirsin.',
+            AUTH.yonetici ? 'Template oluştur' : null, 'template-olustur-ac')}</div>`}
     `;
   },
 
@@ -709,6 +752,13 @@ const VIEWS = {
             <div class="row-main">
               <span class="row-title">Projeleri kilitle</span>
               <span class="row-sub">${kilitAltBaslik()} · kilitli proje yanlışlıkla silinemez</span>
+            </div>
+            <span class="row-val">${svg(ICON.chevron, 15)}</span>
+          </div>
+          <div class="row" data-eylem="templatelere" role="button" tabindex="0">
+            <div class="row-main">
+              <span class="row-title">Templateler</span>
+              <span class="row-sub">${cekirdekAltBaslik()} · yeni proje kurarken kaynak olarak seçilir</span>
             </div>
             <span class="row-val">${svg(ICON.chevron, 15)}</span>
           </div>
@@ -5442,7 +5492,7 @@ function menuyuCiz() {
 
 function sayaclariYaz() {
   const pr = $('[data-count="projeler"]');
-  if (pr) pr.textContent = DB.projeler.length;
+  if (pr) pr.textContent = DB.projeler.filter(p => !cekirdekMi(p)).length;
 
   const gv = $('[data-count="gorevler"]');
   if (gv) {
@@ -5480,7 +5530,7 @@ function sablonAltBaslik() {
 
 function kilitAltBaslik() {
   if (YUKLENIYOR) return 'yükleniyor…';
-  const n = DB.projeler.filter(p => !p.arsiv && (p.palet || {}).kilitli).length;
+  const n = DB.projeler.filter(p => !p.arsiv && !cekirdekMi(p) && (p.palet || {}).kilitli).length;
   return n ? n + ' kilitli' : 'kilitli proje yok';
 }
 
@@ -5495,6 +5545,37 @@ function kilitSatiri(p) {
       <label class="kur-onay ${kilitli ? 'on' : ''}" data-eylem="proje-kilit-degistir"
              data-proje="${p.id}" role="button" tabindex="0">
         <span class="kur-kutu">${svg(ICON.kilit, 12)}</span></label>
+    </div>`;
+}
+
+function cekirdekAltBaslik() {
+  if (YUKLENIYOR) return 'yükleniyor…';
+  const n = DB.projeler.filter(p => !p.arsiv && cekirdekMi(p)).length;
+  return n ? n + ' template' : 'template yok';
+}
+
+function cekirdekTuruAdi(tur) {
+  return (CEKIRDEK_TUR_LISTESI.find(x => x.anahtar === tur) || {}).ad || tur;
+}
+
+function cekirdekSatiri(p) {
+  const pl      = p.palet || {};
+  const cek     = pl.cekirdek || {};
+  const hazir   = !!pl.cekirdekTemizlendi;
+  const kilitli = !!pl.kilitli;
+  return `
+    <div class="row" data-eylem="template-kur-ac" data-proje="${p.id}" role="button" tabindex="0">
+      <div class="row-main">
+        <span class="row-title">${esc(projeAdi(p))}</span>
+        <span class="row-sub">${esc(cekirdekTuruAdi(cek.tur))} · ${hazir
+          ? (kilitli ? 'Hazır ve kilitli' : 'Hazır')
+          : 'Kuruluyor — GitHub ve Claude adımları bekliyor'}</span>
+      </div>
+      ${hazir
+        ? `<button class="ak-kop ${kilitli ? 'oldu' : ''}" type="button" data-eylem="proje-kilit-degistir"
+                   data-proje="${p.id}" aria-label="${kilitli ? 'Kilidi aç' : 'Kilitle'}"
+                   title="${kilitli ? 'Kilidi aç' : 'Kilitle'}">${svg(ICON.kilit, 13)}</button>`
+        : `<span class="row-val">${svg(ICON.chevron, 15)}</span>`}
     </div>`;
 }
 
@@ -5577,7 +5658,7 @@ function gorevlerAltBaslik() {
 
 function projelerAltBaslik() {
   if (YUKLENIYOR) return 'yükleniyor…';
-  const n = DB.projeler.length;
+  const n = DB.projeler.filter(p => !cekirdekMi(p)).length;
   return n ? `${n} aktif proje` : 'Müşteri projeleri';
 }
 
@@ -5674,13 +5755,16 @@ function baslangicTuruSec(tur) {
   modalHepsiniKapat();
   modalAc(`
     ${modalBaslik(ICON.katman, 'Nasıl başlayalım?',
-      'Sıfırdan mı kuracağız, yoksa var olan bir projeyi mi kopyalayacağız?')}
+      'Sıfırdan mı kuracağız, var olan bir projeyi mi kopyalayacağız, yoksa bir template\'ten mi başlayacağız?')}
     <div class="secim">
       <div class="satir sec-satir" data-bt="sifirdan" role="button" tabindex="0">
         <span class="sec-yazi"><b>Sıfırdan Proje</b><i>Firma bilgileriyle baştan kur</i></span>
       </div>
       <div class="satir sec-satir" data-bt="kopya" role="button" tabindex="0">
         <span class="sec-yazi"><b>Kopya Proje</b><i>Bitmiş bir projenin birebir aynısıyla başla</i></span>
+      </div>
+      <div class="satir sec-satir" data-bt="template" role="button" tabindex="0">
+        <span class="sec-yazi"><b>Bir Template'ten Başla</b><i>Temizlenmiş, hazır bir tabandan hızlıca kur</i></span>
       </div>
     </div>
     <div class="modal-alt">
@@ -5691,10 +5775,49 @@ function baslangicTuruSec(tur) {
       const t = ev.target.closest('[data-bt]');
       if (!t || t.dataset.bt === 'kapat') return;
       modalKapat();
-      if (t.dataset.bt === 'kopya') return kopyaKaynagiSec(tur);
+      if (t.dataset.bt === 'kopya')    return kopyaKaynagiSec(tur);
+      if (t.dataset.bt === 'template') return cekirdekKaynakSec(tur);
       sihirbaziBaslat(tur);
     });
   });
+}
+
+/* Template'ten başlatma — yalnız temizliği bitmiş (kilitli) template'ler
+   listelenir; yarım kalmış bir template'ten müşteri kopyası çıkarmak
+   firma izini de taşır. Seçilince mevcut müşteri-kopyası akışına
+   (templateOnaySor → projeKopyalaVeAc) aynen giriyor, tek fark `sablon`ın
+   template'in türünden gelmesi. */
+function cekirdekKaynakSec(tur) {
+  modalHepsiniKapat();
+  const liste = DB.projeler.filter(p => !p.arsiv && cekirdekMi(p) && (p.palet || {}).cekirdekTemizlendi);
+  if (!liste.length) {
+    toast('Hazır template yok — önce Ayarlar > Templateler\'den bir tane oluştur.', 'uyari');
+    return;
+  }
+
+  modalAc(`
+    ${modalBaslik(ICON.katman, 'Hangi template\'ten başlayalım?',
+      'Yeni proje bu template\'in birebir kopyasıyla kurulacak.')}
+    <div class="secim">
+      ${liste.map(p => `
+        <div class="satir sec-satir" data-proje="${p.id}" role="button" tabindex="0">
+          <span class="sec-yazi"><b>${esc(projeAdi(p))}</b>
+            <i>${esc(cekirdekTuruAdi((p.palet || {}).cekirdek.tur))}</i></span>
+        </div>`).join('')}
+    </div>
+    <div class="modal-alt">
+      <button class="btn btn-ghost" data-bt="kapat" type="button">Vazgeç</button>
+    </div>`, kutu => {
+    $('[data-bt="kapat"]', kutu).addEventListener('click', modalKapat);
+    kutu.addEventListener('click', ev => {
+      const t = ev.target.closest('[data-proje]');
+      if (!t) return;
+      modalKapat();
+      const kaynak = DB.proje(t.dataset.proje);
+      const sablon = kaynak ? (kaynak.palet || {}).cekirdek.tur : null;
+      templateOnaySor(t.dataset.proje, tur, sablon);
+    });
+  }, 'genis');
 }
 
 /* Kopya kaynağı seçimi — arşivlenmemiş tüm projeler listelenir. Seçilince
@@ -5702,7 +5825,7 @@ function baslangicTuruSec(tur) {
    sihirbazından geçmiyor çünkü zaten dolu geliyor. */
 function kopyaKaynagiSec(tur) {
   modalHepsiniKapat();
-  const liste = DB.projeler.filter(p => !p.arsiv);
+  const liste = DB.projeler.filter(p => !p.arsiv && !cekirdekMi(p));
   if (!liste.length) { toast('Kopyalanacak proje yok.', 'uyari'); return; }
 
   modalAc(`
@@ -5764,10 +5887,10 @@ function sablonSec(kaynakId, tur) {
    değiliz) — o yüzden doğrudan soruyoruz. Kapalıysa Settings sayfasını
    açıyoruz, pencere açık kalıyor; işaretleyip döndüğünde "Açık, devam et"
    diyor. Kaynağın hiç deposu yoksa soru anlamsız, direkt kopyalıyoruz. */
-function templateOnaySor(kaynakId, tur, sablon) {
+function templateOnaySor(kaynakId, tur, sablon, cekirdek) {
   const kaynak = DB.proje(kaynakId);
   const slug = kaynak ? depoSlug(kaynak.repo) : '';
-  if (!slug) return projeKopyalaVeAc(kaynakId, tur, sablon);
+  if (!slug) return templateSonrakiAdim(kaynakId, tur, sablon, cekirdek);
 
   modalHepsiniKapat();
   modalAc(`
@@ -5789,13 +5912,13 @@ function templateOnaySor(kaynakId, tur, sablon) {
       const t = ev.target.closest('[data-tp]');
       if (!t || t.dataset.tp === 'kapat') return;
       if (t.dataset.tp === 'ac') {
-        TEMPLATE_BEKLIYOR[kaynakId] = { tur, sablon };
+        TEMPLATE_BEKLIYOR[kaynakId] = { tur, sablon, cekirdek };
         window.open('https://github.com/' + slug + '/settings', '_blank', 'noopener');
         modalKapat();
         return;
       }
       modalKapat();
-      projeKopyalaVeAc(kaynakId, tur, sablon);
+      templateSonrakiAdim(kaynakId, tur, sablon, cekirdek);
     });
   });
 }
@@ -5803,7 +5926,7 @@ function templateOnaySor(kaynakId, tur, sablon) {
 /* Ayarlar sekmesinden dönünce: işaretlemeyi gerçekten yaptı mı, yoksa
    sekmeye göz atıp mı döndü, Studio bilemez — kopyalamayı otomatik
    başlatmak yerine aynı soruyu bir daha soruyor. */
-function templateDonusOnaySor(kaynakId, tur, sablon) {
+function templateDonusOnaySor(kaynakId, tur, sablon, cekirdek) {
   const kaynak = DB.proje(kaynakId);
   if (!kaynak) return;
 
@@ -5827,9 +5950,16 @@ function templateDonusOnaySor(kaynakId, tur, sablon) {
       const t = ev.target.closest('[data-tp2]');
       if (!t || t.dataset.tp2 !== 'evet') return modalKapat();
       modalKapat();
-      projeKopyalaVeAc(kaynakId, tur, sablon);
+      templateSonrakiAdim(kaynakId, tur, sablon, cekirdek);
     });
   });
+}
+
+/* Bu adımdan sonra iki yoldan biri: normal müşteri kopyası (projeKopyalaVeAc)
+   ya da template oluşturma (cekirdekOlusturVeAc) — GitHub'ın "Template
+   repository" onayı ikisinde de aynı, sadece sonucu farklı. */
+function templateSonrakiAdim(kaynakId, tur, sablon, cekirdek) {
+  return cekirdek ? cekirdekOlusturVeAc(kaynakId, cekirdek) : projeKopyalaVeAc(kaynakId, tur, sablon);
 }
 
 async function projeKopyalaVeAc(kaynakId, tur, sablon) {
@@ -5842,6 +5972,218 @@ async function projeKopyalaVeAc(kaynakId, tur, sablon) {
   } catch (h) {
     toast(h.message, 'hata');
   }
+}
+
+/* Template oluşturma: proje kopyalanır ama normal proje detayına değil,
+   Templateler'e ve oradaki 2 adımlık kurulum sihirbazına (GitHub + Claude
+   temizleme) düşülür. */
+async function cekirdekOlusturVeAc(kaynakId, cekirdek) {
+  try {
+    const id = await DB.projeKopyala(kaynakId, { tur: 'gercek', cekirdek });
+    sayaclariYaz();
+    toast('Template oluşturuldu — şimdi depoyu ve Claude\'u bağla.', 'basari');
+    location.hash = '#/templateler';
+    render();
+    cekirdekKurulumAc(id);
+  } catch (h) {
+    toast(h.message, 'hata');
+  }
+}
+
+/* ---------- Template oluşturma sihirbazı ----------
+   Modal zinciri (kaynak → tür → ad) mevcut kopya-kaynağı akışıyla aynı
+   kalıp. Onaylanınca templateOnaySor'a düşer — GitHub "Template
+   repository" kontrolü müşteri kopyasıyla birebir aynı. */
+function cekirdekOlusturBaslat() {
+  modalHepsiniKapat();
+  const liste = DB.projeler.filter(p => !p.arsiv && !cekirdekMi(p));
+  if (!liste.length) { toast('Template yapılacak proje yok.', 'uyari'); return; }
+
+  modalAc(`
+    ${modalBaslik(ICON.katman, 'Hangi projeden template yapalım?',
+      'Bu projenin bir kopyası temizlenip yeniden kullanılabilir bir template olacak.')}
+    <div class="secim">
+      ${liste.map(p => `
+        <div class="satir sec-satir" data-proje="${p.id}" role="button" tabindex="0">
+          <span class="sec-yazi"><b>${esc(p.firma)}</b><i>${esc(p.sektor || 'Sektör girilmedi')}</i></span>
+        </div>`).join('')}
+    </div>
+    <div class="modal-alt">
+      <button class="btn btn-ghost" data-bt="kapat" type="button">Vazgeç</button>
+    </div>`, kutu => {
+    $('[data-bt="kapat"]', kutu).addEventListener('click', modalKapat);
+    kutu.addEventListener('click', ev => {
+      const t = ev.target.closest('[data-proje]');
+      if (!t) return;
+      modalKapat();
+      cekirdekTuruSec(t.dataset.proje);
+    });
+  }, 'genis');
+}
+
+function cekirdekTuruSec(kaynakId) {
+  modalHepsiniKapat();
+  modalAc(`
+    ${modalBaslik(ICON.katman, 'Şablon türü', 'Bu template hangi tür program için kullanılacak?')}
+    <div class="secim">
+      ${CEKIRDEK_TUR_LISTESI.map(t => `
+        <div class="satir sec-satir" data-tur="${esc(t.anahtar)}" role="button" tabindex="0">
+          <span class="sec-yazi"><b>${esc(t.ad)}</b></span>
+        </div>`).join('')}
+    </div>
+    <div class="modal-alt">
+      <button class="btn btn-ghost" data-tur="kapat" type="button">Vazgeç</button>
+    </div>`, kutu => {
+    $('[data-tur="kapat"]', kutu).addEventListener('click', modalKapat);
+    kutu.addEventListener('click', ev => {
+      const t = ev.target.closest('[data-tur]');
+      if (!t || t.dataset.tur === 'kapat') return;
+      modalKapat();
+      cekirdekAdiSor(kaynakId, t.dataset.tur);
+    });
+  });
+}
+
+async function cekirdekAdiSor(kaynakId, tur) {
+  const ad = await metinSor({
+    baslik: 'Template adı',
+    aciklama: 'Templateler listesinde bu adla görünecek.',
+    deger: cekirdekTuruAdi(tur) + ' Template',
+    buton: 'Oluştur',
+  });
+  if (!ad || !ad.trim()) return;
+  templateOnaySor(kaynakId, null, null, { ad: ad.trim(), tur });
+}
+
+/* ---------- Template kurulum sihirbazı ----------
+   Kurulum sihirbazıyla aynı kalıp, iki adımı var: GitHub (baglantiAdimGithub
+   birebir aynı bileşen — depo bağlama her yerde aynı iş) ve Claude (yeni:
+   temizleme promptu + "Temizlendi, kaydet"). Yayın/Supabase/Namecheap yok —
+   bir template'in gerçek bir servise bağlı olması zaten istenmiyor. */
+const CEKIRDEK_KURULUM = { adim: 1, projeId: null };
+
+function cekirdekKurulumListesi() { return ['github', 'claude']; }
+
+function cekirdekKurulumAdimBittiMi(k, p) {
+  if (k === 'github') return !!p.repo;
+  if (k === 'claude')  return !!(p.palet || {}).cekirdekTemizlendi;
+  return false;
+}
+
+function cekirdekKurulumEtiket(k) {
+  return { github: 'GitHub', claude: 'Claude' }[k] || '';
+}
+
+function cekirdekKurulumAc(projeId) {
+  modalHepsiniKapat();
+  const p = DB.proje(projeId);
+  if (!p) return;
+  const liste = cekirdekKurulumListesi();
+  const ilkEksik = liste.findIndex(k => !cekirdekKurulumAdimBittiMi(k, p));
+  Object.assign(CEKIRDEK_KURULUM, { adim: ilkEksik > -1 ? ilkEksik + 1 : liste.length, projeId });
+  const el = document.createElement('div');
+  el.id = 'cekirdek-kurulum';
+  el.className = 'sihirbaz';
+  document.body.appendChild(el);
+  cekirdekKurulumCiz();
+}
+
+function cekirdekKurulumKapat() {
+  const el = $('#cekirdek-kurulum');
+  if (!el) return;
+  el.classList.remove('acik');
+  setTimeout(() => el.remove(), 260);
+}
+
+function cekirdekKurulumCiz() {
+  const el = $('#cekirdek-kurulum');
+  if (!el) return;
+  const p = DB.proje(CEKIRDEK_KURULUM.projeId);
+  if (!p) return cekirdekKurulumKapat();
+  const liste = cekirdekKurulumListesi();
+  if (CEKIRDEK_KURULUM.adim > liste.length) CEKIRDEK_KURULUM.adim = liste.length;
+  el.innerHTML = cekirdekKurulumHtml(p, liste);
+  cekirdekKurulumBagla(el);
+  requestAnimationFrame(() => el.classList.add('acik'));
+}
+
+function cekirdekKurulumSerit(liste, simdi, p) {
+  return `<div class="sh-adimlar">${liste.map((k, i) => {
+    const n = i + 1;
+    const bitti = cekirdekKurulumAdimBittiMi(k, p);
+    const hal = bitti ? 'done' : n === simdi ? 'simdi' : '';
+    const ikon = bitti ? `<span class="sh-adim-no">${svg(ICON.tik, 13)}</span>`
+                        : `<span class="sh-adim-no">${n}</span>`;
+    return (i ? '<span class="sh-adim-cizgi"></span>' : '')
+      + `<span class="sh-adim ${hal}">${ikon}<i>${esc(cekirdekKurulumEtiket(k))}</i></span>`;
+  }).join('')}</div>`;
+}
+
+function cekirdekKurulumHtml(p, liste) {
+  const k = liste[CEKIRDEK_KURULUM.adim - 1];
+  const govde = k === 'github' ? baglantiAdimGithub(p) : cekirdekAdimClaudeGovde(p);
+
+  const geri = CEKIRDEK_KURULUM.adim > 1
+    ? `<button class="btn btn-ghost" data-ck="geri" type="button">← Geri</button>`
+    : `<button class="btn btn-ghost" data-ck="kapat" type="button">Kapat</button>`;
+  const ileri = CEKIRDEK_KURULUM.adim < liste.length
+    ? `<button class="btn btn-primary" data-ck="ileri" type="button"><span>Sıradaki →</span></button>`
+    : `<button class="btn btn-primary" data-ck="kapat" type="button"><span>Bitti ✓</span></button>`;
+
+  return `
+    <div class="sh-tepe">
+      <button class="sh-kapat" data-ck="kapat" type="button" aria-label="Kapat">
+        ${svg(ICON.kapat, 15)}
+      </button>
+      <span class="sh-ad">${esc(projeAdi(p))} — Template kurulumu</span>
+    </div>
+
+    <div class="sh-sayfa">
+      <div class="sh-icerik">
+        ${cekirdekKurulumSerit(liste, CEKIRDEK_KURULUM.adim, p)}
+        ${govde}
+      </div>
+
+      <div class="sh-dip">${geri}${ileri}</div>
+    </div>`;
+}
+
+/* baglantiAdimGithub'ın kendi düğmeleri (data-depo-ac, data-eylem,
+   data-pano) genel dinleyicilerden zaten çalışıyor — burada yalnız
+   sihirbazın kendi geri/ileri/kapat düğmelerini bağlıyoruz. */
+function cekirdekKurulumBagla(kutu) {
+  $$('[data-ck]', kutu).forEach(el => {
+    el.addEventListener('click', () => {
+      const t = el.dataset.ck;
+      if (t === 'kapat') return cekirdekKurulumKapat();
+      if (t === 'geri')  { CEKIRDEK_KURULUM.adim--; return cekirdekKurulumCiz(); }
+      if (t === 'ileri') { CEKIRDEK_KURULUM.adim++; return cekirdekKurulumCiz(); }
+    });
+  });
+}
+
+/* 2 · Claude — firma izini kaldırma, tasarımı standarda döndürme ve
+   gerçek bağlantıları koparma promptu (bkz. PROMPT.cekirdekTemizle). */
+function cekirdekAdimClaudeGovde(p) {
+  const pl    = p.palet || {};
+  const depo  = !!p.repo;
+  const hazir = !!pl.cekirdekTemizlendi;
+
+  const buton = !depo
+    ? `<p class="ipucu" style="margin-bottom:14px">Önce GitHub adımından depo bağlanmalı.</p>`
+    : `<div class="kur-dug">
+        ${promptBaglantisi({ tur: 'cekirdekTemizle', proje: p.id, slug: depoSlug(p.repo),
+          hedef: 'claude-yeni', yazi: 'Prompt oluştur ve Claude\'u aç' })}
+      </div>`;
+
+  return shBaslikServis('claude', 'Claude ile temizle',
+      'Firma izini kaldırıp tasarımı standarda döndürecek, Supabase gibi gerçek bağlantıları koparacak prompt.')
+    + buton
+    + (hazir
+        ? `<div class="kur-deger duz">${svg(ICON.tik, 13)} Temizlendi, template kilitli</div>`
+        : `<label class="kur-onay" data-eylem="cekirdek-temizlendi-onay" data-proje="${p.id}"
+                  role="button" tabindex="0" ${depo ? '' : 'style="opacity:.5;pointer-events:none"'}>
+            <span class="kur-kutu">${svg(ICON.tik, 12)}</span> Temizlendi, template olarak kaydet</label>`);
 }
 
 function sihirbaziBaslat(tur) {
@@ -8112,6 +8454,7 @@ const PANO_PROMPT = {
     'POS cihazından alınan hareket dökümü.'),
   sablonFatura:  p => PROMPT.sablonOgren(p.id, 'Fatura ve kart hareketi', ''),
   sablonDegisim: p => PROMPT.sablonDegisim(p.id),
+  cekirdekTemizle: p => PROMPT.cekirdekTemizle(p.id),
   yapi:          p => PROMPT.yapi(p.id),
   /* Projesiz: bir programda doğan kuralı standarda çeviren prompt. */
   standartEkle:  () => PROMPT.standartEkle(),
@@ -10153,6 +10496,26 @@ async function eylemCalistir(el) {
     return isYap(() => DB.paletKaydet(pr.id, Object.assign({}, pl, { kilitli: !pl.kilitli })),
       pl.kilitli ? 'Kilit açıldı.' : 'Proje kilitlendi.');
   }
+
+  if (e === 'templatelere')       { location.hash = '#/templateler'; return; }
+  if (e === 'template-olustur-ac') return cekirdekOlusturBaslat();
+  if (e === 'template-kur-ac')     return cekirdekKurulumAc(el.dataset.proje);
+
+  if (e === 'cekirdek-temizlendi-onay') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    if (!await onaySor({
+      baslik: 'Template olarak kaydedilsin mi?',
+      mesaj: 'Claude temizleme promptunu çalıştırıp kontrol ettiysen onayla — '
+           + 'proje otomatik kilitlenecek.',
+      buton: 'Eminim',
+    })) return;
+    const pl = pr.palet || {};
+    return isYap(() => DB.paletKaydet(pr.id,
+      Object.assign({}, pl, { cekirdekTemizlendi: true, kilitli: true })),
+      'Template hazır ve kilitlendi.');
+  }
+
   if (e === 'sablon-sil') {
     const ok = await onaySor({
       baslik: 'Şablon kaldırılsın mı?',
@@ -10179,6 +10542,7 @@ async function isYap(fn, basariMesaji, sonra) {
     if ($('#baglanti-adim')) baglantiAdimCiz();
     if ($('#kurulum-sihirbaz')) kurulumSihirbaziCiz();
     if ($('#sablon-sihirbaz')) sablonSihirbaziCiz();
+    if ($('#cekirdek-kurulum')) cekirdekKurulumCiz();
     if (basariMesaji) toast(basariMesaji);
   } catch (err) {
     toast(err.message, 'hata');
@@ -10820,9 +11184,9 @@ document.addEventListener('DOMContentLoaded', () => {
     /* Burada da otomatik kopyalamıyoruz — GitHub Ayarlar sekmesine gidip
        işaretlemeden dönmüş olabilir. Aynı soru bir daha soruluyor. */
     Object.keys(TEMPLATE_BEKLIYOR).forEach(kaynakId => {
-      const { tur, sablon } = TEMPLATE_BEKLIYOR[kaynakId];
+      const { tur, sablon, cekirdek } = TEMPLATE_BEKLIYOR[kaynakId];
       delete TEMPLATE_BEKLIYOR[kaynakId];
-      templateDonusOnaySor(kaynakId, tur, sablon);
+      templateDonusOnaySor(kaynakId, tur, sablon, cekirdek);
     });
   });
 

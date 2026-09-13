@@ -430,12 +430,18 @@ const DB = {
     /* Depo ve logo bilerek kopyalanmıyor: Bağlantılar ve temel sıfırdan
        kurulacak, logo da aynı fiziksel dosyayı paylaşmasın diye. Şablon
        kopyasında (ör. muhasebe şablonu) firma kimliği de kopyalanmıyor —
-       kopya başka bir firmaya gidecek, "Firma bilgileri" boş gelmeli. */
-    const sablon = ek.sablon || null;
-    const temel = sablon
-      ? { firma: '', olusturan: AUTH.user.id }
-      : { firma: kaynak.firma, renk: kaynak.renk, olusturan: AUTH.user.id };
-    const genis = sablon ? temel : Object.assign({}, temel, {
+       kopya başka bir firmaya gidecek, "Firma bilgileri" boş gelmeli.
+       Template (çekirdek) oluşturulurken de aynı sebeple kopyalanmıyor —
+       firma alanına doğrudan template'in adı yazılıyor, gerçek firmanın
+       adı ve iletişimi Studio'da bile iz bırakmasın. */
+    const sablon   = ek.sablon || null;
+    const cekirdek = ek.cekirdek || null;
+    const temel = cekirdek
+      ? { firma: cekirdek.ad, olusturan: AUTH.user.id }
+      : sablon
+        ? { firma: '', olusturan: AUTH.user.id }
+        : { firma: kaynak.firma, renk: kaynak.renk, olusturan: AUTH.user.id };
+    const genis = (sablon || cekirdek) ? temel : Object.assign({}, temel, {
       sektor: kaynak.sektor || null, telefon: kaynak.telefon || null, eposta: kaynak.eposta || null,
       dil: kaynak.dil || null, para: kaynak.para || null,
       baslangic: kaynak.baslangic || null, teslim: kaynak.teslim || null,
@@ -486,6 +492,14 @@ const DB = {
         sablon,
         modulAdi: null, roller: null, veriKatmani: null,
         sablonTanimlar: null, sablonDegisimTamamlandi: false,
+      } : {}, cekirdek ? {
+        /* Template (çekirdek) — bu proje artık normal bir müşteri işi
+           değil, yeniden kullanılacak bir taban. "Templateler" bölümünde
+           ayrıca listeleniyor, normal Projeler'den gizleniyor (bkz.
+           cekirdekMi). Temizleme bitene kadar kilitli DEĞİL — Claude adımı
+           bitip `cekirdek-temizlendi-onay` çalışınca kilitleniyor. */
+        cekirdek: { tur: cekirdek.tur },
+        cekirdekTemizlendi: false,
       } : {}));
     } catch (h) { /* palet tablosu yoksa proje yine kuruldu, boş paletle kalır */ }
 

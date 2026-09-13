@@ -7,7 +7,7 @@ const APP = {
   name:     'NIZAM | Studio',
   short:    'NIZAM Studio',
   owner:    'Nizam Soft',
-  version: 'v0.135.29',
+  version: 'v0.135.30',
   build:    '2026-09-13',
   /* Studio'nun kendi deposu — "bütün programlarda geçerli olsun"
      istekleri buraya gider. */
@@ -660,6 +660,15 @@ const SABLON_BANKA_HAZIR = [
   { anahtar: 'garanti', ad: 'Garanti BBVA' },
   { anahtar: 'kuveyt',  ad: 'Kuveyt Türk' },
   { anahtar: 'ziraat',  ad: 'Ziraat Bankası' },
+];
+
+/* Template (çekirdek proje) türleri — Ayarlar > Templateler'de "Template
+   oluştur" sihirbazında seçtiriliyor. Şu an tek seçenek var ama liste
+   olarak sunuluyor: yarın ikinci bir şablon (ör. stok takip) eklenince tek
+   satır yeter. `sablon` alanındaki değerle birebir aynı sözlük kullanılıyor
+   — bir template'ten kopyalanan proje bu anahtarı `p.palet.sablon` olarak alır. */
+const CEKIRDEK_TUR_LISTESI = [
+  { anahtar: 'muhasebe', ad: 'Muhasebe' },
 ];
 
 /* ==========================================================================

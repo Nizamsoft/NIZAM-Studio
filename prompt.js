@@ -1316,6 +1316,82 @@ const PROMPT = {
     return s.join('\n');
   },
 
+  /* ---------- Template oluşturma: temizleme promptu ----------
+     Ayarlar > Templateler'de bir müşteri projesinden template çıkarırken
+     tek prompt — firma izini kaldırır, tasarımı standarda döndürür, gerçek
+     bağlantıları koparır. Kaynak proje adı `kopyaKaynagi`dan bulunuyor;
+     `DB.projeKopyala` bunu her kopyada zaten saklıyor. Yapıya (modül/sayfa/
+     iş mantığı) dokunmuyor — o hiç değişmeyecek. */
+  cekirdekTemizle(projeId) {
+    const p = DB.proje(projeId);
+    if (!p) return '';
+    const pl = p.palet || {};
+    const kaynak = pl.kopyaKaynagi ? DB.proje(pl.kopyaKaynagi) : null;
+    const eskiFirma = (kaynak && kaynak.firma) ? kaynak.firma.trim() : '';
+    const slug = depoSlug(p.repo);
+
+    const s = [];
+    s.push('# ' + projeAdi(p) + ' — template temizliği', '');
+    if (slug) {
+      s.push('> ### Depo: `' + slug + '`');
+      s.push('> Bu oturum yalnız bu depoya bağlı olmalı. Deposu farklıysa dur');
+      s.push('> ve söyle.', '');
+    }
+
+    s.push('Bu depo, çalışan bir müşteri programının birebir kopyası.');
+    s.push('Amacımız bunu **yeniden kullanılabilir bir template**\'e');
+    s.push('dönüştürmek — ileride başka firmalara buradan kopya çıkacağız.');
+    s.push('**Modül, sayfa ve iş mantığını hiç değiştirmeyeceksin** —');
+    s.push('sadece bu firmaya özel her izi kaldıracaksın.', '');
+
+    s.push('## 1 · Firma izini kaldır');
+    if (eskiFirma) {
+      s.push('Depoda **"' + eskiFirma + '"** adı ve bu firmaya özel HERHANGİ');
+      s.push('bir iz — logo dosyası, adres, telefon, e-posta, footer, sayfa/');
+      s.push('sekme başlığı, PWA adı ve manifest, favicon, README, kimlik');
+      s.push('dosyası, kod içi yorumlar, örnek/tohum veri — kodun hiçbir');
+      s.push('yerinde kalmasın. Bulduğun her yeri jenerik bir değerle');
+      s.push('değiştir (ör. "Örnek Firma", "0212 000 00 00",');
+      s.push('"ornek@firma.com").');
+    } else {
+      s.push('Depoda hangi firmaya ait olduğunu gösteren bir iz (isim, logo,');
+      s.push('iletişim, footer, başlık) varsa bul ve jenerik bir değerle');
+      s.push('değiştir (ör. "Örnek Firma").');
+    }
+    s.push('');
+
+    s.push('## 2 · Tasarımı standarda döndür');
+    s.push('Uygulama "Profesyonel tasarım" aşamasında özelleştirilmiş');
+    s.push('olabilir — özel renk paleti, tipografi, görseller/ikonlar. Bunu');
+    s.push('geri al: `nizam/tasarim.md` (ya da kimlik dosyalarındaki ilk');
+    s.push('tasarım tanımı neyse) uygulamayı **o sade/nötr hâline** döndür.');
+    s.push('Özel görsel/ikon eklemelerini kaldır, marka rengini nötr');
+    s.push('metalik-gri + kırmızı vurgu paletine döndür.');
+    s.push('');
+
+    s.push('## 3 · Gerçek bağlantıları kopar');
+    s.push('Depoda gerçek bir Supabase bağlantısı (proje adresi, anon key)');
+    s.push('varsa bul ve **sahte** değerle değiştir: adresi ve anahtarı');
+    s.push('`000000000` yap, hemen yanına bir not/yorum ekle: **"Supabase');
+    s.push('bağlı değil — kullanmadan önce Ayarlar\'dan gerçek bağlantıyı');
+    s.push('gir."** Başka bir gerçek servise (ör. e-posta, SMS) ait anahtar');
+    s.push('varsa aynı şekilde sahtele ve aynı uyarıyı ekle.');
+    s.push('');
+
+    s.push('## Kesinlikle yapma');
+    s.push('- Modül, sayfa ya da veritabanı tablosu ekleme/çıkarma/değiştirme.');
+    s.push('- İş mantığını değiştirme, yeni özellik ekleme.');
+    s.push('- Bu üç madde dışında hiçbir şeye dokunma.');
+    s.push('');
+
+    s.push('Bitirince tek commit\'le **`main` dalına** gönder:');
+    s.push(`   \`[${TASK_PREFIX}-0] Template temizliği\``);
+    s.push('');
+    s.push('Anladıysan tek cümleyle onayla, sonra temizliği yap.');
+
+    return s.join('\n');
+  },
+
   /* ---------- Görsel dünya: ChatGPT'ye giden iki prompt ----------
      Studio kod tarafını Claude'a, görünüş tarafını ChatGPT'ye veriyor.
      Buradan çıkan iki metin de müşteri deposuna değil, bir sohbete gider;

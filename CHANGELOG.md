@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## v0.135.30
+- **Template oluşturma eklendi.** Ayarlar > Templateler'de artık bitmiş bir müşteri projesinden yeniden kullanılabilir bir template çıkarılabiliyor: kaynak proje + şablon türü (şu an yalnız Muhasebe) + template adı seçiliyor, GitHub'da aynı kopyalama akışı çalışıyor, sonra Claude'a özel bir **temizleme promptu** gidiyor — firma adı/logo/iletişim gibi her iz kaldırılıp örnek değerlerle değiştiriliyor, tasarım "Profesyonel tasarım" öncesi standart hâline dönüyor, gerçek Supabase gibi bağlantılar sahte değerle koparılıyor (`000000000` + "henüz bağlı değil" notu) — ama modül/sayfa/iş mantığı hiç değişmiyor. Temizlik onaylanınca template otomatik kilitleniyor.
+- Templateler normal Projeler listesinden (kova sayımı, panel, kopya kaynağı seçimi, kilitli projeler listesi) tamamen gizli — kendi bölümünde ayrıca yönetiliyor.
+- "Yeni Proje" akışına üçüncü seçenek eklendi: **Bir Template'ten Başla**. Hazır (temizliği onaylanmış) bir template seçilince, müşteri kopyası mevcut "muhasebe şablonu" akışına otomatik giriyor — şablon türü template'ten geliyor, ayrıca sorulmuyor.
+
 ## v0.135.29
 - **Muhasebe şablonunda Bağlantılar ve temel sırası değişti: Claude artık en sonda.** Önceki sırada Claude, GitHub'dan hemen sonra bağlanıyordu — Yayın/Supabase/Namecheap bilgisi henüz yoktu. Artık şablon kopyalarında sıra GitHub → Yayın → (varsa) Supabase → (varsa) Namecheap → Claude; Claude'a bağlanılana kadar bu bilgilerin hepsi toplanmış oluyor.
 - **Şablon kopyasının "Claude'a bağlan" promptu tamamen yeniden yazıldı.** Eskiden normal projedeki "sıfırdan proje" promptu gidiyordu — oysa bu depo boş değil, çalışan bir programın birebir kopyası. Yeni prompt bunu açıkça söylüyor: amacın bu kopyayı hangi firmaya uyarladığını, yapıya dokunulmayacağını, toplanan bağlantı bilgilerinin (Supabase, yayın adresi) ortama nasıl işleneceğini ve az sonra ayrı bir "Değişim" promptunun geleceğini anlatıyor.
