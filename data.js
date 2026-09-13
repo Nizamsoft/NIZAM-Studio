@@ -484,6 +484,13 @@ const DB = {
         betaTamamlandi: false, finalVerildi: false, finalNotlar: [],
         blokVerildi: false, sqlKuruldu: false, asama: [],
         kilitli: false,
+        /* Kaynak bir template'se onun `cekirdek`/`cekirdekTemizlendi`
+           damgası da palete karışıyordu — kopya, kaynağın kendisi bir
+           template olmasa bile template gibi görünüp Projeler listesinden
+           (bkz. cekirdekMi) tamamen kayboluyordu. Yeni proje gerçekten bir
+           template olarak kuruluyorsa aşağıdaki `cekirdek ? {...}` bloğu
+           bunu zaten geri yazıyor. */
+        cekirdek: null, cekirdekTemizlendi: false,
       }, sablon ? {
         /* Şablon kopyası: "Program temeli"nde girilen paket adı ve veri
            katmanı da bu firmaya özel — boş gelip yeniden doldurulmalı.

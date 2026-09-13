@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## v0.135.35
+- **Bug: Template'ten yeni proje açınca proje kayboluyordu.** Bir template'ten müşteri kopyası oluşturulduğunda, kaynağın (template'in) `cekirdek` damgası yanlışlıkla yeni projeye de kopyalanıyordu — bu da yepyeni müşteri projesini bir template sanıp Projeler listesinden (Başlanmış/Bitmiş, panel, sayaçlar — hepsi templateleri gizliyor) tamamen düşürüyordu. Artık kopyalama sırasında bu damga sıfırlanıyor; yalnızca gerçekten yeni bir template oluşturuluyorsa geri yazılıyor.
+- Bu bug'dan önce oluşturulmuş projeler etkilendiyse (Ayarlar → Templateler'de görünüp Projeler'de görünmeyen bir "proje" varsa) o kaydı Templateler'den silip yeniden oluşturmak gerekiyor — düzeltme yeni kopyalar için geçerli, geçmiş kayıtları kendiliğinden onarmıyor.
+
 ## v0.135.34
 - **Yeni durak: "Kullanıcı ve Yetki" — Final'den bir önce.** Bu durağa kadar proje tek kullanıcılık davranıyordu, artık gerçek kurulum burada yapılıyor:
   - **Katmanlar.** Kaç rol olacak ve isimleri ne (rol merdiveni bileşeni ilk kez burada devreye girdi — daha önce hazırlanıp beklemedeydi).
