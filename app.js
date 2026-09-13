@@ -1206,24 +1206,21 @@ function firmaSayfasi(p, d) {
    kullanacak? ayrı ayrı); tek karar oldukları için tek karta indi. */
 function programSayfasi(p, d) {
   const pl = p.palet || {};
-  const roller = rolListesi(pl.roller);
-  const dolu = [!!pl.modulAdi, roller.length > 0, !!pl.veriKatmani].filter(Boolean).length;
+  const dolu = [!!pl.modulAdi, !!pl.veriKatmani].filter(Boolean).length;
 
-  const kart = dolu <= 1
-    ? fbBosKart('#4fa8c9', ICON.katman, 'Program temeli', dolu + '/3',
-        'Bu paketin adı, kim kullanacak, verisi nerede duracak? '
+  const kart = dolu === 0
+    ? fbBosKart('#4fa8c9', ICON.katman, 'Program temeli', dolu + '/2',
+        'Bu paketin adı ve verisi nerede duracak? '
         + '<b>Kod bu kararlara göre yazılıyor.</b>',
         'program-duzenle', p.id, true)
     : fbKart('#4fa8c9', ICON.katman, 'Program temeli', 'program-duzenle', p.id, `
     <div class="fb-kg tek">
       ${kunyeSatiri('#c48a5c', ICON.katman, 'Program adı', pl.modulAdi, '', p.id, true, 'girilmedi')}
-      ${kunyeSatiri('#d8a63f', ICON.gGuvenlik, 'Kim kullanacak',
-                    roller.length ? roller.length + ' katman' : '', '', p.id, true, 'girilmedi')}
       ${kunyeSatiri('#3ecf8e', ICON.gVeri, 'Veriler nerede', pl.veriKatmani, '', p.id, true, 'girilmedi')}
-    </div>`, dolu + '/3');
+    </div>`, dolu + '/2');
 
   return `<div class="fb-govde">`
-    + adimBasligi(p, d, dolu + '/3') + kart
+    + adimBasligi(p, d, dolu + '/2') + kart
     + `</div>`;
 }
 
@@ -1284,7 +1281,13 @@ function baglantilarSayfasi(p, d) {
 
 /* ---------- Rol merdiveni ----------
    En altta en dar yetki, en üstte en geniş. Sayıyı değiştirince adlar
-   korunur; azaltınca üsttekiler düşer, artırınca örnek adla gelir. */
+   korunur; azaltınca üsttekiler düşer, artırınca örnek adla gelir.
+
+   Şu an hiçbir yerden çağrılmıyor: "kaç katman" sorusu Program temeli'nden
+   ve Kurulum ve yapı'dan kaldırıldı, roller artık yalnız "Kullanıcı ekleme
+   ve Yetkilendirme" durağında sorulacak — o durağın içi henüz tasarlanmadı.
+   Bileşen kasıtlı olarak siline değil, kullanılmıyor bırakıldı: o durak
+   kurulunca muhtemelen aynen buradan çağrılacak. */
 function rolMerdiveni(roller, onek) {
   const liste = rolListesi(roller);
   const n = liste.length || 2;
@@ -2569,10 +2572,6 @@ function yapiSayfasi(p, d) {
    Taslak bellekte durur; veritabanına ancak "Kur" ile yazılır. */
 const YAPI_TASLAK = {};
 
-/* Rol merdiveni taslağı: her tuşta veritabanına yazmıyoruz,
-   ekrandan çıkarken bir kez kaydediliyor. */
-const ROL_TASLAK = {};
-
 /* Modül ağacı açık mı. Taslaktan ayrı tutuluyor: taslak yarım kalan işi
    saklıyor, bu bayrak yalnız "şu an ağaç ekranındayım" diyor. Aynı şey
    olsalardı bir kez modül kuran kullanıcı aşamaya her girişinde kurulum
@@ -2584,7 +2583,7 @@ function yapiTaslak(p) {
     YAPI_TASLAK[p.id] = { yer: 0, modul: '', anlat: '', kararlar: [],
                           baglantilar: [], hazirVeri: [], ciktilar: [],
                           mod: 'agac', odak: null, dal: null, duzelt: null,
-                          mk: { roller: [], eylemler: [], yetki: {}, kural: '' },
+                          mk: { kural: '' },
                           sayfalar: [], kunye: {} };
   }
   const t = YAPI_TASLAK[p.id];
@@ -2716,7 +2715,6 @@ function kunyeAdimTam(k, anahtar) {
 function yapiAkisi(p, d) {
   const t = yapiTaslak(p);
   if (t.mod === 'anlat') return anlatEkrani(p, t);
-  if (t.mod === 'roller') return rolEkrani(p, t);
   if (t.mod === 'mkural' && t.modul) return modulKuralEkrani(p, t);
   if (t.mod === 'onizle' && t.odak) return onizlemeEkrani(p, t);
   if (t.dal && t.odak && t.sayfalar.includes(t.odak)) return duzenEkrani(p, t);
@@ -3000,7 +2998,6 @@ function yapiGeri(t, projeId) {
     else t.modul = '';
     return true;
   }
-  if (t.mod === 'roller') { t.mod = 'agac'; rollariKaydet(DB.proje(projeId)); return true; }
   if (t.mod === 'mkural') { t.mod = 'agac'; t.dal = null; return true; }
   if (t.mod === 'onizle') { t.mod = 'agac'; return true; }
   if (t.dal)   { t.dal = null; return true; }
@@ -3100,7 +3097,6 @@ function onizlemeAlani(p, k, dal, gost) {
 
 /* Düzenleme: dalın kendi ekranı — üstte önizleme, altta düzenleyici. */
 function duzenEkrani(p, t) {
-  if (t.mod === 'roller') return rolEkrani(p, t);
   if (t.mod === 'mkural') return modulKuralEkrani(p, t);
   const sayfa  = t.odak;
   const k      = yapiKunye(t, sayfa);
@@ -3305,42 +3301,6 @@ function kalipKarti(p, sf, k, a, veri) {
   </div>`;
 }
 
-/* Merdiven ekrandan çıkarken bir kez yazılır; değişmediyse dokunulmaz. */
-async function rollariKaydet(p) {
-  if (!p) return;
-  const yeni = ROL_TASLAK[p.id];
-  delete ROL_TASLAK[p.id];
-  if (!yeni || !yeni.length) return;
-  const eski = rolListesi((p.palet || {}).roller);
-  if (eski.join('\u0001') === yeni.join('\u0001')) return;
-  try {
-    await DB.paletKaydet(p.id, Object.assign({}, p.palet || {}, { roller: yeni }));
-  } catch (h) { toast(h.message, 'hata'); }
-}
-
-/* Roller — proje geneli, bir kez. Kimin hangi katmanda olacağını ve hangi
-   katmanın neyi görüp yapabileceğini burada seçmiyoruz — o, deploy edilen
-   uygulamanın kendi Yetkiler ekranından, admin tarafından, runtime'da
-   yönetiliyor. Burada yalnız katmanların adı ve sırası belirleniyor. */
-function rolEkrani(p, t) {
-  const roller = ROL_TASLAK[p.id] || rolListesi((p.palet || {}).roller);
-
-  const govde = `
-    <div class="bslk"><b>Roller</b><em>bütün modüllerde geçerli</em></div>
-    ${balon('Bu programı kaç katman insan kullanacak?',
-            'En altta en dar yetki, en üstte en geniş.')}
-    ${rolMerdiveni(roller, 'yp')}
-    <p class="anl-not">Kim hangi katmanda olacak ve hangi katman neyi
-      yapabilecek, uygulamanın kendi Yetkiler ekranından yönetilir.</p>`;
-
-  return agacKabuk(p, yolCipleri([
-    { ad: p.firma, eylem: 'agac-koke', proje: p.id },
-    { ad: 'Roller' },
-  ]), `<div class="kunye-kaydir">${govde}</div>`, `
-    <button class="ag-dug guclu tek geri" type="button" data-eylem="agac-koke"
-            data-proje="${p.id}">${svg(ICON.tik, 14)} Bitti, ağaca dön</button>`);
-}
-
 /* Modül kuralları ekranı — üç soru, bir kez. */
 function modulKuralEkrani(p, t) {
   const mk = t.mk || (t.mk = { kural: '' });
@@ -3399,37 +3359,6 @@ function alanKarti(p, sf, a, i) {
   </div>`;
 }
 
-/* Künyeyi düz Türkçe tek cümleye çeviren yer — özet ve onay ekranı bunu
-   kullanıyor; AI'a giden metin de aynı cümleden besleniyor. */
-function kunyeCumlesi(sf, k, uzun) {
-  if (!k || !k.tur) return 'künye yok';
-  const alan = (k.alanlar || []).map(a => a.ad.toLocaleLowerCase('tr'));
-  const p = [];
-  p.push('<b>' + esc(sf) + '</b> bir ' + esc(k.tur.toLocaleLowerCase('tr')) + ' ekranı.');
-  if (k.amac) p.push(esc(k.amac));
-  if (alan.length) p.push('Her kayıtta ' + esc(alan.join(', ')) + ' var.');
-  if ((k.roller || []).length) {
-    const en = k.roller[0];
-    p.push('<b>' + esc(en) + '</b> ve üstü görüyor.');
-    /* Aynı yetkiye sahip eylemler tek cümlede toplanır; tek tek yazınca
-       "ekle işini Personel yapıyor, sil işini Personel yapıyor" oluyordu. */
-    const grup = new Map();
-    (k.eylemler || []).forEach(ey => {
-      const r = ((k.yetki[ey] || k.roller)[0]) || en;
-      grup.set(r, (grup.get(r) || []).concat(ey.toLocaleLowerCase('tr')));
-    });
-    if (grup.size === 1 && grup.has(en)) {
-      p.push('Bütün işleri (' + esc([...grup.values()][0].join(', ')) + ') aynı kişi yapabiliyor.');
-    } else if (grup.size) {
-      p.push([...grup.entries()].map(([r, l]) =>
-        esc(l.join(', ')) + ' → <b>' + esc(r) + '</b> ve üstü').join('; ') + '.');
-    }
-  }
-  if (k.kural) p.push('<b>' + esc(k.kural) + '</b>');
-  const metin = p.join(' ');
-  return uzun ? metin : metin.replace(/<\/?b>/g, '');
-}
-
 function tabloAdi(sf) {
   return sutunAdi(sf).replace(/_(listesi|olustur|detayi|paneli|ekrani)$/, '') || 'kayitlar';
 }
@@ -3445,24 +3374,6 @@ function sutunAdi(ad) {
 /* Künyedeki yazı alanları: her tuşta yeniden çizersek imleç kaçar.
    Değer taslağa yazılır, ekran olduğu gibi kalır. */
 function yapiBaglari() {
-  /* Rol merdiveni: katman sayısı düğmeleri kendi içinde yeniden çiziyor,
-     yazılan adlar her tuşta palete yazılıyor. */
-  const rolKat = $('.rol-kat[data-rol-onek="yp"]');
-  if (rolKat && !rolKat.dataset.bagli) {
-    rolKat.dataset.bagli = '1';
-    const sar = rolKat.parentElement;
-    const yaz = () => {
-      const pr = DB.proje(rota().id);
-      if (!pr) return;
-      ROL_TASLAK[pr.id] = rolOku(sar);
-    };
-    rolBagla(sar);
-    sar.addEventListener('input', yaz);
-    sar.addEventListener('click', ev => {
-      if (ev.target.closest('[data-rol-sayi]')) setTimeout(yaz, 0);
-    });
-  }
-
   const mkKural = $('[data-mk="kural"]');
   if (mkKural && !mkKural.dataset.bagli) {
     mkKural.dataset.bagli = '1';
@@ -3530,7 +3441,7 @@ function yapiBaglari() {
       const t = yapiTaslak(pr);
       if (el.dataset.ky === 'farkKural') {
         const k = yapiKunye(t, el.dataset.sayfa);
-        k.fark = k.fark || { roller: [], eylemler: [], yetki: {}, kural: '' };
+        k.fark = k.fark || { kural: '' };
         k.fark.kural = el.value;
       } else {
         yapiKunye(t, el.dataset.sayfa)[el.dataset.ky] = el.value;
@@ -3578,7 +3489,6 @@ function yapiIleriTazele(pr) {
   const k = yapiKunye(t, t.odak);
   const dug = $(`.dal2 .d[data-ad="${t.dal}"]`);
   if (!dug) return;
-  const roller = rolListesi((pr.palet || {}).roller);
   const durum = !kunyeAdimTam(k, t.dal) ? 'eksik'
     : (t.dal === 'fark' && !farkVar(k)) ? 'bos' : 'tamam';
   dug.classList.remove('eksik', 'tamam', 'bos');
@@ -4513,11 +4423,10 @@ function projeDuraklari(p) {
     },
     {
       ad: 'Program temeli',
-      bitti: yerDolu(p) && rolListesi(pl0.roller).length > 0,
+      bitti: yerDolu(p),
       ozet: pl0.modulAdi
-        ? [pl0.modulAdi, rolListesi(pl0.roller).length + ' katman', pl0.veriKatmani]
-            .filter(Boolean).join(' · ')
-        : 'Bu paketin adı, kim kullanacak, verisi nerede duracak?',
+        ? [pl0.modulAdi, pl0.veriKatmani].filter(Boolean).join(' · ')
+        : 'Bu paketin adı, verisi nerede duracak?',
     },
     {
       /* Eski "Nizam kurulum paketi" durağı buraya katlandı. Supabase
@@ -5630,7 +5539,6 @@ const SIHIRBAZ = {
   veri: 'sifirdan',
   dil: 'tr',
   para: 'TRY',
-  roller: ['Personel', 'Yönetici'],
   baslangic: '',
   teslim: '',
   moduller: [],
@@ -6120,7 +6028,6 @@ function sihirbaziBaslat(tur) {
     yetkili: '', telefon: '', eposta: '',
     platform: 'ikisi', veri: 'sifirdan',
     dil: 'tr', para: 'TRY',
-    roller: ['Personel', 'Yönetici'],
     baslangic: bugunTarih(), teslim: '',
     moduller: [], kaydediyor: false,
     tur: tur === 'test' ? 'test' : 'gercek',
@@ -6312,12 +6219,9 @@ function sihirbazBagla(kutu) {
     if (al('sb-yetkili')   !== null) SIHIRBAZ.yetkili   = al('sb-yetkili');
     if (al('sb-telefon')   !== null) SIHIRBAZ.telefon   = al('sb-telefon');
     if (al('sb-eposta')    !== null) SIHIRBAZ.eposta    = al('sb-eposta');
-    if ($('.rol-kat', kutu))         SIHIRBAZ.roller    = rolOku(kutu);
     if (al('sb-baslangic') !== null) SIHIRBAZ.baslangic = al('sb-baslangic');
     if (al('sb-teslim')    !== null) SIHIRBAZ.teslim    = al('sb-teslim');
   };
-
-  rolBagla(kutu);
 
   const ilk = $('#sb-firma', kutu) || $('#sb-yetkili', kutu);
   if (ilk) setTimeout(() => ilk.focus(), 60);
@@ -6505,9 +6409,10 @@ async function sihirbazKaydet() {
 
     /* Görülen sürüm burada damgalanıyor: yeni proje bugünün kararlarıyla
        kuruluyor, "yeni karar" rozeti yalnız eski projelerde çıksın.
-       Roller artık sihirbazda sorulmuyor — dil/para gibi boş kalsın,
-       "Kim kullanacak?" kartı sorsun. Sabit varsayılanı buradan yazarsak
-       kart hiç sorulmadan tamamlanmış görünüyordu. */
+       Roller artık ne sihirbazda ne Program temeli'nde sorulmuyor —
+       "Kullanıcı ekleme ve Yetkilendirme" durağı kurulana kadar hiçbir
+       yerde sorulmayacak, o durak gelene kadar proje tek kullanıcılık
+       davranır (bkz. PROMPT.yetkiBlogu). */
     try {
       await DB.paletKaydet(id, { gorulenSurum: APP.version, projeTuru: SIHIRBAZ.tur || 'gercek' });
     } catch (h) { /* kritik değil, Firma durağından sonra girilebilir */ }
@@ -6557,11 +6462,10 @@ async function sihirbazKaydet() {
 const PROGRAM_ADIM = {
   adim: 1, projeId: null,
   modulAdi: '', veriKatmani: '', alanTuru: 'githubio',
-  roller: ['Personel', 'Yönetici'],
   kaydediyor: false,
 };
 
-const PROGRAM_ADIMLAR = ['Program', 'Kim kullanacak', 'Veriler', 'Alan adı'];
+const PROGRAM_ADIMLAR = ['Program', 'Veriler', 'Alan adı'];
 
 function programDuzenleAc(projeId) {
   modalHepsiniKapat();
@@ -6574,7 +6478,6 @@ function programDuzenleAc(projeId) {
     modulAdi: pl.modulAdi || '',
     veriKatmani: pl.veriKatmani || varsayilan,
     alanTuru: pl.alanTuru === 'namecheap' ? 'namecheap' : 'githubio',
-    roller: rolListesi(pl.roller).length ? rolListesi(pl.roller) : ['Personel', 'Yönetici'],
     kaydediyor: false,
   });
   const el = document.createElement('div');
@@ -6602,8 +6505,7 @@ function programAdimCiz() {
 function programAdimHtml() {
   const govde = PROGRAM_ADIM.adim === 1 ? programAdim1()
     : PROGRAM_ADIM.adim === 2 ? programAdim2()
-    : PROGRAM_ADIM.adim === 3 ? programAdim3()
-    : programAdim4();
+    : programAdim3();
 
   const geri = PROGRAM_ADIM.adim > 1
     ? `<button class="btn btn-ghost" data-pa="geri" type="button">← Geri</button>`
@@ -6641,14 +6543,7 @@ function programAdim1() {
     <p class="ipucu">Bu ad prompt ve kimlik dosyasında kullanılacak.</p>`;
 }
 
-/* 2 · Kim kullanacak — mevcut rol merdiveni bileşeni aynen kullanılıyor. */
-function programAdim2() {
-  return shBaslik(ICON.gGuvenlik, 'Kim kullanacak?',
-    'Kaç katman var ve en alttan en üste hangi sırayla? Üstteki, alttakinin '
-    + 'gördüğü her şeyi görür.') + rolMerdiveni(PROGRAM_ADIM.roller, 'pa');
-}
-
-/* 3 · Veriler nerede — yalnız karar. Supabase seçilirse gerçek bağlantı
+/* 2 · Veriler nerede — yalnız karar. Supabase seçilirse gerçek bağlantı
    (adres+anon key) Bağlantılar ve temel durağında giriliyor; ikisini aynı
    yerde sormak "Bağlantılar" durağının işini burada tekrarlamak olurdu. */
 /* Seçeneklerin artı/eksileri sabit metin: TEKNIK_ALAN'daki veriKatmani
@@ -6675,7 +6570,7 @@ const VERI_KATMANI_KARTI = {
   },
 };
 
-function programAdim3() {
+function programAdim2() {
   const alan = TEKNIK_ALAN.find(x => x.anahtar === 'veriKatmani') || {};
   const secili = PROGRAM_ADIM.veriKatmani;
   return shBaslik(ICON.gVeri, 'Veriler nerede duracak?', alan.alt || '') + `
@@ -6703,7 +6598,7 @@ function programAdim3() {
       bir sonraki durakta — <b>Bağlantılar ve temel</b>'de — gireceksin.</p>` : ''}`;
 }
 
-/* 4 · Alan adı — yalnız karar. Namecheap seçilirse gerçek DNS kaydı ve alan
+/* 3 · Alan adı — yalnız karar. Namecheap seçilirse gerçek DNS kaydı ve alan
    adı Bağlantılar ve temel durağındaki Namecheap karesinde giriliyor; bu
    karar olmadan Bağlantılar kaç kare göstereceğini bilemiyor. */
 const ALAN_TURU_KARTI = {
@@ -6725,7 +6620,7 @@ const ALAN_TURU_KARTI = {
   },
 };
 
-function programAdim4() {
+function programAdim3() {
   const secili = PROGRAM_ADIM.alanTuru;
   return shBaslik(ICON.dil, 'Alan adı nasıl olacak?',
     'Uygulama hangi adresten açılacak? Sonra istersen değiştirebilirsin.') + `
@@ -6758,10 +6653,7 @@ function programAdimBagla(kutu) {
   const yaz = () => {
     const al = id => { const e = $('#' + id, kutu); return e ? e.value : null; };
     if (al('pa-modul') !== null) PROGRAM_ADIM.modulAdi = al('pa-modul');
-    if ($('.rol-kat', kutu))     PROGRAM_ADIM.roller   = rolOku(kutu);
   };
-
-  rolBagla(kutu);
 
   const ilk = $('#pa-modul', kutu);
   if (ilk) setTimeout(() => ilk.focus(), 60);
@@ -6788,10 +6680,6 @@ function programAdimBagla(kutu) {
 function programAdimDenetle() {
   if (PROGRAM_ADIM.adim === 1 && !PROGRAM_ADIM.modulAdi.trim()) {
     toast('Program adını yaz.');
-    return false;
-  }
-  if (PROGRAM_ADIM.adim === 2 && !PROGRAM_ADIM.roller.length) {
-    toast('En az bir katman yaz.');
     return false;
   }
   return true;
@@ -6826,7 +6714,6 @@ async function programAdimKaydet() {
       delete palet.namecheapBaglandi;
     }
     palet.alanTuru = PROGRAM_ADIM.alanTuru;
-    palet.roller = PROGRAM_ADIM.roller;
 
     const projeId = PROGRAM_ADIM.projeId;
     await DB.paletKaydet(projeId, palet);
@@ -9925,19 +9812,10 @@ async function eylemCalistir(el) {
     return;
   }
 
-  if (e === 'agac-roller') {
-    const pr = DB.proje(el.dataset.proje);
-    if (!pr) return;
-    yapiTaslak(pr).mod = 'roller';
-    render();
-    return;
-  }
-
   if (e === 'agac-koke') {
     const pr = DB.proje(el.dataset.proje);
     if (!pr) return;
     const t = yapiTaslak(pr);
-    if (t.mod === 'roller') { t.mod = 'agac'; await rollariKaydet(pr); render(); return; }
     /* Firma çipi: modülden çıkıp modül listesine döner — ama tek (ya da
        hiç) modül varken haritanın gösterecek bir şeyi yok, o zaman
        modülde (ya da anlatta) kal. */
@@ -9963,7 +9841,6 @@ async function eylemCalistir(el) {
     if (!pr) return;
     const t = yapiTaslak(pr);
     t.dal = null;
-    if (t.mod === 'roller') t.mod = 'agac';
     if (t.mod === 'mkural') t.mod = 'agac';
     render();
     $('#view').scrollTop = 0;

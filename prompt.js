@@ -795,16 +795,8 @@ const PROMPT = {
         });
       }
       const f = k.fark || {};
-      const farkli = (f.roller || []).length || (f.eylemler || []).length
-        || Object.keys(f.yetki || {}).length || (f.kural || '').trim();
-      if (farkli) {
-        s.push('- **Bu sayfada modül kuralından farklı** (Yetkiler ekranına varsayılan olarak yaz):');
-        if ((f.roller || []).length) s.push(`  - Varsayılan görebilen: ${f.roller.join(' · ')}`);
-        (f.eylemler || []).forEach(ey => {
-          const r = (f.yetki || {})[ey] || [];
-          s.push(`  - ${ey} — ${r.length ? r.join(' · ') : 'yalnız bu sayfada var'}`);
-        });
-        if ((f.kural || '').trim()) s.push(`  - Kural: ${f.kural}`);
+      if ((f.kural || '').trim()) {
+        s.push(`- **Bu sayfada modül kuralından farklı:** ${f.kural}`);
       }
       /* Claude'un tasarım notu — künyenin "ne" dediği yere "nasıl görünecek"
          eklenir. İkisini ayrı bölümlere koyunca AI birini okuyup diğerini

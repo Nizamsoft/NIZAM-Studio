@@ -7,7 +7,7 @@ const APP = {
   name:     'NIZAM | Studio',
   short:    'NIZAM Studio',
   owner:    'Nizam Soft',
-  version: 'v0.135.32',
+  version: 'v0.135.33',
   build:    '2026-09-13',
   /* Studio'nun kendi deposu — "bütün programlarda geçerli olsun"
      istekleri buraya gider. */
@@ -301,9 +301,6 @@ const TEKNIK_ALAN = [
     varsayilan: 'Supabase (bulut)', ornek: 'Supabase (bulut)',
     alt: 'Veri nerede duracak? Yerel seçilirse sunucu, giriş ve gerçek zamanlı '
        + 'yok; her şey cihazda kalır ve teknik standardın altı satırı değişir.' },
-  { anahtar: 'roller', ad: 'Roller', tur: 'katman', ornek: 'Personel · Amir · Yönetici',
-    alt: 'Kaç katman var ve en alttan en üste hangi sırayla? Üstteki, alttakinin '
-       + 'gördüğü her şeyi görür. Veritabanı güvenlik kuralları buna göre yazılır.' },
   { anahtar: 'alanAdi', ad: 'Alan adı', ornek: 'kubban.nizamsoft.com',
     alt: 'Müşteri hangi adresten girecek? Yayın ayarı ve PWA manifesti buna bağlı.' },
 ];

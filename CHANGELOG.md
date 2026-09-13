@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## v0.135.33
+- **Karar: Yetkilendirme ve kullanıcı ekleme artık tek bir yerde — Final'den bir önceki durakta.** Bu durağa kadar proje tek kullanıcılık davranır: rol/katman kavramı hiçbir yerde sorulmaz, giriş yapan herkes her şeyi görür. Buna göre roller artık "Program temeli"nde de sorulmuyor ("Program → Veriler → Alan adı", üç adım). Bu, daha önce Sıfırdan Proje sihirbazından zaten kaldırılmıştı (yarım kalmıştı — dil/para gibi boş bırakılması gerekirken hâlâ sabit varsayılan yazıp kaydediyordu, o da düzeldi); Kurulum ve yapı'daki erişilemez "Roller" düğümü de tamamen kaldırıldı. Gerçek Yetkiler ekranının kendisi (`yetkiBlogu`) hâlâ mevcut ve hazır — yeni durak kurulana kadar roller boş kaldığı için otomatik olarak "tek kullanıcı" moduna düşüyor.
+- Bu arada bulunan bir başka yarım kalmış temizlik de tamamlandı: hiçbir yerden çağrılmayan `kunyeCumlesi` fonksiyonu kaldırıldı.
+
 ## v0.135.32
 - **"Kurulum ve yapı"daki yarım kalmış "kim görebilir" özelliği tamamen kaldırıldı.** Daha önce yalnızca giriş noktalarının adı/açıklaması değiştirilmişti ("Ortak kural" gibi) ama ekranların içi hâlâ tam bir rol atama arayüzü gösteriyordu — hem modül düzeyinde ("Kimler görür? / Neler yapılabilir? / Hangisini kim yapar?") hem sayfa düzeyinde ("Bu sayfayı kimler görsün?"). Artık ikisi de yalnız düz bir "ortak kural" metin kutusu; kimin neyi görüp yapabileceği tamamen deploy edilen uygulamanın kendi Yetkiler ekranından, admin tarafından, runtime'da yönetiliyor. "Modüller ve sayfalar" promptu da artık bu bilgiyi sormuyor, JSON bloğunda da istemiyor.
 
