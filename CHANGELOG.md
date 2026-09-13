@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.135.38
+- **Yeni durak: "Test ve Güncelle" — Değişim ile Profesyonel tasarım arasında.** Yalnızca şablon kopyalarında görünür: normal projelerde bu döngü zaten Beta ve geliştirme'nin içinde, şablon kopyaları ise "Kurulum ve yapı"/"Beta ve geliştirme" yerine "Temel tanımlar"/"Değişim"den geçtiği için bu test-ve-düzelt döngüsünü hiç görmüyordu. Şimdi: uygulamayı gerçek verilerle dene, bulduğun eksik/hatayı bir kutuya yaz, tek tuşla Claude'a giden bir prompt oluşsun. Açık istekler görev olarak da listeleniyor. Normal projelerde bu durak otomatik tamamlanmış sayılıyor, hiç görünmüyor.
+
 ## v0.135.37
 - **SQL yükleme ve ilk kullanıcı, şablon kopyalarında artık Bağlantılar ve temel'de.** Bir template'in Supabase şeması hazırsa (Templateler'deki kurulum sihirbazına eklenen yeni "SQL" adımında bir GitHub linki tanımlanmışsa), Supabase bağlandıktan hemen sonra iki yeni adım çıkıyor: **Veritabanını kur** (linkteki SQL'i kopyala, yeni projenin SQL Editor'üne yapıştır) ve **İlk kullanıcı** (e-posta+şifre gir, Studio Supabase panelinin doğru sayfasına yönlendirip adım adım anlatıyor). SQL linki tanımlı değilse bu iki adım hiç görünmüyor — eski akış (ilk kullanıcı Kullanıcı ve Yetki durağında) aynen çalışmaya devam ediyor.
 - **İlk kullanıcı artık her zaman Admin — katman seçtirilmiyor.** Rol merdiveninin en üst satırı ("Admin") sabit ve değiştirilemez oldu; katman sayısı kaç olursa olsun en geniş yetkili katman hep bu isimde. Alttaki katmanlar eskisi gibi serbestçe adlandırılıyor.

@@ -1194,6 +1194,39 @@ const PROMPT = {
     return s.join('\n');
   },
 
+  /* ---------- Test ve Güncelle promptu (yalnız şablon kopyaları) ----------
+     betaIstek'in sade hâli: yapı zaten template'ten geliyor, künye/JSON
+     bloğuna gerek yok — genel bir "şunu buldum, düzelt" isteği yeter. */
+  denemeIstek(projeId, istek) {
+    const p = DB.proje(projeId);
+    if (!p) return '';
+    const metin = String(istek || '').trim();
+    if (!metin) return '';
+    const slug = depoSlug(p.repo);
+    const yayin = (p.palet || {}).alanAdi;
+
+    const s = [];
+    s.push('# ' + projeAdi(p) + ' — test sonrası güncelleme', '');
+    if (slug) {
+      s.push('> ### Depo: `' + slug + '`');
+      s.push('> Bu oturum yalnız bu depoya bağlı olmalı. Deposu farklıysa dur');
+      s.push('> ve söyle.', '');
+    }
+    if (yayin) {
+      s.push('> ### Yayın adresi: `https://' + yayin + '`');
+      s.push('> Denediğim sürüm bu adres.', '');
+    }
+    s.push('Uygulamayı gerçek verilerle denedim. Şunu buldum / şunu istiyorum:', '');
+    s.push('> ' + metin.split('\n').join('\n> '));
+    s.push('');
+    s.push('Depoyu incele, gerekeni düzelt ya da ekle. **Var olan hiçbir özelliği');
+    s.push('kırma** — bu istek dışındaki hiçbir şeyi değiştirme.');
+    s.push('');
+    s.push('Bitirince tek commit\'le **`main` dalına** gönder:');
+    s.push(`   \`[${TASK_PREFIX}-0] Güncelleme\``);
+    return s.join('\n');
+  },
+
   /* ---------- Geliştirme (final sonrası) güncelleme promptu ----------
      betaIstek ile aynı iskelet, tek fark: final zaten verildi, uygulama
      müşterinin elinde, gerçek kullanıcı verisi olabilir. O yüzden burada

@@ -939,18 +939,25 @@ const DURAKLAR = {
                  renk: '#c9753c', ikon: 'gOptimizasyon', resim: 'beta',
                  aciklama: p => sablonMu(p) ? 'Toplanan tanımları koda işle.'
                    : 'Testler ve geliştirme süreci.' },
-  tasarim:     { no: 6, ad: 'Profesyonel tasarım',   ciz: tasarimSayfasi,
+  /* Yalnız şablon kopyalarında anlamlı: normal projede bu döngü zaten Beta
+     ve geliştirme'nin içinde. Slot her projede var (sıra bozulmasın diye,
+     bkz. projeDuraklari), normal projede otomatik geçilmiş sayılıyor. */
+  deneme:      { no: 6, ad: 'Test ve Güncelle',       ciz: denemeSayfasi,
+                 renk: '#5a9b8f', ikon: 'gOptimizasyon', resim: 'deneme',
+                 aciklama: p => sablonMu(p) ? 'Uygulamayı dene, eksikleri Claude\'a yazdır.'
+                   : 'Bu proje için geçerli değil.' },
+  tasarim:     { no: 7, ad: 'Profesyonel tasarım',   ciz: tasarimSayfasi,
                  renk: '#5f86c4', ikon: 'gTasarim', resim: 'tasarim',
                  aciklama: 'Arayüz ve kullanıcı deneyimi.' },
   /* Finalden bir önceki durak: bu noktaya kadar proje tek kullanıcılık
      davranır (bkz. rolMerdiveni üstündeki not). Roller burada tanımlanır,
      Yetkiler ekranı burada kodlattırılır, ilk kullanıcı burada açılır. */
-  yetki:       { no: 7, ad: 'Kullanıcı ve Yetki',    ciz: yetkiSayfasi,
+  yetki:       { no: 8, ad: 'Kullanıcı ve Yetki',    ciz: yetkiSayfasi,
                  renk: '#a15fc4', ikon: 'gGuvenlik', resim: 'yetki',
                  aciklama: 'Katmanlar, yetkiler ve ilk kullanıcı.' },
-  final:       { no: 8, ad: 'Final',                 ciz: finalSayfasi,
+  final:       { no: 9, ad: 'Final',                 ciz: finalSayfasi,
                  resim: 'final', aciklama: 'Son kontroller ve yayına hazırlık.' },
-  guncelleme:  { no: 9, ad: 'Geliştirme',            ciz: guncellemeSayfasi,
+  guncelleme:  { no: 10, ad: 'Geliştirme',           ciz: guncellemeSayfasi,
                  resim: 'gelistirme', aciklama: 'Yayın sonrası yeni özellikler.' },
 };
 
@@ -3449,6 +3456,22 @@ function yapiBaglari() {
       }
     });
   }
+  /* Test ve Güncelle durağındaki kutu — aynı imleç-koruma mantığı. */
+  const denemeIstek = $('[data-deneme-istek]');
+  if (denemeIstek && !denemeIstek.dataset.bagli) {
+    denemeIstek.dataset.bagli = '1';
+    denemeIstek.addEventListener('input', () => {
+      const projeId = denemeIstek.dataset.denemeIstek;
+      DENEME_ISTEK[projeId] = denemeIstek.value;
+      const acik = denemeIstek.value.trim().length > 20;
+      if (acik !== !!$('[data-pano="denemeIstek"]')) {
+        const yer = denemeIstek.selectionStart;
+        render();
+        const yeni = $('[data-deneme-istek]');
+        if (yeni) { yeni.focus(); try { yeni.setSelectionRange(yer, yer); } catch (h) {} }
+      }
+    });
+  }
   $$('[data-ky]').forEach(el => {
     if (el.dataset.bagli) return;
     el.dataset.bagli = '1';
@@ -4270,7 +4293,53 @@ function sablonDegisimSayfasi(p, d) {
     + `</div>`;
 }
 
-/* ---------- 7 · Kullanıcı ve Yetki ----------
+/* ---------- 6 · Test ve Güncelle ----------
+   Yalnız şablon kopyalarında anlamlı: normal projede bu döngü zaten Beta
+   ve geliştirme'nin kendi içinde (bkz. betaSayfasi). Şablon kopyası
+   "Kurulum ve yapı"/"Beta ve geliştirme" yerine "Temel tanımlar"/"Değişim"
+   sihirbazlarından geçtiği için bu döngüyü hiç görmüyordu — burada
+   guncellemeSayfasi'yle aynı iskelet (serbest metin → prompt → Claude),
+   yalnız daha sade: depo/sürüm notu bölümleri yok, bu durağa özgü değil. */
+const DENEME_ISTEK = {};
+
+function denemeSayfasi(p, d) {
+  if (!sablonMu(p)) {
+    return sayfaHero(p, d) + `<div class="card">${empty(ICON.check, 'Bu aşama geçerli değil',
+      'Bu durak yalnızca şablon kopyalarında kullanılıyor — normal projelerde test/güncelleme döngüsü zaten Beta ve geliştirme içinde.')}</div>`;
+  }
+
+  const pl = p.palet || {};
+  const istek = DENEME_ISTEK[p.id] || '';
+  const dolu = istek.trim().length > 20;
+  const tamam = !!pl.denemeTamamlandi;
+  const gorevler = DB.gorevleri({ proje: p.id }).filter(g => g.durum !== 'tamamlandi');
+
+  return `<div class="fb-govde">`
+    + adimBasligi(p, d, tamam ? '1/1' : '0/1')
+    + balon('Uygulama artık gerçek verilerle çalışıyor.',
+        'Dene, eksik ya da hatalı gördüğün her şeyi buraya yaz — Claude düzeltsin.')
+    + `<div class="card">
+        <textarea class="anl-kutu" data-deneme-istek="${p.id}"
+          placeholder="Örn. Fatura listesinde tarih sıralaması ters">${esc(istek)}</textarea>
+        <div class="anl-dug">
+          ${dolu
+            ? promptBaglantisi({ tur: 'denemeIstek', proje: p.id, slug: depoSlug(p.repo),
+                hedef: 'claude-yeni', yazi: 'Prompt oluştur ve Claude\'u aç' })
+            : `<button type="button" disabled>${svg(ICON.kopya, 15)} Prompt oluştur</button>`}
+          <button class="ana" type="button" data-eylem="anlat-aktar" data-proje="${p.id}">
+            ${svg(ICON.ice, 15)} JSON varsa yükle</button>
+        </div>
+      </div>`
+    + (gorevler.length ? bolumBas('Açık istekler')
+        + `<div class="card liste">${gorevler.slice(0, 12).map(gorevKarti).join('')}</div>` : '')
+    + (AUTH.yonetici ? (tamam
+        ? `<div class="kur-deger duz">${svg(ICON.tik, 13)} Bu aşama tamamlandı</div>`
+        : `<button class="sayfa-dug ikincil" type="button" data-eylem="deneme-tamamlandi"
+                    data-proje="${p.id}">${svg(ICON.check, 15)} Test ve Güncelle tamamlandı</button>`) : '')
+    + `</div>`;
+}
+
+/* ---------- 8 · Kullanıcı ve Yetki ----------
    Finalden bir önceki durak. Bu noktaya kadar proje tek kullanıcılık
    davranıyor. Beş parça: katmanlar (rolMerdiveni), her katmanın görevi
    (serbest metin), promptu Claude'a yazdırma, Claude'un cevabını aktarma,
@@ -4495,7 +4564,7 @@ function finalNotlariOku(pl) {
     .map(n => typeof n === 'string' ? { metin: n, tamam: false } : n);
 }
 
-/* 8 · Final — görevler bitti, incele, ya final ver ya da bulduğunu not et. */
+/* 9 · Final — görevler bitti, incele, ya final ver ya da bulduğunu not et. */
 function finalSayfasi(p, d) {
   const pl = p.palet || {};
   const verildi = !!pl.finalVerildi;
@@ -4721,6 +4790,20 @@ function projeDuraklari(p) {
         if (biten < liste.length) return `İlk kurulum: ${biten}/${liste.length} adım`;
         return gelistirmeBitti(p) ? 'Tamamlandı.' : 'Yayında — dene, eksik gördüğünü anlat.';
       })(),
+    },
+    pl0.sablon ? {
+      /* Yalnız şablon kopyalarında görünür: normal projede bu döngü zaten
+         Beta ve geliştirme'nin içinde, ayrı bir durak gerekmiyor. */
+      ad: 'Test ve Güncelle',
+      bitti: !!pl0.denemeTamamlandi,
+      ozet: pl0.denemeTamamlandi
+        ? 'Tamamlandı.'
+        : 'Uygulamayı dene, eksik ya da hatalı gördüğünü Claude\'a yazdır.',
+    } : {
+      ad: 'Test ve Güncelle',
+      bitti: true,
+      sayilmaz: true,
+      ozet: 'Bu proje şablon kopyası değil — bu aşama geçerli değil.',
     },
     {
       ad: 'Profesyonel tasarım',
@@ -8598,6 +8681,7 @@ const PANO_PROMPT = {
   modulGuncelle: p => PROMPT.modulGuncelle(p.id),
   betaIstek:     p => PROMPT.betaIstek(p.id, BETA_ISTEK[p.id] || ''),
   guncellemeIstek: p => PROMPT.guncellemeIstek(p.id, GUNCELLEME_ISTEK[p.id] || ''),
+  denemeIstek:   p => PROMPT.denemeIstek(p.id, DENEME_ISTEK[p.id] || ''),
   sablonPos:     p => PROMPT.sablonOgren(p.id, 'POS okuyucu',
     'POS cihazından alınan hareket dökümü.'),
   sablonFatura:  p => PROMPT.sablonOgren(p.id, 'Fatura ve kart hareketi', ''),
@@ -9837,6 +9921,23 @@ async function eylemCalistir(el) {
     })) return;
     return isYap(() => DB.paletKaydet(pr.id,
       Object.assign({}, pl, { sablonDegisimTamamlandi: true })), 'Değişim tamamlandı.');
+  }
+
+  if (e === 'deneme-tamamlandi') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const pl = pr.palet || {};
+    if (pl.denemeTamamlandi) {
+      return isYap(() => DB.paletKaydet(pr.id,
+        Object.assign({}, pl, { denemeTamamlandi: false })), 'İşaret kaldırıldı.');
+    }
+    if (!await onaySor({
+      baslik: 'Test ve Güncelle tamamlandı mı?',
+      mesaj: 'Uygulamayı yeterince denedin ve bulduklarını Claude\'a yazdırdıysan onayla.',
+      buton: 'Eminim',
+    })) return;
+    return isYap(() => DB.paletKaydet(pr.id,
+      Object.assign({}, pl, { denemeTamamlandi: true })), 'Test ve Güncelle tamamlandı.');
   }
 
   if (e === 'supabase-baglan') {
