@@ -468,16 +468,23 @@ const DB = {
         /* Yuvalar kalıyor (hangi görsel gerekiyor bilgisi), dosya yolu
            kalmıyor — aksi hâlde iki proje aynı depodaki dosyayı paylaşır. */
         gorseller: kaynakGorseller.map(g => Object.assign({}, g, { yol: '', boyut: 0, tur: '' })),
+        /* Kopya kendi yol haritasından geçmemiş sayılır — kaynak final
+           vermiş, tasarım seçmiş ya da beta bitirmiş olsa bile kopya bunların
+           hiçbirinden geçmedi. Bunlar taşınmazsa kopya, Projeler listesinde
+           yanlışlıkla "Bitmiş" görünüyordu (kaynağın finalVerildi'si aynen
+           kopyalanıyordu). Kilit de asla kopyalanmaz: kilitli bir projenin
+           kopyası kilitli doğmaz. */
+        tasarimTamamlandi: false, secilenYon: null,
+        betaTamamlandi: false, finalVerildi: false, finalNotlar: [],
+        blokVerildi: false, sqlKuruldu: false, asama: [],
+        kilitli: false,
       }, sablon ? {
-        /* Şablon kopyası: "Program temeli"nde girilen paket adı, roller ve
-           veri katmanı da bu firmaya özel — boş gelip yeniden doldurulmalı.
+        /* Şablon kopyası: "Program temeli"nde girilen paket adı ve veri
+           katmanı da bu firmaya özel — boş gelip yeniden doldurulmalı.
            Kurulum ve yapı (modül/sayfa) yapısı ise KALIYOR, o üstteki
            `modulleri`/`sayfalari` kopyalamasından geliyor. */
         sablon,
         modulAdi: null, roller: null, veriKatmani: null,
-        tasarimTamamlandi: false, secilenYon: null,
-        betaTamamlandi: false, finalVerildi: false, finalNotlar: [],
-        blokVerildi: false, sqlKuruldu: false, asama: [],
         sablonTanimlar: null, sablonDegisimTamamlandi: false,
       } : {}));
     } catch (h) { /* palet tablosu yoksa proje yine kuruldu, boş paletle kalır */ }
@@ -531,6 +538,13 @@ const DB = {
   async projeSil(id) {
     yazmaKontrol();
     const p = this.proje(id);
+
+    /* Kilitli projeler yanlışlıkla silinmesin diye buradan da kapatılıyor —
+       arayüz zaten "sil" düğmesine gelmeden önce durduruyor, bu ikinci bir
+       güvenlik: elle çağrılsa bile geçmez. */
+    if (p && (p.palet || {}).kilitli) {
+      throw new Error('Bu proje kilitli. Silmeden önce Ayarlar\'dan kilidi aç.');
+    }
 
     if (p && p.logo) {
       /* Dosya silinemezse proje yine silinsin — yetim bir logo dert değil. */

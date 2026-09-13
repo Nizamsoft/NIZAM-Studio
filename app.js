@@ -18,6 +18,7 @@ const ROUTES = {
   standartlar: { title: 'Nizam Standartları', kisa: 'Standartlar', sub: () => standartAltBaslik() },
   sablonlar:   { title: 'Modül Şablonları',   kisa: 'Şablonlar',   sub: () => sablonAltBaslik() },
   sektorler:   { title: 'Sektörler',           kisa: 'Sektörler',   sub: () => sektorAltBaslik() },
+  kilitler:    { title: 'Kilitli Projeler',    kisa: 'Kilit',       sub: () => kilitAltBaslik() },
   ekip:        { title: 'Ekip',               kisa: 'Ekip',        sub: () => ekipAltBaslik() },
   ayarlar:     { title: 'Ayarlar',            kisa: 'Ayarlar',     sub: () => APP.version + ' · ' + APP.stage },
 };
@@ -565,6 +566,27 @@ const VIEWS = {
     `;
   },
 
+  /* ---------- Kilitli projeler ---------- */
+
+  kilitler: () => {
+    if (YUKLENIYOR) return iskeletler(3);
+    if (DB.hata)    return hataKutusu(DB.hata);
+
+    const liste = DB.projeler.filter(p => !p.arsiv);
+
+    return `
+      <div class="note" style="margin-bottom:12px">
+        ${svg(ICON.info, 15)}
+        <span>Kilitlediğin proje yanlışlıkla silinemez — "Projeyi sil" desen
+        bile önce buradan kilidi açman istenir.</span>
+      </div>
+
+      ${liste.length
+        ? `<div class="card liste">${liste.map(kilitSatiri).join('')}</div>`
+        : `<div class="card">${empty(ICON.folder, 'Proje yok', 'Kilitlenecek proje bulunmuyor.')}</div>`}
+    `;
+  },
+
   /* ---------- Ekip ---------- */
 
   ekip: () => {
@@ -678,6 +700,21 @@ const VIEWS = {
           </div>
         </div>
       </div>` : ''}
+
+    <div class="section">
+      <span class="label">Projeler</span>
+      <div class="card">
+        <div class="row-list">
+          <div class="row" data-eylem="kilitlere" role="button" tabindex="0">
+            <div class="row-main">
+              <span class="row-title">Projeleri kilitle</span>
+              <span class="row-sub">${kilitAltBaslik()} · kilitli proje yanlışlıkla silinemez</span>
+            </div>
+            <span class="row-val">${svg(ICON.chevron, 15)}</span>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <div class="section">
       <span class="label">Kütüphane</span>
@@ -5428,6 +5465,26 @@ function sablonAltBaslik() {
   return `${n} modül · ${sf} sayfa`;
 }
 
+function kilitAltBaslik() {
+  if (YUKLENIYOR) return 'yükleniyor…';
+  const n = DB.projeler.filter(p => !p.arsiv && (p.palet || {}).kilitli).length;
+  return n ? n + ' kilitli' : 'kilitli proje yok';
+}
+
+function kilitSatiri(p) {
+  const kilitli = !!(p.palet || {}).kilitli;
+  return `
+    <div class="row">
+      <div class="row-main">
+        <span class="row-title">${esc(projeAdi(p))}</span>
+        <span class="row-sub">${kilitli ? 'Kilitli — silinemez' : 'Kilitli değil'}</span>
+      </div>
+      <label class="kur-onay ${kilitli ? 'on' : ''}" data-eylem="proje-kilit-degistir"
+             data-proje="${p.id}" role="button" tabindex="0">
+        <span class="kur-kutu">${svg(ICON.kilit, 12)}</span></label>
+    </div>`;
+}
+
 /* Bir modül şablonu. Açılınca sayfaları listelenir. */
 function sablonKarti(m, i = 0) {
   const anahtar = m.id || m.ad;
@@ -9458,6 +9515,10 @@ async function eylemCalistir(el) {
     }
 
     if (sec === 'sil') {
+      if ((proje.palet || {}).kilitli) {
+        toast('Bu proje kilitli — önce Ayarlar > Projeleri kilitle\'den kilidi aç.', 'uyari');
+        return;
+      }
       const s = DB.sayim(id);
       const gorsel = ((proje.palet || {}).gorseller || []).filter(y => y.yol).length;
       const kayip = [
@@ -9967,6 +10028,16 @@ async function eylemCalistir(el) {
   if (e === 'sablonlara')     { location.hash = '#/sablonlar'; return; }
   if (e === 'sablon-ekle')    return sablonDuzenle(null);
   if (e === 'sablon-duzenle') return sablonDuzenle(id);
+
+  if (e === 'kilitlere') { location.hash = '#/kilitler'; return; }
+
+  if (e === 'proje-kilit-degistir') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const pl = pr.palet || {};
+    return isYap(() => DB.paletKaydet(pr.id, Object.assign({}, pl, { kilitli: !pl.kilitli })),
+      pl.kilitli ? 'Kilit açıldı.' : 'Proje kilitlendi.');
+  }
   if (e === 'sablon-sil') {
     const ok = await onaySor({
       baslik: 'Şablon kaldırılsın mı?',

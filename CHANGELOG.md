@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## v0.135.26
+- **Kopyalanan proje "Bitmiş" görünüyordu.** Kopya, kaynağın final/tasarım/beta durumunu da olduğu gibi taşıyordu — kaynak final vermişse kopya Projeler listesinde doğrudan "Bitmiş Projeler"e düşüyordu, hiç kendi yol haritasından geçmeden. Artık her kopya (şablon olsun olmasın) final/tasarım/beta/kurulum ilerlemesiyle sıfırdan başlıyor, yalnız modül/sayfa yapısı ve program bilgisi taşınıyor.
+- **Projeleri kilitle eklendi.** Ayarlar > Projeler'de her proje için bir kilit var. Kilitli bir proje hiçbir şekilde silinemez — "Projeyi sil" desen bile uyarı verir, önce kilidi açman gerekir. Kopyalanan projeler de her zaman kilitsiz doğar.
+
 ## v0.135.25
 - **Muhasebe şablonu akışı eklendi.** Proje kopyalarken artık "Bu bir şablon dönüşümü mü?" sorusu çıkıyor. "Muhasebe şablonu" seçilirse: firma bilgileri ve program temeli boş gelir (başka bir firma olduğu için), "Kurulum ve yapı" durağının yerini **Temel tanımlar** (şube/kullanıcı/hesap planı/gider grupları metni + POS okuyucu + bankalar + fatura&kart — hepsi "örnek excel'i Claude'a öğret, cevabı yapıştır" akışıyla), "Beta ve geliştirme" durağının yerini ise **Değişim** alıyor — toplanan her şeyi tek promptla koda işleyen durak. Bağlantılar, Profesyonel tasarım, Final ve Geliştirme durakları değişmeden aynen kullanılıyor. Amaç: yeni bir firmaya muhasebe programı kurarken hızlı, tekrarlanabilir bir yol.
 
