@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.135.27
+- **GitHub bağlantısı, sekmeye geri dönülünce otomatik "bağlandı" sayılıyordu.** "GitHub'a bağlan" bağlantısına tıklayıp GitHub tarafında hata alsan bile (boş sayfa, başarısız kopyalama vb.) Studio'ya döner dönmez depo adresini kendiliğinden yazıyordu — "Bağlan" düğmesi kayboluyor, proje gerçekte bağlanmamış oluyordu. Artık sekmeye dönüş yalnızca bir onay kutusu çıkarıyor: depo gerçekten oluştuysa **"Bağlandı, devam et"**e basıyorsun, oluşmadıysa **"Henüz bağlanmadı"** diyip tekrar deniyorsun. Yazma işlemi ancak elle onaylayınca oluyor.
+
 ## v0.135.26
 - **Kopyalanan proje "Bitmiş" görünüyordu.** Kopya, kaynağın final/tasarım/beta durumunu da olduğu gibi taşıyordu — kaynak final vermişse kopya Projeler listesinde doğrudan "Bitmiş Projeler"e düşüyordu, hiç kendi yol haritasından geçmeden. Artık her kopya (şablon olsun olmasın) final/tasarım/beta/kurulum ilerlemesiyle sıfırdan başlıyor, yalnız modül/sayfa yapısı ve program bilgisi taşınıyor.
 - **Projeleri kilitle eklendi.** Ayarlar > Projeler'de her proje için bir kilit var. Kilitli bir proje hiçbir şekilde silinemez — "Projeyi sil" desen bile uyarı verir, önce kilidi açman gerekir. Kopyalanan projeler de her zaman kilitsiz doğar.

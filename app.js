@@ -6698,6 +6698,21 @@ function baglantiAdimGithub(p) {
   const buton = depo ? '' : `<a class="sayfa-dug" target="_blank" rel="noopener" data-depo-ac="${p.id}" href="${depoAdresi}">
       ${svg(ICON.dal, 15)} ${kopyaMi ? 'GitHub\'a bağlan ve kopyala' : 'GitHub\'da depo aç'}</a>`;
 
+  /* Sekmeye dönüş "bağlandı" demek değil — GitHub tarafı hata verip boş
+     sayfa açmış olabilir. Studio depoya bakamadığı için tahmin etmiyor,
+     kullanıcı gerçekten oluştuğunu görüp kendi onaylıyor. */
+  const onayBekliyor = !depo && DEPO_BEKLIYOR[p.id];
+  const onayKutusu = !onayBekliyor ? '' : `
+    <div class="note" style="margin-top:10px">${svg(ICON.info, 15)}
+      <span>GitHub'da depo gerçekten oluştu mu? Oluştuysa onayla. Hata
+      aldıysan yukarıdaki bağlantıyla tekrar dene, onaylama.</span></div>
+    <div class="kur-dug" style="margin-top:8px">
+      <button class="sayfa-dug" type="button" data-eylem="depo-baglandi-onay" data-proje="${p.id}">
+        ${svg(ICON.tik, 15)} Bağlandı, devam et</button>
+      <button class="sayfa-dug ikincil" type="button" data-eylem="depo-baglandi-vazgec" data-proje="${p.id}">
+        Henüz bağlanmadı</button>
+    </div>`;
+
   const kopyaSatir = (etiket, deger) => `
     <div class="ak-s">
       <span class="ak-et">${esc(etiket)}</span>
@@ -6721,7 +6736,7 @@ function baglantiAdimGithub(p) {
 
   return shBaslikServis('github', kopyaMi ? 'GitHub\'a bağlan ve kopyala' : 'GitHub\'a bağlan',
     'Kodun barındığı yer. Depo bağlanınca Claude Code buradan görev alır.')
-    + durum + buton + kopyaRehberi
+    + durum + buton + kopyaRehberi + onayKutusu
     + baOzellikler([
       'Kod güvenle, sürüm geçmişiyle saklanır',
       'Claude Code görevleri buradan alır',
@@ -10029,6 +10044,20 @@ async function eylemCalistir(el) {
   if (e === 'sablon-ekle')    return sablonDuzenle(null);
   if (e === 'sablon-duzenle') return sablonDuzenle(id);
 
+  if (e === 'depo-baglandi-onay') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    delete DEPO_BEKLIYOR[pr.id];
+    return depoAdresiTamamla(pr);
+  }
+
+  if (e === 'depo-baglandi-vazgec') {
+    delete DEPO_BEKLIYOR[el.dataset.proje];
+    render();
+    if ($('#baglanti-adim')) baglantiAdimCiz();
+    return;
+  }
+
   if (e === 'kilitlere') { location.hash = '#/kilitler'; return; }
 
   if (e === 'proje-kilit-degistir') {
@@ -10673,17 +10702,22 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  /* Uygulamaya dönüldüğünde bekleyen depo varsa adresi doldur. Depo adını
-     biz ürettik, sahibini hatırlıyoruz — tahmin değil, kurduğumuz ad. */
+  /* Uygulamaya dönüldüğünde bekleyen depo varsa onay kutusunu göster.
+     Otomatik "bağlandı" YAZMIYORUZ artık: sekmeye dönüş, GitHub'ın gerçekten
+     başarılı olduğu anlamına gelmiyor — hata verip boş sayfa açmış olabilir.
+     Kullanıcı baglantiAdimGithub'daki "Bağlandı, devam et" düğmesiyle kendi
+     onaylıyor (bkz. depo-baglandi-onay). */
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState !== 'visible') return;
-    Object.keys(DEPO_BEKLIYOR).forEach(pid => {
+    const beklenen = Object.keys(DEPO_BEKLIYOR).filter(pid => {
       const pr = DB.proje(pid);
-      if (!pr) { delete DEPO_BEKLIYOR[pid]; return; }
-      if (pr.repo) { delete DEPO_BEKLIYOR[pid]; return; }
-      delete DEPO_BEKLIYOR[pid];
-      depoAdresiTamamla(pr);
+      if (!pr || pr.repo) { delete DEPO_BEKLIYOR[pid]; return false; }
+      return true;
     });
+    if (beklenen.length) {
+      render();
+      if ($('#baglanti-adim')) baglantiAdimCiz();
+    }
     Object.keys(PAGES_BEKLIYOR).forEach(pid => {
       const pr = DB.proje(pid);
       delete PAGES_BEKLIYOR[pid];
