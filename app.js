@@ -4251,13 +4251,16 @@ function projeDuraklari(p) {
         ? 'Final sürüm verildi.'
         : 'Bütün görevler bitince final sürümü teslim et.',
     },
-    {
-      /* Bilerek hiç bitmiyor: proje yaşadıkça yeni istek gelir. */
-      ad: 'Geliştirme',
-      bitti: false,
-      ozet: 'Finalden sonra gelen istekler burada yürür.',
-    },
-  ];
+  ].concat(pl0.finalVerildi ? [{
+    /* Final verilmeden önce hiç görünmez — henüz sırası gelmemiş bir durak
+       değil, finalden sonra doğan ayrı bir aşama. Bilerek hiç bitmiyor:
+       proje yaşadıkça yeni istek gelir. `sayilmaz` "Adımlar" yüzdesine hiç
+       girmesin diye — final verilince proje zaten %100 tamamlanmış sayılır. */
+    ad: 'Geliştirme',
+    bitti: false,
+    sayilmaz: true,
+    ozet: 'Finalden sonra gelen istekler burada yürür.',
+  }] : []);
 }
 
 /* Her durağın simgesi. Hepsi aynı simgeyle dururken kartlar birbirinden
@@ -4332,8 +4335,11 @@ function projeYolu(p) {
   /* Şimdiki durak: bitmemiş ilk durak. Hepsi bitmişse -1. */
   const simdi = duraklar.findIndex(d => !d.bitti);
   const anahtarlar = Object.keys(DURAKLAR);
-  const biten = duraklar.filter(d => d.bitti).length;
-  const yuzde = Math.round(biten / duraklar.length * 100);
+  /* Geliştirme (sayilmaz) hiç bitmediği için yüzdeye girerse final verilmiş
+     bir proje asla %100 görünmezdi — o yüzden sayaç dışında tutuluyor. */
+  const sayilan = duraklar.filter(d => !d.sayilmaz);
+  const biten = sayilan.filter(d => d.bitti).length;
+  const yuzde = Math.round(biten / sayilan.length * 100);
 
   const liste = duraklar.map((d, i) => asamaSatiri(p, d, i, simdi, anahtarlar[i])).join('');
 
@@ -4344,7 +4350,7 @@ function projeYolu(p) {
     <div class="genel">
       <div class="genel-ust"><b>Adımlar</b><u class="mono">%${yuzde}</u></div>
       <div class="genel-ray"><i style="width:${yuzde}%"></i></div>
-      <div class="genel-alt mono">${biten} / ${duraklar.length} tamamlandı</div>
+      <div class="genel-alt mono">${biten} / ${sayilan.length} tamamlandı</div>
     </div>`;
 }
 

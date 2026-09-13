@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.135.23
+- **"Geliştirme" durağı, bilerek hiç bitmeyen bir durak olduğu için "Adımlar" ilerlemesini asla %100 yapmıyordu.** Final verilmiş bir proje 7/8 gösteriyordu. Artık "Geliştirme" hem yüzdeye girmiyor hem de final verilmeden listede hiç görünmüyor — finalden sonra doğan ayrı bir aşama olarak ancak o zaman beliriyor. Final verilince proje 7/7 · %100 tamamlanmış sayılıyor.
+
 ## v0.135.22
 - **Final sayfasının üstündeki ilerleme çubuğu bildirilen notları hiç saymıyordu.** Not eklenip tamamlandı diye işaretlense bile çubuk projenin genel görev sayacına bakıyordu — görev hiç kullanılmayan bir projede sürekli "0/0" görünüyordu. Artık bildirilmiş not varsa çubuk onların tamamlanma durumunu ("X/Y not tamamlandı") gösteriyor; hiç not yoksa eskisi gibi genel görev ilerlemesine düşüyor.
 
