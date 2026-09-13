@@ -6225,6 +6225,10 @@ function cekirdekKurulumHtml(p, liste) {
         ${svg(ICON.kapat, 15)}
       </button>
       <span class="sh-ad">${esc(projeAdi(p))} — Template kurulumu</span>
+      ${AUTH.yonetici ? `<button class="sh-kapat" data-ck="sil" type="button"
+                aria-label="Template'i sil" title="Template'i sil">
+          ${svg(ICON.cop, 15)}
+        </button>` : ''}
     </div>
 
     <div class="sh-sayfa">
@@ -6242,11 +6246,30 @@ function cekirdekKurulumHtml(p, liste) {
    sihirbazın kendi geri/ileri/kapat düğmelerini bağlıyoruz. */
 function cekirdekKurulumBagla(kutu) {
   $$('[data-ck]', kutu).forEach(el => {
-    el.addEventListener('click', () => {
+    el.addEventListener('click', async () => {
       const t = el.dataset.ck;
       if (t === 'kapat') return cekirdekKurulumKapat();
       if (t === 'geri')  { CEKIRDEK_KURULUM.adim--; return cekirdekKurulumCiz(); }
       if (t === 'ileri') { CEKIRDEK_KURULUM.adim++; return cekirdekKurulumCiz(); }
+      if (t === 'sil') {
+        const p = DB.proje(CEKIRDEK_KURULUM.projeId);
+        if (!p) return;
+        if ((p.palet || {}).kilitli) {
+          toast('Bu template kilitli — önce Templateler listesindeki kilit simgesinden aç.', 'uyari');
+          return;
+        }
+        const ok = await onaySor({
+          baslik: 'Bu template silinsin mi?',
+          mesaj: `"${projeAdi(p)}" ve içindeki her şey kalıcı olarak silinecek. Bu işlem geri alınamaz.`,
+          buton: 'Kalıcı olarak sil',
+        });
+        if (!ok) return;
+        const slug = depoSlug(p.repo);
+        const ad = projeAdi(p);
+        cekirdekKurulumKapat();
+        await isYap(() => DB.projeSil(p.id), 'Template silindi.');
+        return disaridaKalanlar(ad, slug);
+      }
     });
   });
 }

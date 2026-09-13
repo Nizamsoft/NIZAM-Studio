@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.135.36
+- **Templateler'e "Sil" eklendi.** Kurulum sihirbazının üst çubuğunda artık bir çöp kutusu simgesi var — yanlışlıkla oluşmuş ya da artık gerekmeyen bir template'i silmek için Supabase'e inmeye gerek kalmıyor. Kilitli bir template önce Templateler listesindeki kilit simgesinden açılmalı.
+
 ## v0.135.35
 - **Bug: Template'ten yeni proje açınca proje kayboluyordu.** Bir template'ten müşteri kopyası oluşturulduğunda, kaynağın (template'in) `cekirdek` damgası yanlışlıkla yeni projeye de kopyalanıyordu — bu da yepyeni müşteri projesini bir template sanıp Projeler listesinden (Başlanmış/Bitmiş, panel, sayaçlar — hepsi templateleri gizliyor) tamamen düşürüyordu. Artık kopyalama sırasında bu damga sıfırlanıyor; yalnızca gerçekten yeni bir template oluşturuluyorsa geri yazılıyor.
 - Bu bug'dan önce oluşturulmuş projeler etkilendiyse (Ayarlar → Templateler'de görünüp Projeler'de görünmeyen bir "proje" varsa) o kaydı Templateler'den silip yeniden oluşturmak gerekiyor — düzeltme yeni kopyalar için geçerli, geçmiş kayıtları kendiliğinden onarmıyor.
