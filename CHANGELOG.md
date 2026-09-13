@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.135.28
+- **Aynı otomatik-varsayma hatası Yayın ve proje kopyalama akışında da vardı, hepsi düzeltildi.** "GitHub Pages'i aç"a tıklayıp sekmeye dönünce "yayında" kendiliğinden yazılıyordu — artık burada da bir onay kutusu var: **"Yayında, devam et"** ya da **"Henüz açılmadı"**. Aynı şekilde proje kopyalarken "Template repository ayarını açayım" deyip GitHub'a gidince, döndüğünde kopyalama otomatik başlıyordu; artık dönüşte aynı soru tekrar soruluyor, kopyalama yalnızca "Evet, işaretledim" denince başlıyor.
+
 ## v0.135.27
 - **GitHub bağlantısı, sekmeye geri dönülünce otomatik "bağlandı" sayılıyordu.** "GitHub'a bağlan" bağlantısına tıklayıp GitHub tarafında hata alsan bile (boş sayfa, başarısız kopyalama vb.) Studio'ya döner dönmez depo adresini kendiliğinden yazıyordu — "Bağlan" düğmesi kayboluyor, proje gerçekte bağlanmamış oluyordu. Artık sekmeye dönüş yalnızca bir onay kutusu çıkarıyor: depo gerçekten oluştuysa **"Bağlandı, devam et"**e basıyorsun, oluşmadıysa **"Henüz bağlanmadı"** diyip tekrar deniyorsun. Yazma işlemi ancak elle onaylayınca oluyor.
 

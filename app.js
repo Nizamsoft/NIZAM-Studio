@@ -1181,9 +1181,10 @@ function programSayfasi(p, d) {
    Namecheap + sabit iskelet onayı. Kaç bağlantı gerektiği Program
    temeli'ndeki iki karara bağlı (veri katmanı, alan adı türü) — karar
    orada, bağlantı burada. Her bağlantı artık kendi tam ekran adımında:
-   `baglantiDuzenleAc` sihirbazı açıyor, GitHub/Claude adımları eskisi gibi
-   sekmeden dönünce kendiliğinden yeşile dönüyor (bkz. DEPO_BEKLIYOR/
-   PAGES_BEKLIYOR), Supabase/Namecheap adımlarında gerçek veri giriliyor.
+   `baglantiDuzenleAc` sihirbazı açıyor. GitHub ve Yayın adımlarında sekmeden
+   dönünce bir onay kutusu çıkıyor (bkz. DEPO_BEKLIYOR/PAGES_BEKLIYOR) —
+   yeşile dönmesi kullanıcının "Bağlandı" demesine bağlı, otomatik değil;
+   Supabase/Namecheap adımlarında zaten gerçek veri elle giriliyor.
    Sabit iskelet (eski "Nizam kurulum paketi" durağı) buraya katlandı:
    tanışma promptu Claude adımıyla zaten gidiyor, geriye Claude'un
    kurduğunu işaretlemek kalıyor. */
@@ -3740,9 +3741,9 @@ function pagesAdresi(p) {
 const PAGES_BEKLIYOR = {};
 
 /* "Template repository ayarını açayım"a dokunulan kopya kaynakları —
-   proje henüz kurulmadı, dönünce ayarı açtı sayıp kopyalamayı kendimiz
-   başlatıyoruz. Anahtar kaynak proje id'si, değer o an seçili tur
-   ('gercek'/'test'). */
+   dönünce ayarı açtığını varsaymıyoruz, templateDonusOnaySor ile aynı
+   soruyu bir daha soruyoruz. Anahtar kaynak proje id'si, değer o an
+   seçili tur ve şablon ('gercek'/'test', 'muhasebe'/null). */
 const TEMPLATE_BEKLIYOR = {};
 
 async function yayinAdresiTamamla(p) {
@@ -3751,6 +3752,18 @@ async function yayinAdresiTamamla(p) {
   await isYap(() => DB.paletKaydet(p.id,
     Object.assign({}, p.palet || {}, { alanAdi: adres })),
     'Yayın adresi yazıldı: ' + adres);
+}
+
+/* Kullanıcı "Yayında, devam et" deyince — GitHub Pages'in kendisi otomatik
+   algılanamıyor, bu yüzden buraya kadar bekletiliyor. Namecheap seçiliyse
+   adres oradan gelecek, burada yalnız "yayinda" işaretleniyor. */
+async function pagesBaglandiOnayla(p) {
+  const pl = p.palet || {};
+  if (!pl.alanAdi && pl.alanTuru !== 'namecheap') return yayinAdresiTamamla(p);
+  if (!pl.yayinda) {
+    return isYap(() => DB.paletKaydet(p.id,
+      Object.assign({}, pl, { yayinda: true })), 'Yayın onaylandı.');
+  }
 }
 
 /* GitHub'dan dönünce adresi yaz. Sahibi biliniyorsa doğrudan kaydediyoruz;
@@ -5787,6 +5800,38 @@ function templateOnaySor(kaynakId, tur, sablon) {
   });
 }
 
+/* Ayarlar sekmesinden dönünce: işaretlemeyi gerçekten yaptı mı, yoksa
+   sekmeye göz atıp mı döndü, Studio bilemez — kopyalamayı otomatik
+   başlatmak yerine aynı soruyu bir daha soruyor. */
+function templateDonusOnaySor(kaynakId, tur, sablon) {
+  const kaynak = DB.proje(kaynakId);
+  if (!kaynak) return;
+
+  modalHepsiniKapat();
+  modalAc(`
+    ${modalBaslik(ICON.dal, 'İşaretlemeyi yaptın mı?',
+      '"Template repository" kutusunu işaretlediysen kopyalama başlasın.')}
+    <div class="secim">
+      <div class="satir sec-satir" data-tp2="evet" role="button" tabindex="0">
+        <span class="sec-yazi"><b>Evet, işaretledim</b><i>Kopyalamayı şimdi başlat</i></span>
+      </div>
+      <div class="satir sec-satir" data-tp2="hayir" role="button" tabindex="0">
+        <span class="sec-yazi"><b>Henüz yapmadım</b><i>Kopyalamayı başlatma</i></span>
+      </div>
+    </div>
+    <div class="modal-alt">
+      <button class="btn btn-ghost" data-tp2="kapat" type="button">Vazgeç</button>
+    </div>`, kutu => {
+    $('[data-tp2="kapat"]', kutu).addEventListener('click', modalKapat);
+    kutu.addEventListener('click', ev => {
+      const t = ev.target.closest('[data-tp2]');
+      if (!t || t.dataset.tp2 !== 'evet') return modalKapat();
+      modalKapat();
+      projeKopyalaVeAc(kaynakId, tur, sablon);
+    });
+  });
+}
+
 async function projeKopyalaVeAc(kaynakId, tur, sablon) {
   try {
     const id = await DB.projeKopyala(kaynakId, { tur, sablon });
@@ -6536,10 +6581,12 @@ async function programAdimKaydet() {
    BAĞLANTILAR VE TEMEL — her bağlantı kendi tam ekran adımında. Aynı
    `.sihirbaz`/`.sh-*` kalıbı, ama adım şeridi sayı değil servis ikonu
    gösteriyor (bilerek ayrı bir çizim — sihirbazAdimlar'ı genelleştirmek
-   risk, bu ayrı ve küçük). GitHub/Claude adımları DEPO_BEKLIYOR/
-   PAGES_BEKLIYOR ile aynen çalışıyor: sekmeden dönünce kendiliğinden
-   yeşile döner, elle "kuruldu" tiki yok. Supabase/Namecheap gerçek veri
-   istediği için kendi alanları ve "Kaydet" düğmesiyle burada duruyor.
+   risk, bu ayrı ve küçük). GitHub/Yayın adımları DEPO_BEKLIYOR/
+   PAGES_BEKLIYOR ile çalışıyor: sekmeden dönünce yeşile hemen dönmüyor,
+   önce bir onay kutusu çıkıyor — "Bağlandı/Yayında" demek kullanıcıya
+   kalıyor, Studio depoya bakıp doğrulayamıyor çünkü. Supabase/Namecheap
+   gerçek veri istediği için kendi alanları ve "Kaydet" düğmesiyle burada
+   duruyor.
    ========================================================================== */
 
 const BAGLANTI_ADIM = { adim: 1, projeId: null, liste: [] };
@@ -6666,8 +6713,8 @@ function baDurum(baslik, alt) {
 
 /* 1 · GitHub — yalnız depo bağlama. Yayına alma (Pages) eskiden aynı
    adımdaydı; Claude'dan sonraya alınınca ayrı adım oldu (bkz. aşağıdaki
-   Yayın adımı). Sekmeden dönünce DEPO_BEKLIYOR üzerinden kendiliğinden
-   tamamlanıyor. */
+   Yayın adımı). Sekmeden dönünce DEPO_BEKLIYOR üzerinden bir onay kutusu
+   çıkıyor — depo adresi ancak kullanıcı "Bağlandı" deyince yazılıyor. */
 function baglantiAdimGithub(p) {
   const pl   = p.palet || {};
   const slug = depoSlug(p.repo);
@@ -6775,7 +6822,8 @@ function baglantiAdimClaude(p) {
 
 /* 3 · Yayın (GitHub Pages) — bilerek Claude'dan sonra: kod daha
    yazılmadan siteyi yayına almanın anlamı yok. Sekmeden dönünce
-   PAGES_BEKLIYOR üzerinden kendiliğinden tamamlanıyor, elle tik yok. */
+   PAGES_BEKLIYOR üzerinden bir onay kutusu çıkıyor — "yayında" ancak
+   kullanıcı onaylayınca yazılıyor (bkz. pagesBaglandiOnayla). */
 function baglantiAdimPages(p) {
   const pl    = p.palet || {};
   const slug  = depoSlug(p.repo);
@@ -6793,9 +6841,21 @@ function baglantiAdimPages(p) {
            href="https://github.com/${esc(slug)}/settings/pages">
           ${svg(ICON.dal, 15)} GitHub Pages'i aç</a>`;
 
+  const onayBekliyor = depo && !yayin && PAGES_BEKLIYOR[p.id];
+  const onayKutusu = !onayBekliyor ? '' : `
+    <div class="note" style="margin-top:10px">${svg(ICON.info, 15)}
+      <span>GitHub Pages gerçekten açıldı mı? Açıldıysa onayla. Hata
+      aldıysan yukarıdaki bağlantıyla tekrar dene, onaylama.</span></div>
+    <div class="kur-dug" style="margin-top:8px">
+      <button class="sayfa-dug" type="button" data-eylem="pages-baglandi-onay" data-proje="${p.id}">
+        ${svg(ICON.tik, 15)} Yayında, devam et</button>
+      <button class="sayfa-dug ikincil" type="button" data-eylem="pages-baglandi-vazgec" data-proje="${p.id}">
+        Henüz açılmadı</button>
+    </div>`;
+
   return shBaslikServis('github', 'Yayına al',
     'Claude görevi bitirince kodun canlıya çıktığı yer. GitHub Pages tek adımda açılıyor.')
-    + durum + buton
+    + durum + buton + onayKutusu
     + baOzellikler([
       'Ek sunucu kurulumu gerekmez',
       'Depo güncellenince adres kendiliğinden yenilenir',
@@ -10058,6 +10118,20 @@ async function eylemCalistir(el) {
     return;
   }
 
+  if (e === 'pages-baglandi-onay') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    delete PAGES_BEKLIYOR[pr.id];
+    return pagesBaglandiOnayla(pr);
+  }
+
+  if (e === 'pages-baglandi-vazgec') {
+    delete PAGES_BEKLIYOR[el.dataset.proje];
+    render();
+    if ($('#baglanti-adim')) baglantiAdimCiz();
+    return;
+  }
+
   if (e === 'kilitlere') { location.hash = '#/kilitler'; return; }
 
   if (e === 'proje-kilit-degistir') {
@@ -10718,27 +10792,25 @@ document.addEventListener('DOMContentLoaded', () => {
       render();
       if ($('#baglanti-adim')) baglantiAdimCiz();
     }
-    Object.keys(PAGES_BEKLIYOR).forEach(pid => {
+    /* Yayın (GitHub Pages) da artık otomatik yazmıyor — GitHub'ın Pages
+       adımı hata verip açılmamış olabilir. Sekmeye dönüş yalnız onay
+       kutusunu gösteriyor, "yayında" ancak pagesBaglandiOnayla ile
+       kullanıcı onaylayınca yazılıyor. */
+    const pagesBeklenen = Object.keys(PAGES_BEKLIYOR).filter(pid => {
       const pr = DB.proje(pid);
-      delete PAGES_BEKLIYOR[pid];
-      if (!pr) return;
-      const pl = pr.palet || {};
-      /* Namecheap seçilmişse adres github.io'ya değil, Namecheap karesinden
-         gelecek özel alan adına yazılmalı — burada hiç dokunmuyoruz. */
-      if (!pl.alanAdi && pl.alanTuru !== 'namecheap') yayinAdresiTamamla(pr);
-      /* Adres zaten yazılıysa (ya da Namecheap bekleniyorsa) Pages'e
-         gidilmesinin tek sebebi custom domain'i kaydetmek — dönüşte
-         durağı yayında sayıyoruz. */
-      else if (!pl.yayinda) {
-        DB.paletKaydet(pr.id, Object.assign({}, pl, { yayinda: true }))
-          .then(() => { render(); if ($('#baglanti-adim')) baglantiAdimCiz(); })
-          .catch(() => { /* çevrimdışıysa bir dahaki sefere */ });
-      }
+      if (!pr || (pr.palet || {}).yayinda) { delete PAGES_BEKLIYOR[pid]; return false; }
+      return true;
     });
+    if (pagesBeklenen.length) {
+      render();
+      if ($('#baglanti-adim')) baglantiAdimCiz();
+    }
+    /* Burada da otomatik kopyalamıyoruz — GitHub Ayarlar sekmesine gidip
+       işaretlemeden dönmüş olabilir. Aynı soru bir daha soruluyor. */
     Object.keys(TEMPLATE_BEKLIYOR).forEach(kaynakId => {
       const { tur, sablon } = TEMPLATE_BEKLIYOR[kaynakId];
       delete TEMPLATE_BEKLIYOR[kaynakId];
-      projeKopyalaVeAc(kaynakId, tur, sablon);
+      templateDonusOnaySor(kaynakId, tur, sablon);
     });
   });
 
