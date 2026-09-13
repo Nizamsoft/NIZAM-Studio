@@ -200,6 +200,11 @@ const PROMPT = {
   tanisma(projeId) {
     const p = DB.proje(projeId);
     if (!p) return '';
+    /* Şablon kopyasında depo zaten dolu — "sıfırdan proje" promptu yanlış
+       oturum verir. Bağlantılar ve temel'de Claude bilerek en sona alınıyor
+       (bkz. app.js sablonMu/baglantiAdimListesi) ki bu ayrı prompt Supabase/
+       yayın bilgisinin hepsini eldeyken tek seferde yazabilsin. */
+    if ((p.palet || {}).sablon) return PROMPT.sablonTanisma(p);
 
     const s = [];
     s.push('# ' + projeAdi(p) + ' — proje başlangıcı', '');
@@ -294,6 +299,81 @@ const PROMPT = {
     s.push('> görsel kimlikle güncellenecek. Şimdilik bu taslakla ilerle.');
     s.push('');
     s.push('Anladıysan tek cümleyle onayla, dosyaları oluştur ve bekle.');
+
+    return s.join('\n');
+  },
+
+  /* Şablon kopyası için tanışma promptu. Depo boş değil — çalışan bir
+     programın birebir kopyası. Bağlantılar ve temel'de Claude en sona
+     alındığı için buraya kadar GitHub/Yayın/(varsa) Supabase/Namecheap
+     zaten kurulmuş oluyor; bu prompt onları tek seferde ortama yazdırıp
+     depoyu yeni firmaya bağlıyor. Yapıya (modül/sayfa/tasarım) dokunmuyor —
+     o iş ayrı bir "Değişim" promptunda (bkz. PROMPT.sablonDegisim). */
+  sablonTanisma(p) {
+    const pl    = p.palet || {};
+    const slug  = depoSlug(p.repo);
+    const yayin = pl.alanAdi || '';
+
+    const s = [];
+    s.push('# ' + projeAdi(p) + ' — şablondan uyarlama', '');
+    if (slug) {
+      s.push('> ### Depo: `' + slug + '`');
+      s.push('> Bu oturum yalnız bu depoya bağlı olmalı. Deposu farklıysa dur');
+      s.push('> ve söyle.', '');
+    }
+
+    s.push('Bu depo **sıfırdan bir proje değil** — çalışan bir muhasebe');
+    s.push('programının birebir kopyası. Amacımız bu kopyayı ');
+    s.push((p.firma ? '**' + p.firma + '**' : 'yeni bir firma') + ' için uyarlamak.');
+    s.push('Kod yapısını, sayfaları ve modülleri **değiştirmeyeceksin** —');
+    s.push('sadece bu firmaya özel olanı uygulayacaksın.', '');
+
+    s.push('Şimdilik uygulama kodu yazma. Az sonra sana ayrı bir "Değişim"');
+    s.push('promptu gelecek; şube/kullanıcı/hesap planı, POS okuyucu, banka');
+    s.push('ve fatura&kart yapıları gibi bu firmaya özel her şeyi tek seferde');
+    s.push('koda işleyecek. Şimdi tek işin: aşağıdaki bağlantı bilgilerini');
+    s.push('depoya yazıp ortamı bu firmaya bağlamak.', '');
+
+    s.push('## Yeni firma');
+    s.push(hiza('Firma', p.firma || 'BELİRLENMEDİ'));
+    if (p.sektor)  s.push(hiza('Sektör', p.sektor));
+    if (p.telefon) s.push(hiza('Telefon', p.telefon));
+    if (p.eposta)  s.push(hiza('E-posta', p.eposta));
+    s.push('');
+    s.push('Depoda eski firmaya ait görünür bir iz varsa (isim, iletişim,');
+    s.push('footer, sayfa/sekme başlığı, manifest, README) yukarıdaki yeni');
+    s.push('bilgiyle değiştir. Marka rengi, logo ve görselleri **şimdi');
+    s.push('değiştirme** — onlar "Profesyonel tasarım" aşamasında ayrıca');
+    s.push('gelecek.', '');
+
+    const baglanti = PROMPT.baglantiBlogu(p);
+    if (baglanti) { s.push(baglanti); s.push(''); }
+
+    if (yayin) {
+      s.push('## Yayın adresi');
+      s.push(hiza('Adres', 'https://' + yayin));
+      s.push('Uygulama buraya yayınlanacak; ortam ya da yapılandırma');
+      s.push('dosyalarında geçen eski adresi bu adresle değiştir.', '');
+    }
+
+    s.push('## Şimdi ne yapacaksın');
+    s.push('1. Depoyu incele, mevcut kimlik dosyalarını (`CLAUDE.md`,');
+    s.push('   `NIZAM.md`, `nizam/` klasörü) oku.');
+    s.push('2. Yukarıdaki bağlantı bilgilerini (varsa Supabase, yayın adresi)');
+    s.push('   ortama işle.');
+    s.push('3. Eski firmaya ait görünür izleri yeni firma bilgisiyle değiştir.');
+    s.push('4. `NIZAM.md`\'ye bu deponun artık ' + (p.firma || 'bu firma')
+      + ' için uyarlandığını tek satır not düş.');
+    s.push('5. Tek commit\'le **`main` dalına** gönder:');
+    s.push('   `[' + TASK_PREFIX + '-0] Şablon uyarlaması — bağlantılar`');
+    s.push('6. Dur ve bekle — "Değişim" promptu az sonra gelecek.', '');
+
+    s.push('## Şunları yapma');
+    s.push('- Yeni sayfa, modül ya da özellik uydurma.');
+    s.push('- Marka rengi, logo, görsel değiştirme.');
+    s.push('- Veritabanı şemasını değiştirme.', '');
+
+    s.push('Anladıysan tek cümleyle onayla ve bekle.');
 
     return s.join('\n');
   },

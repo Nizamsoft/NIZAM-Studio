@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## v0.135.29
+- **Muhasebe şablonunda Bağlantılar ve temel sırası değişti: Claude artık en sonda.** Önceki sırada Claude, GitHub'dan hemen sonra bağlanıyordu — Yayın/Supabase/Namecheap bilgisi henüz yoktu. Artık şablon kopyalarında sıra GitHub → Yayın → (varsa) Supabase → (varsa) Namecheap → Claude; Claude'a bağlanılana kadar bu bilgilerin hepsi toplanmış oluyor.
+- **Şablon kopyasının "Claude'a bağlan" promptu tamamen yeniden yazıldı.** Eskiden normal projedeki "sıfırdan proje" promptu gidiyordu — oysa bu depo boş değil, çalışan bir programın birebir kopyası. Yeni prompt bunu açıkça söylüyor: amacın bu kopyayı hangi firmaya uyarladığını, yapıya dokunulmayacağını, toplanan bağlantı bilgilerinin (Supabase, yayın adresi) ortama nasıl işleneceğini ve az sonra ayrı bir "Değişim" promptunun geleceğini anlatıyor.
+
 ## v0.135.28
 - **Aynı otomatik-varsayma hatası Yayın ve proje kopyalama akışında da vardı, hepsi düzeltildi.** "GitHub Pages'i aç"a tıklayıp sekmeye dönünce "yayında" kendiliğinden yazılıyordu — artık burada da bir onay kutusu var: **"Yayında, devam et"** ya da **"Henüz açılmadı"**. Aynı şekilde proje kopyalarken "Template repository ayarını açayım" deyip GitHub'a gidince, döndüğünde kopyalama otomatik başlıyordu; artık dönüşte aynı soru tekrar soruluyor, kopyalama yalnızca "Evet, işaretledim" denince başlıyor.
 

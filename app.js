@@ -6600,6 +6600,18 @@ const BAGLANTI_SERVIS = { github: 'github', claude: 'claude', pages: 'github', s
    eskiden aynı adımdaydı, sıra yüzünden ayrıldı. */
 function baglantiAdimListesi(p) {
   const pl = p.palet || {};
+  /* Şablon kopyasında Claude BİLEREK EN SONA alınıyor: GitHub/Yayın/(varsa)
+     Supabase/Namecheap bilgisi önce toplanmalı ki Claude'a bağlanınca
+     "tanışma" promptu (bkz. PROMPT.sablonTanisma) bu bilgilerin hepsini
+     tek seferde ortama yazsın. Normal projede sıra tersi: Claude erken
+     bağlanır, Yayın ise kod yazılmadan anlamsız olduğu için sonra gelir. */
+  if (sablonMu(p)) {
+    const liste = ['github', 'pages'];
+    if (sunuculuMu(p)) liste.push('supabase');
+    if (pl.alanTuru === 'namecheap') liste.push('namecheap');
+    liste.push('claude');
+    return liste;
+  }
   const liste = ['github', 'claude', 'pages'];
   if (sunuculuMu(p)) liste.push('supabase');
   if (pl.alanTuru === 'namecheap') liste.push('namecheap');
