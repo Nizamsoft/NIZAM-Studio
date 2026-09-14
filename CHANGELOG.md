@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.135.53
+- **Test ve Güncelle'ye yayın linki eklendi.** Durağın en üstünde artık "Uygulamayı aç" bağlantısı var — adres bulmak için başka yere gitmene gerek kalmadan tek dokunuşla canlı siteyi açabilirsin.
+
 ## v0.135.52
 - **"Değişim" promptu iki soruyu artık baştan cevaplıyor.** İlk gerçek testte Claude iki şey sordu: (1) işi tek commit'te mi yoksa parçalara mı bölsün, (2) kullanıcı tablosu boşken çalışacak sabit giriş bilgisi ne olsun. Artık prompt "sorma, kendin seç" diyerek ikisine de kural veriyor — büyük işi veri/format kısmı + altyapı kısmı diye ikiye bölmesini, giriş bilgisini de tahmin edilmesi zor ama hatırlanabilir seçip NIZAM.md'ye not düşmesini istiyor.
 

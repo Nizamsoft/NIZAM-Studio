@@ -4453,9 +4453,14 @@ function denemeSayfasi(p, d) {
   const dolu = istek.trim().length > 20;
   const tamam = !!pl.denemeTamamlandi;
   const gorevler = DB.gorevleri({ proje: p.id }).filter(g => g.durum !== 'tamamlandi');
+  const yayinAdres = String(pl.alanAdi || '').trim();
 
   return `<div class="fb-govde">`
     + adimBasligi(p, d, tamam ? '1/1' : '0/1')
+    + (yayinAdres ? `<div class="kur-dug" style="margin-top:-6px;margin-bottom:14px">
+        <a class="mini-link" target="_blank" rel="noopener" href="https://${esc(yayinAdres)}">
+          ${svg(ICON.disari, 13)} Uygulamayı aç — ${esc(yayinAdres)}</a>
+      </div>` : '')
     + balon('Uygulama artık gerçek verilerle çalışıyor.',
         'Dene, eksik ya da hatalı gördüğün her şeyi buraya yaz — Claude düzeltsin.')
     + `<div class="card">
