@@ -329,7 +329,7 @@ const PROMPT = {
     s.push('sadece bu firmaya özel olanı uygulayacaksın.', '');
 
     s.push('Şimdilik uygulama kodu yazma. Az sonra sana ayrı bir "Değişim"');
-    s.push('promptu gelecek; şube/kullanıcı/hesap planı, POS okuyucu, banka');
+    s.push('promptu gelecek; şube/kullanıcı/hesap planı, Gün Sonu, banka');
     s.push('ve fatura&kart yapıları gibi bu firmaya özel her şeyi tek seferde');
     s.push('koda işleyecek. Şimdi tek işin: aşağıdaki bağlantı bilgilerini');
     s.push('depoya yazıp ortamı bu firmaya bağlamak.', '');

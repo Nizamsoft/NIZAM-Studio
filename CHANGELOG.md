@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.135.43
+- **Unutulan bir metin düzeltildi.** "Bir Template'ten Başla" sonrası ilk bağlantı promptunda hâlâ eski "POS okuyucu" adı geçiyordu — "Gün Sonu" olarak güncellendi (koddaki gerçek adım zaten yeni adıyla çalışıyordu, yalnız bu tanıtım cümlesi eskiden kalmıştı).
+
 ## v0.135.42
 - **Temel tanımlar'a "öğrenen liste" eklendi: Banka, Fatura ve yeni "Gün Sonu".** Bir müşteride Excel formatı bir kez anlatılınca (Claude'a öğret → cevabı yapıştır → kaydet), o format artık aynı şablon türündeki (ör. Muhasebe) **her yeni müşteride** hazır bir seçenek olarak çıkıyor — yeniden anlatmaya gerek kalmıyor. Banka ve Fatura listeleri artık "kodda zaten hazır" + "başka bir projeden öğrenilen" seçeneklerin birleşimi.
 - **"POS okuyucu" adımı "Gün Sonu"na dönüştü, iki katmanlı oldu.** Üst kısım (POS sistemi) artık banka gibi öğrenen bir liste — başka müşteride kullanılan bir POS burada da çıkabiliyor. Alt kısım ("Bu firmaya özel") ise platform/ısmarlama/yetkili gibi yalnız o firmaya ait serbest metin — hiçbir yere kaydedilmiyor, başka müşterilere taşınmıyor.
