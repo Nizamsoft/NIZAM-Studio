@@ -1036,8 +1036,13 @@ function bolumBas(ad) {
    başlık ve zeminde adımın rengiyle yayılan hafif ışık. Ötekiler 28 piksel
    karo ve 12,5 punto — sayfanın neyle ilgili olduğu ilk bakışta okunuyor. */
 function adimBasligi(p, d, sayac) {
-  const duraklar = projeDuraklari(p);
-  const su   = d.no - 1;
+  /* `no` her girdiye kendi sırasından (1-indeksli) yeniden veriliyor, sonra
+     gizli olanlar çıkarılıyor — böylece `su` (hangi nokta aktif) hâlâ `d.no`
+     ile doğru eşleşiyor, aradan bir durak eksilse bile kayma olmuyor. */
+  const duraklar = projeDuraklari(p)
+    .map((x, i) => Object.assign({}, x, { no: i + 1 }))
+    .filter(x => !x.gizli);
+  const su   = duraklar.findIndex(x => x.no === d.no);
   const renk = d.renk || 'var(--metal-2)';
   const ikon = ICON[d.ikon] || ICON.bayrak;
 
@@ -4794,9 +4799,14 @@ function projeDuraklari(p) {
         ? 'Tamamlandı.'
         : 'Uygulamayı dene, eksik ya da hatalı gördüğünü Claude\'a yazdır.',
     } : {
+      /* Normal projede bu durağın hiç karşılığı yok — sayaçtan (sayilmaz)
+         hariç tutmak yetmiyordu, satır yine de listede görünüp "kilitli"
+         ya da "bitti" gibi durmaya devam ediyordu. `gizli` ile projeYolu
+         bu satırı tamamen listeden çıkarıyor. */
       ad: 'Test ve Güncelle',
       bitti: true,
       sayilmaz: true,
+      gizli: true,
       ozet: 'Bu proje şablon kopyası değil — bu aşama geçerli değil.',
     },
     {
@@ -4904,17 +4914,23 @@ function asamaSatiri(p, d, i, simdi, anahtar) {
 }
 
 function projeYolu(p) {
-  const duraklar = projeDuraklari(p);
+  const anahtarlarTum = Object.keys(DURAKLAR);
+  /* `gizli` işaretli duraklar (ör. normal projede "Test ve Güncelle") hiç
+     listelenmiyor — sırf sayaçtan hariç tutmak (sayilmaz) satırı gizlemeye
+     yetmiyordu. Anahtar her durağın kendi nesnesine taşınıyor ki filtreden
+     sonra da hangi DURAKLAR girdisine karşılık geldiği kaybolmasın. */
+  const duraklar = projeDuraklari(p)
+    .map((d, i) => Object.assign({}, d, { anahtar: anahtarlarTum[i] }))
+    .filter(d => !d.gizli);
   /* Şimdiki durak: bitmemiş ilk durak. Hepsi bitmişse -1. */
   const simdi = duraklar.findIndex(d => !d.bitti);
-  const anahtarlar = Object.keys(DURAKLAR);
   /* Geliştirme (sayilmaz) hiç bitmediği için yüzdeye girerse final verilmiş
      bir proje asla %100 görünmezdi — o yüzden sayaç dışında tutuluyor. */
   const sayilan = duraklar.filter(d => !d.sayilmaz);
   const biten = sayilan.filter(d => d.bitti).length;
   const yuzde = Math.round(biten / sayilan.length * 100);
 
-  const liste = duraklar.map((d, i) => asamaSatiri(p, d, i, simdi, anahtarlar[i])).join('');
+  const liste = duraklar.map((d, i) => asamaSatiri(p, d, i, simdi, d.anahtar)).join('');
 
   return projeKunyesi(p)
     + fbTakvimSeridi(p)

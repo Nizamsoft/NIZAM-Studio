@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.135.49
+- **Bug: "Test ve Güncelle" normal projelerde de görünüyordu.** Bu durak yalnız şablon kopyalarında anlamlı; normal projede "bitti + sayaçtan hariç" işaretlenip listede grileşmiş hâlde duruyordu ("Bu proje için geçerli değil" yazısıyla). Artık projeye göre gerekmeyen duraklar (`gizli`) listeden tamamen çıkarılıyor — proje yolu ve adım başlığındaki ilerleme noktaları buna göre yeniden numaralanıyor.
+
 ## v0.135.48
 - **Temel tanımlar'ın sırası değişti: önce Gün Sonu, Bankalar, Fatura & kart; en sonda isteğe bağlı "Serbest güncelleme".** Eskiden ilk adım olan serbest metin kutusu (şube/kullanıcı/hesap planı gibi) artık en sona alındı ve zorunlu olmaktan çıktı — boş bırakılabilir, durağın tamamlanmasını hiç etkilemiyor. "Eğer eklemek istediğin bir şey varsa" mantığıyla çalışıyor.
 
