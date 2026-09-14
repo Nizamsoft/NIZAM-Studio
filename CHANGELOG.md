@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## v0.135.44
+- **Hazır ve öğrenilen seçeneklerin yanına "Yapıyı gör" eklendi.** Banka/Fatura/Gün Sonu listesindeki her kutunun altında artık tıklayınca açılan bir metin var: hazır olanlarda (Garanti, Kuveyt Türk, Ziraat, Paraşüt) gerçek şablon kodundan çıkarılmış tam yapı açıklaması, öğrenilenlerde daha önce Claude'un yazdığı tarif. Amacı kod üretmek değil — yeni bir banka/sistem anlatırken aynı ayrıntı seviyesinde yazmaya yardımcı bir referans.
+- **Gün Sonu'na yeni hazır seçenek: Samba.** Şablonun POS okuma kodu zaten Samba raporlarını okuyor, o yüzden Garanti/Ziraat gibi hazır seçenek oldu. Yapı metninde önemli bir uyarı da var: raporun genel yapısı (bölüm tespiti, sayı formatı) her Samba müşterisinde aynı, ama ikram kategori isimleri ve platform listesi bu müşteriye özel — yeni müşteride "Bu firmaya özel" kutusuna yazılmalı.
+
 ## v0.135.43
 - **Unutulan bir metin düzeltildi.** "Bir Template'ten Başla" sonrası ilk bağlantı promptunda hâlâ eski "POS okuyucu" adı geçiyordu — "Gün Sonu" olarak güncellendi (koddaki gerçek adım zaten yeni adıyla çalışıyordu, yalnız bu tanıtım cümlesi eskiden kalmıştı).
 

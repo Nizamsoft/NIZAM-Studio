@@ -7,7 +7,7 @@ const APP = {
   name:     'NIZAM | Studio',
   short:    'NIZAM Studio',
   owner:    'Nizam Soft',
-  version: 'v0.135.43',
+  version: 'v0.135.44',
   build:    '2026-09-13',
   /* Studio'nun kendi deposu — "bütün programlarda geçerli olsun"
      istekleri buraya gider. */
@@ -654,16 +654,91 @@ const DURUM_ADI    = { yeni: 'Yeni', gelistiriliyor: 'Geliştiriliyor', kontrold
 
 /* Muhasebe şablonu — proje kopyalarken seçilebilen tek şablon türü.
    Bu üç bankanın ekstre yapısı zaten programda hazır kayıtlı; başka bir
-   banka gerekirse "ekle" ile aynı excel-öğret akışından geçiyor. */
+   banka gerekirse "ekle" ile aynı excel-öğret akışından geçiyor.
+   `yapi`: gerçek şablon kodundan (GZNAS-GznMuhasebe) çıkarılmış, o bankanın
+   ekstresinin tam olarak nasıl okunduğunu anlatan metin — Temel tanımlar'da
+   "Yapıyı gör" ile açılıyor. Amacı kod üretmek değil, yeni bir banka/sistem
+   anlatılırken referans olması: aynı ayrıntı seviyesinde yazmaya yardımcı. */
 const SABLON_BANKA_HAZIR = [
-  { anahtar: 'garanti', ad: 'Garanti BBVA' },
-  { anahtar: 'kuveyt',  ad: 'Kuveyt Türk' },
-  { anahtar: 'ziraat',  ad: 'Ziraat Bankası' },
+  { anahtar: 'garanti', ad: 'Garanti BBVA', yapi:
+    'Garanti ekstresi .xls uzantılı ama içeriği eski Excel (OLE2) formatında ' +
+    'geliyor. Başlık satırı sabit değil, dosyada "TARİH / AÇIKLAMA / TUTAR" ' +
+    'yazan satır aranarak bulunuyor (genelde 14. satır). Sütun sırası sabit: ' +
+    'Tarih, Açıklama, işlem etiketi, Tutar (tek imzalı sütun — pozitif giriş, ' +
+    'negatif çıkış), Bakiye, Dekont No, Terminal No, Kart Tipi, Komisyon. ' +
+    'Sayılar Türkçe biçimde (nokta binlik, virgül ondalık). POS satırları ' +
+    'açıklamada "PK" önekiyle tanınıyor, gün sonu tarihi açıklamadaki gün/ay ' +
+    'bilgisinden çıkarılıyor; komisyon bazen ayrı sütunda bazen açıklama ' +
+    'içinde "K: 21,18" şeklinde geliyor, ikisi de destekleniyor. Satırlar ' +
+    'eskiden yeniye sıralı geliyor.' },
+  { anahtar: 'kuveyt',  ad: 'Kuveyt Türk', yapi:
+    'Kuveyt Türk dosyası .xlsx uzantılı ama içeriği aslında düz bir HTML ' +
+    'tablosu. Diğer bankalardan farklı olarak sütunlar sabit numarayla değil ' +
+    'başlık adından bulunuyor, çünkü Kuveyt Türk zaman zaman raporun düzenini ' +
+    'değiştiriyor (bazen araya "Referans Kodu" giriyor). Aranan başlıklar: ' +
+    '"İŞLEM TARİHİ/TARİH", "AÇIKLAMA", "TUTAR/İŞLEM TUTARI", isteğe bağlı ' +
+    '"BAKİYE" ve bir referans/dekont sütunu. Bu bankada POS komisyonu hiç ' +
+    'kesilmiyor (sıfır kabul ediliyor). Gün sonu tarihi açıklamadaki "Bloke ' +
+    'Tarihi: 28-04-2026" ifadesinden okunuyor. Kendi hesaplar arası virmanlar ' +
+    'açıklamadaki "Hesaplar arası" ibaresiyle tanınıyor. Satırlar yeniden ' +
+    'eskiye sıralı geliyor.' },
+  { anahtar: 'ziraat',  ad: 'Ziraat Bankası', yapi:
+    'Ziraat gerçek .xlsx dosyası. Başlık satırı "TARİH / FİŞ NO / AÇIKLAMA" ' +
+    'yazan satır aranarak bulunuyor (genelde 5. satır). Sütunlar: Tarih, Fiş ' +
+    'No, Açıklama, Tutar, Bakiye. Ziraat\'e özgü nokta: POS/gün sonu bilgisi ' +
+    'ayrı sütunlarda değil, tek açıklama metnine sıkıştırılmış geliyor — ' +
+    '"İşyeri no:…, Komisyon:…, BT: 13/04/2026, ÇT: 28/04/2026" gibi. BT ' +
+    '(satış tarihi) gün sonu tarihi olarak, Komisyon değeri POS komisyonu ' +
+    'olarak metinden ayıklanıyor. Fiş No tek başına tekrarlanabildiği için ' +
+    '"tarih + fiş no" birlikte tekillik anahtarı olarak kullanılıyor. ' +
+    'Satırlar yeniden eskiye sıralı geliyor, sistem bunu kendisi tespit edip ' +
+    'çeviriyor.' },
 ];
 
 /* Aynı mantık fatura & kart tarafında: Paraşüt entegrasyonu zaten hazır. */
 const SABLON_FATURA_HAZIR = [
-  { anahtar: 'parasut', ad: 'Paraşüt' },
+  { anahtar: 'parasut', ad: 'Paraşüt', yapi:
+    'Bu, Paraşüt\'ten indirilen "gelen fatura raporu" (.xlsx). Başlık satırı ' +
+    'ilk 20 satırda "Belge Türü" hücresi aranarak bulunuyor. Aranan başlıklar ' +
+    'arasında Belge Türü, Düzenleme/Vade Tarihi, Tedarikçi, Genel Toplam ' +
+    '(TL sütunu varsa o esas alınıyor, yoksa tutar Döviz Kuru ile ' +
+    'çarpılıyor), Fatura No, KDV tutarı, Ürün/Hizmet, Miktar, Birim Fiyatı ' +
+    'var. Dosya kalem-kalem: bir faturanın başlığı ile ilk kalemi aynı ' +
+    'satırda, sonraki kalemler ilk sütun boş bırakılarak devam ediyor. Cari ' +
+    'eşleştirme vergi numarasıyla değil unvan birebir eşleşmesiyle yapılıyor. ' +
+    'Not: bu dosyada ayrı bir "kredi kartı" bölümü yok — kredi kartı ekstresi ' +
+    '(Garanti\'nin kendi kart ekstresi) tamamen ayrı, kendi sütun sırası olan ' +
+    'bir dosya (Tarih | İşlem | Etiket | Bonus/Mil | Tutar); bir dosyada ' +
+    'birden fazla kart bloğu olabiliyor, her biri "…Numaralı Kart TL Ekstre ' +
+    'Bilgileri" satırıyla başlıyor.' },
+];
+
+/* Gün Sonu — POS sistemi. Samba'nın rapor okuma kodu zaten var, o yüzden
+   hazır seçenek; ama Banka/Fatura'dan farklı olarak yapı metninde bir uyarı
+   da taşıyor: raporun GENEL yapısı (bölüm tespiti, sayı formatı) her Samba
+   müşterisinde aynı, fakat ikram kategori isimleri ve platform listesi bu
+   müşteriye özel — yeni müşteride "Bu firmaya özel" kutusuna yazılıp
+   Değişim promptunda Claude'a ayrıca söylenmesi gerekiyor. */
+const SABLON_GUNSONU_HAZIR = [
+  { anahtar: 'samba', ad: 'Samba', yapi:
+    'Samba raporu .xlsx, BÖLÜMLERDEN oluşuyor — bir satırın ilk hücresi ' +
+    'dolu, yanındaki iki hücre boşsa o satır bölüm başlığı sayılıyor (sabit ' +
+    'satır numarası yok, bu kural tüm bölümlerde geçerli). "Gelirler" ' +
+    'bölümünde tutar sütununda: Kredi Kartı ve Nakit kendi alanına, ' +
+    '"Y.S. Online" (Yemek Sepeti) ayrı bir tahsilat alanına, kalanlar cari ' +
+    'tahsilatı sayılıyor. "Açık Hesap Satışlar" bölümünde tarih, cari adı, ' +
+    'tutar sırayla geliyor. Sayılar iki farklı biçimde karışık gelebiliyor ' +
+    '(İngilizce "11,860.00" ya da Türkçe "2,00" — ayraç konumuna bakılarak ' +
+    'otomatik ayırt ediliyor). Platform tespiti sabit bir liste ile: ' +
+    '"yemek sepeti", "getir", "trendyol".\n\n' +
+    'DİKKAT — bunlar bu müşteriye özel, yeni müşteride değişir: İkram ' +
+    'kategorilerinde gerçek şahıs adları var ("Adem Bey", "Bülent Bey" vb. — ' +
+    'bu restoranın kendi personel ikram uygulamasına özgü) ve platform ' +
+    'listesi (yemek sepeti/getir/trendyol) bu işletmenin anlaştığı ' +
+    'platformları yansıtıyor. Yeni müşteride bunlar tamamen farklı olacak — ' +
+    'gerçek isimler ve platformlar "Bu firmaya özel" kutusuna yazılmalı. ' +
+    'Raporun genel yapısı (bölüm tespiti, sayı formatı, Gelirler/Açık Hesap ' +
+    'sütun düzeni) ise sabit kalıyor.' },
 ];
 
 /* Template (çekirdek proje) türleri — Ayarlar > Templateler'de "Template

@@ -4278,12 +4278,21 @@ function sablonOgrenenListesiGovde(p, kategori, ikon, baslik, aciklama, hazirLis
   const ogrenilen = sablonSecenekleri(tur, kategori)
     .filter(o => !hazirListe.some(h => h.anahtar === o.id));
 
-  const kutu = (anahtar, ad, not) => `
+  /* `yapiMetni`: hazır seçeneklerde gerçek koddan çıkarılmış yapı özeti,
+     öğrenilenlerde daha önce Claude'un yazdığı tarif — ikisi de "Yapıyı gör"
+     ile açılıyor. Amaç kod üretmek değil: yeni bir format anlatılırken aynı
+     ayrıntı seviyesinde yazmaya yardımcı olacak bir referans. */
+  const kutu = (anahtar, ad, not, yapiMetni) => `
     <label class="kur-onay ${t.secili.indexOf(anahtar) > -1 ? 'on' : ''}"
            data-eylem="sablon-secenek-sec" data-proje="${p.id}" data-kategori="${kategori}"
            data-deger="${anahtar}" role="button" tabindex="0">
       <span class="kur-kutu">${svg(ICON.tik, 12)}</span> ${esc(ad)}
-      <i style="margin-left:4px;opacity:.6">— ${not}</i></label>`;
+      <i style="margin-left:4px;opacity:.6">— ${not}</i></label>`
+    + ((yapiMetni || '').trim() ? `
+    <details class="note" style="margin-top:-4px;margin-bottom:8px;display:block">
+      <summary style="cursor:pointer">Yapıyı gör</summary>
+      <div style="margin-top:8px;white-space:pre-wrap">${esc(yapiMetni.trim())}</div>
+    </details>` : '');
 
   const ekstraGovde = t.ekstra.map((x, i) => `
     <div class="note" style="margin-top:10px;display:block">
@@ -4303,8 +4312,8 @@ function sablonOgrenenListesiGovde(p, kategori, ikon, baslik, aciklama, hazirLis
     </div>`).join('');
 
   return shBaslik(ikon, baslik, aciklama)
-    + hazirListe.map(h => kutu(h.anahtar, h.ad, 'zaten hazır')).join('')
-    + ogrenilen.map(o => kutu(o.id, o.ad, 'başka bir projeden öğrenildi')).join('')
+    + hazirListe.map(h => kutu(h.anahtar, h.ad, 'zaten hazır', h.yapi)).join('')
+    + ogrenilen.map(o => kutu(o.id, o.ad, 'başka bir projeden öğrenildi', o.tarif)).join('')
     + ekstraGovde
     + `<div class="kur-dug" style="margin-top:10px">
         <button class="sayfa-dug ikincil" type="button" data-eylem="sablon-secenek-ekle"
@@ -4322,7 +4331,7 @@ function sablonAdimGunSonuGovde(p) {
   return sablonOgrenenListesiGovde(p, 'gunsonu', ICON.gOptimizasyon, 'Gün Sonu — POS sistemi',
       'POS cihazından çıkan örnek Excel dosyasının yapısını Claude\'a öğreteceğiz. Bir daha '
       + 'başka bir firmada aynı POS çıkarsa yeniden anlatmana gerek kalmaz.',
-      [], 'POS ekle', 'Örn. Samba')
+      SABLON_GUNSONU_HAZIR, 'POS ekle', 'Örn. Aloha')
     + `<div style="margin-top:18px">`
     + shBaslik(ICON.etiket, 'Bu firmaya özel',
         'Platform/ısmarlama isimleri, yetkili adları gibi yalnız bu firmaya ait ayrıntılar — '

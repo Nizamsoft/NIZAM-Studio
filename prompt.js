@@ -1402,7 +1402,7 @@ const PROMPT = {
       s.push('');
     }
 
-    PROMPT.sablonDegisimBolumu(s, tur, 'gunsonu', t, [],
+    PROMPT.sablonDegisimBolumu(s, tur, 'gunsonu', t, SABLON_GUNSONU_HAZIR,
       'Gün Sonu — POS sistemi', 'Hazır: ');
     const ozel = ((t.gunsonu || {}).ozel || '').trim();
     if (ozel) {
