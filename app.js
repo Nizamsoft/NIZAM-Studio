@@ -938,9 +938,9 @@ const DURAKLAR = {
      Bkz. sablonD(), sablonTanimlarSayfasi(), sablonDegisimSayfasi(). */
   yapi:        { no: 4, ad: 'Kurulum ve yapı',
                  ciz: (p, d) => sablonMu(p) ? sablonTanimlarSayfasi(p,
-                   sablonD(d, 'Temel tanımlar', 'Şube, Gün Sonu, banka ve fatura tanımlarını topla.')) : yapiSayfasi(p, d),
+                   sablonD(d, 'Temel tanımlar', 'Gün Sonu, banka, fatura tanımlarını topla.')) : yapiSayfasi(p, d),
                  renk: '#8fae4a', ikon: 'gAltyapi', resim: 'yapi',
-                 aciklama: p => sablonMu(p) ? 'Şube, Gün Sonu, banka ve fatura tanımlarını topla.'
+                 aciklama: p => sablonMu(p) ? 'Gün Sonu, banka, fatura tanımlarını topla.'
                    : 'Kurulum dosyaları ve proje yapısı.' },
   beta:        { no: 5, ad: 'Beta ve geliştirme',
                  ciz: (p, d) => sablonMu(p) ? sablonDegisimSayfasi(p,
@@ -4099,7 +4099,7 @@ function sqlEditorAdresi(url) {
    gerçek koda işleme burada değil, "Değişim" durağında tek promptla oluyor. */
 const SABLON_SIHIRBAZ = { adim: 1, projeId: null };
 
-function sablonTanimlarListesi() { return ['temel', 'gunsonu', 'banka', 'fatura']; }
+function sablonTanimlarListesi() { return ['gunsonu', 'banka', 'fatura', 'temel']; }
 
 function sablonTanimlarOku(p) {
   const t = (p.palet || {}).sablonTanimlar || {};
@@ -4128,9 +4128,13 @@ function sablonOgrenenBittiMi(t) {
   return t.secili.length > 0 || t.ekstra.some(b => (b.cevap || '').trim());
 }
 
+/* "temel" isteğe bağlı — bir katalog seçeneği değil, "eğer varsa" eklenen
+   serbest bir not. O yüzden her zaman "bitti" sayılıyor: ne durağın
+   ilerlemesini kilitliyor ne de sihirbazı boşken oraya yapıştırıyor. Yazıp
+   yazmamak tamamen kullanıcının kararı. */
 function sablonTanimlarAdimBittiMi(k, p) {
   const t = sablonTanimlarOku(p);
-  if (k === 'temel')   return !!t.temel.metin.trim();
+  if (k === 'temel')   return true;
   if (k === 'gunsonu') return sablonOgrenenBittiMi(t.gunsonu);
   if (k === 'banka')   return sablonOgrenenBittiMi(t.banka);
   if (k === 'fatura')  return sablonOgrenenBittiMi(t.fatura);
@@ -4142,8 +4146,8 @@ function sablonTanimlarBittiMi(p) {
 }
 
 function sablonTanimlarEtiket(k) {
-  return { temel: 'Temel tanımlar', gunsonu: 'Gün Sonu',
-           banka: 'Bankalar', fatura: 'Fatura & kart' }[k] || '';
+  return { gunsonu: 'Gün Sonu', banka: 'Bankalar', fatura: 'Fatura & kart',
+           temel: 'Serbest güncelleme' }[k] || '';
 }
 
 /* Durak sayfası: kurulum sihirbazındaki özet karta birebir aynı kalıp —
@@ -4154,8 +4158,8 @@ function sablonTanimlarSayfasi(p, d) {
   return `<div class="fb-govde">`
     + adimBasligi(p, d, biten + '/' + liste.length)
     + fbBosKart('#8fae4a', ICON.gAltyapi, 'Temel tanımlar', biten + '/' + liste.length,
-        'Bu firmaya özel şube/kullanıcı/hesap planı, Gün Sonu, banka ve fatura & kart '
-        + 'yapılarını burada topluyoruz. <b>Adımlar sırayla ilerlenir.</b>',
+        'Gün Sonu, banka, fatura & kart yapılarını burada topluyoruz — istersen '
+        + 'sonunda serbest bir güncelleme de eklersin. <b>Adımlar sırayla ilerlenir.</b>',
         'sablon-sihirbazi-ac', p.id, true)
     + `</div>`;
 }
@@ -4248,13 +4252,15 @@ function sablonSihirbaziBagla(kutu, p) {
   });
 }
 
-/* 1 · Temel tanımlar: şube, kullanıcı, hesap planı, gider grupları vb. —
-   düz metin, konuşur gibi yazılıyor, kod tarafı Değişim'de. */
+/* 4 · Serbest güncelleme — isteğe bağlı, en sonda. Şube, kullanıcı, hesap
+   planı, gider grupları vb. — buraya kadar sorulmayan, bu firmaya özel
+   bir şey varsa düz metin, konuşur gibi yazılıyor. Yazılmasa da olur; kod
+   tarafı Değişim'de, yazıldıysa. */
 function sablonAdimTemelGovde(p) {
   const t = sablonTanimlarOku(p);
-  return shBaslik(ICON.etiket, 'Temel tanımlar',
-      'Şube, kullanıcı, hesap planı, gider grupları — bu firmada varsayılandan '
-      + 'farklı olan ne varsa buraya yaz.')
+  return shBaslik(ICON.etiket, 'Serbest güncelleme',
+      'Buraya kadar sormadığımız, bu firmaya özel bir şey varsa yaz — şube, '
+      + 'kullanıcı, hesap planı, gider grupları gibi. İstersen boş bırak.')
     + `<textarea class="anl-kutu" id="sb-temel-metin" rows="6"
          placeholder="Örn. 2 şube var: Merkez ve Fabrika. Kullanıcılar: ...">${esc(t.temel.metin)}</textarea>`
     + `<div class="kur-dug">

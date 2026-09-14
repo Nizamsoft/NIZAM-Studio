@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.135.48
+- **Temel tanımlar'ın sırası değişti: önce Gün Sonu, Bankalar, Fatura & kart; en sonda isteğe bağlı "Serbest güncelleme".** Eskiden ilk adım olan serbest metin kutusu (şube/kullanıcı/hesap planı gibi) artık en sona alındı ve zorunlu olmaktan çıktı — boş bırakılabilir, durağın tamamlanmasını hiç etkilemiyor. "Eğer eklemek istediğin bir şey varsa" mantığıyla çalışıyor.
+
 ## v0.135.47
 - **Yanlış depoya göre kurulmuş "İlk kullanıcı" adımı kaldırıldı.** Gerçek template deposu (MUHASEBETEMPLATE-MuhasebeModulu, daha önce yanlışlıkla bir deneme kopyasına — GZNAS-GznMuhasebe'ye — bakılmıştı) incelendi: template'in SQL zincirinde (01→89) hiç giriş/auth/kullanıcı katmanı yok — göç 89 bunu bilerek kaldırıyor. Gerçek giriş sistemi Studio'nun zaten var olan "Kullanıcı ve Yetki" durağında, Final'den hemen önce, ayrı bir promptla kuruluyor — tıpkı sıfırdan projelerde olduğu gibi.
 - Bağlantılar ve temel'de artık şablon kopyalarında yalnız "Veritabanını kur" var — SQL'i yapıştır/çalıştır, bitti. "İlk kullanıcı" adımı, e-posta otomatik yerleştirme mekanizması (`sqlEpostaYerlestir`) ve buna bağlı tüm arayüz/eylemler kaldırıldı — hiçbiri gerçek template için gerekli değildi.
