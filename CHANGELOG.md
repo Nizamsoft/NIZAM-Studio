@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## v0.135.40
+- **Şablon türlerine template atama eklendi.** Ayarlar → Templateler'de yeni bir "Şablon atamaları" bölümü var: her şablon türüne (şu an yalnız Muhasebe) en fazla bir template atanabiliyor. "Bir Template'ten Başla" artık hangi template olduğunu tek tek sormuyor — hangi şablon türü seçilirse o türe atanmış template doğrudan kullanılıyor.
+- SQL linki de zaten atanan template'in kendi kurulum sihirbazından ayarlanıyor — atama değiştiğinde link de yeni template'inkiyle değişiyor.
+
 ## v0.135.39
 - **Karar değişti: Katmanlar Program temeli'ne geri döndü, kullanıcı ekleme artık en baştan kuruluyor.**
   - **Program temeli** artık 4 adım: Program → **Katmanlar** → Veriler → Alan adı. Katman ladder'ı (en üstte sabit "Admin", altına serbest roller) burada dolduruluyor.

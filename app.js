@@ -627,6 +627,15 @@ const VIEWS = {
         : `<div class="card">${empty(ICON.katman, 'Template yok',
             'Bitmiş bir müşteri projesinden temizlenmiş bir taban oluşturabilirsin.',
             AUTH.yonetici ? 'Template oluştur' : null, 'template-olustur-ac')}</div>`}
+
+      ${bolumBas('Şablon atamaları')}
+      <div class="note" style="margin-bottom:12px">
+        ${svg(ICON.info, 15)}
+        <span>Her şablon türüne en fazla bir template atanabilir. "Bir
+        Template'ten Başla" ile yeni proje kurulurken hangi template
+        kullanılacağı artık tek tek sorulmuyor, buradaki atamadan geliyor.</span>
+      </div>
+      <div class="card liste">${CEKIRDEK_TUR_LISTESI.map(sablonAtamaSatiri).join('')}</div>
     `;
   },
 
@@ -3620,6 +3629,27 @@ function supabaseOrgYaz(deger) {
   } catch (h) { /* önemsiz */ }
 }
 
+/* Şablon türü → template proje id eşlemesi. Her türe en fazla bir template
+   atanabiliyor (bkz. Ayarlar > Templateler); "Bir Template'ten Başla" akışı
+   artık hangi template olduğunu tek tek sormuyor, buradan okuyor. */
+const SABLON_ATAMA_ANAHTAR = 'ns.sablonAtama';
+
+function sablonAtamalari() {
+  try { return JSON.parse(localStorage.getItem(SABLON_ATAMA_ANAHTAR) || '{}') || {}; }
+  catch (h) { return {}; }
+}
+
+function sablonAtamasi(turAnahtari) {
+  return sablonAtamalari()[turAnahtari] || '';
+}
+
+function sablonAtamasiYaz(turAnahtari, projeId) {
+  const hepsi = sablonAtamalari();
+  if (projeId) hepsi[turAnahtari] = projeId; else delete hepsi[turAnahtari];
+  try { localStorage.setItem(SABLON_ATAMA_ANAHTAR, JSON.stringify(hepsi)); }
+  catch (h) { /* önemsiz */ }
+}
+
 /* Projenin alt alanı. Firma adının tamamı uzun ve okunmaz çıkıyor
    ("merkezefendikoftecisi"); ilk iki kelime hem ayırt edici hem kısa. */
 function altAlan(p) {
@@ -5707,7 +5737,7 @@ function cekirdekSatiri(p) {
         <span class="row-title">${esc(projeAdi(p))}</span>
         <span class="row-sub">${esc(cekirdekTuruAdi(cek.tur))} · ${hazir
           ? (kilitli ? 'Hazır ve kilitli' : 'Hazır')
-          : 'Kuruluyor — GitHub ve Claude adımları bekliyor'}</span>
+          : 'Kuruluyor — GitHub, SQL ve Claude adımları bekliyor'}</span>
       </div>
       ${hazir
         ? `<button class="ak-kop ${kilitli ? 'oldu' : ''}" type="button" data-eylem="proje-kilit-degistir"
@@ -5715,6 +5745,68 @@ function cekirdekSatiri(p) {
                    title="${kilitli ? 'Kilidi aç' : 'Kilitle'}">${svg(ICON.kilit, 13)}</button>`
         : `<span class="row-val">${svg(ICON.chevron, 15)}</span>`}
     </div>`;
+}
+
+/* Şablon türü satırı — hangi template atanmış, dokununca değiştirilebilir
+   (bkz. sablonAtamaSecAc). */
+function sablonAtamaSatiri(st) {
+  const atanan = sablonTuruGecerliMi(st) ? DB.proje(sablonAtamasi(st.anahtar)) : null;
+  return `
+    <div class="row" data-eylem="sablon-atama-sec" data-tur="${esc(st.anahtar)}" role="button" tabindex="0">
+      <div class="row-main">
+        <span class="row-title">${esc(st.ad)}</span>
+        <span class="row-sub">${atanan ? esc(projeAdi(atanan)) : 'Atanmadı'}</span>
+      </div>
+      <span class="row-val">${svg(ICON.chevron, 15)}</span>
+    </div>`;
+}
+
+/* Bir şablon türüne hangi template'in atanacağını seçtirir — yalnız o
+   türden, temizliği bitmiş, arşivlenmemiş template'ler listelenir. */
+function sablonAtamaSecAc(turAnahtari) {
+  modalHepsiniKapat();
+  const st = CEKIRDEK_TUR_LISTESI.find(x => x.anahtar === turAnahtari);
+  const liste = DB.projeler.filter(p => !p.arsiv && cekirdekMi(p) && (p.palet || {}).cekirdekTemizlendi
+    && (p.palet.cekirdek || {}).tur === turAnahtari);
+
+  if (!liste.length) {
+    toast('Bu türde hazır template yok — önce bir tane oluştur.', 'uyari');
+    return;
+  }
+
+  const guncel = sablonAtamasi(turAnahtari);
+  modalAc(`
+    ${modalBaslik(ICON.katman, (st ? st.ad : turAnahtari) + ' için template',
+      'Yeni proje bu şablon seçildiğinde bu template\'e bağlanacak.')}
+    <div class="secim">
+      ${liste.map(p => `
+        <div class="satir sec-satir ${guncel === p.id ? 'on' : ''}" data-proje="${p.id}"
+             role="button" tabindex="0">
+          <span class="sec-yazi"><b>${esc(projeAdi(p))}</b>
+            ${guncel === p.id ? `<i>${svg(ICON.tik, 12)} Şu an atanmış</i>` : ''}</span>
+        </div>`).join('')}
+    </div>
+    <div class="modal-alt">
+      ${guncel ? `<button class="btn btn-ghost" data-bt="kaldir" type="button">Atamayı kaldır</button>` : ''}
+      <button class="btn btn-ghost" data-bt="kapat" type="button">Vazgeç</button>
+    </div>`, kutu => {
+    $('[data-bt="kapat"]', kutu).addEventListener('click', modalKapat);
+    const kaldirBtn = $('[data-bt="kaldir"]', kutu);
+    if (kaldirBtn) kaldirBtn.addEventListener('click', () => {
+      sablonAtamasiYaz(turAnahtari, null);
+      modalKapat();
+      render();
+      toast('Atama kaldırıldı.');
+    });
+    kutu.addEventListener('click', ev => {
+      const t = ev.target.closest('[data-proje]');
+      if (!t) return;
+      sablonAtamasiYaz(turAnahtari, t.dataset.proje);
+      modalKapat();
+      render();
+      toast('Template atandı.', 'basari');
+    });
+  }, 'genis');
 }
 
 /* Bir modül şablonu. Açılınca sayfaları listelenir. */
@@ -5919,27 +6011,36 @@ function baslangicTuruSec(tur) {
   });
 }
 
-/* Template'ten başlatma — yalnız temizliği bitmiş (kilitli) template'ler
-   listelenir; yarım kalmış bir template'ten müşteri kopyası çıkarmak
-   firma izini de taşır. Seçilince mevcut müşteri-kopyası akışına
-   (templateOnaySor → projeKopyalaVeAc) aynen giriyor, tek fark `sablon`ın
-   template'in türünden gelmesi. */
+/* Şablon türü geçerli mi — o türe atanmış bir template var mı, o template
+   hâlâ duruyor mu, arşivlenmemiş mi, temizliği bitmiş mi, hâlâ o türden mi.
+   Atama Ayarlar > Templateler'den yapılıyor (bkz. sablonAtamasiYaz). */
+function sablonTuruGecerliMi(st) {
+  const id = sablonAtamasi(st.anahtar);
+  const p = id && DB.proje(id);
+  return !!(p && !p.arsiv && cekirdekMi(p) && (p.palet || {}).cekirdekTemizlendi
+    && (p.palet.cekirdek || {}).tur === st.anahtar);
+}
+
+/* Template'ten başlatma — artık "hangi template" değil "hangi şablon türü"
+   soruluyor: her türe en fazla bir template atanabiliyor (bkz.
+   sablonAtamasiYaz), o yüzden tür seçilince hangi template kullanılacağı
+   zaten belli. Seçilince mevcut müşteri-kopyası akışına (templateOnaySor →
+   projeKopyalaVeAc) aynen giriyor. */
 function cekirdekKaynakSec(tur) {
   modalHepsiniKapat();
-  const liste = DB.projeler.filter(p => !p.arsiv && cekirdekMi(p) && (p.palet || {}).cekirdekTemizlendi);
-  if (!liste.length) {
-    toast('Hazır template yok — önce Ayarlar > Templateler\'den bir tane oluştur.', 'uyari');
+  const turler = CEKIRDEK_TUR_LISTESI.filter(sablonTuruGecerliMi);
+  if (!turler.length) {
+    toast('Henüz hiçbir şablona template atanmadı — Ayarlar > Templateler\'den ata.', 'uyari');
     return;
   }
 
   modalAc(`
-    ${modalBaslik(ICON.katman, 'Hangi template\'ten başlayalım?',
-      'Yeni proje bu template\'in birebir kopyasıyla kurulacak.')}
+    ${modalBaslik(ICON.katman, 'Hangi şablon?',
+      'Yeni proje, bu şablona atanmış template\'in birebir kopyasıyla kurulacak.')}
     <div class="secim">
-      ${liste.map(p => `
-        <div class="satir sec-satir" data-proje="${p.id}" role="button" tabindex="0">
-          <span class="sec-yazi"><b>${esc(projeAdi(p))}</b>
-            <i>${esc(cekirdekTuruAdi((p.palet || {}).cekirdek.tur))}</i></span>
+      ${turler.map(st => `
+        <div class="satir sec-satir" data-tur="${esc(st.anahtar)}" role="button" tabindex="0">
+          <span class="sec-yazi"><b>${esc(st.ad)}</b></span>
         </div>`).join('')}
     </div>
     <div class="modal-alt">
@@ -5947,12 +6048,11 @@ function cekirdekKaynakSec(tur) {
     </div>`, kutu => {
     $('[data-bt="kapat"]', kutu).addEventListener('click', modalKapat);
     kutu.addEventListener('click', ev => {
-      const t = ev.target.closest('[data-proje]');
+      const t = ev.target.closest('[data-tur]');
       if (!t) return;
       modalKapat();
-      const kaynak = DB.proje(t.dataset.proje);
-      const sablon = kaynak ? (kaynak.palet || {}).cekirdek.tur : null;
-      templateOnaySor(t.dataset.proje, tur, sablon);
+      const templateId = sablonAtamasi(t.dataset.tur);
+      templateOnaySor(templateId, tur, t.dataset.tur);
     });
   }, 'genis');
 }
@@ -10727,6 +10827,7 @@ async function eylemCalistir(el) {
   if (e === 'templatelere')       { location.hash = '#/templateler'; return; }
   if (e === 'template-olustur-ac') return cekirdekOlusturBaslat();
   if (e === 'template-kur-ac')     return cekirdekKurulumAc(el.dataset.proje);
+  if (e === 'sablon-atama-sec')    return sablonAtamaSecAc(el.dataset.tur);
 
   if (e === 'cekirdek-temizlendi-onay') {
     const pr = DB.proje(el.dataset.proje);
