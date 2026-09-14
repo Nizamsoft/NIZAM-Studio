@@ -1265,7 +1265,7 @@ function baglantilarSayfasi(p, d) {
   const pl = p.palet || {};
   const sunuculu    = sunuculuMu(p);
   const namecheapMi = pl.alanTuru === 'namecheap';
-  const sqlliMi     = sunuculu && !!pl.sablonSqlLink;
+  const sqlliMi     = sunuculu && (!!pl.sablonSqlLink || !!pl.sablonSqlMetinVar);
   const supabaseTam = !!String(pl.supabaseUrl || '').trim() && !!String(pl.supabaseAnon || '').trim();
   const depoTam     = !!p.repo;
   const yayinTam    = !!pl.yayinda;
@@ -4093,6 +4093,15 @@ function sqlEditorAdresi(url) {
             : 'https://supabase.com/dashboard';
 }
 
+/* Şablon SQL metninde yönetici e-postasının sabit yazdığı yeri (ör.
+   `YONETICI_EPOSTA constant text := '...';`) gerçek admin e-postasıyla
+   değiştirir — kopyalamadan önce, elle düzenlemeye gerek kalmasın diye. */
+function sqlEpostaYerlestir(metin, eposta) {
+  return String(metin || '').replace(
+    /([A-Z_]*EPOSTA\w*\s+constant\s+text\s*:=\s*)'[^']*'/gi,
+    (tam, onEk) => onEk + "'" + String(eposta).replace(/'/g, "''") + "'");
+}
+
 
 /* ---------- Muhasebe şablonu: Temel tanımlar sihirbazı ----------
    Kurulum sihirbazıyla aynı kalıp (yüzen tam ekran katman, adım şeridi,
@@ -4816,9 +4825,10 @@ function projeDuraklari(p) {
              && (!sunuculuMu(p) || (!!String(pl0.supabaseUrl || '').trim()
                                      && !!String(pl0.supabaseAnon || '').trim()))
              && (pl0.alanTuru !== 'namecheap' || !!pl0.namecheapBaglandi)
-             /* Template'in SQL linki varsa yükleme ve ilk kullanıcı da
-                burada bitmiş olmalı — bkz. baglantiAdimListesi. */
-             && (!pl0.sablonSqlLink || (!!pl0.sqlYuklendi && !!pl0.ilkKullaniciEklendi)),
+             /* Template'in SQL'i (link ya da metin) varsa yükleme ve ilk
+                kullanıcı da burada bitmiş olmalı — bkz. baglantiAdimListesi. */
+             && ((!pl0.sablonSqlLink && !pl0.sablonSqlMetinVar)
+                 || (!!pl0.sqlYuklendi && !!pl0.ilkKullaniciEklendi)),
       ozet: !p.repo
         ? 'Depo, sohbet, adres ve yayın burada kurulacak.'
         : !pl0.yayinda
@@ -6371,9 +6381,13 @@ function cekirdekKurulumListesi() { return ['github', 'sql', 'claude']; }
 
 function cekirdekKurulumAdimBittiMi(k, p) {
   if (k === 'github') return !!p.repo;
-  /* SQL linki isteğe bağlı — bir template'in mutlaka veritabanı olması
-     gerekmez, o yüzden bu adım hiç doldurulmasa da geçilebiliyor. */
-  if (k === 'sql')     return !!((p.palet || {}).cekirdek || {}).sqlLink;
+  /* SQL isteğe bağlı — bir template'in mutlaka veritabanı olması gerekmez,
+     o yüzden bu adım hiç doldurulmasa da geçilebiliyor. Metin ya da link,
+     ikisinden biri yeterli. */
+  if (k === 'sql') {
+    const cekirdek = (p.palet || {}).cekirdek || {};
+    return !!cekirdek.sqlLink || !!cekirdek.sqlMetinVar;
+  }
   if (k === 'claude')  return !!(p.palet || {}).cekirdekTemizlendi;
   return false;
 }
@@ -6500,18 +6514,30 @@ function cekirdekKurulumBagla(kutu) {
    baglantiAdimSql). İsteğe bağlı: her template'in veritabanı olması gerekmez. */
 function cekirdekAdimSqlGovde(p) {
   const pl = p.palet || {};
-  const mevcut = (pl.cekirdek || {}).sqlLink || '';
-  return shBaslikServis('supabase', 'Kurulum SQL linki',
-      'Bu template\'ten açılan her müşteri kopyasında, Supabase bağlanırken bu link gösterilecek.')
-    + `<label class="field"><span>Birleşik kurulum SQL dosyasının GitHub linki</span>
-        <input type="text" id="ck-sql-link" value="${esc(mevcut)}"
+  const cekirdek = pl.cekirdek || {};
+  const mevcutLink  = cekirdek.sqlLink || '';
+  const metinVar    = !!cekirdek.sqlMetinVar;
+  return shBaslikServis('supabase', 'Kurulum SQL\'i',
+      'Bu template\'ten açılan her müşteri kopyasında, Supabase bağlanırken bu SQL kullanılacak.')
+    + `<label class="field"><span>SQL metni — depo private olsa bile çalışır, önerilen</span>
+        <textarea id="ck-sql-metin" rows="6" spellcheck="false"
+          placeholder="Birleşik kurulum SQL dosyasının tamamını buraya yapıştır…"></textarea></label>
+      <div class="kur-dug">
+        <button class="sayfa-dug" type="button" data-eylem="cekirdek-sql-metin-kaydet"
+                data-proje="${p.id}">${svg(ICON.check, 15)} Kaydet</button>
+      </div>`
+    + (metinVar ? `<div class="kur-deger duz">${svg(ICON.tik, 13)} Metin kayıtlı — müşteri
+        projelerinde bundan otomatik kopya çıkacak</div>` : '')
+    + `<label class="field" style="margin-top:18px">
+        <span>GitHub linki — depo public'se yeterli, metin girilmediyse yedek olarak kullanılır</span>
+        <input type="text" id="ck-sql-link" value="${esc(mevcutLink)}"
                placeholder="https://github.com/.../blob/main/....sql"
                autocomplete="off" spellcheck="false"></label>
       <div class="kur-dug">
         <button class="sayfa-dug ikincil" type="button" data-eylem="cekirdek-sql-kaydet"
                 data-proje="${p.id}">${svg(ICON.check, 15)} Kaydet</button>
       </div>`
-    + (mevcut ? `<div class="kur-deger duz">${svg(ICON.tik, 13)} Kayıtlı</div>` : '');
+    + (mevcutLink ? `<div class="kur-deger duz">${svg(ICON.tik, 13)} Link kayıtlı</div>` : '');
 }
 
 /* 3 · Claude — firma izini kaldırma, tasarımı standarda döndürme ve
@@ -7300,15 +7326,16 @@ function baglantiAdimListesi(p) {
     const liste = ['github', 'pages'];
     if (sunuculuMu(p)) {
       liste.push('supabase');
-      /* Template'e bir SQL linki tanımlıysa (bkz. Templateler > kurulum
-         sihirbazı) Supabase bağlanır bağlanmaz önce ilk kullanıcı (Admin)
-         Authentication'da açılıyor, SONRA SQL çalıştırılıyor — sıra bilerek
-         bu yönde: SQL'in sonundaki "Yönetici satırı" bloğu auth.users'ta bu
-         e-postayı arıyor, SQL'den önce açılmışsa kullanıcı tablosundaki
-         satırı kendisi oluşturuyor, ayrı bir adım gerekmiyor. Link yoksa
-         (nadir: veritabanı gerektirmeyen bir template) ilk kullanıcı ilk
-         kurulum promptunun kendi bootstrap girişinden gelir (bkz. yetkiBlogu). */
-      if (pl.sablonSqlLink) liste.push('ilkKullanici', 'sql');
+      /* Template'e bir SQL tanımlıysa (link ya da metin, bkz. Templateler >
+         kurulum sihirbazı) Supabase bağlanır bağlanmaz önce ilk kullanıcı
+         (Admin) Authentication'da açılıyor, SONRA SQL çalıştırılıyor — sıra
+         bilerek bu yönde: SQL'in sonundaki "Yönetici satırı" bloğu
+         auth.users'ta bu e-postayı arıyor, SQL'den önce açılmışsa kullanıcı
+         tablosundaki satırı kendisi oluşturuyor, ayrı bir adım gerekmiyor.
+         Hiçbiri yoksa (nadir: veritabanı gerektirmeyen bir template) ilk
+         kullanıcı ilk kurulum promptunun kendi bootstrap girişinden gelir
+         (bkz. yetkiBlogu). */
+      if (pl.sablonSqlLink || pl.sablonSqlMetinVar) liste.push('ilkKullanici', 'sql');
     }
     if (pl.alanTuru === 'namecheap') liste.push('namecheap');
     liste.push('claude');
@@ -7638,22 +7665,37 @@ function baglantiAdimSupabase(p) {
    içerik zaten kopyalandığı için sorun değil. */
 function baglantiAdimSql(p) {
   const pl = p.palet || {};
-  const link = String(pl.sablonSqlLink || '').trim();
+  const metinVar = !!pl.sablonSqlMetinVar;
+  const link     = String(pl.sablonSqlLink || '').trim();
   const yuklendi = !!pl.sqlYuklendi;
+  const eposta   = (pl.ilkKullanici || {}).eposta || '';
+
+  /* Metin varsa öncelik onda: depo private olsa da çalışır, e-postayı da
+     otomatik yerleştirir (bkz. sablon-sql-metin-kopyala). Yalnız link
+     tanımlıysa eskisi gibi "aç, elle kopyala" akışına düşülüyor. */
+  const govde = metinVar ? `
+      <button class="sayfa-dug" type="button" data-eylem="sablon-sql-metin-kopyala" data-proje="${p.id}">
+        ${svg(ICON.kopya, 15)} SQL'i kopyala</button>
+      <div class="fbd-not">${svg(ICON.info, 13)}
+        <span>${eposta ? `E-postan (<b>${esc(eposta)}</b>) otomatik yerleştirilip kopyalanıyor`
+          : 'Önce İlk kullanıcı adımını tamamla, e-postan otomatik yerleşsin'} — Supabase
+        projendeki <b>SQL Editor</b>'e yapıştır ve çalıştır (Run).</span></div>`
+    : link ? `
+      <a class="sayfa-dug ikincil" target="_blank" rel="noopener" href="${esc(link)}">
+        ${svg(ICON.disari, 15)} SQL dosyasını aç</a>
+      <div class="fbd-not">${svg(ICON.info, 13)}
+        <span>Açılan sayfadaki kodun tamamını kopyala, Supabase projendeki
+        <b>SQL Editor</b>'e yapıştır ve çalıştır (Run).</span></div>`
+    : `<div class="note uyari">${svg(ICON.uyari, 15)}
+        <span>Bu template için SQL tanımlanmamış — Templateler'den ekleyebilirsin.</span></div>`;
 
   return shBaslikServis('supabase', 'Veritabanını kur',
       'Template\'in hazır tablo ve kurallarını yeni Supabase projene yükle.')
-    + (link ? `
-        <a class="sayfa-dug ikincil" target="_blank" rel="noopener" href="${esc(link)}">
-          ${svg(ICON.disari, 15)} SQL dosyasını aç</a>
-        <div class="fbd-not">${svg(ICON.info, 13)}
-          <span>Açılan sayfadaki kodun tamamını kopyala, Supabase projendeki
-          <b>SQL Editor</b>'e yapıştır ve çalıştır (Run).</span></div>
+    + govde
+    + ((metinVar || link) ? `
         <label class="kur-onay ${yuklendi ? 'on' : ''}" data-eylem="sql-yuklendi-onay"
                data-proje="${p.id}" role="button" tabindex="0">
-          <span class="kur-kutu">${svg(ICON.tik, 12)}</span> SQL'i yükledim</label>`
-      : `<div class="note uyari">${svg(ICON.uyari, 15)}
-          <span>Bu template için SQL linki tanımlanmamış — Templateler'den ekleyebilirsin.</span></div>`);
+          <span class="kur-kutu">${svg(ICON.tik, 12)}</span> SQL'i yükledim</label>` : '');
 }
 
 /* 5 · Namecheap — DNS kaydı + alan adı, eskiden ayrı bir pencereydi
@@ -10105,6 +10147,23 @@ async function eylemCalistir(el) {
       pl.sqlYuklendi ? 'İşaret kaldırıldı.' : 'Kaydedildi.');
   }
 
+  if (e === 'sablon-sql-metin-kopyala') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const pl = pr.palet || {};
+    const eposta = (pl.ilkKullanici || {}).eposta || '';
+    let metin;
+    try { metin = await DB.sablonSqlMetniOku(pl.kopyaKaynagi); }
+    catch (h) { toast('SQL metni okunamadı: ' + h.message, 'hata'); return; }
+    if (!metin) { toast('SQL metni bulunamadı — template kayıtlı değil olabilir.', 'hata'); return; }
+    if (eposta) metin = sqlEpostaYerlestir(metin, eposta);
+    const ok = await panoyaKopyala(metin);
+    toast(ok
+      ? (eposta ? 'SQL kopyalandı — e-postan otomatik eklendi.' : 'SQL kopyalandı.')
+      : 'Kopyalanamadı, tarayıcı izin vermedi.', ok ? 'basari' : 'hata');
+    return;
+  }
+
   if (e === 'ekibe') { location.hash = '#/ekip'; return; }
   if (e === 'kullanici-ekle') return kullaniciEkleAc();
   if (e === 'kisi-duzenle')   return kisiDuzenle(id);
@@ -10918,6 +10977,19 @@ async function eylemCalistir(el) {
     const pl = pr.palet || {};
     const cekirdek = Object.assign({}, pl.cekirdek || {}, { sqlLink: link });
     return isYap(() => DB.paletKaydet(pr.id, Object.assign({}, pl, { cekirdek })), 'Kaydedildi.');
+  }
+
+  if (e === 'cekirdek-sql-metin-kaydet') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const alan = document.getElementById('ck-sql-metin');
+    const metin = alan ? alan.value.trim() : '';
+    if (!metin) { toast('Önce SQL metnini yapıştır.', 'uyari'); return; }
+    const pl = pr.palet || {};
+    const cekirdek = Object.assign({}, pl.cekirdek || {}, { sqlMetinVar: true });
+    return isYap(() => DB.sablonSqlMetniYaz(pr.id, metin)
+      .then(() => DB.paletKaydet(pr.id, Object.assign({}, pl, { cekirdek }))),
+      'SQL metni kaydedildi.');
   }
 
   if (e === 'sablon-sil') {

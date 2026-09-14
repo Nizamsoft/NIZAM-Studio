@@ -497,9 +497,14 @@ const DB = {
            Kurulum ve yapı (modül/sayfa) yapısı ise KALIYOR, o üstteki
            `modulleri`/`sayfalari` kopyalamasından geliyor.
            `sablonSqlLink`: kaynağın (template'in) kendi `cekirdek.sqlLink`'i —
-           Bağlantılar ve temel'deki SQL/İlk kullanıcı adımları bunu okuyor. */
+           Bağlantılar ve temel'deki SQL/İlk kullanıcı adımları bunu okuyor.
+           `sablonSqlMetinVar`: SQL metin olarak da kayıtlıysa (bkz.
+           sql/18-sablon-sql-metni.sql) bu bayrak true olur — asıl metin
+           `kopyaKaynagi` (yani bu template'in id'si) üzerinden ayrı tablodan
+           okunuyor, palete taşınmıyor. */
         sablon,
         sablonSqlLink: (kaynak.palet && kaynak.palet.cekirdek && kaynak.palet.cekirdek.sqlLink) || null,
+        sablonSqlMetinVar: !!(kaynak.palet && kaynak.palet.cekirdek && kaynak.palet.cekirdek.sqlMetinVar),
         modulAdi: null, roller: null, veriKatmani: null,
         sablonTanimlar: null, sablonDegisimTamamlandi: false,
       } : {}, cekirdek ? {
@@ -1210,6 +1215,24 @@ const DB = {
       throw new Error('Palet yazılamadı — sql/11-marka.sql çalıştırılmamış olabilir.');
     }
     await this.tazele('projeler');
+  },
+
+  /* Şablon kurulum SQL'i — palet'e değil ayrı bir tabloya yazılıyor, bkz.
+     sql/18-sablon-sql-metni.sql. Büyük bir metin (yüzlerce KB olabilir),
+     palet her küçük işlemde okunup yazıldığı için oraya konmuyor. */
+  async sablonSqlMetniOku(projeId) {
+    if (!AUTH.db || !projeId) return '';
+    const { data, error } = await AUTH.db
+      .from('sablon_sql_metinleri').select('metin').eq('proje_id', projeId).maybeSingle();
+    if (error) throw new Error(veriHatasi(error));
+    return (data && data.metin) || '';
+  },
+
+  async sablonSqlMetniYaz(projeId, metin) {
+    yazmaKontrol();
+    const { error } = await AUTH.db
+      .from('sablon_sql_metinleri').upsert({ proje_id: projeId, metin });
+    if (error) throw new Error(veriHatasi(error));
   },
 
   async fotoSil() {

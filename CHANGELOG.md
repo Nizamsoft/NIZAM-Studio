@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## v0.135.46
+- **Şablon kurulum SQL'i artık metin olarak da girilebiliyor — GitHub linkine bağımlı kalmıyor.** Templateler'de kurulum sihirbazının SQL adımına yeni bir kutu eklendi: SQL dosyasının tamamı doğrudan yapıştırılıp kaydediliyor. Depo private olsa da, link erişilemez olsa da çalışır.
+- **Müşteri projesinde "Veritabanını kur" adımı artık tek tuşla kopyalıyor.** Metin girilmiş bir templateden kurulan projede, "SQL'i kopyala" düğmesi SQL metnini getirip içindeki yönetici e-postası satırını (`... EPOSTA constant text := '...'`) az önce Supabase'de açtığın gerçek admin e-postasıyla otomatik değiştirip panoya kopyalıyor — SQL Editor'e yapıştırıp Run'a basman yeterli, elle e-posta değiştirmene gerek kalmıyor.
+- SQL metni, sık okunup yazılan proje ayar kutusunu (palet) şişirmesin diye ayrı bir tabloda tutuluyor (`sablon_sql_metinleri`, bkz. `sql/18-sablon-sql-metni.sql` — Studio'nun kendi Supabase'inde bir kerelik çalıştırılmalı). Link hâlâ yedek olarak destekleniyor: metin girilmemiş bir template'te eskisi gibi link akışı çalışmaya devam ediyor.
+
 ## v0.135.45
 - **Bağlantılar ve temel'de sıra değişti: İlk kullanıcı artık SQL'den ÖNCE.** Gerçek şablon SQL'ini (hepsi-kurulum-01-88.sql) inceleyince, dosyanın kendi başlığında tam olarak bu sırayı önerdiğini gördük: Authentication'da kullanıcı SQL'den önce açılırsa, dosyanın sonundaki "Yönetici satırı" bloğu bu e-postayı bulup kullanıcı tablosundaki satırını kendisi açıyor — ekstra bir SQL ya da prompt gerekmiyor. Eskiden SQL önce çalıştığı için bu blok kullanıcıyı bulamıyor, satır oluşmuyordu (sadece uyarı yazıp geçiyordu).
 - İlk kullanıcı ekranındaki metin ve "Değişim" promptundaki "İlk giriş" notu buna göre sadeleşti — artık "bu satırı Claude Değişim'de eklesin" demiyor, çünkü satır SQL çalışınca zaten hazır oluyor.
