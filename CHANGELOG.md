@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.135.52
+- **"Değişim" promptu iki soruyu artık baştan cevaplıyor.** İlk gerçek testte Claude iki şey sordu: (1) işi tek commit'te mi yoksa parçalara mı bölsün, (2) kullanıcı tablosu boşken çalışacak sabit giriş bilgisi ne olsun. Artık prompt "sorma, kendin seç" diyerek ikisine de kural veriyor — büyük işi veri/format kısmı + altyapı kısmı diye ikiye bölmesini, giriş bilgisini de tahmin edilmesi zor ama hatırlanabilir seçip NIZAM.md'ye not düşmesini istiyor.
+
 ## v0.135.51
 - **Eklediğin bir banka/fatura/POS kaydedilince artık hazır olanlarla aynı görünüyor.** Eskiden "Banka ekle" ile eklediğin bir satır, cevabını kaydettikten sonra da açık metin kutusu olarak durmaya devam ediyordu. Şimdi kaydedilince Garanti/Kuveyt/Ziraat gibi tik + "Yapıyı gör" şeklinde kompakt bir satıra dönüşüyor; "Düzenle" ile tekrar açılabiliyor.
 

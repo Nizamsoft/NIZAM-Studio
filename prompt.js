@@ -701,6 +701,10 @@ const PROMPT = {
     s.push('yalnız bu bilgiyi kabul etsin ve içeri alsın. İlk gerçek kullanıcı');
     s.push('yukarıdaki Kullanıcı ekle özelliğinden oluşturulur oluşturulmaz');
     s.push('bu sabit giriş bir daha çalışmasın — kalıcı bir arka kapı kalmasın.');
+    s.push('Kullanıcı adı ve şifreyi kendin seç, **sorma**: `admin`/`admin` gibi');
+    s.push('bariz bir şey olmasın, hatırlanması kolay ama rastgele biri');
+    s.push('tarafından tahmin edilmesi zor bir şey seç (ör. `kurulum` /');
+    s.push('paket adı + yıl + noktalama). Seçtiğini `NIZAM.md`\'ye not düş.');
     return s.join('\n');
   },
 
@@ -1423,8 +1427,14 @@ const PROMPT = {
     s.push(PROMPT.yetkiBlogu(p));
     s.push('');
 
-    s.push('Bitirince proje kimlik dosyasını (`nizam/` klasörü) bu bilgilere');
-    s.push('göre güncelle ve tek commit\'le **`main` dalına** gönder:');
+    s.push('## Nasıl teslim edeceksin');
+    s.push('Bu iş tek commit\'e sığmak zorunda değil — büyükse parçala,');
+    s.push('**sorma**, kendin karar ver. Önerilen sıra: önce Gün Sonu/Banka/');
+    s.push('Fatura okuyucuları gibi veri-format işini bir commit\'te gönder;');
+    s.push('giriş, Kullanıcı ekle özelliği ve RLS gibi daha büyük altyapı işini');
+    s.push('ayrı bir commit\'te. Her commit\'te proje kimlik dosyasını (`nizam/`');
+    s.push('klasörü) o commit\'te değişenlere göre güncelle, **`main` dalına**');
+    s.push('gönder:');
     s.push(`   \`[${TASK_PREFIX}-0] Şablon özelleştirmesi\``);
     return s.join('\n');
   },
