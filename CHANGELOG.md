@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.135.50
+- **Şablon tanışma promptuna "Bilinmesi gerekenler" eklendi.** İlk gerçek testte Claude üç şeyi soru olarak geri getirdi: supabase-js kullanılmaması, giriş sisteminin henüz kurulmamış olması, `07-kullanici-onarimi.sql`'in e-postası. Üçü de aslında normal/beklenen durumlar — artık prompt baştan söylüyor, bir dahaki müşteride tekrar sorulmayacak.
+
 ## v0.135.49
 - **Bug: "Test ve Güncelle" normal projelerde de görünüyordu.** Bu durak yalnız şablon kopyalarında anlamlı; normal projede "bitti + sayaçtan hariç" işaretlenip listede grileşmiş hâlde duruyordu ("Bu proje için geçerli değil" yazısıyla). Artık projeye göre gerekmeyen duraklar (`gizli`) listeden tamamen çıkarılıyor — proje yolu ve adım başlığındaki ilerleme noktaları buna göre yeniden numaralanıyor.
 

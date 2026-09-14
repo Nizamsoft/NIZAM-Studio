@@ -356,6 +356,21 @@ const PROMPT = {
       s.push('dosyalarında geçen eski adresi bu adresle değiştir.', '');
     }
 
+    s.push('## Bilinmesi gerekenler — bunları sorma, bilerek böyle');
+    s.push('- Program `supabase-js` kullanmıyor, REST\'e doğrudan istek atıyor,');
+    s.push('  anahtarı `apikey` başlığında taşıyor. Anahtar `sb_publishable_…`');
+    s.push('  biçiminde olsa bile olduğu gibi çalışır — güncellenecek bir şey yok.');
+    s.push('- Şu an gerçek bir giriş ekranı yok, herkes anon anahtarla giriyor,');
+    s.push('  yalnız "personel seç" var. Gerçek giriş sistemi (Supabase Auth +');
+    s.push('  Ayarlar\'a "Kullanıcı ekle" özelliği) az sonra gelecek "Değişim"');
+    s.push('  promptunda kurulacak — şimdi bunu sorma, kurmaya çalışma, sadece');
+    s.push('  bekle.');
+    s.push('- `1-kurulum/07-kullanici-onarimi.sql` artık kullanılmıyor: SQL');
+    s.push('  zincirinin sonundaki göç 89, `kullanicilar` tablosunu Supabase');
+    s.push('  Auth\'tan tamamen koparıyor (artık yalnız bir isim listesi, giriş');
+    s.push('  hesabı değil). Bu dosyayla hiç uğraşma, içindeki e-postayı');
+    s.push('  değiştirmene gerek yok.', '');
+
     s.push('## Şimdi ne yapacaksın');
     s.push('1. Depoyu incele, mevcut kimlik dosyalarını (`CLAUDE.md`,');
     s.push('   `NIZAM.md`, `nizam/` klasörü) oku.');
