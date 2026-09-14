@@ -4104,6 +4104,11 @@ function sqlEditorAdresi(url) {
    gerçek koda işleme burada değil, "Değişim" durağında tek promptla oluyor. */
 const SABLON_SIHIRBAZ = { adim: 1, projeId: null };
 
+/* Bir ekstra banka/fatura/gunsonu satırı "kaydedildi" hâlden "düzenleniyor"
+   hâline elle geçirilince burada işaretleniyor — yalnız görüntü, veriye
+   yazılmıyor. Anahtar: "<kategori>:<ekstra index>". */
+const SABLON_EKSTRA_DUZEN = {};
+
 function sablonTanimlarListesi() { return ['gunsonu', 'banka', 'fatura', 'temel']; }
 
 function sablonTanimlarOku(p) {
@@ -4303,22 +4308,52 @@ function sablonOgrenenListesiGovde(p, kategori, ikon, baslik, aciklama, hazirLis
       <div style="margin-top:8px;white-space:pre-wrap">${esc(yapiMetni.trim())}</div>
     </details>` : '');
 
-  const ekstraGovde = t.ekstra.map((x, i) => `
-    <div class="note" style="margin-top:10px;display:block">
-      <b>${esc(x.ad)}</b>
-      <div class="kur-dug" style="margin-top:8px">
-        ${promptBaglantisi({ tur: 'sablonEkstra:' + kategori + ':' + i, proje: p.id, slug: depoSlug(p.repo),
-          hedef: 'claude-yeni', yazi: 'Prompt oluştur ve Claude\'u aç' })}
-      </div>
-      <textarea class="anl-kutu" id="sb-${kategori}-cevap-${i}" rows="4"
-        placeholder="Claude'un cevabını buraya yapıştır…">${esc(x.cevap || '')}</textarea>
-      <div class="kur-dug" style="margin-top:8px">
-        <button class="sayfa-dug" type="button" data-eylem="sablon-secenek-cevap-kaydet"
-                data-proje="${p.id}" data-kategori="${kategori}" data-deger="${i}">${svg(ICON.check, 15)} Kaydet</button>
-        <button class="sayfa-dug ikincil" type="button" data-eylem="sablon-secenek-sil"
-                data-proje="${p.id}" data-kategori="${kategori}" data-deger="${i}">${svg(ICON.cop, 15)} Sil</button>
-      </div>
-    </div>`).join('');
+  /* Bir ekstra kaydedilince (cevabı dolunca) artık hazır/öğrenilen kutularla
+     aynı kompakt görünüme dönüyor — tik + "Yapıyı gör". Düzenle'ye basılana
+     kadar tekrar açık form olarak durmuyor, ekranı şişirmesin diye. Bu
+     yalnız görüntü durumu, veriye yazılmıyor. */
+  const ekstraGovde = t.ekstra.map((x, i) => {
+    const anahtarEk = kategori + ':' + i;
+    const cevapVar = !!(x.cevap || '').trim();
+    const duzenleniyor = !cevapVar || !!SABLON_EKSTRA_DUZEN[anahtarEk];
+
+    if (!duzenleniyor) {
+      return `
+        <label class="kur-onay on" role="button" tabindex="0" data-eylem="sablon-ekstra-duzenle-ac"
+               data-proje="${p.id}" data-kategori="${kategori}" data-deger="${i}">
+          <span class="kur-kutu">${svg(ICON.tik, 12)}</span> ${esc(x.ad)}
+          <i style="margin-left:4px;opacity:.6">— eklendi</i></label>
+        <details class="note" style="margin-top:-4px;margin-bottom:8px;display:block">
+          <summary style="cursor:pointer">Yapıyı gör</summary>
+          <div style="margin-top:8px;white-space:pre-wrap">${esc(x.cevap.trim())}</div>
+          <div class="kur-dug" style="margin-top:8px">
+            <button class="sayfa-dug ikincil" type="button" data-eylem="sablon-ekstra-duzenle-ac"
+                    data-proje="${p.id}" data-kategori="${kategori}" data-deger="${i}">
+              ${svg(ICON.kalem, 15)} Düzenle</button>
+            <button class="sayfa-dug ikincil" type="button" data-eylem="sablon-secenek-sil"
+                    data-proje="${p.id}" data-kategori="${kategori}" data-deger="${i}">
+              ${svg(ICON.cop, 15)} Sil</button>
+          </div>
+        </details>`;
+    }
+
+    return `
+      <div class="note" style="margin-top:10px;display:block">
+        <b>${esc(x.ad)}</b>
+        <div class="kur-dug" style="margin-top:8px">
+          ${promptBaglantisi({ tur: 'sablonEkstra:' + kategori + ':' + i, proje: p.id, slug: depoSlug(p.repo),
+            hedef: 'claude-yeni', yazi: 'Prompt oluştur ve Claude\'u aç' })}
+        </div>
+        <textarea class="anl-kutu" id="sb-${kategori}-cevap-${i}" rows="4"
+          placeholder="Claude'un cevabını buraya yapıştır…">${esc(x.cevap || '')}</textarea>
+        <div class="kur-dug" style="margin-top:8px">
+          <button class="sayfa-dug" type="button" data-eylem="sablon-secenek-cevap-kaydet"
+                  data-proje="${p.id}" data-kategori="${kategori}" data-deger="${i}">${svg(ICON.check, 15)} Kaydet</button>
+          <button class="sayfa-dug ikincil" type="button" data-eylem="sablon-secenek-sil"
+                  data-proje="${p.id}" data-kategori="${kategori}" data-deger="${i}">${svg(ICON.cop, 15)} Sil</button>
+        </div>
+      </div>`;
+  }).join('');
 
   return shBaslik(ikon, baslik, aciklama)
     + hazirListe.map(h => kutu(h.anahtar, h.ad, 'zaten hazır', h.yapi)).join('')
@@ -9951,6 +9986,13 @@ async function eylemCalistir(el) {
       { ekstra: t.ekstra.concat({ ad: ad.trim(), cevap: '' }) }) }), 'Eklendi.');
   }
 
+  if (e === 'sablon-ekstra-duzenle-ac') {
+    SABLON_EKSTRA_DUZEN[el.dataset.kategori + ':' + el.dataset.deger] = true;
+    render();
+    if ($('#sablon-sihirbaz')) sablonSihirbaziCiz();
+    return;
+  }
+
   if (e === 'sablon-secenek-cevap-kaydet') {
     const pr = DB.proje(el.dataset.proje);
     if (!pr) return;
@@ -9966,7 +10008,10 @@ async function eylemCalistir(el) {
          için sonraki her proje bunu hazır seçenek olarak görecek. */
       if (tur && kayit && (kayit.cevap || '').trim()) sablonSecenekEkle(tur, kategori, kayit.ad, kayit.cevap);
       return sablonTanimlarYaz(pr, { [kategori]: Object.assign({}, t, { ekstra }) });
-    }, 'Kaydedildi.');
+    }, 'Kaydedildi.', () => {
+      /* Kaydedince kompakt (tik + Yapıyı gör) görünüme dönsün. */
+      delete SABLON_EKSTRA_DUZEN[kategori + ':' + i];
+    });
   }
 
   if (e === 'sablon-secenek-sil') {
@@ -9976,7 +10021,13 @@ async function eylemCalistir(el) {
     const i = Number(el.dataset.deger);
     const t = sablonTanimlarOku(pr)[kategori];
     return isYap(() => sablonTanimlarYaz(pr, { [kategori]: Object.assign({}, t,
-      { ekstra: t.ekstra.filter((_, j) => j !== i) }) }), 'Kaldırıldı.');
+      { ekstra: t.ekstra.filter((_, j) => j !== i) }) }), 'Kaldırıldı.', () => {
+        /* Silinince indexler kayıyor — o kategori için tuttuğumuz "düzenleniyor"
+           bayrakları artık yanlış satırı işaret edebilir, hepsini temizle. */
+        Object.keys(SABLON_EKSTRA_DUZEN).forEach(k => {
+          if (k.indexOf(kategori + ':') === 0) delete SABLON_EKSTRA_DUZEN[k];
+        });
+      });
   }
 
   if (e === 'sablon-degisim-onay') {

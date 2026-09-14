@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.135.51
+- **Eklediğin bir banka/fatura/POS kaydedilince artık hazır olanlarla aynı görünüyor.** Eskiden "Banka ekle" ile eklediğin bir satır, cevabını kaydettikten sonra da açık metin kutusu olarak durmaya devam ediyordu. Şimdi kaydedilince Garanti/Kuveyt/Ziraat gibi tik + "Yapıyı gör" şeklinde kompakt bir satıra dönüşüyor; "Düzenle" ile tekrar açılabiliyor.
+
 ## v0.135.50
 - **Şablon tanışma promptuna "Bilinmesi gerekenler" eklendi.** İlk gerçek testte Claude üç şeyi soru olarak geri getirdi: supabase-js kullanılmaması, giriş sisteminin henüz kurulmamış olması, `07-kullanici-onarimi.sql`'in e-postası. Üçü de aslında normal/beklenen durumlar — artık prompt baştan söylüyor, bir dahaki müşteride tekrar sorulmayacak.
 
