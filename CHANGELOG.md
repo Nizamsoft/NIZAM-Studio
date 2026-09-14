@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.135.56
+- **Excel yapısı öğretme promptu artık JSON + notlar istiyor.** Banka/Fatura/Gün Sonu'nda "yeni bir tane anlat" akışında Claude'dan düz metin anlatım yerine iki parça isteniyor: sütun adı/tür/sırayı kesin belirten bir JSON alan listesi, altında da JSON'a sığmayan istisnalar için kısa notlar. "Değişim" promptu da bu ikisini birlikte okumasını Claude'a açıkça söylüyor. Amaç: bir sonraki Claude oturumunun formatı yanlış anlama payını azaltmak.
+
 ## v0.135.55
 - **"Değişim" durağı ikiye bölündü: Veri ve format / Giriş ve Kullanıcı ekle.** Eskiden tek bir onay kutusu vardı — giriş sistemi hiç kurulmasa da "Değişim tamamlandı" deyip Final'e geçmek mümkündü. Şimdi ikisi ayrı promptla, ayrı onayla ilerliyor; proje sunuculu ve Program temeli'nde en az bir katman (rol) tanımlıysa ikinci adım zorunlu, Final'e ancak ikisi de bitince geçiliyor. Giriş promptu artık sistemi baştan sona anlatıyor ve Kullanıcı ekle ekranındaki katman seçiminin Program temeli'nde belirlenen isimlerle (ör. Admin/Yönetici/Personel) birebir aynı olması gerektiğini açıkça söylüyor.
 

@@ -1337,17 +1337,32 @@ const PROMPT = {
     }
     s.push('Az sonra sana ' + konu.toLowerCase() + ' için örnek bir Excel');
     s.push('dosyası vereceğim. **Kod yazma, hiçbir dosyayı değiştirme** — tek');
-    s.push('işin dosyanın yapısını inceleyip bana düz metinle anlatmak.');
+    s.push('işin dosyanın yapısını inceleyip aşağıdaki iki parça halinde geri');
+    s.push('vermek. Bu metin olduğu gibi kopyalanıp başka bir Claude oturumuna');
+    s.push('yapıştırılacak — o oturum dosyayı bir daha hiç görmeyecek, yalnız');
+    s.push('senin yazdığını okuyacak. O yüzden net ve eksiksiz ol, tahmine yer');
+    s.push('bırakma.');
     s.push('');
     if (ipucu) { s.push('> ' + ipucu, ''); }
-    s.push('Dosyayı incele ve şunları anlat:');
-    s.push('- Kaç satır başlık var, veri hangi satırdan başlıyor');
-    s.push('- Sütunlar sırayla hangi isimde ve ne anlama geliyor');
-    s.push('- Tarih ve tutar gibi alanların formatı nasıl (ör. 12.01.2025,');
-    s.push('  1.234,56)');
-    s.push('- Dikkat çeken, sabit ya da değişken olabilecek bir şey varsa belirt');
+    s.push('## 1. Alanlar — JSON');
+    s.push('Dosyadaki her sütun için tek bir JSON bloğu ver, sırayı dosyadaki');
+    s.push('gibi koru, uydurma sütun ekleme:');
+    s.push('```json');
+    s.push('{');
+    s.push('  "baslikSatiri": 1,');
+    s.push('  "veriBaslangicSatiri": 2,');
+    s.push('  "alanlar": [');
+    s.push('    { "sutun": "Tarih", "tur": "tarih", "bicim": "12.01.2025", "ornek": "12.01.2025" },');
+    s.push('    { "sutun": "Tutar", "tur": "tutar", "bicim": "1.234,56", "ornek": "-250,00" }');
+    s.push('  ]');
+    s.push('}');
+    s.push('```');
     s.push('');
-    s.push('Kısa ve net anlat, madde madde yeter. JSON ya da kod isteme.');
+    s.push('## 2. Notlar — düz metin');
+    s.push('JSON\'a sığmayan her şey burada: tutarın işareti nasıl belli oluyor,');
+    s.push('atlanması gereken satır/sayfa var mı, sabit mi değişken mi olabilir,');
+    s.push('dikkat çeken bir tuhaflık var mı. Kısa, madde madde yaz — hiçbiri');
+    s.push('yoksa "yok" de.');
     return s.join('\n');
   },
 
@@ -1401,6 +1416,10 @@ const PROMPT = {
     s.push('Bu proje bir muhasebe programı şablonundan kopyalandı. Aşağıdaki');
     s.push('bilgiler bu firmaya özel — bunları koda işle. **Modül, sayfa ve');
     s.push('genel yapıyı değiştirme**, yalnız aşağıdaki bilgilere göre uyarla.');
+    s.push('"Excel yapısı" başlıklarının altında bir JSON alan listesi ve');
+    s.push('ardından "Notlar" göreceksin — JSON sütun adı/tür/sırayı kesin');
+    s.push('olarak belirler, tahmin etme; Notlar kısmı da işaret/istisna gibi');
+    s.push('JSON\'a sığmayan ayrıntıları verir, ikisini birlikte oku.');
     s.push('');
 
     if ((t.temel || {}).metin) {
