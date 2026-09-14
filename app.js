@@ -4548,12 +4548,11 @@ function ilkKullaniciGovde(p, pl) {
   }
 
   const kullaniciAdres = ilkKullaniciSupabasePaneli(pl, '/auth/users');
-  /* Bilerek burada SQL yazdırmıyoruz: bu adımda kullanıcı tablosunun son
-     hâli henüz belli değil (SQL az önce yüklendi, "Değişim" promptu daha
-     çalışmadı — o promptu, bu e-postayı Admin olarak o tabloya kendisi
-     ekleyecek, bkz. PROMPT.yetkiBlogu). Burada yanlış sütun adıyla SQL
-     önermek "çalıştırılmış SQL değiştirilmez" gibi bir kuralı olan bir
-     depoda daha çok zarar verir. */
+  /* Bilerek burada SQL yazdırmıyoruz: bu adım SQL'den ÖNCE geliyor (bkz.
+     baglantiAdimListesi), tabloların bile henüz kurulmadığı an — SQL'i
+     buradan sonra çalıştırınca, o dosyanın sonundaki "Yönetici satırı"
+     bloğu bu e-postayı auth.users'ta bulup kullanıcı tablosundaki satırını
+     kendisi açıyor. Ayrı bir SQL/prompt gerekmiyor. */
   return `<p class="fb-neden">Şunu yap, sonra "Ekledim" de:</p>
     <ol style="margin:0;padding-left:20px;display:grid;gap:10px;color:var(--ink-soft);font-size:13.5px">
       <li>Supabase panelinde <b>Authentication → Users → Add user</b>'a git;
@@ -4562,8 +4561,9 @@ function ilkKullaniciGovde(p, pl) {
         <a class="mini-link" target="_blank" rel="noopener" href="${esc(kullaniciAdres)}">
           ${svg(ICON.disari, 13)} Panele git</a></li>
     </ol>
-    <p class="ipucu">Kullanıcı tablosundaki satırını sen ekleme — bu e-postayı
-      Admin olarak o tabloya "Değişim" promptunda Claude ekleyecek.</p>
+    <p class="ipucu">Kullanıcı tablosuna satır ekleme diye bir şey yapmana gerek yok
+      — sıradaki "Veritabanını kur" adımında SQL'i çalıştırınca bu e-posta
+      otomatik olarak Admin yapılıyor.</p>
     ${AUTH.yonetici ? `<div class="kur-dug">
       <button class="sayfa-dug" type="button" data-eylem="ilk-kullanici-onay"
               data-proje="${p.id}">${svg(ICON.tik, 15)} Ekledim</button>
@@ -7301,11 +7301,14 @@ function baglantiAdimListesi(p) {
     if (sunuculuMu(p)) {
       liste.push('supabase');
       /* Template'e bir SQL linki tanımlıysa (bkz. Templateler > kurulum
-         sihirbazı) tablolar burada, Supabase bağlanır bağlanmaz yüklenir —
-         ilk kullanıcı (Admin) da bu noktada açılır. Link yoksa (nadir:
-         veritabanı gerektirmeyen bir template) ilk kullanıcı ilk kurulum
-         promptunun kendi bootstrap girişinden gelir (bkz. yetkiBlogu). */
-      if (pl.sablonSqlLink) liste.push('sql', 'ilkKullanici');
+         sihirbazı) Supabase bağlanır bağlanmaz önce ilk kullanıcı (Admin)
+         Authentication'da açılıyor, SONRA SQL çalıştırılıyor — sıra bilerek
+         bu yönde: SQL'in sonundaki "Yönetici satırı" bloğu auth.users'ta bu
+         e-postayı arıyor, SQL'den önce açılmışsa kullanıcı tablosundaki
+         satırı kendisi oluşturuyor, ayrı bir adım gerekmiyor. Link yoksa
+         (nadir: veritabanı gerektirmeyen bir template) ilk kullanıcı ilk
+         kurulum promptunun kendi bootstrap girişinden gelir (bkz. yetkiBlogu). */
+      if (pl.sablonSqlLink) liste.push('ilkKullanici', 'sql');
     }
     if (pl.alanTuru === 'namecheap') liste.push('namecheap');
     liste.push('claude');

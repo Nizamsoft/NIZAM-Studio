@@ -683,11 +683,10 @@ const PROMPT = {
     s.push('');
     if (pl.ilkKullaniciEklendi) {
       const eposta = (pl.ilkKullanici || {}).eposta || '';
-      s.push('**İlk giriş.** İlk admin hesabı Supabase Authentication\'da zaten');
-      s.push('açık' + (eposta ? ` (**${eposta}**)` : '') + ' — ama az önce kurduğun kullanıcı');
-      s.push('tablosunda henüz satırı yok, çünkü o tablo bu hesap açıldığında');
-      s.push('henüz yoktu. Bu e-posta için o tabloya bir Admin satırı ekle (tek');
-      s.push('seferlik bir SQL ile yeter). Kodun içine sabit bir kullanıcı');
+      s.push('**İlk giriş.** İlk admin hesabı hem Supabase Authentication\'da');
+      s.push('hem kullanıcı tablosunda zaten hazır' + (eposta ? ` (**${eposta}**)` : '')
+        + ' —');
+      s.push('SQL kurulumu bunu otomatik yaptı. Kodun içine sabit bir kullanıcı');
       s.push('adı/şifre gömmene gerek yok; giriş ekranı bu gerçek admin hesabını');
       s.push('baştan itibaren kullanabilir.');
     } else {

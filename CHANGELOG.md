@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## v0.135.45
+- **Bağlantılar ve temel'de sıra değişti: İlk kullanıcı artık SQL'den ÖNCE.** Gerçek şablon SQL'ini (hepsi-kurulum-01-88.sql) inceleyince, dosyanın kendi başlığında tam olarak bu sırayı önerdiğini gördük: Authentication'da kullanıcı SQL'den önce açılırsa, dosyanın sonundaki "Yönetici satırı" bloğu bu e-postayı bulup kullanıcı tablosundaki satırını kendisi açıyor — ekstra bir SQL ya da prompt gerekmiyor. Eskiden SQL önce çalıştığı için bu blok kullanıcıyı bulamıyor, satır oluşmuyordu (sadece uyarı yazıp geçiyordu).
+- İlk kullanıcı ekranındaki metin ve "Değişim" promptundaki "İlk giriş" notu buna göre sadeleşti — artık "bu satırı Claude Değişim'de eklesin" demiyor, çünkü satır SQL çalışınca zaten hazır oluyor.
+
 ## v0.135.44
 - **Hazır ve öğrenilen seçeneklerin yanına "Yapıyı gör" eklendi.** Banka/Fatura/Gün Sonu listesindeki her kutunun altında artık tıklayınca açılan bir metin var: hazır olanlarda (Garanti, Kuveyt Türk, Ziraat, Paraşüt) gerçek şablon kodundan çıkarılmış tam yapı açıklaması, öğrenilenlerde daha önce Claude'un yazdığı tarif. Amacı kod üretmek değil — yeni bir banka/sistem anlatırken aynı ayrıntı seviyesinde yazmaya yardımcı bir referans.
 - **Gün Sonu'na yeni hazır seçenek: Samba.** Şablonun POS okuma kodu zaten Samba raporlarını okuyor, o yüzden Garanti/Ziraat gibi hazır seçenek oldu. Yapı metninde önemli bir uyarı da var: raporun genel yapısı (bölüm tespiti, sayı formatı) her Samba müşterisinde aynı, ama ikram kategori isimleri ve platform listesi bu müşteriye özel — yeni müşteride "Bu firmaya özel" kutusuna yazılmalı.
