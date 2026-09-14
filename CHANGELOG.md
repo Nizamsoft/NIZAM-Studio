@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.135.54
+- **Templateler listesinde yayın linki eklendi.** Bir template'in yayın adresi varsa, satırın üstünde küçük bir düğmeyle tek dokunuşla açılabiliyor — satırın kendi tıklaması (kurulum sihirbazı) etkilenmiyor.
+
 ## v0.135.53
 - **Test ve Güncelle'ye yayın linki eklendi.** Durağın en üstünde artık "Uygulamayı aç" bağlantısı var — adres bulmak için başka yere gitmene gerek kalmadan tek dokunuşla canlı siteyi açabilirsin.
 

@@ -5777,6 +5777,7 @@ function cekirdekSatiri(p) {
   const cek     = pl.cekirdek || {};
   const hazir   = !!pl.cekirdekTemizlendi;
   const kilitli = !!pl.kilitli;
+  const yayinAdres = String(pl.alanAdi || '').trim();
   return `
     <div class="row" data-eylem="template-kur-ac" data-proje="${p.id}" role="button" tabindex="0">
       <div class="row-main">
@@ -5785,6 +5786,9 @@ function cekirdekSatiri(p) {
           ? (kilitli ? 'Hazır ve kilitli' : 'Hazır')
           : 'Kuruluyor — GitHub, SQL ve Claude adımları bekliyor'}</span>
       </div>
+      ${yayinAdres ? `<button class="ak-kop" type="button" data-eylem="sablon-yayina-git"
+                 data-adres="${esc(yayinAdres)}" aria-label="Uygulamayı aç"
+                 title="Uygulamayı aç — ${esc(yayinAdres)}">${svg(ICON.disari, 13)}</button>` : ''}
       ${hazir
         ? `<button class="ak-kop ${kilitli ? 'oldu' : ''}" type="button" data-eylem="proje-kilit-degistir"
                    data-proje="${p.id}" aria-label="${kilitli ? 'Kilidi aç' : 'Kilitle'}"
@@ -10888,6 +10892,16 @@ async function eylemCalistir(el) {
   if (e === 'template-olustur-ac') return cekirdekOlusturBaslat();
   if (e === 'template-kur-ac')     return cekirdekKurulumAc(el.dataset.proje);
   if (e === 'sablon-atama-sec')    return sablonAtamaSecAc(el.dataset.tur);
+
+  /* Satırın kendisi template-kur-ac'ı açıyor — bu düğme ayrı bir data-eylem
+     taşıdığı için closest() önce bunu buluyor, satırın tıklaması tetiklenmiyor.
+     window.open kullanıyoruz: delegasyon dinleyicisi her data-eylem'de
+     preventDefault çağırıyor, düz bir <a> burada işe yaramazdı. */
+  if (e === 'sablon-yayina-git') {
+    const adres = el.dataset.adres;
+    if (adres) window.open('https://' + adres, '_blank', 'noopener');
+    return;
+  }
 
   if (e === 'cekirdek-temizlendi-onay') {
     const pr = DB.proje(el.dataset.proje);
