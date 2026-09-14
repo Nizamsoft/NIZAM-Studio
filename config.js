@@ -7,7 +7,7 @@ const APP = {
   name:     'NIZAM | Studio',
   short:    'NIZAM Studio',
   owner:    'Nizam Soft',
-  version: 'v0.135.41',
+  version: 'v0.135.42',
   build:    '2026-09-13',
   /* Studio'nun kendi deposu — "bütün programlarda geçerli olsun"
      istekleri buraya gider. */
@@ -659,6 +659,11 @@ const SABLON_BANKA_HAZIR = [
   { anahtar: 'garanti', ad: 'Garanti BBVA' },
   { anahtar: 'kuveyt',  ad: 'Kuveyt Türk' },
   { anahtar: 'ziraat',  ad: 'Ziraat Bankası' },
+];
+
+/* Aynı mantık fatura & kart tarafında: Paraşüt entegrasyonu zaten hazır. */
+const SABLON_FATURA_HAZIR = [
+  { anahtar: 'parasut', ad: 'Paraşüt' },
 ];
 
 /* Template (çekirdek proje) türleri — Ayarlar > Templateler'de "Template

@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.135.42
+- **Temel tanımlar'a "öğrenen liste" eklendi: Banka, Fatura ve yeni "Gün Sonu".** Bir müşteride Excel formatı bir kez anlatılınca (Claude'a öğret → cevabı yapıştır → kaydet), o format artık aynı şablon türündeki (ör. Muhasebe) **her yeni müşteride** hazır bir seçenek olarak çıkıyor — yeniden anlatmaya gerek kalmıyor. Banka ve Fatura listeleri artık "kodda zaten hazır" + "başka bir projeden öğrenilen" seçeneklerin birleşimi.
+- **"POS okuyucu" adımı "Gün Sonu"na dönüştü, iki katmanlı oldu.** Üst kısım (POS sistemi) artık banka gibi öğrenen bir liste — başka müşteride kullanılan bir POS burada da çıkabiliyor. Alt kısım ("Bu firmaya özel") ise platform/ısmarlama/yetkili gibi yalnız o firmaya ait serbest metin — hiçbir yere kaydedilmiyor, başka müşterilere taşınmıyor.
+- **Fatura & kart artık Paraşüt'e özel Evet/Hayır sorusu değil, Banka gibi bir liste.** Paraşüt hazır seçenek, farklı bir sistem kullanılıyorsa eklenip öğretiliyor.
+- Öğrenilen seçenekler şimdilik tarayıcının yerel deposunda (localStorage) tutuluyor — yeni bir Supabase tablosu/migration gerektirmiyor.
+
 ## v0.135.41
 - **Bug: Şablon kopyaları Final'e hiç ulaşamıyordu.** "Final ver" düğmesinin hazır olup olmadığını kontrol eden fonksiyon yalnızca normal projelerin bayrağına (`betaTamamlandi`) bakıyordu — şablon kopyalarının kendi bayrağını (`sablonDegisimTamamlandi`) hiç bilmiyordu, yani düğme hiçbir zaman açılmıyordu. Final sayfasındaki "Beta ve geliştirme durağı" yazısı da şablon kopyalarında yanlıştı, artık "Değişim" yazıyor.
 - **Bug: Şablon kopyalarında kullanıcı ekleme özelliği hiç kodlatılmıyordu.** İlk kurulum promptuna (bkz. yetkiBlogu) eklediğimiz "Ayarlar'a Kullanıcı ekle kur" talimatı yalnızca sıfırdan projelerin promptuna (`PROMPT.yapi`) gidiyordu — şablon kopyalarının gerçek ilk kod promptu olan "Değişim"e hiç eklenmemişti. Artık oraya da ekleniyor.

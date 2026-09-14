@@ -1344,14 +1344,44 @@ const PROMPT = {
     return s.join('\n');
   },
 
+  /* Banka/fatura/gunsonu bölümlerinin üçü de aynı kalıp: hazır (kodda zaten
+     var) + öğrenilen (başka bir projede bir kez anlatılmış, tarifi
+     `sablonSecenekleri`'nden geliyor) + ekstra (bu projede yeni anlatılmış).
+     Öğrenilen bir tarif de dahil edilmezse, şablon kopyası kendi başına bir
+     kod tabanı olduğundan Claude o formatı hiç bilmez — az önce anlatılmış
+     gibi burada tekrar veriliyor. */
+  sablonDegisimBolumu(s, tur, kategori, t, hazirListe, baslik, hazirCumle) {
+    const veri = t[kategori] || {};
+    const secili = veri.secili || [];
+    const ekstra = (veri.ekstra || []).filter(x => (x.ad || '').trim());
+    const hazirAd = hazirListe.filter(h => secili.indexOf(h.anahtar) > -1).map(h => h.ad);
+    const ogrenilen = secili
+      .filter(id => !hazirListe.some(h => h.anahtar === id))
+      .map(id => sablonSecenekleri(tur, kategori).find(o => o.id === id))
+      .filter(Boolean);
+    if (!hazirAd.length && !ogrenilen.length && !ekstra.length) return;
+    s.push('## ' + baslik);
+    if (hazirAd.length) s.push(hazirCumle + hazirAd.join(', ') + '.');
+    ogrenilen.forEach(o => {
+      s.push('', '### ' + o.ad + ' — Excel yapısı (başka bir projede öğrenildi)');
+      s.push(o.tarif);
+    });
+    ekstra.forEach(x => {
+      s.push('', '### ' + x.ad + ' — Excel yapısı');
+      s.push((x.cevap || '').trim() || '(açıklama girilmedi)');
+    });
+    s.push('');
+  },
+
   /* Değişim: Temel tanımlar'da toplanan her şeyi tek seferde koda işleyen
      prompt. Genel yapıyı (modül/sayfa) değiştirmiyor, yalnız bu firmaya
      özel bilgiyi uyguluyor. */
   sablonDegisim(projeId) {
     const p = DB.proje(projeId);
     if (!p) return '';
-    const pl = p.palet || {};
-    const t  = pl.sablonTanimlar || {};
+    const pl  = p.palet || {};
+    const t   = pl.sablonTanimlar || {};
+    const tur = pl.sablon || '';
     const slug = depoSlug(p.repo);
 
     const s = [];
@@ -1371,40 +1401,21 @@ const PROMPT = {
       s.push('> ' + t.temel.metin.trim().split('\n').join('\n> '));
       s.push('');
     }
-    if ((t.pos || {}).cevap) {
-      s.push('## POS okuyucu — Excel yapısı');
-      s.push(t.pos.cevap.trim());
+
+    PROMPT.sablonDegisimBolumu(s, tur, 'gunsonu', t, [],
+      'Gün Sonu — POS sistemi', 'Hazır: ');
+    const ozel = ((t.gunsonu || {}).ozel || '').trim();
+    if (ozel) {
+      s.push('## Gün Sonu — bu firmaya özel');
+      s.push(ozel);
       s.push('');
     }
 
-    const banka    = t.banka || {};
-    const hazirAd  = SABLON_BANKA_HAZIR
-      .filter(b => (banka.secili || []).indexOf(b.anahtar) > -1).map(b => b.ad);
-    const ekstra   = (banka.ekstra || []).filter(b => (b.ad || '').trim());
-    if (hazirAd.length || ekstra.length) {
-      s.push('## Bankalar');
-      if (hazirAd.length) {
-        s.push('Hazır ekstre yapısı zaten sistemde kayıtlı: ' + hazirAd.join(', ') + '.');
-      }
-      ekstra.forEach(b => {
-        s.push('', '### ' + b.ad + ' — Excel yapısı');
-        s.push((b.cevap || '').trim() || '(açıklama girilmedi)');
-      });
-      s.push('');
-    }
+    PROMPT.sablonDegisimBolumu(s, tur, 'banka', t, SABLON_BANKA_HAZIR,
+      'Bankalar', 'Hazır ekstre yapısı zaten sistemde kayıtlı: ');
 
-    const fatura = t.fatura || {};
-    if (fatura.parasut === true) {
-      s.push('## Fatura ve kart hareketleri');
-      s.push('Firma Paraşüt kullanıyor — sistemde zaten kurulu Paraşüt');
-      s.push('entegrasyonu geçerli, ek bir şey gerekmiyor.');
-      s.push('');
-    } else if (fatura.parasut === false && (fatura.cevap || '').trim()) {
-      s.push('## Fatura ve kart hareketleri — Excel yapısı');
-      s.push('Firma Paraşüt kullanmıyor, aşağıdaki Excel yapısından okunacak:');
-      s.push(fatura.cevap.trim());
-      s.push('');
-    }
+    PROMPT.sablonDegisimBolumu(s, tur, 'fatura', t, SABLON_FATURA_HAZIR,
+      'Fatura ve kart hareketleri', 'Hazır entegrasyon zaten sistemde kayıtlı: ');
 
     s.push(PROMPT.yetkiBlogu(p));
     s.push('');

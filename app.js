@@ -938,9 +938,9 @@ const DURAKLAR = {
      Bkz. sablonD(), sablonTanimlarSayfasi(), sablonDegisimSayfasi(). */
   yapi:        { no: 4, ad: 'Kurulum ve yapı',
                  ciz: (p, d) => sablonMu(p) ? sablonTanimlarSayfasi(p,
-                   sablonD(d, 'Temel tanımlar', 'Şube, POS, banka ve fatura tanımlarını topla.')) : yapiSayfasi(p, d),
+                   sablonD(d, 'Temel tanımlar', 'Şube, Gün Sonu, banka ve fatura tanımlarını topla.')) : yapiSayfasi(p, d),
                  renk: '#8fae4a', ikon: 'gAltyapi', resim: 'yapi',
-                 aciklama: p => sablonMu(p) ? 'Şube, POS, banka ve fatura tanımlarını topla.'
+                 aciklama: p => sablonMu(p) ? 'Şube, Gün Sonu, banka ve fatura tanımlarını topla.'
                    : 'Kurulum dosyaları ve proje yapısı.' },
   beta:        { no: 5, ad: 'Beta ve geliştirme',
                  ciz: (p, d) => sablonMu(p) ? sablonDegisimSayfasi(p,
@@ -3650,6 +3650,46 @@ function sablonAtamasiYaz(turAnahtari, projeId) {
   catch (h) { /* önemsiz */ }
 }
 
+/* Şablon kopyasının hangi şablon türünden geldiği — Temel tanımlar'daki
+   "öğrenen liste" (bkz. sablonSecenekleri) bu türe göre paylaşılıyor: bir
+   müşteride öğrenilen banka/fatura/POS formatı, aynı türden başka her
+   müşteride hazır seçenek olarak çıkıyor. */
+function sablonProjeTuru(p) {
+  return ((p && p.palet) || {}).sablon || '';
+}
+
+/* Öğrenen seçenekler: bir şablon türü + kategori (banka/fatura/gunsonu)
+   için, herhangi bir müşteride bir kez anlatılmış format tarifleri.
+   localStorage'da tutuluyor — `sablonAtamasi` ile aynı gerekçe: yeni bir
+   Supabase tablosu, kullanıcının canlı projesine SQL migration'ı elle
+   çalıştırmasını gerektirir, test sırasında gereksiz sürtünme olur. */
+const SABLON_SECENEK_ANAHTAR = 'ns.sablonSecenekleri';
+function sablonSecenekHepsi() {
+  try { return JSON.parse(localStorage.getItem(SABLON_SECENEK_ANAHTAR) || '{}') || {}; }
+  catch (h) { return {}; }
+}
+function sablonSecenekYazHepsi(hepsi) {
+  try { localStorage.setItem(SABLON_SECENEK_ANAHTAR, JSON.stringify(hepsi)); }
+  catch (h) { /* önemsiz */ }
+}
+function sablonSecenekleri(tur, kategori) {
+  if (!tur) return [];
+  return ((sablonSecenekHepsi()[tur] || {})[kategori] || []);
+}
+function sablonSecenekEkle(tur, kategori, ad, tarif) {
+  const adTrim = (ad || '').trim();
+  if (!tur || !adTrim || !(tarif || '').trim()) return;
+  const hepsi = sablonSecenekHepsi();
+  hepsi[tur] = hepsi[tur] || {};
+  const liste = (hepsi[tur][kategori] || []).slice();
+  const id = asciiye(adTrim).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'secenek';
+  const i = liste.findIndex(x => x.id === id);
+  const kayit = { id, ad: adTrim, tarif: tarif.trim() };
+  if (i > -1) liste[i] = kayit; else liste.push(kayit);
+  hepsi[tur][kategori] = liste;
+  sablonSecenekYazHepsi(hepsi);
+}
+
 /* Projenin alt alanı. Firma adının tamamı uzun ve okunmaz çıkıyor
    ("merkezefendikoftecisi"); ilk iki kelime hem ayırt edici hem kısa. */
 function altAlan(p) {
@@ -4061,15 +4101,18 @@ function sqlEditorAdresi(url) {
    gerçek koda işleme burada değil, "Değişim" durağında tek promptla oluyor. */
 const SABLON_SIHIRBAZ = { adim: 1, projeId: null };
 
-function sablonTanimlarListesi() { return ['temel', 'pos', 'banka', 'fatura']; }
+function sablonTanimlarListesi() { return ['temel', 'gunsonu', 'banka', 'fatura']; }
 
 function sablonTanimlarOku(p) {
   const t = (p.palet || {}).sablonTanimlar || {};
   return {
-    temel:  Object.assign({ metin: '' }, t.temel),
-    pos:    Object.assign({ cevap: '' }, t.pos),
-    banka:  Object.assign({ secili: [], ekstra: [] }, t.banka),
-    fatura: Object.assign({ parasut: null, cevap: '' }, t.fatura),
+    temel:   Object.assign({ metin: '' }, t.temel),
+    /* Gün Sonu iki katmanlı: "secili/ekstra" POS sistemi — öğrenen liste,
+       başka müşterilerle paylaşılıyor; "ozel" ise platform/ısmarlama/yetkili
+       gibi yalnız bu firmaya ait serbest metin, hiçbir yere kaydedilmiyor. */
+    gunsonu: Object.assign({ secili: [], ekstra: [], ozel: '' }, t.gunsonu),
+    banka:   Object.assign({ secili: [], ekstra: [] }, t.banka),
+    fatura:  Object.assign({ secili: [], ekstra: [] }, t.fatura),
   };
 }
 
@@ -4080,14 +4123,19 @@ function sablonTanimlarYaz(pr, kismi) {
   }));
 }
 
+/* Banka/fatura/gunsonu üçü de aynı "en az bir seçenek" kuralına uyuyor —
+   ister hazır/öğrenilen bir kutu işaretlensin, ister yeni bir tane anlatılıp
+   kaydedilsin. */
+function sablonOgrenenBittiMi(t) {
+  return t.secili.length > 0 || t.ekstra.some(b => (b.cevap || '').trim());
+}
+
 function sablonTanimlarAdimBittiMi(k, p) {
   const t = sablonTanimlarOku(p);
-  if (k === 'temel')  return !!t.temel.metin.trim();
-  if (k === 'pos')    return !!t.pos.cevap.trim();
-  if (k === 'banka')  return t.banka.secili.length > 0
-    || t.banka.ekstra.some(b => (b.cevap || '').trim());
-  if (k === 'fatura') return t.fatura.parasut === true
-    || (t.fatura.parasut === false && !!t.fatura.cevap.trim());
+  if (k === 'temel')   return !!t.temel.metin.trim();
+  if (k === 'gunsonu') return sablonOgrenenBittiMi(t.gunsonu);
+  if (k === 'banka')   return sablonOgrenenBittiMi(t.banka);
+  if (k === 'fatura')  return sablonOgrenenBittiMi(t.fatura);
   return false;
 }
 
@@ -4096,7 +4144,7 @@ function sablonTanimlarBittiMi(p) {
 }
 
 function sablonTanimlarEtiket(k) {
-  return { temel: 'Temel tanımlar', pos: 'POS okuyucu',
+  return { temel: 'Temel tanımlar', gunsonu: 'Gün Sonu',
            banka: 'Bankalar', fatura: 'Fatura & kart' }[k] || '';
 }
 
@@ -4108,7 +4156,7 @@ function sablonTanimlarSayfasi(p, d) {
   return `<div class="fb-govde">`
     + adimBasligi(p, d, biten + '/' + liste.length)
     + fbBosKart('#8fae4a', ICON.gAltyapi, 'Temel tanımlar', biten + '/' + liste.length,
-        'Bu firmaya özel şube/kullanıcı/hesap planı, POS okuyucu, banka ve fatura & kart '
+        'Bu firmaya özel şube/kullanıcı/hesap planı, Gün Sonu, banka ve fatura & kart '
         + 'yapılarını burada topluyoruz. <b>Adımlar sırayla ilerlenir.</b>',
         'sablon-sihirbazi-ac', p.id, true)
     + `</div>`;
@@ -4161,9 +4209,9 @@ function sablonSihirbaziSerit(liste, simdi, p) {
 
 function sablonSihirbaziHtml(p, liste) {
   const k = liste[SABLON_SIHIRBAZ.adim - 1];
-  const govde = k === 'temel' ? sablonAdimTemelGovde(p)
-    : k === 'pos'   ? sablonAdimPosGovde(p)
-    : k === 'banka' ? sablonAdimBankaGovde(p)
+  const govde = k === 'temel'   ? sablonAdimTemelGovde(p)
+    : k === 'gunsonu' ? sablonAdimGunSonuGovde(p)
+    : k === 'banka'   ? sablonAdimBankaGovde(p)
     : sablonAdimFaturaGovde(p);
 
   const geri = SABLON_SIHIRBAZ.adim > 1
@@ -4218,88 +4266,93 @@ function sablonAdimTemelGovde(p) {
     + (t.temel.metin.trim() ? `<div class="kur-deger duz">${svg(ICON.tik, 13)} Kaydedildi</div>` : '');
 }
 
-/* Ortak "Excel yapısını öğret" gövdesi — POS, ekstra banka ve Paraşüt-dışı
-   fatura&kart adımlarının hepsi aynı kalıbı kullanıyor: prompt oluştur,
-   Claude'a ver, cevabı yapıştır. */
-function sablonOgrenGovde(baslik, aciklama, pano, cevap, girdiId, kaydetEylem, p, ekVeri) {
-  return shBaslikServis('claude', baslik, aciklama)
-    + `<div class="kur-dug">
-        ${promptBaglantisi({ tur: pano, proje: p.id, slug: depoSlug(p.repo),
-          hedef: 'claude-yeni', yazi: 'Prompt oluştur ve Claude\'u aç' })}
-      </div>`
-    + `<textarea class="anl-kutu" id="${girdiId}" rows="6"
-         placeholder="Claude'un cevabını buraya yapıştır…">${esc(cevap)}</textarea>`
-    + `<div class="kur-dug">
-        <button class="sayfa-dug" type="button" data-eylem="${kaydetEylem}"
-                data-proje="${p.id}"${ekVeri !== undefined ? ` data-deger="${esc(ekVeri)}"` : ''}>
-          ${svg(ICON.check, 15)} Kaydet</button>
-      </div>`
-    + (cevap.trim() ? `<div class="kur-deger duz">${svg(ICON.tik, 13)} Kaydedildi</div>` : '');
-}
+/* Ortak "öğrenen liste" gövdesi — banka, fatura ve Gün Sonu'ndaki POS
+   sistemi hepsi aynı kalıbı kullanıyor: kodda zaten hazır olanlar + başka
+   müşterilerden öğrenilenler onay kutusu, altında "yeni bir tane anlat"
+   akışı. Bir öğrenilen kutu işaretlenince tarifi zaten hazır — Claude'a
+   yeniden anlatmaya gerek kalmıyor. Kod yazmıyoruz burada — yalnız tarif
+   topluyoruz; gerçek koda işleme her zaman "Değişim" promptunda. */
+function sablonOgrenenListesiGovde(p, kategori, ikon, baslik, aciklama, hazirListe, ekleEtiket, ekleYerTutucu) {
+  const t = sablonTanimlarOku(p)[kategori];
+  const tur = sablonProjeTuru(p);
+  const ogrenilen = sablonSecenekleri(tur, kategori)
+    .filter(o => !hazirListe.some(h => h.anahtar === o.id));
 
-/* 2 · POS okuyucu — örnek excel Claude'a öğretiliyor. */
-function sablonAdimPosGovde(p) {
-  const t = sablonTanimlarOku(p);
-  return sablonOgrenGovde('POS okuyucu', 'POS cihazından çıkan örnek Excel dosyasının '
-    + 'yapısını Claude\'a öğreteceğiz.', 'sablonPos', t.pos.cevap, 'sb-pos-cevap', 'sablon-pos-kaydet', p);
-}
+  const kutu = (anahtar, ad, not) => `
+    <label class="kur-onay ${t.secili.indexOf(anahtar) > -1 ? 'on' : ''}"
+           data-eylem="sablon-secenek-sec" data-proje="${p.id}" data-kategori="${kategori}"
+           data-deger="${anahtar}" role="button" tabindex="0">
+      <span class="kur-kutu">${svg(ICON.tik, 12)}</span> ${esc(ad)}
+      <i style="margin-left:4px;opacity:.6">— ${not}</i></label>`;
 
-/* 3 · Bankalar: üçü hazır (excel yapısı zaten kayıtlı), geri kalanı yine
-   excel-öğret akışı. */
-function sablonAdimBankaGovde(p) {
-  const t = sablonTanimlarOku(p);
-  const b = t.banka;
-  const kutu = banka => `
-    <label class="kur-onay ${b.secili.indexOf(banka.anahtar) > -1 ? 'on' : ''}"
-           data-eylem="sablon-banka-sec" data-proje="${p.id}" data-deger="${banka.anahtar}"
-           role="button" tabindex="0">
-      <span class="kur-kutu">${svg(ICON.tik, 12)}</span> ${esc(banka.ad)}
-      <i style="margin-left:4px;opacity:.6">— excel yapısı hazır</i></label>`;
-
-  const ekstraGovde = b.ekstra.map((x, i) => `
+  const ekstraGovde = t.ekstra.map((x, i) => `
     <div class="note" style="margin-top:10px;display:block">
       <b>${esc(x.ad)}</b>
       <div class="kur-dug" style="margin-top:8px">
-        ${promptBaglantisi({ tur: 'sablonBanka:' + i, proje: p.id, slug: depoSlug(p.repo),
+        ${promptBaglantisi({ tur: 'sablonEkstra:' + kategori + ':' + i, proje: p.id, slug: depoSlug(p.repo),
           hedef: 'claude-yeni', yazi: 'Prompt oluştur ve Claude\'u aç' })}
       </div>
-      <textarea class="anl-kutu" id="sb-banka-cevap-${i}" rows="4"
+      <textarea class="anl-kutu" id="sb-${kategori}-cevap-${i}" rows="4"
         placeholder="Claude'un cevabını buraya yapıştır…">${esc(x.cevap || '')}</textarea>
       <div class="kur-dug" style="margin-top:8px">
-        <button class="sayfa-dug" type="button" data-eylem="sablon-banka-cevap-kaydet"
-                data-proje="${p.id}" data-deger="${i}">${svg(ICON.check, 15)} Kaydet</button>
-        <button class="sayfa-dug ikincil" type="button" data-eylem="sablon-banka-sil"
-                data-proje="${p.id}" data-deger="${i}">${svg(ICON.cop, 15)} Sil</button>
+        <button class="sayfa-dug" type="button" data-eylem="sablon-secenek-cevap-kaydet"
+                data-proje="${p.id}" data-kategori="${kategori}" data-deger="${i}">${svg(ICON.check, 15)} Kaydet</button>
+        <button class="sayfa-dug ikincil" type="button" data-eylem="sablon-secenek-sil"
+                data-proje="${p.id}" data-kategori="${kategori}" data-deger="${i}">${svg(ICON.cop, 15)} Sil</button>
       </div>
     </div>`).join('');
 
-  return shBaslik(ICON.gAltyapi, 'Bankalar',
-      'Hangi bankalar kullanılacak? Garanti, Kuveyt Türk ve Ziraat için excel '
-      + 'yapısı zaten sistemde kayıtlı — seçmen yeter. Başka bir banka gerekirse ekle.')
-    + SABLON_BANKA_HAZIR.map(kutu).join('')
+  return shBaslik(ikon, baslik, aciklama)
+    + hazirListe.map(h => kutu(h.anahtar, h.ad, 'zaten hazır')).join('')
+    + ogrenilen.map(o => kutu(o.id, o.ad, 'başka bir projeden öğrenildi')).join('')
     + ekstraGovde
     + `<div class="kur-dug" style="margin-top:10px">
-        <button class="sayfa-dug ikincil" type="button" data-eylem="sablon-banka-ekle" data-proje="${p.id}">
-          ${svg(ICON.arti, 15)} Banka ekle</button>
+        <button class="sayfa-dug ikincil" type="button" data-eylem="sablon-secenek-ekle"
+                data-proje="${p.id}" data-kategori="${kategori}" data-etiket="${esc(ekleEtiket)}"
+                data-yertutucu="${esc(ekleYerTutucu)}">
+          ${svg(ICON.arti, 15)} ${esc(ekleEtiket)}</button>
       </div>`;
 }
 
-/* 4 · Fatura & kart hareketleri — Paraşüt kullanılıyorsa iş yok. */
-function sablonAdimFaturaGovde(p) {
+/* 2 · Gün Sonu: POS sistemi öğrenen liste (paylaşılıyor) + bu firmaya özel
+   platform/ısmarlama/yetkili serbest metni (paylaşılmıyor). */
+function sablonAdimGunSonuGovde(p) {
   const t = sablonTanimlarOku(p);
-  const f = t.fatura;
-  return shBaslik(ICON.etiket, 'Fatura ve kart hareketleri', 'Firma Paraşüt kullanıyor mu?')
-    + `<label class="kur-onay ${f.parasut === true ? 'on' : ''}" data-eylem="sablon-fatura-parasut"
-             data-proje="${p.id}" data-deger="evet" role="button" tabindex="0">
-        <span class="kur-kutu">${svg(ICON.tik, 12)}</span> Evet, Paraşüt kullanıyor</label>`
-    + `<label class="kur-onay ${f.parasut === false ? 'on' : ''}" data-eylem="sablon-fatura-parasut"
-             data-proje="${p.id}" data-deger="hayir" role="button" tabindex="0" style="margin-top:8px">
-        <span class="kur-kutu">${svg(ICON.tik, 12)}</span> Hayır, kullanmıyor</label>`
-    + (f.parasut === false
-        ? `<div style="margin-top:14px">` + sablonOgrenGovde('Fatura ve kart — Excel yapısı',
-            'Fatura ve kart hareketleri için örnek Excel dosyasının yapısını Claude\'a öğreteceğiz.',
-            'sablonFatura', f.cevap, 'sb-fatura-cevap', 'sablon-fatura-kaydet', p) + `</div>`
-        : '');
+  const ozel = t.gunsonu.ozel;
+  return sablonOgrenenListesiGovde(p, 'gunsonu', ICON.gOptimizasyon, 'Gün Sonu — POS sistemi',
+      'POS cihazından çıkan örnek Excel dosyasının yapısını Claude\'a öğreteceğiz. Bir daha '
+      + 'başka bir firmada aynı POS çıkarsa yeniden anlatmana gerek kalmaz.',
+      [], 'POS ekle', 'Örn. Samba')
+    + `<div style="margin-top:18px">`
+    + shBaslik(ICON.etiket, 'Bu firmaya özel',
+        'Platform/ısmarlama isimleri, yetkili adları gibi yalnız bu firmaya ait ayrıntılar — '
+        + 'başka firmalara taşınmaz, burada kalır.')
+    + `<textarea class="anl-kutu" id="sb-gunsonu-ozel" rows="4"
+         placeholder="Örn. Yemeksepeti, Getir, Trendyol üzerinden gelen siparişler ayrı satırda…">${esc(ozel)}</textarea>`
+    + `<div class="kur-dug">
+        <button class="sayfa-dug" type="button" data-eylem="sablon-gunsonu-ozel-kaydet" data-proje="${p.id}">
+          ${svg(ICON.check, 15)} Kaydet</button>
+      </div>`
+    + (ozel.trim() ? `<div class="kur-deger duz">${svg(ICON.tik, 13)} Kaydedildi</div>` : '')
+    + `</div>`;
+}
+
+/* 3 · Bankalar: üçü hazır (excel yapısı zaten kayıtlı), öğrenilenler +
+   yeni ekleme yine excel-öğret akışı. */
+function sablonAdimBankaGovde(p) {
+  return sablonOgrenenListesiGovde(p, 'banka', ICON.gAltyapi, 'Bankalar',
+      'Hangi bankalar kullanılacak? Garanti, Kuveyt Türk ve Ziraat için excel yapısı zaten '
+      + 'sistemde kayıtlı — seçmen yeter. Listede yoksa ekle; bir daha başka bir firmada aynı '
+      + 'banka çıkarsa yeniden anlatmana gerek kalmaz.',
+      SABLON_BANKA_HAZIR, 'Banka ekle', 'Örn. Akbank');
+}
+
+/* 4 · Fatura & kart hareketleri — Paraşüt hazır, geri kalanı öğrenen liste. */
+function sablonAdimFaturaGovde(p) {
+  return sablonOgrenenListesiGovde(p, 'fatura', ICON.etiket, 'Fatura ve kart hareketleri',
+      'Firma hangi sistemi kullanıyor? Paraşüt için entegrasyon zaten sistemde kayıtlı — '
+      + 'seçmen yeter. Listede yoksa ekle.',
+      SABLON_FATURA_HAZIR, 'Sistem ekle', 'Örn. Logo');
 }
 
 /* 5 · Değişim — Temel tanımlar'da toplanan her şeyi tek promptla koda
@@ -8774,9 +8827,6 @@ const PANO_PROMPT = {
   betaIstek:     p => PROMPT.betaIstek(p.id, BETA_ISTEK[p.id] || ''),
   guncellemeIstek: p => PROMPT.guncellemeIstek(p.id, GUNCELLEME_ISTEK[p.id] || ''),
   denemeIstek:   p => PROMPT.denemeIstek(p.id, DENEME_ISTEK[p.id] || ''),
-  sablonPos:     p => PROMPT.sablonOgren(p.id, 'POS okuyucu',
-    'POS cihazından alınan hareket dökümü.'),
-  sablonFatura:  p => PROMPT.sablonOgren(p.id, 'Fatura ve kart hareketi', ''),
   sablonDegisim: p => PROMPT.sablonDegisim(p.id),
   cekirdekTemizle: p => PROMPT.cekirdekTemizle(p.id),
   yapi:          p => PROMPT.yapi(p.id),
@@ -9928,70 +9978,67 @@ async function eylemCalistir(el) {
     return isYap(() => sablonTanimlarYaz(pr, { temel: { metin: metin.trim() } }), 'Kaydedildi.');
   }
 
-  if (e === 'sablon-pos-kaydet') {
+  if (e === 'sablon-gunsonu-ozel-kaydet') {
     const pr = DB.proje(el.dataset.proje);
     if (!pr) return;
-    const cevap = ($('#sb-pos-cevap') || {}).value || '';
-    if (!cevap.trim()) return toast('Önce Claude\'un cevabını yapıştır.', 'uyari');
-    return isYap(() => sablonTanimlarYaz(pr, { pos: { cevap: cevap.trim() } }), 'Kaydedildi.');
+    const ozel = ($('#sb-gunsonu-ozel') || {}).value || '';
+    const t = sablonTanimlarOku(pr).gunsonu;
+    return isYap(() => sablonTanimlarYaz(pr, { gunsonu: Object.assign({}, t, { ozel: ozel.trim() }) }), 'Kaydedildi.');
   }
 
-  if (e === 'sablon-banka-sec') {
+  /* Banka/fatura/gunsonu — dördü de aynı "öğrenen liste" kalıbını paylaşıyor,
+     bkz. sablonOgrenenListesiGovde. Kategoriye göre dallanmak yerine
+     `data-kategori` ile tek kod yolundan geçiyorlar. */
+  if (e === 'sablon-secenek-sec') {
     const pr = DB.proje(el.dataset.proje);
     if (!pr) return;
-    const t = sablonTanimlarOku(pr);
+    const kategori = el.dataset.kategori;
+    const t = sablonTanimlarOku(pr)[kategori];
     const anahtar = el.dataset.deger;
-    const secili = t.banka.secili.indexOf(anahtar) > -1
-      ? t.banka.secili.filter(x => x !== anahtar)
-      : t.banka.secili.concat(anahtar);
-    return isYap(() => sablonTanimlarYaz(pr, { banka: Object.assign({}, t.banka, { secili }) }));
+    const secili = t.secili.indexOf(anahtar) > -1
+      ? t.secili.filter(x => x !== anahtar)
+      : t.secili.concat(anahtar);
+    return isYap(() => sablonTanimlarYaz(pr, { [kategori]: Object.assign({}, t, { secili }) }));
   }
 
-  if (e === 'sablon-banka-ekle') {
+  if (e === 'sablon-secenek-ekle') {
     const pr = DB.proje(el.dataset.proje);
     if (!pr) return;
-    const ad = await metinSor({ baslik: 'Banka adı', buton: 'Ekle', yerTutucu: 'Örn. Akbank' });
+    const kategori = el.dataset.kategori;
+    const ad = await metinSor({ baslik: el.dataset.etiket || 'Ad', buton: 'Ekle',
+      yerTutucu: el.dataset.yertutucu || '' });
     if (!ad || !ad.trim()) return;
-    const t = sablonTanimlarOku(pr);
-    return isYap(() => sablonTanimlarYaz(pr, { banka: Object.assign({}, t.banka,
-      { ekstra: t.banka.ekstra.concat({ ad: ad.trim(), cevap: '' }) }) }), 'Banka eklendi.');
+    const t = sablonTanimlarOku(pr)[kategori];
+    return isYap(() => sablonTanimlarYaz(pr, { [kategori]: Object.assign({}, t,
+      { ekstra: t.ekstra.concat({ ad: ad.trim(), cevap: '' }) }) }), 'Eklendi.');
   }
 
-  if (e === 'sablon-banka-cevap-kaydet') {
+  if (e === 'sablon-secenek-cevap-kaydet') {
     const pr = DB.proje(el.dataset.proje);
     if (!pr) return;
+    const kategori = el.dataset.kategori;
     const i = Number(el.dataset.deger);
-    const cevap = ($('#sb-banka-cevap-' + i) || {}).value || '';
-    const t = sablonTanimlarOku(pr);
-    const ekstra = t.banka.ekstra.map((x, j) => j === i ? Object.assign({}, x, { cevap: cevap.trim() }) : x);
-    return isYap(() => sablonTanimlarYaz(pr, { banka: Object.assign({}, t.banka, { ekstra }) }), 'Kaydedildi.');
+    const cevap = ($('#sb-' + kategori + '-cevap-' + i) || {}).value || '';
+    const t = sablonTanimlarOku(pr)[kategori];
+    const ekstra = t.ekstra.map((x, j) => j === i ? Object.assign({}, x, { cevap: cevap.trim() }) : x);
+    return isYap(() => {
+      const kayit = ekstra[i];
+      const tur = sablonProjeTuru(pr);
+      /* Bu tarif başka müşteriler için de öğrenilmiş olsun — aynı kategori
+         için sonraki her proje bunu hazır seçenek olarak görecek. */
+      if (tur && kayit && (kayit.cevap || '').trim()) sablonSecenekEkle(tur, kategori, kayit.ad, kayit.cevap);
+      return sablonTanimlarYaz(pr, { [kategori]: Object.assign({}, t, { ekstra }) });
+    }, 'Kaydedildi.');
   }
 
-  if (e === 'sablon-banka-sil') {
+  if (e === 'sablon-secenek-sil') {
     const pr = DB.proje(el.dataset.proje);
     if (!pr) return;
+    const kategori = el.dataset.kategori;
     const i = Number(el.dataset.deger);
-    const t = sablonTanimlarOku(pr);
-    return isYap(() => sablonTanimlarYaz(pr, { banka: Object.assign({}, t.banka,
-      { ekstra: t.banka.ekstra.filter((_, j) => j !== i) }) }), 'Banka kaldırıldı.');
-  }
-
-  if (e === 'sablon-fatura-parasut') {
-    const pr = DB.proje(el.dataset.proje);
-    if (!pr) return;
-    const t = sablonTanimlarOku(pr);
-    return isYap(() => sablonTanimlarYaz(pr,
-      { fatura: Object.assign({}, t.fatura, { parasut: el.dataset.deger === 'evet' }) }));
-  }
-
-  if (e === 'sablon-fatura-kaydet') {
-    const pr = DB.proje(el.dataset.proje);
-    if (!pr) return;
-    const cevap = ($('#sb-fatura-cevap') || {}).value || '';
-    if (!cevap.trim()) return toast('Önce Claude\'un cevabını yapıştır.', 'uyari');
-    const t = sablonTanimlarOku(pr);
-    return isYap(() => sablonTanimlarYaz(pr,
-      { fatura: Object.assign({}, t.fatura, { cevap: cevap.trim() }) }), 'Kaydedildi.');
+    const t = sablonTanimlarOku(pr)[kategori];
+    return isYap(() => sablonTanimlarYaz(pr, { [kategori]: Object.assign({}, t,
+      { ekstra: t.ekstra.filter((_, j) => j !== i) }) }), 'Kaldırıldı.');
   }
 
   if (e === 'sablon-degisim-onay') {
@@ -11454,12 +11501,18 @@ document.addEventListener('DOMContentLoaded', () => {
       : pano.indexOf('finalNot:') === 0
       ? (proje => PROMPT.guncellemeIstek(proje.id,
           (finalNotlariOku(proje.palet || {})[Number(pano.slice(9))] || {}).metin || ''))
-      /* Ekstra banka promptu: bankanın adı görünsün diye ayrı, PANO_PROMPT
-         sabit anahtarlarla çalışıyor, banka sayısı değişken. */
-      : pano.indexOf('sablonBanka:') === 0
+      /* Ekstra banka/fatura/gunsonu promptu: seçeneğin adı görünsün diye
+         ayrı, PANO_PROMPT sabit anahtarlarla çalışıyor, seçenek sayısı
+         değişken. `sablonEkstra:<kategori>:<i>` biçiminde geliyor. */
+      : pano.indexOf('sablonEkstra:') === 0
       ? (proje => {
-          const b = sablonTanimlarOku(proje).banka.ekstra[Number(pano.slice(12))] || {};
-          return PROMPT.sablonOgren(proje.id, (b.ad || 'Banka') + ' ekstresi', '');
+          const parcalar = pano.split(':');
+          const kategori = parcalar[1];
+          const x = (sablonTanimlarOku(proje)[kategori] || {}).ekstra[Number(parcalar[2])] || {};
+          const konu = { banka: (x.ad || 'Banka') + ' ekstresi',
+                         fatura: (x.ad || 'Sistem') + ' — fatura ve kart hareketi',
+                         gunsonu: (x.ad || 'POS') + ' — gün sonu' }[kategori] || (x.ad || 'Yapı');
+          return PROMPT.sablonOgren(proje.id, konu, '');
         })
       : PANO_PROMPT[pano];
     /* Projesiz prompt da var (standart ekleme) — o zaman data-proje boş. */
