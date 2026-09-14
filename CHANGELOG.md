@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.135.55
+- **"Değişim" durağı ikiye bölündü: Veri ve format / Giriş ve Kullanıcı ekle.** Eskiden tek bir onay kutusu vardı — giriş sistemi hiç kurulmasa da "Değişim tamamlandı" deyip Final'e geçmek mümkündü. Şimdi ikisi ayrı promptla, ayrı onayla ilerliyor; proje sunuculu ve Program temeli'nde en az bir katman (rol) tanımlıysa ikinci adım zorunlu, Final'e ancak ikisi de bitince geçiliyor. Giriş promptu artık sistemi baştan sona anlatıyor ve Kullanıcı ekle ekranındaki katman seçiminin Program temeli'nde belirlenen isimlerle (ör. Admin/Yönetici/Personel) birebir aynı olması gerektiğini açıkça söylüyor.
+
 ## v0.135.54
 - **Templateler listesinde yayın linki eklendi.** Bir template'in yayın adresi varsa, satırın üstünde küçük bir düğmeyle tek dokunuşla açılabiliyor — satırın kendi tıklaması (kurulum sihirbazı) etkilenmiyor.
 

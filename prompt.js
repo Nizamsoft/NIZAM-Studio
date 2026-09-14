@@ -362,9 +362,9 @@ const PROMPT = {
     s.push('  biçiminde olsa bile olduğu gibi çalışır — güncellenecek bir şey yok.');
     s.push('- Şu an gerçek bir giriş ekranı yok, herkes anon anahtarla giriyor,');
     s.push('  yalnız "personel seç" var. Gerçek giriş sistemi (Supabase Auth +');
-    s.push('  Ayarlar\'a "Kullanıcı ekle" özelliği) az sonra gelecek "Değişim"');
-    s.push('  promptunda kurulacak — şimdi bunu sorma, kurmaya çalışma, sadece');
-    s.push('  bekle.');
+    s.push('  Ayarlar\'a "Kullanıcı ekle" özelliği) az sonra ayrı bir "Giriş ve');
+    s.push('  kullanıcı ekleme" promptuyla kurulacak — şimdi bunu sorma,');
+    s.push('  kurmaya çalışma, sadece bekle.');
     s.push('- `1-kurulum/07-kullanici-onarimi.sql` artık kullanılmıyor: SQL');
     s.push('  zincirinin sonundaki göç 89, `kullanicilar` tablosunu Supabase');
     s.push('  Auth\'tan tamamen koparıyor (artık yalnız bir isim listesi, giriş');
@@ -1424,18 +1424,67 @@ const PROMPT = {
     PROMPT.sablonDegisimBolumu(s, tur, 'fatura', t, SABLON_FATURA_HAZIR,
       'Fatura ve kart hareketleri', 'Hazır entegrasyon zaten sistemde kayıtlı: ');
 
-    s.push(PROMPT.yetkiBlogu(p));
-    s.push('');
-
     s.push('## Nasıl teslim edeceksin');
     s.push('Bu iş tek commit\'e sığmak zorunda değil — büyükse parçala,');
-    s.push('**sorma**, kendin karar ver. Önerilen sıra: önce Gün Sonu/Banka/');
-    s.push('Fatura okuyucuları gibi veri-format işini bir commit\'te gönder;');
-    s.push('giriş, Kullanıcı ekle özelliği ve RLS gibi daha büyük altyapı işini');
-    s.push('ayrı bir commit\'te. Her commit\'te proje kimlik dosyasını (`nizam/`');
-    s.push('klasörü) o commit\'te değişenlere göre güncelle, **`main` dalına**');
-    s.push('gönder:');
+    s.push('**sorma**, kendin karar ver. Giriş ekranı ve Kullanıcı ekle özelliği');
+    s.push('bu promptun konusu değil — o ayrı bir promptla, ayrı bir görevde');
+    s.push('geliyor; burada yalnız veri/format işini bitir. Proje kimlik');
+    s.push('dosyasını (`nizam/` klasörü) güncelle, **`main` dalına** gönder:');
     s.push(`   \`[${TASK_PREFIX}-0] Şablon özelleştirmesi\``);
+    return s.join('\n');
+  },
+
+  /* Değişim'in ikinci ve ayrı adımı: giriş ekranı ve Kullanıcı ekle özelliği.
+     Bilerek veri/format promptundan ayrıldı — biri unutulunca (genelde bu,
+     çünkü göç 89 sessizce "tek kullanıcılık" bırakıyor, hata vermiyor) proje
+     Final'e kadar login'siz ilerleyebiliyordu. `sablonGirisGerekliMi` bu
+     adımı proje sunuculu ve Program temeli'nde en az bir katman tanımlıysa
+     zorunlu tutuyor (bkz. app.js). */
+  sablonDegisimGiris(projeId) {
+    const p = DB.proje(projeId);
+    if (!p) return '';
+    const pl = p.palet || {};
+    const roller = rolListesi(pl.roller);
+    const slug = depoSlug(p.repo);
+
+    const s = [];
+    s.push('# ' + projeAdi(p) + ' — giriş ve kullanıcı ekleme', '');
+    if (slug) {
+      s.push('> ### Depo: `' + slug + '`');
+      s.push('> Bu oturum yalnız bu depoya bağlı olmalı. Deposu farklıysa dur');
+      s.push('> ve söyle.', '');
+    }
+    s.push('Bu proje bir muhasebe programı şablonundan kopyalandı. Gün Sonu/');
+    s.push('Banka/Fatura gibi veri-format işi ayrı bir promptla zaten yapıldı');
+    s.push('(ya da paralel yapılıyor) — **bu prompt yalnız giriş ekranı ve');
+    s.push('Kullanıcı ekle özelliğini kuruyor**, başka hiçbir şeye dokunma.');
+    s.push('');
+    s.push('## Şu anki durum, iyi anla');
+    s.push('Şablonun kurulum SQL\'i (göç 89 · "yetki kaldırıldı") giriş, rol ve');
+    s.push('yetki sistemini **bilerek** kaldırdı: uygulama şu an tek');
+    s.push('kullanıcılık — giriş ekranı yok, açan herkes içeri girip her şeyi');
+    s.push('görür ve yapar. Bu bir hata değil, kusur değil: kaç katman');
+    s.push('olacağı ve adları firmadan firmaya değiştiği için önceden');
+    s.push('kurulmadı, bu promptla şimdi bu firmaya özel kuruluyor. Kurulunca');
+    s.push('eski "herkes girer" davranışı tamamen kapanacak.');
+    s.push('');
+    if (roller.length) {
+      s.push('## Bu firmanın katmanları');
+      s.push('Program temeli aşamasında bu proje için şu katmanlar');
+      s.push('belirlendi (dar yetkiden genişe): '
+        + roller.map(r => '**' + r + '**').join(' · ') + '.');
+      s.push('**Kullanıcı ekle** ekranındaki katman seçimi tam olarak bu');
+      s.push('isimlerden oluşacak — sen "kullanıcı", "yönetici" gibi genel/');
+      s.push('varsayımsal bir liste uydurma, adları burada yazılanlarla');
+      s.push('birebir aynı yaz.');
+      s.push('');
+    }
+    s.push(PROMPT.yetkiBlogu(p));
+    s.push('');
+    s.push('## Bitirince');
+    s.push('Proje kimlik dosyasını (`nizam/` klasörü) güncelle, **`main`');
+    s.push('dalına** gönder:');
+    s.push(`   \`[${TASK_PREFIX}-0] Giriş ve kullanıcı ekleme\``);
     return s.join('\n');
   },
 

@@ -4408,28 +4408,65 @@ function sablonAdimFaturaGovde(p) {
       SABLON_FATURA_HAZIR, 'Sistem ekle', 'Örn. Logo');
 }
 
-/* 5 · Değişim — Temel tanımlar'da toplanan her şeyi tek promptla koda
-   işleme durağı. Yapıyı değiştirmiyor, yalnız firmaya özel bilgiyi uyguluyor. */
+/* Program temeli'nde katman tanımlanmış ve proje sunuculuysa giriş/kullanıcı
+   ekleme sistemi anlamlı — aksi halde (tek kullanıcılık proje) o iş hiç
+   yok, ikinci adım otomatik tamamlanmış sayılır (bkz. sablonDegisimBittiMi). */
+function sablonGirisGerekliMi(p) {
+  return rolListesi((p.palet || {}).roller).length > 0 && sunuculuMu(p);
+}
+
+/* "Değişim" durağı artık iki ayrı iş: (1) Temel tanımlar'da toplanan
+   veri/format bilgisini koda işlemek, (2) giriş ekranı ve Kullanıcı ekle
+   özelliğini kurmak. İkisi ayrı promptla, ayrı onayla ilerliyor — tek
+   kutuda toplanınca "giriş hiç yapılmadı" durumu fark edilmiyordu. */
+function sablonDegisimBittiMi(p) {
+  const pl = p.palet || {};
+  return !!pl.sablonDegisimTamamlandi
+    && (!sablonGirisGerekliMi(p) || !!pl.sablonGirisTamamlandi);
+}
+
+/* 5 · Değişim — Temel tanımlar'da toplanan her şeyi koda işleme durağı.
+   Yapıyı değiştirmiyor, yalnız firmaya özel bilgiyi uyguluyor. */
 function sablonDegisimSayfasi(p, d) {
   const pl = p.palet || {};
   const hazir = sablonTanimlarBittiMi(p);
-  const tamamlandi = !!pl.sablonDegisimTamamlandi;
+  const veriTamam = !!pl.sablonDegisimTamamlandi;
+  const girisGerekli = sablonGirisGerekliMi(p);
+  const girisTamam = !girisGerekli || !!pl.sablonGirisTamamlandi;
 
   return `<div class="fb-govde">`
     + adimBasligi(p, d, '')
     + shBaslikServis('claude', 'Değişim',
-        'Temel tanımlar\'da toplanan her şey burada tek promptla koda işleniyor.')
+        'Temel tanımlar\'da toplanan her şey burada iki ayrı promptla koda işleniyor.')
     + (hazir ? '' : `<div class="note uyari">${svg(ICON.uyari, 15)}
         <span><b>Temel tanımlar bitmedi.</b> Önce o durağı tamamla.</span></div>`)
+
+    + bolumBas('1 · Veri ve format')
     + `<div class="kur-dug">
         ${promptBaglantisi({ tur: 'sablonDegisim', proje: p.id, slug: depoSlug(p.repo),
           hedef: 'claude-yeni', yazi: 'Kopyala ve Claude\'u aç', ikincil: !hazir, kapali: !hazir })}
       </div>`
-    + (tamamlandi
+    + (veriTamam
         ? `<div class="kur-deger duz">${svg(ICON.tik, 13)} Bu aşama tamamlandı</div>`
         : `<label class="kur-onay" data-eylem="sablon-degisim-onay" data-proje="${p.id}"
                   role="button" tabindex="0">
             <span class="kur-kutu">${svg(ICON.tik, 12)}</span> Değişim yapıldı, kontrol ettim</label>`)
+
+    + bolumBas('2 · Giriş ve Kullanıcı ekle')
+    + (!girisGerekli
+        ? `<div class="note">${svg(ICON.info, 15)}
+            <span>Bu projede rol katmanı yok ya da sunucusuz — giriş ve kullanıcı
+            ekleme sistemi gerekmiyor, bu adım otomatik tamamlandı sayılıyor.</span></div>`
+        : `<div class="kur-dug">
+            ${promptBaglantisi({ tur: 'sablonDegisimGiris', proje: p.id, slug: depoSlug(p.repo),
+              hedef: 'claude-yeni', yazi: 'Kopyala ve Claude\'u aç', ikincil: !hazir, kapali: !hazir })}
+          </div>`
+          + (girisTamam
+              ? `<div class="kur-deger duz">${svg(ICON.tik, 13)} Bu aşama tamamlandı</div>`
+              : `<label class="kur-onay" data-eylem="sablon-giris-onay" data-proje="${p.id}"
+                        role="button" tabindex="0">
+                  <span class="kur-kutu">${svg(ICON.tik, 12)}</span> Giriş ve kullanıcı ekleme
+                  yapıldı, kontrol ettim</label>`))
     + `</div>`;
 }
 
@@ -4746,7 +4783,7 @@ function gelistirmeBitti(p) {
      o durağın kendi bitti bayrağı ayrı bir alanda tutuluyor. Bunu
      kontrol etmezsek Final'in "hazır mı" kontrolü şablon projelerinde
      hiç doğru olmaz, "Final ver" düğmesi hep kilitli kalır. */
-  return sablonMu(p) ? !!pl.sablonDegisimTamamlandi : !!pl.betaTamamlandi;
+  return sablonMu(p) ? sablonDegisimBittiMi(p) : !!pl.betaTamamlandi;
 }
 
 /* Projenin beş durağı. Durum veriden okunur, elle girilmez. */
@@ -4811,12 +4848,14 @@ function projeDuraklari(p) {
     },
     pl0.sablon ? {
       ad: 'Değişim',
-      bitti: !!pl0.sablonDegisimTamamlandi,
-      ozet: pl0.sablonDegisimTamamlandi
+      bitti: sablonDegisimBittiMi(p),
+      ozet: sablonDegisimBittiMi(p)
         ? 'Tamamlandı.'
-        : sablonTanimlarBittiMi(p)
-          ? 'Toplanan tanımlar hazır — promptu Claude\'a ver.'
-          : 'Önce Temel tanımlar\'ı bitir.',
+        : !!pl0.sablonDegisimTamamlandi
+          ? 'Veri ve format hazır — sıra giriş ve kullanıcı eklemede.'
+          : sablonTanimlarBittiMi(p)
+            ? 'Toplanan tanımlar hazır — promptu Claude\'a ver.'
+            : 'Önce Temel tanımlar\'ı bitir.',
     } : {
       /* İki bölüm: ilk kurulum (plan + beş aşama) bitmeden sürekli
          geliştirme ekranı gösterilmiyor (bkz. betaSayfasi). "Bitti" burada
@@ -8847,6 +8886,7 @@ const PANO_PROMPT = {
   guncellemeIstek: p => PROMPT.guncellemeIstek(p.id, GUNCELLEME_ISTEK[p.id] || ''),
   denemeIstek:   p => PROMPT.denemeIstek(p.id, DENEME_ISTEK[p.id] || ''),
   sablonDegisim: p => PROMPT.sablonDegisim(p.id),
+  sablonDegisimGiris: p => PROMPT.sablonDegisimGiris(p.id),
   cekirdekTemizle: p => PROMPT.cekirdekTemizle(p.id),
   yapi:          p => PROMPT.yapi(p.id),
   yetkiKur:      p => PROMPT.yetkiKur(p.id),
@@ -10054,6 +10094,23 @@ async function eylemCalistir(el) {
     })) return;
     return isYap(() => DB.paletKaydet(pr.id,
       Object.assign({}, pl, { sablonDegisimTamamlandi: true })), 'Değişim tamamlandı.');
+  }
+
+  if (e === 'sablon-giris-onay') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const pl = pr.palet || {};
+    if (pl.sablonGirisTamamlandi) {
+      return isYap(() => DB.paletKaydet(pr.id,
+        Object.assign({}, pl, { sablonGirisTamamlandi: false })), 'İşaret kaldırıldı.');
+    }
+    if (!await onaySor({
+      baslik: 'Giriş ve kullanıcı ekleme tamamlandı mı?',
+      mesaj: 'Claude giriş ekranını ve Kullanıcı ekle özelliğini kurduktan sonra kontrol ettiysen onayla.',
+      buton: 'Eminim',
+    })) return;
+    return isYap(() => DB.paletKaydet(pr.id,
+      Object.assign({}, pl, { sablonGirisTamamlandi: true })), 'Giriş ve kullanıcı ekleme tamamlandı.');
   }
 
   if (e === 'deneme-tamamlandi') {

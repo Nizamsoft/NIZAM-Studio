@@ -506,7 +506,7 @@ const DB = {
         sablonSqlLink: (kaynak.palet && kaynak.palet.cekirdek && kaynak.palet.cekirdek.sqlLink) || null,
         sablonSqlMetinVar: !!(kaynak.palet && kaynak.palet.cekirdek && kaynak.palet.cekirdek.sqlMetinVar),
         modulAdi: null, roller: null, veriKatmani: null,
-        sablonTanimlar: null, sablonDegisimTamamlandi: false,
+        sablonTanimlar: null, sablonDegisimTamamlandi: false, sablonGirisTamamlandi: false,
       } : {}, cekirdek ? {
         /* Template (çekirdek) — bu proje artık normal bir müşteri işi
            değil, yeniden kullanılacak bir taban. "Templateler" bölümünde
