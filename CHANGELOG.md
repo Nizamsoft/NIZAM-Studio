@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.135.57
+- **Giriş ve Kullanıcı ekle promptuna şube ataması eklendi.** Şubeli bir firmada kullanıcı eklenirken artık katmanın yanında şube de seçiliyor (varsa — şablonda zaten Ayarlar'dan kurulan bir şube tablosu üzerinden dinamik okunuyor, isimler koda sabitlenmiyor). Kullanıcı girişte kendi şubesine bağlanmış sayılıyor; şubeye göre veri kısıtlaması yine Yetkilendirme aşamasında kurulacak.
+
 ## v0.135.56
 - **Excel yapısı öğretme promptu artık JSON + notlar istiyor.** Banka/Fatura/Gün Sonu'nda "yeni bir tane anlat" akışında Claude'dan düz metin anlatım yerine iki parça isteniyor: sütun adı/tür/sırayı kesin belirten bir JSON alan listesi, altında da JSON'a sığmayan istisnalar için kısa notlar. "Değişim" promptu da bu ikisini birlikte okumasını Claude'a açıkça söylüyor. Amaç: bir sonraki Claude oturumunun formatı yanlış anlama payını azaltmak.
 
