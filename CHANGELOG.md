@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## v0.135.41
+- **Bug: Şablon kopyaları Final'e hiç ulaşamıyordu.** "Final ver" düğmesinin hazır olup olmadığını kontrol eden fonksiyon yalnızca normal projelerin bayrağına (`betaTamamlandi`) bakıyordu — şablon kopyalarının kendi bayrağını (`sablonDegisimTamamlandi`) hiç bilmiyordu, yani düğme hiçbir zaman açılmıyordu. Final sayfasındaki "Beta ve geliştirme durağı" yazısı da şablon kopyalarında yanlıştı, artık "Değişim" yazıyor.
+- **Bug: Şablon kopyalarında kullanıcı ekleme özelliği hiç kodlatılmıyordu.** İlk kurulum promptuna (bkz. yetkiBlogu) eklediğimiz "Ayarlar'a Kullanıcı ekle kur" talimatı yalnızca sıfırdan projelerin promptuna (`PROMPT.yapi`) gidiyordu — şablon kopyalarının gerçek ilk kod promptu olan "Değişim"e hiç eklenmemişti. Artık oraya da ekleniyor.
+- **Bağlantılar ve temel'deki "İlk kullanıcı" adımından, yanlış olabilecek SQL tahmini kaldırıldı.** Kullanıcı tablosunun o an nasıl bir şekle sahip olacağı henüz belli değil (SQL az önce yüklendi, "Değişim" henüz çalışmadı) — artık Studio örnek bir `insert` cümlesi önermiyor, bunun yerine "Değişim" promptu (kendi kurduğu şemayı bildiği için) bu e-postayı Admin olarak tabloya kendisi ekliyor.
+
 ## v0.135.40
 - **Şablon türlerine template atama eklendi.** Ayarlar → Templateler'de yeni bir "Şablon atamaları" bölümü var: her şablon türüne (şu an yalnız Muhasebe) en fazla bir template atanabiliyor. "Bir Template'ten Başla" artık hangi template olduğunu tek tek sormuyor — hangi şablon türü seçilirse o türe atanmış template doğrudan kullanılıyor.
 - SQL linki de zaten atanan template'in kendi kurulum sihirbazından ayarlanıyor — atama değiştiğinde link de yeni template'inkiyle değişiyor.

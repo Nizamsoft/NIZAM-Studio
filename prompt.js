@@ -682,10 +682,14 @@ const PROMPT = {
     s.push('  cevaplanacak.');
     s.push('');
     if (pl.ilkKullaniciEklendi) {
-      s.push('**İlk giriş.** İlk kullanıcı (Admin) zaten var — Supabase');
-      s.push('panelinden elle açıldı, ilgili tabloda satırı da duruyor. Kodun');
-      s.push('içine sabit bir kullanıcı adı/şifre gömmene gerek yok; giriş');
-      s.push('ekranı bu gerçek admin satırını baştan itibaren kullanabilir.');
+      const eposta = (pl.ilkKullanici || {}).eposta || '';
+      s.push('**İlk giriş.** İlk admin hesabı Supabase Authentication\'da zaten');
+      s.push('açık' + (eposta ? ` (**${eposta}**)` : '') + ' — ama az önce kurduğun kullanıcı');
+      s.push('tablosunda henüz satırı yok, çünkü o tablo bu hesap açıldığında');
+      s.push('henüz yoktu. Bu e-posta için o tabloya bir Admin satırı ekle (tek');
+      s.push('seferlik bir SQL ile yeter). Kodun içine sabit bir kullanıcı');
+      s.push('adı/şifre gömmene gerek yok; giriş ekranı bu gerçek admin hesabını');
+      s.push('baştan itibaren kullanabilir.');
     } else {
       s.push('**İlk giriş.** Veritabanında hiç kullanıcı yokken normal girişle');
       s.push('kimse içeri giremez — kayıt ekranı da yok. Kodun içine sabit bir');
@@ -1401,6 +1405,9 @@ const PROMPT = {
       s.push(fatura.cevap.trim());
       s.push('');
     }
+
+    s.push(PROMPT.yetkiBlogu(p));
+    s.push('');
 
     s.push('Bitirince proje kimlik dosyasını (`nizam/` klasörü) bu bilgilere');
     s.push('göre güncelle ve tek commit\'le **`main` dalına** gönder:');

@@ -4486,22 +4486,22 @@ function ilkKullaniciGovde(p, pl) {
   }
 
   const kullaniciAdres = ilkKullaniciSupabasePaneli(pl, '/auth/users');
-  const sqlAdres = ilkKullaniciSupabasePaneli(pl, '/sql/new');
-  return `<p class="fb-neden">Sırayla yap, sonra "Ekledim" de:</p>
+  /* Bilerek burada SQL yazdırmıyoruz: bu adımda kullanıcı tablosunun son
+     hâli henüz belli değil (SQL az önce yüklendi, "Değişim" promptu daha
+     çalışmadı — o promptu, bu e-postayı Admin olarak o tabloya kendisi
+     ekleyecek, bkz. PROMPT.yetkiBlogu). Burada yanlış sütun adıyla SQL
+     önermek "çalıştırılmış SQL değiştirilmez" gibi bir kuralı olan bir
+     depoda daha çok zarar verir. */
+  return `<p class="fb-neden">Şunu yap, sonra "Ekledim" de:</p>
     <ol style="margin:0;padding-left:20px;display:grid;gap:10px;color:var(--ink-soft);font-size:13.5px">
       <li>Supabase panelinde <b>Authentication → Users → Add user</b>'a git;
         e-posta <code>${esc(bilgi.eposta)}</code>, şifre <code>${esc(bilgi.sifre)}</code>
         yaz, "Auto Confirm User" işaretli olsun.<br>
         <a class="mini-link" target="_blank" rel="noopener" href="${esc(kullaniciAdres)}">
           ${svg(ICON.disari, 13)} Panele git</a></li>
-      <li><b>SQL Editor</b>'de bu kullanıcı için <code>kullanicilar</code> tablosuna
-        Admin satırını ekle — sütun adları şemaya göre değişebilir, emin
-        değilsen kontrol et. Örnek:
-        <div class="anl-kutu mono" style="margin-top:6px;padding:8px 10px;font-size:12.5px">insert into kullanicilar (eposta, rol) values
-('${esc(bilgi.eposta)}', 'Admin');</div>
-        <a class="mini-link" target="_blank" rel="noopener" href="${esc(sqlAdres)}">
-          ${svg(ICON.disari, 13)} SQL Editor'e git</a></li>
     </ol>
+    <p class="ipucu">Kullanıcı tablosundaki satırını sen ekleme — bu e-postayı
+      Admin olarak o tabloya "Değişim" promptunda Claude ekleyecek.</p>
     ${AUTH.yonetici ? `<div class="kur-dug">
       <button class="sayfa-dug" type="button" data-eylem="ilk-kullanici-onay"
               data-proje="${p.id}">${svg(ICON.tik, 15)} Ekledim</button>
@@ -4594,8 +4594,9 @@ function finalSayfasi(p, d) {
         <p class="fb-neden">${hazir || verildi
           ? (s.gorev > 0 ? 'Bütün görevler bitti.' : 'Geliştirmeye ihtiyaç yoktu.')
             + ' Uygulamayı son bir kez dene — sorunsuzsa final ver, bir şey bulursan bildir.'
-          : '<b class="eksik">Önce açık görevleri bitir.</b> Final, <b>Beta ve '
-            + 'geliştirme</b> durağındaki bütün görevler tamamlandığında verilebilir.'}</p>
+          : `<b class="eksik">Önce açık görevleri bitir.</b> Final, <b>${
+              sablonMu(p) ? 'Değişim' : 'Beta ve geliştirme'
+            }</b> durağı tamamlandığında verilebilir.`}</p>
         ${verildi
           ? `<div class="kur-deger duz">${svg(ICON.tik, 13)} Final sürüm verildi</div>`
           : `<button class="sayfa-dug" type="button" data-eylem="final-onay"
@@ -4711,7 +4712,12 @@ function projeKunyesi(p) {
    onayladıysa. Final sayfası da aynı şartı soruyor — tek yerde tutulmazsa
    ikisi ayrı düşer (biri güncellenir, öteki unutulur). */
 function gelistirmeBitti(p) {
-  return !!(p.palet && p.palet.betaTamamlandi);
+  const pl = p.palet || {};
+  /* Şablon kopyasında "Beta ve geliştirme" yerine "Değişim" durağı var —
+     o durağın kendi bitti bayrağı ayrı bir alanda tutuluyor. Bunu
+     kontrol etmezsek Final'in "hazır mı" kontrolü şablon projelerinde
+     hiç doğru olmaz, "Final ver" düğmesi hep kilitli kalır. */
+  return sablonMu(p) ? !!pl.sablonDegisimTamamlandi : !!pl.betaTamamlandi;
 }
 
 /* Projenin beş durağı. Durum veriden okunur, elle girilmez. */
