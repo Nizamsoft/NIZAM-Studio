@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## v0.135.47
+- **Yanlış depoya göre kurulmuş "İlk kullanıcı" adımı kaldırıldı.** Gerçek template deposu (MUHASEBETEMPLATE-MuhasebeModulu, daha önce yanlışlıkla bir deneme kopyasına — GZNAS-GznMuhasebe'ye — bakılmıştı) incelendi: template'in SQL zincirinde (01→89) hiç giriş/auth/kullanıcı katmanı yok — göç 89 bunu bilerek kaldırıyor. Gerçek giriş sistemi Studio'nun zaten var olan "Kullanıcı ve Yetki" durağında, Final'den hemen önce, ayrı bir promptla kuruluyor — tıpkı sıfırdan projelerde olduğu gibi.
+- Bağlantılar ve temel'de artık şablon kopyalarında yalnız "Veritabanını kur" var — SQL'i yapıştır/çalıştır, bitti. "İlk kullanıcı" adımı, e-posta otomatik yerleştirme mekanizması (`sqlEpostaYerlestir`) ve buna bağlı tüm arayüz/eylemler kaldırıldı — hiçbiri gerçek template için gerekli değildi.
+- "Değişim" promptundaki ilk giriş talimatı sadeleşti: artık her zaman sabit geçici giriş + "Kullanıcı ekle" özelliğinin inşa edilmesini istiyor (sıfırdan projelerle birebir aynı davranış).
+
 ## v0.135.46
 - **Şablon kurulum SQL'i artık metin olarak da girilebiliyor — GitHub linkine bağımlı kalmıyor.** Templateler'de kurulum sihirbazının SQL adımına yeni bir kutu eklendi: SQL dosyasının tamamı doğrudan yapıştırılıp kaydediliyor. Depo private olsa da, link erişilemez olsa da çalışır.
 - **Müşteri projesinde "Veritabanını kur" adımı artık tek tuşla kopyalıyor.** Metin girilmiş bir templateden kurulan projede, "SQL'i kopyala" düğmesi SQL metnini getirip içindeki yönetici e-postası satırını (`... EPOSTA constant text := '...'`) az önce Supabase'de açtığın gerçek admin e-postasıyla otomatik değiştirip panoya kopyalıyor — SQL Editor'e yapıştırıp Run'a basman yeterli, elle e-posta değiştirmene gerek kalmıyor.

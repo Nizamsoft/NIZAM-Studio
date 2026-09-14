@@ -1272,9 +1272,9 @@ function baglantilarSayfasi(p, d) {
   const sohbetAdi   = String(pl.sohbetAdi || '').trim();
 
   const bagDolu = [depoTam, !!sohbetAdi, yayinTam].concat(sunuculu ? [supabaseTam] : [])
-    .concat(sqlliMi ? [!!pl.sqlYuklendi, !!pl.ilkKullaniciEklendi] : [])
+    .concat(sqlliMi ? [!!pl.sqlYuklendi] : [])
     .concat(namecheapMi ? [!!pl.namecheapBaglandi] : []).filter(Boolean).length;
-  const bagToplam = 3 + (sunuculu ? 1 : 0) + (sqlliMi ? 2 : 0) + (namecheapMi ? 1 : 0);
+  const bagToplam = 3 + (sunuculu ? 1 : 0) + (sqlliMi ? 1 : 0) + (namecheapMi ? 1 : 0);
 
   const kart = bagDolu === 0
     ? fbBosKart('#b8926b', ICON.dal, 'Bağlantılar', bagDolu + '/' + bagToplam,
@@ -1294,8 +1294,6 @@ function baglantilarSayfasi(p, d) {
                     supabaseTam ? 'Bağlandı' : '', '', p.id, true, 'bağlı değil') : ''}
       ${sqlliMi ? kunyeSatiri('#3ecf8e', ICON.bulut, 'Veritabanı',
                     pl.sqlYuklendi ? 'Yüklendi' : '', '', p.id, true, 'bekliyor') : ''}
-      ${sqlliMi ? kunyeSatiri('#a15fc4', ICON.anahtar, 'İlk kullanıcı',
-                    pl.ilkKullaniciEklendi ? 'Açıldı' : '', '', p.id, true, 'bekliyor') : ''}
       ${namecheapMi ? kunyeSatiri('#c48a5c', ICON.dil, 'Namecheap',
                     pl.namecheapBaglandi ? (pl.alanAdi || 'Bağlandı') : '', '', p.id, true, 'bağlı değil') : ''}
     </div>`, bagDolu + '/' + bagToplam);
@@ -4093,15 +4091,6 @@ function sqlEditorAdresi(url) {
             : 'https://supabase.com/dashboard';
 }
 
-/* Şablon SQL metninde yönetici e-postasının sabit yazdığı yeri (ör.
-   `YONETICI_EPOSTA constant text := '...';`) gerçek admin e-postasıyla
-   değiştirir — kopyalamadan önce, elle düzenlemeye gerek kalmasın diye. */
-function sqlEpostaYerlestir(metin, eposta) {
-  return String(metin || '').replace(
-    /([A-Z_]*EPOSTA\w*\s+constant\s+text\s*:=\s*)'[^']*'/gi,
-    (tam, onEk) => onEk + "'" + String(eposta).replace(/'/g, "''") + "'");
-}
-
 
 /* ---------- Muhasebe şablonu: Temel tanımlar sihirbazı ----------
    Kurulum sihirbazıyla aynı kalıp (yüzen tam ekran katman, adım şeridi,
@@ -4511,88 +4500,6 @@ function yetkiKoduKarti(p, pl) {
     </div>`);
 }
 
-/* İlk kullanıcının e-posta/şifresi kalıcı değil — yalnız bu ekran açıkken
-   tarayıcı belleğinde durur, onaylanınca (yalnız e-posta) palete yazılıp
-   şifre atılır. Veritabanında düz metin şifre tutmayalım diye.
-
-   İlk kullanıcı her zaman "Admin" — katman seçtirilmiyor (bkz. rolMerdiveni'nin
-   sabit üst satırı, Program temeli'nde). Yalnız şablon kopyalarında, Bağlantılar
-   ve temel'de kullanılıyor (bkz. baglantiAdimIlkKullanici — SQL zaten yüklendiği
-   için tablo hazır). Sıfırdan projelerde ilk kullanıcı burada değil, ilk kurulum
-   promptunun kendi bootstrap girişinden gelir (bkz. PROMPT.yetkiBlogu). */
-const ILK_KULLANICI = {};
-
-/* Proje adresinden (https://xxxx.supabase.co) dashboard bağlantısı çıkarır.
-   Çözülemezse genel dashboard adresine düşer — link yine çalışır, yalnız
-   projeyi elle seçmek gerekir. */
-function ilkKullaniciSupabasePaneli(pl, yol) {
-  const eslesme = String(pl.supabaseUrl || '').match(/^https?:\/\/([a-z0-9-]+)\.supabase\.co/i);
-  return eslesme
-    ? `https://supabase.com/dashboard/project/${eslesme[1]}${yol}`
-    : 'https://supabase.com/dashboard';
-}
-
-/* Kart/adımın ortak içeriği — dıştaki kabuk (fbKart ya da shBaslikServis)
-   çağırana göre değişir, bkz. ilkKullaniciKarti ve baglantiAdimIlkKullanici. */
-function ilkKullaniciGovde(p, pl) {
-  if (pl.ilkKullaniciEklendi) {
-    const k = pl.ilkKullanici || {};
-    return `<div class="kur-deger duz">${svg(ICON.tik, 13)}
-      ${esc(k.eposta || '')} — Admin</div>`;
-  }
-
-  const bilgi = ILK_KULLANICI[p.id];
-  if (!bilgi) {
-    return `<p class="fb-neden">Kayıt ekranı yok — ilk hesabı (Admin) sen,
-        Supabase panelinden elle açacaksın. Önce e-posta ve şifresini gir.</p>
-      ${AUTH.yonetici ? `
-        <label class="field"><span>E-posta</span>
-          <input type="email" id="ik-eposta-${p.id}" placeholder="ornek@firma.com" autocomplete="off"></label>
-        <label class="field"><span>Şifre</span>
-          <input type="text" id="ik-sifre-${p.id}" placeholder="En az 6 karakter" autocomplete="off"></label>
-        <div class="kur-dug">
-          <button class="sayfa-dug" type="button" data-eylem="ilk-kullanici-hazirla"
-                  data-proje="${p.id}">${svg(ICON.kalem, 15)} Talimatı oluştur</button>
-        </div>` : ''}`;
-  }
-
-  const kullaniciAdres = ilkKullaniciSupabasePaneli(pl, '/auth/users');
-  /* Bilerek burada SQL yazdırmıyoruz: bu adım SQL'den ÖNCE geliyor (bkz.
-     baglantiAdimListesi), tabloların bile henüz kurulmadığı an — SQL'i
-     buradan sonra çalıştırınca, o dosyanın sonundaki "Yönetici satırı"
-     bloğu bu e-postayı auth.users'ta bulup kullanıcı tablosundaki satırını
-     kendisi açıyor. Ayrı bir SQL/prompt gerekmiyor. */
-  return `<p class="fb-neden">Şunu yap, sonra "Ekledim" de:</p>
-    <ol style="margin:0;padding-left:20px;display:grid;gap:10px;color:var(--ink-soft);font-size:13.5px">
-      <li>Supabase panelinde <b>Authentication → Users → Add user</b>'a git;
-        e-posta <code>${esc(bilgi.eposta)}</code>, şifre <code>${esc(bilgi.sifre)}</code>
-        yaz, "Auto Confirm User" işaretli olsun.<br>
-        <a class="mini-link" target="_blank" rel="noopener" href="${esc(kullaniciAdres)}">
-          ${svg(ICON.disari, 13)} Panele git</a></li>
-    </ol>
-    <p class="ipucu">Kullanıcı tablosuna satır ekleme diye bir şey yapmana gerek yok
-      — sıradaki "Veritabanını kur" adımında SQL'i çalıştırınca bu e-posta
-      otomatik olarak Admin yapılıyor.</p>
-    ${AUTH.yonetici ? `<div class="kur-dug">
-      <button class="sayfa-dug" type="button" data-eylem="ilk-kullanici-onay"
-              data-proje="${p.id}">${svg(ICON.tik, 15)} Ekledim</button>
-      <button class="sayfa-dug ikincil" type="button" data-eylem="ilk-kullanici-vazgec"
-              data-proje="${p.id}">Vazgeç</button>
-    </div>` : ''}`;
-}
-
-/* Bağlantılar ve temel'deki adım kabuğu — şablon kopyalarında, SQL yüklendikten
-   hemen sonra gösteriliyor (bkz. baglantiAdimListesi). Sıfırdan projelerde ilk
-   kullanıcı burada değil, ilk kurulum promptunun kendi bootstrap girişinden
-   (bkz. PROMPT.yetkiBlogu) — o yüzden bu kabuğun Yetkilendirme durağında bir
-   karşılığı yok. */
-function baglantiAdimIlkKullanici(p) {
-  const pl = p.palet || {};
-  return shBaslikServis('supabase', 'İlk kullanıcı (Admin)',
-      'Uygulamanın ilk yöneticisini şimdi Supabase panelinden aç.')
-    + ilkKullaniciGovde(p, pl);
-}
-
 function yetkiBilgiKarti() {
   return `<div class="card">
     <p class="fb-neden">${svg(ICON.info, 14)} Bundan sonra yeni kullanıcı eklemek
@@ -4825,10 +4732,9 @@ function projeDuraklari(p) {
              && (!sunuculuMu(p) || (!!String(pl0.supabaseUrl || '').trim()
                                      && !!String(pl0.supabaseAnon || '').trim()))
              && (pl0.alanTuru !== 'namecheap' || !!pl0.namecheapBaglandi)
-             /* Template'in SQL'i (link ya da metin) varsa yükleme ve ilk
-                kullanıcı da burada bitmiş olmalı — bkz. baglantiAdimListesi. */
-             && ((!pl0.sablonSqlLink && !pl0.sablonSqlMetinVar)
-                 || (!!pl0.sqlYuklendi && !!pl0.ilkKullaniciEklendi)),
+             /* Template'in SQL'i (link ya da metin) varsa yükleme de burada
+                bitmiş olmalı — bkz. baglantiAdimListesi. */
+             && ((!pl0.sablonSqlLink && !pl0.sablonSqlMetinVar) || !!pl0.sqlYuklendi),
       ozet: !p.repo
         ? 'Depo, sohbet, adres ve yayın burada kurulacak.'
         : !pl0.yayinda
@@ -7306,11 +7212,11 @@ async function programAdimKaydet() {
 const BAGLANTI_ADIM = { adim: 1, projeId: null, liste: [] };
 
 const BAGLANTI_ETIKET = { github: 'GitHub', claude: 'Claude', pages: 'Yayın', supabase: 'Supabase',
-  sql: 'Veritabanı', ilkKullanici: 'İlk kullanıcı', namecheap: 'Namecheap' };
+  sql: 'Veritabanı', namecheap: 'Namecheap' };
 /* Yayın adımının kendi servisi yok — hâlâ GitHub, o yüzden aynı logo.
-   SQL ve İlk kullanıcı adımları da Supabase logosunu paylaşıyor. */
+   SQL adımı da Supabase logosunu paylaşıyor. */
 const BAGLANTI_SERVIS = { github: 'github', claude: 'claude', pages: 'github', supabase: 'supabase',
-  sql: 'supabase', ilkKullanici: 'supabase', namecheap: 'namecheap' };
+  sql: 'supabase', namecheap: 'namecheap' };
 
 /* Yayın (GitHub Pages) bilerek Claude'dan SONRA geliyor: Claude görevini
    bitirmeden siteyi yayına almanın anlamı yok. Depo bağlama ile yayın
@@ -7327,15 +7233,12 @@ function baglantiAdimListesi(p) {
     if (sunuculuMu(p)) {
       liste.push('supabase');
       /* Template'e bir SQL tanımlıysa (link ya da metin, bkz. Templateler >
-         kurulum sihirbazı) Supabase bağlanır bağlanmaz önce ilk kullanıcı
-         (Admin) Authentication'da açılıyor, SONRA SQL çalıştırılıyor — sıra
-         bilerek bu yönde: SQL'in sonundaki "Yönetici satırı" bloğu
-         auth.users'ta bu e-postayı arıyor, SQL'den önce açılmışsa kullanıcı
-         tablosundaki satırı kendisi oluşturuyor, ayrı bir adım gerekmiyor.
-         Hiçbiri yoksa (nadir: veritabanı gerektirmeyen bir template) ilk
-         kullanıcı ilk kurulum promptunun kendi bootstrap girişinden gelir
-         (bkz. yetkiBlogu). */
-      if (pl.sablonSqlLink || pl.sablonSqlMetinVar) liste.push('ilkKullanici', 'sql');
+         kurulum sihirbazı) Supabase bağlanır bağlanmaz burada çalıştırılıyor.
+         Template'in SQL'inde auth/kullanıcı hiç yok (bkz. göç 89 —
+         "giriş ve yetki kaldırıldı") — ilk giriş, normal projelerdeki gibi
+         ilk kurulum promptunun kendi bootstrap girişinden geliyor (bkz.
+         yetkiBlogu), ayrı bir "İlk kullanıcı" adımına gerek yok. */
+      if (pl.sablonSqlLink || pl.sablonSqlMetinVar) liste.push('sql');
     }
     if (pl.alanTuru === 'namecheap') liste.push('namecheap');
     liste.push('claude');
@@ -7354,7 +7257,6 @@ function baglantiAdimBittiMi(k, p) {
   if (k === 'pages')        return !!pl.yayinda;
   if (k === 'supabase')     return !!String(pl.supabaseUrl || '').trim() && !!String(pl.supabaseAnon || '').trim();
   if (k === 'sql')          return !!pl.sqlYuklendi;
-  if (k === 'ilkKullanici') return !!pl.ilkKullaniciEklendi;
   if (k === 'namecheap')    return !!pl.namecheapBaglandi;
   return false;
 }
@@ -7413,7 +7315,6 @@ function baglantiAdimHtml(p) {
     : k === 'pages' ? baglantiAdimPages(p)
     : k === 'supabase' ? baglantiAdimSupabase(p)
     : k === 'sql' ? baglantiAdimSql(p)
-    : k === 'ilkKullanici' ? baglantiAdimIlkKullanici(p)
     : baglantiAdimNamecheap(p);
 
   const geri = BAGLANTI_ADIM.adim > 1
@@ -7668,18 +7569,16 @@ function baglantiAdimSql(p) {
   const metinVar = !!pl.sablonSqlMetinVar;
   const link     = String(pl.sablonSqlLink || '').trim();
   const yuklendi = !!pl.sqlYuklendi;
-  const eposta   = (pl.ilkKullanici || {}).eposta || '';
 
-  /* Metin varsa öncelik onda: depo private olsa da çalışır, e-postayı da
-     otomatik yerleştirir (bkz. sablon-sql-metin-kopyala). Yalnız link
-     tanımlıysa eskisi gibi "aç, elle kopyala" akışına düşülüyor. */
+  /* Metin varsa öncelik onda: depo private olsa da çalışır (bkz.
+     sablon-sql-metin-kopyala). Yalnız link tanımlıysa eskisi gibi
+     "aç, elle kopyala" akışına düşülüyor. */
   const govde = metinVar ? `
       <button class="sayfa-dug" type="button" data-eylem="sablon-sql-metin-kopyala" data-proje="${p.id}">
         ${svg(ICON.kopya, 15)} SQL'i kopyala</button>
       <div class="fbd-not">${svg(ICON.info, 13)}
-        <span>${eposta ? `E-postan (<b>${esc(eposta)}</b>) otomatik yerleştirilip kopyalanıyor`
-          : 'Önce İlk kullanıcı adımını tamamla, e-postan otomatik yerleşsin'} — Supabase
-        projendeki <b>SQL Editor</b>'e yapıştır ve çalıştır (Run).</span></div>`
+        <span>Panoya kopyalanır — Supabase projendeki <b>SQL Editor</b>'e
+        yapıştır ve çalıştır (Run).</span></div>`
     : link ? `
       <a class="sayfa-dug ikincil" target="_blank" rel="noopener" href="${esc(link)}">
         ${svg(ICON.disari, 15)} SQL dosyasını aç</a>
@@ -9881,43 +9780,6 @@ async function eylemCalistir(el) {
       Object.assign({}, pl, { yetkiKodTamamlandi: true })), 'Kaydedildi.');
   }
 
-  if (e === 'ilk-kullanici-hazirla') {
-    const pr = DB.proje(el.dataset.proje);
-    if (!pr) return;
-    const epostaEl = document.getElementById('ik-eposta-' + pr.id);
-    const sifreEl  = document.getElementById('ik-sifre-' + pr.id);
-    const eposta = epostaEl ? epostaEl.value.trim() : '';
-    const sifre  = sifreEl ? sifreEl.value.trim() : '';
-    if (!eposta || !sifre) { toast('E-posta ve şifre gerekli.', 'uyari'); return; }
-    if (sifre.length < 6) { toast('Şifre en az 6 karakter olmalı.', 'uyari'); return; }
-    ILK_KULLANICI[pr.id] = { eposta, sifre };
-    render();
-    if ($('#baglanti-adim')) baglantiAdimCiz();
-    return;
-  }
-
-  if (e === 'ilk-kullanici-vazgec') {
-    delete ILK_KULLANICI[el.dataset.proje];
-    render();
-    if ($('#baglanti-adim')) baglantiAdimCiz();
-    return;
-  }
-
-  if (e === 'ilk-kullanici-onay') {
-    const pr = DB.proje(el.dataset.proje);
-    if (!pr) return;
-    const bilgi = ILK_KULLANICI[pr.id];
-    if (!bilgi) return;
-    const pl = pr.palet || {};
-    return isYap(() => {
-      delete ILK_KULLANICI[pr.id];
-      return DB.paletKaydet(pr.id, Object.assign({}, pl, {
-        ilkKullaniciEklendi: true,
-        ilkKullanici: { eposta: bilgi.eposta, rol: 'Admin' },
-      }));
-    }, 'İlk kullanıcı kaydedildi.');
-  }
-
   if (e === 'yetki-tamamlandi') {
     const pr = DB.proje(el.dataset.proje);
     if (!pr) return;
@@ -10151,16 +10013,12 @@ async function eylemCalistir(el) {
     const pr = DB.proje(el.dataset.proje);
     if (!pr) return;
     const pl = pr.palet || {};
-    const eposta = (pl.ilkKullanici || {}).eposta || '';
     let metin;
     try { metin = await DB.sablonSqlMetniOku(pl.kopyaKaynagi); }
     catch (h) { toast('SQL metni okunamadı: ' + h.message, 'hata'); return; }
     if (!metin) { toast('SQL metni bulunamadı — template kayıtlı değil olabilir.', 'hata'); return; }
-    if (eposta) metin = sqlEpostaYerlestir(metin, eposta);
     const ok = await panoyaKopyala(metin);
-    toast(ok
-      ? (eposta ? 'SQL kopyalandı — e-postan otomatik eklendi.' : 'SQL kopyalandı.')
-      : 'Kopyalanamadı, tarayıcı izin vermedi.', ok ? 'basari' : 'hata');
+    toast(ok ? 'SQL kopyalandı.' : 'Kopyalanamadı, tarayıcı izin vermedi.', ok ? 'basari' : 'hata');
     return;
   }
 

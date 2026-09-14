@@ -636,7 +636,6 @@ const PROMPT = {
   yetkiBlogu(proje) {
     const roller = rolListesi(proje && (proje.palet || {}).roller);
     const sunuculu = proje ? sunuculuMu(proje) : true;
-    const pl = (proje && proje.palet) || {};
 
     /* Rol katmanı tanımlanmamışsa (eski proje) ya da sunucusuzsa (yerel
        projede hesap/kullanıcı sistemi kurulamaz) proje tek kullanıcılık
@@ -681,22 +680,12 @@ const PROMPT = {
     s.push('  "Kim ne yapabilir" sorusu ilerideki "Yetkilendirme" aşamasında');
     s.push('  cevaplanacak.');
     s.push('');
-    if (pl.ilkKullaniciEklendi) {
-      const eposta = (pl.ilkKullanici || {}).eposta || '';
-      s.push('**İlk giriş.** İlk admin hesabı hem Supabase Authentication\'da');
-      s.push('hem kullanıcı tablosunda zaten hazır' + (eposta ? ` (**${eposta}**)` : '')
-        + ' —');
-      s.push('SQL kurulumu bunu otomatik yaptı. Kodun içine sabit bir kullanıcı');
-      s.push('adı/şifre gömmene gerek yok; giriş ekranı bu gerçek admin hesabını');
-      s.push('baştan itibaren kullanabilir.');
-    } else {
-      s.push('**İlk giriş.** Veritabanında hiç kullanıcı yokken normal girişle');
-      s.push('kimse içeri giremez — kayıt ekranı da yok. Kodun içine sabit bir');
-      s.push('kullanıcı adı ve şifre göm; kullanıcı tablosu boşken giriş ekranı');
-      s.push('yalnız bu bilgiyi kabul etsin ve içeri alsın. İlk gerçek kullanıcı');
-      s.push('yukarıdaki Kullanıcı ekle özelliğinden oluşturulur oluşturulmaz');
-      s.push('bu sabit giriş bir daha çalışmasın — kalıcı bir arka kapı kalmasın.');
-    }
+    s.push('**İlk giriş.** Veritabanında hiç kullanıcı yokken normal girişle');
+    s.push('kimse içeri giremez — kayıt ekranı da yok. Kodun içine sabit bir');
+    s.push('kullanıcı adı ve şifre göm; kullanıcı tablosu boşken giriş ekranı');
+    s.push('yalnız bu bilgiyi kabul etsin ve içeri alsın. İlk gerçek kullanıcı');
+    s.push('yukarıdaki Kullanıcı ekle özelliğinden oluşturulur oluşturulmaz');
+    s.push('bu sabit giriş bir daha çalışmasın — kalıcı bir arka kapı kalmasın.');
     return s.join('\n');
   },
 
