@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.135.58
+- **Profesyonel tasarıma "Serbest tasarım" seçeneği eklendi.** 5 hazır yönün yanına, müşterinin kendi getirdiği bir referans görsele göre tüm uygulamayı uyarlayan altıncı bir yol geldi — ChatGPT'den mockup istemeye gerek yok, tek promptla hem tasarım dili çıkarılıp bütün sayfalara uygulanıyor hem eksik görsel/ikonlar için ChatGPT istekleri numaralı bir liste halinde, tek bir `ikonlar/` klasörüne toplanacak şekilde isteniyor.
+
 ## v0.135.57
 - **Giriş ve Kullanıcı ekle promptuna şube ataması eklendi.** Şubeli bir firmada kullanıcı eklenirken artık katmanın yanında şube de seçiliyor (varsa — şablonda zaten Ayarlar'dan kurulan bir şube tablosu üzerinden dinamik okunuyor, isimler koda sabitlenmiyor). Kullanıcı girişte kendi şubesine bağlanmış sayılıyor; şubeye göre veri kısıtlaması yine Yetkilendirme aşamasında kurulacak.
 

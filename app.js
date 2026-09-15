@@ -1444,24 +1444,61 @@ function tasarimYonKarti(p, pl, yon) {
     </div>`);
 }
 
+/* 6. seçenek: 5 sabit yön kendi mockup'ını ChatGPT'den üretiyor, bu ise
+   müşterinin ZATEN elinde olan bir referans görseli kullanıyor — ChatGPT'den
+   mockup istemeye gerek yok, tek promptla hem tasarım dili çıkarılıp
+   uygulanıyor hem eksik görseller için ChatGPT istekleri veriliyor (bkz.
+   PROMPT.serbestTasarim). O yüzden bu kartta "Promptu kopyala" düğmesi yok —
+   kopyalanacak sabit bir yön promptu değil, doğrudan "Sıradaki adım" kartı. */
+function serbestTasarimKarti(p, pl) {
+  const resim = gorselAdresi(p, 'Y_serbest');
+  const secili = pl.secilenYon === 'serbest';
+  return fbKart('var(--metal-2)', ICON.gTasarim, 'Serbest tasarım', null, p.id, `
+    <p class="fb-neden">Müşterinin kendi getirdiği bir referans görsel varsa —
+      buraya yükle, tek promptla bütün uygulama ona uyarlanır.</p>
+    <div class="ty-gorsel ${resim ? 'var' : ''}"
+         ${AUTH.yonetici ? `data-eylem="tasarim-yon-gorsel" data-proje="${p.id}"
+           data-alan="serbest" role="button" tabindex="0"` : ''}
+         ${resim ? `style="background-image:url('${esc(resim)}')"` : ''}>
+      ${resim ? '' : svg(ICON.folder, 22)}
+      ${resim ? '' : `<i>${AUTH.yonetici ? 'dokun, referans görseli yükle' : 'görsel yok'}</i>`}
+      ${GORSEL_YUKLENIYOR[p.id] && GORSEL_YUKLENIYOR[p.id].no === 'Y_serbest'
+        ? gorselYuklemeKatmani(p.id) : ''}
+    </div>
+    ${AUTH.yonetici ? `
+      <div class="ty-dug">
+        <button class="sayfa-dug ${secili ? '' : 'ikincil'}" type="button"
+                data-eylem="tasarim-yon-sec" data-proje="${p.id}" data-alan="serbest">
+          ${secili ? svg(ICON.tik, 15) : ''} Müşteri bunu seçti</button>
+      </div>` : ''}`);
+}
+
 function tasarimSayfasi(p, d) {
   const pl = p.palet || {};
+  const serbest = pl.secilenYon === 'serbest';
   return `<div class="fb-govde">`
     + adimBasligi(p, d, pl.secilenYon ? '1/1' : '0/1')
-    + balon('Bu 5 promptu sırayla ChatGPT\'ye ver — her biri işletmenin gerçek '
-        + 'ekran görüntüsünü alıp farklı bir görsel yön öneriyor.',
+    + balon('5 hazır yönü sırayla ChatGPT\'ye ver — her biri işletmenin gerçek '
+        + 'ekran görüntüsünü alıp farklı bir görsel yön öneriyor. Müşterinin kendi '
+        + 'getirdiği bir referans görsel varsa "Serbest tasarım"ı kullan.',
         'Dönen görselleri buraya yükle, müşteriye göster, seçtiğini işaretle.')
-    + `<div class="ty-izgara">${TASARIM_YON.map(y => tasarimYonKarti(p, pl, y)).join('')}</div>`
+    + `<div class="ty-izgara">${TASARIM_YON.map(y => tasarimYonKarti(p, pl, y)).join('')
+        + serbestTasarimKarti(p, pl)}</div>`
     + (pl.secilenYon ? `
-      <div class="fb-kart" style="--kr:${(TASARIM_YON.find(y => y.anahtar === pl.secilenYon) || {}).renk || 'var(--metal-2)'}">
+      <div class="fb-kart" style="--kr:${serbest ? 'var(--metal-2)' : (TASARIM_YON.find(y => y.anahtar === pl.secilenYon) || {}).renk || 'var(--metal-2)'}">
         <div class="fb-ust">
           <span class="fb-ik">${svg(ICON.gTasarim, 14)}</span>
           <span class="fb-bas">Sıradaki adım</span>
         </div>
-        <p class="fb-neden">Müşteri <b>${esc((TASARIM_YON.find(y => y.anahtar === pl.secilenYon) || {}).ad || '')}</b>
-          yönünü seçti. Bu promptu kopyala, seçilen yönün mockup görseliyle birlikte
-          Claude Code'a yapıştır — Claude sana, ihtiyaç olan her görsel/ikon için
-          ChatGPT'ye vereceğin, ayrı ayrı hazır promptlar yazacak.</p>
+        <p class="fb-neden">${serbest
+          ? 'Müşteri kendi referans görselini kullanmayı seçti. Bu promptu kopyala, '
+            + 'referans görselle birlikte Claude Code\'a yapıştır — Claude hem tasarımı '
+            + 'uygulayacak hem de ihtiyaç olan görsel/ikonlar için ChatGPT\'ye vereceğin '
+            + 'numaralı promptları yazacak.'
+          : `Müşteri <b>${esc((TASARIM_YON.find(y => y.anahtar === pl.secilenYon) || {}).ad || '')}</b>
+            yönünü seçti. Bu promptu kopyala, seçilen yönün mockup görseliyle birlikte
+            Claude Code'a yapıştır — Claude sana, ihtiyaç olan her görsel/ikon için
+            ChatGPT'ye vereceğin, ayrı ayrı hazır promptlar yazacak.`}</p>
         <button class="sayfa-dug" type="button" data-eylem="tasarim-varlik-kopyala"
                 data-proje="${p.id}" data-alan="${pl.secilenYon}">
           ${svg(ICON.kopya, 15)} Promptu kopyala</button>
@@ -4895,7 +4932,7 @@ function projeDuraklari(p) {
         ? 'Tamamlandı.'
         : pl0.secilenYon
           ? 'Yön seçildi — uygulanınca tamamlandı diye işaretle.'
-          : '5 yönü ChatGPT\'ye ver, müşteri hangisini istediğini seçsin.',
+          : '5 yönü ChatGPT\'ye ver ya da müşterinin kendi görselini yükle, seçsin.',
     },
     {
       ad: 'Yetkilendirme',
@@ -9812,7 +9849,9 @@ async function eylemCalistir(el) {
   }
 
   if (e === 'tasarim-yon-gorsel') {
-    const yon = TASARIM_YON.find(y => y.anahtar === el.dataset.alan);
+    const alan = el.dataset.alan;
+    if (alan === 'serbest') { gorselSecVeYukle(el.dataset.proje, 'Y_serbest', 'Serbest tasarım'); return; }
+    const yon = TASARIM_YON.find(y => y.anahtar === alan);
     if (!yon) return;
     gorselSecVeYukle(el.dataset.proje, 'Y_' + yon.anahtar, yon.ad);
     return;
@@ -9827,10 +9866,12 @@ async function eylemCalistir(el) {
   }
 
   if (e === 'tasarim-varlik-kopyala') {
-    const metin = PROMPT.tasarimVarlikIstek(el.dataset.proje, el.dataset.alan);
+    const metin = el.dataset.alan === 'serbest'
+      ? PROMPT.serbestTasarim(el.dataset.proje)
+      : PROMPT.tasarimVarlikIstek(el.dataset.proje, el.dataset.alan);
     if (!metin) { toast('Prompt oluşturulamadı.', 'hata'); return; }
     const oldu = await panoyaKopyala(metin);
-    toast(oldu ? 'Prompt panoda — mockup görseliyle Claude Code\'a yapıştır.' : 'Kopyalanamadı.',
+    toast(oldu ? 'Prompt panoda — referans görselle Claude Code\'a yapıştır.' : 'Kopyalanamadı.',
       oldu ? 'basari' : 'hata');
     return;
   }

@@ -1684,6 +1684,93 @@ const PROMPT = {
     return s.join('\n');
   },
 
+  /* "Serbest tasarım" — 5 sabit yönün altıncı alternatifi: müşteri kendi
+     getirdiği bir referans görsele göre tüm uygulamayı uyarlamak istiyor.
+     tasarimVarlikIstek'ten farkı: orada önce bir yön seçilip ChatGPT'den
+     mockup isteniyor, burada mockup zaten müşterinin elinde — tek promptla
+     hem tasarım dili çıkarılıp tüm sayfalara uygulanıyor hem eksik görsel/
+     ikonlar için ChatGPT istekleri tek seferde, numaralı ve tek bir klasöre
+     (`ikonlar/`) toplanacak şekilde isteniyor. */
+  serbestTasarim(projeId) {
+    const p = DB.proje(projeId);
+    if (!p) return '';
+    const slug = depoSlug(p.repo);
+
+    const s = [];
+    s.push('# ' + projeAdi(p) + ' — referans görsele göre tasarım', '');
+    if (slug) {
+      s.push('> ### Depo: `' + slug + '`');
+      s.push('> Bu oturum yalnız bu depoya bağlı olmalı. Deposu farklıysa dur');
+      s.push('> ve söyle; başka depo ekleme, commit atma.');
+      s.push('');
+    }
+
+    s.push('Ekli görseli incele. Bu, uygulamanın **hedef tasarımı** — az sonra');
+    s.push('uygulamanın tamamını bu görseldeki temaya, renklere, tipografiye,');
+    s.push('ikon diline ve bileşen stiline (kart, buton, liste, üst çubuk vb.)');
+    s.push('uyduracaksın. İçerik, veri, modül ve sayfa yapısı **değişmiyor** —');
+    s.push('yalnız görsel dil bu görseldeki gibi olacak.');
+    s.push('');
+    s.push('Bu görseli bu sohbete **ekli olarak** ekliyorum — yoksa dur ve iste,');
+    s.push('tahmin etme.');
+    s.push('');
+
+    s.push('## Kapsam');
+    s.push('');
+    s.push('Görseldeki dil, uygulamanın **her sayfasına** uygulanacak: gördüğün');
+    s.push('ekran(lar) birebir örnek, ama görmediğin her sayfa da **aynı tema,');
+    s.push('aynı bileşen stili, aynı ikon dili** ile güncellenecek. Bir sayfa');
+    s.push('görselde yoksa tahmin etme, mevcut sayfanın içeriğini koru — yalnız');
+    s.push('görsel katmanını buradaki dile çevir.');
+    s.push('');
+
+    s.push('## Yapacakların');
+    s.push('');
+    s.push('1. Görseldeki tasarım dilini çıkar: renk paleti, tipografi, boşluk/');
+    s.push('   hizalama düzeni, kart/buton/liste bileşen stili, ikon tarzı');
+    s.push('   (çizgi mi dolgu mu, kalınlık, köşe yuvarlaklığı).');
+    s.push('2. Bunu `nizam/tasarim.md`\'ye yaz — ileride her yeni sayfa/bileşen');
+    s.push('   buna bakarak kurulacak.');
+    s.push('3. Uygulamadaki **her sayfayı** bu dile göre güncelle. Sırayı sen');
+    s.push('   belirle, **sorma**.');
+    s.push('4. Görselde çizim/illüstrasyon/fotoğraf gibi kodla üretilemeyecek');
+    s.push('   bir öğe varsa (basit SVG ikonları kendin çiz, onları sayma),');
+    s.push('   kodu yazmadan önce bana **numaralı bir liste** halinde, her biri');
+    s.push('   için ayrı bir ChatGPT promptu hazırla:');
+    s.push('');
+    s.push('   ```');
+    s.push('   1. Zebra ikonu');
+    s.push('   [ChatGPT promptu]');
+    s.push('');
+    s.push('   2. At ikonu');
+    s.push('   [ChatGPT promptu]');
+    s.push('   ```');
+    s.push('');
+    s.push('   - Görselde zaten görünen bir öğeyse: sıfırdan tarif etme,');
+    s.push('     doğrudan görsele işaret et — "Ekteki görselde [ne, nerede] var,');
+    s.push('     bunu birebir aynısıyla, yalnız bu öğeyi, saydam zeminli PNG');
+    s.push('     olarak ver."');
+    s.push('   - Görselde hiç görünmeyen ama aynı dille çizilmesi gereken yeni');
+    s.push('     bir öğeyse (görmediğin bir sayfa için gereken bir ikon gibi):');
+    s.push('     "Ekteki görselin çizim stiline, renk paletine ve çizgi');
+    s.push('     kalınlığına uygun bir [öğe] çiz."');
+    s.push('5. **Hepsi tek bir klasöre gidecek: `ikonlar/`.** Bu klasör depoda');
+    s.push('   zaten var, sen açma, farklı bir yere dağıtma — kaç görsel');
+    s.push('   istersen hepsini oraya koy.');
+    s.push('');
+    s.push('Görselleri üretip sana geri vereceğim, sen o zaman kod tarafını');
+    s.push('tamamlayacaksın — şimdilik yalnız numaralı liste ve promptları');
+    s.push('bekliyorum.');
+    s.push('');
+
+    s.push('## Bitirince');
+    s.push('');
+    s.push('Proje kimlik dosyasını (`nizam/` klasörü) güncelle, **main** dalına');
+    s.push('gönder:');
+    s.push(`   \`[${TASK_PREFIX}-0] Tasarım — referans görsele uyarlama\``);
+    return s.join('\n');
+  },
+
   /* Standart ekleme promptu — bir programda yeni bir kural doğduğunda,
      o değişikliği yapan Claude oturumuna yapıştırılır. Claude kuralı sabit
      bir blok olarak geri verir; blok Studio'ya yapıştırılınca standart
