@@ -679,6 +679,33 @@ const PROMPT = {
     s.push('"Yetkilendirme" promptuyla sonra gelecek. Şimdi yalnız altyapıyı');
     s.push('kur:');
     s.push('');
+
+    s.push('**Veritabanı tarafı — SQL\'i sen çalıştıramıyorsun.** Aşağıdakileri');
+    s.push('SQL olarak, kopyalanabilir **tek bir blok** halinde ver; ben');
+    s.push('Supabase SQL Editör\'e yapıştırıp çalıştıracağım, kodu commit\'e');
+    s.push('gönderdiğinde SQL\'i unutma:');
+    s.push('- `kullanicilar` tablosuna bir katman kolonu (ve varsa şube kolonu)');
+    s.push('  ekle, tabloyu `auth.users`\'a bağla — şu an bağlı değil.');
+    s.push('- Bir **trigger**: `auth.users`\'a yeni bir kayıt düştüğünde,');
+    s.push('  `kullanicilar` tablosunda hiç satır yoksa yeni geleni otomatik');
+    s.push('  en üst katmana (ör. Admin) yaz. Tabloda zaten satır varsa trigger');
+    s.push('  hiçbir şey yapmasın — o durumda satırı zaten aşağıdaki Edge');
+    s.push('  Function kendisi yazacak.');
+    s.push('');
+
+    s.push('**İlk giriş — arka kapı yok, sabit şifre yazma.** İlk admin hesabı');
+    s.push('Supabase panelinden (Authentication → Users → Add user) elle');
+    s.push('açılacak — bunu ben yapacağım, sen bir şey yapmana gerek yok.');
+    s.push('Yukarıdaki trigger o hesabı otomatik admin yapacak. Bu yüzden');
+    s.push('**kodun içine sabit bir kullanıcı adı/şifre gömme, "veritabanı');
+    s.push('boşken şunu kabul et" gibi özel bir giriş yolu da yazma** — login');
+    s.push('ekranı sıradan e-posta+şifre ile Supabase Auth\'a bağlansın.');
+    s.push('`auth.users` boşken zaten kimse giremez; bu normal ve beklenen');
+    s.push('bir durum, hata değil. `nizam/NIZAM.md`\'ye kısa bir not düş: ilk');
+    s.push('admin hesabı Supabase panelinden açılıyor, uygulamada kayıt');
+    s.push('ekranı yok.');
+    s.push('');
+
     s.push('- **Kullanıcı listesi.** Admin kullanıcı ekler, siler, pasife alır.');
     s.push('- **Katman ataması.** Yeni kullanıcı eklenirken şu katmanlardan');
     s.push('  biri seçilir: ' + roller.map(r => '**' + r + '**').join(', ') + '.');
@@ -701,17 +728,6 @@ const PROMPT = {
     s.push('  göre ayrım yapma. Her katman her sayfayı görür, her işi yapar.');
     s.push('  "Kim ne yapabilir" sorusu ilerideki "Yetkilendirme" aşamasında');
     s.push('  cevaplanacak.');
-    s.push('');
-    s.push('**İlk giriş.** Veritabanında hiç kullanıcı yokken normal girişle');
-    s.push('kimse içeri giremez — kayıt ekranı da yok. Kodun içine sabit bir');
-    s.push('kullanıcı adı ve şifre göm; kullanıcı tablosu boşken giriş ekranı');
-    s.push('yalnız bu bilgiyi kabul etsin ve içeri alsın. İlk gerçek kullanıcı');
-    s.push('yukarıdaki Kullanıcı ekle özelliğinden oluşturulur oluşturulmaz');
-    s.push('bu sabit giriş bir daha çalışmasın — kalıcı bir arka kapı kalmasın.');
-    s.push('Kullanıcı adı ve şifreyi kendin seç, **sorma**: `admin`/`admin` gibi');
-    s.push('bariz bir şey olmasın, hatırlanması kolay ama rastgele biri');
-    s.push('tarafından tahmin edilmesi zor bir şey seç (ör. `kurulum` /');
-    s.push('paket adı + yıl + noktalama). Seçtiğini `NIZAM.md`\'ye not düş.');
     return s.join('\n');
   },
 
@@ -771,11 +787,16 @@ const PROMPT = {
     s.push('- En üstteki katman (Admin) her zaman her şeyi yapabilir.');
     s.push('- Kendi katmanını düşüremesin, son admini silemesin kuralı zaten');
     s.push('  kuruluydu — boz-ma.');
+    s.push('- **RLS\'i sen çalıştıramıyorsun.** Arayüz kodunu commit\'e gönder,');
+    s.push('  ama katman/şube bazlı RLS kurallarının SQL\'ini de kopyalanabilir');
+    s.push('  **tek bir blok** halinde ver — ben Supabase SQL Editör\'e');
+    s.push('  yapıştırıp çalıştıracağım. SQL\'i cevabının içinde unutma.');
     s.push('');
     s.push('## Bitirince');
     s.push('');
-    s.push('Başka hiçbir şey yazma, yalnızca aşağıdaki bloğu doldurup ver —');
-    s.push('Studio bu bloğu okuyup kurulumun bittiğini anlayacak:');
+    s.push('Önce RLS SQL bloğunu ver. Ardından, başka hiçbir şey yazmadan,');
+    s.push('yalnızca aşağıdaki bloğu doldurup ver — Studio bu bloğu okuyup');
+    s.push('kurulumun bittiğini anlayacak:');
     s.push('');
     s.push('```json');
     s.push('{ "kuruldu": true }');

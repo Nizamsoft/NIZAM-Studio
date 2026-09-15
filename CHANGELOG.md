@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## v0.135.59
+- **Giriş sistemi: arka kapı kaldırıldı, gerçek "ilk admin" akışına geçildi.** Kodun içine sabit bir kullanıcı adı/şifre gömme talimatı tamamen kaldırıldı. Yeni plan: ilk admin hesabı Supabase panelinden (Authentication → Users) elle açılıyor, bir SQL trigger'ı bu ilk kaydı otomatik en üst katmana yazıyor — uygulamada kayıt ekranı hiç yok, veritabanı boşken zaten kimse giremiyor. Prompt artık bunun için gereken SQL'i (katman/şube kolonu + trigger) kopyalanabilir tek bir blok halinde istiyor, çünkü Claude Code veritabanına doğrudan bağlanamıyor.
+- **Yetkilendirme promptu RLS'i artık SQL blok olarak istiyor.** Önceden yalnız "RLS uygula" diyordu ama bunu nasıl teslim edeceğini söylemiyordu — Claude Code'un SQL çalıştırma yetkisi olmadığı için bu bir boşluktu. Şimdi arayüz kodunun yanında RLS kurallarını da kopyalanabilir bir SQL bloğu halinde istiyor.
+
 ## v0.135.58
 - **Profesyonel tasarıma "Serbest tasarım" seçeneği eklendi.** 5 hazır yönün yanına, müşterinin kendi getirdiği bir referans görsele göre tüm uygulamayı uyarlayan altıncı bir yol geldi — ChatGPT'den mockup istemeye gerek yok, tek promptla hem tasarım dili çıkarılıp bütün sayfalara uygulanıyor hem eksik görsel/ikonlar için ChatGPT istekleri numaralı bir liste halinde, tek bir `ikonlar/` klasörüne toplanacak şekilde isteniyor.
 
