@@ -4137,6 +4137,13 @@ function sqlEditorAdresi(url) {
             : 'https://supabase.com/dashboard';
 }
 
+/* Supabase URL'inden proje referansı (alt alan adı) — Edge Function
+   deploy promptunda `supabase link --project-ref` için kullanılıyor. */
+function supabaseProjeRef(url) {
+  const es = String(url || '').match(/https?:\/\/([a-z0-9-]+)\.supabase\.co/i);
+  return es ? es[1] : '';
+}
+
 
 /* ---------- Muhasebe şablonu: Temel tanımlar sihirbazı ----------
    Kurulum sihirbazıyla aynı kalıp (yüzen tam ekran katman, adım şeridi,
@@ -4521,7 +4528,11 @@ function sablonDegisimSayfasi(p, d) {
                     data-proje="${p.id}">${svg(ICON.kopya, 15)} SQL'i kopyala</button>
           </div></span></li>
         <li><span>Supabase panelinden ilk admin hesabını aç (Authentication → Users → Add user)</span></li>
-        <li><span>Edge Function'ı yayınla<br><code>supabase functions deploy kullanici-yonetimi</code></span></li>
+        <li><span>Edge Function'ı yayınla — <code>supabase functions deploy kullanici-yonetimi</code>
+          <div class="kur-dug" style="margin:8px 0 0 0">
+            ${promptBaglantisi({ tur: 'sablonEdgeDeploy', proje: p.id, slug: depoSlug(p.repo),
+              hedef: 'claude-yeni', yazi: 'Prompt oluştur ve Claude\'u aç' })}
+          </div></span></li>
       </ol>`
       + (girisTamam
           ? `<div class="kur-deger duz">${svg(ICON.tik, 13)} Bu aşama tamamlandı</div>`
@@ -8986,6 +8997,7 @@ const PANO_PROMPT = {
   guncellemeIstek: p => PROMPT.guncellemeIstek(p.id, GUNCELLEME_ISTEK[p.id] || ''),
   denemeIstek:   p => PROMPT.denemeIstek(p.id, DENEME_ISTEK[p.id] || ''),
   sablonDegisim: p => PROMPT.sablonDegisim(p.id),
+  sablonEdgeDeploy: p => PROMPT.sablonEdgeDeploy(p.id),
   cekirdekTemizle: p => PROMPT.cekirdekTemizle(p.id),
   yapi:          p => PROMPT.yapi(p.id),
   yetkiKur:      p => PROMPT.yetkiKur(p.id),

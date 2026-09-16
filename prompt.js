@@ -1543,6 +1543,54 @@ const PROMPT = {
     return s.join('\n');
   },
 
+  /* Giriş ve Kullanıcı ekle'nin 3. adımı: Edge Function'ı bu firmanın
+     Supabase projesine yayınlamak. Studio'nun kendisi bunu yapamaz —
+     tarayıcıdan çalışan bir SPA, Supabase CLI'yi çalıştıramaz. Bunun
+     yerine Claude Code oturumuna (terminali olan, depoya bağlı) yaptırıyoruz.
+     Erişim token'ı — hesap genelinde geçerli, hassas bir sır — hiçbir
+     zaman Studio'ya yazılmıyor; prompt Claude'dan bunu doğrudan bu
+     oturumda, kullanıcıya sorup almasını istiyor. */
+  sablonEdgeDeploy(projeId) {
+    const p = DB.proje(projeId);
+    if (!p) return '';
+    const pl = p.palet || {};
+    const slug = depoSlug(p.repo);
+    const ref = supabaseProjeRef(pl.supabaseUrl);
+
+    const s = [];
+    s.push('# ' + projeAdi(p) + ' — Edge Function\'ı yayınla', '');
+    if (slug) {
+      s.push('> ### Depo: `' + slug + '`');
+      s.push('> Bu oturum yalnız bu depoya bağlı olmalı. Deposu farklıysa dur');
+      s.push('> ve söyle; başka depo ekleme, commit atma.');
+      s.push('');
+    }
+    s.push('Bu depoda `7-sunucu/kullanici-yonetimi/` klasöründe hazır bir');
+    s.push('Supabase Edge Function var. Kod yazmana gerek yok — tek işin bunu');
+    s.push('bu firmanın Supabase projesine **yayınlamak (deploy)**.');
+    s.push('');
+    s.push('## Yapacakların');
+    s.push('');
+    s.push('1. `supabase --version` ile CLI kurulu mu kontrol et; yoksa kur');
+    s.push('   (`npm install -g supabase`).');
+    s.push('2. Benden bir Supabase **erişim token\'ı (access token)** iste —');
+    s.push('   bunu Studio\'ya değil, doğrudan bu sohbete yapıştıracağım.');
+    s.push('   Nereden alacağımı da söyle: supabase.com/dashboard/account/tokens');
+    s.push('   → "Generate new token". Token\'ı hiçbir dosyaya yazma, commit');
+    s.push('   etme — yalnız bu oturumda, komut satırında kullan.');
+    s.push('3. `supabase login --token <token>` ile giriş yap — bu ortamda');
+    s.push('   tarayıcı açılmaz, normal `supabase login` çalışmaz.');
+    s.push('4. Projeye bağlan: `supabase link --project-ref '
+      + (ref || '<proje-referansı>') + '`');
+    if (!ref) {
+      s.push('   (Bu depoda Supabase adresini bulamadım — projeye ait referansı');
+      s.push('   Supabase panelinin proje ayarlarından bul ya da bana sor.)');
+    }
+    s.push('5. Yayınla: `supabase functions deploy kullanici-yonetimi`');
+    s.push('6. Çıktıyı kontrol et, başarılıysa kısaca özet ver.');
+    return s.join('\n');
+  },
+
   /* ---------- Template oluşturma: temizleme promptu ----------
      Ayarlar > Templateler'de bir müşteri projesinden template çıkarırken
      tek prompt — firma izini kaldırır, tasarımı standarda döndürür, gerçek

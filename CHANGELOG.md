@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.135.64
+- **"Edge Function'ı yayınla" adımı artık yönlendiriyor.** Eskiden yalnız bir komut satırı yazıyordu, tıklanacak bir şey yoktu. Şimdi "Prompt oluştur ve Claude'u aç" düğmesi var — Claude Code oturumu CLI'yi kurup, erişim token'ını (Studio'ya değil, doğrudan o sohbete) isteyip deploy'u kendisi yapıyor. Token hiçbir zaman Studio'da saklanmıyor; proje referansı Supabase adresinden otomatik çıkarılıyor.
+
 ## v0.135.63
 - **"Değişim" durağı yeniden tasarlandı: dikey adım çizgisi (stepper).** Üç adım artık numaralı, bağlı dairelerle gösteriliyor — biten yeşil, sıradaki kırmızı vurgulu, bekleyen nötr. Kilitli adımdaki gri/tıklanamaz düğme kaldırıldı, yerine kısa bir "🔒 Önce X. adımı bitir" notu geldi. Sıra da değişti: **1) Giriş ve Kullanıcı ekle, 2) Temel tanımlar, 3) Veri ve format** — ilk ikisi birbirinden bağımsız, hızlı biten Giriş adımı öne alındı; yalnız Temel tanımlar → Veri ve format arasında (biri diğerinin verisini kullandığı için) sıra kilidi hâlâ var.
 
