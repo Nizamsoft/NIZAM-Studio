@@ -4519,6 +4519,11 @@ function sablonDegisimSayfasi(p, d) {
   const aktifIdx = durum.findIndex(x => !x);
   const hal = i => (aktifIdx === -1 || i < aktifIdx) ? 'bitti' : i === aktifIdx ? 'aktif' : '';
 
+  const slug = depoSlug(p.repo);
+  const dosyaAdres = slug ? `https://github.com/${slug}/blob/main/7-sunucu/kullanici-yonetimi/index.ts` : '';
+  const fonksiyonlarAdres = supabaseProjeRef(pl.supabaseUrl)
+    ? `https://supabase.com/dashboard/project/${supabaseProjeRef(pl.supabaseUrl)}/functions` : '';
+
   const girisIcerik = !girisGerekli
     ? `<div class="dg-kilitli">${svg(ICON.info, 14)} Rol katmanı yok ya da sunucusuz — bu adım gerekmiyor</div>`
     : `<ol class="dg-mini">
@@ -4528,11 +4533,22 @@ function sablonDegisimSayfasi(p, d) {
                     data-proje="${p.id}">${svg(ICON.kopya, 15)} SQL'i kopyala</button>
           </div></span></li>
         <li><span>Supabase panelinden ilk admin hesabını aç (Authentication → Users → Add user)</span></li>
-        <li><span>Edge Function'ı yayınla — <code>supabase functions deploy kullanici-yonetimi</code>
-          <div class="kur-dug" style="margin:8px 0 0 0">
-            ${promptBaglantisi({ tur: 'sablonEdgeDeploy', proje: p.id, slug: depoSlug(p.repo),
-              hedef: 'claude-yeni', yazi: 'Prompt oluştur ve Claude\'u aç' })}
-          </div></span></li>
+        <li><span>Edge Function'ı yayınla — kod çalıştırmadan, kopyala-yapıştır:
+          <ol class="dg-mini" style="margin-top:8px">
+            <li><span>${dosyaAdres
+                ? `<a class="mini-link" target="_blank" rel="noopener" href="${esc(dosyaAdres)}">
+                    ${svg(ICON.disari, 13)} kullanici-yonetimi/index.ts'i aç</a>`
+                : 'Depodan <code>7-sunucu/kullanici-yonetimi/index.ts</code>\'i aç'}
+              — sağ üstteki kopyala simgesiyle ("Copy raw file") kodu panoya al</span></li>
+            <li><span>Supabase paneli${fonksiyonlarAdres
+                ? ` — <a class="mini-link" target="_blank" rel="noopener" href="${esc(fonksiyonlarAdres)}">
+                    ${svg(ICON.disari, 13)} Edge Functions'ı aç</a>` : ''}
+              → Deploy a new function → <b>via Editor</b></span></li>
+            <li><span>İsim kutusuna tam olarak <code>kullanici-yonetimi</code> yaz (tire dahil)</span></li>
+            <li><span>Örnek kodu tamamen sil, panodakini yapıştır</span></li>
+            <li><span><b>Verify JWT açık kalsın</b> — kapatma</span></li>
+            <li><span>Deploy</span></li>
+          </ol></span></li>
       </ol>`
       + (girisTamam
           ? `<div class="kur-deger duz">${svg(ICON.tik, 13)} Bu aşama tamamlandı</div>`
@@ -8997,7 +9013,6 @@ const PANO_PROMPT = {
   guncellemeIstek: p => PROMPT.guncellemeIstek(p.id, GUNCELLEME_ISTEK[p.id] || ''),
   denemeIstek:   p => PROMPT.denemeIstek(p.id, DENEME_ISTEK[p.id] || ''),
   sablonDegisim: p => PROMPT.sablonDegisim(p.id),
-  sablonEdgeDeploy: p => PROMPT.sablonEdgeDeploy(p.id),
   cekirdekTemizle: p => PROMPT.cekirdekTemizle(p.id),
   yapi:          p => PROMPT.yapi(p.id),
   yetkiKur:      p => PROMPT.yetkiKur(p.id),

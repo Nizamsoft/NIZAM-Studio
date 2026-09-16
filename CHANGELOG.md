@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.135.65
+- **"Edge Function'ı yayınla" artık CLI değil, telefondan kopyala-yapıştır.** Erişim token'ı isteyen Claude Code/CLI akışı kaldırıldı — yerine gerçekte denenip doğrulanmış, hiçbir kurulum gerektirmeyen yöntem geldi: dosyayı GitHub'da aç → "Copy raw file" → Supabase paneli → Edge Functions → Deploy a new function → via Editor → ismi `kullanici-yonetimi` yaz → yapıştır → Verify JWT açık kalsın → Deploy. Studio artık dosyayı ve Supabase Functions sayfasını doğrudan açan bağlantılar da veriyor.
+
 ## v0.135.64
 - **"Edge Function'ı yayınla" adımı artık yönlendiriyor.** Eskiden yalnız bir komut satırı yazıyordu, tıklanacak bir şey yoktu. Şimdi "Prompt oluştur ve Claude'u aç" düğmesi var — Claude Code oturumu CLI'yi kurup, erişim token'ını (Studio'ya değil, doğrudan o sohbete) isteyip deploy'u kendisi yapıyor. Token hiçbir zaman Studio'da saklanmıyor; proje referansı Supabase adresinden otomatik çıkarılıyor.
 
