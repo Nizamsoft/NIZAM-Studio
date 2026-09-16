@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.135.62
+- **"Temel tanımlar" ve "Değişim" tek durakta birleşti: Değişim.** Şablon kopyalarında eskiden ayrı ayrı görünen bu iki durak artık tek bir "Değişim" durağı — üç adım halinde: Temel tanımlar (Gün Sonu/Banka/Fatura), Veri ve format, Giriş ve Kullanıcı ekle. Akış bir durak kısaldı, ilerleme "X/3" olarak tek yerden okunuyor. Final'in hazır sayması için üçünün de bitmesi gerekiyor.
+
 ## v0.135.61
 - **"Giriş ve Kullanıcı ekle" artık kod yazdırmıyor.** Şablon (MUHASEBETEMPLATE) göç 90 ile bu sistemi kendi içinde hazır getirdiği için, Studio'daki bu adım artık bir Claude Code promptu değil — üç maddelik bir kontrol listesi: katman isimlerini `katmanlar` tablosuna yazan hazır bir SQL (Studio üretiyor, kopyala yeter), ilk admin hesabını Supabase panelinden açma, Edge Function'ı yayınlama. `yetkiBlogu` da şablon kopyalarında artık "burada dokunma, zaten hazır" diye kısa kesiyor — eski "sıfırdan kur" talimatı yalnız şablon olmayan (sıfırdan) projelerde kalıyor. Tanışma promptundaki "personel seç" açıklaması da güncel duruma göre düzeltildi.
 

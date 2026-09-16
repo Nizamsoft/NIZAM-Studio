@@ -933,20 +933,24 @@ const DURAKLAR = {
      sayfaların olduğunu bilmeli. Bilmezse altı genel ekran çiziyor; künye
      elindeyken gerçek modülleri, gerçek alanları ve o işe ait simgeleri
      çiziyor. Bağımlılık bu yönde. */
-  /* Muhasebe şablonu kopyasında bu iki durağın yerini "Temel tanımlar" ve
-     "Değişim" alıyor — sıra ve numara aynı kalıyor, yalnız içerik değişiyor.
-     Bkz. sablonD(), sablonTanimlarSayfasi(), sablonDegisimSayfasi(). */
+  /* Muhasebe şablonu kopyasında bu iki durağın yerini tek bir "Değişim"
+     durağı alıyor — "yapi" slotu (bkz. projeDuraklari) o kopyalarda gizli,
+     her şey "beta" slotunda toplanıyor. Sıra ve numaralar aynı kalıyor,
+     yalnız şablon kopyasında bir durak daha az görünüyor. Bkz. sablonD(),
+     sablonDegisimSayfasi(). */
   yapi:        { no: 4, ad: 'Kurulum ve yapı',
-                 ciz: (p, d) => sablonMu(p) ? sablonTanimlarSayfasi(p,
-                   sablonD(d, 'Temel tanımlar', 'Gün Sonu, banka, fatura tanımlarını topla.')) : yapiSayfasi(p, d),
+                 ciz: (p, d) => sablonMu(p)
+                   ? sayfaHero(p, sablonD(d, 'Değişim', '')) + `<div class="card">${empty(ICON.check,
+                       'Bu aşama Değişim\'e taşındı', 'Temel tanımlar artık "Değişim" durağının içinde.')}</div>`
+                   : yapiSayfasi(p, d),
                  renk: '#8fae4a', ikon: 'gAltyapi', resim: 'yapi',
-                 aciklama: p => sablonMu(p) ? 'Gün Sonu, banka, fatura tanımlarını topla.'
+                 aciklama: p => sablonMu(p) ? 'Bu aşama Değişim\'e taşındı.'
                    : 'Kurulum dosyaları ve proje yapısı.' },
   beta:        { no: 5, ad: 'Beta ve geliştirme',
                  ciz: (p, d) => sablonMu(p) ? sablonDegisimSayfasi(p,
-                   sablonD(d, 'Değişim', 'Toplanan tanımları koda işle.')) : betaSayfasi(p, d),
+                   sablonD(d, 'Değişim', 'Temel tanımlar, veri/format ve giriş kurulumu burada.')) : betaSayfasi(p, d),
                  renk: '#c9753c', ikon: 'gOptimizasyon', resim: 'beta',
-                 aciklama: p => sablonMu(p) ? 'Toplanan tanımları koda işle.'
+                 aciklama: p => sablonMu(p) ? 'Temel tanımlar, veri/format ve giriş kurulumu burada.'
                    : 'Testler ve geliştirme süreci.' },
   /* Yalnız şablon kopyalarında anlamlı: normal projede bu döngü zaten Beta
      ve geliştirme'nin içinde. Slot her projede var (sıra bozulmasın diye,
@@ -4197,20 +4201,6 @@ function sablonTanimlarEtiket(k) {
            temel: 'Serbest güncelleme' }[k] || '';
 }
 
-/* Durak sayfası: kurulum sihirbazındaki özet karta birebir aynı kalıp —
-   sihirbazı açan tek bir "Doldur" kartı. */
-function sablonTanimlarSayfasi(p, d) {
-  const liste = sablonTanimlarListesi();
-  const biten = liste.filter(k => sablonTanimlarAdimBittiMi(k, p)).length;
-  return `<div class="fb-govde">`
-    + adimBasligi(p, d, biten + '/' + liste.length)
-    + fbBosKart('#8fae4a', ICON.gAltyapi, 'Temel tanımlar', biten + '/' + liste.length,
-        'Gün Sonu, banka, fatura & kart yapılarını burada topluyoruz — istersen '
-        + 'sonunda serbest bir güncelleme de eklersin. <b>Adımlar sırayla ilerlenir.</b>',
-        'sablon-sihirbazi-ac', p.id, true)
-    + `</div>`;
-}
-
 function sablonSihirbaziAc(projeId) {
   modalHepsiniKapat();
   const p = DB.proje(projeId);
@@ -4466,36 +4456,48 @@ function sablonKatmanSqlMetni(p) {
   return `insert into katmanlar (seviye, ad) values\n${satirlar}\non conflict do nothing;`;
 }
 
-/* "Değişim" durağı artık iki ayrı iş: (1) Temel tanımlar'da toplanan
-   veri/format bilgisini koda işlemek, (2) giriş ekranı ve Kullanıcı ekle
-   özelliğini kurmak. İkisi ayrı promptla, ayrı onayla ilerliyor — tek
-   kutuda toplanınca "giriş hiç yapılmadı" durumu fark edilmiyordu. */
+/* "Değişim" durağı üç ayrı iş: (1) Temel tanımlar (Gün Sonu/Banka/Fatura
+   verisi topla — eskiden ayrı bir durak olan "Temel tanımlar" buraya
+   katlandı, bkz. DURAKLAR.yapi), (2) veri/format bilgisini koda işlemek,
+   (3) giriş ekranı ve Kullanıcı ekle özelliğini kurmak. Üçü ayrı ayrı
+   ilerliyor — tek kutuda toplanınca "giriş hiç yapılmadı" gibi bir
+   durum fark edilmiyordu. */
 function sablonDegisimBittiMi(p) {
   const pl = p.palet || {};
-  return !!pl.sablonDegisimTamamlandi
+  return sablonTanimlarBittiMi(p) && !!pl.sablonDegisimTamamlandi
     && (!sablonGirisGerekliMi(p) || !!pl.sablonGirisTamamlandi);
 }
 
-/* 5 · Değişim — Temel tanımlar'da toplanan her şeyi koda işleme durağı.
-   Yapıyı değiştirmiyor, yalnız firmaya özel bilgiyi uyguluyor. */
+/* 4 · Değişim — Temel tanımlar'ı toplayıp koda işleyen ve giriş sistemini
+   kuran birleşik durak. Eskiden "Temel tanımlar" ve "Değişim" diye iki
+   ayrı durak olan bu iş, akışı sadeleştirmek için tek durakta toplandı. */
 function sablonDegisimSayfasi(p, d) {
   const pl = p.palet || {};
-  const hazir = sablonTanimlarBittiMi(p);
+  const liste = sablonTanimlarListesi();
+  const tanimBiten = liste.filter(k => sablonTanimlarAdimBittiMi(k, p)).length;
+  const tanimlarBitti = tanimBiten >= liste.length;
   const veriTamam = !!pl.sablonDegisimTamamlandi;
   const girisGerekli = sablonGirisGerekliMi(p);
   const girisTamam = !girisGerekli || !!pl.sablonGirisTamamlandi;
+  const biten = [tanimlarBitti, veriTamam, girisTamam].filter(Boolean).length;
 
   return `<div class="fb-govde">`
-    + adimBasligi(p, d, '')
+    + adimBasligi(p, d, biten + '/3')
     + shBaslikServis('claude', 'Değişim',
-        'Temel tanımlar\'da toplanan her şey burada iki ayrı adımda tamamlanıyor.')
-    + (hazir ? '' : `<div class="note uyari">${svg(ICON.uyari, 15)}
-        <span><b>Temel tanımlar bitmedi.</b> Önce o durağı tamamla.</span></div>`)
+        'Firmaya özel her şey burada üç adımda toplanıp koda işleniyor.')
 
-    + bolumBas('1 · Veri ve format')
+    + bolumBas('1 · Temel tanımlar')
+    + fbBosKart('#8fae4a', ICON.gAltyapi, 'Temel tanımlar', tanimBiten + '/' + liste.length,
+        'Gün Sonu, banka, fatura & kart yapılarını burada topluyoruz — istersen '
+        + 'sonunda serbest bir güncelleme de eklersin. <b>Adımlar sırayla ilerlenir.</b>',
+        'sablon-sihirbazi-ac', p.id, true)
+
+    + bolumBas('2 · Veri ve format')
+    + (tanimlarBitti ? '' : `<div class="note uyari">${svg(ICON.uyari, 15)}
+        <span><b>Temel tanımlar bitmedi.</b> Önce 1. adımı tamamla.</span></div>`)
     + `<div class="kur-dug">
         ${promptBaglantisi({ tur: 'sablonDegisim', proje: p.id, slug: depoSlug(p.repo),
-          hedef: 'claude-yeni', yazi: 'Kopyala ve Claude\'u aç', ikincil: !hazir, kapali: !hazir })}
+          hedef: 'claude-yeni', yazi: 'Kopyala ve Claude\'u aç', ikincil: !tanimlarBitti, kapali: !tanimlarBitti })}
       </div>`
     + (veriTamam
         ? `<div class="kur-deger duz">${svg(ICON.tik, 13)} Bu aşama tamamlandı</div>`
@@ -4503,7 +4505,7 @@ function sablonDegisimSayfasi(p, d) {
                   role="button" tabindex="0">
             <span class="kur-kutu">${svg(ICON.tik, 12)}</span> Değişim yapıldı, kontrol ettim</label>`)
 
-    + bolumBas('2 · Giriş ve Kullanıcı ekle')
+    + bolumBas('3 · Giriş ve Kullanıcı ekle')
     + (!girisGerekli
         ? `<div class="note">${svg(ICON.info, 15)}
             <span>Bu projede rol katmanı yok ya da sunucusuz — giriş ve kullanıcı
@@ -4890,13 +4892,14 @@ function projeDuraklari(p) {
           : 'Bağlantılar hazır.',
     },
     pl0.sablon ? {
-      ad: 'Temel tanımlar',
-      bitti: sablonTanimlarBittiMi(p),
-      ozet: (() => {
-        const liste = sablonTanimlarListesi();
-        const biten = liste.filter(k => sablonTanimlarAdimBittiMi(k, p)).length;
-        return biten < liste.length ? `${biten}/${liste.length} adım` : 'Tamamlandı.';
-      })(),
+      /* Eskiden ayrı bir "Temel tanımlar" durağıydı — artık "Değişim"in
+         içine katlandı (bkz. sablonDegisimSayfasi). Slot sırayı bozmasın
+         diye duruyor, tamamen gizli — bkz. "Test ve Güncelle" örneği. */
+      ad: 'Değişim',
+      bitti: true,
+      sayilmaz: true,
+      gizli: true,
+      ozet: 'Değişim durağına taşındı.',
     } : {
       /* Sıra kilitli olduğu için bu durağa gelindiğinde Bağlantılar zaten
          bitmiş oluyor — burada tekrar depo/sohbet kontrolü gerekmiyor. */
@@ -4909,13 +4912,16 @@ function projeDuraklari(p) {
     pl0.sablon ? {
       ad: 'Değişim',
       bitti: sablonDegisimBittiMi(p),
-      ozet: sablonDegisimBittiMi(p)
-        ? 'Tamamlandı.'
-        : !!pl0.sablonDegisimTamamlandi
-          ? 'Veri ve format hazır — sıra giriş ve kullanıcı eklemede.'
-          : sablonTanimlarBittiMi(p)
-            ? 'Toplanan tanımlar hazır — promptu Claude\'a ver.'
-            : 'Önce Temel tanımlar\'ı bitir.',
+      ozet: (() => {
+        if (sablonDegisimBittiMi(p)) return 'Tamamlandı.';
+        if (!sablonTanimlarBittiMi(p)) {
+          const liste = sablonTanimlarListesi();
+          const biten = liste.filter(k => sablonTanimlarAdimBittiMi(k, p)).length;
+          return `Temel tanımlar: ${biten}/${liste.length} adım`;
+        }
+        if (!pl0.sablonDegisimTamamlandi) return 'Toplanan tanımlar hazır — veri/format promptunu ver.';
+        return 'Veri ve format hazır — sıra giriş ve kullanıcı eklemede.';
+      })(),
     } : {
       /* İki bölüm: ilk kurulum (plan + beş aşama) bitmeden sürekli
          geliştirme ekranı gösterilmiyor (bkz. betaSayfasi). "Bitti" burada
