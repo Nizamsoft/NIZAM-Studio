@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.135.63
+- **"Değişim" durağı yeniden tasarlandı: dikey adım çizgisi (stepper).** Üç adım artık numaralı, bağlı dairelerle gösteriliyor — biten yeşil, sıradaki kırmızı vurgulu, bekleyen nötr. Kilitli adımdaki gri/tıklanamaz düğme kaldırıldı, yerine kısa bir "🔒 Önce X. adımı bitir" notu geldi. Sıra da değişti: **1) Giriş ve Kullanıcı ekle, 2) Temel tanımlar, 3) Veri ve format** — ilk ikisi birbirinden bağımsız, hızlı biten Giriş adımı öne alındı; yalnız Temel tanımlar → Veri ve format arasında (biri diğerinin verisini kullandığı için) sıra kilidi hâlâ var.
+
 ## v0.135.62
 - **"Temel tanımlar" ve "Değişim" tek durakta birleşti: Değişim.** Şablon kopyalarında eskiden ayrı ayrı görünen bu iki durak artık tek bir "Değişim" durağı — üç adım halinde: Temel tanımlar (Gün Sonu/Banka/Fatura), Veri ve format, Giriş ve Kullanıcı ekle. Akış bir durak kısaldı, ilerleme "X/3" olarak tek yerden okunuyor. Final'in hazır sayması için üçünün de bitmesi gerekiyor.
 

@@ -4468,9 +4468,34 @@ function sablonDegisimBittiMi(p) {
     && (!sablonGirisGerekliMi(p) || !!pl.sablonGirisTamamlandi);
 }
 
+/* Bir "Değişim" adımının dış kabuğu — numaralı daire + bağlayan dikey
+   çizgi (bkz. .dg-* stilleri). `hal`: 'bitti' | 'aktif' | '' (henüz sırası
+   gelmedi). Sıradaki üç adım (Giriş, Temel tanımlar, Veri ve format)
+   birbirinden bağımsız görsel dille anlatılsın diye ortak bir kalıba
+   alındı; içerikleri sablonDegisimSayfasi'nda ayrı ayrı üretiliyor. */
+function sablonDegisimAdim(no, hal, baslik, rozetHtml, aciklama, icerikHtml) {
+  return `<div class="dg-adim ${hal}">
+      <div class="dg-cizgi"></div>
+      <div class="dg-no">${hal === 'bitti' ? svg(ICON.tik, 15) : no}</div>
+      <div class="dg-ic">
+        <div class="dg-baslik-satir">
+          <span class="dg-baslik">${esc(baslik)}</span>
+          ${rozetHtml || ''}
+        </div>
+        ${aciklama ? `<p class="dg-aciklama">${aciklama}</p>` : ''}
+        ${icerikHtml || ''}
+      </div>
+    </div>`;
+}
+
 /* 4 · Değişim — Temel tanımlar'ı toplayıp koda işleyen ve giriş sistemini
    kuran birleşik durak. Eskiden "Temel tanımlar" ve "Değişim" diye iki
-   ayrı durak olan bu iş, akışı sadeleştirmek için tek durakta toplandı. */
+   ayrı durak olan bu iş, akışı sadeleştirmek için tek durakta toplandı.
+   Adım sırası bilerek Giriş ve Kullanıcı ekle ile başlıyor — o, Temel
+   tanımlar/Veri ve format'tan bağımsız, hızlı biten bir iş; en sona
+   bırakmanın bir gerekçesi yoktu. Tek gerçek sıra kuralı Temel tanımlar
+   → Veri ve format arasında (ikincisinin promptu birincinin verisini
+   okuyor), o yüzden yalnız bu ikisi arasında kilit var. */
 function sablonDegisimSayfasi(p, d) {
   const pl = p.palet || {};
   const liste = sablonTanimlarListesi();
@@ -4479,57 +4504,66 @@ function sablonDegisimSayfasi(p, d) {
   const veriTamam = !!pl.sablonDegisimTamamlandi;
   const girisGerekli = sablonGirisGerekliMi(p);
   const girisTamam = !girisGerekli || !!pl.sablonGirisTamamlandi;
-  const biten = [tanimlarBitti, veriTamam, girisTamam].filter(Boolean).length;
+  const biten = [girisTamam, tanimlarBitti, veriTamam].filter(Boolean).length;
+
+  /* Hangi adım "aktif" (sırada): tamamlanmamış ilk adım. Ondan öncekiler
+     yeşil/bitti, sonrakiler nötr — kilitli olup olmaması ayrı bir konu. */
+  const durum = [girisTamam, tanimlarBitti, veriTamam];
+  const aktifIdx = durum.findIndex(x => !x);
+  const hal = i => (aktifIdx === -1 || i < aktifIdx) ? 'bitti' : i === aktifIdx ? 'aktif' : '';
+
+  const girisIcerik = !girisGerekli
+    ? `<div class="dg-kilitli">${svg(ICON.info, 14)} Rol katmanı yok ya da sunucusuz — bu adım gerekmiyor</div>`
+    : `<ol class="dg-mini">
+        <li><span>Katmanlar tablosuna bu firmanın rollerini yaz
+          <div class="kur-dug" style="margin:8px 0 0 0">
+            <button class="sayfa-dug ikincil" type="button" data-eylem="sablon-katman-sql-kopyala"
+                    data-proje="${p.id}">${svg(ICON.kopya, 15)} SQL'i kopyala</button>
+          </div></span></li>
+        <li><span>Supabase panelinden ilk admin hesabını aç (Authentication → Users → Add user)</span></li>
+        <li><span>Edge Function'ı yayınla<br><code>supabase functions deploy kullanici-yonetimi</code></span></li>
+      </ol>`
+      + (girisTamam
+          ? `<div class="kur-deger duz">${svg(ICON.tik, 13)} Bu aşama tamamlandı</div>`
+          : `<label class="kur-onay" data-eylem="sablon-giris-onay" data-proje="${p.id}"
+                    role="button" tabindex="0">
+              <span class="kur-kutu">${svg(ICON.tik, 12)}</span> Giriş ve kullanıcı ekleme
+              yapıldı, kontrol ettim</label>`);
+
+  const tanimIcerik = `<div class="kur-dug">
+      <button class="sayfa-dug" type="button" data-eylem="sablon-sihirbazi-ac" data-proje="${p.id}">
+        ${svg(ICON.kalem, 15)} Doldur</button>
+    </div>`;
+
+  const veriIcerik = !tanimlarBitti
+    ? `<div class="dg-kilitli">${svg(ICON.kilit, 14)} Önce 2. adımı bitir</div>`
+    : `<div class="kur-dug">
+        ${promptBaglantisi({ tur: 'sablonDegisim', proje: p.id, slug: depoSlug(p.repo),
+          hedef: 'claude-yeni', yazi: 'Kopyala ve Claude\'u aç' })}
+      </div>`
+      + (veriTamam
+          ? `<div class="kur-deger duz">${svg(ICON.tik, 13)} Bu aşama tamamlandı</div>`
+          : `<label class="kur-onay" data-eylem="sablon-degisim-onay" data-proje="${p.id}"
+                    role="button" tabindex="0">
+              <span class="kur-kutu">${svg(ICON.tik, 12)}</span> Değişim yapıldı, kontrol ettim</label>`);
 
   return `<div class="fb-govde">`
     + adimBasligi(p, d, biten + '/3')
     + shBaslikServis('claude', 'Değişim',
         'Firmaya özel her şey burada üç adımda toplanıp koda işleniyor.')
-
-    + bolumBas('1 · Temel tanımlar')
-    + fbBosKart('#8fae4a', ICON.gAltyapi, 'Temel tanımlar', tanimBiten + '/' + liste.length,
-        'Gün Sonu, banka, fatura & kart yapılarını burada topluyoruz — istersen '
-        + 'sonunda serbest bir güncelleme de eklersin. <b>Adımlar sırayla ilerlenir.</b>',
-        'sablon-sihirbazi-ac', p.id, true)
-
-    + bolumBas('2 · Veri ve format')
-    + (tanimlarBitti ? '' : `<div class="note uyari">${svg(ICON.uyari, 15)}
-        <span><b>Temel tanımlar bitmedi.</b> Önce 1. adımı tamamla.</span></div>`)
-    + `<div class="kur-dug">
-        ${promptBaglantisi({ tur: 'sablonDegisim', proje: p.id, slug: depoSlug(p.repo),
-          hedef: 'claude-yeni', yazi: 'Kopyala ve Claude\'u aç', ikincil: !tanimlarBitti, kapali: !tanimlarBitti })}
-      </div>`
-    + (veriTamam
-        ? `<div class="kur-deger duz">${svg(ICON.tik, 13)} Bu aşama tamamlandı</div>`
-        : `<label class="kur-onay" data-eylem="sablon-degisim-onay" data-proje="${p.id}"
-                  role="button" tabindex="0">
-            <span class="kur-kutu">${svg(ICON.tik, 12)}</span> Değişim yapıldı, kontrol ettim</label>`)
-
-    + bolumBas('3 · Giriş ve Kullanıcı ekle')
-    + (!girisGerekli
-        ? `<div class="note">${svg(ICON.info, 15)}
-            <span>Bu projede rol katmanı yok ya da sunucusuz — giriş ve kullanıcı
-            ekleme sistemi gerekmiyor, bu adım otomatik tamamlandı sayılıyor.</span></div>`
-        : `<div class="note">${svg(ICON.info, 15)}
-            <span>Bu sistem artık şablonda hazır geliyor — <b>kod yazdırmana gerek yok.</b>
-            Sırayla üç adım (sıra önemli, önce 1, sonra 2):</span></div>
-          <ol class="kur-adim">
-            <li>Katmanlar tablosuna bu firmanın rollerini yaz:
-              <div class="kur-dug" style="margin-top:8px">
-                <button class="sayfa-dug ikincil" type="button" data-eylem="sablon-katman-sql-kopyala"
-                        data-proje="${p.id}">${svg(ICON.kopya, 15)} SQL'i kopyala</button>
-              </div></li>
-            <li>Supabase panelinden ilk admin hesabını aç
-              (Authentication → Users → Add user).</li>
-            <li>Edge Function'ı yayınla: <code>supabase functions deploy kullanici-yonetimi</code></li>
-          </ol>`
-          + (girisTamam
-              ? `<div class="kur-deger duz">${svg(ICON.tik, 13)} Bu aşama tamamlandı</div>`
-              : `<label class="kur-onay" data-eylem="sablon-giris-onay" data-proje="${p.id}"
-                        role="button" tabindex="0">
-                  <span class="kur-kutu">${svg(ICON.tik, 12)}</span> Giriş ve kullanıcı ekleme
-                  yapıldı, kontrol ettim</label>`))
-    + `</div>`;
+    + `<div class="dg-stepper">`
+    + sablonDegisimAdim(1, hal(0), 'Giriş ve Kullanıcı ekle',
+        girisGerekli ? `<span class="dg-rozet bilgi">şablonda hazır</span>` : '',
+        girisGerekli ? 'Kod yazdırmana gerek yok — sırayla üç adım (sıra önemli), hızlı biter:' : '',
+        girisIcerik)
+    + sablonDegisimAdim(2, hal(1), 'Temel tanımlar',
+        `<span class="dg-rozet beklet">${tanimBiten}/${liste.length}</span>`,
+        'Gün Sonu, banka, fatura &amp; kart yapılarını topla — istersen sonunda serbest bir güncelleme de eklersin.',
+        tanimIcerik)
+    + sablonDegisimAdim(3, hal(2), 'Veri ve format', '',
+        'Toplanan tanımları tek promptla koda işle.',
+        veriIcerik)
+    + `</div></div>`;
 }
 
 /* ---------- 6 · Test ve Güncelle ----------
