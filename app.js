@@ -4452,6 +4452,20 @@ function sablonGirisGerekliMi(p) {
   return rolListesi((p.palet || {}).roller).length > 0 && sunuculuMu(p);
 }
 
+/* Giriş ve Kullanıcı ekle artık kod yazdırmıyor — MUHASEBETEMPLATE göç 90
+   ile mekanizmayı kendi içinde hazır getiriyor (auth_id, trigger, Kullanıcı
+   ekle ekranı, Edge Function). Tek eksik veri: bu firmanın katman isimleri
+   — onlar `katmanlar` tablosuna yazılır, koda değil. Bu yüzden burada
+   Claude'a gönderilecek bir prompt değil, doğrudan çalıştırılabilir bir
+   SQL metni üretiliyor. Seviye sırası `rolListesi`nin kendi sırasıyla
+   aynı: dar yetkiden genişe (bkz. yetkiKur, cozumleme). */
+function sablonKatmanSqlMetni(p) {
+  const roller = rolListesi((p.palet || {}).roller);
+  if (!roller.length) return '';
+  const satirlar = roller.map((ad, i) => `  (${i + 1}, '${ad.replace(/'/g, "''")}')`).join(',\n');
+  return `insert into katmanlar (seviye, ad) values\n${satirlar}\non conflict do nothing;`;
+}
+
 /* "Değişim" durağı artık iki ayrı iş: (1) Temel tanımlar'da toplanan
    veri/format bilgisini koda işlemek, (2) giriş ekranı ve Kullanıcı ekle
    özelliğini kurmak. İkisi ayrı promptla, ayrı onayla ilerliyor — tek
@@ -4474,7 +4488,7 @@ function sablonDegisimSayfasi(p, d) {
   return `<div class="fb-govde">`
     + adimBasligi(p, d, '')
     + shBaslikServis('claude', 'Değişim',
-        'Temel tanımlar\'da toplanan her şey burada iki ayrı promptla koda işleniyor.')
+        'Temel tanımlar\'da toplanan her şey burada iki ayrı adımda tamamlanıyor.')
     + (hazir ? '' : `<div class="note uyari">${svg(ICON.uyari, 15)}
         <span><b>Temel tanımlar bitmedi.</b> Önce o durağı tamamla.</span></div>`)
 
@@ -4494,10 +4508,19 @@ function sablonDegisimSayfasi(p, d) {
         ? `<div class="note">${svg(ICON.info, 15)}
             <span>Bu projede rol katmanı yok ya da sunucusuz — giriş ve kullanıcı
             ekleme sistemi gerekmiyor, bu adım otomatik tamamlandı sayılıyor.</span></div>`
-        : `<div class="kur-dug">
-            ${promptBaglantisi({ tur: 'sablonDegisimGiris', proje: p.id, slug: depoSlug(p.repo),
-              hedef: 'claude-yeni', yazi: 'Kopyala ve Claude\'u aç', ikincil: !hazir, kapali: !hazir })}
-          </div>`
+        : `<div class="note">${svg(ICON.info, 15)}
+            <span>Bu sistem artık şablonda hazır geliyor — <b>kod yazdırmana gerek yok.</b>
+            Sırayla üç adım (sıra önemli, önce 1, sonra 2):</span></div>
+          <ol class="kur-adim">
+            <li>Katmanlar tablosuna bu firmanın rollerini yaz:
+              <div class="kur-dug" style="margin-top:8px">
+                <button class="sayfa-dug ikincil" type="button" data-eylem="sablon-katman-sql-kopyala"
+                        data-proje="${p.id}">${svg(ICON.kopya, 15)} SQL'i kopyala</button>
+              </div></li>
+            <li>Supabase panelinden ilk admin hesabını aç
+              (Authentication → Users → Add user).</li>
+            <li>Edge Function'ı yayınla: <code>supabase functions deploy kullanici-yonetimi</code></li>
+          </ol>`
           + (girisTamam
               ? `<div class="kur-deger duz">${svg(ICON.tik, 13)} Bu aşama tamamlandı</div>`
               : `<label class="kur-onay" data-eylem="sablon-giris-onay" data-proje="${p.id}"
@@ -8923,7 +8946,6 @@ const PANO_PROMPT = {
   guncellemeIstek: p => PROMPT.guncellemeIstek(p.id, GUNCELLEME_ISTEK[p.id] || ''),
   denemeIstek:   p => PROMPT.denemeIstek(p.id, DENEME_ISTEK[p.id] || ''),
   sablonDegisim: p => PROMPT.sablonDegisim(p.id),
-  sablonDegisimGiris: p => PROMPT.sablonDegisimGiris(p.id),
   cekirdekTemizle: p => PROMPT.cekirdekTemizle(p.id),
   yapi:          p => PROMPT.yapi(p.id),
   yetkiKur:      p => PROMPT.yetkiKur(p.id),
@@ -10135,6 +10157,17 @@ async function eylemCalistir(el) {
     })) return;
     return isYap(() => DB.paletKaydet(pr.id,
       Object.assign({}, pl, { sablonDegisimTamamlandi: true })), 'Değişim tamamlandı.');
+  }
+
+  if (e === 'sablon-katman-sql-kopyala') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const metin = sablonKatmanSqlMetni(pr);
+    if (!metin) { toast('SQL üretilemedi — rol tanımlı değil.', 'hata'); return; }
+    const ok = await panoyaKopyala(metin);
+    toast(ok ? 'SQL kopyalandı — SQL Editör\'e yapıştır.' : 'Kopyalanamadı, tarayıcı izin vermedi.',
+      ok ? 'basari' : 'hata');
+    return;
   }
 
   if (e === 'sablon-giris-onay') {

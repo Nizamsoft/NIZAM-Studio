@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.135.61
+- **"Giriş ve Kullanıcı ekle" artık kod yazdırmıyor.** Şablon (MUHASEBETEMPLATE) göç 90 ile bu sistemi kendi içinde hazır getirdiği için, Studio'daki bu adım artık bir Claude Code promptu değil — üç maddelik bir kontrol listesi: katman isimlerini `katmanlar` tablosuna yazan hazır bir SQL (Studio üretiyor, kopyala yeter), ilk admin hesabını Supabase panelinden açma, Edge Function'ı yayınlama. `yetkiBlogu` da şablon kopyalarında artık "burada dokunma, zaten hazır" diye kısa kesiyor — eski "sıfırdan kur" talimatı yalnız şablon olmayan (sıfırdan) projelerde kalıyor. Tanışma promptundaki "personel seç" açıklaması da güncel duruma göre düzeltildi.
+
 ## v0.135.60
 - **Giriş ve Yetkilendirme promptları, template incelemesinden çıkan kritik bulgularla düzeltildi.** İlk-admin trigger'ının şartı "tablo boş mu" yerine "admin katmanlı satır var mı" oldu (aksi halde hiç çalışmazdı — `kullanicilar` zaten personel listesi olarak dolu geliyor). Mevcut personel satırlarının kimliğini bozmamak için `id` yerine ayrı bir `auth_id` kolonu kullanılıyor, Edge Function ile trigger artık `upsert`/`on conflict` ile çakışmıyor. "Personel seç" ekranı ve `X-NS-Personel` imza mekanizmasının gerçek girişle birlikte güvensiz hale geldiği, bunun Giriş adımında `auth.uid()`'ye çevrilmesi gerektiği eklendi. Ayrıca: kullanıcı pasife alınınca Auth hesabının da kapatılması, `alter default privileges`'in geri alınması, RLS fonksiyonlarının `stable` (immutable değil) olması ve her SQL teslimatının sonuna bir doğrulama sorgusu eklenmesi kural oldu.
 
