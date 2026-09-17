@@ -4456,6 +4456,22 @@ function sablonGirisGerekliMi(p) {
    Claude'a gönderilecek bir prompt değil, doğrudan çalıştırılabilir bir
    SQL metni üretiliyor. Seviye sırası `rolListesi`nin kendi sırasıyla
    aynı: dar yetkiden genişe (bkz. yetkiKur, cozumleme). */
+/* Bir birleşik kurulum SQL metninin hangi göçe kadar geldiğini bulup toast'ta
+   gösterir. Tam metni ekrana dökmez (20 bin+ satır, telefonda kasar).
+   Kullanan iki yer: Templateler'deki kayıt kutusu ve müşteri kopyasının
+   "Bağlantılar ve temel" durağındaki "SQL'i kopyala" adımı — ikisi de aynı
+   şüpheyi (kayıtlı/kopyalanacak metin güncel mi) farklı yerden soruyor. */
+function sqlMetniGocBildir(metin) {
+  if (!(metin || '').trim()) { toast('Henüz kayıtlı bir SQL metni yok.', 'uyari'); return; }
+  /* Göç başlığı TAM OLARAK "-- NN · ..." biçiminde (tek boşluklu). `\s*`
+     kullanılamaz: SQL gövdesinde hesap kodu açıklamaları da "--     331 ·
+     ..." gibi birden çok boşlukla yazılıyor ve gerçek göç numarasından
+     büyük çıkıp yanlış sonuç veriyordu. */
+  const numaralar = [...metin.matchAll(/^-- (\d{1,3}) · /gm)].map(m => Number(m[1]));
+  if (!numaralar.length) { toast('Göç numarası bulunamadı — metin farklı biçimde olabilir.', 'uyari'); return; }
+  toast('Kayıtlı SQL şu an göç ' + Math.max(...numaralar) + '\'e kadar.', 'basari');
+}
+
 function sablonKatmanSqlMetni(p) {
   const roller = rolListesi((p.palet || {}).roller);
   if (!roller.length) return '';
@@ -8114,8 +8130,12 @@ function baglantiAdimSql(p) {
      sablon-sql-metin-kopyala). Yalnız link tanımlıysa eskisi gibi
      "aç, elle kopyala" akışına düşülüyor. */
   const govde = metinVar ? `
-      <button class="sayfa-dug" type="button" data-eylem="sablon-sql-metin-kopyala" data-proje="${p.id}">
-        ${svg(ICON.kopya, 15)} SQL'i kopyala</button>
+      <div class="kur-dug">
+        <button class="sayfa-dug" type="button" data-eylem="sablon-sql-metin-kopyala" data-proje="${p.id}">
+          ${svg(ICON.kopya, 15)} SQL'i kopyala</button>
+        <button class="sayfa-dug ikincil" type="button" data-eylem="sablon-sql-metin-kontrol" data-proje="${p.id}">
+          ${svg(ICON.info, 15)} Kayıtlı göç kaç?</button>
+      </div>
       <div class="fbd-not">${svg(ICON.info, 13)}
         <span>Panoya kopyalanır — Supabase projendeki <b>SQL Editor</b>'e
         yapıştır ve çalıştır (Run).</span></div>`
@@ -11461,15 +11481,18 @@ async function eylemCalistir(el) {
     let metin = '';
     try { metin = await DB.sablonSqlMetniOku(pr.id); }
     catch (h) { toast('Okunamadı: ' + h.message, 'hata'); return; }
-    if (!metin.trim()) { toast('Henüz kayıtlı bir SQL metni yok.', 'uyari'); return; }
-    /* Her göç dosyasının başlığı TAM OLARAK "-- NN · ..." biçiminde (tek
-       boşluklu) — bütün metni ekrana dökmeden en yüksek numarayı bulmak
-       yeter. `\s*` kullanılamaz: SQL gövdesinde hesap kodu açıklamaları da
-       "--     331 · ..." gibi birden çok boşlukla yazılıyor ve gerçek göç
-       numarasından büyük çıkıp yanlış sonuç veriyordu. */
-    const numaralar = [...metin.matchAll(/^-- (\d{1,3}) · /gm)].map(m => Number(m[1]));
-    if (!numaralar.length) { toast('Göç numarası bulunamadı — metin farklı biçimde olabilir.', 'uyari'); return; }
-    toast('Kayıtlı SQL şu an göç ' + Math.max(...numaralar) + '\'e kadar.', 'basari');
+    sqlMetniGocBildir(metin);
+    return;
+  }
+
+  if (e === 'sablon-sql-metin-kontrol') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const pl = pr.palet || {};
+    let metin = '';
+    try { metin = await DB.sablonSqlMetniOku(pl.kopyaKaynagi); }
+    catch (h) { toast('Okunamadı: ' + h.message, 'hata'); return; }
+    sqlMetniGocBildir(metin);
     return;
   }
 

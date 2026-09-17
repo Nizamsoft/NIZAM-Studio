@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.135.69
+- **"Bağlantılar ve temel"deki "SQL'i kopyala" adımına da "Kayıtlı göç kaç?" düğmesi eklendi.** Müşteri kopyasına yapıştırılacak metnin hangi göçe kadar geldiğini, kopyalamadan önce kontrol edebilirsin — Templateler'dekiyle aynı kontrol, aynı kaynaktan okuyor.
+
 ## v0.135.68
 - **Fix: "Kayıtlı göç kaç?" yanlış numara veriyordu.** SQL gövdesindeki hesap kodu açıklamaları ("--     331 · ...") gerçek göç başlığıyla ("-- 93 · ...") karışıyordu. Artık yalnız tek boşluklu gerçek başlık biçimi sayılıyor.
 
