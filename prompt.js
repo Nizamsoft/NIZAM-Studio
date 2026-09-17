@@ -461,6 +461,11 @@ const PROMPT = {
       s.push('   > `create table if not exists`, `drop policy if exists` gibi');
       s.push('   > yeniden çalıştırmaya dayanıklı yaz. Ben Supabase\'in SQL');
       s.push('   > editörüne yapıştırıp çalıştıracağım — sen çalıştıramazsın.', '');
+      s.push('   > Ara tablo (`create temp table` vb.) kullanıyorsan tamamını');
+      s.push('   > tek bir `do $$ ... $$` içine al — Supabase\'in SQL Editör\'ü çok');
+      s.push('   > ifadeli bir yapıştırmada bazen her ifadeyi ayrı çalıştırıyor ve');
+      s.push('   > ikinci ifade ilk ifadenin açtığı ara tabloyu göremeyip sessizce');
+      s.push('   > başarısız oluyor.', '');
       s.push('   > `js/yapilandirma.js` dosyasını da aç ve yukarıdaki bağlantı');
       s.push('   > bilgilerini yaz. Kod ilk günden gerçek veritabanına bağlansın.', '');
       s.push('**5 · `NIZAM.md`** içindeki `## Dosyalar` listesini güncelle.', '');
@@ -853,6 +858,12 @@ const PROMPT = {
     s.push('- SQL bloğunun sonuna kısa bir **doğrulama sorgusu** ekle (ör. "bu');
     s.push('  sorgu boş dönmeli" notuyla) — kurallar gerçekten uygulanmış mı,');
     s.push('  çalıştırıp göreyim.');
+    s.push('- **Ara tablo (`create temp table` vb.) kullanıyorsan bloğun tamamını');
+    s.push('  tek bir `do $$ ... $$` içine al.** Supabase\'in SQL Editör\'ü çok');
+    s.push('  ifadeli bir yapıştırmada her ifadeyi ayrı çalıştırabiliyor —');
+    s.push('  ikinci ifade ilk ifadenin açtığı ara tabloyu göremiyor ve sessizce');
+    s.push('  başarısız oluyor. Gerçek bir kurulumda tam bu yüzden bir göç hiç');
+    s.push('  çalışmamıştı, fark edilmesi haftalar sürdü.');
     s.push('');
     s.push('## Bitirince');
     s.push('');

@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.135.71
+- **SQL üreten iki prompta (Yetkilendirme ve ilk şema) "ara tablo" uyarısı eklendi.** Template'te göç 39'un aylarca sessizce çalışmadığı gerçek bir hata bulundu: Supabase SQL Editör çok ifadeli yapıştırmalarda bazen her ifadeyi ayrı çalıştırıyor, ikinci ifade ilk ifadenin açtığı ara tabloyu göremiyor. Artık Claude'a "ara tablo kullanıyorsan tek bir `do $$ ... $$` bloğuna al" diye söyleniyor.
+
 ## v0.135.70
 - **Kurulum SQL'i artık üç parça.** Birleşik dosya tek blok halinde Claude Code sohbetine sığmadığı için (20 bin+ satır) üçe bölündü. Templateler'de üç ayrı kutu/kaydet, müşteri kopyasında üç ayrı "parçayı kopyala" adımı var; "Kayıtlı göç kaç?" üçünü birleştirip tek numara veriyor, eksik parçayı da uyarıyor. Studio'nun kendi Supabase'inde tek satırlık bir SQL çalıştırmak gerekiyor — `sql/19-sablon-sql-parca.sql`.
 
