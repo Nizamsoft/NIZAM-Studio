@@ -4460,16 +4460,23 @@ function sablonGirisGerekliMi(p) {
    gösterir. Tam metni ekrana dökmez (20 bin+ satır, telefonda kasar).
    Kullanan iki yer: Templateler'deki kayıt kutusu ve müşteri kopyasının
    "Bağlantılar ve temel" durağındaki "SQL'i kopyala" adımı — ikisi de aynı
-   şüpheyi (kayıtlı/kopyalanacak metin güncel mi) farklı yerden soruyor. */
-function sqlMetniGocBildir(metin) {
-  if (!(metin || '').trim()) { toast('Henüz kayıtlı bir SQL metni yok.', 'uyari'); return; }
+   şüpheyi (kayıtlı/kopyalanacak metin güncel mi) farklı yerden soruyor.
+   Metin artık üç parça (bkz. sql/19-sablon-sql-parca.sql, DB.sablonSqlMetniOku)
+   — üçü birleştirilip tek numara aranıyor, eksik parça ayrıca uyarılıyor. */
+function sqlMetniGocBildir(parcalar) {
+  const p = parcalar || {};
+  const eksik = [1, 2, 3].filter(no => !(p[no === 1 ? 'metin' : 'metin' + no] || '').trim());
+  const tumu = [p.metin, p.metin2, p.metin3].filter(Boolean).join('\n');
+  if (!tumu.trim()) { toast('Henüz kayıtlı bir SQL metni yok.', 'uyari'); return; }
   /* Göç başlığı TAM OLARAK "-- NN · ..." biçiminde (tek boşluklu). `\s*`
      kullanılamaz: SQL gövdesinde hesap kodu açıklamaları da "--     331 ·
      ..." gibi birden çok boşlukla yazılıyor ve gerçek göç numarasından
      büyük çıkıp yanlış sonuç veriyordu. */
-  const numaralar = [...metin.matchAll(/^-- (\d{1,3}) · /gm)].map(m => Number(m[1]));
+  const numaralar = [...tumu.matchAll(/^-- (\d{1,3}) · /gm)].map(m => Number(m[1]));
   if (!numaralar.length) { toast('Göç numarası bulunamadı — metin farklı biçimde olabilir.', 'uyari'); return; }
-  toast('Kayıtlı SQL şu an göç ' + Math.max(...numaralar) + '\'e kadar.', 'basari');
+  let mesaj = 'Kayıtlı SQL şu an göç ' + Math.max(...numaralar) + '\'e kadar.';
+  if (eksik.length) mesaj += ' (Parça ' + eksik.join(', ') + ' boş!)';
+  toast(mesaj, eksik.length ? 'uyari' : 'basari');
 }
 
 function sablonKatmanSqlMetni(p) {
@@ -6977,17 +6984,23 @@ function cekirdekAdimSqlGovde(p) {
   const cekirdek = pl.cekirdek || {};
   const mevcutLink  = cekirdek.sqlLink || '';
   const metinVar    = !!cekirdek.sqlMetinVar;
-  return shBaslikServis('supabase', 'Kurulum SQL\'i',
-      'Bu template\'ten açılan her müşteri kopyasında, Supabase bağlanırken bu SQL kullanılacak.')
-    + `<label class="field"><span>SQL metni — depo private olsa bile çalışır, önerilen</span>
-        <textarea id="ck-sql-metin" rows="6" spellcheck="false"
-          placeholder="Birleşik kurulum SQL dosyasının tamamını buraya yapıştır…"></textarea></label>
+  /* Birleşik kurulum SQL'i tek blok olarak Claude Code sohbetine
+     sığmıyor (20 bin+ satır) — o yüzden üç parçaya bölünüp geliyor,
+     her biri ayrı kaydediliyor (bkz. sql/19-sablon-sql-parca.sql). */
+  const parcaKutusu = (no) => `
+      <label class="field" style="margin-top:${no === 1 ? 0 : 12}px"><span>Parça ${no}</span>
+        <textarea id="ck-sql-metin-${no}" rows="6" spellcheck="false"
+          placeholder="${no}. parçayı buraya yapıştır…"></textarea></label>
       <div class="kur-dug">
-        <button class="sayfa-dug" type="button" data-eylem="cekirdek-sql-metin-kaydet"
-                data-proje="${p.id}">${svg(ICON.check, 15)} Kaydet</button>
-        <button class="sayfa-dug ikincil" type="button" data-eylem="cekirdek-sql-metin-kontrol"
-                data-proje="${p.id}">${svg(ICON.info, 15)} Kayıtlı göç kaç?</button>
-      </div>`
+        <button class="sayfa-dug ${no === 3 ? '' : 'ikincil'}" type="button"
+                data-eylem="cekirdek-sql-metin-kaydet" data-parca="${no}"
+                data-proje="${p.id}">${svg(ICON.check, 15)} Parça ${no}'${no === 1 ? 'i' : no === 2 ? 'yi' : 'ü'} kaydet</button>
+        ${no === 3 ? `<button class="sayfa-dug ikincil" type="button" data-eylem="cekirdek-sql-metin-kontrol"
+                data-proje="${p.id}">${svg(ICON.info, 15)} Kayıtlı göç kaç?</button>` : ''}
+      </div>`;
+  return shBaslikServis('supabase', 'Kurulum SQL\'i',
+      'Bu template\'ten açılan her müşteri kopyasında, Supabase bağlanırken bu SQL kullanılacak — üç parça halinde.')
+    + parcaKutusu(1) + parcaKutusu(2) + parcaKutusu(3)
     + (metinVar ? `<div class="kur-deger duz">${svg(ICON.tik, 13)} Metin kayıtlı — müşteri
         projelerinde bundan otomatik kopya çıkacak</div>` : '')
     + `<label class="field" style="margin-top:18px">
@@ -8128,17 +8141,21 @@ function baglantiAdimSql(p) {
 
   /* Metin varsa öncelik onda: depo private olsa da çalışır (bkz.
      sablon-sql-metin-kopyala). Yalnız link tanımlıysa eskisi gibi
-     "aç, elle kopyala" akışına düşülüyor. */
+     "aç, elle kopyala" akışına düşülüyor. Metin üç parça halinde
+     (bkz. sql/19-sablon-sql-parca.sql) — sırayla kopyalanıp çalıştırılır. */
+  const parcaSirasi = ['1.', '2.', '3.'];
   const govde = metinVar ? `
-      <div class="kur-dug">
-        <button class="sayfa-dug" type="button" data-eylem="sablon-sql-metin-kopyala" data-proje="${p.id}">
-          ${svg(ICON.kopya, 15)} SQL'i kopyala</button>
-        <button class="sayfa-dug ikincil" type="button" data-eylem="sablon-sql-metin-kontrol" data-proje="${p.id}">
-          ${svg(ICON.info, 15)} Kayıtlı göç kaç?</button>
-      </div>
+      ${parcaSirasi.map((etiket, i) => `
+      <div class="kur-dug" style="margin-top:${i === 0 ? 0 : 8}px">
+        <button class="sayfa-dug ${i === 2 ? '' : 'ikincil'}" type="button"
+                data-eylem="sablon-sql-metin-kopyala" data-parca="${i + 1}" data-proje="${p.id}">
+          ${svg(ICON.kopya, 15)} ${etiket} parçayı kopyala</button>
+        ${i === 2 ? `<button class="sayfa-dug ikincil" type="button" data-eylem="sablon-sql-metin-kontrol"
+                data-proje="${p.id}">${svg(ICON.info, 15)} Kayıtlı göç kaç?</button>` : ''}
+      </div>`).join('')}
       <div class="fbd-not">${svg(ICON.info, 13)}
-        <span>Panoya kopyalanır — Supabase projendeki <b>SQL Editor</b>'e
-        yapıştır ve çalıştır (Run).</span></div>`
+        <span>Her parça panoya kopyalanır — Supabase projendeki <b>SQL Editor</b>'e
+        sırayla yapıştır ve çalıştır (Run): önce 1., bitince 2., sonra 3.</span></div>`
     : link ? `
       <a class="sayfa-dug ikincil" target="_blank" rel="noopener" href="${esc(link)}">
         ${svg(ICON.disari, 15)} SQL dosyasını aç</a>
@@ -8154,7 +8171,7 @@ function baglantiAdimSql(p) {
     + ((metinVar || link) ? `
         <label class="kur-onay ${yuklendi ? 'on' : ''}" data-eylem="sql-yuklendi-onay"
                data-proje="${p.id}" role="button" tabindex="0">
-          <span class="kur-kutu">${svg(ICON.tik, 12)}</span> SQL'i yükledim</label>` : '');
+          <span class="kur-kutu">${svg(ICON.tik, 12)}</span> ${metinVar ? 'Üç parçayı da yükledim' : 'SQL\'i yükledim'}</label>` : '');
 }
 
 /* 5 · Namecheap — DNS kaydı + alan adı, eskiden ayrı bir pencereydi
@@ -10628,12 +10645,14 @@ async function eylemCalistir(el) {
     const pr = DB.proje(el.dataset.proje);
     if (!pr) return;
     const pl = pr.palet || {};
-    let metin;
-    try { metin = await DB.sablonSqlMetniOku(pl.kopyaKaynagi); }
+    const parca = Number(el.dataset.parca) || 1;
+    let parcalar;
+    try { parcalar = await DB.sablonSqlMetniOku(pl.kopyaKaynagi); }
     catch (h) { toast('SQL metni okunamadı: ' + h.message, 'hata'); return; }
-    if (!metin) { toast('SQL metni bulunamadı — template kayıtlı değil olabilir.', 'hata'); return; }
+    const metin = parca === 2 ? parcalar.metin2 : parca === 3 ? parcalar.metin3 : parcalar.metin;
+    if (!metin) { toast(parca + '. parça bulunamadı — template\'te henüz kayıtlı değil.', 'hata'); return; }
     const ok = await panoyaKopyala(metin);
-    toast(ok ? 'SQL kopyalandı.' : 'Kopyalanamadı, tarayıcı izin vermedi.', ok ? 'basari' : 'hata');
+    toast(ok ? parca + '. parça kopyalandı.' : 'Kopyalanamadı, tarayıcı izin vermedi.', ok ? 'basari' : 'hata');
     return;
   }
 
@@ -11465,23 +11484,24 @@ async function eylemCalistir(el) {
   if (e === 'cekirdek-sql-metin-kaydet') {
     const pr = DB.proje(el.dataset.proje);
     if (!pr) return;
-    const alan = document.getElementById('ck-sql-metin');
+    const parca = Number(el.dataset.parca) || 1;
+    const alan = document.getElementById('ck-sql-metin-' + parca);
     const metin = alan ? alan.value.trim() : '';
-    if (!metin) { toast('Önce SQL metnini yapıştır.', 'uyari'); return; }
+    if (!metin) { toast('Önce ' + parca + '. parçayı yapıştır.', 'uyari'); return; }
     const pl = pr.palet || {};
     const cekirdek = Object.assign({}, pl.cekirdek || {}, { sqlMetinVar: true });
-    return isYap(() => DB.sablonSqlMetniYaz(pr.id, metin)
+    return isYap(() => DB.sablonSqlMetniYaz(pr.id, parca, metin)
       .then(() => DB.paletKaydet(pr.id, Object.assign({}, pl, { cekirdek }))),
-      'SQL metni kaydedildi.');
+      parca + '. parça kaydedildi.');
   }
 
   if (e === 'cekirdek-sql-metin-kontrol') {
     const pr = DB.proje(el.dataset.proje);
     if (!pr) return;
-    let metin = '';
-    try { metin = await DB.sablonSqlMetniOku(pr.id); }
+    let parcalar;
+    try { parcalar = await DB.sablonSqlMetniOku(pr.id); }
     catch (h) { toast('Okunamadı: ' + h.message, 'hata'); return; }
-    sqlMetniGocBildir(metin);
+    sqlMetniGocBildir(parcalar);
     return;
   }
 
@@ -11489,10 +11509,10 @@ async function eylemCalistir(el) {
     const pr = DB.proje(el.dataset.proje);
     if (!pr) return;
     const pl = pr.palet || {};
-    let metin = '';
-    try { metin = await DB.sablonSqlMetniOku(pl.kopyaKaynagi); }
+    let parcalar;
+    try { parcalar = await DB.sablonSqlMetniOku(pl.kopyaKaynagi); }
     catch (h) { toast('Okunamadı: ' + h.message, 'hata'); return; }
-    sqlMetniGocBildir(metin);
+    sqlMetniGocBildir(parcalar);
     return;
   }
 

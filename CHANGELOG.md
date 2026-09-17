@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.135.70
+- **Kurulum SQL'i artık üç parça.** Birleşik dosya tek blok halinde Claude Code sohbetine sığmadığı için (20 bin+ satır) üçe bölündü. Templateler'de üç ayrı kutu/kaydet, müşteri kopyasında üç ayrı "parçayı kopyala" adımı var; "Kayıtlı göç kaç?" üçünü birleştirip tek numara veriyor, eksik parçayı da uyarıyor. Studio'nun kendi Supabase'inde tek satırlık bir SQL çalıştırmak gerekiyor — `sql/19-sablon-sql-parca.sql`.
+
 ## v0.135.69
 - **"Bağlantılar ve temel"deki "SQL'i kopyala" adımına da "Kayıtlı göç kaç?" düğmesi eklendi.** Müşteri kopyasına yapıştırılacak metnin hangi göçe kadar geldiğini, kopyalamadan önce kontrol edebilirsin — Templateler'dekiyle aynı kontrol, aynı kaynaktan okuyor.
 

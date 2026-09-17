@@ -1219,19 +1219,31 @@ const DB = {
 
   /* Şablon kurulum SQL'i — palet'e değil ayrı bir tabloya yazılıyor, bkz.
      sql/18-sablon-sql-metni.sql. Büyük bir metin (yüzlerce KB olabilir),
-     palet her küçük işlemde okunup yazıldığı için oraya konmuyor. */
+     palet her küçük işlemde okunup yazıldığı için oraya konmuyor.
+
+     ÜÇ PARÇA: birleşik kurulum SQL'i tek blok halinde Claude Code
+     sohbetine sığmadığı için (20 bin+ satır) üçe bölünüp geliyor, her
+     parça kendi kolonunda duruyor (bkz. sql/19-sablon-sql-parca.sql). */
   async sablonSqlMetniOku(projeId) {
-    if (!AUTH.db || !projeId) return '';
+    if (!AUTH.db || !projeId) return { metin: '', metin2: '', metin3: '' };
     const { data, error } = await AUTH.db
-      .from('sablon_sql_metinleri').select('metin').eq('proje_id', projeId).maybeSingle();
+      .from('sablon_sql_metinleri').select('metin,metin2,metin3').eq('proje_id', projeId).maybeSingle();
     if (error) throw new Error(veriHatasi(error));
-    return (data && data.metin) || '';
+    return {
+      metin:  (data && data.metin)  || '',
+      metin2: (data && data.metin2) || '',
+      metin3: (data && data.metin3) || '',
+    };
   },
 
-  async sablonSqlMetniYaz(projeId, metin) {
+  /* `parca`: 1 | 2 | 3. Yalnız ilgili kolonu yazar — upsert Supabase'de
+     yalnız verilen kolonları günceller, diğer iki parça olduğu gibi kalır. */
+  async sablonSqlMetniYaz(projeId, parca, metin) {
     yazmaKontrol();
-    const { error } = await AUTH.db
-      .from('sablon_sql_metinleri').upsert({ proje_id: projeId, metin });
+    const kolon = parca === 2 ? 'metin2' : parca === 3 ? 'metin3' : 'metin';
+    const satir = { proje_id: projeId };
+    satir[kolon] = metin;
+    const { error } = await AUTH.db.from('sablon_sql_metinleri').upsert(satir);
     if (error) throw new Error(veriHatasi(error));
   },
 
