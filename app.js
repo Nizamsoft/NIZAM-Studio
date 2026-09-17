@@ -11462,11 +11462,12 @@ async function eylemCalistir(el) {
     try { metin = await DB.sablonSqlMetniOku(pr.id); }
     catch (h) { toast('Okunamadı: ' + h.message, 'hata'); return; }
     if (!metin.trim()) { toast('Henüz kayıtlı bir SQL metni yok.', 'uyari'); return; }
-    /* Her göç dosyasının başlığı "-- NN · ..." biçiminde — bütün metni
-       ekrana dökmeden en yüksek numarayı bulmak yeter (bkz. göç
-       dosyalarının kendi başlıkları). Tam metni göstermek 20 bin satırlık
-       bir kutuyu açar, telefonda kasar; istenen yalnız "hangi göçe kadar". */
-    const numaralar = [...metin.matchAll(/^--\s*(\d{1,3})\s*·/gm)].map(m => Number(m[1]));
+    /* Her göç dosyasının başlığı TAM OLARAK "-- NN · ..." biçiminde (tek
+       boşluklu) — bütün metni ekrana dökmeden en yüksek numarayı bulmak
+       yeter. `\s*` kullanılamaz: SQL gövdesinde hesap kodu açıklamaları da
+       "--     331 · ..." gibi birden çok boşlukla yazılıyor ve gerçek göç
+       numarasından büyük çıkıp yanlış sonuç veriyordu. */
+    const numaralar = [...metin.matchAll(/^-- (\d{1,3}) · /gm)].map(m => Number(m[1]));
     if (!numaralar.length) { toast('Göç numarası bulunamadı — metin farklı biçimde olabilir.', 'uyari'); return; }
     toast('Kayıtlı SQL şu an göç ' + Math.max(...numaralar) + '\'e kadar.', 'basari');
     return;

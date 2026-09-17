@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.135.68
+- **Fix: "Kayıtlı göç kaç?" yanlış numara veriyordu.** SQL gövdesindeki hesap kodu açıklamaları ("--     331 · ...") gerçek göç başlığıyla ("-- 93 · ...") karışıyordu. Artık yalnız tek boşluklu gerçek başlık biçimi sayılıyor.
+
 ## v0.135.67
 - **Templateler'de "Kayıtlı göç kaç?" düğmesi.** Kayıtlı SQL metnini tam açmadan (uzun metin telefonda kasar) yalnız hangi göçe kadar geldiğini gösteriyor — yeni bir sürüm yapıştırmadan önce/sonra ne kayıtlı olduğunu kontrol etmek için.
 
