@@ -4463,6 +4463,314 @@ function sablonKatmanSqlMetni(p) {
   return `insert into katmanlar (seviye, ad) values\n${satirlar}\non conflict do nothing;`;
 }
 
+/* Şablonun "Giriş ve Kullanıcı ekle" Edge Function'ı (7-sunucu/kullanici-
+   yonetimi/index.ts) — her şablon kopyasında birebir aynı, müşteriye özel
+   hiçbir şey içermiyor. Bu yüzden GitHub'a gidip kopyalatmak yerine
+   Studio'nun kendi kaynağına gömülü: buton doğrudan bunu panoya kopyalar. */
+const SABLON_EDGE_FONKSIYON = `/* Kullanıcı yönetimi · Supabase Edge Function.
+
+   NİYE SUNUCUDA
+     Hesap açmak, şifre koymak ve hesabı kapatmak \`service_role\`
+     anahtarını gerektirir. O anahtar bütün satır güvenliği kurallarını
+     atlar; tarayıcıya, depoya ya da herhangi bir istemci koduna HİÇBİR
+     KOŞULDA inmez (6-belgeler/NIZAM.md). Bu dosya sunucuda çalışır ve
+     anahtarı yalnız burada okur.
+
+     İkinci sebep: \`auth.admin.createUser\` çağıran kişinin oturumunu
+     bozmaz. İstemciden \`signUp\` çağrılsaydı admin kendi oturumundan
+     düşer, yeni açtığı kullanıcı olarak devam ederdi.
+
+   KAPIDA DURAN İKİ KONTROL
+     1 · Çağıran giriş yapmış mı? (Authorization başlığındaki belirteç)
+     2 · Çağıran EN ÜST KATMANDA mı? Katman adları müşteriye özeldir, o
+         yüzden ada değil SEVİYEYE bakılır: katmanlar tablosundaki en
+         büyük seviye. Kod hiçbir katman adı bilmez.
+
+   İŞLEMLER
+     ekle          · hesap açar, kullanicilar satırını auth_id ile upsert eder
+     durum         · Aktif / Pasif — Pasif auth hesabını da kapatır
+     girisi-kaldir · auth hesabını siler, personel satırı ADIYLA KALIR
+
+   KURULUM
+     supabase functions deploy kullanici-yonetimi
+     Ayrıntı: 7-sunucu/OKUBENI.md
+*/
+
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
+
+const CORS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
+/* Hata cümleleri Türkçe ve ne yapılacağını söyler
+   (6-belgeler/NIZAM.md · "Hata · Hata metni Türkçe ve anlaşılırdır").
+   Hata kodu, SQL cümlesi ya da İngilizce kütüphane metni dışarı çıkmaz. */
+function cevap(govde: unknown, durum = 200): Response {
+  return new Response(JSON.stringify(govde), {
+    status: durum,
+    headers: { ...CORS, "Content-Type": "application/json" },
+  });
+}
+
+function hata(mesaj: string, durum = 400): Response {
+  return cevap({ hata: mesaj }, durum);
+}
+
+Deno.serve(async (istek: Request) => {
+  if (istek.method === "OPTIONS") return new Response("ok", { headers: CORS });
+  if (istek.method !== "POST") return hata("Yalnız POST kabul edilir.", 405);
+
+  const adres = Deno.env.get("SUPABASE_URL");
+  const servis = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  const anon = Deno.env.get("SUPABASE_ANON_KEY");
+  if (!adres || !servis || !anon) {
+    return hata("Sunucu yapılandırması eksik. Yöneticinize bildirin.", 500);
+  }
+
+  const belirtec = (istek.headers.get("Authorization") || "").replace(/^Bearer\\s+/i, "");
+  if (!belirtec) return hata("Oturum bulunamadı. Çıkış yapıp tekrar girin.", 401);
+
+  /* service_role istemcisi · bütün kuralları atlar, yalnız bu dosyada. */
+  const yonetim = createClient(adres, servis, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+
+  /* ---- 1 · Çağıran kim? ---- */
+  const { data: kimVeri, error: kimHata } = await yonetim.auth.getUser(belirtec);
+  if (kimHata || !kimVeri?.user) {
+    return hata("Oturum geçersiz ya da süresi dolmuş. Tekrar giriş yapın.", 401);
+  }
+  const cagiranAuthId = kimVeri.user.id;
+
+  /* ---- 2 · Çağıran en üst katmanda mı? ---- */
+  const { data: katmanlar, error: katmanHata } = await yonetim
+    .from("katmanlar").select("id,seviye,ad").order("seviye", { ascending: false });
+
+  if (katmanHata) return hata("Katmanlar okunamadı. Tekrar deneyin.", 500);
+  if (!katmanlar || !katmanlar.length) {
+    return hata(
+      "Katmanlar tanımlanmamış. Önce katmanlar tablosuna rolleri yazın " +
+      "(5-veritabani/2-guncellemeler/90).", 409);
+  }
+
+  const ustKatman = katmanlar[0];
+  const altKatman = katmanlar[katmanlar.length - 1];
+
+  const { data: cagiran } = await yonetim
+    .from("kullanicilar").select("id,katman_id,durum")
+    .eq("auth_id", cagiranAuthId).maybeSingle();
+
+  if (!cagiran || cagiran.katman_id !== ustKatman.id || cagiran.durum !== "Aktif") {
+    return hata("Bu işlem için en üst katman yetkisi gerekir.", 403);
+  }
+
+  let govde: Record<string, unknown>;
+  try {
+    govde = await istek.json();
+  } catch {
+    return hata("İstek okunamadı.", 400);
+  }
+
+  const islem = String(govde.islem || "");
+
+  /* Bir katmanda kaç AKTİF ve GİRİŞİ OLAN kişi var. "Son admini silme"
+     kuralı buna bakar: sayı 1'ken o kişiye dokunulmaz, yoksa kimse
+     kullanıcı ekleyemez hâle gelir ve kapı kilitlenir. */
+  async function katmandakiSayi(katmanId: string): Promise<number> {
+    const { count } = await yonetim
+      .from("kullanicilar")
+      .select("id", { count: "exact", head: true })
+      .eq("katman_id", katmanId).eq("durum", "Aktif").not("auth_id", "is", null);
+    return count || 0;
+  }
+
+  /* ------------------------------------------------------------------
+     ekle · hesap aç + kullanicilar satırını auth_id ile upsert et
+     ------------------------------------------------------------------ */
+  if (islem === "ekle") {
+    const eposta = String(govde.eposta || "").trim().toLowerCase();
+    const sifre = String(govde.sifre || "");
+    const adSoyad = String(govde.ad_soyad || "").trim();
+    const katmanId = String(govde.katman_id || "");
+    const subeler: string[] = Array.isArray(govde.sube_idler)
+      ? (govde.sube_idler as string[]) : [];
+
+    if (!eposta || eposta.indexOf("@") < 1) return hata("Geçerli bir e-posta yazın.");
+    if (sifre.length < 8) return hata("Şifre en az 8 karakter olmalı.");
+    if (!adSoyad) return hata("Ad soyad boş bırakılamaz.");
+    if (!katmanlar.some((k) => k.id === katmanId)) return hata("Katman seçin.");
+
+    /* Hesap açılır. E-posta doğrulaması istenmez: kullanıcıyı admin
+       açıyor, şifreyi de admin veriyor — posta kutusu beklemenin bir
+       anlamı yok ve kullanıcı kapıda kalır. */
+    const { data: yeni, error: acmaHatasi } = await yonetim.auth.admin.createUser({
+      email: eposta,
+      password: sifre,
+      email_confirm: true,
+      user_metadata: { ad_soyad: adSoyad },
+    });
+
+    if (acmaHatasi || !yeni?.user) {
+      const m = String(acmaHatasi?.message || "");
+      if (/already|registered|exists/i.test(m)) {
+        return hata("Bu e-posta ile bir hesap zaten var.", 409);
+      }
+      if (/password/i.test(m)) return hata("Şifre kabul edilmedi. Daha uzun bir şifre deneyin.");
+      return hata("Hesap açılamadı. Tekrar deneyin.", 500);
+    }
+
+    /* Göç 90'daki tetik bu satırı zaten açmış olabilir (en düşük katman +
+       Pasif). Upsert onun üstüne yazar: admin'in seçtiği katman ve Aktif
+       durum geçerlidir. Çakışma anahtarı auth_id'dir. */
+    const { data: satir, error: yazmaHatasi } = await yonetim
+      .from("kullanicilar")
+      .upsert({
+        auth_id: yeni.user.id,
+        ad_soyad: adSoyad,
+        eposta: eposta,
+        katman_id: katmanId,
+        durum: "Aktif",
+      }, { onConflict: "auth_id" })
+      .select("id").single();
+
+    if (yazmaHatasi || !satir) {
+      /* Kullanıcı satırı yazılamadıysa auth hesabı da geri alınır:
+         yoksa giriş yapabilen ama uygulamada karşılığı olmayan bir
+         hesap kalır ve sebebi hiçbir ekranda görünmez. */
+      await yonetim.auth.admin.deleteUser(yeni.user.id);
+      return hata("Kullanıcı kaydedilemedi. Tekrar deneyin.", 500);
+    }
+
+    if (subeler.length) {
+      await yonetim.from("kullanici_subeleri").delete().eq("kullanici_id", satir.id);
+      await yonetim.from("kullanici_subeleri").insert(
+        subeler.map((s) => ({ kullanici_id: satir.id, sube_id: s })));
+    }
+
+    return cevap({ tamam: true, id: satir.id });
+  }
+
+  /* ------------------------------------------------------------------
+     durum · Aktif / Pasif. Pasif auth hesabını da kapatır.
+     ------------------------------------------------------------------ */
+  if (islem === "durum") {
+    const id = String(govde.kullanici_id || "");
+    const durum = String(govde.durum || "");
+    if (durum !== "Aktif" && durum !== "Pasif") return hata("Durum Aktif ya da Pasif olmalı.");
+
+    const { data: kisi } = await yonetim
+      .from("kullanicilar").select("id,auth_id,katman_id,ad_soyad")
+      .eq("id", id).maybeSingle();
+    if (!kisi) return hata("Kullanıcı bulunamadı.", 404);
+
+    if (durum === "Pasif") {
+      if (kisi.id === cagiran.id) return hata("Kendi hesabınızı pasife alamazsınız.");
+      if (kisi.katman_id === ustKatman.id && await katmandakiSayi(ustKatman.id) <= 1) {
+        return hata("Son " + ustKatman.ad + " pasife alınamaz.");
+      }
+    }
+
+    const { error: guncelHata } = await yonetim
+      .from("kullanicilar").update({ durum }).eq("id", id);
+    if (guncelHata) return hata("Durum değiştirilemedi. Tekrar deneyin.", 500);
+
+    /* Arayüzde pasife almak yetmez: hesap açık kalırsa işten çıkan kişi
+       girmeye devam eder. Auth tarafında da yasaklanır.
+       "none" yasağı kaldırır, uzun bir süre fiilen kapatır. */
+    if (kisi.auth_id) {
+      await yonetim.auth.admin.updateUserById(kisi.auth_id, {
+        ban_duration: durum === "Pasif" ? "876000h" : "none",
+      });
+    }
+
+    return cevap({ tamam: true });
+  }
+
+  /* ------------------------------------------------------------------
+     girisi-kaldir · auth hesabı silinir, PERSONEL SATIRI KALIR
+     Satır silinseydi kişinin işlem geçmişindeki imzası "kim bu" olurdu.
+     ------------------------------------------------------------------ */
+  if (islem === "girisi-kaldir") {
+    const id = String(govde.kullanici_id || "");
+
+    const { data: kisi } = await yonetim
+      .from("kullanicilar").select("id,auth_id,katman_id,ad_soyad")
+      .eq("id", id).maybeSingle();
+    if (!kisi) return hata("Kullanıcı bulunamadı.", 404);
+    if (kisi.id === cagiran.id) return hata("Kendi girişinizi kaldıramazsınız.");
+    if (kisi.katman_id === ustKatman.id && await katmandakiSayi(ustKatman.id) <= 1) {
+      return hata("Son " + ustKatman.ad + " kaldırılamaz.");
+    }
+
+    if (kisi.auth_id) await yonetim.auth.admin.deleteUser(kisi.auth_id);
+
+    const { error: temizleHatasi } = await yonetim
+      .from("kullanicilar")
+      .update({ auth_id: null, katman_id: null, durum: "Pasif" })
+      .eq("id", id);
+    if (temizleHatasi) return hata("Kayıt güncellenemedi. Tekrar deneyin.", 500);
+
+    return cevap({ tamam: true });
+  }
+
+  /* ------------------------------------------------------------------
+     katman · başka birinin katmanını değiştir
+     ------------------------------------------------------------------ */
+  if (islem === "katman") {
+    const id = String(govde.kullanici_id || "");
+    const katmanId = String(govde.katman_id || "");
+    if (!katmanlar.some((k) => k.id === katmanId)) return hata("Katman seçin.");
+
+    const { data: kisi } = await yonetim
+      .from("kullanicilar").select("id,katman_id").eq("id", id).maybeSingle();
+    if (!kisi) return hata("Kullanıcı bulunamadı.", 404);
+
+    /* Kendi katmanını düşüremez: düşürdüğü an bu ekranın kapısı kapanır
+       ve geri açacak yer kalmaz. */
+    if (kisi.id === cagiran.id && katmanId !== ustKatman.id) {
+      return hata("Kendi katmanınızı düşüremezsiniz.");
+    }
+    if (kisi.katman_id === ustKatman.id && katmanId !== ustKatman.id &&
+        await katmandakiSayi(ustKatman.id) <= 1) {
+      return hata("Son " + ustKatman.ad + " katmanı değiştirilemez.");
+    }
+
+    const { error: kHata } = await yonetim
+      .from("kullanicilar").update({ katman_id: katmanId }).eq("id", id);
+    if (kHata) return hata("Katman değiştirilemedi. Tekrar deneyin.", 500);
+
+    return cevap({ tamam: true });
+  }
+
+  /* ------------------------------------------------------------------
+     sifre · başka birinin şifresini değiştir
+     ------------------------------------------------------------------ */
+  if (islem === "sifre") {
+    const id = String(govde.kullanici_id || "");
+    const sifre = String(govde.sifre || "");
+    if (sifre.length < 8) return hata("Şifre en az 8 karakter olmalı.");
+
+    const { data: kisi } = await yonetim
+      .from("kullanicilar").select("auth_id").eq("id", id).maybeSingle();
+    if (!kisi || !kisi.auth_id) return hata("Bu kişinin girişi yok.", 404);
+
+    const { error: sHata } = await yonetim.auth.admin
+      .updateUserById(kisi.auth_id, { password: sifre });
+    if (sHata) return hata("Şifre değiştirilemedi. Tekrar deneyin.", 500);
+
+    return cevap({ tamam: true });
+  }
+
+  /* Bilinmeyen işlem. Alt katman bilgisi cevapta durur: arayüz katman
+     listesini kendisi okur, buradaki değer yalnız arıza ararken işe yarar. */
+  return hata("Bilinmeyen işlem: " + (islem || "—") +
+    " (beklenen: ekle · durum · katman · sifre · girisi-kaldir, " +
+    "en düşük katman: " + altKatman.ad + ")");
+});
+`;
+
 /* "Değişim" durağı üç ayrı iş: (1) Temel tanımlar (Gün Sonu/Banka/Fatura
    verisi topla — eskiden ayrı bir durak olan "Temel tanımlar" buraya
    katlandı, bkz. DURAKLAR.yapi), (2) veri/format bilgisini koda işlemek,
@@ -4519,8 +4827,6 @@ function sablonDegisimSayfasi(p, d) {
   const aktifIdx = durum.findIndex(x => !x);
   const hal = i => (aktifIdx === -1 || i < aktifIdx) ? 'bitti' : i === aktifIdx ? 'aktif' : '';
 
-  const slug = depoSlug(p.repo);
-  const dosyaAdres = slug ? `https://github.com/${slug}/blob/main/7-sunucu/kullanici-yonetimi/index.ts` : '';
   const fonksiyonlarAdres = supabaseProjeRef(pl.supabaseUrl)
     ? `https://supabase.com/dashboard/project/${supabaseProjeRef(pl.supabaseUrl)}/functions` : '';
 
@@ -4535,11 +4841,11 @@ function sablonDegisimSayfasi(p, d) {
         <li><span>Supabase panelinden ilk admin hesabını aç (Authentication → Users → Add user)</span></li>
         <li><span>Edge Function'ı yayınla — kod çalıştırmadan, kopyala-yapıştır:
           <ol class="dg-mini" style="margin-top:8px">
-            <li><span>${dosyaAdres
-                ? `<a class="mini-link" target="_blank" rel="noopener" href="${esc(dosyaAdres)}">
-                    ${svg(ICON.disari, 13)} kullanici-yonetimi/index.ts'i aç</a>`
-                : 'Depodan <code>7-sunucu/kullanici-yonetimi/index.ts</code>\'i aç'}
-              — sağ üstteki kopyala simgesiyle ("Copy raw file") kodu panoya al</span></li>
+            <li><span>Fonksiyon kodunu kopyala
+              <div class="kur-dug" style="margin:8px 0 0 0">
+                <button class="sayfa-dug ikincil" type="button" data-eylem="sablon-fonksiyon-kopyala"
+                        data-proje="${p.id}">${svg(ICON.kopya, 15)} Fonksiyon kodunu kopyala</button>
+              </div></span></li>
             <li><span>Supabase paneli${fonksiyonlarAdres
                 ? ` — <a class="mini-link" target="_blank" rel="noopener" href="${esc(fonksiyonlarAdres)}">
                     ${svg(ICON.disari, 13)} Edge Functions'ı aç</a>` : ''}
@@ -10233,6 +10539,13 @@ async function eylemCalistir(el) {
     if (!metin) { toast('SQL üretilemedi — rol tanımlı değil.', 'hata'); return; }
     const ok = await panoyaKopyala(metin);
     toast(ok ? 'SQL kopyalandı — SQL Editör\'e yapıştır.' : 'Kopyalanamadı, tarayıcı izin vermedi.',
+      ok ? 'basari' : 'hata');
+    return;
+  }
+
+  if (e === 'sablon-fonksiyon-kopyala') {
+    const ok = await panoyaKopyala(SABLON_EDGE_FONKSIYON);
+    toast(ok ? 'Kod kopyalandı — Supabase Editör\'e yapıştır.' : 'Kopyalanamadı, tarayıcı izin vermedi.',
       ok ? 'basari' : 'hata');
     return;
   }

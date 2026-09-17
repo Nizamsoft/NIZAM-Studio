@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.135.66
+- **Edge Function kodu artık Studio'nun içinde, GitHub'a gitmeye gerek yok.** "kullanici-yonetimi/index.ts'i aç" adımı kaldırıldı — kod her şablon kopyasında birebir aynı olduğu için Studio'ya sabit gömüldü, "Fonksiyon kodunu kopyala" düğmesine basmak yeterli.
+
 ## v0.135.65
 - **"Edge Function'ı yayınla" artık CLI değil, telefondan kopyala-yapıştır.** Erişim token'ı isteyen Claude Code/CLI akışı kaldırıldı — yerine gerçekte denenip doğrulanmış, hiçbir kurulum gerektirmeyen yöntem geldi: dosyayı GitHub'da aç → "Copy raw file" → Supabase paneli → Edge Functions → Deploy a new function → via Editor → ismi `kullanici-yonetimi` yaz → yapıştır → Verify JWT açık kalsın → Deploy. Studio artık dosyayı ve Supabase Functions sayfasını doğrudan açan bağlantılar da veriyor.
 
