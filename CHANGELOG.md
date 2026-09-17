@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.135.67
+- **Templateler'de "Kayıtlı göç kaç?" düğmesi.** Kayıtlı SQL metnini tam açmadan (uzun metin telefonda kasar) yalnız hangi göçe kadar geldiğini gösteriyor — yeni bir sürüm yapıştırmadan önce/sonra ne kayıtlı olduğunu kontrol etmek için.
+
 ## v0.135.66
 - **Edge Function kodu artık Studio'nun içinde, GitHub'a gitmeye gerek yok.** "kullanici-yonetimi/index.ts'i aç" adımı kaldırıldı — kod her şablon kopyasında birebir aynı olduğu için Studio'ya sabit gömüldü, "Fonksiyon kodunu kopyala" düğmesine basmak yeterli.
 
