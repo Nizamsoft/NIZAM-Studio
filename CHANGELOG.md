@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.135.75
+- **Güvenlik Testi sonucuna "Raporu kopyala" düğmesi eklendi.** Sonuç düz metin olarak tek tıkla panoya kopyalanıyor — AÇIK satırlar üstte ve ⚠️ işaretli, sohbete ya da nota direkt yapıştırılabilir.
+
 ## v0.135.74
 - **Güvenlik Testi, Ayarlar'a bağımsız bir sayfa olarak taşındı.** Templateler'le ilgisi yok artık — Supabase adresi, anon key ve istersen bir personel hesabının e-posta/şifresini elle gir, "Test Et" de. Ziyaretçi bataryası aynı; personel girişi başarılıysa aynı batarya + kendini üst katmana yükseltme, başka kullanıcıyı değiştirme, şube açma/silme denemeleri de otomatik çalışıyor. Şifre hiçbir yerde saklanmıyor. Templateler'deki adım yalnız İç test'in (3 parça SQL) kaydı olarak kaldı.
 

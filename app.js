@@ -7370,6 +7370,24 @@ async function guvenlikTestiCalistir({ url, anon, eposta, sifre }) {
   return sonuclar;
 }
 
+/* Düz metin rapor — sohbete ya da nota tek tıkla yapıştırılabilsin diye.
+   Tablo görünümüyle aynı sırayı (AÇIK'lar üstte) kullanır. */
+function guvenlikRaporMetni(sonuc) {
+  if (!sonuc || !sonuc.length) return '';
+  const acik = sonuc.filter(s => s.sonuc === 'AÇIK').length;
+  const s = [];
+  s.push('# Güvenlik Testi Sonucu');
+  s.push(acik ? acik + ' GÜVENLİK AÇIĞI BULUNDU' : 'Güvenli · ' + sonuc.length + ' deneme yapıldı, hiçbiri işe yaramadı');
+  s.push('');
+  sonuc.slice()
+    .sort((a, b) => (a.sonuc === 'AÇIK' ? 0 : 1) - (b.sonuc === 'AÇIK' ? 0 : 1))
+    .forEach(r => {
+      const isaret = r.sonuc === 'AÇIK' ? '⚠️ ' : '';
+      s.push(isaret + r.kim + ' · ' + r.deneme + ' · ' + r.sonuc + (r.ayrinti ? ' · ' + r.ayrinti : ''));
+    });
+  return s.join('\n');
+}
+
 function guvenlikSonucTablosu(sonuc) {
   if (!sonuc) return '';
   if (!sonuc.length) return `<p class="ipucu" style="margin-top:10px">Sonuç yok.</p>`;
@@ -7379,6 +7397,10 @@ function guvenlikSonucTablosu(sonuc) {
         <span><b>${acik} GÜVENLİK AÇIĞI BULUNDU</b></span></div>`
     : `<div class="kur-deger duz" style="margin-top:14px">${svg(ICON.tik, 13)}
         Güvenli · ${sonuc.length} deneme yapıldı, hiçbiri işe yaramadı</div>`;
+  const kopyalaDugmesi = `<div class="kur-dug" style="margin-top:10px">
+      <button class="sayfa-dug ikincil" type="button" data-eylem="guvenlik-rapor-kopyala">
+        ${svg(ICON.kopya, 15)} Raporu kopyala</button>
+    </div>`;
   const sirali = sonuc.slice().sort((a, b) => (a.sonuc === 'AÇIK' ? 0 : 1) - (b.sonuc === 'AÇIK' ? 0 : 1));
   const satirlar = sirali.map(s => {
     const acikMi = s.sonuc === 'AÇIK';
@@ -7389,7 +7411,7 @@ function guvenlikSonucTablosu(sonuc) {
         <td style="padding:6px 8px;color:var(--ink-soft)">${esc(s.ayrinti || '')}</td>
       </tr>`;
   }).join('');
-  return ozet + `<div style="overflow-x:auto;margin-top:10px">
+  return ozet + kopyalaDugmesi + `<div style="overflow-x:auto;margin-top:10px">
       <table style="width:100%;border-collapse:collapse;font-size:13px">
         <thead><tr style="text-align:left;border-bottom:1px solid var(--line)">
           <th style="padding:6px 8px">Kim</th><th style="padding:6px 8px">Deneme</th>
@@ -11941,6 +11963,14 @@ async function eylemCalistir(el) {
     }
     GUVENLIK_SAYFA.calisiyor = false;
     render();
+    return;
+  }
+
+  if (e === 'guvenlik-rapor-kopyala') {
+    const metin = guvenlikRaporMetni(GUVENLIK_SAYFA.sonuc);
+    if (!metin) { toast('Kopyalanacak sonuç yok.', 'uyari'); return; }
+    const ok = await panoyaKopyala(metin);
+    toast(ok ? 'Rapor kopyalandı.' : 'Kopyalanamadı, tarayıcı izin vermedi.', ok ? 'basari' : 'hata');
     return;
   }
 
