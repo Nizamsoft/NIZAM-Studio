@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.135.77
+- **Güvenlik Testi'nde hüküm hatası düzeltildi.** Satır güvenliği bir işlemi hata vererek değil, satırları süzerek engeller — eşleşmeyecek süzgeçle yapılan denemeler bu yüzden 11 satırı yanlışlıkla AÇIK gösteriyordu. Artık hüküm dönen dizinin dolu/boş olmasına bakıyor. Değiştirme testleri artık gerçek bir satırı okuyup kendi değeriyle geri yazıyor (eşleşmeyecek süzgeç yok); silme testi yalnız kendi açtığı cariler kaydında (başka tabloda silme kaldırıldı, geri alınamaz). "Yetki"/"Admin" geçen hata mesajları artık KAPALI sayılıyor, BİLGİ değil. Giriş yapan herkesin defter kaydı düzeltmesi (kural gereği serbest) artık bulgu yazılmıyor. Deftere yazma testi artık yaprak hesap seçiyor. 3+ açık çıkarsa göçlerin eksik olabileceğine dair uyarı eklendi; temizlenemeyen test kaydı kalırsa ekranda temizleme SQL'i gösteriliyor.
+
 ## v0.135.76
 - **Güvenlik Testi baştan yazıldı — doğru zihin modeliyle.** Giriş yapmış herkesin okuyabilmesi artık bulgu sayılmıyor (bu şablonda kasıtlı bir kural); personel bataryası okuma yerine yetki testlerine odaklandı: kendini üst katmana yükseltme, başkasının kaydını değiştirme, hesap/şube/katman açma, defter/denetim kaydı/hesap planı üzerinde filtreli silme-değiştirme, üç fonksiyon kapısı (hata metninde "yetki" var mı diye bakarak). Hesabın kendisi üst katmandaysa büyük bir uyarı çıkıyor ve yetki testleri ATLANDI işaretleniyor (yanlışlıkla KAPALI/güvenli gösterilmiyor). E-posta ve şifre artık zorunlu — giriş başarısızsa test hiç başlamıyor. Her satırın Ayrıntı sütununda artık HTTP kodu ve sunucunun kendi hata metni var. Alt tarafta şablondaki 3 parçalı SQL testine (daha derin yapı denetimi için) yönlendiren bir not eklendi.
 
