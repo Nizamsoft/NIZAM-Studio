@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.135.78
+- **Güvenlik Testi'nde iki düzeltme.** "Hesabı değiştirir" testi serbest olan `ad` sütununu ölçüyordu (yazım düzeltmesi bilerek serbesttir); artık kilitli `kod` sütununu, tetiği uyandıracak FARKLI bir değerle ("kod"+X) test edip başarılıysa hemen geri alıyor — adı "hesabın kodunu değiştirir" oldu. Ayrıca ziyaretçi bataryasına yeni bir test eklendi: "kendi kendine kayıt açık mı" — Supabase'de varsayılan olarak açık olan e-posta kaydını rastgele bir adresle dener, açıksa paneldeki kapatma yolunu ve silinmesi gereken test hesabını gösterir.
+
 ## v0.135.77
 - **Güvenlik Testi'nde hüküm hatası düzeltildi.** Satır güvenliği bir işlemi hata vererek değil, satırları süzerek engeller — eşleşmeyecek süzgeçle yapılan denemeler bu yüzden 11 satırı yanlışlıkla AÇIK gösteriyordu. Artık hüküm dönen dizinin dolu/boş olmasına bakıyor. Değiştirme testleri artık gerçek bir satırı okuyup kendi değeriyle geri yazıyor (eşleşmeyecek süzgeç yok); silme testi yalnız kendi açtığı cariler kaydında (başka tabloda silme kaldırıldı, geri alınamaz). "Yetki"/"Admin" geçen hata mesajları artık KAPALI sayılıyor, BİLGİ değil. Giriş yapan herkesin defter kaydı düzeltmesi (kural gereği serbest) artık bulgu yazılmıyor. Deftere yazma testi artık yaprak hesap seçiyor. 3+ açık çıkarsa göçlerin eksik olabileceğine dair uyarı eklendi; temizlenemeyen test kaydı kalırsa ekranda temizleme SQL'i gösteriliyor.
 

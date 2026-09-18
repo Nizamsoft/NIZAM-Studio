@@ -7212,7 +7212,9 @@ function guvenlikYetkiEngelliMi(govde) {
      200 + dolu dizi  → AÇIK (gerçekten dokunabildi)
      200 + boş dizi   → KAPALI (satır güvenliği süzdü, ya da satır hiç yoktu)
      401 / 403        → KAPALI
-     başka bir hata   → mesajda "yetki/admin" varsa KAPALI, yoksa BİLGİ
+     başka bir hata   → sunucu bir mesajla reddettiyse (ör. "yetki gerekir",
+                        "Hesabın yalnız adı değiştirilebilir…" gibi bir
+                        tetik/iş kuralı engeli) KAPALI, mesaj yoksa BİLGİ
    `ekle` artık pushladığı satırı geri döndürüyor ki çağıran (ör. "kural
    gereği serbest" istisnası) sonradan üzerine yazabilsin. */
 async function guvenlikYazDeneVeYorumla(istek, ekle, kim, deneme, yol, secenek, acikNot) {
@@ -7222,7 +7224,7 @@ async function guvenlikYazDeneVeYorumla(istek, ekle, kim, deneme, yol, secenek, 
   if (hata) sonuc = 'BİLGİ';
   else if (durum === 401 || durum === 403) sonuc = 'KAPALI';
   else if (durum >= 200 && durum < 300) sonuc = (!Array.isArray(govde) || govde.length > 0) ? 'AÇIK' : 'KAPALI';
-  else if (guvenlikYetkiEngelliMi(govde)) sonuc = 'KAPALI';
+  else if (govde && govde.message) sonuc = 'KAPALI';
   else sonuc = 'BİLGİ';
   const satir = ekle(kim, deneme, sonuc, sonuc === 'AÇIK' && acikNot ? acikNot + ' · ' + ayrinti : ayrinti);
   return { durum, govde, sonuc, satir };
@@ -7303,6 +7305,33 @@ async function guvenlikZiyaretciTestleri(istek, ekle) {
     else if (durum >= 200 && durum < 300)
       ekle('Ziyaretçi', 'uydurma kimlik', 'AÇIK', 'ÇOK CİDDİ — geçersiz kimlik kabul edildi · ' + ayrinti);
     else ekle('Ziyaretçi', 'uydurma kimlik', 'BİLGİ', ayrinti);
+  }
+
+  /* 1.7 · Kendi kendine kayıt açık mı — Güncelleme 2. Supabase'de e-posta
+     ile kayıt varsayılan olarak AÇIKTIR ve anon key zaten herkesin
+     elinde; açık kalırsa yabancı biri kendine hesap açıp authenticated
+     rolüne geçebilir. Göç 106 veritabanı tarafını kilitler ama kapının
+     kendisi de kapalı olmalı. Her çalıştırmada RASTGELE bir e-posta
+     kullanılır — aynısını tekrar denemek "zaten var" hatasını yanlışlıkla
+     KAPALI diye okutur. */
+  {
+    const rastgele = Math.random().toString(36).slice(2) + Date.now().toString(36);
+    const eposta = 'ns-kayit-testi-' + rastgele + '@ornek.gecici';
+    const sifre = (Math.random().toString(36) + Math.random().toString(36)).replace(/[^a-z0-9]/g, '').slice(0, 16);
+    const { durum, govde, hata } = await istek('/auth/v1/signup', {
+      method: 'POST', body: JSON.stringify({ email: eposta, password: sifre }),
+    });
+    const ayrinti = guvenlikAyrinti(durum, govde, hata);
+    if (hata) ekle('Ziyaretçi', 'kendi kendine kayıt', 'BİLGİ', ayrinti);
+    else if (durum === 200 || durum === 201)
+      ekle('Ziyaretçi', 'kendi kendine kayıt', 'AÇIK',
+        'Yabancılar hesap açabiliyor — Supabase → Authentication → Sign In / Providers → ' +
+        'User Signups → "Allow new users to sign up" kapatın, Save changes deyin. ' +
+        '"Enable email provider"a DOKUNMAYIN, o giriş yapmayı sağlar. Açılan ' + eposta +
+        ' hesabını Authentication → Users listesinden silin. · ' + ayrinti);
+    else if (durum === 422 || durum === 400 || durum === 403)
+      ekle('Ziyaretçi', 'kendi kendine kayıt', 'KAPALI', ayrinti);
+    else ekle('Ziyaretçi', 'kendi kendine kayıt', 'BİLGİ', ayrinti);
   }
 }
 
@@ -7455,7 +7484,6 @@ async function guvenlikPersonelTestleri(istek, ekle, belirtec, ownAuthId, katman
   const degistirmeler = [
     { deneme: 'defter satırını değiştirir', tablo: 'hareketler', alan: 'aciklama', serbest: true },
     { deneme: 'denetim kaydını değiştirir', tablo: 'degisiklik_kaydi', alan: 'islem' },
-    { deneme: 'hesabı değiştirir', tablo: 'hesaplar', alan: 'ad' },
     { deneme: 'şubeyi değiştirir', tablo: 'subeler', alan: 'ad' },
     { deneme: 'ödeme yöntemini değiştirir', tablo: 'odeme_yontemleri', alan: 'ad' },
     { deneme: 'kredi kartını değiştirir', tablo: 'kredi_kartlari', alan: 'son_odeme_gunu' },
@@ -7466,6 +7494,30 @@ async function guvenlikPersonelTestleri(istek, ekle, belirtec, ownAuthId, katman
     if (t.serbest && r && r.satir && r.satir.sonuc === 'AÇIK') {
       r.satir.sonuc = 'SERBEST';
       r.satir.ayrinti = 'Kural gereği serbest — giriş yapan herkes defter kaydı düzeltebilir · ' + r.satir.ayrinti;
+    }
+  }
+
+  /* hesaplar için "aynı değeri geri yaz" kalıbı yanlış ölçer (Güncelleme 1):
+     `ad` serbest bir sütun — yazım yanlışı düzeltilebilsin diye bilerek
+     serbest, bulgu değil. Kilitli sütun `kod`dur ve kilit bir tetikle
+     kurulu; tetik "değer değişti mi" diye baktığı için aynı değeri geri
+     yazmak onu hiç uyandırmaz. Bu yüzden kodun sonuna X eklenip FARKLI bir
+     değer deneniyor; başarılıysa eski kod hemen geri yazılıyor. */
+  {
+    const { govde: satirlar } = await istek('/rest/v1/hesaplar?select=id,kod&limit=1', { belirtec });
+    const satir = satirlar && satirlar[0];
+    if (!satir) {
+      ekle('Personel', 'hesabın kodunu değiştirir', 'ATLANDI', 'Tabloda satır yok');
+    } else {
+      const { sonuc } = await guvenlikYazDeneVeYorumla(istek, ekle, 'Personel', 'hesabın kodunu değiştirir',
+        '/rest/v1/hesaplar?id=eq.' + encodeURIComponent(satir.id),
+        { belirtec, method: 'PATCH', headers: { Prefer: 'return=representation' },
+          body: JSON.stringify({ kod: satir.kod + 'X' }) });
+      if (sonuc === 'AÇIK') {
+        await istek('/rest/v1/hesaplar?id=eq.' + encodeURIComponent(satir.id), {
+          belirtec, method: 'PATCH', body: JSON.stringify({ kod: satir.kod }),
+        });
+      }
     }
   }
 
@@ -7550,7 +7602,7 @@ async function guvenlikTestiCalistir({ url, anon, eposta, sifre }) {
   if (katman.ustKatmandaMi) {
     const isimler = ['katman yükseltme', 'başka kullanıcı değiştirme', 'yeni katman açar', 'hesap ekler',
       'ödeme yöntemi ekler', 'şube açar', 'deftere elle yazar', 'başkasına şube atar',
-      'defter satırını değiştirir', 'denetim kaydını değiştirir', 'hesabı değiştirir', 'şubeyi değiştirir',
+      'defter satırını değiştirir', 'denetim kaydını değiştirir', 'hesabın kodunu değiştirir', 'şubeyi değiştirir',
       'ödeme yöntemini değiştirir', 'kredi kartını değiştirir', 'aylık tahakkuku değiştirir', 'cari siler',
       'kayıt siler (ns_kayit_sil)', 'elle kaydı siler', 'kaydı düzeltir'];
     isimler.forEach(d => ekle('Personel', d, 'ATLANDI', 'Verilen hesap zaten en üst katman — anlamlı test değil'));
@@ -7629,7 +7681,9 @@ function guvenlikSonucTablosu(sonuc, ustKatmanUyarisi, kalintilar) {
   }).join('');
   const yapiNotu = `<p class="ipucu" style="margin-top:14px">Bu test dışarıdan bakar —
     veritabanının içindeki yapıyı (RLS açık mı, koruma tetikleri yerinde mi)
-    göremez. Daha derin denetim için şablondaki SQL testini elle çalıştır:
+    ve onaylanmamış bir hesabın gerçekten hiçbir şey göremediğini (göç 106)
+    göremez. Daha derin denetim için şablondaki SQL testini elle çalıştır —
+    "Onaysız" grubu bunu ölçüyor:
     <code>5-veritabani/4-bakim/parcalar/saldiri-testi-parca-1-3.sql</code>,
     <code>-2-3.sql</code>, <code>-3-3.sql</code> — Supabase SQL Editör'de sırayla.</p>`;
   return uyari + gocUyarisi + ozet + kalintiUyarisi + kopyalaDugmesi + `<div style="overflow-x:auto;margin-top:10px">
