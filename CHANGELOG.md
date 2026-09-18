@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.135.80
+- **Template kurulum sihirbazından Güvenlik adımı kaldırıldı.** Kullanılmıyordu; sihirbaz artık GitHub → SQL → Claude, 3 adım. (Otomatik güvenlik testi hâlâ Ayarlar > Güvenlik Testi'nde duruyor, oradan bağımsız.)
+
 ## v0.135.79
 - **Edge Function kodu güncellendi — CORS artık sabit adrese kilitli.** Şablonun `kullanici-yonetimi` fonksiyonu artık `"*"` yerine `NS_IZINLI_ADRES` ortam değişkeninden okuduğu tek bir adrese izin veriyor; Studio'daki "Fonksiyon kodunu kopyala" bu güncel kodu veriyor. Değişim sihirbazının kurulum listesine yeni bir adım eklendi: "Ortam değişkeni ekle" — projenin yayın adresini tek tıkla kopyalayıp fonksiyonun Secrets bölümüne yapıştırmak için.
 
