@@ -4595,8 +4595,23 @@ const SABLON_EDGE_FONKSIYON = `/* Kullanıcı yönetimi · Supabase Edge Functio
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 
+/* İzin verilen yayın adresi · CORS. Müşteri kopyasında Studio bunu
+   uygulamanın gerçek adresiyle değiştirir. Şablonda GitHub Pages adresi
+   durur; yanlış adres bırakılırsa Kullanıcı ekle ekranı çalışmaz ve bu
+   sessiz bir güvenlik açığından iyidir. */
+const IZINLI_ADRES = Deno.env.get("NS_IZINLI_ADRES")
+  || "https://nizamsoft.github.io";
+
 const CORS = {
-  "Access-Control-Allow-Origin": "*",
+  /* Yalnız uygulamanın kendi adresi çağırabilir. "*" idi: herhangi bir
+     site tarayıcıdan bu uca istek atabiliyordu. Geçerli bir oturum
+     belirteci şart olduğu için sömürülmesi kolay değildi, ama açık kapıyı
+     açık bırakmanın sebebi yok.
+
+     KURULUMDA GÜNCELLENİR: müşteri kopyasının yayın adresi buraya yazılır
+     (Studio · "Bağlantılar ve temel"). Liste boş bırakılırsa hiçbir
+     tarayıcı çağrısı geçmez. */
+  "Access-Control-Allow-Origin": IZINLI_ADRES,
   "Access-Control-Allow-Headers": "authorization, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
@@ -4951,6 +4966,15 @@ function sablonDegisimSayfasi(p, d) {
             <li><span>Örnek kodu tamamen sil, panodakini yapıştır</span></li>
             <li><span><b>Verify JWT açık kalsın</b> — kapatma</span></li>
             <li><span>Deploy</span></li>
+            <li><span>Ortam değişkeni ekle: fonksiyonun <b>Secrets</b> (ya da
+              Ayarlar) bölümüne yeni değişken — <code>NS_IZINLI_ADRES</code>
+              = <code>https://${esc(String(pl.alanAdi || '').trim())}</code>.
+              Yazılmazsa Kullanıcı ekle ekranı çalışmaz (adres izinli
+              listede değil demektir).
+              <div class="kur-dug" style="margin:8px 0 0 0">
+                <button class="sayfa-dug ikincil" type="button" data-eylem="sablon-ortam-degiskeni-kopyala"
+                        data-proje="${p.id}">${svg(ICON.kopya, 15)} Değeri kopyala</button>
+              </div></span></li>
           </ol></span></li>
       </ol>`
       + (girisTamam
@@ -11266,6 +11290,16 @@ async function eylemCalistir(el) {
     const ok = await panoyaKopyala(SABLON_EDGE_FONKSIYON);
     toast(ok ? 'Kod kopyalandı — Supabase Editör\'e yapıştır.' : 'Kopyalanamadı, tarayıcı izin vermedi.',
       ok ? 'basari' : 'hata');
+    return;
+  }
+
+  if (e === 'sablon-ortam-degiskeni-kopyala') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const pl = pr.palet || {};
+    const deger = 'https://' + String(pl.alanAdi || '').trim();
+    const ok = await panoyaKopyala(deger);
+    toast(ok ? 'Değer kopyalandı.' : 'Kopyalanamadı, tarayıcı izin vermedi.', ok ? 'basari' : 'hata');
     return;
   }
 

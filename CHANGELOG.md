@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.135.79
+- **Edge Function kodu güncellendi — CORS artık sabit adrese kilitli.** Şablonun `kullanici-yonetimi` fonksiyonu artık `"*"` yerine `NS_IZINLI_ADRES` ortam değişkeninden okuduğu tek bir adrese izin veriyor; Studio'daki "Fonksiyon kodunu kopyala" bu güncel kodu veriyor. Değişim sihirbazının kurulum listesine yeni bir adım eklendi: "Ortam değişkeni ekle" — projenin yayın adresini tek tıkla kopyalayıp fonksiyonun Secrets bölümüne yapıştırmak için.
+
 ## v0.135.78
 - **Güvenlik Testi'nde iki düzeltme.** "Hesabı değiştirir" testi serbest olan `ad` sütununu ölçüyordu (yazım düzeltmesi bilerek serbesttir); artık kilitli `kod` sütununu, tetiği uyandıracak FARKLI bir değerle ("kod"+X) test edip başarılıysa hemen geri alıyor — adı "hesabın kodunu değiştirir" oldu. Ayrıca ziyaretçi bataryasına yeni bir test eklendi: "kendi kendine kayıt açık mı" — Supabase'de varsayılan olarak açık olan e-posta kaydını rastgele bir adresle dener, açıksa paneldeki kapatma yolunu ve silinmesi gereken test hesabını gösterir.
 
