@@ -7046,7 +7046,9 @@ function cekirdekAdimGuvenlikGovde(p) {
                 data-parca="${no}" data-proje="${p.id}">${svg(ICON.kopya, 15)} Kopyala</button>
       </div>`;
   return shBaslikServis('supabase', 'Güvenlik Testi',
-      'Ziyaretçi ve personel rolleriyle satır güvenliğini yoklayan, veri bozmayan bir test — kurulumun parçası değil, istendiğinde herhangi bir müşteri projesinde çalıştırılır.')
+      'İki ayak: dış test (Studio otomatik dener), iç test (üç parça, elle Supabase\'e yapıştırılır). Kurulumun parçası değil, istendiğinde çalıştırılır.')
+    + guvenlikDisTestGovde()
+    + `<div class="ipucu" style="margin:18px 0 10px;font-weight:600">İç test — 3 parça, elle çalıştırılır</div>`
     + parcaKutusu(1) + parcaKutusu(2) + parcaKutusu(3)
     + (varMi ? `<div class="kur-deger duz">${svg(ICON.tik, 13)} Test kayıtlı</div>` : '')
     + `<div class="fbd-not" style="margin-top:14px">${svg(ICON.info, 13)}
@@ -7054,6 +7056,183 @@ function cekirdekAdimGuvenlikGovde(p) {
         çalıştır: <b>1)</b> Run — "Success" demesi yeter. <b>2)</b> Run — sonuç
         tablosuna bak, <b>AÇIK</b> yazan satır varsa güvenlik açığı demektir.
         <b>3)</b> bakman bitince Run — sonuç tablosu silinir.</span></div>`;
+}
+
+/* ---------- Dış test ----------
+   Ziyaretçinin (giriş yapmamış, elinde yalnız anon anahtarı) REST üzerinden
+   ne yapabildiğini tarayıcıdan doğrudan dener — anon anahtar zaten gizli
+   değil, yeni bir mimari gerektirmez (bkz. güvenlik testi tartışması:
+   iç test için gereken Supabase yönetim jetonu Studio'da SAKLANMIYOR,
+   bilerek — o hep elle, iç testin 3 parçasıyla kalıyor). Sonuç kalıcı
+   değil, yalnız bu oturumda; proje değişince ya da modal kapanınca uçar. */
+const GUVENLIK_DIS_TEST = { projeId: '', calisiyor: false, sonuc: null };
+
+const GUVENLIK_TABLOLAR = ['hesaplar', 'kullanicilar', 'hareketler', 'cariler', 'subeler',
+  'katmanlar', 'degisiklik_kaydi', 'islemler', 'alis_faturalari', 'satis_faturalari',
+  'gun_sonu_raporlari', 'kredi_kartlari', 'odeme_yontemleri', 'banka_dekontlari', 'kullanici_subeleri'];
+
+function guvenlikSupabaseliProjeler() {
+  return DB.projeler.filter(pr => {
+    const pl = pr.palet || {};
+    return String(pl.supabaseUrl || '').trim() && String(pl.supabaseAnon || '').trim();
+  });
+}
+
+async function disTestiCalistir(url, anon) {
+  const taban = String(url || '').trim().replace(/\/+$/, '');
+  const sonuclar = [];
+  const ekle = (kim, deneme, sonuc, ayrinti) =>
+    sonuclar.push({ nereden: 'Dış', kim, deneme, sonuc, ayrinti: ayrinti || '' });
+
+  async function istek(yol, secenek) {
+    secenek = secenek || {};
+    const headers = Object.assign({
+      apikey: anon,
+      Authorization: 'Bearer ' + anon,
+      'Content-Type': 'application/json',
+    }, secenek.headers || {});
+    try {
+      const r = await fetch(taban + yol, { method: secenek.method || 'GET', headers, body: secenek.body });
+      let govde = null;
+      try { govde = await r.json(); } catch (h) { /* boş gövde olabilir */ }
+      return { durum: r.status, govde };
+    } catch (h) {
+      return { durum: 0, govde: null, hata: h.message || 'Bağlantı kurulamadı' };
+    }
+  }
+
+  const belirsiz = (deneme, durum, hata) => hata
+    ? ekle('Ziyaretçi', deneme, 'BİLGİ', 'Bağlantı hatası: ' + hata)
+    : ekle('Ziyaretçi', deneme, 'BİLGİ', 'Beklenmeyen durum: ' + durum);
+
+  /* A · okuma denemeleri */
+  for (const tablo of GUVENLIK_TABLOLAR) {
+    const { durum, govde, hata } = await istek('/rest/v1/' + tablo + '?select=*&limit=1');
+    const deneme = tablo + ' okuma';
+    if (hata) belirsiz(deneme, durum, hata);
+    else if (durum === 200 && Array.isArray(govde) && govde.length > 0)
+      ekle('Ziyaretçi', deneme, 'AÇIK', 'Ziyaretçi veri okuyabiliyor');
+    else if (durum === 200) ekle('Ziyaretçi', deneme, 'KAPALI', '');
+    else if (durum === 401 || durum === 403) ekle('Ziyaretçi', deneme, 'KAPALI', '');
+    else if (durum === 404) ekle('Ziyaretçi', deneme, 'KAPALI', 'Tablo dışarı açık değil');
+    else belirsiz(deneme, durum);
+  }
+
+  /* B · yazma denemesi — başarılıysa hemen sil, iz bırakma */
+  {
+    const deneme = 'cariler yazma';
+    const { durum, govde, hata } = await istek('/rest/v1/cariler', {
+      method: 'POST', headers: { Prefer: 'return=representation' },
+      body: JSON.stringify({ unvan: 'NS-SALDIRI-TESTI' }),
+    });
+    if (hata) belirsiz(deneme, durum, hata);
+    else if (durum === 200 || durum === 201) {
+      ekle('Ziyaretçi', deneme, 'AÇIK', 'Ziyaretçi kayıt ekleyebiliyor');
+      const id = govde && govde[0] && govde[0].id;
+      if (id) await istek('/rest/v1/cariler?id=eq.' + encodeURIComponent(id), { method: 'DELETE' });
+    } else if (durum === 401 || durum === 403) ekle('Ziyaretçi', deneme, 'KAPALI', '');
+    else belirsiz(deneme, durum);
+  }
+
+  /* C · silme ve değiştirme denemesi — eşleşmeyecek bir süzgeçle, gerçek satıra dokunmadan */
+  {
+    const deneme = 'hareketler silme';
+    const { durum, hata } = await istek('/rest/v1/hareketler?aciklama=eq.NS-SALDIRI-TESTI-YOK', {
+      method: 'DELETE', headers: { Prefer: 'return=representation' },
+    });
+    if (hata) belirsiz(deneme, durum, hata);
+    else if (durum === 200) ekle('Ziyaretçi', deneme, 'AÇIK', 'İzin var (eşleşen satır yoktu)');
+    else if (durum === 401 || durum === 403) ekle('Ziyaretçi', deneme, 'KAPALI', '');
+    else belirsiz(deneme, durum);
+  }
+  {
+    const deneme = 'hesaplar değiştirme';
+    const { durum, hata } = await istek('/rest/v1/hesaplar?kod=eq.NS-YOK-BOYLE-BIR-KOD', {
+      method: 'PATCH', headers: { Prefer: 'return=representation' },
+      body: JSON.stringify({ kod: 'NS-YOK-BOYLE-BIR-KOD' }),
+    });
+    if (hata) belirsiz(deneme, durum, hata);
+    else if (durum === 200) ekle('Ziyaretçi', deneme, 'AÇIK', 'İzin var (eşleşen satır yoktu)');
+    else if (durum === 401 || durum === 403) ekle('Ziyaretçi', deneme, 'KAPALI', '');
+    else belirsiz(deneme, durum);
+  }
+
+  /* D · fonksiyon çağırma denemesi */
+  {
+    const deneme = 'ns_katman çağırma';
+    const { durum, hata } = await istek('/rest/v1/rpc/ns_katman', { method: 'POST', body: '{}' });
+    if (hata) belirsiz(deneme, durum, hata);
+    else if (durum === 200) ekle('Ziyaretçi', deneme, 'AÇIK', '');
+    else if (durum === 401 || durum === 403 || durum === 404) ekle('Ziyaretçi', deneme, 'KAPALI', '');
+    else belirsiz(deneme, durum);
+  }
+
+  /* E · kimlik uydurma denemesi — imzası geçersiz bir belirteçle */
+  {
+    const deneme = 'uydurma kimlik';
+    const uydurma = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYXV0aGVudGljYXRlZCJ9.' +
+      'ns-saldiri-testi-gecersiz-imza';
+    const { durum, hata } = await istek('/rest/v1/kullanicilar?select=*', {
+      headers: { Authorization: 'Bearer ' + uydurma },
+    });
+    if (hata) belirsiz(deneme, durum, hata);
+    else if (durum === 401) ekle('Ziyaretçi', deneme, 'KAPALI', '');
+    else if (durum === 200) ekle('Ziyaretçi', deneme, 'AÇIK', 'ÇOK CİDDİ — geçersiz kimlik kabul edildi');
+    else belirsiz(deneme, durum);
+  }
+
+  return sonuclar;
+}
+
+function guvenlikSonucTablosu(sonuc) {
+  if (!sonuc) return '';
+  if (!sonuc.length) return `<p class="ipucu" style="margin-top:10px">Sonuç yok.</p>`;
+  const acik = sonuc.filter(s => s.sonuc === 'AÇIK').length;
+  const ozet = acik
+    ? `<div class="note uyari" style="margin-top:10px">${svg(ICON.uyari, 15)}
+        <span><b>${acik} GÜVENLİK AÇIĞI BULUNDU</b></span></div>`
+    : `<div class="kur-deger duz" style="margin-top:10px">${svg(ICON.tik, 13)}
+        Güvenli · ${sonuc.length} deneme yapıldı, hiçbiri işe yaramadı</div>`;
+  const sirali = sonuc.slice().sort((a, b) => (a.sonuc === 'AÇIK' ? 0 : 1) - (b.sonuc === 'AÇIK' ? 0 : 1));
+  const satirlar = sirali.map(s => {
+    const acikMi = s.sonuc === 'AÇIK';
+    return `<tr ${acikMi ? 'style="background:var(--red-soft)"' : ''}>
+        <td style="padding:6px 8px">${esc(s.nereden)}</td>
+        <td style="padding:6px 8px">${esc(s.kim)}</td>
+        <td style="padding:6px 8px">${esc(s.deneme)}</td>
+        <td style="padding:6px 8px;${acikMi ? 'color:var(--red);font-weight:600' : ''}">${esc(s.sonuc)}</td>
+        <td style="padding:6px 8px;color:var(--ink-soft)">${esc(s.ayrinti || '')}</td>
+      </tr>`;
+  }).join('');
+  return ozet + `<div style="overflow-x:auto;margin-top:10px">
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <thead><tr style="text-align:left;border-bottom:1px solid var(--line)">
+          <th style="padding:6px 8px">Nereden</th><th style="padding:6px 8px">Kim</th>
+          <th style="padding:6px 8px">Deneme</th><th style="padding:6px 8px">Sonuç</th>
+          <th style="padding:6px 8px">Ayrıntı</th></tr></thead>
+        <tbody>${satirlar}</tbody>
+      </table></div>`;
+}
+
+function guvenlikDisTestGovde() {
+  const projeler = guvenlikSupabaseliProjeler();
+  const secenekler = projeler.map(pr =>
+    `<option value="${esc(pr.id)}" ${pr.id === GUVENLIK_DIS_TEST.projeId ? 'selected' : ''}>
+      ${esc(projeAdi(pr))}</option>`).join('');
+
+  return `<div class="ipucu" style="margin-bottom:10px;font-weight:600">Dış test — otomatik</div>`
+    + (!projeler.length
+      ? `<p class="ipucu">Supabase bağlantısı olan bir proje yok — önce bir projede
+          Bağlantılar ve temel'de Supabase'i kur.</p>`
+      : `<label class="field"><span>Hangi proje test edilsin</span>
+          <select id="ck-guvenlik-proje">${secenekler}</select></label>
+        <div class="kur-dug" style="margin-top:8px">
+          <button class="sayfa-dug" type="button" data-eylem="guvenlik-dis-test-calistir"
+                  ${GUVENLIK_DIS_TEST.calisiyor ? 'disabled' : ''}>
+            ${svg(ICON.gGuvenlik, 15)} ${GUVENLIK_DIS_TEST.calisiyor ? 'Test ediliyor…' : 'Test Et'}
+          </button>
+        </div>`)
+    + guvenlikSonucTablosu(GUVENLIK_DIS_TEST.sonuc);
 }
 
 /* 4 · Claude — firma izini kaldırma, tasarımı standarda döndürme ve
@@ -11582,6 +11761,29 @@ async function eylemCalistir(el) {
     if (!metin) { toast(parca + '. parça henüz kaydedilmemiş.', 'uyari'); return; }
     const ok = await panoyaKopyala(metin);
     toast(ok ? parca + '. parça kopyalandı.' : 'Kopyalanamadı, tarayıcı izin vermedi.', ok ? 'basari' : 'hata');
+    return;
+  }
+
+  if (e === 'guvenlik-dis-test-calistir') {
+    const secim = $('#ck-guvenlik-proje');
+    const projeId = secim ? secim.value : '';
+    const pr = DB.proje(projeId);
+    if (!pr) { toast('Önce bir proje seç.', 'uyari'); return; }
+    const pl = pr.palet || {};
+    const url = String(pl.supabaseUrl || '').trim();
+    const anon = String(pl.supabaseAnon || '').trim();
+    if (!url || !anon) { toast('Bu projenin Supabase bağlantısı eksik.', 'hata'); return; }
+    GUVENLIK_DIS_TEST.projeId = projeId;
+    GUVENLIK_DIS_TEST.calisiyor = true;
+    GUVENLIK_DIS_TEST.sonuc = null;
+    cekirdekKurulumCiz();
+    try {
+      GUVENLIK_DIS_TEST.sonuc = await disTestiCalistir(url, anon);
+    } catch (h) {
+      toast('Test çalıştırılamadı: ' + h.message, 'hata');
+    }
+    GUVENLIK_DIS_TEST.calisiyor = false;
+    cekirdekKurulumCiz();
     return;
   }
 

@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.135.73
+- **Güvenlik Testi'ne otomatik "Dış test" eklendi.** Proje seç, "Test Et" — Studio ziyaretçi kimliğiyle (yalnız anon anahtarla) 20 denemeyi tarayıcıdan otomatik yapıyor: okuma, yazma, filtreli silme/değiştirme, fonksiyon çağırma, uydurma kimlik. Sonuç tek tabloda, AÇIK satırlar kırmızı ve en üstte. İç test (3 parça, Supabase yönetim jetonu gerektiren kısım) bilerek elle kalmaya devam ediyor — o jeton Studio'da hiç saklanmıyor.
+
 ## v0.135.72
 - **Templateler'e "Güvenlik Testi" adımı eklendi.** Kurulum sihirbazında SQL adımından sonra yeni bir adım: şablonun saldırı testini (3 parça) kaydet/kopyala. Kurulumun parçası değil — herhangi bir müşteri projesinde istendiğinde elle çalıştırılan ayrı bir araç. Studio'nun kendi Supabase'inde `sql/20-sablon-guvenlik-testi.sql`'i çalıştırmak gerekiyor.
 
