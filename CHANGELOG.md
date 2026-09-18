@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.135.74
+- **Güvenlik Testi, Ayarlar'a bağımsız bir sayfa olarak taşındı.** Templateler'le ilgisi yok artık — Supabase adresi, anon key ve istersen bir personel hesabının e-posta/şifresini elle gir, "Test Et" de. Ziyaretçi bataryası aynı; personel girişi başarılıysa aynı batarya + kendini üst katmana yükseltme, başka kullanıcıyı değiştirme, şube açma/silme denemeleri de otomatik çalışıyor. Şifre hiçbir yerde saklanmıyor. Templateler'deki adım yalnız İç test'in (3 parça SQL) kaydı olarak kaldı.
+
 ## v0.135.73
 - **Güvenlik Testi'ne otomatik "Dış test" eklendi.** Proje seç, "Test Et" — Studio ziyaretçi kimliğiyle (yalnız anon anahtarla) 20 denemeyi tarayıcıdan otomatik yapıyor: okuma, yazma, filtreli silme/değiştirme, fonksiyon çağırma, uydurma kimlik. Sonuç tek tabloda, AÇIK satırlar kırmızı ve en üstte. İç test (3 parça, Supabase yönetim jetonu gerektiren kısım) bilerek elle kalmaya devam ediyor — o jeton Studio'da hiç saklanmıyor.
 
