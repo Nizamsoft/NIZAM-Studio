@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.135.76
+- **Güvenlik Testi baştan yazıldı — doğru zihin modeliyle.** Giriş yapmış herkesin okuyabilmesi artık bulgu sayılmıyor (bu şablonda kasıtlı bir kural); personel bataryası okuma yerine yetki testlerine odaklandı: kendini üst katmana yükseltme, başkasının kaydını değiştirme, hesap/şube/katman açma, defter/denetim kaydı/hesap planı üzerinde filtreli silme-değiştirme, üç fonksiyon kapısı (hata metninde "yetki" var mı diye bakarak). Hesabın kendisi üst katmandaysa büyük bir uyarı çıkıyor ve yetki testleri ATLANDI işaretleniyor (yanlışlıkla KAPALI/güvenli gösterilmiyor). E-posta ve şifre artık zorunlu — giriş başarısızsa test hiç başlamıyor. Her satırın Ayrıntı sütununda artık HTTP kodu ve sunucunun kendi hata metni var. Alt tarafta şablondaki 3 parçalı SQL testine (daha derin yapı denetimi için) yönlendiren bir not eklendi.
+
 ## v0.135.75
 - **Güvenlik Testi sonucuna "Raporu kopyala" düğmesi eklendi.** Sonuç düz metin olarak tek tıkla panoya kopyalanıyor — AÇIK satırlar üstte ve ⚠️ işaretli, sohbete ya da nota direkt yapıştırılabilir.
 

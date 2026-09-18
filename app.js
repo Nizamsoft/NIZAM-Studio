@@ -681,9 +681,10 @@ const VIEWS = {
     return `
       <div class="note" style="margin-bottom:14px">${svg(ICON.info, 15)}
         <span>Herhangi bir Supabase projesinin (Studio'da kayıtlı olması
-        gerekmez) ziyaretçi ve — girersen — personel kimliğiyle ne
-        yapabildiğini REST üzerinden dener. Veri bozmaz: yazdığı her şeyi
-        hemen siler.</span></div>
+        gerekmez) önce ziyaretçi, sonra girdiğin hesapla giriş yapmış bir
+        personelin ne yapabildiğini REST üzerinden dener. Veri bozmaz —
+        yazdığı her şeyi hemen siler. En iyisi: test için açılmış,
+        yetkisiz, ayrı bir personel hesabı kullan.</span></div>
 
       <div class="section" style="margin-top:0">
         <span class="label">Bağlantı</span>
@@ -700,12 +701,12 @@ const VIEWS = {
       </div>
 
       <div class="section">
-        <span class="label">Personel girişi — isteğe bağlı</span>
+        <span class="label">Personel girişi</span>
         <div class="card" style="padding:14px">
-          <p class="ipucu" style="margin:0 0 10px">Girersen ziyaretçi testine ek
-            olarak, giriş yapmış ama üst katmanda olmayan bir kullanıcının ne
-            yapabildiği de denenir. Boş bırakırsan yalnız ziyaretçi testi çalışır.
-            Şifre hiçbir yerde saklanmıyor.</p>
+          <p class="ipucu" style="margin:0 0 10px">Test edilecek projedeki bir
+            hesabın e-postası ve şifresi — dördü de gerekli. Giriş
+            başarısız olursa test hiç başlamaz. Şifre hiçbir yerde
+            saklanmıyor.</p>
           <label class="field"><span>E-posta</span>
             <input type="text" id="gv-eposta" value="${esc(g.eposta)}"
                    placeholder="personel@firma.com" autocomplete="off"
@@ -722,7 +723,7 @@ const VIEWS = {
         </button>
       </div>
 
-      ${guvenlikSonucTablosu(g.sonuc)}
+      ${guvenlikSonucTablosu(g.sonuc, g.ustKatmanUyarisi)}
     `;
   },
 
@@ -7147,11 +7148,18 @@ function cekirdekAdimGuvenlikGovde(p) {
 
    Şifre hiçbir yerde tutulmuyor: yalnız bu sayfanın kendi state'inde,
    test bitince değeri okunmaz bile — giriş isteğine gidip unutuluyor. */
-const GUVENLIK_SAYFA = { url: '', anon: '', eposta: '', calisiyor: false, sonuc: null };
+const GUVENLIK_SAYFA = { url: '', anon: '', eposta: '', calisiyor: false, sonuc: null, ustKatmanUyarisi: false };
 
 const GUVENLIK_TABLOLAR = ['hesaplar', 'kullanicilar', 'hareketler', 'cariler', 'subeler',
   'katmanlar', 'degisiklik_kaydi', 'islemler', 'alis_faturalari', 'satis_faturalari',
   'gun_sonu_raporlari', 'kredi_kartlari', 'odeme_yontemleri', 'banka_dekontlari', 'kullanici_subeleri'];
+
+function guvenlikUuid() {
+  if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+  /* Eski tarayıcı yedeği — yalnız test verisini etiketlemek için, kriptografik
+     güç gerekmiyor. */
+  return 'ns-' + Date.now().toString(16) + '-' + Math.random().toString(16).slice(2);
+}
 
 /* `istek` üreticisi: taban adres + anon key sabit, Authorization her
    çağrıda değişebilir (ziyaretçi → anon, personel → giriş sonrası belirteç). */
@@ -7174,171 +7182,274 @@ function guvenlikIstekYap(taban, anon) {
   };
 }
 
-/* A–D: ziyaretçi VE personel için ortak batarya — okuma, yazma, filtreli
-   silme/değiştirme, fonksiyon çağırma. `belirtec` verilmezse anon (ziyaretçi)
-   kullanılır; personel'de giriş sonrası erişim belirteci geçilir. */
-async function guvenlikGenelBatarya(istek, kim, belirtec, ekle) {
-  const belirsiz = (deneme, durum, hata) => hata
-    ? ekle(kim, deneme, 'BİLGİ', 'Bağlantı hatası: ' + hata)
-    : ekle(kim, deneme, 'BİLGİ', 'Beklenmeyen durum: ' + durum);
+/* Her satırın Ayrıntı sütunu HTTP kodu + sunucunun kendi hata metnini
+   OLDUĞU GİBİ taşır — açık çıkarsa teşhis buradan yapılır. */
+function guvenlikAyrinti(durum, govde, hata, ekNot) {
+  const parcalar = [];
+  if (ekNot) parcalar.push(ekNot);
+  if (hata) parcalar.push('Bağlantı hatası: ' + hata);
+  else {
+    parcalar.push('HTTP ' + durum);
+    const mesaj = govde && (govde.message || govde.hint || govde.details || govde.error_description);
+    if (mesaj) parcalar.push(String(mesaj));
+  }
+  return parcalar.join(' · ');
+}
 
+/* Tek bir yazma/silme denemesini çalıştırıp yorumlar: 2xx → AÇIK,
+   401/403 (ya da PostgREST'in kendi "permission denied"i) → KAPALI,
+   başka her şey → BİLGİ. Sonucu ve HTTP/gövde bilgisini geri döndürür ki
+   çağıran (ekleme testlerinde olduğu gibi) temizlik kararını verebilsin. */
+async function guvenlikYazDeneVeYorumla(istek, ekle, kim, deneme, yol, secenek, acikNot) {
+  const { durum, govde, hata } = await istek(yol, secenek);
+  const ayrinti = guvenlikAyrinti(durum, govde, hata);
+  let sonuc;
+  if (hata) sonuc = 'BİLGİ';
+  else if (durum >= 200 && durum < 300) sonuc = 'AÇIK';
+  else if (durum === 401 || durum === 403) sonuc = 'KAPALI';
+  else sonuc = 'BİLGİ';
+  ekle(kim, deneme, sonuc, sonuc === 'AÇIK' && acikNot ? acikNot + ' · ' + ayrinti : ayrinti);
+  return { durum, govde, sonuc };
+}
+
+/* ---------- 1 · Aşama — Ziyaretçi (giriş yapmamış) ---------- */
+async function guvenlikZiyaretciTestleri(istek, ekle) {
+  /* 1.1 · Hangi tablolar dışarıdan görünüyor */
+  {
+    const { durum, govde, hata } = await istek('/rest/v1/');
+    const ayrinti = guvenlikAyrinti(durum, govde, hata);
+    if (hata) ekle('Ziyaretçi', 'şema listesi', 'BİLGİ', ayrinti);
+    else {
+      const yollar = govde && govde.paths ? Object.keys(govde.paths).length : 0;
+      ekle('Ziyaretçi', 'şema listesi', yollar > 0 ? 'AÇIK' : 'KAPALI',
+        (yollar > 0 ? yollar + ' yol görünüyor · ' : '') + ayrinti);
+    }
+  }
+
+  /* 1.2 · Okuma denemeleri */
   for (const tablo of GUVENLIK_TABLOLAR) {
-    const { durum, govde, hata } = await istek('/rest/v1/' + tablo + '?select=*&limit=1', { belirtec });
+    const { durum, govde, hata } = await istek('/rest/v1/' + tablo + '?select=*&limit=1');
+    const ayrinti = guvenlikAyrinti(durum, govde, hata);
     const deneme = tablo + ' okuma';
-    if (hata) belirsiz(deneme, durum, hata);
+    if (hata) ekle('Ziyaretçi', deneme, 'BİLGİ', ayrinti);
     else if (durum === 200 && Array.isArray(govde) && govde.length > 0)
-      ekle(kim, deneme, 'AÇIK', kim + ' veri okuyabiliyor');
-    else if (durum === 200) ekle(kim, deneme, 'KAPALI', '');
-    else if (durum === 401 || durum === 403) ekle(kim, deneme, 'KAPALI', '');
-    else if (durum === 404) ekle(kim, deneme, 'KAPALI', 'Tablo dışarı açık değil');
-    else belirsiz(deneme, durum);
+      ekle('Ziyaretçi', deneme, 'AÇIK', 'Ziyaretçi veri okuyabiliyor · ' + ayrinti);
+    else if (durum === 200 || durum === 401 || durum === 403 || durum === 404)
+      ekle('Ziyaretçi', deneme, 'KAPALI', ayrinti);
+    else ekle('Ziyaretçi', deneme, 'BİLGİ', ayrinti);
   }
 
+  /* 1.3 · Yazma denemesi — başarılıysa hemen sil */
   {
-    const deneme = 'cariler yazma';
-    const { durum, govde, hata } = await istek('/rest/v1/cariler', {
-      belirtec, method: 'POST', headers: { Prefer: 'return=representation' },
-      body: JSON.stringify({ unvan: 'NS-SALDIRI-TESTI' }),
-    });
-    if (hata) belirsiz(deneme, durum, hata);
-    else if (durum === 200 || durum === 201) {
-      ekle(kim, deneme, 'AÇIK', kim + ' kayıt ekleyebiliyor');
+    const { durum, govde, sonuc } = await guvenlikYazDeneVeYorumla(istek, ekle, 'Ziyaretçi', 'cariler yazma',
+      '/rest/v1/cariler', { method: 'POST', headers: { Prefer: 'return=representation' },
+        body: JSON.stringify({ unvan: 'NS-GUVENLIK-TESTI' }) }, 'Ziyaretçi kayıt ekleyebiliyor');
+    if (sonuc === 'AÇIK') {
       const id = govde && govde[0] && govde[0].id;
-      if (id) await istek('/rest/v1/cariler?id=eq.' + encodeURIComponent(id), { belirtec, method: 'DELETE' });
-    } else if (durum === 401 || durum === 403) ekle(kim, deneme, 'KAPALI', '');
-    else belirsiz(deneme, durum);
+      if (id) await istek('/rest/v1/cariler?id=eq.' + encodeURIComponent(id), { method: 'DELETE' });
+    }
   }
 
-  {
-    const deneme = 'hareketler silme';
-    const { durum, hata } = await istek('/rest/v1/hareketler?aciklama=eq.NS-SALDIRI-TESTI-YOK', {
-      belirtec, method: 'DELETE', headers: { Prefer: 'return=representation' },
-    });
-    if (hata) belirsiz(deneme, durum, hata);
-    else if (durum === 200) ekle(kim, deneme, 'AÇIK', 'İzin var (eşleşen satır yoktu)');
-    else if (durum === 401 || durum === 403) ekle(kim, deneme, 'KAPALI', '');
-    else belirsiz(deneme, durum);
-  }
-  {
-    const deneme = 'hesaplar değiştirme';
-    const { durum, hata } = await istek('/rest/v1/hesaplar?kod=eq.NS-YOK-BOYLE-BIR-KOD', {
-      belirtec, method: 'PATCH', headers: { Prefer: 'return=representation' },
-      body: JSON.stringify({ kod: 'NS-YOK-BOYLE-BIR-KOD' }),
-    });
-    if (hata) belirsiz(deneme, durum, hata);
-    else if (durum === 200) ekle(kim, deneme, 'AÇIK', 'İzin var (eşleşen satır yoktu)');
-    else if (durum === 401 || durum === 403) ekle(kim, deneme, 'KAPALI', '');
-    else belirsiz(deneme, durum);
-  }
+  /* 1.4 · Silme ve değiştirme denemesi — eşleşmeyecek süzgeçle */
+  await guvenlikYazDeneVeYorumla(istek, ekle, 'Ziyaretçi', 'hareketler silme',
+    '/rest/v1/hareketler?aciklama=eq.NS-BOYLE-BIR-KAYIT-YOK',
+    { method: 'DELETE', headers: { Prefer: 'return=representation' } }, 'İzin var (eşleşen satır yoktu)');
+  await guvenlikYazDeneVeYorumla(istek, ekle, 'Ziyaretçi', 'hesaplar değiştirme',
+    '/rest/v1/hesaplar?kod=eq.NS-BOYLE-BIR-KOD-YOK',
+    { method: 'PATCH', headers: { Prefer: 'return=representation' },
+      body: JSON.stringify({ kod: 'NS-BOYLE-BIR-KOD-YOK' }) }, 'İzin var (eşleşen satır yoktu)');
 
+  /* 1.5 · Fonksiyon çağırma */
+  await guvenlikYazDeneVeYorumla(istek, ekle, 'Ziyaretçi', 'ns_katman çağırma',
+    '/rest/v1/rpc/ns_katman', { method: 'POST', body: '{}' });
+
+  /* 1.6 · Uydurma kimlik — imzası geçersiz bir belirteçle */
   {
-    const deneme = 'ns_katman çağırma';
-    const { durum, hata } = await istek('/rest/v1/rpc/ns_katman', { belirtec, method: 'POST', body: '{}' });
-    if (hata) belirsiz(deneme, durum, hata);
-    else if (durum === 200) ekle(kim, deneme, 'AÇIK', '');
-    else if (durum === 401 || durum === 403 || durum === 404) ekle(kim, deneme, 'KAPALI', '');
-    else belirsiz(deneme, durum);
+    const uydurma = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYXV0aGVudGljYXRlZCJ9.' +
+      'ns-guvenlik-testi-gecersiz-imza';
+    const { durum, govde, hata } = await istek('/rest/v1/kullanicilar?select=*', { belirtec: uydurma });
+    const ayrinti = guvenlikAyrinti(durum, govde, hata);
+    if (hata) ekle('Ziyaretçi', 'uydurma kimlik', 'BİLGİ', ayrinti);
+    else if (durum === 401) ekle('Ziyaretçi', 'uydurma kimlik', 'KAPALI', ayrinti);
+    else if (durum >= 200 && durum < 300)
+      ekle('Ziyaretçi', 'uydurma kimlik', 'AÇIK', 'ÇOK CİDDİ — geçersiz kimlik kabul edildi · ' + ayrinti);
+    else ekle('Ziyaretçi', 'uydurma kimlik', 'BİLGİ', ayrinti);
   }
 }
 
-/* Yalnız ziyaretçiye özel: imzası geçersiz bir belirteçle giriş taklidi. */
-async function guvenlikZiyaretciEkstra(istek, ekle) {
-  const deneme = 'uydurma kimlik';
-  const uydurma = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYXV0aGVudGljYXRlZCJ9.' +
-    'ns-saldiri-testi-gecersiz-imza';
-  const { durum, hata } = await istek('/rest/v1/kullanicilar?select=*', { belirtec: uydurma });
-  if (hata) ekle('Ziyaretçi', deneme, 'BİLGİ', 'Bağlantı hatası: ' + hata);
-  else if (durum === 401) ekle('Ziyaretçi', deneme, 'KAPALI', '');
-  else if (durum === 200) ekle('Ziyaretçi', deneme, 'AÇIK', 'ÇOK CİDDİ — geçersiz kimlik kabul edildi');
-  else ekle('Ziyaretçi', deneme, 'BİLGİ', 'Beklenmeyen durum: ' + durum);
+/* ---------- 0.2 · Giriş yapan hesabın katmanını öğren ---------- */
+async function guvenlikKendiKatmanim(istek, belirtec, ownAuthId) {
+  const { govde: katmanlar } = await istek('/rest/v1/katmanlar?select=id,ad,seviye&order=seviye.desc', { belirtec });
+  const { govde: kullanicilar } = await istek('/rest/v1/kullanicilar?select=id,auth_id,katman_id,ad_soyad', { belirtec });
+  const ust = katmanlar && katmanlar[0];
+  const own = (kullanicilar || []).find(k => k.auth_id === ownAuthId);
+  return {
+    own, ust,
+    baskalari: (kullanicilar || []).filter(k => k.auth_id !== ownAuthId),
+    ustKatmandaMi: !!(own && ust && own.katman_id === ust.id),
+  };
 }
 
-/* Yalnız personele özel: kendini üst katmana yükseltme, başkasının kaydını
-   değiştirme, şube açma/silme. Yalnız kesin bilinen sütunlarla (göç 90/91) —
-   hareketler/hesaplar/denetim kaydı gibi tabloların tam şemasını Studio
-   bilmiyor, tahmin yürütüp yanlış sonuç vermektense bunlar İç test'in (gerçek
-   şablon SQL'i) işi olarak kalıyor. */
-async function guvenlikPersonelEkstra(istek, belirtec, ekle) {
-  const { durum: uDurum, govde: uGovde, hata: uHata } =
-    await istek('/auth/v1/user', { belirtec });
-  const ownAuthId = !uHata && uDurum === 200 && uGovde && uGovde.id;
-  if (!ownAuthId) {
-    ekle('Personel', 'kimlik okuma', 'ATLANDI', 'Kendi kimliği okunamadı');
-    return;
-  }
+/* ---------- 2 · Aşama — Personel (giriş yapmış, üst katman değil) ----------
+   OKUMA TESTİ YOK: giriş yapan herkesin her şeyi okuması bu şablonda kural,
+   bulgu değil (bkz. 2 numaralı aşamanın başındaki not). */
+async function guvenlikPersonelTestleri(istek, ekle, belirtec, ownAuthId, katman) {
+  const { own, ust, baskalari } = katman;
 
-  const { govde: ownRows } = await istek(
-    '/rest/v1/kullanicilar?select=id,unvan,katman_id&auth_id=eq.' + encodeURIComponent(ownAuthId) + '&limit=1',
-    { belirtec });
-  const own = ownRows && ownRows[0];
-  const { govde: ustRows } = await istek(
-    '/rest/v1/katmanlar?select=id,seviye&order=seviye.desc&limit=1', { belirtec });
-  const ust = ustRows && ustRows[0];
-
+  /* 2.1 · Kendini en üst katmana çıkarır — EN ÖNEMLİ TEST */
   if (!own || !ust) {
     ekle('Personel', 'katman yükseltme', 'ATLANDI', 'Kendi kaydı ya da katmanlar okunamadı');
   } else if (own.katman_id === ust.id) {
-    ekle('Personel', 'katman yükseltme', 'ATLANDI', 'Zaten en üst katmanda — anlamlı test değil');
+    ekle('Personel', 'katman yükseltme', 'ATLANDI', 'Zaten en üst katmanda');
   } else {
-    const { durum, govde } = await istek('/rest/v1/kullanicilar?id=eq.' + encodeURIComponent(own.id), {
+    const { durum, govde } = await istek('/rest/v1/kullanicilar?auth_id=eq.' + encodeURIComponent(ownAuthId), {
       belirtec, method: 'PATCH', headers: { Prefer: 'return=representation' },
       body: JSON.stringify({ katman_id: ust.id }),
     });
-    if (durum === 200 && govde && govde[0] && govde[0].katman_id === ust.id) {
-      ekle('Personel', 'katman yükseltme', 'AÇIK', 'Kendini en üst katmana yükseltebiliyor');
-      await istek('/rest/v1/kullanicilar?id=eq.' + encodeURIComponent(own.id), {
+    const ayrinti = guvenlikAyrinti(durum, govde);
+    const degisti = durum >= 200 && durum < 300 && govde && govde[0] && govde[0].katman_id === ust.id;
+    if (degisti) {
+      ekle('Personel', 'katman yükseltme', 'AÇIK', 'ÇOK CİDDİ — kendini en üst katmana yükseltebiliyor · ' + ayrinti);
+      await istek('/rest/v1/kullanicilar?auth_id=eq.' + encodeURIComponent(ownAuthId), {
         belirtec, method: 'PATCH', body: JSON.stringify({ katman_id: own.katman_id }),
       });
-    } else if (durum === 200 || durum === 401 || durum === 403) {
-      ekle('Personel', 'katman yükseltme', 'KAPALI', '');
+    } else if (durum === 401 || durum === 403 || (durum >= 200 && durum < 300)) {
+      ekle('Personel', 'katman yükseltme', 'KAPALI', ayrinti);
     } else {
-      ekle('Personel', 'katman yükseltme', 'BİLGİ', 'Beklenmeyen durum: ' + durum);
+      ekle('Personel', 'katman yükseltme', 'BİLGİ', ayrinti);
     }
   }
 
-  const { govde: baskalari } = await istek('/rest/v1/kullanicilar?select=id,unvan&limit=5', { belirtec });
-  const baskasi = (baskalari || []).find(k => k.id !== (own && own.id));
+  /* 2.2 · Başkasının kaydını değiştirir — mevcut değerini geri yazarak,
+     yalnız TEK bilinen satıra (bulgu doğrulanınca da bozulmasın diye
+     yayılmayan, eşleşen tek satırlı bir süzgeçle — bkz. madde 3 kuralı 1). */
+  const baskasi = baskalari && baskalari[0];
   if (!baskasi) {
-    ekle('Personel', 'başka kullanıcı değiştirme', 'ATLANDI', 'Başka kullanıcı bulunamadı');
+    ekle('Personel', 'başka kullanıcı değiştirme', 'ATLANDI', 'Başka kullanıcı yok');
   } else {
-    const eski = baskasi.unvan;
-    const { durum, govde } = await istek('/rest/v1/kullanicilar?id=eq.' + encodeURIComponent(baskasi.id), {
+    const eski = baskasi.ad_soyad;
+    const { durum, govde } = await istek('/rest/v1/kullanicilar?auth_id=eq.' + encodeURIComponent(baskasi.auth_id), {
       belirtec, method: 'PATCH', headers: { Prefer: 'return=representation' },
-      body: JSON.stringify({ unvan: 'NS-SALDIRI-TESTI' }),
+      body: JSON.stringify({ ad_soyad: eski }),
     });
-    if (durum === 200 && govde && govde.length > 0) {
-      ekle('Personel', 'başka kullanıcı değiştirme', 'AÇIK', 'Başkasının kaydını değiştirebiliyor');
-      await istek('/rest/v1/kullanicilar?id=eq.' + encodeURIComponent(baskasi.id), {
-        belirtec, method: 'PATCH', body: JSON.stringify({ unvan: eski }),
-      });
-    } else if (durum === 200 || durum === 401 || durum === 403) {
-      ekle('Personel', 'başka kullanıcı değiştirme', 'KAPALI', '');
+    const ayrinti = guvenlikAyrinti(durum, govde);
+    if (durum >= 200 && durum < 300 && govde && govde.length > 0) {
+      ekle('Personel', 'başka kullanıcı değiştirme', 'AÇIK', 'Başkasının kaydını değiştirebiliyor · ' + ayrinti);
+    } else if (durum === 401 || durum === 403 || (durum >= 200 && durum < 300)) {
+      ekle('Personel', 'başka kullanıcı değiştirme', 'KAPALI', ayrinti);
     } else {
-      ekle('Personel', 'başka kullanıcı değiştirme', 'BİLGİ', 'Beklenmeyen durum: ' + durum);
+      ekle('Personel', 'başka kullanıcı değiştirme', 'BİLGİ', ayrinti);
     }
   }
 
-  {
-    const deneme = 'şube açma';
-    const { durum, govde } = await istek('/rest/v1/subeler', {
-      belirtec, method: 'POST', headers: { Prefer: 'return=representation' },
-      body: JSON.stringify({ ad: 'NS-SALDIRI-TESTI', kisa_kod: 'NST' }),
-    });
-    if (durum === 200 || durum === 201) {
-      ekle('Personel', deneme, 'AÇIK', 'Şube açabiliyor');
+  /* 2.3a · Ekleme denemeleri — başarılıysa açtığı kaydı hemen sil */
+  const eklemeler = [
+    { deneme: 'yeni katman açar', yol: '/rest/v1/katmanlar',
+      govde: { seviye: 9999, ad: 'NS-GUVENLIK-TESTI' },
+      temizle: id => '/rest/v1/katmanlar?id=eq.' + encodeURIComponent(id) },
+    { deneme: 'hesap ekler', yol: '/rest/v1/hesaplar',
+      govde: { kod: 'ZZZ9', ad: 'NS-GUVENLIK-TESTI' },
+      temizle: () => '/rest/v1/hesaplar?kod=eq.ZZZ9' },
+    { deneme: 'ödeme yöntemi ekler', yol: '/rest/v1/odeme_yontemleri',
+      govde: { ad: 'NS-GUVENLIK-TESTI' },
+      temizle: () => '/rest/v1/odeme_yontemleri?ad=eq.NS-GUVENLIK-TESTI' },
+    { deneme: 'şube açar', yol: '/rest/v1/subeler',
+      govde: { ad: 'NS-GUVENLIK-TESTI' },
+      temizle: () => '/rest/v1/subeler?ad=eq.NS-GUVENLIK-TESTI' },
+  ];
+  for (const t of eklemeler) {
+    const { durum, govde } = await guvenlikYazDeneVeYorumla(istek, ekle, 'Personel', t.deneme, t.yol,
+      { belirtec, method: 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify(t.govde) });
+    if (durum >= 200 && durum < 300) {
       const id = govde && govde[0] && govde[0].id;
-      if (id) await istek('/rest/v1/subeler?id=eq.' + encodeURIComponent(id), { belirtec, method: 'DELETE' });
-    } else if (durum === 401 || durum === 403) ekle('Personel', deneme, 'KAPALI', '');
-    else ekle('Personel', deneme, 'BİLGİ', 'Beklenmeyen durum: ' + durum);
+      if (id) await istek(t.temizle(id), { belirtec, method: 'DELETE' });
+    }
   }
+
+  /* Deftere elle yazar — gerçek bir hesap id'si gerekiyor, önce okunur
+     (okuma serbest, kural bu — bkz. aşama başlığı). */
   {
-    const deneme = 'şube silme';
-    const { durum } = await istek('/rest/v1/subeler?kisa_kod=eq.NS-YOK-BOYLE-BIR-KOD', {
-      belirtec, method: 'DELETE', headers: { Prefer: 'return=representation' },
-    });
-    if (durum === 200) ekle('Personel', deneme, 'AÇIK', 'İzin var (eşleşen satır yoktu)');
-    else if (durum === 401 || durum === 403) ekle('Personel', deneme, 'KAPALI', '');
-    else ekle('Personel', deneme, 'BİLGİ', 'Beklenmeyen durum: ' + durum);
+    const { govde: hesaplar } = await istek('/rest/v1/hesaplar?select=id&limit=1', { belirtec });
+    const hesapId = hesaplar && hesaplar[0] && hesaplar[0].id;
+    if (!hesapId) {
+      ekle('Personel', 'deftere elle yazar', 'ATLANDI', 'Örnek hesap bulunamadı');
+    } else {
+      const fisId = guvenlikUuid();
+      const { durum } = await guvenlikYazDeneVeYorumla(istek, ekle, 'Personel', 'deftere elle yazar',
+        '/rest/v1/hareketler',
+        { belirtec, method: 'POST', headers: { Prefer: 'return=representation' },
+          body: JSON.stringify({ fis_id: fisId, tarih: new Date().toISOString().slice(0, 10),
+            hesap_id: hesapId, kaynak: 'NS-TEST', borc: 1 }) });
+      if (durum >= 200 && durum < 300)
+        await istek('/rest/v1/hareketler?fis_id=eq.' + encodeURIComponent(fisId), { belirtec, method: 'DELETE' });
+    }
+  }
+
+  /* Başkasına şube atar — bir şube id'si gerekiyor. */
+  {
+    const { govde: subeler } = await istek('/rest/v1/subeler?select=id&limit=1', { belirtec });
+    const subeId = subeler && subeler[0] && subeler[0].id;
+    if (!subeId || !baskasi) {
+      ekle('Personel', 'başkasına şube atar', 'ATLANDI', 'Örnek şube ya da başka kullanıcı yok');
+    } else {
+      const { durum } = await guvenlikYazDeneVeYorumla(istek, ekle, 'Personel', 'başkasına şube atar',
+        '/rest/v1/kullanici_subeleri',
+        { belirtec, method: 'POST', headers: { Prefer: 'return=representation' },
+          body: JSON.stringify({ kullanici_id: baskasi.id, sube_id: subeId }) });
+      if (durum >= 200 && durum < 300)
+        await istek('/rest/v1/kullanici_subeleri?kullanici_id=eq.' + encodeURIComponent(baskasi.id) +
+          '&sube_id=eq.' + encodeURIComponent(subeId), { belirtec, method: 'DELETE' });
+    }
+  }
+
+  /* 2.3b · Silme ve değiştirme denemeleri — hepsi eşleşmeyecek süzgeçle */
+  const silDegistir = [
+    { deneme: 'defter satırı siler', yol: '/rest/v1/hareketler?aciklama=eq.NS-BOYLE-BIR-KAYIT-YOK', yontem: 'DELETE' },
+    { deneme: 'denetim kaydını siler', yol: '/rest/v1/degisiklik_kaydi?tablo_adi=eq.NS-BOYLE-BIR-TABLO-YOK', yontem: 'DELETE' },
+    { deneme: 'denetim kaydını değiştirir', yol: '/rest/v1/degisiklik_kaydi?tablo_adi=eq.NS-BOYLE-BIR-TABLO-YOK',
+      yontem: 'PATCH', govde: { islem: 'NS-TEST' } },
+    { deneme: 'açılış bakiyesi değiştirir', yol: '/rest/v1/hesaplar?kod=eq.NS-BOYLE-BIR-KOD-YOK',
+      yontem: 'PATCH', govde: { acilis_bakiyesi: 999999 } },
+    { deneme: 'hesap kodu değiştirir', yol: '/rest/v1/hesaplar?kod=eq.NS-BOYLE-BIR-KOD-YOK',
+      yontem: 'PATCH', govde: { kod: 'ZZZ8' } },
+    { deneme: 'şube siler', yol: '/rest/v1/subeler?ad=eq.NS-BOYLE-BIR-SUBE-YOK', yontem: 'DELETE' },
+    { deneme: 'şube gelir hesabı', yol: '/rest/v1/subeler?ad=eq.NS-BOYLE-BIR-SUBE-YOK',
+      yontem: 'PATCH', govde: { gelir_hesabi_id: null } },
+    { deneme: 'cari siler', yol: '/rest/v1/cariler?unvan=eq.NS-BOYLE-BIR-CARI-YOK', yontem: 'DELETE' },
+    { deneme: 'ödeme yöntemi hesabı', yol: '/rest/v1/odeme_yontemleri?ad=eq.NS-BOYLE-BIR-YONTEM-YOK',
+      yontem: 'PATCH', govde: { gidecegi_hesap_id: null } },
+    { deneme: 'kredi kartı günü', yol: '/rest/v1/kredi_kartlari?hesap_id=eq.00000000-0000-0000-0000-000000000000',
+      yontem: 'PATCH', govde: { son_odeme_gunu: 1 } },
+    { deneme: 'aylık tahakkuk tutarı', yol: '/rest/v1/aylik_tahakkuklar?ad=eq.NS-BOYLE-BIR-TAHAKKUK-YOK',
+      yontem: 'PATCH', govde: { tutar: 1 } },
+  ];
+  for (const t of silDegistir) {
+    await guvenlikYazDeneVeYorumla(istek, ekle, 'Personel', t.deneme, t.yol,
+      { belirtec, method: t.yontem, headers: { Prefer: 'return=representation' },
+        body: t.govde ? JSON.stringify(t.govde) : undefined },
+      'İzin var (eşleşen satır yoktu)');
+  }
+
+  /* 2.3c · Fonksiyon kapıları — var olmayan bir kimlikle çağır, hata
+     metninde "yetki" var mı diye bak. */
+  const bosId = '00000000-0000-0000-0000-000000000000';
+  const kapilar = [
+    { deneme: 'kayıt siler (ns_kayit_sil)', yol: '/rest/v1/rpc/ns_kayit_sil', govde: { p_fis_id: bosId } },
+    { deneme: 'elle kaydı siler', yol: '/rest/v1/rpc/ns_elle_kayit_sil', govde: { p_fis_id: bosId } },
+    { deneme: 'kaydı düzeltir', yol: '/rest/v1/rpc/ns_kayit_duzelt',
+      govde: { p_fis_id: bosId, p_hesap: null, p_tarih: null, p_tutar: null, p_aciklama: null, p_karsi_hesap: null } },
+  ];
+  for (const t of kapilar) {
+    const { durum, govde, hata } = await istek(t.yol, { belirtec, method: 'POST', body: JSON.stringify(t.govde) });
+    const ayrinti = guvenlikAyrinti(durum, govde, hata);
+    if (hata) { ekle('Personel', t.deneme, 'BİLGİ', ayrinti); continue; }
+    if (durum >= 200 && durum < 300) {
+      ekle('Personel', t.deneme, 'AÇIK', 'ÇOK CİDDİ · ' + ayrinti);
+      continue;
+    }
+    const mesaj = ((govde && govde.message) || '').toLocaleLowerCase('tr');
+    if (mesaj.indexOf('yetki') >= 0) ekle('Personel', t.deneme, 'KAPALI', ayrinti);
+    else ekle('Personel', t.deneme, 'AÇIK', 'Kapı yok — fonksiyon yetkiye bakmadan işe girişti · ' + ayrinti);
   }
 }
 
@@ -7349,34 +7460,46 @@ async function guvenlikTestiCalistir({ url, anon, eposta, sifre }) {
   const ekle = (kim, deneme, sonuc, ayrinti) =>
     sonuclar.push({ kim, deneme, sonuc, ayrinti: ayrinti || '' });
 
-  await guvenlikGenelBatarya(istek, 'Ziyaretçi', anon, ekle);
-  await guvenlikZiyaretciEkstra(istek, ekle);
+  /* 0.1 · Giriş — başarısızsa hiçbir şey çalıştırma, tek satırla dur. */
+  const { durum: gDurum, govde: gGovde, hata: gHata } = await istek('/auth/v1/token?grant_type=password', {
+    belirtec: anon, method: 'POST', body: JSON.stringify({ email: eposta, password: sifre }),
+  });
+  const belirtec = !gHata && gDurum === 200 && gGovde && gGovde.access_token;
+  const ownAuthId = belirtec && gGovde.user && gGovde.user.id;
 
-  if (eposta && sifre) {
-    const { durum, govde, hata } = await istek('/auth/v1/token?grant_type=password', {
-      belirtec: anon, method: 'POST',
-      body: JSON.stringify({ email: eposta, password: sifre }),
-    });
-    const belirtec = !hata && durum === 200 && govde && govde.access_token;
-    if (!belirtec) {
-      ekle('Personel', 'giriş', 'BİLGİ',
-        hata ? 'Bağlantı hatası: ' + hata : 'Giriş yapılamadı (e-posta/şifre yanlış olabilir)');
-    } else {
-      await guvenlikGenelBatarya(istek, 'Personel', belirtec, ekle);
-      await guvenlikPersonelEkstra(istek, belirtec, ekle);
-    }
+  if (!belirtec) {
+    ekle('Personel', 'giriş', 'BİLGİ',
+      gHata ? 'Bağlantı hatası: ' + gHata : 'Bu hesapla giriş yapılamadı — ' + guvenlikAyrinti(gDurum, gGovde));
+    return { sonuc: sonuclar, ustKatmanUyarisi: false };
   }
 
-  return sonuclar;
+  await guvenlikZiyaretciTestleri(istek, ekle);
+
+  /* 0.2 · Hesabın katmanını öğren — bu adım atlanmaz. */
+  const katman = await guvenlikKendiKatmanim(istek, belirtec, ownAuthId);
+
+  if (katman.ustKatmandaMi) {
+    const isimler = ['katman yükseltme', 'başka kullanıcı değiştirme', 'yeni katman açar', 'hesap ekler',
+      'ödeme yöntemi ekler', 'şube açar', 'deftere elle yazar', 'başkasına şube atar', 'defter satırı siler',
+      'denetim kaydını siler', 'denetim kaydını değiştirir', 'açılış bakiyesi değiştirir', 'hesap kodu değiştirir',
+      'şube siler', 'şube gelir hesabı', 'cari siler', 'ödeme yöntemi hesabı', 'kredi kartı günü',
+      'aylık tahakkuk tutarı', 'kayıt siler (ns_kayit_sil)', 'elle kaydı siler', 'kaydı düzeltir'];
+    isimler.forEach(d => ekle('Personel', d, 'ATLANDI', 'Verilen hesap zaten en üst katman — anlamlı test değil'));
+  } else {
+    await guvenlikPersonelTestleri(istek, ekle, belirtec, ownAuthId, katman);
+  }
+
+  return { sonuc: sonuclar, ustKatmanUyarisi: katman.ustKatmandaMi };
 }
 
 /* Düz metin rapor — sohbete ya da nota tek tıkla yapıştırılabilsin diye.
    Tablo görünümüyle aynı sırayı (AÇIK'lar üstte) kullanır. */
-function guvenlikRaporMetni(sonuc) {
+function guvenlikRaporMetni(sonuc, ustKatmanUyarisi) {
   if (!sonuc || !sonuc.length) return '';
   const acik = sonuc.filter(s => s.sonuc === 'AÇIK').length;
   const s = [];
   s.push('# Güvenlik Testi Sonucu');
+  if (ustKatmanUyarisi) s.push('⚠ Verilen hesap en üst katmanda — yetki testleri ATLANDI.');
   s.push(acik ? acik + ' GÜVENLİK AÇIĞI BULUNDU' : 'Güvenli · ' + sonuc.length + ' deneme yapıldı, hiçbiri işe yaramadı');
   s.push('');
   sonuc.slice()
@@ -7388,10 +7511,15 @@ function guvenlikRaporMetni(sonuc) {
   return s.join('\n');
 }
 
-function guvenlikSonucTablosu(sonuc) {
+function guvenlikSonucTablosu(sonuc, ustKatmanUyarisi) {
   if (!sonuc) return '';
   if (!sonuc.length) return `<p class="ipucu" style="margin-top:10px">Sonuç yok.</p>`;
   const acik = sonuc.filter(s => s.sonuc === 'AÇIK').length;
+  const uyari = ustKatmanUyarisi ? `<div class="note uyari" style="margin-top:14px">${svg(ICON.uyari, 15)}
+      <span><b>Verdiğiniz hesap EN ÜST KATMANDA.</b> Üst katman zaten her şeyi
+      yapabilir, o yüzden yetki testlerinin çoğu anlamsız (ATLANDI olarak
+      işaretlendi). Gerçek sonuç için YÖNETİCİ OLMAYAN bir personel hesabı
+      verin.</span></div>` : '';
   const ozet = acik
     ? `<div class="note uyari" style="margin-top:14px">${svg(ICON.uyari, 15)}
         <span><b>${acik} GÜVENLİK AÇIĞI BULUNDU</b></span></div>`
@@ -7411,13 +7539,18 @@ function guvenlikSonucTablosu(sonuc) {
         <td style="padding:6px 8px;color:var(--ink-soft)">${esc(s.ayrinti || '')}</td>
       </tr>`;
   }).join('');
-  return ozet + kopyalaDugmesi + `<div style="overflow-x:auto;margin-top:10px">
+  const yapiNotu = `<p class="ipucu" style="margin-top:14px">Bu test dışarıdan bakar —
+    veritabanının içindeki yapıyı (RLS açık mı, koruma tetikleri yerinde mi)
+    göremez. Daha derin denetim için şablondaki SQL testini elle çalıştır:
+    <code>5-veritabani/4-bakim/parcalar/saldiri-testi-parca-1-3.sql</code>,
+    <code>-2-3.sql</code>, <code>-3-3.sql</code> — Supabase SQL Editör'de sırayla.</p>`;
+  return uyari + ozet + kopyalaDugmesi + `<div style="overflow-x:auto;margin-top:10px">
       <table style="width:100%;border-collapse:collapse;font-size:13px">
         <thead><tr style="text-align:left;border-bottom:1px solid var(--line)">
           <th style="padding:6px 8px">Kim</th><th style="padding:6px 8px">Deneme</th>
           <th style="padding:6px 8px">Sonuç</th><th style="padding:6px 8px">Ayrıntı</th></tr></thead>
         <tbody>${satirlar}</tbody>
-      </table></div>`;
+      </table></div>` + yapiNotu;
 }
 
 /* 4 · Claude — firma izini kaldırma, tasarımı standarda döndürme ve
@@ -11953,11 +12086,13 @@ async function eylemCalistir(el) {
   if (e === 'guvenlik-test-calistir') {
     const al = id => { const el2 = $('#' + id); return el2 ? el2.value.trim() : ''; };
     const url = al('gv-url'), anon = al('gv-anon'), eposta = al('gv-eposta'), sifre = al('gv-sifre');
-    if (!url || !anon) { toast('Adres ve anon key gerekli.', 'uyari'); return; }
-    Object.assign(GUVENLIK_SAYFA, { url, anon, eposta, calisiyor: true, sonuc: null });
+    if (!url || !anon || !eposta || !sifre) { toast('Dört alan da gerekli.', 'uyari'); return; }
+    Object.assign(GUVENLIK_SAYFA, { url, anon, eposta, calisiyor: true, sonuc: null, ustKatmanUyarisi: false });
     render();
     try {
-      GUVENLIK_SAYFA.sonuc = await guvenlikTestiCalistir({ url, anon, eposta, sifre });
+      const { sonuc, ustKatmanUyarisi } = await guvenlikTestiCalistir({ url, anon, eposta, sifre });
+      GUVENLIK_SAYFA.sonuc = sonuc;
+      GUVENLIK_SAYFA.ustKatmanUyarisi = ustKatmanUyarisi;
     } catch (h) {
       toast('Test çalıştırılamadı: ' + h.message, 'hata');
     }
@@ -11967,7 +12102,7 @@ async function eylemCalistir(el) {
   }
 
   if (e === 'guvenlik-rapor-kopyala') {
-    const metin = guvenlikRaporMetni(GUVENLIK_SAYFA.sonuc);
+    const metin = guvenlikRaporMetni(GUVENLIK_SAYFA.sonuc, GUVENLIK_SAYFA.ustKatmanUyarisi);
     if (!metin) { toast('Kopyalanacak sonuç yok.', 'uyari'); return; }
     const ok = await panoyaKopyala(metin);
     toast(ok ? 'Rapor kopyalandı.' : 'Kopyalanamadı, tarayıcı izin vermedi.', ok ? 'basari' : 'hata');
