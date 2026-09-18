@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.135.72
+- **Templateler'e "Güvenlik Testi" adımı eklendi.** Kurulum sihirbazında SQL adımından sonra yeni bir adım: şablonun saldırı testini (3 parça) kaydet/kopyala. Kurulumun parçası değil — herhangi bir müşteri projesinde istendiğinde elle çalıştırılan ayrı bir araç. Studio'nun kendi Supabase'inde `sql/20-sablon-guvenlik-testi.sql`'i çalıştırmak gerekiyor.
+
 ## v0.135.71
 - **SQL üreten iki prompta (Yetkilendirme ve ilk şema) "ara tablo" uyarısı eklendi.** Template'te göç 39'un aylarca sessizce çalışmadığı gerçek bir hata bulundu: Supabase SQL Editör çok ifadeli yapıştırmalarda bazen her ifadeyi ayrı çalıştırıyor, ikinci ifade ilk ifadenin açtığı ara tabloyu göremiyor. Artık Claude'a "ara tablo kullanıyorsan tek bir `do $$ ... $$` bloğuna al" diye söyleniyor.
 

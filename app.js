@@ -6844,7 +6844,7 @@ async function cekirdekAdiSor(kaynakId, tur) {
    bir template'in gerçek bir servise bağlı olması zaten istenmiyor. */
 const CEKIRDEK_KURULUM = { adim: 1, projeId: null };
 
-function cekirdekKurulumListesi() { return ['github', 'sql', 'claude']; }
+function cekirdekKurulumListesi() { return ['github', 'sql', 'guvenlik', 'claude']; }
 
 function cekirdekKurulumAdimBittiMi(k, p) {
   if (k === 'github') return !!p.repo;
@@ -6855,12 +6855,18 @@ function cekirdekKurulumAdimBittiMi(k, p) {
     const cekirdek = (p.palet || {}).cekirdek || {};
     return !!cekirdek.sqlLink || !!cekirdek.sqlMetinVar;
   }
+  /* Güvenlik testi de isteğe bağlı — kurulumun parçası değil, elle
+     istendiğinde çalıştırılan ayrı bir araç (bkz. cekirdekAdimGuvenlikGovde). */
+  if (k === 'guvenlik') {
+    const cekirdek = (p.palet || {}).cekirdek || {};
+    return !!cekirdek.guvenlikVar;
+  }
   if (k === 'claude')  return !!(p.palet || {}).cekirdekTemizlendi;
   return false;
 }
 
 function cekirdekKurulumEtiket(k) {
-  return { github: 'GitHub', sql: 'SQL', claude: 'Claude' }[k] || '';
+  return { github: 'GitHub', sql: 'SQL', guvenlik: 'Güvenlik', claude: 'Claude' }[k] || '';
 }
 
 function cekirdekKurulumAc(projeId) {
@@ -6912,6 +6918,7 @@ function cekirdekKurulumHtml(p, liste) {
   const k = liste[CEKIRDEK_KURULUM.adim - 1];
   const govde = k === 'github' ? baglantiAdimGithub(p)
     : k === 'sql' ? cekirdekAdimSqlGovde(p)
+    : k === 'guvenlik' ? cekirdekAdimGuvenlikGovde(p)
     : cekirdekAdimClaudeGovde(p);
 
   const geri = CEKIRDEK_KURULUM.adim > 1
@@ -7015,7 +7022,41 @@ function cekirdekAdimSqlGovde(p) {
     + (mevcutLink ? `<div class="kur-deger duz">${svg(ICON.tik, 13)} Link kayıtlı</div>` : '');
 }
 
-/* 3 · Claude — firma izini kaldırma, tasarımı standarda döndürme ve
+/* 3 · Güvenlik testi — template deposundaki saldırı-testi.sql, ziyaretçi
+   ve personel rolleriyle satır güvenliğini (RLS) yoklayan, veri bozmayan
+   bir test. Kurulumun (Bağlantılar ve temel) parçası DEĞİL — elle,
+   istenildiğinde herhangi bir müşteri projesinin Supabase'inde çalıştırılır.
+   Bu yüzden yalnız burada (Templateler > kurulum sihirbazı) duruyor; ayrı
+   bir proje bilgisine ihtiyacı yok, üç parça hep aynı, hangi Supabase'e
+   yapıştırıldığı önemli değil. Kaydet + Kopyala aynı ekranda: kopyalanan
+   metin DB'den okunuyor (bkz. sablon-sql-metin-kopyala'daki kalıp), yani
+   sayfa kapanıp açılsa da kopyalama çalışır. */
+function cekirdekAdimGuvenlikGovde(p) {
+  const pl = p.palet || {};
+  const cekirdek = pl.cekirdek || {};
+  const varMi = !!cekirdek.guvenlikVar;
+  const parcaKutusu = (no) => `
+      <label class="field" style="margin-top:${no === 1 ? 0 : 12}px"><span>Parça ${no}</span>
+        <textarea id="ck-guvenlik-metin-${no}" rows="6" spellcheck="false"
+          placeholder="${no}. parçayı buraya yapıştır…"></textarea></label>
+      <div class="kur-dug">
+        <button class="sayfa-dug ikincil" type="button" data-eylem="cekirdek-guvenlik-metin-kaydet"
+                data-parca="${no}" data-proje="${p.id}">${svg(ICON.check, 15)} Kaydet</button>
+        <button class="sayfa-dug ikincil" type="button" data-eylem="cekirdek-guvenlik-metin-kopyala"
+                data-parca="${no}" data-proje="${p.id}">${svg(ICON.kopya, 15)} Kopyala</button>
+      </div>`;
+  return shBaslikServis('supabase', 'Güvenlik Testi',
+      'Ziyaretçi ve personel rolleriyle satır güvenliğini yoklayan, veri bozmayan bir test — kurulumun parçası değil, istendiğinde herhangi bir müşteri projesinde çalıştırılır.')
+    + parcaKutusu(1) + parcaKutusu(2) + parcaKutusu(3)
+    + (varMi ? `<div class="kur-deger duz">${svg(ICON.tik, 13)} Test kayıtlı</div>` : '')
+    + `<div class="fbd-not" style="margin-top:14px">${svg(ICON.info, 13)}
+        <span>Test edeceğin projenin Supabase <b>SQL Editor</b>'ünde sırayla
+        çalıştır: <b>1)</b> Run — "Success" demesi yeter. <b>2)</b> Run — sonuç
+        tablosuna bak, <b>AÇIK</b> yazan satır varsa güvenlik açığı demektir.
+        <b>3)</b> bakman bitince Run — sonuç tablosu silinir.</span></div>`;
+}
+
+/* 4 · Claude — firma izini kaldırma, tasarımı standarda döndürme ve
    gerçek bağlantıları koparma promptu (bkz. PROMPT.cekirdekTemizle). */
 function cekirdekAdimClaudeGovde(p) {
   const pl    = p.palet || {};
@@ -11513,6 +11554,34 @@ async function eylemCalistir(el) {
     try { parcalar = await DB.sablonSqlMetniOku(pl.kopyaKaynagi); }
     catch (h) { toast('Okunamadı: ' + h.message, 'hata'); return; }
     sqlMetniGocBildir(parcalar);
+    return;
+  }
+
+  if (e === 'cekirdek-guvenlik-metin-kaydet') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const parca = Number(el.dataset.parca) || 1;
+    const alan = document.getElementById('ck-guvenlik-metin-' + parca);
+    const metin = alan ? alan.value.trim() : '';
+    if (!metin) { toast('Önce ' + parca + '. parçayı yapıştır.', 'uyari'); return; }
+    const pl = pr.palet || {};
+    const cekirdek = Object.assign({}, pl.cekirdek || {}, { guvenlikVar: true });
+    return isYap(() => DB.sablonGuvenlikMetniYaz(pr.id, parca, metin)
+      .then(() => DB.paletKaydet(pr.id, Object.assign({}, pl, { cekirdek }))),
+      parca + '. parça kaydedildi.');
+  }
+
+  if (e === 'cekirdek-guvenlik-metin-kopyala') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const parca = Number(el.dataset.parca) || 1;
+    let parcalar;
+    try { parcalar = await DB.sablonGuvenlikMetniOku(pr.id); }
+    catch (h) { toast('Okunamadı: ' + h.message, 'hata'); return; }
+    const metin = parca === 2 ? parcalar.guvenlik2 : parca === 3 ? parcalar.guvenlik3 : parcalar.guvenlik1;
+    if (!metin) { toast(parca + '. parça henüz kaydedilmemiş.', 'uyari'); return; }
+    const ok = await panoyaKopyala(metin);
+    toast(ok ? parca + '. parça kopyalandı.' : 'Kopyalanamadı, tarayıcı izin vermedi.', ok ? 'basari' : 'hata');
     return;
   }
 

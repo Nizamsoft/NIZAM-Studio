@@ -1247,6 +1247,31 @@ const DB = {
     if (error) throw new Error(veriHatasi(error));
   },
 
+  /* Güvenlik testi SQL'i — kurulum SQL'iyle aynı tabloda (sablon_sql_metinleri),
+     ayrı üç kolonda duruyor (bkz. sql/20-sablon-guvenlik-testi.sql). Kurulumla
+     ilgisi yok, istendiğinde herhangi bir müşteri projesinde elle çalıştırılan
+     ayrı bir araç — proje_id yalnız "hangi template'e ait" bilgisini taşıyor. */
+  async sablonGuvenlikMetniOku(projeId) {
+    if (!AUTH.db || !projeId) return { guvenlik1: '', guvenlik2: '', guvenlik3: '' };
+    const { data, error } = await AUTH.db
+      .from('sablon_sql_metinleri').select('guvenlik1,guvenlik2,guvenlik3').eq('proje_id', projeId).maybeSingle();
+    if (error) throw new Error(veriHatasi(error));
+    return {
+      guvenlik1: (data && data.guvenlik1) || '',
+      guvenlik2: (data && data.guvenlik2) || '',
+      guvenlik3: (data && data.guvenlik3) || '',
+    };
+  },
+
+  async sablonGuvenlikMetniYaz(projeId, parca, metin) {
+    yazmaKontrol();
+    const kolon = parca === 2 ? 'guvenlik2' : parca === 3 ? 'guvenlik3' : 'guvenlik1';
+    const satir = { proje_id: projeId };
+    satir[kolon] = metin;
+    const { error } = await AUTH.db.from('sablon_sql_metinleri').upsert(satir);
+    if (error) throw new Error(veriHatasi(error));
+  },
+
   async fotoSil() {
     if (!AUTH.db || !AUTH.user) throw new Error('Oturum yok.');
     const sonuc = await AUTH.db.from('profiles')
