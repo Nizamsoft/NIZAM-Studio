@@ -7626,7 +7626,11 @@ function guvenlikMetinAlaniSatirdan(satir) {
    yüzden çağıran "ölçülemedi" yazar, "ekler" YAZMAZ (bkz. guvenlikBosGovdeIleEkle). */
 function guvenlikEklemeKesinReddedildiMi(mesaj) {
   const m = (mesaj || '').toLocaleLowerCase('tr');
-  return m.indexOf('row-level security') >= 0 || m.indexOf('yetki') >= 0 || m.indexOf('yalnız') >= 0;
+  /* "permission denied for table/function" — GRANT düzeyinde ret (rol o
+     tabloda/fonksiyonda hiç yetkiye sahip değil). RLS'ten önce, ondan
+     bağımsız bir engel — o da en az "row-level security" kadar kesin. */
+  return m.indexOf('row-level security') >= 0 || m.indexOf('yetki') >= 0 || m.indexOf('yalnız') >= 0
+    || m.indexOf('permission denied') >= 0;
 }
 
 /* Ekleme testi — ŞEMA GEREKMEZ: BOŞ gövde (`{}`) gönderilir, hata metni

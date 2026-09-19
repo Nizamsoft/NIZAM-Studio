@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.137.1
+- **Güvenlik Testi: "permission denied for table/function" artık KESİN ret sayılıyor.** Canlı testte görüldü — anon'un hiç GRANT'i olmayan bir tabloda ekleme denemesi bu mesajı veriyordu ve "ölçülemedi" (belirsiz) diye işaretleniyordu, oysa GRANT düzeyinde ret RLS reddi kadar kesindir. Artık "ekleyemez"/KAPALI yazıyor.
+
 ## v0.137.0
 - **Güvenlik Testi — 2. aşama (B + C).** Yapısal (B) ve programa özel (C) denetimler eklendi. İkisi de Supabase erişim jetonu ister; o jeton tarayıcıya hiç inmiyor — Studio'nun kendi Supabase'inde tek bir Edge Function'ın (`guvenlik-sql`) gizli değişkeni olarak duruyor, şifreli saklama katmanı yok (jeton kullanıcı başına değil, Nizam'ın kendi hesabının tek değeri). B'nin SQL'i sabit (RLS kapalı tablo, "herkese serbest" kural, ziyaretçi fonksiyon/tablo/dizi izni, güvensiz görünüm, arama yolu sabitlenmemiş fonksiyon — 7 denetim); C'nin SQL parçaları guvenlik.json → sql_testi.parcalar'dan, aynı Pages adresinden jetonsuz indirilip sırayla, ayrı ayrı çalıştırılıyor, sonucu okuyup temizliyor. Ayarlar > Güvenlik Testi'ne kurulum kartı eklendi: fonksiyon kodunu kopyala, Studio'nun Supabase'ine bir kere deploy et, NS_SUPABASE_JETON'u Secrets'a ekle — sonrası her testte otomatik. Fonksiyon kurulu değilse testler sessizce atlanır, hata gibi gösterilmez.
 
