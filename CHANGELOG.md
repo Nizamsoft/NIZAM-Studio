@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü
 
+## v0.139.0
+- **Yeni aşama: Güvenlik kontrolü (9).** Yetkilendirme ile Final'in arasına girdi; Final artık bu aşama temiz çıkmadan açılmıyor. Gerekçe: "kuruldu" demek bir iddiadır, açık olup olmadığı ancak saldırarak bilinir. Ayarlar > Güvenlik Testi ile aynı motoru kullanıyor (dış, yapısal, programa özel ve sunucu işlevi denetimleri), tek farkı Supabase adresi ve anon key'in projeden gelmesi — Bağlantılar ve temel'de zaten girilmişti, bir daha sorulmuyor. Kullanıcı yalnız test hesabını ve guvenlik.json adresini yazıyor.
+- Ölçümün özeti (deneme sayısı, açık sayısı, tarih) projeye kaydediliyor, sayfa yenilenince kaybolmuyor. "Tamamlandı" düğmesi yalnız sıfır açıkken açılıyor; bir açık bulunursa aşama kendiliğinden geri alınıyor.
+- Üst katman hesabıyla yapılan ölçüm geçerli sayılmıyor ve kaydedilmiyor — yetki haritası atlandığı için "sıfır açık" yanıltıcı olurdu.
+- Jeton ve `guvenlik-sql` köprüsünün nasıl kurulacağı aşamanın içinde adım adım anlatılıyor; fonksiyon kodunu kopyalama düğmesi burada da var. Kod güncellendiğinde yeniden dağıtmak gerektiği ayrıca yazılı.
+- Sonuç tablosundaki "raporu kopyala" düğmesi artık hangi ekrandan çağrıldığını biliyor — proje durağında durağın kendi sonucunu kopyalıyor.
+- Final ve Geliştirme aşamalarının numaraları 10 ve 11 oldu.
+
 ## v0.138.1
 - **C katmanında sonuç okuma düzeltildi.** guvenlik.json'un SQL'i kendi hükmünü (sonuc/kim/deneme/ayrıntı) zaten veriyorsa artık olduğu gibi kullanılıyor — önceden her satır zorla AÇIK/KAPALI'ya sıkıştırılıp tüm satır JSON olarak ayrıntıya dökülüyordu, kaynağın kendi BİLGİ/ATLANDI ayrımı kayboluyor ve okunması zor bir JSON dampı gösteriliyordu. Sütun adı vermeyen programlar için eski (acik_degeri arama) yöntem yedek olarak duruyor.
 

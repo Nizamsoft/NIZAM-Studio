@@ -1084,9 +1084,15 @@ const DURAKLAR = {
   yetki:       { no: 8, ad: 'Yetkilendirme',         ciz: yetkiSayfasi,
                  renk: '#a15fc4', ikon: 'gGuvenlik', resim: 'yetki',
                  aciklama: 'Her katman ne yapabilir?' },
-  final:       { no: 9, ad: 'Final',                 ciz: finalSayfasi,
+  /* Yetkilendirme kuralları yazdı — burada ÖLÇÜLÜYOR. Ayrı bir durak olması
+     bilerek: "kuruldu" demek bir iddiadır, açık olup olmadığını ancak
+     saldırarak anlarsın. Final bu ölçüm temiz çıkmadan açılmıyor. */
+  guvenlik:    { no: 9, ad: 'Güvenlik kontrolü',    ciz: guvenlikDurakSayfasi,
+                 renk: '#3f9d7a', ikon: 'gGuvenlik', resim: 'yetki',
+                 aciklama: 'Kurulan kurallar gerçekten tutuyor mu?' },
+  final:       { no: 10, ad: 'Final',                ciz: finalSayfasi,
                  resim: 'final', aciklama: 'Son kontroller ve yayına hazırlık.' },
-  guncelleme:  { no: 10, ad: 'Geliştirme',           ciz: guncellemeSayfasi,
+  guncelleme:  { no: 11, ad: 'Geliştirme',           ciz: guncellemeSayfasi,
                  resim: 'gelistirme', aciklama: 'Yayın sonrası yeni özellikler.' },
 };
 
@@ -5197,7 +5203,7 @@ function yetkiSayfasi(p, d) {
   return `<div class="fb-govde">`
     + adimBasligi(p, d, `${tamam ? adimlar.length : biten}/${adimlar.length}`)
     + balon('Katmanlar ve kullanıcı ekleme zaten kurulu — şimdiye kadar her katman her şeyi yapabiliyordu.',
-        'Her katmanın ne yapabileceğini yaz, kodu Claude\'a ver — Final burada açılır.')
+        'Her katmanın ne yapabileceğini yaz, kodu Claude\'a ver — sonra Güvenlik kontrolü ölçecek.')
     + fbKart('#a15fc4', ICON.gGuvenlik, 'Katmanlar', null, p.id,
         roller.length
           ? `<div>${roller.slice().reverse().map(ad => `<span style="display:inline-flex;
@@ -5215,6 +5221,150 @@ function yetkiSayfasi(p, d) {
         : `<button class="sayfa-dug ikincil" type="button" data-eylem="yetki-tamamlandi"
                     data-proje="${p.id}" ${biten === adimlar.length ? '' : 'disabled'}>
              ${svg(ICON.check, 15)} Yetkilendirme tamamlandı</button>`) : '')
+    + `</div>`;
+}
+
+/* ---------- 9 · Güvenlik kontrolü ----------
+   Ayarlar > Güvenlik Testi ile AYNI motor (guvenlikTestiCalistir). Tek fark:
+   Supabase adresi ve anon key projeden geliyor — "Bağlantılar ve temel"de
+   zaten girilmişti, bir daha sorulmuyor. Kullanıcı yalnız test hesabını
+   yazıyor.
+
+   Bu durak bilerek kendi kendini onaylatmıyor: ölçüm sonucu palete yazılıyor
+   (guvenlikOlcum) ve "tamamlandı" düğmesi ancak SIFIR AÇIK varken açılıyor.
+   "Kuruldu" demek bir iddiadır; açık olup olmadığı ancak saldırarak bilinir. */
+
+/* Ekranda yaşayan, kaydedilmeyen durum — proje başına. Sonucun kalıcı özeti
+   palete yazılıyor, tam tablo yalnız o oturumda duruyor. */
+const DURAK_GUVENLIK = {};
+
+function durakGuvenlikDurum(projeId) {
+  if (!DURAK_GUVENLIK[projeId]) {
+    DURAK_GUVENLIK[projeId] = { calisiyor: false, sonuc: null, harita: null,
+      ustKatmanUyarisi: false, kalintilar: [], tabloKaynagi: '' };
+  }
+  return DURAK_GUVENLIK[projeId];
+}
+
+/* anon key gizli bir şey değil (tarayıcıya zaten iniyor) ama ekranda tam
+   görünmesinin bir faydası da yok — ortasını kısaltıyoruz. */
+function anahtarKisalt(a) {
+  const x = String(a || '').trim();
+  return x.length > 22 ? x.slice(0, 12) + '…' + x.slice(-6) : x;
+}
+
+function guvenlikBaglantiKarti(p, pl) {
+  const url = String(pl.supabaseUrl || '').trim();
+  const anon = String(pl.supabaseAnon || '').trim();
+  if (!url || !anon) {
+    return fbKart('#3f9d7a', ICON.uyari, 'Bağlantı eksik', null, p.id, `
+      <p class="fb-neden">Bu projenin Supabase adresi ya da anon key'i kayıtlı
+        değil. <b>Bağlantılar ve temel</b> durağına dönüp gir — test onlarsız
+        başlamaz.</p>`);
+  }
+  return fbKart('#3f9d7a', ICON.gGuvenlik, 'Bağlantı', null, p.id, `
+    <p class="fb-neden">Bağlantılar ve temel'den geldi, tekrar girmene gerek yok.</p>
+    <div class="kur-deger duz">${esc(url)}</div>
+    <div class="kur-deger duz" style="margin-top:6px">${esc(anahtarKisalt(anon))}</div>`);
+}
+
+/* Jeton ve guvenlik-sql fonksiyonu HESAP bazında bir kere kurulur; her
+   projede tekrar kurulmaz. Burada yalnız hatırlatılıyor, kod kopyalama
+   düğmesi Ayarlar'dakiyle aynı eylemi kullanıyor. */
+function guvenlikHazirlikKarti(p) {
+  return fbKart('#3f9d7a', ICON.info, 'Bir kere kurulur · jeton ve köprü', null, p.id, `
+    <p class="fb-neden">Dış denetimler (A) hiçbir şey istemez, hemen çalışır.
+      Yapısal (B), programa özel (C) ve sunucu işlevi (Ç) denetimleri ise
+      veritabanının içine bakabilmek için bir köprü ister. <b>Bir kere kur,
+      bütün projelerde geçerli</b> — kuruluysa bu kartı geç.</p>
+    <p class="ipucu"><b>1 · Jetonu al.</b> Test edilecek projelerin bulunduğu
+      Supabase <b>hesabından</b> (projeden değil) →
+      <code>supabase.com/dashboard/account/tokens</code> → Generate new token →
+      <b>Create legacy token</b>. Değer <code>sbp_</code> ile başlar.</p>
+    <p class="ipucu"><b>2 · Köprüyü kur.</b> Studio'nun kendi Supabase'inde
+      Edge Functions → New Function, adı <code>guvenlik-sql</code>, aşağıdaki
+      kodu yapıştır, deploy et. Sonra o fonksiyonun Settings → Secrets bölümüne
+      <code>NS_SUPABASE_JETON</code> adıyla jetonu ekle.</p>
+    <p class="ipucu"><b>3 · Kod güncellenince.</b> Studio yeni sürüm çıkarınca
+      aynı fonksiyonun <b>Code</b> sekmesine kodu yeniden yapıştırıp deploy et.
+      Secrets'a dokunma. Bunu atlarsan yeni denetimler sessizce çalışmaz.</p>
+    <div class="kur-dug">
+      <button class="sayfa-dug ikincil" type="button" data-eylem="guvenlik-sql-kopyala">
+        ${svg(ICON.kopya, 15)} Fonksiyon kodunu kopyala</button>
+    </div>`);
+}
+
+function guvenlikTestKarti(p, pl, g) {
+  const hazir = !!String(pl.supabaseUrl || '').trim() && !!String(pl.supabaseAnon || '').trim();
+  const depo = String(pl.guvenlikDepoAdresi || p.repo || '').trim();
+  return fbKart('#3f9d7a', ICON.kisi, 'Test hesabı', null, p.id, `
+    <p class="fb-neden">Bu projedeki bir hesabın e-postası ve şifresi. <b>Yönetici
+      olmayan</b> bir hesap ver — üst katman zaten her şeyi yapabilir, onunla
+      ölçüm anlamsız olur. Şifre hiçbir yere kaydedilmiyor.</p>
+    <label class="field"><span>E-posta</span>
+      <input type="text" id="gvd-eposta-${p.id}" value="${esc(g.eposta || '')}"
+             placeholder="personel@firma.com" autocomplete="off"
+             spellcheck="false" autocapitalize="off"></label>
+    <label class="field" style="margin-top:10px"><span>Şifre</span>
+      <input type="password" id="gvd-sifre-${p.id}" placeholder="••••••••"
+             autocomplete="off"></label>
+    <label class="field" style="margin-top:10px"><span>guvenlik.json adresi</span>
+      <input type="text" id="gvd-depo-${p.id}" value="${esc(depo)}"
+             placeholder="github.com/sahip/depo ya da https://.../guvenlik.json"
+             autocomplete="off" spellcheck="false" autocapitalize="off"></label>
+    <p class="ipucu">Depo gizliyse github.com adresi okunamaz — dosyanın yayında
+      olduğu doğrudan adresi yaz (ör. GitHub Pages). Programa özel denetimler
+      bu dosyadan geliyor.</p>
+    <div class="kur-dug">
+      <button class="sayfa-dug" type="button" data-eylem="guvenlik-durak-test"
+              data-proje="${p.id}" ${g.calisiyor || !hazir ? 'disabled' : ''}>
+        ${svg(ICON.gGuvenlik, 15)} ${g.calisiyor ? 'Test ediliyor…' : 'Test Et'}
+      </button>
+    </div>`);
+}
+
+function guvenlikOlcumKarti(p, pl, g) {
+  const o = pl.guvenlikOlcum;
+  if (!o || g.sonuc) return '';
+  const t = new Date(o.tarih);
+  const gun = isNaN(t) ? '' : t.toLocaleDateString('tr-TR') + ' ' + t.toLocaleTimeString('tr-TR').slice(0, 5);
+  return fbKart('#3f9d7a', ICON.check, 'Son ölçüm', null, p.id, `
+    <div class="kur-deger duz">${o.acik
+      ? `${svg(ICON.uyari, 13)} ${o.acik} açık · ${o.toplam} deneme`
+      : `${svg(ICON.tik, 13)} sıfır açık · ${o.toplam} deneme`}</div>
+    ${gun ? `<p class="ipucu" style="margin-top:8px">${esc(gun)}</p>` : ''}
+    <p class="ipucu">Kodda ya da SQL'de bir değişiklik yaptıysan yeniden ölç —
+      bu satır o anki hâli gösterir.</p>`);
+}
+
+function guvenlikDurakSayfasi(p, d) {
+  const pl = p.palet || {};
+  const g = durakGuvenlikDurum(p.id);
+  const o = pl.guvenlikOlcum;
+  const olculdu = !!o;
+  const temiz = olculdu && !o.acik;
+  const tamam = !!pl.guvenlikTamamlandi;
+  const adimlar = [olculdu, temiz];
+  const biten = adimlar.filter(Boolean).length;
+
+  return `<div class="fb-govde">`
+    + adimBasligi(p, d, `${tamam ? adimlar.length : biten}/${adimlar.length}`)
+    + balon('Yetkilendirme kuralları yazdı — ama yazılmış olması tuttuğu anlamına gelmiyor.',
+        'Buradan saldırıyoruz: ziyaretçi, personel ve sunucu işlevi. Sıfır açık çıkmadan Final açılmaz.')
+    + guvenlikBaglantiKarti(p, pl)
+    + guvenlikHazirlikKarti(p)
+    + guvenlikTestKarti(p, pl, g)
+    + guvenlikOlcumKarti(p, pl, g)
+    + guvenlikSonucTablosu(g.sonuc, g.ustKatmanUyarisi, g.kalintilar, g.harita, g.tabloKaynagi, p.id)
+    + (olculdu && !temiz ? `<div class="note uyari" style="margin-top:14px">${svg(ICON.uyari, 15)}
+        <span><b>Açık varken bu aşama kapanmaz.</b> Bulguları Claude'a ver,
+        düzeltmeyi <b>yeni numaralı bir göç</b> olarak yazsın — yazılmış SQL
+        düzeltilmez. Sonra burada yeniden ölç.</span></div>` : '')
+    + (AUTH.yonetici ? (tamam
+        ? `<div class="kur-deger duz">${svg(ICON.tik, 13)} Bu aşama tamamlandı</div>`
+        : `<button class="sayfa-dug ikincil" type="button" data-eylem="guvenlik-durak-tamamlandi"
+                    data-proje="${p.id}" ${temiz ? '' : 'disabled'}>
+             ${svg(ICON.check, 15)} Güvenlik kontrolü tamamlandı</button>`) : '')
     + `</div>`;
 }
 
@@ -5500,6 +5650,17 @@ function projeDuraklari(p) {
         : !pl0.yetkiKodTamamlandi
           ? 'Her katman ne yapabilecek — promptu Claude\'a ver.'
           : 'Son onayı bekliyor.',
+    },
+    {
+      ad: 'Güvenlik kontrolü',
+      bitti: !!pl0.guvenlikTamamlandi,
+      ozet: pl0.guvenlikTamamlandi
+        ? 'Tamamlandı.'
+        : !pl0.guvenlikOlcum
+          ? 'Kurallar gerçekten tutuyor mu — ölç.'
+          : pl0.guvenlikOlcum.acik
+            ? pl0.guvenlikOlcum.acik + ' açık bulundu — kapatılmadan Final açılmaz.'
+            : pl0.guvenlikOlcum.toplam + ' deneme, sıfır açık — onayı bekliyor.',
     },
     {
       ad: 'Final',
@@ -8227,7 +8388,7 @@ function guvenlikRaporMetni(sonuc, ustKatmanUyarisi, kalintilar, harita, tabloKa
   return s.join('\n');
 }
 
-function guvenlikSonucTablosu(sonuc, ustKatmanUyarisi, kalintilar, harita, tabloKaynagi) {
+function guvenlikSonucTablosu(sonuc, ustKatmanUyarisi, kalintilar, harita, tabloKaynagi, projeId) {
   if (!sonuc) return '';
   if (!sonuc.length) return `<p class="ipucu" style="margin-top:10px">Sonuç yok.</p>`;
   const acik = sonuc.filter(s => s.sonuc === 'AÇIK').length;
@@ -8252,7 +8413,8 @@ function guvenlikSonucTablosu(sonuc, ustKatmanUyarisi, kalintilar, harita, tablo
       Supabase SQL Editör'de çalıştırıp temizle:<br>
       ${kalintilar.map(k => `<code>${esc(k)}</code>`).join('<br>')}</span></div>` : '';
   const kopyalaDugmesi = `<div class="kur-dug" style="margin-top:10px">
-      <button class="sayfa-dug ikincil" type="button" data-eylem="guvenlik-rapor-kopyala">
+      <button class="sayfa-dug ikincil" type="button" data-eylem="guvenlik-rapor-kopyala"
+              ${projeId ? `data-proje="${esc(projeId)}"` : ''}>
         ${svg(ICON.kopya, 15)} Raporu kopyala</button>
     </div>`;
   const oncelik = { 'AÇIK': 0, 'BİLGİ': 1, 'KAPALI': 2, 'SERBEST': 2, 'ATLANDI': 3 };
@@ -11667,7 +11829,7 @@ async function eylemCalistir(el) {
     if (!rolListesi(pl.roller).length || !pl.yetkiKodTamamlandi) return;
     if (!await onaySor({
       baslik: 'Yetkilendirme tamamlandı mı?',
-      mesaj: 'Kısıtlamalar koda işlendiğinde onayla — Final açılacak.',
+      mesaj: 'Kısıtlamalar koda işlendiğinde onayla — Güvenlik kontrolü açılacak.',
       buton: 'Eminim',
     })) return;
     return isYap(() => DB.paletKaydet(pr.id,
@@ -12844,9 +13006,75 @@ async function eylemCalistir(el) {
     return;
   }
 
+  /* Güvenlik kontrolü durağı — Ayarlar'daki testin aynısı, bağlantı
+     projeden. Sonucun özeti palete yazılıyor ki sayfa yenilenince de
+     "ölçüldü mü, temiz mi" bilgisi kaybolmasın. */
+  if (e === 'guvenlik-durak-test') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const pl = pr.palet || {};
+    const url = String(pl.supabaseUrl || '').trim();
+    const anon = String(pl.supabaseAnon || '').trim();
+    if (!url || !anon) { toast('Supabase adresi ve anon key eksik.', 'uyari'); return; }
+    const al = son => { const x = $('#gvd-' + son + '-' + pr.id); return x ? x.value.trim() : ''; };
+    const eposta = al('eposta'), sifre = al('sifre'), depo = al('depo');
+    if (!eposta || !sifre) { toast('E-posta ve şifre gerekli.', 'uyari'); return; }
+
+    const g = durakGuvenlikDurum(pr.id);
+    Object.assign(g, { eposta, calisiyor: true, sonuc: null, harita: null,
+      ustKatmanUyarisi: false, kalintilar: [], tabloKaynagi: '' });
+    render();
+    try {
+      const r = await guvenlikTestiCalistir({ url, anon, eposta, sifre, depo });
+      g.sonuc = r.sonuc;
+      g.harita = r.harita;
+      g.ustKatmanUyarisi = r.ustKatmanUyarisi;
+      g.kalintilar = r.kalintilar || [];
+      g.tabloKaynagi = r.tabloKaynagi || '';
+      const toplam = (r.sonuc || []).length;
+      const acik = (r.sonuc || []).filter(x => x.sonuc === 'AÇIK').length;
+      /* Üst katman hesabıyla yapılan ölçüm geçerli sayılmaz — yetki haritası
+         atlanıyor, "sıfır açık" yanıltıcı olur. Ölçüm kaydedilmiyor. */
+      if (r.ustKatmanUyarisi) {
+        toast('Üst katman hesabıyla ölçüm geçerli değil — personel hesabı ver.', 'uyari');
+      } else {
+        await DB.paletKaydet(pr.id, Object.assign({}, pr.palet || {},
+          { guvenlikOlcum: { tarih: Date.now(), toplam, acik },
+            guvenlikDepoAdresi: depo },
+          acik ? { guvenlikTamamlandi: false } : {}));
+      }
+    } catch (h) {
+      toast('Test çalıştırılamadı: ' + h.message, 'hata');
+    }
+    g.calisiyor = false;
+    render();
+    return;
+  }
+
+  if (e === 'guvenlik-durak-tamamlandi') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const pl = pr.palet || {};
+    if (pl.guvenlikTamamlandi) {
+      return isYap(() => DB.paletKaydet(pr.id,
+        Object.assign({}, pl, { guvenlikTamamlandi: false })), 'İşaret kaldırıldı.');
+    }
+    if (!pl.guvenlikOlcum || pl.guvenlikOlcum.acik) return;
+    if (!await onaySor({
+      baslik: 'Güvenlik kontrolü tamamlandı mı?',
+      mesaj: `Son ölçüm: ${pl.guvenlikOlcum.toplam} deneme, sıfır açık. Onaylarsan Final açılacak.`,
+      buton: 'Eminim',
+    })) return;
+    return isYap(() => DB.paletKaydet(pr.id,
+      Object.assign({}, pl, { guvenlikTamamlandi: true })), 'Güvenlik kontrolü tamamlandı.');
+  }
+
   if (e === 'guvenlik-rapor-kopyala') {
-    const metin = guvenlikRaporMetni(GUVENLIK_SAYFA.sonuc, GUVENLIK_SAYFA.ustKatmanUyarisi, GUVENLIK_SAYFA.kalintilar,
-      GUVENLIK_SAYFA.harita, GUVENLIK_SAYFA.tabloKaynagi);
+    /* Aynı tablo iki yerde çiziliyor: Ayarlar > Güvenlik Testi ve proje
+       durağı. data-proje varsa durağın kendi sonucu kopyalanır. */
+    const kaynak = el.dataset.proje ? durakGuvenlikDurum(el.dataset.proje) : GUVENLIK_SAYFA;
+    const metin = guvenlikRaporMetni(kaynak.sonuc, kaynak.ustKatmanUyarisi, kaynak.kalintilar,
+      kaynak.harita, kaynak.tabloKaynagi);
     if (!metin) { toast('Kopyalanacak sonuç yok.', 'uyari'); return; }
     const ok = await panoyaKopyala(metin);
     toast(ok ? 'Rapor kopyalandı.' : 'Kopyalanamadı, tarayıcı izin vermedi.', ok ? 'basari' : 'hata');
