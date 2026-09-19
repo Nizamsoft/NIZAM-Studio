@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.136.2
+- **Güvenlik Testi: tablo listesi artık üç kaynaktan.** Supabase'in yeni anahtar düzeninde OpenAPI şema keşfi (yayınlanabilir anahtarla) 401 "Secret API key required" dönebiliyor — bu artık hata gösterilmeden sessizce yedek kaynağa geçiyor: programın deposundaki `guvenlik.json` → `tablolar.liste`. Ayarlar > Güvenlik Testi'ne opsiyonel bir "GitHub deposu" alanı eklendi. guvenlik.json'dan gelen liste yalnız tablo adı içerdiği için (sütun şeması yok) o modda ekleme/değiştirme/silme testleri "ölçülemedi" olarak işaretleniyor, yanlış KAPALI okunmuyor; okuma testleri (A2, D'nin "okur" sorusu) her koşulda çalışıyor. Üçü de bulunamazsa "tablo listesi bulunamadı" tek bir bilgi satırı olarak gösteriliyor — bulgu değil, eksik ölçüm.
+
 ## v0.136.1
 - **Güvenlik Testi'nde A4 ve A7 düzeltildi.** "Fonksiyon çağırma" artık hiçbir şey çalıştırmıyor — A1'de zaten çekilen anon (oturumsuz) şema belgesine bakıp ziyaretçinin görebildiği /rpc/ yollarını doğrudan sayıyor (PostgREST bir rolün belgesinde yalnız o rolün erişebildiklerini listeler). "Kapanmış oturum" testi tamamen kaldırıldı — Supabase'in erişim belirteci durum bilgisiz (JWT) olduğu için çıkış yapmak onu geçersiz kılmıyordu, bu her zaman yanlış alarm veriyordu. Yerine "belirteç ömrü" testi geldi: giriş cevabındaki JWT'nin exp/iat farkına bakıyor — 1 saat ve altı KAPALI, 1-24 saat BİLGİ, 24 saatten uzunsa AÇIK (çalınan bir belirteç günlerce geçerli kalır uyarısıyla).
 

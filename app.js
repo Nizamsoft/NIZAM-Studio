@@ -716,6 +716,19 @@ const VIEWS = {
         </div>
       </div>
 
+      <div class="section">
+        <span class="label">GitHub deposu (opsiyonel)</span>
+        <div class="card" style="padding:14px">
+          <p class="ipucu" style="margin:0 0 10px">Tablo listesi önce otomatik keşfedilir; olmazsa
+            programın deposundaki <code>guvenlik.json</code>'dan okunur. Depo adresi yalnız bu yedek
+            için gerekli — public bir depo yeterli.</p>
+          <label class="field"><span>Depo adresi</span>
+            <input type="text" id="gv-depo" value="${esc(g.depo)}"
+                   placeholder="github.com/.../..." autocomplete="off"
+                   spellcheck="false" autocapitalize="off"></label>
+        </div>
+      </div>
+
       <div class="kur-dug">
         <button class="sayfa-dug" type="button" data-eylem="guvenlik-test-calistir"
                 ${g.calisiyor ? 'disabled' : ''}>
@@ -723,7 +736,7 @@ const VIEWS = {
         </button>
       </div>
 
-      ${guvenlikSonucTablosu(g.sonuc, g.ustKatmanUyarisi, g.kalintilar, g.harita, g.semaHatasi)}
+      ${guvenlikSonucTablosu(g.sonuc, g.ustKatmanUyarisi, g.kalintilar, g.harita, g.tabloKaynagi)}
     `;
   },
 
@@ -7141,7 +7154,7 @@ function cekirdekAdimSqlGovde(p) {
    jetonudur (bütün projelerde SQL çalıştırır); o da AŞAMA 2'de tarayıcıya
    hiç inmeyecek, tek bir Edge Function'ın gizli değişkeni olarak duracak. */
 const GUVENLIK_SAYFA = { url: '', anon: '', eposta: '', calisiyor: false,
-  sonuc: null, harita: null, ustKatmanUyarisi: false, kalintilar: [], semaHatasi: '' };
+  sonuc: null, harita: null, ustKatmanUyarisi: false, kalintilar: [], tabloKaynagi: '', depo: '' };
 
 function guvenlikUuid() {
   if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
@@ -7197,6 +7210,42 @@ async function guvenlikSemaKesfet(istek, belirtec) {
     return { hata: hata || ('HTTP ' + durum), tablolar: [], semalar: {} };
   }
   return { tablolar: Object.keys(govde.definitions), semalar: govde.definitions };
+}
+
+/* guvenlik.json'u programın GitHub deposunun kökünden okur — yalnız
+   tablolar.liste alanı kullanılıyor (bkz. guvenlikTabloListesiKesfet).
+   Depo public değilse, dosya yoksa ya da bozuksa SESSİZCE null döner;
+   hata verilmez — bu bir yedek kaynak, olmaması normal bir durum. */
+async function guvenlikJsonOku(depo) {
+  const slug = depoSlug(depo);
+  if (!slug) return null;
+  try {
+    const r = await fetch('https://api.github.com/repos/' + slug + '/contents/guvenlik.json',
+      { headers: { Accept: 'application/vnd.github.v3.raw' } });
+    if (!r.ok) return null;
+    return JSON.parse(await r.text());
+  } catch (h) { return null; }
+}
+
+/* Tablo listesi — ÜÇ KAYNAKTAN, SIRAYLA:
+   3.1 OpenAPI keşfi — en iyisi, sütun şeması da gelir. Supabase'in yeni
+       anahtar düzeninde bu uç nokta GİZLİ anahtar isteyebilir (401 "Secret
+       API key required") — yayınlanabilir/anon anahtarla bu beklenir,
+       HATA gösterilmez, sessizce 3.2'ye geçilir.
+   3.2 guvenlik.json → tablolar.liste — yalnız tablo adları, sütun şeması
+       YOK. Koda hiçbir tablo adı yazılmıyor, liste programın kendi
+       dosyasından geliyor.
+   3.3 hiçbiri yoksa boş liste döner — bu BULGU değil, EKSİK ÖLÇÜM
+       (çağıran ekranda böyle göstermeli). */
+async function guvenlikTabloListesiKesfet(istek, belirtec, depo) {
+  const sema = await guvenlikSemaKesfet(istek, belirtec);
+  if (sema.tablolar.length) return { tablolar: sema.tablolar, semalar: sema.semalar, kaynak: 'openapi' };
+
+  const json = await guvenlikJsonOku(depo);
+  const liste = json && json.tablolar && Array.isArray(json.tablolar.liste) ? json.tablolar.liste : null;
+  if (liste && liste.length) return { tablolar: liste, semalar: {}, kaynak: 'guvenlik.json' };
+
+  return { tablolar: [], semalar: {}, kaynak: null, hata: sema.hata };
 }
 
 /* OpenAPI sütun tipinden minik bir örnek değer üretir — ekleme testinde
@@ -7298,10 +7347,15 @@ async function guvenlikDisTest(istek, ekle, sema) {
     else ekle('Dış', deneme, 'BİLGİ', ayrinti);
   }
 
-  /* A3 · Yazma ve silme — ilk keşfedilen tabloda. Silme gerçek id'yle
-     denenir (kendi eklediği satır) — eşleşmeyecek süzgeç YOK, hüküm dönen
-     diziye bakar (bkz. guvenlikYazDeneVeYorumla), yanlış KAPALI okumaz. */
-  if (tablolar[0]) {
+  /* A3 · Yazma ve silme — ilk keşfedilen tabloda, YALNIZ sütun şeması
+     varsa (kaynak OpenAPI ise). guvenlik.json yalnız tablo adı verir;
+     şemasız bir ekleme gövdesi kurmak eksik-alan hatasını yanlışlıkla
+     KAPALI diye okutur — "ölçülemedi" demek daha doğru. Silme gerçek
+     id'yle denenir (kendi eklediği satır) — eşleşmeyecek süzgeç YOK,
+     hüküm dönen diziye bakar (bkz. guvenlikYazDeneVeYorumla). */
+  if (tablolar[0] && sema.kaynak !== 'openapi') {
+    ekle('Dış', tablolar[0] + ' yazma', 'ATLANDI', 'Sütun şeması yok (yalnız tablo adı biliniyor) — güvenli bir ekleme gövdesi kurulamadı');
+  } else if (tablolar[0]) {
     const tablo = tablolar[0];
     const eklemeGovdesi = guvenlikEklemeGovdesi(sema.semalar[tablo]);
     const { govde, sonuc } = await guvenlikYazDeneVeYorumla(istek, ekle, 'Dış', tablo + ' yazma',
@@ -7438,17 +7492,31 @@ async function guvenlikKendiKatmanim(istek, belirtec, ownAuthId, tablolar) {
 async function guvenlikPersonelHaritasi(istek, belirtec, sema, kalintilar) {
   const satirlar = [];
   for (const tablo of sema.tablolar) {
-    const semaTablo = sema.semalar[tablo] || {};
-    const idVar = !!(semaTablo.properties && ('id' in semaTablo.properties));
+    const semaTablo = sema.semalar[tablo];
+    const semaVar = !!semaTablo;
+    const idVar = !!(semaVar && semaTablo.properties && ('id' in semaTablo.properties));
     const satir = { tablo, okur: 'ölçülemedi', ekler: 'ölçülemedi', degistirir: 'ölçülemedi', siler: 'ölçülemedi' };
 
-    /* Okuma */
+    /* Okuma — sütun şeması gerekmez, yalnız tablo adı yeterli. */
     const { durum: oDurum, govde: oGovde } = await istek('/rest/v1/' + tablo + '?select=*&limit=1', { belirtec });
     let ornekSatir = null;
     if (oDurum === 401 || oDurum === 403) satir.okur = 'okuyamaz';
     else if (oDurum >= 200 && oDurum < 300 && Array.isArray(oGovde) && oGovde.length > 0) {
       satir.okur = 'okur';
       ornekSatir = oGovde[0];
+    }
+
+    /* Ekleme/değiştirme/silme sütun şeması ister (hangi alan zorunlu,
+       hangisi metin) — kaynak guvenlik.json ise (yalnız tablo adı, şema
+       yok) bu üçü güvenle denenemez: körlemesine kurulan bir gövde ya
+       eksik-alan hatası alır (yanlışlıkla KAPALI okunur) ya da rastgele
+       bir sütuna yazar. Böyle bir yanlış ölçümden "ölçülemedi" yeğdir. */
+    if (!semaVar) {
+      satir.ekler = 'ölçülemedi — sütun şeması yok';
+      satir.degistirir = 'ölçülemedi — sütun şeması yok';
+      satir.siler = 'ölçülemedi — sütun şeması yok';
+      satirlar.push(satir);
+      continue;
     }
 
     /* Değiştirme — okurken bulunan gerçek satırın bir metin sütunu, kendi
@@ -7500,7 +7568,7 @@ async function guvenlikPersonelHaritasi(istek, belirtec, sema, kalintilar) {
   return satirlar;
 }
 
-async function guvenlikTestiCalistir({ url, anon, eposta, sifre }) {
+async function guvenlikTestiCalistir({ url, anon, eposta, sifre, depo }) {
   const taban = String(url || '').trim().replace(/\/+$/, '');
   const istek = guvenlikIstekYap(taban, anon);
   const sonuclar = [];
@@ -7521,13 +7589,21 @@ async function guvenlikTestiCalistir({ url, anon, eposta, sifre }) {
   if (!belirtec) {
     ekle('Personel', 'giriş', 'BİLGİ',
       gSonuc.hata ? 'Bağlantı hatası: ' + gSonuc.hata : 'Bu hesapla giriş yapılamadı — ' + guvenlikAyrinti(gSonuc.durum, gSonuc.govde));
-    return { sonuc: sonuclar, harita: null, ustKatmanUyarisi: false, kalintilar, semaHatasi: '' };
+    return { sonuc: sonuclar, harita: null, ustKatmanUyarisi: false, kalintilar, tabloKaynagi: '' };
   }
 
-  /* 1 · Şema keşfi — giriş yapmış kimlikle (ziyaretçiden daha çok tablo
-     görebilir, test listesi en geniş haliyle kurulsun diye). */
-  const sema = await guvenlikSemaKesfet(istek, belirtec);
-  if (sema.hata) ekle('Dış', 'şema keşfi', 'BİLGİ', 'Şema keşfedilemedi: ' + sema.hata + ' — okuma/yazma/D testleri atlandı');
+  /* 1 · Tablo listesi — üç kaynaktan sırayla (bkz. guvenlikTabloListesiKesfet):
+     OpenAPI keşfi (sütun şemasıyla birlikte) → guvenlik.json (yalnız
+     adlar) → hiçbiri yoksa boş. OpenAPI başarısız oldu diye hata
+     GÖSTERİLMEZ (Supabase'in yeni anahtar düzeninde bu uç nokta gizli
+     anahtar isteyebilir) — yalnız üçü de boşsa aşağıda bilgi satırı yazılır. */
+  const sema = await guvenlikTabloListesiKesfet(istek, belirtec, depo);
+  if (!sema.tablolar.length) {
+    ekle('Dış', 'tablo listesi', 'BİLGİ',
+      'Tablo listesi bulunamadı — yalnız oturumsuz denemeler çalıştı (okuma/yazma ve yetki haritası atlandı). ' +
+      'OpenAPI: ' + (sema.hata || 'boş liste') + (depo ? '; guvenlik.json da okunamadı ya da tablolar.liste yok.'
+        : '; denemek için GitHub depo adresi de girilebilir.'));
+  }
 
   /* A · Dış test (anon, oturumsuz). */
   await guvenlikDisTest(istek, ekle, sema);
@@ -7542,12 +7618,13 @@ async function guvenlikTestiCalistir({ url, anon, eposta, sifre }) {
     harita = await guvenlikPersonelHaritasi(istek, belirtec, sema, kalintilar);
   }
 
-  return { sonuc: sonuclar, harita, ustKatmanUyarisi: katman.ustKatmandaMi, kalintilar, semaHatasi: sema.hata || '' };
+  return { sonuc: sonuclar, harita, ustKatmanUyarisi: katman.ustKatmandaMi, kalintilar,
+    tabloKaynagi: sema.kaynak || '' };
 }
 
 /* Düz metin rapor — sohbete ya da nota tek tıkla yapıştırılabilsin diye.
    Tablo görünümüyle aynı sırayı (AÇIK'lar üstte) kullanır. */
-function guvenlikRaporMetni(sonuc, ustKatmanUyarisi, kalintilar, harita, semaHatasi) {
+function guvenlikRaporMetni(sonuc, ustKatmanUyarisi, kalintilar, harita, tabloKaynagi) {
   if (!sonuc || !sonuc.length) return '';
   const acik = sonuc.filter(s => s.sonuc === 'AÇIK').length;
   const s = [];
@@ -7555,7 +7632,8 @@ function guvenlikRaporMetni(sonuc, ustKatmanUyarisi, kalintilar, harita, semaHat
   if (ustKatmanUyarisi) s.push('⚠ Verilen hesap en üst katmanda — yetki haritası ATLANDI.');
   if (acik >= 3) s.push('⚠ Bu kadar çok bulgu genelde güvenlik ayarlarının eksik ya da veritabanının ' +
     'güncellenmemiş olduğu anlamına gelir.');
-  if (semaHatasi) s.push('⚠ Şema keşfedilemedi (' + semaHatasi + ') — bazı testler atlandı.');
+  if (tabloKaynagi === 'guvenlik.json') s.push('ℹ Tablo listesi guvenlik.json\'dan okundu (OpenAPI keşfi ' +
+    'çalışmadı) — sütun şeması yok, ekleme/değiştirme/silme "ölçülemedi" işaretlendi.');
   s.push(acik ? acik + ' GÜVENLİK AÇIĞI BULUNDU' : 'Güvenli · ' + sonuc.length + ' deneme yapıldı, hiçbiri işe yaramadı');
   if (kalintilar && kalintilar.length) {
     s.push('');
@@ -7578,7 +7656,7 @@ function guvenlikRaporMetni(sonuc, ustKatmanUyarisi, kalintilar, harita, semaHat
   return s.join('\n');
 }
 
-function guvenlikSonucTablosu(sonuc, ustKatmanUyarisi, kalintilar, harita, semaHatasi) {
+function guvenlikSonucTablosu(sonuc, ustKatmanUyarisi, kalintilar, harita, tabloKaynagi) {
   if (!sonuc) return '';
   if (!sonuc.length) return `<p class="ipucu" style="margin-top:10px">Sonuç yok.</p>`;
   const acik = sonuc.filter(s => s.sonuc === 'AÇIK').length;
@@ -7586,9 +7664,9 @@ function guvenlikSonucTablosu(sonuc, ustKatmanUyarisi, kalintilar, harita, semaH
       <span><b>Verdiğiniz hesap EN ÜST KATMANDA.</b> Üst katman zaten her şeyi
       yapabilir, o yüzden yetki haritası anlamsız olurdu (atlandı). Gerçek
       sonuç için YÖNETİCİ OLMAYAN bir personel hesabı verin.</span></div>` : '';
-  const semaUyarisi = semaHatasi ? `<div class="note uyari" style="margin-top:14px">${svg(ICON.uyari, 15)}
-      <span><b>Şema keşfedilemedi</b> (${esc(semaHatasi)}) — okuma/yazma ve yetki
-      haritası testleri atlandı, yalnız oturumsuz denemeler çalıştı.</span></div>` : '';
+  const semaUyarisi = tabloKaynagi === 'guvenlik.json' ? `<div class="note" style="margin-top:14px">${svg(ICON.info, 15)}
+      <span>Tablo listesi <b>guvenlik.json</b>'dan okundu (OpenAPI keşfi çalışmadı) — sütun şeması yok,
+      ekleme/değiştirme/silme "ölçülemedi" işaretlendi.</span></div>` : '';
   const gocUyarisi = acik >= 3 ? `<div class="note uyari" style="margin-top:14px">${svg(ICON.uyari, 15)}
       <span><b>Bu kadar çok bulgu genelde şu demektir: güvenlik ayarları eksik
       ya da veritabanı güncellenmemiş.</b> Projenin kurulum/göç dosyalarını
@@ -12172,18 +12250,18 @@ async function eylemCalistir(el) {
 
   if (e === 'guvenlik-test-calistir') {
     const al = id => { const el2 = $('#' + id); return el2 ? el2.value.trim() : ''; };
-    const url = al('gv-url'), anon = al('gv-anon'), eposta = al('gv-eposta'), sifre = al('gv-sifre');
+    const url = al('gv-url'), anon = al('gv-anon'), eposta = al('gv-eposta'), sifre = al('gv-sifre'), depo = al('gv-depo');
     if (!url || !anon || !eposta || !sifre) { toast('Dört alan da gerekli.', 'uyari'); return; }
-    Object.assign(GUVENLIK_SAYFA, { url, anon, eposta, calisiyor: true, sonuc: null, harita: null,
-      ustKatmanUyarisi: false, kalintilar: [], semaHatasi: '' });
+    Object.assign(GUVENLIK_SAYFA, { url, anon, eposta, depo, calisiyor: true, sonuc: null, harita: null,
+      ustKatmanUyarisi: false, kalintilar: [], tabloKaynagi: '' });
     render();
     try {
-      const { sonuc, harita, ustKatmanUyarisi, kalintilar, semaHatasi } = await guvenlikTestiCalistir({ url, anon, eposta, sifre });
+      const { sonuc, harita, ustKatmanUyarisi, kalintilar, tabloKaynagi } = await guvenlikTestiCalistir({ url, anon, eposta, sifre, depo });
       GUVENLIK_SAYFA.sonuc = sonuc;
       GUVENLIK_SAYFA.harita = harita;
       GUVENLIK_SAYFA.ustKatmanUyarisi = ustKatmanUyarisi;
       GUVENLIK_SAYFA.kalintilar = kalintilar || [];
-      GUVENLIK_SAYFA.semaHatasi = semaHatasi || '';
+      GUVENLIK_SAYFA.tabloKaynagi = tabloKaynagi || '';
     } catch (h) {
       toast('Test çalıştırılamadı: ' + h.message, 'hata');
     }
@@ -12194,7 +12272,7 @@ async function eylemCalistir(el) {
 
   if (e === 'guvenlik-rapor-kopyala') {
     const metin = guvenlikRaporMetni(GUVENLIK_SAYFA.sonuc, GUVENLIK_SAYFA.ustKatmanUyarisi, GUVENLIK_SAYFA.kalintilar,
-      GUVENLIK_SAYFA.harita, GUVENLIK_SAYFA.semaHatasi);
+      GUVENLIK_SAYFA.harita, GUVENLIK_SAYFA.tabloKaynagi);
     if (!metin) { toast('Kopyalanacak sonuç yok.', 'uyari'); return; }
     const ok = await panoyaKopyala(metin);
     toast(ok ? 'Rapor kopyalandı.' : 'Kopyalanamadı, tarayıcı izin vermedi.', ok ? 'basari' : 'hata');
