@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.140.0
+- **Güvenlik kontrolü artık "tamamlandı" işareti taşımıyor.** Elle onaylanan bir görev değil, her açıldığında o anki hâli söyleyen bir ölçü aleti. "Tamamlandı" düğmesi ve işareti kalktı; yerine hem durak listesinde hem aşamanın içinde **son testin tarihi ve sonucu** duruyor (ör. "19.09.2026 14:32 · 109 deneme · sıfır açık").
+- Gerekçe: bir kez konulan onay işareti bir daha düşmüyordu, yani yeşil tik "bir zamanlar temizdi" demek oluyordu ama "şu an temiz" diye okunuyordu. Tarih yazınca ölçümün ne kadar eski olduğu göz önünde kalıyor.
+- Final'in kilidi ölçümün kendisine bağlandı: son test var ve sıfır açıksa Final açılıyor, bir açık bulunduğunda kendiliğinden kapanıyor. Elle onay adımı yok.
+- Aşamanın en üstünde artık "Son test" kartı var; jeton/köprü kurulum rehberi en alta indi (bir kere okunan bir metin, her seferinde en üstte durmasına gerek yok).
+
 ## v0.139.2
 - **Düzeltme: verisi tarayıcıda duran projede Güvenlik kontrolü Final'i sonsuza kadar kilitliyordu.** O projelerde Supabase adresi ve anon key hiç yok, dolayısıyla test hiç çalışamıyor ve aşama hiç kapanamıyordu. Artık "Test ve Güncelle" durağındaki gibi gizleniyor ve otomatik geçilmiş sayılıyor; aşamaya doğrudan gidilirse neden atlandığını yazıyor.
 

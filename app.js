@@ -5238,6 +5238,25 @@ function yetkiSayfasi(p, d) {
    palete yazılıyor, tam tablo yalnız o oturumda duruyor. */
 const DURAK_GUVENLIK = {};
 
+/* "19.09.2026 14:32 · 109 deneme · sıfır açık" — durak listesinde de,
+   aşamanın içinde de aynı cümle. Tarihi bilerek başa koyuyoruz: bir ölçümün
+   ne zaman yapıldığı, sonucu kadar önemli. */
+function olcumTarihi(olcum) {
+  const t = new Date((olcum || {}).tarih);
+  if (isNaN(t)) return '';
+  return t.toLocaleDateString('tr-TR') + ' '
+    + t.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+}
+
+function olcumOzeti(olcum) {
+  if (!olcum) return 'Henüz test edilmedi.';
+  const tarih = olcumTarihi(olcum);
+  const sonuc = olcum.acik
+    ? olcum.acik + ' açık bulundu'
+    : 'sıfır açık';
+  return [tarih, olcum.toplam + ' deneme', sonuc].filter(Boolean).join(' · ');
+}
+
 function durakGuvenlikDurum(projeId) {
   if (!DURAK_GUVENLIK[projeId]) {
     DURAK_GUVENLIK[projeId] = { calisiyor: false, sonuc: null, harita: null,
@@ -5323,55 +5342,47 @@ function guvenlikTestKarti(p, pl, g) {
     </div>`);
 }
 
-function guvenlikOlcumKarti(p, pl, g) {
+function guvenlikSonTestKarti(p, pl) {
   const o = pl.guvenlikOlcum;
-  if (!o || g.sonuc) return '';
-  const t = new Date(o.tarih);
-  const gun = isNaN(t) ? '' : t.toLocaleDateString('tr-TR') + ' ' + t.toLocaleTimeString('tr-TR').slice(0, 5);
-  return fbKart('#3f9d7a', ICON.check, 'Son ölçüm', null, p.id, `
+  if (!o) {
+    return fbKart('#3f9d7a', ICON.gGuvenlik, 'Son test', null, p.id, `
+      <div class="kur-deger duz">Henüz test edilmedi</div>
+      <p class="ipucu" style="margin-top:8px">Aşağıdaki hesapla giriş yapıp
+        <b>Test Et</b>'e bas — sonuç burada duracak.</p>`);
+  }
+  return fbKart('#3f9d7a', ICON.gGuvenlik, 'Son test', null, p.id, `
     <div class="kur-deger duz">${o.acik
-      ? `${svg(ICON.uyari, 13)} ${o.acik} açık · ${o.toplam} deneme`
-      : `${svg(ICON.tik, 13)} sıfır açık · ${o.toplam} deneme`}</div>
-    ${gun ? `<p class="ipucu" style="margin-top:8px">${esc(gun)}</p>` : ''}
-    <p class="ipucu">Kodda ya da SQL'de bir değişiklik yaptıysan yeniden ölç —
-      bu satır o anki hâli gösterir.</p>`);
+      ? `${svg(ICON.uyari, 13)} ${o.acik} açık bulundu`
+      : `${svg(ICON.tik, 13)} sıfır açık`}</div>
+    <p class="ipucu" style="margin-top:8px">${esc(olcumTarihi(o))} · ${o.toplam} deneme</p>
+    <p class="ipucu">Bu satır o testin yapıldığı andaki hâli gösterir. Kodda ya
+      da SQL'de bir şey değiştiyse yeniden ölç — eski sonuç yeni hâli anlatmaz.</p>`);
 }
 
 function guvenlikDurakSayfasi(p, d) {
   const pl = p.palet || {};
   if (!sunuculuMu(p)) {
     return `<div class="fb-govde">`
-      + adimBasligi(p, d, '—')
+      + adimBasligi(p, d, '')
       + balon('Bu projenin verisi tarayıcıda duruyor.',
           'Sunucu tarafı olmadığı için saldırılacak bir kapı da yok — bu aşama atlandı.')
       + `</div>`;
   }
   const g = durakGuvenlikDurum(p.id);
-  const o = pl.guvenlikOlcum;
-  const olculdu = !!o;
-  const temiz = olculdu && !o.acik;
-  const tamam = !!pl.guvenlikTamamlandi;
-  const adimlar = [olculdu, temiz];
-  const biten = adimlar.filter(Boolean).length;
 
   return `<div class="fb-govde">`
-    + adimBasligi(p, d, `${tamam ? adimlar.length : biten}/${adimlar.length}`)
-    + balon('Yetkilendirme kuralları yazdı — ama yazılmış olması tuttuğu anlamına gelmiyor.',
-        'Buradan saldırıyoruz: ziyaretçi, personel ve sunucu işlevi. Sıfır açık çıkmadan Final açılmaz.')
+    + adimBasligi(p, d, '')
+    + balon('Bu aşama bitmiş sayılmaz — her açtığında yeniden ölçersin.',
+        'Ziyaretçi, personel ve sunucu işlevi saldırıları. Son testin tarihi ve sonucu aşağıda.')
+    + guvenlikSonTestKarti(p, pl)
     + guvenlikBaglantiKarti(p, pl)
-    + guvenlikHazirlikKarti(p)
     + guvenlikTestKarti(p, pl, g)
-    + guvenlikOlcumKarti(p, pl, g)
+    + guvenlikHazirlikKarti(p)
     + guvenlikSonucTablosu(g.sonuc, g.ustKatmanUyarisi, g.kalintilar, g.harita, g.tabloKaynagi, p.id)
-    + (olculdu && !temiz ? `<div class="note uyari" style="margin-top:14px">${svg(ICON.uyari, 15)}
-        <span><b>Açık varken bu aşama kapanmaz.</b> Bulguları Claude'a ver,
-        düzeltmeyi <b>yeni numaralı bir göç</b> olarak yazsın — yazılmış SQL
-        düzeltilmez. Sonra burada yeniden ölç.</span></div>` : '')
-    + (AUTH.yonetici ? (tamam
-        ? `<div class="kur-deger duz">${svg(ICON.tik, 13)} Bu aşama tamamlandı</div>`
-        : `<button class="sayfa-dug ikincil" type="button" data-eylem="guvenlik-durak-tamamlandi"
-                    data-proje="${p.id}" ${temiz ? '' : 'disabled'}>
-             ${svg(ICON.check, 15)} Güvenlik kontrolü tamamlandı</button>`) : '')
+    + (pl.guvenlikOlcum && pl.guvenlikOlcum.acik ? `<div class="note uyari" style="margin-top:14px">${svg(ICON.uyari, 15)}
+        <span><b>Açık varken Final açılmaz.</b> Bulguları Claude'a ver, düzeltmeyi
+        <b>yeni numaralı bir göç</b> olarak yazsın — yazılmış SQL düzeltilmez.
+        Sonra burada yeniden ölç.</span></div>` : '')
     + `</div>`;
 }
 
@@ -5659,15 +5670,14 @@ function projeDuraklari(p) {
           : 'Son onayı bekliyor.',
     },
     sunuculuMu(p) ? {
+      /* Bu durak "tamamlandı" işareti taşımıyor: elle onaylanan bir görev
+         değil, her çalıştırıldığında o anki hâli söyleyen bir ölçü aleti.
+         Listede duran şey son testin tarihi ve sonucu. */
       ad: 'Güvenlik kontrolü',
-      bitti: !!pl0.guvenlikTamamlandi,
-      ozet: pl0.guvenlikTamamlandi
-        ? 'Tamamlandı.'
-        : !pl0.guvenlikOlcum
-          ? 'Kurallar gerçekten tutuyor mu — ölç.'
-          : pl0.guvenlikOlcum.acik
-            ? pl0.guvenlikOlcum.acik + ' açık bulundu — kapatılmadan Final açılmaz.'
-            : pl0.guvenlikOlcum.toplam + ' deneme, sıfır açık — onayı bekliyor.',
+      bitti: !!(pl0.guvenlikOlcum && !pl0.guvenlikOlcum.acik),
+      ozet: !pl0.guvenlikOlcum
+        ? 'Henüz test edilmedi.'
+        : olcumOzeti(pl0.guvenlikOlcum),
     } : {
       /* Verisi tarayıcıda duran projede sunucu tarafı yok: saldırılacak bir
          kapı da yok. Gizlenmezse Final sonsuza kadar kilitli kalırdı. */
@@ -13055,8 +13065,10 @@ async function eylemCalistir(el) {
       } else {
         await DB.paletKaydet(pr.id, Object.assign({}, pr.palet || {},
           { guvenlikOlcum: { tarih: Date.now(), toplam, acik },
-            guvenlikDepoAdresi: depo },
-          acik ? { guvenlikTamamlandi: false } : {}));
+            guvenlikDepoAdresi: depo,
+            /* Eski sürümlerden kalan elle onay işareti — artık kullanılmıyor,
+               duruyorsa temizleniyor ki iki ayrı doğruluk kaynağı olmasın. */
+            guvenlikTamamlandi: undefined }));
       }
     } catch (h) {
       toast('Test çalıştırılamadı: ' + h.message, 'hata');
@@ -13064,24 +13076,6 @@ async function eylemCalistir(el) {
     g.calisiyor = false;
     render();
     return;
-  }
-
-  if (e === 'guvenlik-durak-tamamlandi') {
-    const pr = DB.proje(el.dataset.proje);
-    if (!pr) return;
-    const pl = pr.palet || {};
-    if (pl.guvenlikTamamlandi) {
-      return isYap(() => DB.paletKaydet(pr.id,
-        Object.assign({}, pl, { guvenlikTamamlandi: false })), 'İşaret kaldırıldı.');
-    }
-    if (!pl.guvenlikOlcum || pl.guvenlikOlcum.acik) return;
-    if (!await onaySor({
-      baslik: 'Güvenlik kontrolü tamamlandı mı?',
-      mesaj: `Son ölçüm: ${pl.guvenlikOlcum.toplam} deneme, sıfır açık. Onaylarsan Final açılacak.`,
-      buton: 'Eminim',
-    })) return;
-    return isYap(() => DB.paletKaydet(pr.id,
-      Object.assign({}, pl, { guvenlikTamamlandi: true })), 'Güvenlik kontrolü tamamlandı.');
   }
 
   if (e === 'guvenlik-rapor-kopyala') {
