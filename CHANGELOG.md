@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.140.2
+- **Güvenlik kontrolü aşaması artık hiç kilitlenmiyor.** Sırası gelmese de tıklanıp çalıştırılabiliyor. Gerekçe: bu durak bir görev değil, ölçü aleti — kurulumun her anında "şu an açık var mı" diye bakabilmek gerekir, sırasını beklemek ölçümü geciktirmekten başka işe yaramaz.
+
 ## v0.140.1
 - Güvenlik kontrolü aşamasının kendi simgesi eklendi (`ikon/asama/guvenlik.png`) — Yetkilendirme'nin kalkanı, anahtar deliği yerine onay işareti. Aşama artık Yetkilendirme'nin resmini ödünç almıyor.
 - **Düzeltme: `index.html` içindeki `?v=` numaraları 0.138.1'de kalmıştı.** Son dört sürümde güncellenmemişti; tarayıcı eski `app.js`, `style.css` ve logoyu önbellekten servis edebilirdi.

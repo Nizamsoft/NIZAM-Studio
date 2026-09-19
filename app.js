@@ -5712,6 +5712,10 @@ function projeDuraklari(p) {
 function durakKilitli(projeId, anahtar) {
   const p = DB.proje(projeId);
   if (!p) return false;
+  /* Güvenlik kontrolü hiç kilitlenmez: bir görev değil, ölçü aleti.
+     Kurulumun her anında "şu an açık var mı" diye bakabilmek gerekir —
+     sırasını beklemek ölçümü geciktirmekten başka işe yaramaz. */
+  if (anahtar === 'guvenlik') return false;
   const sira = Object.keys(DURAKLAR).indexOf(anahtar);
   if (sira < 1) return false;
   const duraklar = projeDuraklari(p);
