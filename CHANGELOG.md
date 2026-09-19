@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.137.4
+- **B katmanında yanlış alarm düzeltildi: "Ziyaretçinin dizi izni var mı".** Sorguda şema süzgeci yoktu — `information_schema.usage_privileges`'a bakıyordu, bu da Supabase'in kendi şemalarındaki (storage, graphql, vb.) dizileri de sayıyordu; oralarda anon'un izinli olması normal ve gerekli, programın güvenliğiyle ilgisi yok. Artık yalnız `public` şemasındaki dizilere bakıyor (`pg_sequences` üzerinden — `pg_class` + `relkind='S'` değil, çünkü Postgres süzgeçten önce fonksiyonu çalıştırıp dizi olmayan satırlarda hataya düşebiliyor), bulgu çıkarsa hangi dizi olduğunu da yazıyor. Diğer 6 sorgu zaten public'e süzülüyordu, değişmedi.
+
 ## v0.137.3
 - **Jeton kurulum metni "AL / KOY" olarak ikiye ayrıldı.** Ayarlar > Güvenlik Testi'ndeki ve guvenlik-sql fonksiyonunun kendi başlık yorumundaki açıklama artık net: jeton test edilecek projelerin SAHİBİ olan Supabase hesabından alınır (account/tokens → Generate new token → Create legacy token, sbp_ ile başlar), Studio'nun kendi Supabase'ine ise yalnız KASA olarak konur (guvenlik-sql → Settings → Secrets) — iki hesabın aynı olması gerekmez. Secret kaydedildikten sonra hata devam ederse redeploy/bir dakika bekleme notu eklendi. B katmanının "çalışmadı" mesajına da "jeton bu projenin sahibi olduğu hesaptan mı alındı?" ipucu eklendi.
 

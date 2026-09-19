@@ -7430,8 +7430,19 @@ from (
         and not exists (select 1 from unnest(coalesce(p.proconfig,'{}')) x
                          where x like 'search\\_path=%')), '-')
   union all select 7, 'Ziyaretçinin dizi (sequence) izni var mı',
-    (select count(*) from information_schema.usage_privileges
-      where grantee = 'anon' and object_type = 'SEQUENCE'), '-'
+    (select count(*) from pg_sequences s
+      where s.schemaname = 'public'
+        and (has_sequence_privilege('anon', quote_ident(s.schemaname) || '.' ||
+                                            quote_ident(s.sequencename), 'usage')
+          or has_sequence_privilege('anon', quote_ident(s.schemaname) || '.' ||
+                                            quote_ident(s.sequencename), 'select'))),
+    coalesce((select string_agg(s.sequencename, ', ' order by s.sequencename)
+      from pg_sequences s
+      where s.schemaname = 'public'
+        and (has_sequence_privilege('anon', quote_ident(s.schemaname) || '.' ||
+                                            quote_ident(s.sequencename), 'usage')
+          or has_sequence_privilege('anon', quote_ident(s.schemaname) || '.' ||
+                                            quote_ident(s.sequencename), 'select'))), '-')
 ) as d(sira, deneme, sayi, ayrinti)
 order by case when d.sayi > 0 then 0 else 1 end, d.sira;`;
 
