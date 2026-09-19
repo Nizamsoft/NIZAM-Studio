@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## v0.140.5
+- **Düzeltme: görünüm denetimi korunan görünümü AÇIK sayıyordu.** Yapısal denetim `security_invoker` ayarını yalnız `'true'` ile karşılaştırıyordu. Postgres mantıksal ayarı yazıldığı gibi saklar: `set (security_invoker = on)` diyen bir göç `'on'` bırakır. Dördü de (on · true · yes · 1) aynı şeydir; denetim artık hepsini kabul ediyor. Bu hata bugüne kadar görünmedi çünkü test edilen programlarda hiç görünüm yoktu — görünümü olan ilk programda çıktı ve iki korumalı görünümü açık diye raporladı.
+- v0.140.4 yayında kalmadı: düzeltmenin yanına yazdığım açıklama satırı ters tırnak taşıyordu ve JS metnini kesip uygulamayı çökertti. Açıklama SQL yorumuna çevrildi.
+
 ## v0.140.3
 - **Düzeltme: Güvenlik kontrolü kartı hâlâ tıklanamıyordu.** Kilit iki ayrı yerde hesaplanıyor — biri adres denetiminde (`durakKilitli`), biri aşama listesindeki kartın kendisinde. v0.140.2'de yalnız ilki gevşetilmişti, kart hâlâ bağlantı bile değildi. İkisi de artık aynı istisnayı tanıyor; kartın üstündeki kilit simgesi de kalktı.
 

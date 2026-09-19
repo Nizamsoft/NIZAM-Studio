@@ -7663,11 +7663,11 @@ from (
     coalesce((select string_agg(distinct table_name, ', ')
       from information_schema.role_table_grants
       where grantee = 'anon' and table_schema = 'public'), '-')
-  /* Postgres mantıksal ayarı YAZILDIĞI GİBİ saklar: `set (security_invoker
-     = on)` diyen bir göç 'on' bırakır, elle `= true` yazan 'true'. Dördü de
-     (on · true · yes · 1) aynı şeydir. Önceden yalnız 'true' aranıyordu ve
-     korunan görünümler AÇIK diye raporlanıyordu — görünümü olan ilk
-     programda ortaya çıktı (v0.140.4). */
+  -- Postgres mantıksal ayarı YAZILDIĞI GİBİ saklar: set (security_invoker
+  -- = on) diyen bir göç 'on' bırakır, elle = true yazan 'true'. Dördü de
+  -- (on, true, yes, 1) aynı şeydir. Önceden yalnız 'true' aranıyordu ve
+  -- korunan görünümler AÇIK diye raporlanıyordu — görünümü olan ilk
+  -- programda ortaya çıktı (v0.140.4).
   union all select 5, 'Satır güvenliğini atlayan görünüm var mı',
     (select count(*) from pg_class c join pg_namespace n on n.oid = c.relnamespace
       where n.nspname = 'public' and c.relkind = 'v'
