@@ -738,6 +738,25 @@ const VIEWS = {
       </div>
 
       ${guvenlikSonucTablosu(g.sonuc, g.ustKatmanUyarisi, g.kalintilar, g.harita, g.tabloKaynagi)}
+
+      <div class="section">
+        <span class="label">2. Aşama · B ve C testleri (bir kere kurulur)</span>
+        <div class="card" style="padding:14px">
+          <p class="ipucu" style="margin:0 0 10px">Yapısal (B) ve programa özel (C) denetimler Supabase
+            erişim jetonu ister — o jeton tarayıcıya hiç inmez, Studio'nun kendi Supabase'inde tek bir
+            Edge Function'ın (<code>guvenlik-sql</code>) gizli değişkeni olarak durur. Bir kere kur,
+            sonrası otomatik: <b>Test Et</b> her çalıştığında bu ikisini de dener; fonksiyon kurulu
+            değilse sessizce atlar.</p>
+          <p class="ipucu" style="margin:0 0 10px">Kurulum: Studio'nun Supabase'inde <b>Edge Functions →
+            New Function</b>, adı <code>guvenlik-sql</code>, kodu yapıştır, deploy et. Sonra o
+            fonksiyonun <b>Secrets</b> bölümüne <code>NS_SUPABASE_JETON</code> ekle — değeri
+            <code>supabase.com/dashboard/account/tokens</code>'dan alınan kişisel erişim jetonu.</p>
+          <div class="kur-dug">
+            <button class="sayfa-dug ikincil" type="button" data-eylem="guvenlik-sql-kopyala">
+              ${svg(ICON.kopya, 15)} Fonksiyon kodunu kopyala</button>
+          </div>
+        </div>
+      </div>
     `;
   },
 
@@ -7164,6 +7183,296 @@ function guvenlikUuid() {
   return 'ns-' + Date.now().toString(16) + '-' + Math.random().toString(16).slice(2);
 }
 
+/* ==========================================================================
+   AŞAMA 2 · B (evrensel iç) ve C (programa özel iç) — ikisi de Supabase
+   erişim jetonu ister. O jeton Studio'nun kendi Supabase'inde tek bir Edge
+   Function'ın (guvenlik-sql, bkz. GUVENLIK_SQL_FONKSIYON) gizli değişkeni
+   olarak duruyor — tarayıcıya hiç inmiyor, şifreli saklama katmanı yok,
+   çünkü jeton kullanıcı başına değil, Nizam'ın kendi hesabının tek değeri.
+
+   Tarayıcı yalnız {ref, sql} gönderiyor; fonksiyon çağıranın Studio'da
+   yönetici olduğunu doğruluyor, SQL'i Management API'ye iletiyor, sonucu
+   olduğu gibi döndürüyor. B'nin SQL'i sabit (aşağıda); C'nin SQL'i
+   guvenlik.json'dan ve onun yanındaki dosyalardan gelir — GitHub Pages gibi
+   açık bir adresten, jetonsuz (bkz. guvenlikUrlIndir). */
+
+/* Studio'nun kendi Supabase'ine BİR KERE deploy edilecek Edge Function.
+   "Fonksiyon kodunu kopyala" düğmesiyle (bkz. eylem guvenlik-sql-kopyala)
+   Ayarlar > Güvenlik Testi ekranından kopyalanır. Kurulum:
+     1) Studio'nun kendi Supabase'inde Edge Functions → New Function →
+        adı "guvenlik-sql" → kodu yapıştır, deploy et.
+     2) O fonksiyonun Secrets bölümüne NS_SUPABASE_JETON ekle — değeri
+        https://supabase.com/dashboard/account/tokens adresinden alınan
+        kişisel erişim jetonu (personal access token).
+   SUPABASE_URL/SERVICE_ROLE_KEY/ANON_KEY'i Supabase her fonksiyona zaten
+   kendisi veriyor — ayrıca girilmez. */
+const GUVENLIK_SQL_FONKSIYON = `/* Güvenlik testi · SQL çalıştırma köprüsü · Supabase Edge Function.
+
+   NİYE SUNUCUDA
+     Supabase erişim jetonu (personal access token) hesaptaki BÜTÜN
+     projelerde SQL çalıştırabilir. Tarayıcıya, depoya ya da herhangi bir
+     istemci koduna HİÇBİR KOŞULDA inmez — yalnız bu fonksiyonun gizli
+     değişkeni (NS_SUPABASE_JETON) olarak durur.
+
+   KAPIDA DURAN KONTROL
+     Çağıran Studio'da giriş yapmış VE yönetici mi? (profiles.rol)
+     Değilse istek reddedilir — jeton yalnız yönetici için çalışır.
+
+   İŞLEM
+     Gövdede { ref, sql } gelir: ref hedef Supabase projesinin kimliği
+     (https://<ref>.supabase.co), sql çalıştırılacak metin. Management
+     API'ye iletilir, sonuç olduğu gibi (satirlar ya da hata) döner.
+
+   KURULUM
+     Studio'nun kendi Supabase'inde: Edge Functions → New Function →
+     "guvenlik-sql" → bu kodu yapıştır, deploy et. Sonra Secrets'a
+     NS_SUPABASE_JETON ekle (değeri supabase.com/dashboard/account/tokens).
+*/
+
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
+
+const IZINLI_ADRES = Deno.env.get("NS_IZINLI_ADRES") || "https://nizamsoft.github.io";
+
+const CORS = {
+  "Access-Control-Allow-Origin": IZINLI_ADRES,
+  "Access-Control-Allow-Headers": "authorization, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
+function cevap(govde: unknown, durum = 200): Response {
+  return new Response(JSON.stringify(govde), {
+    status: durum,
+    headers: { ...CORS, "Content-Type": "application/json" },
+  });
+}
+
+function hata(mesaj: string, durum = 400): Response {
+  return cevap({ hata: mesaj }, durum);
+}
+
+Deno.serve(async (istek: Request) => {
+  if (istek.method === "OPTIONS") return new Response("ok", { headers: CORS });
+  if (istek.method !== "POST") return hata("Yalnız POST kabul edilir.", 405);
+
+  const adres = Deno.env.get("SUPABASE_URL");
+  const servis = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!adres || !servis) return hata("Sunucu yapılandırması eksik.", 500);
+
+  const belirtec = (istek.headers.get("Authorization") || "").replace(/^Bearer\\s+/i, "");
+  if (!belirtec) return hata("Oturum bulunamadı. Çıkış yapıp tekrar girin.", 401);
+
+  /* service_role istemcisi · Studio'nun KENDİ veritabanı, bütün kuralları
+     atlar, yalnız bu dosyada. */
+  const yonetim = createClient(adres, servis, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+
+  /* ---- 1 · Çağıran kim? ---- */
+  const { data: kimVeri, error: kimHata } = await yonetim.auth.getUser(belirtec);
+  if (kimHata || !kimVeri?.user) {
+    return hata("Oturum geçersiz ya da süresi dolmuş. Tekrar giriş yapın.", 401);
+  }
+
+  /* ---- 2 · Yönetici mi? ---- */
+  const { data: profil } = await yonetim
+    .from("profiles").select("rol,aktif").eq("id", kimVeri.user.id).maybeSingle();
+  if (!profil || profil.rol !== "yonetici" || !profil.aktif) {
+    return hata("Bu işlem yalnız yöneticiye açık.", 403);
+  }
+
+  /* ---- 3 · Gövde ---- */
+  let govde: { ref?: string; sql?: string };
+  try { govde = await istek.json(); } catch { return hata("Gövde okunamadı."); }
+  const ref = String(govde?.ref || "").trim();
+  const sql = String(govde?.sql || "").trim();
+  if (!/^[a-z0-9]+$/i.test(ref)) return hata("Geçersiz proje kimliği (ref).");
+  if (!sql) return hata("Çalıştırılacak SQL boş.");
+
+  const jeton = Deno.env.get("NS_SUPABASE_JETON");
+  if (!jeton) return hata("NS_SUPABASE_JETON tanımlı değil — bu fonksiyonun Secrets bölümüne eklenmeli.", 500);
+
+  /* ---- 4 · Management API'ye ilet ---- */
+  try {
+    const r = await fetch(\`https://api.supabase.com/v1/projects/\${ref}/database/query\`, {
+      method: "POST",
+      headers: { Authorization: \`Bearer \${jeton}\`, "Content-Type": "application/json" },
+      body: JSON.stringify({ query: sql }),
+    });
+    const sonuc = await r.json().catch(() => null);
+    if (!r.ok) {
+      const mesaj = (sonuc && (sonuc.message || sonuc.error)) || ("HTTP " + r.status);
+      return hata(String(mesaj), r.status);
+    }
+    return cevap({ satirlar: Array.isArray(sonuc) ? sonuc : (sonuc ? [sonuc] : []) });
+  } catch (e) {
+    return hata("Management API'ye ulaşılamadı: " + (e as Error).message, 502);
+  }
+});
+`;
+
+/* Hedef projenin ref'ini URL'den çıkarır: https://<ref>.supabase.co */
+function guvenlikProjeRef(url) {
+  const m = String(url || '').trim().match(/^https?:\/\/([a-z0-9-]+)\.supabase\.co/i);
+  return m ? m[1] : '';
+}
+
+/* Studio'nun kendi Edge Function'ını çağırır — Studio'nun kendi oturum
+   belirteciyle (AUTH.db, yönetici olduğu fonksiyon tarafından doğrulanır).
+   Fonksiyon kurulu değilse (404) ya da jeton tanımlı değilse (500) BULGU
+   DEĞİL, "çalışmadı" bilgisi döner — çağıran bunu BİLGİ olarak yazar. */
+async function guvenlikEdgeCalistir(ref, sql) {
+  if (!AUTH.db) return { hata: 'Studio oturumu yok.' };
+  let oturum;
+  try { oturum = (await AUTH.db.auth.getSession()).data.session; }
+  catch (h) { return { hata: 'Oturum okunamadı: ' + h.message }; }
+  if (!oturum) return { hata: 'Studio oturumu yok — çıkış yapılmış olabilir.' };
+  try {
+    const r = await fetch(SUPABASE.url + '/functions/v1/guvenlik-sql', {
+      method: 'POST',
+      headers: { apikey: SUPABASE.key, Authorization: 'Bearer ' + oturum.access_token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ref, sql }),
+    });
+    let govde = null;
+    try { govde = await r.json(); } catch (h) { /* boş gövde olabilir */ }
+    if (!r.ok) return { hata: (govde && govde.hata) || ('HTTP ' + r.status) };
+    return { satirlar: (govde && govde.satirlar) || [] };
+  } catch (h) {
+    return { hata: 'Bağlantı kurulamadı: ' + h.message };
+  }
+}
+
+/* ---------- B · Evrensel iç test — her Supabase projesinde aynı SQL ----------
+   Studio'nun kendi içinde sabit durur, hiçbir programdan gelmez. Her satırın
+   sonuc sütunu zaten 'AÇIK'/'KAPALI' olarak dönüyor — motor yalnız taşıyor. */
+const GUVENLIK_B_SQL = `select d.sira,
+       d.deneme,
+       case when d.sayi > 0 then 'AÇIK' else 'KAPALI' end as sonuc,
+       d.sayi,
+       d.ayrinti
+from (
+  select 1, 'Satır güvenliği kapalı tablo var mı',
+    (select count(*) from pg_class c join pg_namespace n on n.oid = c.relnamespace
+      where n.nspname = 'public' and c.relkind in ('r','p') and not c.relrowsecurity),
+    coalesce((select string_agg(c.relname, ', ' order by c.relname)
+      from pg_class c join pg_namespace n on n.oid = c.relnamespace
+      where n.nspname = 'public' and c.relkind in ('r','p') and not c.relrowsecurity), '-')
+  union all select 2, '"Giriş yapmış herkese serbest" kural kaldı mı',
+    (select count(*) from pg_policy p join pg_class c on c.oid = p.polrelid
+       join pg_namespace n on n.oid = c.relnamespace
+      where n.nspname = 'public'
+        and (pg_get_expr(p.polqual, p.polrelid) = 'true'
+          or pg_get_expr(p.polwithcheck, p.polrelid) = 'true')),
+    coalesce((select string_agg(c.relname || '.' || p.polname, ', ')
+      from pg_policy p join pg_class c on c.oid = p.polrelid
+       join pg_namespace n on n.oid = c.relnamespace
+      where n.nspname = 'public'
+        and (pg_get_expr(p.polqual, p.polrelid) = 'true'
+          or pg_get_expr(p.polwithcheck, p.polrelid) = 'true')), '-')
+  union all select 3, 'Ziyaretçi fonksiyon çağırabiliyor mu',
+    (select count(*) from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+      where n.nspname = 'public' and has_function_privilege('anon', p.oid, 'execute')),
+    coalesce((select string_agg(p.proname, ', ' order by p.proname)
+      from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+      where n.nspname = 'public' and has_function_privilege('anon', p.oid, 'execute')), '-')
+  union all select 4, 'Ziyaretçinin tablo izni var mı',
+    (select count(*) from information_schema.role_table_grants
+      where grantee = 'anon' and table_schema = 'public'),
+    coalesce((select string_agg(distinct table_name, ', ')
+      from information_schema.role_table_grants
+      where grantee = 'anon' and table_schema = 'public'), '-')
+  union all select 5, 'Satır güvenliğini atlayan görünüm var mı',
+    (select count(*) from pg_class c join pg_namespace n on n.oid = c.relnamespace
+      where n.nspname = 'public' and c.relkind = 'v'
+        and coalesce((select option_value from pg_options_to_table(c.reloptions)
+                       where option_name = 'security_invoker'), 'false') <> 'true'),
+    coalesce((select string_agg(c.relname, ', ')
+      from pg_class c join pg_namespace n on n.oid = c.relnamespace
+      where n.nspname = 'public' and c.relkind = 'v'
+        and coalesce((select option_value from pg_options_to_table(c.reloptions)
+                       where option_name = 'security_invoker'), 'false') <> 'true'), '-')
+  union all select 6, 'Arama yolu sabitlenmemiş güçlü fonksiyon var mı',
+    (select count(*) from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+      where n.nspname = 'public' and p.prosecdef
+        and not exists (select 1 from unnest(coalesce(p.proconfig,'{}')) x
+                         where x like 'search\\_path=%')),
+    coalesce((select string_agg(p.proname, ', ' order by p.proname)
+      from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+      where n.nspname = 'public' and p.prosecdef
+        and not exists (select 1 from unnest(coalesce(p.proconfig,'{}')) x
+                         where x like 'search\\_path=%')), '-')
+  union all select 7, 'Ziyaretçinin dizi (sequence) izni var mı',
+    (select count(*) from information_schema.usage_privileges
+      where grantee = 'anon' and object_type = 'SEQUENCE'), '-'
+) as d(sira, deneme, sayi, ayrinti)
+order by case when d.sayi > 0 then 0 else 1 end, d.sira;`;
+
+async function guvenlikYapisalTest(ekle, ref) {
+  const { satirlar, hata } = await guvenlikEdgeCalistir(ref, GUVENLIK_B_SQL);
+  if (hata) { ekle('Yapısal', 'B katmanı', 'BİLGİ', 'Çalışmadı — ' + hata + '. Edge Function kurulu mu, NS_SUPABASE_JETON tanımlı mı kontrol edin.'); return; }
+  if (!satirlar.length) { ekle('Yapısal', 'B katmanı', 'BİLGİ', 'Sonuç dönmedi.'); return; }
+  satirlar.forEach(s => ekle('Yapısal', s.deneme, s.sonuc, s.ayrinti));
+}
+
+/* ---------- C · Programa özel iç test — guvenlik.json'dan ----------
+   sql_testi.parcalar listesindeki dosyalar AYRI AYRI, sırayla çalıştırılır
+   (aynı istekte gönderilmez — bir parçanın yarattığı tabloyu bir sonraki
+   ancak ayrı bir istekte görür). Sonuç sonuc_tablosu'ndan okunur, hangi
+   sütunun/hangi değerin "AÇIK" sayılacağını yine guvenlik.json söyler.
+   Bir parça hata verirse dur, sonraki parçaları çalıştırma — ama temizlik
+   parçasını (sonuncu) yine de dene. */
+async function guvenlikProgramaOzelTest(ekle, ref, guvenlikJson, tabanUrl, kalintilar) {
+  const sqlTesti = guvenlikJson && guvenlikJson.sql_testi;
+  const parcalar = sqlTesti && Array.isArray(sqlTesti.parcalar) ? sqlTesti.parcalar : null;
+  if (!parcalar || !parcalar.length) {
+    ekle('Programa özel', 'C katmanı', 'ATLANDI', 'guvenlik.json yok ya da sql_testi.parcalar tanımlı değil');
+    return;
+  }
+  if (!tabanUrl) {
+    ekle('Programa özel', 'C katmanı', 'ATLANDI', 'guvenlik.json doğrudan bir adresten okunmadı — SQL parçalarının nereden indirileceği bilinmiyor');
+    return;
+  }
+  const kok = tabanUrl.replace(/\/[^/]*$/, '');
+  const sonPar = parcalar.length - 1;
+
+  let dur = false;
+  for (let i = 0; i < parcalar.length; i++) {
+    if (dur && i !== sonPar) continue; /* durunca yalnız son (temizlik) parça yine de denenir */
+    const { metin, hata: indirmeHatasi } = await guvenlikUrlIndir(kok + '/' + parcalar[i]);
+    if (indirmeHatasi || !metin) {
+      ekle('Programa özel', 'C parça ' + (i + 1), 'BİLGİ', 'İndirilemedi — ' + (indirmeHatasi || 'boş dosya'));
+      dur = true;
+      continue;
+    }
+    const { hata: calismaHatasi } = await guvenlikEdgeCalistir(ref, metin);
+    if (calismaHatasi) {
+      ekle('Programa özel', 'C parça ' + (i + 1), 'BİLGİ', 'Çalıştırılamadı — ' + calismaHatasi);
+      dur = true;
+      continue;
+    }
+    /* Ara sonuç: son parçadan (temizlik) önceki parça sonuç tablosunu
+       yaratmış olabilir — hemen sonrasında okunur. */
+    if (i === sonPar - 1 && sqlTesti.sonuc_tablosu) {
+      const sutunlar = Array.isArray(sqlTesti.sonuc_sutunlari) && sqlTesti.sonuc_sutunlari.length
+        ? sqlTesti.sonuc_sutunlari.join(',') : '*';
+      const { satirlar, hata: okumaHatasi } = await guvenlikEdgeCalistir(ref,
+        'select ' + sutunlar + ' from ' + sqlTesti.sonuc_tablosu + ';');
+      if (okumaHatasi) {
+        ekle('Programa özel', 'C sonuç', 'BİLGİ', 'Sonuç tablosu okunamadı — ' + okumaHatasi);
+      } else if (!satirlar.length) {
+        ekle('Programa özel', 'C sonuç', 'BİLGİ', 'Sonuç tablosu boş.');
+      } else {
+        const ozetAlan = sqlTesti.ozet_satiri;
+        const acikDeger = sqlTesti.acik_degeri;
+        satirlar.forEach((satir, k) => {
+          const deneme = 'C · ' + (ozetAlan && satir[ozetAlan] ? satir[ozetAlan] : 'satır ' + (k + 1));
+          const acikMi = acikDeger !== undefined && Object.values(satir).some(v => v === acikDeger);
+          ekle('Programa özel', deneme, acikMi ? 'AÇIK' : 'KAPALI', JSON.stringify(satir));
+        });
+      }
+    }
+  }
+}
+
 /* `istek` üreticisi: taban adres + anon key sabit, Authorization her
    çağrıda değişebilir (ziyaretçi → anon, personel → giriş sonrası belirteç). */
 function guvenlikIstekYap(taban, anon) {
@@ -7244,23 +7553,29 @@ async function guvenlikUrlIndir(url) {
    çağıran yalnız gerektiğinde (üç kaynak da boşsa) hatayı gösterir. */
 async function guvenlikJsonOku(depo) {
   const deger = String(depo || '').trim();
-  if (!deger) return { json: null, hata: '' };
+  if (!deger) return { json: null, hata: '', kaynakUrl: null };
 
   let metin, hata;
+  /* kaynakUrl yalnız DOĞRUDAN adres girildiğinde biliniyor — C katmanının
+     SQL parçalarını aynı klasörden indirebilmesi için (bkz.
+     guvenlikProgramaOzelTest). GitHub API'den (owner/repo kısayolu)
+     okunduğunda genel/açık bir taban adres bilinmiyor. */
+  let kaynakUrl = null;
   if (/^https?:\/\//i.test(deger)) {
     ({ metin, hata } = await guvenlikUrlIndir(deger));
+    if (metin) kaynakUrl = deger;
   } else {
     const slug = depoSlug(deger);
-    if (!slug) return { json: null, hata: 'Adres anlaşılamadı — bir URL ya da github.com/sahip/depo girin.' };
+    if (!slug) return { json: null, hata: 'Adres anlaşılamadı — bir URL ya da github.com/sahip/depo girin.', kaynakUrl: null };
     const sonuc = await guvenlikUrlIndir('https://api.github.com/repos/' + slug + '/contents/guvenlik.json');
     metin = sonuc.metin; hata = sonuc.hata;
     if (!metin && /404/.test(hata || '')) {
       hata = 'Depo gizli görünüyor. guvenlik.json\'un doğrudan adresini girin (ör. GitHub Pages adresi).';
     }
   }
-  if (!metin) return { json: null, hata };
-  try { return { json: JSON.parse(metin), hata: '' }; }
-  catch (h) { return { json: null, hata: 'guvenlik.json geçerli bir JSON değil.' }; }
+  if (!metin) return { json: null, hata, kaynakUrl: null };
+  try { return { json: JSON.parse(metin), hata: '', kaynakUrl }; }
+  catch (h) { return { json: null, hata: 'guvenlik.json geçerli bir JSON değil.', kaynakUrl: null }; }
 }
 
 /* Tablo listesi — ÜÇ KAYNAKTAN, SIRAYLA:
@@ -7640,8 +7955,9 @@ async function guvenlikTestiCalistir({ url, anon, eposta, sifre, depo }) {
   }
 
   /* guvenlik.json bir kez okunur — hem tablo listesi yedeği (3.2) hem A4'ün
-     güvenli deneme fonksiyonu (fonksiyonlar.deneme_guvenli) için kullanılır. */
-  const { json: guvenlikJson, hata: guvenlikJsonHata } = await guvenlikJsonOku(depo);
+     güvenli deneme fonksiyonu (fonksiyonlar.deneme_guvenli) hem de C
+     katmanının SQL parçaları (sql_testi.parcalar) için kullanılır. */
+  const { json: guvenlikJson, hata: guvenlikJsonHata, kaynakUrl: guvenlikJsonUrl } = await guvenlikJsonOku(depo);
 
   /* 1 · Tablo listesi — üç kaynaktan sırayla (bkz. guvenlikTabloListesiKesfet):
      OpenAPI keşfi (sütun şemasıyla birlikte) → guvenlik.json (yalnız
@@ -7660,6 +7976,15 @@ async function guvenlikTestiCalistir({ url, anon, eposta, sifre, depo }) {
 
   /* A7 · belirteç ömrü — hiçbir şey çağırmaz, giriş cevabını okur. */
   guvenlikBelirtecOmruTesti(ekle, gSonuc.govde);
+
+  /* B ve C · yalnız Studio'nun kendi Edge Function'ı (guvenlik-sql)
+     kuruluysa çalışır — kurulu değilse guvenlikYapisalTest tek bir BİLGİ
+     satırıyla bunu söyler, testi durdurmaz. */
+  const ref = guvenlikProjeRef(url);
+  if (ref) {
+    await guvenlikYapisalTest(ekle, ref);
+    await guvenlikProgramaOzelTest(ekle, ref, guvenlikJson, guvenlikJsonUrl, kalintilar);
+  }
 
   /* 0.2 · Hesabın katmanı (best effort) + D · personel yetki haritası. */
   const katman = await guvenlikKendiKatmanim(istek, belirtec, ownAuthId, sema.tablolar || []);
@@ -12324,6 +12649,13 @@ async function eylemCalistir(el) {
     if (!metin) { toast('Kopyalanacak sonuç yok.', 'uyari'); return; }
     const ok = await panoyaKopyala(metin);
     toast(ok ? 'Rapor kopyalandı.' : 'Kopyalanamadı, tarayıcı izin vermedi.', ok ? 'basari' : 'hata');
+    return;
+  }
+
+  if (e === 'guvenlik-sql-kopyala') {
+    const ok = await panoyaKopyala(GUVENLIK_SQL_FONKSIYON);
+    toast(ok ? 'Kod kopyalandı — Supabase Edge Functions\'a yapıştır.' : 'Kopyalanamadı, tarayıcı izin vermedi.',
+      ok ? 'basari' : 'hata');
     return;
   }
 
