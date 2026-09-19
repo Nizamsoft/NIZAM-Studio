@@ -1088,7 +1088,7 @@ const DURAKLAR = {
      bilerek: "kuruldu" demek bir iddiadır, açık olup olmadığını ancak
      saldırarak anlarsın. Final bu ölçüm temiz çıkmadan açılmıyor. */
   guvenlik:    { no: 9, ad: 'Güvenlik kontrolü',    ciz: guvenlikDurakSayfasi,
-                 renk: '#3f9d7a', ikon: 'gGuvenlik', resim: 'yetki',
+                 renk: '#3f9d7a', ikon: 'gGuvenlik', resim: 'guvenlik',
                  aciklama: 'Kurulan kurallar gerçekten tutuyor mu?' },
   final:       { no: 10, ad: 'Final',                ciz: finalSayfasi,
                  resim: 'final', aciklama: 'Son kontroller ve yayına hazırlık.' },

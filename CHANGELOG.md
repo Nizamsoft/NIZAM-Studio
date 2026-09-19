@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## v0.140.1
+- Güvenlik kontrolü aşamasının kendi simgesi eklendi (`ikon/asama/guvenlik.png`) — Yetkilendirme'nin kalkanı, anahtar deliği yerine onay işareti. Aşama artık Yetkilendirme'nin resmini ödünç almıyor.
+- **Düzeltme: `index.html` içindeki `?v=` numaraları 0.138.1'de kalmıştı.** Son dört sürümde güncellenmemişti; tarayıcı eski `app.js`, `style.css` ve logoyu önbellekten servis edebilirdi.
+
 ## v0.140.0
 - **Güvenlik kontrolü artık "tamamlandı" işareti taşımıyor.** Elle onaylanan bir görev değil, her açıldığında o anki hâli söyleyen bir ölçü aleti. "Tamamlandı" düğmesi ve işareti kalktı; yerine hem durak listesinde hem aşamanın içinde **son testin tarihi ve sonucu** duruyor (ör. "19.09.2026 14:32 · 109 deneme · sıfır açık").
 - Gerekçe: bir kez konulan onay işareti bir daha düşmüyordu, yani yeşil tik "bir zamanlar temizdi" demek oluyordu ama "şu an temiz" diye okunuyordu. Tarih yazınca ölçümün ne kadar eski olduğu göz önünde kalıyor.
