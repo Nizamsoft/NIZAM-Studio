@@ -7194,30 +7194,9 @@ async function guvenlikSemaKesfet(istek, belirtec) {
   const { durum, govde, hata } = await istek('/rest/v1/',
     { belirtec, headers: { Accept: 'application/openapi+json' } });
   if (hata || durum !== 200 || !govde || !govde.definitions) {
-    return { hata: hata || ('HTTP ' + durum), tablolar: [], fonksiyonlar: [], argumansizFonksiyonlar: [], semalar: {} };
+    return { hata: hata || ('HTTP ' + durum), tablolar: [], semalar: {} };
   }
-  const tablolar = Object.keys(govde.definitions);
-  const fonksiyonlar = Object.keys(govde.paths || {})
-    .filter(yol => yol.indexOf('/rpc/') === 0)
-    .map(yol => yol.slice(5));
-  /* Argümansız (zorunlu parametresiz) fonksiyonlar — yalnız bunlar A4'te
-     boş gövdeyle çağrılır. Şemadan statik olarak çıkarılıyor, deneme-yanılma
-     ile HER fonksiyonu çağırmıyoruz — aralarında bir silme/değiştirme
-     fonksiyonu olabilir, körlemesine çağırmak veri güvenliğini ihlal eder. */
-  const argumansizFonksiyonlar = fonksiyonlar.filter(fn => {
-    const post = (govde.paths['/rpc/' + fn] || {}).post;
-    if (!post) return false;
-    const govdeParam = (post.parameters || []).find(p => p.in === 'body');
-    if (!govdeParam) return true;
-    const ref = govdeParam.schema && govdeParam.schema['$ref'];
-    const ad = ref ? ref.split('/').pop() : null;
-    const parcaSema = ad && govde.definitions[ad];
-    /* GÜVENLİK: gövde şeması çözülemiyorsa "argümansız" SAYMA — emin
-       olamadığımız bir fonksiyonu boş gövdeyle çağırmak riskli olabilir.
-       Yalnız şemayı gerçekten görüp zorunlu alanı sıfır bulursak dahil et. */
-    return !!parcaSema && !(parcaSema.required && parcaSema.required.length);
-  });
-  return { tablolar, fonksiyonlar, argumansizFonksiyonlar, semalar: govde.definitions };
+  return { tablolar: Object.keys(govde.definitions), semalar: govde.definitions };
 }
 
 /* OpenAPI sütun tipinden minik bir örnek değer üretir — ekleme testinde
@@ -7286,16 +7265,21 @@ async function guvenlikYazDeneVeYorumla(istek, ekle, kim, deneme, yol, secenek, 
 /* ---------- A · Dış test (ziyaretçi — oturumsuz, yalnız anon key) ----------
    `sema`: guvenlikSemaKesfet'ten gelen keşif sonucu. */
 async function guvenlikDisTest(istek, ekle, sema) {
-  /* A1 · Hangi tablolar dışarıdan görünüyor — yalnız anon anahtarıyla. */
+  /* A1 · Hangi tablolar dışarıdan görünüyor + A4'ün hazırlığı — TEK bir
+     anon çağrısıyla: PostgREST'in kök uç noktası varsayılan olarak (özel
+     bir Accept başlığı gerekmeden) OpenAPI belgesini döndürür ve yalnız O
+     ROLÜN (burada: ziyaretçi/anon) erişebildiği yolları listeler. */
+  let govdeYollari = null;
   {
     const { durum, govde, hata } = await istek('/rest/v1/');
     const ayrinti = guvenlikAyrinti(durum, govde, hata);
     if (hata) ekle('Dış', 'şema listesi', 'BİLGİ', ayrinti);
     else {
-      const yollar = govde && govde.paths
-        ? Object.keys(govde.paths).filter(p => p !== '/' && p.indexOf('/rpc/') !== 0) : [];
-      ekle('Dış', 'şema listesi', yollar.length ? 'AÇIK' : 'KAPALI',
-        yollar.length ? yollar.length + ' tablo görünüyor: ' + yollar.map(p => p.slice(1)).join(', ') : ayrinti);
+      govdeYollari = (durum === 200 && govde && govde.paths) ? govde.paths : null;
+      const tabloYollari = govdeYollari
+        ? Object.keys(govdeYollari).filter(p => p !== '/' && p.indexOf('/rpc/') !== 0) : [];
+      ekle('Dış', 'şema listesi', tabloYollari.length ? 'AÇIK' : 'KAPALI',
+        tabloYollari.length ? tabloYollari.length + ' tablo görünüyor: ' + tabloYollari.map(p => p.slice(1)).join(', ') : ayrinti);
     }
   }
 
@@ -7333,14 +7317,20 @@ async function guvenlikDisTest(istek, ekle, sema) {
     }
   }
 
-  /* A4 · Fonksiyon çağırma — yalnız ŞEMADA argümansız/zorunlu-parametresiz
-     görünen ilk fonksiyon. Bulmak için deneme-yanılmayla HER fonksiyonu
-     çağırmıyoruz — aralarında bir silme/değiştirme işlevi olabilir. */
+  /* A4 · Fonksiyon çağırma — HİÇBİR ŞEY ÇAĞIRMADAN ölçer. A1'de zaten
+     çekilen anon (oturumsuz) OpenAPI belgesinden: PostgREST bir rolün
+     belgesinde YALNIZ O ROLÜN erişebildiği yolları listeler, yani /rpc/
+     yolu görünüyorsa ziyaretçi gerçekten çağırabiliyor demektir — hem
+     risksiz (hiçbir şey çalıştırılmaz) hem tam (argümanlı fonksiyonlar da
+     görünür, hiçbiri atlanmaz). */
   {
-    const aday = (sema.argumansizFonksiyonlar || [])[0];
-    if (!aday) ekle('Dış', 'fonksiyon çağırma', 'ATLANDI', 'Argümansız (zorunlu parametresiz) bir fonksiyon bulunamadı');
-    else await guvenlikYazDeneVeYorumla(istek, ekle, 'Dış', 'rpc/' + aday + ' çağırma',
-      '/rest/v1/rpc/' + aday, { method: 'POST', body: '{}' });
+    if (govdeYollari === null) {
+      ekle('Dış', 'fonksiyon çağırma', 'KAPALI', 'Ziyaretçi şemayı bile göremiyor');
+    } else {
+      const fonksiyonlar = Object.keys(govdeYollari).filter(p => p.indexOf('/rpc/') === 0).map(p => p.slice(5));
+      ekle('Dış', 'fonksiyon çağırma', fonksiyonlar.length ? 'AÇIK' : 'KAPALI',
+        fonksiyonlar.length ? 'Ziyaretçi şu fonksiyonları çağırabiliyor: ' + fonksiyonlar.join(', ') : 'Görünen /rpc/ yolu yok');
+    }
   }
 
   /* A5 · Uydurma kimlik — imzası geçersiz bir belirteçle, ilk keşfedilen tabloya. */
@@ -7382,28 +7372,40 @@ async function guvenlikDisTest(istek, ekle, sema) {
   }
 }
 
-/* A7 · Kapanmış oturum — logout sonrası aynı belirteçle bir tabloya
-   gidiliyor. DİKKAT: Supabase'in erişim belirteci (JWT) durum bilgisiz
-   çalışır; logout varsayılan olarak yalnız yenileme belirtecini iptal
-   eder, erişim belirteci kendi süresi dolana kadar (genelde ~1 saat)
-   geçerli kalmaya devam eder — bu Supabase'in normal davranışıdır, proje
-   özelinde bir açık değildir. O yüzden 2xx dönerse AÇIK değil BİLGİ
-   yazılır; yalnız 401 (anında iptal) KAPALI sayılır. Testten sonra
-   yeniden giriş yapılır — belirteç D bölümü için hâlâ gerekli. */
-async function guvenlikOturumTesti(istek, ekle, tablo, belirtec, girisYap) {
-  if (!tablo) { ekle('Dış', 'kapanmış oturum', 'ATLANDI', 'Denenecek tablo yok'); return belirtec; }
-  await istek('/auth/v1/logout', { belirtec, method: 'POST' });
-  const { durum, govde, hata } = await istek('/rest/v1/' + tablo + '?select=*&limit=1', { belirtec });
-  const ayrinti = guvenlikAyrinti(durum, govde, hata);
-  if (hata) ekle('Dış', 'kapanmış oturum', 'BİLGİ', ayrinti);
-  else if (durum === 401) ekle('Dış', 'kapanmış oturum', 'KAPALI', ayrinti);
-  else if (durum >= 200 && durum < 300)
-    ekle('Dış', 'kapanmış oturum', 'BİLGİ',
-      'Kapatılan oturumun erişim belirteci hâlâ geçerli — bu Supabase\'in normal (durum bilgisiz JWT) ' +
-      'davranışı, proje özelinde bir açık değil · ' + ayrinti);
-  else ekle('Dış', 'kapanmış oturum', 'BİLGİ', ayrinti);
-  const { durum: gDurum, govde: gGovde } = await girisYap();
-  return (gDurum === 200 && gGovde && gGovde.access_token) || belirtec;
+/* JWT'nin orta bölümünü (payload) çözer — imza doğrulamaz, yalnız exp/iat
+   okumak için. Base64url (standart base64'ten farklı: +/  yerine -_, dolgu
+   yok) çözülüp JSON'a çevrilir. */
+function guvenlikJwtCoz(token) {
+  try {
+    const parca = (token || '').split('.')[1];
+    if (!parca) return null;
+    const b64 = parca.replace(/-/g, '+').replace(/_/g, '/');
+    const dolgulu = b64 + '==='.slice((b64.length + 3) % 4);
+    return JSON.parse(atob(dolgulu));
+  } catch (h) { return null; }
+}
+
+/* A7 · Belirteç ömrü — "çıkış yap, aynı belirteçle dene" testi kaldırıldı:
+   Supabase'in erişim belirteci (JWT) durum bilgisizdir, çıkış yalnız
+   yenileme belirtecini iptal eder, erişim belirteci kendi süresi dolana
+   kadar geçerli kalmaya devam eder — bu her zaman "hâlâ geçerli" çıkıp
+   yanlış alarm verirdi. Asıl soru: ÇALINAN bir belirteç ne kadar süre
+   geçerli kalır? Giriş cevabındaki access_token'ın exp - iat farkına
+   bakılır; hiçbir şey çağrılmaz. */
+function guvenlikBelirtecOmruTesti(ekle, girisGovdesi) {
+  const yuk = guvenlikJwtCoz(girisGovdesi && girisGovdesi.access_token);
+  if (!yuk || !yuk.exp || !yuk.iat) {
+    ekle('Dış', 'belirteç ömrü', 'BİLGİ', 'Belirteç çözülemedi — exp/iat alanı yok');
+    return;
+  }
+  const saniye = yuk.exp - yuk.iat;
+  const saat = saniye / 3600;
+  const ayrinti = 'Belirteç ömrü ' + Math.round(saniye) + ' saniye (~' + (Math.round(saat * 10) / 10) + ' saat)';
+  if (saat <= 1) ekle('Dış', 'belirteç ömrü', 'KAPALI', ayrinti);
+  else if (saat <= 24) ekle('Dış', 'belirteç ömrü', 'BİLGİ', ayrinti + ' — 1 saatten uzun, sebebi olmalı');
+  else ekle('Dış', 'belirteç ömrü', 'AÇIK',
+    'Çalınan bir belirteç günlerce geçerli kalır — Supabase → Authentication → Sessions → ' +
+    'Access token (JWT) expiry değerini 3600 saniyeye (1 saat) indirin. · ' + ayrinti);
 }
 
 /* ---------- 0.2 · Giriş yapan hesabın katmanını öğren ----------
@@ -7509,13 +7511,11 @@ async function guvenlikTestiCalistir({ url, anon, eposta, sifre }) {
     return satir;
   };
 
-  const girisYap = () => istek('/auth/v1/token?grant_type=password', {
+  /* 0.1 · Giriş — başarısızsa hiçbir şey çalıştırma, tek satırla dur. */
+  const gSonuc = await istek('/auth/v1/token?grant_type=password', {
     belirtec: anon, method: 'POST', body: JSON.stringify({ email: eposta, password: sifre }),
   });
-
-  /* 0.1 · Giriş — başarısızsa hiçbir şey çalıştırma, tek satırla dur. */
-  const gSonuc = await girisYap();
-  let belirtec = !gSonuc.hata && gSonuc.durum === 200 && gSonuc.govde && gSonuc.govde.access_token;
+  const belirtec = !gSonuc.hata && gSonuc.durum === 200 && gSonuc.govde && gSonuc.govde.access_token;
   const ownAuthId = belirtec && gSonuc.govde.user && gSonuc.govde.user.id;
 
   if (!belirtec) {
@@ -7532,8 +7532,8 @@ async function guvenlikTestiCalistir({ url, anon, eposta, sifre }) {
   /* A · Dış test (anon, oturumsuz). */
   await guvenlikDisTest(istek, ekle, sema);
 
-  /* A7 · kapanmış oturum — belirteci değiştirebilir (yeniden giriş yapar). */
-  belirtec = await guvenlikOturumTesti(istek, ekle, (sema.tablolar || [])[0], belirtec, girisYap);
+  /* A7 · belirteç ömrü — hiçbir şey çağırmaz, giriş cevabını okur. */
+  guvenlikBelirtecOmruTesti(ekle, gSonuc.govde);
 
   /* 0.2 · Hesabın katmanı (best effort) + D · personel yetki haritası. */
   const katman = await guvenlikKendiKatmanim(istek, belirtec, ownAuthId, sema.tablolar || []);

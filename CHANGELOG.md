@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.136.1
+- **Güvenlik Testi'nde A4 ve A7 düzeltildi.** "Fonksiyon çağırma" artık hiçbir şey çalıştırmıyor — A1'de zaten çekilen anon (oturumsuz) şema belgesine bakıp ziyaretçinin görebildiği /rpc/ yollarını doğrudan sayıyor (PostgREST bir rolün belgesinde yalnız o rolün erişebildiklerini listeler). "Kapanmış oturum" testi tamamen kaldırıldı — Supabase'in erişim belirteci durum bilgisiz (JWT) olduğu için çıkış yapmak onu geçersiz kılmıyordu, bu her zaman yanlış alarm veriyordu. Yerine "belirteç ömrü" testi geldi: giriş cevabındaki JWT'nin exp/iat farkına bakıyor — 1 saat ve altı KAPALI, 1-24 saat BİLGİ, 24 saatten uzunsa AÇIK (çalınan bir belirteç günlerce geçerli kalır uyarısıyla).
+
 ## v0.136.0
 - **Güvenlik Testi motoru baştan yazıldı — 1. aşama (A + D).** Sabit tablo listesi kaldırıldı: artık PostgREST'in kendi OpenAPI belgesinden (şema keşfi) hangi tabloların/fonksiyonların olduğunu öğreniyor, bu yüzden yalnız muhasebe şablonunda değil herhangi bir Supabase projesinde çalışır. Dış test (A) genişledi: kapanmış oturum ve argümansız fonksiyon çağırma testleri eklendi, silme testleri artık her zaman gerçek (kendi eklediği) bir satırla deneniyor — eşleşmeyecek süzgeç yok. Yeni bir bölüm: Personel yetki haritası (D) — keşfedilen her tabloda okur/ekler/değiştirir/siler durumunu gösterir, hüküm vermez (bir programda serbest olan başka programda yasak olabilir). Yapısal (B) ve programa özel (C) denetimler ayrı bir aşamada gelecek — o ikisi Supabase erişim jetonu ister, bu yüzden tek bir sunucu fonksiyonu (Edge Function) gerektirecek.
 
