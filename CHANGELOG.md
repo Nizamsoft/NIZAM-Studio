@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.136.4
+- **Güvenlik Testi: guvenlik.json artık doğrudan adresten de okunabiliyor.** Depo gizliyse GitHub API'den ham içerik çekmek 401/404 veriyordu — dosya genelde başka bir adreste (ör. GitHub Pages) açık yayında oluyor. Alan artık "http(s)://" ile başlayan bir adresi olduğu gibi indiriyor (GitHub'a hiç gidilmez, jeton istenmez); "github.com/sahip/depo" biçimi girilirse eskisi gibi GitHub API'den denenir, başarısız olursa "Depo gizli görünüyor, doğrudan adres girin" diyor. "Bulunamadı (404)" ile "tarayıcı engelledi (CORS)/bağlantı sorunu" artık ayrı mesajlarla gösteriliyor.
+
 ## v0.136.3
 - **Güvenlik Testi: A1 ve A4 ölçmeden yeşil/kırmızı göstermeyi bıraktı.** A1 ("şema listesi"), Supabase'in yeni anahtar düzeninde kök uç yayınlanabilir anahtarla açılmadığında ("Secret API key required") artık KAPALI değil BİLGİ yazıyor — bu bir platform kuralı, projenin ayarı değil; ziyaretçinin veri okuyup okuyamadığı zaten A2'de tablo uçlarından ölçülüyor. A4 ("fonksiyon çağırma") artık rastgele/keşfedilen bir fonksiyonu değil, programın guvenlik.json'unda bildirdiği tek güvenli deneme fonksiyonunu (`fonksiyonlar.deneme_guvenli`, muhasebe şablonunda `ns_katman`) çağırıyor — dosya yoksa ya da alan boşsa ATLANDI, bulgu gibi gösterilmiyor.
 

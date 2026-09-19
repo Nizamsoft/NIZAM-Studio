@@ -717,14 +717,15 @@ const VIEWS = {
       </div>
 
       <div class="section">
-        <span class="label">GitHub deposu (opsiyonel)</span>
+        <span class="label">guvenlik.json adresi (opsiyonel)</span>
         <div class="card" style="padding:14px">
           <p class="ipucu" style="margin:0 0 10px">Tablo listesi önce otomatik keşfedilir; olmazsa
-            programın deposundaki <code>guvenlik.json</code>'dan okunur. Depo adresi yalnız bu yedek
-            için gerekli — public bir depo yeterli.</p>
-          <label class="field"><span>Depo adresi</span>
+            programın <code>guvenlik.json</code>'undan okunur — bu yedek için gerekli. Depo GİZLİYSE
+            (github.com/… adresi 401/404 verir) dosyanın yayında olduğu doğrudan adresi gir (ör.
+            GitHub Pages). Depo PUBLIC'se github.com/sahip/depo yazman yeterli.</p>
+          <label class="field"><span>Adres</span>
             <input type="text" id="gv-depo" value="${esc(g.depo)}"
-                   placeholder="github.com/.../..." autocomplete="off"
+                   placeholder="https://.../guvenlik.json ya da github.com/sahip/depo" autocomplete="off"
                    spellcheck="false" autocapitalize="off"></label>
         </div>
       </div>
@@ -7212,19 +7213,52 @@ async function guvenlikSemaKesfet(istek, belirtec) {
   return { tablolar: Object.keys(govde.definitions), semalar: govde.definitions };
 }
 
-/* guvenlik.json'u programın GitHub deposunun kökünden okur — yalnız
-   tablolar.liste alanı kullanılıyor (bkz. guvenlikTabloListesiKesfet).
-   Depo public değilse, dosya yoksa ya da bozuksa SESSİZCE null döner;
-   hata verilmez — bu bir yedek kaynak, olmaması normal bir durum. */
-async function guvenlikJsonOku(depo) {
-  const slug = depoSlug(depo);
-  if (!slug) return null;
+/* Bir adresten JSON metni indirir — hem guvenlik.json'un kendisi hem
+   (aşama 2'de) sql_testi.parcalar için ortak. 404 ile "tarayıcı engelledi
+   (CORS)/bağlantı sorunu" ayrı mesajlarla döner: ikisi aynı şey değil,
+   çözümleri farklı. fetch ikisini de aynı jenerik hatayla fırlatır (tarayıcı
+   ayrıntı vermez), o yüzden network/CORS ikisi tek mesajda birleşti. */
+async function guvenlikUrlIndir(url) {
   try {
-    const r = await fetch('https://api.github.com/repos/' + slug + '/contents/guvenlik.json',
-      { headers: { Accept: 'application/vnd.github.v3.raw' } });
-    if (!r.ok) return null;
-    return JSON.parse(await r.text());
-  } catch (h) { return null; }
+    const r = await fetch(url);
+    if (r.status === 404) return { metin: null, hata: 'Adreste dosya bulunamadı (404).' };
+    if (!r.ok) return { metin: null, hata: 'Okunamadı (HTTP ' + r.status + ').' };
+    return { metin: await r.text(), hata: '' };
+  } catch (h) {
+    return { metin: null, hata: 'İndirilemedi — tarayıcı engellemiş olabilir (CORS) ya da bağlantı sorunu.' };
+  }
+}
+
+/* guvenlik.json'u okur — yalnız tablolar.liste ve fonksiyonlar.deneme_guvenli
+   alanları kullanılıyor (bkz. guvenlikTabloListesiKesfet, guvenlikDisTest).
+   `depo` iki biçimde girilebilir:
+     - "http(s)://..." → OLDUĞU GİBİ indirilir (ör. GitHub Pages adresi) —
+       github.com'a hiç gidilmez, jeton istenmez. Depo gizliyse tek çalışan
+       yol budur (dosyanın yayında olduğu gerçek adres).
+     - "github.com/sahip/depo" → GitHub API'den ham içerik denenir; depo
+       gizliyse 401/404 döner, bu durumda kullanıcıya doğrudan adres girmesi
+       söylenir.
+   Alan boşsa ya da hiçbir şey bulunamazsa SESSİZCE {json:null} döner —
+   çağıran yalnız gerektiğinde (üç kaynak da boşsa) hatayı gösterir. */
+async function guvenlikJsonOku(depo) {
+  const deger = String(depo || '').trim();
+  if (!deger) return { json: null, hata: '' };
+
+  let metin, hata;
+  if (/^https?:\/\//i.test(deger)) {
+    ({ metin, hata } = await guvenlikUrlIndir(deger));
+  } else {
+    const slug = depoSlug(deger);
+    if (!slug) return { json: null, hata: 'Adres anlaşılamadı — bir URL ya da github.com/sahip/depo girin.' };
+    const sonuc = await guvenlikUrlIndir('https://api.github.com/repos/' + slug + '/contents/guvenlik.json');
+    metin = sonuc.metin; hata = sonuc.hata;
+    if (!metin && /404/.test(hata || '')) {
+      hata = 'Depo gizli görünüyor. guvenlik.json\'un doğrudan adresini girin (ör. GitHub Pages adresi).';
+    }
+  }
+  if (!metin) return { json: null, hata };
+  try { return { json: JSON.parse(metin), hata: '' }; }
+  catch (h) { return { json: null, hata: 'guvenlik.json geçerli bir JSON değil.' }; }
 }
 
 /* Tablo listesi — ÜÇ KAYNAKTAN, SIRAYLA:
@@ -7609,7 +7643,7 @@ async function guvenlikTestiCalistir({ url, anon, eposta, sifre, depo }) {
 
   /* guvenlik.json bir kez okunur — hem tablo listesi yedeği (3.2) hem A4'ün
      güvenli deneme fonksiyonu (fonksiyonlar.deneme_guvenli) için kullanılır. */
-  const guvenlikJson = await guvenlikJsonOku(depo);
+  const { json: guvenlikJson, hata: guvenlikJsonHata } = await guvenlikJsonOku(depo);
 
   /* 1 · Tablo listesi — üç kaynaktan sırayla (bkz. guvenlikTabloListesiKesfet):
      OpenAPI keşfi (sütun şemasıyla birlikte) → guvenlik.json (yalnız
@@ -7620,8 +7654,7 @@ async function guvenlikTestiCalistir({ url, anon, eposta, sifre, depo }) {
   if (!sema.tablolar.length) {
     ekle('Dış', 'tablo listesi', 'BİLGİ',
       'Tablo listesi bulunamadı — yalnız oturumsuz denemeler çalıştı (okuma/yazma ve yetki haritası atlandı). ' +
-      'OpenAPI: ' + (sema.hata || 'boş liste') + (depo ? '; guvenlik.json da okunamadı ya da tablolar.liste yok.'
-        : '; denemek için GitHub depo adresi de girilebilir.'));
+      (depo ? 'guvenlik.json: ' + (guvenlikJsonHata || 'tablolar.liste yok') : 'Denemek için guvenlik.json adresi de girilebilir.'));
   }
 
   /* A · Dış test (anon, oturumsuz). */
