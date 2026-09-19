@@ -742,15 +742,19 @@ const VIEWS = {
       <div class="section">
         <span class="label">2. Aşama · B ve C testleri (bir kere kurulur)</span>
         <div class="card" style="padding:14px">
-          <p class="ipucu" style="margin:0 0 10px">Yapısal (B) ve programa özel (C) denetimler Supabase
-            erişim jetonu ister — o jeton tarayıcıya hiç inmez, Studio'nun kendi Supabase'inde tek bir
-            Edge Function'ın (<code>guvenlik-sql</code>) gizli değişkeni olarak durur. Bir kere kur,
-            sonrası otomatik: <b>Test Et</b> her çalıştığında bu ikisini de dener; fonksiyon kurulu
-            değilse sessizce atlar.</p>
+          <p class="ipucu" style="margin:0 0 10px">Yapısal (B) ve programa özel (C) denetimler bir Supabase
+            erişim jetonu (personal access token) ister — o jeton tarayıcıya hiç inmez, Studio'nun kendi
+            Supabase'inde tek bir Edge Function'ın (<code>guvenlik-sql</code>) gizli değişkeni olarak durur.
+            Bu fonksiyonun kendisi Studio'nun Supabase'inde barınıyor (testi çalıştıran, "kumanda merkezi"
+            burası) — ama jetonun kendisi bir PROJEYE değil, HESABA aittir: hangi projeyi test edeceksen o
+            projenin SAHİBİ OLDUĞUN hesaptan alınmalı, yoksa Management API o projeye erişim vermez. Bir
+            kere kur, sonrası otomatik: <b>Test Et</b> her çalıştığında bu ikisini de dener; fonksiyon
+            kurulu değilse sessizce atlar.</p>
           <p class="ipucu" style="margin:0 0 10px">Kurulum: Studio'nun Supabase'inde <b>Edge Functions →
             New Function</b>, adı <code>guvenlik-sql</code>, kodu yapıştır, deploy et. Sonra o
             fonksiyonun <b>Secrets</b> bölümüne <code>NS_SUPABASE_JETON</code> ekle — değeri
-            <code>supabase.com/dashboard/account/tokens</code>'dan alınan kişisel erişim jetonu.</p>
+            <b>proje ayarlarındaki bir API anahtarı DEĞİL</b>, <code>supabase.com/dashboard/account/tokens</code>
+            → Generate new token'dan alınan, <code>sbp_</code> ile başlayan kişisel erişim jetonu.</p>
           <div class="kur-dug">
             <button class="sayfa-dug ikincil" type="button" data-eylem="guvenlik-sql-kopyala">
               ${svg(ICON.kopya, 15)} Fonksiyon kodunu kopyala</button>
@@ -7226,7 +7230,10 @@ const GUVENLIK_SQL_FONKSIYON = `/* Güvenlik testi · SQL çalıştırma köprü
    KURULUM
      Studio'nun kendi Supabase'inde: Edge Functions → New Function →
      "guvenlik-sql" → bu kodu yapıştır, deploy et. Sonra Secrets'a
-     NS_SUPABASE_JETON ekle (değeri supabase.com/dashboard/account/tokens).
+     NS_SUPABASE_JETON ekle — supabase.com/dashboard/account/tokens →
+     Generate new token, sbp_ ile başlar. ÖNEMLİ: bu jeton PROJEYE değil
+     HESABA aittir; test edilecek projelerin SAHİBİ OLDUĞUN hesaptan
+     alınmalı, yoksa Management API o projelere erişim vermez.
 */
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
@@ -7290,6 +7297,11 @@ Deno.serve(async (istek: Request) => {
 
   const jeton = Deno.env.get("NS_SUPABASE_JETON");
   if (!jeton) return hata("NS_SUPABASE_JETON tanımlı değil — bu fonksiyonun Secrets bölümüne eklenmeli.", 500);
+  if (!jeton.startsWith("sbp_")) {
+    return hata("NS_SUPABASE_JETON yanlış türde görünüyor — bu bir proje API anahtarına benziyor. " +
+      "Gereken şey hesap düzeyindeki kişisel erişim jetonu (personal access token): " +
+      "supabase.com/dashboard/account/tokens → Generate new token, sbp_ ile başlar.", 500);
+  }
 
   /* ---- 4 · Management API'ye ilet ---- */
   try {

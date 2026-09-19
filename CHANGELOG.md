@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.137.2
+- **Jeton açıklaması netleştirildi.** NS_SUPABASE_JETON bir PROJEYE değil HESABA aittir — Studio'nun kendi Supabase'inde durması, testi çalıştıran fonksiyonun orada barınmasından; jetonun kendisi test edilecek projelerin SAHİBİ OLDUĞUN hesaptan (supabase.com/dashboard/account/tokens, sbp_ ile başlar) alınmalı. Ayarlar > Güvenlik Testi'ndeki kurulum metni buna göre düzeltildi. guvenlik-sql fonksiyonu artık girilen değer sbp_ ile başlamıyorsa ("proje API anahtarına benziyor") net bir hata veriyor, Management API'nin belirsiz reddiyle uğraştırmıyor.
+
 ## v0.137.1
 - **Güvenlik Testi: "permission denied for table/function" artık KESİN ret sayılıyor.** Canlı testte görüldü — anon'un hiç GRANT'i olmayan bir tabloda ekleme denemesi bu mesajı veriyordu ve "ölçülemedi" (belirsiz) diye işaretleniyordu, oysa GRANT düzeyinde ret RLS reddi kadar kesindir. Artık "ekleyemez"/KAPALI yazıyor.
 
