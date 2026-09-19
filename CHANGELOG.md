@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## v0.139.1
+- **Yetkilendirme promptu güncellendi.** Üç madde eklendi: (1) RLS SQL'i artık sohbette kalmıyor — Claude önce depoya yeni numaralı bir göç dosyası yazıp commit'e gönderiyor, sonra aynı içeriği yapıştırılabilir blok olarak veriyor; var olan göç dosyası asla değiştirilmiyor ve `guvenlik.json` → `veritabani_surumu` aynı commit'te güncelleniyor. (2) Var olan kapıları gevşetmesi yasak — kurulu politikalar zaten `ns_gecerli_kullanici()` / `ns_ust_katman_mi()` gibi kapılardan geçiyor, yalnız üstüne daraltabilir. (3) Bitiş şartı değişti: "kuruldu" demek yetmiyor, sıradaki Güvenlik kontrolü aşaması ölçecek — prompt bunu söyleyip Claude'dan kendi yazdığını bir kez daha okumasını istiyor.
+- Arayüzde gizlemenin kolaylık olduğu, güvenliğin sunucu tarafında olduğu promptta ayrı bir madde olarak yazıldı.
+
 ## v0.139.0
 - **Yeni aşama: Güvenlik kontrolü (9).** Yetkilendirme ile Final'in arasına girdi; Final artık bu aşama temiz çıkmadan açılmıyor. Gerekçe: "kuruldu" demek bir iddiadır, açık olup olmadığı ancak saldırarak bilinir. Ayarlar > Güvenlik Testi ile aynı motoru kullanıyor (dış, yapısal, programa özel ve sunucu işlevi denetimleri), tek farkı Supabase adresi ve anon key'in projeden gelmesi — Bağlantılar ve temel'de zaten girilmişti, bir daha sorulmuyor. Kullanıcı yalnız test hesabını ve guvenlik.json adresini yazıyor.
 - Ölçümün özeti (deneme sayısı, açık sayısı, tarih) projeye kaydediliyor, sayfa yenilenince kaybolmuyor. "Tamamlandı" düğmesi yalnız sıfır açıkken açılıyor; bir açık bulunursa aşama kendiliğinden geri alınıyor.
