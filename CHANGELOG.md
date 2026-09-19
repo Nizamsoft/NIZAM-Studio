@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.136.5
+- **Personel yetki haritası artık sütun şemasına muhtaç değil.** Değiştirme testi, okuma testinin döndürdüğü gerçek satırın kendi anahtarlarından bir metin sütunu seçiyor — ayrı bir OpenAPI şemasına gerek yok. Ekleme testi boş gövde (`{}`) gönderip hata metnini yorumluyor: "row-level security"/"yetki"/"yalnız" içeren hata KESİN "ekleyemez", başka bir hata (zorunlu alan, iş kuralı, foreign key) BEFORE tetiklerinin satır güvenliğinden önce çalışabilmesi yüzünden belirsiz — "ölçülemedi" yazılıyor, "ekler" denmiyor. Silme yalnız ekleme başarılı olduysa, kendi eklediği kayıtta deneniyor; olmadıysa "ölçülemedi · B katmanında ölçülür". Aynı boş-gövde yöntemi A3 (ziyaretçi yazma) testine de uygulandı, artık o da sütun şeması istemiyor. "Kendi kendine kayıt" testinde HTTP 429 (çok deneme) artık KAPALI değil BİLGİ.
+
 ## v0.136.4
 - **Güvenlik Testi: guvenlik.json artık doğrudan adresten de okunabiliyor.** Depo gizliyse GitHub API'den ham içerik çekmek 401/404 veriyordu — dosya genelde başka bir adreste (ör. GitHub Pages) açık yayında oluyor. Alan artık "http(s)://" ile başlayan bir adresi olduğu gibi indiriyor (GitHub'a hiç gidilmez, jeton istenmez); "github.com/sahip/depo" biçimi girilirse eskisi gibi GitHub API'den denenir, başarısız olursa "Depo gizli görünüyor, doğrudan adres girin" diyor. "Bulunamadı (404)" ile "tarayıcı engelledi (CORS)/bağlantı sorunu" artık ayrı mesajlarla gösteriliyor.
 

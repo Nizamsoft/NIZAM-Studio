@@ -7200,17 +7200,19 @@ function guvenlikAyrinti(durum, govde, hata, ekNot) {
 }
 
 /* Şema keşfi — sabit tablo listesi YOK. PostgREST'in kendi OpenAPI
-   belgesini (Swagger 2.0 biçiminde) okuyup projedeki gerçek tabloları,
-   sütunlarını/zorunlu alanlarını ve /rpc/ fonksiyonlarını çıkarır. Giriş
-   yapmış kimlikle çekiliyor (bkz. çağıran) — ziyaretçiden daha çok tablo
-   görebilir, test listesi en geniş haliyle kurulsun diye. */
+   belgesini (Swagger 2.0 biçiminde) okuyup projedeki gerçek tabloları
+   çıkarır. Giriş yapmış kimlikle çekiliyor (bkz. çağıran) — ziyaretçiden
+   daha çok tablo görebilir, test listesi en geniş haliyle kurulsun diye.
+   Sütun bilgisi artık kullanılmıyor (bkz. guvenlikBosGovdeIleEkle,
+   guvenlikMetinAlaniSatirdan) — ekleme/değiştirme testleri şemaya değil,
+   gerçek denemeye ve okunan satırın kendi anahtarlarına bakıyor. */
 async function guvenlikSemaKesfet(istek, belirtec) {
   const { durum, govde, hata } = await istek('/rest/v1/',
     { belirtec, headers: { Accept: 'application/openapi+json' } });
   if (hata || durum !== 200 || !govde || !govde.definitions) {
-    return { hata: hata || ('HTTP ' + durum), tablolar: [], semalar: {} };
+    return { hata: hata || ('HTTP ' + durum), tablolar: [] };
   }
-  return { tablolar: Object.keys(govde.definitions), semalar: govde.definitions };
+  return { tablolar: Object.keys(govde.definitions) };
 }
 
 /* Bir adresten JSON metni indirir — hem guvenlik.json'un kendisi hem
@@ -7274,50 +7276,57 @@ async function guvenlikJsonOku(depo) {
        (çağıran ekranda böyle göstermeli). */
 async function guvenlikTabloListesiKesfet(istek, belirtec, json) {
   const sema = await guvenlikSemaKesfet(istek, belirtec);
-  if (sema.tablolar.length) return { tablolar: sema.tablolar, semalar: sema.semalar, kaynak: 'openapi' };
+  if (sema.tablolar.length) return { tablolar: sema.tablolar, kaynak: 'openapi' };
 
   const liste = json && json.tablolar && Array.isArray(json.tablolar.liste) ? json.tablolar.liste : null;
-  if (liste && liste.length) return { tablolar: liste, semalar: {}, kaynak: 'guvenlik.json' };
+  if (liste && liste.length) return { tablolar: liste, kaynak: 'guvenlik.json' };
 
-  return { tablolar: [], semalar: {}, kaynak: null, hata: sema.hata };
+  return { tablolar: [], kaynak: null, hata: sema.hata };
 }
 
-/* OpenAPI sütun tipinden minik bir örnek değer üretir — ekleme testinde
-   zorunlu alanları doldurmak için. Tahmin yürütmüyor: tip/format neyse ona
-   göre en basit değeri veriyor, metin alanlarına iz sürülebilir bir etiket
-   (NS-GUVENLIK-TESTI) yazıyor. */
-function guvenlikOrnekDeger(ozellik) {
-  const tip = ozellik && ozellik.type;
-  const format = ozellik && ozellik.format;
-  if (format === 'uuid') return guvenlikUuid();
-  if (format === 'date') return new Date().toISOString().slice(0, 10);
-  if (format === 'timestamp' || format === 'timestamptz' || format === 'date-time') return new Date().toISOString();
-  if (tip === 'integer' || tip === 'number') return 0;
-  if (tip === 'boolean') return false;
-  return 'NS-GUVENLIK-TESTI';
-}
-
-/* Zorunlu alanlardan en küçük ekleme gövdesini kurar (id hariç — genelde
-   otomatik üretilir). */
-function guvenlikEklemeGovdesi(sema) {
-  const govde = {};
-  const ozellikler = (sema && sema.properties) || {};
-  const zorunlu = (sema && sema.required) || [];
-  zorunlu.forEach(ad => { if (ad !== 'id') govde[ad] = guvenlikOrnekDeger(ozellikler[ad]); });
-  return govde;
-}
-
-/* "Değiştirir" testi için uygun bir metin sütunu seçer — id, *_id ve uuid/
-   tarih alanları elenir; ilk düz metin sütunu kullanılır. */
-function guvenlikMetinAlani(sema) {
-  const ozellikler = (sema && sema.properties) || {};
-  const adaylar = Object.keys(ozellikler).filter(ad => {
+/* "Değiştirir" testi için uygun bir metin sütunu seçer — ŞEMAYA GEREK YOK:
+   okuma testinin döndürdüğü GERÇEK satırın kendi anahtarları zaten o
+   tablonun sütunlarıdır. id, *_id ve UUID/ISO-tarih GÖRÜNÜMLÜ değerler
+   elenir (tip bilgisi yok, yalnız çalışma zamanı değerine bakılabiliyor);
+   ilk düz metin değerli sütun kullanılır. */
+const GUVENLIK_UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const GUVENLIK_TARIH_RE = /^\d{4}-\d{2}-\d{2}/;
+function guvenlikMetinAlaniSatirdan(satir) {
+  const adaylar = Object.keys(satir || {}).filter(ad => {
     if (ad === 'id' || /_id$/.test(ad)) return false;
-    const o = ozellikler[ad];
-    return o && o.type === 'string' && o.format !== 'uuid' && o.format !== 'date'
-      && o.format !== 'date-time' && o.format !== 'timestamp' && o.format !== 'timestamptz';
+    const deger = satir[ad];
+    return typeof deger === 'string' && !GUVENLIK_UUID_RE.test(deger) && !GUVENLIK_TARIH_RE.test(deger);
   });
   return adaylar[0] || null;
+}
+
+/* Satır güvenliği (RLS) engeliyle uygulamanın kendi iş kuralı/tetik
+   engelini AYIRT EDER — ikisi farklı mesajla gelir, farklı anlama gelir:
+     "row-level security" içeren hata → izin KESİN yok (RLS engelledi)
+     "yetki" ya da "yalnız" içeren hata → izin KESİN yok (uygulamanın
+       kendi yetki kontrolü — bir tetik)
+   Başka bir hata (zorunlu alan, iş kuralı, foreign key) belirsizdir:
+   BEFORE tetikleri satır güvenliğinden ÖNCE çalışabildiği için, geçerli
+   bir gövdeyle gönderilse arkasından yine reddedilmiş olabilirdi — bu
+   yüzden çağıran "ölçülemedi" yazar, "ekler" YAZMAZ (bkz. guvenlikBosGovdeIleEkle). */
+function guvenlikEklemeKesinReddedildiMi(mesaj) {
+  const m = (mesaj || '').toLocaleLowerCase('tr');
+  return m.indexOf('row-level security') >= 0 || m.indexOf('yetki') >= 0 || m.indexOf('yalnız') >= 0;
+}
+
+/* Ekleme testi — ŞEMA GEREKMEZ: BOŞ gövde (`{}`) gönderilir, hata metni
+   yorumlanır. Bu TEK YÖNLÜ bir testtir: kesin ret güvenilirdir ("ekleyemez"),
+   ama kesin ret DIŞINDAKİ bir hata "izin var" anlamına gelmez — yalnız
+   "ölçülemedi" denir (bkz. guvenlikEklemeKesinReddedildiMi). 2xx ise zaten
+   satır oluşmuş demektir, dönen satır (varsa) id'siyle birlikte taşınır. */
+async function guvenlikBosGovdeIleEkle(istek, tablo, secenek) {
+  const { durum, govde, hata } = await istek('/rest/v1/' + tablo,
+    Object.assign({ method: 'POST', headers: { Prefer: 'return=representation' }, body: '{}' }, secenek || {}));
+  if (hata) return { sonuc: 'olcumsuz', mesaj: 'Bağlantı hatası: ' + hata, satir: null };
+  if (durum >= 200 && durum < 300) return { sonuc: 'ekler', satir: (Array.isArray(govde) && govde[0]) || null };
+  const mesaj = (govde && govde.message) || ('HTTP ' + durum);
+  if (guvenlikEklemeKesinReddedildiMi(mesaj)) return { sonuc: 'ekleyemez', mesaj };
+  return { sonuc: 'olcumsuz', mesaj };
 }
 
 /* Tek bir yazma/silme denemesini çalıştırıp yorumlar.
@@ -7389,27 +7398,32 @@ async function guvenlikDisTest(istek, ekle, sema, guvenlikJson) {
     else ekle('Dış', deneme, 'BİLGİ', ayrinti);
   }
 
-  /* A3 · Yazma ve silme — ilk keşfedilen tabloda, YALNIZ sütun şeması
-     varsa (kaynak OpenAPI ise). guvenlik.json yalnız tablo adı verir;
-     şemasız bir ekleme gövdesi kurmak eksik-alan hatasını yanlışlıkla
-     KAPALI diye okutur — "ölçülemedi" demek daha doğru. Silme gerçek
-     id'yle denenir (kendi eklediği satır) — eşleşmeyecek süzgeç YOK,
-     hüküm dönen diziye bakar (bkz. guvenlikYazDeneVeYorumla). */
-  if (tablolar[0] && sema.kaynak !== 'openapi') {
-    ekle('Dış', tablolar[0] + ' yazma', 'ATLANDI', 'Sütun şeması yok (yalnız tablo adı biliniyor) — güvenli bir ekleme gövdesi kurulamadı');
-  } else if (tablolar[0]) {
+  /* A3 · Yazma ve silme — ilk keşfedilen tabloda, BOŞ GÖVDE ile (şema
+     gerekmez, bkz. guvenlikBosGovdeIleEkle). Satır güvenliği/yetki hatası
+     KESİN "KAPALI"; başka bir hata (zorunlu alan, iş kuralı, FK) BEFORE
+     tetikleri satır güvenliğinden önce çalışabildiği için belirsizdir —
+     "BİLGİ" yazılır, "AÇIK" denmez. Silme yalnız ekleme BAŞARILI olduysa,
+     kendi eklediği gerçek satırda denenir — hüküm dönen diziye bakar
+     (bkz. guvenlikYazDeneVeYorumla). */
+  if (tablolar[0]) {
     const tablo = tablolar[0];
-    const eklemeGovdesi = guvenlikEklemeGovdesi(sema.semalar[tablo]);
-    const { govde, sonuc } = await guvenlikYazDeneVeYorumla(istek, ekle, 'Dış', tablo + ' yazma',
-      '/rest/v1/' + tablo, { method: 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify(eklemeGovdesi) },
-      'Ziyaretçi kayıt ekleyebiliyor');
-    const id = sonuc === 'AÇIK' && govde && govde[0] && govde[0].id;
-    if (id) {
-      await guvenlikYazDeneVeYorumla(istek, ekle, 'Dış', tablo + ' silme',
-        '/rest/v1/' + tablo + '?id=eq.' + encodeURIComponent(id),
-        { method: 'DELETE', headers: { Prefer: 'return=representation' } }, 'Ziyaretçi silebiliyor');
-    } else {
+    const eklemeSonucu = await guvenlikBosGovdeIleEkle(istek, tablo);
+    if (eklemeSonucu.sonuc === 'ekler') {
+      ekle('Dış', tablo + ' yazma', 'AÇIK', 'Ziyaretçi kayıt ekleyebiliyor');
+      const id = eklemeSonucu.satir && eklemeSonucu.satir.id;
+      if (id) {
+        await guvenlikYazDeneVeYorumla(istek, ekle, 'Dış', tablo + ' silme',
+          '/rest/v1/' + tablo + '?id=eq.' + encodeURIComponent(id),
+          { method: 'DELETE', headers: { Prefer: 'return=representation' } }, 'Ziyaretçi silebiliyor');
+      } else {
+        ekle('Dış', tablo + ' silme', 'ATLANDI', 'Eklenen satırın id\'si okunamadı');
+      }
+    } else if (eklemeSonucu.sonuc === 'ekleyemez') {
+      ekle('Dış', tablo + ' yazma', 'KAPALI', eklemeSonucu.mesaj || '');
       ekle('Dış', tablo + ' silme', 'ATLANDI', 'Yazma kapalı olduğu için gerçek bir satırla denenemedi');
+    } else {
+      ekle('Dış', tablo + ' yazma', 'BİLGİ', 'Ölçülemedi' + (eklemeSonucu.mesaj ? ' · ' + eklemeSonucu.mesaj : ''));
+      ekle('Dış', tablo + ' silme', 'ATLANDI', 'Yazma ölçülemediği için gerçek bir satırla denenemedi');
     }
   }
 
@@ -7469,6 +7483,10 @@ async function guvenlikDisTest(istek, ekle, sema, guvenlikJson) {
         'User Signups → "Allow new users to sign up" kapatın, Save changes deyin. ' +
         '"Enable email provider"a DOKUNMAYIN, o giriş yapmayı sağlar. Açılan ' + eposta +
         ' hesabını Authentication → Users listesinden silin. · ' + ayrinti);
+    /* 429: çok deneme yapıldığı için Supabase kendisi reddetti — bu bir
+       hız sınırı, kayıt kapalı olduğu anlamına gelmez. KAPALI SAYILMAZ. */
+    else if (durum === 429)
+      ekle('Dış', 'kendi kendine kayıt', 'BİLGİ', 'Çok deneme yapıldı, ölçülemedi — biraz sonra tekrar deneyin. · ' + ayrinti);
     else if (durum === 422 || durum === 400 || durum === 403)
       ekle('Dış', 'kendi kendine kayıt', 'KAPALI', ayrinti);
     else ekle('Dış', 'kendi kendine kayıt', 'BİLGİ', ayrinti);
@@ -7541,12 +7559,11 @@ async function guvenlikKendiKatmanim(istek, belirtec, ownAuthId, tablolar) {
 async function guvenlikPersonelHaritasi(istek, belirtec, sema, kalintilar) {
   const satirlar = [];
   for (const tablo of sema.tablolar) {
-    const semaTablo = sema.semalar[tablo];
-    const semaVar = !!semaTablo;
-    const idVar = !!(semaVar && semaTablo.properties && ('id' in semaTablo.properties));
     const satir = { tablo, okur: 'ölçülemedi', ekler: 'ölçülemedi', degistirir: 'ölçülemedi', siler: 'ölçülemedi' };
 
-    /* Okuma — sütun şeması gerekmez, yalnız tablo adı yeterli. */
+    /* Okuma — sütun şeması gerekmez, yalnız tablo adı yeterli. Bulunan
+       satırın kendi ANAHTARLARI aynı zamanda o tablonun sütunlarıdır —
+       değiştirme testi ayrı bir şemaya değil, bu satıra bakar. */
     const { durum: oDurum, govde: oGovde } = await istek('/rest/v1/' + tablo + '?select=*&limit=1', { belirtec });
     let ornekSatir = null;
     if (oDurum === 401 || oDurum === 403) satir.okur = 'okuyamaz';
@@ -7555,61 +7572,42 @@ async function guvenlikPersonelHaritasi(istek, belirtec, sema, kalintilar) {
       ornekSatir = oGovde[0];
     }
 
-    /* Ekleme/değiştirme/silme sütun şeması ister (hangi alan zorunlu,
-       hangisi metin) — kaynak guvenlik.json ise (yalnız tablo adı, şema
-       yok) bu üçü güvenle denenemez: körlemesine kurulan bir gövde ya
-       eksik-alan hatası alır (yanlışlıkla KAPALI okunur) ya da rastgele
-       bir sütuna yazar. Böyle bir yanlış ölçümden "ölçülemedi" yeğdir. */
-    if (!semaVar) {
-      satir.ekler = 'ölçülemedi — sütun şeması yok';
-      satir.degistirir = 'ölçülemedi — sütun şeması yok';
-      satir.siler = 'ölçülemedi — sütun şeması yok';
-      satirlar.push(satir);
-      continue;
+    /* Değiştirme — okunan gerçek satırın bir metin sütunu, KENDİ değeriyle
+       geri yazılıyor. Sütun adı satırın kendi anahtarlarından seçiliyor
+       (bkz. guvenlikMetinAlaniSatirdan) — tablo boşsa zaten ornekSatir yok. */
+    if (ornekSatir && ornekSatir.id !== undefined) {
+      const metinAlan = guvenlikMetinAlaniSatirdan(ornekSatir);
+      if (metinAlan) {
+        const govdeYaz = {}; govdeYaz[metinAlan] = ornekSatir[metinAlan];
+        const { durum: dDurum, govde: dGovde } = await istek('/rest/v1/' + tablo + '?id=eq.' + encodeURIComponent(ornekSatir.id), {
+          belirtec, method: 'PATCH', headers: { Prefer: 'return=representation' }, body: JSON.stringify(govdeYaz) });
+        if (dDurum === 401 || dDurum === 403) satir.degistirir = 'değiştiremez';
+        else if (dDurum >= 200 && dDurum < 300) satir.degistirir = (Array.isArray(dGovde) && dGovde.length > 0) ? 'değiştirir' : 'değiştiremez';
+      }
     }
 
-    /* Değiştirme — okurken bulunan gerçek satırın bir metin sütunu, kendi
-       değeriyle geri yazılıyor. */
-    const metinAlan = guvenlikMetinAlani(semaTablo);
-    if (idVar && ornekSatir && metinAlan && ornekSatir.id !== undefined) {
-      const govdeYaz = {}; govdeYaz[metinAlan] = ornekSatir[metinAlan];
-      const { durum: dDurum, govde: dGovde } = await istek('/rest/v1/' + tablo + '?id=eq.' + encodeURIComponent(ornekSatir.id), {
-        belirtec, method: 'PATCH', headers: { Prefer: 'return=representation' }, body: JSON.stringify(govdeYaz) });
-      if (dDurum === 401 || dDurum === 403) satir.degistirir = 'değiştiremez';
-      else if (dDurum >= 200 && dDurum < 300) satir.degistirir = (Array.isArray(dGovde) && dGovde.length > 0) ? 'değiştirir' : 'değiştiremez';
-    }
-
-    /* Ekleme — zorunlu alanlardan en küçük satır, metin alanlarına
-       NS-GUVENLIK-TESTI. */
-    const eklemeGovdesi = guvenlikEklemeGovdesi(semaTablo);
-    const { durum: eDurum, govde: eGovde, hata: eHata } = await istek('/rest/v1/' + tablo, {
-      belirtec, method: 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify(eklemeGovdesi) });
+    /* Ekleme — BOŞ GÖVDE ile (şema gerekmez, bkz. guvenlikBosGovdeIleEkle).
+       Satır güvenliği/yetki hatası KESİN "ekleyemez"; başka bir hata
+       (zorunlu alan, iş kuralı, FK) belirsizdir — BEFORE tetikleri satır
+       güvenliğinden önce çalışabildiği için geçerli bir gövdeyle de
+       reddedilmiş olabilirdi, bu yüzden "ölçülemedi" yazılır, "ekler" YAZILMAZ. */
+    const eklemeSonucu = await guvenlikBosGovdeIleEkle(istek, tablo, { belirtec });
     let eklenenSatir = null;
-    if (eDurum === 403) satir.ekler = 'ekleyemez';
-    else if (eDurum >= 200 && eDurum < 300) {
-      satir.ekler = 'ekler';
-      if (Array.isArray(eGovde) && eGovde[0]) eklenenSatir = eGovde[0];
-    } else {
-      const mesaj = (eGovde && eGovde.message) || eHata;
-      satir.ekler = 'ölçülemedi' + (mesaj ? ' · ' + mesaj : '');
-    }
+    if (eklemeSonucu.sonuc === 'ekler') { satir.ekler = 'ekler'; eklenenSatir = eklemeSonucu.satir; }
+    else if (eklemeSonucu.sonuc === 'ekleyemez') satir.ekler = 'ekleyemez';
+    else satir.ekler = 'ölçülemedi' + (eklemeSonucu.mesaj ? ' · ' + eklemeSonucu.mesaj : '');
 
-    /* Silme — yalnız az önce kendi eklediği kayıtta. id varsa id=eq.<id>;
-       yoksa (nadir) eklenen alan değerleriyle eşleştirip siliniyor. */
-    if (eklenenSatir && idVar && eklenenSatir.id !== undefined) {
+    /* Silme — yalnız EKLEME BAŞARILI olduysa, kendi eklediği kayıtta.
+       Ekleme yapılamadıysa dışarıdan güvenle ölçmenin başka yolu yok
+       (eşleşmeyen süzgeç izin ölçmez, gerçek satırda deneme veriyi siler)
+       — o zaman B katmanına bırakılır. */
+    if (eklenenSatir && eklenenSatir.id !== undefined) {
       const { durum: sDurum, govde: sGovde } = await istek('/rest/v1/' + tablo + '?id=eq.' + encodeURIComponent(eklenenSatir.id),
         { belirtec, method: 'DELETE', headers: { Prefer: 'return=representation' } });
       if (sDurum >= 200 && sDurum < 300 && Array.isArray(sGovde) && sGovde.length > 0) satir.siler = 'siler';
       else { satir.siler = 'silemez'; kalintilar.push('delete from ' + tablo + ' where id = \'' + eklenenSatir.id + '\';'); }
-    } else if (eklenenSatir) {
-      const filtre = Object.keys(eklemeGovdesi).map(ad => ad + '=eq.' + encodeURIComponent(eklemeGovdesi[ad])).join('&');
-      const { durum: sDurum, govde: sGovde } = await istek('/rest/v1/' + tablo + '?' + filtre,
-        { belirtec, method: 'DELETE', headers: { Prefer: 'return=representation' } });
-      if (sDurum >= 200 && sDurum < 300 && Array.isArray(sGovde) && sGovde.length > 0) satir.siler = 'siler';
-      else {
-        satir.siler = 'silemez';
-        kalintilar.push('delete from ' + tablo + ' where ' + filtre.replace(/&/g, ' and ').replace(/=eq\./g, ' = ') + ';');
-      }
+    } else {
+      satir.siler = 'ölçülemedi · B katmanında ölçülür';
     }
 
     satirlar.push(satir);
@@ -7684,8 +7682,7 @@ function guvenlikRaporMetni(sonuc, ustKatmanUyarisi, kalintilar, harita, tabloKa
   if (ustKatmanUyarisi) s.push('⚠ Verilen hesap en üst katmanda — yetki haritası ATLANDI.');
   if (acik >= 3) s.push('⚠ Bu kadar çok bulgu genelde güvenlik ayarlarının eksik ya da veritabanının ' +
     'güncellenmemiş olduğu anlamına gelir.');
-  if (tabloKaynagi === 'guvenlik.json') s.push('ℹ Tablo listesi guvenlik.json\'dan okundu (OpenAPI keşfi ' +
-    'çalışmadı) — sütun şeması yok, ekleme/değiştirme/silme "ölçülemedi" işaretlendi.');
+  if (tabloKaynagi === 'guvenlik.json') s.push('ℹ Tablo listesi guvenlik.json\'dan okundu (OpenAPI keşfi çalışmadı).');
   s.push(acik ? acik + ' GÜVENLİK AÇIĞI BULUNDU' : 'Güvenli · ' + sonuc.length + ' deneme yapıldı, hiçbiri işe yaramadı');
   if (kalintilar && kalintilar.length) {
     s.push('');
@@ -7717,8 +7714,7 @@ function guvenlikSonucTablosu(sonuc, ustKatmanUyarisi, kalintilar, harita, tablo
       yapabilir, o yüzden yetki haritası anlamsız olurdu (atlandı). Gerçek
       sonuç için YÖNETİCİ OLMAYAN bir personel hesabı verin.</span></div>` : '';
   const semaUyarisi = tabloKaynagi === 'guvenlik.json' ? `<div class="note" style="margin-top:14px">${svg(ICON.info, 15)}
-      <span>Tablo listesi <b>guvenlik.json</b>'dan okundu (OpenAPI keşfi çalışmadı) — sütun şeması yok,
-      ekleme/değiştirme/silme "ölçülemedi" işaretlendi.</span></div>` : '';
+      <span>Tablo listesi <b>guvenlik.json</b>'dan okundu (OpenAPI keşfi çalışmadı).</span></div>` : '';
   const gocUyarisi = acik >= 3 ? `<div class="note uyari" style="margin-top:14px">${svg(ICON.uyari, 15)}
       <span><b>Bu kadar çok bulgu genelde şu demektir: güvenlik ayarları eksik
       ya da veritabanı güncellenmemiş.</b> Projenin kurulum/göç dosyalarını
@@ -7758,7 +7754,7 @@ function guvenlikSonucTablosu(sonuc, ustKatmanUyarisi, kalintilar, harita, tablo
 
   let dBolumu = '';
   if (harita && harita.length) {
-    const isaret = v => v === 'ölçülemedi' ? '<span style="color:var(--ink-soft)">—</span>'
+    const isaret = v => v.indexOf('ölçülemedi') === 0 ? '<span style="color:var(--ink-soft)">—</span> ' + esc(v.replace(/^ölçülemedi\s*[·—]?\s*/, ''))
       : /^(okur|ekler|değiştirir|siler)$/.test(v) ? '<span style="color:var(--basari,#3d9970)">✓</span> ' + esc(v)
       : '<span style="color:var(--ink-soft)">✗</span> ' + esc(v);
     const hSatirlar = harita.map(h => `<tr>
