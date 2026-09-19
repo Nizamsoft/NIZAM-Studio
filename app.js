@@ -7663,16 +7663,23 @@ from (
     coalesce((select string_agg(distinct table_name, ', ')
       from information_schema.role_table_grants
       where grantee = 'anon' and table_schema = 'public'), '-')
+  /* Postgres mantıksal ayarı YAZILDIĞI GİBİ saklar: `set (security_invoker
+     = on)` diyen bir göç 'on' bırakır, elle `= true` yazan 'true'. Dördü de
+     (on · true · yes · 1) aynı şeydir. Önceden yalnız 'true' aranıyordu ve
+     korunan görünümler AÇIK diye raporlanıyordu — görünümü olan ilk
+     programda ortaya çıktı (v0.140.4). */
   union all select 5, 'Satır güvenliğini atlayan görünüm var mı',
     (select count(*) from pg_class c join pg_namespace n on n.oid = c.relnamespace
       where n.nspname = 'public' and c.relkind = 'v'
         and coalesce((select option_value from pg_options_to_table(c.reloptions)
-                       where option_name = 'security_invoker'), 'false') <> 'true'),
+                       where option_name = 'security_invoker'), 'false')
+            not in ('true', 'on', 'yes', '1')),
     coalesce((select string_agg(c.relname, ', ')
       from pg_class c join pg_namespace n on n.oid = c.relnamespace
       where n.nspname = 'public' and c.relkind = 'v'
         and coalesce((select option_value from pg_options_to_table(c.reloptions)
-                       where option_name = 'security_invoker'), 'false') <> 'true'), '-')
+                       where option_name = 'security_invoker'), 'false')
+            not in ('true', 'on', 'yes', '1')), '-')
   union all select 6, 'Arama yolu sabitlenmemiş güçlü fonksiyon var mı',
     (select count(*) from pg_proc p join pg_namespace n on n.oid = p.pronamespace
       where n.nspname = 'public' and p.prosecdef
