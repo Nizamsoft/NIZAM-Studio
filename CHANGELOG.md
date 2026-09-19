@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.138.0
+- **Güvenlik Testi'ne dördüncü bir grup eklendi: Sunucu işlevi saldırıları.** Programın Edge Function'ı (guvenlik.json → sunucu_islevi.ad, ör. kullanici-yonetimi) service_role ile çalışır — satır güvenliğinin bütün kurallarını atlayan tek bileşen, ama şimdiye kadar hiç ölçülmüyordu. Yedi deneme: hesap açar, katman değiştirir, şifre değiştirir, hesap kapatır, girişi kaldırır, kimliksiz çağrı, uydurma kimlik — hepsi var olmayan sabit bir kullanıcı id'siyle, veri bozmadan. Bu istekler fonksiyonun CORS'u yüzünden tarayıcıdan atılamadığı için guvenlik-sql Edge Function'ı yeni bir işlem (`istek`) kazandı: hedefin kendi fonksiyonuna sunucudan sunucuya, jetonsuz istek atıyor. Bir satır bile AÇIK çıkarsa en ciddi bulgu sayılıp listenin en üstünde gösteriliyor. **Mevcut guvenlik-sql fonksiyonunu Code sekmesinden yeniden yapıştırıp deploy etmen gerekiyor** — Secrets'a dokunmana gerek yok.
+
 ## v0.137.4
 - **B katmanında yanlış alarm düzeltildi: "Ziyaretçinin dizi izni var mı".** Sorguda şema süzgeci yoktu — `information_schema.usage_privileges`'a bakıyordu, bu da Supabase'in kendi şemalarındaki (storage, graphql, vb.) dizileri de sayıyordu; oralarda anon'un izinli olması normal ve gerekli, programın güvenliğiyle ilgisi yok. Artık yalnız `public` şemasındaki dizilere bakıyor (`pg_sequences` üzerinden — `pg_class` + `relkind='S'` değil, çünkü Postgres süzgeçten önce fonksiyonu çalıştırıp dizi olmayan satırlarda hataya düşebiliyor), bulgu çıkarsa hangi dizi olduğunu da yazıyor. Diğer 6 sorgu zaten public'e süzülüyordu, değişmedi.
 

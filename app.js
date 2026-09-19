@@ -740,11 +740,14 @@ const VIEWS = {
       ${guvenlikSonucTablosu(g.sonuc, g.ustKatmanUyarisi, g.kalintilar, g.harita, g.tabloKaynagi)}
 
       <div class="section">
-        <span class="label">2. Aşama · B ve C testleri (bir kere kurulur)</span>
+        <span class="label">2. Aşama · B, C ve Sunucu işlevi testleri (bir kere kurulur)</span>
         <div class="card" style="padding:14px">
-          <p class="ipucu" style="margin:0 0 10px">Yapısal (B) ve programa özel (C) denetimler bir Supabase
-            erişim jetonu (personal access token) ister. Bir kere kur, sonrası otomatik: <b>Test Et</b> her
-            çalıştığında bu ikisini de dener; fonksiyon kurulu değilse sessizce atlar.</p>
+          <p class="ipucu" style="margin:0 0 10px">Yapısal (B), programa özel (C) ve sunucu işlevi
+            saldırıları denetimi bir Supabase erişim jetonu (personal access token) ister. Bir kere kur,
+            sonrası otomatik: <b>Test Et</b> her çalıştığında üçünü de dener; fonksiyon kurulu değilse
+            sessizce atlar. Fonksiyon kodu güncellendiyse (yeni sürüm çıktığında) mevcut
+            <code>guvenlik-sql</code> fonksiyonunun <b>Code</b> sekmesinden kodu yeniden yapıştırıp
+            deploy etmen yeterli — Secrets'a dokunman gerekmez.</p>
           <p class="ipucu" style="margin:0 0 10px"><b>1) Jetonu ŞURADAN AL</b> — test edeceğin projelerin
             bulunduğu Supabase HESABI (jeton projeye değil hesaba aittir; template/müşteri projeleri
             Studio'nun kendi hesabından ayrı bir hesaptaysa oradan alınır) → <code>supabase.com/dashboard/
@@ -7189,17 +7192,24 @@ function guvenlikUuid() {
 }
 
 /* ==========================================================================
-   AŞAMA 2 · B (evrensel iç) ve C (programa özel iç) — ikisi de Supabase
-   erişim jetonu ister. O jeton Studio'nun kendi Supabase'inde tek bir Edge
-   Function'ın (guvenlik-sql, bkz. GUVENLIK_SQL_FONKSIYON) gizli değişkeni
-   olarak duruyor — tarayıcıya hiç inmiyor, şifreli saklama katmanı yok,
-   çünkü jeton kullanıcı başına değil, Nizam'ın kendi hesabının tek değeri.
+   AŞAMA 2 · B (evrensel iç), C (programa özel iç) ve Sunucu işlevi
+   saldırıları — B ve C Supabase erişim jetonu ister. O jeton Studio'nun
+   kendi Supabase'inde tek bir Edge Function'ın (guvenlik-sql, bkz.
+   GUVENLIK_SQL_FONKSIYON) gizli değişkeni olarak duruyor — tarayıcıya hiç
+   inmiyor, şifreli saklama katmanı yok, çünkü jeton kullanıcı başına
+   değil, Nizam'ın kendi hesabının tek değeri. Sunucu işlevi testi jeton
+   İSTEMEZ — aynı guvenlik-sql fonksiyonunu, hedefin KENDİ Edge Function'ına
+   (ör. kullanici-yonetimi) sunucudan sunucuya istek attırmak için kullanır;
+   o fonksiyonun CORS'u yalnız uygulamanın kendi adresine izin verdiği için
+   bu istekler tarayıcıdan hiç atılamıyor (bkz. guvenlikSunucuIslevTesti).
 
-   Tarayıcı yalnız {ref, sql} gönderiyor; fonksiyon çağıranın Studio'da
-   yönetici olduğunu doğruluyor, SQL'i Management API'ye iletiyor, sonucu
-   olduğu gibi döndürüyor. B'nin SQL'i sabit (aşağıda); C'nin SQL'i
-   guvenlik.json'dan ve onun yanındaki dosyalardan gelir — GitHub Pages gibi
-   açık bir adresten, jetonsuz (bkz. guvenlikUrlIndir).
+   Tarayıcı {islem:'sql',ref,sql} ya da {islem:'istek',ref,fonksiyon,anon,
+   belirtec,govde} gönderiyor; fonksiyon çağıranın Studio'da yönetici
+   olduğunu doğruluyor, isteğe göre Management API'ye ya da hedefin kendi
+   Edge Function'ına iletiyor, sonucu olduğu gibi döndürüyor. B'nin SQL'i
+   sabit (aşağıda); C'nin SQL'i guvenlik.json'dan ve onun yanındaki
+   dosyalardan gelir — GitHub Pages gibi açık bir adresten, jetonsuz (bkz.
+   guvenlikUrlIndir).
 
    SINIR (şimdilik bilinçli, ileride büyütülecek): NS_SUPABASE_JETON tek
    bir değer, tek bir Supabase HESABININ projelerinde çalışır — o hesabın
@@ -7239,10 +7249,16 @@ const GUVENLIK_SQL_FONKSIYON = `/* Güvenlik testi · SQL çalıştırma köprü
      Çağıran Studio'da giriş yapmış VE yönetici mi? (profiles.rol)
      Değilse istek reddedilir — jeton yalnız yönetici için çalışır.
 
-   İŞLEM
-     Gövdede { ref, sql } gelir: ref hedef Supabase projesinin kimliği
-     (https://<ref>.supabase.co), sql çalıştırılacak metin. Management
-     API'ye iletilir, sonuç olduğu gibi (satirlar ya da hata) döner.
+   İKİ İŞLEM
+     islem: "sql" — { ref, sql }: SQL Management API'ye iletilir, jeton
+       (NS_SUPABASE_JETON) burada kullanılır.
+     islem: "istek" — { ref, fonksiyon, anon, belirtec, govde }: hedef
+       projenin KENDİ Edge Function'ına (ör. kullanici-yonetimi) sunucudan
+       sunucuya bir istek atar — jeton YOK, hedefin kendi anon key'i ve
+       (varsa) personel belirteciyle. Bu, o fonksiyonun CORS ayarı yalnız
+       uygulamanın kendi adresine izin verdiği için tarayıcıdan hiç
+       denenemiyor (bkz. guvenlikSunucuIslevTesti) — sunucudan sunucuya
+       çağrıda CORS yok.
 
    KURULUM
      Studio'nun kendi Supabase'inde: Edge Functions → New Function →
@@ -7305,11 +7321,40 @@ Deno.serve(async (istek: Request) => {
   }
 
   /* ---- 3 · Gövde ---- */
-  let govde: { ref?: string; sql?: string };
+  let govde: {
+    islem?: string; ref?: string; sql?: string;
+    fonksiyon?: string; anon?: string; belirtec?: string; govde?: unknown;
+  };
   try { govde = await istek.json(); } catch { return hata("Gövde okunamadı."); }
+  const islem = String(govde?.islem || "sql");
   const ref = String(govde?.ref || "").trim();
-  const sql = String(govde?.sql || "").trim();
   if (!/^[a-z0-9]+$/i.test(ref)) return hata("Geçersiz proje kimliği (ref).");
+
+  /* ---- 4a · islem: istek — hedefin KENDİ Edge Function'ına sunucudan
+     sunucuya ilet. Jeton YOK; yalnız SSRF'yi daraltmak için hedef adres
+     bir Supabase Edge Function kalıbına ({ref}.supabase.co/functions/v1/…)
+     zorlanıyor, gövdeden gelen serbest bir URL'e değil. */
+  if (islem === "istek") {
+    const fonksiyon = String(govde?.fonksiyon || "").trim();
+    const anon = String(govde?.anon || "").trim();
+    const belirtecHedef = String(govde?.belirtec || "");
+    if (!/^[a-z0-9_-]+$/i.test(fonksiyon)) return hata("Geçersiz fonksiyon adı.");
+    if (!anon) return hata("Hedef projenin anon anahtarı boş.");
+    try {
+      const hedefHeaders: Record<string, string> = { apikey: anon, "Content-Type": "application/json" };
+      if (belirtecHedef) hedefHeaders["Authorization"] = \`Bearer \${belirtecHedef}\`;
+      const r = await fetch(\`https://\${ref}.supabase.co/functions/v1/\${fonksiyon}\`, {
+        method: "POST", headers: hedefHeaders, body: JSON.stringify(govde?.govde || {}),
+      });
+      const sonuc = await r.json().catch(() => null);
+      return cevap({ durum: r.status, govde: sonuc });
+    } catch (e) {
+      return hata("Hedef fonksiyona ulaşılamadı: " + (e as Error).message, 502);
+    }
+  }
+
+  /* ---- 4b · islem: sql — Management API'ye ilet ---- */
+  const sql = String(govde?.sql || "").trim();
   if (!sql) return hata("Çalıştırılacak SQL boş.");
 
   const jeton = Deno.env.get("NS_SUPABASE_JETON");
@@ -7320,7 +7365,6 @@ Deno.serve(async (istek: Request) => {
       "supabase.com/dashboard/account/tokens → Generate new token, sbp_ ile başlar.", 500);
   }
 
-  /* ---- 4 · Management API'ye ilet ---- */
   try {
     const r = await fetch(\`https://api.supabase.com/v1/projects/\${ref}/database/query\`, {
       method: "POST",
@@ -7349,7 +7393,7 @@ function guvenlikProjeRef(url) {
    belirteciyle (AUTH.db, yönetici olduğu fonksiyon tarafından doğrulanır).
    Fonksiyon kurulu değilse (404) ya da jeton tanımlı değilse (500) BULGU
    DEĞİL, "çalışmadı" bilgisi döner — çağıran bunu BİLGİ olarak yazar. */
-async function guvenlikEdgeCalistir(ref, sql) {
+async function guvenlikEdgeCagir(istekGovdesi) {
   if (!AUTH.db) return { hata: 'Studio oturumu yok.' };
   let oturum;
   try { oturum = (await AUTH.db.auth.getSession()).data.session; }
@@ -7359,15 +7403,32 @@ async function guvenlikEdgeCalistir(ref, sql) {
     const r = await fetch(SUPABASE.url + '/functions/v1/guvenlik-sql', {
       method: 'POST',
       headers: { apikey: SUPABASE.key, Authorization: 'Bearer ' + oturum.access_token, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ref, sql }),
+      body: JSON.stringify(istekGovdesi),
     });
     let govde = null;
     try { govde = await r.json(); } catch (h) { /* boş gövde olabilir */ }
     if (!r.ok) return { hata: (govde && govde.hata) || ('HTTP ' + r.status) };
-    return { satirlar: (govde && govde.satirlar) || [] };
+    return { govde };
   } catch (h) {
     return { hata: 'Bağlantı kurulamadı: ' + h.message };
   }
+}
+
+async function guvenlikEdgeCalistir(ref, sql) {
+  const { govde, hata } = await guvenlikEdgeCagir({ islem: 'sql', ref, sql });
+  if (hata) return { hata };
+  return { satirlar: (govde && govde.satirlar) || [] };
+}
+
+/* Hedef projenin KENDİ Edge Function'ına (ör. kullanici-yonetimi) sunucudan
+   sunucuya bir istek attırır — bkz. guvenlikSunucuIslevTesti. Jeton İSTEMEZ;
+   yalnız hedefin kendi anon key'i ve (varsa) bir personel belirteci kullanır.
+   `belirtec` boş bırakılırsa Authorization başlığı hiç gönderilmez (kimliksiz
+   çağrı testi için). */
+async function guvenlikEdgeIstekAt(ref, fonksiyon, anon, belirtec, govdeIstek) {
+  const { govde, hata } = await guvenlikEdgeCagir({ islem: 'istek', ref, fonksiyon, anon, belirtec: belirtec || '', govde: govdeIstek });
+  if (hata) return { hata };
+  return { durum: govde && govde.durum, govde: govde && govde.govde };
 }
 
 /* ---------- B · Evrensel iç test — her Supabase projesinde aynı SQL ----------
@@ -7512,6 +7573,79 @@ async function guvenlikProgramaOzelTest(ekle, ref, guvenlikJson, tabanUrl, kalin
       }
     }
   }
+}
+
+/* ---------- Sunucu işlevi saldırıları — programın Edge Function'ı ----------
+   Bu bileşen (bizde kullanici-yonetimi) service_role ile çalışır — satır
+   güvenliğinin BÜTÜN kurallarını atlayan tek yer. Kapısında iki kontrol
+   olması gerekir: giriş yapmış mı, en üst katman mı. Fonksiyonun CORS'u
+   yalnız uygulamanın kendi adresine izin verdiği için bu istekler
+   TARAYICIDAN ATILAMAZ — Studio'nun guvenlik-sql'i üzerinden, sunucudan
+   sunucuya gönderiliyor (bkz. guvenlikEdgeIstekAt).
+
+   VERİ GÜVENLİĞİ: 2-5. denemelerde kullanici_id hep sabit, VAR OLMAYAN bir
+   uuid — böyle bir kullanıcı olmadığı için kapı çalışmasa bile gerçek
+   kimseye dokunulmaz. 1. denemede e-posta her seferinde rastgele. */
+async function guvenlikSunucuIslevTesti(ekle, ref, anon, belirtec, ustKatmanId, guvenlikJson) {
+  const fonksiyon = guvenlikJson && guvenlikJson.sunucu_islevi && guvenlikJson.sunucu_islevi.ad;
+  if (!fonksiyon) {
+    ekle('Sunucu işlevi', 'sunucu işlevi', 'ATLANDI', 'guvenlik.json yok ya da sunucu_islevi.ad tanımlı değil');
+    return;
+  }
+
+  const bosId = '00000000-0000-0000-0000-000000000000';
+  const rastgeleSifre = () => (Math.random().toString(36) + Math.random().toString(36)).replace(/[^a-z0-9]/g, '').slice(0, 16);
+
+  /* Hüküm ortak: 401/403 KAPALI, 404 fonksiyon dağıtılmamış (ATLANDI),
+     2xx AÇIK (ÇOK CİDDİ — istek gerçekten işlendi), başka bir hata
+     (ör. "Kullanıcı bulunamadı") AÇIK — KAPI YOK: fonksiyon yetkiye
+     bakmadan işe girişmiş demektir, kapıda durması gereken kontrolü
+     hiç yapmamıştır. */
+  const yorumla = async (deneme, govdeIstek, belirtecOverride) => {
+    const kullanilacakBelirtec = belirtecOverride === undefined ? belirtec : belirtecOverride;
+    const { durum, govde, hata } = await guvenlikEdgeIstekAt(ref, fonksiyon, anon, kullanilacakBelirtec, govdeIstek);
+    if (hata) { ekle('Sunucu işlevi', deneme, 'BİLGİ', hata); return; }
+    const ayrinti = guvenlikAyrinti(durum, govde);
+    if (durum === 401 || durum === 403) ekle('Sunucu işlevi', deneme, 'KAPALI', ayrinti);
+    else if (durum === 404) ekle('Sunucu işlevi', deneme, 'ATLANDI', 'Fonksiyon dağıtılmamış · ' + ayrinti);
+    else if (durum >= 200 && durum < 300) ekle('Sunucu işlevi', deneme, 'AÇIK', 'ÇOK CİDDİ · ' + ayrinti);
+    else ekle('Sunucu işlevi', deneme, 'AÇIK', 'KAPI YOK — fonksiyon yetkiye bakmadan işe girişti · ' + ayrinti);
+  };
+
+  /* 1 · hesap açar — yalnız en üst katmanın id'si biliniyorsa (katmanlar/
+     kullanicilar keşfedilebildiyse). Bilinmiyorsa test anlamsız, ATLANDI. */
+  if (ustKatmanId) {
+    const rastgele = Math.random().toString(36).slice(2) + Date.now().toString(36);
+    const eposta = 'ns-islev-testi-' + rastgele + '@ornek.gecici';
+    const { durum, govde, hata } = await guvenlikEdgeIstekAt(ref, fonksiyon, anon, belirtec,
+      { islem: 'ekle', eposta, sifre: rastgeleSifre(), ad_soyad: 'NS Test', katman_id: ustKatmanId });
+    if (hata) ekle('Sunucu işlevi', 'hesap açar', 'BİLGİ', hata);
+    else {
+      const ayrinti = guvenlikAyrinti(durum, govde);
+      if (durum === 401 || durum === 403) ekle('Sunucu işlevi', 'hesap açar', 'KAPALI', ayrinti);
+      else if (durum === 404) ekle('Sunucu işlevi', 'hesap açar', 'ATLANDI', 'Fonksiyon dağıtılmamış · ' + ayrinti);
+      else if (durum >= 200 && durum < 300) ekle('Sunucu işlevi', 'hesap açar', 'AÇIK',
+        'ÇOK CİDDİ — Authentication → Users listesinden ' + eposta + ' ile başlayan hesabı silin. · ' + ayrinti);
+      else ekle('Sunucu işlevi', 'hesap açar', 'AÇIK', 'KAPI YOK — fonksiyon yetkiye bakmadan işe girişti · ' + ayrinti);
+    }
+    /* 2 · katman değiştirir — var olmayan kullanıcıyı en üst katmana taşımayı dener. */
+    await yorumla('katman değiştirir', { islem: 'katman', kullanici_id: bosId, katman_id: ustKatmanId });
+  } else {
+    const not = 'En üst katmanın id\'si bilinmiyor (katmanlar/kullanicilar tabloları keşfedilemedi)';
+    ekle('Sunucu işlevi', 'hesap açar', 'ATLANDI', not);
+    ekle('Sunucu işlevi', 'katman değiştirir', 'ATLANDI', not);
+  }
+
+  /* 3-5 · var olmayan kullanıcı üzerinde şifre/durum/girişi kaldır. */
+  await yorumla('şifre değiştirir', { islem: 'sifre', kullanici_id: bosId, sifre: rastgeleSifre() });
+  await yorumla('hesap kapatır', { islem: 'durum', kullanici_id: bosId, durum: 'Pasif' });
+  await yorumla('girişi kaldırır', { islem: 'girisi-kaldir', kullanici_id: bosId });
+
+  /* 6 · kimliksiz çağrı — Authorization başlığı hiç yok, yalnız apikey. */
+  await yorumla('kimliksiz çağrı', { islem: 'durum', kullanici_id: bosId, durum: 'Pasif' }, '');
+  /* 7 · uydurma kimlik — imzası geçersiz bir belirteçle. */
+  await yorumla('uydurma kimlik', { islem: 'durum', kullanici_id: bosId, durum: 'Pasif' },
+    'eyJhbGciOiJIUzI1NiJ9.uydurma.imza');
 }
 
 /* `istek` üreticisi: taban adres + anon key sabit, Authorization her
@@ -8016,23 +8150,27 @@ async function guvenlikTestiCalistir({ url, anon, eposta, sifre, depo }) {
       (depo ? 'guvenlik.json: ' + (guvenlikJsonHata || 'tablolar.liste yok') : 'Denemek için guvenlik.json adresi de girilebilir.'));
   }
 
+  /* 0.2 · Hesabın katmanı (best effort) — B/C/D ve sunucu işlevi testinden
+     önce hesaplanır, "en üst katmanın id'si" ikisinde de lazım. */
+  const katman = await guvenlikKendiKatmanim(istek, belirtec, ownAuthId, sema.tablolar || []);
+
   /* A · Dış test (anon, oturumsuz). */
   await guvenlikDisTest(istek, ekle, sema, guvenlikJson);
 
   /* A7 · belirteç ömrü — hiçbir şey çağırmaz, giriş cevabını okur. */
   guvenlikBelirtecOmruTesti(ekle, gSonuc.govde);
 
-  /* B ve C · yalnız Studio'nun kendi Edge Function'ı (guvenlik-sql)
-     kuruluysa çalışır — kurulu değilse guvenlikYapisalTest tek bir BİLGİ
-     satırıyla bunu söyler, testi durdurmaz. */
+  /* B, C ve Sunucu işlevi · yalnız Studio'nun kendi Edge Function'ı
+     (guvenlik-sql) kuruluysa çalışır — kurulu değilse guvenlikYapisalTest
+     tek bir BİLGİ satırıyla bunu söyler, testi durdurmaz. */
   const ref = guvenlikProjeRef(url);
   if (ref) {
     await guvenlikYapisalTest(ekle, ref);
     await guvenlikProgramaOzelTest(ekle, ref, guvenlikJson, guvenlikJsonUrl, kalintilar);
+    await guvenlikSunucuIslevTesti(ekle, ref, anon, belirtec, katman.ust ? katman.ust.id : null, guvenlikJson);
   }
 
-  /* 0.2 · Hesabın katmanı (best effort) + D · personel yetki haritası. */
-  const katman = await guvenlikKendiKatmanim(istek, belirtec, ownAuthId, sema.tablolar || []);
+  /* D · personel yetki haritası. */
   let harita = null;
   if (!katman.ustKatmandaMi && sema.tablolar && sema.tablolar.length) {
     harita = await guvenlikPersonelHaritasi(istek, belirtec, sema, kalintilar);
@@ -8060,8 +8198,9 @@ function guvenlikRaporMetni(sonuc, ustKatmanUyarisi, kalintilar, harita, tabloKa
     kalintilar.forEach(k => s.push('  ' + k));
   }
   s.push('');
+  const oncelikMetin = r => (r.kim === 'Sunucu işlevi' && r.sonuc === 'AÇIK') ? -1 : (r.sonuc === 'AÇIK' ? 0 : 1);
   sonuc.slice()
-    .sort((a, b) => (a.sonuc === 'AÇIK' ? 0 : 1) - (b.sonuc === 'AÇIK' ? 0 : 1))
+    .sort((a, b) => oncelikMetin(a) - oncelikMetin(b))
     .forEach(r => {
       const isaret = r.sonuc === 'AÇIK' ? '⚠️ ' : '';
       s.push(isaret + r.kim + ' · ' + r.deneme + ' · ' + r.sonuc + (r.ayrinti ? ' · ' + r.ayrinti : ''));
@@ -8104,7 +8243,10 @@ function guvenlikSonucTablosu(sonuc, ustKatmanUyarisi, kalintilar, harita, tablo
         ${svg(ICON.kopya, 15)} Raporu kopyala</button>
     </div>`;
   const oncelik = { 'AÇIK': 0, 'BİLGİ': 1, 'KAPALI': 2, 'SERBEST': 2, 'ATLANDI': 3 };
-  const sirali = sonuc.slice().sort((a, b) => (oncelik[a.sonuc] ?? 4) - (oncelik[b.sonuc] ?? 4));
+  /* Sunucu işlevi AÇIK çıkarsa en ciddi bulgu odur (service_role, satır
+     güvenliğinin tamamını atlayan tek yer) — diğer bütün AÇIK'ların da üstünde. */
+  const oncelikDegeri = s => (s.kim === 'Sunucu işlevi' && s.sonuc === 'AÇIK') ? -1 : (oncelik[s.sonuc] ?? 4);
+  const sirali = sonuc.slice().sort((a, b) => oncelikDegeri(a) - oncelikDegeri(b));
   const satirlar = sirali.map(s => {
     const acikMi = s.sonuc === 'AÇIK';
     return `<tr ${acikMi ? 'style="background:var(--red-soft)"' : ''}>
@@ -8114,6 +8256,11 @@ function guvenlikSonucTablosu(sonuc, ustKatmanUyarisi, kalintilar, harita, tablo
         <td style="padding:6px 8px;color:var(--ink-soft)">${esc(s.ayrinti || '')}</td>
       </tr>`;
   }).join('');
+  const sunucuIslevVar = sonuc.some(s => s.kim === 'Sunucu işlevi');
+  const sunucuIslevNotu = sunucuIslevVar ? `<div class="note" style="margin-top:14px">${svg(ICON.info, 15)}
+      <span><b>Sunucu işlevi:</b> bu bileşen service_role ile çalışır, yani bütün satır güvenliği
+      kurallarını atlar. Buradaki tek koruma fonksiyonun kendi kapısıdır.</span></div>` : '';
+
   const aTablosu = `<div style="overflow-x:auto;margin-top:10px">
       <table style="width:100%;border-collapse:collapse;font-size:13px">
         <thead><tr style="text-align:left;border-bottom:1px solid var(--line)">
@@ -8147,11 +8294,7 @@ function guvenlikSonucTablosu(sonuc, ustKatmanUyarisi, kalintilar, harita, tablo
         </table></div></div>`;
   }
 
-  const asamaNotu = `<p class="ipucu" style="margin-top:14px">Bu test yalnız dışarıdan bakıyor (A) ve
-    personelin ne yapabildiğini gösteriyor (D). Veritabanının içindeki yapıyı (RLS açık mı, tetikler
-    yerinde mi — B) ve programa özel saldırı testini (C) bir sonraki aşamada eklenecek.</p>`;
-
-  return uyari + semaUyarisi + gocUyarisi + ozet + kalintiUyarisi + kopyalaDugmesi + aTablosu + dBolumu + asamaNotu;
+  return uyari + semaUyarisi + gocUyarisi + ozet + kalintiUyarisi + kopyalaDugmesi + sunucuIslevNotu + aTablosu + dBolumu;
 }
 
 /* 4 · Claude — firma izini kaldırma, tasarımı standarda döndürme ve
