@@ -743,18 +743,19 @@ const VIEWS = {
         <span class="label">2. Aşama · B ve C testleri (bir kere kurulur)</span>
         <div class="card" style="padding:14px">
           <p class="ipucu" style="margin:0 0 10px">Yapısal (B) ve programa özel (C) denetimler bir Supabase
-            erişim jetonu (personal access token) ister — o jeton tarayıcıya hiç inmez, Studio'nun kendi
-            Supabase'inde tek bir Edge Function'ın (<code>guvenlik-sql</code>) gizli değişkeni olarak durur.
-            Bu fonksiyonun kendisi Studio'nun Supabase'inde barınıyor (testi çalıştıran, "kumanda merkezi"
-            burası) — ama jetonun kendisi bir PROJEYE değil, HESABA aittir: hangi projeyi test edeceksen o
-            projenin SAHİBİ OLDUĞUN hesaptan alınmalı, yoksa Management API o projeye erişim vermez. Bir
-            kere kur, sonrası otomatik: <b>Test Et</b> her çalıştığında bu ikisini de dener; fonksiyon
-            kurulu değilse sessizce atlar.</p>
-          <p class="ipucu" style="margin:0 0 10px">Kurulum: Studio'nun Supabase'inde <b>Edge Functions →
-            New Function</b>, adı <code>guvenlik-sql</code>, kodu yapıştır, deploy et. Sonra o
-            fonksiyonun <b>Secrets</b> bölümüne <code>NS_SUPABASE_JETON</code> ekle — değeri
-            <b>proje ayarlarındaki bir API anahtarı DEĞİL</b>, <code>supabase.com/dashboard/account/tokens</code>
-            → Generate new token'dan alınan, <code>sbp_</code> ile başlayan kişisel erişim jetonu.</p>
+            erişim jetonu (personal access token) ister. Bir kere kur, sonrası otomatik: <b>Test Et</b> her
+            çalıştığında bu ikisini de dener; fonksiyon kurulu değilse sessizce atlar.</p>
+          <p class="ipucu" style="margin:0 0 10px"><b>1) Jetonu ŞURADAN AL</b> — test edeceğin projelerin
+            bulunduğu Supabase HESABI (jeton projeye değil hesaba aittir; template/müşteri projeleri
+            Studio'nun kendi hesabından ayrı bir hesaptaysa oradan alınır) → <code>supabase.com/dashboard/
+            account/tokens</code> → <b>Generate new token</b> → <b>Create legacy token</b> (scoped/granular
+            değil, Management API'nin SQL ucu onu istiyor). Değer <code>sbp_</code> ile başlar.</p>
+          <p class="ipucu" style="margin:0 0 10px"><b>2) Jetonu ŞURAYA KOY</b> — Studio'nun kendi Supabase'i
+            (bu jeton nereden alındığından bağımsız, yalnız KASA görevi görür) → <b>Edge Functions →
+            New Function</b>, adı <code>guvenlik-sql</code>, kodu yapıştır, deploy et. Sonra o fonksiyonun
+            <b>Settings → Secrets</b> bölümüne <code>NS_SUPABASE_JETON</code> ekle. Kaydettikten sonra hata
+            hemen devam ederse fonksiyonu bir kere yeniden dağıt (redeploy) ya da bir dakika bekleyip
+            tekrar dene — eski değer bir süre takılı kalabiliyor.</p>
           <div class="kur-dug">
             <button class="sayfa-dug ikincil" type="button" data-eylem="guvenlik-sql-kopyala">
               ${svg(ICON.kopya, 15)} Fonksiyon kodunu kopyala</button>
@@ -7198,16 +7199,32 @@ function guvenlikUuid() {
    yönetici olduğunu doğruluyor, SQL'i Management API'ye iletiyor, sonucu
    olduğu gibi döndürüyor. B'nin SQL'i sabit (aşağıda); C'nin SQL'i
    guvenlik.json'dan ve onun yanındaki dosyalardan gelir — GitHub Pages gibi
-   açık bir adresten, jetonsuz (bkz. guvenlikUrlIndir). */
+   açık bir adresten, jetonsuz (bkz. guvenlikUrlIndir).
+
+   SINIR (şimdilik bilinçli, ileride büyütülecek): NS_SUPABASE_JETON tek
+   bir değer, tek bir Supabase HESABININ projelerinde çalışır — o hesabın
+   SAHİP OLMADIĞI bir projede (ör. müşteri kendi Supabase hesabını
+   kullanmaya başlarsa) B/C "Your account does not have the necessary
+   privileges" ile başarısız olur. O zaman çözüm jeton başına proje/hesap
+   saklamaya geçmek olur; bugün için tek jeton yeterli. */
 
 /* Studio'nun kendi Supabase'ine BİR KERE deploy edilecek Edge Function.
    "Fonksiyon kodunu kopyala" düğmesiyle (bkz. eylem guvenlik-sql-kopyala)
-   Ayarlar > Güvenlik Testi ekranından kopyalanır. Kurulum:
-     1) Studio'nun kendi Supabase'inde Edge Functions → New Function →
-        adı "guvenlik-sql" → kodu yapıştır, deploy et.
-     2) O fonksiyonun Secrets bölümüne NS_SUPABASE_JETON ekle — değeri
-        https://supabase.com/dashboard/account/tokens adresinden alınan
-        kişisel erişim jetonu (personal access token).
+   Ayarlar > Güvenlik Testi ekranından kopyalanır.
+
+   JETON NEREDEN ALINIR / NEREYE KONUR — bunlar İKİ AYRI HESAP olabilir:
+     AL: test edilecek projelerin SAHİBİ olan Supabase hesabından —
+         https://supabase.com/dashboard/account/tokens → Generate new
+         token → Create legacy token (scoped/granular değil). sbp_ ile
+         başlar. Jeton PROJEYE değil HESABA aittir.
+     KOY: Studio'nun kendi Supabase'i, Edge Functions → New Function →
+         adı "guvenlik-sql" → kodu yapıştır, deploy et → o fonksiyonun
+         Settings → Secrets → NS_SUPABASE_JETON. Studio'nun Supabase'i
+         burada yalnız KASA — jetonun hangi hesaba ait olduğuyla ilgisi
+         yok, iki hesabın birbiriyle ilişkili olması gerekmez.
+   Kaydettikten sonra hata hemen devam ederse fonksiyonu bir kere yeniden
+   dağıt ya da bir dakika bekleyip tekrar dene (eski değer takılı kalabilir).
+
    SUPABASE_URL/SERVICE_ROLE_KEY/ANON_KEY'i Supabase her fonksiyona zaten
    kendisi veriyor — ayrıca girilmez. */
 const GUVENLIK_SQL_FONKSIYON = `/* Güvenlik testi · SQL çalıştırma köprüsü · Supabase Edge Function.
@@ -7420,7 +7437,8 @@ order by case when d.sayi > 0 then 0 else 1 end, d.sira;`;
 
 async function guvenlikYapisalTest(ekle, ref) {
   const { satirlar, hata } = await guvenlikEdgeCalistir(ref, GUVENLIK_B_SQL);
-  if (hata) { ekle('Yapısal', 'B katmanı', 'BİLGİ', 'Çalışmadı — ' + hata + '. Edge Function kurulu mu, NS_SUPABASE_JETON tanımlı mı kontrol edin.'); return; }
+  if (hata) { ekle('Yapısal', 'B katmanı', 'BİLGİ', 'Çalışmadı — ' + hata + '. Edge Function kurulu mu, ' +
+    'NS_SUPABASE_JETON tanımlı mı kontrol edin — jeton bu projenin SAHİBİ OLDUĞU hesaptan mı alındı?'); return; }
   if (!satirlar.length) { ekle('Yapısal', 'B katmanı', 'BİLGİ', 'Sonuç dönmedi.'); return; }
   satirlar.forEach(s => ekle('Yapısal', s.deneme, s.sonuc, s.ayrinti));
 }

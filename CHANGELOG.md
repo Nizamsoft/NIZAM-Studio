@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.137.3
+- **Jeton kurulum metni "AL / KOY" olarak ikiye ayrıldı.** Ayarlar > Güvenlik Testi'ndeki ve guvenlik-sql fonksiyonunun kendi başlık yorumundaki açıklama artık net: jeton test edilecek projelerin SAHİBİ olan Supabase hesabından alınır (account/tokens → Generate new token → Create legacy token, sbp_ ile başlar), Studio'nun kendi Supabase'ine ise yalnız KASA olarak konur (guvenlik-sql → Settings → Secrets) — iki hesabın aynı olması gerekmez. Secret kaydedildikten sonra hata devam ederse redeploy/bir dakika bekleme notu eklendi. B katmanının "çalışmadı" mesajına da "jeton bu projenin sahibi olduğu hesaptan mı alındı?" ipucu eklendi.
+
 ## v0.137.2
 - **Jeton açıklaması netleştirildi.** NS_SUPABASE_JETON bir PROJEYE değil HESABA aittir — Studio'nun kendi Supabase'inde durması, testi çalıştıran fonksiyonun orada barınmasından; jetonun kendisi test edilecek projelerin SAHİBİ OLDUĞUN hesaptan (supabase.com/dashboard/account/tokens, sbp_ ile başlar) alınmalı. Ayarlar > Güvenlik Testi'ndeki kurulum metni buna göre düzeltildi. guvenlik-sql fonksiyonu artık girilen değer sbp_ ile başlamıyorsa ("proje API anahtarına benziyor") net bir hata veriyor, Management API'nin belirsiz reddiyle uğraştırmıyor.
 
