@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.139.2
+- **Düzeltme: verisi tarayıcıda duran projede Güvenlik kontrolü Final'i sonsuza kadar kilitliyordu.** O projelerde Supabase adresi ve anon key hiç yok, dolayısıyla test hiç çalışamıyor ve aşama hiç kapanamıyordu. Artık "Test ve Güncelle" durağındaki gibi gizleniyor ve otomatik geçilmiş sayılıyor; aşamaya doğrudan gidilirse neden atlandığını yazıyor.
+
 ## v0.139.1
 - **Yetkilendirme promptu güncellendi.** Üç madde eklendi: (1) RLS SQL'i artık sohbette kalmıyor — Claude önce depoya yeni numaralı bir göç dosyası yazıp commit'e gönderiyor, sonra aynı içeriği yapıştırılabilir blok olarak veriyor; var olan göç dosyası asla değiştirilmiyor ve `guvenlik.json` → `veritabani_surumu` aynı commit'te güncelleniyor. (2) Var olan kapıları gevşetmesi yasak — kurulu politikalar zaten `ns_gecerli_kullanici()` / `ns_ust_katman_mi()` gibi kapılardan geçiyor, yalnız üstüne daraltabilir. (3) Bitiş şartı değişti: "kuruldu" demek yetmiyor, sıradaki Güvenlik kontrolü aşaması ölçecek — prompt bunu söyleyip Claude'dan kendi yazdığını bir kez daha okumasını istiyor.
 - Arayüzde gizlemenin kolaylık olduğu, güvenliğin sunucu tarafında olduğu promptta ayrı bir madde olarak yazıldı.

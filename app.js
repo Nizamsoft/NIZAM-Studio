@@ -5339,6 +5339,13 @@ function guvenlikOlcumKarti(p, pl, g) {
 
 function guvenlikDurakSayfasi(p, d) {
   const pl = p.palet || {};
+  if (!sunuculuMu(p)) {
+    return `<div class="fb-govde">`
+      + adimBasligi(p, d, '—')
+      + balon('Bu projenin verisi tarayıcıda duruyor.',
+          'Sunucu tarafı olmadığı için saldırılacak bir kapı da yok — bu aşama atlandı.')
+      + `</div>`;
+  }
   const g = durakGuvenlikDurum(p.id);
   const o = pl.guvenlikOlcum;
   const olculdu = !!o;
@@ -5651,7 +5658,7 @@ function projeDuraklari(p) {
           ? 'Her katman ne yapabilecek — promptu Claude\'a ver.'
           : 'Son onayı bekliyor.',
     },
-    {
+    sunuculuMu(p) ? {
       ad: 'Güvenlik kontrolü',
       bitti: !!pl0.guvenlikTamamlandi,
       ozet: pl0.guvenlikTamamlandi
@@ -5661,6 +5668,14 @@ function projeDuraklari(p) {
           : pl0.guvenlikOlcum.acik
             ? pl0.guvenlikOlcum.acik + ' açık bulundu — kapatılmadan Final açılmaz.'
             : pl0.guvenlikOlcum.toplam + ' deneme, sıfır açık — onayı bekliyor.',
+    } : {
+      /* Verisi tarayıcıda duran projede sunucu tarafı yok: saldırılacak bir
+         kapı da yok. Gizlenmezse Final sonsuza kadar kilitli kalırdı. */
+      ad: 'Güvenlik kontrolü',
+      bitti: true,
+      sayilmaz: true,
+      gizli: true,
+      ozet: 'Bu projenin verisi tarayıcıda duruyor — sunucu tarafı yok.',
     },
     {
       ad: 'Final',
