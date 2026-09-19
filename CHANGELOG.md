@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.140.3
+- **Düzeltme: Güvenlik kontrolü kartı hâlâ tıklanamıyordu.** Kilit iki ayrı yerde hesaplanıyor — biri adres denetiminde (`durakKilitli`), biri aşama listesindeki kartın kendisinde. v0.140.2'de yalnız ilki gevşetilmişti, kart hâlâ bağlantı bile değildi. İkisi de artık aynı istisnayı tanıyor; kartın üstündeki kilit simgesi de kalktı.
+
 ## v0.140.2
 - **Güvenlik kontrolü aşaması artık hiç kilitlenmiyor.** Sırası gelmese de tıklanıp çalıştırılabiliyor. Gerekçe: bu durak bir görev değil, ölçü aleti — kurulumun her anında "şu an açık var mı" diye bakabilmek gerekir, sırasını beklemek ölçümü geciktirmekten başka işe yaramaz.
 

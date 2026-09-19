@@ -5749,10 +5749,13 @@ const ASAMA_SIHIRBAZ_EYLEM = {
    yeşil şimdiki/biten), ortada ad + sabit açıklama, sağda durum ve ok. */
 function asamaSatiri(p, d, i, simdi, anahtar) {
   const su      = i === simdi;
-  const kilitli = simdi !== -1 && i > simdi;
-  const hal     = d.bitti ? 'bitti' : su ? 'simdi' : 'kilitli';
+  /* Kilit iki yerde hesaplanıyor: burada (kartın kendisi) ve durakKilitli'de
+     (adres denetimi). İkisi de aynı istisnayı tanımalı — yalnız birini
+     gevşetmek kartı tıklanmaz bırakır. */
+  const kilitli = anahtar !== 'guvenlik' && simdi !== -1 && i > simdi;
+  const hal     = d.bitti ? 'bitti' : su ? 'simdi' : (kilitli ? 'kilitli' : 'simdi');
   const def     = DURAKLAR[anahtar] || {};
-  const durum   = d.bitti ? svg(ICON.tik, 14) : su ? '' : svg(ICON.kilit, 13);
+  const durum   = d.bitti ? svg(ICON.tik, 14) : (su || !kilitli) ? '' : svg(ICON.kilit, 13);
 
   const ic = `
     <span class="asr-no mono">${String(i + 1).padStart(2, '0')}</span>
