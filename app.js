@@ -7566,6 +7566,19 @@ async function guvenlikProgramaOzelTest(ekle, ref, guvenlikJson, tabanUrl, kalin
         const ozetAlan = sqlTesti.ozet_satiri;
         const acikDeger = sqlTesti.acik_degeri;
         satirlar.forEach((satir, k) => {
+          /* Satırın kendisi zaten bir "sonuc" sütunu taşıyorsa (bazı
+             programların C SQL'i kendi hükmünü kendi veriyor — bkz.
+             GUVENLIK_B_SQL'deki gibi) onu OLDUĞU GİBİ kullan; tahmin
+             yürütüp AÇIK/KAPALI'ya sıkıştırma, zengin ayrımı (BİLGİ,
+             ATLANDI, vb.) at kaybetme. */
+          if (satir && satir.sonuc !== undefined) {
+            const deneme = 'C · ' + (satir.kim ? satir.kim + ' · ' : '') + (satir.deneme || ('satır ' + (k + 1)));
+            ekle('Programa özel', deneme, String(satir.sonuc),
+              satir.ayrinti !== undefined && satir.ayrinti !== null ? String(satir.ayrinti) : '');
+            return;
+          }
+          /* Sütun adı vermeyen bir program için yedek: acik_degeri'nin
+             satırın herhangi bir sütununda görünüp görünmediğine bakar. */
           const deneme = 'C · ' + (ozetAlan && satir[ozetAlan] ? satir[ozetAlan] : 'satır ' + (k + 1));
           const acikMi = acikDeger !== undefined && Object.values(satir).some(v => v === acikDeger);
           ekle('Programa özel', deneme, acikMi ? 'AÇIK' : 'KAPALI', JSON.stringify(satir));

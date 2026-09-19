@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.138.1
+- **C katmanında sonuç okuma düzeltildi.** guvenlik.json'un SQL'i kendi hükmünü (sonuc/kim/deneme/ayrıntı) zaten veriyorsa artık olduğu gibi kullanılıyor — önceden her satır zorla AÇIK/KAPALI'ya sıkıştırılıp tüm satır JSON olarak ayrıntıya dökülüyordu, kaynağın kendi BİLGİ/ATLANDI ayrımı kayboluyor ve okunması zor bir JSON dampı gösteriliyordu. Sütun adı vermeyen programlar için eski (acik_degeri arama) yöntem yedek olarak duruyor.
+
 ## v0.138.0
 - **Güvenlik Testi'ne dördüncü bir grup eklendi: Sunucu işlevi saldırıları.** Programın Edge Function'ı (guvenlik.json → sunucu_islevi.ad, ör. kullanici-yonetimi) service_role ile çalışır — satır güvenliğinin bütün kurallarını atlayan tek bileşen, ama şimdiye kadar hiç ölçülmüyordu. Yedi deneme: hesap açar, katman değiştirir, şifre değiştirir, hesap kapatır, girişi kaldırır, kimliksiz çağrı, uydurma kimlik — hepsi var olmayan sabit bir kullanıcı id'siyle, veri bozmadan. Bu istekler fonksiyonun CORS'u yüzünden tarayıcıdan atılamadığı için guvenlik-sql Edge Function'ı yeni bir işlem (`istek`) kazandı: hedefin kendi fonksiyonuna sunucudan sunucuya, jetonsuz istek atıyor. Bir satır bile AÇIK çıkarsa en ciddi bulgu sayılıp listenin en üstünde gösteriliyor. **Mevcut guvenlik-sql fonksiyonunu Code sekmesinden yeniden yapıştırıp deploy etmen gerekiyor** — Secrets'a dokunmana gerek yok.
 
