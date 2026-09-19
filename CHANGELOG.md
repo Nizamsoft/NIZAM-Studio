@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.136.3
+- **Güvenlik Testi: A1 ve A4 ölçmeden yeşil/kırmızı göstermeyi bıraktı.** A1 ("şema listesi"), Supabase'in yeni anahtar düzeninde kök uç yayınlanabilir anahtarla açılmadığında ("Secret API key required") artık KAPALI değil BİLGİ yazıyor — bu bir platform kuralı, projenin ayarı değil; ziyaretçinin veri okuyup okuyamadığı zaten A2'de tablo uçlarından ölçülüyor. A4 ("fonksiyon çağırma") artık rastgele/keşfedilen bir fonksiyonu değil, programın guvenlik.json'unda bildirdiği tek güvenli deneme fonksiyonunu (`fonksiyonlar.deneme_guvenli`, muhasebe şablonunda `ns_katman`) çağırıyor — dosya yoksa ya da alan boşsa ATLANDI, bulgu gibi gösterilmiyor.
+
 ## v0.136.2
 - **Güvenlik Testi: tablo listesi artık üç kaynaktan.** Supabase'in yeni anahtar düzeninde OpenAPI şema keşfi (yayınlanabilir anahtarla) 401 "Secret API key required" dönebiliyor — bu artık hata gösterilmeden sessizce yedek kaynağa geçiyor: programın deposundaki `guvenlik.json` → `tablolar.liste`. Ayarlar > Güvenlik Testi'ne opsiyonel bir "GitHub deposu" alanı eklendi. guvenlik.json'dan gelen liste yalnız tablo adı içerdiği için (sütun şeması yok) o modda ekleme/değiştirme/silme testleri "ölçülemedi" olarak işaretleniyor, yanlış KAPALI okunmuyor; okuma testleri (A2, D'nin "okur" sorusu) her koşulda çalışıyor. Üçü de bulunamazsa "tablo listesi bulunamadı" tek bir bilgi satırı olarak gösteriliyor — bulgu değil, eksik ölçüm.
 

@@ -7234,14 +7234,14 @@ async function guvenlikJsonOku(depo) {
        HATA gösterilmez, sessizce 3.2'ye geçilir.
    3.2 guvenlik.json → tablolar.liste — yalnız tablo adları, sütun şeması
        YOK. Koda hiçbir tablo adı yazılmıyor, liste programın kendi
-       dosyasından geliyor.
+       dosyasından geliyor. `json`: guvenlikJsonOku'dan gelen, çağıran
+       tarafından bir kez okunmuş sonuç (fonksiyon A4 için de kullanıyor).
    3.3 hiçbiri yoksa boş liste döner — bu BULGU değil, EKSİK ÖLÇÜM
        (çağıran ekranda böyle göstermeli). */
-async function guvenlikTabloListesiKesfet(istek, belirtec, depo) {
+async function guvenlikTabloListesiKesfet(istek, belirtec, json) {
   const sema = await guvenlikSemaKesfet(istek, belirtec);
   if (sema.tablolar.length) return { tablolar: sema.tablolar, semalar: sema.semalar, kaynak: 'openapi' };
 
-  const json = await guvenlikJsonOku(depo);
   const liste = json && json.tablolar && Array.isArray(json.tablolar.liste) ? json.tablolar.liste : null;
   if (liste && liste.length) return { tablolar: liste, semalar: {}, kaynak: 'guvenlik.json' };
 
@@ -7312,23 +7312,31 @@ async function guvenlikYazDeneVeYorumla(istek, ekle, kim, deneme, yol, secenek, 
 }
 
 /* ---------- A · Dış test (ziyaretçi — oturumsuz, yalnız anon key) ----------
-   `sema`: guvenlikSemaKesfet'ten gelen keşif sonucu. */
-async function guvenlikDisTest(istek, ekle, sema) {
-  /* A1 · Hangi tablolar dışarıdan görünüyor + A4'ün hazırlığı — TEK bir
-     anon çağrısıyla: PostgREST'in kök uç noktası varsayılan olarak (özel
-     bir Accept başlığı gerekmeden) OpenAPI belgesini döndürür ve yalnız O
-     ROLÜN (burada: ziyaretçi/anon) erişebildiği yolları listeler. */
-  let govdeYollari = null;
+   `sema`: guvenlikSemaKesfet'ten gelen keşif sonucu.
+   `guvenlikJson`: programın deposundaki guvenlik.json (yoksa null). */
+async function guvenlikDisTest(istek, ekle, sema, guvenlikJson) {
+  /* A1 · Hangi tablolar dışarıdan görünüyor — yalnız anon anahtarıyla.
+     Supabase'in yeni anahtar düzeninde kök uç ("/rest/v1/") yayınlanabilir
+     anahtarla hiç açılmayabilir ("Secret API key required", HTTP 401) —
+     bu bir PLATFORM kuralıdır, projenin ayarı değil. Böyle bir 401'i
+     KAPALI göstermek "ölçüm yaptık, güvenli" demek olurdu; oysa hiç
+     ölçemedik. O yüzden BİLGİ yazılır. Asıl "ziyaretçi veri okuyabiliyor
+     mu" sorusu zaten A2'de, tablo uçlarına gidilerek ölçülüyor — onlar
+     yayınlanabilir anahtarla normal çalışıyor. */
   {
     const { durum, govde, hata } = await istek('/rest/v1/');
     const ayrinti = guvenlikAyrinti(durum, govde, hata);
+    const gizliAnahtarGerekli = durum === 401 && /secret api key/i.test((govde && govde.message) || '');
     if (hata) ekle('Dış', 'şema listesi', 'BİLGİ', ayrinti);
+    else if (gizliAnahtarGerekli) ekle('Dış', 'şema listesi', 'BİLGİ',
+      'Kök uç yayınlanabilir anahtarla açılmıyor (platform kuralı) — ölçülemedi · ' + ayrinti);
     else {
-      govdeYollari = (durum === 200 && govde && govde.paths) ? govde.paths : null;
-      const tabloYollari = govdeYollari
-        ? Object.keys(govdeYollari).filter(p => p !== '/' && p.indexOf('/rpc/') !== 0) : [];
-      ekle('Dış', 'şema listesi', tabloYollari.length ? 'AÇIK' : 'KAPALI',
-        tabloYollari.length ? tabloYollari.length + ' tablo görünüyor: ' + tabloYollari.map(p => p.slice(1)).join(', ') : ayrinti);
+      const tabloYollari = (durum === 200 && govde && govde.paths)
+        ? Object.keys(govde.paths).filter(p => p !== '/' && p.indexOf('/rpc/') !== 0) : [];
+      if (tabloYollari.length) ekle('Dış', 'şema listesi', 'AÇIK',
+        tabloYollari.length + ' tablo görünüyor: ' + tabloYollari.map(p => p.slice(1)).join(', '));
+      else if (durum === 401 || durum === 403) ekle('Dış', 'şema listesi', 'KAPALI', ayrinti);
+      else ekle('Dış', 'şema listesi', 'BİLGİ', ayrinti);
     }
   }
 
@@ -7371,19 +7379,26 @@ async function guvenlikDisTest(istek, ekle, sema) {
     }
   }
 
-  /* A4 · Fonksiyon çağırma — HİÇBİR ŞEY ÇAĞIRMADAN ölçer. A1'de zaten
-     çekilen anon (oturumsuz) OpenAPI belgesinden: PostgREST bir rolün
-     belgesinde YALNIZ O ROLÜN erişebildiği yolları listeler, yani /rpc/
-     yolu görünüyorsa ziyaretçi gerçekten çağırabiliyor demektir — hem
-     risksiz (hiçbir şey çalıştırılmaz) hem tam (argümanlı fonksiyonlar da
-     görünür, hiçbiri atlanmaz). */
+  /* A4 · Fonksiyon çağırma — OpenAPI'den fonksiyon listesi de keşfedilemiyor
+     (aynı platform kısıtı). Bunun yerine programın guvenlik.json'unda
+     bildirdiği TEK güvenli deneme fonksiyonunu (fonksiyonlar.deneme_guvenli)
+     çağırır — RASTGELE FONKSİYON DENENMEZ. O alana yalnız okuyan,
+     argümansız, yan etkisiz bir fonksiyon adı konması beklenir (muhasebe
+     şablonunda: ns_katman). "En iyi çaba" ölçümüdür; tam ölçüm ("anon hangi
+     fonksiyonları çağırabiliyor") B katmanında doğrudan veritabanından
+     sorulacak. */
   {
-    if (govdeYollari === null) {
-      ekle('Dış', 'fonksiyon çağırma', 'KAPALI', 'Ziyaretçi şemayı bile göremiyor');
+    const deneme = guvenlikJson && guvenlikJson.fonksiyonlar && guvenlikJson.fonksiyonlar.deneme_guvenli;
+    if (!deneme) {
+      ekle('Dış', 'fonksiyon çağırma', 'ATLANDI', 'guvenlik.json yok ya da fonksiyonlar.deneme_guvenli tanımlı değil');
     } else {
-      const fonksiyonlar = Object.keys(govdeYollari).filter(p => p.indexOf('/rpc/') === 0).map(p => p.slice(5));
-      ekle('Dış', 'fonksiyon çağırma', fonksiyonlar.length ? 'AÇIK' : 'KAPALI',
-        fonksiyonlar.length ? 'Ziyaretçi şu fonksiyonları çağırabiliyor: ' + fonksiyonlar.join(', ') : 'Görünen /rpc/ yolu yok');
+      const { durum, govde, hata } = await istek('/rest/v1/rpc/' + deneme, { method: 'POST', body: '{}' });
+      const ayrinti = guvenlikAyrinti(durum, govde, hata);
+      if (hata) ekle('Dış', 'fonksiyon çağırma', 'BİLGİ', ayrinti);
+      else if (durum >= 200 && durum < 300) ekle('Dış', 'fonksiyon çağırma', 'AÇIK', 'rpc/' + deneme + ' · ' + ayrinti);
+      else if (durum === 404) ekle('Dış', 'fonksiyon çağırma', 'ATLANDI', 'rpc/' + deneme + ' bulunamadı · ' + ayrinti);
+      else if (durum === 401 || durum === 403) ekle('Dış', 'fonksiyon çağırma', 'KAPALI', ayrinti);
+      else ekle('Dış', 'fonksiyon çağırma', 'BİLGİ', ayrinti);
     }
   }
 
@@ -7592,12 +7607,16 @@ async function guvenlikTestiCalistir({ url, anon, eposta, sifre, depo }) {
     return { sonuc: sonuclar, harita: null, ustKatmanUyarisi: false, kalintilar, tabloKaynagi: '' };
   }
 
+  /* guvenlik.json bir kez okunur — hem tablo listesi yedeği (3.2) hem A4'ün
+     güvenli deneme fonksiyonu (fonksiyonlar.deneme_guvenli) için kullanılır. */
+  const guvenlikJson = await guvenlikJsonOku(depo);
+
   /* 1 · Tablo listesi — üç kaynaktan sırayla (bkz. guvenlikTabloListesiKesfet):
      OpenAPI keşfi (sütun şemasıyla birlikte) → guvenlik.json (yalnız
      adlar) → hiçbiri yoksa boş. OpenAPI başarısız oldu diye hata
      GÖSTERİLMEZ (Supabase'in yeni anahtar düzeninde bu uç nokta gizli
      anahtar isteyebilir) — yalnız üçü de boşsa aşağıda bilgi satırı yazılır. */
-  const sema = await guvenlikTabloListesiKesfet(istek, belirtec, depo);
+  const sema = await guvenlikTabloListesiKesfet(istek, belirtec, guvenlikJson);
   if (!sema.tablolar.length) {
     ekle('Dış', 'tablo listesi', 'BİLGİ',
       'Tablo listesi bulunamadı — yalnız oturumsuz denemeler çalıştı (okuma/yazma ve yetki haritası atlandı). ' +
@@ -7606,7 +7625,7 @@ async function guvenlikTestiCalistir({ url, anon, eposta, sifre, depo }) {
   }
 
   /* A · Dış test (anon, oturumsuz). */
-  await guvenlikDisTest(istek, ekle, sema);
+  await guvenlikDisTest(istek, ekle, sema, guvenlikJson);
 
   /* A7 · belirteç ömrü — hiçbir şey çağırmaz, giriş cevabını okur. */
   guvenlikBelirtecOmruTesti(ekle, gSonuc.govde);
