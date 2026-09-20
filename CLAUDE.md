@@ -84,22 +84,37 @@ Studio görev + prompt üretir
 ```
 
 ## Tasarım dili
-Kaynak: Nizam Soft logosu (metalik grafit + kırmızı).
+**Editoryal açık tema.** Kağıt zemin, mürekkep yazı, tek kırmızı.
+Kaynak: Nizam Soft logosu (kırmızı) + basılı bir dergi sayfasının sakinliği.
 
 | Rol | Renk |
 |---|---|
-| Arka plan | `#0e0f11` |
-| Yüzey | `#17191c` |
-| Çizgi | `#26292e` |
-| Metin | `#e8eaed` / soft `#9aa0a8` / silik `#6b7178` |
-| Kırmızı | `#e5342a` |
-| Metal | `#4a4f56` → `#c9ced6` |
+| Zemin (kağıt) | `#f2efe9` |
+| Kart / yüzey | `#fffdf9` · `#ffffff` |
+| Çizgi | `#e7e2d9` → `#d2cbbe` |
+| Metin | `#221f1b` / soft `#55504a` / silik `#938b81` |
+| Kırmızı (dolgu) | `#e5342a` |
+| Kırmızı (yazı) | `#b4231b` — açık zeminde `#e5342a` okunmuyor |
 
-**Kırmızı sadece 4 yerde:** logo, ana buton, aktif menü, "Acil".
-İlerleme çubukları metal gradyandır — kırmızı değil (kırmızı "tehlike" gibi okunur).
+**Kırmızı sadece:** logo, ana buton, aktif menü, kart üst şeridi, "Acil".
+İlerleme çubukları nötr — kırmızı "tehlike" gibi okunur.
 
-Yazı tipleri: `Space Grotesk` (başlık) · `IBM Plex Sans` (metin) · `IBM Plex Mono` (kod, görev no).
-Durum renkleri: Yapılacak `#9aa0a8` · Geliştiriliyor `#d0a13c` · Kontrolde `#5b8def` · Tamamlandı `#3d9970`.
+Kurallar:
+- **Gölge yok.** Kart zeminden ince çizgiyle ayrılır. Gölge yalnız gerçekten
+  yüzen şeyde (pencere, açılır menü) ve orada da çok yumuşak.
+- **Cam parıltısı yok.** Koyu temadan kalan beyaz ışık huzmeleri kağıtta kir
+  gibi duruyor; hepsi kapatıldı (style.css sonundaki editoryal katman).
+- **Köşeler ölçülü:** 8px. Hap biçimi yalnız rozet ve avatar.
+- Fotoğraf sınırlı bir blok olarak kullanılır, sayfanın zemini olarak değil.
+
+Yazı tipleri: başlık **serif** (`--yazi-baslik`, Georgia ailesi) ·
+etiket/sayı **Space Grotesk** (`--yazi-etiket`) · gövde sistem sans ·
+kod monospace.
+Durum renkleri (açık zeminde): Yapılacak `#8a837b` · Geliştiriliyor `#b8801a` ·
+Kontrolde `#2f62c4` · Tamamlandı `#2f7d5c`.
+
+Görseller **tek klasörde**: `gorseller/`. Dosya adları sabit, kod adıyla arar;
+dosya yoksa uygulama sade bir zemine düşer, çökmez. Liste: `gorseller/OKU.md`.
 
 ## Her değişiklikte yapılacaklar
 1. `config.js` içindeki `APP.version` güncelle

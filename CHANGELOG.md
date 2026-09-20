@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü
 
+## v0.148.0
+- **Studio editoryal açık temaya geçti.** Koyu grafit zemin gitti; yerine kağıt zemin, mürekkep yazı, serif başlıklar ve tek kırmızı geldi. Renkler tek yerden (`:root`) döndüğü için bütün sayfalar aynı anda değişti.
+- **Panel yeniden kuruldu.** Ofis fotoğrafı artık sayfanın zemini değil, tepedeki kendi bloğu: selam onun koyu perdesinin üstünde serif ve iri duruyor. Kartlar kağıdın üstünde, üstlerinde markanın kırmızı şeridiyle; mobilde iki, masaüstünde üç sütun.
+- Koyu temaya özgü alışkanlıklar temizlendi: cam parıltıları, ağır siyah gölgeler ve beyaz yarı saydam yüzeyler (açık zeminde görünmez oluyorlardı). Alt çubukta aktif sekme artık kırmızı.
+- Gövde zemininde koyu bir gradyan gizliydi ve `--bg` değişse de sayfayı koyu tutuyordu; kağıt dokusuyla değiştirildi.
+- **`gorseller/` klasörü açıldı.** Uygulamanın bütün fotoğraf ve çizimleri tek klasörde toplanıyor; dosya adları sabit, dosya yoksa uygulama sade bir zemine düşüyor. Liste ve ChatGPT tarifi `gorseller/OKU.md` içinde.
+- `CLAUDE.md` içindeki tasarım dili bölümü yeni temaya göre baştan yazıldı.
+
 ## v0.147.1
 - **Ayarlardaki "Yol Haritası" bölümü kaldırıldı.** Studio'nun kendi geliştirme adımlarını gösteren sabit bir listeydi; kimse kullanmıyordu ve elle güncellenmediği için zaten geride kalmıştı. Ayarlar sayfası bir bölüm kısaldı.
 

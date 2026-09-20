@@ -385,7 +385,7 @@ const VIEWS = {
        hem Görevler ekranında zaten duruyordu, panel de ikinci bir liste
        taşımak zorunda kalıyordu. Panel yalnızca nereye gidileceğini söylüyor. */
     return `
-      ${panelSelam()}
+      ${panelHero()}
       ${kisayolIzgarasi(p.length, acik)}
     `;
   },
@@ -13551,17 +13551,29 @@ function karsilama(ilerleme, projeSayi, acikIs) {
     </div>`;
 }
 
-/* Fotoğrafın tavan bandı boş kalıyordu; selam oraya oturuyor. Eski
-   karşılama bloğunun halkası yok — o yüzde özet kartında. */
-function panelSelam() {
+/* Panelin hero bloğu — editoryal dilin açılışı.
+   Fotoğraf eskiden bütün panelin zeminiydi; kartlar onun üstünde yüzmek
+   zorunda kalıyor, her biri yarı saydam cam olmak durumunda kalıyordu.
+   Şimdi fotoğraf sınırlı bir blok: selam onun koyu perdesinin üstüne
+   düşüyor, kartlar kağıdın üstünde rahat ediyor.
+
+   Görsel gorseller/panel-ofis.png. Dosya yoksa onerror ile eski ofis
+   fotoğrafına, o da yoksa düz mürekkep zemine düşüyor — yani görsel
+   eklenene kadar panel çirkinleşmiyor, yalnız sadeleşiyor. */
+function panelHero() {
   const ad = String(AUTH.ad || '').split(' ')[0];
+  const selam = esc(selamla()) + (ad ? ',<br>' + esc(ad) : '');
   return `
-    <div class="p-selam-yer">
-      <div class="p-selam">
-        <b>${esc(selamla())}${ad ? ', ' + esc(ad) : ''}</b>
-        <i>${esc(todayLabel())}</i>
+    <section class="p-hero">
+      <img class="p-hero-foto" src="gorseller/panel-ofis.png" alt="" draggable="false"
+           onerror="this.onerror=null;this.src='ofis.webp'">
+      <span class="p-hero-perde"></span>
+      <div class="p-hero-yazi">
+        <span class="p-hero-cizgi"></span>
+        <h1>${selam}</h1>
+        <p>${esc(todayLabel())}</p>
       </div>
-    </div>`;
+    </section>`;
 }
 
 /* ---------- Panelin kısayol ızgarası ----------

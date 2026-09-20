@@ -6,104 +6,114 @@
    ========================================================================== */
 
 :root {
-  /* --- Vurgu: tek kaynak. Markanın kırmızısı buradan türer. --- */
+  /* --- Vurgu: tek kaynak. Markanın kırmızısı buradan türer. ---
+     Açık zeminde dolgu rengiyle yazı rengi aynı olamaz: #e5342a beyaz
+     üstünde 3.9:1 veriyor, yazı için yetmiyor. Dolgular --red, kağıt
+     üstüne yazılan kırmızı metin --red-ink. */
   --red:            #e5342a;
   --red-parlak:     #f24a40;
-  --red-acik:       #f75f55;
+  --red-acik:       #c8281f;
   --red-koyu:       #b8221a;
-  --red-derin:      #6d1a14;
-  --red-ink:        #f08279;
-  --red-ink-soft:   #f0a49e;
-  --red-soft:       rgba(229, 52, 42, .13);
-  --red-cizgi:      rgba(229, 52, 42, .34);
+  --red-derin:      #7d1812;
+  --red-ink:        #b4231b;
+  --red-ink-soft:   #c4463d;
+  --red-soft:       rgba(229, 52, 42, .09);
+  --red-cizgi:      rgba(229, 52, 42, .30);
 
-  /* --- Metal --- */
-  --metal-1:        #58504b;
-  --metal-2:        #d6d0cd;
+  /* --- Metal: açık temada koyulaşır, yoksa kağıtta kaybolur --- */
+  --metal-1:        #9a938a;
+  --metal-2:        #6b645c;
 
-  /* --- Yüzeyler: sıcak grafit merdiveni --- */
-  --bg:             #171614;
-  /* iOS uygulama kipinde sayfanın DIŞINDA kalan şerit (ana ekran çizgisi bölgesi)
-     bu renkle boyanır. Alt çubuğun bittiği renkle aynı: ikisi tek parça görünsün. */
-  --cerceve:        #1f1d1b;
-  --bg-ust:         #232120;
-  --rail:           #1a1817;
-  --rail-ust:       #211f1d;
-  --kod-bg:         #181614;
-  --yuva-2:         #1c1b19;
-  --yuva:           #211f1d;
+  /* --- Yüzeyler: sıcak kağıt merdiveni ---
+     Zemin en koyu kağıt, kartlar ondan AÇIK. Koyu temanın tersi:
+     orada kart zeminden koyuydu. */
+  --bg:             #f2efe9;
+  /* iOS uygulama kipinde sayfanın DIŞINDA kalan şerit. Alt çubuğun
+     bittiği renkle aynı: ikisi tek parça görünsün. */
+  --cerceve:        #ffffff;
+  --bg-ust:         #ffffff;
+  --rail:           #ffffff;
+  --rail-ust:       #ffffff;
+  --kod-bg:         #f6f3ec;
+  --yuva-2:         #efebe3;
+  --yuva:           #f7f5f0;
 
-  /* Panelin ve çubukların ortak koyu malzemesi. Fotoğrafın üstünde duran
-     her şey bu renkte: kısayol kartları, bugünkü durum, selam hapı,
-     üst çubuk, alt çubuk. */
-  --panel-kart:     #121110;
-  --panel-cam:      rgba(18, 17, 16, .92);
-  --panel-cizgi:    rgba(255, 255, 255, .06);
-  --kart-alt:       #222020;
-  --surface:        #272523;
-  --kart-ust:       #2d2a27;
-  --surface-2:      #2d2a27;
-  --surface-3:      #363330;
+  /* Panelin ve çubukların ortak malzemesi: fotoğrafın üstünde duran
+     her şey bu renkte. */
+  --panel-kart:     #fffdf9;
+  --panel-cam:      rgba(255, 253, 249, .94);
+  --panel-cizgi:    rgba(20, 18, 15, .10);
+  --kart-alt:       #faf8f4;
+  --surface:        #ffffff;
+  --kart-ust:       #ffffff;
+  --surface-2:      #f5f2ec;
+  --surface-3:      #ede9e1;
 
   /* --- Çizgiler --- */
-  --line-3:         #2f2c2a;
-  --line-2:         #373331;
-  --line:           #3c3734;
-  --line-parlak:    #4a4440;
-  --line-parlak-2:  #4f4844;
+  --line-3:         #e7e2d9;
+  --line-2:         #ded8cd;
+  --line:           #d2cbbe;
+  --line-parlak:    #c4bcac;
+  --line-parlak-2:  #b3a996;
 
   /* --- Metin --- */
-  --ink-strong:     #f6f5f4;
-  --ink:            #eceae9;
-  --ink-soft:       #b8b2ad;
-  --ink-faint:      #938b85;
-  --ink-dim:        #7c746e;
-  --kod-ink:        #c6c1be;
+  --ink-strong:     #14120f;
+  --ink:            #221f1b;
+  --ink-soft:       #55504a;
+  --ink-faint:      #7d766d;
+  --ink-dim:        #938b81;
+  --kod-ink:        #3a3630;
 
-  /* --- Durum renkleri --- */
-  --st-todo:        #a39a95;
-  --st-dev:         #d8a63f;
-  --st-dev-t:       #e8bb5c;
-  --st-check:       #6b93e8;
-  --st-check-t:     #8badf2;
-  --st-done:        #45a37b;
-  --st-done-t:      #62c295;
-  --st-done-parlak: #4fb388;
+  /* --- Durum renkleri: açık zeminde okunacak kadar koyu --- */
+  --st-todo:        #8a837b;
+  --st-dev:         #b8801a;
+  --st-dev-t:       #8a5f0e;
+  --st-check:       #2f62c4;
+  --st-check-t:     #24509f;
+  --st-done:        #2f7d5c;
+  --st-done-t:      #256546;
+  --st-done-parlak: #35916a;
 
-  --dev-soft:       rgba(216, 166, 63, .12);
-  --dev-cizgi:      rgba(216, 166, 63, .32);
-  --dev-cizgi-2:    rgba(216, 166, 63, .46);
-  --check-soft:     rgba(107, 147, 232, .13);
-  --check-cizgi:    rgba(107, 147, 232, .32);
-  --check-cizgi-2:  rgba(107, 147, 232, .46);
-  --done-soft:      rgba(69, 163, 123, .12);
-  --done-cizgi:     rgba(69, 163, 123, .32);
-  --done-cizgi-2:   rgba(69, 163, 123, .46);
+  --dev-soft:       rgba(184, 128, 26, .13);
+  --dev-cizgi:      rgba(184, 128, 26, .30);
+  --dev-cizgi-2:    rgba(184, 128, 26, .46);
+  --check-soft:     rgba(47, 98, 196, .11);
+  --check-cizgi:    rgba(47, 98, 196, .28);
+  --check-cizgi-2:  rgba(47, 98, 196, .44);
+  --done-soft:      rgba(47, 125, 92, .12);
+  --done-cizgi:     rgba(47, 125, 92, .28);
+  --done-cizgi-2:   rgba(47, 125, 92, .44);
 
   /* --- Yardımcılar --- */
-  --bar-bos:        #2c2826;
-  --iskelet-1:      #23211f;
-  --iskelet-2:      #34302d;
-  --isik:           rgba(255, 255, 255, .052);
-  /* Kart gölgesi iki katman: yakın ve sert olan kartı zeminden ayırıyor,
-     uzak ve yumuşak olan yükseklik hissini veriyor. Tek katmanla kart
-     dokulu zemine yapışık duruyordu. */
-  --golge:          0 2px 4px -2px rgba(0, 0, 0, .70),
-                    0 18px 34px -20px rgba(0, 0, 0, .95);
-  --golge-yuksek:   0 26px 50px -24px rgba(0, 0, 0, .95);
-  --perde:          rgba(9, 7, 6, .74);
+  --bar-bos:        #e4dfd5;
+  --iskelet-1:      #ede9e1;
+  --iskelet-2:      #e0dacf;
+  /* Koyu temada kartın üst kenarına konan beyaz parıltı burada ters
+     çalışıyor: açık zeminde kabartma değil kir gibi duruyor. Onun yerine
+     çok soluk bir mürekkep çizgisi. */
+  --isik:           rgba(20, 18, 15, .05);
+  --cam-cizgi:      rgba(20, 18, 15, .09);
+  /* Editoryal dil gölge sevmez: kart zeminden gölgeyle değil ince
+     çizgiyle ayrılıyor. Gölge yalnız gerçekten yüzen şeylerde (pencere,
+     açılır menü) ve orada da yumuşak. */
+  --golge:          0 1px 2px rgba(40, 33, 24, .05);
+  --golge-yuksek:   0 22px 44px -26px rgba(40, 33, 24, .40);
+  --perde:          rgba(34, 29, 22, .38);
 
-  /* --- Ölçüler --- */
-  --radius:         12px;
-  --radius-sm:      9px;
-  --radius-lg:      14px;
+  /* --- Ölçüler: editoryal dilde köşeler ölçülü --- */
+  --radius:         8px;
+  --radius-sm:      6px;
+  --radius-lg:      10px;
   --rail-w:         236px;
   --dokunma:        44px;
   --ease:           cubic-bezier(.2, .7, .3, 1);
   --yay:            cubic-bezier(.34, 1.42, .48, 1);
 
-  /* --- Yazı --- */
-  --yazi-baslik:    "Space Grotesk", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  /* --- Yazı ---
+     Başlıklar editoryal bir serif; etiketler ve sayılar grotesk.
+     gorseller/serif.woff2 konursa başlıklar kendiliğinden ona geçer. */
+  --yazi-baslik:    "Nizam Serif", Georgia, "Iowan Old Style", "Times New Roman", serif;
+  --yazi-etiket:    "Space Grotesk", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --yazi-govde:     ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --yazi-kod:       ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
 }
@@ -1334,12 +1344,15 @@ a.mini-link { text-decoration: none; }
    Sayfa kaydırılırken zemin yerinde durduğu için yeniden boyanmıyor.
    Panelde görünmüyor: orada ofis fotoğrafı zaten üstünü kapatıyor. */
 body {
+  /* Kağıt zemin: iki yönlü çok soluk bir mürekkep taraması, üstte ışık.
+     Eskiden burada koyu bir gradyan vardı (#1e1c1a → #131211) ve açık
+     temada --bg'yi tamamen örtüyordu — zemin renginin neden değişmediği
+     aylarca burada saklanabilirdi. */
   background-color: var(--bg);
   background-image:
-    repeating-linear-gradient(45deg,  rgba(255, 255, 255, .022) 0 1px, transparent 1px 4px),
-    repeating-linear-gradient(-45deg, rgba(0, 0, 0, .30)        0 1px, transparent 1px 4px),
-    radial-gradient(120% 55% at 50% -8%, rgba(214, 208, 205, .08), transparent 62%),
-    linear-gradient(180deg, #1e1c1a, #131211);
+    repeating-linear-gradient(45deg,  rgba(20, 18, 15, .014) 0 1px, transparent 1px 4px),
+    repeating-linear-gradient(-45deg, rgba(20, 18, 15, .014) 0 1px, transparent 1px 4px),
+    radial-gradient(120% 55% at 50% -8%, rgba(255, 255, 255, .55), transparent 62%);
 }
 html { background: var(--bg); }
 
@@ -6643,4 +6656,146 @@ a.asr:active{ transform:scale(.99); }
 .obk-cizgi{
   flex:1; min-width:0; height:1px;
   background:linear-gradient(90deg, var(--line), transparent);
+}
+
+/* ==========================================================================
+   EDİTORYAL KATMAN — kağıt, mürekkep ve tek kırmızı
+   ==========================================================================
+   Uygulama koyu grafit bir temadan açık, kağıt hissinde editoryal bir dile
+   geçti. Renkler :root'ta çevrildi; burada duran şey koyu temaya ÖZGÜ olan
+   ve açık zeminde ters çalışan alışkanlıkların düzeltmesi:
+
+     · cam parıltıları (beyaz ışık huzmeleri) — kağıtta kir gibi duruyor,
+     · beyaz yarı saydam zeminler — beyaz kağıtta görünmez oluyor,
+     · ağır siyah gölgeler — editoryal dilde kartı çizgi ayırır, gölge değil.
+
+   Blok en sonda duruyor ki aynı seçiciyi eziyor olsun; her kuralın yanına
+   NEDEN değiştiğini yazdım, yoksa altı ay sonra "bu niye burada" olur. */
+
+/* 1 · Cam parıltıları kalkıyor ------------------------------------------- */
+.kova::before, .bs-kart::before, .sa-kart::before, .bsc::before,
+.fb-kart::before, .fb-tks::before, .bs2::before, .ya::before, .pk::before,
+.kk::after { display: none; }
+
+/* 2 · Beyaz yarı saydam yüzeyler → kağıt --------------------------------- */
+.proje-ray { background: var(--line-2); }
+.hero-no, .rz, .ke, .tkutu .ik, .hp-ikon {
+  background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--line-2);
+}
+.std-satir   { background: var(--surface); }
+.hp-sat:hover { background: var(--surface-2); }
+.hero-zemin {
+  background: var(--surface); box-shadow: inset 0 0 0 1px var(--line-2);
+}
+.hero-logo { box-shadow: 0 1px 2px rgba(40, 33, 24, .10), 0 0 0 1px var(--line-2); }
+.kk-av { background: linear-gradient(150deg, var(--ink-soft), var(--ink-strong)); }
+
+/* 3 · Kısayol kartı: gölge değil çizgi, tepesinde markanın kırmızısı ------
+   Editoryal dilde kart zeminden yükselmez; ince bir çerçeveyle ayrılır ve
+   üstündeki şerit onu bir gazete kutusu gibi başlatır. */
+.kk {
+  background: var(--panel-kart);
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius);
+  box-shadow: none;
+  padding: 16px 14px 15px;
+}
+.kk:hover { border-color: var(--line); }
+.kk::before {                       /* eski ışık huzmesi → üst şerit */
+  content: ""; position: absolute; top: 0; left: 0; right: 0;
+  width: auto; height: 3px; background: var(--red);
+  pointer-events: none;
+}
+.kk.yakinda::before { background: var(--line); }
+.kk b { font-size: 14.5px; font-weight: 600; letter-spacing: 0; }
+.kk i { font-family: var(--yazi-govde); }
+.kk-dr {
+  background: var(--red-soft); color: var(--red-ink);
+  border-radius: var(--radius-sm);
+  box-shadow: none;
+}
+.kk.yakinda .kk-dr { background: var(--surface-2); color: var(--ink-dim); }
+.kk.ana { background: var(--panel-kart); border-color: var(--line-2); }
+.kk.ana .kk-dr { box-shadow: none; }
+
+/* 4 · Panel hero: fotoğraf artık sayfanın zemini değil, kendi bloğu -------
+   Fotoğraf tüm ekranı kaplayınca kartlar onun üstünde yüzmek zorundaydı ve
+   her kart yarı saydam cam olmak durumundaydı. Editoryal dilde fotoğraf
+   sınırlı bir blok: tepede durur, yazı onun koyu perdesinin üstüne düşer,
+   kartlar kağıdın üstünde rahat eder. */
+#main.susulu #zemin-sus { display: none; }        /* tam ekran fotoğraf kapalı */
+#main.susulu .kisayol   { margin-top: 0; }
+#main.susulu .view      { overflow: visible; }
+
+.p-hero {
+  position: relative; overflow: hidden;
+  border-radius: var(--radius); border: 1px solid var(--line-2);
+  aspect-ratio: 16 / 11; margin-bottom: 18px; background: var(--surface-3);
+}
+.p-hero-foto {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: cover; object-position: 50% 42%;
+}
+/* Perde soldan sağa açılıyor: yazı solda okunsun, fotoğrafın sağ tarafı
+   (duvardaki logo) açıkta kalsın. */
+.p-hero-perde {
+  position: absolute; inset: 0;
+  background: linear-gradient(95deg,
+    rgba(16, 14, 12, .86) 0%, rgba(16, 14, 12, .72) 34%,
+    rgba(16, 14, 12, .30) 62%, rgba(16, 14, 12, .12) 100%);
+}
+.p-hero-yazi {
+  position: absolute; left: 20px; right: 20px; top: 50%;
+  transform: translateY(-50%); z-index: 2;
+}
+.p-hero-cizgi {
+  display: block; width: 44px; height: 3px; background: var(--red);
+  margin-bottom: 14px;
+}
+.p-hero h1 {
+  margin: 0; font-family: var(--yazi-baslik); font-weight: 700;
+  font-size: clamp(30px, 9vw, 46px); line-height: 1.04;
+  letter-spacing: -.015em; color: #fff;
+}
+.p-hero p {
+  margin: 10px 0 0; font-family: var(--yazi-govde);
+  font-size: 13px; color: rgba(255, 255, 255, .80);
+}
+/* Fotoğraf yoksa blok boş bir kutu gibi durmasın: kağıt zemin + mürekkep. */
+.p-hero.fotosuz { background: var(--ink-strong); }
+.p-hero.fotosuz .p-hero-perde { background: none; }
+
+/* 5 · Kısayol ızgarası: mobilde iki sütun --------------------------------
+   Üç sütunda başlıklar ("Örnek Projeler") iki satıra kırılıyor ve kart
+   yazısı okunmuyordu. İki sütunda her başlık tek satıra sığıyor. */
+.kisayol { grid-template-columns: repeat(2, 1fr); gap: 11px; margin-top: 0; }
+@media (min-width: 901px) { .kisayol { grid-template-columns: repeat(3, 1fr); } }
+
+/* 6 · Alt çubuk: aktif olan kırmızı, arkasında cam kabarcık yok ---------- */
+@media (max-width: 900px) {
+  .tab::before { display: none; }
+  .tab.active, .tab.active span { color: var(--red-ink); }
+  .tab.active svg { stroke: var(--red); }
+  .tab.active .dolgu > * { fill: var(--red); fill-opacity: .18; }
+  #tabbar { border: 1px solid var(--line-2); box-shadow: var(--golge); }
+}
+
+/* 7 · Etiketler ve sayılar grotesk, başlıklar serif ----------------------
+   --yazi-baslik artık serif. Küçük büyük harfli etiketlerde serif dağınık
+   duruyor; onlar grotesk kalıyor. */
+.label, .pill, .rz, .tab span, .kk-cv, .row-sub, .hero-no,
+.kunye-alt, .p-hero p { font-family: var(--yazi-etiket); }
+.label { letter-spacing: .12em; }
+
+/* 8 · Son ayarlar ------------------------------------------------------- */
+/* Başlığa iki satırlık yer ayırmak üç sütunlu ızgarada gerekliydi; iki
+   sütunda her başlık tek satıra sığıyor ve o pay başlıkla alt yazının
+   arasında boşluk olarak kalıyordu. */
+.kk b { min-height: 0; }
+.kk-yz { gap: 6px; }
+/* Masaüstünde hero geniş bir bant: 16/11 oran orada ekranın tamamını
+   yiyordu. */
+@media (min-width: 901px) {
+  .p-hero { aspect-ratio: 16 / 5; max-height: 360px; }
+  .p-hero-yazi { left: 40px; right: 40px; }
 }
