@@ -1544,6 +1544,49 @@ function gorselAdresi(p, no) {
    girdi alıp yalnız görsel dili değiştiriyor. Müşteri hangisini beğendiyse
    onu işaretliyoruz; gerçek uygulama Studio dışında (Claude Code sohbetiyle)
    yapılıyor — burada iş yalnız yön seçmek ve tamamlandığını işaretlemekte. */
+/* Yön önizlemesi · küçük bir ekran taklidi.
+
+   NİYE ÇİZİM, NİYE RESİM DEĞİL
+   Her yön için on iki resim dosyası tutmak demek, yön eklendiğinde ya da
+   bir renk değiştiğinde resimleri elde yeniden üretmek demekti. Önizleme
+   bunun yerine yönün kendi tarifinden (config.js · TASARIM_YON.onizleme)
+   canlı çiziliyor: dosya yok, çevrimdışı çalışıyor, tarif değişince
+   kendiliğinden güncelleniyor.
+
+   Gösterdiği şey gerçek uygulama ekranı DEĞİL, yönün görsel dilidir:
+   zemin, kart, çerçeve, köşe, gölge, vurgu rengi ve yazı tipi. Müşteri
+   promptu çalıştırmadan önce "bu yön kabaca böyle duruyor" diyebilsin.
+
+   Yüklenmiş gerçek bir mockup varsa o kazanır — çizim yalnız boşluğu
+   doldurur. */
+function yonOnizlemesi(yon) {
+  const o = yon.onizleme;
+  if (!o) return '';
+  const stil = [
+    `--o-zemin:${o.zemin}`, `--o-kart:${o.kart}`, `--o-metin:${o.metin}`,
+    `--o-soluk:${o.soluk}`, `--o-vurgu:${o.vurgu}`, `--o-kenar:${o.kenar}`,
+    `--o-ust:${o.ust}`, `--o-kose:${o.kose}`, `--o-golge:${o.golge}`,
+    `--o-yazi:${o.yazi}`, `--o-doku:${o.doku}`,
+    /* Düğme yazısı ayrı bir alan: kart zemini saydam olan yönlerde
+       (camsı) yazı görünmez kalıyordu. */
+    `--o-dugme-yazi:${o.dugmeYazi || o.kart}`,
+  ].join(';');
+  return `
+    <div class="ty-mini" style="${esc(stil)}" aria-hidden="true">
+      <div class="ty-mini-ust">
+        <span class="ty-mini-nokta"></span>
+        <span class="ty-mini-baslik">Kasa</span>
+      </div>
+      <div class="ty-mini-kart">
+        <span class="ty-mini-etiket">Bugünkü bakiye</span>
+        <span class="ty-mini-sayi">24.860</span>
+        <span class="ty-mini-cizgi"></span>
+        <span class="ty-mini-cizgi kisa"></span>
+      </div>
+      <div class="ty-mini-dug">Devam</div>
+    </div>`;
+}
+
 function tasarimYonKarti(p, pl, yon) {
   const resim = gorselAdresi(p, 'Y_' + yon.anahtar);
   const secili = pl.secilenYon === yon.anahtar;
@@ -1553,8 +1596,8 @@ function tasarimYonKarti(p, pl, yon) {
          ${AUTH.yonetici ? `data-eylem="tasarim-yon-gorsel" data-proje="${p.id}"
            data-alan="${yon.anahtar}" role="button" tabindex="0"` : ''}
          ${resim ? `style="background-image:url('${esc(resim)}')"` : ''}>
-      ${resim ? '' : svg(ICON.folder, 22)}
-      ${resim ? '' : `<i>${AUTH.yonetici ? 'dokun, mockup\'ı yükle' : 'görsel yok'}</i>`}
+      ${resim ? '' : yonOnizlemesi(yon)}
+      ${resim || !AUTH.yonetici ? '' : '<i class="ty-mini-not">dokun, gerçek mockup\'ı yükle</i>'}
       ${GORSEL_YUKLENIYOR[p.id] && GORSEL_YUKLENIYOR[p.id].no === 'Y_' + yon.anahtar
         ? gorselYuklemeKatmani(p.id) : ''}
     </div>

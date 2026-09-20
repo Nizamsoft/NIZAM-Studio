@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.143.0
+- **Her tasarım yönü artık kendi örnek ekranını gösteriyor.** Promptu çalıştırmadan önce o yönün nasıl duracağı görülüyor: zemin, kart, çerçeve, köşe yarıçapı, gölge, vurgu rengi ve yazı tipi.
+- Önizlemeler resim dosyası değil, **canlı çizim**. Her yönün kendi tarifinden (`TASARIM_YON.onizleme`) üretiliyor: on iki resim dosyası taşımak, yön eklendiğinde ya da bir renk değiştiğinde onları elde yeniden üretmek demekti. Bu hâliyle dosya yok, çevrimdışı çalışıyor, tarif değişince kendiliğinden güncelleniyor.
+- Yüklenmiş gerçek bir mockup varsa o kazanır; çizim yalnız boşluğu dolduruyor. Kutu hâlâ yükleme düğmesi.
+- Düğme yazısı için ayrı bir renk alanı eklendi: kart zemini saydam olan yönde (camsı) yazı görünmez kalıyordu.
+
 ## v0.142.0
 - **Profesyonel tasarım aşamasına yedi yeni yön eklendi** — beşten on ikiye çıktı: Brütalist / Ham, Terminal / Yeşil Ekran, Matbaa / Riso Baskı, Art Deco / Klasik Lüks, Doğal / Elde Çizilmiş, Büyük Punto / Yüksek Kontrast, Aurora / Yumuşak Degrade.
 - Yönler bilerek birbirinden uzak seçildi: biri fotoğrafı tamamen atıyor, biri her şeyi tek aralıklı yazıya çeviriyor, biri iki mürekkeple baskı taklidi yapıyor, biri yalnız okunurluğa bakıyor. "Biraz daha koyu" gibi varyantlar yok — müşteri iki seçenek arasında kalmasın diye.

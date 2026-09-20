@@ -2204,8 +2204,8 @@ a.sayfa-dug { text-decoration: none; }
                 box-shadow: inset 0 1px 0 rgba(255, 255, 255, .18); }
 
 /* ==========================================================================
-   PROFESYONEL TASARIM — 5 YÖN
-   5 sabit kart, ızgarada. Her kartta bir mockup önizleme kutusu ve iki düğme.
+   PROFESYONEL TASARIM — YÖNLER
+   Sabit kartlar, ızgarada. Her kartta bir önizleme kutusu ve iki düğme.
    ========================================================================== */
 .ty-izgara { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
 .ty-izgara .fb-kart { margin-bottom: 0; }
@@ -2218,6 +2218,53 @@ a.sayfa-dug { text-decoration: none; }
 }
 .ty-gorsel.var { border-style: solid; border-color: var(--line-2); }
 .ty-gorsel i { font-style: normal; font-size: 11px; }
+
+/* ---- Yön önizlemesi ----
+   Yönün görsel dilini gösteren küçük ekran taklidi. Bütün renk ve biçim
+   değerleri satır içi özel değişkenlerden gelir (bkz. app.js ·
+   yonOnizlemesi); buradaki kurallar yalnız yerleşimi kurar. Böylece yeni
+   bir yön eklemek CSS'e dokunmayı gerektirmiyor.
+
+   `pointer-events: none` bilerek: kutunun kendisi hâlâ "dokun, mockup
+   yükle" düğmesi, çizim onun önünü kesmemeli. */
+.ty-mini {
+  position: absolute; inset: 0; padding: 9px 10px;
+  display: flex; flex-direction: column; gap: 7px;
+  background: var(--o-zemin); color: var(--o-metin);
+  font-family: var(--o-yazi); pointer-events: none; overflow: hidden;
+}
+.ty-mini::after {
+  content: ''; position: absolute; inset: 0; background: var(--o-doku);
+  pointer-events: none;
+}
+.ty-mini-ust { display: flex; align-items: center; gap: 5px; }
+.ty-mini-nokta {
+  width: 9px; height: 9px; border-radius: 2px; background: var(--o-vurgu);
+}
+.ty-mini-baslik { font-size: 10px; font-weight: 700; letter-spacing: .02em; }
+.ty-mini-kart {
+  flex: 1; display: flex; flex-direction: column; gap: 4px; justify-content: center;
+  padding: 8px 9px; background: var(--o-kart); border: var(--o-kenar);
+  border-top: var(--o-ust); border-radius: var(--o-kose); box-shadow: var(--o-golge);
+}
+.ty-mini-etiket { font-size: 8px; color: var(--o-soluk); letter-spacing: .04em; }
+.ty-mini-sayi { font-size: 19px; font-weight: 700; line-height: 1; color: var(--o-vurgu); }
+.ty-mini-cizgi {
+  height: 3px; border-radius: 2px; background: var(--o-soluk); opacity: .38;
+}
+.ty-mini-cizgi.kisa { width: 55%; }
+.ty-mini-dug {
+  align-self: flex-start; padding: 4px 11px; font-size: 9px; font-weight: 700;
+  color: var(--o-dugme-yazi); background: var(--o-vurgu);
+  border-radius: var(--o-kose); border: var(--o-kenar);
+}
+/* Yükleme ipucu çizimin üstünde, okunur kalsın diye kendi zemininde. */
+.ty-mini-not {
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 2;
+  padding: 3px 0; text-align: center; font-size: 10px; font-style: normal;
+  color: var(--ink); background: rgba(12, 14, 17, .62);
+  backdrop-filter: blur(2px);
+}
 
 .ty-dug { display: flex; flex-direction: column; gap: 7px; margin-top: 11px; }
 

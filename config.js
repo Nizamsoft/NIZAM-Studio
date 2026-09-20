@@ -7,7 +7,7 @@ const APP = {
   name:     'NIZAM | Studio',
   short:    'NIZAM Studio',
   owner:    'Nizam Soft',
-  version: 'v0.142.0',
+  version: 'v0.143.0',
   build:    '2026-09-17',
   /* Studio'nun kendi deposu — "bütün programlarda geçerli olsun"
      istekleri buraya gider. */
@@ -111,6 +111,7 @@ const GRUP_SIMGE = {
 const TASARIM_YON = [
   { anahtar: 'marka', ad: 'Editoryal / Fotoğraflı', renk: '#c9753c',
     ozet: 'Dergi düzeni: iri serif başlık, gerçek fotoğraf, bol boşluk, tek vurgu.',
+    onizleme: { zemin:'#F6F1E8', kart:'#FFFDF8', metin:'#1A1A1A', soluk:'#8A7F70', vurgu:'#C9753C', kenar:'none', ust:'3px solid #C9753C', kose:'7px', golge:'none', yazi:'Georgia, "Times New Roman", serif', doku:'none' , dugmeYazi:'#FFFFFF' },
     prompt: 'Ekteki mobil ve masaüstü ekran görüntüleri {FIRMA}\'nin gerçek '
       + 'uygulaması. İçeriği, kartları, menüyü olduğu gibi koru, hiçbir öğeyi '
       + 'ekleme/çıkarma — yalnız görsel dili değiştir. Yön: bir dergi kapağı '
@@ -127,6 +128,7 @@ const TASARIM_YON = [
       + 'ayrı çiz.' },
   { anahtar: 'minimal', ad: 'İsviçre Usulü / Sıfır Süs', renk: '#8fae4a',
     ozet: 'Fotoğraf yok, keskin köşe, gölgesiz, ızgara temelli, tek renk.',
+    onizleme: { zemin:'#FFFFFF', kart:'#FFFFFF', metin:'#000000', soluk:'#777777', vurgu:'#E5342A', kenar:'1px solid #111111', ust:'none', kose:'0', golge:'none', yazi:'Inter, Helvetica, Arial, sans-serif', doku:'none' , dugmeYazi:'#FFFFFF' },
     prompt: 'Ekteki mobil ve masaüstü ekran görüntüleri {FIRMA}\'nin gerçek '
       + 'uygulaması. İçeriği, kartları, menüyü olduğu gibi koru, hiçbir öğeyi '
       + 'ekleme/çıkarma — yalnız görsel dili değiştir. Yön: katı İsviçre/Bauhaus '
@@ -142,6 +144,7 @@ const TASARIM_YON = [
       + 'gibi eşit. Hem mobil hem masaüstü versiyonunu ayrı ayrı çiz.' },
   { anahtar: 'koyu', ad: 'Camsı / Karanlık Mod', renk: '#5f86c4',
     ozet: 'Koyu zemin, buzlu cam kartlar, neon gradyan kenarlık, mono yazı.',
+    onizleme: { zemin:'#0B0F1A', kart:'rgba(255,255,255,.07)', metin:'#E8EAED', soluk:'#8A93A6', vurgu:'#7F5AF0', kenar:'1px solid rgba(255,255,255,.20)', ust:'none', kose:'18px', golge:'0 0 18px rgba(127,90,240,.35)', yazi:'"SF Mono", Menlo, monospace', doku:'none' , dugmeYazi:'#0B0F1A' },
     prompt: 'Ekteki mobil ve masaüstü ekran görüntüleri {FIRMA}\'nin gerçek '
       + 'uygulaması. İçeriği, kartları, menüyü olduğu gibi koru, hiçbir öğeyi '
       + 'ekleme/çıkarma — yalnız görsel dili değiştir. Yön: gerçek '
@@ -157,6 +160,7 @@ const TASARIM_YON = [
       + 'mobil hem masaüstü versiyonunu ayrı ayrı çiz.' },
   { anahtar: 'sicak', ad: 'Yumuşak / Oyunbaz', renk: '#c4a05c',
     ozet: 'Neumorfik kabartma kartlar, pastel, blob şekiller, düz illüstrasyon.',
+    onizleme: { zemin:'#EFE7DD', kart:'#EFE7DD', metin:'#4A3A2C', soluk:'#9C8B79', vurgu:'#C4A05C', kenar:'none', ust:'none', kose:'20px', golge:'5px 5px 11px rgba(120,95,70,.20), -5px -5px 11px rgba(255,255,255,.85)', yazi:'"Nunito", Inter, sans-serif', doku:'none' , dugmeYazi:'#3B2E22' },
     prompt: 'Ekteki mobil ve masaüstü ekran görüntüleri {FIRMA}\'nin gerçek '
       + 'uygulaması. İçeriği, kartları, menüyü olduğu gibi koru, hiçbir öğeyi '
       + 'ekleme/çıkarma — yalnız görsel dili değiştir. Yön: yumuşak ve oyunbaz, '
@@ -173,6 +177,7 @@ const TASARIM_YON = [
       + 'versiyonunu ayrı ayrı çiz.' },
   { anahtar: 'kurumsal', ad: 'Kurumsal / Yoğun Panel', renk: '#6b7178',
     ozet: 'Fotoğraf yok, KPI şeridi, ince çizgili sıkı tablo, koyu lacivert.',
+    onizleme: { zemin:'#F2F4F7', kart:'#FFFFFF', metin:'#1E2A38', soluk:'#6B7889', vurgu:'#4A6FA5', kenar:'1px solid #D4D9E0', ust:'none', kose:'3px', golge:'none', yazi:'"Roboto Condensed", Inter, sans-serif', doku:'none' , dugmeYazi:'#FFFFFF' },
     prompt: 'Ekteki mobil ve masaüstü ekran görüntüleri {FIRMA}\'nin gerçek '
       + 'uygulaması. İçeriği, kartları, menüyü olduğu gibi koru, hiçbir öğeyi '
       + 'ekleme/çıkarma — yalnız görsel dili değiştir. Yön: ciddi bir kurumsal '
@@ -189,6 +194,7 @@ const TASARIM_YON = [
       + 'ayrı ayrı çiz.' },
   { anahtar: 'brutal', ad: 'Brütalist / Ham', renk: '#d6b400',
     ozet: 'Kalın siyah çerçeve, kaydırılmış gölge, devasa başlık, ham his.',
+    onizleme: { zemin:'#F7E948', kart:'#FFFFFF', metin:'#000000', soluk:'#444444', vurgu:'#1F4FD8', kenar:'3px solid #000000', ust:'none', kose:'0', golge:'5px 5px 0 #000000', yazi:'Inter, Arial Black, sans-serif', doku:'none' , dugmeYazi:'#FFFFFF' },
     prompt: 'Ekteki mobil ve masaüstü ekran görüntüleri {FIRMA}\'nin gerçek '
       + 'uygulaması. İçeriği, kartları, menüyü olduğu gibi koru, hiçbir öğeyi '
       + 'ekleme/çıkarma — yalnız görsel dili değiştir. Yön: **neo-brütalist**, '
@@ -205,6 +211,7 @@ const TASARIM_YON = [
       + 'masaüstü versiyonunu ayrı ayrı çiz.' },
   { anahtar: 'terminal', ad: 'Terminal / Yeşil Ekran', renk: '#3f9d7a',
     ozet: 'Tek aralıklı yazı, koyu zemin, fosfor yeşili, çizgi çerçeveler.',
+    onizleme: { zemin:'#05100A', kart:'#05100A', metin:'#4DFF9F', soluk:'#2E8A5C', vurgu:'#FFC247', kenar:'1px solid #1F7A4D', ust:'none', kose:'0', golge:'none', yazi:'"SF Mono", Menlo, monospace', doku:'repeating-linear-gradient(180deg, rgba(77,255,159,.05) 0 1px, transparent 1px 3px)' , dugmeYazi:'#05100A' },
     prompt: 'Ekteki mobil ve masaüstü ekran görüntüleri {FIRMA}\'nin gerçek '
       + 'uygulaması. İçeriği, kartları, menüyü olduğu gibi koru, hiçbir öğeyi '
       + 'ekleme/çıkarma — yalnız görsel dili değiştir. Yön: eski bir '
@@ -220,6 +227,7 @@ const TASARIM_YON = [
       + 'hem masaüstü versiyonunu ayrı ayrı çiz.' },
   { anahtar: 'riso', ad: 'Matbaa / Riso Baskı', renk: '#d4577a',
     ozet: 'İki renk üst üste basılmış his, tram noktaları, kâğıt dokusu.',
+    onizleme: { zemin:'#F4EFE2', kart:'#F4EFE2', metin:'#1C1C1C', soluk:'#6E6A60', vurgu:'#FF3D8B', kenar:'none', ust:'none', kose:'0', golge:'2px 2px 0 rgba(43,95,217,.55)', yazi:'Inter, Helvetica, sans-serif', doku:'radial-gradient(rgba(43,95,217,.22) 1px, transparent 1px) 0 0/5px 5px' , dugmeYazi:'#FFFFFF' },
     prompt: 'Ekteki mobil ve masaüstü ekran görüntüleri {FIRMA}\'nin gerçek '
       + 'uygulaması. İçeriği, kartları, menüyü olduğu gibi koru, hiçbir öğeyi '
       + 'ekleme/çıkarma — yalnız görsel dili değiştir. Yön: **risograf baskı** '
@@ -234,6 +242,7 @@ const TASARIM_YON = [
       + 'yuvarlak köşe yok. Hem mobil hem masaüstü versiyonunu ayrı ayrı çiz.' },
   { anahtar: 'deco', ad: 'Art Deco / Klasik Lüks', renk: '#6f4f8f',
     ozet: 'Altın ince çizgi, simetrik çerçeve, yüksek kontrast serif, koyu mücevher tonu.',
+    onizleme: { zemin:'#10342F', kart:'#10342F', metin:'#F0E6D2', soluk:'#9FB3A8', vurgu:'#D4AF37', kenar:'1px solid #D4AF37', ust:'none', kose:'2px', golge:'none', yazi:'Georgia, "Didot", serif', doku:'none' , dugmeYazi:'#10342F' },
     prompt: 'Ekteki mobil ve masaüstü ekran görüntüleri {FIRMA}\'nin gerçek '
       + 'uygulaması. İçeriği, kartları, menüyü olduğu gibi koru, hiçbir öğeyi '
       + 'ekleme/çıkarma — yalnız görsel dili değiştir. Yön: **Art Deco** '
@@ -249,6 +258,7 @@ const TASARIM_YON = [
       + 'mobil hem masaüstü versiyonunu ayrı ayrı çiz.' },
   { anahtar: 'organik', ad: 'Doğal / Elde Çizilmiş', renk: '#5b8c7b',
     ozet: 'Toprak tonları, botanik çizim, kâğıt greni, elle çizilmiş ayraçlar.',
+    onizleme: { zemin:'#EFE9DD', kart:'#F8F4EB', metin:'#3D4034', soluk:'#8B8A78', vurgu:'#5B8C7B', kenar:'1px solid #CFC6B4', ust:'none', kose:'12px', golge:'none', yazi:'Georgia, serif', doku:'radial-gradient(rgba(90,80,60,.07) 1px, transparent 1px) 0 0/4px 4px' , dugmeYazi:'#FFFFFF' },
     prompt: 'Ekteki mobil ve masaüstü ekran görüntüleri {FIRMA}\'nin gerçek '
       + 'uygulaması. İçeriği, kartları, menüyü olduğu gibi koru, hiçbir öğeyi '
       + 'ekleme/çıkarma — yalnız görsel dili değiştir. Yön: doğal, sıcak ve '
@@ -264,6 +274,7 @@ const TASARIM_YON = [
       + 'ayrı çiz.' },
   { anahtar: 'erisim', ad: 'Büyük Punto / Yüksek Kontrast', renk: '#1f4fa8',
     ozet: 'İri yazı, kalın kenarlık, bol kontrast, süs yok — gözü yormayan.',
+    onizleme: { zemin:'#FFFFFF', kart:'#FFFFFF', metin:'#000000', soluk:'#333333', vurgu:'#1F4FA8', kenar:'3px solid #000000', ust:'none', kose:'6px', golge:'none', yazi:'Inter, Arial, sans-serif', doku:'none' , dugmeYazi:'#FFFFFF' },
     prompt: 'Ekteki mobil ve masaüstü ekran görüntüleri {FIRMA}\'nin gerçek '
       + 'uygulaması. İçeriği, kartları, menüyü olduğu gibi koru, hiçbir öğeyi '
       + 'ekleme/çıkarma — yalnız görsel dili değiştir. Yön: **gözü yormayan, '
@@ -280,6 +291,7 @@ const TASARIM_YON = [
       + 'kullanma. Hem mobil hem masaüstü versiyonunu ayrı ayrı çiz.' },
   { anahtar: 'aurora', ad: 'Aurora / Yumuşak Degrade', renk: '#a259c4',
     ozet: 'Açık zemin, pastel degrade lekeler, yumuşak gölge, ferah modern.',
+    onizleme: { zemin:'radial-gradient(120% 90% at 10% 0%, rgba(162,89,196,.30), transparent 60%), radial-gradient(110% 80% at 95% 25%, rgba(56,189,208,.28), transparent 62%), radial-gradient(110% 90% at 60% 110%, rgba(255,169,128,.28), transparent 60%), #FBFAFF', kart:'#FFFFFF', metin:'#23262B', soluk:'#7A8090', vurgu:'#A259C4', kenar:'none', ust:'none', kose:'16px', golge:'0 10px 22px rgba(90,60,150,.16)', yazi:'Inter, system-ui, sans-serif', doku:'none' , dugmeYazi:'#FFFFFF' },
     prompt: 'Ekteki mobil ve masaüstü ekran görüntüleri {FIRMA}\'nin gerçek '
       + 'uygulaması. İçeriği, kartları, menüyü olduğu gibi koru, hiçbir öğeyi '
       + 'ekleme/çıkarma — yalnız görsel dili değiştir. Yön: **aydınlık ve '
