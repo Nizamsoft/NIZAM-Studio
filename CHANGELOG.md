@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.144.0
+- **Örnek ekrana dokununca büyük hâli açılıyor: masaüstü ve mobil.** İki düğme aynı pencerede görüntüyü değiştiriyor, pencere yeniden açılmıyor — iki yönü karşılaştırmak tek dokunuş.
+- Örnek düzen **Nizam Studio'nun kendi panelinden** alındı: solda menü (Panel, Projeler, Görevler, Şablonlar, Ayarlar), üstte başlık ve avatar, içeride üç sayı kartı ve son görevler listesi. Mobilde aynı içerik alt menüyle.
+- İçerik on iki yönde birebir aynı; değişen yalnız görsel dil. Amaç bu: iki yön yan yana konduğunda farkın nereden geldiği görülsün.
+- Kart içindeki küçük kutu artık örnek ekranı açıyor; "gerçek mockup yükle" kendi düğmesine taşındı (eskiden kutuya dokunmak yükleme başlatıyordu).
+
 ## v0.143.0
 - **Her tasarım yönü artık kendi örnek ekranını gösteriyor.** Promptu çalıştırmadan önce o yönün nasıl duracağı görülüyor: zemin, kart, çerçeve, köşe yarıçapı, gölge, vurgu rengi ve yazı tipi.
 - Önizlemeler resim dosyası değil, **canlı çizim**. Her yönün kendi tarifinden (`TASARIM_YON.onizleme`) üretiliyor: on iki resim dosyası taşımak, yön eklendiğinde ya da bir renk değiştiğinde onları elde yeniden üretmek demekti. Bu hâliyle dosya yok, çevrimdışı çalışıyor, tarif değişince kendiliğinden güncelleniyor.

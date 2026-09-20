@@ -1544,6 +1544,134 @@ function gorselAdresi(p, no) {
    girdi alıp yalnız görsel dili değiştiriyor. Müşteri hangisini beğendiyse
    onu işaretliyoruz; gerçek uygulama Studio dışında (Claude Code sohbetiyle)
    yapılıyor — burada iş yalnız yön seçmek ve tamamlandığını işaretlemekte. */
+/* ---- Yönün büyük örnek ekranı ----------------------------------------
+   Küçük önizleme yönün rengini ve biçimini gösteriyor; bu ise o dilin
+   GERÇEK BİR EKRANDA nasıl duracağını gösteriyor. Düzen Nizam Studio'nun
+   kendi panelinden alındı: solda menü, üstte başlık, içeride sayı
+   kartları ve bir liste.
+
+   İçerik on iki yönde birebir aynı — değişen tek şey görsel dil. Amaç
+   bu: müşteri iki yönü yan yana koyduğunda farkın nereden geldiğini
+   görsün.
+
+   Çizim yine tarifin kendisinden (TASARIM_YON.onizleme) besleniyor;
+   ayrı bir resim ya da ayrı bir renk listesi tutulmuyor. */
+
+function yonStilDegiskenleri(o) {
+  return [
+    `--o-zemin:${o.zemin}`, `--o-kart:${o.kart}`, `--o-metin:${o.metin}`,
+    `--o-soluk:${o.soluk}`, `--o-vurgu:${o.vurgu}`, `--o-kenar:${o.kenar}`,
+    `--o-ust:${o.ust}`, `--o-kose:${o.kose}`, `--o-golge:${o.golge}`,
+    `--o-yazi:${o.yazi}`, `--o-doku:${o.doku}`,
+    `--o-dugme-yazi:${o.dugmeYazi || o.kart}`,
+  ].join(';');
+}
+
+const OE_MENU  = ['Panel', 'Projeler', 'Görevler', 'Şablonlar', 'Ayarlar'];
+const OE_SAYI  = [['Açık görev', '18'], ['Bu ay', '7'], ['Bekleyen', '3']];
+const OE_SATIR = [
+  ['Muhasebe Modülü', 'Kontrolde'],
+  ['Gün sonu aktarımı', 'Geliştiriliyor'],
+  ['Banka eşleştirme', 'Tamamlandı'],
+  ['Kullanıcı yetkileri', 'Yapılacak'],
+];
+
+function oeSayiKarti([etiket, sayi]) {
+  return `<div class="oe-kart">
+    <span class="oe-etiket">${esc(etiket)}</span>
+    <span class="oe-sayi">${esc(sayi)}</span>
+  </div>`;
+}
+
+function oeListe() {
+  return `<div class="oe-kart oe-liste">
+    <span class="oe-etiket">Son görevler</span>
+    ${OE_SATIR.map(([ad, durum]) => `
+      <div class="oe-satir">
+        <span class="oe-satir-ad">${esc(ad)}</span>
+        <span class="oe-rozet">${esc(durum)}</span>
+      </div>`).join('')}
+  </div>`;
+}
+
+function yonOrnekEkran(yon, kip) {
+  const o = yon.onizleme;
+  if (!o) return '';
+  const stil = yonStilDegiskenleri(o);
+
+  if (kip === 'mobil') {
+    return `<div class="oe oe-mobil" style="${esc(stil)}">
+      <div class="oe-tepe">
+        <span class="oe-marka">Panel</span>
+        <span class="oe-avatar">EG</span>
+      </div>
+      <div class="oe-govde">
+        <div class="oe-sayilar oe-iki">${OE_SAYI.slice(0, 2).map(oeSayiKarti).join('')}</div>
+        ${oeListe()}
+        <div class="oe-dugme">Yeni görev</div>
+      </div>
+      <div class="oe-alt-menu">
+        ${OE_MENU.slice(0, 4).map((m, i) => `
+          <span class="oe-alt-oge ${i === 0 ? 'etkin' : ''}">
+            <span class="oe-alt-nokta"></span>${esc(m)}</span>`).join('')}
+      </div>
+    </div>`;
+  }
+
+  return `<div class="oe oe-masaustu" style="${esc(stil)}">
+    <div class="oe-yan">
+      <span class="oe-marka">NIZAM</span>
+      ${OE_MENU.map((m, i) => `
+        <span class="oe-menu-oge ${i === 0 ? 'etkin' : ''}">
+          <span class="oe-menu-nokta"></span>${esc(m)}</span>`).join('')}
+    </div>
+    <div class="oe-sag">
+      <div class="oe-tepe">
+        <span class="oe-baslik">Panel</span>
+        <span class="oe-avatar">EG</span>
+      </div>
+      <div class="oe-govde">
+        <div class="oe-sayilar">${OE_SAYI.map(oeSayiKarti).join('')}</div>
+        ${oeListe()}
+        <div class="oe-dugme">Yeni görev</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* Pencere · iki düğme bir görüntüyü değiştiriyor, pencere yeniden
+   açılmıyor: karşılaştırma tek dokunuşla olsun. */
+function yonOrnekAc(anahtar) {
+  const yon = TASARIM_YON.find(y => y.anahtar === anahtar);
+  if (!yon || !yon.onizleme) { toast('Bu yönün örnek ekranı yok.', 'uyari'); return; }
+
+  modalAc(`
+    <div class="modal-bas">
+      <span class="modal-baslik">${esc(yon.ad)}</span>
+      <p class="modal-alt-yazi">${esc(yon.ozet)}</p>
+    </div>
+    <div class="oe-secim">
+      <button class="btn btn-ghost etkin" data-oe="masaustu" type="button">Masaüstü</button>
+      <button class="btn btn-ghost" data-oe="mobil" type="button">Mobil</button>
+    </div>
+    <div class="oe-sahne" data-oe-sahne>${yonOrnekEkran(yon, 'masaustu')}</div>
+    <p class="oe-not">Örnek düzen Nizam Studio panelinden alındı. İçerik on
+      iki yönde aynı; değişen yalnız görsel dil.</p>
+    <div class="modal-alt">
+      <button class="btn btn-ghost" data-m="kapat" type="button">Kapat</button>
+    </div>`, kutu => {
+    const sahne = $('[data-oe-sahne]', kutu);
+    kutu.querySelectorAll('[data-oe]').forEach(d => {
+      d.addEventListener('click', () => {
+        kutu.querySelectorAll('[data-oe]').forEach(x => x.classList.remove('etkin'));
+        d.classList.add('etkin');
+        sahne.innerHTML = yonOrnekEkran(yon, d.dataset.oe);
+      });
+    });
+    $('[data-m="kapat"]', kutu).addEventListener('click', modalKapat);
+  }, 'genis');
+}
+
 /* Yön önizlemesi · küçük bir ekran taklidi.
 
    NİYE ÇİZİM, NİYE RESİM DEĞİL
@@ -1562,15 +1690,7 @@ function gorselAdresi(p, no) {
 function yonOnizlemesi(yon) {
   const o = yon.onizleme;
   if (!o) return '';
-  const stil = [
-    `--o-zemin:${o.zemin}`, `--o-kart:${o.kart}`, `--o-metin:${o.metin}`,
-    `--o-soluk:${o.soluk}`, `--o-vurgu:${o.vurgu}`, `--o-kenar:${o.kenar}`,
-    `--o-ust:${o.ust}`, `--o-kose:${o.kose}`, `--o-golge:${o.golge}`,
-    `--o-yazi:${o.yazi}`, `--o-doku:${o.doku}`,
-    /* Düğme yazısı ayrı bir alan: kart zemini saydam olan yönlerde
-       (camsı) yazı görünmez kalıyordu. */
-    `--o-dugme-yazi:${o.dugmeYazi || o.kart}`,
-  ].join(';');
+  const stil = yonStilDegiskenleri(o);
   return `
     <div class="ty-mini" style="${esc(stil)}" aria-hidden="true">
       <div class="ty-mini-ust">
@@ -1593,11 +1713,11 @@ function tasarimYonKarti(p, pl, yon) {
   return fbKart(yon.renk, ICON.gTasarim, yon.ad, null, p.id, `
     <p class="fb-neden">${esc(yon.ozet)}</p>
     <div class="ty-gorsel ${resim ? 'var' : ''}"
-         ${AUTH.yonetici ? `data-eylem="tasarim-yon-gorsel" data-proje="${p.id}"
-           data-alan="${yon.anahtar}" role="button" tabindex="0"` : ''}
+         data-eylem="tasarim-yon-ornek" data-alan="${yon.anahtar}"
+         role="button" tabindex="0" title="Örnek ekranı büyük gör"
          ${resim ? `style="background-image:url('${esc(resim)}')"` : ''}>
       ${resim ? '' : yonOnizlemesi(yon)}
-      ${resim || !AUTH.yonetici ? '' : '<i class="ty-mini-not">dokun, gerçek mockup\'ı yükle</i>'}
+      <i class="ty-mini-not">dokun · örnek ekranı gör</i>
       ${GORSEL_YUKLENIYOR[p.id] && GORSEL_YUKLENIYOR[p.id].no === 'Y_' + yon.anahtar
         ? gorselYuklemeKatmani(p.id) : ''}
     </div>
@@ -1605,6 +1725,10 @@ function tasarimYonKarti(p, pl, yon) {
       <button class="sayfa-dug ikincil" type="button" data-eylem="tasarim-yon-kopyala"
               data-proje="${p.id}" data-alan="${yon.anahtar}">
         ${svg(ICON.kopya, 15)} Promptu kopyala</button>
+      ${AUTH.yonetici ? `
+        <button class="sayfa-dug ikincil" type="button" data-eylem="tasarim-yon-gorsel"
+                data-proje="${p.id}" data-alan="${yon.anahtar}">
+          ${svg(ICON.folder, 15)} ${resim ? 'Mockup\'ı değiştir' : 'Gerçek mockup yükle'}</button>` : ''}
       ${AUTH.yonetici ? `
         <button class="sayfa-dug ${secili ? '' : 'ikincil'}" type="button"
                 data-eylem="tasarim-yon-sec" data-proje="${p.id}" data-alan="${yon.anahtar}">
@@ -11836,6 +11960,11 @@ async function eylemCalistir(el) {
     const yon = TASARIM_YON.find(y => y.anahtar === alan);
     if (!yon) return;
     gorselSecVeYukle(el.dataset.proje, 'Y_' + yon.anahtar, yon.ad);
+    return;
+  }
+
+  if (e === 'tasarim-yon-ornek') {
+    yonOrnekAc(el.dataset.alan);
     return;
   }
 

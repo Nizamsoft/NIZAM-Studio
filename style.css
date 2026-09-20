@@ -2266,6 +2266,98 @@ a.sayfa-dug { text-decoration: none; }
   backdrop-filter: blur(2px);
 }
 
+/* ---- Yönün büyük örnek ekranı ----
+   Düzen Nizam Studio panelinden: solda menü, üstte başlık, içeride sayı
+   kartları ve liste. Bütün renk/biçim değerleri yönün tarifinden gelen
+   --o-* değişkenlerinden okunuyor; buradaki kurallar yalnız yerleşim
+   kurar. Yeni yön eklemek bu dosyaya dokunmayı gerektirmez. */
+.oe-secim { display: flex; gap: 8px; margin: 2px 0 12px; }
+.oe-secim .btn.etkin { background: var(--yuva-2); color: var(--ink); border-color: var(--line-2); }
+
+.oe-sahne {
+  border-radius: 12px; overflow: hidden; border: 1px solid var(--line-2);
+  background: var(--yuva);
+}
+.oe-not { margin: 10px 2px 0; font-size: 11.5px; color: var(--ink-dim); }
+
+.oe {
+  background: var(--o-zemin); color: var(--o-metin); font-family: var(--o-yazi);
+  position: relative;
+}
+.oe::after { content: ''; position: absolute; inset: 0; background: var(--o-doku);
+  pointer-events: none; }
+
+.oe-masaustu { display: grid; grid-template-columns: 150px 1fr; min-height: 330px; }
+.oe-mobil    { display: flex; flex-direction: column; min-height: 420px;
+  max-width: 260px; margin: 0 auto; }
+
+.oe-yan {
+  display: flex; flex-direction: column; gap: 3px; padding: 14px 10px;
+  border-right: var(--o-kenar);
+}
+.oe-marka { font-size: 12px; font-weight: 800; letter-spacing: .10em; margin-bottom: 10px; }
+.oe-menu-oge {
+  display: flex; align-items: center; gap: 7px; padding: 6px 8px;
+  font-size: 11px; color: var(--o-soluk); border-radius: var(--o-kose);
+}
+.oe-menu-oge.etkin { color: var(--o-dugme-yazi); background: var(--o-vurgu); font-weight: 700; }
+.oe-menu-nokta { width: 6px; height: 6px; border-radius: 2px; background: currentColor; opacity: .8; }
+
+.oe-sag { display: flex; flex-direction: column; }
+.oe-tepe {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 11px 14px; border-bottom: var(--o-kenar);
+}
+.oe-baslik { font-size: 14px; font-weight: 800; }
+.oe-avatar {
+  width: 24px; height: 24px; border-radius: 999px; display: grid; place-items: center;
+  font-size: 9px; font-weight: 700; color: var(--o-dugme-yazi); background: var(--o-vurgu);
+}
+
+.oe-govde { flex: 1; padding: 13px 14px; display: flex; flex-direction: column; gap: 10px; }
+.oe-sayilar { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; }
+.oe-sayilar.oe-iki { grid-template-columns: repeat(2, 1fr); }
+
+.oe-kart {
+  display: flex; flex-direction: column; gap: 4px; padding: 10px 11px;
+  background: var(--o-kart); border: var(--o-kenar); border-top: var(--o-ust);
+  border-radius: var(--o-kose); box-shadow: var(--o-golge);
+}
+.oe-etiket { font-size: 9px; color: var(--o-soluk); letter-spacing: .05em; }
+.oe-sayi { font-size: 22px; font-weight: 800; line-height: 1.05; color: var(--o-vurgu); }
+
+.oe-liste { gap: 7px; }
+.oe-satir {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding-top: 6px; border-top: 1px solid currentColor;
+}
+.oe-satir:first-of-type { border-top: 0; padding-top: 2px; }
+.oe-satir-ad { font-size: 11px; }
+.oe-rozet {
+  font-size: 8.5px; padding: 2px 7px; border-radius: var(--o-kose);
+  color: var(--o-dugme-yazi); background: var(--o-vurgu); white-space: nowrap;
+}
+.oe-dugme {
+  align-self: flex-start; padding: 7px 15px; font-size: 11px; font-weight: 700;
+  color: var(--o-dugme-yazi); background: var(--o-vurgu);
+  border-radius: var(--o-kose); border: var(--o-kenar);
+}
+
+.oe-alt-menu {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px;
+  padding: 8px 6px; border-top: var(--o-kenar);
+}
+.oe-alt-oge {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  font-size: 8.5px; color: var(--o-soluk);
+}
+.oe-alt-oge.etkin { color: var(--o-vurgu); font-weight: 700; }
+.oe-alt-nokta { width: 12px; height: 12px; border-radius: 3px; background: currentColor; opacity: .85; }
+
+/* Satır ayracı yönün metin renginden türüyor; çok koyu durmasın. */
+.oe-satir { border-top-color: color-mix(in srgb, var(--o-soluk) 45%, transparent); }
+
+
 .ty-dug { display: flex; flex-direction: column; gap: 7px; margin-top: 11px; }
 
 /* Yuva listesi — pencere içinde. */
