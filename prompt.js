@@ -1657,21 +1657,136 @@ const PROMPT = {
      Buradan çıkan iki metin de müşteri deposuna değil, bir sohbete gider;
      depo uyarısı yok, kod talimatı yok. */
 
-  /* Profesyonel tasarım — 12 sabit yön, her yön için iki prompt. İkisi de
-     projenin gerçek ekran görüntüsünü girdi alıyor:
-       kip 'ayni'    → yerleşim korunur, yalnız görsel dil değişir (yon.prompt),
-       kip 'yeniden' → yerleşim de sıfırdan kurulur (yon.promptYeniden).
-     Metinler TASARIM_YON'da (config.js). */
+  /* Profesyonel tasarım — 12 sabit görsel yön, her biri iki kiple çıkıyor:
+       kip 'ayni'    → ekteki yerleşim korunur, yalnız görsel dil değişir,
+       kip 'yeniden' → bilgiler aynı kalır ama yerleşim de sıfırdan kurulur.
+
+     Promptun çatısı burada, yöne özel iki parça (yon.stil ve yon.yerlesim)
+     config.js'te. Çatı burada duruyor çünkü asıl iş onda: ChatGPT'ye ekteki
+     ekranın HANGİ işletmeye ait olduğunu, neyin değişmeyeceğini ve tasarımın
+     hangi kalite çıtasını geçmesi gerektiğini anlatıyor.
+
+     Buradaki en pahalı ders: yalnız "yön" verilince ChatGPT yönün klişesine
+     kayıp işletmeyi değiştiriyordu — bir yazılım firmasının paneli, pastel
+     palet verilince saksı çiçekli bir sağlık uygulamasına dönüşmüştü. O
+     yüzden prompt önce işletmeyi tanıtıyor, sonra yönü veriyor; "sektör
+     kimliği değişmez" ve "içerik uydurulmaz" maddeleri de bu yüzden var. */
   tasarimYonu(projeId, anahtar, kip) {
     const p = DB.proje(projeId);
     const yon = TASARIM_YON.find(y => y.anahtar === anahtar);
     if (!p || !yon) return '';
-    const firma = p.firma || 'Bu işletme';
-    const sektor = p.sektor ? p.sektor + ' sektörüne' : 'işletmenin diline';
-    /* kip: 'ayni' → yerleşim korunur, yalnız görsel dil değişir.
-       kip: 'yeniden' → yerleşim de sıfırdan kurulur. */
-    const metin = (kip === 'yeniden' && yon.promptYeniden) ? yon.promptYeniden : yon.prompt;
-    return metin.replace(/\{FIRMA\}/g, firma).replace(/\{SEKTOR\}/g, sektor);
+
+    const yeniden = kip === 'yeniden';
+    const firma   = (p.firma || '').trim();
+    const sektor  = p.sektor || '';
+    const urun    = modulAdi(p);
+    const platform = PLATFORM_ADI[p.platform] || '';
+    const marka   = (p.palet && p.palet.vurgu) || (PROJE_RENK[p.renk] || [])[0] || '';
+    const kimlik  = sektor
+      ? '**' + sektor + '** alanında çalışan bir işletmenin uygulaması'
+      : 'ekteki ekranda görünen işi yapan bir işletmenin uygulaması';
+
+    const s = [];
+    s.push('# ' + (firma || 'Uygulama') + ' — görsel yön: ' + yon.ad, '');
+    s.push('Ekte gönderdiğim ekran görüntüsü/görüntüleri ' + (firma
+      ? '**' + firma + '** adlı işletmenin gerçekten çalışan uygulamasından'
+      : 'gerçekten çalışan bir işletme uygulamasından'));
+    s.push('alındı. Bu uygulamanın görünüşünü yeniden tasarlamanı istiyorum.', '');
+
+    s.push('## Bu uygulama kimin, ne işi yapıyor');
+    if (firma) s.push('- **İşletme:** ' + firma);
+    s.push('- **Sektör:** ' + (sektor || 'ekteki ekrandaki içerikten çıkar'));
+    if (urun)     s.push('- **Ürün:** ' + urun);
+    if (platform) s.push('- **Çalıştığı yer:** ' + platform);
+    if (marka)    s.push('- **Marka rengi:** ' + marka);
+    s.push('- **Arayüz dili:** Türkçe', '');
+    s.push('Çizmeye başlamadan önce ekteki görüntüyü dikkatle oku: markanın adı,');
+    s.push('logosu ve renkleri; ekrandaki her başlık, etiket, sayı ve durum;');
+    s.push('menülerin yeri. Tasarım boyunca bunlara sadık kalacaksın.', '');
+
+    s.push('## Değişmeyecekler — bunlar kural');
+    s.push('1. **İçerik birebir aynı.** Ekrandaki bütün yazılar aynı kelimelerle ve');
+    s.push('   Türkçe kalsın. Yeni kart, yeni bölüm, yeni sayı, yeni istatistik,');
+    s.push('   yeni slogan ya da pazarlama cümlesi **uydurma**; ekranda olmayan');
+    s.push('   hiçbir bilgiyi ekleme, olan hiçbir bilgiyi silme. Boş durumlar');
+    s.push('   ("açık iş yok" gibi) olduğu gibi kalsın — yerlerine uydurma rakam');
+    s.push('   koyma.');
+    s.push('2. **Marka aynı.** Logo, marka adı ve marka rengi korunacak. Yönün');
+    s.push('   paleti marka rengiyle çakışıyorsa **marka rengi kazanır**, palet');
+    s.push('   onun etrafında kurulur. Logoyu yeniden çizme ya da üslubunu');
+    s.push('   değiştirme; koyu/açık zemine göre yalnız uygun sürümünü kullan.');
+    s.push('3. **İşin kimliği aynı.** Bu, ' + kimlik + '. Değişen yalnız');
+    s.push('   görsel dil; uygulamanın ne işe yaradığı değişmiyor. Çıkan ekran');
+    s.push('   başka bir sektörün uygulamasına benzemeyecek. Somut örnek: bir');
+    s.push('   işletme paneline saksı çiçeği, yaprak, suluboya figür ya da');
+    s.push('   "daha sağlıklı yarınlar" gibi wellness/klinik göndermeleri koyma;');
+    s.push('   ciddi bir panele çocuk kitabı maskotu ya da tatil fotoğrafı koyma.');
+    s.push('   Dekoratif görsel ancak bu işin kendi dünyasından olabilir — emin');
+    s.push('   değilsen hiç koyma, boşluk bırak.');
+    s.push('4. **İkonların anlamı aynı.** Klasör klasör, onay onay kalır; yalnız');
+    s.push('   çizim üslubu yöne uyar.');
+    if (yeniden) {
+      s.push('5. **Yerleşim serbest, bilgi değil.** Düzeni sen kuracaksın ama');
+      s.push('   ekrandaki her bilgi yeni düzende de bulunacak; hiçbiri');
+      s.push('   kaybolmayacak, hiçbiri çoğalmayacak.');
+    } else {
+      s.push('5. **Yerleşim aynı.** Hangi kart nerede, menü nerede, hangi bilgi');
+      s.push('   hangi sırada — hepsi ekteki gibi kalsın. Tek değişen görsel dil.');
+    }
+    s.push('');
+
+    s.push('## Görsel yön: ' + yon.ad);
+    s.push(yon.stil);
+    s.push('Buradaki benzetmeler (dergi, afiş, film, gazete, panel...) yalnız');
+    s.push('görsel dili anlatmak için. Uygulamayı gerçekten o şeye çevirme —');
+    s.push('ekran yine ' + (firma || 'bu işletmenin') + (firma ? ' işletmesinin' : '')
+      + ' çalışan uygulaması olarak kalacak.');
+    s.push('');
+
+    if (yeniden) {
+      s.push('## Yerleşim');
+      s.push('Aynı bilgilerle düzeni sıfırdan kur; ızgara, hiyerarşi, gezinme ve');
+      s.push('sayfa ritmi senin kararın. Bir tasarım ajansının bu işletme için');
+      s.push('sıfırdan kurguladığı çağdaş bir uygulama gibi düşün.');
+      s.push(yon.yerlesim, '');
+    }
+
+    s.push('## Kalite çıtası — çıkan tasarım bunların hepsini geçmeli');
+    s.push('- **Okunurluk:** gövde metniyle zemini arasında en az 4.5:1 kontrast.');
+    s.push('  Renkli zemin üstünde soluk gri yazı bırakma; menü ve sekme');
+    s.push('  etiketleri dahil her yazı net okunsun.');
+    s.push('- **Tek ızgara:** boşluklar 4 ya da 8\'in katları olsun. Aynı işi yapan');
+    s.push('  iki kart aynı yükseklikte ve aynı iç boşlukta dursun.');
+    s.push('- **Tipografi:** en fazla iki yazı ailesi, dört-beş boy. Başlık, gövde');
+    s.push('  ve etiket farkı ölçüyle kurulsun; rastgele punto kullanma.');
+    s.push('- **Dokunma alanı:** tıklanabilir her şey en az 44px yüksekliğinde.');
+    s.push('- **Durumlar yalnız renkle anlatılmasın;** rozetin yazısı da dursun.');
+    s.push('- **Aktif menü öğesi** ilk bakışta belli olsun.');
+    s.push('- **Türkçe doğru yazılsın** (ğ, ı, İ, ş, ü, ö, ç) ve uzun kelimeler');
+    s.push('  kutulara sığsın, hiçbir yazı kırpılmasın ya da taşmasın.');
+    s.push('- **Süs eklemek serbest değil:** yön istemiyorsa gölge, degrade,');
+    s.push('  parıltı ve 3B efekt koyma. Boşluk bırakmak, doldurmaktan iyidir.', '');
+
+    s.push('## Teslim');
+    s.push('**Ekte hangi ekran varsa yalnız onu çiz:** yalnız mobil ekran');
+    s.push('görüntüsü gönderdiysem yalnız mobil tasarım üret, yalnız masaüstü');
+    s.push('gönderdiysem yalnız masaüstü üret, ikisini birden gönderdiysem');
+    s.push('ikisini ayrı ayrı çiz. Ekte olmayan bir ekran türünü kendiliğinden');
+    s.push('ekleme, istenmedikçe ikinci bir versiyon üretme.');
+    if (yeniden) {
+      s.push('Mobil çizeceksen masaüstünü daraltarak verme; mobil yerleşimi');
+      s.push('baştan düşün.');
+    }
+    s.push('Ekteki ekranın oranında, yüksek çözünürlüklü, tek bir arayüz');
+    s.push('mockup\'ı çiz. Görselin **içine** açıklama yazısı, ölçü oku, renk');
+    s.push('paleti şeridi ya da "önce/sonra" etiketi koyma — yalnız ekranın');
+    s.push('kendisi görünsün.', '');
+    s.push('Görselden sonra, mesajın metninde (görselin içinde değil) kullandığın');
+    s.push('renk kodlarını, yazı tipi adlarını, köşe yarıçapını, gölge ve boşluk');
+    s.push('ölçeğini kısa bir liste hâlinde yaz — bu listeyi tasarımı koda');
+    s.push('geçirirken kullanacağım.');
+
+    return s.join('\n');
   },
 
   /* Yön seçildikten sonraki ilk Claude Code promptu. Studio artık işin

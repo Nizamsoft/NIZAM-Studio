@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü
 
+## v0.147.0
+- **Tasarım promptları artık projeyi tanıyor.** Prompt, ChatGPT'ye firmanın adını, sektörünü, ürününü, çalıştığı yeri ve marka rengini yazıyor; "ekteki ekranı oku, markaya ve içeriğe sadık kal" diye başlıyor.
+- **"Başka sektörün uygulaması" sorunu kapatıldı.** Bir yazılım firmasının paneli, pastel yön seçilince saksı çiçekli bir sağlık uygulamasına dönüşüyordu. Artık promptta üç sert kural var: içerik birebir aynı (yeni kart, sayı, slogan uydurulmaz; boş durumlar korunur), marka aynı (çakışmada marka rengi kazanır), işin kimliği aynı (alakasız dekor konmaz). Yön metinlerindeki benzetmelerin (dergi, film, gazete) sadece görsel dil için olduğu da ayrıca söyleniyor.
+- **Kalite çıtası eklendi:** kontrast, tek ızgara ve boşluk ölçeği, en fazla iki yazı ailesi, 44px dokunma alanı, renge ek olarak yazıyla anlatılan durumlar, taşmayan Türkçe metin, istenmeyen gölge/degrade yasağı.
+- Prompt sonunda ChatGPT'den kullandığı **renk kodlarını, yazı tiplerini, köşe ve boşluk ölçeğini** yazılı liste olarak vermesi isteniyor — bu liste doğrudan Claude Code'a gidiyor.
+- Teknik: promptun çatısı `prompt.js`'e taşındı, `config.js`'te her yön yalnız `stil` ve `yerlesim` metnini tutuyor. Bir iyileştirme artık 24 metni değil tek şablonu düzeltiyor.
+- "Sakin" yönünün tarifindeki "sağlık uygulamalarının dili" ifadesi kaldırıldı — istenmeyen çağrışımı prompta davet ediyordu.
+
 ## v0.146.0
 - **Yedi tasarım yönü değişti.** Beğenilen beşi (Editoryal, İsviçre Usulü, Yumuşak/Oyunbaz, Kurumsal Panel, Aurora) metnine dokunulmadan kaldı; Camsı, Brütalist, Terminal, Riso, Art Deco, Organik ve Büyük Punto çıkarıldı.
 - Yerlerine gelen yeni yönler: **Bento/Mozaik Izgara**, **Gece/Koyu Lüks**, **Sakin/Serin Pastel**, **Toprak/Sıcak Nötr**, **Veri Gazetesi**, **Canlı Blok** ve **Sinema/Geniş Perde**. Hepsi ayrı bir palete, yazı tipine, köşe ve gölge kuralına sahip — yan yana konduğunda karışmıyorlar.

@@ -1722,9 +1722,9 @@ function tasarimYonKarti(p, pl, yon) {
         ? gorselYuklemeKatmani(p.id) : ''}
     </div>
     <p class="ty-ipucu">İki prompt: biri ekteki yerleşimi bozmadan yalnız
-      görünüşü değiştirir, diğeri sayfayı bir web sitesi gibi baştan kurar.
-      İkisi de yalnız eklediğin ekranı çizer — mobil görüntü verdiysen mobil,
-      masaüstü verdiysen masaüstü.</p>
+      görünüşü değiştirir, diğeri sayfayı baştan kurar. İkisi de projenin
+      firmasını, sektörünü ve marka rengini prompta yazar — içerik uydurulmaz,
+      iş başka bir sektörün uygulamasına dönmez. Yalnız eklediğin ekranı çizer.</p>
     <div class="ty-dug">
       <div class="ty-cift">
         <button class="sayfa-dug ikincil" type="button" data-eylem="tasarim-yon-kopyala"
