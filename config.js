@@ -7,7 +7,7 @@ const APP = {
   name:     'NIZAM | Studio',
   short:    'NIZAM Studio',
   owner:    'Nizam Soft',
-  version: 'v0.145.0',
+  version: 'v0.145.1',
   build:    '2026-09-17',
   /* Studio'nun kendi deposu — "bütün programlarda geçerli olsun"
      istekleri buraya gider. */
@@ -116,29 +116,36 @@ const GRUP_SIMGE = {
    ikisi arasında karar veremez. Prompt hep aynı üç parçadan kurulur:
    (1) yerleşim kuralı (aynı kalacak mı, serbest mi), (2) yönün adı ve
    somut kuralları (yazı tipi, renk sayısı, gölge, köşe, fotoğraf
-   var/yok), (3) hem mobil hem masaüstü isteği. Müşteri beğendiğini
+   var/yok), (3) ekran kuralı: ekte hangi ekran varsa yalnız o çizilir
+   (yalnız mobil geldiyse yalnız mobil). Müşteri beğendiğini
    seçiyor; gerisi (gerçek renk/tipografi uygulaması) artık Studio
    dışında, doğrudan Claude Code sohbetiyle yapılıyor. */
 const TASARIM_YON = [
   { anahtar: 'marka', ad: 'Editoryal / Fotoğraflı', renk: '#c9753c',
     ozet: 'Dergi düzeni: iri serif başlık, gerçek fotoğraf, bol boşluk, tek vurgu.',
     onizleme: { zemin:'#F6F1E8', kart:'#FFFDF8', metin:'#1A1A1A', soluk:'#8A7F70', vurgu:'#C9753C', kenar:'none', ust:'3px solid #C9753C', kose:'7px', golge:'none', yazi:'Georgia, "Times New Roman", serif', doku:'none' , dugmeYazi:'#FFFFFF' },
-    prompt: 'Ekteki mobil ve masaüstü ekran görüntüleri {FIRMA}\'nin gerçek '
-      + 'uygulaması. İçeriği, kartları, menüyü olduğu gibi koru, hiçbir öğeyi '
-      + 'ekleme/çıkarma — yalnız görsel dili değiştir. Yön: bir dergi kapağı '
-      + 'gibi editoryal bir kabuk. Başlıkları iri, oturaklı bir **serif** '
-      + 'yazı tipiyle yaz (İnter/Roboto gibi standart bir gövde yazısıyla '
-      + 'birlikte kullan). Gerçek fotoğrafı kahraman alanında büyük ve kesintisiz '
-      + 'göster, üstüne gradyan bindirme; {SEKTOR} uygun **tek** doygun bir '
-      + 'vurgu rengi seç ve bunu yalnız bir-iki küçük vurgulu öğede kullan '
-      + '(altı çizili başlık, tek bir rakam, tek bir ikon) — geri kalan her '
-      + 'şey kırık beyaz/krem zemin ve siyaha yakın metin. Kartlarda gölge '
-      + 'kullanma; bunun yerine üstte ince renkli bir şerit kenarlık olsun, '
-      + 'köşeler hafif yuvarlak (6-8px), gradyan ve camsı efekt yok. Bolca boş '
-      + 'alan bırak, sıkışık durmasın. Hem mobil hem masaüstü versiyonunu ayrı '
-      + 'ayrı çiz.',
-    promptYeniden: 'Ekteki mobil ve masaüstü ekran görüntüleri {FIRMA}\'nin gerçek '
-      + 'uygulaması. Bu sefer **yerleşimi de yeniden kur**: aynı '
+    prompt: 'Ekte gönderdiğim ekran görüntüsü/görüntüleri {FIRMA}\'nin '
+      + 'gerçek uygulaması. İçeriği, kartları, menüyü olduğu gibi koru, '
+      + 'hiçbir öğeyi ekleme/çıkarma — yalnız görsel dili değiştir. '
+      + 'Yön: bir dergi kapağı gibi editoryal bir kabuk. Başlıkları '
+      + 'iri, oturaklı bir **serif** yazı tipiyle yaz (İnter/Roboto '
+      + 'gibi standart bir gövde yazısıyla birlikte kullan). Gerçek '
+      + 'fotoğrafı kahraman alanında büyük ve kesintisiz göster, üstüne '
+      + 'gradyan bindirme; {SEKTOR} uygun **tek** doygun bir vurgu '
+      + 'rengi seç ve bunu yalnız bir-iki küçük vurgulu öğede kullan '
+      + '(altı çizili başlık, tek bir rakam, tek bir ikon) — geri kalan '
+      + 'her şey kırık beyaz/krem zemin ve siyaha yakın metin. '
+      + 'Kartlarda gölge kullanma; bunun yerine üstte ince renkli bir '
+      + 'şerit kenarlık olsun, köşeler hafif yuvarlak (6-8px), gradyan '
+      + 've camsı efekt yok. Bolca boş alan bırak, sıkışık durmasın. '
+      + '**Ekte hangi ekran varsa yalnız onu çiz:** yalnız mobil ekran '
+      + 'görüntüsü gönderdiysem yalnız mobil tasarım üret, yalnız '
+      + 'masaüstü gönderdiysem yalnız masaüstü üret, ikisini birden '
+      + 'gönderdiysem ikisini ayrı ayrı çiz. Ekte olmayan bir ekran '
+      + 'türünü kendiliğinden ekleme, istenmedikçe ikinci bir versiyon '
+      + 'üretme.',
+    promptYeniden: 'Ekte gönderdiğim ekran görüntüsü/görüntüleri {FIRMA}\'nin '
+      + 'gerçek uygulaması. Bu sefer **yerleşimi de yeniden kur**: aynı '
       + 'bilgiler ve aynı işlevler kalsın, hiçbirini atma — ama düzen, '
       + 'hiyerarşi, ızgara, gezinme ve sayfa ritmi tamamen senin '
       + 'kararın. Bunu bir tasarım ajansının {SEKTOR} uygun biçimde '
@@ -151,27 +158,39 @@ const TASARIM_YON = [
       + 'başlık, altında asimetrik iki sütun (geniş içerik sütunu + dar '
       + 'kenar sütunu). Bölümleri iri numaralı ara başlıklarla ayır, '
       + 'sayfa uzun olsun ve nefes aralıkları ferah kalsın. Menüyü '
-      + 'üstte ince bir şerit yap, altına bölüm bağlantılarını diz. Hem '
-      + 'mobil hem masaüstü versiyonunu ayrı ayrı çiz; mobili '
-      + 'masaüstünü daraltarak verme, mobil yerleşimi baştan düşün.' },
+      + 'üstte ince bir şerit yap, altına bölüm bağlantılarını diz. '
+      + '**Ekte hangi ekran varsa yalnız onu çiz:** yalnız mobil ekran '
+      + 'görüntüsü gönderdiysem yalnız mobil tasarım üret, yalnız '
+      + 'masaüstü gönderdiysem yalnız masaüstü üret, ikisini birden '
+      + 'gönderdiysem ikisini ayrı ayrı çiz. Ekte olmayan bir ekran '
+      + 'türünü kendiliğinden ekleme, istenmedikçe ikinci bir versiyon '
+      + 'üretme. Mobil çizeceksen masaüstünü daraltarak verme, mobil '
+      + 'yerleşimi baştan düşün.' },
   { anahtar: 'minimal', ad: 'İsviçre Usulü / Sıfır Süs', renk: '#8fae4a',
     ozet: 'Fotoğraf yok, keskin köşe, gölgesiz, ızgara temelli, tek renk.',
     onizleme: { zemin:'#FFFFFF', kart:'#FFFFFF', metin:'#000000', soluk:'#777777', vurgu:'#E5342A', kenar:'1px solid #111111', ust:'none', kose:'0', golge:'none', yazi:'Inter, Helvetica, Arial, sans-serif', doku:'none' , dugmeYazi:'#FFFFFF' },
-    prompt: 'Ekteki mobil ve masaüstü ekran görüntüleri {FIRMA}\'nin gerçek '
-      + 'uygulaması. İçeriği, kartları, menüyü olduğu gibi koru, hiçbir öğeyi '
-      + 'ekleme/çıkarma — yalnız görsel dili değiştir. Yön: katı İsviçre/Bauhaus '
-      + 'usulü minimalizm. **Fotoğrafı tamamen kaldır** — kahraman alanının '
-      + 'yerine yalnız düz bir renk bloğu ve iri, kalın bir sayı ya da geometrik '
-      + 'bir şekil koy. Geometrik, dar aralıklı bir grotesk yazı tipi kullan '
-      + '(Helvetica/Inter tarzı). Renk paleti: bir nötr (siyah/beyaz/gri) ve '
-      + 'yalnız **en önemli tek rakam veya düğme** için kullanılan tek bir '
-      + 'vurgu rengi — başka hiçbir yerde vurgu rengi tekrarlanmasın. **Hiçbir '
-      + 'kartta gölge, gradyan ya da yuvarlatılmış büyük köşe olmasın**; köşeler '
-      + 'keskin ya da en fazla 2px. Kartları ayırmak için gölge yerine ince '
-      + '1px çizgi kullan. Sıkı bir ızgara hizasına otur, boşluklar matematik '
-      + 'gibi eşit. Hem mobil hem masaüstü versiyonunu ayrı ayrı çiz.',
-    promptYeniden: 'Ekteki mobil ve masaüstü ekran görüntüleri {FIRMA}\'nin gerçek '
-      + 'uygulaması. Bu sefer **yerleşimi de yeniden kur**: aynı '
+    prompt: 'Ekte gönderdiğim ekran görüntüsü/görüntüleri {FIRMA}\'nin '
+      + 'gerçek uygulaması. İçeriği, kartları, menüyü olduğu gibi koru, '
+      + 'hiçbir öğeyi ekleme/çıkarma — yalnız görsel dili değiştir. '
+      + 'Yön: katı İsviçre/Bauhaus usulü minimalizm. **Fotoğrafı '
+      + 'tamamen kaldır** — kahraman alanının yerine yalnız düz bir '
+      + 'renk bloğu ve iri, kalın bir sayı ya da geometrik bir şekil '
+      + 'koy. Geometrik, dar aralıklı bir grotesk yazı tipi kullan '
+      + '(Helvetica/Inter tarzı). Renk paleti: bir nötr '
+      + '(siyah/beyaz/gri) ve yalnız **en önemli tek rakam veya düğme** '
+      + 'için kullanılan tek bir vurgu rengi — başka hiçbir yerde vurgu '
+      + 'rengi tekrarlanmasın. **Hiçbir kartta gölge, gradyan ya da '
+      + 'yuvarlatılmış büyük köşe olmasın**; köşeler keskin ya da en '
+      + 'fazla 2px. Kartları ayırmak için gölge yerine ince 1px çizgi '
+      + 'kullan. Sıkı bir ızgara hizasına otur, boşluklar matematik '
+      + 'gibi eşit. **Ekte hangi ekran varsa yalnız onu çiz:** yalnız '
+      + 'mobil ekran görüntüsü gönderdiysem yalnız mobil tasarım üret, '
+      + 'yalnız masaüstü gönderdiysem yalnız masaüstü üret, ikisini '
+      + 'birden gönderdiysem ikisini ayrı ayrı çiz. Ekte olmayan bir '
+      + 'ekran türünü kendiliğinden ekleme, istenmedikçe ikinci bir '
+      + 'versiyon üretme.',
+    promptYeniden: 'Ekte gönderdiğim ekran görüntüsü/görüntüleri {FIRMA}\'nin '
+      + 'gerçek uygulaması. Bu sefer **yerleşimi de yeniden kur**: aynı '
       + 'bilgiler ve aynı işlevler kalsın, hiçbirini atma — ama düzen, '
       + 'hiyerarşi, ızgara, gezinme ve sayfa ritmi tamamen senin '
       + 'kararın. Bunu bir tasarım ajansının {SEKTOR} uygun biçimde '
@@ -184,27 +203,37 @@ const TASARIM_YON = [
       + 'şeyi ortalama — hepsi sola hizalı olsun. Gezinmeyi solda dar '
       + 've sabit bir sütuna al, yalnız yazıdan oluşsun. Kart yerine '
       + 'çizgilerle ayrılmış bölümler kullan, başlıklar bölümün solunda '
-      + 'dursun. Hem mobil hem masaüstü versiyonunu ayrı ayrı çiz; '
-      + 'mobili masaüstünü daraltarak verme, mobil yerleşimi baştan '
-      + 'düşün.' },
+      + 'dursun. **Ekte hangi ekran varsa yalnız onu çiz:** yalnız '
+      + 'mobil ekran görüntüsü gönderdiysem yalnız mobil tasarım üret, '
+      + 'yalnız masaüstü gönderdiysem yalnız masaüstü üret, ikisini '
+      + 'birden gönderdiysem ikisini ayrı ayrı çiz. Ekte olmayan bir '
+      + 'ekran türünü kendiliğinden ekleme, istenmedikçe ikinci bir '
+      + 'versiyon üretme. Mobil çizeceksen masaüstünü daraltarak verme, '
+      + 'mobil yerleşimi baştan düşün.' },
   { anahtar: 'koyu', ad: 'Camsı / Karanlık Mod', renk: '#5f86c4',
     ozet: 'Koyu zemin, buzlu cam kartlar, neon gradyan kenarlık, mono yazı.',
     onizleme: { zemin:'#0B0F1A', kart:'rgba(255,255,255,.07)', metin:'#E8EAED', soluk:'#8A93A6', vurgu:'#7F5AF0', kenar:'1px solid rgba(255,255,255,.20)', ust:'none', kose:'18px', golge:'0 0 18px rgba(127,90,240,.35)', yazi:'"SF Mono", Menlo, monospace', doku:'none' , dugmeYazi:'#0B0F1A' },
-    prompt: 'Ekteki mobil ve masaüstü ekran görüntüleri {FIRMA}\'nin gerçek '
-      + 'uygulaması. İçeriği, kartları, menüyü olduğu gibi koru, hiçbir öğeyi '
-      + 'ekleme/çıkarma — yalnız görsel dili değiştir. Yön: gerçek '
-      + '**camsı (glassmorphism) karanlık mod**. Zemin neredeyse siyah/çok koyu '
-      + 'lacivert. Her kart yarı saydam, arkası bulanık (buzlu cam) bir yüzey '
-      + 'olsun, kenarında ince, parlayan bir gradyan çerçeve olsun (ör. '
-      + 'mor→camgöbeği ya da pembe→turuncu). Kahraman görselinin arkasına '
-      + 'yumuşak, ışıldayan bir gradyan hâle koy. Bütün sayıları/istatistikleri '
-      + '**tek aralıklı (monospace)** bir yazı tipiyle yaz, sanki bir bilgi '
-      + 'ekranı gibi. İkonlar ince çizgili ve hafif parlayan konturlu olsun, '
-      + 'dolu/siyah ikon kullanma. Köşeler geniş yuvarlak (16-20px). İki '
-      + 'kontrast neon vurgu rengini birlikte kullan, tek renk yetmesin. Hem '
-      + 'mobil hem masaüstü versiyonunu ayrı ayrı çiz.',
-    promptYeniden: 'Ekteki mobil ve masaüstü ekran görüntüleri {FIRMA}\'nin gerçek '
-      + 'uygulaması. Bu sefer **yerleşimi de yeniden kur**: aynı '
+    prompt: 'Ekte gönderdiğim ekran görüntüsü/görüntüleri {FIRMA}\'nin '
+      + 'gerçek uygulaması. İçeriği, kartları, menüyü olduğu gibi koru, '
+      + 'hiçbir öğeyi ekleme/çıkarma — yalnız görsel dili değiştir. '
+      + 'Yön: gerçek **camsı (glassmorphism) karanlık mod**. Zemin '
+      + 'neredeyse siyah/çok koyu lacivert. Her kart yarı saydam, '
+      + 'arkası bulanık (buzlu cam) bir yüzey olsun, kenarında ince, '
+      + 'parlayan bir gradyan çerçeve olsun (ör. mor→camgöbeği ya da '
+      + 'pembe→turuncu). Kahraman görselinin arkasına yumuşak, '
+      + 'ışıldayan bir gradyan hâle koy. Bütün sayıları/istatistikleri '
+      + '**tek aralıklı (monospace)** bir yazı tipiyle yaz, sanki bir '
+      + 'bilgi ekranı gibi. İkonlar ince çizgili ve hafif parlayan '
+      + 'konturlu olsun, dolu/siyah ikon kullanma. Köşeler geniş '
+      + 'yuvarlak (16-20px). İki kontrast neon vurgu rengini birlikte '
+      + 'kullan, tek renk yetmesin. **Ekte hangi ekran varsa yalnız onu '
+      + 'çiz:** yalnız mobil ekran görüntüsü gönderdiysem yalnız mobil '
+      + 'tasarım üret, yalnız masaüstü gönderdiysem yalnız masaüstü '
+      + 'üret, ikisini birden gönderdiysem ikisini ayrı ayrı çiz. Ekte '
+      + 'olmayan bir ekran türünü kendiliğinden ekleme, istenmedikçe '
+      + 'ikinci bir versiyon üretme.',
+    promptYeniden: 'Ekte gönderdiğim ekran görüntüsü/görüntüleri {FIRMA}\'nin '
+      + 'gerçek uygulaması. Bu sefer **yerleşimi de yeniden kur**: aynı '
       + 'bilgiler ve aynı işlevler kalsın, hiçbirini atma — ama düzen, '
       + 'hiyerarşi, ızgara, gezinme ve sayfa ritmi tamamen senin '
       + 'kararın. Bunu bir tasarım ajansının {SEKTOR} uygun biçimde '
@@ -217,28 +246,38 @@ const TASARIM_YON = [
       + 'arama ve durum şeridi; ortada değişken boyutlu camsı '
       + 'kutulardan oluşan bir pano (bir büyük, iki orta, dört küçük). '
       + 'Detaylar sayfa değiştirmeden sağdan kayarak açılan bir panelde '
-      + 'görünsün. Hem mobil hem masaüstü versiyonunu ayrı ayrı çiz; '
-      + 'mobili masaüstünü daraltarak verme, mobil yerleşimi baştan '
-      + 'düşün.' },
+      + 'görünsün. **Ekte hangi ekran varsa yalnız onu çiz:** yalnız '
+      + 'mobil ekran görüntüsü gönderdiysem yalnız mobil tasarım üret, '
+      + 'yalnız masaüstü gönderdiysem yalnız masaüstü üret, ikisini '
+      + 'birden gönderdiysem ikisini ayrı ayrı çiz. Ekte olmayan bir '
+      + 'ekran türünü kendiliğinden ekleme, istenmedikçe ikinci bir '
+      + 'versiyon üretme. Mobil çizeceksen masaüstünü daraltarak verme, '
+      + 'mobil yerleşimi baştan düşün.' },
   { anahtar: 'sicak', ad: 'Yumuşak / Oyunbaz', renk: '#c4a05c',
     ozet: 'Neumorfik kabartma kartlar, pastel, blob şekiller, düz illüstrasyon.',
     onizleme: { zemin:'#EFE7DD', kart:'#EFE7DD', metin:'#4A3A2C', soluk:'#9C8B79', vurgu:'#C4A05C', kenar:'none', ust:'none', kose:'20px', golge:'5px 5px 11px rgba(120,95,70,.20), -5px -5px 11px rgba(255,255,255,.85)', yazi:'"Nunito", Inter, sans-serif', doku:'none' , dugmeYazi:'#3B2E22' },
-    prompt: 'Ekteki mobil ve masaüstü ekran görüntüleri {FIRMA}\'nin gerçek '
-      + 'uygulaması. İçeriği, kartları, menüyü olduğu gibi koru, hiçbir öğeyi '
-      + 'ekleme/çıkarma — yalnız görsel dili değiştir. Yön: yumuşak ve oyunbaz, '
-      + '**neumorfik (soft-UI)** bir his. Tek renkli sıcak pastel bir zemin '
-      + 'üzerinde her kart kendi zemininden **kabartma gibi** yükseliyormuş '
-      + 'hissi versin — bunu iki yönlü yumuşak gölgeyle (bir açık, bir koyu) '
-      + 'yap, sert kenar çizgisi kullanma. Düğmeler tam yuvarlak (hap biçimi). '
-      + 'Zemine dekoratif, bulanık kenarlı büyük "blob" (amorf damla) şekiller '
-      + 'serpiştir. Gerçek fotoğraf yerine **düz vektör illüstrasyon** kullan: '
-      + 'basit, birkaç renkli, gölgesiz, karikatürsü bir karakter ya da nesne '
-      + 'çizimi — fotogerçekçi görsel değil. Yuvarlak hatlı, kalın, samimi bir '
-      + 'başlık yazı tipi seç (köşeli hiçbir font kullanma). Bütün köşeler çok '
-      + 'yuvarlak, hiçbir yerde keskin çizgi olmasın. Hem mobil hem masaüstü '
-      + 'versiyonunu ayrı ayrı çiz.',
-    promptYeniden: 'Ekteki mobil ve masaüstü ekran görüntüleri {FIRMA}\'nin gerçek '
-      + 'uygulaması. Bu sefer **yerleşimi de yeniden kur**: aynı '
+    prompt: 'Ekte gönderdiğim ekran görüntüsü/görüntüleri {FIRMA}\'nin '
+      + 'gerçek uygulaması. İçeriği, kartları, menüyü olduğu gibi koru, '
+      + 'hiçbir öğeyi ekleme/çıkarma — yalnız görsel dili değiştir. '
+      + 'Yön: yumuşak ve oyunbaz, **neumorfik (soft-UI)** bir his. Tek '
+      + 'renkli sıcak pastel bir zemin üzerinde her kart kendi '
+      + 'zemininden **kabartma gibi** yükseliyormuş hissi versin — bunu '
+      + 'iki yönlü yumuşak gölgeyle (bir açık, bir koyu) yap, sert '
+      + 'kenar çizgisi kullanma. Düğmeler tam yuvarlak (hap biçimi). '
+      + 'Zemine dekoratif, bulanık kenarlı büyük "blob" (amorf damla) '
+      + 'şekiller serpiştir. Gerçek fotoğraf yerine **düz vektör '
+      + 'illüstrasyon** kullan: basit, birkaç renkli, gölgesiz, '
+      + 'karikatürsü bir karakter ya da nesne çizimi — fotogerçekçi '
+      + 'görsel değil. Yuvarlak hatlı, kalın, samimi bir başlık yazı '
+      + 'tipi seç (köşeli hiçbir font kullanma). Bütün köşeler çok '
+      + 'yuvarlak, hiçbir yerde keskin çizgi olmasın. **Ekte hangi '
+      + 'ekran varsa yalnız onu çiz:** yalnız mobil ekran görüntüsü '
+      + 'gönderdiysem yalnız mobil tasarım üret, yalnız masaüstü '
+      + 'gönderdiysem yalnız masaüstü üret, ikisini birden gönderdiysem '
+      + 'ikisini ayrı ayrı çiz. Ekte olmayan bir ekran türünü '
+      + 'kendiliğinden ekleme, istenmedikçe ikinci bir versiyon üretme.',
+    promptYeniden: 'Ekte gönderdiğim ekran görüntüsü/görüntüleri {FIRMA}\'nin '
+      + 'gerçek uygulaması. Bu sefer **yerleşimi de yeniden kur**: aynı '
       + 'bilgiler ve aynı işlevler kalsın, hiçbirini atma — ama düzen, '
       + 'hiyerarşi, ızgara, gezinme ve sayfa ritmi tamamen senin '
       + 'kararın. Bunu bir tasarım ajansının {SEKTOR} uygun biçimde '
@@ -251,28 +290,38 @@ const TASARIM_YON = [
       + 'hap biçimli sekmeler, içerik iri kartlar hâlinde alt alta. '
       + 'Mobilde altta büyük yuvarlak ikonlu bir gezinme çubuğu olsun; '
       + 'masaüstünde kartlar üç sütuna yayılsın ve boşluklar bol '
-      + 'kalsın. Hem mobil hem masaüstü versiyonunu ayrı ayrı çiz; '
-      + 'mobili masaüstünü daraltarak verme, mobil yerleşimi baştan '
-      + 'düşün.' },
+      + 'kalsın. **Ekte hangi ekran varsa yalnız onu çiz:** yalnız '
+      + 'mobil ekran görüntüsü gönderdiysem yalnız mobil tasarım üret, '
+      + 'yalnız masaüstü gönderdiysem yalnız masaüstü üret, ikisini '
+      + 'birden gönderdiysem ikisini ayrı ayrı çiz. Ekte olmayan bir '
+      + 'ekran türünü kendiliğinden ekleme, istenmedikçe ikinci bir '
+      + 'versiyon üretme. Mobil çizeceksen masaüstünü daraltarak verme, '
+      + 'mobil yerleşimi baştan düşün.' },
   { anahtar: 'kurumsal', ad: 'Kurumsal / Yoğun Panel', renk: '#6b7178',
     ozet: 'Fotoğraf yok, KPI şeridi, ince çizgili sıkı tablo, koyu lacivert.',
     onizleme: { zemin:'#F2F4F7', kart:'#FFFFFF', metin:'#1E2A38', soluk:'#6B7889', vurgu:'#4A6FA5', kenar:'1px solid #D4D9E0', ust:'none', kose:'3px', golge:'none', yazi:'"Roboto Condensed", Inter, sans-serif', doku:'none' , dugmeYazi:'#FFFFFF' },
-    prompt: 'Ekteki mobil ve masaüstü ekran görüntüleri {FIRMA}\'nin gerçek '
-      + 'uygulaması. İçeriği, kartları, menüyü olduğu gibi koru, hiçbir öğeyi '
-      + 'ekleme/çıkarma — yalnız görsel dili değiştir. Yön: ciddi bir kurumsal '
-      + '**yönetim paneli** (Bloomberg/ERP tarzı), tüketici uygulaması gibi '
-      + 'durmasın. **Kahraman fotoğrafını tamamen kaldır**; yerine ince '
-      + 'çizgilerle ayrılmış, küçük mini-grafik (sparkline) içeren dar bir KPI '
-      + 'şeridi koy. Bütün kartlar dikdörtgen, **köşeler keskin ya da en fazla '
-      + '4px**, gölge yok — yalnız 1px ince gri kenarlık. Palet: lacivert/gri '
-      + 'tonları ve yalnız tek, soluk bir vurgu rengi; hiçbir yerde canlı/parlak '
-      + 'renk kullanma. Yazı boyutlarını küçük ve sıkı tut (gövde 12-13px), '
-      + 'satır aralarını dar yap — amaç bol beyaz alan değil, çok bilgiyi düzenli '
-      + 'sığdırmak. Sade, dar (condensed) bir kurumsal sans-serif kullan, '
-      + 'yuvarlak/samimi hiçbir öğe olmasın. Hem mobil hem masaüstü versiyonunu '
-      + 'ayrı ayrı çiz.',
-    promptYeniden: 'Ekteki mobil ve masaüstü ekran görüntüleri {FIRMA}\'nin gerçek '
-      + 'uygulaması. Bu sefer **yerleşimi de yeniden kur**: aynı '
+    prompt: 'Ekte gönderdiğim ekran görüntüsü/görüntüleri {FIRMA}\'nin '
+      + 'gerçek uygulaması. İçeriği, kartları, menüyü olduğu gibi koru, '
+      + 'hiçbir öğeyi ekleme/çıkarma — yalnız görsel dili değiştir. '
+      + 'Yön: ciddi bir kurumsal **yönetim paneli** (Bloomberg/ERP '
+      + 'tarzı), tüketici uygulaması gibi durmasın. **Kahraman '
+      + 'fotoğrafını tamamen kaldır**; yerine ince çizgilerle ayrılmış, '
+      + 'küçük mini-grafik (sparkline) içeren dar bir KPI şeridi koy. '
+      + 'Bütün kartlar dikdörtgen, **köşeler keskin ya da en fazla '
+      + '4px**, gölge yok — yalnız 1px ince gri kenarlık. Palet: '
+      + 'lacivert/gri tonları ve yalnız tek, soluk bir vurgu rengi; '
+      + 'hiçbir yerde canlı/parlak renk kullanma. Yazı boyutlarını '
+      + 'küçük ve sıkı tut (gövde 12-13px), satır aralarını dar yap — '
+      + 'amaç bol beyaz alan değil, çok bilgiyi düzenli sığdırmak. '
+      + 'Sade, dar (condensed) bir kurumsal sans-serif kullan, '
+      + 'yuvarlak/samimi hiçbir öğe olmasın. **Ekte hangi ekran varsa '
+      + 'yalnız onu çiz:** yalnız mobil ekran görüntüsü gönderdiysem '
+      + 'yalnız mobil tasarım üret, yalnız masaüstü gönderdiysem yalnız '
+      + 'masaüstü üret, ikisini birden gönderdiysem ikisini ayrı ayrı '
+      + 'çiz. Ekte olmayan bir ekran türünü kendiliğinden ekleme, '
+      + 'istenmedikçe ikinci bir versiyon üretme.',
+    promptYeniden: 'Ekte gönderdiğim ekran görüntüsü/görüntüleri {FIRMA}\'nin '
+      + 'gerçek uygulaması. Bu sefer **yerleşimi de yeniden kur**: aynı '
       + 'bilgiler ve aynı işlevler kalsın, hiçbirini atma — ama düzen, '
       + 'hiyerarşi, ızgara, gezinme ve sayfa ritmi tamamen senin '
       + 'kararın. Bunu bir tasarım ajansının {SEKTOR} uygun biçimde '
@@ -285,34 +334,42 @@ const TASARIM_YON = [
       + 'iki katlı başlık (firma + sayfa yolu + eylemler), içerikte '
       + 'üstte dar KPI şeridi ve altında ekranı dolduran sıkı bir '
       + 'tablo. Filtreler tablonun hemen üstünde tek satırda, sayfalama '
-      + 've toplam satırı altta sabit dursun. Hem mobil hem masaüstü '
-      + 'versiyonunu ayrı ayrı çiz; mobili masaüstünü daraltarak verme, '
-      + 'mobil yerleşimi baştan düşün.' },
+      + 've toplam satırı altta sabit dursun. **Ekte hangi ekran varsa '
+      + 'yalnız onu çiz:** yalnız mobil ekran görüntüsü gönderdiysem '
+      + 'yalnız mobil tasarım üret, yalnız masaüstü gönderdiysem yalnız '
+      + 'masaüstü üret, ikisini birden gönderdiysem ikisini ayrı ayrı '
+      + 'çiz. Ekte olmayan bir ekran türünü kendiliğinden ekleme, '
+      + 'istenmedikçe ikinci bir versiyon üretme. Mobil çizeceksen '
+      + 'masaüstünü daraltarak verme, mobil yerleşimi baştan düşün.' },
   { anahtar: 'brutal', ad: 'Brütalist / Ham', renk: '#d6b400',
     ozet: 'Kalın siyah çerçeve, kaydırılmış gölge, devasa başlık, ham his.',
     onizleme: { zemin:'#F7E948', kart:'#FFFFFF', metin:'#000000', soluk:'#444444', vurgu:'#1F4FD8', kenar:'3px solid #000000', ust:'none', kose:'0', golge:'5px 5px 0 #000000', yazi:'Inter, Arial Black, sans-serif', doku:'none' , dugmeYazi:'#FFFFFF' },
-    prompt: 'Ekteki mobil ve masaüstü ekran görüntüleri {FIRMA}\'nin gerçek '
-      + 'uygulaması. İçeriği, kartları, menüyü ve yerleşimi olduğu gibi '
-      + 'koru; hiçbir öğeyi ekleme, çıkarma ya da yerini değiştirme — '
-      + 'yalnız görsel dili değiştir. Yön: neo-brütalist bir web '
-      + 'estetiği — Gumroad ya da bir Figma topluluk sayfası gibi. '
-      + 'Zemin tek parça doygun bir renk olsun (kükürt sarısı, elektrik '
-      + 'mavisi ya da kireç yeşili), kartlar kar beyazı. Her kart, her '
-      + 'düğme, her giriş kutusu **3px tam siyah çerçeveli** ve **4-6px '
-      + 'sağa-aşağı kaydırılmış tam siyah gölgeli** olsun — bulanıklık '
-      + 've saydamlık yok. Köşeler kesinlikle 0px, hiçbir yerde '
-      + 'yuvarlatma yapma. Başlıkları devasa yaz: sayfa başlığı gövde '
-      + 'yazısının 4-5 katı, çok ağır bir grotesk (Arial Black / Inter '
-      + 'Black), harf araları sıkı, gerekirse tamamı büyük harf; gövde '
-      + 'yazısı küçük ve sade kalsın, kontrast başlıktan gelsin. '
+    prompt: 'Ekte gönderdiğim ekran görüntüsü/görüntüleri {FIRMA}\'nin '
+      + 'gerçek uygulaması. İçeriği, kartları, menüyü ve yerleşimi '
+      + 'olduğu gibi koru; hiçbir öğeyi ekleme, çıkarma ya da yerini '
+      + 'değiştirme — yalnız görsel dili değiştir. Yön: neo-brütalist '
+      + 'bir web estetiği — Gumroad ya da bir Figma topluluk sayfası '
+      + 'gibi. Zemin tek parça doygun bir renk olsun (kükürt sarısı, '
+      + 'elektrik mavisi ya da kireç yeşili), kartlar kar beyazı. Her '
+      + 'kart, her düğme, her giriş kutusu **3px tam siyah çerçeveli** '
+      + 've **4-6px sağa-aşağı kaydırılmış tam siyah gölgeli** olsun — '
+      + 'bulanıklık ve saydamlık yok. Köşeler kesinlikle 0px, hiçbir '
+      + 'yerde yuvarlatma yapma. Başlıkları devasa yaz: sayfa başlığı '
+      + 'gövde yazısının 4-5 katı, çok ağır bir grotesk (Arial Black / '
+      + 'Inter Black), harf araları sıkı, gerekirse tamamı büyük harf; '
+      + 'gövde yazısı küçük ve sade kalsın, kontrast başlıktan gelsin. '
       + 'Siyahın yanında ikinci bir ham vurgu rengi kullan, gradyan ve '
       + 'yumuşak geçiş hiç olmasın. İkonlar kalın konturlu, neredeyse '
       + 'kaba çizilmiş dursun. Bağlantılar kalın ve düz çizgiyle altı '
       + 'çizili. Üstüne gelince kart 2px kayıp gölgesi küçülsün — bu '
-      + 'üzerine-gelme hâlini de ayrıca göster. Hem mobil hem masaüstü '
-      + 'versiyonunu ayrı ayrı çiz.',
-    promptYeniden: 'Ekteki mobil ve masaüstü ekran görüntüleri {FIRMA}\'nin gerçek '
-      + 'uygulaması. Bu sefer **yerleşimi de yeniden kur**: aynı '
+      + 'üzerine-gelme hâlini de ayrıca göster. **Ekte hangi ekran '
+      + 'varsa yalnız onu çiz:** yalnız mobil ekran görüntüsü '
+      + 'gönderdiysem yalnız mobil tasarım üret, yalnız masaüstü '
+      + 'gönderdiysem yalnız masaüstü üret, ikisini birden gönderdiysem '
+      + 'ikisini ayrı ayrı çiz. Ekte olmayan bir ekran türünü '
+      + 'kendiliğinden ekleme, istenmedikçe ikinci bir versiyon üretme.',
+    promptYeniden: 'Ekte gönderdiğim ekran görüntüsü/görüntüleri {FIRMA}\'nin '
+      + 'gerçek uygulaması. Bu sefer **yerleşimi de yeniden kur**: aynı '
       + 'bilgiler ve aynı işlevler kalsın, hiçbirini atma — ama düzen, '
       + 'hiyerarşi, ızgara, gezinme ve sayfa ritmi tamamen senin '
       + 'kararın. Bunu bir tasarım ajansının {SEKTOR} uygun biçimde '
@@ -337,20 +394,24 @@ const TASARIM_YON = [
       + 'genişlikte siyah bir şerit ve içinde büyük harf gezinme; hemen '
       + 'altında sayfa başlığı ekranın yarısını kaplasın. Araya kayan '
       + 'yazılı (marquee) bir şerit koy, alt bilgiyi devasa '
-      + 'tipografiyle bitir. Hem mobil hem masaüstü versiyonunu ayrı '
-      + 'ayrı çiz; mobili masaüstünü daraltarak verme, mobil yerleşimi '
-      + 'baştan düşün.' },
+      + 'tipografiyle bitir. **Ekte hangi ekran varsa yalnız onu çiz:** '
+      + 'yalnız mobil ekran görüntüsü gönderdiysem yalnız mobil tasarım '
+      + 'üret, yalnız masaüstü gönderdiysem yalnız masaüstü üret, '
+      + 'ikisini birden gönderdiysem ikisini ayrı ayrı çiz. Ekte '
+      + 'olmayan bir ekran türünü kendiliğinden ekleme, istenmedikçe '
+      + 'ikinci bir versiyon üretme. Mobil çizeceksen masaüstünü '
+      + 'daraltarak verme, mobil yerleşimi baştan düşün.' },
   { anahtar: 'terminal', ad: 'Terminal / Yeşil Ekran', renk: '#3f9d7a',
     ozet: 'Tek aralıklı yazı, koyu zemin, fosfor yeşili, çizgi çerçeveler.',
     onizleme: { zemin:'#05100A', kart:'#05100A', metin:'#4DFF9F', soluk:'#2E8A5C', vurgu:'#FFC247', kenar:'1px solid #1F7A4D', ust:'none', kose:'0', golge:'none', yazi:'"SF Mono", Menlo, monospace', doku:'repeating-linear-gradient(180deg, rgba(77,255,159,.05) 0 1px, transparent 1px 3px)' , dugmeYazi:'#05100A' },
-    prompt: 'Ekteki mobil ve masaüstü ekran görüntüleri {FIRMA}\'nin gerçek '
-      + 'uygulaması. İçeriği, kartları, menüyü ve yerleşimi olduğu gibi '
-      + 'koru; hiçbir öğeyi ekleme, çıkarma ya da yerini değiştirme — '
-      + 'yalnız görsel dili değiştir. Yön: eski bir kasa terminali, CRT '
-      + 'yeşil ekran. Zemin neredeyse siyah kömür; **bütün metin, '
-      + 'başlıklar dahil, tek aralıklı (monospace)** bir yazı tipiyle '
-      + 'yazılsın, ikinci bir font hiç kullanma. Ana renk fosfor '
-      + 'yeşili; ikinci renk yalnız uyarı ve eksi tutarlar için '
+    prompt: 'Ekte gönderdiğim ekran görüntüsü/görüntüleri {FIRMA}\'nin '
+      + 'gerçek uygulaması. İçeriği, kartları, menüyü ve yerleşimi '
+      + 'olduğu gibi koru; hiçbir öğeyi ekleme, çıkarma ya da yerini '
+      + 'değiştirme — yalnız görsel dili değiştir. Yön: eski bir kasa '
+      + 'terminali, CRT yeşil ekran. Zemin neredeyse siyah kömür; '
+      + '**bütün metin, başlıklar dahil, tek aralıklı (monospace)** bir '
+      + 'yazı tipiyle yazılsın, ikinci bir font hiç kullanma. Ana renk '
+      + 'fosfor yeşili; ikinci renk yalnız uyarı ve eksi tutarlar için '
       + 'kehribar/kırmızı. Kartların çerçevesi ASCII kutu çizgisi gibi '
       + 'ince tek çizgi, köşeler keskin. Başlıkların önüne komut istemi '
       + 'işareti koy, etiketleri büyük harf ve seyrek harf aralığıyla '
@@ -359,10 +420,14 @@ const TASARIM_YON = [
       + 'okunurluğu bozmayacak kadar ince bir parıltı ver. Seçili '
       + 'satırda yanıp sönen blok imleç olsun; üstüne gelince satır '
       + 'tersine dönsün — yeşil zemin, siyah yazı. Gölge, yuvarlak '
-      + 'köşe, gradyan, fotoğraf: hiçbiri olmasın. Hem mobil hem '
-      + 'masaüstü versiyonunu ayrı ayrı çiz.',
-    promptYeniden: 'Ekteki mobil ve masaüstü ekran görüntüleri {FIRMA}\'nin gerçek '
-      + 'uygulaması. Bu sefer **yerleşimi de yeniden kur**: aynı '
+      + 'köşe, gradyan, fotoğraf: hiçbiri olmasın. **Ekte hangi ekran '
+      + 'varsa yalnız onu çiz:** yalnız mobil ekran görüntüsü '
+      + 'gönderdiysem yalnız mobil tasarım üret, yalnız masaüstü '
+      + 'gönderdiysem yalnız masaüstü üret, ikisini birden gönderdiysem '
+      + 'ikisini ayrı ayrı çiz. Ekte olmayan bir ekran türünü '
+      + 'kendiliğinden ekleme, istenmedikçe ikinci bir versiyon üretme.',
+    promptYeniden: 'Ekte gönderdiğim ekran görüntüsü/görüntüleri {FIRMA}\'nin '
+      + 'gerçek uygulaması. Bu sefer **yerleşimi de yeniden kur**: aynı '
       + 'bilgiler ve aynı işlevler kalsın, hiçbirini atma — ama düzen, '
       + 'hiyerarşi, ızgara, gezinme ve sayfa ritmi tamamen senin '
       + 'kararın. Bunu bir tasarım ajansının {SEKTOR} uygun biçimde '
@@ -385,20 +450,24 @@ const TASARIM_YON = [
       + 'kısayol tuşları şeridi. Menü yerine köşeli parantezli sekmeler '
       + 'ya da bir komut satırı kutusu kullan. İçeriği tek sütunda '
       + 'hizalı metin blokları hâlinde ver; gerekirse ekranı dikey '
-      + 'ikiye bölen iki panel yap. Hem mobil hem masaüstü versiyonunu '
-      + 'ayrı ayrı çiz; mobili masaüstünü daraltarak verme, mobil '
-      + 'yerleşimi baştan düşün.' },
+      + 'ikiye bölen iki panel yap. **Ekte hangi ekran varsa yalnız onu '
+      + 'çiz:** yalnız mobil ekran görüntüsü gönderdiysem yalnız mobil '
+      + 'tasarım üret, yalnız masaüstü gönderdiysem yalnız masaüstü '
+      + 'üret, ikisini birden gönderdiysem ikisini ayrı ayrı çiz. Ekte '
+      + 'olmayan bir ekran türünü kendiliğinden ekleme, istenmedikçe '
+      + 'ikinci bir versiyon üretme. Mobil çizeceksen masaüstünü '
+      + 'daraltarak verme, mobil yerleşimi baştan düşün.' },
   { anahtar: 'riso', ad: 'Matbaa / Riso Baskı', renk: '#d4577a',
     ozet: 'İki renk üst üste basılmış his, tram noktaları, kâğıt dokusu.',
     onizleme: { zemin:'#F4EFE2', kart:'#F4EFE2', metin:'#1C1C1C', soluk:'#6E6A60', vurgu:'#FF3D8B', kenar:'none', ust:'none', kose:'0', golge:'2px 2px 0 rgba(43,95,217,.55)', yazi:'Inter, Helvetica, sans-serif', doku:'radial-gradient(rgba(43,95,217,.22) 1px, transparent 1px) 0 0/5px 5px' , dugmeYazi:'#FFFFFF' },
-    prompt: 'Ekteki mobil ve masaüstü ekran görüntüleri {FIRMA}\'nin gerçek '
-      + 'uygulaması. İçeriği, kartları, menüyü ve yerleşimi olduğu gibi '
-      + 'koru; hiçbir öğeyi ekleme, çıkarma ya da yerini değiştirme — '
-      + 'yalnız görsel dili değiştir. Yön: Risograf baskı afişi. Zemin '
-      + 'bembeyaz değil, hafif kirli ve dokulu bir kâğıt olsun. Yalnız '
-      + '**iki mürekkep rengi** seç (ör. flo pembe + gece mavisi); '
-      + 'üçüncü rengi bu ikisinin üst üste basılmasından doğur ve '
-      + 'kenarlarda 1-2px kaymış kayıt (mis-registration) taşması '
+    prompt: 'Ekte gönderdiğim ekran görüntüsü/görüntüleri {FIRMA}\'nin '
+      + 'gerçek uygulaması. İçeriği, kartları, menüyü ve yerleşimi '
+      + 'olduğu gibi koru; hiçbir öğeyi ekleme, çıkarma ya da yerini '
+      + 'değiştirme — yalnız görsel dili değiştir. Yön: Risograf baskı '
+      + 'afişi. Zemin bembeyaz değil, hafif kirli ve dokulu bir kâğıt '
+      + 'olsun. Yalnız **iki mürekkep rengi** seç (ör. flo pembe + gece '
+      + 'mavisi); üçüncü rengi bu ikisinin üst üste basılmasından doğur '
+      + 've kenarlarda 1-2px kaymış kayıt (mis-registration) taşması '
       + 'bırak. Bütün dolgu alanlarını düz renk yerine iri noktalı '
       + 'yarım ton (halftone) dokusuyla doldur. Başlıklar geniş ve '
       + 'sıkışık bir afiş grotesk\'i, gövde küçük ve sade. Fotoğraf '
@@ -406,10 +475,14 @@ const TASARIM_YON = [
       + 'kalmasın. Kenarlıklar elle basılmış gibi hafif titrek, köşeler '
       + 'keskin. Gölge ve gradyan yok — derinlik yalnız mürekkebin üst '
       + 'üste binmesinden gelsin. Bölüm numaralarını iri rakamlarla '
-      + 'kenarda göster. Hem mobil hem masaüstü versiyonunu ayrı ayrı '
-      + 'çiz.',
-    promptYeniden: 'Ekteki mobil ve masaüstü ekran görüntüleri {FIRMA}\'nin gerçek '
-      + 'uygulaması. Bu sefer **yerleşimi de yeniden kur**: aynı '
+      + 'kenarda göster. **Ekte hangi ekran varsa yalnız onu çiz:** '
+      + 'yalnız mobil ekran görüntüsü gönderdiysem yalnız mobil tasarım '
+      + 'üret, yalnız masaüstü gönderdiysem yalnız masaüstü üret, '
+      + 'ikisini birden gönderdiysem ikisini ayrı ayrı çiz. Ekte '
+      + 'olmayan bir ekran türünü kendiliğinden ekleme, istenmedikçe '
+      + 'ikinci bir versiyon üretme.',
+    promptYeniden: 'Ekte gönderdiğim ekran görüntüsü/görüntüleri {FIRMA}\'nin '
+      + 'gerçek uygulaması. Bu sefer **yerleşimi de yeniden kur**: aynı '
       + 'bilgiler ve aynı işlevler kalsın, hiçbirini atma — ama düzen, '
       + 'hiyerarşi, ızgara, gezinme ve sayfa ritmi tamamen senin '
       + 'kararın. Bunu bir tasarım ajansının {SEKTOR} uygun biçimde '
@@ -430,31 +503,40 @@ const TASARIM_YON = [
       + 'başlık, altında üst üste binen renk blokları, içerik düzensiz '
       + 'ama bilinçli bir ızgarada. Menü sayfanın üstünde tek satır, '
       + 'alt çizgili kelimelerden oluşsun. Sayfayı kalın bir mürekkep '
-      + 'bloğuyla bitir. Hem mobil hem masaüstü versiyonunu ayrı ayrı '
-      + 'çiz; mobili masaüstünü daraltarak verme, mobil yerleşimi '
-      + 'baştan düşün.' },
+      + 'bloğuyla bitir. **Ekte hangi ekran varsa yalnız onu çiz:** '
+      + 'yalnız mobil ekran görüntüsü gönderdiysem yalnız mobil tasarım '
+      + 'üret, yalnız masaüstü gönderdiysem yalnız masaüstü üret, '
+      + 'ikisini birden gönderdiysem ikisini ayrı ayrı çiz. Ekte '
+      + 'olmayan bir ekran türünü kendiliğinden ekleme, istenmedikçe '
+      + 'ikinci bir versiyon üretme. Mobil çizeceksen masaüstünü '
+      + 'daraltarak verme, mobil yerleşimi baştan düşün.' },
   { anahtar: 'deco', ad: 'Art Deco / Klasik Lüks', renk: '#6f4f8f',
     ozet: 'Altın ince çizgi, simetrik çerçeve, yüksek kontrast serif, koyu mücevher tonu.',
     onizleme: { zemin:'#10342F', kart:'#10342F', metin:'#F0E6D2', soluk:'#9FB3A8', vurgu:'#D4AF37', kenar:'1px solid #D4AF37', ust:'none', kose:'2px', golge:'none', yazi:'Georgia, "Didot", serif', doku:'none' , dugmeYazi:'#10342F' },
-    prompt: 'Ekteki mobil ve masaüstü ekran görüntüleri {FIRMA}\'nin gerçek '
-      + 'uygulaması. İçeriği, kartları, menüyü ve yerleşimi olduğu gibi '
-      + 'koru; hiçbir öğeyi ekleme, çıkarma ya da yerini değiştirme — '
-      + 'yalnız görsel dili değiştir. Yön: 1920\'ler Art Deco lüksü — '
-      + 'bir otel kartviziti gibi. Zemin derin gece mavisi ya da '
-      + 'abanoz; vurgu şampanya altını. Başlıklar yüksek kontrastlı, '
-      + 'ince-kalın geçişli bir didone serif (Playfair/Bodoni tarzı), '
-      + 'büyük harf ve geniş harf aralığıyla. Kartların üstüne ve '
-      + 'altına ince altın çift çizgi koy, köşelerine küçük geometrik '
-      + 'yelpaze/güneş ışını motifi yerleştir. Kenarlıklar 1px altın, '
-      + 'gölge yok. Simetriyi koru: her şey ya tam ortaya hizalı ya da '
-      + 'iki eşit sütun. Bölüm başlıklarının arasına ince altın ayraç '
-      + 've ortasına küçük bir elmas motifi koy. Sayılar da aynı serif '
-      + 'ile, iri ve ferah yazılsın. Fotoğraf varsa sepya ya da '
-      + 'lacivert-altın duotone olsun. Hiçbir yerde canlı renk, gradyan '
-      + 'ya da geniş yuvarlak köşe kullanma. Hem mobil hem masaüstü '
-      + 'versiyonunu ayrı ayrı çiz.',
-    promptYeniden: 'Ekteki mobil ve masaüstü ekran görüntüleri {FIRMA}\'nin gerçek '
-      + 'uygulaması. Bu sefer **yerleşimi de yeniden kur**: aynı '
+    prompt: 'Ekte gönderdiğim ekran görüntüsü/görüntüleri {FIRMA}\'nin '
+      + 'gerçek uygulaması. İçeriği, kartları, menüyü ve yerleşimi '
+      + 'olduğu gibi koru; hiçbir öğeyi ekleme, çıkarma ya da yerini '
+      + 'değiştirme — yalnız görsel dili değiştir. Yön: 1920\'ler Art '
+      + 'Deco lüksü — bir otel kartviziti gibi. Zemin derin gece mavisi '
+      + 'ya da abanoz; vurgu şampanya altını. Başlıklar yüksek '
+      + 'kontrastlı, ince-kalın geçişli bir didone serif '
+      + '(Playfair/Bodoni tarzı), büyük harf ve geniş harf aralığıyla. '
+      + 'Kartların üstüne ve altına ince altın çift çizgi koy, '
+      + 'köşelerine küçük geometrik yelpaze/güneş ışını motifi '
+      + 'yerleştir. Kenarlıklar 1px altın, gölge yok. Simetriyi koru: '
+      + 'her şey ya tam ortaya hizalı ya da iki eşit sütun. Bölüm '
+      + 'başlıklarının arasına ince altın ayraç ve ortasına küçük bir '
+      + 'elmas motifi koy. Sayılar da aynı serif ile, iri ve ferah '
+      + 'yazılsın. Fotoğraf varsa sepya ya da lacivert-altın duotone '
+      + 'olsun. Hiçbir yerde canlı renk, gradyan ya da geniş yuvarlak '
+      + 'köşe kullanma. **Ekte hangi ekran varsa yalnız onu çiz:** '
+      + 'yalnız mobil ekran görüntüsü gönderdiysem yalnız mobil tasarım '
+      + 'üret, yalnız masaüstü gönderdiysem yalnız masaüstü üret, '
+      + 'ikisini birden gönderdiysem ikisini ayrı ayrı çiz. Ekte '
+      + 'olmayan bir ekran türünü kendiliğinden ekleme, istenmedikçe '
+      + 'ikinci bir versiyon üretme.',
+    promptYeniden: 'Ekte gönderdiğim ekran görüntüsü/görüntüleri {FIRMA}\'nin '
+      + 'gerçek uygulaması. Bu sefer **yerleşimi de yeniden kur**: aynı '
       + 'bilgiler ve aynı işlevler kalsın, hiçbirini atma — ama düzen, '
       + 'hiyerarşi, ızgara, gezinme ve sayfa ritmi tamamen senin '
       + 'kararın. Bunu bir tasarım ajansının {SEKTOR} uygun biçimde '
@@ -476,30 +558,39 @@ const TASARIM_YON = [
       + 'iki sütun. Her bölüm altın çift çizgiyle çerçevelenmiş bir '
       + 'pano gibi dursun. Menü üstte ortalanmış ve harfleri seyrek '
       + 'olsun; sayfa sonunda ince bir altın ayraç ve ortalanmış bir '
-      + 'imza bloğu bitirsin. Hem mobil hem masaüstü versiyonunu ayrı '
-      + 'ayrı çiz; mobili masaüstünü daraltarak verme, mobil yerleşimi '
-      + 'baştan düşün.' },
+      + 'imza bloğu bitirsin. **Ekte hangi ekran varsa yalnız onu '
+      + 'çiz:** yalnız mobil ekran görüntüsü gönderdiysem yalnız mobil '
+      + 'tasarım üret, yalnız masaüstü gönderdiysem yalnız masaüstü '
+      + 'üret, ikisini birden gönderdiysem ikisini ayrı ayrı çiz. Ekte '
+      + 'olmayan bir ekran türünü kendiliğinden ekleme, istenmedikçe '
+      + 'ikinci bir versiyon üretme. Mobil çizeceksen masaüstünü '
+      + 'daraltarak verme, mobil yerleşimi baştan düşün.' },
   { anahtar: 'organik', ad: 'Doğal / Elde Çizilmiş', renk: '#5b8c7b',
     ozet: 'Toprak tonları, botanik çizim, kâğıt greni, elle çizilmiş ayraçlar.',
     onizleme: { zemin:'#EFE9DD', kart:'#F8F4EB', metin:'#3D4034', soluk:'#8B8A78', vurgu:'#5B8C7B', kenar:'1px solid #CFC6B4', ust:'none', kose:'12px', golge:'none', yazi:'Georgia, serif', doku:'radial-gradient(rgba(90,80,60,.07) 1px, transparent 1px) 0 0/4px 4px' , dugmeYazi:'#FFFFFF' },
-    prompt: 'Ekteki mobil ve masaüstü ekran görüntüleri {FIRMA}\'nin gerçek '
-      + 'uygulaması. İçeriği, kartları, menüyü ve yerleşimi olduğu gibi '
-      + 'koru; hiçbir öğeyi ekleme, çıkarma ya da yerini değiştirme — '
-      + 'yalnız görsel dili değiştir. Yön: elde yapılmış, doğal bir '
-      + 'kırtasiye hissi. Zemin kirli krem, üstünde ince kâğıt lifi '
-      + 'dokusu. Palet toprak tonları: adaçayı yeşili, kil, terracotta, '
-      + 'kömür — parlak hiçbir renk yok. Kart kenarları cetvelle değil '
-      + 'elle çizilmiş gibi hafif dalgalı olsun ve köşe yarıçapları '
-      + 'birbirinden biraz farklı olsun, kusursuz simetri kırılsın. '
-      + 'Başlıklar sıcak, hafif düzensiz bir serif; gövde rahat okunan '
-      + 'humanist bir sans. İkonlar ince kalemle çizilmiş gibi, dolu '
-      + 'değil. Bölüm aralarına suluboya lekesi ya da basit yaprak/dal '
-      + 'çizimi serpiştir. Gölgeler çok yumuşak ve griye değil sıcak '
-      + 'kahveye çalsın. Düğmeler elle çizilmiş bir çerçeve içinde '
-      + 'dursun. Hiçbir yerde saf siyah, saf beyaz ya da keskin gölge '
-      + 'kullanma. Hem mobil hem masaüstü versiyonunu ayrı ayrı çiz.',
-    promptYeniden: 'Ekteki mobil ve masaüstü ekran görüntüleri {FIRMA}\'nin gerçek '
-      + 'uygulaması. Bu sefer **yerleşimi de yeniden kur**: aynı '
+    prompt: 'Ekte gönderdiğim ekran görüntüsü/görüntüleri {FIRMA}\'nin '
+      + 'gerçek uygulaması. İçeriği, kartları, menüyü ve yerleşimi '
+      + 'olduğu gibi koru; hiçbir öğeyi ekleme, çıkarma ya da yerini '
+      + 'değiştirme — yalnız görsel dili değiştir. Yön: elde yapılmış, '
+      + 'doğal bir kırtasiye hissi. Zemin kirli krem, üstünde ince '
+      + 'kâğıt lifi dokusu. Palet toprak tonları: adaçayı yeşili, kil, '
+      + 'terracotta, kömür — parlak hiçbir renk yok. Kart kenarları '
+      + 'cetvelle değil elle çizilmiş gibi hafif dalgalı olsun ve köşe '
+      + 'yarıçapları birbirinden biraz farklı olsun, kusursuz simetri '
+      + 'kırılsın. Başlıklar sıcak, hafif düzensiz bir serif; gövde '
+      + 'rahat okunan humanist bir sans. İkonlar ince kalemle çizilmiş '
+      + 'gibi, dolu değil. Bölüm aralarına suluboya lekesi ya da basit '
+      + 'yaprak/dal çizimi serpiştir. Gölgeler çok yumuşak ve griye '
+      + 'değil sıcak kahveye çalsın. Düğmeler elle çizilmiş bir çerçeve '
+      + 'içinde dursun. Hiçbir yerde saf siyah, saf beyaz ya da keskin '
+      + 'gölge kullanma. **Ekte hangi ekran varsa yalnız onu çiz:** '
+      + 'yalnız mobil ekran görüntüsü gönderdiysem yalnız mobil tasarım '
+      + 'üret, yalnız masaüstü gönderdiysem yalnız masaüstü üret, '
+      + 'ikisini birden gönderdiysem ikisini ayrı ayrı çiz. Ekte '
+      + 'olmayan bir ekran türünü kendiliğinden ekleme, istenmedikçe '
+      + 'ikinci bir versiyon üretme.',
+    promptYeniden: 'Ekte gönderdiğim ekran görüntüsü/görüntüleri {FIRMA}\'nin '
+      + 'gerçek uygulaması. Bu sefer **yerleşimi de yeniden kur**: aynı '
       + 'bilgiler ve aynı işlevler kalsın, hiçbirini atma — ama düzen, '
       + 'hiyerarşi, ızgara, gezinme ve sayfa ritmi tamamen senin '
       + 'kararın. Bunu bir tasarım ajansının {SEKTOR} uygun biçimde '
@@ -520,32 +611,40 @@ const TASARIM_YON = [
       + 'kavisli bölüm geçişleri, geniş kenar boşlukları, tek sütunluk '
       + 'rahat bir okuma genişliği. Kenarda ince bir içindekiler sütunu '
       + 'olsun. Menü üstte yumuşak hap biçimli, mobilde altta yuvarlak '
-      + 'bir çubuk olarak dursun. Hem mobil hem masaüstü versiyonunu '
-      + 'ayrı ayrı çiz; mobili masaüstünü daraltarak verme, mobil '
-      + 'yerleşimi baştan düşün.' },
+      + 'bir çubuk olarak dursun. **Ekte hangi ekran varsa yalnız onu '
+      + 'çiz:** yalnız mobil ekran görüntüsü gönderdiysem yalnız mobil '
+      + 'tasarım üret, yalnız masaüstü gönderdiysem yalnız masaüstü '
+      + 'üret, ikisini birden gönderdiysem ikisini ayrı ayrı çiz. Ekte '
+      + 'olmayan bir ekran türünü kendiliğinden ekleme, istenmedikçe '
+      + 'ikinci bir versiyon üretme. Mobil çizeceksen masaüstünü '
+      + 'daraltarak verme, mobil yerleşimi baştan düşün.' },
   { anahtar: 'erisim', ad: 'Büyük Punto / Yüksek Kontrast', renk: '#1f4fa8',
     ozet: 'İri yazı, kalın kenarlık, bol kontrast, süs yok — gözü yormayan.',
     onizleme: { zemin:'#FFFFFF', kart:'#FFFFFF', metin:'#000000', soluk:'#333333', vurgu:'#1F4FA8', kenar:'3px solid #000000', ust:'none', kose:'6px', golge:'none', yazi:'Inter, Arial, sans-serif', doku:'none' , dugmeYazi:'#FFFFFF' },
-    prompt: 'Ekteki mobil ve masaüstü ekran görüntüleri {FIRMA}\'nin gerçek '
-      + 'uygulaması. İçeriği, kartları, menüyü ve yerleşimi olduğu gibi '
-      + 'koru; hiçbir öğeyi ekleme, çıkarma ya da yerini değiştirme — '
-      + 'yalnız görsel dili değiştir. Yön: erişilebilirliği önce koyan '
-      + 'çok net bir arayüz — gözü zayıf birinin tek bakışta '
-      + 'okuyabileceği kadar büyük. Gövde yazısı en az 18px, başlıklar '
-      + '32px ve üstü, satır aralığı bol (1.6). Açık harfli bir sans '
-      + 'kullan (Atkinson Hyperlegible / Inter); ince ağırlık hiç '
-      + 'kullanma, en az orta kalınlık. Kontrastı her yerde WCAG AAA '
-      + 'hedefiyle kur: siyaha yakın metin, saf beyaz zemin, **soluk '
-      + 'gri metin yok**. Tek bir koyu vurgu rengi olsun ve yalnız '
-      + 'eylemler için kullanılsın. Düğmeler en az 48px yüksekliğinde '
-      + 've üstünde tam yazı olsun — yalnız ikonlu düğme bırakma. Odak '
-      + 'halkası 3px ve açıkça görünür olsun. Durumları yalnız renkle '
-      + 'değil, ikon ve yazıyla da anlat. Kartları gölge yerine 2px '
-      + 'belirgin kenarlıkla ayır. Hiçbir yerde ince yazı, düşük '
-      + 'kontrast ya da küçük dokunma alanı bırakma. Hem mobil hem '
-      + 'masaüstü versiyonunu ayrı ayrı çiz.',
-    promptYeniden: 'Ekteki mobil ve masaüstü ekran görüntüleri {FIRMA}\'nin gerçek '
-      + 'uygulaması. Bu sefer **yerleşimi de yeniden kur**: aynı '
+    prompt: 'Ekte gönderdiğim ekran görüntüsü/görüntüleri {FIRMA}\'nin '
+      + 'gerçek uygulaması. İçeriği, kartları, menüyü ve yerleşimi '
+      + 'olduğu gibi koru; hiçbir öğeyi ekleme, çıkarma ya da yerini '
+      + 'değiştirme — yalnız görsel dili değiştir. Yön: '
+      + 'erişilebilirliği önce koyan çok net bir arayüz — gözü zayıf '
+      + 'birinin tek bakışta okuyabileceği kadar büyük. Gövde yazısı en '
+      + 'az 18px, başlıklar 32px ve üstü, satır aralığı bol (1.6). Açık '
+      + 'harfli bir sans kullan (Atkinson Hyperlegible / Inter); ince '
+      + 'ağırlık hiç kullanma, en az orta kalınlık. Kontrastı her yerde '
+      + 'WCAG AAA hedefiyle kur: siyaha yakın metin, saf beyaz zemin, '
+      + '**soluk gri metin yok**. Tek bir koyu vurgu rengi olsun ve '
+      + 'yalnız eylemler için kullanılsın. Düğmeler en az 48px '
+      + 'yüksekliğinde ve üstünde tam yazı olsun — yalnız ikonlu düğme '
+      + 'bırakma. Odak halkası 3px ve açıkça görünür olsun. Durumları '
+      + 'yalnız renkle değil, ikon ve yazıyla da anlat. Kartları gölge '
+      + 'yerine 2px belirgin kenarlıkla ayır. Hiçbir yerde ince yazı, '
+      + 'düşük kontrast ya da küçük dokunma alanı bırakma. **Ekte hangi '
+      + 'ekran varsa yalnız onu çiz:** yalnız mobil ekran görüntüsü '
+      + 'gönderdiysem yalnız mobil tasarım üret, yalnız masaüstü '
+      + 'gönderdiysem yalnız masaüstü üret, ikisini birden gönderdiysem '
+      + 'ikisini ayrı ayrı çiz. Ekte olmayan bir ekran türünü '
+      + 'kendiliğinden ekleme, istenmedikçe ikinci bir versiyon üretme.',
+    promptYeniden: 'Ekte gönderdiğim ekran görüntüsü/görüntüleri {FIRMA}\'nin '
+      + 'gerçek uygulaması. Bu sefer **yerleşimi de yeniden kur**: aynı '
       + 'bilgiler ve aynı işlevler kalsın, hiçbirini atma — ama düzen, '
       + 'hiyerarşi, ızgara, gezinme ve sayfa ritmi tamamen senin '
       + 'kararın. Bunu bir tasarım ajansının {SEKTOR} uygun biçimde '
@@ -567,18 +666,23 @@ const TASARIM_YON = [
       + 'kur — her ekranda tek bir ana iş olsun. Üstte sabit, iri ve '
       + 'yazılı bir gezinme; hemen altında \'içeriğe atla\' bağlantısı. '
       + 'Tabloyu mobilde kart listesine çevir. Eylemleri ekranın '
-      + 'altında tam genişlikte büyük düğmeler hâlinde topla. Hem mobil '
-      + 'hem masaüstü versiyonunu ayrı ayrı çiz; mobili masaüstünü '
-      + 'daraltarak verme, mobil yerleşimi baştan düşün.' },
+      + 'altında tam genişlikte büyük düğmeler hâlinde topla. **Ekte '
+      + 'hangi ekran varsa yalnız onu çiz:** yalnız mobil ekran '
+      + 'görüntüsü gönderdiysem yalnız mobil tasarım üret, yalnız '
+      + 'masaüstü gönderdiysem yalnız masaüstü üret, ikisini birden '
+      + 'gönderdiysem ikisini ayrı ayrı çiz. Ekte olmayan bir ekran '
+      + 'türünü kendiliğinden ekleme, istenmedikçe ikinci bir versiyon '
+      + 'üretme. Mobil çizeceksen masaüstünü daraltarak verme, mobil '
+      + 'yerleşimi baştan düşün.' },
   { anahtar: 'aurora', ad: 'Aurora / Yumuşak Degrade', renk: '#a259c4',
     ozet: 'Açık zemin, pastel degrade lekeler, yumuşak gölge, ferah modern.',
     onizleme: { zemin:'radial-gradient(120% 90% at 10% 0%, rgba(162,89,196,.30), transparent 60%), radial-gradient(110% 80% at 95% 25%, rgba(56,189,208,.28), transparent 62%), radial-gradient(110% 90% at 60% 110%, rgba(255,169,128,.28), transparent 60%), #FBFAFF', kart:'#FFFFFF', metin:'#23262B', soluk:'#7A8090', vurgu:'#A259C4', kenar:'none', ust:'none', kose:'16px', golge:'0 10px 22px rgba(90,60,150,.16)', yazi:'Inter, system-ui, sans-serif', doku:'none' , dugmeYazi:'#FFFFFF' },
-    prompt: 'Ekteki mobil ve masaüstü ekran görüntüleri {FIRMA}\'nin gerçek '
-      + 'uygulaması. İçeriği, kartları, menüyü ve yerleşimi olduğu gibi '
-      + 'koru; hiçbir öğeyi ekleme, çıkarma ya da yerini değiştirme — '
-      + 'yalnız görsel dili değiştir. Yön: çağdaş bir SaaS ürün sitesi '
-      + '— yumuşak aurora degradeleri. Zemin açık ve temiz; üstte '
-      + 'geniş, bulanık, çok renkli bir ışık halesi (lavanta → '
+    prompt: 'Ekte gönderdiğim ekran görüntüsü/görüntüleri {FIRMA}\'nin '
+      + 'gerçek uygulaması. İçeriği, kartları, menüyü ve yerleşimi '
+      + 'olduğu gibi koru; hiçbir öğeyi ekleme, çıkarma ya da yerini '
+      + 'değiştirme — yalnız görsel dili değiştir. Yön: çağdaş bir SaaS '
+      + 'ürün sitesi — yumuşak aurora degradeleri. Zemin açık ve temiz; '
+      + 'üstte geniş, bulanık, çok renkli bir ışık halesi (lavanta → '
       + 'camgöbeği → şeftali) yavaşça dağılsın. Kartlar beyaza yakın ve '
       + 'çok hafif saydam, 1px açık kenarlıklı, 16-20px yuvarlak '
       + 'köşeli; zeminden **çok geniş ama çok soluk** bir gölgeyle '
@@ -588,10 +692,14 @@ const TASARIM_YON = [
       + 'degrade dolgu kullanabilirsin. İkonlar ince çizgili ve '
       + 'yuvarlak uçlu. Bölüm geçişlerinde sert ayraç çizgisi yerine '
       + 'yumuşak renk sızıntısı olsun. Hiçbir yerde sert gölge, keskin '
-      + 'köşe ya da doygun blok renk kullanma. Hem mobil hem masaüstü '
-      + 'versiyonunu ayrı ayrı çiz.',
-    promptYeniden: 'Ekteki mobil ve masaüstü ekran görüntüleri {FIRMA}\'nin gerçek '
-      + 'uygulaması. Bu sefer **yerleşimi de yeniden kur**: aynı '
+      + 'köşe ya da doygun blok renk kullanma. **Ekte hangi ekran varsa '
+      + 'yalnız onu çiz:** yalnız mobil ekran görüntüsü gönderdiysem '
+      + 'yalnız mobil tasarım üret, yalnız masaüstü gönderdiysem yalnız '
+      + 'masaüstü üret, ikisini birden gönderdiysem ikisini ayrı ayrı '
+      + 'çiz. Ekte olmayan bir ekran türünü kendiliğinden ekleme, '
+      + 'istenmedikçe ikinci bir versiyon üretme.',
+    promptYeniden: 'Ekte gönderdiğim ekran görüntüsü/görüntüleri {FIRMA}\'nin '
+      + 'gerçek uygulaması. Bu sefer **yerleşimi de yeniden kur**: aynı '
       + 'bilgiler ve aynı işlevler kalsın, hiçbirini atma — ama düzen, '
       + 'hiyerarşi, ızgara, gezinme ve sayfa ritmi tamamen senin '
       + 'kararın. Bunu bir tasarım ajansının {SEKTOR} uygun biçimde '
@@ -612,73 +720,13 @@ const TASARIM_YON = [
       + 'sabit bir gezinme, ortalanmış iri başlık ve tek ana düğme, '
       + 'altında üç sütunlu özellik kartları, ardından geniş bir pano '
       + 'görseli ve sık sorulanlar bölümü. Bölümler tam genişlikte '
-      + 'şeritler hâlinde birbirini izlesin. Hem mobil hem masaüstü '
-      + 'versiyonunu ayrı ayrı çiz; mobili masaüstünü daraltarak verme, '
-      + 'mobil yerleşimi baştan düşün.' },];
-
-/* ---- Nizam teknik standardı — TOHUM ve YEDEK ----
-   Standardın yaşadığı yer artık Supabase'deki `standards` tablosu; oraya
-   ekleme kod değiştirmeden, prompt-yapıştır ile yapılıyor. Bu dizi iki iş
-   görüyor:
-     1. `sql/17-standart.sql` bu içeriği tabloya tohumluyor.
-     2. Tablo boşsa (SQL henüz çalıştırılmadıysa ya da erişilemiyorsa)
-        prompt teknik standartsız çıkmasın diye buraya düşülüyor.
-   Tohumlandıktan sonra doğruluk kaynağı tablodur; buradaki metni
-   değiştirmek kurulmuş bir Studio'yu etkilemez.
-
-   Satır biçimi: [ad, değer, not] — dördüncü eleman isteğe bağlı `eklendi`
-   damgasıdır. */
-const TEKNIK_STANDART = [
-  ['Dil ve çatı', 'Vanilla JS · HTML · CSS',
-   'Hazır çatı (React, Vue) yok. Bağımlılık az, ömrü uzun.'],
-  ['Derleme', 'Yok',
-   'Dosyalar doğrudan çalışır. Build adımı, paket yöneticisi, node_modules yok.'],
-  ['Dosya düzeni', 'Ekran başına ayrı dosya',
-   'Tek dosyada 1500 satırı geçme. Büyük dosyada bir yeri düzeltirken başka yer bozulur.'],
-  ['Barındırma', 'GitHub Pages',
-   'Depoya gönderilen kod kendiliğinden yayınlanır.'],
-  ['Depo', 'GitHub · main dalı', 'Commit başına [NS-x] etiketi.'],
-  ['PWA', 'Var',
-   'Ana ekrana eklenebilir. Servis işçisi kabuğu önbelleğe alır, sürüm değişince günceller.'],
-  ['Veri', 'Supabase',
-   'Postgres + Auth + Realtime + Storage. Satır güvenliği (RLS) her tabloda açık.'],
-  ['Gerçek zamanlı', 'Her zaman açık',
-   'Başkası bir kaydı değiştirince ekran kendiliğinden tazelenir.'],
-  ['Çevrimdışı', 'Her zaman çalışır',
-   'Okuma yerelden: son görülen veri tarayıcıda durur. Yazma kuyruğa girer, '
-   + 'internet gelince gönderilir. Çakışırsa son yazan kazanır ve kullanıcıya söylenir.'],
-  ['Değişiklik kaydı', 'Her zaman tutulur',
-   'Her yazma işleminde kim, ne, ne zaman kaydedilir. Ayarlarda listelenir.'],
-  ['Dosya saklama', 'Supabase Storage',
-   'Belge ve logolar özel klasörde, imzalı adresle sunulur. Profil fotoğrafı genel olabilir.'],
-  ['Giriş', 'E-posta + şifre',
-   'Kayıt ekranı yok; hesabı yönetici açar. Perde arkasında yeni hesap '
-   + 'Supabase\'in anon-key ile açık kayıt ucundan açılır ama yetki oradan '
-   + 'gelmez — `kullanicilar` tablosundaki satırdan gelir. Satırı olmayan biri '
-   + 'boş ekran değil, net bir "hesabın tanımlı değil" mesajı görür.'],
-  ['Paketler', 'Yalnız Supabase istemcisi',
-   'Excel gerekiyorsa xlsx. Başka paket eklemeden önce sor.'],
-  ['Para birimi', '₺ TRY', 'Binlik nokta, ondalık virgül: 12.400,00'],
-  ['Tarih ve saat', '22.05.2025 · 14:30', 'Gün.Ay.Yıl ve 24 saatlik saat.'],
-  ['Kayıt numarası', 'HARF-SIRA',
-   'Kaydın türünü gösteren kısa harf, tire, sıra numarası: F-1042 (fatura), '
-   + 'S-1001 (sipariş). Sayaç 1\'den başlar, yıl başında sıfırlanmaz, boşluk bırakmaz.'],
-  ['Sürümleme', 'YIL.SAYAÇ', 'Örnek 2026.14. Ayarlar ekranında görünür.'],
-  ['Arayüz dili', 'Türkçe', 'Tek dil. Metinler koda yazılır, sözlük dosyası yok.'],
-  ['Masaüstü gezinme', 'Alt çubuk yok — solda panel',
-   '900px ve üstünde alt sekme çubuğu gizlenir; gezinme solda dikey panele döner. '
-   + 'Alt çubuk yalnız telefon ve tablette görünür. Seçilen çubuk dokusu ikisinde de aynıdır.'],
-  ['Erişilebilirlik', '44px · 4.5:1',
-   'Dokunma hedefi en az 44×44px, metin kontrastı en az 4.5:1.'],
-  ['Yakınlaştırma', 'Kapalı',
-   'Çift dokunma ve iki parmakla yakınlaştırma kapalı: viewport etiketinde '
-   + 'maximum-scale=1, user-scalable=no. Yazı boyutu ayarlardan değişir, '
-   + 'sayfa esnetilerek değil.', 'v0.67.0'],
-  ['Geliştirme istekleri', 'Ayarlarda toplanır',
-   'Ayarlar\'da "Geliştirme istekleri" ekranı olur: kullanıcı isteğini yazar, '
-   + 'liste cihazda birikir, "Hepsini kopyala" ile tek metin olarak alınır. '
-   + 'Sunucuya gitmez, kimseye gönderilmez.', 'v0.67.0'],
-];
+      + 'şeritler hâlinde birbirini izlesin. **Ekte hangi ekran varsa '
+      + 'yalnız onu çiz:** yalnız mobil ekran görüntüsü gönderdiysem '
+      + 'yalnız mobil tasarım üret, yalnız masaüstü gönderdiysem yalnız '
+      + 'masaüstü üret, ikisini birden gönderdiysem ikisini ayrı ayrı '
+      + 'çiz. Ekte olmayan bir ekran türünü kendiliğinden ekleme, '
+      + 'istenmedikçe ikinci bir versiyon üretme. Mobil çizeceksen '
+      + 'masaüstünü daraltarak verme, mobil yerleşimi baştan düşün.' },];
 
 /* Teknik standardın hangi satırı hangi gruba düşüyor. Eşleşmeyen satır
    Altyapı sayılır — orası omurga. */

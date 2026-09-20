@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## v0.145.1
+- **Prompt artık yalnız eklediğin ekranı tasarlıyor.** Mobil ekran görüntüsü verdiysen yalnız mobil, masaüstü verdiysen yalnız masaüstü çiziyor; ikisini birden verirsen ikisini ayrı ayrı. Eskiden her promptun sonunda "hem mobil hem masaüstü çiz" yazıyordu ve tek ekran gönderilse bile ikincisini uyduruyordu.
+- Kural 24 promptun (12 yön × 2 kip) hepsinde aynı; yönlerin görsel dili ve yerleşim tarifleri birebir korundu.
+
 ## v0.145.0
 - **Her tasarım yönünün artık iki promptu var.** "Yerleşim aynı" ekteki ekranın düzenine hiç dokunmadan yalnız görünüşü değiştiriyor; "Yerleşim de yeni" aynı bilgileri koruyup sayfayı bir web sitesi gibi baştan kuruyor — ızgara, gezinme, sayfa ritmi serbest.
 - Sonradan eklenen yedi yön (Brütalist, Terminal, Riso, Art Deco, Organik, Büyük Punto, Aurora) **web sitesi gözüyle yeniden yazıldı**: tipografi ölçeği, kenarlık ve gölge kuralları, üzerine gelme hâli, bölüm ritmi tek tek tarif ediliyor. İlk beş yönün metni beğenildiği için olduğu gibi kaldı.
