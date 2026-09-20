@@ -6620,7 +6620,16 @@ function cekirdekSatiri(p) {
         ? `<button class="ak-kop ${kilitli ? 'oldu' : ''}" type="button" data-eylem="proje-kilit-degistir"
                    data-proje="${p.id}" aria-label="${kilitli ? 'Kilidi aç' : 'Kilitle'}"
                    title="${kilitli ? 'Kilidi aç' : 'Kilitle'}">${svg(ICON.kilit, 13)}</button>`
-        : `<span class="row-val">${svg(ICON.chevron, 15)}</span>`}
+        : ''}
+      ${AUTH.yonetici
+        /* Silme eskiden yalnız template kurulum panelinin içindeydi; listeden
+           görünmüyordu ve kullanıcı "silme özelliği yok" sanıyordu. Aynı iş
+           artık satırdan da yapılabiliyor — kilit kuralı ikisinde de aynı. */
+        ? `<button class="ak-kop tehlike" type="button" data-eylem="template-sil"
+                   data-proje="${p.id}" aria-label="Template'i sil"
+                   title="Template'i sil">${svg(ICON.cop, 13)}</button>`
+        : ''}
+      ${hazir ? '' : `<span class="row-val">${svg(ICON.chevron, 15)}</span>`}
     </div>`;
 }
 
@@ -13109,6 +13118,31 @@ async function eylemCalistir(el) {
     toast(ok ? 'Kod kopyalandı — Supabase Edge Functions\'a yapıştır.' : 'Kopyalanamadı, tarayıcı izin vermedi.',
       ok ? 'basari' : 'hata');
     return;
+  }
+
+  /* Template'i listeden silme · Templateler ekranındaki çöp düğmesi.
+     Kurulum panelindeki silmeyle AYNI kuralları uygular: kilitliyse
+     durur, onay ister, silinince GitHub ve Supabase'de kalanları
+     hatırlatır. İki yerde iki farklı davranış olmasın diye metinler de
+     birebir aynı. */
+  if (e === 'template-sil') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    if ((pr.palet || {}).kilitli) {
+      toast('Bu template kilitli — önce yanındaki kilit simgesinden aç.', 'uyari');
+      return;
+    }
+    const ok = await onaySor({
+      baslik: 'Bu template silinsin mi?',
+      mesaj: `"${projeAdi(pr)}" ve içindeki her şey kalıcı olarak silinecek. Bu işlem geri alınamaz.`,
+      buton: 'Kalıcı olarak sil',
+    });
+    if (!ok) return;
+    /* Depo adresi silinmeden önce alınıyor: sonrasında proje kaydı yok. */
+    const slug = depoSlug(pr.repo);
+    const ad   = projeAdi(pr);
+    await isYap(() => DB.projeSil(pr.id), 'Template silindi.');
+    return disaridaKalanlar(ad, slug);
   }
 
   if (e === 'sablon-sil') {

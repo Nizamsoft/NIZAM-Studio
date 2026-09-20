@@ -5912,6 +5912,13 @@ button.fb-cp:active{ transform:scale(.94); }
 .ak-kop:active{ transform:scale(.9); }
 .ak-kop.oldu{ color:var(--st-done-t); border-color:rgba(69,163,123,.4); }
 
+/* Yıkıcı eylem · satır içindeki çöp düğmesi. Kırmızı yalnız üstüne
+   gelince doluyor: liste sakin dursun, düğme dikkat çekmesin ama
+   dokunulduğunda ne olacağı belli olsun. */
+.ak-kop.tehlike{ color:var(--ink-dim); }
+.ak-kop.tehlike:hover{ color:var(--red-ink); background:var(--red-soft);
+  border-color:var(--red-ink); }
+
 /* Pencerede kartın kendi gölgesi fazla: içerik zaten kutunun içinde. */
 .modal-kutu .fb-kart{ margin-bottom:12px; box-shadow:inset 0 1px 0 var(--isik); }
 .modal-kutu .sayfa-dug{ margin:0; }

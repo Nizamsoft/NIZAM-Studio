@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.141.0
+- **Templateler listesine silme düğmesi eklendi.** Silme aslında vardı ama template kurulum panelinin içine gömülüydü; listeden görünmediği için "silme özelliği yok" gibi duruyordu. Artık Ayarlar → Templateler'de her satırın sağında çöp simgesi var. Kurulum panelindeki silmeyle aynı kuralları uyguluyor: kilitli template silinmez (önce kilit simgesinden açılır), onay ister, silindikten sonra GitHub ve Supabase'de kalanları hatırlatır.
+
 ## v0.140.5
 - **Düzeltme: görünüm denetimi korunan görünümü AÇIK sayıyordu.** Yapısal denetim `security_invoker` ayarını yalnız `'true'` ile karşılaştırıyordu. Postgres mantıksal ayarı yazıldığı gibi saklar: `set (security_invoker = on)` diyen bir göç `'on'` bırakır. Dördü de (on · true · yes · 1) aynı şeydir; denetim artık hepsini kabul ediyor. Bu hata bugüne kadar görünmedi çünkü test edilen programlarda hiç görünüm yoktu — görünümü olan ilk programda çıktı ve iki korumalı görünümü açık diye raporladı.
 - v0.140.4 yayında kalmadı: düzeltmenin yanına yazdığım açıklama satırı ters tırnak taşıyordu ve JS metnini kesip uygulamayı çökertti. Açıklama SQL yorumuna çevrildi.
