@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.142.0
+- **Profesyonel tasarım aşamasına yedi yeni yön eklendi** — beşten on ikiye çıktı: Brütalist / Ham, Terminal / Yeşil Ekran, Matbaa / Riso Baskı, Art Deco / Klasik Lüks, Doğal / Elde Çizilmiş, Büyük Punto / Yüksek Kontrast, Aurora / Yumuşak Degrade.
+- Yönler bilerek birbirinden uzak seçildi: biri fotoğrafı tamamen atıyor, biri her şeyi tek aralıklı yazıya çeviriyor, biri iki mürekkeple baskı taklidi yapıyor, biri yalnız okunurluğa bakıyor. "Biraz daha koyu" gibi varyantlar yok — müşteri iki seçenek arasında kalmasın diye.
+- Her promptun somut kuralları var (yazı tipi, kaç renk, gölge var mı, köşe kaç piksel, fotoğraf var mı); ChatGPT'ye yorum bırakan yumuşak tarifler yazılmadı.
+- `TASARIM_YON` listesinin başına yeni yön eklerken uyulacak kural yazıldı.
+
 ## v0.141.0
 - **Templateler listesine silme düğmesi eklendi.** Silme aslında vardı ama template kurulum panelinin içine gömülüydü; listeden görünmediği için "silme özelliği yok" gibi duruyordu. Artık Ayarlar → Templateler'de her satırın sağında çöp simgesi var. Kurulum panelindeki silmeyle aynı kuralları uyguluyor: kilitli template silinmez (önce kilit simgesinden açılır), onay ister, silindikten sonra GitHub ve Supabase'de kalanları hatırlatır.
 

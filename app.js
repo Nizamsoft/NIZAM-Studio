@@ -5658,7 +5658,7 @@ function projeDuraklari(p) {
         ? 'Tamamlandı.'
         : pl0.secilenYon
           ? 'Yön seçildi — uygulanınca tamamlandı diye işaretle.'
-          : '5 yönü ChatGPT\'ye ver ya da müşterinin kendi görselini yükle, seçsin.',
+          : 'Yönleri ChatGPT\'ye ver ya da müşterinin kendi görselini yükle, seçsin.',
     },
     {
       ad: 'Yetkilendirme',
