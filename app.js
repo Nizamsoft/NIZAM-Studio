@@ -930,20 +930,6 @@ const VIEWS = {
     </div>
 
     <div class="section">
-      <span class="label">Yol Haritası</span>
-      <div class="card">
-        <div class="row-list">
-          ${stepRow('Adım 0', 'İskelet, tema, açılış, menü', true)}
-          ${stepRow('Adım 1', 'Supabase kurulumu ve giriş', true)}
-          ${stepRow('Adım 2', 'Projeler, modül ve sayfa ağacı', true)}
-          ${stepRow('Adım 3', 'Görevler, durumlar, atama', true)}
-          ${stepRow('Adım 4', 'Prompt motoru ve kimlik dosyası', true)}
-          ${stepRow('Adım 5', 'GitHub okuma ve sürüm notları', false)}
-        </div>
-      </div>
-    </div>
-
-    <div class="section">
       <span class="label">Bakım</span>
       <div class="card">
         <div class="row-list">
@@ -6432,13 +6418,6 @@ function connRow(k, v, ok) {
   return `<div class="row">
     <div class="row-main"><span class="row-title">${k}</span></div>
     <span class="pill ${ok ? 'done' : ''}">${v}</span>
-  </div>`;
-}
-
-function stepRow(step, text, done) {
-  return `<div class="row">
-    <div class="row-main"><span class="row-title">${step}</span><span class="row-sub">${text}</span></div>
-    <span class="pill ${done ? 'done' : ''}">${done ? 'Tamamlandı' : 'Bekliyor'}</span>
   </div>`;
 }
 

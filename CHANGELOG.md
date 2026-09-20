@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.147.1
+- **Ayarlardaki "Yol Haritası" bölümü kaldırıldı.** Studio'nun kendi geliştirme adımlarını gösteren sabit bir listeydi; kimse kullanmıyordu ve elle güncellenmediği için zaten geride kalmıştı. Ayarlar sayfası bir bölüm kısaldı.
+
 ## v0.147.0
 - **Tasarım promptları artık projeyi tanıyor.** Prompt, ChatGPT'ye firmanın adını, sektörünü, ürününü, çalıştığı yeri ve marka rengini yazıyor; "ekteki ekranı oku, markaya ve içeriğe sadık kal" diye başlıyor.
 - **"Başka sektörün uygulaması" sorunu kapatıldı.** Bir yazılım firmasının paneli, pastel yön seçilince saksı çiçekli bir sağlık uygulamasına dönüşüyordu. Artık promptta üç sert kural var: içerik birebir aynı (yeni kart, sayı, slogan uydurulmaz; boş durumlar korunur), marka aynı (çakışmada marka rengi kazanır), işin kimliği aynı (alakasız dekor konmaz). Yön metinlerindeki benzetmelerin (dergi, film, gazete) sadece görsel dil için olduğu da ayrıca söyleniyor.
