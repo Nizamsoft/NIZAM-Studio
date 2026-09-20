@@ -1,5 +1,12 @@
 # Değişiklik Günlüğü
 
+## v0.146.0
+- **Yedi tasarım yönü değişti.** Beğenilen beşi (Editoryal, İsviçre Usulü, Yumuşak/Oyunbaz, Kurumsal Panel, Aurora) metnine dokunulmadan kaldı; Camsı, Brütalist, Terminal, Riso, Art Deco, Organik ve Büyük Punto çıkarıldı.
+- Yerlerine gelen yeni yönler: **Bento/Mozaik Izgara**, **Gece/Koyu Lüks**, **Sakin/Serin Pastel**, **Toprak/Sıcak Nötr**, **Veri Gazetesi**, **Canlı Blok** ve **Sinema/Geniş Perde**. Hepsi ayrı bir palete, yazı tipine, köşe ve gölge kuralına sahip — yan yana konduğunda karışmıyorlar.
+- Her yeni yönün de iki promptu var (yerleşim aynı / yerleşim de yeni) ve ikisi de yalnız eklediğin ekranı çiziyor.
+- Örnek ekranların on ikisi de gerçekten çizdirilip kontrol edildi; okunmayan renk bırakılmadı.
+- Daha önce kaldırılmış bir yön seçilmişse "Sıradaki adım" kartı boş isimle çıkmıyor, yeniden seçtiren bir uyarı gösteriyor.
+
 ## v0.145.1
 - **Prompt artık yalnız eklediğin ekranı tasarlıyor.** Mobil ekran görüntüsü verdiysen yalnız mobil, masaüstü verdiysen yalnız masaüstü çiziyor; ikisini birden verirsen ikisini ayrı ayrı. Eskiden her promptun sonunda "hem mobil hem masaüstü çiz" yazıyordu ve tek ekran gönderilse bile ikincisini uyduruyordu.
 - Kural 24 promptun (12 yön × 2 kip) hepsinde aynı; yönlerin görsel dili ve yerleşim tarifleri birebir korundu.

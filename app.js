@@ -1787,7 +1787,19 @@ function tasarimSayfasi(p, d) {
         'Dönen görselleri buraya yükle, müşteriye göster, seçtiğini işaretle.')
     + `<div class="ty-izgara">${TASARIM_YON.map(y => tasarimYonKarti(p, pl, y)).join('')
         + serbestTasarimKarti(p, pl)}</div>`
-    + (pl.secilenYon ? `
+    /* Eskiden seçilmiş bir yön listeden kaldırılmış olabilir (yön listesi
+       zaman zaman yenileniyor). O zaman "Sıradaki adım" kartı boş isimle
+       çıkmasın — müşteriye yeniden seçtirelim. */
+    + (pl.secilenYon && !serbest && !TASARIM_YON.some(y => y.anahtar === pl.secilenYon) ? `
+      <div class="fb-kart" style="--kr:var(--metal-2)">
+        <div class="fb-ust">
+          <span class="fb-ik">${svg(ICON.gTasarim, 14)}</span>
+          <span class="fb-bas">Seçilen yön artık listede yok</span>
+        </div>
+        <p class="fb-neden">Daha önce seçilen tasarım yönü kaldırıldı. Yukarıdaki
+          yönlerden birini müşteriye yeniden seçtir.</p>
+      </div>` : '')
+    + (pl.secilenYon && (serbest || TASARIM_YON.some(y => y.anahtar === pl.secilenYon)) ? `
       <div class="fb-kart" style="--kr:${serbest ? 'var(--metal-2)' : (TASARIM_YON.find(y => y.anahtar === pl.secilenYon) || {}).renk || 'var(--metal-2)'}">
         <div class="fb-ust">
           <span class="fb-ik">${svg(ICON.gTasarim, 14)}</span>
