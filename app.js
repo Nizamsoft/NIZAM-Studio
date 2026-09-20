@@ -1721,10 +1721,19 @@ function tasarimYonKarti(p, pl, yon) {
       ${GORSEL_YUKLENIYOR[p.id] && GORSEL_YUKLENIYOR[p.id].no === 'Y_' + yon.anahtar
         ? gorselYuklemeKatmani(p.id) : ''}
     </div>
+    <p class="ty-ipucu">İki prompt: biri ekteki yerleşimi bozmadan yalnız
+      görünüşü değiştirir, diğeri sayfayı bir web sitesi gibi baştan kurar.</p>
     <div class="ty-dug">
-      <button class="sayfa-dug ikincil" type="button" data-eylem="tasarim-yon-kopyala"
-              data-proje="${p.id}" data-alan="${yon.anahtar}">
-        ${svg(ICON.kopya, 15)} Promptu kopyala</button>
+      <div class="ty-cift">
+        <button class="sayfa-dug ikincil" type="button" data-eylem="tasarim-yon-kopyala"
+                data-proje="${p.id}" data-alan="${yon.anahtar}" data-kip="ayni"
+                title="Ekrandaki yerleşim aynı kalır, yalnız görünüş değişir">
+          ${svg(ICON.kopya, 15)} Yerleşim aynı</button>
+        <button class="sayfa-dug ikincil" type="button" data-eylem="tasarim-yon-kopyala"
+                data-proje="${p.id}" data-alan="${yon.anahtar}" data-kip="yeniden"
+                title="Yerleşim de sıfırdan kurulur — bir web sitesi gibi">
+          ${svg(ICON.kopya, 15)} Yerleşim de yeni</button>
+      </div>
       ${AUTH.yonetici ? `
         <button class="sayfa-dug ikincil" type="button" data-eylem="tasarim-yon-gorsel"
                 data-proje="${p.id}" data-alan="${yon.anahtar}">
@@ -1736,7 +1745,7 @@ function tasarimYonKarti(p, pl, yon) {
     </div>`);
 }
 
-/* 6. seçenek: 5 sabit yön kendi mockup'ını ChatGPT'den üretiyor, bu ise
+/* Son seçenek: 12 sabit yön kendi mockup'ını ChatGPT'den üretiyor, bu ise
    müşterinin ZATEN elinde olan bir referans görseli kullanıyor — ChatGPT'den
    mockup istemeye gerek yok, tek promptla hem tasarım dili çıkarılıp
    uygulanıyor hem eksik görseller için ChatGPT istekleri veriliyor (bkz.
@@ -11969,10 +11978,12 @@ async function eylemCalistir(el) {
   }
 
   if (e === 'tasarim-yon-kopyala') {
-    const metin = PROMPT.tasarimYonu(el.dataset.proje, el.dataset.alan);
+    const kip = el.dataset.kip || 'ayni';
+    const metin = PROMPT.tasarimYonu(el.dataset.proje, el.dataset.alan, kip);
     if (!metin) { toast('Prompt oluşturulamadı.', 'hata'); return; }
     const oldu = await panoyaKopyala(metin);
-    toast(oldu ? 'Prompt panoda — ChatGPT\'ye yapıştır.' : 'Kopyalanamadı.', oldu ? 'basari' : 'hata');
+    const etiket = kip === 'yeniden' ? 'Yerleşimi de değiştiren prompt' : 'Yerleşimi koruyan prompt';
+    toast(oldu ? etiket + ' panoda — ChatGPT\'ye yapıştır.' : 'Kopyalanamadı.', oldu ? 'basari' : 'hata');
     return;
   }
 

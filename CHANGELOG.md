@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.145.0
+- **Her tasarım yönünün artık iki promptu var.** "Yerleşim aynı" ekteki ekranın düzenine hiç dokunmadan yalnız görünüşü değiştiriyor; "Yerleşim de yeni" aynı bilgileri koruyup sayfayı bir web sitesi gibi baştan kuruyor — ızgara, gezinme, sayfa ritmi serbest.
+- Sonradan eklenen yedi yön (Brütalist, Terminal, Riso, Art Deco, Organik, Büyük Punto, Aurora) **web sitesi gözüyle yeniden yazıldı**: tipografi ölçeği, kenarlık ve gölge kuralları, üzerine gelme hâli, bölüm ritmi tek tek tarif ediliyor. İlk beş yönün metni beğenildiği için olduğu gibi kaldı.
+- Her yön için yerleşim tarifi ayrı yazıldı: Terminal bir terminal penceresi, Art Deco simetrik bir pano, Aurora bir SaaS ürün sayfası, Kurumsal katlanabilir ağaç menülü bir panel olarak kuruluyor.
+- Kartta iki düğme yan yana (dar ekranda alt alta), altında hangisinin ne yaptığını söyleyen tek satırlık açıklama. Kopyalayınca bildirim hangi promptun alındığını yazıyor.
+
 ## v0.144.0
 - **Örnek ekrana dokununca büyük hâli açılıyor: masaüstü ve mobil.** İki düğme aynı pencerede görüntüyü değiştiriyor, pencere yeniden açılmıyor — iki yönü karşılaştırmak tek dokunuş.
 - Örnek düzen **Nizam Studio'nun kendi panelinden** alındı: solda menü (Panel, Projeler, Görevler, Şablonlar, Ayarlar), üstte başlık ve avatar, içeride üç sayı kartı ve son görevler listesi. Mobilde aynı içerik alt menüyle.

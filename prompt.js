@@ -1657,16 +1657,21 @@ const PROMPT = {
      Buradan çıkan iki metin de müşteri deposuna değil, bir sohbete gider;
      depo uyarısı yok, kod talimatı yok. */
 
-  /* Profesyonel tasarım — 5 sabit yön promptu. Her biri projenin gerçek
-     ekran görüntüsünü girdi alıp yalnız görsel dili değiştiriyor; içerik,
-     kartlar, menü aynı kalıyor. Metinler TASARIM_YON'da (config.js). */
-  tasarimYonu(projeId, anahtar) {
+  /* Profesyonel tasarım — 12 sabit yön, her yön için iki prompt. İkisi de
+     projenin gerçek ekran görüntüsünü girdi alıyor:
+       kip 'ayni'    → yerleşim korunur, yalnız görsel dil değişir (yon.prompt),
+       kip 'yeniden' → yerleşim de sıfırdan kurulur (yon.promptYeniden).
+     Metinler TASARIM_YON'da (config.js). */
+  tasarimYonu(projeId, anahtar, kip) {
     const p = DB.proje(projeId);
     const yon = TASARIM_YON.find(y => y.anahtar === anahtar);
     if (!p || !yon) return '';
     const firma = p.firma || 'Bu işletme';
     const sektor = p.sektor ? p.sektor + ' sektörüne' : 'işletmenin diline';
-    return yon.prompt.replace(/\{FIRMA\}/g, firma).replace(/\{SEKTOR\}/g, sektor);
+    /* kip: 'ayni' → yerleşim korunur, yalnız görsel dil değişir.
+       kip: 'yeniden' → yerleşim de sıfırdan kurulur. */
+    const metin = (kip === 'yeniden' && yon.promptYeniden) ? yon.promptYeniden : yon.prompt;
+    return metin.replace(/\{FIRMA\}/g, firma).replace(/\{SEKTOR\}/g, sektor);
   },
 
   /* Yön seçildikten sonraki ilk Claude Code promptu. Studio artık işin
@@ -1694,7 +1699,7 @@ const PROMPT = {
 
     s.push('Ekteki görseli incele. **Profesyonel tasarıma geçiş** aşamasındayız —');
     s.push('uygulamayı şimdi tam olarak bu görseldeki gibi görünür hale getireceğiz.');
-    s.push('Müşteriye 5 farklı görsel yön sunuldu, ekteki mockup şu seçilen yöne ait:');
+    s.push('Müşteriye 12 farklı görsel yön sunuldu, ekteki mockup şu seçilen yöne ait:');
     s.push('');
     if (yon) {
       s.push(`**${yon.ad}** — ${yon.ozet}`);
@@ -1746,7 +1751,7 @@ const PROMPT = {
     return s.join('\n');
   },
 
-  /* "Serbest tasarım" — 5 sabit yönün altıncı alternatifi: müşteri kendi
+  /* "Serbest tasarım" — 12 sabit yönün dışındaki alternatif: müşteri kendi
      getirdiği bir referans görsele göre tüm uygulamayı uyarlamak istiyor.
      tasarimVarlikIstek'ten farkı: orada önce bir yön seçilip ChatGPT'den
      mockup isteniyor, burada mockup zaten müşterinin elinde — tek promptla
