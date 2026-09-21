@@ -8121,3 +8121,7 @@ a.asr:active{ transform:scale(.99); }
   font-family: inherit; font-size: 13.5px;
 }
 .kd-tarih.gizli { display: none; }
+
+/* Yazarak onay: kutunun üstündeki açıklamada istenen söz koyu. */
+.yo-alan { margin-top: 4px; }
+.yo-alan > span b { color: var(--ink-strong); font-weight: 700; }

@@ -68,6 +68,23 @@ Deno.serve(async (istek) => {
   }
 
   const id = String(govde.id ?? '').trim();
+  const islem = String(govde.islem ?? '').trim();
+
+  // 3a) Silme isteği --------------------------------------------------
+  //     Kullanıcıyı Supabase'den siler; profil satırı ona bağlı olduğu için
+  //     kendiliğinden gider. Görevler silinmez, yalnız "atanmamış" olur.
+  if (islem === 'sil') {
+    if (!id) return hata('Kişi belirtilmedi.');
+    if (id === oturum.user.id) return hata('Kendi hesabını silemezsin.');
+
+    const { error: silmeHata } = await yonetimDb.auth.admin.deleteUser(id);
+    if (silmeHata) return hata(silmeHata.message || 'Kullanıcı silinemedi.', 500);
+
+    // Profil satırı tetikleyiciyle gitmediyse elle siliyoruz.
+    await yonetimDb.from('profiles').delete().eq('id', id);
+    return yanit({ ok: true });
+  }
+
   const ad = String(govde.ad ?? '').trim();
   const rol = String(govde.rol ?? '').trim();
   const eposta = String(govde.eposta ?? '').trim().toLowerCase();

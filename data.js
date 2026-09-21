@@ -993,6 +993,24 @@ const DB = {
     }
   },
 
+  /* Kullanıcıyı tamamen siler. Görevleri silinmez; yalnız atanmamış olur. */
+  async kullaniciSil(id) {
+    yazmaKontrol();
+    const { data, error } = await AUTH.db.functions.invoke('kullanici-guncelle', {
+      body: { islem: 'sil', id },
+    });
+    if (error) {
+      let mesaj = '';
+      try { mesaj = (await error.context.json()).hata; } catch (_) {}
+      if (!mesaj && /Failed to send|fetch/i.test(error.message || '')) {
+        mesaj = 'kullanici-guncelle fonksiyonu bulunamadı — Supabase → Edge Functions\'dan kur.';
+      }
+      throw new Error(mesaj || error.message || 'Kullanıcı silinemedi.');
+    }
+    if (data && data.hata) throw new Error(data.hata);
+    await this.tazele('kisiler');
+  },
+
   /* Kullanıcı açma sunucuda yapılır: gizli anahtar tarayıcıya konamaz. */
   async kullaniciEkle({ mail, ad, rol, sifre }) {
     yazmaKontrol();

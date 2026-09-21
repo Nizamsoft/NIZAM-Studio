@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.163.0
+- Ekip kartındaki üç nokta artık **menü** açıyor: **Düzenle** ve **Üyeyi sil**.
+- Silme doğrudan olmuyor: **"üyeyi sil"** yazılmadan Sil düğmesi açılmıyor. Kendi hesabını silemezsin.
+- Silinen kişinin görevleri silinmez, atanmamış olarak kalır.
+- **Kurulum:** `kullanici-guncelle` fonksiyonuna silme eklendi — Supabase → Edge Functions'da yeniden deploy et.
+
 ## v0.162.2
 - Kurucu kartında "Kurucu" yazısı simgenin altına alındı; yan yana yazınca karttan taşıyordu.
 

@@ -7155,8 +7155,8 @@ function ekipKarti(k) {
   return `
     <div class="ek2 ${acik ? 'cevrimici' : ''} ${k.aktif ? '' : 'pasif'}"
          data-ara="${esc(ad.toLocaleLowerCase('tr'))}">
-      <button class="ek2-menu" type="button" data-eylem="kisi-duzenle" data-id="${k.id}"
-              aria-label="${esc(ad)} düzenle">
+      <button class="ek2-menu" type="button" data-eylem="kisi-menu" data-id="${k.id}"
+              aria-label="${esc(ad)} seçenekleri">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.7"></circle><circle cx="12" cy="12" r="1.7"></circle><circle cx="12" cy="19" r="1.7"></circle></svg>
       </button>
       <span class="ek2-foto ${k.foto ? 'resimli' : ''}"
@@ -10435,6 +10435,43 @@ function listeSor(baslik, secenekler, yazAd) {
 }
 
 /* Onay kutusu — silme gibi geri alınamaz işler için */
+/* Yazarak onay — geri alınamayan silmelerde. Kullanıcı istenen sözü
+   harfi harfine yazmadan düğme açılmıyor; "yanlışlıkla bastım" olmuyor. */
+function yazarakOnaySor({ baslik, mesaj, kelime, buton = 'Sil' }) {
+  return new Promise(resolve => {
+    modalAc(`
+      <div class="onay">
+        <span class="onay-ikon">${svg(ICON.uyari, 22)}</span>
+        <p class="onay-soru">${esc(baslik)}</p>
+        <p class="onay-alt">${esc(mesaj)}</p>
+      </div>
+      <label class="field yo-alan">
+        <span>Onaylamak için <b>${esc(kelime)}</b> yaz</span>
+        <input type="text" id="yo-metin" placeholder="${esc(kelime)}" autocomplete="off"
+               autocapitalize="off" spellcheck="false">
+      </label>
+      <div class="modal-alt">
+        <button class="btn btn-ghost" data-m="hayir" type="button">Vazgeç</button>
+        <button class="btn btn-tehlike" data-m="evet" type="button" disabled><span>${esc(buton)}</span></button>
+      </div>`, kutu => {
+      const alan = $('#yo-metin', kutu);
+      const dug  = $('[data-m="evet"]', kutu);
+      const uyar = () => alan.value.trim().toLocaleLowerCase('tr') === kelime.toLocaleLowerCase('tr');
+
+      setTimeout(() => alan.focus(), 40);
+      alan.addEventListener('input', () => { dug.disabled = !uyar(); });
+
+      const bitir = v => { modalKapat(); resolve(v); };
+      alan.addEventListener('keydown', e => {
+        if (e.key === 'Enter' && uyar()) { e.preventDefault(); bitir(true); }
+        if (e.key === 'Escape') bitir(false);
+      });
+      $('[data-m="hayir"]', kutu).addEventListener('click', () => bitir(false));
+      dug.addEventListener('click', () => { if (uyar()) bitir(true); });
+    }, 'kucuk');
+  });
+}
+
 function onaySor({ baslik, mesaj, buton = 'Sil' }) {
   return new Promise(resolve => {
     modalAc(`
@@ -12826,6 +12863,31 @@ async function eylemCalistir(el) {
   if (e === 'ekibe') { location.hash = '#/ekip'; return; }
   if (e === 'kullanici-ekle') return kullaniciEkleAc();
   if (e === 'kisi-duzenle')   return kisiDuzenle(id);
+
+  /* Karttaki üç nokta: önce ne yapılacağı soruluyor. */
+  if (e === 'kisi-menu') {
+    const k = DB.kisilerHepsi.find(x => x.id === id);
+    if (!k) return;
+    const ben = AUTH.user && k.id === AUTH.user.id;
+
+    const sec = await secenekSor(k.ad || 'Ekip üyesi', [
+      { anahtar: 'duzenle', ad: 'Düzenle', ikon: ICON.kalem },
+      ben
+        ? { anahtar: 'yok', ad: 'Kendini silemezsin', ikon: ICON.kilit, alt: 'Başka bir yönetici silebilir' }
+        : { anahtar: 'sil', ad: 'Üyeyi sil', ikon: ICON.cop, tehlike: true, alt: 'Geri alınamaz' },
+    ]);
+    if (!sec || sec === 'yok') return;
+    if (sec === 'duzenle') return kisiDuzenle(id);
+
+    const onay = await yazarakOnaySor({
+      baslik: (k.ad || 'Bu üye') + ' silinsin mi?',
+      mesaj: 'Hesabı tamamen silinir ve geri gelmez. Görevleri silinmez, atanmamış olarak kalır.',
+      kelime: 'üyeyi sil',
+    });
+    if (!onay) return;
+
+    return isYap(() => DB.kullaniciSil(id), (k.ad || 'Üye') + ' silindi.');
+  }
 
   if (e === 'foto-degistir') return fotoSec();
 
