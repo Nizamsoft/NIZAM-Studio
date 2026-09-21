@@ -7,7 +7,7 @@ const APP = {
   name:     'NIZAM | Studio',
   short:    'NIZAM Studio',
   owner:    'Nizam Soft',
-  version: 'v0.157.2',
+  version: 'v0.158.0',
   build:    '2026-09-17',
   /* Studio'nun kendi deposu — "bütün programlarda geçerli olsun"
      istekleri buraya gider. */
@@ -928,14 +928,16 @@ const HAREKET_ADI = {
    yan menü ve mobil sekme çubuğu kendiliğinden oluşur.
    ========================================================================== */
 
+/* `alt: true` olanlar yan menüde ayırıcının altındaki sönük grupta durur —
+   her gün girilen yerler değil, ayar ve arşiv niteliğinde ekranlar. */
 const MENU = [
   { id: 'panel',       ad: 'Panel',              ikon: 'ev',     tab: true },
   { id: 'projeler',    ad: 'Projeler',           ikon: 'folder', tab: true,  sayac: 'projeler' },
-  { id: 'gorevler',    ad: 'Bana Atananlar',     ikon: 'check',  tab: true,  sayac: 'gorevler', tabAd: 'Görevler' },
-  /* Standartlar alt çubukta değil — Ayarlar'ın içinden açılıyor. */
-  { id: 'sektorler',   ad: 'Sektörler',          ikon: 'folder', sadeceYonetici: true },
-  { id: 'sablonlar',   ad: 'Modül Şablonları',   ikon: 'katman', sadeceYonetici: true },
-  { id: 'standartlar', ad: 'Nizam Standartları', ikon: 'katman' },
+  { id: 'gorevler',    ad: 'Görevler',           ikon: 'check',  tab: true,  sayac: 'gorevler' },
   { id: 'ekip',        ad: 'Ekip',               ikon: 'kisi', sadeceYonetici: true, tab: true },
-  { id: 'ayarlar',     ad: 'Ayarlar',            ikon: 'ayar' },
+  /* Standartlar alt çubukta değil — Ayarlar'ın içinden açılıyor. */
+  { id: 'sektorler',   ad: 'Sektörler',          ikon: 'folder', sadeceYonetici: true, alt: true },
+  { id: 'sablonlar',   ad: 'Modül Şablonları',   ikon: 'katman', sadeceYonetici: true, alt: true },
+  { id: 'standartlar', ad: 'Nizam Standartları', ikon: 'katman', alt: true },
+  { id: 'ayarlar',     ad: 'Ayarlar',            ikon: 'ayar',   alt: true },
 ];

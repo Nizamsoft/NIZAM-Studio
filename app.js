@@ -383,7 +383,10 @@ const VIEWS = {
       ${panelHero()}
       ${panelSayilar(p)}
       ${panelProjeler(p)}
-      ${panelEkip()}
+      <div class="pz-ikili">
+        ${panelEkip()}
+        ${panelAktivite()}
+      </div>
     `;
   },
 
@@ -6680,12 +6683,33 @@ function egilmeyiBagla() {
 function menuyuCiz() {
   const gorunur = MENU.filter(m => !m.sadeceYonetici || AUTH.yonetici);
 
-  $('#sidebar .nav').innerHTML = gorunur.map(m => `
+  const satir = m => `
     <a class="nav-item" href="#/${m.id}" data-route="${m.id}" draggable="false">
       ${svg(ICON[m.ikon], 18)}
       <span>${esc(m.ad)}</span>
       ${m.sayac ? `<em class="nav-count" data-count="${m.sayac}">0</em>` : ''}
-    </a>`).join('');
+    </a>`;
+
+  /* Yan menü iki grup: üstte her gün girilen ekranlar, ayırıcının altında
+     ayar ve arşiv niteliğinde olanlar. Profil bir ekran değil, üstten açılan
+     hesap paneli — o yüzden bağlantı değil düğme. */
+  $('#sidebar .nav').innerHTML = `
+    <div class="nav-grup">
+      ${gorunur.filter(m => !m.alt).map(satir).join('')}
+      <button class="nav-item" id="nav-profil" type="button">
+        ${svg(ICON.kisi, 18)}<span>Profil</span>
+      </button>
+    </div>
+    <span class="nav-ayrac"></span>
+    <div class="nav-grup sonik">
+      ${gorunur.filter(m => m.alt).map(satir).join('')}
+      <button class="nav-item" id="nav-cikis" type="button">
+        ${svg(ICON.cikis, 18)}<span>Çıkış Yap</span>
+      </button>
+    </div>`;
+
+  $('#nav-profil').addEventListener('click', () => hesapMenusu());
+  $('#nav-cikis').addEventListener('click', () => signOut());
 
   /* Alt çubuk: beş sekme, ortada artı yok. Artı kaldırıldı çünkü onaylanan
      tasarımda yok; yerine "Yeni Proje" Projeler ekranının kendi başlığında
@@ -11977,6 +12001,17 @@ async function eylemCalistir(el) {
 
   if (e === 'gorev-ac')   return gorevKartiAc(id);
 
+  /* Proje şeridini bir kart boyu sağa kaydırır; sona gelince başa döner. */
+  if (e === 'serit-kaydir') {
+    const serit = el.parentElement.querySelector('.pk2-serit');
+    if (!serit) return;
+    const kart = serit.querySelector('.pk2');
+    const adim = kart ? kart.offsetWidth + 11 : 200;
+    const son  = serit.scrollWidth - serit.clientWidth - 4;
+    serit.scrollTo({ left: serit.scrollLeft >= son ? 0 : serit.scrollLeft + adim, behavior: 'smooth' });
+    return;
+  }
+
   if (e === 'gorev-ekle') return yeniGorevAc({
     proje: el.dataset.proje || rota().id,
     modul: el.dataset.modul,
@@ -13641,8 +13676,15 @@ function panelHero() {
         <blockquote class="ph-soz">Fikirleri gerçeğe dönüştüren<br>bir çalışma alanı.</blockquote>
       </div>
       <span class="ph-etek">
-        <i class="ph-tarih">${gunler[d.getDay()]}, ${d.getDate()} ${aylar[d.getMonth()]}, ${p(d.getHours())}:${p(d.getMinutes())}</i>
+        <i class="ph-tarih">${svg(ICON.takvim, 14)}${gunler[d.getDay()]}, ${d.getDate()} ${aylar[d.getMonth()]} ${d.getFullYear()}, ${p(d.getHours())}:${p(d.getMinutes())}</i>
       </span>
+      <!-- Sağ kenardaki dikey söz: yalnız masaüstünde, geniş hero'nun sağ
+           ucu boş kalmasın diye. Altındaki ok Projeler'e götürüyor. -->
+      <span class="ph-sag" aria-hidden="true">
+        <u></u>
+        <i>Daha<br>iyi fikirler<br>daha büyük<br>projeler</i>
+      </span>
+      <a class="ph-ok" href="#/projeler" aria-label="Projeler">${svg(ICON.chevron, 16)}</a>
     </section>`;
 }
 
@@ -13723,6 +13765,7 @@ function panelSayilar(projeler) {
 
   return `<div class="ps-izgara">
     <a class="ps ps-proje" href="#/projeler">
+      <span class="ps-ok" aria-hidden="true">${svg(ICON.chevron, 14)}</span>
       <span class="ps-ikon">${klasorDolu}</span>
       <b class="ps-bas">Devam Eden Proje</b>
       <i class="ps-aciklama">Aktif olarak ilerleyen proje</i>
@@ -13734,6 +13777,7 @@ function panelSayilar(projeler) {
     </a>
     <a class="ps ps-gorev" href="#/gorevler">
       <span class="ps-cizim" aria-hidden="true">${gorevCizimi}</span>
+      <span class="ps-ok" aria-hidden="true">${svg(ICON.chevron, 14)}</span>
       <span class="ps-ikon">${onayDolu}</span>
       <b class="ps-bas">Açık Görev</b>
       <i class="ps-aciklama">Tamamlanmayı bekleyen</i>
@@ -13762,6 +13806,10 @@ function pzProjeKarti(p) {
   return `
     <div class="pk2 ${bitti ? 'bitti' : ''}" data-eylem="proje-ac" data-id="${p.id}"
          role="button" tabindex="0">
+      ${AUTH.yonetici ? `<button class="pk2-menu only-desktop" data-eylem="proje-menu"
+        data-id="${p.id}" type="button" aria-label="Proje menüsü">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.6"></circle><circle cx="12" cy="12" r="1.6"></circle><circle cx="12" cy="19" r="1.6"></circle></svg>
+      </button>` : ''}
       <b class="pk2-ad${uzun}" title="${esc(tam)}">${esc(ad)}</b>
       <span class="pk2-halka">
         ${pzHalka(s.yuzde, 52, 5)}<u>${s.yuzde}%</u>
@@ -13788,7 +13836,11 @@ function panelProjeler(projeler) {
       <b>Aktif Projeler</b><u></u>
       <a class="pz-tum" href="#/projeler">Tüm Projeler ${svg(ICON.chevron, 13)}</a>
     </span>
-    <div class="pk2-serit"><div class="pk2-sira">${sirali.slice(0, 6).map(pzProjeKarti).join('')}</div></div>
+    <div class="pk2-sarma">
+      <div class="pk2-serit"><div class="pk2-sira">${sirali.slice(0, 6).map(pzProjeKarti).join('')}</div></div>
+      <button class="pk2-kaydir only-desktop" data-eylem="serit-kaydir" type="button"
+        aria-label="Sonraki projeler">${svg(ICON.chevron, 16)}</button>
+    </div>
     <a class="pk2-dug" href="#/projeler">Tüm Projeleri Görüntüle ${svg(ICON.chevron, 15)}</a>
   </div>`;
 }
@@ -13832,6 +13884,44 @@ function panelEkip() {
       ${AUTH.yonetici ? `<a class="pz-tum" href="#/ekip">Tüm Ekip ${svg(ICON.chevron, 13)}</a>` : ''}
     </span>
     <div class="ek-liste">${kisiler.slice(0, 5).map(ekipSatiri).join('')}</div>
+  </div>`;
+}
+
+/* ---------- Son Aktiviteler ----------
+   Görev hareketlerinin son beşi. Hepsi gerçek kayıt: kim, ne yaptı, hangi
+   göreve, saat kaçta. Hiç hareket yoksa bölüm hiç çıkmıyor — boş kutu
+   göstermektense yer kaplamasın. */
+const AKTIVITE_IKON = {
+  olusturuldu: 'folder', atandi: 'kisi', baslandi: 'kalem',
+  kontrole: 'saat', revize: 'uyari', onaylandi: 'tik', geri: 'geriAl',
+};
+
+function aktiviteSatiri(h) {
+  const gorev = (DB.gorevler || []).find(g => g.id === h.gorev_id);
+  const ikon  = ICON[AKTIVITE_IKON[h.tip]] || ICON.check;
+  const alt   = h.notu || (gorev && gorev.baslik) || '';
+  const t     = new Date(h.olusturuldu || Date.now());
+  const p     = n => String(n).padStart(2, '0');
+  return `
+    <div class="ak2 ${h.tip === 'revize' ? 'uyari' : ''}">
+      <span class="ak2-ikon">${svg(ikon, 15)}</span>
+      <span class="ak2-orta">
+        <b>${esc(DB.kisiAdi(h.kim) || 'Biri')}</b>
+        <span>${esc(HAREKET_ADI[h.tip] || h.tip)}</span>
+        ${alt ? `<i>${esc(alt)}</i>` : ''}
+      </span>
+      <span class="ak2-saat">${p(t.getHours())}:${p(t.getMinutes())}</span>
+    </div>`;
+}
+
+function panelAktivite() {
+  const hepsi = (DB.hareketler || []).slice()
+    .sort((a, b) => (b.olusturuldu || '').localeCompare(a.olusturuldu || ''))
+    .slice(0, 5);
+  if (!hepsi.length) return '';
+  return `<div class="pz-bolum">
+    <span class="pz-bas"><b>Son Aktiviteler</b><u></u></span>
+    <div class="ak2-liste">${hepsi.map(aktiviteSatiri).join('')}</div>
   </div>`;
 }
 
@@ -14273,6 +14363,11 @@ document.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('click', e => {
     if (e.target.closest('#tab-profil')) { hesapMenusu(); }
   });
+
+  /* Üstteki arama kutusu henüz çalışmıyor: tasarımda yeri hazır, arama
+     özelliği yazılınca burası açılır. Sessiz kalmasın diye haber veriyor. */
+  const ara = $('#ust-ara');
+  if (ara) ara.addEventListener('click', () => toast('Arama yakında gelecek.'));
 
   /* Zil bekleyen işlere götürüyor. */
   const zil = $('#btn-zil');

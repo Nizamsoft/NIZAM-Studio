@@ -1,5 +1,15 @@
 # Değişiklik Günlüğü
 
+## v0.158.0
+**Masaüstü görünümü onaylanan tasarıma geçti.** Mobil düzen değişmedi.
+- **Yan menü siyah.** Üstte marka, altında Panel / Projeler / Görevler / Ekip / Profil; aktif olan kırmızı. Ayırıcının altında sönük grup: Sektörler, Modül Şablonları, Nizam Standartları, Ayarlar, Çıkış Yap. En altta söz kartı ve sürüm.
+- **Üst çubukta arama kutusu** (şimdilik "yakında" diyor, arama özelliği henüz yazılmadı) ve sağda kullanıcı bloğu: avatar, ad, rol, ok.
+- **Hero geniş ekranda** sağ kenarda dikey söz ve Projeler'e giden ok; tarih kendi hapında.
+- **Sayı kartları yatık:** solda karo, ortada başlık/açıklama/sayı, sağda halka veya bitiş tarihi, köşede ok.
+- **Proje kartları tek sırada beşli;** ad solda, yöneticide sağ üstte menü, şeridin ucunda kaydırma düğmesi.
+- **Yeni bölüm — Son Aktiviteler:** görev hareketlerinin son beşi (kim, ne yaptı, hangi görev, saat). Ekip'le yan yana duruyor.
+- Görevler menüde "Bana Atananlar" yerine "Görevler" yazıyor.
+
 ## v0.157.2
 - Panel hero'sundan **"Bugünün odağı"** satırı kaldırıldı; etekte yalnız tarih kaldı.
 

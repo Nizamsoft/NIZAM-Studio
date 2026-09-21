@@ -7258,3 +7258,301 @@ a.asr:active{ transform:scale(.99); }
   @media (display-mode: standalone) { #tabbar { margin-bottom: 0; } }
   html.uygulama #tabbar { margin-bottom: 0; }
 }
+
+/* ==========================================================================
+   17 · MASAÜSTÜ DÜZENİ
+   Onaylanan masaüstü tasarımı: siyah yan menü, üstte arama kutusu ve
+   kullanıcı bloğu, geniş hero, yan yana iki sayı kartı, tek sırada proje
+   kartları, altta Ekip ve Son Aktiviteler yan yana.
+   Mobil düzen bu bölümden etkilenmiyor: değişiklikler 900px üstünde.
+   ========================================================================== */
+
+/* ---- Yan menü: koyu ---- */
+#sidebar {
+  width: 268px; padding: 18px 14px 14px;
+  background: #0f0f11;
+  border-right: 1px solid rgba(255, 255, 255, .07);
+  color: rgba(255, 255, 255, .72);
+}
+
+.brand { display: flex; align-items: center; gap: 11px; padding: 6px 8px 24px; }
+.brand-logo { width: auto; height: 30px; flex-shrink: 0; }
+.brand-name {
+  font-size: 16px; font-weight: 700; letter-spacing: .01em;
+  color: #fff; white-space: nowrap;
+}
+.brand-name span { color: rgba(255, 255, 255, .55); font-weight: 600; }
+
+.nav { display: flex; flex-direction: column; gap: 0; }
+.nav-grup { display: flex; flex-direction: column; gap: 4px; }
+.nav-ayrac {
+  display: block; height: 1px; margin: 16px 10px;
+  background: rgba(255, 255, 255, .09);
+}
+.nav-item {
+  display: flex; align-items: center; gap: 13px; width: 100%;
+  padding: 11px 13px; border-radius: 12px; cursor: pointer;
+  background: none; border: 0; text-align: left;
+  color: rgba(255, 255, 255, .72); font-size: 13.5px; font-weight: 500;
+  box-shadow: none;
+  transition: background .16s ease, color .16s ease;
+}
+.nav-item svg { width: 19px; height: 19px; flex-shrink: 0; }
+.nav-item:hover { background: rgba(255, 255, 255, .06); color: #fff; }
+.nav-item.active {
+  background: var(--red); color: #fff; font-weight: 600; box-shadow: none;
+}
+.nav-item.active:hover { background: var(--red); }
+/* Alt grup daha sönük: her gün girilen yerler değil. */
+.nav-grup.sonik .nav-item { color: rgba(255, 255, 255, .42); font-size: 13px; }
+.nav-grup.sonik .nav-item:hover { color: rgba(255, 255, 255, .8); }
+
+.nav-count {
+  margin-left: auto; font-style: normal; font-size: 11px;
+  color: rgba(255, 255, 255, .4); font-variant-numeric: tabular-nums;
+}
+.nav-item.active .nav-count { color: rgba(255, 255, 255, .8); }
+.nav-item.has-alert .nav-count {
+  background: var(--red); color: #fff; font-weight: 600;
+  border-radius: 999px; padding: 1px 7px; font-size: 10px;
+}
+.nav-item.active.has-alert .nav-count { background: rgba(0, 0, 0, .28); }
+
+/* Menünün dibindeki söz kartı */
+.yan-soz {
+  position: relative; overflow: hidden;
+  margin: 0 2px 10px; padding: 18px 16px 16px;
+  border-radius: 16px; background: #17171a;
+  border: 1px solid rgba(255, 255, 255, .06);
+}
+.yan-soz::before {
+  content: ''; position: absolute; top: -40px; right: -30px;
+  width: 140px; height: 140px; border-radius: 999px;
+  background: radial-gradient(closest-side, rgba(229, 52, 42, .28), rgba(229, 52, 42, 0) 75%);
+}
+.yan-soz p {
+  position: relative; margin: 0; font-family: var(--yazi-baslik);
+  font-style: italic; font-size: 12.5px; line-height: 1.5;
+  color: rgba(255, 255, 255, .74);
+}
+.yan-soz p::before { content: '“'; }
+.yan-soz p::after  { content: '”'; }
+.yan-cizgi {
+  position: relative; display: block; width: 26px; height: 2px;
+  margin: 14px 0 10px; border-radius: 2px; background: var(--red);
+}
+.yan-soz b {
+  position: relative; font-size: 11px; font-weight: 700;
+  letter-spacing: .1em; color: rgba(255, 255, 255, .88);
+}
+.yan-soz b span { color: rgba(255, 255, 255, .45); font-weight: 600; }
+
+.rail-surum {
+  padding: 0 12px; font-size: 9.5px; letter-spacing: .04em;
+  color: rgba(255, 255, 255, .26);
+}
+
+/* ---- Üst çubuk ---- */
+@media (min-width: 901px) {
+  /* Marka yan menüde; üst çubukta ikinci kez görünmesin. */
+  #topbar .logo-kutu, #topbar .marka { display: none; }
+  #topbar { gap: 12px; height: 72px; padding: 0 28px; }
+}
+
+.ust-ara {
+  display: flex; align-items: center; gap: 10px;
+  width: 100%; max-width: 520px; padding: 11px 16px;
+  border-radius: 999px; cursor: pointer; text-align: left;
+  background: var(--surface-2); border: 1px solid var(--line-2);
+  color: var(--ink-dim); font-size: 13px;
+  transition: border-color .16s ease, background .16s ease;
+}
+.ust-ara:hover { border-color: var(--line); background: var(--surface); }
+.ust-ara svg {
+  width: 17px; height: 17px; flex-shrink: 0; fill: none;
+  stroke: currentColor; stroke-width: 1.9; stroke-linecap: round;
+}
+.ust-ara span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Kullanıcı bloğu: avatar, ad + rol, küçük ok. */
+.hesap { padding: 4px 10px 4px 4px; gap: 10px; }
+.hesap-yazi { align-items: flex-start; gap: 0; }
+.hesap .user-name { font-family: inherit; font-size: 13px; font-weight: 600; }
+.hesap .user-role {
+  font-size: 11px; font-weight: 500; letter-spacing: 0;
+  text-transform: none; color: var(--ink-dim);
+}
+.hesap-ok {
+  width: 16px; height: 16px; flex-shrink: 0; fill: none;
+  stroke: var(--ink-dim); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+}
+@media (max-width: 900px) {
+  /* Mobilde yalnız avatar: ad, rol ve ok yer yiyor. */
+  .hesap-yazi, .hesap-ok { display: none; }
+  .hesap { padding: 0; border: 0; background: none; box-shadow: none; }
+}
+
+/* ---- Hero: geniş ekranda sağ sütun ---- */
+.ph-etek i { display: inline-flex; align-items: center; gap: 7px; }
+.ph-etek svg {
+  width: 14px; height: 14px; fill: none; stroke: currentColor;
+  stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round;
+}
+.ph-sag, .ph-ok { display: none; }
+
+@media (min-width: 901px) {
+  .ph-sag {
+    position: absolute; top: 34px; right: 34px; z-index: 2;
+    display: flex; flex-direction: column; align-items: flex-start; gap: 14px;
+  }
+  .ph-sag u { display: block; width: 30px; height: 2px; background: var(--red); }
+  .ph-sag i {
+    font-style: normal; font-size: 11px; font-weight: 600;
+    letter-spacing: .14em; line-height: 1.7; text-transform: uppercase;
+    color: rgba(255, 255, 255, .62);
+  }
+  .ph-ok {
+    position: absolute; right: 34px; bottom: 34px; z-index: 2;
+    display: flex; align-items: center; justify-content: center;
+    width: 36px; height: 36px; border-radius: 999px;
+    background: rgba(255, 255, 255, .08);
+    border: 1px solid rgba(255, 255, 255, .16);
+    color: rgba(255, 255, 255, .85);
+    transition: background .16s ease;
+  }
+  .ph-ok:hover { background: rgba(255, 255, 255, .16); }
+  .ph-ok svg { fill: none; stroke: currentColor; stroke-width: 2; }
+  /* Sağ sütuna yer açmak için "N" biraz sola çekiliyor. */
+  .ph-n { right: 210px; }
+  .ph-etek { justify-content: flex-start; }
+  .ph-tarih {
+    padding: 9px 14px; border-radius: 999px;
+    background: rgba(255, 255, 255, .07);
+    border: 1px solid rgba(255, 255, 255, .1);
+  }
+}
+
+/* ---- Sayı kartları: geniş ekranda yatık ---- */
+.ps-ok { display: none; }
+
+@media (min-width: 901px) {
+  .ps-izgara { grid-template-columns: 1fr 1fr; gap: 16px; }
+  .ps {
+    display: grid; grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-rows: auto auto auto;
+    align-items: center; column-gap: 18px;
+    min-height: 124px; padding: 20px 22px;
+  }
+  .ps-ikon { grid-column: 1; grid-row: 1 / 4; margin: 0; width: 56px; height: 56px; border-radius: 18px; }
+  .ps-ikon svg { width: 24px; height: 24px; }
+  .ps-bas { grid-column: 2; grid-row: 1; font-size: 15px; }
+  .ps-aciklama { grid-column: 2; grid-row: 2; font-size: 11.5px; }
+  .ps-sayi { grid-column: 2; grid-row: 3; margin: 0; padding-top: 6px; font-size: 38px; }
+  /* position: relative kalmalı: içindeki beyaz daire (::before) buna göre
+     yerleşiyor, static olunca kartın tamamını kaplıyordu. Ölçü de SVG'nin
+     kendi boyuyla aynı kalmalı (80px): büyütülünce beyaz daire halkadan
+     kayıyor ve yazı halkanın üstüne biniyordu. */
+  .ps-halka {
+    position: relative; inset: auto; grid-column: 3; grid-row: 1 / 4;
+    /* Sağ boşluk köşedeki okun sütunu: halka kenara dayanınca ok halkanın
+       üstüne biniyordu. */
+    justify-self: end; margin-right: 30px;
+  }
+  .ps-halka-ic b { font-size: 15px; }
+  /* Bitiş tarihi sağda, kendi hapında. */
+  .ps-bitis {
+    position: relative; inset: auto; grid-column: 3; grid-row: 1 / 4;
+    justify-self: end; margin-right: 30px;
+    padding: 10px 14px; border-radius: 14px;
+    background: rgba(255, 255, 255, .62);
+    border: 1px solid rgba(27, 27, 30, .06);
+  }
+  .ps-cizim { right: -6px; bottom: -22px; width: 116px; height: 116px; }
+  /* Köşedeki ok: kartın kendisi zaten bağlantı, bu yalnız işaret. */
+  .ps-ok {
+    position: absolute; top: 16px; right: 16px; z-index: 2;
+    display: flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px; border-radius: 999px; pointer-events: none;
+    background: rgba(255, 255, 255, .72); color: var(--ink-soft);
+  }
+  .ps-ok svg { fill: none; stroke: currentColor; stroke-width: 2.2; }
+  .ps:hover .ps-ok { background: #fff; color: var(--ink-strong); }
+}
+
+/* ---- Proje kartları: geniş ekranda beş sıra, ad solda ---- */
+.pk2-sarma { position: relative; }
+.pk2-menu { display: none; }
+
+@media (min-width: 901px) {
+  .pk2-dug { display: none; }                 /* başlıktaki "Tüm Projeler" yeter */
+  .pk2 {
+    flex: 0 0 calc((100% - 4 * 11px) / 5); min-width: 0;
+    aspect-ratio: auto; height: 150px;
+    align-items: stretch; justify-content: flex-start;
+    padding: 14px 15px; text-align: left;
+  }
+  .pk2-ad, .pk2-ad.uzun {
+    font-family: inherit; font-size: 13.5px; font-weight: 600;
+    text-align: left; line-height: 1.3;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    overflow: hidden; min-height: 0; padding-right: 22px;
+  }
+  .pk2-halka { margin: auto; }
+  .pk2-durum { display: none; }
+  .pk2-menu {
+    position: absolute; top: 10px; right: 8px;
+    display: flex; align-items: center; justify-content: center;
+    width: 26px; height: 26px; border-radius: 8px; cursor: pointer;
+    background: none; border: 0; color: rgba(255, 255, 255, .5);
+    transition: background .16s ease, color .16s ease;
+  }
+  .pk2-menu:hover { background: rgba(255, 255, 255, .1); color: #fff; }
+  .pk2-menu svg { width: 18px; height: 18px; fill: currentColor; stroke: none; }
+  /* Şeridin sağ ucundaki kaydırma düğmesi */
+  .pk2-kaydir {
+    position: absolute; top: 50%; right: -6px; transform: translateY(-50%);
+    display: flex; align-items: center; justify-content: center;
+    width: 34px; height: 34px; border-radius: 999px; cursor: pointer;
+    background: var(--surface); border: 1px solid var(--line-2);
+    color: var(--ink-soft); box-shadow: 0 6px 16px -10px #000;
+    transition: border-color .16s ease, color .16s ease;
+  }
+  .pk2-kaydir:hover { border-color: var(--line); color: var(--ink-strong); }
+  .pk2-kaydir svg { fill: none; stroke: currentColor; stroke-width: 2.2; }
+}
+
+/* ---- Ekip ve Son Aktiviteler yan yana ---- */
+.pz-ikili { display: grid; gap: 18px; }
+@media (min-width: 901px) {
+  .pz-ikili { grid-template-columns: 1fr 1fr; gap: 24px; align-items: start; }
+  .pz-ikili .pz-bolum { margin-bottom: 0; }
+}
+
+.ak2-liste {
+  display: flex; flex-direction: column;
+  background: var(--surface); border: 1px solid var(--line-2); border-radius: 16px;
+  overflow: hidden;
+}
+.ak2 {
+  display: flex; align-items: center; gap: 12px; padding: 13px 14px;
+  border-bottom: 1px solid var(--line-3);
+}
+.ak2:last-child { border-bottom: 0; }
+.ak2-ikon {
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  width: 34px; height: 34px; border-radius: 11px;
+  background: #2a2a2f; color: #fff;
+}
+.ak2.uyari .ak2-ikon { background: var(--red); }
+.ak2-ikon svg { fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+.ak2-orta { min-width: 0; flex: 1; }
+.ak2-orta b { font-size: 13px; font-weight: 700; color: var(--ink-strong); }
+.ak2-orta span { font-size: 13px; color: var(--ink-soft); }
+.ak2-orta i {
+  display: block; margin-top: 2px; font-style: normal; font-size: 11.5px;
+  color: var(--ink-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.ak2-saat {
+  flex-shrink: 0; font-size: 12px; color: var(--ink-dim);
+  font-variant-numeric: tabular-nums;
+}
