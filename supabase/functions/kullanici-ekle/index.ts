@@ -94,9 +94,18 @@ Deno.serve(async (istek) => {
 
   // 5) Profili tamamla ---------------------------------------------------
   //    Tetikleyici satırı zaten oluşturdu; adı ve rolü burada kesinleştiriyoruz.
-  const { error: profilHata } = await yonetimDb
+  //    E-posta profilde de duruyor: tarayıcı auth tablosunu okuyamıyor,
+  //    ekip ekranı adresi oradan gösteriyor. Sütun yoksa (sql/21 henüz
+  //    çalıştırılmamışsa) onsuz yeniden deniyoruz.
+  let { error: profilHata } = await yonetimDb
     .from('profiles')
-    .upsert({ id: yeni.user.id, ad, rol, aktif: true }, { onConflict: 'id' });
+    .upsert({ id: yeni.user.id, ad, rol, aktif: true, eposta: mail }, { onConflict: 'id' });
+
+  if (profilHata) {
+    ({ error: profilHata } = await yonetimDb
+      .from('profiles')
+      .upsert({ id: yeni.user.id, ad, rol, aktif: true }, { onConflict: 'id' }));
+  }
 
   if (profilHata) return hata('Kullanıcı açıldı ama profili yazılamadı: ' + profilHata.message, 500);
 

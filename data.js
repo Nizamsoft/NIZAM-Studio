@@ -945,6 +945,48 @@ const DB = {
     await this.tazele('kisiler');
   },
 
+  /* Ekip üyesi güncelleme. E-posta ve şifre Supabase'in kullanıcı
+     tablosunda; oraya ancak sunucudaki fonksiyon dokunabiliyor. E-posta ve
+     şifre değişmiyorsa fonksiyona hiç gitmiyoruz — o zaman doğrudan
+     yazmak yetiyor ve fonksiyon kurulmamışsa bile ekran çalışıyor. */
+  async kullaniciGuncelle({ id, ad, rol, aktif, eposta, telefon, sifre, epostaDegisti }) {
+    yazmaKontrol();
+
+    if (!sifre && !epostaDegisti) {
+      const alanlar = { ad };
+      if (rol !== undefined)   alanlar.rol = rol;
+      if (aktif !== undefined) alanlar.aktif = aktif;
+      if (telefon !== undefined) alanlar.telefon = telefon;
+      try {
+        await this.kisiKaydet(id, alanlar);
+        return {};
+      } catch (h) {
+        /* telefon sütunu yoksa onsuz yeniden dene */
+        if (!/telefon/i.test(h.message || '')) throw h;
+        delete alanlar.telefon;
+        await this.kisiKaydet(id, alanlar);
+        return { uyari: 'Telefon yazılamadı — sql/21-ekip-iletisim.sql çalıştırılmamış.' };
+      }
+    }
+
+    const { data, error } = await AUTH.db.functions.invoke('kullanici-guncelle', {
+      body: { id, ad, rol, aktif, eposta, telefon, sifre },
+    });
+
+    if (error) {
+      let mesaj = '';
+      try { mesaj = (await error.context.json()).hata; } catch (_) {}
+      if (!mesaj && /Failed to send|fetch/i.test(error.message || '')) {
+        mesaj = 'kullanici-guncelle fonksiyonu bulunamadı — Supabase → Edge Functions\'dan kur.';
+      }
+      throw new Error(mesaj || error.message || 'Kullanıcı güncellenemedi.');
+    }
+    if (data && data.hata) throw new Error(data.hata);
+
+    await this.tazele('kisiler');
+    return data || {};
+  },
+
   /* Kullanıcı açma sunucuda yapılır: gizli anahtar tarayıcıya konamaz. */
   async kullaniciEkle({ mail, ad, rol, sifre }) {
     yazmaKontrol();

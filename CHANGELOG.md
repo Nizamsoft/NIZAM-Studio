@@ -1,5 +1,18 @@
 # Değişiklik Günlüğü
 
+## v0.161.0
+**Ekip üyesi düzenleme ekranı onaylanan tasarıma geçti.**
+- Fotoğraf, **Ad** ve **Soyad** (tek alan ekranda ikiye bölünüyor, kaydederken birleşiyor), **E-posta**, **Telefon**, **Rol**, **Ekibe katılım tarihi** (değiştirilemez), **Erişim** ve **Şifre**.
+- Şifre alanında göz düğmesi var; boş bırakılırsa şifre değişmez.
+- Kendi satırında rol ve erişim kilitli kalmaya devam ediyor.
+
+**Kurulum gerekiyor (iki adım):**
+1. `sql/21-ekip-iletisim.sql` → Supabase SQL Editor'de çalıştır. Profile `eposta` ve `telefon` alanlarını ekler, mevcut kullanıcıların e-postasını doldurur.
+2. `supabase/functions/kullanici-guncelle/index.ts` → Supabase → Edge Functions → yeni fonksiyon, adı `kullanici-guncelle`. E-posta ve şifre değişikliği bu fonksiyonla yapılıyor (gizli anahtar tarayıcıya konamaz).
+   `kullanici-ekle` de güncellendi (yeni kullanıcının e-postasını profile yazıyor) — onu da yeniden deploy et.
+
+Kurulum yapılmadan da ekran çalışır: ad, rol ve erişim yine kaydedilir, e-posta/şifre değişikliğinde uyarı verir.
+
 ## v0.160.3
 - **"Aktif üye" artık şu an uygulamada olan kişi** demek; çevrimiçi olmayan herkes pasif sayılıyor. Hapların sayısı da, filtresi de buna göre.
 - Biri girip çıkınca Ekip ekranı kendiliğinden tazeleniyor: sayılar ve yeşil kartlar anında doğru.

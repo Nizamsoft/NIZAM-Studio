@@ -11861,41 +11861,78 @@ function kisiDuzenle(id) {
   if (!k) return;
   const ben = AUTH.user && k.id === AUTH.user.id;
 
+  /* Veritabanında tek "ad" alanı var. Ekranda ikiye bölünüyor: son
+     sözcük soyad, kalanı ad. Kaydederken yine birleşiyor. */
+  const parca = String(k.ad || '').trim().split(/\s+/).filter(Boolean);
+  const soyad = parca.length > 1 ? parca.pop() : '';
+  const adi   = parca.join(' ');
+
+  const epostaVar = k.eposta || (ben && AUTH.user ? AUTH.user.email : '') || '';
+  const katilim   = k.olusturuldu ? pjTarih(k.olusturuldu) : '';
+
+  const goz = '<svg viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"></path>'
+    + '<circle cx="12" cy="12" r="3.2"></circle></svg>';
+
   modalHepsiniKapat();
   modalAc(`
-    ${modalBaslik(ICON.kisi, esc(k.ad || 'Kişi'), ben ? 'Kendi rolünü ve erişimini değiştiremezsin.' : 'Ad, rol ve erişim.')}
+    <h3 class="modal-h">Ekip Üyesini Düzenle</h3>
+    <p class="modal-s">Ekip üyesinin bilgilerini güncelle.</p>
 
-    <label class="field">
-      <span>Ad Soyad</span>
-      <input type="text" id="kd-ad" value="${esc(k.ad || '')}" maxlength="60" autocomplete="off">
-    </label>
+    <div class="kd-ust">
+      <span class="kd-foto ${k.foto ? 'resimli' : ''}"
+            ${k.foto ? `style="background-image:url('${esc(k.foto)}')"` : ''}>
+        <b>${esc(basHarf(k.ad || '?'))}</b>
+        ${ben ? `<button class="kd-kamera" data-kd="foto" type="button" aria-label="Fotoğrafı değiştir">
+          ${svg(ICON.resim, 14)}</button>` : ''}
+      </span>
+      <label class="field"><span>Ad</span>
+        <input type="text" id="kd-ad" value="${esc(adi)}" maxlength="40" autocomplete="off"></label>
+      <label class="field"><span>Soyad</span>
+        <input type="text" id="kd-soyad" value="${esc(soyad)}" maxlength="30" autocomplete="off"></label>
+    </div>
 
-    <div class="field">
-      <span>Rol</span>
-      <div class="secenek-serit">
-        <button class="ss ${k.rol === 'gelistirici' ? 'sec' : ''}" data-rol="gelistirici"
-                type="button" ${ben ? 'disabled' : ''}>Geliştirici</button>
-        <button class="ss ${k.rol === 'yonetici' ? 'sec' : ''}" data-rol="yonetici"
-                type="button" ${ben ? 'disabled' : ''}>Yönetici</button>
+    <div class="kd-cift">
+      <label class="field"><span>E-posta</span>
+        <input type="email" id="kd-mail" value="${esc(epostaVar)}" placeholder="ad@firma.com"
+               autocomplete="off" autocapitalize="off" spellcheck="false"></label>
+      <label class="field"><span>Telefon</span>
+        <input type="tel" id="kd-tel" value="${esc(k.telefon || '')}" placeholder="+90 555 123 45 67"
+               autocomplete="off"></label>
+    </div>
+
+    <div class="kd-cift">
+      <div class="field"><span>Rol</span>
+        <div class="secenek-serit">
+          <button class="ss ${k.rol === 'gelistirici' ? 'sec' : ''}" data-rol="gelistirici"
+                  type="button" ${ben ? 'disabled' : ''}>Geliştirici</button>
+          <button class="ss ${k.rol === 'yonetici' ? 'sec' : ''}" data-rol="yonetici"
+                  type="button" ${ben ? 'disabled' : ''}>Yönetici</button>
+        </div>
+      </div>
+      <div class="field"><span>Ekibe katılım</span>
+        <div class="kd-sabit">${svg(ICON.takvim, 15)}${esc(katilim || 'bilinmiyor')}</div>
       </div>
     </div>
 
-    <div class="field">
-      <span>Erişim</span>
+    <div class="field kd-tek"><span>Erişim</span>
       <div class="secenek-serit">
-        <button class="ss ${k.aktif ? 'sec' : ''}" data-aktif="1" type="button" ${ben ? 'disabled' : ''}>Aktif</button>
-        <button class="ss ${k.aktif ? '' : 'sec'}" data-aktif="0" type="button" ${ben ? 'disabled' : ''}>Pasif</button>
+        <button class="ss ${k.aktif ? 'sec' : ''}" data-aktif="1" type="button" ${ben ? 'disabled' : ''}>Açık</button>
+        <button class="ss ${k.aktif ? '' : 'sec'}" data-aktif="0" type="button" ${ben ? 'disabled' : ''}>Kapalı</button>
       </div>
     </div>
 
-    <div class="note note-kucuk">
-      ${svg(ICON.info, 15)}
-      <span>Pasif kullanıcı giriş yapamaz ve hiçbir veriye ulaşamaz. Kaydı silinmez.</span>
-    </div>
+    <label class="field kd-tek"><span>Şifre</span>
+      <span class="kd-sifre">
+        <input type="password" id="kd-sifre" placeholder="••••••••" autocomplete="new-password"
+               autocapitalize="off" spellcheck="false">
+        <button class="kd-goz" data-kd="goz" type="button" aria-label="Şifreyi göster">${goz}</button>
+      </span></label>
+    <p class="kd-ipucu">Boş bırakılırsa şifre değişmez. Erişimi kapalı kullanıcı giriş yapamaz, kaydı silinmez.</p>
 
-    <div class="modal-alt">
-      <button class="btn btn-ghost" data-kd="iptal" type="button">Vazgeç</button>
-      <button class="btn btn-primary" data-kd="kaydet" type="button"><span>Kaydet</span></button>
+    <div class="modal-alt kd-alt">
+      <button class="btn btn-primary kd-guncelle" data-kd="kaydet" type="button">
+        ${svg(ICON.tik, 16)}<span>Güncelle</span></button>
+      <button class="btn btn-ghost" data-kd="iptal" type="button">İptal</button>
     </div>`, kutu => {
     let rol = k.rol, aktif = k.aktif;
 
@@ -11910,23 +11947,42 @@ function kisiDuzenle(id) {
       $$('[data-aktif]', kutu).forEach(x => x.classList.toggle('sec', x === b));
     }));
 
+    const fotoDug = $('[data-kd="foto"]', kutu);
+    if (fotoDug) fotoDug.addEventListener('click', () => { modalKapat(); fotoSec(); });
+
+    $('[data-kd="goz"]', kutu).addEventListener('click', () => {
+      const alan = $('#kd-sifre', kutu);
+      alan.type = alan.type === 'password' ? 'text' : 'password';
+      $('[data-kd="goz"]', kutu).classList.toggle('acik', alan.type === 'text');
+    });
+
     $('[data-kd="iptal"]', kutu).addEventListener('click', modalKapat);
     $('[data-kd="kaydet"]', kutu).addEventListener('click', async () => {
-      const ad = $('#kd-ad', kutu).value.trim();
-      if (ad.length < 2) { toast('Ad soyad yaz.'); return; }
+      const ad = ($('#kd-ad', kutu).value.trim() + ' ' + $('#kd-soyad', kutu).value.trim()).trim();
+      const mail = $('#kd-mail', kutu).value.trim().toLowerCase();
+      const tel = $('#kd-tel', kutu).value.trim();
+      const sifre = $('#kd-sifre', kutu).value;
 
-      const alanlar = ben ? { ad } : { ad, rol, aktif };
+      if (ad.length < 2) { toast('Ad yaz.'); return; }
+      if (mail && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(mail)) { toast('Geçerli bir e-posta yaz.'); return; }
+      if (sifre && sifre.length < 8) { toast('Şifre en az 8 karakter olmalı.'); return; }
+
       const yazi = $('[data-kd="kaydet"] span', kutu);
       yazi.textContent = 'Kaydediliyor…';
       try {
-        await DB.kisiKaydet(k.id, alanlar);
+        const sonuc = await DB.kullaniciGuncelle({
+          id: k.id, ad, telefon: tel, eposta: mail, sifre,
+          epostaDegisti: !!mail && mail !== String(epostaVar || '').toLowerCase(),
+          rol: ben ? undefined : rol,
+          aktif: ben ? undefined : aktif,
+        });
         if (ben) await AUTH.profilOku();
         modalKapat();
         kullaniciYaz();
         render();
-        toast('Kaydedildi.', 'basari');
+        toast(sonuc && sonuc.uyari ? sonuc.uyari : 'Kaydedildi.', sonuc && sonuc.uyari ? 'bilgi' : 'basari');
       } catch (h) {
-        yazi.textContent = 'Kaydet';
+        yazi.textContent = 'Güncelle';
         toast(h.message, 'hata');
       }
     });
