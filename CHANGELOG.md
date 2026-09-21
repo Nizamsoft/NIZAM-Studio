@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.163.1
+- Kurucu kartında "Kurucu" yazısı "Proje" ve "Görev" ile aynı hizaya geldi.
+
 ## v0.163.0
 - Ekip kartındaki üç nokta artık **menü** açıyor: **Düzenle** ve **Üyeyi sil**.
 - Silme doğrudan olmuyor: **"üyeyi sil"** yazılmadan Sil düğmesi açılmıyor. Kendi hesabını silemezsin.

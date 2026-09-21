@@ -7933,8 +7933,10 @@ a.asr:active{ transform:scale(.99); }
 }
 .ek2-sayilar > span { flex: 1; min-width: 0; text-align: left; }
 .ek2-sayilar b {
+  /* Sabit yükseklik: kurucuda üst satırda yalnız simge var; yazı olan
+     sütunlarla aynı boyda olmazsa alttaki etiketler kayıyor. */
   display: flex; align-items: center; gap: 4px; white-space: nowrap;
-  font-size: 13px; font-weight: 700; color: var(--ink-strong);
+  height: 19px; font-size: 13px; font-weight: 700; color: var(--ink-strong);
 }
 .ek2-sayilar svg { width: 13px; height: 13px; flex-shrink: 0; opacity: .55; }
 .ek2-sayilar i {
@@ -7999,7 +8001,7 @@ a.asr:active{ transform:scale(.99); }
   .ek2-foto u { width: 14px; height: 14px; }
   .ek2-ad { font-size: 14.5px; }
   .ek2-sayilar { gap: 2px; }
-  .ek2-sayilar b { font-size: 12px; gap: 3px; }
+  .ek2-sayilar b { height: 17px; font-size: 12px; gap: 3px; }
   .ek2-sayilar svg { width: 12px; height: 12px; }
   .ek2-sayilar i { font-size: 10px; }
   .ek2-dug { font-size: 12.5px; padding: 9px; }
