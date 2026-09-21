@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.158.2
+- Masaüstünde "En yakın bitiş" hapı biraz sola alındı; kartın sağ kenarına yapışık durmuyor.
+
 ## v0.158.1
 - **Yeni sürümü uygulama kendi fark ediyor.** Sunucuya bakma işi artık yalnız açılışta değil: uygulamaya geri dönüldüğünde ve on beş dakikada bir de bakıyor.
 - Yeni sürüm görülünce altta bir çubuk çıkıyor ("Yeni sürüm hazır · Yenile"). Sayfa kendiliğinden yenilenmiyor; yarım kalmış bir iş varsa kaybolmasın diye kararı kullanıcı veriyor.
