@@ -7588,3 +7588,233 @@ a.asr:active{ transform:scale(.99); }
 @media (min-width: 901px) {
   #yeni-surum { bottom: 24px; }
 }
+
+/* ==========================================================================
+   18 · PROJELER EKRANI
+   Mobilde satır, masaüstünde üçlü ızgara. İkisi de aynı HTML'i kullanıyor;
+   fark yalnız ızgara yerleşiminde.
+   ========================================================================== */
+
+.pj-tepe {
+  display: flex; align-items: flex-start; gap: 16px;
+  margin-bottom: 18px;
+}
+.pj-tepe-yz { flex: 1; min-width: 0; }
+.pj-tepe h1 {
+  margin: 0; font-family: var(--yazi-baslik); font-size: 30px; font-weight: 700;
+  letter-spacing: -.02em; color: var(--ink-strong);
+}
+.pj-tepe p { margin: 4px 0 0; font-size: 13px; color: var(--ink-dim); }
+.pj-yeni {
+  display: flex; align-items: center; gap: 8px; flex-shrink: 0;
+  padding: 12px 20px; border: 0; border-radius: 12px; cursor: pointer;
+  background: var(--red); color: #fff; font-size: 14px; font-weight: 600;
+}
+.pj-yeni svg { fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; }
+.pj-yeni:active { transform: scale(.98); }
+
+/* ---- İki sekme ---- */
+.pj-sekmeler { display: flex; gap: 12px; margin-bottom: 14px; }
+.pj-sekme {
+  display: flex; align-items: center; gap: 10px;
+  padding: 13px 20px; border-radius: 12px; text-decoration: none;
+  background: var(--surface-2); border: 1px solid transparent;
+  color: var(--ink-soft); font-size: 13.5px; font-weight: 600;
+  transition: background .16s ease, color .16s ease;
+}
+.pj-sekme svg { width: 17px; height: 17px; flex-shrink: 0; }
+.pj-sekme.acik {
+  background: var(--red-soft); border-color: rgba(229, 52, 42, .22); color: var(--red-ink);
+}
+.pj-sekme span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pj-sekme u { text-decoration: none; }
+
+/* ---- Araç satırı ---- */
+.pj-araclar {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+.pj-ara {
+  display: flex; align-items: center; gap: 10px;
+  flex: 1 1 260px; min-width: 0; padding: 0 16px; height: 46px;
+  border-radius: 12px; background: var(--surface-2); border: 1px solid var(--line-2);
+  color: var(--ink-dim);
+}
+.pj-ara:focus-within { border-color: var(--line); }
+.pj-ara svg {
+  width: 17px; height: 17px; flex-shrink: 0; fill: none;
+  stroke: currentColor; stroke-width: 1.9; stroke-linecap: round;
+}
+.pj-ara input {
+  flex: 1; min-width: 0; border: 0; background: none; outline: none;
+  font-size: 13.5px; color: var(--ink-strong); font-family: inherit;
+}
+.pj-ara input::placeholder { color: var(--ink-dim); }
+.pj-ara input::-webkit-search-cancel-button { display: none; }
+
+.pj-arac {
+  display: flex; align-items: center; gap: 8px; flex-shrink: 0;
+  height: 46px; padding: 0 16px; border-radius: 12px; cursor: pointer;
+  background: var(--surface); border: 1px solid var(--line-2);
+  color: var(--ink); font-size: 13px; font-weight: 500;
+}
+.pj-arac:hover { border-color: var(--line); }
+.pj-arac.secili { background: var(--red-soft); border-color: rgba(229, 52, 42, .22); color: var(--red-ink); }
+
+.pj-gorunum {
+  display: flex; flex-shrink: 0; gap: 4px; padding: 4px;
+  border-radius: 12px; background: var(--surface-2); border: 1px solid var(--line-2);
+}
+.pj-gorunum button {
+  display: flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; border: 0; border-radius: 9px; cursor: pointer;
+  background: none; color: var(--ink-dim);
+}
+.pj-gorunum svg { width: 18px; height: 18px; fill: currentColor; stroke: none; }
+.pj-gorunum button.secili { background: var(--red); color: #fff; }
+
+/* ---- Kart ---- */
+.pj-izgara { display: grid; gap: 12px; }
+.pj-izgara.bos .pj-bos-arama { display: block; }
+.pj-bos-arama {
+  display: none; grid-column: 1 / -1; padding: 28px 0;
+  text-align: center; font-size: 13.5px; color: var(--ink-dim);
+}
+.pj.gizli { display: none; }
+
+.pj {
+  position: relative; cursor: pointer;
+  display: grid; align-items: center;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  grid-template-areas:
+    "logo ad       halka ok"
+    "logo aciklama halka ok"
+    "logo ayak     halka ok"
+    "logo etiket   halka ok";
+  column-gap: 14px; row-gap: 3px;
+  padding: 14px 14px 14px 14px;
+  background: var(--surface); border: 1px solid var(--line-2); border-radius: 16px;
+  transition: border-color .16s ease, transform .12s var(--ease);
+}
+.pj:hover  { border-color: var(--line); }
+.pj:active { transform: scale(.995); }
+
+.pj-logo {
+  grid-area: logo; align-self: center;
+  display: flex; align-items: center; justify-content: center;
+  width: 62px; height: 62px; flex-shrink: 0; border-radius: 16px;
+  background: #2a2a2f; background-size: cover; background-position: 50% 50%;
+  color: #fff; font-size: 17px; font-weight: 700;
+}
+.pj-logo.dolu .logo-harf { display: none; }
+
+.pj-ad {
+  grid-area: ad; font-size: 15px; font-weight: 700; color: var(--ink-strong);
+  line-height: 1.25;
+}
+.pj-aciklama {
+  grid-area: aciklama; font-style: normal; font-size: 12.5px; color: var(--ink-dim);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.pj-aciklama.bos { display: none; }
+
+.pj-ayak {
+  grid-area: ayak; display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 4px;
+}
+.pj-ayak span {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 11.5px; color: var(--ink-soft); white-space: nowrap;
+}
+.pj-ayak svg { width: 14px; height: 14px; flex-shrink: 0; opacity: .7; }
+
+.pj-etiketler { grid-area: etiket; display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.pj-etiketler em {
+  font-style: normal; padding: 4px 10px; border-radius: 999px;
+  background: var(--surface-2); color: var(--ink-soft);
+  font-size: 11px; font-weight: 600;
+}
+
+.pj-halka {
+  grid-area: halka; position: relative; align-self: center;
+  display: flex; align-items: center; justify-content: center;
+  width: 58px; height: 58px; flex-shrink: 0;
+  --hlk-bos: var(--line-2); --hlk-dolu: var(--red);
+}
+.pj-halka u {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  text-decoration: none; font-size: 12px; font-weight: 700; color: var(--ink-strong);
+}
+.pj.bitti .pj-halka { --hlk-dolu: var(--red); }
+
+.pj-ok { grid-area: ok; color: var(--ink-dim); display: flex; align-items: center; }
+.pj-ok svg { fill: none; stroke: currentColor; stroke-width: 2.2; }
+
+.pj-menu {
+  position: absolute; top: 8px; right: 8px; z-index: 2;
+  display: flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; border: 0; border-radius: 9px; cursor: pointer;
+  background: none; color: var(--ink-dim);
+}
+.pj-menu:hover { background: var(--surface-2); color: var(--ink-strong); }
+.pj-menu svg { width: 18px; height: 18px; fill: currentColor; stroke: none; }
+
+@media (max-width: 900px) {
+  .pj-tepe h1 { font-size: 26px; }
+  .pj-sekmeler { gap: 8px; }
+  .pj-sekme { flex: 1; min-width: 0; padding: 12px 14px; font-size: 12.5px; gap: 7px; }
+  .pj-sekme u { display: none; }
+  /* Arama kendi satırında, üç düğme altında yan yana: dar ekranda
+     düzensiz sarma oluyordu. */
+  .pj-ara { flex: 1 1 100%; }
+  .pj-araclar .pj-arac span { display: none; }
+  .pj-araclar .pj-arac { padding: 0 14px; }
+  .pj-araclar .pj-gorunum { margin-left: auto; }
+  /* Logo adın hizasında dursun, satırın ortasında değil. */
+  .pj-logo { align-self: start; }
+  .pj { padding: 14px 12px; column-gap: 11px; }
+  .pj-etiketler em { padding: 3px 9px; font-size: 10.5px; }
+}
+
+/* ---- Masaüstü: üçlü ızgara, dikey kart ---- */
+@media (min-width: 901px) {
+  .pj-izgara { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+  .pj {
+    align-items: start;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      "logo .        halka"
+      "ad   ad       ad"
+      "aciklama aciklama aciklama"
+      "etiket etiket  ok"
+      "ayak ayak     ayak";
+    row-gap: 0; padding: 18px;
+  }
+  .pj-logo { width: 74px; height: 74px; border-radius: 18px; font-size: 20px; }
+  .pj-halka { justify-self: end; margin-top: 8px; }
+  .pj-ad { margin-top: 14px; font-size: 16px; }
+  .pj-aciklama { margin-top: 3px; }
+  .pj-etiketler { margin-top: 10px; align-self: center; }
+  .pj-ok { align-self: center; justify-self: end; }
+  .pj-ayak {
+    margin-top: 14px; padding-top: 12px; gap: 4px 16px;
+    border-top: 1px solid var(--line-3);
+  }
+
+  /* Liste görünümü: masaüstünde de tek sütun, mobildeki satır düzeni. */
+  .pj-izgara.duz { grid-template-columns: 1fr; gap: 10px; }
+  .pj-izgara.duz .pj {
+    align-items: center;
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    grid-template-areas:
+      "logo ad       halka ok"
+      "logo aciklama halka ok"
+      "logo ayak     halka ok"
+      "logo etiket   halka ok";
+    row-gap: 3px; padding: 14px 18px;
+  }
+  .pj-izgara.duz .pj-logo { width: 62px; height: 62px; border-radius: 16px; font-size: 17px; }
+  .pj-izgara.duz .pj-ad { margin-top: 0; }
+  .pj-izgara.duz .pj-halka { margin-top: 0; }
+  .pj-izgara.duz .pj-etiketler { margin-top: 6px; }
+  .pj-izgara.duz .pj-ayak { margin-top: 4px; padding-top: 0; border-top: 0; }
+}

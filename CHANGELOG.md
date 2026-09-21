@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü
 
+## v0.159.0
+**Projeler ekranı onaylanan tasarıma geçti** — mobilde satır, masaüstünde üçlü ızgara.
+- Eski iki kova kartı gitti; yerine **iki sekme**: Devam Eden Projeler (n) · Tamamlanan Projeler (n). Adresler aynı kaldı (`#/projeler/basmis`, `#/projeler/bitmis`).
+- Kartta: **proje logosu** (yoksa firmanın baş harfi), ad, sektör, platform ve durum etiketi, ilerleme halkası, görev sayısı, o projede görevi olan kişi sayısı, teslim tarihi. Olmayan alanın satırı hiç çıkmıyor.
+- **Arama** çalışıyor: proje adı, firma veya sektör. Yazarken ekran yeniden çizilmiyor, imleç kutuda kalıyor.
+- **Filtrele** (platform ve durum), **Sıralama** (son güncellenen / ada göre / ilerlemeye göre) ve **ızgara–liste** düğmesi çalışıyor. Görünüm tercihi hatırlanıyor.
+- Yöneticide sağ üstte "Yeni Proje", her kartın köşesinde proje menüsü.
+
 ## v0.158.3
 - "En yakın bitiş" hapı masaüstünde biraz daha sola alındı.
 

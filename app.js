@@ -65,6 +65,16 @@ function rota() {
 
 let YUKLENIYOR     = false;
 let GOREV_FILTRE   = '';
+/* Projeler ekranının araçları. Arama DOM üstünde çalışıyor (her harfte
+   ekranı yeniden çizmek yazarken imleci kaçırıyor), diğerleri yeniden
+   çizdiriyor. Görünüm tercihi kalıcı: kullanıcı her girişte seçmesin. */
+let PROJE_ARAMA  = '';
+let PROJE_SUZ    = '';
+let PROJE_SIRA   = 'son';
+let PROJE_GORUNUM = (() => {
+  try { return localStorage.getItem('ns.projeGorunum') || 'izgara'; }
+  catch (e) { return 'izgara'; }
+})();
 let SON_EKRAN      = '';
 const ACIK_STANDART = new Set();
 /* Gruplar akordeon: aynı anda yalnızca biri açık kalır. */
@@ -395,67 +405,15 @@ const VIEWS = {
   projeler: () => {
     if (YUKLENIYOR) return iskeletler(6);
     if (DB.hata)    return hataKutusu(DB.hata);
-
-    const projeler = DB.projeler.filter(p => !cekirdekMi(p));
-    /* Alt çubuktaki artı kaldırıldı; yeni proje kapısı artık burada. */
-    const bas = AUTH.yonetici ? `
-      <div class="pz-bas">
-        <b>Projeler</b><u></u>
-        <button class="pz-tum" type="button" data-eylem="sihirbaz">
-          ${svg(ICON.arti, 14)} Yeni Proje</button>
-      </div>` : '';
-    if (!projeler.length) {
-      return `<div class="card">${empty(ICON.folder, 'Proje listesi boş',
-        'Yeni Proje sihirbazı firma, renk, platform, veritabanı ve modülleri sorar; gerisini kendisi kurar.',
-        AUTH.yonetici ? 'Yeni Proje' : null, 'sihirbaz')}</div>`;
-    }
-
-    /* İki kova. Yüzde elle girilmiyor, görevlerden (ya da final verildiyse
-       doğrudan) hesaplanıyor. */
-    const say = {};
-    Object.keys(PROJE_KOVASI).forEach(k => { say[k] = 0; });
-    projeler.forEach(p => {
-      Object.keys(PROJE_KOVASI).forEach(k => { if (PROJE_KOVASI[k].sec(p)) say[k]++; });
-    });
-
-    /* Sayı sıfırdan sayarak gelmiyor. Kova sayısı bir hareket değil, bir
-       gerçek: ekrana her girişte sıfırdan yukarı tırmanması kullanıcıya
-       "veri henüz yüklenmedi" dedirtiyordu. Değer önbellekten geliyor,
-       ilk karede doğru yazılıyor. */
-    return bas + `<div class="kovalar">${Object.keys(PROJE_KOVASI).map(k => {
-      const kv = PROJE_KOVASI[k];
-      return `
-        <a class="kova ${kv.sinif} ${say[k] ? '' : 'bos'}" href="#/projeler/${k}">
-          <span class="kv-ust">
-            <span class="kv-ikon">${svg(ICON[kv.ikon], 20)}</span>
-            <span class="kv-cv">${svg(ICON.chevron, 13)}</span>
-          </span>
-          <span class="kv-yz">
-            <span class="kv-say">${say[k]}</span>
-            <span class="kv-ad">${esc(kv.ad)}</span>
-          </span>
-        </a>`;
-    }).join('')}</div>`;
+    /* Kovasız adres devam eden projelere düşer. */
+    return projelerEkrani('basmis');
   },
 
-  /* Bir kovanın içi. Proje kartları olduğu gibi duruyor — bu sayfanın
-     kendi düzeni sonraki turda ele alınacak. */
+  /* Aynı ekran, sekmesi seçili hâlde: #/projeler/basmis · #/projeler/bitmis */
   projeKovasi: (k) => {
-    if (YUKLENIYOR) return iskeletler(4);
+    if (YUKLENIYOR) return iskeletler(6);
     if (DB.hata)    return hataKutusu(DB.hata);
-
-    const kv    = PROJE_KOVASI[k];
-    const liste = DB.projeler.filter(p => !cekirdekMi(p) && kv.sec(p));
-
-    if (!liste.length) {
-      return `<div class="card">${empty(ICON[kv.ikon], kv.ad + ' yok',
-        k === 'bitmis'
-          ? 'Final verilen ya da bütün görevleri biten projeler buraya düşer.'
-          : 'Yeni Proje sihirbazı firma, renk, platform, veritabanı ve modülleri sorar.',
-        AUTH.yonetici && k === 'basmis' ? 'Yeni Proje' : null, 'sihirbaz')}</div>`;
-    }
-
-    return `<div class="proje-grid">${liste.map(projeKarti).join('')}</div>`;
+    return projelerEkrani(PROJE_KOVASI[k] ? k : 'basmis');
   },
 
   /* ---------- Proje detayı ---------- */
@@ -6061,6 +6019,197 @@ function projeKarti(p, i = 0) {
     </div>`;
 }
 
+/* ---------- Projeler ekranı ----------
+   Onaylanan tasarım: üstte başlık ve "Yeni Proje", altında iki sekme
+   (devam eden / tamamlanan), sonra arama-filtre-sıralama-görünüm satırı,
+   en altta kartlar.
+
+   Kartta yazan her şey gerçek veriden geliyor: logo yüklenmişse logo,
+   yoksa firmanın baş harfi; ad; sektör; platform ve durum etiketi;
+   görev sayısı; o projede görevi olan kişi sayısı; teslim tarihi. Olmayan
+   alan satırı hiç çıkmıyor — boş yer tutulmuyor. */
+const AY_KISA = ['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara'];
+
+function pjTarih(iso) {
+  if (!iso) return '';
+  const t = new Date(iso);
+  if (isNaN(t)) return '';
+  return `${t.getDate()} ${AY_KISA[t.getMonth()]} ${t.getFullYear()}`;
+}
+
+/* O projede görevi olan kaç ayrı kişi var. */
+function pjKisiSayisi(pid) {
+  const kisiler = new Set();
+  DB.gorevleri({ proje: pid }).forEach(g => { if (g.atanan) kisiler.add(g.atanan); });
+  return kisiler.size;
+}
+
+function pjKarti(p) {
+  const s     = DB.sayim(p.id);
+  const adres = DB.logoAdres[p.id];
+  const kisi  = pjKisiSayisi(p.id);
+  const teslim = pjTarih(p.teslim);
+  const bitti = s.yuzde >= 100 || p.durum === 'tamamlandi';
+
+  const ayak = [
+    `<span>${svg(ICON.check, 14)}${s.gorev} görev</span>`,
+    kisi ? `<span>${svg(ICON.kisi, 14)}${kisi} kişi</span>` : '',
+    teslim ? `<span>${svg(ICON.takvim, 14)}${esc(teslim)}</span>` : '',
+  ].filter(Boolean).join('');
+
+  return `
+    <div class="pj ${bitti ? 'bitti' : ''}" data-eylem="proje-ac" data-id="${p.id}"
+         role="button" tabindex="0" data-ara="${esc((projeAdi(p) + ' ' + (p.sektor || '') + ' ' + (p.firma || '')).toLowerCase())}">
+      <span class="pj-logo ${adres ? 'yukleniyor' : ''}" ${adres ? `data-logo="${esc(adres)}"` : ''}>
+        <b class="logo-harf">${esc(basHarf(p.firma))}</b>
+        ${adres ? '<span class="donen"></span>' : ''}
+      </span>
+      ${AUTH.yonetici ? `<button class="pj-menu" data-eylem="proje-menu" data-id="${p.id}"
+        type="button" aria-label="Proje seçenekleri">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.7"></circle><circle cx="12" cy="12" r="1.7"></circle><circle cx="12" cy="19" r="1.7"></circle></svg>
+      </button>` : ''}
+      <b class="pj-ad">${esc(projeAdi(p))}</b>
+      ${p.sektor ? `<i class="pj-aciklama">${esc(p.sektor)}</i>` : '<i class="pj-aciklama bos"></i>'}
+      <span class="pj-etiketler">
+        <em>${esc(PLATFORM_ADI[p.platform] || p.platform)}</em>
+        <em class="${durumSinif(p.durum)}">${esc(DURUM_ADI[p.durum] || p.durum)}</em>
+      </span>
+      <span class="pj-halka">${pzHalka(s.yuzde, 58, 5)}<u>${s.yuzde}%</u></span>
+      <span class="pj-ok">${svg(ICON.chevron, 16)}</span>
+      <span class="pj-ayak">${ayak}</span>
+    </div>`;
+}
+
+/* Arama yazılırken ekran yeniden çizilmiyor: her harfte çizmek imleci
+   kutudan kaçırıyor. Kartlar yerinde duruyor, uymayanlar gizleniyor. */
+function pjAramaUygula() {
+  const izgara = $('.pj-izgara');
+  if (!izgara) return;
+  let gorunen = 0;
+  $$('.pj', izgara).forEach(k => {
+    const uyar = !PROJE_ARAMA || (k.dataset.ara || '').indexOf(PROJE_ARAMA) >= 0;
+    k.classList.toggle('gizli', !uyar);
+    if (uyar) gorunen++;
+  });
+  izgara.classList.toggle('bos', gorunen === 0);
+}
+
+/* Filtre ve sıralama seçenekleri tek yerde: düğmenin yazısı da buradan. */
+const PJ_SUZGEC = [
+  { anahtar: '',       ad: 'Tümü' },
+  { anahtar: 'p:web',   ad: 'Web' },
+  { anahtar: 'p:mobil', ad: 'Mobil' },
+  { anahtar: 'p:ikisi', ad: 'Web + Mobil' },
+  { anahtar: 'd:yeni',           ad: 'Yeni' },
+  { anahtar: 'd:gelistiriliyor', ad: 'Geliştiriliyor' },
+  { anahtar: 'd:kontrolde',      ad: 'Kontrolde' },
+  { anahtar: 'd:tamamlandi',     ad: 'Tamamlandı' },
+];
+const PJ_SIRA = [
+  { anahtar: 'son',  ad: 'Son güncellenen' },
+  { anahtar: 'ad',   ad: 'Ada göre' },
+  { anahtar: 'yuzde',ad: 'İlerlemeye göre' },
+];
+
+function pjSuzgecAdi() {
+  const s = PJ_SUZGEC.find(x => x.anahtar === PROJE_SUZ);
+  return s && s.anahtar ? s.ad : 'Filtrele';
+}
+
+function pjSiraAdi() {
+  const s = PJ_SIRA.find(x => x.anahtar === PROJE_SIRA);
+  return s ? s.ad : 'Son güncellenen';
+}
+
+function pjSuz(liste) {
+  if (!PROJE_SUZ) return liste;
+  const [tip, deger] = PROJE_SUZ.split(':');
+  return liste.filter(p => tip === 'p' ? p.platform === deger : p.durum === deger);
+}
+
+function pjSirala(liste) {
+  const l = liste.slice();
+  if (PROJE_SIRA === 'ad')    return l.sort((a, b) => projeAdi(a).localeCompare(projeAdi(b), 'tr'));
+  if (PROJE_SIRA === 'yuzde') return l.sort((a, b) => DB.sayim(b.id).yuzde - DB.sayim(a.id).yuzde);
+  return l.sort((a, b) => (pzSonDokunus(b.id) || '').localeCompare(pzSonDokunus(a.id) || ''));
+}
+
+function projelerEkrani(kova) {
+  const hepsi  = DB.projeler.filter(p => !cekirdekMi(p));
+  const sayi   = { basmis: 0, bitmis: 0 };
+  hepsi.forEach(p => { sayi[projeBittiMi(p) ? 'bitmis' : 'basmis']++; });
+
+  const liste = pjSirala(pjSuz(hepsi.filter(p => PROJE_KOVASI[kova].sec(p))));
+
+  const huni = '<svg viewBox="0 0 24 24" style="width:15px;height:15px"><path fill="none" stroke="currentColor"'
+    + ' stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"'
+    + ' d="M4 5h16l-6.2 7.4V20l-3.6-2v-5.6z"></path></svg>';
+  const okIkili = '<svg viewBox="0 0 24 24" style="width:15px;height:15px"><path fill="none" stroke="currentColor"'
+    + ' stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"'
+    + ' d="M7 4v16M7 20l-3-3M17 20V4M17 4l3 3"></path></svg>';
+  const izgaraIkon = '<svg viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="2"></rect>'
+    + '<rect x="13" y="4" width="7" height="7" rx="2"></rect><rect x="4" y="13" width="7" height="7" rx="2"></rect>'
+    + '<rect x="13" y="13" width="7" height="7" rx="2"></rect></svg>';
+  const listeIkon = '<svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="3" rx="1.5"></rect>'
+    + '<rect x="4" y="10.5" width="16" height="3" rx="1.5"></rect><rect x="4" y="16" width="16" height="3" rx="1.5"></rect></svg>';
+
+  /* "Projeler" sözcüğü telefonda gizleniyor: iki sekme tek satıra sığsın,
+     yazı üç noktayla kesilmesin. */
+  const sekme = (k, ikon, ad) => `
+    <a class="pj-sekme ${k === kova ? 'acik' : ''}" href="#/projeler/${k}">
+      ${svg(ICON[ikon], 17)}<span>${ad}<u> Projeler</u> (${sayi[k]})</span>
+    </a>`;
+
+  const govde = liste.length
+    ? `<div class="pj-izgara ${PROJE_GORUNUM === 'liste' ? 'duz' : ''}">${liste.map(pjKarti).join('')}
+         <div class="pj-bos-arama">Aramana uyan proje yok.</div>
+       </div>`
+    : `<div class="card">${empty(ICON[PROJE_KOVASI[kova].ikon],
+        PROJE_SUZ ? 'Bu filtreye uyan proje yok' : PROJE_KOVASI[kova].ad + ' yok',
+        PROJE_SUZ ? 'Filtreyi kaldırıp yeniden bak.'
+          : kova === 'bitmis'
+            ? 'Final verilen ya da bütün görevleri biten projeler buraya düşer.'
+            : 'Yeni Proje sihirbazı firma, renk, platform, veritabanı ve modülleri sorar.',
+        AUTH.yonetici && kova === 'basmis' && !PROJE_SUZ ? 'Yeni Proje' : null, 'sihirbaz')}</div>`;
+
+  return `
+    <div class="pj-tepe">
+      <div class="pj-tepe-yz">
+        <h1>Projeler</h1>
+        <p>Tüm projeleri görüntüle, ilerlemeleri takip et.</p>
+      </div>
+      ${AUTH.yonetici ? `<button class="pj-yeni" type="button" data-eylem="sihirbaz">
+        ${svg(ICON.arti, 16)}<span>Yeni Proje</span></button>` : ''}
+    </div>
+
+    <div class="pj-sekmeler">
+      ${sekme('basmis', 'saat', 'Devam Eden')}
+      ${sekme('bitmis', 'bitti', 'Tamamlanan')}
+    </div>
+
+    <div class="pj-araclar">
+      <label class="pj-ara">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.4"></circle><path d="M15.8 15.8L20.5 20.5"></path></svg>
+        <input id="pj-ara" type="search" autocomplete="off" placeholder="Proje adı, firma veya sektör ile ara…"
+          value="${esc(PROJE_ARAMA)}">
+      </label>
+      <button class="pj-arac ${PROJE_SUZ ? 'secili' : ''}" type="button" data-eylem="proje-suz">
+        ${huni}<span>${esc(pjSuzgecAdi())}</span>
+      </button>
+      <button class="pj-arac" type="button" data-eylem="proje-sirala">
+        ${okIkili}<span>Sıralama: ${esc(pjSiraAdi())}</span>
+      </button>
+      <span class="pj-gorunum">
+        <button type="button" data-eylem="proje-gorunum" data-deger="izgara"
+          class="${PROJE_GORUNUM === 'izgara' ? 'secili' : ''}" aria-label="Izgara">${izgaraIkon}</button>
+        <button type="button" data-eylem="proje-gorunum" data-deger="liste"
+          class="${PROJE_GORUNUM === 'liste' ? 'secili' : ''}" aria-label="Liste">${listeIkon}</button>
+      </span>
+    </div>
+
+    ${govde}`;
+}
+
 /* Ağaç içindeki tek satırlık görev */
 function gorevSatiri(g) {
   return `
@@ -6531,6 +6680,8 @@ function render() {
   $$('[data-route]').forEach(el => el.classList.toggle('active', el.dataset.route === key));
 
   logolariGoster();
+  /* Arama kutusundaki yazı ekran yeniden çizilince de geçerli kalsın. */
+  pjAramaUygula();
   if (kaydirmaYeri) {
     const yeni = $('.dk-govde, .kunye-kaydir, .ozet-kaydir, .palet-kaydir');
     if (yeni) yeni.scrollTop = kaydirmaYeri;
@@ -12001,6 +12152,27 @@ async function eylemCalistir(el) {
 
   if (e === 'gorev-ac')   return gorevKartiAc(id);
 
+  if (e === 'proje-suz') {
+    const sec = await secenekSor('Filtrele', PJ_SUZGEC.map(x =>
+      Object.assign({}, x, { anahtar: x.anahtar || 'tumu' })));
+    if (sec === null) return;
+    PROJE_SUZ = sec === 'tumu' ? '' : sec;
+    return render();
+  }
+
+  if (e === 'proje-sirala') {
+    const sec = await secenekSor('Sıralama', PJ_SIRA);
+    if (!sec) return;
+    PROJE_SIRA = sec;
+    return render();
+  }
+
+  if (e === 'proje-gorunum') {
+    PROJE_GORUNUM = el.dataset.deger;
+    try { localStorage.setItem('ns.projeGorunum', PROJE_GORUNUM); } catch (h) {}
+    return render();
+  }
+
   /* Proje şeridini bir kart boyu sağa kaydırır; sona gelince başa döner. */
   if (e === 'serit-kaydir') {
     const serit = el.parentElement.querySelector('.pk2-serit');
@@ -14362,6 +14534,14 @@ document.addEventListener('DOMContentLoaded', () => {
   /* Profil sekmesi menüde değil, hesap panelini açıyor. */
   document.addEventListener('click', e => {
     if (e.target.closest('#tab-profil')) { hesapMenusu(); }
+  });
+
+  /* Projeler ekranındaki arama. Kutu her çizimde yeniden doğduğu için
+     dinleyici belgeye bağlı. */
+  document.addEventListener('input', e => {
+    if (!e.target.matches('#pj-ara')) return;
+    PROJE_ARAMA = e.target.value.trim().toLocaleLowerCase('tr');
+    pjAramaUygula();
   });
 
   /* Üstteki arama kutusu henüz çalışmıyor: tasarımda yeri hazır, arama
