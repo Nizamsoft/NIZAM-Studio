@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.153.3
+- **Alt çubuk saydam değil.** Buzlu cam koyu temada güzel duruyordu ama beyaz zeminde altından geçen kartlar çubuğun içinden okunuyor, yazılar birbirine karışıyordu. Artık düz beyaz; ayrım ince bir çizgi ve yumuşak gölgeyle yapılıyor.
+
 ## v0.153.2
 - Aktif proje kartlarında durumu "Yeni" olan projede etiket yazılmıyor — her yeni proje zaten yeni, satır bilgi taşımıyordu. Yeri duruyor, kartların hizası bozulmuyor.
 
