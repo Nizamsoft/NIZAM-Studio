@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.162.2
+- Kurucu kartında "Kurucu" yazısı simgenin altına alındı; yan yana yazınca karttan taşıyordu.
+
 ## v0.162.1
 - Ekip düzenleme ekranı derli toplu oldu: **E-posta ile Şifre yan yana**, altında Telefon ile Rol, en altta katılım.
 - **Rol artık açılır kutu.**

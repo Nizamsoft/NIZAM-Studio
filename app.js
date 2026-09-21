@@ -7172,7 +7172,11 @@ function ekipKarti(k) {
       <span class="ek2-sayilar">
         <span><b>${svg(ICON.folder, 14)}${ekipProjeSayisi(k.id)}</b><i>Proje</i></span>
         <span><b>${svg(ICON.check, 14)}${gorev}</b><i>Görev</i></span>
-        <span><b>${svg(ICON.kisi, 14)}${kidem || '—'}</b>${k.kurucu ? '' : '<i>Ekipte</i>'}</span>
+        <span>${k.kurucu
+          /* Kurucuda süre yok: simge üstte, "Kurucu" onun altında — yan yana
+             yazınca kartın dışına taşıyordu. */
+          ? `<b>${svg(ICON.kisi, 14)}</b><i>Kurucu</i>`
+          : `<b>${svg(ICON.kisi, 14)}${kidem || '—'}</b><i>Ekipte</i>`}</span>
       </span>
       <button class="ek2-dug" type="button" data-eylem="mesaj-gonder" data-id="${k.id}">
         ${svg(ICON.mail, 15)}<span>Mesaj Gönder</span>
