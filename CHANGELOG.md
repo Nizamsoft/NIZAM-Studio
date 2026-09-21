@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.155.1
+- Proje kartlarındaki logo filigranı kaldırıldı; kartlar düz siyah. Kare biçim, küçük halka ve sade içerik duruyor.
+
 ## v0.155.0
 - **Proje kartları kare oldu.** Sığması için yüzde halkası küçüldü, "İlerleme" etiketi ve saat kalktı; kartta ad, halka ve durum kaldı.
 - **Arkada firmanın logosu** var: ortada, sönük bir filigran olarak. Logo kendi katmanında duruyor ki opaklığı ayrı ayarlanabilsin — kartın zeminine doğrudan basılınca üstüne konan perde logoyu da yazıyı da birlikte soldurmak zorunda kalıyordu. Yükseklikten sığdırılıyor, yoksa dikey logolar kartın altından taşıyordu.

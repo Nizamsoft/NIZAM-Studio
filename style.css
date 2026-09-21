@@ -6999,19 +6999,6 @@ a.asr:active{ transform:scale(.99); }
   transition: transform .12s var(--ease);
 }
 .pk2:active { transform: scale(.98); }
-/* Logo kartın arkasında filigran. Kendi katmanında duruyor ki opaklığı
-   ayarlanabilsin: kartın zeminine doğrudan basınca üstüne konan perde
-   logoyu da yazıyı da aynı anda soldurmak zorunda kalıyordu.
-   Yükseklikten sığdırılıyor (auto 58%) — genişlikten sığdırınca dikey
-   logolar kartın altından taşıyordu. */
-.pk2.logolu::before {
-  content: ''; position: absolute; inset: 0; z-index: 0; opacity: .16;
-  background-image: var(--logo);
-  background-repeat: no-repeat; background-position: center;
-  background-size: auto 58%;
-}
-/* Ada her kartta iki satırlık yer ayrılıyor; tek satırlık ad üstte
-   kalıyor, uzun ad ikinci satıra iniyor ve kart boyu değişmiyor. */
 .pk2-ad {
   position: relative; z-index: 2;
   display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
