@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.163.2
+- Açılış ve giriş ekranındaki logo kırpıldı: altındaki beyaz "STUDIO" yazısı beyaz zeminde okunmadığı için artık yalnız "N" görünüyor.
+
 ## v0.163.1
 - Kurucu kartında "Kurucu" yazısı "Proje" ve "Görev" ile aynı hizaya geldi.
 

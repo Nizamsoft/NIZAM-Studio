@@ -208,7 +208,11 @@ button { font-family: inherit; color: inherit; }
 .loader-box { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 24px; }
 
 .loader-logo {
-  width: auto; height: clamp(112px, 26vw, 136px);
+  /* Logonun altındaki "STUDIO" yazısı beyaz; beyaz açılış ekranında
+     okunmuyordu. Görsel kırpılıyor, yalnız "N" görünüyor — zaten altında
+     "Nizam Soft" yazıyor. */
+  width: clamp(78px, 19vw, 96px); height: clamp(92px, 22vw, 113px);
+  object-fit: cover; object-position: 50% 16%;
   filter: drop-shadow(0 18px 38px rgba(229,52,42,.22));
   animation: riseIn .75s var(--ease) both, float 5s ease-in-out 1s infinite;
 }
@@ -269,7 +273,10 @@ button { font-family: inherit; color: inherit; }
   animation: riseIn .5s var(--ease) both;
 }
 .login-logo {
-  width: auto; height: 66px; align-self: center;
+  /* Açılış ekranındaki gibi kırpılıyor: beyaz "STUDIO" yazısı beyaz
+     zeminde okunmuyor. */
+  width: 46px; height: 55px; align-self: center;
+  object-fit: cover; object-position: 50% 16%;
   filter: drop-shadow(0 10px 22px rgba(229,52,42,.18));
 }
 .login-card h1 { margin-top: 16px; text-align: center; font-size: 20px; font-weight: 700; }
