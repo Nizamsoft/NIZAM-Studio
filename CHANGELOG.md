@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.153.4
+- **Alt çubuk ekrana yapışık.** Yüzen bir hap değil, ekranın altına oturan bir bant: sağ, sol ve alt kenarlara yapışık, yalnız üst köşeleri yuvarlak. Ana ekran çizgisinin payı artık dış boşlukla değil çubuğun kendi iç boşluğuyla veriliyor — yoksa çubukla ekranın dibi arasında beyaz bir şerit kalıyordu.
+
 ## v0.153.3
 - **Alt çubuk saydam değil.** Buzlu cam koyu temada güzel duruyordu ama beyaz zeminde altından geçen kartlar çubuğun içinden okunuyor, yazılar birbirine karışıyordu. Artık düz beyaz; ayrım ince bir çizgi ve yumuşak gölgeyle yapılıyor.
 

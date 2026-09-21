@@ -7174,3 +7174,21 @@ a.asr:active{ transform:scale(.99); }
     #tabbar { background: var(--surface); }
   }
 }
+
+/* 16 · Alt çubuk ekrana yapışık ------------------------------------------
+   Çubuk yüzen bir hap değil, ekranın altına oturan bir bant: sağ, sol ve
+   alt kenarlara yapışık, yalnız üst köşeleri yuvarlak. Ana ekran
+   çizgisinin payı artık dış boşlukla değil, çubuğun kendi iç boşluğuyla
+   veriliyor — yoksa çubukla ekranın dibi arasında beyaz bir şerit
+   kalıyordu. */
+@media (max-width: 900px) {
+  #tabbar {
+    margin: 0;
+    padding: 6px 6px calc(6px + env(safe-area-inset-bottom, 0px));
+    border-radius: 20px 20px 0 0;
+    box-shadow: 0 -1px 0 var(--line-2), 0 -10px 24px -18px rgba(23, 23, 26, .5);
+  }
+  /* Dış boşluk kalktığı için pay kuralları da sıfırlanıyor. */
+  @media (display-mode: standalone) { #tabbar { margin-bottom: 0; } }
+  html.uygulama #tabbar { margin-bottom: 0; }
+}
