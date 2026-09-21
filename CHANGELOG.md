@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü
 
+## v0.157.0
+- **Sayı kartları yeni tasarımda:** yumuşak renkli zemin (proje kartı pembe, görev kartı gri), sol üstte dolu karo, altında başlık ve tek satırlık açıklama, sol altta iri sayı.
+- Proje kartında sağ altta **ilerleme halkası**; içinde yüzde ve "tamamlandı" yazıyor.
+- Görev kartında sağ altta soluk bir **görev çizimi**, altta **en yakın bitiş tarihi**.
+  - Tarih şimdilik geçici: teslim tarihi olan proje varsa en yakını, yoksa bugünün tarihi görünüyor. Asıl mantık sonra kurulacak.
+- "+2 bu ay" ve "Takipte" yazıları kaldırıldı.
+- İki kartın iri sayısı aynı hizada; geniş ekranda kartlar boydan boya uzamıyor.
+
 ## v0.156.1
 - Sayı kartları tasarımla karşılaştırıldı, üç fark düzeltildi:
   - **Karo simgeleri dolu** oldu (çizgi ikon yerine dolu klasör; onay karosu kırmızı dolu kare, tiki beyaz).

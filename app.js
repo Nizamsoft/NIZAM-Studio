@@ -13708,42 +13708,51 @@ function panelSayilar(projeler) {
   const ortalama = yuzdeler.length
     ? Math.round(yuzdeler.reduce((t, x) => t + x, 0) / yuzdeler.length) : 0;
 
-  const yakin = enYakinTeslim(projeler);
   const aylar = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz',
                  'Ağustos','Eylül','Ekim','Kasım','Aralık'];
-  const tarihYazi = yakin
-    ? `${yakin.t.getDate()} ${aylar[yakin.t.getMonth()]} ${yakin.t.getFullYear()}`
-    : '';
+  /* GEÇİCİ: en yakın bitiş tarihi. Projede teslim tarihi varsa gerçeği
+     yazılıyor; yoksa şimdilik bugünün tarihi görünüyor. Bu satırın asıl
+     mantığı (hangi tarih, neye göre) sonra kurulacak. */
+  const yakin = enYakinTeslim(projeler);
+  const t = yakin ? yakin.t : new Date();
+  const tarihYazi = `${t.getDate()} ${aylar[t.getMonth()]} ${t.getFullYear()}`;
 
-  /* Karo simgeleri burada elle çizildi: ICON'daki çizgi ikonlar tasarımda
-     dolu görünüyor. Onay karosu kırmızı dolu bir kare, tiki beyaz. */
-  const klasorDolu = '<svg viewBox="0 0 24 24" style="width:18px;height:18px">'
-    + '<path fill="currentColor" stroke="none" d="M3 7.5A2.5 2.5 0 0 1 5.5 5h3.2l2 2h8.8A2.5 2.5 0 0 1 22 9.5v8A2.5 2.5 0 0 1 19.5 20h-15A2.5 2.5 0 0 1 2 17.5z"></path></svg>';
-  const onayDolu = '<svg viewBox="0 0 24 24" style="width:18px;height:18px">'
-    + '<rect x="3" y="3" width="18" height="18" rx="5" fill="currentColor" stroke="none"></rect>'
+  const klasorDolu = '<svg viewBox="0 0 24 24" style="width:19px;height:19px">'
+    + '<path fill="#fff" stroke="none" d="M3 7.5A2.5 2.5 0 0 1 5.5 5h3.2l2 2h8.8A2.5 2.5 0 0 1 22 9.5v8A2.5 2.5 0 0 1 19.5 20h-15A2.5 2.5 0 0 1 2 17.5z"></path></svg>';
+  const onayDolu = '<svg viewBox="0 0 24 24" style="width:19px;height:19px">'
+    + '<rect x="3.5" y="3.5" width="17" height="17" rx="4.5" fill="none" stroke="#fff" stroke-width="1.8"></rect>'
     + '<path d="M8 12.3l2.7 2.7L16.3 9.2" fill="none" stroke="#fff" stroke-width="2.2"'
     + ' stroke-linecap="round" stroke-linejoin="round"></path></svg>';
 
+  /* Sağ alttaki soluk çizim: üst üste binmiş üç kart ve bir onay. */
+  const gorevCizimi = '<svg viewBox="0 0 120 120" aria-hidden="true">'
+    + '<rect x="46" y="10" width="62" height="62" rx="16" fill="currentColor" opacity=".30"></rect>'
+    + '<rect x="30" y="30" width="68" height="68" rx="18" fill="currentColor" opacity=".45"></rect>'
+    + '<rect x="40" y="46" width="72" height="72" rx="20" fill="currentColor" opacity=".70"></rect>'
+    + '<path d="M60 84l10 10 20-22" fill="none" stroke="#fff" stroke-width="7"'
+    + ' stroke-linecap="round" stroke-linejoin="round" opacity=".7"></path></svg>';
+
   return `<div class="ps-izgara">
-    <a class="ps" href="#/projeler" title="Halka: devam eden projelerin ortalama ilerlemesi">
-      <span class="ps-leke" aria-hidden="true"></span>
+    <a class="ps ps-proje" href="#/projeler">
       <span class="ps-ikon">${klasorDolu}</span>
-      <span class="ps-yazi"><i>Devam Eden Proje</i><b>${devam.length}</b></span>
+      <b class="ps-bas">Devam Eden Proje</b>
+      <i class="ps-aciklama">Aktif olarak ilerleyen proje</i>
+      <b class="ps-sayi">${devam.length}</b>
       <span class="ps-halka">
-        ${pzHalka(ortalama, 54, 6)}
-        <u>%${ortalama}</u>
+        ${pzHalka(ortalama, 80, 8)}
+        <span class="ps-halka-ic"><b>%${ortalama}</b><i>tamamlandı</i></span>
       </span>
     </a>
-    <a class="ps" href="#/gorevler"${yakin ? ` title="En yakın teslim: ${esc(projeAdi(yakin.p))}"` : ''}>
-      <span class="ps-leke" aria-hidden="true"></span>
-      <span class="ps-sus" aria-hidden="true">${svg(ICON.takvim, 74)}</span>
+    <a class="ps ps-gorev" href="#/gorevler">
+      <span class="ps-cizim" aria-hidden="true">${gorevCizimi}</span>
       <span class="ps-ikon">${onayDolu}</span>
-      <span class="ps-yazi"><i>Açık Görev</i><b>${acik}</b></span>
-      ${yakin ? `
-        <span class="ps-bitis">
-          ${svg(ICON.takvim, 14)}
-          <span><i>En yakın bitiş</i><b>${esc(tarihYazi)}</b></span>
-        </span>` : ''}
+      <b class="ps-bas">Açık Görev</b>
+      <i class="ps-aciklama">Tamamlanmayı bekleyen</i>
+      <b class="ps-sayi">${acik}</b>
+      <span class="ps-bitis">
+        ${svg(ICON.takvim, 14)}
+        <span><i>En yakın bitiş</i><b>${esc(tarihYazi)}</b></span>
+      </span>
     </a>
   </div>`;
 }
