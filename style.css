@@ -6934,15 +6934,11 @@ a.asr:active{ transform:scale(.99); }
 }
 
 /* ---- Sayı şeridi ---- */
-.pz-serit {
-  margin: 0 calc(var(--yan) * -1) 24px; padding: 0 var(--yan);
-  overflow-x: auto; overscroll-behavior-x: contain;
-  scrollbar-width: none; -webkit-overflow-scrolling: touch;
-}
-.pz-serit::-webkit-scrollbar { display: none; }
-.pz-izgara { display: flex; gap: 11px; }
+/* Şerit iki kutuya indi: yatay kaydırmaya gerek kalmadı, ikisi yan yana
+   tam sığıyor ve sayılar daha iri yazılabiliyor. */
+.pz-izgara { display: grid; grid-template-columns: 1fr 1fr; gap: 11px; margin-bottom: 24px; }
 .pz {
-  flex: 0 0 120px; display: flex; flex-direction: column; gap: 9px;
+  display: flex; flex-direction: column; gap: 9px;
   padding: 13px 13px 12px; text-decoration: none;
   background: var(--surface); border: 1px solid var(--line-2);
   border-radius: 14px; color: var(--ink);
@@ -6958,7 +6954,7 @@ a.asr:active{ transform:scale(.99); }
 }
 .pz-cv { display: flex; color: var(--ink-dim); }
 .pz-sayi {
-  font-family: var(--yazi-baslik); font-size: 27px; font-weight: 700;
+  font-family: var(--yazi-baslik); font-size: 32px; font-weight: 700;
   line-height: 1; letter-spacing: -.02em; color: var(--ink-strong);
 }
 .pz-etiket {
@@ -6973,11 +6969,7 @@ a.asr:active{ transform:scale(.99); }
 .pz-ray i { display: block; height: 100%; background: var(--ink-soft); border-radius: 999px; }
 .pz.vurgu .pz-ray i { background: var(--red); }
 
-@media (min-width: 901px) {
-  .pz-serit { margin: 0 0 26px; padding: 0; overflow: visible; }
-  .pz-izgara { display: grid; grid-template-columns: repeat(5, 1fr); }
-  .pz { flex: initial; }
-}
+@media (min-width: 901px) { .pz-izgara { gap: 14px; margin-bottom: 26px; } }
 
 /* ---- Bölüm başlığı ---- */
 .pz-bolum { margin-bottom: 20px; }
@@ -7105,3 +7097,43 @@ a.asr:active{ transform:scale(.99); }
   }
   .tab { position: relative; }
 }
+
+/* ---- Ekip: kim şu an uygulamada ----------------------------------------
+   Çevrimiçi bilgisi canlı kanaldan geliyor ve ANLIK: kanal yalnız şu anı
+   bilir, geçmişi değil. Çevrimdışı satırda yazan saat o kişinin son görev
+   hareketidir; hiç hareketi yoksa yalnız "çevrimdışı" yazar. */
+.ek-sayac { font-size: 12px; color: var(--ink-dim); white-space: nowrap; }
+.ek-liste {
+  display: flex; flex-direction: column;
+  background: var(--surface); border: 1px solid var(--line-2); border-radius: 14px;
+  overflow: hidden;
+}
+.ek {
+  display: flex; align-items: center; gap: 12px;
+  padding: 11px 14px; border-top: 1px solid var(--line-3);
+}
+.ek:first-child { border-top: 0; }
+.ek-av {
+  position: relative; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  width: 38px; height: 38px; border-radius: 999px;
+  background: var(--surface-2); color: var(--metal-2);
+  font-family: var(--yazi-etiket); font-size: 13px; font-weight: 600;
+}
+.ek-av img { width: 100%; height: 100%; border-radius: 999px; object-fit: cover; }
+/* Sağ alt köşedeki nokta: dolu yeşil = şu an bağlı, boş gri = değil. */
+.ek-av u {
+  position: absolute; right: -1px; bottom: -1px;
+  width: 11px; height: 11px; border-radius: 999px;
+  background: var(--line-parlak); border: 2px solid var(--surface);
+}
+.ek.acik .ek-av u { background: var(--st-done); }
+.ek.acik .ek-av { background: var(--ink-strong); color: #fff; }
+.ek-orta { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 1px; }
+.ek-orta b {
+  font-size: 13.5px; font-weight: 600; color: var(--ink-strong);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.ek-orta i { font-style: normal; font-size: 11px; color: var(--ink-dim); }
+.ek-durum { font-size: 11.5px; color: var(--ink-faint); white-space: nowrap; }
+.ek.acik .ek-durum { color: var(--st-done-t); font-weight: 600; }

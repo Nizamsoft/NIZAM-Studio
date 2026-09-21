@@ -1,5 +1,12 @@
 # Değişiklik Günlüğü
 
+## v0.151.0
+- **Panelin içeriğine karar verildi:** hero · iki sayı · aktif projeler · ekip. Sıra bilinçli — önce kim olduğun, sonra ne durumda, sonra neye dokunacaksın, en sonda kim yanında.
+- **Ekip bloğu geldi.** Kim şu an uygulamada olduğunu **canlı** gösteriyor: yeşil nokta ve "şu an aktif". Çevrimiçi olanlar listenin başında.
+- Çevrimiçi bilgisi Supabase'in presence kanalından geliyor; tabloya hiçbir şey yazılmıyor, bağlantı kopunca kişi listeden kendiliğinden düşüyor. Kanal yalnız **şu anı** bilir, o yüzden çevrimdışı satırda yazan saat o kişinin son görev hareketidir; hiç hareketi yoksa yalnız "çevrimdışı" yazar — uydurma saat yok.
+- Biri girip çıkınca yalnız ekip bloğu yeniden çiziliyor, bütün sayfa değil (kaydırma yerinde kalıyor).
+- Sayı şeridi beş kutudan **iki kutuya** indi: Devam Eden Proje ve Açık Görev. İkisi yan yana tam sığdığı için yatay kaydırma kalktı, sayılar irileşti.
+
 ## v0.150.1
 - **Panel onaylanan mockup'a göre yeniden kuruldu.** Hero artık koyu bir pano: sol yarıda kırmızı çizgi, "NIZAM STUDIO" etiketi, selam (ad kırmızı), slogan ve söz; fotoğraf sağ yarıda eriyor, tarih sağ altta takvim simgesiyle.
 - **Sayılar yatay kayan bir şerit** oldu: Aktif Proje, Toplam Görev, Ekip Üyesi, Bu Hafta Biten, Standart. Her kutunun dibinde gerçek bir oranı gösteren ince çubuk var; hangi oran olduğu kutunun üstüne gelince yazıyor.

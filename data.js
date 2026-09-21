@@ -74,10 +74,58 @@ const DB = {
 
   canliDur() {
     clearTimeout(this._tazeleZaman);
+    this.varlikDur();
     if (!this.kanal) return;
     try { AUTH.db.removeChannel(this.kanal); } catch (e) {}
     this.kanal = null;
   },
+
+  /* ---------- Kim şu an uygulamada? ----------
+     Supabase'in "presence" kanalı: herkes bağlanınca kendini yazar,
+     ayrılınca kendiliğinden düşer. Tabloya yazılmıyor — kapanan sekme
+     için temizlik kodu yazmak gerekmiyor, sunucu bağlantı kopunca
+     listeden çıkarıyor.
+
+     Bu yüzden "en son ne zaman aktifti" bilgisi buradan gelmez: kanal
+     yalnız ŞU AN kimin bağlı olduğunu bilir. Çevrimdışı olanın son
+     hareketi görev geçmişinden okunuyor (bkz. app.js · ekipSonHareket).
+
+     Not: presence kanalı tabloların satır güvenliğinden bağımsız çalışır;
+     burada paylaşılan tek şey kişinin adı ve kimliği. */
+  varlik: {},        /* { kisiId: true } */
+  varlikKanal: null,
+
+  varlikBasla(degisince) {
+    if (!AUTH.bagli || this.varlikKanal || !AUTH.user) return;
+    try {
+      const kanal = AUTH.db.channel('studio-varlik', {
+        config: { presence: { key: AUTH.user.id } },
+      });
+      const oku = () => {
+        const durum = kanal.presenceState() || {};
+        this.varlik = {};
+        Object.keys(durum).forEach(id => { this.varlik[id] = true; });
+        if (degisince) degisince();
+      };
+      kanal.on('presence', { event: 'sync' }, oku);
+      kanal.subscribe(async s => {
+        if (s !== 'SUBSCRIBED') return;
+        try { await kanal.track({ ad: AUTH.ad || '', giris: new Date().toISOString() }); } catch (e) {}
+      });
+      this.varlikKanal = kanal;
+    } catch (e) {
+      this.varlikKanal = null;   /* presence yoksa uygulama yine çalışır */
+    }
+  },
+
+  varlikDur() {
+    this.varlik = {};
+    if (!this.varlikKanal) return;
+    try { AUTH.db.removeChannel(this.varlikKanal); } catch (e) {}
+    this.varlikKanal = null;
+  },
+
+  cevrimicimi(kisiId) { return !!this.varlik[kisiId]; },
 
   /* ---------- Yedekleme ----------
      Tek kaynak: aşağıdaki liste. Yeni tablo eklenince buraya bir satır eklenir. */

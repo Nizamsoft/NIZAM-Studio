@@ -370,24 +370,20 @@ const VIEWS = {
     if (YUKLENIYOR) return iskeletler(4);
     if (DB.hata)    return hataKutusu(DB.hata);
 
-    const p  = DB.projeler.filter(x => !cekirdekMi(x));
-    const on = (!DB.yuklendi && DB.panelOnbellek) ? DB.panelOnbellek : null;
+    const p = DB.projeler.filter(x => !cekirdekMi(x));
 
-    const dev  = on ? on.dev  : DB.gorevleri({ durum: 'gelistiriliyor' }).length;
-    const kont = on ? on.kont : DB.gorevleri({ durum: 'kontrolde' }).length;
-    const acik = dev + kont;
-
-    /* Karşılama bloğu (halka + selam) kaldırıldı: zemindeki ofis fotoğrafının
-       kendi logo duvarı hero'yu taşıyor, üstüne selam yazınca ikisi birbirini
-       eziyordu. Üst çubuk zaten kullanıcının adını gösteriyor; halkadaki genel
-       yüzde de özet kartına taşındı. */
-    /* "Bugünkü durum" kartı kaldırıldı: sayılar hem alt çubuğun rozetlerinde
-       hem Görevler ekranında zaten duruyordu, panel de ikinci bir liste
-       taşımak zorunda kalıyordu. Panel yalnızca nereye gidileceğini söylüyor. */
+    /* Panelin dört katmanı, yukarıdan aşağı:
+         hero    · selam ve marka anı,
+         sayılar · devam eden proje ve açık görev,
+         projeler· en son dokunulan üç proje,
+         ekip    · kim şu an uygulamada.
+       Sıra bilinçli: önce "kim olduğun", sonra "ne durumda", sonra
+       "neye dokunacaksın", en sonda "kim yanında". */
     return `
       ${panelHero()}
-      ${panelSayilar(p, acik)}
+      ${panelSayilar(p)}
       ${panelProjeler(p)}
+      ${panelEkip()}
     `;
   },
 
@@ -13591,13 +13587,8 @@ function panelHero() {
 }
 
 /* ---------- Panelin özet sayıları ----------
-   Beş kutu, yatay kayan bir şerit: kaç proje, kaç görev, kaç kişi, bu
-   hafta kaç iş bitti, kaç standart. Her biri bir yere gidiyor — panel
-   "ne oluyor" ve "nereye gidilir" sorularını birlikte cevaplıyor.
-
-   Kutunun dibindeki ince çubuk SÜS DEĞİL, gerçek bir oran; hangi oran
-   olduğu kutunun title'ında yazıyor. Oranı olmayan kutuda çubuk yok —
-   uydurma bir çubuk koymaktansa boş bırakmak dürüst. */
+   İki kutu: kaç proje devam ediyor, kaç iş açık. Dibindeki ince çubuk
+   gerçek bir oran; hangi oran olduğu kutunun title'ında yazıyor. */
 function pzKutu({ ikon, sayi, etiket, adres, oran, aciklama, vurgu }) {
   return `
     <a class="pz ${vurgu ? 'vurgu' : ''}" href="${adres}"${aciklama ? ` title="${esc(aciklama)}"` : ''}>
@@ -13613,65 +13604,102 @@ function pzKutu({ ikon, sayi, etiket, adres, oran, aciklama, vurgu }) {
     </a>`;
 }
 
-function panelSayilar(projeler, acikIs) {
-  const yon = AUTH.yonetici;
+function panelSayilar(projeler) {
   const gorevler = DB.gorevler || [];
-  const bitmis = gorevler.filter(g => g.durum === 'tamamlandi');
+  const bitmis = gorevler.filter(g => g.durum === 'tamamlandi').length;
+  const acik = gorevler.length - bitmis;
 
-  /* Ortalama proje ilerlemesi. */
-  const yuzdeler = projeler.map(p => DB.sayim(p.id).yuzde);
-  const ortalama = yuzdeler.length
-    ? yuzdeler.reduce((t, x) => t + x, 0) / yuzdeler.length : null;
+  const devam = projeler.filter(p => p.durum !== 'tamamlandi');
+  const yuzdeler = devam.map(p => DB.sayim(p.id).yuzde);
+  const ortalama = yuzdeler.length ? yuzdeler.reduce((t, x) => t + x, 0) / yuzdeler.length : null;
 
-  /* Bu hafta biten işler: pazartesiden bugüne. */
-  const simdi = new Date();
-  const haftaBasi = new Date(simdi.getFullYear(), simdi.getMonth(),
-    simdi.getDate() - ((simdi.getDay() + 6) % 7)).toISOString();
-  const buHafta = bitmis.filter(g => (g.guncellendi || '') >= haftaBasi);
-
-  /* Üzerinde açık iş olan kişiler. */
-  const kisiler = DB.kisiler || [];
-  const mesgul = new Set(gorevler.filter(g => g.durum !== 'tamamlandi' && g.atanan)
-    .map(g => g.atanan)).size;
-
-  return `<div class="pz-serit"><div class="pz-izgara">
-    ${pzKutu({ ikon: 'folder', sayi: projeler.length, etiket: 'Aktif Proje',
+  return `<div class="pz-izgara">
+    ${pzKutu({ ikon: 'folder', sayi: devam.length, etiket: 'Devam Eden Proje',
                adres: '#/projeler', oran: ortalama, vurgu: true,
-               aciklama: 'Çubuk: projelerin ortalama ilerlemesi' })}
-    ${pzKutu({ ikon: 'check', sayi: gorevler.length, etiket: 'Toplam Görev',
+               aciklama: 'Çubuk: bu projelerin ortalama ilerlemesi' })}
+    ${pzKutu({ ikon: 'check', sayi: acik, etiket: 'Açık Görev',
                adres: '#/gorevler',
-               oran: gorevler.length ? bitmis.length / gorevler.length * 100 : null,
+               oran: gorevler.length ? bitmis / gorevler.length * 100 : null,
                aciklama: 'Çubuk: biten görevlerin oranı' })}
-    ${pzKutu({ ikon: 'kisi', sayi: kisiler.length, etiket: 'Ekip Üyesi',
-               adres: yon ? '#/ekip' : '#/ayarlar',
-               oran: kisiler.length ? mesgul / kisiler.length * 100 : null,
-               aciklama: 'Çubuk: üzerinde açık iş olan kişilerin oranı' })}
-    ${pzKutu({ ikon: 'saat', sayi: buHafta.length, etiket: 'Bu Hafta Biten',
-               adres: '#/gorevler',
-               oran: bitmis.length ? buHafta.length / bitmis.length * 100 : null,
-               aciklama: 'Çubuk: bu haftanın tüm biten işler içindeki payı' })}
-    ${pzKutu({ ikon: 'katman', sayi: (DB.standartlar || []).length, etiket: 'Standart',
-               adres: '#/standartlar' })}
-  </div></div>`;
+  </div>`;
 }
 
-/* ---------- Aktif projeler listesi ----------
-   Panelde üç satır: en son dokunulan projeler. "Son güncelleme" uydurma
-   bir alan değil, o projenin görevleri içindeki en yeni değişiklik. */
-function pzSonDokunus(pid) {
-  const gorevler = DB.gorevleri({ proje: pid });
+/* ---------- Ekip ----------
+   Kim şu an uygulamada, kim değil. Çevrimiçi bilgisi canlı kanaldan
+   geliyor (bkz. data.js · varlikBasla) ve anlıktır: kanal yalnız şu anı
+   bilir. Çevrimdışı olan için "en son ne yapmıştı" görev geçmişinden
+   okunuyor — o da yoksa satır sessiz kalıyor, uydurma saat yazılmıyor. */
+function ekipSonHareket(kisiId) {
   let enYeni = '';
-  gorevler.forEach(g => { if ((g.guncellendi || '') > enYeni) enYeni = g.guncellendi || ''; });
+  (DB.hareketler || []).forEach(h => {
+    if (h.kim === kisiId && (h.olusturuldu || '') > enYeni) enYeni = h.olusturuldu || '';
+  });
   return enYeni;
 }
 
+function ekipSatiri(k) {
+  const ad = k.ad_soyad || k.ad || 'İsimsiz';
+  const cevrimici = DB.cevrimicimi(k.id);
+  const son = cevrimici ? '' : ekipSonHareket(k.id);
+  return `
+    <div class="ek ${cevrimici ? 'acik' : ''}">
+      <span class="ek-av">${k.foto
+        ? `<img src="${esc(k.foto)}" alt="" loading="lazy">`
+        : esc(basHarf(ad))}<u></u></span>
+      <span class="ek-orta">
+        <b>${esc(ad)}</b>
+        <i>${k.rol === 'yonetici' ? 'Yönetici' : 'Geliştirici'}</i>
+      </span>
+      <span class="ek-durum">${cevrimici
+        ? 'şu an aktif'
+        : (son ? esc(pzZaman(son)) : 'çevrimdışı')}</span>
+    </div>`;
+}
+
+function panelEkip() {
+  const kisiler = (DB.kisiler || []).slice()
+    .sort((a, b) => (DB.cevrimicimi(b.id) ? 1 : 0) - (DB.cevrimicimi(a.id) ? 1 : 0));
+  if (!kisiler.length) return '';
+  const acik = kisiler.filter(k => DB.cevrimicimi(k.id)).length;
+  return `<div class="pz-bolum" id="ekip-blok">
+    <span class="pz-bas">
+      <b>Ekip</b><u></u>
+      <span class="ek-sayac">${acik ? `${acik} kişi aktif` : 'kimse aktif değil'}</span>
+    </span>
+    <div class="ek-liste">${kisiler.slice(0, 6).map(ekipSatiri).join('')}</div>
+  </div>`;
+}
+
+/* Biri girip çıkınca yalnız bu blok yeniden çiziliyor. */
+function ekipBlogunuTazele() {
+  const eski = document.getElementById('ekip-blok');
+  if (!eski) return;
+  const kap = document.createElement('div');
+  kap.innerHTML = panelEkip();
+  const yeni = kap.firstElementChild;
+  if (yeni) eski.replaceWith(yeni);
+}
+
+/* Projeye en son ne zaman dokunuldu — o projenin görevleri içindeki en
+   yeni değişiklik. Ayrı bir "güncellendi" alanı tutmuyoruz; tutulsaydı
+   iki kaynak olur ve biri eskirdi. */
+function pzSonDokunus(pid) {
+  let enYeni = '';
+  DB.gorevleri({ proje: pid }).forEach(g => {
+    if ((g.guncellendi || '') > enYeni) enYeni = g.guncellendi || '';
+  });
+  return enYeni;
+}
+
+/* Tarihi insan diline çevirir: bugün ve dün saatle, öncesi tam tarihle. */
 function pzZaman(iso) {
   if (!iso) return 'henüz hareket yok';
   const d = new Date(iso);
   const p = n => String(n).padStart(2, '0');
   const saat = `${p(d.getHours())}:${p(d.getMinutes())}`;
   const gun = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-  const bugun = new Date(); const b0 = new Date(bugun.getFullYear(), bugun.getMonth(), bugun.getDate());
+  const bugun = new Date();
+  const b0 = new Date(bugun.getFullYear(), bugun.getMonth(), bugun.getDate());
   const fark = Math.round((b0 - gun) / 86400000);
   if (fark === 0) return 'Bugün · ' + saat;
   if (fark === 1) return 'Dün · ' + saat;
@@ -13861,6 +13889,11 @@ async function uygulamayiAc() {
     sayaclariYaz();
     if (!$('.modal-perde') && !$('#sihirbaz') && !$('#program-adim') && !$('#onizleme')) render();
   });
+
+  /* Kim şu an uygulamada — panelin ekip bloğu bunu gösteriyor.
+     Biri girip çıkınca yalnız o blok yeniden çiziliyor; bütün sayfayı
+     tazelemek kaydırmayı başa alıyor ve göz yoruyordu. */
+  DB.varlikBasla(() => ekipBlogunuTazele());
 
   /* Telefon uygulamayı arka planda dondurunca canlı bağlantı kopuyor ve
      aradaki değişiklikler kaçıyor. Geri dönünce sessizce tazele. */
