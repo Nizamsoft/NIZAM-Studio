@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## v0.164.0
+- **Serif yazı kaldırıldı.** Başlıklar da Space Grotesk oldu; uygulamanın her yerinde tek aile kullanılıyor. Serif duruşu profesyonellikten uzaklaştırıyordu.
+- Alıntılar artık eğik değil (Space Grotesk'in gerçek italiği yok, tarayıcı eğerek uyduruyordu).
+- CLAUDE.md'deki tasarım dili buna göre güncellendi: serif kullanılmaz.
+
 ## v0.163.2
 - Açılış ve giriş ekranındaki logo kırpıldı: altındaki beyaz "STUDIO" yazısı beyaz zeminde okunmadığı için artık yalnız "N" görünüyor.
 

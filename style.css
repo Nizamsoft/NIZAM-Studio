@@ -103,7 +103,10 @@
   --yay:            cubic-bezier(.34, 1.42, .48, 1);
 
   /* --- Yazı --- */
-  --yazi-baslik:    "Nizam Serif", Georgia, "Iowan Old Style", "Times New Roman", serif;
+  /* Başlık yazısı artık serif değil: serif profesyonel duruşu bozuyordu.
+     Başlıklar da etiketler gibi Space Grotesk. Değişken adı kalıyor,
+     seksen yerde çağrılıyor. */
+  --yazi-baslik:    "Space Grotesk", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --yazi-etiket:    "Space Grotesk", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --yazi-govde:     ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --yazi-kod:       ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
@@ -6919,7 +6922,7 @@ a.asr:active{ transform:scale(.99); }
   color: rgba(255, 255, 255, .92);
 }
 .ph-soz {
-  margin: 14px 0 0; padding: 0; font-style: italic;
+  margin: 14px 0 0; padding: 0; font-style: normal;
   font-family: var(--yazi-baslik); font-size: 13px; line-height: 1.5;
   color: rgba(255, 255, 255, .58);
 }
@@ -7339,7 +7342,7 @@ a.asr:active{ transform:scale(.99); }
 }
 .yan-soz p {
   position: relative; margin: 0; font-family: var(--yazi-baslik);
-  font-style: italic; font-size: 12.5px; line-height: 1.5;
+  font-style: normal; font-size: 12.5px; line-height: 1.5;
   color: rgba(255, 255, 255, .74);
 }
 .yan-soz p::before { content: '“'; }

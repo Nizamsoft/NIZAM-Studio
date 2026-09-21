@@ -117,9 +117,11 @@ Kurallar:
 - **Köşeler ölçülü:** 8px. Hap biçimi yalnız rozet ve avatar.
 - Fotoğraf sınırlı bir blok olarak kullanılır, sayfanın zemini olarak değil.
 
-Yazı tipleri: başlık **serif** (`--yazi-baslik`, Georgia ailesi) ·
-etiket/sayı **Space Grotesk** (`--yazi-etiket`) · gövde sistem sans ·
-kod monospace.
+Yazı tipleri: **serif kullanılmaz** — denendi, profesyonel duruşu bozuyor.
+Başlık ve etiket **Space Grotesk** (`--yazi-baslik` ve `--yazi-etiket`,
+ikisi de aynı aileyi gösteriyor) · gövde sistem sans · kod monospace.
+Bölüm başlıkları büyük harf, harf araları açık (`letter-spacing: .06em`) —
+onaylanan görünüm bu.
 Durum renkleri (beyaz zeminde): Yapılacak `#83838b` · Geliştiriliyor `#b8801a` ·
 Kontrolde `#2f62c4` · Tamamlandı `#2f7d5c`.
 
