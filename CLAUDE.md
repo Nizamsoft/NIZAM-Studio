@@ -116,6 +116,15 @@ Kontrolde `#2f62c4` · Tamamlandı `#2f7d5c`.
 Görseller **tek klasörde**: `gorseller/`. Dosya adları sabit, kod adıyla arar;
 dosya yoksa uygulama sade bir zemine düşer, çökmez. Liste: `gorseller/OKU.md`.
 
+## Ekran kontrolü (görünüşü değiştiren her işte)
+Tasarım değişikliği **iki ekran boyunda** denenir, tek boyda değil:
+- **390 × 700** (kısa telefon) — alt çubuğun altında içerik kalmamalı,
+  sayfa kaydırılabilmeli. Çoğu hata burada çıkıyor.
+- **1440 × 900** (masaüstü) — yan menü ve geniş ızgara.
+
+Kaydırma kapalıysa (`overflow: hidden`) içerik sığmadığı anda ulaşılamaz
+hâle gelir; panelde tam bu oldu. Sığmıyorsa kaydırmayı aç, kırpma.
+
 ## Her değişiklikte yapılacaklar
 1. `config.js` içindeki `APP.version` güncelle
 2. `CHANGELOG.md` — en yeni üstte

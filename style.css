@@ -2877,9 +2877,8 @@ a.durak:active { transform: scale(.99); transition: transform .1s var(--ease); }
    228'de duruyor, kısaldıkça kendiliğinden yukarı çıkıyor. */
 #main.susulu .kisayol { margin-top: clamp(0px, 100vh - 552px, 228px); }
 
-/* Panel kaydırılmıyor: içerik zaten tam sığıyor, kalan tek hareket
-   parmağı bırakınca gelen esneme oluyordu. */
-#main.susulu .view { overflow: hidden; }
+/* (Panel'in kaydırması editoryal katmanda açıldı: hero bloğuyla birlikte
+   içerik artık her ekrana sığmıyor.) */
 /* Kısayol kartı, Standartlar ekranındaki kartın dilinde: karo simge sol
    üstte, ok sağ üstte, yazı altta sola hizalı. Malzemesi de aynı — grafit
    degrade ve açık çerçeve; panel kartının koyusu yerine bu kullanılıyor ki
@@ -6726,7 +6725,12 @@ a.asr:active{ transform:scale(.99); }
    kartlar kağıdın üstünde rahat eder. */
 #main.susulu #zemin-sus { display: none; }        /* tam ekran fotoğraf kapalı */
 #main.susulu .kisayol   { margin-top: 0; }
-#main.susulu .view      { overflow: visible; }
+/* Panel de kaydırılır. Eskiden "kaydırma yok" kuralı vardı çünkü içerik
+   tam sığıyordu; hero bloğu gelince sığmaz oldu ve kısa ekranlarda son
+   kart satırı alt çubuğun altında kalıyordu — kaydırma kapalı olduğu
+   için de ulaşılamıyordu. `.view` zaten overflow-y:auto; burada onu
+   ezmiyoruz. */
+#main.susulu .view      { overflow-y: auto; }
 
 .p-hero {
   position: relative; overflow: hidden;
@@ -6815,4 +6819,14 @@ a.asr:active{ transform:scale(.99); }
 .login-card {
   box-shadow: 0 30px 60px -32px rgba(40, 33, 24, .45);
   border-color: var(--line-2);
+}
+
+/* 10 · Kısa ekranlar ------------------------------------------------------
+   Panel kaydırılabiliyor ama ilk bakışta ne kadar çok şey göründüğü de
+   önemli. Alçak ekranlarda hero bandı kısalıyor: bir kart satırı daha
+   kaydırmadan görünür hâle geliyor. */
+@media (max-height: 780px) {
+  .p-hero { aspect-ratio: 16 / 8; margin-bottom: 14px; }
+  .p-hero h1 { font-size: clamp(26px, 7.5vw, 36px); }
+  .kk { padding: 13px 12px 12px; }
 }

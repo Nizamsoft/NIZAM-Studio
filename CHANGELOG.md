@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## v0.148.3
+- **Panel kısa ekranlarda kaydırılıyor.** "Standartlar" ve "Ayarlar" kartları alt çubuğun altında kalıyor ve ulaşılamıyordu: panelde kaydırma kapalıydı (içerik eskiden tam sığdığı için). Hero bloğu gelince sığmaz oldu, kural da kalkmadı.
+- Alçak ekranlarda hero bandı kısalıyor, kart içi boşluk daraltılıyor — bir kart satırı daha kaydırmadan görünüyor.
+- `CLAUDE.md`'ye ekran kontrolü kuralı eklendi: görünüşü değiştiren her iş 390×700 ve 1440×900'de denenir.
+
 ## v0.148.2
 - **Ofis fotoğrafları geldi.** Panel'in hero bloğu ve giriş ekranının zemini artık gerçek Nizam Software ofisi.
 - Yüklenen PNG'ler 1,8 MB'tı; webp'ye çevrildi ve **120 KB**'a indi (ortamda cwebp/ImageMagick yok, Chromium'un kendi kodlayıcısı kullanıldı). Ağır PNG'ler depodan çıkarıldı.
