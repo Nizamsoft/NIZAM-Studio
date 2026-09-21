@@ -13740,17 +13740,26 @@ function pzProjeKarti(p) {
   const s = DB.sayim(p.id);
   const bitti = s.yuzde >= 100 || p.durum === 'tamamlandi';
   const zaman = pzSonDokunus(p.id);
+
+  /* Ad kutuya sığsın: önce "Firma - Modül", sığmazsa yalnız firma adı,
+     o da uzunsa yazı küçülüp iki satıra iniyor. Ad alanına her kartta
+     iki satırlık yer ayrıldığı için kartlar aynı boyda ve hizada kalıyor
+     — daha önce uzun isimli kart diğerlerinden yüksekti. */
+  const tam = projeAdi(p);
+  const ad = tam.length > 20 ? (p.firma || tam) : tam;
+  const uzun = ad.length > 13 ? ' uzun' : '';
+
   return `
     <div class="pk2 ${bitti ? 'bitti' : ''}" data-eylem="proje-ac" data-id="${p.id}"
          role="button" tabindex="0">
-      <b class="pk2-ad">${esc(projeAdi(p))}</b>
+      <b class="pk2-ad${uzun}" title="${esc(tam)}">${esc(ad)}</b>
       <i class="pk2-et">İlerleme</i>
       <span class="pk2-halka">
-        ${pzHalka(s.yuzde, 96, 9)}<u>${s.yuzde}%</u>
+        ${pzHalka(s.yuzde, 72, 7)}<u>${s.yuzde}%</u>
         ${bitti ? `<em class="pk2-tik">${svg(ICON.tik, 13)}</em>` : ''}
       </span>
       <span class="pk2-durum">${esc(DURUM_ADI[p.durum] || p.durum)}</span>
-      <span class="pk2-zaman">Son güncelleme: ${esc(pzZamanKisa(zaman))}</span>
+      <span class="pk2-zaman" title="Son güncelleme">${esc(pzZamanKisa(zaman))}</span>
     </div>`;
 }
 

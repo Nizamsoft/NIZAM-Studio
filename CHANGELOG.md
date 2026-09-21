@@ -1,5 +1,12 @@
 # Değişiklik Günlüğü
 
+## v0.153.1
+- **Proje kartları eşitlendi.** Hepsi aynı yükseklikte ve aynı hizada; halkalar, durum ve saat her kartta aynı satırda. Önceden uzun isimli kart diğerlerinden yüksekti.
+- Ad kutuya sığmıyorsa sırayla: "Firma - Modül" yerine yalnız firma adı, o da uzunsa yazı küçülüp iki satıra iniyor. Ada her kartta iki satırlık yer ayrıldığı için hiza bozulmuyor; tam ad kartın üstüne gelince görünüyor.
+- Kartlar kısaldı ve **üçü ekrana tam sığıyor**; genişlik sabit piksel değil, şeritten pay alınarak hesaplanıyor.
+- Kart altındaki "Son güncelleme:" öneki kalktı, yalnız saat kaldı — dar kartta satırı ikiye kırıyordu.
+- Hero'daki "N" logosu küçültüldü.
+
 ## v0.153.0
 - **Üst çubuk onaylanan tasarıma geçti:** logo, "NIZAM STUDIO" (NIZAM koyu, STUDIO gri), zil ve siyah avatar dairesi. Dikey çizgi ve sayfa adı mobilde kalktı; sayfa adı masaüstünde duruyor.
 - **Zil süs değil:** yöneticide onay bekleyen (Kontrolde) görev varsa, geliştiricide kendine atanmış bitmemiş iş varsa kırmızı nokta yanıyor. Dokununca Görevler'e gidiyor.
