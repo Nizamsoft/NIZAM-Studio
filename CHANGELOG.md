@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.158.3
+- "En yakın bitiş" hapı masaüstünde biraz daha sola alındı.
+
 ## v0.158.2
 - Masaüstünde "En yakın bitiş" hapı biraz sola alındı; kartın sağ kenarına yapışık durmuyor.
 

@@ -7464,7 +7464,7 @@ a.asr:active{ transform:scale(.99); }
     position: relative; inset: auto; grid-column: 3; grid-row: 1 / 4;
     /* Halkadan daha içeride: tarih hapı kartın sağ kenarına yapışık
        durmasın, köşedeki okla arasında nefes olsun. */
-    justify-self: end; margin-right: 58px;
+    justify-self: end; margin-right: 96px;
     padding: 10px 14px; border-radius: 14px;
     background: rgba(255, 255, 255, .62);
     border: 1px solid rgba(27, 27, 30, .06);
