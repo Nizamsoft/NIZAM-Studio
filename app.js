@@ -6693,9 +6693,10 @@ function menuyuCiz() {
   /* Ortadaki artı sekme değil, eylem. Çift sayıda sekmede tam ortaya oturur. */
   sekmeler.splice(Math.floor(sekmeler.length / 2), 0, `
     <div class="tab-arti">
-      <button id="arti" class="arti-btn hidden" type="button" aria-label="Yeni">
+      <button id="arti" class="arti-btn hidden" type="button" aria-label="Yeni kayıt">
         <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"></path></svg>
       </button>
+      <span class="arti-yazi">Yeni Kayıt</span>
     </div>`);
 
   $('#tabbar').innerHTML = sekmeler.join('');
@@ -13563,7 +13564,10 @@ function karsilama(ilerleme, projeSayi, acikIs) {
    eklenene kadar panel çirkinleşmiyor, yalnız sadeleşiyor. */
 function panelHero() {
   const ad = String(AUTH.ad || '').split(' ')[0];
-  const selam = esc(selamla()) + (ad ? ',<br>' + esc(ad) : '');
+  const d = new Date();
+  const aylar = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz',
+                 'Ağustos','Eylül','Ekim','Kasım','Aralık'];
+  const gunler = ['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi'];
   return `
     <section class="p-hero">
       <img class="p-hero-foto" src="gorseller/panel-ofis.webp" alt="" draggable="false"
@@ -13572,80 +13576,83 @@ function panelHero() {
       <div class="p-hero-yazi">
         <span class="p-hero-cizgi"></span>
         <span class="p-hero-ust">Nizam Studio</span>
-        <h1>${selam}</h1>
-        <p class="p-hero-tarih">${esc(todayLabel())}</p>
-        <span class="p-hero-ayrac"></span>
+        <h1>${esc(selamla())},${ad ? `<br><em>${esc(ad)}.</em>` : ''}</h1>
         <p class="p-hero-slogan">Planla. Geliştir. Teslim et.</p>
+        <blockquote class="p-hero-soz">Daha iyi yazılımlar,<br>daha iyi yarınlar üretir.</blockquote>
       </div>
+      <span class="p-hero-tarih">
+        ${svg(ICON.takvim, 15)}
+        <span>
+          <b>${d.getDate()} ${aylar[d.getMonth()]} ${d.getFullYear()}</b>
+          <i>${gunler[d.getDay()]}</i>
+        </span>
+      </span>
     </section>`;
 }
 
 /* ---------- Panelin özet sayıları ----------
-   Dört kutu: kaç proje, kaç açık iş, kaç kişi, kaç standart. Her biri
-   bir yere gidiyor — panel "ne oluyor" ve "nereye gidilir" sorularını
-   aynı anda cevaplıyor.
+   Beş kutu, yatay kayan bir şerit: kaç proje, kaç görev, kaç kişi, bu
+   hafta kaç iş bitti, kaç standart. Her biri bir yere gidiyor — panel
+   "ne oluyor" ve "nereye gidilir" sorularını birlikte cevaplıyor.
 
-   Kutulardaki küçük çubuklar SÜS DEĞİL: her biri gerçek bir kırılımdan
-   geliyor (projelerin ilerlemesi, görevlerin durumu, rollerin dağılımı,
-   standart gruplarının büyüklüğü). Veri yoksa çubuk da çizilmiyor —
-   uydurma bir grafik koymaktansa boş bırakmak dürüst. */
-function pzCubuklar(degerler) {
-  const d = (degerler || []).filter(x => typeof x === 'number' && x >= 0).slice(0, 4);
-  const enBuyuk = Math.max.apply(null, d.concat([0]));
-  /* Hepsi sıfırsa çizilecek bir şey yok: dört küçük nokta grafik gibi
-     değil, kir gibi duruyordu. */
-  if (!d.length || !enBuyuk) return '';
-  return `<span class="pz-cubuk" aria-hidden="true">${
-    d.map((v, i) => `<i style="height:${Math.max(14, Math.round(v / enBuyuk * 100))}%;--i:${i}"></i>`).join('')
-  }</span>`;
-}
-
-function pzKutu({ ikon, sayi, etiket, adres, cubuklar, vurgu }) {
+   Kutunun dibindeki ince çubuk SÜS DEĞİL, gerçek bir oran; hangi oran
+   olduğu kutunun title'ında yazıyor. Oranı olmayan kutuda çubuk yok —
+   uydurma bir çubuk koymaktansa boş bırakmak dürüst. */
+function pzKutu({ ikon, sayi, etiket, adres, oran, aciklama, vurgu }) {
   return `
-    <a class="pz ${vurgu ? 'vurgu' : ''}" href="${adres}">
+    <a class="pz ${vurgu ? 'vurgu' : ''}" href="${adres}"${aciklama ? ` title="${esc(aciklama)}"` : ''}>
       <span class="pz-ust">
         <span class="pz-ikon">${svg(ICON[ikon], 19)}</span>
-        ${pzCubuklar(cubuklar)}
+        <em class="pz-cv">${svg(ICON.chevron, 14)}</em>
       </span>
       <b class="pz-sayi">${sayi}</b>
-      <span class="pz-alt">
-        <i>${esc(etiket)}</i>
-        <em class="pz-cv">${svg(ICON.chevron, 13)}</em>
-      </span>
+      <i class="pz-etiket">${esc(etiket)}</i>
+      ${typeof oran === 'number'
+        ? `<span class="pz-ray"><i style="width:${Math.max(3, Math.min(100, Math.round(oran)))}%"></i></span>`
+        : '<span class="pz-ray bos"></span>'}
     </a>`;
 }
 
 function panelSayilar(projeler, acikIs) {
   const yon = AUTH.yonetici;
+  const gorevler = DB.gorevler || [];
+  const bitmis = gorevler.filter(g => g.durum === 'tamamlandi');
 
-  /* Projelerin ilerlemesi — en son dördü. */
-  const ilerlemeler = projeler.slice(0, 4).map(p => DB.sayim(p.id).yuzde);
+  /* Ortalama proje ilerlemesi. */
+  const yuzdeler = projeler.map(p => DB.sayim(p.id).yuzde);
+  const ortalama = yuzdeler.length
+    ? yuzdeler.reduce((t, x) => t + x, 0) / yuzdeler.length : null;
 
-  /* Görevlerin durum kırılımı. */
-  const durumSay = DURUM_SIRA.map(d => DB.gorevleri({ durum: d }).length);
+  /* Bu hafta biten işler: pazartesiden bugüne. */
+  const simdi = new Date();
+  const haftaBasi = new Date(simdi.getFullYear(), simdi.getMonth(),
+    simdi.getDate() - ((simdi.getDay() + 6) % 7)).toISOString();
+  const buHafta = bitmis.filter(g => (g.guncellendi || '') >= haftaBasi);
 
-  /* Rol dağılımı: yönetici ve geliştirici. */
+  /* Üzerinde açık iş olan kişiler. */
   const kisiler = DB.kisiler || [];
-  const rolSay = [
-    kisiler.filter(k => k.rol === 'yonetici').length,
-    kisiler.filter(k => k.rol !== 'yonetici').length,
-  ];
+  const mesgul = new Set(gorevler.filter(g => g.durum !== 'tamamlandi' && g.atanan)
+    .map(g => g.atanan)).size;
 
-  /* Standartların grup büyüklükleri. */
-  const grup = {};
-  (DB.standartlar || []).forEach(s => { grup[s.grup || '—'] = (grup[s.grup || '—'] || 0) + 1; });
-  const grupSay = Object.values(grup).sort((a, b) => b - a);
-
-  return `<div class="pz-izgara">
+  return `<div class="pz-serit"><div class="pz-izgara">
     ${pzKutu({ ikon: 'folder', sayi: projeler.length, etiket: 'Aktif Proje',
-               adres: '#/projeler', cubuklar: ilerlemeler })}
-    ${pzKutu({ ikon: 'check', sayi: acikIs, etiket: 'Açık Görev',
-               adres: '#/gorevler', cubuklar: durumSay, vurgu: acikIs > 0 })}
+               adres: '#/projeler', oran: ortalama, vurgu: true,
+               aciklama: 'Çubuk: projelerin ortalama ilerlemesi' })}
+    ${pzKutu({ ikon: 'check', sayi: gorevler.length, etiket: 'Toplam Görev',
+               adres: '#/gorevler',
+               oran: gorevler.length ? bitmis.length / gorevler.length * 100 : null,
+               aciklama: 'Çubuk: biten görevlerin oranı' })}
     ${pzKutu({ ikon: 'kisi', sayi: kisiler.length, etiket: 'Ekip Üyesi',
-               adres: yon ? '#/ekip' : '#/ayarlar', cubuklar: rolSay })}
+               adres: yon ? '#/ekip' : '#/ayarlar',
+               oran: kisiler.length ? mesgul / kisiler.length * 100 : null,
+               aciklama: 'Çubuk: üzerinde açık iş olan kişilerin oranı' })}
+    ${pzKutu({ ikon: 'saat', sayi: buHafta.length, etiket: 'Bu Hafta Biten',
+               adres: '#/gorevler',
+               oran: bitmis.length ? buHafta.length / bitmis.length * 100 : null,
+               aciklama: 'Çubuk: bu haftanın tüm biten işler içindeki payı' })}
     ${pzKutu({ ikon: 'katman', sayi: (DB.standartlar || []).length, etiket: 'Standart',
-               adres: '#/standartlar', cubuklar: grupSay })}
-  </div>`;
+               adres: '#/standartlar' })}
+  </div></div>`;
 }
 
 /* ---------- Aktif projeler listesi ----------
@@ -13671,22 +13678,47 @@ function pzZaman(iso) {
   return tarihYaz(iso);
 }
 
-function pzProjeSatiri(p) {
+/* Projenin platformuna göre karo simgesi. */
+function pzKaroIkon(p) {
+  return { mobil: 'telefon', web: 'bulut', ikisi: 'panel' }[p.platform] || 'folder';
+}
+
+/* Projede iş atanmış kişiler — en fazla iki baş harf, gerisi "+N". */
+function pzKisiler(pid) {
+  const idler = [...new Set(DB.gorevleri({ proje: pid })
+    .filter(g => g.atanan).map(g => g.atanan))];
+  if (!idler.length) return '';
+  const goster = idler.slice(0, 2).map(id => {
+    const k = (DB.kisiler || []).find(x => x.id === id);
+    return `<u>${esc(basHarf((k && (k.ad_soyad || k.ad)) || '?'))}</u>`;
+  }).join('');
+  const kalan = idler.length - 2;
+  return `<span class="pp-kisiler">${svg(ICON.kisi, 13)}${goster}${kalan > 0 ? `<i>+${kalan}</i>` : ''}</span>`;
+}
+
+function pzProjeSatiri(p, i) {
   const s = DB.sayim(p.id);
-  const zaman = pzSonDokunus(p.id);
   return `
-    <div class="pp" data-eylem="proje-ac" data-id="${p.id}" role="button" tabindex="0">
-      <span class="pp-karo">${esc(basHarf(p.firma))}</span>
+    <div class="pp ${i === 0 ? 'ilk' : ''}" data-eylem="proje-ac" data-id="${p.id}"
+         role="button" tabindex="0">
+      <span class="pp-seri"></span>
+      <span class="pp-karo">${svg(ICON[pzKaroIkon(p)], 22)}</span>
       <span class="pp-orta">
         <b class="pp-ad">${esc(projeAdi(p))}</b>
-        <i class="pp-alt">${esc(PLATFORM_ADI[p.platform] || p.platform || '')}</i>
-        <span class="pp-ray"><i style="width:${s.yuzde}%"></i></span>
+        <i class="pp-alt">${esc(modulAdi(p) || PLATFORM_ADI[p.platform] || p.platform || '')}</i>
+        <span class="pp-ray-satir">
+          <span class="pp-ray"><i style="width:${s.yuzde}%"></i></span>
+          <b class="pp-yuz mono">%${s.yuzde}</b>
+        </span>
+        <span class="pp-durum-satir">
+          <span class="pp-durum"><u class="${durumSinif(p.durum)}"></u>${esc(DURUM_ADI[p.durum] || p.durum)}</span>
+          ${pzKisiler(p.id)}
+        </span>
       </span>
       <span class="pp-sag">
-        <span class="pp-durum"><u class="${durumSinif(p.durum)}"></u>${esc(DURUM_ADI[p.durum] || p.durum)}</span>
-        <span class="pp-zaman"><i>Son güncelleme</i>${esc(pzZaman(zaman))}</span>
+        ${svg(ICON.takvim, 14)}
+        <span><i>Son güncelleme</i>${esc(pzZaman(pzSonDokunus(p.id)))}</span>
       </span>
-      <b class="pp-yuz mono">%${s.yuzde}</b>
       ${AUTH.yonetici ? `<button class="pp-menu" data-eylem="proje-menu" data-id="${p.id}"
         type="button" aria-label="Proje seçenekleri">${svg(ICON.nokta, 15)}</button>` : ''}
     </div>`;
@@ -13708,9 +13740,9 @@ function panelProjeler(projeler) {
   return `<div class="pz-bolum">
     <span class="pz-bas">
       <b>Aktif Projeler</b><u></u>
-      <a href="#/projeler">Tüm Projeler ${svg(ICON.chevron, 13)}</a>
+      <a class="pz-tum" href="#/projeler">Tüm Projeler ${svg(ICON.chevron, 14)}</a>
     </span>
-    <div class="pp-liste">${sirali.slice(0, 3).map(pzProjeSatiri).join('')}</div>
+    <div class="pp-liste">${sirali.slice(0, 3).map((p, i) => pzProjeSatiri(p, i)).join('')}</div>
   </div>`;
 }
 

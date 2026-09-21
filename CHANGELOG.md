@@ -1,5 +1,12 @@
 # Değişiklik Günlüğü
 
+## v0.150.1
+- **Panel onaylanan mockup'a göre yeniden kuruldu.** Hero artık koyu bir pano: sol yarıda kırmızı çizgi, "NIZAM STUDIO" etiketi, selam (ad kırmızı), slogan ve söz; fotoğraf sağ yarıda eriyor, tarih sağ altta takvim simgesiyle.
+- **Sayılar yatay kayan bir şerit** oldu: Aktif Proje, Toplam Görev, Ekip Üyesi, Bu Hafta Biten, Standart. Her kutunun dibinde gerçek bir oranı gösteren ince çubuk var; hangi oran olduğu kutunun üstüne gelince yazıyor.
+- **Proje satırı** mockup'taki gibi: solda dikey şerit (en son dokunulan projede kırmızı), platform simgeli siyah karo, ilerleme çubuğu + yüzde, durum noktası, atanan kişilerin baş harfleri ve sağda takvimli "son güncelleme".
+- Alt çubuktaki artının altına **"Yeni Kayıt"** yazısı geldi; artı siyahlaştı, aktif sekme kırmızı ve altında nokta var.
+- Hero yazısı dikeyde ortalanıp bloğun dışına taşıyordu (eski kuraldan kalan `translateY`); sıfırlandı.
+
 ## v0.150.0
 - **Panel yeniden kuruldu: hero · dört sayı · aktif projeler.** Eskiden altı kısayol kutusuydu; nereye gidileceğini söylüyor ama ne olduğunu söylemiyordu.
 - **Hero** artık üst etiket, iri serif selam, tarih, ince ayraç ve "Planla. Geliştir. Teslim et." sloganını taşıyor.

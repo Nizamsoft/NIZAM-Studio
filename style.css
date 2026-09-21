@@ -6860,105 +6860,165 @@ a.asr:active{ transform:scale(.99); }
 /* Sihirbazın "şu anki adım" işareti de nötr. */
 .steps .sd.cur { background: var(--ink-strong); }
 
-/* 13 · Panelin yeni düzeni: hero · sayılar · aktif projeler --------------
-   Panel eskiden altı kısayol kutusuydu: nereye gidileceğini söylüyor ama
-   ne olduğunu söylemiyordu. Şimdi üç katman var — selam, dört sayı ve en
-   son dokunulan projeler. Kırmızı burada hiç yok; ayrım ağırlık ve ton
-   farkıyla kuruluyor. */
+/* 13 · Panel: hero · sayı şeridi · aktif projeler -------------------------
+   Düzen doğrudan onaylanan mockup'tan geliyor. Üç kural:
+     · hero koyu bir pano, fotoğraf sağ yarıda erir,
+     · sayılar yatay kayan bir şerit (telefonda dördü yan yana sığmaz),
+     · proje satırının solunda dikey bir şerit; en üsttekinin şeridi kırmızı.
+   Kırmızı burada üç yerde: selamdaki ad, ilk projenin şeridi, aktif sekme. */
 
-/* Hero yazısı: üst etiket, iri serif selam, tarih, ayraç, slogan. */
+/* ---- Hero ---- */
+.p-hero {
+  position: relative; overflow: hidden;
+  border-radius: 16px; border: 0;
+  aspect-ratio: 20 / 17; margin-bottom: 20px; background: #0d0d0f;
+}
+.p-hero-foto {
+  position: absolute; inset: 0 0 0 auto; width: 74%; height: 100%;
+  object-fit: cover; object-position: 62% 46%;
+}
+/* Perde soldan sağa açılıyor: yazı koyu panonun üstünde, fotoğraf sağda
+   yaşıyor. Tam ekran koyu perde fotoğrafı boğuyordu. */
+.p-hero-perde {
+  position: absolute; inset: 0;
+  background: linear-gradient(95deg,
+    #0d0d0f 0%, #0d0d0f 38%, rgba(13, 13, 15, .82) 52%,
+    rgba(13, 13, 15, .35) 74%, rgba(13, 13, 15, .10) 100%);
+}
+.p-hero-yazi {
+  /* transform:none — bölüm 4'teki eski kural yazıyı dikeyde ortalıyordu
+     (top:50% + translateY(-50%)). Yeni düzende yazı üstten başlıyor;
+     sıfırlanmayınca blok yarı boyu kadar yukarı kayıp hero'nun dışına
+     taşıyordu. */
+  position: absolute; left: 22px; right: 22px; top: 22px; bottom: auto;
+  transform: none; z-index: 2;
+}
+.p-hero-cizgi {
+  display: block; width: 40px; height: 3px; background: var(--red);
+  margin-bottom: 16px;
+}
 .p-hero-ust {
   display: block; font-family: var(--yazi-etiket);
-  font-size: 10px; font-weight: 600; letter-spacing: .22em;
-  text-transform: uppercase; color: rgba(255, 255, 255, .72);
-  margin-bottom: 8px;
+  font-size: 10.5px; font-weight: 600; letter-spacing: .26em;
+  text-transform: uppercase; color: rgba(255, 255, 255, .80);
+  margin-bottom: 10px;
 }
-.p-hero-tarih { margin-top: 12px; }
-.p-hero-ayrac {
-  display: block; width: 34px; height: 1px;
-  background: rgba(255, 255, 255, .38); margin: 14px 0 10px;
+.p-hero h1 {
+  margin: 0; font-family: var(--yazi-baslik); font-weight: 700;
+  font-size: clamp(27px, 7.6vw, 40px); line-height: 1.08;
+  letter-spacing: -.015em; color: #fff;
 }
+.p-hero h1 em { font-style: normal; color: var(--red); }
 .p-hero-slogan {
-  margin: 0; font-family: var(--yazi-baslik); font-size: 15px;
-  color: rgba(255, 255, 255, .88);
+  margin: 14px 0 0; font-family: var(--yazi-govde);
+  font-size: 13.5px; font-weight: 600; color: #fff;
+}
+.p-hero-soz {
+  margin: 16px 0 0; padding: 0; max-width: 62%;
+  font-family: var(--yazi-baslik); font-size: 13px; line-height: 1.5;
+  color: rgba(255, 255, 255, .62);
+}
+.p-hero-soz::before { content: '“ '; }
+.p-hero-soz::after  { content: ' ”'; }
+/* Tarih sağ altta, takvim simgesiyle. */
+.p-hero-tarih {
+  position: absolute; right: 20px; bottom: 18px; z-index: 2;
+  display: flex; align-items: center; gap: 8px; text-align: left;
+  color: rgba(255, 255, 255, .92);
+}
+.p-hero-tarih svg { width: 15px; height: 15px; flex-shrink: 0; opacity: .75; }
+.p-hero-tarih b { display: block; font-size: 12.5px; font-weight: 600; }
+.p-hero-tarih i {
+  display: block; font-style: normal; font-size: 11.5px;
+  color: rgba(255, 255, 255, .62);
 }
 
-/* Dört sayı kutusu. Mobilde iki sütun, masaüstünde dört. */
-.pz-izgara {
-  display: grid; grid-template-columns: repeat(2, 1fr);
-  gap: 11px; margin-bottom: 26px;
+/* ---- Sayı şeridi ---- */
+.pz-serit {
+  margin: 0 calc(var(--yan) * -1) 24px; padding: 0 var(--yan);
+  overflow-x: auto; overscroll-behavior-x: contain;
+  scrollbar-width: none; -webkit-overflow-scrolling: touch;
 }
-@media (min-width: 901px) { .pz-izgara { grid-template-columns: repeat(4, 1fr); } }
-
+.pz-serit::-webkit-scrollbar { display: none; }
+.pz-izgara { display: flex; gap: 11px; }
 .pz {
-  display: flex; flex-direction: column; gap: 10px;
-  padding: 14px 14px 12px; text-decoration: none;
+  flex: 0 0 120px; display: flex; flex-direction: column; gap: 9px;
+  padding: 13px 13px 12px; text-decoration: none;
   background: var(--surface); border: 1px solid var(--line-2);
-  border-radius: var(--radius); color: var(--ink);
+  border-radius: 14px; color: var(--ink);
   transition: border-color .16s ease, transform .12s var(--ease);
 }
 .pz:hover  { border-color: var(--line); }
-.pz:active { transform: scale(.985); }
-.pz-ust { display: flex; align-items: flex-end; justify-content: space-between; gap: 8px; }
+.pz:active { transform: scale(.98); }
+.pz-ust { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .pz-ikon {
   display: flex; align-items: center; justify-content: center;
-  width: 38px; height: 38px; border-radius: var(--radius-sm);
+  width: 38px; height: 38px; border-radius: 11px;
   background: var(--surface-2); color: var(--metal-2);
 }
-/* Küçük çubuk grafiği: dört sütun, son sütun en koyu. */
-.pz-cubuk { display: flex; align-items: flex-end; gap: 3px; height: 26px; }
-.pz-cubuk i {
-  width: 5px; border-radius: 2px; background: var(--line-parlak);
-  display: block;
-}
-.pz-cubuk i:last-child { background: var(--ink-soft); }
-.pz.vurgu .pz-cubuk i:last-child { background: var(--red); }
+.pz-cv { display: flex; color: var(--ink-dim); }
 .pz-sayi {
-  font-family: var(--yazi-baslik); font-size: 30px; font-weight: 700;
+  font-family: var(--yazi-baslik); font-size: 27px; font-weight: 700;
   line-height: 1; letter-spacing: -.02em; color: var(--ink-strong);
 }
-.pz-alt { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.pz-alt i {
-  font-style: normal; font-size: 12px; color: var(--ink-soft);
+.pz-etiket {
+  font-style: normal; font-size: 11.5px; color: var(--ink-soft);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.pz-cv { display: flex; color: var(--ink-dim); }
+.pz-ray {
+  display: block; height: 4px; border-radius: 999px;
+  background: var(--bar-bos); overflow: hidden; margin-top: 2px;
+}
+.pz-ray.bos { background: none; }
+.pz-ray i { display: block; height: 100%; background: var(--ink-soft); border-radius: 999px; }
+.pz.vurgu .pz-ray i { background: var(--red); }
 
-/* Bölüm başlığı: yazı — çizgi — bağlantı. */
+@media (min-width: 901px) {
+  .pz-serit { margin: 0 0 26px; padding: 0; overflow: visible; }
+  .pz-izgara { display: grid; grid-template-columns: repeat(5, 1fr); }
+  .pz { flex: initial; }
+}
+
+/* ---- Bölüm başlığı ---- */
 .pz-bolum { margin-bottom: 20px; }
-.pz-bas { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.pz-bas { display: flex; align-items: center; gap: 12px; margin-bottom: 13px; }
 .pz-bas b {
-  font-family: var(--yazi-baslik); font-size: 19px; font-weight: 700;
+  font-family: var(--yazi-baslik); font-size: 20px; font-weight: 700;
   color: var(--ink-strong); letter-spacing: -.01em;
 }
-.pz-bas u { flex: 1; height: 1px; background: var(--line-2); }
-.pz-bas a {
-  display: flex; align-items: center; gap: 5px; text-decoration: none;
-  font-size: 12.5px; font-weight: 600; color: var(--ink-soft); white-space: nowrap;
-}
-.pz-bas a:hover { color: var(--ink-strong); }
-
-/* Proje satırı. */
-.pp-liste { display: flex; flex-direction: column; gap: 10px; }
-.pp {
-  display: grid; align-items: center; gap: 12px;
-  /* Dört sütun: karo · orta · yüzde · menü. Üç sütun tanımlanınca menü
-     düğmesi örtük ikinci satıra düşüyor ve kayboluyordu. */
-  grid-template-columns: 52px minmax(0, 1fr) auto auto;
-  padding: 13px 14px; cursor: pointer;
+.pz-bas u { flex: 1; height: 0; }
+.pz-tum {
+  display: flex; align-items: center; gap: 7px; text-decoration: none;
+  padding: 9px 14px; border-radius: 999px; white-space: nowrap;
   background: var(--surface); border: 1px solid var(--line-2);
-  border-radius: var(--radius);
+  font-size: 12.5px; font-weight: 600; color: var(--ink);
+}
+.pz-tum:hover { border-color: var(--line); }
+
+/* ---- Proje satırı ---- */
+.pp-liste { display: flex; flex-direction: column; gap: 11px; }
+.pp {
+  position: relative; display: grid; align-items: center;
+  grid-template-columns: 56px minmax(0, 1fr) auto auto;
+  gap: 12px; padding: 13px 12px 13px 18px; cursor: pointer;
+  background: var(--surface); border: 1px solid var(--line-2);
+  border-radius: 14px; overflow: hidden;
   transition: border-color .16s ease, transform .12s var(--ease);
 }
 .pp:hover  { border-color: var(--line); }
 .pp:active { transform: scale(.99); }
+/* Soldaki dikey şerit. En üstteki satır (en son dokunulan proje) kırmızı. */
+.pp-seri {
+  position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+  background: var(--ink-strong);
+}
+.pp.ilk .pp-seri { background: var(--red); }
 .pp-karo {
   display: flex; align-items: center; justify-content: center;
-  width: 52px; height: 52px; border-radius: var(--radius-sm);
+  width: 56px; height: 56px; border-radius: 14px;
   background: var(--ink-strong); color: #fff;
-  font-family: var(--yazi-baslik); font-size: 19px; font-weight: 700;
 }
-.pp-orta { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.pp-orta { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .pp-ad {
   font-family: var(--yazi-baslik); font-size: 15.5px; font-weight: 700;
   color: var(--ink-strong);
@@ -6968,35 +7028,80 @@ a.asr:active{ transform:scale(.99); }
   font-style: normal; font-size: 11.5px; color: var(--ink-dim);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
+.pp-ray-satir { display: flex; align-items: center; gap: 9px; margin: 6px 0 5px; }
 .pp-ray {
-  display: block; height: 5px; margin-top: 5px; border-radius: 999px;
+  flex: 1; height: 5px; border-radius: 999px;
   background: var(--bar-bos); overflow: hidden;
 }
-.pp-ray i { display: block; height: 100%; background: var(--ink-soft); border-radius: 999px; }
-.pp-sag { display: none; }
-.pp-yuz { font-size: 12.5px; color: var(--ink-soft); }
+.pp-ray i { display: block; height: 100%; background: var(--ink-strong); border-radius: 999px; }
+.pp.ilk .pp-ray i { background: var(--red); }
+.pp-yuz { font-size: 12px; color: var(--ink-soft); }
+.pp-durum-satir { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.pp-durum {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 11.5px; color: var(--ink-soft); white-space: nowrap;
+}
+.pp-durum u { width: 7px; height: 7px; border-radius: 999px; background: var(--st-todo); }
+.pp-durum u.dev   { background: var(--red); }
+.pp-durum u.check { background: var(--st-check); }
+.pp-durum u.done  { background: var(--st-done); }
+.pp-kisiler { display: flex; align-items: center; gap: 4px; color: var(--ink-dim); }
+.pp-kisiler svg { width: 13px; height: 13px; margin-right: 2px; }
+.pp-kisiler u {
+  display: flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px; margin-left: -6px; border-radius: 999px;
+  background: var(--metal-2); color: #fff; border: 2px solid var(--surface);
+  font-family: var(--yazi-etiket); font-size: 9px; font-weight: 600;
+  text-decoration: none;
+}
+.pp-kisiler u:first-of-type { margin-left: 0; }
+.pp-kisiler i { font-style: normal; font-size: 11px; margin-left: 3px; }
+/* Sağ sütun: takvim + son güncelleme. İnce bir çizgiyle ayrılıyor. */
+.pp-sag {
+  display: flex; align-items: center; gap: 8px;
+  padding-left: 12px; border-left: 1px solid var(--line-3);
+  color: var(--ink-dim);
+}
+.pp-sag svg { width: 14px; height: 14px; flex-shrink: 0; }
+.pp-sag i { display: block; font-style: normal; font-size: 10.5px; color: var(--ink-faint); }
+.pp-sag span { font-size: 11.5px; color: var(--ink-soft); white-space: nowrap; }
 .pp-menu {
   display: flex; align-items: center; justify-content: center;
-  width: 30px; height: 30px; border: 0; border-radius: var(--radius-sm);
+  width: 26px; height: 30px; border: 0; border-radius: var(--radius-sm);
   background: none; color: var(--ink-dim); cursor: pointer;
 }
 .pp-menu:hover { background: var(--surface-2); color: var(--ink); }
 
-/* Masaüstünde sağ sütun açılıyor: durum ve son güncelleme, ince bir
-   çizgiyle ayrılmış. Mobilde yer yok — orada yüzde yeterli. */
-@media (min-width: 901px) {
-  .pp { grid-template-columns: 56px minmax(0, 1fr) 190px auto auto; padding: 14px 16px; }
-  .pp-sag {
-    display: flex; flex-direction: column; gap: 5px;
-    padding-left: 16px; border-left: 1px solid var(--line-3);
+/* Dar telefonda sağ sütun yer bırakmıyor: "Son güncelleme" etiketi düşer,
+   yalnız tarih kalır. 360px'te bile satır tek parça duruyor. */
+@media (max-width: 430px) {
+  .pp { grid-template-columns: 52px minmax(0, 1fr) auto auto; gap: 10px; padding-left: 16px; }
+  .pp-karo { width: 52px; height: 52px; }
+  .pp-sag { flex-direction: column; align-items: flex-end; gap: 2px; padding-left: 10px; }
+  .pp-sag svg { display: none; }
+  .pp-sag i { font-size: 10px; }
+}
+
+/* ---- Alt çubuk: artının altında yazı ---- */
+@media (max-width: 900px) {
+  .tab-arti { flex-direction: column; gap: 3px; }
+  .arti-yazi {
+    font-family: var(--yazi-etiket); font-size: 9.5px; font-weight: 600;
+    color: var(--ink-soft); white-space: nowrap;
   }
-  .pp-durum { display: flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--ink); }
-  .pp-durum u {
-    width: 7px; height: 7px; border-radius: 999px; background: var(--st-todo);
+  .tab-arti:has(.arti-btn.hidden) .arti-yazi { display: none; }
+  .arti-btn {
+    background: var(--ink-strong);
+    box-shadow: 0 8px 18px -8px rgba(23, 23, 26, .7);
   }
-  .pp-durum u.dev   { background: var(--st-dev); }
-  .pp-durum u.check { background: var(--st-check); }
-  .pp-durum u.done  { background: var(--st-done); }
-  .pp-zaman { font-size: 11.5px; color: var(--ink-dim); }
-  .pp-zaman i { display: block; font-style: normal; color: var(--ink-faint); }
+  /* Aktif sekme kırmızı ve altında bir nokta — mockup'taki gibi. */
+  .tab.active, .tab.active span { color: var(--red-ink); }
+  .tab.active svg { stroke: var(--red); }
+  .tab.active .dolgu > * { fill: var(--red); fill-opacity: .16; }
+  .tab.active::after {
+    content: ''; position: absolute; bottom: 4px; left: 50%;
+    width: 4px; height: 4px; margin-left: -2px; border-radius: 999px;
+    background: var(--red);
+  }
+  .tab { position: relative; }
 }
