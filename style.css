@@ -6936,16 +6936,17 @@ a.asr:active{ transform:scale(.99); }
 .ps {
   position: relative; overflow: hidden;
   display: flex; flex-direction: column;
-  min-height: 152px; padding: 14px;
+  min-height: 152px;
+  /* Alt boşluk iki kartta da aynı: "en yakın bitiş" satırı bu boşluğa
+     mutlak konumla oturuyor. Böylece iri sayı ikisinde de tam aynı
+     yerde duruyor. */
+  padding: 14px 14px 46px;
   text-decoration: none; color: var(--ink);
   border: 1px solid transparent; border-radius: 18px;
   transition: transform .12s var(--ease);
 }
 .ps:active { transform: scale(.985); }
 .ps-proje {
-  /* Alt boşluk fazla: ikinci karttaki "en yakın bitiş" satırının yerini
-     tutuyor, böylece iki kartın iri sayısı aynı hizada duruyor. */
-  padding-bottom: 46px;
   background: linear-gradient(150deg, #fbe2e0 0%, #fdeeec 48%, #fff7f6 100%);
   border-color: rgba(229, 52, 42, .14);
 }
@@ -6974,8 +6975,13 @@ a.asr:active{ transform:scale(.99); }
 }
 .ps-sayi {
   position: relative; z-index: 1; margin-top: auto; padding-top: 10px;
-  font-family: var(--yazi-baslik); font-size: 34px; font-weight: 700;
-  line-height: 1; letter-spacing: -.03em; color: var(--ink-strong);
+  /* Başlık serifi eski usul rakam kullanıyor: 7 aşağı sarkıyor, 2 kısa
+     kalıyor, iki kartın sayısı farklı boyda görünüyordu. Gövde yazısı +
+     düz rakam ayarı ile hepsi aynı yükseklikte. */
+  font-size: 34px; font-weight: 700;
+  font-variant-numeric: lining-nums tabular-nums;
+  font-feature-settings: 'lnum' 1, 'tnum' 1;
+  line-height: 1; letter-spacing: -.02em; color: var(--ink-strong);
 }
 
 /* Sağ alttaki halka: içi beyaz, ortasında yüzde ve "tamamlandı". */
@@ -7014,9 +7020,10 @@ a.asr:active{ transform:scale(.99); }
 }
 .ps-cizim svg { width: 100%; height: 100%; }
 
-/* En yakın bitiş satırı: sayının altında, çizimin soluna sığar. */
+/* En yakın bitiş satırı: kartın altındaki boşluğa mutlak oturuyor;
+   akışta yer kaplamadığı için iri sayıyı aşağı itmiyor. */
 .ps-bitis {
-  position: relative; z-index: 1; margin-top: 10px;
+  position: absolute; z-index: 1; left: 14px; right: 14px; bottom: 11px;
   display: flex; align-items: center; gap: 6px; color: var(--ink-soft);
 }
 .ps-bitis svg { width: 14px; height: 14px; flex-shrink: 0; }

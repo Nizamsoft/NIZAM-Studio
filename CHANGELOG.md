@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## v0.157.1
+- **İki kartın iri sayısı artık birebir aynı:** aynı yerde, aynı boyda.
+  - Sayı başlık serifiyle yazılıyordu; o yazının rakamları eski usul, yani 7 satırın altına sarkıyor, 2 kısa kalıyordu. Sayı gövde yazısına ve düz rakam ayarına geçti.
+  - "En yakın bitiş" satırı akıştan çıkıp kartın alt boşluğuna oturdu; sayıyı aşağı itmiyor.
+
 ## v0.157.0
 - **Sayı kartları yeni tasarımda:** yumuşak renkli zemin (proje kartı pembe, görev kartı gri), sol üstte dolu karo, altında başlık ve tek satırlık açıklama, sol altta iri sayı.
 - Proje kartında sağ altta **ilerleme halkası**; içinde yüzde ve "tamamlandı" yazıyor.
