@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.149.0
+- **Palet logoya sabitlendi: kırmızı, gri, beyaz.** Zemin artık krem değil düz beyaz; sıcak tonlar (kağıt dokusu, krem yüzeyler, üst çubuktaki altın "PANEL" yazısı) kaldırıldı.
+- Kart içindeki **ikon kutuları gri** oldu — kırmızı tint gidiyor, simge logonun grafit tonunda.
+- Gri merdiveni nötrlendi: metin, çizgi ve yüzey renklerinde sıcaklık kalmadı.
+- Kağıt dokusu dosyası depodan çıkarıldı (artık kullanılmıyor).
+
 ## v0.148.3
 - **Panel kısa ekranlarda kaydırılıyor.** "Standartlar" ve "Ayarlar" kartları alt çubuğun altında kalıyor ve ulaşılamıyordu: panelde kaydırma kapalıydı (içerik eskiden tam sığdığı için). Hero bloğu gelince sığmaz oldu, kural da kalkmadı.
 - Alçak ekranlarda hero bandı kısalıyor, kart içi boşluk daraltılıyor — bir kart satırı daha kaydırmadan görünüyor.

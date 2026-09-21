@@ -84,33 +84,37 @@ Studio görev + prompt üretir
 ```
 
 ## Tasarım dili
-**Editoryal açık tema.** Kağıt zemin, mürekkep yazı, tek kırmızı.
-Kaynak: Nizam Soft logosu (kırmızı) + basılı bir dergi sayfasının sakinliği.
+**Beyaz, gri, kırmızı.** Üçü de logodan geliyor; dördüncü renk yok.
+Editoryal düzen: serif başlık, ince çizgi, gölgesiz kart.
 
 | Rol | Renk |
 |---|---|
-| Zemin (kağıt) | `#f2efe9` |
-| Kart / yüzey | `#fffdf9` · `#ffffff` |
-| Çizgi | `#e7e2d9` → `#d2cbbe` |
-| Metin | `#221f1b` / soft `#55504a` / silik `#938b81` |
+| Zemin | `#ffffff` — krem/kağıt değil, düz beyaz |
+| Kart | `#ffffff` (zeminden çizgiyle ayrılır) |
+| Gri yüzey (ikon kutusu, yuva) | `#f2f2f4` · `#f6f6f8` |
+| Çizgi | `#ededf0` → `#d6d6db` |
+| Metin | `#26262a` / soft `#56565c` / silik `#9a9aa2` |
+| Grafit (logonun metali) | `#4a4a50` |
 | Kırmızı (dolgu) | `#e5342a` |
-| Kırmızı (yazı) | `#b4231b` — açık zeminde `#e5342a` okunmuyor |
+| Kırmızı (yazı) | `#b4231b` — beyaz üstünde `#e5342a` okunmuyor |
 
 **Kırmızı sadece:** logo, ana buton, aktif menü, kart üst şeridi, "Acil".
-İlerleme çubukları nötr — kırmızı "tehlike" gibi okunur.
+İkon kutuları **gri**, kırmızı tintli değil. İlerleme çubukları nötr.
+Sıcak ton (krem, altın, kağıt dokusu) kullanma — denendi, paletin dışında
+kalıyor.
 
 Kurallar:
 - **Gölge yok.** Kart zeminden ince çizgiyle ayrılır. Gölge yalnız gerçekten
   yüzen şeyde (pencere, açılır menü) ve orada da çok yumuşak.
-- **Cam parıltısı yok.** Koyu temadan kalan beyaz ışık huzmeleri kağıtta kir
-  gibi duruyor; hepsi kapatıldı (style.css sonundaki editoryal katman).
+- **Cam parıltısı yok.** Koyu temadan kalan beyaz ışık huzmeleri kapatıldı
+  (style.css sonundaki editoryal katman).
 - **Köşeler ölçülü:** 8px. Hap biçimi yalnız rozet ve avatar.
 - Fotoğraf sınırlı bir blok olarak kullanılır, sayfanın zemini olarak değil.
 
 Yazı tipleri: başlık **serif** (`--yazi-baslik`, Georgia ailesi) ·
 etiket/sayı **Space Grotesk** (`--yazi-etiket`) · gövde sistem sans ·
 kod monospace.
-Durum renkleri (açık zeminde): Yapılacak `#8a837b` · Geliştiriliyor `#b8801a` ·
+Durum renkleri (beyaz zeminde): Yapılacak `#83838b` · Geliştiriliyor `#b8801a` ·
 Kontrolde `#2f62c4` · Tamamlandı `#2f7d5c`.
 
 Görseller **tek klasörde**: `gorseller/`. Dosya adları sabit, kod adıyla arar;

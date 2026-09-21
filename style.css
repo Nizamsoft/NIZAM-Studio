@@ -7,9 +7,8 @@
 
 :root {
   /* --- Vurgu: tek kaynak. Markanın kırmızısı buradan türer. ---
-     Açık zeminde dolgu rengiyle yazı rengi aynı olamaz: #e5342a beyaz
-     üstünde 3.9:1 veriyor, yazı için yetmiyor. Dolgular --red, kağıt
-     üstüne yazılan kırmızı metin --red-ink. */
+     Beyaz üstünde #e5342a 3.9:1 veriyor: dolgu için yeter, yazı için
+     yetmez. Dolgular --red, kağıt üstüne yazılan kırmızı --red-ink. */
   --red:            #e5342a;
   --red-parlak:     #f24a40;
   --red-acik:       #c8281f;
@@ -18,54 +17,52 @@
   --red-ink:        #b4231b;
   --red-ink-soft:   #c4463d;
   --red-soft:       rgba(229, 52, 42, .09);
-  --red-cizgi:      rgba(229, 52, 42, .30);
+  --red-cizgi:      rgba(229, 52, 42, .28);
 
-  /* --- Metal: açık temada koyulaşır, yoksa kağıtta kaybolur --- */
-  --metal-1:        #9a938a;
-  --metal-2:        #6b645c;
+  /* --- Metal: logonun grafit yarısı --- */
+  --metal-1:        #9a9aa2;
+  --metal-2:        #4a4a50;
 
-  /* --- Yüzeyler: sıcak kağıt merdiveni ---
-     Zemin en koyu kağıt, kartlar ondan AÇIK. Koyu temanın tersi:
-     orada kart zeminden koyuydu. */
-  --bg:             #f2efe9;
-  /* iOS uygulama kipinde sayfanın DIŞINDA kalan şerit. Alt çubuğun
-     bittiği renkle aynı: ikisi tek parça görünsün. */
+  /* --- Yüzeyler: beyaz ve nötr gri ---
+     Palet logodan geliyor: kırmızı, gri, beyaz. Sıcak/krem ton yok —
+     bir önceki denemede kağıt rengi zemin vardı, marka rengiyle
+     akraba değildi. */
+  --bg:             #ffffff;
   --cerceve:        #ffffff;
   --bg-ust:         #ffffff;
   --rail:           #ffffff;
   --rail-ust:       #ffffff;
-  --kod-bg:         #f6f3ec;
-  --yuva-2:         #efebe3;
-  --yuva:           #f7f5f0;
+  --kod-bg:         #f4f4f6;
+  --yuva-2:         #f0f0f2;
+  --yuva:           #f6f6f8;
 
-  /* Panelin ve çubukların ortak malzemesi: fotoğrafın üstünde duran
-     her şey bu renkte. */
-  --panel-kart:     #fffdf9;
-  --panel-cam:      rgba(255, 253, 249, .94);
-  --panel-cizgi:    rgba(20, 18, 15, .10);
-  --kart-alt:       #faf8f4;
+  /* Kartların ve çubukların ortak malzemesi. */
+  --panel-kart:     #ffffff;
+  --panel-cam:      rgba(255, 255, 255, .94);
+  --panel-cizgi:    rgba(23, 23, 26, .10);
+  --kart-alt:       #ffffff;
   --surface:        #ffffff;
   --kart-ust:       #ffffff;
-  --surface-2:      #f5f2ec;
-  --surface-3:      #ede9e1;
+  --surface-2:      #f2f2f4;
+  --surface-3:      #e9e9ec;
 
   /* --- Çizgiler --- */
-  --line-3:         #e7e2d9;
-  --line-2:         #ded8cd;
-  --line:           #d2cbbe;
-  --line-parlak:    #c4bcac;
-  --line-parlak-2:  #b3a996;
+  --line-3:         #ededf0;
+  --line-2:         #e2e2e6;
+  --line:           #d6d6db;
+  --line-parlak:    #c3c3ca;
+  --line-parlak-2:  #aeaeb6;
 
-  /* --- Metin --- */
-  --ink-strong:     #14120f;
-  --ink:            #221f1b;
-  --ink-soft:       #55504a;
-  --ink-faint:      #7d766d;
-  --ink-dim:        #938b81;
-  --kod-ink:        #3a3630;
+  /* --- Metin: nötr grafit --- */
+  --ink-strong:     #17171a;
+  --ink:            #26262a;
+  --ink-soft:       #56565c;
+  --ink-faint:      #7c7c84;
+  --ink-dim:        #9a9aa2;
+  --kod-ink:        #3a3a40;
 
-  /* --- Durum renkleri: açık zeminde okunacak kadar koyu --- */
-  --st-todo:        #8a837b;
+  /* --- Durum renkleri: beyaz zeminde okunacak kadar koyu --- */
+  --st-todo:        #83838b;
   --st-dev:         #b8801a;
   --st-dev-t:       #8a5f0e;
   --st-check:       #2f62c4;
@@ -85,22 +82,18 @@
   --done-cizgi-2:   rgba(47, 125, 92, .44);
 
   /* --- Yardımcılar --- */
-  --bar-bos:        #e4dfd5;
-  --iskelet-1:      #ede9e1;
-  --iskelet-2:      #e0dacf;
-  /* Koyu temada kartın üst kenarına konan beyaz parıltı burada ters
-     çalışıyor: açık zeminde kabartma değil kir gibi duruyor. Onun yerine
-     çok soluk bir mürekkep çizgisi. */
-  --isik:           rgba(20, 18, 15, .05);
-  --cam-cizgi:      rgba(20, 18, 15, .09);
+  --bar-bos:        #e6e6ea;
+  --iskelet-1:      #f0f0f3;
+  --iskelet-2:      #e4e4e8;
+  --isik:           rgba(23, 23, 26, .05);
+  --cam-cizgi:      rgba(23, 23, 26, .09);
   /* Editoryal dil gölge sevmez: kart zeminden gölgeyle değil ince
-     çizgiyle ayrılıyor. Gölge yalnız gerçekten yüzen şeylerde (pencere,
-     açılır menü) ve orada da yumuşak. */
-  --golge:          0 1px 2px rgba(40, 33, 24, .05);
-  --golge-yuksek:   0 22px 44px -26px rgba(40, 33, 24, .40);
-  --perde:          rgba(34, 29, 22, .38);
+     çizgiyle ayrılıyor. Gölge yalnız gerçekten yüzen şeylerde. */
+  --golge:          0 1px 2px rgba(23, 23, 26, .05);
+  --golge-yuksek:   0 22px 44px -26px rgba(23, 23, 26, .35);
+  --perde:          rgba(23, 23, 26, .40);
 
-  /* --- Ölçüler: editoryal dilde köşeler ölçülü --- */
+  /* --- Ölçüler --- */
   --radius:         8px;
   --radius-sm:      6px;
   --radius-lg:      10px;
@@ -109,9 +102,7 @@
   --ease:           cubic-bezier(.2, .7, .3, 1);
   --yay:            cubic-bezier(.34, 1.42, .48, 1);
 
-  /* --- Yazı ---
-     Başlıklar editoryal bir serif; etiketler ve sayılar grotesk.
-     gorseller/serif.woff2 konursa başlıklar kendiliğinden ona geçer. */
+  /* --- Yazı --- */
   --yazi-baslik:    "Nizam Serif", Georgia, "Iowan Old Style", "Times New Roman", serif;
   --yazi-etiket:    "Space Grotesk", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --yazi-govde:     ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -1344,16 +1335,11 @@ a.mini-link { text-decoration: none; }
    Sayfa kaydırılırken zemin yerinde durduğu için yeniden boyanmıyor.
    Panelde görünmüyor: orada ofis fotoğrafı zaten üstünü kapatıyor. */
 body {
-  /* Kağıt zemin: iki yönlü çok soluk bir mürekkep taraması, üstte ışık.
-     Eskiden burada koyu bir gradyan vardı (#1e1c1a → #131211) ve açık
-     temada --bg'yi tamamen örtüyordu — zemin renginin neden değişmediği
-     aylarca burada saklanabilirdi. */
+  /* Düz beyaz. Burada eskiden koyu bir gradyan, sonra kağıt dokusu
+     vardı; ikisi de paletin dışındaydı. Marka üç renk: kırmızı, gri,
+     beyaz — zemin o beyazın kendisi. */
   background-color: var(--bg);
-  background-image:
-    url("gorseller/kagit-doku.png"),
-    radial-gradient(120% 55% at 50% -8%, rgba(255, 255, 255, .55), transparent 62%);
-  background-repeat: repeat, no-repeat;
-  background-size: 512px 512px, auto;
+  background-image: none;
 }
 html { background: var(--bg); }
 
@@ -6710,7 +6696,7 @@ a.asr:active{ transform:scale(.99); }
 .kk b { font-size: 14.5px; font-weight: 600; letter-spacing: 0; }
 .kk i { font-family: var(--yazi-govde); }
 .kk-dr {
-  background: var(--red-soft); color: var(--red-ink);
+  background: var(--surface-2); color: var(--metal-2);
   border-radius: var(--radius-sm);
   box-shadow: none;
 }
@@ -6812,7 +6798,7 @@ a.asr:active{ transform:scale(.99); }
    kağıt olarak kalıyor (url çözülmezse gradyan zaten altında). */
 #login {
   background:
-    linear-gradient(180deg, rgba(242, 239, 233, .55), rgba(242, 239, 233, .82)),
+    linear-gradient(180deg, rgba(255, 255, 255, .55), rgba(255, 255, 255, .84)),
     url("gorseller/giris-ofis.webp") center / cover no-repeat,
     radial-gradient(120% 90% at 50% -10%, var(--bg-ust) 0%, var(--bg) 60%);
 }
@@ -6830,3 +6816,9 @@ a.asr:active{ transform:scale(.99); }
   .p-hero h1 { font-size: clamp(26px, 7.5vw, 36px); }
   .kk { padding: 13px 12px 12px; }
 }
+
+/* 11 · Palet dışı kalan vurgular ----------------------------------------
+   Üst çubuktaki sayfa adı ("PANEL") "geliştiriliyor" sarısını kullanıyordu
+   — koyu temada altın gibi okunuyordu, beyaz zeminde paletin dışında
+   kalan tek renk oldu. Marka üç renk: kırmızı, gri, beyaz. */
+.marka i { color: var(--ink-dim); }

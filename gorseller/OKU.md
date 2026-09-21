@@ -13,9 +13,8 @@ boyut mobilde her açılışta indirilir. Sen PNG'yi buraya koy, ben `.webp`'ye
 
 ---
 
-> `kagit-doku.png` listede yok: ChatGPT'den %4 opaklıkta saydam doku
-> istenince gerçekten boş görsel çıkıyordu. O dosya kodla üretildi ve
-> klasörde hazır duruyor.
+> Kağıt dokusu kaldırıldı: palet kırmızı · gri · beyaz olarak
+> kesinleşti, zemin düz beyaz. Doku sıcak/krem bir his veriyordu.
 
 ## 1. öncelik — tema ve Panel için gerekli
 
