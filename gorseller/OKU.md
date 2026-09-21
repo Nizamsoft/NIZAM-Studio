@@ -9,13 +9,16 @@ Yani görselleri sırayla ekleyebilirsin, acelesi yok.
 
 ---
 
+> `kagit-doku.png` listede yok: ChatGPT'den %4 opaklıkta saydam doku
+> istenince gerçekten boş görsel çıkıyordu. O dosya kodla üretildi ve
+> klasörde hazır duruyor.
+
 ## 1. öncelik — tema ve Panel için gerekli
 
 | Dosya adı | Ne? | Ölçü |
 |---|---|---|
 | `panel-ofis.png` | Panel'in tepesindeki geniş ofis fotoğrafı | 2400 × 1400 |
 | `giris-ofis.png` | Giriş ekranının zemini (dikey) | 1600 × 2400 |
-| `kagit-doku.png` | Kağıt dokusu, döşenebilir, saydam zeminli | 800 × 800 |
 
 ## 2. öncelik — sayfa kuşakları (her sayfanın tepesindeki ince şerit)
 

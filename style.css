@@ -1350,9 +1350,10 @@ body {
      aylarca burada saklanabilirdi. */
   background-color: var(--bg);
   background-image:
-    repeating-linear-gradient(45deg,  rgba(20, 18, 15, .014) 0 1px, transparent 1px 4px),
-    repeating-linear-gradient(-45deg, rgba(20, 18, 15, .014) 0 1px, transparent 1px 4px),
+    url("gorseller/kagit-doku.png"),
     radial-gradient(120% 55% at 50% -8%, rgba(255, 255, 255, .55), transparent 62%);
+  background-repeat: repeat, no-repeat;
+  background-size: 512px 512px, auto;
 }
 html { background: var(--bg); }
 

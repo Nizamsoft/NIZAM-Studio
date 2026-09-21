@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## v0.148.1
+- **Kağıt dokusu geldi** (`gorseller/kagit-doku.png`). ChatGPT'den istenemiyordu: %4 opaklıkta saydam bir doku istenince gerçekten boş görsel çıkıyordu. Doku zaten matematik — kodla üretildi, döşenebilir ve tekrar üretilebilir (sabit tohum).
+- Zemindeki çapraz tarama çizgileri kaldırıldı; doku artık tek kaynaktan geliyor ve ızgara gibi değil, gren gibi okunuyor.
+- İstenecek görsel listesinden `kagit-doku.png` çıkarıldı (`gorseller/OKU.md`).
+
 ## v0.148.0
 - **Studio editoryal açık temaya geçti.** Koyu grafit zemin gitti; yerine kağıt zemin, mürekkep yazı, serif başlıklar ve tek kırmızı geldi. Renkler tek yerden (`:root`) döndüğü için bütün sayfalar aynı anda değişti.
 - **Panel yeniden kuruldu.** Ofis fotoğrafı artık sayfanın zemini değil, tepedeki kendi bloğu: selam onun koyu perdesinin üstünde serif ve iri duruyor. Kartlar kağıdın üstünde, üstlerinde markanın kırmızı şeridiyle; mobilde iki, masaüstünde üç sütun.
