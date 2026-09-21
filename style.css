@@ -8094,8 +8094,26 @@ a.asr:active{ transform:scale(.99); }
   font-size: 12.5px; white-space: nowrap;
 }
 
-/* Katılım tarihi: "Kurucu" seçilince tarih kutusu gizleniyor. */
-.kd-katilim-sec { margin-bottom: 8px; }
+/* Rol açılır kutusu: tarayıcının kendi oku gizleniyor, kendi okumuz
+   sağa konuyor — diğer alanlarla aynı görünsün. */
+.kd-secim { position: relative; display: block; }
+.kd-secim select {
+  width: 100%; height: 46px; padding: 0 38px 0 14px;
+  border-radius: 10px; background: var(--surface-2);
+  border: 1px solid var(--line-2); color: var(--ink-strong);
+  font-family: inherit; font-size: 13.5px; cursor: pointer;
+  appearance: none; -webkit-appearance: none;
+}
+.kd-secim select:disabled { color: var(--ink-dim); cursor: default; }
+.kd-secim svg {
+  position: absolute; right: 13px; top: 50%; transform: translateY(-50%);
+  width: 16px; height: 16px; pointer-events: none;
+  fill: none; stroke: var(--ink-dim); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+}
+
+/* Katılım: solda Tarih/Kurucu, sağda tarih kutusu. */
+.kd-katilim { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; align-items: center; }
+.kd-katilim .secenek-serit { flex-wrap: nowrap; }
 .kd-tarih {
   width: 100%; height: 46px; padding: 0 14px;
   border-radius: 10px; background: var(--surface-2);

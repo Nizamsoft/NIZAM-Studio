@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.162.1
+- Ekip düzenleme ekranı derli toplu oldu: **E-posta ile Şifre yan yana**, altında Telefon ile Rol, en altta katılım.
+- **Rol artık açılır kutu.**
+- **Erişim açık/kapalı kaldırıldı** — ekranı kalabalıklaştırıyordu.
+- Şifre kutusundaki göz düğmesi yazdığın şifreyi gösteriyor; alan boşken "Yeni şifre" yazıyor.
+
 ## v0.162.0
 - **Ekibe katılım tarihi artık seçiliyor.** Düzenleme ekranında "Tarih" ya da "Kurucu": kurucunun katılım tarihi yok, kartta "Kurucu" yazıyor.
 - Karttaki kıdem **hep aya yuvarlanıyor** — gün yazmıyor. Bir aydan azsa "1 ay", on iki ayı geçince "N yıl".

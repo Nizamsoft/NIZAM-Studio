@@ -11904,22 +11904,31 @@ function kisiDuzenle(id) {
       <label class="field"><span>E-posta</span>
         <input type="email" id="kd-mail" value="${esc(epostaVar)}" placeholder="ad@firma.com"
                autocomplete="off" autocapitalize="off" spellcheck="false"></label>
-      <label class="field"><span>Telefon</span>
-        <input type="tel" id="kd-tel" value="${esc(k.telefon || '')}" placeholder="+90 555 123 45 67"
-               autocomplete="off"></label>
+      <label class="field"><span>Şifre</span>
+        <span class="kd-sifre">
+          <input type="password" id="kd-sifre" placeholder="Yeni şifre" autocomplete="new-password"
+                 autocapitalize="off" spellcheck="false">
+          <button class="kd-goz" data-kd="goz" type="button" aria-label="Şifreyi göster">${goz}</button>
+        </span></label>
     </div>
 
     <div class="kd-cift">
-      <div class="field"><span>Rol</span>
+      <label class="field"><span>Telefon</span>
+        <input type="tel" id="kd-tel" value="${esc(k.telefon || '')}" placeholder="+90 555 123 45 67"
+               autocomplete="off"></label>
+      <label class="field"><span>Rol</span>
+        <span class="kd-secim">
+          <select id="kd-rol" ${ben ? 'disabled' : ''}>
+            <option value="gelistirici" ${k.rol === 'gelistirici' ? 'selected' : ''}>Geliştirici</option>
+            <option value="yonetici" ${k.rol === 'yonetici' ? 'selected' : ''}>Yönetici</option>
+          </select>
+          <svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"></path></svg>
+        </span></label>
+    </div>
+
+    <div class="field kd-tek"><span>Ekibe katılım</span>
+      <div class="kd-katilim">
         <div class="secenek-serit">
-          <button class="ss ${k.rol === 'gelistirici' ? 'sec' : ''}" data-rol="gelistirici"
-                  type="button" ${ben ? 'disabled' : ''}>Geliştirici</button>
-          <button class="ss ${k.rol === 'yonetici' ? 'sec' : ''}" data-rol="yonetici"
-                  type="button" ${ben ? 'disabled' : ''}>Yönetici</button>
-        </div>
-      </div>
-      <div class="field"><span>Ekibe katılım</span>
-        <div class="secenek-serit kd-katilim-sec">
           <button class="ss ${k.kurucu ? '' : 'sec'}" data-kur="0" type="button">Tarih</button>
           <button class="ss ${k.kurucu ? 'sec' : ''}" data-kur="1" type="button">Kurucu</button>
         </div>
@@ -11928,39 +11937,13 @@ function kisiDuzenle(id) {
       </div>
     </div>
 
-    <div class="field kd-tek"><span>Erişim</span>
-      <div class="secenek-serit">
-        <button class="ss ${k.aktif ? 'sec' : ''}" data-aktif="1" type="button" ${ben ? 'disabled' : ''}>Açık</button>
-        <button class="ss ${k.aktif ? '' : 'sec'}" data-aktif="0" type="button" ${ben ? 'disabled' : ''}>Kapalı</button>
-      </div>
-    </div>
-
-    <label class="field kd-tek"><span>Şifre</span>
-      <span class="kd-sifre">
-        <input type="password" id="kd-sifre" placeholder="••••••••" autocomplete="new-password"
-               autocapitalize="off" spellcheck="false">
-        <button class="kd-goz" data-kd="goz" type="button" aria-label="Şifreyi göster">${goz}</button>
-      </span></label>
-    <p class="kd-ipucu">Boş bırakılırsa şifre değişmez. Erişimi kapalı kullanıcı giriş yapamaz, kaydı silinmez.</p>
+    <p class="kd-ipucu">Şifre boş bırakılırsa değişmez. Kurucunun katılım tarihi olmaz.</p>
 
     <div class="modal-alt kd-alt">
       <button class="btn btn-primary kd-guncelle" data-kd="kaydet" type="button">
         ${svg(ICON.tik, 16)}<span>Güncelle</span></button>
       <button class="btn btn-ghost" data-kd="iptal" type="button">İptal</button>
     </div>`, kutu => {
-    let rol = k.rol, aktif = k.aktif;
-
-    $$('[data-rol]', kutu).forEach(b => b.addEventListener('click', () => {
-      if (ben) return;
-      rol = b.dataset.rol;
-      $$('[data-rol]', kutu).forEach(x => x.classList.toggle('sec', x === b));
-    }));
-    $$('[data-aktif]', kutu).forEach(b => b.addEventListener('click', () => {
-      if (ben) return;
-      aktif = b.dataset.aktif === '1';
-      $$('[data-aktif]', kutu).forEach(x => x.classList.toggle('sec', x === b));
-    }));
-
     /* Kurucu seçilince tarih kutusu gizleniyor: kurucunun katılım tarihi yok. */
     let kurucu = !!k.kurucu;
     $$('[data-kur]', kutu).forEach(b => b.addEventListener('click', () => {
@@ -11996,8 +11979,7 @@ function kisiDuzenle(id) {
           id: k.id, ad, telefon: tel, eposta: mail, sifre,
           kurucu, katilim: kurucu ? null : $('#kd-katilim', kutu).value,
           epostaDegisti: !!mail && mail !== String(epostaVar || '').toLowerCase(),
-          rol: ben ? undefined : rol,
-          aktif: ben ? undefined : aktif,
+          rol: ben ? undefined : $('#kd-rol', kutu).value,
         });
         if (ben) await AUTH.profilOku();
         modalKapat();
