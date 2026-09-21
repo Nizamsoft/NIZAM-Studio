@@ -13558,128 +13558,6 @@ function karsilama(ilerleme, projeSayi, acikIs) {
    Görsel gorseller/panel-ofis.webp. Dosya yoksa onerror ile eski ofis
    fotoğrafına, o da yoksa düz mürekkep zemine düşüyor — yani görsel
    eklenene kadar panel çirkinleşmiyor, yalnız sadeleşiyor. */
-function panelHero() {
-  const ad = String(AUTH.ad || '').split(' ')[0];
-  const d = new Date();
-  const aylar = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz',
-                 'Ağustos','Eylül','Ekim','Kasım','Aralık'];
-  const gunler = ['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi'];
-  return `
-    <section class="p-hero">
-      <img class="p-hero-foto" src="gorseller/panel-ofis.webp" alt="" draggable="false"
-           onerror="this.onerror=null;this.src='ofis.webp'">
-      <span class="p-hero-perde"></span>
-      <div class="p-hero-yazi">
-        <span class="p-hero-cizgi"></span>
-        <span class="p-hero-ust">Nizam Studio</span>
-        <h1>${esc(selamla())},${ad ? `<br><em>${esc(ad)}.</em>` : ''}</h1>
-        <p class="p-hero-slogan">Planla. Geliştir. Teslim et.</p>
-        <blockquote class="p-hero-soz">Daha iyi yazılımlar,<br>daha iyi yarınlar üretir.</blockquote>
-      </div>
-      <span class="p-hero-tarih">
-        ${svg(ICON.takvim, 15)}
-        <span>
-          <b>${d.getDate()} ${aylar[d.getMonth()]} ${d.getFullYear()}</b>
-          <i>${gunler[d.getDay()]}</i>
-        </span>
-      </span>
-    </section>`;
-}
-
-/* ---------- Panelin özet sayıları ----------
-   İki kutu: kaç proje devam ediyor, kaç iş açık. Dibindeki ince çubuk
-   gerçek bir oran; hangi oran olduğu kutunun title'ında yazıyor. */
-function pzKutu({ ikon, sayi, etiket, adres, oran, aciklama, vurgu }) {
-  return `
-    <a class="pz ${vurgu ? 'vurgu' : ''}" href="${adres}"${aciklama ? ` title="${esc(aciklama)}"` : ''}>
-      <span class="pz-ust">
-        <span class="pz-ikon">${svg(ICON[ikon], 19)}</span>
-        <em class="pz-cv">${svg(ICON.chevron, 14)}</em>
-      </span>
-      <b class="pz-sayi">${sayi}</b>
-      <i class="pz-etiket">${esc(etiket)}</i>
-      ${typeof oran === 'number'
-        ? `<span class="pz-ray"><i style="width:${Math.max(3, Math.min(100, Math.round(oran)))}%"></i></span>`
-        : '<span class="pz-ray bos"></span>'}
-    </a>`;
-}
-
-function panelSayilar(projeler) {
-  const gorevler = DB.gorevler || [];
-  const bitmis = gorevler.filter(g => g.durum === 'tamamlandi').length;
-  const acik = gorevler.length - bitmis;
-
-  const devam = projeler.filter(p => p.durum !== 'tamamlandi');
-  const yuzdeler = devam.map(p => DB.sayim(p.id).yuzde);
-  const ortalama = yuzdeler.length ? yuzdeler.reduce((t, x) => t + x, 0) / yuzdeler.length : null;
-
-  return `<div class="pz-izgara">
-    ${pzKutu({ ikon: 'folder', sayi: devam.length, etiket: 'Devam Eden Proje',
-               adres: '#/projeler', oran: ortalama, vurgu: true,
-               aciklama: 'Çubuk: bu projelerin ortalama ilerlemesi' })}
-    ${pzKutu({ ikon: 'check', sayi: acik, etiket: 'Açık Görev',
-               adres: '#/gorevler',
-               oran: gorevler.length ? bitmis / gorevler.length * 100 : null,
-               aciklama: 'Çubuk: biten görevlerin oranı' })}
-  </div>`;
-}
-
-/* ---------- Ekip ----------
-   Kim şu an uygulamada, kim değil. Çevrimiçi bilgisi canlı kanaldan
-   geliyor (bkz. data.js · varlikBasla) ve anlıktır: kanal yalnız şu anı
-   bilir. Çevrimdışı olan için "en son ne yapmıştı" görev geçmişinden
-   okunuyor — o da yoksa satır sessiz kalıyor, uydurma saat yazılmıyor. */
-function ekipSonHareket(kisiId) {
-  let enYeni = '';
-  (DB.hareketler || []).forEach(h => {
-    if (h.kim === kisiId && (h.olusturuldu || '') > enYeni) enYeni = h.olusturuldu || '';
-  });
-  return enYeni;
-}
-
-function ekipSatiri(k) {
-  const ad = k.ad_soyad || k.ad || 'İsimsiz';
-  const cevrimici = DB.cevrimicimi(k.id);
-  const son = cevrimici ? '' : ekipSonHareket(k.id);
-  return `
-    <div class="ek ${cevrimici ? 'acik' : ''}">
-      <span class="ek-av">${k.foto
-        ? `<img src="${esc(k.foto)}" alt="" loading="lazy">`
-        : esc(basHarf(ad))}<u></u></span>
-      <span class="ek-orta">
-        <b>${esc(ad)}</b>
-        <i>${k.rol === 'yonetici' ? 'Yönetici' : 'Geliştirici'}</i>
-      </span>
-      <span class="ek-durum">${cevrimici
-        ? 'şu an aktif'
-        : (son ? esc(pzZaman(son)) : 'çevrimdışı')}</span>
-    </div>`;
-}
-
-function panelEkip() {
-  const kisiler = (DB.kisiler || []).slice()
-    .sort((a, b) => (DB.cevrimicimi(b.id) ? 1 : 0) - (DB.cevrimicimi(a.id) ? 1 : 0));
-  if (!kisiler.length) return '';
-  const acik = kisiler.filter(k => DB.cevrimicimi(k.id)).length;
-  return `<div class="pz-bolum" id="ekip-blok">
-    <span class="pz-bas">
-      <b>Ekip</b><u></u>
-      <span class="ek-sayac">${acik ? `${acik} kişi aktif` : 'kimse aktif değil'}</span>
-    </span>
-    <div class="ek-liste">${kisiler.slice(0, 6).map(ekipSatiri).join('')}</div>
-  </div>`;
-}
-
-/* Biri girip çıkınca yalnız bu blok yeniden çiziliyor. */
-function ekipBlogunuTazele() {
-  const eski = document.getElementById('ekip-blok');
-  if (!eski) return;
-  const kap = document.createElement('div');
-  kap.innerHTML = panelEkip();
-  const yeni = kap.firstElementChild;
-  if (yeni) eski.replaceWith(yeni);
-}
-
 /* Projeye en son ne zaman dokunuldu — o projenin görevleri içindeki en
    yeni değişiklik. Ayrı bir "güncellendi" alanı tutmuyoruz; tutulsaydı
    iki kaynak olur ve biri eskirdi. */
@@ -13690,7 +13568,6 @@ function pzSonDokunus(pid) {
   });
   return enYeni;
 }
-
 /* Tarihi insan diline çevirir: bugün ve dün saatle, öncesi tam tarihle. */
 function pzZaman(iso) {
   if (!iso) return 'henüz hareket yok';
@@ -13706,49 +13583,140 @@ function pzZaman(iso) {
   return tarihYaz(iso);
 }
 
-/* Projenin platformuna göre karo simgesi. */
-function pzKaroIkon(p) {
-  return { mobil: 'telefon', web: 'bulut', ikisi: 'panel' }[p.platform] || 'folder';
+/* ---------- Panelin hero'su ----------
+   Koyu bir pano: solda selam, sağda markanın "N"i ve kırmızı ışık
+   çizgileri. Ofis fotoğrafı kalktı — tasarım kararı: hero artık markanın
+   kendisini taşıyor, bir mekânı değil.
+
+   "Bugünün odağı" uydurma bir cümle değil: en son dokunulan, bitmemiş
+   görevin başlığı. Öyle bir görev yoksa satır hiç çıkmıyor. */
+function panelOdak() {
+  const acik = (DB.gorevler || []).filter(g => g.durum !== 'tamamlandi');
+  if (!acik.length) return '';
+  const son = acik.slice().sort((a, b) =>
+    (b.guncellendi || '').localeCompare(a.guncellendi || ''))[0];
+  return son && son.baslik ? son.baslik : '';
 }
 
-/* Projede iş atanmış kişiler — en fazla iki baş harf, gerisi "+N". */
-function pzKisiler(pid) {
-  const idler = [...new Set(DB.gorevleri({ proje: pid })
-    .filter(g => g.atanan).map(g => g.atanan))];
-  if (!idler.length) return '';
-  const goster = idler.slice(0, 2).map(id => {
-    const k = (DB.kisiler || []).find(x => x.id === id);
-    return `<u>${esc(basHarf((k && (k.ad_soyad || k.ad)) || '?'))}</u>`;
-  }).join('');
-  const kalan = idler.length - 2;
-  return `<span class="pp-kisiler">${svg(ICON.kisi, 13)}${goster}${kalan > 0 ? `<i>+${kalan}</i>` : ''}</span>`;
-}
+function panelHero() {
+  const ad = String(AUTH.ad || '').split(' ')[0];
+  const d = new Date();
+  const aylar = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz',
+                 'Ağustos','Eylül','Ekim','Kasım','Aralık'];
+  const gunler = ['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi'];
+  const p = n => String(n).padStart(2, '0');
+  const odak = panelOdak();
 
-function pzProjeSatiri(p, i) {
-  const s = DB.sayim(p.id);
   return `
-    <div class="pp ${i === 0 ? 'ilk' : ''}" data-eylem="proje-ac" data-id="${p.id}"
+    <section class="ph">
+      <span class="ph-isik" aria-hidden="true"></span>
+      <img class="ph-n" src="logo.png" alt="" draggable="false">
+      <div class="ph-yazi">
+        <h1>Merhaba,${ad ? ` <em>${esc(ad)}</em>` : ''}</h1>
+        <p class="ph-slogan">Planla. Geliştir. Teslim et.</p>
+        <blockquote class="ph-soz">Fikirleri gerçeğe dönüştüren<br>bir çalışma alanı.</blockquote>
+      </div>
+      <span class="ph-etek">
+        ${odak ? `<i class="ph-odak">Bugünün odağı: <b>${esc(odak)}</b></i>` : '<i></i>'}
+        <i class="ph-tarih">${gunler[d.getDay()]}, ${d.getDate()} ${aylar[d.getMonth()]}, ${p(d.getHours())}:${p(d.getMinutes())}</i>
+      </span>
+    </section>`;
+}
+
+/* Proje kartında yer dar: bugünkü saat tek başına yeter, "Bugün ·"
+   öneki satırı ikiye kırıyordu. */
+function pzZamanKisa(iso) {
+  const t = pzZaman(iso);
+  return t.indexOf('Bugün · ') === 0 ? t.slice(8) : t.replace(' · ', ' ');
+}
+
+/* Yüzde halkası. Tek yerde duruyor: panelde üç ayrı boyda kullanılıyor
+   ve her seferinde yeniden yazmak üç ayrı yuvarlama hatası demekti. */
+function pzHalka(yuzde, boy, kalin) {
+  boy = boy || 74; kalin = kalin || 8;
+  const y = Math.max(0, Math.min(100, Math.round(yuzde || 0)));
+  const r = (boy - kalin) / 2;
+  const cevre = 2 * Math.PI * r;
+  const dolu = cevre * y / 100;
+  const o = boy / 2;
+  return `<svg class="hlk" viewBox="0 0 ${boy} ${boy}" width="${boy}" height="${boy}" aria-hidden="true">
+    <circle cx="${o}" cy="${o}" r="${r.toFixed(2)}" fill="none"
+            stroke="var(--hlk-bos)" stroke-width="${kalin}"></circle>
+    <circle cx="${o}" cy="${o}" r="${r.toFixed(2)}" fill="none"
+            stroke="var(--hlk-dolu)" stroke-width="${kalin}" stroke-linecap="round"
+            stroke-dasharray="${dolu.toFixed(1)} ${(cevre - dolu).toFixed(1)}"
+            transform="rotate(-90 ${o} ${o})"></circle>
+  </svg>`;
+}
+
+/* ---------- İki sayı kartı ----------
+   Solda halka: devam eden projelerin ortalama ilerlemesi.
+   Sağda haftalık çubuklar: bu haftanın günlük hareketi (görev geçmişinden
+   sayılıyor), bugünün çubuğu kırmızı. İkisi de gerçek veri; hangisi
+   olduğu kartın title'ında yazıyor. */
+function panelSayilar(projeler) {
+  const gorevler = DB.gorevler || [];
+  const bitmis = gorevler.filter(g => g.durum === 'tamamlandi').length;
+  const acik = gorevler.length - bitmis;
+
+  const devam = projeler.filter(p => p.durum !== 'tamamlandi');
+  const yuzdeler = devam.map(p => DB.sayim(p.id).yuzde);
+  const ortalama = yuzdeler.length
+    ? Math.round(yuzdeler.reduce((t, x) => t + x, 0) / yuzdeler.length) : 0;
+
+  /* Haftanın günleri pazartesiden başlıyor; hareketler güne dağıtılıyor. */
+  const kisa = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cts', 'Paz'];
+  const simdi = new Date();
+  const bugunIndis = (simdi.getDay() + 6) % 7;
+  const haftaBasi = new Date(simdi.getFullYear(), simdi.getMonth(), simdi.getDate() - bugunIndis);
+  const say = [0, 0, 0, 0, 0, 0, 0];
+  (DB.hareketler || []).forEach(h => {
+    const t = new Date(h.olusturuldu || 0);
+    const fark = Math.floor((t - haftaBasi) / 86400000);
+    if (fark >= 0 && fark < 7) say[fark]++;
+  });
+  const enBuyuk = Math.max.apply(null, say.concat([1]));
+
+  return `<div class="ps-izgara">
+    <a class="ps" href="#/projeler" title="Halka: devam eden projelerin ortalama ilerlemesi">
+      <span class="ps-ust"><span class="ps-ikon">${svg(ICON.folder, 18)}</span><i>Devam Eden Proje</i></span>
+      <span class="ps-alt">
+        <b>${devam.length}</b>
+        <span class="ps-halka">${pzHalka(ortalama, 76, 9)}<u>%${ortalama}</u></span>
+      </span>
+    </a>
+    <a class="ps" href="#/gorevler" title="Çubuklar: bu haftanın günlük hareketi">
+      <span class="ps-ust"><span class="ps-ikon">${svg(ICON.check, 18)}</span><i>Açık Görev</i></span>
+      <span class="ps-alt">
+        <b>${acik}</b>
+        <span class="ps-hafta">${say.map((n, i) => `
+          <span class="hf ${i === bugunIndis ? 'bugun' : ''}">
+            <u style="height:${Math.max(8, Math.round(n / enBuyuk * 100))}%"></u>
+            <em>${kisa[i]}</em>
+          </span>`).join('')}</span>
+      </span>
+    </a>
+  </div>`;
+}
+
+/* ---------- Aktif projeler ----------
+   Koyu kartlar, yan yana kayan bir şerit. Her kartta halka içinde yüzde,
+   altında durum ve son güncelleme. Bitmiş projede yeşil onay rozeti. */
+function pzProjeKarti(p) {
+  const s = DB.sayim(p.id);
+  const bitti = s.yuzde >= 100 || p.durum === 'tamamlandi';
+  const zaman = pzSonDokunus(p.id);
+  return `
+    <div class="pk2 ${bitti ? 'bitti' : ''}" data-eylem="proje-ac" data-id="${p.id}"
          role="button" tabindex="0">
-      <span class="pp-seri"></span>
-      <span class="pp-karo">${svg(ICON[pzKaroIkon(p)], 22)}</span>
-      <span class="pp-orta">
-        <b class="pp-ad">${esc(projeAdi(p))}</b>
-        <i class="pp-alt">${esc(modulAdi(p) || PLATFORM_ADI[p.platform] || p.platform || '')}</i>
-        <span class="pp-ray-satir">
-          <span class="pp-ray"><i style="width:${s.yuzde}%"></i></span>
-          <b class="pp-yuz mono">%${s.yuzde}</b>
-        </span>
-        <span class="pp-durum-satir">
-          <span class="pp-durum"><u class="${durumSinif(p.durum)}"></u>${esc(DURUM_ADI[p.durum] || p.durum)}</span>
-          ${pzKisiler(p.id)}
-        </span>
+      <b class="pk2-ad">${esc(projeAdi(p))}</b>
+      <i class="pk2-et">İlerleme</i>
+      <span class="pk2-halka">
+        ${pzHalka(s.yuzde, 96, 9)}<u>${s.yuzde}%</u>
+        ${bitti ? `<em class="pk2-tik">${svg(ICON.tik, 13)}</em>` : ''}
       </span>
-      <span class="pp-sag">
-        ${svg(ICON.takvim, 14)}
-        <span><i>Son güncelleme</i>${esc(pzZaman(pzSonDokunus(p.id)))}</span>
-      </span>
-      ${AUTH.yonetici ? `<button class="pp-menu" data-eylem="proje-menu" data-id="${p.id}"
-        type="button" aria-label="Proje seçenekleri">${svg(ICON.nokta, 15)}</button>` : ''}
+      <span class="pk2-durum">${esc(DURUM_ADI[p.durum] || p.durum)}</span>
+      <span class="pk2-zaman">Son güncelleme: ${esc(pzZamanKisa(zaman))}</span>
     </div>`;
 }
 
@@ -13762,16 +13730,68 @@ function panelProjeler(projeler) {
         AUTH.yonetici ? 'Yeni Proje' : null, 'sihirbaz')}</div>
     </div>`;
   }
-  /* En son dokunulan üç proje. Panel bir liste ekranı değil; tamamı
-     "Tüm Projeler" bağlantısının arkasında. */
-  const sirali = projeler.slice().sort((a, b) => (pzSonDokunus(b.id) || '').localeCompare(pzSonDokunus(a.id) || ''));
+  const sirali = projeler.slice().sort((a, b) =>
+    (pzSonDokunus(b.id) || '').localeCompare(pzSonDokunus(a.id) || ''));
   return `<div class="pz-bolum">
     <span class="pz-bas">
       <b>Aktif Projeler</b><u></u>
-      <a class="pz-tum" href="#/projeler">Tüm Projeler ${svg(ICON.chevron, 14)}</a>
+      <a class="pz-tum" href="#/projeler">Tüm Projeler ${svg(ICON.chevron, 13)}</a>
     </span>
-    <div class="pp-liste">${sirali.slice(0, 3).map((p, i) => pzProjeSatiri(p, i)).join('')}</div>
+    <div class="pk2-serit"><div class="pk2-sira">${sirali.slice(0, 6).map(pzProjeKarti).join('')}</div></div>
+    <a class="pk2-dug" href="#/projeler">Tüm Projeleri Görüntüle ${svg(ICON.chevron, 15)}</a>
   </div>`;
+}
+
+/* ---------- Ekip ----------
+   Çevrimiçi bilgisi canlı kanaldan geliyor ve ANLIK: kanal yalnız şu anı
+   bilir. Çevrimdışı satırda yazan saat o kişinin son görev hareketidir;
+   hiç hareketi yoksa satır sessiz kalır, uydurma saat yazılmaz. */
+function ekipSonHareket(kisiId) {
+  let enYeni = '';
+  (DB.hareketler || []).forEach(h => {
+    if (h.kim === kisiId && (h.olusturuldu || '') > enYeni) enYeni = h.olusturuldu || '';
+  });
+  return enYeni;
+}
+
+function ekipSatiri(k) {
+  const ad = k.ad_soyad || k.ad || 'İsimsiz';
+  const cevrimici = DB.cevrimicimi(k.id);
+  const son = ekipSonHareket(k.id);
+  return `
+    <div class="ek ${cevrimici ? 'acik' : ''}">
+      <span class="ek-av">${k.foto
+        ? `<img src="${esc(k.foto)}" alt="" loading="lazy">`
+        : esc(basHarf(ad))}<u></u></span>
+      <span class="ek-orta">
+        <b>${esc(ad.split(' ')[0])}</b>
+        <i class="ek-dur">${cevrimici ? 'Şu an aktif.' : (son ? 'Son hareket: ' + esc(pzZaman(son)) : 'Çevrimdışı')}</i>
+      </span>
+      <span class="ek-rol">${k.rol === 'yonetici' ? 'Yönetici' : 'Geliştirici'}</span>
+    </div>`;
+}
+
+function panelEkip() {
+  const kisiler = (DB.kisiler || []).slice()
+    .sort((a, b) => (DB.cevrimicimi(b.id) ? 1 : 0) - (DB.cevrimicimi(a.id) ? 1 : 0));
+  if (!kisiler.length) return '';
+  return `<div class="pz-bolum" id="ekip-blok">
+    <span class="pz-bas">
+      <b>Ekip</b><u></u>
+      ${AUTH.yonetici ? `<a class="pz-tum" href="#/ekip">Tüm Ekip ${svg(ICON.chevron, 13)}</a>` : ''}
+    </span>
+    <div class="ek-liste">${kisiler.slice(0, 5).map(ekipSatiri).join('')}</div>
+  </div>`;
+}
+
+/* Biri girip çıkınca yalnız bu blok yeniden çiziliyor. */
+function ekipBlogunuTazele() {
+  const eski = document.getElementById('ekip-blok');
+  if (!eski) return;
+  const kap = document.createElement('div');
+  kap.innerHTML = panelEkip();
+  const yeni = kap.firstElementChild;
+  if (yeni) eski.replaceWith(yeni);
 }
 
 /* ---------- Bugünkü durum ----------

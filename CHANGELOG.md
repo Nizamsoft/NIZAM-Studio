@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü
 
+## v0.152.0
+- **Panel onaylanan tasarıma geçti.** Hero artık ofis fotoğrafı değil, koyu bir pano: solda büyük harf selam (ad kırmızı), slogan ve söz; sağda markanın "N"i ve kırmızı ışık çizgileri; altta solda bugünün odağı, sağda tarih ve saat.
+- "Bugünün odağı" uydurma bir cümle değil: en son dokunulan bitmemiş görevin başlığı. Öyle bir görev yoksa satır hiç çıkmıyor.
+- **Sayı kartları grafikli:** Devam Eden Proje'de ortalama ilerlemeyi gösteren halka, Açık Görev'de bu haftanın günlük hareketi (bugünün çubuğu kırmızı).
+- **Aktif projeler koyu kartlara döndü:** yan yana kayan şerit, ortada yüzde halkası, altında durum ve son güncelleme saati. Biten projede yeşil onay rozeti. Altında tam genişlikte "Tüm Projeleri Görüntüle" düğmesi.
+- Ekip satırlarında kişinin rolü sağa alındı; çevrimiçi olanlar yeşil noktayla üstte.
+- Hero'daki logo `logo.png`'den geliyor; görselin altındaki "STUDIO" yazısı kırpılıyor, yalnız harf görünüyor.
+
 ## v0.151.0
 - **Panelin içeriğine karar verildi:** hero · iki sayı · aktif projeler · ekip. Sıra bilinçli — önce kim olduğun, sonra ne durumda, sonra neye dokunacaksın, en sonda kim yanında.
 - **Ekip bloğu geldi.** Kim şu an uygulamada olduğunu **canlı** gösteriyor: yeşil nokta ve "şu an aktif". Çevrimiçi olanlar listenin başında.

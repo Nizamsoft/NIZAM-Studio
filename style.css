@@ -6860,219 +6860,206 @@ a.asr:active{ transform:scale(.99); }
 /* Sihirbazın "şu anki adım" işareti de nötr. */
 .steps .sd.cur { background: var(--ink-strong); }
 
-/* 13 · Panel: hero · sayı şeridi · aktif projeler -------------------------
-   Düzen doğrudan onaylanan mockup'tan geliyor. Üç kural:
-     · hero koyu bir pano, fotoğraf sağ yarıda erir,
-     · sayılar yatay kayan bir şerit (telefonda dördü yan yana sığmaz),
-     · proje satırının solunda dikey bir şerit; en üsttekinin şeridi kırmızı.
-   Kırmızı burada üç yerde: selamdaki ad, ilk projenin şeridi, aktif sekme. */
+/* 13 · Panel ---------------------------------------------------------------
+   Düzen onaylanan mockup'tan: koyu hero (markanın "N"i sağda), iki sayı
+   kartı (halka + haftalık çubuk), yan yana kayan koyu proje kartları,
+   altında tam genişlikte kırmızı düğme, en altta ekip listesi.
+
+   Kırmızı burada sayılı: hero'daki ad, bugünün çubuğu, proje halkaları,
+   "Tüm ..." bağlantıları ve tek büyük düğme. Geri kalan her şey
+   siyah-gri-beyaz. */
+
+:root { --hlk-bos: var(--surface-3); --hlk-dolu: var(--red); }
 
 /* ---- Hero ---- */
-.p-hero {
+.ph {
   position: relative; overflow: hidden;
-  border-radius: 16px; border: 0;
-  aspect-ratio: 20 / 17; margin-bottom: 20px; background: #0d0d0f;
+  border-radius: 18px; margin-bottom: 14px;
+  padding: 26px 20px 16px; min-height: 210px;
+  background: linear-gradient(135deg, #1b1b1e 0%, #121214 46%, #0b0b0c 100%);
+  display: flex; flex-direction: column;
 }
-.p-hero-foto {
-  position: absolute; inset: 0 0 0 auto; width: 74%; height: 100%;
-  object-fit: cover; object-position: 62% 46%;
+/* Kırmızı ışık: sağ üstten geçen iki ince yay. Görsel değil, çizgi —
+   dosya ağırlığı sıfır ve her ekranda net. */
+.ph-isik {
+  position: absolute; inset: 0; pointer-events: none;
+  background:
+    radial-gradient(120% 90% at 92% 8%, rgba(229, 52, 42, .30), transparent 58%),
+    linear-gradient(118deg, transparent 54%, rgba(229, 52, 42, .55) 55.2%, transparent 56.4%),
+    linear-gradient(118deg, transparent 63%, rgba(229, 52, 42, .28) 63.8%, transparent 64.6%);
 }
-/* Perde soldan sağa açılıyor: yazı koyu panonun üstünde, fotoğraf sağda
-   yaşıyor. Tam ekran koyu perde fotoğrafı boğuyordu. */
-.p-hero-perde {
-  position: absolute; inset: 0;
-  background: linear-gradient(95deg,
-    #0d0d0f 0%, #0d0d0f 38%, rgba(13, 13, 15, .82) 52%,
-    rgba(13, 13, 15, .35) 74%, rgba(13, 13, 15, .10) 100%);
+.ph-n {
+  /* logo.png'de "N"in altında STUDIO yazısı da var; hero'da yalnız harf
+     görünsün diye görsel kutuya sığdırılıp alt kısmı kırpılıyor. */
+  position: absolute; right: 10px; top: 50%; transform: translateY(-52%);
+  /* logo.png 360x517 (dikey). Kare bir kutuya "cover" ile sığdırınca
+     harfin yanları kırpılıyordu; kutu kaynağa yakın bir orana getirildi,
+     kırpma yalnız dikeyde oluyor ve alttaki STUDIO yazısı dışarıda kalıyor. */
+  width: 152px; height: 178px; object-fit: cover; object-position: 50% 16%;
+  opacity: .95;
+  filter: drop-shadow(0 18px 30px rgba(0, 0, 0, .55));
+  pointer-events: none;
 }
-.p-hero-yazi {
-  /* transform:none — bölüm 4'teki eski kural yazıyı dikeyde ortalıyordu
-     (top:50% + translateY(-50%)). Yeni düzende yazı üstten başlıyor;
-     sıfırlanmayınca blok yarı boyu kadar yukarı kayıp hero'nun dışına
-     taşıyordu. */
-  position: absolute; left: 22px; right: 22px; top: 22px; bottom: auto;
-  transform: none; z-index: 2;
+.ph-yazi { position: relative; z-index: 2; max-width: 62%; }
+.ph h1 {
+  margin: 0; font-family: var(--yazi-etiket); font-weight: 700;
+  font-size: clamp(23px, 6.4vw, 30px); line-height: 1.12;
+  letter-spacing: -.01em; color: #fff; text-transform: uppercase;
 }
-.p-hero-cizgi {
-  display: block; width: 40px; height: 3px; background: var(--red);
-  margin-bottom: 16px;
-}
-.p-hero-ust {
-  display: block; font-family: var(--yazi-etiket);
-  font-size: 10.5px; font-weight: 600; letter-spacing: .26em;
-  text-transform: uppercase; color: rgba(255, 255, 255, .80);
-  margin-bottom: 10px;
-}
-.p-hero h1 {
-  margin: 0; font-family: var(--yazi-baslik); font-weight: 700;
-  font-size: clamp(27px, 7.6vw, 40px); line-height: 1.08;
-  letter-spacing: -.015em; color: #fff;
-}
-.p-hero h1 em { font-style: normal; color: var(--red); }
-.p-hero-slogan {
-  margin: 14px 0 0; font-family: var(--yazi-govde);
-  font-size: 13.5px; font-weight: 600; color: #fff;
-}
-.p-hero-soz {
-  margin: 16px 0 0; padding: 0; max-width: 62%;
-  font-family: var(--yazi-baslik); font-size: 13px; line-height: 1.5;
-  color: rgba(255, 255, 255, .62);
-}
-.p-hero-soz::before { content: '“ '; }
-.p-hero-soz::after  { content: ' ”'; }
-/* Tarih sağ altta, takvim simgesiyle. */
-.p-hero-tarih {
-  position: absolute; right: 20px; bottom: 18px; z-index: 2;
-  display: flex; align-items: center; gap: 8px; text-align: left;
+.ph h1 em { font-style: normal; color: var(--red-parlak); }
+.ph-slogan {
+  margin: 9px 0 0; font-size: 14.5px; font-weight: 500;
   color: rgba(255, 255, 255, .92);
 }
-.p-hero-tarih svg { width: 15px; height: 15px; flex-shrink: 0; opacity: .75; }
-.p-hero-tarih b { display: block; font-size: 12.5px; font-weight: 600; }
-.p-hero-tarih i {
-  display: block; font-style: normal; font-size: 11.5px;
-  color: rgba(255, 255, 255, .62);
+.ph-soz {
+  margin: 14px 0 0; padding: 0; font-style: italic;
+  font-family: var(--yazi-baslik); font-size: 13px; line-height: 1.5;
+  color: rgba(255, 255, 255, .58);
 }
+.ph-soz::before { content: '“'; }
+.ph-soz::after  { content: '”'; }
+/* Etek: solda bugünün odağı, sağda tarih. Odak yoksa tarih sağda kalır. */
+.ph-etek {
+  position: relative; z-index: 2; margin-top: auto; padding-top: 18px;
+  display: flex; align-items: flex-end; justify-content: space-between; gap: 12px;
+}
+.ph-etek i { font-style: normal; font-size: 11.5px; color: rgba(255, 255, 255, .62); }
+.ph-odak { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ph-odak b { color: rgba(255, 255, 255, .92); font-weight: 600; }
+.ph-tarih { white-space: nowrap; }
 
-/* ---- Sayı şeridi ---- */
-/* Şerit iki kutuya indi: yatay kaydırmaya gerek kalmadı, ikisi yan yana
-   tam sığıyor ve sayılar daha iri yazılabiliyor. */
-.pz-izgara { display: grid; grid-template-columns: 1fr 1fr; gap: 11px; margin-bottom: 24px; }
-.pz {
-  display: flex; flex-direction: column; gap: 9px;
-  padding: 13px 13px 12px; text-decoration: none;
-  background: var(--surface); border: 1px solid var(--line-2);
-  border-radius: 14px; color: var(--ink);
+/* ---- İki sayı kartı ---- */
+.ps-izgara { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+.ps {
+  display: flex; flex-direction: column; gap: 12px;
+  padding: 14px 14px 12px; text-decoration: none; color: var(--ink);
+  background: var(--surface); border: 1px solid var(--line-2); border-radius: 16px;
   transition: border-color .16s ease, transform .12s var(--ease);
 }
-.pz:hover  { border-color: var(--line); }
-.pz:active { transform: scale(.98); }
-.pz-ust { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.pz-ikon {
-  display: flex; align-items: center; justify-content: center;
-  width: 38px; height: 38px; border-radius: 11px;
-  background: var(--surface-2); color: var(--metal-2);
+.ps:hover  { border-color: var(--line); }
+.ps:active { transform: scale(.985); }
+.ps-ust { display: flex; align-items: center; gap: 9px; min-width: 0; }
+.ps-ikon {
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  width: 34px; height: 34px; border-radius: 10px;
+  background: var(--red-soft); color: var(--red);
 }
-.pz-cv { display: flex; color: var(--ink-dim); }
-.pz-sayi {
-  font-family: var(--yazi-baslik); font-size: 32px; font-weight: 700;
-  line-height: 1; letter-spacing: -.02em; color: var(--ink-strong);
-}
-.pz-etiket {
-  font-style: normal; font-size: 11.5px; color: var(--ink-soft);
+.ps-ust i {
+  font-style: normal; font-size: 12px; color: var(--ink-soft);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.pz-ray {
-  display: block; height: 4px; border-radius: 999px;
-  background: var(--bar-bos); overflow: hidden; margin-top: 2px;
+.ps-alt { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.ps-alt > b {
+  font-family: var(--yazi-baslik); font-size: 34px; font-weight: 700;
+  line-height: 1; letter-spacing: -.02em; color: var(--ink-strong);
 }
-.pz-ray.bos { background: none; }
-.pz-ray i { display: block; height: 100%; background: var(--ink-soft); border-radius: 999px; }
-.pz.vurgu .pz-ray i { background: var(--red); }
-
-@media (min-width: 901px) { .pz-izgara { gap: 14px; margin-bottom: 26px; } }
+.ps-halka { position: relative; display: flex; align-items: center; justify-content: center; }
+.ps-halka u {
+  position: absolute; text-decoration: none;
+  font-size: 11.5px; font-weight: 600; color: var(--ink-soft);
+}
+/* Haftalık çubuklar: yedi gün, bugün kırmızı. */
+.ps-hafta { display: flex; align-items: flex-end; gap: 4px; height: 58px; }
+.hf { display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%; }
+.hf u {
+  display: block; width: 7px; margin-top: auto; border-radius: 3px;
+  background: var(--surface-3);
+}
+.hf em { font-style: normal; font-size: 8px; color: var(--ink-dim); }
+.hf.bugun u  { background: var(--red); }
+.hf.bugun em { color: var(--ink-soft); font-weight: 600; }
 
 /* ---- Bölüm başlığı ---- */
 .pz-bolum { margin-bottom: 20px; }
-.pz-bas { display: flex; align-items: center; gap: 12px; margin-bottom: 13px; }
+.pz-bas { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
 .pz-bas b {
-  font-family: var(--yazi-baslik); font-size: 20px; font-weight: 700;
-  color: var(--ink-strong); letter-spacing: -.01em;
+  font-family: var(--yazi-etiket); font-size: 15px; font-weight: 700;
+  color: var(--ink-strong); letter-spacing: .06em; text-transform: uppercase;
 }
 .pz-bas u { flex: 1; height: 0; }
 .pz-tum {
-  display: flex; align-items: center; gap: 7px; text-decoration: none;
-  padding: 9px 14px; border-radius: 999px; white-space: nowrap;
-  background: var(--surface); border: 1px solid var(--line-2);
-  font-size: 12.5px; font-weight: 600; color: var(--ink);
+  display: flex; align-items: center; gap: 5px; text-decoration: none;
+  font-size: 12.5px; font-weight: 600; color: var(--red-ink); white-space: nowrap;
 }
-.pz-tum:hover { border-color: var(--line); }
 
-/* ---- Proje satırı ---- */
-.pp-liste { display: flex; flex-direction: column; gap: 11px; }
-.pp {
-  position: relative; display: grid; align-items: center;
-  grid-template-columns: 56px minmax(0, 1fr) auto auto;
-  gap: 12px; padding: 13px 12px 13px 18px; cursor: pointer;
-  background: var(--surface); border: 1px solid var(--line-2);
-  border-radius: 14px; overflow: hidden;
-  transition: border-color .16s ease, transform .12s var(--ease);
+/* ---- Proje kartları: koyu, yan yana kayan ---- */
+.pk2-serit {
+  margin: 0 calc(var(--yan) * -1); padding: 0 var(--yan) 2px;
+  overflow-x: auto; overscroll-behavior-x: contain;
+  scrollbar-width: none; -webkit-overflow-scrolling: touch;
 }
-.pp:hover  { border-color: var(--line); }
-.pp:active { transform: scale(.99); }
-/* Soldaki dikey şerit. En üstteki satır (en son dokunulan proje) kırmızı. */
-.pp-seri {
-  position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
-  background: var(--ink-strong);
+.pk2-serit::-webkit-scrollbar { display: none; }
+.pk2-sira { display: flex; gap: 11px; }
+.pk2 {
+  position: relative; flex: 0 0 158px;
+  display: flex; flex-direction: column; align-items: center; gap: 5px;
+  padding: 15px 12px 13px; cursor: pointer; text-align: center;
+  background: #1b1b1e; border-radius: 16px; color: #fff;
+  transition: transform .12s var(--ease);
 }
-.pp.ilk .pp-seri { background: var(--red); }
-.pp-karo {
+.pk2:active { transform: scale(.98); }
+.pk2-ad {
+  font-family: var(--yazi-baslik); font-size: 14.5px; font-weight: 700;
+  max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.pk2-et { font-style: normal; font-size: 10.5px; color: rgba(255, 255, 255, .45); }
+.pk2-halka {
+  position: relative; display: flex; align-items: center; justify-content: center;
+  margin: 4px 0 6px;
+  --hlk-bos: rgba(255, 255, 255, .13);
+}
+.pk2-halka u {
+  position: absolute; text-decoration: none;
+  font-family: var(--yazi-baslik); font-size: 17px; font-weight: 700; color: #fff;
+}
+.pk2-tik {
+  position: absolute; top: -2px; right: -2px;
   display: flex; align-items: center; justify-content: center;
-  width: 56px; height: 56px; border-radius: 14px;
+  width: 22px; height: 22px; border-radius: 999px;
+  background: var(--st-done); color: #fff; border: 2px solid #1b1b1e;
+}
+.pk2-durum { font-size: 12.5px; font-weight: 600; color: #fff; }
+.pk2-zaman { font-size: 10.5px; color: rgba(255, 255, 255, .45); }
+
+/* Tam genişlikte tek kırmızı düğme — panelin ana eylemi. */
+.pk2-dug {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  margin-top: 12px; height: 50px; border-radius: 14px; text-decoration: none;
+  background: var(--red); color: #fff;
+  font-size: 14px; font-weight: 600;
+}
+.pk2-dug:active { background: var(--red-koyu); }
+
+/* ---- Ekip ---- */
+.ek-liste {
+  display: flex; flex-direction: column;
+  background: var(--surface); border: 1px solid var(--line-2); border-radius: 16px;
+  overflow: hidden;
+}
+.ek {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px; border-top: 1px solid var(--line-3);
+}
+.ek:first-child { border-top: 0; }
+.ek-av {
+  position: relative; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  width: 40px; height: 40px; border-radius: 999px;
   background: var(--ink-strong); color: #fff;
+  font-family: var(--yazi-etiket); font-size: 14px; font-weight: 600;
 }
-.pp-orta { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-.pp-ad {
-  font-family: var(--yazi-baslik); font-size: 15.5px; font-weight: 700;
-  color: var(--ink-strong);
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+.ek-av img { width: 100%; height: 100%; border-radius: 999px; object-fit: cover; }
+.ek-av u {
+  position: absolute; right: -1px; bottom: -1px;
+  width: 12px; height: 12px; border-radius: 999px;
+  background: var(--line-parlak); border: 2px solid var(--surface);
 }
-.pp-alt {
-  font-style: normal; font-size: 11.5px; color: var(--ink-dim);
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-.pp-ray-satir { display: flex; align-items: center; gap: 9px; margin: 6px 0 5px; }
-.pp-ray {
-  flex: 1; height: 5px; border-radius: 999px;
-  background: var(--bar-bos); overflow: hidden;
-}
-.pp-ray i { display: block; height: 100%; background: var(--ink-strong); border-radius: 999px; }
-.pp.ilk .pp-ray i { background: var(--red); }
-.pp-yuz { font-size: 12px; color: var(--ink-soft); }
-.pp-durum-satir { display: flex; align-items: center; gap: 12px; min-width: 0; }
-.pp-durum {
-  display: flex; align-items: center; gap: 6px;
-  font-size: 11.5px; color: var(--ink-soft); white-space: nowrap;
-}
-.pp-durum u { width: 7px; height: 7px; border-radius: 999px; background: var(--st-todo); }
-.pp-durum u.dev   { background: var(--red); }
-.pp-durum u.check { background: var(--st-check); }
-.pp-durum u.done  { background: var(--st-done); }
-.pp-kisiler { display: flex; align-items: center; gap: 4px; color: var(--ink-dim); }
-.pp-kisiler svg { width: 13px; height: 13px; margin-right: 2px; }
-.pp-kisiler u {
-  display: flex; align-items: center; justify-content: center;
-  width: 22px; height: 22px; margin-left: -6px; border-radius: 999px;
-  background: var(--metal-2); color: #fff; border: 2px solid var(--surface);
-  font-family: var(--yazi-etiket); font-size: 9px; font-weight: 600;
-  text-decoration: none;
-}
-.pp-kisiler u:first-of-type { margin-left: 0; }
-.pp-kisiler i { font-style: normal; font-size: 11px; margin-left: 3px; }
-/* Sağ sütun: takvim + son güncelleme. İnce bir çizgiyle ayrılıyor. */
-.pp-sag {
-  display: flex; align-items: center; gap: 8px;
-  padding-left: 12px; border-left: 1px solid var(--line-3);
-  color: var(--ink-dim);
-}
-.pp-sag svg { width: 14px; height: 14px; flex-shrink: 0; }
-.pp-sag i { display: block; font-style: normal; font-size: 10.5px; color: var(--ink-faint); }
-.pp-sag span { font-size: 11.5px; color: var(--ink-soft); white-space: nowrap; }
-.pp-menu {
-  display: flex; align-items: center; justify-content: center;
-  width: 26px; height: 30px; border: 0; border-radius: var(--radius-sm);
-  background: none; color: var(--ink-dim); cursor: pointer;
-}
-.pp-menu:hover { background: var(--surface-2); color: var(--ink); }
-
-/* Dar telefonda sağ sütun yer bırakmıyor: "Son güncelleme" etiketi düşer,
-   yalnız tarih kalır. 360px'te bile satır tek parça duruyor. */
-@media (max-width: 430px) {
-  .pp { grid-template-columns: 52px minmax(0, 1fr) auto auto; gap: 10px; padding-left: 16px; }
-  .pp-karo { width: 52px; height: 52px; }
-  .pp-sag { flex-direction: column; align-items: flex-end; gap: 2px; padding-left: 10px; }
-  .pp-sag svg { display: none; }
-  .pp-sag i { font-size: 10px; }
-}
+.ek.acik .ek-av u { background: var(--st-done); }
+.ek-orta { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.ek-orta b { font-size: 14px; font-weight: 700; color: var(--ink-strong); }
+.ek-dur { font-style: normal; font-size: 11.5px; color: var(--ink-dim); }
+.ek.acik .ek-dur { color: var(--st-done-t); font-weight: 600; }
+.ek-rol { font-size: 11.5px; color: var(--ink-soft); white-space: nowrap; }
 
 /* ---- Alt çubuk: artının altında yazı ---- */
 @media (max-width: 900px) {
@@ -7086,7 +7073,7 @@ a.asr:active{ transform:scale(.99); }
     background: var(--ink-strong);
     box-shadow: 0 8px 18px -8px rgba(23, 23, 26, .7);
   }
-  /* Aktif sekme kırmızı ve altında bir nokta — mockup'taki gibi. */
+  .tab { position: relative; }
   .tab.active, .tab.active span { color: var(--red-ink); }
   .tab.active svg { stroke: var(--red); }
   .tab.active .dolgu > * { fill: var(--red); fill-opacity: .16; }
@@ -7095,45 +7082,12 @@ a.asr:active{ transform:scale(.99); }
     width: 4px; height: 4px; margin-left: -2px; border-radius: 999px;
     background: var(--red);
   }
-  .tab { position: relative; }
 }
 
-/* ---- Ekip: kim şu an uygulamada ----------------------------------------
-   Çevrimiçi bilgisi canlı kanaldan geliyor ve ANLIK: kanal yalnız şu anı
-   bilir, geçmişi değil. Çevrimdışı satırda yazan saat o kişinin son görev
-   hareketidir; hiç hareketi yoksa yalnız "çevrimdışı" yazar. */
-.ek-sayac { font-size: 12px; color: var(--ink-dim); white-space: nowrap; }
-.ek-liste {
-  display: flex; flex-direction: column;
-  background: var(--surface); border: 1px solid var(--line-2); border-radius: 14px;
-  overflow: hidden;
+@media (min-width: 901px) {
+  .ph { min-height: 250px; padding: 32px 30px 20px; }
+  .ph-n { width: 200px; height: 234px; right: 22px; }
+  .ps-izgara { gap: 14px; }
+  .pk2-serit { margin: 0; padding: 0 0 2px; }
+  .pk2 { flex: 0 0 200px; }
 }
-.ek {
-  display: flex; align-items: center; gap: 12px;
-  padding: 11px 14px; border-top: 1px solid var(--line-3);
-}
-.ek:first-child { border-top: 0; }
-.ek-av {
-  position: relative; flex-shrink: 0;
-  display: flex; align-items: center; justify-content: center;
-  width: 38px; height: 38px; border-radius: 999px;
-  background: var(--surface-2); color: var(--metal-2);
-  font-family: var(--yazi-etiket); font-size: 13px; font-weight: 600;
-}
-.ek-av img { width: 100%; height: 100%; border-radius: 999px; object-fit: cover; }
-/* Sağ alt köşedeki nokta: dolu yeşil = şu an bağlı, boş gri = değil. */
-.ek-av u {
-  position: absolute; right: -1px; bottom: -1px;
-  width: 11px; height: 11px; border-radius: 999px;
-  background: var(--line-parlak); border: 2px solid var(--surface);
-}
-.ek.acik .ek-av u { background: var(--st-done); }
-.ek.acik .ek-av { background: var(--ink-strong); color: #fff; }
-.ek-orta { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 1px; }
-.ek-orta b {
-  font-size: 13.5px; font-weight: 600; color: var(--ink-strong);
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-.ek-orta i { font-style: normal; font-size: 11px; color: var(--ink-dim); }
-.ek-durum { font-size: 11.5px; color: var(--ink-faint); white-space: nowrap; }
-.ek.acik .ek-durum { color: var(--st-done-t); font-weight: 600; }
