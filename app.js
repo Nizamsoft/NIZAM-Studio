@@ -71,6 +71,10 @@ let GOREV_FILTRE   = '';
 let PROJE_ARAMA  = '';
 let PROJE_SUZ    = '';
 let PROJE_SIRA   = 'son';
+/* Ekip ekranının araçları — Projeler'dekiyle aynı mantık. */
+let EKIP_ARAMA = '';
+let EKIP_SUZ   = 'tumu';
+let EKIP_SIRA  = 'aktiflik';
 let PROJE_GORUNUM = (() => {
   try { return localStorage.getItem('ns.projeGorunum') || 'izgara'; }
   catch (e) { return 'izgara'; }
@@ -614,25 +618,7 @@ const VIEWS = {
       return `<div class="card">${empty(ICON.kisi, 'Bu ekran yöneticiye ait',
         'Ekip yönetimini yalnızca yönetici görebilir.')}</div>`;
     }
-
-    const liste = DB.kisilerHepsi;
-
-    return `
-      <div class="note" style="margin-bottom:12px">
-        ${svg(ICON.info, 15)}
-        <span>Yeni kullanıcı açtığında geçici şifreyi kendin belirlersin.
-        Kişi girdikten sonra Ayarlar'dan adını ve fotoğrafını değiştirebilir.</span>
-      </div>
-
-      <div class="standart-arac">
-        <button class="mini-link" data-eylem="kullanici-ekle" type="button">
-          ${svg(ICON.arti, 13)} Yeni Kullanıcı</button>
-      </div>
-
-      ${liste.length
-        ? `<div class="card liste">${liste.map(kisiSatiri).join('')}</div>`
-        : `<div class="card">${empty(ICON.kisi, 'Kimse yok', 'İlk kullanıcıyı ekle.')}</div>`}
-    `;
+    return ekipEkrani();
   },
 
   /* ---------- Güvenlik Testi ---------- */
@@ -6682,6 +6668,7 @@ function render() {
   logolariGoster();
   /* Arama kutusundaki yazı ekran yeniden çizilince de geçerli kalsın. */
   pjAramaUygula();
+  ekipAramaUygula();
   if (kaydirmaYeri) {
     const yeni = $('.dk-govde, .kunye-kaydir, .ozet-kaydir, .palet-kaydir');
     if (yeni) yeni.scrollTop = kaydirmaYeri;
@@ -7120,6 +7107,164 @@ function kisiSatiri(k, i = 0) {
         <span class="row-sub">${k.rol === 'yonetici' ? 'Yönetici' : 'Geliştirici'}${k.aktif ? '' : ' · pasif'}</span>
       </div>
       <span class="row-val">${svg(ICON.chevron, 15)}</span>
+    </div>`;
+}
+
+/* ---------- Ekip ekranı ----------
+   Onaylanan tasarım: üstte başlık ve "Ekip Üyesi Ekle", altında üç sayı
+   hapı (aynı zamanda filtre), arama ve sıralama, sonra kişi kartları.
+
+   Karttaki her şey gerçek: fotoğraf, ad, rol, hesap durumu, canlı çevrimiçi
+   bilgisi, son hareket saati, kişinin görevi olan proje sayısı, görev
+   sayısı ve hesabın açıldığı günden beri geçen süre. Mockup'taki kişisel
+   söz satırı Studio'da yok, o yüzden konmadı. */
+function ekipKidem(iso) {
+  if (!iso) return '';
+  const gun = Math.floor((Date.now() - new Date(iso)) / 86400000);
+  if (isNaN(gun) || gun < 0) return '';
+  if (gun < 30)  return gun <= 1 ? '1 gün' : gun + ' gün';
+  const ay = Math.floor(gun / 30);
+  if (ay < 12) return ay + ' ay';
+  return Math.floor(ay / 12) + ' yıl';
+}
+
+function ekipProjeSayisi(kisiId) {
+  const p = new Set();
+  DB.gorevleri({ kisi: kisiId }).forEach(g => { if (g.proje_id) p.add(g.proje_id); });
+  return p.size;
+}
+
+function ekipKarti(k) {
+  const ad   = k.ad || 'İsimsiz';
+  const acik = DB.cevrimicimi(k.id);
+  const son  = ekipSonHareket(k.id);
+  const kidem = ekipKidem(k.olusturuldu);
+  const gorev = DB.gorevleri({ kisi: k.id }).length;
+
+  const durumYazi = acik ? 'Şu an aktif.'
+    : (son ? esc(pzZaman(son)) : (k.aktif ? 'Hareket yok' : 'Pasif hesap'));
+
+  return `
+    <div class="ek2 ${acik ? 'cevrimici' : ''} ${k.aktif ? '' : 'pasif'}"
+         data-ara="${esc(ad.toLocaleLowerCase('tr'))}">
+      <span class="ek2-foto ${k.foto ? 'resimli' : ''}"
+            ${k.foto ? `style="background-image:url('${esc(k.foto)}')"` : ''}>
+        <b>${esc(basHarf(ad))}</b><u class="${acik ? 'acik' : ''}"></u>
+      </span>
+      <b class="ek2-ad">${esc(ad)}</b>
+      <span class="ek2-rol ${k.rol === 'yonetici' ? 'yon' : ''}">${k.rol === 'yonetici' ? 'Yönetici' : 'Üye'}</span>
+      <span class="ek2-durum">
+        <i class="${acik ? 'acik' : ''}"></i>
+        <span><em>Son aktiflik</em><b>${durumYazi}</b></span>
+      </span>
+      <span class="ek2-sayilar">
+        <span><b>${svg(ICON.folder, 14)}${ekipProjeSayisi(k.id)}</b><i>Proje</i></span>
+        <span><b>${svg(ICON.check, 14)}${gorev}</b><i>Görev</i></span>
+        <span><b>${svg(ICON.kisi, 14)}${kidem || '—'}</b><i>Ekipte</i></span>
+      </span>
+      <button class="ek2-dug" type="button" data-eylem="kisi-duzenle" data-id="${k.id}">
+        ${svg(ICON.kalem, 15)}<span>Düzenle</span>
+      </button>
+    </div>`;
+}
+
+const EK_SIRA = [
+  { anahtar: 'aktiflik', ad: 'Son aktiflik' },
+  { anahtar: 'ad',       ad: 'Ada göre' },
+  { anahtar: 'rol',      ad: 'Role göre' },
+];
+
+function ekSiraAdi() {
+  const s = EK_SIRA.find(x => x.anahtar === EKIP_SIRA);
+  return s ? s.ad : 'Son aktiflik';
+}
+
+/* Arama Projeler'deki gibi: ekran yeniden çizilmiyor, uymayan kart gizleniyor. */
+function ekipAramaUygula() {
+  const izgara = $('.ek2-izgara');
+  if (!izgara) return;
+  let gorunen = 0;
+  $$('.ek2', izgara).forEach(k => {
+    const uyar = !EKIP_ARAMA || (k.dataset.ara || '').indexOf(EKIP_ARAMA) >= 0;
+    k.classList.toggle('gizli', !uyar);
+    if (uyar) gorunen++;
+  });
+  izgara.classList.toggle('bos', gorunen === 0);
+}
+
+function ekipEkrani() {
+  const hepsi = DB.kisilerHepsi || [];
+  const sayi  = {
+    tumu:  hepsi.length,
+    aktif: hepsi.filter(k => k.aktif).length,
+    pasif: hepsi.filter(k => !k.aktif).length,
+  };
+
+  let liste = hepsi.filter(k =>
+    EKIP_SUZ === 'aktif' ? k.aktif : EKIP_SUZ === 'pasif' ? !k.aktif : true);
+
+  if (EKIP_SIRA === 'ad')       liste = liste.slice().sort((a, b) => (a.ad || '').localeCompare(b.ad || '', 'tr'));
+  else if (EKIP_SIRA === 'rol') liste = liste.slice().sort((a, b) => (a.rol === 'yonetici' ? 0 : 1) - (b.rol === 'yonetici' ? 0 : 1));
+  else liste = liste.slice().sort((a, b) => {
+    const fa = DB.cevrimicimi(a.id) ? 1 : 0, fb = DB.cevrimicimi(b.id) ? 1 : 0;
+    if (fa !== fb) return fb - fa;
+    return (ekipSonHareket(b.id) || '').localeCompare(ekipSonHareket(a.id) || '');
+  });
+
+  const hap = (k, ad) => `
+    <button class="ek2-hap ${EKIP_SUZ === k ? 'secili' : ''} h-${k}" type="button"
+            data-eylem="ekip-suz" data-deger="${k}">
+      <i></i><span><em>${ad}</em><b>${sayi[k]}</b></span>
+    </button>`;
+
+  const okIkili = '<svg viewBox="0 0 24 24" style="width:15px;height:15px"><path fill="none" stroke="currentColor"'
+    + ' stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"'
+    + ' d="M7 4v16M7 20l-3-3M17 20V4M17 4l3 3"></path></svg>';
+
+  return `
+    <div class="pj-tepe">
+      <div class="pj-tepe-yz">
+        <h1>Tüm Ekip</h1>
+        <p>Ekibini yönet, rollerini gör ve son aktifliklerini takip et.</p>
+      </div>
+      <button class="pj-yeni" type="button" data-eylem="kullanici-ekle">
+        ${svg(ICON.arti, 16)}<span>Ekip Üyesi Ekle</span></button>
+    </div>
+
+    <div class="ek2-haplar">
+      ${hap('tumu', 'Toplam Üye')}
+      ${hap('aktif', 'Aktif Üye')}
+      ${hap('pasif', 'Pasif Üye')}
+    </div>
+
+    <div class="pj-araclar ekip">
+      <label class="pj-ara">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.4"></circle><path d="M15.8 15.8L20.5 20.5"></path></svg>
+        <input id="ek-ara" type="search" autocomplete="off" placeholder="Ekip üyesi ara…"
+          value="${esc(EKIP_ARAMA)}">
+      </label>
+      <button class="pj-arac" type="button" data-eylem="ekip-sirala">
+        ${okIkili}<span>Sıralama: ${esc(ekSiraAdi())}</span>
+      </button>
+    </div>
+
+    ${liste.length
+      ? `<div class="ek2-izgara">${liste.map(ekipKarti).join('')}
+           <div class="pj-bos-arama">Aramana uyan kişi yok.</div>
+         </div>`
+      : `<div class="card">${empty(ICON.kisi,
+          EKIP_SUZ === 'pasif' ? 'Pasif üye yok' : 'Kimse yok',
+          'Yeni kullanıcı açtığında geçici şifreyi kendin belirlersin.',
+          EKIP_SUZ === 'tumu' ? 'Ekip Üyesi Ekle' : null, 'kullanici-ekle')}</div>`}
+
+    <div class="ek2-afis">
+      <span class="ek2-afis-ikon">${svg(ICON.kisi, 26)}</span>
+      <span class="ek2-afis-yz">
+        <b>Daha Güçlü Bir Ekip</b>
+        <i>İyi fikirler, doğru insanlarla gerçeğe dönüşür.</i>
+      </span>
+      <img class="ek2-afis-n" src="logo.png" alt="" draggable="false">
+      <span class="ek2-afis-soz"><u></u>Birlikte<br>daha büyük<br>projeler.</span>
     </div>`;
 }
 
@@ -12152,6 +12297,18 @@ async function eylemCalistir(el) {
 
   if (e === 'gorev-ac')   return gorevKartiAc(id);
 
+  if (e === 'ekip-suz') {
+    EKIP_SUZ = el.dataset.deger;
+    return render();
+  }
+
+  if (e === 'ekip-sirala') {
+    const sec = await secenekSor('Sıralama', EK_SIRA);
+    if (!sec) return;
+    EKIP_SIRA = sec;
+    return render();
+  }
+
   if (e === 'proje-suz') {
     const sec = await secenekSor('Filtrele', PJ_SUZGEC.map(x =>
       Object.assign({}, x, { anahtar: x.anahtar || 'tumu' })));
@@ -14539,9 +14696,13 @@ document.addEventListener('DOMContentLoaded', () => {
   /* Projeler ekranındaki arama. Kutu her çizimde yeniden doğduğu için
      dinleyici belgeye bağlı. */
   document.addEventListener('input', e => {
-    if (!e.target.matches('#pj-ara')) return;
-    PROJE_ARAMA = e.target.value.trim().toLocaleLowerCase('tr');
-    pjAramaUygula();
+    if (e.target.matches('#pj-ara')) {
+      PROJE_ARAMA = e.target.value.trim().toLocaleLowerCase('tr');
+      pjAramaUygula();
+    } else if (e.target.matches('#ek-ara')) {
+      EKIP_ARAMA = e.target.value.trim().toLocaleLowerCase('tr');
+      ekipAramaUygula();
+    }
   });
 
   /* Üstteki arama kutusu henüz çalışmıyor: tasarımda yeri hazır, arama

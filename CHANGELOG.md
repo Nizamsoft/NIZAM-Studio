@@ -1,5 +1,14 @@
 # Değişiklik Günlüğü
 
+## v0.160.0
+**Ekip ekranı onaylanan tasarıma geçti** — mobilde ikili, masaüstünde dörtlü kart ızgarası.
+- Kartlar beyaz; kişi **o an uygulamadaysa kart yeşile dönüyor**. "Bu benim kartım" diye ayrı renk yok.
+- Kartta: fotoğraf (yoksa baş harf), ad, rol, canlı çevrimiçi noktası, son aktiflik saati, görevi olduğu proje sayısı, görev sayısı ve hesabın açılmasından beri geçen süre.
+- Üstte üç sayı hapı — **aynı zamanda filtre**: Toplam / Aktif / Pasif üye.
+- **Arama** (ad) ve **sıralama** (son aktiflik / ada göre / role göre) çalışıyor.
+- "Ekip Üyesi Ekle" eski "Yeni Kullanıcı" akışını açıyor; kartın düğmesi kişiyi düzenliyor.
+- Mockup'taki kişisel söz satırı ve "Mesaj Gönder" konmadı: Studio'da ne o alan ne de mesajlaşma var. Düğme onun yerine "Düzenle".
+
 ## v0.159.0
 **Projeler ekranı onaylanan tasarıma geçti** — mobilde satır, masaüstünde üçlü ızgara.
 - Eski iki kova kartı gitti; yerine **iki sekme**: Devam Eden Projeler (n) · Tamamlanan Projeler (n). Adresler aynı kaldı (`#/projeler/basmis`, `#/projeler/bitmis`).

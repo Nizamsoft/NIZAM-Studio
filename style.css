@@ -7818,3 +7818,176 @@ a.asr:active{ transform:scale(.99); }
   .pj-izgara.duz .pj-etiketler { margin-top: 6px; }
   .pj-izgara.duz .pj-ayak { margin-top: 4px; padding-top: 0; border-top: 0; }
 }
+
+/* ==========================================================================
+   19 · EKİP EKRANI
+   Kartlar beyaz; kişi o an uygulamadaysa yeşile dönüyor. Kırmızı yok —
+   "bu benim kartım" diye ayrı bir renk kullanılmıyor.
+   ========================================================================== */
+
+/* ---- Üç sayı hapı (aynı zamanda filtre) ---- */
+.ek2-haplar { display: flex; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+.ek2-hap {
+  display: flex; align-items: center; gap: 12px; flex: 1 1 160px;
+  padding: 14px 18px; border-radius: 14px; cursor: pointer; text-align: left;
+  background: var(--surface-2); border: 1px solid transparent;
+  transition: background .16s ease, border-color .16s ease;
+}
+/* Renkli kare içinde küçük bir nokta: kırmızı toplam, yeşil aktif,
+   gri pasif. Sayının yanında ne olduğunu renk söylüyor. */
+.ek2-hap i {
+  position: relative; width: 34px; height: 34px; flex-shrink: 0;
+  border-radius: 11px; background: var(--surface-3);
+}
+.ek2-hap i::after {
+  content: ''; position: absolute; inset: 0; margin: auto;
+  width: 11px; height: 11px; border-radius: 999px; background: var(--ink-dim);
+}
+.ek2-hap.h-tumu  i          { background: var(--red-soft); }
+.ek2-hap.h-tumu  i::after   { background: var(--red); }
+.ek2-hap.h-aktif i          { background: rgba(47, 125, 92, .12); }
+.ek2-hap.h-aktif i::after   { background: #2f7d5c; }
+.ek2-hap span { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.ek2-hap em { font-style: normal; font-size: 11.5px; color: var(--ink-dim); white-space: nowrap; }
+.ek2-hap b {
+  font-family: var(--yazi-baslik); font-size: 22px; font-weight: 700;
+  line-height: 1; color: var(--ink-strong);
+}
+.ek2-hap.secili { background: var(--surface); border-color: var(--line); }
+
+/* ---- Kart ---- */
+.ek2-izgara { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.ek2-izgara.bos .pj-bos-arama { display: block; }
+.ek2.gizli { display: none; }
+
+.ek2 {
+  display: flex; flex-direction: column; align-items: flex-start;
+  padding: 16px 14px;
+  background: var(--surface); border: 1px solid var(--line-2); border-radius: 18px;
+  transition: border-color .16s ease, background .16s ease;
+}
+/* Çevrimiçi olan yeşile dönüyor — tek renk kodu bu. */
+.ek2.cevrimici {
+  background: linear-gradient(160deg, #eaf6f0 0%, #f4fbf7 55%, #fbfdfc 100%);
+  border-color: rgba(47, 125, 92, .2);
+}
+.ek2.pasif { opacity: .62; }
+
+.ek2-foto {
+  position: relative; display: flex; align-items: center; justify-content: center;
+  width: 64px; height: 64px; flex-shrink: 0; border-radius: 999px;
+  background: #2a2a2f; background-size: cover; background-position: 50% 50%;
+  color: #fff; font-size: 18px; font-weight: 700;
+}
+.ek2-foto.resimli b { display: none; }
+.ek2-foto u {
+  position: absolute; right: 1px; bottom: 1px;
+  width: 15px; height: 15px; border-radius: 999px;
+  background: var(--ink-dim); border: 2.5px solid var(--surface);
+}
+.ek2.cevrimici .ek2-foto u { background: #2f7d5c; border-color: #f4fbf7; }
+
+.ek2-ad {
+  margin-top: 12px; font-size: 15px; font-weight: 700; color: var(--ink-strong);
+  line-height: 1.25;
+}
+.ek2-rol {
+  margin-top: 7px; padding: 4px 11px; border-radius: 999px;
+  background: var(--surface-2); color: var(--ink-soft);
+  font-size: 11px; font-weight: 600;
+}
+.ek2-rol.yon { background: var(--red-soft); color: var(--red-ink); }
+
+.ek2-durum { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
+.ek2-durum i {
+  width: 9px; height: 9px; flex-shrink: 0; border-radius: 999px; background: var(--ink-dim);
+}
+.ek2-durum i.acik { background: #2f7d5c; }
+.ek2-durum em { display: block; font-style: normal; font-size: 10.5px; color: var(--ink-dim); }
+.ek2-durum b { display: block; font-size: 12.5px; font-weight: 600; color: var(--ink); }
+.ek2.cevrimici .ek2-durum b { color: #2f7d5c; }
+
+.ek2-sayilar {
+  display: flex; gap: 6px; width: 100%; margin-top: 14px;
+  padding-top: 13px; border-top: 1px solid var(--line-3);
+}
+.ek2-sayilar > span { flex: 1; min-width: 0; text-align: left; }
+.ek2-sayilar b {
+  display: flex; align-items: center; gap: 5px; white-space: nowrap;
+  font-size: 13.5px; font-weight: 700; color: var(--ink-strong);
+}
+.ek2-sayilar svg { width: 14px; height: 14px; flex-shrink: 0; opacity: .6; }
+.ek2-sayilar i {
+  display: block; margin-top: 2px; font-style: normal; font-size: 10.5px; color: var(--ink-dim);
+}
+
+.ek2-dug {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%; margin-top: 14px; padding: 11px; border: 0; border-radius: 12px;
+  cursor: pointer; background: var(--surface-2); color: var(--ink);
+  font-size: 13px; font-weight: 600;
+}
+.ek2-dug:hover { background: var(--surface-3); }
+.ek2-dug svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.8; }
+.ek2.cevrimici .ek2-dug { background: rgba(47, 125, 92, .1); color: #2f7d5c; }
+
+/* ---- Alt afiş ---- */
+.ek2-afis {
+  position: relative; overflow: hidden;
+  display: flex; align-items: center; gap: 16px;
+  margin-top: 18px; padding: 22px;
+  background: var(--surface); border: 1px solid var(--line-2); border-radius: 18px;
+}
+.ek2-afis-ikon {
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  width: 62px; height: 62px; border-radius: 999px;
+  background: var(--red-soft); color: var(--red);
+}
+.ek2-afis-ikon svg { fill: none; stroke: currentColor; stroke-width: 1.7; }
+.ek2-afis-yz { flex: 1; min-width: 0; }
+.ek2-afis-yz b {
+  display: block; font-family: var(--yazi-baslik); font-size: 18px;
+  font-weight: 700; color: var(--ink-strong);
+}
+.ek2-afis-yz i {
+  display: block; margin-top: 4px; font-style: normal; font-size: 13px; color: var(--ink-dim);
+}
+.ek2-afis-n {
+  width: 58px; height: 62px; flex-shrink: 0;
+  object-fit: cover; object-position: 50% 16%;   /* yalnız "N": logoda altta STUDIO yazısı var */
+}
+.ek2-afis-soz {
+  flex-shrink: 0; font-size: 12px; font-weight: 600; line-height: 1.6;
+  color: var(--ink-soft);
+}
+.ek2-afis-soz u { display: block; width: 26px; height: 2px; margin-bottom: 8px; background: var(--red); }
+
+@media (max-width: 900px) {
+  /* Başlık ve düğme aynı satırda, açıklama altında tam genişlikte. */
+  .pj-tepe { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; row-gap: 0; }
+  .pj-tepe-yz { display: contents; }
+  .pj-tepe h1 { grid-column: 1; }
+  .pj-yeni { grid-column: 2; grid-row: 1; padding: 11px 16px; font-size: 13px; }
+  .pj-tepe p { grid-column: 1 / -1; }
+  /* Ekip'te tek düğme var, arama ile aynı satıra sığıyor. */
+  .pj-araclar.ekip .pj-ara { flex: 1 1 auto; }
+  /* Dar kartta "2 yıl" alt satıra kırılıyordu: simgeler kalktı. */
+  .ek2-sayilar svg { display: none; }
+  .ek2-sayilar b { font-size: 13px; }
+  .ek2-haplar { gap: 8px; }
+  .ek2-hap { flex: 1 1 0; gap: 8px; padding: 11px 12px; }
+  .ek2-hap i { width: 26px; height: 26px; border-radius: 9px; }
+  .ek2-hap i::after { width: 9px; height: 9px; }
+  .ek2-hap em { font-size: 10px; }
+  .ek2-hap b { font-size: 17px; }
+  .ek2-afis { flex-wrap: wrap; gap: 12px; padding: 18px; }
+  .ek2-afis-n, .ek2-afis-soz { display: none; }
+}
+
+@media (min-width: 901px) {
+  .ek2-izgara { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+  .ek2 { padding: 20px 18px; }
+  .ek2-foto { width: 84px; height: 84px; font-size: 24px; }
+  .ek2-foto u { width: 18px; height: 18px; right: 3px; bottom: 3px; }
+  .ek2-ad { margin-top: 14px; font-size: 16px; }
+}
