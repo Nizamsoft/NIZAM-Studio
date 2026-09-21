@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.160.2
+- Ekip sayı hapları renklendi: Toplam Üye nötr gri (iki kişi simgesi), Aktif Üye yeşil, **Pasif Üye kırmızı**. Yuvalar yuvarlak.
+
 ## v0.160.1
 - Ekip kartında **sağ üstte üç nokta**: basınca kişinin düzenleme ekranı açılıyor.
 - Alttaki düğme **"Mesaj Gönder"** oldu. Mesajlaşma henüz yazılmadı; basınca "yakında" diyor.

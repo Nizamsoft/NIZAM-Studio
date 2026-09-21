@@ -7215,10 +7215,15 @@ function ekipEkrani() {
     return (ekipSonHareket(b.id) || '').localeCompare(ekipSonHareket(a.id) || '');
   });
 
-  const hap = (k, ad) => `
+  /* Toplam'da iki kişi simgesi, diğer ikisinde renkli nokta. */
+  const ikiKisi = '<svg viewBox="0 0 24 24"><circle cx="9.5" cy="8" r="3.3"></circle>'
+    + '<path d="M3.5 19c0-3.1 2.7-5 6-5s6 1.9 6 5"></path>'
+    + '<path d="M16.2 6.2a3 3 0 0 1 0 5.6M17.5 14.4c2 .6 3.5 2.1 3.5 4.6"></path></svg>';
+
+  const hap = (k, ad, ic) => `
     <button class="ek2-hap ${EKIP_SUZ === k ? 'secili' : ''} h-${k}" type="button"
             data-eylem="ekip-suz" data-deger="${k}">
-      <i></i><span><em>${ad}</em><b>${sayi[k]}</b></span>
+      <i>${ic || ''}</i><span><em>${ad}</em><b>${sayi[k]}</b></span>
     </button>`;
 
   const okIkili = '<svg viewBox="0 0 24 24" style="width:15px;height:15px"><path fill="none" stroke="currentColor"'
@@ -7236,7 +7241,7 @@ function ekipEkrani() {
     </div>
 
     <div class="ek2-haplar">
-      ${hap('tumu', 'Toplam Üye')}
+      ${hap('tumu', 'Toplam Üye', ikiKisi)}
       ${hap('aktif', 'Aktif Üye')}
       ${hap('pasif', 'Pasif Üye')}
     </div>
