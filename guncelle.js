@@ -90,6 +90,51 @@ const GUNCELLEME = {
     return true;
   },
 
+  /* --------------------------------------------------------------------
+     Uygulama açıkken arka planda denetim.
+
+     Sunucuya yeni sürüm koyulduktan sonra yayına çıkması birkaç dakika
+     sürebiliyor; kullanıcı "Güncelle"ye erken basınca "zaten günceldesin"
+     cevabını alıyordu. Artık uygulama kendi bakıyor: sekmeye geri
+     dönüldüğünde ve on beş dakikada bir.
+
+     Burada sayfayı KENDİLİĞİNDEN yenilemiyoruz — kullanıcı bir form
+     doldurup formun ortasında olabilir. Yalnız altta bir çubuk çıkıyor,
+     yenilemeye o karar veriyor. Açılışta yenileme sürüyor, orada yarım
+     kalmış bir iş olamaz.
+     -------------------------------------------------------------------- */
+  sonDenetim: 0,
+  haberVerilen: '',
+
+  async arkadaDenetle() {
+    if (document.hidden) return;
+    const simdi = Date.now();
+    if (simdi - this.sonDenetim < 120000) return;   /* dakikada bir yetmez, ikide bir */
+    this.sonDenetim = simdi;
+
+    const uzak = await this.uzakSurum();
+    if (!uzak || !this.daha_yeni(uzak, APP.version)) return;
+    if (this.haberVerilen === uzak) return;         /* aynı sürümü bir kez söyledik */
+    this.haberVerilen = uzak;
+    this.cubukGoster(uzak);
+  },
+
+  cubukGoster(uzak) {
+    if (document.getElementById('yeni-surum')) return;
+    const el = document.createElement('div');
+    el.id = 'yeni-surum';
+    el.innerHTML = '<b>Yeni sürüm hazır</b><i>' + uzak + '</i>'
+      + '<button type="button" data-ys="yenile">Yenile</button>'
+      + '<button type="button" data-ys="kapat" aria-label="Kapat">✕</button>';
+    el.addEventListener('click', e => {
+      const d = e.target.closest('[data-ys]');
+      if (!d) return;
+      if (d.dataset.ys === 'yenile') this.yenile();
+      else el.remove();
+    });
+    document.body.appendChild(el);
+  },
+
   /* Ayarlar'daki "Güncellemeleri denetle" düğmesi. */
   /* Sonucu döndürüyor ki çağıran kum saatini ne zaman durduracağını bilsin:
      yeni sürüm bulunduysa sayfa yenilenene kadar dönmeye devam etmeli. */
@@ -131,6 +176,12 @@ window.addEventListener('pageshow', olay => {
   if (!olay.persisted) return;   /* normal açılışta zaten boot denetliyor */
   GUNCELLEME.acilistaDenetle();
 });
+
+/* Uygulamaya geri dönüldüğünde ve açık kaldıkça ara ara denetle. */
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) GUNCELLEME.arkadaDenetle();
+});
+setInterval(() => GUNCELLEME.arkadaDenetle(), 15 * 60 * 1000);
 
 /* Yenileme adresindeki `?y=` damgası geçmişte birikmesin. Damga yalnızca
    önbelleği atlatmak için var; sayfa yüklendikten sonra işi bitiyor.

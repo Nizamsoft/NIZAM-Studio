@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## v0.158.1
+- **Yeni sürümü uygulama kendi fark ediyor.** Sunucuya bakma işi artık yalnız açılışta değil: uygulamaya geri dönüldüğünde ve on beş dakikada bir de bakıyor.
+- Yeni sürüm görülünce altta bir çubuk çıkıyor ("Yeni sürüm hazır · Yenile"). Sayfa kendiliğinden yenilenmiyor; yarım kalmış bir iş varsa kaybolmasın diye kararı kullanıcı veriyor.
+- Not: bir sürümün sunucuda yayına çıkması GitHub tarafında birkaç dakika sürebiliyor; bu süre uygulamadan kısaltılamıyor.
+
 ## v0.158.0
 **Masaüstü görünümü onaylanan tasarıma geçti.** Mobil düzen değişmedi.
 - **Yan menü siyah.** Üstte marka, altında Panel / Projeler / Görevler / Ekip / Profil; aktif olan kırmızı. Ayırıcının altında sönük grup: Sektörler, Modül Şablonları, Nizam Standartları, Ayarlar, Çıkış Yap. En altta söz kartı ve sürüm.

@@ -7556,3 +7556,33 @@ a.asr:active{ transform:scale(.99); }
   flex-shrink: 0; font-size: 12px; color: var(--ink-dim);
   font-variant-numeric: tabular-nums;
 }
+
+/* ---- Yeni sürüm çubuğu ----
+   Uygulama açıkken sunucuda yeni sürüm görülünce altta beliriyor. Sayfayı
+   kendiliğinden yenilemiyoruz: kullanıcı bir formun ortasında olabilir. */
+#yeni-surum {
+  position: fixed; z-index: 120; left: 50%; transform: translateX(-50%);
+  bottom: calc(86px + env(safe-area-inset-bottom));
+  display: flex; align-items: center; gap: 10px;
+  max-width: calc(100% - 28px); padding: 10px 10px 10px 16px;
+  border-radius: 999px; background: #1b1b1e; color: #fff;
+  box-shadow: 0 14px 34px -14px rgba(0, 0, 0, .6);
+  animation: fadeIn .28s ease both;
+}
+#yeni-surum b { font-size: 13px; font-weight: 600; white-space: nowrap; }
+#yeni-surum i {
+  font-style: normal; font-size: 11px; color: rgba(255, 255, 255, .5);
+  white-space: nowrap;
+}
+#yeni-surum button {
+  flex-shrink: 0; padding: 8px 15px; border: 0; border-radius: 999px;
+  background: var(--red); color: #fff; font-size: 12.5px; font-weight: 700;
+  cursor: pointer;
+}
+#yeni-surum button[data-ys="kapat"] {
+  padding: 0; width: 28px; height: 28px; font-size: 13px; font-weight: 500;
+  background: rgba(255, 255, 255, .1); color: rgba(255, 255, 255, .7);
+}
+@media (min-width: 901px) {
+  #yeni-surum { bottom: 24px; }
+}
