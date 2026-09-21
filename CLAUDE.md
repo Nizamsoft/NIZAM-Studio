@@ -98,10 +98,16 @@ Editoryal düzen: serif başlık, ince çizgi, gölgesiz kart.
 | Kırmızı (dolgu) | `#e5342a` |
 | Kırmızı (yazı) | `#b4231b` — beyaz üstünde `#e5342a` okunmuyor |
 
-**Kırmızı sadece:** logo, ana buton, aktif menü, kart üst şeridi, "Acil".
-İkon kutuları **gri**, kırmızı tintli değil. İlerleme çubukları nötr.
+**Kırmızı yalnız üç yerde:** logo, alt çubuktaki ekle (+) düğmesi ve
+tehlike/acil (silme, uyarı). Başka hiçbir yerde yok.
+Ana düğmeler, aktif menü, kart üst şeridi ve aktif sekme **mürekkep
+siyahı** (`#17171a`). İkon kutuları gri. İlerleme çubukları nötr.
 Sıcak ton (krem, altın, kağıt dokusu) kullanma — denendi, paletin dışında
 kalıyor.
+
+Sebebi: kırmızı her kartın üstünde, alt çubukta ve her düğmede olunca
+hepsi birden "buraya bak" diyor, yani hiçbiri demiyor. Vurgu nadir
+olduğunda vurgudur.
 
 Kurallar:
 - **Gölge yok.** Kart zeminden ince çizgiyle ayrılır. Gölge yalnız gerçekten

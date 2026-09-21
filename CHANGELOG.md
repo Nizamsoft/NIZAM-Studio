@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## v0.149.1
+- **Kırmızı kısıldı: siyah, gri, beyaz.** Kart üst şeritleri, ana düğmeler, aktif menü satırı ve alt çubuktaki aktif sekme artık mürekkep siyahı. Kırmızı yalnız üç yerde kaldı: logo, ekle (+) düğmesi ve tehlike/acil.
+- Sebebi: kırmızı her kartın üstünde, her düğmede ve alt çubukta olunca hepsi birden "buraya bak" diyordu. Vurgu nadir olduğunda vurgu oluyor.
+
 ## v0.149.0
 - **Palet logoya sabitlendi: kırmızı, gri, beyaz.** Zemin artık krem değil düz beyaz; sıcak tonlar (kağıt dokusu, krem yüzeyler, üst çubuktaki altın "PANEL" yazısı) kaldırıldı.
 - Kart içindeki **ikon kutuları gri** oldu — kırmızı tint gidiyor, simge logonun grafit tonunda.

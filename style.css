@@ -6822,3 +6822,40 @@ a.asr:active{ transform:scale(.99); }
    — koyu temada altın gibi okunuyordu, beyaz zeminde paletin dışında
    kalan tek renk oldu. Marka üç renk: kırmızı, gri, beyaz. */
 .marka i { color: var(--ink-dim); }
+
+/* 12 · Kırmızı kısılıyor: siyah, gri, beyaz --------------------------------
+   Palet üç renk ama kırmızı çok yer kaplıyordu: her kartın üstünde şerit,
+   alt çubukta aktif sekme, bütün ana düğmeler. Üçü de "buraya bak" diyordu,
+   yani hiçbiri demiyordu.
+
+   Kırmızı bundan sonra yalnız ÜÇ yerde: logo, alt çubuktaki ekle düğmesi
+   ve tehlike/acil. Geri kalan her vurgu mürekkep siyahı; ayrım ağırlık ve
+   ton farkıyla kuruluyor. */
+
+/* Kart üst şeridi: mürekkep. */
+.kk::before { background: var(--ink-strong); }
+.kk.yakinda::before { background: var(--line); }
+
+/* Ana düğmeler siyah. Kırmızı düğme yalnız silme/tehlike için kaldı. */
+.btn-primary {
+  background: var(--ink-strong); border-color: var(--ink-strong); color: #fff;
+}
+.btn-primary:hover { background: var(--ink); border-color: var(--ink); }
+.sayfa-dug {
+  background: var(--ink-strong);
+  box-shadow: 0 10px 24px -14px rgba(23, 23, 26, .55);
+}
+.sayfa-dug.parla { background: var(--ink); }
+
+/* Yan menüde aktif satır: kırmızı çizgi yerine siyah. */
+.nav-item.active { box-shadow: inset 2px 0 0 var(--ink-strong); }
+
+/* Alt çubukta aktif sekme. */
+@media (max-width: 900px) {
+  .tab.active, .tab.active span { color: var(--ink-strong); }
+  .tab.active svg { stroke: var(--ink-strong); }
+  .tab.active .dolgu > * { fill: var(--ink-strong); fill-opacity: .16; }
+}
+
+/* Sihirbazın "şu anki adım" işareti de nötr. */
+.steps .sd.cur { background: var(--ink-strong); }
