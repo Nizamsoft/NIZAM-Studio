@@ -13741,7 +13741,11 @@ function pzProjeKarti(p) {
   const bitti = s.yuzde >= 100 || p.durum === 'tamamlandi';
   const zaman = pzSonDokunus(p.id);
 
-  /* Ad kutuya sığsın: önce "Firma - Modül", sığmazsa yalnız firma adı,
+  /* Durumu "Yeni" olan projede etiket yazılmıyor: her yeni proje zaten
+     yeni, satır bilgi taşımıyordu. Öğe yerinde duruyor ki kartların
+     hizası bozulmasın.
+
+     Ad kutuya sığsın: önce "Firma - Modül", sığmazsa yalnız firma adı,
      o da uzunsa yazı küçülüp iki satıra iniyor. Ad alanına her kartta
      iki satırlık yer ayrıldığı için kartlar aynı boyda ve hizada kalıyor
      — daha önce uzun isimli kart diğerlerinden yüksekti. */
@@ -13758,7 +13762,7 @@ function pzProjeKarti(p) {
         ${pzHalka(s.yuzde, 72, 7)}<u>${s.yuzde}%</u>
         ${bitti ? `<em class="pk2-tik">${svg(ICON.tik, 13)}</em>` : ''}
       </span>
-      <span class="pk2-durum">${esc(DURUM_ADI[p.durum] || p.durum)}</span>
+      <span class="pk2-durum">${p.durum === 'yeni' ? '' : esc(DURUM_ADI[p.durum] || p.durum)}</span>
       <span class="pk2-zaman" title="Son güncelleme">${esc(pzZamanKisa(zaman))}</span>
     </div>`;
 }

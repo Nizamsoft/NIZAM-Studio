@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.153.2
+- Aktif proje kartlarında durumu "Yeni" olan projede etiket yazılmıyor — her yeni proje zaten yeni, satır bilgi taşımıyordu. Yeri duruyor, kartların hizası bozulmuyor.
+
 ## v0.153.1
 - **Proje kartları eşitlendi.** Hepsi aynı yükseklikte ve aynı hizada; halkalar, durum ve saat her kartta aynı satırda. Önceden uzun isimli kart diğerlerinden yüksekti.
 - Ad kutuya sığmıyorsa sırayla: "Firma - Modül" yerine yalnız firma adı, o da uzunsa yazı küçülüp iki satıra iniyor. Ada her kartta iki satırlık yer ayrıldığı için hiza bozulmuyor; tam ad kartın üstüne gelince görünüyor.
