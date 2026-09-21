@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## v0.155.0
+- **Proje kartları kare oldu.** Sığması için yüzde halkası küçüldü, "İlerleme" etiketi ve saat kalktı; kartta ad, halka ve durum kaldı.
+- **Arkada firmanın logosu** var: ortada, sönük bir filigran olarak. Logo kendi katmanında duruyor ki opaklığı ayrı ayarlanabilsin — kartın zeminine doğrudan basılınca üstüne konan perde logoyu da yazıyı da birlikte soldurmak zorunda kalıyordu. Yükseklikten sığdırılıyor, yoksa dikey logolar kartın altından taşıyordu.
+- Logosu olmayan projede kart eskisi gibi düz koyu kalıyor.
+
 ## v0.154.0
 - **"Açık Görev" kartındaki haftalık çubuk grafiği kaldırıldı.** "Dün dört hareket olmuş" bilgisiyle yapılacak bir şey yoktu; yalnız yer kaplıyordu. Kartta artık sadece sayı var, iki kart aynı boyda duruyor.
 - Grafiğe ait ölü stiller de silindi.
