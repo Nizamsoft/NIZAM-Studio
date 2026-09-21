@@ -394,6 +394,13 @@ const VIEWS = {
     if (DB.hata)    return hataKutusu(DB.hata);
 
     const projeler = DB.projeler.filter(p => !cekirdekMi(p));
+    /* Alt çubuktaki artı kaldırıldı; yeni proje kapısı artık burada. */
+    const bas = AUTH.yonetici ? `
+      <div class="pz-bas">
+        <b>Projeler</b><u></u>
+        <button class="pz-tum" type="button" data-eylem="sihirbaz">
+          ${svg(ICON.arti, 14)} Yeni Proje</button>
+      </div>` : '';
     if (!projeler.length) {
       return `<div class="card">${empty(ICON.folder, 'Proje listesi boş',
         'Yeni Proje sihirbazı firma, renk, platform, veritabanı ve modülleri sorar; gerisini kendisi kurar.',
@@ -412,7 +419,7 @@ const VIEWS = {
        gerçek: ekrana her girişte sıfırdan yukarı tırmanması kullanıcıya
        "veri henüz yüklenmedi" dedirtiyordu. Değer önbellekten geliyor,
        ilk karede doğru yazılıyor. */
-    return `<div class="kovalar">${Object.keys(PROJE_KOVASI).map(k => {
+    return bas + `<div class="kovalar">${Object.keys(PROJE_KOVASI).map(k => {
       const kv = PROJE_KOVASI[k];
       return `
         <a class="kova ${kv.sinif} ${say[k] ? '' : 'bos'}" href="#/projeler/${k}">
@@ -6680,25 +6687,42 @@ function menuyuCiz() {
       ${m.sayac ? `<em class="nav-count" data-count="${m.sayac}">0</em>` : ''}
     </a>`).join('');
 
+  /* Alt çubuk: beş sekme, ortada artı yok. Artı kaldırıldı çünkü onaylanan
+     tasarımda yok; yerine "Yeni Proje" Projeler ekranının kendi başlığında
+     duruyor (bkz. ROUTES.projeler). */
   const sekmeler = gorunur.filter(m => m.tab).map(m => `
     <a class="tab" href="#/${m.id}" data-route="${m.id}" draggable="false">
       ${svg(ICON[m.ikon], 23)}
       <span>${esc(m.tabAd || m.ad)}</span>
     </a>`);
 
-  /* Ortadaki artı sekme değil, eylem. Çift sayıda sekmede tam ortaya oturur. */
-  sekmeler.splice(Math.floor(sekmeler.length / 2), 0, `
-    <div class="tab-arti">
-      <button id="arti" class="arti-btn hidden" type="button" aria-label="Yeni kayıt">
-        <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"></path></svg>
-      </button>
-      <span class="arti-yazi">Yeni Kayıt</span>
-    </div>`);
+  /* Profil bir ekran değil, üstten açılan hesap paneli — o yüzden sekme
+     bağlantı değil düğme. */
+  sekmeler.push(`
+    <button class="tab" id="tab-profil" type="button">
+      ${svg(ICON.kisi, 23)}
+      <span>Profil</span>
+    </button>`);
 
   $('#tabbar').innerHTML = sekmeler.join('');
 }
 
+/* Zilin kırmızı noktası — bekleyen işin var mı?
+   Yöneticide onay bekleyen (Kontrolde) görevler, geliştiricide kendine
+   atanmış bitmemiş işler. Sayı yazmıyoruz: nokta "bir şey var" demek
+   için yeter, sayı zaten Görevler ekranında. */
+function zilNoktasi() {
+  const n = $('.zil-nokta');
+  if (!n) return;
+  const bekleyen = AUTH.yonetici
+    ? DB.gorevleri({ durum: 'kontrolde' }).length
+    : DB.gorevleri({ kisi: AUTH.user ? AUTH.user.id : '' })
+        .filter(g => g.durum !== 'tamamlandi').length;
+  n.classList.toggle('hidden', !bekleyen);
+}
+
 function sayaclariYaz() {
+  zilNoktasi();
   const pr = $('[data-count="projeler"]');
   if (pr) pr.textContent = DB.projeler.filter(p => !cekirdekMi(p)).length;
 
@@ -11625,6 +11649,10 @@ function hesapPaneliKur() {
   el.id = 'hesap-panel';
   el.className = 'hesap-panel';
   el.innerHTML = `
+    <button class="hp-sat" data-hs="ayarlar" type="button">
+      <span class="hp-ikon">${svg(ICON.ayar, 16)}</span>
+      <span class="hp-ad">Ayarlar</span>
+    </button>
     <button class="hp-sat" data-hs="not" type="button">
       <span class="hp-ikon">${svg(ICON.kalem, 16)}</span>
       <span class="hp-ad">Not defteri</span>
@@ -11649,6 +11677,12 @@ function hesapPaneliKur() {
       <span class="hp-ad">Çıkış yap</span>
     </button>`;
 
+  /* Ayarlar alt çubuktan çıkarıldı (onaylanan tasarımda beş sekme var);
+     mobilde tek kapısı burası. */
+  $('[data-hs="ayarlar"]', el).addEventListener('click', () => {
+    hesapMenusuKapat();
+    location.hash = '#/ayarlar';
+  });
   $('[data-hs="not"]', el).addEventListener('click', () => {
     hesapMenusuKapat();
     notDefteriAc(true);
@@ -14217,6 +14251,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
   $$('#user-chip, #user-tile').forEach(el =>
     el.addEventListener('click', hesapMenusu));
+
+  /* Profil sekmesi menüde değil, hesap panelini açıyor. */
+  document.addEventListener('click', e => {
+    if (e.target.closest('#tab-profil')) { hesapMenusu(); }
+  });
+
+  /* Zil bekleyen işlere götürüyor. */
+  const zil = $('#btn-zil');
+  if (zil) zil.addEventListener('click', () => { location.hash = '#/gorevler'; });
 
   boot();
 });

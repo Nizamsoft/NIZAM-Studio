@@ -7091,3 +7091,57 @@ a.asr:active{ transform:scale(.99); }
   .pk2-serit { margin: 0; padding: 0 0 2px; }
   .pk2 { flex: 0 0 200px; }
 }
+
+/* 14 · Üst çubuk ve alt menü ----------------------------------------------
+   Onaylanan tasarım: üstte yalnız logo, "NIZAM STUDIO", zil ve avatar;
+   altta beş sekme, ortada artı yok.
+
+   Artı kaldırıldığı için "Yeni Proje" mobilde kapısız kalmasın diye
+   Projeler ekranının başına taşındı (bkz. app.js · projelerBaslik). */
+
+/* Marka: NIZAM koyu, STUDIO gri. */
+.marka-ikinci { color: var(--ink-dim); font-weight: 700; }
+#firma-adi .pipe { display: none; }
+
+/* Zil. Nokta yalnız bekleyen iş varken görünür. */
+.zil {
+  position: relative; display: flex; align-items: center; justify-content: center;
+  width: 40px; height: 40px; flex-shrink: 0;
+  border: 0; border-radius: 999px; background: none; cursor: pointer;
+  color: var(--ink);
+}
+.zil:hover { background: var(--surface-2); }
+.zil svg {
+  width: 21px; height: 21px; fill: none; stroke: currentColor;
+  stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round;
+}
+.zil-nokta {
+  position: absolute; top: 7px; right: 8px;
+  width: 9px; height: 9px; border-radius: 999px;
+  background: var(--red); border: 2px solid var(--bg-ust);
+}
+.zil-nokta.hidden { display: none; }
+
+@media (max-width: 900px) {
+  /* Sayfa adı alt çubukta zaten yazıyor. */
+  #page-title { display: none; }
+  /* Geri oku pasifken hiç yer kaplamasın: tasarımda yok. */
+  .geri-ok.pasif { display: none; }
+  /* Hesap hapı yerine sade siyah daire. */
+  .hesap { padding: 0; background: none; border: 0; box-shadow: none; }
+  .hesap-yazi { display: none; }
+  .hesap .foto { width: 40px; height: 40px; }
+  .hesap .avatar { background: var(--ink-strong); color: #fff; font-size: 14px; }
+
+  /* Beş sekme yan yana; artı kalktığı için hepsi eşit paylaşıyor. */
+  .tab-arti { display: none; }
+  .tab { flex: 1; min-width: 0; }
+  .tab span { font-size: 10px; }
+  /* Profil sekmesi <button>: tarayıcının kendi çerçevesi ve yazı tipi
+     geliyordu, diğer sekmelerle aynı görünmesi için sıfırlanıyor. */
+  button.tab {
+    -webkit-appearance: none; appearance: none;
+    background: none; border: 0; padding: 0; margin: 0;
+    font: inherit; color: inherit; cursor: pointer;
+  }
+}

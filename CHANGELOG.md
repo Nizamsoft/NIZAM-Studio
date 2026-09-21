@@ -1,5 +1,12 @@
 # Değişiklik Günlüğü
 
+## v0.153.0
+- **Üst çubuk onaylanan tasarıma geçti:** logo, "NIZAM STUDIO" (NIZAM koyu, STUDIO gri), zil ve siyah avatar dairesi. Dikey çizgi ve sayfa adı mobilde kalktı; sayfa adı masaüstünde duruyor.
+- **Zil süs değil:** yöneticide onay bekleyen (Kontrolde) görev varsa, geliştiricide kendine atanmış bitmemiş iş varsa kırmızı nokta yanıyor. Dokununca Görevler'e gidiyor.
+- **Alt çubuk beş sekme oldu:** Panel, Projeler, Görevler, Ekip (yöneticide), Profil. Ortadaki artı kaldırıldı.
+- Artı kalktığı için iki kapı açıldı: **"Yeni Proje"** Projeler ekranının başlığına, **"Ayarlar"** hesap paneline taşındı. Hiçbir yere erişim kaybolmadı.
+- Profil sekmesi bir ekran değil, üstteki hesap panelini açıyor.
+
 ## v0.152.0
 - **Panel onaylanan tasarıma geçti.** Hero artık ofis fotoğrafı değil, koyu bir pano: solda büyük harf selam (ad kırmızı), slogan ve söz; sağda markanın "N"i ve kırmızı ışık çizgileri; altta solda bugünün odağı, sağda tarih ve saat.
 - "Bugünün odağı" uydurma bir cümle değil: en son dokunulan bitmemiş görevin başlığı. Öyle bir görev yoksa satır hiç çıkmıyor.
