@@ -13622,16 +13622,7 @@ function pzZaman(iso) {
    çizgileri. Ofis fotoğrafı kalktı — tasarım kararı: hero artık markanın
    kendisini taşıyor, bir mekânı değil.
 
-   "Bugünün odağı" uydurma bir cümle değil: en son dokunulan, bitmemiş
-   görevin başlığı. Öyle bir görev yoksa satır hiç çıkmıyor. */
-function panelOdak() {
-  const acik = (DB.gorevler || []).filter(g => g.durum !== 'tamamlandi');
-  if (!acik.length) return '';
-  const son = acik.slice().sort((a, b) =>
-    (b.guncellendi || '').localeCompare(a.guncellendi || ''))[0];
-  return son && son.baslik ? son.baslik : '';
-}
-
+   Etekte yalnız tarih var. */
 function panelHero() {
   const ad = String(AUTH.ad || '').split(' ')[0];
   const d = new Date();
@@ -13639,7 +13630,6 @@ function panelHero() {
                  'Ağustos','Eylül','Ekim','Kasım','Aralık'];
   const gunler = ['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi'];
   const p = n => String(n).padStart(2, '0');
-  const odak = panelOdak();
 
   return `
     <section class="ph">
@@ -13651,7 +13641,6 @@ function panelHero() {
         <blockquote class="ph-soz">Fikirleri gerçeğe dönüştüren<br>bir çalışma alanı.</blockquote>
       </div>
       <span class="ph-etek">
-        ${odak ? `<i class="ph-odak">Bugünün odağı: <b>${esc(odak)}</b></i>` : '<i></i>'}
         <i class="ph-tarih">${gunler[d.getDay()]}, ${d.getDate()} ${aylar[d.getMonth()]}, ${p(d.getHours())}:${p(d.getMinutes())}</i>
       </span>
     </section>`;

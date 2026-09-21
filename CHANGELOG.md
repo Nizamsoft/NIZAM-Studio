@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.157.2
+- Panel hero'sundan **"Bugünün odağı"** satırı kaldırıldı; etekte yalnız tarih kaldı.
+
 ## v0.157.1
 - **İki kartın iri sayısı artık birebir aynı:** aynı yerde, aynı boyda.
   - Sayı başlık serifiyle yazılıyordu; o yazının rakamları eski usul, yani 7 satırın altına sarkıyor, 2 kısa kalıyordu. Sayı gövde yazısına ve düz rakam ayarına geçti.
