@@ -5934,7 +5934,9 @@ function projeYolu(p) {
   const simdi = duraklar.findIndex(d => !d.bitti);
   /* Geliştirme (sayilmaz) hiç bitmediği için yüzdeye girerse final verilmiş
      bir proje asla %100 görünmezdi — o yüzden sayaç dışında tutuluyor. */
-  const yuzde = projeAsamaYuzde(p);
+  const sayilan = duraklar.filter(d => !d.sayilmaz);
+  const biten   = sayilan.filter(d => d.bitti).length;
+  const yuzde   = projeAsamaYuzde(p);
 
   const liste = duraklar.map((d, i) => asamaSatiri(p, d, i, simdi, d.anahtar)).join('');
 

@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.166.1
+- **Onarım:** proje detayı açılmıyordu ("Can't find variable: biten"). Yüzde hesabı ortak fonksiyona taşınırken adım sayacı yanlışlıkla silinmişti.
+
 ## v0.166.0
 - **Proje yüzdesi artık adımlara göre.** Projenin bitmiş aşaması / toplam aşaması (Firma bilgileri, Program temeli, Bağlantılar, Kurulum ve yapı, Beta, Profesyonel tasarım, Yetkilendirme, Güvenlik, Final). Eskiden biten görev / toplam görevdi; sıfır görevli proje %0, tek görevi biten proje %100 görünüyordu.
 - Aynı sayı her yerde: panel halkası, Aktif Projeler kartları, Projeler ekranı ve proje künyesi.
