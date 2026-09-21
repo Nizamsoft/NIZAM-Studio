@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.156.0
+- **İki sayı kartı onaylanan tasarıma geçti:** üstte kırmızı karo ve etiket yan yana, altında iri sayı; solda ilerleme halkası (yüzde halkanın altında yazıyor), sağda en yakın teslim tarihi.
+- **"En yakın bitiş" gerçek veri:** projelerin teslim tarihinden, bugünden sonraki en yakın olanı. Tarihi olan proje yoksa satır hiç çıkmıyor.
+- Sağ üst köşedeki pembe leke ve sağ alttaki soluk takvim çizimi CSS ile yapıldı, dosya eklenmedi.
+- İki kartın sayıları aynı satırda: sol karttaki halka sağdaki sayıdan yüksek olduğu için ortaya hizalayınca kayıyordu, üstten hizalandı. Ölçüldü — iki kart da 146px, sayılar aynı y'de.
+
 ## v0.155.1
 - Proje kartlarındaki logo filigranı kaldırıldı; kartlar düz siyah. Kare biçim, küçük halka ve sade içerik duruyor.
 

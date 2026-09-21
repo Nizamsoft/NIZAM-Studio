@@ -13685,9 +13685,19 @@ function pzHalka(yuzde, boy, kalin) {
 
 /* ---------- İki sayı kartı ----------
    Solda halka: devam eden projelerin ortalama ilerlemesi.
-   Sağda yalnız sayı — burada haftalık çubuk grafiği vardı, kaldırıldı:
-   "dün dört hareket olmuş" bilgisiyle yapılacak bir şey yoktu, yalnız
-   yer kaplıyordu. Panelde süs değil, bakılınca iş çıkaran şey durur. */
+   Sağda en yakın teslim tarihi: projelerin `teslim` alanından, bugünden
+   sonraki en yakın olanı. Tarihi olan proje yoksa satır hiç çıkmıyor —
+   uydurma bir tarih yazmaktansa kart sade kalsın. */
+function enYakinTeslim(projeler) {
+  const bugun = new Date(bugunTarih());
+  const gelecek = projeler
+    .filter(p => p.teslim && p.durum !== 'tamamlandi')
+    .map(p => ({ p, t: new Date(p.teslim) }))
+    .filter(x => x.t >= bugun)
+    .sort((x, y) => x.t - y.t);
+  return gelecek.length ? gelecek[0] : null;
+}
+
 function panelSayilar(projeler) {
   const gorevler = DB.gorevler || [];
   const bitmis = gorevler.filter(g => g.durum === 'tamamlandi').length;
@@ -13698,17 +13708,41 @@ function panelSayilar(projeler) {
   const ortalama = yuzdeler.length
     ? Math.round(yuzdeler.reduce((t, x) => t + x, 0) / yuzdeler.length) : 0;
 
+  const yakin = enYakinTeslim(projeler);
+  const aylar = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz',
+                 'Ağustos','Eylül','Ekim','Kasım','Aralık'];
+  const tarihYazi = yakin
+    ? `${yakin.t.getDate()} ${aylar[yakin.t.getMonth()]} ${yakin.t.getFullYear()}`
+    : '';
+
   return `<div class="ps-izgara">
     <a class="ps" href="#/projeler" title="Halka: devam eden projelerin ortalama ilerlemesi">
-      <span class="ps-ust"><span class="ps-ikon">${svg(ICON.folder, 18)}</span><i>Devam Eden Proje</i></span>
+      <span class="ps-leke" aria-hidden="true"></span>
+      <span class="ps-ust">
+        <span class="ps-ikon">${svg(ICON.folder, 17)}</span>
+        <i>Devam Eden Proje</i>
+      </span>
       <span class="ps-alt">
-        <b>${devam.length}</b>
-        <span class="ps-halka">${pzHalka(ortalama, 76, 9)}<u>%${ortalama}</u></span>
+        <b class="ps-sayi">${devam.length}</b>
+        <span class="ps-halka">
+          ${pzHalka(ortalama, 62, 7)}
+          <u>%${ortalama}</u>
+        </span>
       </span>
     </a>
-    <a class="ps" href="#/gorevler">
-      <span class="ps-ust"><span class="ps-ikon">${svg(ICON.check, 18)}</span><i>Açık Görev</i></span>
-      <span class="ps-alt"><b>${acik}</b></span>
+    <a class="ps" href="#/gorevler"${yakin ? ` title="En yakın teslim: ${esc(projeAdi(yakin.p))}"` : ''}>
+      <span class="ps-leke" aria-hidden="true"></span>
+      <span class="ps-sus" aria-hidden="true">${svg(ICON.takvim, 78)}</span>
+      <span class="ps-ust">
+        <span class="ps-ikon">${svg(ICON.check, 17)}</span>
+        <i>Açık Görev</i>
+      </span>
+      <span class="ps-alt"><b class="ps-sayi">${acik}</b></span>
+      ${yakin ? `
+        <span class="ps-bitis">
+          ${svg(ICON.takvim, 15)}
+          <span><i>En yakın bitiş</i><b>${esc(tarihYazi)}</b></span>
+        </span>` : ''}
     </a>
   </div>`;
 }
