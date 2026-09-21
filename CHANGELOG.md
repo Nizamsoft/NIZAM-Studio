@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü
 
+## v0.150.0
+- **Panel yeniden kuruldu: hero · dört sayı · aktif projeler.** Eskiden altı kısayol kutusuydu; nereye gidileceğini söylüyor ama ne olduğunu söylemiyordu.
+- **Hero** artık üst etiket, iri serif selam, tarih, ince ayraç ve "Planla. Geliştir. Teslim et." sloganını taşıyor.
+- **Dört sayı kutusu:** aktif proje, açık görev, ekip üyesi, standart. Her biri ilgili ekrana gidiyor — kısayollar kaybolmadı, sayının içine girdi.
+- Kutulardaki küçük çubuklar **süs değil**: projelerin ilerlemesi, görevlerin durum kırılımı, rol dağılımı ve standart gruplarının büyüklüğünden geliyor. Veri yoksa çubuk çizilmiyor.
+- **Aktif Projeler** listesi: en son dokunulan üç proje, ilerleme çubuğu ve yüzdesiyle. Masaüstünde durum ve son güncelleme de görünüyor. "Son güncelleme" o projenin görevlerindeki en yeni değişiklik — uydurma alan değil.
+- "Örnek Projeler" kutusu kaldırıldı (ekranı yoktu, yalnız yer tutuyordu).
+
 ## v0.149.1
 - **Kırmızı kısıldı: siyah, gri, beyaz.** Kart üst şeritleri, ana düğmeler, aktif menü satırı ve alt çubuktaki aktif sekme artık mürekkep siyahı. Kırmızı yalnız üç yerde kaldı: logo, ekle (+) düğmesi ve tehlike/acil.
 - Sebebi: kırmızı her kartın üstünde, her düğmede ve alt çubukta olunca hepsi birden "buraya bak" diyordu. Vurgu nadir olduğunda vurgu oluyor.

@@ -386,7 +386,8 @@ const VIEWS = {
        taşımak zorunda kalıyordu. Panel yalnızca nereye gidileceğini söylüyor. */
     return `
       ${panelHero()}
-      ${kisayolIzgarasi(p.length, acik)}
+      ${panelSayilar(p, acik)}
+      ${panelProjeler(p)}
     `;
   },
 
@@ -13570,56 +13571,147 @@ function panelHero() {
       <span class="p-hero-perde"></span>
       <div class="p-hero-yazi">
         <span class="p-hero-cizgi"></span>
+        <span class="p-hero-ust">Nizam Studio</span>
         <h1>${selam}</h1>
-        <p>${esc(todayLabel())}</p>
+        <p class="p-hero-tarih">${esc(todayLabel())}</p>
+        <span class="p-hero-ayrac"></span>
+        <p class="p-hero-slogan">Planla. Geliştir. Teslim et.</p>
       </div>
     </section>`;
 }
 
-/* ---------- Panelin kısayol ızgarası ----------
-   Panel eskiden dört sayaç ve proje listesiydi: ne olduğunu söylüyor ama
-   nereye gidileceğini söylemiyordu — her şeye alt çubuktan ulaşılıyordu.
-   Şimdi önce gidilecek yerler, sayılar altta özet kartında.
-   Kırmızı yalnız "Yeni Proje"de: ızgaranın ana eylemi o. */
-function kisayolIzgarasi(projeSayi, acikIs) {
+/* ---------- Panelin özet sayıları ----------
+   Dört kutu: kaç proje, kaç açık iş, kaç kişi, kaç standart. Her biri
+   bir yere gidiyor — panel "ne oluyor" ve "nereye gidilir" sorularını
+   aynı anda cevaplıyor.
+
+   Kutulardaki küçük çubuklar SÜS DEĞİL: her biri gerçek bir kırılımdan
+   geliyor (projelerin ilerlemesi, görevlerin durumu, rollerin dağılımı,
+   standart gruplarının büyüklüğü). Veri yoksa çubuk da çizilmiyor —
+   uydurma bir grafik koymaktansa boş bırakmak dürüst. */
+function pzCubuklar(degerler) {
+  const d = (degerler || []).filter(x => typeof x === 'number' && x >= 0).slice(0, 4);
+  const enBuyuk = Math.max.apply(null, d.concat([0]));
+  /* Hepsi sıfırsa çizilecek bir şey yok: dört küçük nokta grafik gibi
+     değil, kir gibi duruyordu. */
+  if (!d.length || !enBuyuk) return '';
+  return `<span class="pz-cubuk" aria-hidden="true">${
+    d.map((v, i) => `<i style="height:${Math.max(14, Math.round(v / enBuyuk * 100))}%;--i:${i}"></i>`).join('')
+  }</span>`;
+}
+
+function pzKutu({ ikon, sayi, etiket, adres, cubuklar, vurgu }) {
+  return `
+    <a class="pz ${vurgu ? 'vurgu' : ''}" href="${adres}">
+      <span class="pz-ust">
+        <span class="pz-ikon">${svg(ICON[ikon], 19)}</span>
+        ${pzCubuklar(cubuklar)}
+      </span>
+      <b class="pz-sayi">${sayi}</b>
+      <span class="pz-alt">
+        <i>${esc(etiket)}</i>
+        <em class="pz-cv">${svg(ICON.chevron, 13)}</em>
+      </span>
+    </a>`;
+}
+
+function panelSayilar(projeler, acikIs) {
   const yon = AUTH.yonetici;
 
-  /* --i: açılıştaki sıralı beliriş için; kartlar 42ms arayla geliyor. */
-  const kutu = ({ ad, alt, ikon, adres, eylem, ana, yakinda }, i) => {
-    /* Standartlar ekranındaki kartın dili: karo simge sol üstte, ok sağ
-       üstte, yazı altta sola hizalı. `.kk-ust` adı yetkili kartında
-       kullanılıyor, o yüzden `.kk-bas`. */
-    const ic = `
-      <span class="kk-bas">
-        <span class="kk-dr">${svg(ICON[ikon], 20)}</span>
-        ${yakinda ? '' : `<span class="kk-cv">${svg(ICON.chevron, 13)}</span>`}
-      </span>
-      <span class="kk-yz">
-        <b>${esc(ad)}</b>
-        <i>${esc(alt)}</i>
-      </span>`;
-    /* Henüz ekranı olmayan kart: yeri tutulsun ama boşa dokundurmasın. */
-    const st = `style="--i:${i + 1}"`;
-    if (yakinda) return `<span class="kk yakinda" ${st}>${ic}</span>`;
-    return eylem
-      ? `<button class="kk ${ana ? 'ana' : ''}" type="button" ${st} data-eylem="${eylem}">${ic}</button>`
-      : `<a class="kk ${ana ? 'ana' : ''}" ${st} href="${adres}">${ic}</a>`;
-  };
+  /* Projelerin ilerlemesi — en son dördü. */
+  const ilerlemeler = projeler.slice(0, 4).map(p => DB.sayim(p.id).yuzde);
 
-  const kutular = [
-    { ad: 'Projeler', alt: projeSayi ? projeSayi + ' aktif proje' : 'henüz yok',
-      ikon: 'folder', adres: '#/projeler' },
-    { ad: 'Görevler', alt: acikIs ? acikIs + ' açık iş' : 'açık iş yok',
-      ikon: 'check', adres: '#/gorevler' },
-    /* Ekranı henüz yok; adı duruyor, yeri ayrıldı. */
-    { ad: 'Örnek Projeler', alt: 'yakında', ikon: 'goz', yakinda: true },
-    { ad: 'Ekip', alt: 'kullanıcı ve yetki', ikon: 'kisi',
-      adres: yon ? '#/ekip' : '#/ayarlar', yakinda: !yon },
-    { ad: 'Standartlar', alt: 'ortak tarifler', ikon: 'katman', adres: '#/standartlar' },
-    { ad: 'Ayarlar', alt: 'uygulama ayarı', ikon: 'ayar', adres: '#/ayarlar' },
+  /* Görevlerin durum kırılımı. */
+  const durumSay = DURUM_SIRA.map(d => DB.gorevleri({ durum: d }).length);
+
+  /* Rol dağılımı: yönetici ve geliştirici. */
+  const kisiler = DB.kisiler || [];
+  const rolSay = [
+    kisiler.filter(k => k.rol === 'yonetici').length,
+    kisiler.filter(k => k.rol !== 'yonetici').length,
   ];
 
-  return `<div class="kisayol">${kutular.map(kutu).join('')}</div>`;
+  /* Standartların grup büyüklükleri. */
+  const grup = {};
+  (DB.standartlar || []).forEach(s => { grup[s.grup || '—'] = (grup[s.grup || '—'] || 0) + 1; });
+  const grupSay = Object.values(grup).sort((a, b) => b - a);
+
+  return `<div class="pz-izgara">
+    ${pzKutu({ ikon: 'folder', sayi: projeler.length, etiket: 'Aktif Proje',
+               adres: '#/projeler', cubuklar: ilerlemeler })}
+    ${pzKutu({ ikon: 'check', sayi: acikIs, etiket: 'Açık Görev',
+               adres: '#/gorevler', cubuklar: durumSay, vurgu: acikIs > 0 })}
+    ${pzKutu({ ikon: 'kisi', sayi: kisiler.length, etiket: 'Ekip Üyesi',
+               adres: yon ? '#/ekip' : '#/ayarlar', cubuklar: rolSay })}
+    ${pzKutu({ ikon: 'katman', sayi: (DB.standartlar || []).length, etiket: 'Standart',
+               adres: '#/standartlar', cubuklar: grupSay })}
+  </div>`;
+}
+
+/* ---------- Aktif projeler listesi ----------
+   Panelde üç satır: en son dokunulan projeler. "Son güncelleme" uydurma
+   bir alan değil, o projenin görevleri içindeki en yeni değişiklik. */
+function pzSonDokunus(pid) {
+  const gorevler = DB.gorevleri({ proje: pid });
+  let enYeni = '';
+  gorevler.forEach(g => { if ((g.guncellendi || '') > enYeni) enYeni = g.guncellendi || ''; });
+  return enYeni;
+}
+
+function pzZaman(iso) {
+  if (!iso) return 'henüz hareket yok';
+  const d = new Date(iso);
+  const p = n => String(n).padStart(2, '0');
+  const saat = `${p(d.getHours())}:${p(d.getMinutes())}`;
+  const gun = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const bugun = new Date(); const b0 = new Date(bugun.getFullYear(), bugun.getMonth(), bugun.getDate());
+  const fark = Math.round((b0 - gun) / 86400000);
+  if (fark === 0) return 'Bugün · ' + saat;
+  if (fark === 1) return 'Dün · ' + saat;
+  return tarihYaz(iso);
+}
+
+function pzProjeSatiri(p) {
+  const s = DB.sayim(p.id);
+  const zaman = pzSonDokunus(p.id);
+  return `
+    <div class="pp" data-eylem="proje-ac" data-id="${p.id}" role="button" tabindex="0">
+      <span class="pp-karo">${esc(basHarf(p.firma))}</span>
+      <span class="pp-orta">
+        <b class="pp-ad">${esc(projeAdi(p))}</b>
+        <i class="pp-alt">${esc(PLATFORM_ADI[p.platform] || p.platform || '')}</i>
+        <span class="pp-ray"><i style="width:${s.yuzde}%"></i></span>
+      </span>
+      <span class="pp-sag">
+        <span class="pp-durum"><u class="${durumSinif(p.durum)}"></u>${esc(DURUM_ADI[p.durum] || p.durum)}</span>
+        <span class="pp-zaman"><i>Son güncelleme</i>${esc(pzZaman(zaman))}</span>
+      </span>
+      <b class="pp-yuz mono">%${s.yuzde}</b>
+      ${AUTH.yonetici ? `<button class="pp-menu" data-eylem="proje-menu" data-id="${p.id}"
+        type="button" aria-label="Proje seçenekleri">${svg(ICON.nokta, 15)}</button>` : ''}
+    </div>`;
+}
+
+function panelProjeler(projeler) {
+  if (!projeler.length) {
+    return `<div class="pz-bolum">
+      <span class="pz-bas"><b>Aktif Projeler</b><u></u></span>
+      <div class="card">${empty(ICON.folder, 'Henüz proje yok',
+        AUTH.yonetici ? 'Yeni Proje sihirbazı firma, platform ve modülleri sorar; gerisini kendisi kurar.'
+                      : 'Sana bir proje atandığında burada görünecek.',
+        AUTH.yonetici ? 'Yeni Proje' : null, 'sihirbaz')}</div>
+    </div>`;
+  }
+  /* En son dokunulan üç proje. Panel bir liste ekranı değil; tamamı
+     "Tüm Projeler" bağlantısının arkasında. */
+  const sirali = projeler.slice().sort((a, b) => (pzSonDokunus(b.id) || '').localeCompare(pzSonDokunus(a.id) || ''));
+  return `<div class="pz-bolum">
+    <span class="pz-bas">
+      <b>Aktif Projeler</b><u></u>
+      <a href="#/projeler">Tüm Projeler ${svg(ICON.chevron, 13)}</a>
+    </span>
+    <div class="pp-liste">${sirali.slice(0, 3).map(pzProjeSatiri).join('')}</div>
+  </div>`;
 }
 
 /* ---------- Bugünkü durum ----------
