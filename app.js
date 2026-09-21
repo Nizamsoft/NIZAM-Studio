@@ -13557,7 +13557,7 @@ function karsilama(ilerleme, projeSayi, acikIs) {
    Şimdi fotoğraf sınırlı bir blok: selam onun koyu perdesinin üstüne
    düşüyor, kartlar kağıdın üstünde rahat ediyor.
 
-   Görsel gorseller/panel-ofis.png. Dosya yoksa onerror ile eski ofis
+   Görsel gorseller/panel-ofis.webp. Dosya yoksa onerror ile eski ofis
    fotoğrafına, o da yoksa düz mürekkep zemine düşüyor — yani görsel
    eklenene kadar panel çirkinleşmiyor, yalnız sadeleşiyor. */
 function panelHero() {
@@ -13565,7 +13565,7 @@ function panelHero() {
   const selam = esc(selamla()) + (ad ? ',<br>' + esc(ad) : '');
   return `
     <section class="p-hero">
-      <img class="p-hero-foto" src="gorseller/panel-ofis.png" alt="" draggable="false"
+      <img class="p-hero-foto" src="gorseller/panel-ofis.webp" alt="" draggable="false"
            onerror="this.onerror=null;this.src='ofis.webp'">
       <span class="p-hero-perde"></span>
       <div class="p-hero-yazi">

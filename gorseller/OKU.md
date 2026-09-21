@@ -7,6 +7,10 @@ buraya atılır, alt klasör açmaya gerek yok. Dosya adları aşağıdaki liste
 Kural: PNG yoksa uygulama çökmez, o görselin yerine sade bir zemin çıkar.
 Yani görselleri sırayla ekleyebilirsin, acelesi yok.
 
+**PNG at, gerisini bırak.** ChatGPT'den çıkan PNG 2 MB civarı oluyor; o
+boyut mobilde her açılışta indirilir. Sen PNG'yi buraya koy, ben `.webp`'ye
+çevirip (yaklaşık 120 KB) PNG'yi sileyim — kod zaten `.webp` arıyor.
+
 ---
 
 > `kagit-doku.png` listede yok: ChatGPT'den %4 opaklıkta saydam doku
@@ -17,8 +21,8 @@ Yani görselleri sırayla ekleyebilirsin, acelesi yok.
 
 | Dosya adı | Ne? | Ölçü |
 |---|---|---|
-| `panel-ofis.png` | Panel'in tepesindeki geniş ofis fotoğrafı | 2400 × 1400 |
-| `giris-ofis.png` | Giriş ekranının zemini (dikey) | 1600 × 2400 |
+| ~~`panel-ofis`~~ | Panel'in tepesindeki geniş ofis fotoğrafı | ✅ geldi |
+| ~~`giris-ofis`~~ | Giriş ekranının zemini (dikey) | ✅ geldi |
 
 ## 2. öncelik — sayfa kuşakları (her sayfanın tepesindeki ince şerit)
 

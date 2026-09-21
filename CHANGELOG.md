@@ -1,5 +1,12 @@
 # Değişiklik Günlüğü
 
+## v0.148.2
+- **Ofis fotoğrafları geldi.** Panel'in hero bloğu ve giriş ekranının zemini artık gerçek Nizam Software ofisi.
+- Yüklenen PNG'ler 1,8 MB'tı; webp'ye çevrildi ve **120 KB**'a indi (ortamda cwebp/ImageMagick yok, Chromium'un kendi kodlayıcısı kullanıldı). Ağır PNG'ler depodan çıkarıldı.
+- Mobilde hero kadrajı sağa kaydırıldı: duvardaki logo kesiliyordu, artık tam görünüyor.
+- Giriş ekranındaki kağıt perdesi inceltildi; fotoğraf sisin arkasında kaybolmuyor.
+- Servis işçisi üç görseli de önbelleğe alıyor — çevrimdışı açılışta boş blok çıkmasın.
+
 ## v0.148.1
 - **Kağıt dokusu geldi** (`gorseller/kagit-doku.png`). ChatGPT'den istenemiyordu: %4 opaklıkta saydam bir doku istenince gerçekten boş görsel çıkıyordu. Doku zaten matematik — kodla üretildi, döşenebilir ve tekrar üretilebilir (sabit tohum).
 - Zemindeki çapraz tarama çizgileri kaldırıldı; doku artık tek kaynaktan geliyor ve ızgara gibi değil, gren gibi okunuyor.
