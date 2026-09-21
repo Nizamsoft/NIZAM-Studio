@@ -7145,12 +7145,12 @@ function ekipProjeSayisi(kisiId) {
 function ekipKarti(k) {
   const ad   = k.ad || 'İsimsiz';
   const acik = DB.cevrimicimi(k.id);
-  const son  = ekipSonHareket(k.id);
+  const son  = ekipSonGorulme(k);
   const kidem = ekipKidem(k);
   const gorev = DB.gorevleri({ kisi: k.id }).length;
 
   const durumYazi = acik ? 'Şu an aktif.'
-    : (son ? esc(pzZaman(son)) : (k.aktif ? 'Hareket yok' : 'Pasif hesap'));
+    : (son ? esc(pzZaman(son)) : 'Henüz girmedi');
 
   return `
     <div class="ek2 ${acik ? 'cevrimici' : ''} ${k.aktif ? '' : 'pasif'}"
@@ -7224,7 +7224,7 @@ function ekipEkrani() {
   else liste = liste.slice().sort((a, b) => {
     const fa = DB.cevrimicimi(a.id) ? 1 : 0, fb = DB.cevrimicimi(b.id) ? 1 : 0;
     if (fa !== fb) return fb - fa;
-    return (ekipSonHareket(b.id) || '').localeCompare(ekipSonHareket(a.id) || '');
+    return (ekipSonGorulme(b) || '').localeCompare(ekipSonGorulme(a) || '');
   });
 
   /* Toplam'da iki kişi simgesi, diğer ikisinde renkli nokta. */
@@ -14320,6 +14320,14 @@ function panelProjeler(projeler) {
    Çevrimiçi bilgisi canlı kanaldan geliyor ve ANLIK: kanal yalnız şu anı
    bilir. Çevrimdışı satırda yazan saat o kişinin son görev hareketidir;
    hiç hareketi yoksa satır sessiz kalır, uydurma saat yazılmaz. */
+/* Son aktiflik: uygulamayı en son ne zaman açtığı. Damga yoksa (SQL
+   çalıştırılmamışsa) en son görev hareketine düşüyor. */
+function ekipSonGorulme(k) {
+  const damga = (k && k.son_gorulme) || '';
+  const hareket = ekipSonHareket(k && k.id);
+  return damga > hareket ? damga : hareket;
+}
+
 function ekipSonHareket(kisiId) {
   let enYeni = '';
   (DB.hareketler || []).forEach(h => {
@@ -14331,7 +14339,7 @@ function ekipSonHareket(kisiId) {
 function ekipSatiri(k) {
   const ad = k.ad_soyad || k.ad || 'İsimsiz';
   const cevrimici = DB.cevrimicimi(k.id);
-  const son = ekipSonHareket(k.id);
+  const son = ekipSonGorulme(k);
   return `
     <div class="ek ${cevrimici ? 'acik' : ''}">
       <span class="ek-av">${k.foto
@@ -14529,8 +14537,15 @@ async function uygulamayiAc() {
      sayılar ve yeşil kartlar anında doğru olsun. */
   DB.varlikBasla(() => {
     ekipBlogunuTazele();
-    if (rota().key === 'ekip') render();
+    /* Biri çıktığında onun "son görülme"si değişmiş olur; Ekip ekranı
+       açıksa kişileri tazeleyip yeniden çiziyoruz. */
+    if (rota().key === 'ekip') DB.tazele('kisiler').then(render, render);
   });
+
+  /* Son görülme damgası: açılışta bir kez, sonra beş dakikada bir. */
+  DB.goruldu(true);
+  clearInterval(GORULDU_SAAT);
+  GORULDU_SAAT = setInterval(() => DB.goruldu(), 5 * 60 * 1000);
 
   /* Telefon uygulamayı arka planda dondurunca canlı bağlantı kopuyor ve
      aradaki değişiklikler kaçıyor. Geri dönünce sessizce tazele. */
@@ -14540,8 +14555,10 @@ async function uygulamayiAc() {
 
 /* Uygulamaya geri dönüldüğünde sessiz tazeleme — en fazla dakikada bir. */
 let SON_TAZELEME = 0;
+let GORULDU_SAAT = null;
 async function geriDonunce() {
   if (document.hidden || !AUTH.bagli) return;
+  DB.goruldu();                      /* geri döndü: hâlâ buradayım */
   if (Date.now() - SON_TAZELEME < 60 * 1000) return;
   SON_TAZELEME = Date.now();
 

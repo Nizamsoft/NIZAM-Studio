@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.165.0
+- **"Son aktiflik" artık gerçekten son giriş.** Kişi uygulamayı her açtığında zaman damgası yazılıyor; göreve dokunmasına gerek yok. Açık kaldıkça beş dakikada bir, uygulamaya geri dönünce de tazeleniyor.
+- Damga yoksa eski davranışa (son görev hareketi) düşüyor; hiç girmemişse "Henüz girmedi" yazıyor.
+- Biri uygulamadan çıkınca Ekip ekranı kendini tazeleyip son görülme saatini gösteriyor.
+- **Kurulum:** `sql/23-son-gorulme.sql` → Supabase SQL Editor'de çalıştır.
+
 ## v0.164.0
 - **Serif yazı kaldırıldı.** Başlıklar da Space Grotesk oldu; uygulamanın her yerinde tek aile kullanılıyor. Serif duruşu profesyonellikten uzaklaştırıyordu.
 - Alıntılar artık eğik değil (Space Grotesk'in gerçek italiği yok, tarayıcı eğerek uyduruyordu).

@@ -118,6 +118,23 @@ const DB = {
     }
   },
 
+  /* Son görülme damgası. Uygulama açıldığında, sekmeye geri dönüldüğünde
+     ve açık kaldıkça beş dakikada bir yazılıyor. Sütun yoksa (SQL
+     çalıştırılmamışsa) sessizce geçiyor — uygulama bundan etkilenmez. */
+  sonDamga: 0,
+
+  async goruldu(zorla = false) {
+    if (!AUTH.db || !AUTH.user) return;
+    const simdi = Date.now();
+    if (!zorla && simdi - this.sonDamga < 120000) return;
+    this.sonDamga = simdi;
+    try {
+      await AUTH.db.from('profiles')
+        .update({ son_gorulme: new Date().toISOString() })
+        .eq('id', AUTH.user.id);
+    } catch (e) { /* sütun yok ya da ağ yok: önemli değil */ }
+  },
+
   varlikDur() {
     this.varlik = {};
     if (!this.varlikKanal) return;
