@@ -1,5 +1,12 @@
 # Değişiklik Günlüğü
 
+## v0.156.1
+- Sayı kartları tasarımla karşılaştırıldı, üç fark düzeltildi:
+  - **Karo simgeleri dolu** oldu (çizgi ikon yerine dolu klasör; onay karosu kırmızı dolu kare, tiki beyaz).
+  - **Sayı etiketin altına** geldi. Önce kartın en soluna düşüyordu, tasarımda etiketle aynı hizada başlıyor.
+  - **Etiket kırpılmıyor.** "Devam Eden Proje" ikon ve halkayla aynı satıra sıkışınca "Devam…" oluyordu; etiket artık üst satırın tamamını alıyor, halka alt satıra indi.
+- Kartlar kısaldı (146px → 134px) ve ikisi de aynı boyda.
+
 ## v0.156.0
 - **İki sayı kartı onaylanan tasarıma geçti:** üstte kırmızı karo ve etiket yan yana, altında iri sayı; solda ilerleme halkası (yüzde halkanın altında yazıyor), sağda en yakın teslim tarihi.
 - **"En yakın bitiş" gerçek veri:** projelerin teslim tarihinden, bugünden sonraki en yakın olanı. Tarihi olan proje yoksa satır hiç çıkmıyor.

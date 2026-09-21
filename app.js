@@ -13715,32 +13715,33 @@ function panelSayilar(projeler) {
     ? `${yakin.t.getDate()} ${aylar[yakin.t.getMonth()]} ${yakin.t.getFullYear()}`
     : '';
 
+  /* Karo simgeleri burada elle çizildi: ICON'daki çizgi ikonlar tasarımda
+     dolu görünüyor. Onay karosu kırmızı dolu bir kare, tiki beyaz. */
+  const klasorDolu = '<svg viewBox="0 0 24 24" style="width:18px;height:18px">'
+    + '<path fill="currentColor" stroke="none" d="M3 7.5A2.5 2.5 0 0 1 5.5 5h3.2l2 2h8.8A2.5 2.5 0 0 1 22 9.5v8A2.5 2.5 0 0 1 19.5 20h-15A2.5 2.5 0 0 1 2 17.5z"></path></svg>';
+  const onayDolu = '<svg viewBox="0 0 24 24" style="width:18px;height:18px">'
+    + '<rect x="3" y="3" width="18" height="18" rx="5" fill="currentColor" stroke="none"></rect>'
+    + '<path d="M8 12.3l2.7 2.7L16.3 9.2" fill="none" stroke="#fff" stroke-width="2.2"'
+    + ' stroke-linecap="round" stroke-linejoin="round"></path></svg>';
+
   return `<div class="ps-izgara">
     <a class="ps" href="#/projeler" title="Halka: devam eden projelerin ortalama ilerlemesi">
       <span class="ps-leke" aria-hidden="true"></span>
-      <span class="ps-ust">
-        <span class="ps-ikon">${svg(ICON.folder, 17)}</span>
-        <i>Devam Eden Proje</i>
-      </span>
-      <span class="ps-alt">
-        <b class="ps-sayi">${devam.length}</b>
-        <span class="ps-halka">
-          ${pzHalka(ortalama, 62, 7)}
-          <u>%${ortalama}</u>
-        </span>
+      <span class="ps-ikon">${klasorDolu}</span>
+      <span class="ps-yazi"><i>Devam Eden Proje</i><b>${devam.length}</b></span>
+      <span class="ps-halka">
+        ${pzHalka(ortalama, 54, 6)}
+        <u>%${ortalama}</u>
       </span>
     </a>
     <a class="ps" href="#/gorevler"${yakin ? ` title="En yakın teslim: ${esc(projeAdi(yakin.p))}"` : ''}>
       <span class="ps-leke" aria-hidden="true"></span>
-      <span class="ps-sus" aria-hidden="true">${svg(ICON.takvim, 78)}</span>
-      <span class="ps-ust">
-        <span class="ps-ikon">${svg(ICON.check, 17)}</span>
-        <i>Açık Görev</i>
-      </span>
-      <span class="ps-alt"><b class="ps-sayi">${acik}</b></span>
+      <span class="ps-sus" aria-hidden="true">${svg(ICON.takvim, 74)}</span>
+      <span class="ps-ikon">${onayDolu}</span>
+      <span class="ps-yazi"><i>Açık Görev</i><b>${acik}</b></span>
       ${yakin ? `
         <span class="ps-bitis">
-          ${svg(ICON.takvim, 15)}
+          ${svg(ICON.takvim, 14)}
           <span><i>En yakın bitiş</i><b>${esc(tarihYazi)}</b></span>
         </span>` : ''}
     </a>
