@@ -7198,14 +7198,14 @@ function ekipAramaUygula() {
 
 function ekipEkrani() {
   const hepsi = DB.kisilerHepsi || [];
-  const sayi  = {
-    tumu:  hepsi.length,
-    aktif: hepsi.filter(k => k.aktif).length,
-    pasif: hepsi.filter(k => !k.aktif).length,
-  };
+  /* "Aktif" = şu an uygulamada olan. Canlı varlık kanalından geliyor,
+     hesabın açık/kapalı olmasıyla ilgisi yok. Çevrimiçi olmayan herkes
+     pasif sayılıyor. */
+  const online = hepsi.filter(k => DB.cevrimicimi(k.id)).length;
+  const sayi  = { tumu: hepsi.length, aktif: online, pasif: hepsi.length - online };
 
-  let liste = hepsi.filter(k =>
-    EKIP_SUZ === 'aktif' ? k.aktif : EKIP_SUZ === 'pasif' ? !k.aktif : true);
+  let liste = hepsi.filter(k => EKIP_SUZ === 'aktif' ? DB.cevrimicimi(k.id)
+    : EKIP_SUZ === 'pasif' ? !DB.cevrimicimi(k.id) : true);
 
   if (EKIP_SIRA === 'ad')       liste = liste.slice().sort((a, b) => (a.ad || '').localeCompare(b.ad || '', 'tr'));
   else if (EKIP_SIRA === 'rol') liste = liste.slice().sort((a, b) => (a.rol === 'yonetici' ? 0 : 1) - (b.rol === 'yonetici' ? 0 : 1));
@@ -14398,7 +14398,12 @@ async function uygulamayiAc() {
   /* Kim şu an uygulamada — panelin ekip bloğu bunu gösteriyor.
      Biri girip çıkınca yalnız o blok yeniden çiziliyor; bütün sayfayı
      tazelemek kaydırmayı başa alıyor ve göz yoruyordu. */
-  DB.varlikBasla(() => ekipBlogunuTazele());
+  /* Biri girip çıkınca panelin ekip bloğu ve Ekip ekranı tazeleniyor:
+     sayılar ve yeşil kartlar anında doğru olsun. */
+  DB.varlikBasla(() => {
+    ekipBlogunuTazele();
+    if (rota().key === 'ekip') render();
+  });
 
   /* Telefon uygulamayı arka planda dondurunca canlı bağlantı kopuyor ve
      aradaki değişiklikler kaçıyor. Geri dönünce sessizce tazele. */

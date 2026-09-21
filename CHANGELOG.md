@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## v0.160.3
+- **"Aktif üye" artık şu an uygulamada olan kişi** demek; çevrimiçi olmayan herkes pasif sayılıyor. Hapların sayısı da, filtresi de buna göre.
+- Biri girip çıkınca Ekip ekranı kendiliğinden tazeleniyor: sayılar ve yeşil kartlar anında doğru.
+
 ## v0.160.2
 - Ekip sayı hapları renklendi: Toplam Üye nötr gri (iki kişi simgesi), Aktif Üye yeşil, **Pasif Üye kırmızı**. Yuvalar yuvarlak.
 
