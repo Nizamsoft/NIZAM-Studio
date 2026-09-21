@@ -7861,8 +7861,9 @@ a.asr:active{ transform:scale(.99); }
 .ek2.gizli { display: none; }
 
 .ek2 {
+  position: relative;
   display: flex; flex-direction: column; align-items: flex-start;
-  padding: 16px 14px;
+  padding: 14px;
   background: var(--surface); border: 1px solid var(--line-2); border-radius: 18px;
   transition: border-color .16s ease, background .16s ease;
 }
@@ -7887,18 +7888,27 @@ a.asr:active{ transform:scale(.99); }
 }
 .ek2.cevrimici .ek2-foto u { background: #2f7d5c; border-color: #f4fbf7; }
 
+.ek2-menu {
+  position: absolute; top: 8px; right: 6px; z-index: 2;
+  display: flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; border: 0; border-radius: 9px; cursor: pointer;
+  background: none; color: var(--ink-dim);
+}
+.ek2-menu:hover { background: var(--surface-2); color: var(--ink-strong); }
+.ek2-menu svg { width: 18px; height: 18px; fill: currentColor; stroke: none; }
+
 .ek2-ad {
-  margin-top: 12px; font-size: 15px; font-weight: 700; color: var(--ink-strong);
+  margin-top: 10px; font-size: 15px; font-weight: 700; color: var(--ink-strong);
   line-height: 1.25;
 }
 .ek2-rol {
-  margin-top: 7px; padding: 4px 11px; border-radius: 999px;
+  margin-top: 6px; padding: 3px 10px; border-radius: 999px;
   background: var(--surface-2); color: var(--ink-soft);
   font-size: 11px; font-weight: 600;
 }
 .ek2-rol.yon { background: var(--red-soft); color: var(--red-ink); }
 
-.ek2-durum { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
+.ek2-durum { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
 .ek2-durum i {
   width: 9px; height: 9px; flex-shrink: 0; border-radius: 999px; background: var(--ink-dim);
 }
@@ -7908,22 +7918,22 @@ a.asr:active{ transform:scale(.99); }
 .ek2.cevrimici .ek2-durum b { color: #2f7d5c; }
 
 .ek2-sayilar {
-  display: flex; gap: 6px; width: 100%; margin-top: 14px;
-  padding-top: 13px; border-top: 1px solid var(--line-3);
+  display: flex; gap: 4px; width: 100%; margin-top: 12px;
+  padding-top: 11px; border-top: 1px solid var(--line-3);
 }
 .ek2-sayilar > span { flex: 1; min-width: 0; text-align: left; }
 .ek2-sayilar b {
-  display: flex; align-items: center; gap: 5px; white-space: nowrap;
-  font-size: 13.5px; font-weight: 700; color: var(--ink-strong);
+  display: flex; align-items: center; gap: 4px; white-space: nowrap;
+  font-size: 13px; font-weight: 700; color: var(--ink-strong);
 }
-.ek2-sayilar svg { width: 14px; height: 14px; flex-shrink: 0; opacity: .6; }
+.ek2-sayilar svg { width: 13px; height: 13px; flex-shrink: 0; opacity: .55; }
 .ek2-sayilar i {
   display: block; margin-top: 2px; font-style: normal; font-size: 10.5px; color: var(--ink-dim);
 }
 
 .ek2-dug {
   display: flex; align-items: center; justify-content: center; gap: 8px;
-  width: 100%; margin-top: 14px; padding: 11px; border: 0; border-radius: 12px;
+  width: 100%; margin-top: 12px; padding: 10px; border: 0; border-radius: 12px;
   cursor: pointer; background: var(--surface-2); color: var(--ink);
   font-size: 13px; font-weight: 600;
 }
@@ -7971,9 +7981,18 @@ a.asr:active{ transform:scale(.99); }
   .pj-tepe p { grid-column: 1 / -1; }
   /* Ekip'te tek düğme var, arama ile aynı satıra sığıyor. */
   .pj-araclar.ekip .pj-ara { flex: 1 1 auto; }
-  /* Dar kartta "2 yıl" alt satıra kırılıyordu: simgeler kalktı. */
-  .ek2-sayilar svg { display: none; }
-  .ek2-sayilar b { font-size: 13px; }
+  /* Telefonda kart alçak olsun: "Son aktiflik" üst etiketi gizli, yalnız
+     durumun kendisi yazıyor. */
+  .ek2-durum em { display: none; }
+  .ek2-durum b { font-size: 12px; }
+  .ek2-foto { width: 58px; height: 58px; font-size: 16px; }
+  .ek2-foto u { width: 14px; height: 14px; }
+  .ek2-ad { font-size: 14.5px; }
+  .ek2-sayilar { gap: 2px; }
+  .ek2-sayilar b { font-size: 12px; gap: 3px; }
+  .ek2-sayilar svg { width: 12px; height: 12px; }
+  .ek2-sayilar i { font-size: 10px; }
+  .ek2-dug { font-size: 12.5px; padding: 9px; }
   .ek2-haplar { gap: 8px; }
   .ek2-hap { flex: 1 1 0; gap: 8px; padding: 11px 12px; }
   .ek2-hap i { width: 26px; height: 26px; border-radius: 9px; }

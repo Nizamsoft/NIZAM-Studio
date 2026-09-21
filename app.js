@@ -7147,6 +7147,10 @@ function ekipKarti(k) {
   return `
     <div class="ek2 ${acik ? 'cevrimici' : ''} ${k.aktif ? '' : 'pasif'}"
          data-ara="${esc(ad.toLocaleLowerCase('tr'))}">
+      <button class="ek2-menu" type="button" data-eylem="kisi-duzenle" data-id="${k.id}"
+              aria-label="${esc(ad)} düzenle">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.7"></circle><circle cx="12" cy="12" r="1.7"></circle><circle cx="12" cy="19" r="1.7"></circle></svg>
+      </button>
       <span class="ek2-foto ${k.foto ? 'resimli' : ''}"
             ${k.foto ? `style="background-image:url('${esc(k.foto)}')"` : ''}>
         <b>${esc(basHarf(ad))}</b><u class="${acik ? 'acik' : ''}"></u>
@@ -7162,8 +7166,8 @@ function ekipKarti(k) {
         <span><b>${svg(ICON.check, 14)}${gorev}</b><i>Görev</i></span>
         <span><b>${svg(ICON.kisi, 14)}${kidem || '—'}</b><i>Ekipte</i></span>
       </span>
-      <button class="ek2-dug" type="button" data-eylem="kisi-duzenle" data-id="${k.id}">
-        ${svg(ICON.kalem, 15)}<span>Düzenle</span>
+      <button class="ek2-dug" type="button" data-eylem="mesaj-gonder" data-id="${k.id}">
+        ${svg(ICON.mail, 15)}<span>Mesaj Gönder</span>
       </button>
     </div>`;
 }
@@ -12296,6 +12300,12 @@ async function eylemCalistir(el) {
   if (e === 'proje-ac')  { location.hash = '#/projeler/' + id; return; }
 
   if (e === 'gorev-ac')   return gorevKartiAc(id);
+
+  /* Mesajlaşma henüz yazılmadı; düğmenin yeri tasarımda hazır. */
+  if (e === 'mesaj-gonder') {
+    toast('Mesajlaşma yakında gelecek.');
+    return;
+  }
 
   if (e === 'ekip-suz') {
     EKIP_SUZ = el.dataset.deger;

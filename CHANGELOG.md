@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.160.1
+- Ekip kartında **sağ üstte üç nokta**: basınca kişinin düzenleme ekranı açılıyor.
+- Alttaki düğme **"Mesaj Gönder"** oldu. Mesajlaşma henüz yazılmadı; basınca "yakında" diyor.
+- "Proje · Görev · Ekipte" satırındaki **simgeler telefonda da görünüyor**.
+- Kart **alçaldı**: telefonda "Son aktiflik" üst etiketi gizlendi, fotoğraf ve boşluklar küçüldü.
+
 ## v0.160.0
 **Ekip ekranı onaylanan tasarıma geçti** — mobilde ikili, masaüstünde dörtlü kart ızgarası.
 - Kartlar beyaz; kişi **o an uygulamadaysa kart yeşile dönüyor**. "Bu benim kartım" diye ayrı renk yok.
