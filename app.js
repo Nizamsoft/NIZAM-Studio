@@ -13685,9 +13685,9 @@ function pzHalka(yuzde, boy, kalin) {
 
 /* ---------- İki sayı kartı ----------
    Solda halka: devam eden projelerin ortalama ilerlemesi.
-   Sağda haftalık çubuklar: bu haftanın günlük hareketi (görev geçmişinden
-   sayılıyor), bugünün çubuğu kırmızı. İkisi de gerçek veri; hangisi
-   olduğu kartın title'ında yazıyor. */
+   Sağda yalnız sayı — burada haftalık çubuk grafiği vardı, kaldırıldı:
+   "dün dört hareket olmuş" bilgisiyle yapılacak bir şey yoktu, yalnız
+   yer kaplıyordu. Panelde süs değil, bakılınca iş çıkaran şey durur. */
 function panelSayilar(projeler) {
   const gorevler = DB.gorevler || [];
   const bitmis = gorevler.filter(g => g.durum === 'tamamlandi').length;
@@ -13698,19 +13698,6 @@ function panelSayilar(projeler) {
   const ortalama = yuzdeler.length
     ? Math.round(yuzdeler.reduce((t, x) => t + x, 0) / yuzdeler.length) : 0;
 
-  /* Haftanın günleri pazartesiden başlıyor; hareketler güne dağıtılıyor. */
-  const kisa = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cts', 'Paz'];
-  const simdi = new Date();
-  const bugunIndis = (simdi.getDay() + 6) % 7;
-  const haftaBasi = new Date(simdi.getFullYear(), simdi.getMonth(), simdi.getDate() - bugunIndis);
-  const say = [0, 0, 0, 0, 0, 0, 0];
-  (DB.hareketler || []).forEach(h => {
-    const t = new Date(h.olusturuldu || 0);
-    const fark = Math.floor((t - haftaBasi) / 86400000);
-    if (fark >= 0 && fark < 7) say[fark]++;
-  });
-  const enBuyuk = Math.max.apply(null, say.concat([1]));
-
   return `<div class="ps-izgara">
     <a class="ps" href="#/projeler" title="Halka: devam eden projelerin ortalama ilerlemesi">
       <span class="ps-ust"><span class="ps-ikon">${svg(ICON.folder, 18)}</span><i>Devam Eden Proje</i></span>
@@ -13719,16 +13706,9 @@ function panelSayilar(projeler) {
         <span class="ps-halka">${pzHalka(ortalama, 76, 9)}<u>%${ortalama}</u></span>
       </span>
     </a>
-    <a class="ps" href="#/gorevler" title="Çubuklar: bu haftanın günlük hareketi">
+    <a class="ps" href="#/gorevler">
       <span class="ps-ust"><span class="ps-ikon">${svg(ICON.check, 18)}</span><i>Açık Görev</i></span>
-      <span class="ps-alt">
-        <b>${acik}</b>
-        <span class="ps-hafta">${say.map((n, i) => `
-          <span class="hf ${i === bugunIndis ? 'bugun' : ''}">
-            <u style="height:${Math.max(8, Math.round(n / enBuyuk * 100))}%"></u>
-            <em>${kisa[i]}</em>
-          </span>`).join('')}</span>
-      </span>
+      <span class="ps-alt"><b>${acik}</b></span>
     </a>
   </div>`;
 }

@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## v0.154.0
+- **"Açık Görev" kartındaki haftalık çubuk grafiği kaldırıldı.** "Dün dört hareket olmuş" bilgisiyle yapılacak bir şey yoktu; yalnız yer kaplıyordu. Kartta artık sadece sayı var, iki kart aynı boyda duruyor.
+- Grafiğe ait ölü stiller de silindi.
+
 ## v0.153.4
 - **Alt çubuk ekrana yapışık.** Yüzen bir hap değil, ekranın altına oturan bir bant: sağ, sol ve alt kenarlara yapışık, yalnız üst köşeleri yuvarlak. Ana ekran çizgisinin payı artık dış boşlukla değil çubuğun kendi iç boşluğuyla veriliyor — yoksa çubukla ekranın dibi arasında beyaz bir şerit kalıyordu.
 
