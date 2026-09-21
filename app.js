@@ -7118,12 +7118,20 @@ function kisiSatiri(k, i = 0) {
    bilgisi, son hareket saati, kişinin görevi olan proje sayısı, görev
    sayısı ve hesabın açıldığı günden beri geçen süre. Mockup'taki kişisel
    söz satırı Studio'da yok, o yüzden konmadı. */
-function ekipKidem(iso) {
+/* Kıdem hep AY olarak yuvarlanıyor, gün yazılmıyor. Bir aydan azsa
+   "1 ay" diyor; on iki ayı geçince yıla dönüyor. */
+function ekipKidem(k) {
+  if (k && k.kurucu) return 'Kurucu';
+  const iso = (k && (k.katilim || k.olusturuldu)) || '';
   if (!iso) return '';
-  const gun = Math.floor((Date.now() - new Date(iso)) / 86400000);
-  if (isNaN(gun) || gun < 0) return '';
-  if (gun < 30)  return gun <= 1 ? '1 gün' : gun + ' gün';
-  const ay = Math.floor(gun / 30);
+  const t = new Date(iso);
+  if (isNaN(t)) return '';
+
+  const bugun = new Date();
+  let ay = (bugun.getFullYear() - t.getFullYear()) * 12 + (bugun.getMonth() - t.getMonth());
+  if (bugun.getDate() < t.getDate()) ay--;          /* ayı doldurmadıysa sayma */
+  if (ay < 1) ay = 1;                                /* gün yazmıyoruz */
+
   if (ay < 12) return ay + ' ay';
   return Math.floor(ay / 12) + ' yıl';
 }
@@ -7138,7 +7146,7 @@ function ekipKarti(k) {
   const ad   = k.ad || 'İsimsiz';
   const acik = DB.cevrimicimi(k.id);
   const son  = ekipSonHareket(k.id);
-  const kidem = ekipKidem(k.olusturuldu);
+  const kidem = ekipKidem(k);
   const gorev = DB.gorevleri({ kisi: k.id }).length;
 
   const durumYazi = acik ? 'Şu an aktif.'
@@ -7164,7 +7172,7 @@ function ekipKarti(k) {
       <span class="ek2-sayilar">
         <span><b>${svg(ICON.folder, 14)}${ekipProjeSayisi(k.id)}</b><i>Proje</i></span>
         <span><b>${svg(ICON.check, 14)}${gorev}</b><i>Görev</i></span>
-        <span><b>${svg(ICON.kisi, 14)}${kidem || '—'}</b><i>Ekipte</i></span>
+        <span><b>${svg(ICON.kisi, 14)}${kidem || '—'}</b>${k.kurucu ? '' : '<i>Ekipte</i>'}</span>
       </span>
       <button class="ek2-dug" type="button" data-eylem="mesaj-gonder" data-id="${k.id}">
         ${svg(ICON.mail, 15)}<span>Mesaj Gönder</span>
@@ -11868,7 +11876,8 @@ function kisiDuzenle(id) {
   const adi   = parca.join(' ');
 
   const epostaVar = k.eposta || (ben && AUTH.user ? AUTH.user.email : '') || '';
-  const katilim   = k.olusturuldu ? pjTarih(k.olusturuldu) : '';
+  /* Tarih kutusu YYYY-AA-GG ister. Kayıtlı tarih yoksa hesabın açıldığı gün. */
+  const katilimGun = String(k.katilim || k.olusturuldu || '').slice(0, 10);
 
   const goz = '<svg viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"></path>'
     + '<circle cx="12" cy="12" r="3.2"></circle></svg>';
@@ -11910,7 +11919,12 @@ function kisiDuzenle(id) {
         </div>
       </div>
       <div class="field"><span>Ekibe katılım</span>
-        <div class="kd-sabit">${svg(ICON.takvim, 15)}${esc(katilim || 'bilinmiyor')}</div>
+        <div class="secenek-serit kd-katilim-sec">
+          <button class="ss ${k.kurucu ? '' : 'sec'}" data-kur="0" type="button">Tarih</button>
+          <button class="ss ${k.kurucu ? 'sec' : ''}" data-kur="1" type="button">Kurucu</button>
+        </div>
+        <input type="date" id="kd-katilim" class="kd-tarih ${k.kurucu ? 'gizli' : ''}"
+               value="${esc(katilimGun)}" max="${esc(bugunTarih())}">
       </div>
     </div>
 
@@ -11947,6 +11961,14 @@ function kisiDuzenle(id) {
       $$('[data-aktif]', kutu).forEach(x => x.classList.toggle('sec', x === b));
     }));
 
+    /* Kurucu seçilince tarih kutusu gizleniyor: kurucunun katılım tarihi yok. */
+    let kurucu = !!k.kurucu;
+    $$('[data-kur]', kutu).forEach(b => b.addEventListener('click', () => {
+      kurucu = b.dataset.kur === '1';
+      $$('[data-kur]', kutu).forEach(x => x.classList.toggle('sec', x === b));
+      $('#kd-katilim', kutu).classList.toggle('gizli', kurucu);
+    }));
+
     const fotoDug = $('[data-kd="foto"]', kutu);
     if (fotoDug) fotoDug.addEventListener('click', () => { modalKapat(); fotoSec(); });
 
@@ -11972,6 +11994,7 @@ function kisiDuzenle(id) {
       try {
         const sonuc = await DB.kullaniciGuncelle({
           id: k.id, ad, telefon: tel, eposta: mail, sifre,
+          kurucu, katilim: kurucu ? null : $('#kd-katilim', kutu).value,
           epostaDegisti: !!mail && mail !== String(epostaVar || '').toLowerCase(),
           rol: ben ? undefined : rol,
           aktif: ben ? undefined : aktif,

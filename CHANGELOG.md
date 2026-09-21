@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.162.0
+- **Ekibe katılım tarihi artık seçiliyor.** Düzenleme ekranında "Tarih" ya da "Kurucu": kurucunun katılım tarihi yok, kartta "Kurucu" yazıyor.
+- Karttaki kıdem **hep aya yuvarlanıyor** — gün yazmıyor. Bir aydan azsa "1 ay", on iki ayı geçince "N yıl".
+- E-posta, telefon, katılım ve kurucu alanları artık doğrudan yazılıyor; e-posta ya da şifre değişmedikçe sunucudaki fonksiyona hiç gidilmiyor.
+- **Kurulum:** `sql/22-ekip-katilim.sql` → Supabase SQL Editor'de çalıştır. (Fonksiyonu yeniden kurmana gerek yok.)
+
 ## v0.161.0
 **Ekip üyesi düzenleme ekranı onaylanan tasarıma geçti.**
 - Fotoğraf, **Ad** ve **Soyad** (tek alan ekranda ikiye bölünüyor, kaydederken birleşiyor), **E-posta**, **Telefon**, **Rol**, **Ekibe katılım tarihi** (değiştirilemez), **Erişim** ve **Şifre**.

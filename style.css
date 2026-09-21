@@ -8085,3 +8085,21 @@ a.asr:active{ transform:scale(.99); }
   .kd-cift { gap: 9px; }
   .kd-ust .field input, .kd-cift .field input { padding-left: 11px; padding-right: 11px; }
 }
+
+/* Dar sütunda iki seçenek yan yana kalsın: yazı küçülüyor, kutular
+   sütunu eşit bölüşüyor. Yoksa "Geliştirici" alt satıra kırılıyor. */
+.kd-cift .secenek-serit { flex-wrap: nowrap; }
+.kd-cift .secenek-serit .ss {
+  flex: 1 1 0; min-width: 0; padding-left: 8px; padding-right: 8px;
+  font-size: 12.5px; white-space: nowrap;
+}
+
+/* Katılım tarihi: "Kurucu" seçilince tarih kutusu gizleniyor. */
+.kd-katilim-sec { margin-bottom: 8px; }
+.kd-tarih {
+  width: 100%; height: 46px; padding: 0 14px;
+  border-radius: 10px; background: var(--surface-2);
+  border: 1px solid var(--line-2); color: var(--ink-strong);
+  font-family: inherit; font-size: 13.5px;
+}
+.kd-tarih.gizli { display: none; }
