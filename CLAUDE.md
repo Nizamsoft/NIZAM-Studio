@@ -57,7 +57,12 @@ Yapılacak → Geliştiriliyor → Kontrolde → Tamamlandı
 - Revize ayrı durum değil: Kontrolde'den Geliştiriliyor'a geri düşme + not.
 
 ## İlerleme yüzdesi
-**Asla elle girilmez.** Her zaman hesaplanır: bitmiş görev / toplam görev.
+**Asla elle girilmez.** Projenin yüzdesi **adımlara** göre hesaplanır:
+bitmiş aşama / sayılan aşama (`projeAsamaYuzde`). Firma bilgileri, Program
+temeli, Bağlantılar, Kurulum ve yapı, Beta, Profesyonel tasarım,
+Yetkilendirme, Güvenlik, Final… Gizli ve `sayilmaz` adımlar hesaba girmez.
+Görev sayısına göre hesaplama bırakıldı: sıfır görevi olan proje %0,
+tek görevi biten proje %100 görünüyordu.
 
 ## Roller (2 tane)
 - **Yönetici** — her şeyi görür, onaylar

@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## v0.166.0
+- **Proje yüzdesi artık adımlara göre.** Projenin bitmiş aşaması / toplam aşaması (Firma bilgileri, Program temeli, Bağlantılar, Kurulum ve yapı, Beta, Profesyonel tasarım, Yetkilendirme, Güvenlik, Final). Eskiden biten görev / toplam görevdi; sıfır görevli proje %0, tek görevi biten proje %100 görünüyordu.
+- Aynı sayı her yerde: panel halkası, Aktif Projeler kartları, Projeler ekranı ve proje künyesi.
+- **Panelde Aktif Projeler yalnız devam edenleri gösteriyor**; biten proje şeritten çıkıyor. "Devam Eden Proje" sayısı da aynı ölçüyü kullanıyor.
+
 ## v0.165.0
 - **"Son aktiflik" artık gerçekten son giriş.** Kişi uygulamayı her açtığında zaman damgası yazılıyor; göreve dokunmasına gerek yok. Açık kaldıkça beş dakikada bir, uygulamaya geri dönünce de tazeleniyor.
 - Damga yoksa eski davranışa (son görev hareketi) düşüyor; hiç girmemişse "Henüz girmedi" yazıyor.

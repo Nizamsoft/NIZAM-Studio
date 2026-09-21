@@ -30,8 +30,22 @@ const DEFAULT_ROUTE = 'panel';
 /* Bir proje bitmiş sayılır mı: final verildiyse evet — görev yüzdesi
    %100 olmasa da (görev hiç kullanılmayan bir projede yüzde hep sıfır
    kalıyordu, final verilse bile "Başlamış" kovasından hiç çıkmıyordu). */
+/* Projenin ilerlemesi ADIMLARA göre: bitmiş aşama / sayılan aşama.
+   (Eskiden biten görev / toplam görevdi; aynı proje sıfır görevle %0,
+   tek görevle %100 görünüyordu — gerçek durumu anlatmıyordu.)
+   Gizli ve "sayilmaz" adımlar hesaba girmiyor. */
+function projeAsamaYuzde(p) {
+  if (!p) return 0;
+  const sayilan = projeDuraklari(p).filter(d => !d.gizli && !d.sayilmaz);
+  if (!sayilan.length) return 0;
+  return Math.round(sayilan.filter(d => d.bitti).length / sayilan.length * 100);
+}
+
 function projeBittiMi(p) {
-  return !!(p.palet && p.palet.finalVerildi) || DB.sayim(p.id).yuzde >= 100;
+  if (!p) return false;
+  return !!(p.palet && p.palet.finalVerildi)
+      || p.durum === 'tamamlandi'
+      || projeAsamaYuzde(p) >= 100;
 }
 
 /* Projeler ekranının iki kovası. Adres `#/projeler/basmis` — proje kimlikleri
@@ -5656,7 +5670,7 @@ function projeKunyesi(p) {
           ${(p.palet || {}).projeTuru === 'test' ? '<span class="pill dev">Test</span>' : ''}</span>
         <span class="pk-alt">${alt}</span>
       </span>
-      <span class="pk-yuz"><b>%${s.yuzde}</b><i>tamam</i></span>
+      <span class="pk-yuz"><b>%${projeAsamaYuzde(p)}</b><i>tamam</i></span>
     </div>`;
 }
 
@@ -5920,9 +5934,7 @@ function projeYolu(p) {
   const simdi = duraklar.findIndex(d => !d.bitti);
   /* Geliştirme (sayilmaz) hiç bitmediği için yüzdeye girerse final verilmiş
      bir proje asla %100 görünmezdi — o yüzden sayaç dışında tutuluyor. */
-  const sayilan = duraklar.filter(d => !d.sayilmaz);
-  const biten = sayilan.filter(d => d.bitti).length;
-  const yuzde = Math.round(biten / sayilan.length * 100);
+  const yuzde = projeAsamaYuzde(p);
 
   const liste = duraklar.map((d, i) => asamaSatiri(p, d, i, simdi, d.anahtar)).join('');
 
@@ -6035,7 +6047,8 @@ function pjKarti(p) {
   const adres = DB.logoAdres[p.id];
   const kisi  = pjKisiSayisi(p.id);
   const teslim = pjTarih(p.teslim);
-  const bitti = s.yuzde >= 100 || p.durum === 'tamamlandi';
+  const yuzde = projeAsamaYuzde(p);
+  const bitti = projeBittiMi(p);
 
   const ayak = [
     `<span>${svg(ICON.check, 14)}${s.gorev} görev</span>`,
@@ -6060,7 +6073,7 @@ function pjKarti(p) {
         <em>${esc(PLATFORM_ADI[p.platform] || p.platform)}</em>
         <em class="${durumSinif(p.durum)}">${esc(DURUM_ADI[p.durum] || p.durum)}</em>
       </span>
-      <span class="pj-halka">${pzHalka(s.yuzde, 58, 5)}<u>${s.yuzde}%</u></span>
+      <span class="pj-halka">${pzHalka(yuzde, 58, 5)}<u>${yuzde}%</u></span>
       <span class="pj-ok">${svg(ICON.chevron, 16)}</span>
       <span class="pj-ayak">${ayak}</span>
     </div>`;
@@ -6116,7 +6129,7 @@ function pjSuz(liste) {
 function pjSirala(liste) {
   const l = liste.slice();
   if (PROJE_SIRA === 'ad')    return l.sort((a, b) => projeAdi(a).localeCompare(projeAdi(b), 'tr'));
-  if (PROJE_SIRA === 'yuzde') return l.sort((a, b) => DB.sayim(b.id).yuzde - DB.sayim(a.id).yuzde);
+  if (PROJE_SIRA === 'yuzde') return l.sort((a, b) => projeAsamaYuzde(b) - projeAsamaYuzde(a));
   return l.sort((a, b) => (pzSonDokunus(b.id) || '').localeCompare(pzSonDokunus(a.id) || ''));
 }
 
@@ -14205,8 +14218,9 @@ function panelSayilar(projeler) {
   const bitmis = gorevler.filter(g => g.durum === 'tamamlandi').length;
   const acik = gorevler.length - bitmis;
 
-  const devam = projeler.filter(p => p.durum !== 'tamamlandi');
-  const yuzdeler = devam.map(p => DB.sayim(p.id).yuzde);
+  /* Şeritteki "Aktif Projeler" ile aynı ölçü: biten proje sayılmıyor. */
+  const devam = projeler.filter(p => !projeBittiMi(p));
+  const yuzdeler = devam.map(p => projeAsamaYuzde(p));
   const ortalama = yuzdeler.length
     ? Math.round(yuzdeler.reduce((t, x) => t + x, 0) / yuzdeler.length) : 0;
 
@@ -14265,8 +14279,8 @@ function panelSayilar(projeler) {
    Koyu kartlar, yan yana kayan bir şerit. Her kartta halka içinde yüzde,
    altında durum ve son güncelleme. Bitmiş projede yeşil onay rozeti. */
 function pzProjeKarti(p) {
-  const s = DB.sayim(p.id);
-  const bitti = s.yuzde >= 100 || p.durum === 'tamamlandi';
+  const yuzde = projeAsamaYuzde(p);
+  const bitti = projeBittiMi(p);
   /* Ad kutuya sığsın: önce "Firma - Modül", sığmazsa yalnız firma adı,
      o da uzunsa yazı küçülüp iki satıra iniyor. Ada her kartta iki
      satırlık yer ayrıldığı için kartlar aynı hizada kalıyor. */
@@ -14283,7 +14297,7 @@ function pzProjeKarti(p) {
       </button>` : ''}
       <b class="pk2-ad${uzun}" title="${esc(tam)}">${esc(ad)}</b>
       <span class="pk2-halka">
-        ${pzHalka(s.yuzde, 52, 5)}<u>${s.yuzde}%</u>
+        ${pzHalka(yuzde, 52, 5)}<u>${yuzde}%</u>
         ${bitti ? `<em class="pk2-tik">${svg(ICON.tik, 11)}</em>` : ''}
       </span>
       <span class="pk2-durum">${p.durum === 'yeni' ? '' : esc(DURUM_ADI[p.durum] || p.durum)}</span>
@@ -14291,16 +14305,17 @@ function pzProjeKarti(p) {
 }
 
 function panelProjeler(projeler) {
-  if (!projeler.length) {
+  if (!projeler.filter(p => !projeBittiMi(p)).length) {
     return `<div class="pz-bolum">
       <span class="pz-bas"><b>Aktif Projeler</b><u></u></span>
-      <div class="card">${empty(ICON.folder, 'Henüz proje yok',
+      <div class="card">${empty(ICON.folder, 'Devam eden proje yok',
         AUTH.yonetici ? 'Yeni Proje sihirbazı firma, platform ve modülleri sorar; gerisini kendisi kurar.'
                       : 'Sana bir proje atandığında burada görünecek.',
         AUTH.yonetici ? 'Yeni Proje' : null, 'sihirbaz')}</div>
     </div>`;
   }
-  const sirali = projeler.slice().sort((a, b) =>
+  /* Panelde yalnız devam edenler: biten proje "aktif" değil. */
+  const sirali = projeler.filter(p => !projeBittiMi(p)).sort((a, b) =>
     (pzSonDokunus(b.id) || '').localeCompare(pzSonDokunus(a.id) || ''));
   return `<div class="pz-bolum">
     <span class="pz-bas">
