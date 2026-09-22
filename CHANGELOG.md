@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## v0.168.0
+- **Sohbet ekranı geldi** (üst çubuktaki simgeden): başlık, kişi araması ve liste. Satırlar gerçek ekip üyelerinden; çevrimiçi olanlar üstte ve yeşil noktalı. En altta "Nizam Studio" duyuru satırı.
+- Mesajlaşmanın kendisi henüz yazılmadı: satıra basınca haber veriyor, son mesaj ve saat alanları özellik gelince dolacak.
+- Ekip kartındaki "Mesaj Gönder" düğmesi de bu ekranı açıyor.
+
 ## v0.167.2
 - Üst çubuğa **sohbet simgesi** eklendi (zilin solunda). Özellik henüz yazılmadı; basınca "yakında" diyor. Okunmamış mesaj noktası hazır ama şimdilik gizli.
 

@@ -21,6 +21,7 @@ const ROUTES = {
   kilitler:    { title: 'Kilitli Projeler',    kisa: 'Kilit',       sub: () => kilitAltBaslik() },
   templateler: { title: 'Templateler',         kisa: 'Template',    sub: () => cekirdekAltBaslik() },
   ekip:        { title: 'Ekip',               kisa: 'Ekip',        sub: () => ekipAltBaslik() },
+  sohbet:      { title: 'Sohbet',             kisa: 'Sohbet',      sub: () => 'Ekip ile iletişimde kal' },
   guvenlik:    { title: 'Güvenlik Testi',     kisa: 'Güvenlik',    sub: () => 'anon key ve istersen personel girişiyle test et' },
   ayarlar:     { title: 'Ayarlar',            kisa: 'Ayarlar',     sub: () => APP.version + ' · ' + APP.stage },
 };
@@ -95,6 +96,7 @@ let PROJE_SUZ    = '';
 let PROJE_SIRA   = 'son';
 /* Ekip ekranının araçları — Projeler'dekiyle aynı mantık. */
 let EKIP_ARAMA = '';
+let SOHBET_ARAMA = '';
 let EKIP_SUZ   = 'tumu';
 let EKIP_SIRA  = 'aktiflik';
 let PROJE_GORUNUM = (() => {
@@ -641,6 +643,12 @@ const VIEWS = {
         'Ekip yönetimini yalnızca yönetici görebilir.')}</div>`;
     }
     return ekipEkrani();
+  },
+
+  sohbet: () => {
+    if (YUKLENIYOR) return iskeletler(4);
+    if (DB.hata)    return hataKutusu(DB.hata);
+    return sohbetEkrani();
   },
 
   /* ---------- Güvenlik Testi ---------- */
@@ -6692,6 +6700,7 @@ function render() {
   /* Arama kutusundaki yazı ekran yeniden çizilince de geçerli kalsın. */
   pjAramaUygula();
   ekipAramaUygula();
+  sohbetAramaUygula();
   if (kaydirmaYeri) {
     const yeni = $('.dk-govde, .kunye-kaydir, .ozet-kaydir, .palet-kaydir');
     if (yeni) yeni.scrollTop = kaydirmaYeri;
@@ -7309,6 +7318,78 @@ function ekipEkrani() {
       </span>
       <img class="ek2-afis-n" src="logo.png" alt="" draggable="false">
       <span class="ek2-afis-soz"><u></u>Birlikte<br>daha büyük<br>projeler.</span>
+    </div>`;
+}
+
+/* ---------- Sohbet ----------
+   Şimdilik yalnız liste: ekip üyeleri ve Nizam Studio duyuru satırı.
+   Mesajlaşmanın kendisi henüz yazılmadı; satıra basınca haber veriyor.
+   Yazılınca son mesaj, saat ve okunmamış rozeti bu satırlara girecek. */
+function sohbetSatiri({ ad, alt, avatar, foto, acik, marka }) {
+  return `
+    <button class="sh2" type="button" data-eylem="sohbet-ac"
+            data-ara="${esc(String(ad).toLocaleLowerCase('tr'))}">
+      <span class="sh2-foto ${foto ? 'resimli' : ''} ${marka ? 'marka' : ''}"
+            ${foto ? `style="background-image:url('${esc(foto)}')"` : ''}>
+        ${marka ? '<img src="logo.png" alt="">' : `<b>${esc(avatar)}</b>`}
+        ${acik === undefined ? '' : `<u class="${acik ? 'acik' : ''}"></u>`}
+      </span>
+      <span class="sh2-orta">
+        <b>${esc(ad)}</b>
+        <i>${esc(alt)}</i>
+      </span>
+      <span class="sh2-sag"></span>
+    </button>`;
+}
+
+function sohbetAramaUygula() {
+  const liste = $('.sh2-liste');
+  if (!liste) return;
+  let gorunen = 0;
+  $$('.sh2', liste).forEach(s => {
+    const uyar = !SOHBET_ARAMA || (s.dataset.ara || '').indexOf(SOHBET_ARAMA) >= 0;
+    s.classList.toggle('gizli', !uyar);
+    if (uyar) gorunen++;
+  });
+  liste.classList.toggle('bos', gorunen === 0);
+}
+
+function sohbetEkrani() {
+  const kisiler = (DB.kisiler || [])
+    .filter(k => !(AUTH.user && k.id === AUTH.user.id))
+    .sort((a, b) => (DB.cevrimicimi(b.id) ? 1 : 0) - (DB.cevrimicimi(a.id) ? 1 : 0));
+
+  const satirlar = kisiler.map(k => sohbetSatiri({
+    ad: k.ad || 'İsimsiz',
+    alt: DB.cevrimicimi(k.id) ? 'Şu an aktif.' : 'Henüz mesaj yok',
+    avatar: basHarf(k.ad || '?'),
+    foto: k.foto,
+    acik: DB.cevrimicimi(k.id),
+  })).join('') + sohbetSatiri({
+    ad: 'Nizam Studio',
+    alt: 'Duyurular burada görünecek',
+    avatar: 'NS',
+    marka: true,
+  });
+
+  return `
+    <div class="pj-tepe">
+      <div class="pj-tepe-yz">
+        <h1>Sohbet</h1>
+        <p>Ekip ile iletişimde kal.</p>
+      </div>
+    </div>
+
+    <div class="pj-araclar ekip">
+      <label class="pj-ara">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.4"></circle><path d="M15.8 15.8L20.5 20.5"></path></svg>
+        <input id="sh-ara" type="search" autocomplete="off" placeholder="Kişi ara…"
+          value="${esc(SOHBET_ARAMA)}">
+      </label>
+    </div>
+
+    <div class="sh2-liste">${satirlar}
+      <div class="pj-bos-arama">Aramana uyan kişi yok.</div>
     </div>`;
 }
 
@@ -12432,10 +12513,8 @@ async function eylemCalistir(el) {
   if (e === 'gorev-ac')   return gorevKartiAc(id);
 
   /* Mesajlaşma henüz yazılmadı; düğmenin yeri tasarımda hazır. */
-  if (e === 'mesaj-gonder') {
-    toast('Mesajlaşma yakında gelecek.');
-    return;
-  }
+  if (e === 'mesaj-gonder') { location.hash = '#/sohbet'; return; }
+  if (e === 'sohbet-ac')    { toast('Mesajlaşma yakında gelecek.'); return; }
 
   if (e === 'ekip-suz') {
     EKIP_SUZ = el.dataset.deger;
@@ -14892,6 +14971,9 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (e.target.matches('#ek-ara')) {
       EKIP_ARAMA = e.target.value.trim().toLocaleLowerCase('tr');
       ekipAramaUygula();
+    } else if (e.target.matches('#sh-ara')) {
+      SOHBET_ARAMA = e.target.value.trim().toLocaleLowerCase('tr');
+      sohbetAramaUygula();
     }
   });
 
@@ -14902,7 +14984,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   /* Sohbet henüz yazılmadı; düğmenin yeri tasarımda hazır. */
   const sohbet = $('#btn-sohbet');
-  if (sohbet) sohbet.addEventListener('click', () => toast('Sohbet yakında gelecek.'));
+  if (sohbet) sohbet.addEventListener('click', () => { location.hash = '#/sohbet'; });
 
   /* Zil bekleyen işlere götürüyor. */
   const zil = $('#btn-zil');
