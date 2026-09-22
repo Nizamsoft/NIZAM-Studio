@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## v0.171.1
+- **"Yol haritası" seçimi kalktı — varsayılan işareti zaten söylüyor.** Varsayılan paket sıfırdan kurulan projelerin paketi, orada değiştirilecek hazır bir program yok → normal akış. Varsayılan olmayan bir pakete ancak bir template üzerinden geliniyor → hazır programın kurulumu akışı. İki durumun dışında bir hâl yok, ayrı bir seçim gereksizdi.
+- Anahtarın altında artık tek satırda hangi duraklardan geçileceği yazıyor; pakete bağlı proje varsa "işareti değiştirirsen onların adımları da değişir" uyarısı çıkıyor.
+- Template oluştururken ve kopyayı pakete bağlarken **varsayılan paket listede çıkmıyor** — onun template'i olmaz.
+
 ## v0.171.0
 **Paket penceresi yeniden tasarlandı.**
 - Turuncu ikon, başlıkta paketin adı, sağ üstte kapatma; Paket Adı, Açıklama ve "Promptda nasıl anlatılsın?" alanları, altta tam genişlikte Kaldır, kırmızı Kaydet.

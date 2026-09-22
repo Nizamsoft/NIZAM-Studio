@@ -1230,12 +1230,30 @@ function projePaketi(p) {
   return (DB.paketler || []).find(x => x.anahtar === anahtar) || null;
 }
 
-/* Hangi akış çizilecek. Paket tablosu henüz kurulmadıysa (sql/25 çalışmadı)
-   eski işarete düşüyoruz — ekran yine de doğru yol haritasını gösteriyor. */
+/* Hangi akış çizilecek — paketin VARSAYILAN işaretinden türüyor:
+   varsayılan paket sıfırdan kurulan projelerin paketi, orada değiştirilecek
+   hazır bir program yok → normal akış. Varsayılan olmayan bir pakete ancak
+   bir template üzerinden geliniyor → hazır programın kurulumu akışı.
+   Ayrı bir "yol haritası" seçimi vardı, gereksizdi: bu iki durumun dışında
+   bir hâl yok.
+
+   `varsayilan` sütunu kurulmadıysa (sql/27 çalışmadı) eski `akis` alanına,
+   paket tablosu hiç yoksa (sql/25) projenin eski şablon işaretine düşüyoruz —
+   ekran yine de doğru yol haritasını çiziyor. */
 function paketAkisi(p) {
-  const paket = projePaketi(p);
-  if (paket) return paket.akis || 'ozel';
+  const k = projePaketi(p);
+  if (k) {
+    if ('varsayilan' in k) return k.varsayilan ? 'ozel' : 'muhasebe';
+    return k.akis || 'ozel';
+  }
   return ((p && p.palet) || {}).sablon ? 'muhasebe' : 'ozel';
+}
+
+/* Bir paketin akışı — projesiz de sorulabilsin diye ayrı. */
+function paketinAkisi(k) {
+  if (!k) return 'ozel';
+  if ('varsayilan' in k) return k.varsayilan ? 'ozel' : 'muhasebe';
+  return k.akis || 'ozel';
 }
 
 function sablonMu(p) {
@@ -7206,7 +7224,7 @@ function paketKarti(x) {
       <span class="lk-ikon turuncu">${svg(ICON.paket, 26)}</span>
       <span class="lk-yz">
         <b>${esc(x.ad)}${x.varsayilan ? '<u class="lk-rozet">Varsayılan</u>' : ''}</b>
-        <i>${esc(x.aciklama || paketAkisAdi(x.akis))}</i>
+        <i>${esc(x.aciklama || paketAkisAdi(paketinAkisi(x)))}</i>
         <em>${svg(ICON.folder, 15)}${n ? n + ' proje' : 'proje yok'}</em>
       </span>
       <span class="lk-ok">${svg(ICON.chevron, 18)}</span>
@@ -7219,8 +7237,8 @@ function paketKarti(x) {
 function paketDuzenle(id) {
   modalHepsiniKapat();
   const x = id ? (DB.paketler || []).find(k => k.id === id) : null;
-  let akis = x ? (x.akis || 'ozel') : 'ozel';
-  let varsayilan = !!(x && x.varsayilan);
+  let varsayilan = x ? paketinAkisi(x) === 'ozel' : false;
+  const projeSayisi = x ? paketProjeSayisi(x.anahtar) : 0;
   /* Sütunlar kurulmadıysa kutular görünür ama neden kaydedilmediği yazılır. */
   const yeniKapali = paketYeniAlanlarKapali();
 
@@ -7270,16 +7288,6 @@ function paketDuzenle(id) {
         <b class="mono">sql/27-paket-varsayilan.sql</b> çalıştırılmalı.</i>` : ''}
     </label>
 
-    <div class="pd-alan">
-      <span class="pd-et">Yol haritası</span>
-      <div class="secenek-serit" id="pk-akis">
-        ${PAKET_AKISLARI.map(a => `<button class="ss ${akis === a.anahtar ? 'sec' : ''}"
-          data-pk-akis="${a.anahtar}" type="button">${esc(a.ad)}</button>`).join('')}
-      </div>
-      <i class="pd-ipucu" id="pk-akis-alt">${esc(
-        (PAKET_AKISLARI.find(a => a.anahtar === akis) || PAKET_AKISLARI[0]).alt)}</i>
-    </div>
-
     <button class="pd-anahtar ${varsayilan ? 'acik' : ''}" type="button" data-pk="varsayilan"
             role="switch" aria-checked="${varsayilan}">
       <span class="pd-anahtar-ikon">${svg(ICON.yildiz, 20)}</span>
@@ -7289,6 +7297,9 @@ function paketDuzenle(id) {
       </span>
       <span class="pd-anahtar-kol"><u></u></span>
     </button>
+
+    <i class="pd-ipucu ${projeSayisi ? 'uyari' : ''}" id="pk-akis-alt">${
+      esc(paketAkisOzeti(varsayilan, projeSayisi))}</i>
 
     ${x ? `<button class="pd-kaldir" type="button" data-pk="sil">
       ${svg(ICON.cop, 17)}<span>Kaldır</span></button>` : ''}
@@ -7316,18 +7327,14 @@ function paketDuzenle(id) {
       });
     });
 
-    $$('[data-pk-akis]', kutu).forEach(b => b.addEventListener('click', () => {
-      akis = b.dataset.pkAkis;
-      $$('[data-pk-akis]', kutu).forEach(o => o.classList.toggle('sec', o === b));
-      const a = PAKET_AKISLARI.find(y => y.anahtar === akis);
-      $('#pk-akis-alt', kutu).textContent = a ? a.alt : '';
-    }));
-
     const anahtar = $('[data-pk="varsayilan"]', kutu);
+    const ozet = $('#pk-akis-alt', kutu);
     anahtar.addEventListener('click', () => {
       varsayilan = !varsayilan;
       anahtar.classList.toggle('acik', varsayilan);
       anahtar.setAttribute('aria-checked', String(varsayilan));
+      ozet.textContent = paketAkisOzeti(varsayilan, projeSayisi);
+      ozet.classList.toggle('uyari', !!projeSayisi);
     });
 
     const silDug = $('[data-pk="sil"]', kutu);
@@ -7362,7 +7369,9 @@ function paketDuzenle(id) {
         const alanlar = {
           ad,
           aciklama: $('#pk-aciklama', kutu).value.trim() || null,
-          akis,
+          /* `akis` artık işareti izliyor; sütun eski kurulumlarda hâlâ
+             okunduğu için tutarlı yazıyoruz. */
+          akis: varsayilan ? 'ozel' : 'muhasebe',
           tanim: $('#pk-tanim', kutu).value.trim() || null,
           varsayilan,
         };
@@ -7378,6 +7387,17 @@ function paketDuzenle(id) {
       }
     });
   });
+}
+
+/* Anahtarın altındaki tek satırlık özet: bu paketle kurulan proje hangi
+   duraklardan geçecek, ve değişiklik kurulmuş projeleri etkileyecek mi. */
+function paketAkisOzeti(varsayilan, projeSayisi) {
+  const a = PAKET_AKISLARI.find(x => x.anahtar === (varsayilan ? 'ozel' : 'muhasebe'));
+  const yol = a ? a.alt : '';
+  return projeSayisi
+    ? `${yol} · Bu paket ${projeSayisi} projede kullanılıyor — işareti `
+      + 'değiştirirsen onların adımları da değişir.'
+    : yol;
 }
 
 /* Yeni sütunlar kurulmuş mu — okunan satırda anahtar hiç yoksa kurulmamıştır. */
@@ -8322,7 +8342,8 @@ function kopyaKaynagiSec(tur) {
    projeDuraklari(). Firma bilgisi de bilerek boş kopyalanır (DB.projeKopyala). */
 function sablonSec(kaynakId, tur) {
   modalHepsiniKapat();
-  const paketler = (DB.paketler || []).filter(k => k.akis !== 'ozel');
+  /* Varsayılan paket burada çıkmaz: o, sıfırdan kurulan projelerin paketi. */
+  const paketler = (DB.paketler || []).filter(k => paketinAkisi(k) !== 'ozel');
 
   modalAc(`
     ${modalBaslik(ICON.paket, 'Bu bir paket kurulumu mu?',
@@ -8331,7 +8352,7 @@ function sablonSec(kaynakId, tur) {
       ${paketler.map(k => `
         <div class="satir sec-satir" data-ss="${esc(k.anahtar)}" role="button" tabindex="0">
           <span class="sec-yazi"><b>${esc(k.ad)}</b>
-            <i>${esc(k.aciklama || paketAkisAdi(k.akis))}</i></span>
+            <i>${esc(k.aciklama || paketAkisAdi(paketinAkisi(k)))}</i></span>
         </div>`).join('')}
       <div class="satir sec-satir" data-ss="hayir" role="button" tabindex="0">
         <span class="sec-yazi"><b>Hayır, normal kopya</b><i>Bugüne kadar olduğu gibi</i></span>
@@ -8491,9 +8512,11 @@ function cekirdekOlusturBaslat() {
 
 function cekirdekTuruSec(kaynakId) {
   modalHepsiniKapat();
-  const paketler = DB.paketler || [];
+  /* Template ancak "hazır program" paketine bağlanır — varsayılan paket
+     sıfırdan kurulanların paketi, template'i olmaz. */
+  const paketler = (DB.paketler || []).filter(k => paketinAkisi(k) !== 'ozel');
   if (!paketler.length) {
-    toast('Önce sql/25-paketler.sql dosyasını çalıştır.', 'uyari');
+    toast('Varsayılan olmayan bir paket yok — önce Paketler\'den bir paket ekle.', 'uyari');
     return;
   }
 
@@ -8504,7 +8527,7 @@ function cekirdekTuruSec(kaynakId) {
       ${paketler.map(k => `
         <div class="satir sec-satir" data-tur="${esc(k.anahtar)}" role="button" tabindex="0">
           <span class="sec-yazi"><b>${esc(k.ad)}</b>
-            <i>${esc(k.aciklama || paketAkisAdi(k.akis))}</i></span>
+            <i>${esc(k.aciklama || paketAkisAdi(paketinAkisi(k)))}</i></span>
         </div>`).join('')}
     </div>
     <div class="modal-alt">
