@@ -7246,7 +7246,6 @@ function paketDuzenle(id) {
   modalHepsiniKapat();
   const x = id ? (DB.paketler || []).find(k => k.id === id) : null;
   let varsayilan = x ? paketinAkisi(x) === 'ozel' : false;
-  const projeSayisi = x ? paketProjeSayisi(x.anahtar) : 0;
   /* Sütunlar kurulmadıysa kutular görünür ama neden kaydedilmediği yazılır. */
   const yeniKapali = paketYeniAlanlarKapali();
 
@@ -7306,9 +7305,6 @@ function paketDuzenle(id) {
       <span class="pd-anahtar-kol"><u></u></span>
     </button>
 
-    <i class="pd-ipucu" id="pk-akis-alt">${
-      esc(paketAkisOzeti(varsayilan, projeSayisi))}</i>
-
     ${x ? `<button class="pd-kaldir" type="button" data-pk="sil">
       ${svg(ICON.cop, 17)}<span>Kaldır</span></button>` : ''}
 
@@ -7336,12 +7332,10 @@ function paketDuzenle(id) {
     });
 
     const anahtar = $('[data-pk="varsayilan"]', kutu);
-    const ozet = $('#pk-akis-alt', kutu);
     anahtar.addEventListener('click', () => {
       varsayilan = !varsayilan;
       anahtar.classList.toggle('acik', varsayilan);
       anahtar.setAttribute('aria-checked', String(varsayilan));
-      ozet.textContent = paketAkisOzeti(varsayilan, projeSayisi);
     });
 
     const silDug = $('[data-pk="sil"]', kutu);
@@ -7394,17 +7388,6 @@ function paketDuzenle(id) {
       }
     });
   });
-}
-
-/* Anahtarın altındaki tek satırlık özet: bu paketle kurulan proje hangi
-   duraklardan geçecek, ve değişiklik kurulmuş projeleri etkileyecek mi. */
-function paketAkisOzeti(varsayilan, projeSayisi) {
-  const a = PAKET_AKISLARI.find(x => x.anahtar === (varsayilan ? 'ozel' : 'muhasebe'));
-  const yol = a ? a.alt : '';
-  return projeSayisi
-    ? `${yol} · Kurulmuş ${projeSayisi} proje etkilenmez; bu ayar yalnız `
-      + 'bundan sonra kurulacaklara uygulanır.'
-    : yol;
 }
 
 /* Yeni sütunlar kurulmuş mu — okunan satırda anahtar hiç yoksa kurulmamıştır. */

@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.171.3
+- Paket penceresindeki anahtarın altındaki açıklama satırı kaldırıldı. Yol haritası artık projeye donduğu için uyaracak bir şey kalmamıştı; pencere tasarımdaki gibi sade.
+
 ## v0.171.2
 - **Yol haritası artık projeye kurulduğu anda donuyor.** Eskiden her açılışta paketten türetiliyordu; paketin "varsayılan" işaretini değiştirmek aylar önce teslim edilmiş bir müşterinin adımlarını da değiştirirdi. Paket artık ileriye dönük: yalnız bundan sonra kurulacak projeleri etkiliyor.
 - Anahtarın altındaki uyarı da bunu söylüyor: *"Kurulmuş N proje etkilenmez."*
