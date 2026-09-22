@@ -14900,6 +14900,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const ara = $('#ust-ara');
   if (ara) ara.addEventListener('click', () => toast('Arama yakında gelecek.'));
 
+  /* Sohbet henüz yazılmadı; düğmenin yeri tasarımda hazır. */
+  const sohbet = $('#btn-sohbet');
+  if (sohbet) sohbet.addEventListener('click', () => toast('Sohbet yakında gelecek.'));
+
   /* Zil bekleyen işlere götürüyor. */
   const zil = $('#btn-zil');
   if (zil) zil.addEventListener('click', () => { location.hash = '#/gorevler'; });

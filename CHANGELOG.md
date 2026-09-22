@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.167.2
+- Üst çubuğa **sohbet simgesi** eklendi (zilin solunda). Özellik henüz yazılmadı; basınca "yakında" diyor. Okunmamış mesaj noktası hazır ama şimdilik gizli.
+
 ## v0.167.1
 - Aktif Projeler kartları genişledi: ekrana beş yerine üç buçuk kart giriyor. Logo, halka ve ad büyüdü; dar kartta hepsi sıkışıyordu.
 
