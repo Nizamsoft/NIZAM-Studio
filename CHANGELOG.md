@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.168.3
+- Sohbet simgesi yeniden çizildi: yuvarlak köşeli düzgün bir konuşma balonu, ortada üç nokta. Eskisi elle çizilmiş eğri bir balondu, yamuk duruyordu.
+
 ## v0.168.2
 - **Onarım:** sohbet listesinde üst çubuktaki geri oku yazışma ekranına dönüyordu. Yazışmadan çıkarken geçmişe yeni kayıt ekleniyordu; artık gerçekten geri gidiyor.
 
