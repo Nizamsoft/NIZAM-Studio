@@ -6601,10 +6601,17 @@ function connRow(k, v, ok) {
 
 /* Adres değiştirip HEMEN çiziyoruz. `hashchange` olayı tarayıcıda bir
    sonraki tura kalıyor; beklemek dokunuşla ekranın açılması arasına
-   gözle görülür bir boşluk koyuyordu. Olay sonra da gelse aynı ekran
-   yeniden çizilir, ucuz. */
+   gözle görülür bir boşluk koyuyordu.
+
+   Çizdiğimiz adresi not ediyoruz: olay arkadan geldiğinde ekran İKİNCİ kez
+   çiziliyordu. İkinci çizim listeyi sıfırdan kuruyor, avatarlar yeniden
+   yükleniyor ve dokunuşun hemen ardına gözle görülür bir takılma düşüyordu.
+   Sekmelerde tek çizim var; burada da tek olsun. */
+let CIZILEN_ADRES = null;
+
 function gitVeCiz(hash) {
   if (location.hash === hash) { render(); return; }
+  CIZILEN_ADRES = hash;
   location.hash = hash;
   render();
 }
@@ -15009,6 +15016,9 @@ async function boot() {
    bunun bedeli animasyonun kendisinden büyük. Düz bir `opacity` ise
    ekran kartında bedava sayılır. */
 window.addEventListener('hashchange', () => {
+  /* Bu adresi gitVeCiz zaten çizdi; aynı ekranı bir daha kurmayalım. */
+  if (CIZILEN_ADRES === location.hash) { CIZILEN_ADRES = null; return; }
+  CIZILEN_ADRES = null;
   if (!$('#app').classList.contains('hidden')) { modalHepsiniKapat(); render(); }
 });
 

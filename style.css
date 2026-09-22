@@ -7192,6 +7192,9 @@ a.asr:active{ transform:scale(.99); }
   color: var(--ink);
 }
 .zil:hover { background: var(--surface-2); }
+/* Dokunma tepkisi: parmağı kaldırmadan düğme küçülsün. Tepkisiz kalınca
+   ekran açılana kadar geçen kısa süre "takıldı" gibi okunuyordu. */
+.zil:active { transform: scale(.9); transition: transform .08s var(--ease); }
 .zil svg {
   width: 21px; height: 21px; fill: none; stroke: currentColor;
   stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round;

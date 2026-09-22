@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## v0.169.3
+- **Sohbete basınca takılma bitti.** Sohbet ekranı iki kez çiziliyordu: önce dokunulur dokunulmaz, sonra tarayıcının adres olayı gelince bir daha. İkinci çizim listeyi sıfırdan kuruyor, avatarları yeniden yüklüyordu. Artık sekmelerde olduğu gibi tek çizim var.
+- Üst çubuktaki sohbet ve zil düğmelerine dokunma tepkisi eklendi — basınca hafifçe küçülüyor, ekran açılana kadar tepkisiz durmuyor.
+
 ## v0.169.2
 - **Sohbet ve yazışma dokunur dokunmaz açılıyor.** Eskiden adres değişip tarayıcının `hashchange` olayı beklenip sonra çiziliyordu; artık adres değişince ekran aynı anda çiziliyor.
 - Ölçüm ve bağlama işleri (önizleme boyu, yapı ağacı bağları, yol izi) ilk boyamadan sonraya alındı — sayfa önce görünüyor, ayarlar sonra yapılıyor.
