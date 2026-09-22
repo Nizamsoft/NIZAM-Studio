@@ -94,6 +94,7 @@ let GOREV_FILTRE   = '';
 let PROJE_ARAMA  = '';
 /* Ekip ekranının araçları — Projeler'dekiyle aynı mantık. */
 let SEKTOR_ARAMA = '';
+let TEMPLATE_ARAMA = '';
 let SEKTOR_SIRA  = 'sira';
 let EKIP_ARAMA = '';
 let SOHBET_ARAMA = '';
@@ -687,21 +688,27 @@ const VIEWS = {
     const liste = DB.projeler.filter(p => !p.arsiv && cekirdekMi(p));
 
     return `
-      <div class="note" style="margin-bottom:12px">
-        ${svg(ICON.info, 15)}
-        <span>Bir template, gerçek bir müşteri projesinden temizlenerek
-        çıkarılır — firma izi kalmaz, tasarım standarda döner. Yeni proje
-        kurarken "Template'ten başlat" ile buradan seçilir.</span>
+      <div class="pj-tepe">
+        <div class="pj-tepe-yz">
+          <h1>Templateler</h1>
+          <p>Projelerinde kullanabileceğin hazır yazılım şablonlarını keşfet.</p>
+        </div>
       </div>
 
-      ${AUTH.yonetici ? `
-        <div class="standart-arac">
-          <button class="mini-link" data-eylem="template-olustur-ac" type="button">
-            ${svg(ICON.arti, 13)} Template oluştur</button>
-        </div>` : ''}
+      <div class="pj-araclar ekip sk-arac">
+        <label class="pj-ara">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.4"></circle><path d="M15.8 15.8L20.5 20.5"></path></svg>
+          <input id="tp-ara" type="search" autocomplete="off" placeholder="Template ara…"
+            value="${esc(TEMPLATE_ARAMA)}">
+        </label>
+        ${AUTH.yonetici ? `<button class="pj-yeni" type="button" data-eylem="template-olustur-ac">
+          ${svg(ICON.arti, 16)}<span>Yeni</span></button>` : ''}
+      </div>
 
       ${liste.length
-        ? `<div class="card liste">${liste.map(cekirdekSatiri).join('')}</div>`
+        ? `<div class="tp-liste">${liste.map(templateKarti).join('')}
+             <div class="pj-bos-arama">Aramana uyan template yok.</div>
+           </div>`
         : `<div class="card">${empty(ICON.katman, 'Template yok',
             'Bitmiş bir müşteri projesinden temizlenmiş bir taban oluşturabilirsin.',
             AUTH.yonetici ? 'Template oluştur' : null, 'template-olustur-ac')}</div>`}
@@ -6955,6 +6962,7 @@ function render() {
   ekipAramaUygula();
   sohbetAramaUygula();
   skAramaUygula();
+  tpAramaUygula();
   if (kaydirmaYeri) {
     const yeni = $('.dk-govde, .kunye-kaydir, .ozet-kaydir, .palet-kaydir');
     if (yeni) yeni.scrollTop = kaydirmaYeri;
@@ -7476,41 +7484,54 @@ function cekirdekAltBaslik() {
 }
 
 
-function cekirdekSatiri(p) {
-  const pl      = p.palet || {};
-  const cek     = pl.cekirdek || {};
-  const hazir   = !!pl.cekirdekTemizlendi;
-  const kilitli = !!pl.kilitli;
-  const yayinAdres = String(pl.alanAdi || '').trim();
+
+/* Template'in kaç modülü var — "Proje Geneli" sayılmıyor. */
+function templateModulSayisi(p) {
+  return DB.modulleri(p.id).filter(m => m.ad !== GENEL_MODUL).length;
+}
+
+/* Template'in açıklaması — paletinde duruyor, ayrı sütun gerekmiyor. */
+function templateAciklamasi(p) {
+  return String(((((p || {}).palet) || {}).cekirdek || {}).aciklama || '').trim();
+}
+
+/* Templateler listesindeki kart. Kapak görseli projenin logo alanını
+   kullanıyor: template zaten bir proje, kova ve imzalı adres hazır.
+   Müşteri kopyasına taşınmıyor (bkz. DB.projeKopyala). */
+function templateKarti(p) {
+  const pl    = p.palet || {};
+  const hazir = !!pl.cekirdekTemizlendi;
+  const n     = templateModulSayisi(p);
+  const adres = DB.logoAdres[p.id];
+  const aciklama = templateAciklamasi(p);
+
   return `
-    <div class="row" data-eylem="template-kur-ac" data-proje="${p.id}" role="button" tabindex="0">
-      <div class="row-main">
-        <span class="row-title">${esc(projeAdi(p))}</span>
-        <span class="row-sub">${esc(templateOzeti(p))} · ${hazir
-          ? (kilitli ? 'Hazır ve kilitli' : 'Hazır')
-          : 'Kuruluyor — GitHub, SQL ve Claude adımları bekliyor'}</span>
-      </div>
-      ${AUTH.yonetici ? `<button class="ak-kop" type="button" data-eylem="template-ayar"
-                 data-proje="${p.id}" aria-label="Sektör ve paket"
-                 title="Sektör ve paket">${svg(ICON.ayar, 13)}</button>` : ''}
-      ${yayinAdres ? `<button class="ak-kop" type="button" data-eylem="sablon-yayina-git"
-                 data-adres="${esc(yayinAdres)}" aria-label="Uygulamayı aç"
-                 title="Uygulamayı aç — ${esc(yayinAdres)}">${svg(ICON.disari, 13)}</button>` : ''}
-      ${hazir
-        ? `<button class="ak-kop ${kilitli ? 'oldu' : ''}" type="button" data-eylem="proje-kilit-degistir"
-                   data-proje="${p.id}" aria-label="${kilitli ? 'Kilidi aç' : 'Kilitle'}"
-                   title="${kilitli ? 'Kilidi aç' : 'Kilitle'}">${svg(ICON.kilit, 13)}</button>`
-        : ''}
-      ${AUTH.yonetici
-        /* Silme eskiden yalnız template kurulum panelinin içindeydi; listeden
-           görünmüyordu ve kullanıcı "silme özelliği yok" sanıyordu. Aynı iş
-           artık satırdan da yapılabiliyor — kilit kuralı ikisinde de aynı. */
-        ? `<button class="ak-kop tehlike" type="button" data-eylem="template-sil"
-                   data-proje="${p.id}" aria-label="Template'i sil"
-                   title="Template'i sil">${svg(ICON.cop, 13)}</button>`
-        : ''}
-      ${hazir ? '' : `<span class="row-val">${svg(ICON.chevron, 15)}</span>`}
-    </div>`;
+    <button class="tp" type="button" data-eylem="template-ayar" data-proje="${p.id}"
+            data-ara="${esc(((p.firma || '') + ' ' + aciklama).toLocaleLowerCase('tr'))}">
+      <span class="tp-kapak ${adres ? 'yukleniyor' : ''}"
+            ${adres ? `data-logo="${esc(adres)}"` : ''}>
+        ${adres ? '<span class="donen"></span>' : svg(ICON.resim, 26)}
+      </span>
+      <span class="tp-yz">
+        <b>${esc(p.firma || 'Template')}</b>
+        <i>${esc(aciklama || 'Açıklama yazılmadı.')}</i>
+        <em>${svg(ICON.katman, 15)}${n ? n + ' modül' : 'modül yok'}${
+          hazir ? '' : ' · kuruluyor'}</em>
+      </span>
+      <span class="tp-ok">${svg(ICON.chevron, 18)}</span>
+    </button>`;
+}
+
+function tpAramaUygula() {
+  const liste = $('.tp-liste');
+  if (!liste) return;
+  let gorunen = 0;
+  $$('.tp', liste).forEach(k => {
+    const uyar = !TEMPLATE_ARAMA || (k.dataset.ara || '').indexOf(TEMPLATE_ARAMA) >= 0;
+    k.classList.toggle('gizli', !uyar);
+    if (uyar) gorunen++;
+  });
+  liste.classList.toggle('bos', gorunen === 0);
 }
 
 /* ---------- Template'in sektörü ve paketi ----------
@@ -7551,31 +7572,67 @@ function templateOzeti(p) {
   ].join(' · ');
 }
 
-/* Template'in sektör ve paketini seçtiren pencere. */
+/* Template'in tek yönetim ekranı: kapak, açıklama, paket, sektörler ve
+   kurulum/kilit/silme işleri. Liste kartına dokununca burası açılıyor. */
 function templateAyarlari(projeId) {
   modalHepsiniKapat();
   const p = DB.proje(projeId);
   if (!p) return;
 
+  const pl = p.palet || {};
   let secili = templateSektorIdleri(p).slice();
   let paket  = templatePaketAnahtari(p);
-  const paketler = DB.paketler || [];
+  const paketler  = (DB.paketler || []).filter(k => paketinAkisi(k) !== 'ozel');
   const sektorler = DB.sektorler || [];
+  const yayinAdres = String(pl.alanAdi || '').trim();
+  const kilitli = !!pl.kilitli;
 
   modalAc(`
-    ${modalBaslik(ICON.paket, 'Template ayarları',
-      'Yeni proje kurarken bu template hangi sektörde çıkacak ve hangi yol haritasını getirecek.')}
+    <div class="pd-tepe">
+      <span class="pd-ikon mor">${svg(ICON.izgaraDort, 26)}</span>
+      <span class="pd-yz">
+        <b>${esc(p.firma || 'Template')}</b>
+        <i>Template bilgilerini düzenleyin.</i>
+      </span>
+      <button class="pd-kapat" type="button" data-ta="iptal" aria-label="Kapat">
+        ${svg(ICON.kapat, 18)}
+      </button>
+    </div>
 
-    <div class="field">
-      <span>Paket</span>
+    <div class="pd-alan">
+      <span class="pd-et">Kapak görseli</span>
+      <button class="tp-kapak-sec" type="button" data-ta="kapak">
+        <span class="tp-kapak buyuk" id="ta-kapak"
+              style="${DB.logoAdres[p.id] ? `background-image:url('${esc(DB.logoAdres[p.id])}')` : ''}">
+          ${DB.logoAdres[p.id] ? '' : svg(ICON.bulut, 24)}
+        </span>
+        <span class="tp-kapak-yz">
+          <b>${DB.logoAdres[p.id] ? 'Değiştir' : 'Görsel yükle'}</b>
+          <i>Listede bu görsel çıkar. PNG veya JPG, en fazla 4 MB.</i>
+        </span>
+      </button>
+    </div>
+
+    <label class="pd-alan">
+      <span class="pd-et">Açıklama</span>
+      <span class="pd-kutu">
+        <textarea class="pd-giris" id="ta-aciklama" rows="3" maxlength="300"
+          placeholder="Bu template ne işe yarar?">${esc(templateAciklamasi(p))}</textarea>
+        <em class="pd-sayac" data-sayac="ta-aciklama" data-sinir="300">${
+          templateAciklamasi(p).length}/300</em>
+      </span>
+    </label>
+
+    <div class="pd-alan">
+      <span class="pd-et">Paket</span>
       ${paketler.length ? `<div class="secenek-serit" id="ta-paket">
         ${paketler.map(k => `<button class="ss ${paket === k.anahtar ? 'sec' : ''}"
           data-ta-paket="${esc(k.anahtar)}" type="button">${esc(k.ad)}</button>`).join('')}
-      </div>` : '<p class="ipucu">Önce sql/25-paketler.sql dosyasını çalıştır.</p>'}
+      </div>` : '<i class="pd-ipucu">Varsayılan olmayan bir paket yok — önce Paketler\'den ekle.</i>'}
     </div>
 
-    <div class="field">
-      <span>Sektörler <em class="ipucu">birden çok seçebilirsin</em></span>
+    <div class="pd-alan">
+      <span class="pd-et">Sektörler</span>
       ${sektorler.length ? `<div class="secim" id="ta-sektor">
         ${sektorler.map(x => `
           <div class="satir sec-satir ${secili.includes(x.id) ? 'sec' : ''}"
@@ -7583,20 +7640,56 @@ function templateAyarlari(projeId) {
             <span class="sec-yazi"><b>${esc(x.ad)}</b></span>
             <span class="kare">${secili.includes(x.id) ? svg(ICON.tik, 12) : ''}</span>
           </div>`).join('')}
-      </div>` : '<p class="ipucu">Önce Kütüphane > Sektörler\'den sektör ekle.</p>'}
+      </div>` : '<i class="pd-ipucu">Önce Kütüphane > Sektörler\'den sektör ekle.</i>'}
+      <i class="pd-ipucu">Sektör seçmezsen bu template yeni proje akışında
+      hiçbir sektörün altında çıkmaz.</i>
     </div>
 
-    <div class="note note-kucuk">
-      ${svg(ICON.info, 15)}
-      <span>Sektör seçmezsen bu template yeni proje akışında hiçbir sektörün
-      altında çıkmaz.</span>
+    <div class="tp-isler">
+      <button class="tp-is" type="button" data-ta="kurulum">
+        ${svg(ICON.dal, 17)}<span>Kurulum adımları</span>${svg(ICON.chevron, 15)}
+      </button>
+      ${yayinAdres ? `<button class="tp-is" type="button" data-ta="yayin">
+        ${svg(ICON.disari, 17)}<span>Uygulamayı aç</span>${svg(ICON.chevron, 15)}
+      </button>` : ''}
+      <button class="tp-is" type="button" data-ta="kilit">
+        ${svg(ICON.kilit, 17)}<span>${kilitli ? 'Kilidi aç' : 'Kilitle'}</span>
+        ${svg(ICON.chevron, 15)}
+      </button>
     </div>
+
+    <button class="pd-kaldir" type="button" data-ta="sil">
+      ${svg(ICON.cop, 17)}<span>Template'i sil</span></button>
 
     <div class="modal-alt">
       <button class="btn btn-ghost" data-ta="iptal" type="button">Vazgeç</button>
-      <button class="btn btn-primary" data-ta="kaydet" type="button"><span>Kaydet</span></button>
+      <button class="btn btn-primary pd-kaydet" data-ta="kaydet" type="button"><span>Kaydet</span></button>
     </div>`, kutu => {
-    $('[data-ta="iptal"]', kutu).addEventListener('click', modalKapat);
+    $$('[data-ta="iptal"]', kutu).forEach(b => b.addEventListener('click', modalKapat));
+
+    const buyut = t => { t.style.height = 'auto'; t.style.height = Math.min(t.scrollHeight, 220) + 'px'; };
+    $$('[data-sayac]', kutu).forEach(em => {
+      const alan = $('#' + em.dataset.sayac, kutu);
+      if (!alan) return;
+      buyut(alan);
+      alan.addEventListener('input', () => {
+        em.textContent = alan.value.length + '/' + em.dataset.sinir;
+        buyut(alan);
+      });
+    });
+
+    /* Kapak, projenin logo alanına yükleniyor; pencere açık kalıyor ki
+       yazdığın açıklama kaybolmasın. */
+    $('[data-ta="kapak"]', kutu).addEventListener('click', () => {
+      templateKapakSec(p.id, () => {
+        const kutucuk = $('#ta-kapak', kutu);
+        const yeni = DB.logoAdres[p.id];
+        if (kutucuk && yeni) {
+          kutucuk.innerHTML = '';
+          kutucuk.style.backgroundImage = `url('${yeni}')`;
+        }
+      });
+    });
 
     $$('[data-ta-paket]', kutu).forEach(b => b.addEventListener('click', () => {
       paket = b.dataset.taPaket;
@@ -7611,16 +7704,50 @@ function templateAyarlari(projeId) {
       $('.kare', satir).innerHTML = i === -1 ? svg(ICON.tik, 12) : '';
     }));
 
+    $('[data-ta="kurulum"]', kutu).addEventListener('click', () => {
+      modalKapat();
+      cekirdekKurulumAc(p.id);
+    });
+
+    const yayinDug = $('[data-ta="yayin"]', kutu);
+    if (yayinDug) yayinDug.addEventListener('click', () => {
+      window.open(/^https?:/.test(yayinAdres) ? yayinAdres : 'https://' + yayinAdres, '_blank');
+    });
+
+    $('[data-ta="kilit"]', kutu).addEventListener('click', async () => {
+      try {
+        await DB.paletKaydet(p.id, Object.assign({}, p.palet || {}, { kilitli: !kilitli }));
+        modalKapat();
+        render();
+        toast(kilitli ? 'Kilit açıldı.' : 'Template kilitlendi.', 'basari');
+      } catch (h) { toast(h.message, 'hata'); }
+    });
+
+    $('[data-ta="sil"]', kutu).addEventListener('click', () => {
+      modalKapat();
+      /* Silme kuralları (kilit kontrolü, onay, depoda kalanlar) tek yerde
+         duruyor; burada aynı eylemi çağırıyoruz. */
+      const sahte = document.createElement('div');
+      sahte.dataset.eylem = 'template-sil';
+      sahte.dataset.proje = p.id;
+      eylemCalistir(sahte);
+    });
+
     $('[data-ta="kaydet"]', kutu).addEventListener('click', async () => {
       const yazi = $('[data-ta="kaydet"] span', kutu);
       yazi.textContent = 'Kaydediliyor…';
       try {
-        const pl = p.palet || {};
-        const cek = Object.assign({}, pl.cekirdek || {}, { paket, sektorler: secili });
-        await DB.paletKaydet(p.id, Object.assign({}, pl, { cekirdek: cek }));
+        const guncel = DB.proje(p.id) || p;
+        const eskiPalet = guncel.palet || {};
+        const cek = Object.assign({}, eskiPalet.cekirdek || {}, {
+          paket,
+          sektorler: secili,
+          aciklama: $('#ta-aciklama', kutu).value.trim() || null,
+        });
+        await DB.paletKaydet(p.id, Object.assign({}, eskiPalet, { cekirdek: cek }));
         modalKapat();
         render();
-        toast('Template ayarları kaydedildi.', 'basari');
+        toast('Template kaydedildi.', 'basari');
       } catch (h) {
         yazi.textContent = 'Kaydet';
         toast(h.message, 'hata');
@@ -7629,6 +7756,30 @@ function templateAyarlari(projeId) {
   });
 }
 
+/* Kapak görselini seçtirir ve yükler. Template bir proje olduğu için
+   projenin logo alanı kullanılıyor — yeni kova ve yeni sütun gerekmiyor,
+   müşteri kopyasına da taşınmıyor. */
+function templateKapakSec(projeId, sonra) {
+  const alan = document.createElement('input');
+  alan.type = 'file';
+  alan.accept = 'image/*';
+  alan.style.display = 'none';
+  document.body.appendChild(alan);
+
+  alan.addEventListener('change', async () => {
+    const dosya = alan.files && alan.files[0];
+    alan.remove();
+    if (!dosya) return;
+    toast('Görsel yükleniyor…');
+    try {
+      await DB.logoYukle(projeId, dosya);
+      toast('Kapak görseli güncellendi.', 'basari');
+      if (sonra) sonra();
+    } catch (h) { toast(h.message, 'hata'); }
+  });
+
+  alan.click();
+}
 
 function ekipAltBaslik() {
   if (YUKLENIYOR) return 'yükleniyor…';
@@ -8250,6 +8401,7 @@ function baslangicTuruSec(tur, sektorId) {
     });
   });
 }
+
 
 /* Kurulmaya hazır template'ler — istenirse tek bir sektörünkiler. */
 function hazirTemplateler(sektorId) {
@@ -15683,6 +15835,9 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (e.target.matches('#sk-ara')) {
       SEKTOR_ARAMA = e.target.value.trim().toLocaleLowerCase('tr');
       skAramaUygula();
+    } else if (e.target.matches('#tp-ara')) {
+      TEMPLATE_ARAMA = e.target.value.trim().toLocaleLowerCase('tr');
+      tpAramaUygula();
     } else if (e.target.matches('#sh-ara')) {
       SOHBET_ARAMA = e.target.value.trim().toLocaleLowerCase('tr');
       sohbetAramaUygula();

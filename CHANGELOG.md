@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü
 
+## v0.172.0
+**Templateler ekranı yenilendi.**
+- Başlık, **arama** kutusu ve kırmızı **Yeni** düğmesi; altında kart kart template'ler: solda kapak görseli, sağda ad, açıklama ve modül sayısı.
+- **Template'e kapak görseli yükleyebiliyorsun** 📷 Listede bu görsel çıkıyor. Müşteri kopyasına taşınmıyor.
+- **Template'e açıklama** yazılabiliyor (300 karakter) — kartta o görünüyor.
+- Karta dokununca template'in tek yönetim ekranı açılıyor: kapak, açıklama, paket, sektörler ve altta **Kurulum adımları · Uygulamayı aç · Kilitle · Template'i sil**. Eskiden satıra sıkışmış küçük simgelerdi.
+- Kart başlığında artık template'in kendi adı yazıyor; modül adı eklenmiyor.
+
 ## v0.171.3
 - Paket penceresindeki anahtarın altındaki açıklama satırı kaldırıldı. Yol haritası artık projeye donduğu için uyaracak bir şey kalmamıştı; pencere tasarımdaki gibi sade.
 
