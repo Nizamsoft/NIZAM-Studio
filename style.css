@@ -7663,18 +7663,6 @@ a.asr:active{ transform:scale(.99); }
 .pj-arac:hover { border-color: var(--line); }
 .pj-arac.secili { background: var(--red-soft); border-color: rgba(229, 52, 42, .22); color: var(--red-ink); }
 
-.pj-gorunum {
-  display: flex; flex-shrink: 0; gap: 4px; padding: 4px;
-  border-radius: 12px; background: var(--surface-2); border: 1px solid var(--line-2);
-}
-.pj-gorunum button {
-  display: flex; align-items: center; justify-content: center;
-  width: 36px; height: 36px; border: 0; border-radius: 9px; cursor: pointer;
-  background: none; color: var(--ink-dim);
-}
-.pj-gorunum svg { width: 18px; height: 18px; fill: currentColor; stroke: none; }
-.pj-gorunum button.secili { background: var(--red); color: #fff; }
-
 /* ---- Kart ---- */
 .pj-izgara { display: grid; gap: 12px; }
 .pj-izgara.bos .pj-bos-arama { display: block; }
@@ -7770,7 +7758,6 @@ a.asr:active{ transform:scale(.99); }
   .pj-ara { flex: 1 1 100%; }
   .pj-araclar .pj-arac span { display: none; }
   .pj-araclar .pj-arac { padding: 0 14px; }
-  .pj-araclar .pj-gorunum { margin-left: auto; }
   /* Logo adın hizasında dursun, satırın ortasında değil. */
   .pj-logo { align-self: start; }
   .pj { padding: 14px 12px; column-gap: 11px; }
@@ -7801,24 +7788,6 @@ a.asr:active{ transform:scale(.99); }
     margin-top: 14px; padding-top: 12px; gap: 4px 16px;
     border-top: 1px solid var(--line-3);
   }
-
-  /* Liste görünümü: masaüstünde de tek sütun, mobildeki satır düzeni. */
-  .pj-izgara.duz { grid-template-columns: 1fr; gap: 10px; }
-  .pj-izgara.duz .pj {
-    align-items: center;
-    grid-template-columns: auto minmax(0, 1fr) auto auto;
-    grid-template-areas:
-      "logo ad       halka ok"
-      "logo aciklama halka ok"
-      "logo ayak     halka ok"
-      "logo etiket   halka ok";
-    row-gap: 3px; padding: 14px 18px;
-  }
-  .pj-izgara.duz .pj-logo { width: 62px; height: 62px; border-radius: 16px; font-size: 17px; }
-  .pj-izgara.duz .pj-ad { margin-top: 0; }
-  .pj-izgara.duz .pj-halka { margin-top: 0; }
-  .pj-izgara.duz .pj-etiketler { margin-top: 6px; }
-  .pj-izgara.duz .pj-ayak { margin-top: 4px; padding-top: 0; border-top: 0; }
 }
 
 /* ==========================================================================

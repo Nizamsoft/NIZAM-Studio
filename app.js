@@ -92,17 +92,11 @@ let GOREV_FILTRE   = '';
    ekranı yeniden çizmek yazarken imleci kaçırıyor), diğerleri yeniden
    çizdiriyor. Görünüm tercihi kalıcı: kullanıcı her girişte seçmesin. */
 let PROJE_ARAMA  = '';
-let PROJE_SUZ    = '';
-let PROJE_SIRA   = 'son';
 /* Ekip ekranının araçları — Projeler'dekiyle aynı mantık. */
 let EKIP_ARAMA = '';
 let SOHBET_ARAMA = '';
 let EKIP_SUZ   = 'tumu';
 let EKIP_SIRA  = 'aktiflik';
-let PROJE_GORUNUM = (() => {
-  try { return localStorage.getItem('ns.projeGorunum') || 'izgara'; }
-  catch (e) { return 'izgara'; }
-})();
 let SON_EKRAN      = '';
 const ACIK_STANDART = new Set();
 /* Gruplar akordeon: aynı anda yalnızca biri açık kalır. */
@@ -6112,44 +6106,11 @@ function pjAramaUygula() {
   izgara.classList.toggle('bos', gorunen === 0);
 }
 
-/* Filtre ve sıralama seçenekleri tek yerde: düğmenin yazısı da buradan. */
-const PJ_SUZGEC = [
-  { anahtar: '',       ad: 'Tümü' },
-  { anahtar: 'p:web',   ad: 'Web' },
-  { anahtar: 'p:mobil', ad: 'Mobil' },
-  { anahtar: 'p:ikisi', ad: 'Web + Mobil' },
-  { anahtar: 'd:yeni',           ad: 'Yeni' },
-  { anahtar: 'd:gelistiriliyor', ad: 'Geliştiriliyor' },
-  { anahtar: 'd:kontrolde',      ad: 'Kontrolde' },
-  { anahtar: 'd:tamamlandi',     ad: 'Tamamlandı' },
-];
-const PJ_SIRA = [
-  { anahtar: 'son',  ad: 'Son güncellenen' },
-  { anahtar: 'ad',   ad: 'Ada göre' },
-  { anahtar: 'yuzde',ad: 'İlerlemeye göre' },
-];
-
-function pjSuzgecAdi() {
-  const s = PJ_SUZGEC.find(x => x.anahtar === PROJE_SUZ);
-  return s && s.anahtar ? s.ad : 'Filtrele';
-}
-
-function pjSiraAdi() {
-  const s = PJ_SIRA.find(x => x.anahtar === PROJE_SIRA);
-  return s ? s.ad : 'Son güncellenen';
-}
-
-function pjSuz(liste) {
-  if (!PROJE_SUZ) return liste;
-  const [tip, deger] = PROJE_SUZ.split(':');
-  return liste.filter(p => tip === 'p' ? p.platform === deger : p.durum === deger);
-}
-
+/* Sıra sabit: en son dokunulan proje üstte. Filtre, sıralama ve ızgara/liste
+   seçimi vardı; sekmeler ve arama yetiyor, kaldırıldı. */
 function pjSirala(liste) {
-  const l = liste.slice();
-  if (PROJE_SIRA === 'ad')    return l.sort((a, b) => projeAdi(a).localeCompare(projeAdi(b), 'tr'));
-  if (PROJE_SIRA === 'yuzde') return l.sort((a, b) => projeAsamaYuzde(b) - projeAsamaYuzde(a));
-  return l.sort((a, b) => (pzSonDokunus(b.id) || '').localeCompare(pzSonDokunus(a.id) || ''));
+  return liste.slice()
+    .sort((a, b) => (pzSonDokunus(b.id) || '').localeCompare(pzSonDokunus(a.id) || ''));
 }
 
 function projelerEkrani(kova) {
@@ -6157,19 +6118,7 @@ function projelerEkrani(kova) {
   const sayi   = { basmis: 0, bitmis: 0 };
   hepsi.forEach(p => { sayi[projeBittiMi(p) ? 'bitmis' : 'basmis']++; });
 
-  const liste = pjSirala(pjSuz(hepsi.filter(p => PROJE_KOVASI[kova].sec(p))));
-
-  const huni = '<svg viewBox="0 0 24 24" style="width:15px;height:15px"><path fill="none" stroke="currentColor"'
-    + ' stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"'
-    + ' d="M4 5h16l-6.2 7.4V20l-3.6-2v-5.6z"></path></svg>';
-  const okIkili = '<svg viewBox="0 0 24 24" style="width:15px;height:15px"><path fill="none" stroke="currentColor"'
-    + ' stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"'
-    + ' d="M7 4v16M7 20l-3-3M17 20V4M17 4l3 3"></path></svg>';
-  const izgaraIkon = '<svg viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="2"></rect>'
-    + '<rect x="13" y="4" width="7" height="7" rx="2"></rect><rect x="4" y="13" width="7" height="7" rx="2"></rect>'
-    + '<rect x="13" y="13" width="7" height="7" rx="2"></rect></svg>';
-  const listeIkon = '<svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="3" rx="1.5"></rect>'
-    + '<rect x="4" y="10.5" width="16" height="3" rx="1.5"></rect><rect x="4" y="16" width="16" height="3" rx="1.5"></rect></svg>';
+  const liste = pjSirala(hepsi.filter(p => PROJE_KOVASI[kova].sec(p)));
 
   /* "Projeler" sözcüğü telefonda gizleniyor: iki sekme tek satıra sığsın,
      yazı üç noktayla kesilmesin. */
@@ -6179,16 +6128,15 @@ function projelerEkrani(kova) {
     </a>`;
 
   const govde = liste.length
-    ? `<div class="pj-izgara ${PROJE_GORUNUM === 'liste' ? 'duz' : ''}">${liste.map(pjKarti).join('')}
+    ? `<div class="pj-izgara">${liste.map(pjKarti).join('')}
          <div class="pj-bos-arama">Aramana uyan proje yok.</div>
        </div>`
     : `<div class="card">${empty(ICON[PROJE_KOVASI[kova].ikon],
-        PROJE_SUZ ? 'Bu filtreye uyan proje yok' : PROJE_KOVASI[kova].ad + ' yok',
-        PROJE_SUZ ? 'Filtreyi kaldırıp yeniden bak.'
-          : kova === 'bitmis'
-            ? 'Final verilen ya da bütün görevleri biten projeler buraya düşer.'
-            : 'Yeni Proje sihirbazı firma, renk, platform, veritabanı ve modülleri sorar.',
-        AUTH.yonetici && kova === 'basmis' && !PROJE_SUZ ? 'Yeni Proje' : null, 'sihirbaz')}</div>`;
+        PROJE_KOVASI[kova].ad + ' yok',
+        kova === 'bitmis'
+          ? 'Final verilen ya da bütün görevleri biten projeler buraya düşer.'
+          : 'Yeni Proje sihirbazı firma, renk, platform, veritabanı ve modülleri sorar.',
+        AUTH.yonetici && kova === 'basmis' ? 'Yeni Proje' : null, 'sihirbaz')}</div>`;
 
   return `
     <div class="pj-tepe">
@@ -6211,18 +6159,6 @@ function projelerEkrani(kova) {
         <input id="pj-ara" type="search" autocomplete="off" placeholder="Proje adı, firma veya sektör ile ara…"
           value="${esc(PROJE_ARAMA)}">
       </label>
-      <button class="pj-arac ${PROJE_SUZ ? 'secili' : ''}" type="button" data-eylem="proje-suz">
-        ${huni}<span>${esc(pjSuzgecAdi())}</span>
-      </button>
-      <button class="pj-arac" type="button" data-eylem="proje-sirala">
-        ${okIkili}<span>Sıralama: ${esc(pjSiraAdi())}</span>
-      </button>
-      <span class="pj-gorunum">
-        <button type="button" data-eylem="proje-gorunum" data-deger="izgara"
-          class="${PROJE_GORUNUM === 'izgara' ? 'secili' : ''}" aria-label="Izgara">${izgaraIkon}</button>
-        <button type="button" data-eylem="proje-gorunum" data-deger="liste"
-          class="${PROJE_GORUNUM === 'liste' ? 'secili' : ''}" aria-label="Liste">${listeIkon}</button>
-      </span>
     </div>
 
     ${govde}`;
@@ -12748,27 +12684,6 @@ async function eylemCalistir(el) {
     const sec = await secenekSor('Sıralama', EK_SIRA);
     if (!sec) return;
     EKIP_SIRA = sec;
-    return render();
-  }
-
-  if (e === 'proje-suz') {
-    const sec = await secenekSor('Filtrele', PJ_SUZGEC.map(x =>
-      Object.assign({}, x, { anahtar: x.anahtar || 'tumu' })));
-    if (sec === null) return;
-    PROJE_SUZ = sec === 'tumu' ? '' : sec;
-    return render();
-  }
-
-  if (e === 'proje-sirala') {
-    const sec = await secenekSor('Sıralama', PJ_SIRA);
-    if (!sec) return;
-    PROJE_SIRA = sec;
-    return render();
-  }
-
-  if (e === 'proje-gorunum') {
-    PROJE_GORUNUM = el.dataset.deger;
-    try { localStorage.setItem('ns.projeGorunum', PROJE_GORUNUM); } catch (h) {}
     return render();
   }
 
