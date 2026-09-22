@@ -854,7 +854,13 @@ const DB = {
 
     let { data, error } = await yaz(alanlar);
     let uyari = null;
-    if (error && /tanim/.test(error.message || '')) {
+    /* Sütun yoksa hata metni sunucunun sürümüne göre değişiyor; "tanim"
+       geçmese de sütun/şema hatasıysa onsuz bir daha deniyoruz. */
+    const sutunHatasi = e => {
+      const m = (e && e.message) || '';
+      return /tanim/.test(m) || /column|schema cache|PGRST204/i.test(m);
+    };
+    if (error && alanlar.tanim !== undefined && sutunHatasi(error)) {
       const kopya = Object.assign({}, alanlar);
       delete kopya.tanim;
       ({ data, error } = await yaz(kopya));

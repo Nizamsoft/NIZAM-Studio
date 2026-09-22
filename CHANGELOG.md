@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## v0.170.5
+- **"Promptta nasıl anlatılsın?" sessizce boş kalıyordu.** Sütun veritabanında yoksa alan kaydedilemiyor ama bunu yalnızca kaybolup giden bir bildirim söylüyordu. Artık Paketler ekranının tepesinde kalıcı bir uyarı ve kutunun altında hangi SQL'in çalıştırılacağı yazıyor.
+- Sütun eksikliği hatasının metni sunucu sürümüne göre değişebiliyordu; yakalama genişletildi, paketin diğer alanları her hâlükârda kaydediliyor.
+
 ## v0.170.4
 **Promptlar pakete bağlandı — yapının son adımı.**
 - Claude'a giden metinlerde "muhasebe programı" düz yazı duruyordu; ikinci bir paket eklendiği anda yanlış konuşacaktı. Artık **paketin kendi tanımından** geliyor.

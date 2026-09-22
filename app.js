@@ -618,6 +618,9 @@ const VIEWS = {
     if (DB.hata)    return hataKutusu(DB.hata);
 
     const liste = DB.paketler || [];
+    /* Sütun yoksa okunan satırda anahtar hiç bulunmuyor. Kaydederken çıkan
+       uyarı kayboluyordu; burada kalıcı duruyor. */
+    const tanimYok = liste.length && !('tanim' in liste[0]);
 
     return `
       <div class="pj-tepe">
@@ -628,6 +631,13 @@ const VIEWS = {
         ${AUTH.yonetici ? `<button class="pj-yeni" type="button" data-eylem="paket-ekle">
           ${svg(ICON.arti, 16)}<span>Yeni</span></button>` : ''}
       </div>
+
+      ${tanimYok ? `<div class="note" style="margin-bottom:14px">
+        ${svg(ICON.uyari, 15)}
+        <span><b>"Promptta nasıl anlatılsın?"</b> kaydedilemiyor —
+        <b class="mono">sql/26-paket-tanim.sql</b> dosyası Supabase'de
+        çalıştırılmamış. Paketin diğer alanları normal kaydediliyor.</span>
+      </div>` : ''}
 
       ${liste.length
         ? `<div class="lk-liste">${liste.map(paketKarti).join('')}</div>`
@@ -7196,6 +7206,9 @@ function paketDuzenle(id) {
   modalHepsiniKapat();
   const x = id ? (DB.paketler || []).find(k => k.id === id) : null;
   let akis = x ? (x.akis || 'ozel') : 'ozel';
+  /* Sütun kurulmadıysa kutuyu göstermeye devam ediyoruz ama neden
+     kaydedilmediğini altında yazıyoruz. */
+  const tanimKapali = (DB.paketler || []).length && !('tanim' in DB.paketler[0]);
 
   modalAc(`
     ${modalBaslik(ICON.paket, x ? 'Paketi düzenle' : 'Yeni paket',
@@ -7217,8 +7230,9 @@ function paketDuzenle(id) {
       <span>Promptta nasıl anlatılsın? <em class="ipucu">isteğe bağlı</em></span>
       <input type="text" id="pk-tanim" value="${esc(x ? (x.tanim || '') : '')}"
              placeholder="Örn. muhasebe programı" maxlength="60" autocomplete="off">
-      <p class="ipucu">Claude'a giden metinlerde "çalışan bir <b>…</b> var" diye
-      geçiyor. Ek almayan bir ad yaz.</p>
+      <p class="ipucu">${tanimKapali
+        ? 'Bu alan için sql/26-paket-tanim.sql dosyası Supabase\'de çalıştırılmalı.'
+        : 'Claude\'a giden metinlerde "çalışan bir <b>…</b> var" diye geçiyor. Ek almayan bir ad yaz.'}</p>
     </label>
 
     <div class="field">
