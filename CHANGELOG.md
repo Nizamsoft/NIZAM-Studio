@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.167.1
+- Aktif Projeler kartları genişledi: ekrana beş yerine üç buçuk kart giriyor. Logo, halka ve ad büyüdü; dar kartta hepsi sıkışıyordu.
+
 ## v0.167.0
 - **Aktif Projeler kartları yeni tasarımda:** beyaz kart, üstte proje logosu (yoksa baş harf), altında ince ilerleme halkası ve yüzde, en altta proje adı. Bir ekrana beş kart sığıyor.
 - En son dokunulan proje kartı hafif kırmızı — kaldığın yer belli olsun.

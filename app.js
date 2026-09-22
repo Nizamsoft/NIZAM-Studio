@@ -14310,7 +14310,7 @@ function pzProjeKarti(p, i = 0) {
         <b class="logo-harf">${esc(basHarf(p.firma))}</b>
         ${adres ? '<span class="donen"></span>' : ''}
       </span>
-      <span class="pk2-halka">${pzHalka(yuzde, 38, 4)}<u>${yuzde}%</u></span>
+      <span class="pk2-halka">${pzHalka(yuzde, 46, 5)}<u>${yuzde}%</u></span>
       <b class="pk2-ad" title="${esc(tam)}">${esc(ad)}</b>
     </div>`;
 }
