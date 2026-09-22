@@ -12586,7 +12586,13 @@ async function eylemCalistir(el) {
   /* Mesajlaşma henüz yazılmadı; düğmenin yeri tasarımda hazır. */
   if (e === 'mesaj-gonder') { location.hash = '#/sohbet'; return; }
   if (e === 'sohbet-ac')      { location.hash = '#/sohbet/' + id; return; }
-  if (e === 'sohbete')        { location.hash = '#/sohbet'; return; }
+  /* Yazışmadan çıkış GERİ gitmeli: yeni adres atamak geçmişe bir kayıt
+     daha ekliyor, sonra üst çubuktaki geri oku yazışmaya dönüyordu. */
+  if (e === 'sohbete') {
+    if (history.length > 1) history.back();
+    else location.hash = '#/sohbet';
+    return;
+  }
   if (e === 'sohbet-yakinda') { toast('Mesajlaşma yakında gelecek.'); return; }
 
   if (e === 'ekip-suz') {
