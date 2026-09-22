@@ -582,7 +582,10 @@ const DB = {
            sql/18-sablon-sql-metni.sql) bu bayrak true olur — asıl metin
            `kopyaKaynagi` (yani bu template'in id'si) üzerinden ayrı tablodan
            okunuyor, palete taşınmıyor. */
-        sablon,
+        /* Paket, projenin yol haritasını belirliyor (bkz. app.js paketAkisi).
+           Eskiden burada `sablon` yazıyordu; artık paket anahtarı. Eski
+           projelerdeki `sablon` işareti okunmaya devam ediyor. */
+        paket: sablon,
         sablonSqlLink: (kaynak.palet && kaynak.palet.cekirdek && kaynak.palet.cekirdek.sqlLink) || null,
         sablonSqlMetinVar: !!(kaynak.palet && kaynak.palet.cekirdek && kaynak.palet.cekirdek.sqlMetinVar),
         modulAdi: null, roller: null, veriKatmani: null,

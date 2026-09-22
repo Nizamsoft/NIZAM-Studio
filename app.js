@@ -719,14 +719,6 @@ const VIEWS = {
             'Bitmiş bir müşteri projesinden temizlenmiş bir taban oluşturabilirsin.',
             AUTH.yonetici ? 'Template oluştur' : null, 'template-olustur-ac')}</div>`}
 
-      ${bolumBas('Şablon atamaları')}
-      <div class="note" style="margin-bottom:12px">
-        ${svg(ICON.info, 15)}
-        <span>Her şablon türüne en fazla bir template atanabilir. "Bir
-        Template'ten Başla" ile yeni proje kurulurken hangi template
-        kullanılacağı artık tek tek sorulmuyor, buradaki atamadan geliyor.</span>
-      </div>
-      <div class="card liste">${CEKIRDEK_TUR_LISTESI.map(sablonAtamaSatiri).join('')}</div>
     `;
   },
 
@@ -4232,35 +4224,17 @@ function supabaseOrgYaz(deger) {
 /* Şablon türü → template proje id eşlemesi. Her türe en fazla bir template
    atanabiliyor (bkz. Ayarlar > Templateler); "Bir Template'ten Başla" akışı
    artık hangi template olduğunu tek tek sormuyor, buradan okuyor. */
-const SABLON_ATAMA_ANAHTAR = 'ns.sablonAtama';
-
-function sablonAtamalari() {
-  try { return JSON.parse(localStorage.getItem(SABLON_ATAMA_ANAHTAR) || '{}') || {}; }
-  catch (h) { return {}; }
-}
-
-function sablonAtamasi(turAnahtari) {
-  return sablonAtamalari()[turAnahtari] || '';
-}
-
-function sablonAtamasiYaz(turAnahtari, projeId) {
-  const hepsi = sablonAtamalari();
-  if (projeId) hepsi[turAnahtari] = projeId; else delete hepsi[turAnahtari];
-  try { localStorage.setItem(SABLON_ATAMA_ANAHTAR, JSON.stringify(hepsi)); }
-  catch (h) { /* önemsiz */ }
-}
-
 /* Şablon kopyasının hangi şablon türünden geldiği — Temel tanımlar'daki
    "öğrenen liste" (bkz. sablonSecenekleri) bu türe göre paylaşılıyor: bir
    müşteride öğrenilen banka/fatura/POS formatı, aynı türden başka her
    müşteride hazır seçenek olarak çıkıyor. */
 function sablonProjeTuru(p) {
-  return ((p && p.palet) || {}).sablon || '';
+  return paketAnahtari(p);
 }
 
 /* Öğrenen seçenekler: bir şablon türü + kategori (banka/fatura/gunsonu)
    için, herhangi bir müşteride bir kez anlatılmış format tarifleri.
-   localStorage'da tutuluyor — `sablonAtamasi` ile aynı gerekçe: yeni bir
+   localStorage'da tutuluyor — paket atamasıyla aynı gerekçe: yeni bir
    Supabase tablosu, kullanıcının canlı projesine SQL migration'ı elle
    çalıştırmasını gerektirir, test sırasında gereksiz sürtünme olur. */
 const SABLON_SECENEK_ANAHTAR = 'ns.sablonSecenekleri';
@@ -5986,6 +5960,8 @@ function projeDuraklari(p) {
   const moduller = DB.modulleri(p.id);
   const gercek   = moduller.filter(m => m.ad !== GENEL_MODUL).length;
   const pl0 = p.palet || {};
+  /* Hangi yol haritası çizilecek — projenin paketi söylüyor. */
+  const paketli = sablonMu(p);
 
   return [
     {
@@ -6023,7 +5999,7 @@ function projeDuraklari(p) {
           ? (pl0.alanAdi ? 'Depo, sohbet ve adres hazır. Sıra yayında.' : 'Depo hazır. Sıra adres ve yayında.')
           : 'Bağlantılar hazır.',
     },
-    pl0.sablon ? {
+    paketli ? {
       /* Eskiden ayrı bir "Temel tanımlar" durağıydı — artık "Değişim"in
          içine katlandı (bkz. sablonDegisimSayfasi). Slot sırayı bozmasın
          diye duruyor, tamamen gizli — bkz. "Test ve Güncelle" örneği. */
@@ -6041,7 +6017,7 @@ function projeDuraklari(p) {
         ? `${gercek} modül · ${s.sayfa} sayfa`
         : 'Hangi modüller ve sayfalar olacak?',
     },
-    pl0.sablon ? {
+    paketli ? {
       ad: 'Değişim',
       bitti: sablonDegisimBittiMi(p),
       ozet: (() => {
@@ -6067,7 +6043,7 @@ function projeDuraklari(p) {
         return gelistirmeBitti(p) ? 'Tamamlandı.' : 'Yayında — dene, eksik gördüğünü anlat.';
       })(),
     },
-    pl0.sablon ? {
+    paketli ? {
       /* Yalnız şablon kopyalarında görünür: normal projede bu döngü zaten
          Beta ve geliştirme'nin içinde, ayrı bir durak gerekmiyor. */
       ad: 'Test ve Güncelle',
@@ -7413,9 +7389,6 @@ function cekirdekAltBaslik() {
   return n ? n + ' template' : 'template yok';
 }
 
-function cekirdekTuruAdi(tur) {
-  return (CEKIRDEK_TUR_LISTESI.find(x => x.anahtar === tur) || {}).ad || tur;
-}
 
 function cekirdekSatiri(p) {
   const pl      = p.palet || {};
@@ -7427,10 +7400,13 @@ function cekirdekSatiri(p) {
     <div class="row" data-eylem="template-kur-ac" data-proje="${p.id}" role="button" tabindex="0">
       <div class="row-main">
         <span class="row-title">${esc(projeAdi(p))}</span>
-        <span class="row-sub">${esc(cekirdekTuruAdi(cek.tur))} · ${hazir
+        <span class="row-sub">${esc(templateOzeti(p))} · ${hazir
           ? (kilitli ? 'Hazır ve kilitli' : 'Hazır')
           : 'Kuruluyor — GitHub, SQL ve Claude adımları bekliyor'}</span>
       </div>
+      ${AUTH.yonetici ? `<button class="ak-kop" type="button" data-eylem="template-ayar"
+                 data-proje="${p.id}" aria-label="Sektör ve paket"
+                 title="Sektör ve paket">${svg(ICON.ayar, 13)}</button>` : ''}
       ${yayinAdres ? `<button class="ak-kop" type="button" data-eylem="sablon-yayina-git"
                  data-adres="${esc(yayinAdres)}" aria-label="Uygulamayı aç"
                  title="Uygulamayı aç — ${esc(yayinAdres)}">${svg(ICON.disari, 13)}</button>` : ''}
@@ -7451,69 +7427,123 @@ function cekirdekSatiri(p) {
     </div>`;
 }
 
-/* Şablon türü satırı — hangi template atanmış, dokununca değiştirilebilir
-   (bkz. sablonAtamaSecAc). */
-function sablonAtamaSatiri(st) {
-  const atanan = sablonTuruGecerliMi(st) ? DB.proje(sablonAtamasi(st.anahtar)) : null;
-  return `
-    <div class="row" data-eylem="sablon-atama-sec" data-tur="${esc(st.anahtar)}" role="button" tabindex="0">
-      <div class="row-main">
-        <span class="row-title">${esc(st.ad)}</span>
-        <span class="row-sub">${atanan ? esc(projeAdi(atanan)) : 'Atanmadı'}</span>
-      </div>
-      <span class="row-val">${svg(ICON.chevron, 15)}</span>
-    </div>`;
+/* ---------- Template'in sektörü ve paketi ----------
+   İkisi de template'in paletinde, `cekirdek` nesnesinin içinde duruyor.
+   Sektör ÇOKLU: aynı taban birden çok sektöre uyabiliyor ("Cari + Stok"
+   hem markete hem toptancıya). Kimlikle bağlanıyor, adla değil — sektörün
+   adı değişince bağ kopmasın. */
+function templateSektorIdleri(p) {
+  const cek = ((p && p.palet) || {}).cekirdek || {};
+  return Array.isArray(cek.sektorler) ? cek.sektorler : [];
 }
 
-/* Bir şablon türüne hangi template'in atanacağını seçtirir — yalnız o
-   türden, temizliği bitmiş, arşivlenmemiş template'ler listelenir. */
-function sablonAtamaSecAc(turAnahtari) {
+function templateSektorleri(p) {
+  const idler = templateSektorIdleri(p);
+  return (DB.sektorler || []).filter(x => idler.includes(x.id));
+}
+
+/* Paket anahtarı. Eski template'lerde yok — o zaman kurulum türünden
+   ("muhasebe") türetiyoruz ki hiçbiri paketsiz kalmasın. */
+function templatePaketAnahtari(p) {
+  const cek = ((p && p.palet) || {}).cekirdek || {};
+  if (cek.paket) return cek.paket;
+  return cek.tur === 'muhasebe' ? 'muhasebe-1' : 'ozel';
+}
+
+function templatePaketi(p) {
+  const anahtar = templatePaketAnahtari(p);
+  return (DB.paketler || []).find(x => x.anahtar === anahtar) || null;
+}
+
+/* Satırda görünen özet: paket · sektörler. */
+function templateOzeti(p) {
+  const paket = templatePaketi(p);
+  const sk = templateSektorleri(p);
+  return [
+    paket ? paket.ad : templatePaketAnahtari(p),
+    sk.length ? sk.map(x => x.ad).join(', ') : 'sektör seçilmedi',
+  ].join(' · ');
+}
+
+/* Template'in sektör ve paketini seçtiren pencere. */
+function templateAyarlari(projeId) {
   modalHepsiniKapat();
-  const st = CEKIRDEK_TUR_LISTESI.find(x => x.anahtar === turAnahtari);
-  const liste = DB.projeler.filter(p => !p.arsiv && cekirdekMi(p) && (p.palet || {}).cekirdekTemizlendi
-    && (p.palet.cekirdek || {}).tur === turAnahtari);
+  const p = DB.proje(projeId);
+  if (!p) return;
 
-  if (!liste.length) {
-    toast('Bu türde hazır template yok — önce bir tane oluştur.', 'uyari');
-    return;
-  }
+  let secili = templateSektorIdleri(p).slice();
+  let paket  = templatePaketAnahtari(p);
+  const paketler = DB.paketler || [];
+  const sektorler = DB.sektorler || [];
 
-  const guncel = sablonAtamasi(turAnahtari);
   modalAc(`
-    ${modalBaslik(ICON.katman, (st ? st.ad : turAnahtari) + ' için template',
-      'Yeni proje bu şablon seçildiğinde bu template\'e bağlanacak.')}
-    <div class="secim">
-      ${liste.map(p => `
-        <div class="satir sec-satir ${guncel === p.id ? 'on' : ''}" data-proje="${p.id}"
-             role="button" tabindex="0">
-          <span class="sec-yazi"><b>${esc(projeAdi(p))}</b>
-            ${guncel === p.id ? `<i>${svg(ICON.tik, 12)} Şu an atanmış</i>` : ''}</span>
-        </div>`).join('')}
+    ${modalBaslik(ICON.paket, 'Template ayarları',
+      'Yeni proje kurarken bu template hangi sektörde çıkacak ve hangi yol haritasını getirecek.')}
+
+    <div class="field">
+      <span>Paket</span>
+      ${paketler.length ? `<div class="secenek-serit" id="ta-paket">
+        ${paketler.map(k => `<button class="ss ${paket === k.anahtar ? 'sec' : ''}"
+          data-ta-paket="${esc(k.anahtar)}" type="button">${esc(k.ad)}</button>`).join('')}
+      </div>` : '<p class="ipucu">Önce sql/25-paketler.sql dosyasını çalıştır.</p>'}
     </div>
+
+    <div class="field">
+      <span>Sektörler <em class="ipucu">birden çok seçebilirsin</em></span>
+      ${sektorler.length ? `<div class="secim" id="ta-sektor">
+        ${sektorler.map(x => `
+          <div class="satir sec-satir ${secili.includes(x.id) ? 'sec' : ''}"
+               data-ta-sektor="${esc(x.id)}" role="button" tabindex="0">
+            <span class="sec-yazi"><b>${esc(x.ad)}</b></span>
+            <span class="kare">${secili.includes(x.id) ? svg(ICON.tik, 12) : ''}</span>
+          </div>`).join('')}
+      </div>` : '<p class="ipucu">Önce Kütüphane > Sektörler\'den sektör ekle.</p>'}
+    </div>
+
+    <div class="note note-kucuk">
+      ${svg(ICON.info, 15)}
+      <span>Sektör seçmezsen bu template yeni proje akışında hiçbir sektörün
+      altında çıkmaz.</span>
+    </div>
+
     <div class="modal-alt">
-      ${guncel ? `<button class="btn btn-ghost" data-bt="kaldir" type="button">Atamayı kaldır</button>` : ''}
-      <button class="btn btn-ghost" data-bt="kapat" type="button">Vazgeç</button>
+      <button class="btn btn-ghost" data-ta="iptal" type="button">Vazgeç</button>
+      <button class="btn btn-primary" data-ta="kaydet" type="button"><span>Kaydet</span></button>
     </div>`, kutu => {
-    $('[data-bt="kapat"]', kutu).addEventListener('click', modalKapat);
-    const kaldirBtn = $('[data-bt="kaldir"]', kutu);
-    if (kaldirBtn) kaldirBtn.addEventListener('click', () => {
-      sablonAtamasiYaz(turAnahtari, null);
-      modalKapat();
-      render();
-      toast('Atama kaldırıldı.');
+    $('[data-ta="iptal"]', kutu).addEventListener('click', modalKapat);
+
+    $$('[data-ta-paket]', kutu).forEach(b => b.addEventListener('click', () => {
+      paket = b.dataset.taPaket;
+      $$('[data-ta-paket]', kutu).forEach(o => o.classList.toggle('sec', o === b));
+    }));
+
+    $$('[data-ta-sektor]', kutu).forEach(satir => satir.addEventListener('click', () => {
+      const id = satir.dataset.taSektor;
+      const i = secili.indexOf(id);
+      i === -1 ? secili.push(id) : secili.splice(i, 1);
+      satir.classList.toggle('sec', i === -1);
+      $('.kare', satir).innerHTML = i === -1 ? svg(ICON.tik, 12) : '';
+    }));
+
+    $('[data-ta="kaydet"]', kutu).addEventListener('click', async () => {
+      const yazi = $('[data-ta="kaydet"] span', kutu);
+      yazi.textContent = 'Kaydediliyor…';
+      try {
+        const pl = p.palet || {};
+        const cek = Object.assign({}, pl.cekirdek || {}, { paket, sektorler: secili });
+        await DB.paletKaydet(p.id, Object.assign({}, pl, { cekirdek: cek }));
+        modalKapat();
+        render();
+        toast('Template ayarları kaydedildi.', 'basari');
+      } catch (h) {
+        yazi.textContent = 'Kaydet';
+        toast(h.message, 'hata');
+      }
     });
-    kutu.addEventListener('click', ev => {
-      const t = ev.target.closest('[data-proje]');
-      if (!t) return;
-      sablonAtamasiYaz(turAnahtari, t.dataset.proje);
-      modalKapat();
-      render();
-      toast('Template atandı.', 'basari');
-    });
-  }, 'genis');
+  });
 }
 
-/* Bir modül şablonu. Açılınca sayfaları listelenir. */
+
 function sablonKarti(m, i = 0) {
   const anahtar = m.id || m.ad;
   const acik = ACIK_SABLON === anahtar;
@@ -8096,16 +8126,49 @@ function sihirbaziAc() {
       const t = ev.target.closest('[data-sb0-tur]');
       if (!t) return;
       modalKapat();
-      baslangicTuruSec(t.dataset.sb0Tur);
+      sektorSecAc(t.dataset.sb0Tur);
     });
   });
 }
 
-/* İkinci soru: sıfırdan mı kuruluyor, yoksa bitmiş bir projenin birebir
+/* İkinci soru: müşteri ne iş yapıyor. Sektör burada soruluyor çünkü bir
+   sonraki adımda hazır template'ler buna göre süzülüyor — ayrıca sıfırdan
+   gidilirse sihirbazın Firma bilgileri adımı da dolu başlıyor. */
+function sektorSecAc(tur) {
+  modalHepsiniKapat();
+  const liste = DB.sektorler || [];
+
+  modalAc(`
+    ${modalBaslik(ICON.dukkan, 'Müşteri ne iş yapıyor?',
+      'Sektöre göre hazır template\'ler süzülecek.')}
+    <div class="secim">
+      ${liste.map(x => `
+        <div class="satir sec-satir" data-sks="${esc(x.id)}" role="button" tabindex="0">
+          <span class="sec-yazi"><b>${esc(x.ad)}</b></span>
+        </div>`).join('')}
+      <div class="satir sec-satir" data-sks="" role="button" tabindex="0">
+        <span class="sec-yazi"><b>Sektör seçmeden devam et</b>
+          <i>Sonradan Firma bilgileri adımından da yazabilirsin</i></span>
+      </div>
+    </div>
+    <div class="modal-alt">
+      <button class="btn btn-ghost" data-sks-kapat type="button">Vazgeç</button>
+    </div>`, kutu => {
+    $('[data-sks-kapat]', kutu).addEventListener('click', modalKapat);
+    kutu.addEventListener('click', ev => {
+      const t = ev.target.closest('[data-sks]');
+      if (!t) return;
+      modalKapat();
+      baslangicTuruSec(tur, t.dataset.sks || '');
+    });
+  });
+}
+
+/* Üçüncü soru: sıfırdan mı kuruluyor, yoksa bitmiş bir projenin birebir
    kopyası mı? Kopya şimdilik yalnız ham veriyi taşıyor — firma bilgileri,
    depo, Supabase gibi kişiye özel alanların değiştirilmesi ayrı bir iş,
    henüz burada değil (bkz. `DB.projeKopyala` yorumu). */
-function baslangicTuruSec(tur) {
+function baslangicTuruSec(tur, sektorId) {
   modalHepsiniKapat();
   modalAc(`
     ${modalBaslik(ICON.katman, 'Nasıl başlayalım?',
@@ -8130,54 +8193,52 @@ function baslangicTuruSec(tur) {
       if (!t || t.dataset.bt === 'kapat') return;
       modalKapat();
       if (t.dataset.bt === 'kopya')    return kopyaKaynagiSec(tur);
-      if (t.dataset.bt === 'template') return cekirdekKaynakSec(tur);
-      sihirbaziBaslat(tur);
+      if (t.dataset.bt === 'template') return cekirdekKaynakSec(tur, sektorId);
+      sihirbaziBaslat(tur, sektorId);
     });
   });
 }
 
-/* Şablon türü geçerli mi — o türe atanmış bir template var mı, o template
-   hâlâ duruyor mu, arşivlenmemiş mi, temizliği bitmiş mi, hâlâ o türden mi.
-   Atama Ayarlar > Templateler'den yapılıyor (bkz. sablonAtamasiYaz). */
-function sablonTuruGecerliMi(st) {
-  const id = sablonAtamasi(st.anahtar);
-  const p = id && DB.proje(id);
-  return !!(p && !p.arsiv && cekirdekMi(p) && (p.palet || {}).cekirdekTemizlendi
-    && (p.palet.cekirdek || {}).tur === st.anahtar);
+/* Kurulmaya hazır template'ler — istenirse tek bir sektörünkiler. */
+function hazirTemplateler(sektorId) {
+  return (DB.projeler || []).filter(p =>
+    !p.arsiv && cekirdekMi(p) && (p.palet || {}).cekirdekTemizlendi
+    && (!sektorId || templateSektorIdleri(p).includes(sektorId)));
 }
 
-/* Template'ten başlatma — artık "hangi template" değil "hangi şablon türü"
-   soruluyor: her türe en fazla bir template atanabiliyor (bkz.
-   sablonAtamasiYaz), o yüzden tür seçilince hangi template kullanılacağı
-   zaten belli. Seçilince mevcut müşteri-kopyası akışına (templateOnaySor →
-   projeKopyalaVeAc) aynen giriyor. */
-function cekirdekKaynakSec(tur) {
+/* Template'ten başlatma. Seçilen sektörün template'leri listeleniyor;
+   hangi yol haritasının geleceği template'in paketinden okunuyor. */
+function cekirdekKaynakSec(tur, sektorId) {
   modalHepsiniKapat();
-  const turler = CEKIRDEK_TUR_LISTESI.filter(sablonTuruGecerliMi);
-  if (!turler.length) {
-    toast('Henüz hiçbir şablona template atanmadı — Ayarlar > Templateler\'den ata.', 'uyari');
+  const liste = hazirTemplateler(sektorId);
+  if (!liste.length) {
+    toast('Bu sektörde hazır template yok.', 'uyari');
     return;
   }
 
   modalAc(`
-    ${modalBaslik(ICON.katman, 'Hangi şablon?',
-      'Yeni proje, bu şablona atanmış template\'in birebir kopyasıyla kurulacak.')}
+    ${modalBaslik(ICON.katman, 'Hangi template?',
+      'Yeni proje bu template\'in birebir kopyasıyla kurulacak.')}
     <div class="secim">
-      ${turler.map(st => `
-        <div class="satir sec-satir" data-tur="${esc(st.anahtar)}" role="button" tabindex="0">
-          <span class="sec-yazi"><b>${esc(st.ad)}</b></span>
-        </div>`).join('')}
+      ${liste.map(p => {
+        const paket = templatePaketi(p);
+        return `
+        <div class="satir sec-satir" data-tp="${esc(p.id)}" role="button" tabindex="0">
+          <span class="sec-yazi"><b>${esc(projeAdi(p))}</b>
+            <i>${esc(paket ? paket.ad : templatePaketAnahtari(p))}</i></span>
+        </div>`;
+      }).join('')}
     </div>
     <div class="modal-alt">
       <button class="btn btn-ghost" data-bt="kapat" type="button">Vazgeç</button>
     </div>`, kutu => {
     $('[data-bt="kapat"]', kutu).addEventListener('click', modalKapat);
     kutu.addEventListener('click', ev => {
-      const t = ev.target.closest('[data-tur]');
+      const t = ev.target.closest('[data-tp]');
       if (!t) return;
       modalKapat();
-      const templateId = sablonAtamasi(t.dataset.tur);
-      templateOnaySor(templateId, tur, t.dataset.tur);
+      const p = DB.proje(t.dataset.tp);
+      templateOnaySor(t.dataset.tp, tur, templatePaketAnahtari(p));
     });
   }, 'genis');
 }
@@ -8219,14 +8280,17 @@ function kopyaKaynagiSec(tur) {
    projeDuraklari(). Firma bilgisi de bilerek boş kopyalanır (DB.projeKopyala). */
 function sablonSec(kaynakId, tur) {
   modalHepsiniKapat();
+  const paketler = (DB.paketler || []).filter(k => k.akis !== 'ozel');
+
   modalAc(`
-    ${modalBaslik(ICON.katman, 'Bu bir şablon dönüşümü mü?',
-      'Şablon seçilirse firma bilgileri boş gelir, kurulum yerine o şablona özel bir sihirbaz açılır.')}
+    ${modalBaslik(ICON.paket, 'Bu bir paket kurulumu mu?',
+      'Paket seçilirse firma bilgileri boş gelir ve o paketin yol haritası açılır.')}
     <div class="secim">
-      <div class="satir sec-satir" data-ss="muhasebe" role="button" tabindex="0">
-        <span class="sec-yazi"><b>Muhasebe şablonu</b>
-          <i>Firma bilgisi boş gelir, temel tanımlar sihirbazıyla hızlı kurulur</i></span>
-      </div>
+      ${paketler.map(k => `
+        <div class="satir sec-satir" data-ss="${esc(k.anahtar)}" role="button" tabindex="0">
+          <span class="sec-yazi"><b>${esc(k.ad)}</b>
+            <i>${esc(k.aciklama || paketAkisAdi(k.akis))}</i></span>
+        </div>`).join('')}
       <div class="satir sec-satir" data-ss="hayir" role="button" tabindex="0">
         <span class="sec-yazi"><b>Hayır, normal kopya</b><i>Bugüne kadar olduğu gibi</i></span>
       </div>
@@ -8239,7 +8303,7 @@ function sablonSec(kaynakId, tur) {
       const t = ev.target.closest('[data-ss]');
       if (!t || t.dataset.ss === 'kapat') return;
       modalKapat();
-      templateOnaySor(kaynakId, tur, t.dataset.ss === 'muhasebe' ? 'muhasebe' : null);
+      templateOnaySor(kaynakId, tur, t.dataset.ss === 'hayir' ? null : t.dataset.ss);
     });
   });
 }
@@ -8385,12 +8449,20 @@ function cekirdekOlusturBaslat() {
 
 function cekirdekTuruSec(kaynakId) {
   modalHepsiniKapat();
+  const paketler = DB.paketler || [];
+  if (!paketler.length) {
+    toast('Önce sql/25-paketler.sql dosyasını çalıştır.', 'uyari');
+    return;
+  }
+
   modalAc(`
-    ${modalBaslik(ICON.katman, 'Şablon türü', 'Bu template hangi tür program için kullanılacak?')}
+    ${modalBaslik(ICON.paket, 'Hangi paket?',
+      'Bu template\'ten kurulan projeler bu paketin yol haritasından geçer.')}
     <div class="secim">
-      ${CEKIRDEK_TUR_LISTESI.map(t => `
-        <div class="satir sec-satir" data-tur="${esc(t.anahtar)}" role="button" tabindex="0">
-          <span class="sec-yazi"><b>${esc(t.ad)}</b></span>
+      ${paketler.map(k => `
+        <div class="satir sec-satir" data-tur="${esc(k.anahtar)}" role="button" tabindex="0">
+          <span class="sec-yazi"><b>${esc(k.ad)}</b>
+            <i>${esc(k.aciklama || paketAkisAdi(k.akis))}</i></span>
         </div>`).join('')}
     </div>
     <div class="modal-alt">
@@ -8406,15 +8478,18 @@ function cekirdekTuruSec(kaynakId) {
   });
 }
 
-async function cekirdekAdiSor(kaynakId, tur) {
+async function cekirdekAdiSor(kaynakId, paket) {
+  const k = (DB.paketler || []).find(x => x.anahtar === paket);
   const ad = await metinSor({
     baslik: 'Template adı',
     aciklama: 'Templateler listesinde bu adla görünecek.',
-    deger: cekirdekTuruAdi(tur) + ' Template',
+    deger: (k ? k.ad : 'Yeni') + ' Template',
     buton: 'Oluştur',
   });
   if (!ad || !ad.trim()) return;
-  templateOnaySor(kaynakId, null, null, { ad: ad.trim(), tur });
+  /* Sektör burada sorulmuyor: template kurulduktan sonra listedeki ayar
+     düğmesinden seçiliyor (bkz. templateAyarlari). */
+  templateOnaySor(kaynakId, null, null, { ad: ad.trim(), paket, sektorler: [] });
 }
 
 /* ---------- Template kurulum sihirbazı ----------
@@ -9783,10 +9858,13 @@ function cekirdekAdimClaudeGovde(p) {
             <span class="kur-kutu">${svg(ICON.tik, 12)}</span> Temizlendi, template olarak kaydet</label>`);
 }
 
-function sihirbaziBaslat(tur) {
+function sihirbaziBaslat(tur, sektorId) {
+  /* Sektör bir önceki adımda soruldu; sihirbaz onunla dolu başlıyor.
+     Projede sektör metin olarak duruyor, o yüzden adını yazıyoruz. */
+  const sk = (DB.sektorler || []).find(x => x.id === sektorId);
   Object.assign(SIHIRBAZ, {
     adim: 1, duzenle: false, projeId: null,
-    firma: '', sektor: '', renk: 'yesil',
+    firma: '', sektor: sk ? sk.ad : '', renk: 'yesil',
     logo: null, logoOnizleme: '',
     gorsel: null, gorselOnizleme: '',
     yetkili: '', telefon: '', eposta: '',
@@ -14373,6 +14451,8 @@ async function eylemCalistir(el) {
   }
 
   if (e === 'sektorlere')     { location.hash = '#/sektorler'; return; }
+  if (e === 'template-ayar')  return templateAyarlari(el.dataset.proje);
+
   if (e === 'paketlere')      { location.hash = '#/paketler'; return; }
   if (e === 'paket-ekle')     return paketDuzenle(null);
   if (e === 'paket-duzenle')  return paketDuzenle(id);
@@ -14433,7 +14513,6 @@ async function eylemCalistir(el) {
   if (e === 'guvenlige')          { location.hash = '#/guvenlik'; return; }
   if (e === 'template-olustur-ac') return cekirdekOlusturBaslat();
   if (e === 'template-kur-ac')     return cekirdekKurulumAc(el.dataset.proje);
-  if (e === 'sablon-atama-sec')    return sablonAtamaSecAc(el.dataset.tur);
 
   /* Satırın kendisi template-kur-ac'ı açıyor — bu düğme ayrı bir data-eylem
      taşıdığı için closest() önce bunu buluyor, satırın tıklaması tetiklenmiyor.

@@ -1,5 +1,14 @@
 # Değişiklik Günlüğü
 
+## v0.170.2
+**Yeni proje akışı — yapının 2. adımı.**
+- Yeni proje kurarken sıra artık şöyle: **gerçek/test → sektör → sıfırdan mı hazır template mi**. Hazır template seçince **yalnız o sektöre bağlı template'ler** listeleniyor; yoksa "Bu sektörde hazır template yok." diyor.
+- Sıfırdan gidersen sihirbaz seçtiğin sektörle dolu başlıyor.
+- **Template'ler artık sektör ve paket taşıyor.** Templateler listesindeki dişli düğmesinden seçiliyor; bir template birden çok sektöre bağlanabiliyor.
+- Template seçilince projenin yol haritası **o template'in paketinden** geliyor. "Şablon atamaları" bölümü ve koda gömülü şablon türü listesi kalktı — artık her şey paketten okunuyor.
+- Template oluştururken "şablon türü" yerine **paket** soruluyor.
+- Kurulmuş projeler etkilenmedi: eski şablon işareti Muhasebe-1 paketine denk geliyor, yol haritaları aynı.
+
 ## v0.170.1
 **Paketler — yeni yapının 1. adımı.**
 - **Paket**, yeni projenin hangi yol haritasından geçeceğini söyleyen kavram. İki paketle başlıyor: **Özel Proje** (normal kurulum) ve **Muhasebe-1** (hazır programın kurulumu).

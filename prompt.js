@@ -204,7 +204,7 @@ const PROMPT = {
        oturum verir. Bağlantılar ve temel'de Claude bilerek en sona alınıyor
        (bkz. app.js sablonMu/baglantiAdimListesi) ki bu ayrı prompt Supabase/
        yayın bilgisinin hepsini eldeyken tek seferde yazabilsin. */
-    if ((p.palet || {}).sablon) return PROMPT.sablonTanisma(p);
+    if (sablonMu(p)) return PROMPT.sablonTanisma(p);
 
     const s = [];
     s.push('# ' + projeAdi(p) + ' — proje başlangıcı', '');
@@ -1526,7 +1526,7 @@ const PROMPT = {
     if (!p) return '';
     const pl  = p.palet || {};
     const t   = pl.sablonTanimlar || {};
-    const tur = pl.sablon || '';
+    const tur = paketAnahtari(p);
     const slug = depoSlug(p.repo);
 
     const s = [];

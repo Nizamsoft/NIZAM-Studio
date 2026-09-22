@@ -7,7 +7,7 @@ const APP = {
   name:     'NIZAM | Studio',
   short:    'NIZAM Studio',
   owner:    'Nizam Soft',
-  version: 'v0.170.1',
+  version: 'v0.170.2',
   build:    '2026-09-17',
   /* Studio'nun kendi deposu — "bütün programlarda geçerli olsun"
      istekleri buraya gider. */
@@ -890,10 +890,6 @@ const SABLON_GUNSONU_HAZIR = [
    olarak sunuluyor: yarın ikinci bir şablon (ör. stok takip) eklenince tek
    satır yeter. `sablon` alanındaki değerle birebir aynı sözlük kullanılıyor
    — bir template'ten kopyalanan proje bu anahtarı `p.palet.sablon` olarak alır. */
-const CEKIRDEK_TUR_LISTESI = [
-  { anahtar: 'muhasebe', ad: 'Muhasebe' },
-];
-
 /* ==========================================================================
    Paket akışları — bir paketin hangi yol haritasını kullanacağı.
    Akışın kendisi kodda (bkz. projeDuraklari); paket yalnızca hangisini
