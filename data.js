@@ -16,7 +16,6 @@ const DB = {
   mesajlar: [],
   kisiler: [],
   kisilerHepsi: [],
-  sablonlar: [],
   sektorler: [],
   paketler: [],
   /* Logolar private kovada; adres her oturumda yeniden üretilir. */
@@ -45,7 +44,7 @@ const DB = {
     tasks: 'gorevler', task_events: 'hareketler', profiles: 'kisiler',
     messages: 'mesajlar',
     standards: 'standartlar', task_standards: 'gorevStandart',
-    module_templates: 'sablonlar', sectors: 'sektorler', packages: 'paketler',
+    sectors: 'sektorler', packages: 'paketler',
   },
 
   canliBasla(tazele) {
@@ -254,7 +253,6 @@ const DB = {
     kisiler:      db => db.from('profiles').select('*'),
     standartlar:  db => db.from('standards').select('*').eq('aktif', true).order('sira'),
     gorevStandart:db => db.from('task_standards').select('gorev_id, standart_id'),
-    sablonlar:    db => db.from('module_templates').select('*').eq('aktif', true).order('sira'),
     sektorler:    db => db.from('sectors').select('*').eq('aktif', true).order('sira'),
     paketler:     db => db.from('packages').select('*').eq('aktif', true).order('sira'),
     /* Mesajlar da sınırsız büyüyor; son beş yüz satır yetiyor. Satır
@@ -265,7 +263,7 @@ const DB = {
   },
 
   /* Tablosu henüz kurulmamış olabilecekler — hata verme, boş bırak. */
-  ISTEGE_BAGLI: ['sablonlar', 'sektorler', 'mesajlar', 'paketler'],
+  ISTEGE_BAGLI: ['sektorler', 'mesajlar', 'paketler'],
 
   yerlestir(ad, sonuc) {
     if (sonuc.error) {
@@ -327,7 +325,7 @@ const DB = {
       this.projeler = []; this.moduller = []; this.sayfalar = [];
       this.gorevler = []; this.hareketler = []; this.kisiler = []; this.kisilerHepsi = [];
       this.mesajlar = [];
-      this.sablonlar = []; this.sektorler = []; this.paketler = [];
+      this.sektorler = []; this.paketler = [];
       this.standartlar = []; this.gorevStandart = [];
       this.yuklendi = true;
       return;
@@ -837,13 +835,6 @@ const DB = {
     }).sort((a, b) => tr(a.ad, b.ad));
   },
 
-  /* Modül şablonları yalnızca veritabanından gelir.
-     Eskiden liste boşalınca koddaki hazır listeye düşüyordu; sildiğin
-     şablonlar bir sonraki açılışta geri geliyordu. */
-  modulSablonlari() {
-    return this.sablonlar;
-  },
-
   /* ---------- Paketler ----------
      Paket, yeni projenin hangi yol haritasından geçeceğini söyler.
      Akışın kendisi kodda; paket yalnız hangisinin kullanılacağını seçer. */
@@ -885,24 +876,6 @@ const DB = {
     const { error } = await AUTH.db.from('sectors').update({ aktif: false }).eq('id', id);
     if (error) throw new Error(sektorHatasi(error));
     await this.tazele('sektorler');
-  },
-
-  async sablonKaydet(id, alanlar) {
-    yazmaKontrol();
-    const q = id
-      ? AUTH.db.from('module_templates').update(alanlar).eq('id', id)
-      : AUTH.db.from('module_templates')
-          .insert(Object.assign({ sira: this.sablonlar.length + 1 }, alanlar));
-    const { error } = await q;
-    if (error) throw new Error(veriHatasi(error));
-    await this.tazele('sablonlar');
-  },
-
-  async sablonSil(id) {
-    yazmaKontrol();
-    const { error } = await AUTH.db.from('module_templates').update({ aktif: false }).eq('id', id);
-    if (error) throw new Error(veriHatasi(error));
-    await this.tazele('sablonlar');
   },
 
   async standartKaydet(id, alanlar) {

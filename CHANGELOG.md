@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü
 
+## v0.170.3
+**Modül Şablonları kalktı — yapının 4. adımı.**
+- Kütüphane artık dört kart: **Sektörler · Paketler · Templateler · Nizam Standartları**. "Şablonlar" ekranı ve yan menüdeki "Modül Şablonları" kaldırıldı.
+- **Sektörde artık yalnızca ad var.** Modül önerisi kavramı gitti; sektörün işi hazır template'leri süzmek ve prompta girmek. Sektör kartında kaç template'e bağlı olduğu yazıyor.
+- Sıfırdan kurulan proje modülsüz başlıyor; modüller ve sayfalar "Kurulum ve yapı" durağında elle ekleniyor.
+- Uygulama `module_templates` tablosunu artık hiç okumuyor. Tabloyu silmek istersen SQL'i ayrıca veriyoruz — zorunlu değil, durması bir şeyi bozmaz.
+- Kütüphane'de turuncu kart rengi tanımlı değildi; Paketler kartı zeminsiz görünüyordu, düzeltildi.
+
 ## v0.170.2
 **Yeni proje akışı — yapının 2. adımı.**
 - Yeni proje kurarken sıra artık şöyle: **gerçek/test → sektör → sıfırdan mı hazır template mi**. Hazır template seçince **yalnız o sektöre bağlı template'ler** listeleniyor; yoksa "Bu sektörde hazır template yok." diyor.

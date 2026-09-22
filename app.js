@@ -16,7 +16,6 @@ const ROUTES = {
   projeler:    { title: 'Projeler',           kisa: 'Projeler',    sub: () => projelerAltBaslik() },
   gorevler:    { title: 'Bana Atananlar',     kisa: 'Görevler',    sub: () => gorevlerAltBaslik() },
   standartlar: { title: 'Nizam Standartları', kisa: 'Standartlar', sub: () => standartAltBaslik() },
-  sablonlar:   { title: 'Modül Şablonları',   kisa: 'Şablonlar',   sub: () => sablonAltBaslik() },
   sektorler:   { title: 'Sektörler',           kisa: 'Sektörler',   sub: () => sektorAltBaslik() },
   paketler:    { title: 'Paketler',            kisa: 'Paketler',    sub: () => paketAltBaslik() },
   kilitler:    { title: 'Kilitli Projeler',    kisa: 'Kilit',       sub: () => kilitAltBaslik() },
@@ -104,7 +103,6 @@ let SON_EKRAN      = '';
 const ACIK_STANDART = new Set();
 /* Gruplar akordeon: aynı anda yalnızca biri açık kalır. */
 let ACIK_GRUP = null;
-let ACIK_SABLON = null;
 let LOGO_ZAMANLAYICI = null;
 
 /* ---------- İkonlar ---------- */
@@ -641,33 +639,6 @@ const VIEWS = {
 
   /* ---------- Modül şablonları ---------- */
 
-  sablonlar: () => {
-    if (YUKLENIYOR) return iskeletler(3);
-    if (DB.hata)    return hataKutusu(DB.hata);
-
-    const liste = DB.modulSablonlari();
-
-    return `
-      <div class="note" style="margin-bottom:12px">
-        ${svg(ICON.info, 15)}
-        <span>Yeni proje kurarken ve modül eklerken bu liste çıkar.
-        Buradaki değişiklik kurulmuş projeleri etkilemez.</span>
-      </div>
-
-      ${AUTH.yonetici ? `
-        <div class="standart-arac">
-          <button class="mini-link" data-eylem="sablon-ekle" type="button">
-            ${svg(ICON.arti, 13)} Yeni Şablon</button>
-        </div>` : ''}
-
-      ${liste.length
-        ? liste.map((m, i) => sablonKarti(m, i)).join('')
-        : `<div class="card">${empty(ICON.katman, 'Şablon yok',
-            'Sildiklerin geri gelmez. Yeni bir şablon eklersen burada durur.',
-            AUTH.yonetici ? 'Yeni Şablon' : null, 'sablon-ekle')}</div>`}
-    `;
-  },
-
   /* ---------- Kilitli projeler ---------- */
 
   kilitler: () => {
@@ -1070,12 +1041,13 @@ const KUTUPHANE = [
        + '<path d="M6 30h48M24 20v-8h12v8"></path>',
   },
   {
-    ad: 'Şablonlar', adres: '#/sablonlar', renk: 'mavi', ikon: 'dokuman',
-    aciklama: 'Hızlı başlangıç için hazır proje şablonlarını keşfet.',
-    sayi: () => DB.modulSablonlari().length + ' şablon',
-    sus: '<path d="M30 2 56 15 30 28 4 15z"></path>'
-       + '<path d="M30 17 56 30 30 43 4 30z"></path>'
-       + '<path d="M30 32 56 45 30 58 4 45z"></path>',
+    ad: 'Templateler', adres: '#/templateler', renk: 'mor', ikon: 'izgaraDort',
+    aciklama: 'Kurulmaya hazır tabanlar — sektörüne ve paketine bağlı.',
+    sayi: () => DB.projeler.filter(p => !p.arsiv && cekirdekMi(p)).length + ' template',
+    susCizgi: true,
+    sus: '<rect x="20" y="2" width="38" height="38" rx="8"></rect>'
+       + '<rect x="4" y="18" width="38" height="38" rx="8"></rect>'
+       + '<path d="M17 31l-4 6 4 6M29 31l4 6-4 6"></path>',
   },
   {
     ad: 'Nizam Standartları', adres: '#/standartlar', renk: 'yesil', ikon: 'gGuvenlik',
@@ -1085,15 +1057,6 @@ const KUTUPHANE = [
     sus: '<rect x="4" y="2" width="38" height="50" rx="6"></rect>'
        + '<path d="M13 15h20M13 25h20M13 35h12"></path>'
        + '<circle cx="45" cy="44" r="13"></circle>',
-  },
-  {
-    ad: 'Templateler', adres: '#/templateler', renk: 'mor', ikon: 'izgaraDort',
-    aciklama: 'Tekrar kullanılabilir UI bileşenleri, sayfa tasarımları ve kod yapıları.',
-    sayi: () => DB.projeler.filter(p => !p.arsiv && cekirdekMi(p)).length + ' template',
-    susCizgi: true,
-    sus: '<rect x="20" y="2" width="38" height="38" rx="8"></rect>'
-       + '<rect x="4" y="18" width="38" height="38" rx="8"></rect>'
-       + '<path d="M17 31l-4 6 4 6M29 31l4 6-4 6"></path>',
   },
 ];
 
@@ -3254,8 +3217,8 @@ function modulYukle(p, t, ad) {
     const mk = ((p.palet || {}).modulKunye || {})[ad];
     t.mk = mk ? JSON.parse(JSON.stringify(mk)) : { kural: '' };
   } else {
-    const sb = DB.modulSablonlari().find(m => m.ad === ad);
-    t.sayfalar = ((sb && sb.sayfalar) || []).slice();
+    /* Modül şablonları kalktı: yeni modülün sayfalarını kullanıcı yazıyor. */
+    t.sayfalar = [];
     t.kunye = {};
     t.anlat = ''; t.kararlar = []; t.baglantilar = []; t.hazirVeri = []; t.ciktilar = [];
     t.mk = { kural: '' };
@@ -7164,19 +7127,25 @@ function sayaclariYaz() {
 
 function sektorAltBaslik() {
   if (YUKLENIYOR) return 'yükleniyor…';
-  return DB.sektorler.length + ' sektör';
+  return (DB.sektorler || []).length + ' sektör';
 }
 
-/* Sektör kartı. Açıklama alanı yok — kartta ad ve modül sayısı duruyor. */
+/* Bir sektöre kaç template bağlı. */
+function sektorTemplateSayisi(sektorId) {
+  return (DB.projeler || []).filter(p =>
+    !p.arsiv && cekirdekMi(p) && templateSektorIdleri(p).includes(sektorId)).length;
+}
+
+/* Sektör kartı. Açıklama alanı yok — kartta ad ve template sayısı duruyor. */
 function sektorKarti(x) {
-  const n = (x.moduller || []).length;
+  const n = sektorTemplateSayisi(x.id);
   return `
     <button class="lk" type="button" data-eylem="sektor-duzenle" data-id="${esc(x.id)}"
             data-ara="${esc(String(x.ad || '').toLocaleLowerCase('tr'))}">
       <span class="lk-ikon">${svg(ICON.katman, 26)}</span>
       <span class="lk-yz">
         <b>${esc(x.ad)}</b>
-        <em>${svg(ICON.katman, 15)}${n ? n + ' modül' : 'modül önerisi yok'}</em>
+        <em>${svg(ICON.katman, 15)}${n ? n + ' template' : 'template yok'}</em>
       </span>
       <span class="lk-ok">${svg(ICON.chevron, 18)}</span>
     </button>`;
@@ -7354,13 +7323,6 @@ function skAramaUygula() {
     if (uyar) gorunen++;
   });
   liste.classList.toggle('bos', gorunen === 0);
-}
-
-function sablonAltBaslik() {
-  if (YUKLENIYOR) return 'yükleniyor…';
-  const n = DB.modulSablonlari().length;
-  const sf = DB.modulSablonlari().reduce((t, m) => t + (m.sayfalar || []).length, 0);
-  return `${n} modül · ${sf} sayfa`;
 }
 
 function kilitAltBaslik() {
@@ -7543,40 +7505,6 @@ function templateAyarlari(projeId) {
   });
 }
 
-
-function sablonKarti(m, i = 0) {
-  const anahtar = m.id || m.ad;
-  const acik = ACIK_SABLON === anahtar;
-  const sayfalar = m.sayfalar || [];
-
-  return `
-    <div class="card modul" style="--i:${i}">
-      <div class="modul-bas ${acik ? 'acik' : ''}" data-eylem="sablon-ac" data-ad="${esc(anahtar)}"
-           role="button" tabindex="0" aria-expanded="${acik}">
-        <span class="chev">${svg(ICON.chevron, 15)}</span>
-        <span class="modul-ikon">${svg(ICON.katman, 16)}</span>
-        <span class="modul-yazi">
-          <span class="modul-ad">${esc(m.ad)}</span>
-          <span class="modul-alt">${sayfalar.length} sayfa</span>
-        </span>
-      </div>
-
-      ${acik ? `
-        <div class="sayfalar">
-          ${sayfalar.length
-            ? sayfalar.map(sf => `<div class="sayfa">${svg(ICON.nokta || ICON.chevron, 13)}
-                <span class="sayfa-ad">${esc(sf)}</span></div>`).join('')
-            : '<div class="sayfa"><span class="sayfa-ad ipucu">Sayfa tanımlı değil.</span></div>'}
-        </div>
-        ${AUTH.yonetici ? `
-          <div class="modul-araclar">
-            <button class="mini-link" data-eylem="sablon-duzenle" data-id="${m.id}" type="button">
-              ${svg(ICON.kalem, 13)} Düzenle</button>
-            <button class="mini-link tehlike" data-eylem="sablon-sil" data-id="${m.id}"
-                    data-ad="${esc(m.ad)}" type="button">${svg(ICON.cop, 13)} Kaldır</button>
-          </div>` : ''}` : ''}
-    </div>`;
-}
 
 function ekipAltBaslik() {
   if (YUKLENIYOR) return 'yükleniyor…';
@@ -10164,7 +10092,7 @@ async function sihirbazSektorEkle() {
   if (!ad) return;
 
   try {
-    await DB.sektorKaydet(null, { ad: ad.trim(), moduller: SIHIRBAZ.moduller.slice() });
+    await DB.sektorKaydet(null, { ad: ad.trim() });
     SIHIRBAZ.sektor = ad.trim();
     sihirbazCiz();
     toast(ad.trim() + ' eklendi.', 'basari');
@@ -10226,8 +10154,9 @@ async function sihirbazKaydet() {
   }
 
   try {
-    const sablonlar = DB.modulSablonlari();
-    const moduller = SIHIRBAZ.moduller.map(ad => sablonlar.find(m => m.ad === ad)).filter(Boolean);
+    /* Proje modülsüz kuruluyor; modüller "Kurulum ve yapı" durağında
+       elle ekleniyor. Modül şablonları kavramı kaldırıldı. */
+    const moduller = [];
 
     const id = await DB.projeOlustur({
       firma: SIHIRBAZ.firma,
@@ -11795,17 +11724,15 @@ function standartSor(mevcut) {
    MODÜL ŞABLONLARI
    ========================================================================== */
 
-/* Sektör: ad ve o sektörde önden işaretlenecek modüller. */
+/* Sektör: yalnızca ad. Modül önerisi kavramı kalktı — sektör artık hazır
+   template'leri süzmeye ve prompta girmeye yarıyor. */
 function sektorDuzenle(id) {
   modalHepsiniKapat();
   const x = id ? DB.sektorler.find(s => s.id === id) : null;
-  let secili = (x && x.moduller) ? x.moduller.slice() : [];
-
-  const sablonlar = DB.modulSablonlari();
 
   modalAc(`
     ${modalBaslik(ICON.folder, x ? 'Sektörü düzenle' : 'Yeni sektör',
-      'Bu sektör seçilince aşağıdaki modüller önden işaretlenir.')}
+      'Yeni proje kurarken hazır template\'ler bu sektöre göre süzülür.')}
 
     <label class="field">
       <span>Sektör adı</span>
@@ -11813,39 +11740,12 @@ function sektorDuzenle(id) {
              placeholder="Örn. Restoran" maxlength="40" autocomplete="off">
     </label>
 
-    <div class="field">
-      <span>Önerilen modüller <em class="ipucu">isteğe bağlı</em></span>
-      ${sablonlar.length ? `<div class="secim" id="sk-moduller">
-        ${sablonlar.map(m => `
-          <div class="satir sec-satir ${secili.includes(m.ad) ? 'sec' : ''}"
-               data-skm="${esc(m.ad)}" role="button" tabindex="0">
-            <span class="sec-yazi"><b>${esc(m.ad)}</b><i>${(m.sayfalar || []).length} sayfa</i></span>
-            <span class="kare">${secili.includes(m.ad) ? svg(ICON.tik, 12) : ''}</span>
-          </div>`).join('')}
-      </div>` : '<p class="ipucu">Önce Modül Şablonları\'ndan modül ekle.</p>'}
-    </div>
-
     <div class="modal-alt">
       ${x ? `<button class="btn btn-ghost tehlike" data-sk="sil" type="button">Kaldır</button>` : ''}
       <button class="btn btn-ghost" data-sk="iptal" type="button">Vazgeç</button>
       <button class="btn btn-primary" data-sk="kaydet" type="button"><span>Kaydet</span></button>
     </div>`, kutu => {
     setTimeout(() => $('#sk-ad', kutu).focus(), 40);
-
-    const ciz = () => {
-      $$('[data-skm]', kutu).forEach(el => {
-        const var_ = secili.includes(el.dataset.skm);
-        el.classList.toggle('sec', var_);
-        $('.kare', el).innerHTML = var_ ? svg(ICON.tik, 12) : '';
-      });
-    };
-
-    $$('[data-skm]', kutu).forEach(el => el.addEventListener('click', () => {
-      const ad = el.dataset.skm;
-      const i = secili.indexOf(ad);
-      i === -1 ? secili.push(ad) : secili.splice(i, 1);
-      ciz();
-    }));
 
     $('[data-sk="iptal"]', kutu).addEventListener('click', modalKapat);
 
@@ -11871,7 +11771,7 @@ function sektorDuzenle(id) {
       const yazi = $('[data-sk="kaydet"] span', kutu);
       yazi.textContent = 'Kaydediliyor…';
       try {
-        await DB.sektorKaydet(id, { ad, moduller: secili });
+        await DB.sektorKaydet(id, { ad });
         modalKapat();
         render();
         toast(id ? 'Sektör güncellendi.' : 'Sektör eklendi.', 'basari');
@@ -11881,61 +11781,6 @@ function sektorDuzenle(id) {
       }
     });
   }, 'genis');
-}
-
-/* Şablon yazma / düzenleme. */
-function sablonDuzenle(id) {
-  modalHepsiniKapat();
-  const m = id ? DB.sablonlar.find(x => x.id === id) : null;
-
-  modalAc(`
-    ${modalBaslik(ICON.katman, m ? 'Şablonu düzenle' : 'Yeni şablon',
-      'Sihirbazda ve modül eklerken bu liste çıkar.')}
-
-    <label class="field">
-      <span>Modül adı</span>
-      <input type="text" id="sd-mad" value="${esc(m ? m.ad : '')}"
-             placeholder="Örn. Sipariş" maxlength="60" autocomplete="off">
-    </label>
-
-    <label class="field">
-      <span>Sayfalar <em class="ipucu">her satıra bir sayfa</em></span>
-      <textarea id="sd-msayfalar" rows="8" spellcheck="false"
-        placeholder="Sipariş Listesi&#10;Sipariş Oluştur">${esc(m ? (m.sayfalar || []).join('\n') : '')}</textarea>
-    </label>
-
-    <div class="note note-kucuk">
-      ${svg(ICON.info, 15)}
-      <span>Şablonu değiştirmek kurulmuş projeleri etkilemez. Yalnızca bundan
-      sonraki kurulumlar bu hali alır.</span>
-    </div>
-
-    <div class="modal-alt">
-      <button class="btn btn-ghost" data-sd="iptal" type="button">Vazgeç</button>
-      <button class="btn btn-primary" data-sd="kaydet" type="button"><span>Kaydet</span></button>
-    </div>`, kutu => {
-    setTimeout(() => $('#sd-mad', kutu).focus(), 40);
-    $('[data-sd="iptal"]', kutu).addEventListener('click', modalKapat);
-
-    $('[data-sd="kaydet"]', kutu).addEventListener('click', async () => {
-      const ad = $('#sd-mad', kutu).value.trim();
-      const sayfalar = $('#sd-msayfalar', kutu).value.split(/\r?\n/).map(x => x.trim()).filter(Boolean);
-
-      if (!ad) { toast('Modül adı yaz.'); return; }
-
-      const yazi = $('[data-sd="kaydet"] span', kutu);
-      yazi.textContent = 'Kaydediliyor…';
-      try {
-        await DB.sablonKaydet(id, { ad, sayfalar });
-        modalKapat();
-        render();
-        toast(id ? 'Şablon güncellendi.' : 'Şablon eklendi.', 'basari');
-      } catch (h) {
-        yazi.textContent = 'Kaydet';
-        toast(h.message, 'hata');
-      }
-    });
-  });
 }
 
 /* Firma bilgilerini sonradan düzenleme.
@@ -14444,12 +14289,6 @@ async function eylemCalistir(el) {
     return;
   }
 
-  if (e === 'sablon-ac') {
-    const ad = el.dataset.ad;
-    ACIK_SABLON = ACIK_SABLON === ad ? null : ad;
-    return render();
-  }
-
   if (e === 'sektorlere')     { location.hash = '#/sektorler'; return; }
   if (e === 'template-ayar')  return templateAyarlari(el.dataset.proje);
 
@@ -14467,9 +14306,6 @@ async function eylemCalistir(el) {
 
   if (e === 'sektor-duzenle') return sektorDuzenle(id);
 
-  if (e === 'sablonlara')     { location.hash = '#/sablonlar'; return; }
-  if (e === 'sablon-ekle')    return sablonDuzenle(null);
-  if (e === 'sablon-duzenle') return sablonDuzenle(id);
 
   if (e === 'depo-baglandi-onay') {
     const pr = DB.proje(el.dataset.proje);
@@ -14697,17 +14533,6 @@ async function eylemCalistir(el) {
     await isYap(() => DB.projeSil(pr.id), 'Template silindi.');
     return disaridaKalanlar(ad, slug);
   }
-
-  if (e === 'sablon-sil') {
-    const ok = await onaySor({
-      baslik: 'Şablon kaldırılsın mı?',
-      mesaj: `"${el.dataset.ad}" şablonu listeden çıkacak. Bu şablondan kurulmuş
-              projelerdeki modüllere dokunulmaz.`,
-    });
-    if (!ok) return;
-    return isYap(() => DB.sablonSil(id), 'Şablon kaldırıldı.');
-  }
-
 }
 
 /* Veri değiştiren işleri tek yerden çalıştır: hata olursa bildir, olmazsa yenile. */
