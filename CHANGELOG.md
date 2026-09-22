@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## v0.173.0
+- **Kurulum SQL'i artık template ekranının içinde.** Ayrı kurulum sayfası tamamen kalktı; pencerede üç küçük yapıştırma kutusu var, yapıştırdığın parça **kendiliğinden kaydediliyor** ve yanında yeşil "kayıtlı" tiki çıkıyor. Başlıkta da kaç parçanın kayıtlı olduğu yazıyor (2 / 3 gibi).
+- Yeni bir template oluşturunca doğrudan bu pencere açılıyor.
+
 ## v0.172.6
 - **GitHub linki alanı kaldırıldı.** Yalnız public depoda işe yarıyordu, bizim depolarımız private. Template kurulumunda üç parça SQL kaldı; müşteri projesinde de "SQL dosyasını aç" yolu kalktı, tek yol kopyala-yapıştır.
 

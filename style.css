@@ -8899,3 +8899,28 @@ textarea.pd-giris { resize: vertical; display: block; }
 }
 /* Hiç iş satırı kalmadıysa boşluk bırakma. */
 .tp-isler:empty { display: none; }
+/* Kurulum SQL'i — üç küçük yapıştırma kutusu, yapıştırınca tik. */
+.sq-liste { display: flex; flex-direction: column; gap: 10px; }
+.sq {
+  display: block; padding: 12px 14px; border-radius: 14px;
+  background: var(--yuva); border: 1.5px solid transparent;
+}
+.sq-et { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.sq-et b { font-size: 13.5px; font-weight: 700; color: var(--ink-strong); }
+.sq-tik {
+  display: none; align-items: center; gap: 5px; margin-left: auto;
+  color: #2f7d5c; text-decoration: none;
+}
+.sq-tik i { font-style: normal; font-size: 12px; font-weight: 600; }
+.sq-tik svg { fill: none; stroke: currentColor; stroke-width: 2.8; stroke-linecap: round; }
+.sq.sec { border-color: rgba(47, 125, 92, .3); background: #f1f8f4; }
+.sq.sec .sq-tik { display: flex; }
+.sq.sec .sq-alan::placeholder { color: var(--ink-soluk); }
+.sq-alan {
+  width: 100%; min-width: 0; padding: 10px 12px; resize: vertical;
+  border: 1px solid var(--line-3); border-radius: 10px; background: var(--surface);
+  color: var(--ink-strong); font-family: var(--yazi-kod, monospace);
+  font-size: 12.5px; line-height: 1.5; outline: none;
+}
+.sq-alan:focus { border-color: var(--line); }
+.sq.yaziliyor { opacity: .6; pointer-events: none; }

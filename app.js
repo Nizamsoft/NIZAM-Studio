@@ -7601,6 +7601,9 @@ function templateAyarlari(projeId) {
   const paketler  = (DB.paketler || []).filter(k => paketinAkisi(k) !== 'ozel');
   const sektorler = DB.sektorler || [];
   const yayinAdres = String(pl.alanAdi || '').trim();
+  /* Hangi parçalar kaydedilmiş — metnin kendisi ayrı tabloda, burada
+     yalnız işaretleri tutuyoruz ki 20 bin satırı okumadan tik gösterelim. */
+  const sqlKayitli = [1, 2, 3].map(no => !!(cek0.sqlParca || {})[no]);
 
   modalAc(`
     <div class="pd-tepe">
@@ -7667,13 +7670,26 @@ function templateAyarlari(projeId) {
       hiçbir sektörün altında çıkmaz.</i>
     </div>
 
+    <div class="pd-alan">
+      <span class="pd-et">Kurulum SQL'i
+        <em class="pd-sag" id="ta-sql-sayac">${sqlKayitli.filter(Boolean).length} / 3</em>
+      </span>
+      <div class="sq-liste">
+        ${[1, 2, 3].map(no => `
+          <label class="sq ${sqlKayitli[no - 1] ? 'sec' : ''}" data-sq="${no}">
+            <span class="sq-et">
+              <b>Parça ${no}</b>
+              <u class="sq-tik">${svg(ICON.tik, 11)}<i>kayıtlı</i></u>
+            </span>
+            <textarea class="sq-alan" id="ta-sql-${no}" rows="2" spellcheck="false"
+              placeholder="${no}. parçayı buraya yapıştır…"></textarea>
+          </label>`).join('')}
+      </div>
+      <i class="pd-ipucu">Yapıştırınca kendiliğinden kaydedilir. Müşteri projesi
+      kurulurken bu SQL Supabase'e yapıştırılacak.</i>
+    </div>
+
     <div class="tp-isler">
-      <button class="tp-is" type="button" data-ta="kurulum">
-        <span class="tp-is-ik">${svg(ICON.kova, 19)}</span>
-        <span class="tp-is-yz"><b>Kurulum SQL'i</b>
-          <i>Üç parça SQL ve yedek GitHub linki.</i></span>
-        ${svg(ICON.chevron, 16)}
-      </button>
       ${yayinAdres ? `<button class="tp-is" type="button" data-ta="yayin">
         <span class="tp-is-ik">${svg(ICON.disari, 19)}</span>
         <span class="tp-is-yz"><b>Uygulamayı Aç</b>
@@ -7743,10 +7759,33 @@ function templateAyarlari(projeId) {
       kutucuk.classList.toggle('sec', i === -1);
     }));
 
-    const kurulumDug = $('[data-ta="kurulum"]', kutu);
-    if (kurulumDug) kurulumDug.addEventListener('click', () => {
-      modalKapat();
-      cekirdekKurulumAc(p.id);
+    /* Yapıştırınca kaydediyoruz: parça 20 bin satır olabiliyor, ayrı bir
+       "kaydet" düğmesine basmayı beklemek gereksiz bir adım. */
+    [1, 2, 3].forEach(no => {
+      const alan = $('#ta-sql-' + no, kutu);
+      if (!alan) return;
+      const kaydet = async () => {
+        const metin = alan.value.trim();
+        if (!metin) return;
+        const kutucuk = alan.closest('.sq');
+        kutucuk.classList.add('yaziliyor');
+        try {
+          await DB.sablonSqlParcaYaz(p.id, no, metin);
+          alan.value = '';
+          kutucuk.classList.remove('yaziliyor');
+          kutucuk.classList.add('sec');
+          sqlKayitli[no - 1] = true;
+          const sayac = $('#ta-sql-sayac', kutu);
+          if (sayac) sayac.textContent = sqlKayitli.filter(Boolean).length + ' / 3';
+          toast(no + '. parça kaydedildi.', 'basari');
+        } catch (h) {
+          kutucuk.classList.remove('yaziliyor');
+          toast(h.message, 'hata');
+        }
+      };
+      /* `paste` olayında kutunun içi henüz dolmamış oluyor — bir tur bekle. */
+      alan.addEventListener('paste', () => setTimeout(kaydet, 0));
+      alan.addEventListener('change', kaydet);
     });
 
     const yayinDug = $('[data-ta="yayin"]', kutu);
@@ -8621,10 +8660,11 @@ async function cekirdekOlusturVeAc(kaynakId, cekirdek) {
   try {
     const id = await DB.projeKopyala(kaynakId, { tur: 'gercek', cekirdek });
     sayaclariYaz();
-    toast('Template oluşturuldu — şimdi depoyu ve Claude\'u bağla.', 'basari');
+    toast('Template oluşturuldu.', 'basari');
     location.hash = '#/templateler';
     render();
-    cekirdekKurulumAc(id);
+    /* Kurulum SQL'i, sektör ve paket hepsi bu pencerede. */
+    templateAyarlari(id);
   } catch (h) {
     toast(h.message, 'hata');
   }
@@ -8706,175 +8746,6 @@ async function cekirdekAdiSor(kaynakId, paket) {
   /* Sektör burada sorulmuyor: template kurulduktan sonra listedeki ayar
      düğmesinden seçiliyor (bkz. templateAyarlari). */
   templateOnaySor(kaynakId, null, null, { ad: ad.trim(), paket, sektorler: [] });
-}
-
-/* ---------- Template kurulum sihirbazı ----------
-   Kurulum sihirbazıyla aynı kalıp, iki adımı var: GitHub (baglantiAdimGithub
-   birebir aynı bileşen — depo bağlama her yerde aynı iş) ve Claude (yeni:
-   temizleme promptu + "Temizlendi, kaydet"). Yayın/Supabase/Namecheap yok —
-   bir template'in gerçek bir servise bağlı olması zaten istenmiyor. */
-const CEKIRDEK_KURULUM = { adim: 1, projeId: null };
-
-/* Template kurulumunda tek iş kaldı: kurulum SQL'i. Depo bağlama ve
-   "Claude ile temizle" adımları kaldırıldı — depo müşteri projesinin kendi
-   Bağlantılar durağında bağlanıyor, temizlik de template oluşturulurken
-   zaten yapılıyordu. */
-function cekirdekKurulumListesi() { return ['sql']; }
-
-function cekirdekKurulumAdimBittiMi(k, p) {
-  /* SQL isteğe bağlı — bir template'in mutlaka veritabanı olması gerekmez.
-     Metin ya da link, ikisinden biri yeterli. */
-  if (k === 'sql') {
-    const cekirdek = (p.palet || {}).cekirdek || {};
-    return !!cekirdek.sqlMetinVar;
-  }
-  return false;
-}
-
-function cekirdekKurulumEtiket(k) {
-  return { sql: 'SQL' }[k] || '';
-}
-
-function cekirdekKurulumAc(projeId) {
-  modalHepsiniKapat();
-  const p = DB.proje(projeId);
-  if (!p) return;
-  const liste = cekirdekKurulumListesi();
-  const ilkEksik = liste.findIndex(k => !cekirdekKurulumAdimBittiMi(k, p));
-  Object.assign(CEKIRDEK_KURULUM, { adim: ilkEksik > -1 ? ilkEksik + 1 : liste.length, projeId });
-  const el = document.createElement('div');
-  el.id = 'cekirdek-kurulum';
-  el.className = 'sihirbaz';
-  document.body.appendChild(el);
-  cekirdekKurulumCiz();
-}
-
-function cekirdekKurulumKapat() {
-  const el = $('#cekirdek-kurulum');
-  if (!el) return;
-  el.classList.remove('acik');
-  setTimeout(() => el.remove(), 260);
-}
-
-function cekirdekKurulumCiz() {
-  const el = $('#cekirdek-kurulum');
-  if (!el) return;
-  const p = DB.proje(CEKIRDEK_KURULUM.projeId);
-  if (!p) return cekirdekKurulumKapat();
-  const liste = cekirdekKurulumListesi();
-  if (CEKIRDEK_KURULUM.adim > liste.length) CEKIRDEK_KURULUM.adim = liste.length;
-  el.innerHTML = cekirdekKurulumHtml(p, liste);
-  cekirdekKurulumBagla(el);
-  requestAnimationFrame(() => el.classList.add('acik'));
-}
-
-function cekirdekKurulumSerit(liste, simdi, p) {
-  /* Tek adım kaldıysa şerit gereksiz. */
-  if (liste.length < 2) return '';
-  return `<div class="sh-adimlar">${liste.map((k, i) => {
-    const n = i + 1;
-    const bitti = cekirdekKurulumAdimBittiMi(k, p);
-    const hal = bitti ? 'done' : n === simdi ? 'simdi' : '';
-    const ikon = bitti ? `<span class="sh-adim-no">${svg(ICON.tik, 13)}</span>`
-                        : `<span class="sh-adim-no">${n}</span>`;
-    return (i ? '<span class="sh-adim-cizgi"></span>' : '')
-      + `<span class="sh-adim ${hal}">${ikon}<i>${esc(cekirdekKurulumEtiket(k))}</i></span>`;
-  }).join('')}</div>`;
-}
-
-function cekirdekKurulumHtml(p, liste) {
-  const k = liste[CEKIRDEK_KURULUM.adim - 1];
-  const govde = cekirdekAdimSqlGovde(p);
-
-  /* Tek adımda ileri-geri yok, tek kapatma düğmesi var. */
-  const geri = liste.length > 1 && CEKIRDEK_KURULUM.adim > 1
-    ? `<button class="btn btn-ghost" data-ck="geri" type="button">← Geri</button>`
-    : '';
-  const ileri = CEKIRDEK_KURULUM.adim < liste.length
-    ? `<button class="btn btn-primary" data-ck="ileri" type="button"><span>Sıradaki →</span></button>`
-    : `<button class="btn btn-primary" data-ck="kapat" type="button"><span>Kapat</span></button>`;
-
-  return `
-    <div class="sh-tepe">
-      <button class="sh-kapat" data-ck="kapat" type="button" aria-label="Kapat">
-        ${svg(ICON.kapat, 15)}
-      </button>
-      <span class="sh-ad">${esc(p.firma || 'Template')} — Template kurulumu</span>
-      ${AUTH.yonetici ? `<button class="sh-kapat" data-ck="sil" type="button"
-                aria-label="Template'i sil" title="Template'i sil">
-          ${svg(ICON.cop, 15)}
-        </button>` : ''}
-    </div>
-
-    <div class="sh-sayfa">
-      <div class="sh-icerik">
-        ${cekirdekKurulumSerit(liste, CEKIRDEK_KURULUM.adim, p)}
-        ${govde}
-      </div>
-
-      <div class="sh-dip">${geri}${ileri}</div>
-    </div>`;
-}
-
-/* baglantiAdimGithub'ın kendi düğmeleri (data-depo-ac, data-eylem,
-   data-pano) genel dinleyicilerden zaten çalışıyor — burada yalnız
-   sihirbazın kendi geri/ileri/kapat düğmelerini bağlıyoruz. */
-function cekirdekKurulumBagla(kutu) {
-  $$('[data-ck]', kutu).forEach(el => {
-    el.addEventListener('click', async () => {
-      const t = el.dataset.ck;
-      if (t === 'kapat') return cekirdekKurulumKapat();
-      if (t === 'geri')  { CEKIRDEK_KURULUM.adim--; return cekirdekKurulumCiz(); }
-      if (t === 'ileri') { CEKIRDEK_KURULUM.adim++; return cekirdekKurulumCiz(); }
-      if (t === 'sil') {
-        const p = DB.proje(CEKIRDEK_KURULUM.projeId);
-        if (!p) return;
-        if ((p.palet || {}).kilitli) {
-          toast('Bu template kilitli — önce Templateler listesindeki kilit simgesinden aç.', 'uyari');
-          return;
-        }
-        const ok = await onaySor({
-          baslik: 'Bu template silinsin mi?',
-          mesaj: `"${projeAdi(p)}" ve içindeki her şey kalıcı olarak silinecek. Bu işlem geri alınamaz.`,
-          buton: 'Kalıcı olarak sil',
-        });
-        if (!ok) return;
-        const slug = depoSlug(p.repo);
-        const ad = projeAdi(p);
-        cekirdekKurulumKapat();
-        await isYap(() => DB.projeSil(p.id), 'Template silindi.');
-        return disaridaKalanlar(ad, slug);
-      }
-    });
-  });
-}
-
-/* 2 · SQL — bu template'ten açılan her müşteri kopyasında, Bağlantılar ve
-   temel'deki Supabase adımından hemen sonra gösterilecek link (bkz.
-   baglantiAdimSql). İsteğe bağlı: her template'in veritabanı olması gerekmez. */
-function cekirdekAdimSqlGovde(p) {
-  const pl = p.palet || {};
-  const cekirdek = pl.cekirdek || {};
-  const metinVar = !!cekirdek.sqlMetinVar;
-  /* Birleşik kurulum SQL'i tek blok olarak Claude Code sohbetine
-     sığmıyor (20 bin+ satır) — o yüzden üç parçaya bölünüp geliyor,
-     her biri ayrı kaydediliyor (bkz. sql/19-sablon-sql-parca.sql). */
-  const parcaKutusu = (no) => `
-      <label class="field" style="margin-top:${no === 1 ? 0 : 12}px"><span>Parça ${no}</span>
-        <textarea id="ck-sql-metin-${no}" rows="6" spellcheck="false"
-          placeholder="${no}. parçayı buraya yapıştır…"></textarea></label>
-      <div class="kur-dug">
-        <button class="sayfa-dug ${no === 3 ? '' : 'ikincil'}" type="button"
-                data-eylem="cekirdek-sql-metin-kaydet" data-parca="${no}"
-                data-proje="${p.id}">${svg(ICON.check, 15)} Parça ${no}'${no === 1 ? 'i' : no === 2 ? 'yi' : 'ü'} kaydet</button>
-        ${no === 3 ? `<button class="sayfa-dug ikincil" type="button" data-eylem="cekirdek-sql-metin-kontrol"
-                data-proje="${p.id}">${svg(ICON.info, 15)} Kayıtlı göç kaç?</button>` : ''}
-      </div>`;
-  return shBaslikServis('supabase', 'Kurulum SQL\'i',
-      'Bu template\'ten açılan her müşteri kopyasında, Supabase bağlanırken bu SQL kullanılacak — üç parça halinde.')
-    + parcaKutusu(1) + parcaKutusu(2) + parcaKutusu(3)
-    + (metinVar ? `<div class="kur-deger duz">${svg(ICON.tik, 13)} Metin kayıtlı — müşteri
-        projelerinde bundan otomatik kopya çıkacak</div>` : '');
 }
 
 /* ==========================================================================
@@ -14604,7 +14475,7 @@ async function eylemCalistir(el) {
   if (e === 'templatelere')       { location.hash = '#/templateler'; return; }
   if (e === 'guvenlige')          { location.hash = '#/guvenlik'; return; }
   if (e === 'template-olustur-ac') return cekirdekOlusturBaslat();
-  if (e === 'template-kur-ac')     return cekirdekKurulumAc(el.dataset.proje);
+  if (e === 'template-kur-ac')     return templateAyarlari(el.dataset.proje);
 
   /* Satırın kendisi template-kur-ac'ı açıyor — bu düğme ayrı bir data-eylem
      taşıdığı için closest() önce bunu buluyor, satırın tıklaması tetiklenmiyor.
@@ -14613,30 +14484,6 @@ async function eylemCalistir(el) {
   if (e === 'sablon-yayina-git') {
     const adres = el.dataset.adres;
     if (adres) window.open('https://' + adres, '_blank', 'noopener');
-    return;
-  }
-
-  if (e === 'cekirdek-sql-metin-kaydet') {
-    const pr = DB.proje(el.dataset.proje);
-    if (!pr) return;
-    const parca = Number(el.dataset.parca) || 1;
-    const alan = document.getElementById('ck-sql-metin-' + parca);
-    const metin = alan ? alan.value.trim() : '';
-    if (!metin) { toast('Önce ' + parca + '. parçayı yapıştır.', 'uyari'); return; }
-    const pl = pr.palet || {};
-    const cekirdek = Object.assign({}, pl.cekirdek || {}, { sqlMetinVar: true });
-    return isYap(() => DB.sablonSqlMetniYaz(pr.id, parca, metin)
-      .then(() => DB.paletKaydet(pr.id, Object.assign({}, pl, { cekirdek }))),
-      parca + '. parça kaydedildi.');
-  }
-
-  if (e === 'cekirdek-sql-metin-kontrol') {
-    const pr = DB.proje(el.dataset.proje);
-    if (!pr) return;
-    let parcalar;
-    try { parcalar = await DB.sablonSqlMetniOku(pr.id); }
-    catch (h) { toast('Okunamadı: ' + h.message, 'hata'); return; }
-    sqlMetniGocBildir(parcalar);
     return;
   }
 
@@ -14779,7 +14626,6 @@ async function isYap(fn, basariMesaji, sonra) {
     if ($('#baglanti-adim')) baglantiAdimCiz();
     if ($('#kurulum-sihirbaz')) kurulumSihirbaziCiz();
     if ($('#sablon-sihirbaz')) sablonSihirbaziCiz();
-    if ($('#cekirdek-kurulum')) cekirdekKurulumCiz();
     if (basariMesaji) toast(basariMesaji);
   } catch (err) {
     toast(err.message, 'hata');

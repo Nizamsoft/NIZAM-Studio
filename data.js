@@ -1514,6 +1514,19 @@ const DB = {
 
   /* `parca`: 1 | 2 | 3. Yalnız ilgili kolonu yazar — upsert Supabase'de
      yalnız verilen kolonları günceller, diğer iki parça olduğu gibi kalır. */
+  /* Bir parçayı yazar ve template'in paletine "bu parça kayıtlı" işaretini
+     koyar — listede tik göstermek için metnin kendisini okumaya gerek
+     kalmasın (parça başına 20 bin satır olabiliyor). */
+  async sablonSqlParcaYaz(projeId, parca, metin) {
+    await this.sablonSqlMetniYaz(projeId, parca, metin);
+    const p = this.proje(projeId);
+    const pl = (p && p.palet) || {};
+    const cek = Object.assign({}, pl.cekirdek || {});
+    cek.sqlParca = Object.assign({}, cek.sqlParca || {}, { [parca]: true });
+    cek.sqlMetinVar = true;
+    await this.paletKaydet(projeId, Object.assign({}, pl, { cekirdek: cek }));
+  },
+
   async sablonSqlMetniYaz(projeId, parca, metin) {
     yazmaKontrol();
     const kolon = parca === 2 ? 'metin2' : parca === 3 ? 'metin3' : 'metin';
