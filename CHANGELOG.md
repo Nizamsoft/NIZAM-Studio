@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## v0.169.9
+- **Kütüphane ekranı dört büyük karta dönüştü:** Sektörler, Şablonlar, Nizam Standartları ve Templateler. Her kartta kendi rengi, ikonu, bir cümlelik açıklaması ve gerçek sayısı var (12 sektör, 18 tarif gibi).
+- "Projeleri kilitle" Kütüphane'den çıktı, Uygulama ve bakım başlığına taşındı — Kütüphane yalnızca kaynaklara ayrıldı.
+
 ## v0.169.8
 - **Telefon kaydediliyordu ama ekranda görünmüyordu.** Profil okunurken yalnızca ad, rol, aktiflik ve fotoğraf çekiliyordu; telefon sorguya katılmadığı için kutu her açılışta boş geliyordu. Artık geri okunuyor.
 - **Rol kutusu artık herkeste kilitli.** Kendi rolüne veritabanı zaten dokundurmuyor (son yönetici kendini geliştirici yapıp sistemi kilitlemesin diye); açık bir kutu göstermek yanıltıcıydı — seçim sessizce eski değere dönüyordu. Rolünü başka bir yönetici değiştirir.

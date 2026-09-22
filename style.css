@@ -8501,3 +8501,68 @@ a.asr:active{ transform:scale(.99); }
 @media (min-width: 901px) {
   .hs-kart, .hs-kaydet { max-width: 760px; }
 }
+
+/* ---- Kütüphane (Ayarlar › Kütüphane) ----
+   Dört büyük kart. Zemin ve ikon aynı renk ailesinden; sağdaki soluk çizim
+   sadece süs, `pointer-events: none` ile tıklamayı yutmuyor. */
+.kt-liste { display: flex; flex-direction: column; gap: 14px; }
+.kt {
+  position: relative; overflow: hidden;
+  display: flex; align-items: center; gap: 16px;
+  padding: 20px 18px; border-radius: 20px; text-decoration: none;
+  border: 1px solid transparent;
+}
+.kt-yz {
+  position: relative; z-index: 1;
+  display: flex; flex-direction: column; gap: 7px; min-width: 0; flex: 1;
+}
+.kt-yz b { font-size: 18px; font-weight: 700; color: var(--ink-strong); }
+.kt-yz i { font-style: normal; font-size: 14px; line-height: 1.45; color: var(--ink-dim); }
+.kt-yz em {
+  display: flex; align-items: center; gap: 7px; margin-top: 3px;
+  font-style: normal; font-size: 13.5px; font-weight: 600; color: var(--ink);
+}
+.kt-yz em svg { flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linejoin: round; }
+.kt-yz em .dolgu { display: none; }
+
+.kt-ikon {
+  position: relative; z-index: 1;
+  display: flex; align-items: center; justify-content: center;
+  width: 64px; height: 64px; flex-shrink: 0; align-self: flex-start;
+  border-radius: 18px; background: var(--surface);
+}
+.kt-ikon svg { fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+.kt-ikon .dolgu { display: none; }
+
+.kt-ok { position: relative; z-index: 1; flex-shrink: 0; line-height: 0; color: var(--ink-soluk); }
+.kt-ok svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+
+/* Süs: kartın sağ alt köşesinde ve yazının ARKASINDA. Yazı z-index ile
+   üstte duruyor, yoksa dolgu harflerin üstüne biniyordu. */
+.kt-sus {
+  position: absolute; right: 30px; bottom: -6px;
+  width: 92px; height: 92px; pointer-events: none; opacity: .16;
+}
+.kt-sus svg { width: 100%; height: 100%; fill: currentColor; stroke: none; }
+.kt-sus.cizgi svg {
+  fill: none; stroke: currentColor; stroke-width: 3.2;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+
+/* Renk aileleri */
+.kt-kirmizi { background: #fdf0ef; border-color: rgba(229, 52, 42, .10); }
+.kt-kirmizi .kt-ikon, .kt-kirmizi .kt-sus { color: var(--red); }
+.kt-mavi    { background: #eef3fc; border-color: rgba(47, 111, 208, .10); }
+.kt-mavi .kt-ikon, .kt-mavi .kt-sus { color: #2f6fd0; }
+.kt-yesil   { background: #ecf7f1; border-color: rgba(31, 138, 86, .10); }
+.kt-yesil .kt-ikon, .kt-yesil .kt-sus { color: #1f8a56; }
+.kt-mor     { background: #f2eefc; border-color: rgba(106, 69, 200, .10); }
+.kt-mor .kt-ikon, .kt-mor .kt-sus { color: #6a45c8; }
+
+@media (hover: none) {
+  .kt:active { transform: scale(.985); transition: transform .1s var(--ease); }
+}
+
+@media (min-width: 901px) {
+  .kt-liste { max-width: 760px; }
+}

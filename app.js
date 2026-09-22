@@ -112,6 +112,24 @@ let LOGO_ZAMANLAYICI = null;
    tek katman kalır — onlar simge değil, yön gösterir. */
 
 const ICON = {
+  /* Kütüphane kartları: pasta dilimi, doküman ve dört kutulu ızgara. */
+  pasta: {
+    d: '<path d="M12 3a9 9 0 0 1 9 9h-9z"></path>',
+    c: '<circle cx="12" cy="12" r="9"></circle><path d="M12 3v9h9"></path>',
+  },
+  dokuman: {
+    d: '<rect x="5" y="3" width="14" height="18" rx="2.5"></rect>',
+    c: '<rect x="5" y="3" width="14" height="18" rx="2.5"></rect>'
+     + '<path d="M9 8h6M9 12h6M9 16h3.5"></path>',
+  },
+  izgaraDort: {
+    d: '<rect x="4" y="4" width="7" height="7" rx="2"></rect>'
+     + '<rect x="13" y="13" width="7" height="7" rx="2"></rect>',
+    c: '<rect x="4" y="4" width="7" height="7" rx="2"></rect>'
+     + '<rect x="13" y="4" width="7" height="7" rx="2"></rect>'
+     + '<rect x="4" y="13" width="7" height="7" rx="2"></rect>'
+     + '<rect x="13" y="13" width="7" height="7" rx="2"></rect>',
+  },
   /* Hesap ekranı: fotoğraf rozeti, kaydet düğmesi ve rol satırı. */
   kamera: {
     d: '<circle cx="12" cy="13" r="3.4"></circle>',
@@ -868,34 +886,9 @@ const AYAR_GRUP = {
 
   kutuphane: {
     ad: 'Kütüphane', renk: 'mavi', ikon: 'folder',
-    aciklama: 'Sektörler, şablonlar, standartlar ve proje kaynakları.',
+    aciklama: 'Projelerinde kullanabileceğin tüm kaynaklar.',
     goster: () => true,
-    ciz: () => `
-      <div class="section" style="margin-top:0">
-        <span class="label">İçerik</span>
-        <div class="card">
-          <div class="row-list">
-            ${ayarSatir('sektorlere', 'Sektörler',
-              sektorAltBaslik() + ' · modül önerisini belirler')}
-            ${ayarSatir('sablonlara', 'Modül Şablonları',
-              sablonAltBaslik() + ' · yeni projelerde çıkan hazır modüller')}
-            ${ayarSatir('standartlara', 'Nizam Standartları',
-              DB.standartlar.length + ' tarif · prompta kendiliğinden eklenir')}
-          </div>
-        </div>
-      </div>
-
-      <div class="section">
-        <span class="label">Projeler</span>
-        <div class="card">
-          <div class="row-list">
-            ${ayarSatir('templatelere', 'Templateler',
-              cekirdekAltBaslik() + ' · yeni proje kurarken kaynak olarak seçilir')}
-            ${ayarSatir('kilitlere', 'Projeleri kilitle',
-              kilitAltBaslik() + ' · kilitli proje yanlışlıkla silinemez')}
-          </div>
-        </div>
-      </div>`,
+    ciz: () => `<div class="kt-liste">${KUTUPHANE.map(kutuphaneKarti).join('')}</div>`,
   },
 
   guvenlik: {
@@ -974,6 +967,16 @@ const AYAR_GRUP = {
         </div>
       </div>
 
+      <div class="section" ${''}>
+        <span class="label">Projeler</span>
+        <div class="card">
+          <div class="row-list">
+            ${ayarSatir('kilitlere', 'Projeleri kilitle',
+              kilitAltBaslik() + ' · kilitli proje yanlışlıkla silinemez')}
+          </div>
+        </div>
+      </div>
+
       <div class="section">
         <span class="label">Bakım</span>
         <div class="card">
@@ -1004,6 +1007,60 @@ const AYAR_GRUP = {
       </div>`,
   },
 };
+
+/* ---------- Kütüphane ----------
+   Dört büyük kart. Sağdaki soluk çizim süs: kartın ne olduğunu bir bakışta
+   anlatıyor, tıklanmıyor ve okunacak bir bilgi taşımıyor. */
+const KUTUPHANE = [
+  {
+    ad: 'Sektörler', adres: '#/sektorler', renk: 'kirmizi', ikon: 'pasta',
+    aciklama: 'Sektöre özel çözümler, örnek projeler ve referans içerikler.',
+    sayi: () => DB.sektorler.length + ' sektör',
+    sus: '<rect x="4" y="34" width="13" height="22" rx="4"></rect>'
+       + '<rect x="23" y="16" width="13" height="40" rx="4"></rect>'
+       + '<rect x="42" y="2" width="13" height="54" rx="4"></rect>',
+  },
+  {
+    ad: 'Şablonlar', adres: '#/sablonlar', renk: 'mavi', ikon: 'dokuman',
+    aciklama: 'Hızlı başlangıç için hazır proje şablonlarını keşfet.',
+    sayi: () => DB.modulSablonlari().length + ' şablon',
+    sus: '<path d="M30 2 56 15 30 28 4 15z"></path>'
+       + '<path d="M30 17 56 30 30 43 4 30z"></path>'
+       + '<path d="M30 32 56 45 30 58 4 45z"></path>',
+  },
+  {
+    ad: 'Nizam Standartları', adres: '#/standartlar', renk: 'yesil', ikon: 'gGuvenlik',
+    aciklama: 'Geliştirme süreçlerimizde uyduğumuz standartlar ve kurallar.',
+    sayi: () => DB.standartlar.length + ' tarif',
+    susCizgi: true,
+    sus: '<rect x="4" y="2" width="38" height="50" rx="6"></rect>'
+       + '<path d="M13 15h20M13 25h20M13 35h12"></path>'
+       + '<circle cx="45" cy="44" r="13"></circle>',
+  },
+  {
+    ad: 'Templateler', adres: '#/templateler', renk: 'mor', ikon: 'izgaraDort',
+    aciklama: 'Tekrar kullanılabilir UI bileşenleri, sayfa tasarımları ve kod yapıları.',
+    sayi: () => DB.projeler.filter(p => !p.arsiv && cekirdekMi(p)).length + ' template',
+    susCizgi: true,
+    sus: '<rect x="20" y="2" width="38" height="38" rx="8"></rect>'
+       + '<rect x="4" y="18" width="38" height="38" rx="8"></rect>'
+       + '<path d="M17 31l-4 6 4 6M29 31l4 6-4 6"></path>',
+  },
+];
+
+function kutuphaneKarti(k) {
+  return `
+    <a class="kt kt-${k.renk}" href="${k.adres}" draggable="false">
+      <span class="kt-sus ${k.susCizgi ? 'cizgi' : ''}"><svg viewBox="0 0 60 60">${k.sus}</svg></span>
+      <span class="kt-ikon">${svg(ICON[k.ikon], 30)}</span>
+      <span class="kt-yz">
+        <b>${esc(k.ad)}</b>
+        <i>${esc(k.aciklama)}</i>
+        <em>${svg(ICON.katman, 15)}${esc(YUKLENIYOR ? 'yükleniyor…' : k.sayi())}</em>
+      </span>
+      <span class="kt-ok">${svg(ICON.chevron, 20)}</span>
+    </a>`;
+}
 
 /* Hesap ekranındaki tek alan kartı: solda ikon+etiket, altında kutu. */
 function hesapAlani(ikon, etiket, icerik, ipucu = '') {
