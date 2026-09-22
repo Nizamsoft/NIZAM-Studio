@@ -8566,3 +8566,52 @@ a.asr:active{ transform:scale(.99); }
 @media (min-width: 901px) {
   .kt-liste { max-width: 760px; }
 }
+
+/* ---- Sektörler ----
+   Ad ve modül sayısı; açıklama alanı yok. Kart yüksekliği ona göre. */
+.sk-liste { display: flex; flex-direction: column; gap: 12px; }
+.sk-liste.bos .pj-bos-arama { display: block; }
+.sk.gizli { display: none; }
+.sk {
+  display: flex; align-items: center; gap: 16px; width: 100%;
+  padding: 14px 16px; border-radius: 16px; cursor: pointer; text-align: left;
+  background: var(--surface); border: 1px solid var(--line-3);
+  font-family: inherit;
+}
+.sk:hover { border-color: var(--line-2); }
+.sk-ikon {
+  display: flex; align-items: center; justify-content: center;
+  width: 58px; height: 58px; flex-shrink: 0; border-radius: 16px;
+  background: var(--red-soft); color: var(--red);
+}
+.sk-ikon svg { fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linejoin: round; }
+.sk-ikon .dolgu { display: none; }
+.sk-yz { display: flex; flex-direction: column; gap: 7px; min-width: 0; flex: 1; }
+.sk-yz b {
+  font-size: 16.5px; font-weight: 700; color: var(--ink-strong);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.sk-yz em {
+  display: flex; align-items: center; gap: 7px;
+  font-style: normal; font-size: 13.5px; color: var(--ink-dim);
+}
+.sk-yz em svg { flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linejoin: round; }
+.sk-yz em .dolgu { display: none; }
+.sk-ok { flex-shrink: 0; line-height: 0; color: var(--ink-soluk); }
+.sk-ok svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+
+/* Yalnız ikon taşıyan araç düğmesi (sıralama) kare dursun. */
+.pj-arac.tekil { width: 46px; padding: 0; justify-content: center; }
+.pj-arac.tekil svg { fill: none; }
+
+@media (hover: none) {
+  .sk:active { transform: scale(.985); transition: transform .1s var(--ease); }
+}
+@media (min-width: 901px) {
+  .sk-liste { max-width: 760px; }
+}
+/* Araç çubuğundaki "Yeni" arama kutusuyla aynı boyda dursun. */
+.pj-araclar .pj-yeni { height: 46px; padding: 0 20px; }
+/* Sektörlerde üç araç tek satıra sığsın: arama kutusu daralabilir.
+   (Projeler'de arama tek başına satırı kaplıyor, o kural burada geçersiz.) */
+.pj-araclar.sk-arac .pj-ara { flex: 1 1 120px; }

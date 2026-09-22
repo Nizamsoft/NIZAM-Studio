@@ -93,6 +93,8 @@ let GOREV_FILTRE   = '';
    çizdiriyor. Görünüm tercihi kalıcı: kullanıcı her girişte seçmesin. */
 let PROJE_ARAMA  = '';
 /* Ekip ekranının araçları — Projeler'dekiyle aynı mantık. */
+let SEKTOR_ARAMA = '';
+let SEKTOR_SIRA  = 'sira';
 let EKIP_ARAMA = '';
 let SOHBET_ARAMA = '';
 let EKIP_SUZ   = 'tumu';
@@ -112,6 +114,9 @@ let LOGO_ZAMANLAYICI = null;
    tek katman kalır — onlar simge değil, yön gösterir. */
 
 const ICON = {
+  /* Sıralama düğmesi — üstte uzun, altta kısa çizgi ve aşağı ok. */
+  suzgecSira: '<path fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"'
+    + ' d="M4 7h13M4 12h9M4 17h5M17 13v7M17 20l-2.6-2.6M17 20l2.6-2.6"></path>',
   /* Kütüphane kartları: pasta dilimi, doküman ve dört kutulu ızgara. */
   pasta: {
     d: '<path d="M12 3a9 9 0 0 1 9 9h-9z"></path>',
@@ -567,23 +572,34 @@ const VIEWS = {
     if (YUKLENIYOR) return iskeletler(3);
     if (DB.hata)    return hataKutusu(DB.hata);
 
-    const liste = DB.sektorler;
+    const liste = skSirala(DB.sektorler);
 
     return `
-      <div class="note" style="margin-bottom:12px">
-        ${svg(ICON.info, 15)}
-        <span>Sektör, yeni proje kurarken hangi modüllerin önden işaretleneceğini
-        belirler. Sonradan değiştirmen kurulmuş projeleri etkilemez.</span>
+      <div class="pj-tepe">
+        <div class="pj-tepe-yz">
+          <h1>Sektörler</h1>
+          <p>Projene uygun sektörü seç, hazır içerikleri keşfet.</p>
+        </div>
       </div>
 
-      ${AUTH.yonetici ? `
-        <div class="standart-arac">
-          <button class="mini-link" data-eylem="sektor-ekle" type="button">
-            ${svg(ICON.arti, 13)} Yeni Sektör</button>
-        </div>` : ''}
+      <div class="pj-araclar ekip sk-arac">
+        <label class="pj-ara">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.4"></circle><path d="M15.8 15.8L20.5 20.5"></path></svg>
+          <input id="sk-ara" type="search" autocomplete="off" placeholder="Sektör ara…"
+            value="${esc(SEKTOR_ARAMA)}">
+        </label>
+        <button class="pj-arac tekil" type="button" data-eylem="sektor-sirala"
+                aria-label="Sıralama: ${esc(skSiraAdi())}" title="Sıralama: ${esc(skSiraAdi())}">
+          ${svg(ICON.suzgecSira, 17)}
+        </button>
+        ${AUTH.yonetici ? `<button class="pj-yeni" type="button" data-eylem="sektor-ekle">
+          ${svg(ICON.arti, 16)}<span>Yeni</span></button>` : ''}
+      </div>
 
       ${liste.length
-        ? `<div class="card liste">${liste.map(sektorSatiri).join('')}</div>`
+        ? `<div class="sk-liste">${liste.map(sektorKarti).join('')}
+             <div class="pj-bos-arama">Aramana uyan sektör yok.</div>
+           </div>`
         : `<div class="card">${empty(ICON.folder, 'Sektör yok',
             'Sektör eklersen sihirbazda çıkar ve modülleri önden işaretler.',
             AUTH.yonetici ? 'Yeni Sektör' : null, 'sektor-ekle')}</div>`}
@@ -6876,6 +6892,7 @@ function render() {
   pjAramaUygula();
   ekipAramaUygula();
   sohbetAramaUygula();
+  skAramaUygula();
   if (kaydirmaYeri) {
     const yeni = $('.dk-govde, .kunye-kaydir, .ozet-kaydir, .palet-kaydir');
     if (yeni) yeni.scrollTop = kaydirmaYeri;
@@ -7110,17 +7127,53 @@ function sektorAltBaslik() {
   return DB.sektorler.length + ' sektör';
 }
 
-function sektorSatiri(x, i = 0) {
-  const m = x.moduller || [];
+/* Sektör kartı. Açıklama alanı yok — kartta ad ve modül sayısı duruyor. */
+function sektorKarti(x) {
+  const n = (x.moduller || []).length;
   return `
-    <div class="row" style="--i:${i}" data-eylem="sektor-duzenle" data-id="${x.id}"
-         role="button" tabindex="0">
-      <div class="row-main">
-        <span class="row-title">${esc(x.ad)}</span>
-        <span class="row-sub">${m.length ? m.join(' · ') : 'modül önerisi yok'}</span>
-      </div>
-      <span class="row-val">${svg(ICON.chevron, 15)}</span>
-    </div>`;
+    <button class="sk" type="button" data-eylem="sektor-duzenle" data-id="${esc(x.id)}"
+            data-ara="${esc(String(x.ad || '').toLocaleLowerCase('tr'))}">
+      <span class="sk-ikon">${svg(ICON.katman, 26)}</span>
+      <span class="sk-yz">
+        <b>${esc(x.ad)}</b>
+        <em>${svg(ICON.katman, 15)}${n ? n + ' modül' : 'modül önerisi yok'}</em>
+      </span>
+      <span class="sk-ok">${svg(ICON.chevron, 18)}</span>
+    </button>`;
+}
+
+const SK_SIRA = [
+  { anahtar: 'sira',  ad: 'Kendi sırası' },
+  { anahtar: 'ad',    ad: 'Ada göre' },
+  { anahtar: 'modul', ad: 'Modül sayısına göre' },
+];
+
+function skSiraAdi() {
+  return (SK_SIRA.find(x => x.anahtar === SEKTOR_SIRA) || SK_SIRA[0]).ad;
+}
+
+function skSirala(liste) {
+  const l = (liste || []).slice();
+  if (SEKTOR_SIRA === 'ad') {
+    return l.sort((a, b) => String(a.ad || '').localeCompare(String(b.ad || ''), 'tr'));
+  }
+  if (SEKTOR_SIRA === 'modul') {
+    return l.sort((a, b) => (b.moduller || []).length - (a.moduller || []).length);
+  }
+  return l;
+}
+
+/* Arama yazarken ekran yeniden çizilmiyor: kartlar yerinde, uymayan gizleniyor. */
+function skAramaUygula() {
+  const liste = $('.sk-liste');
+  if (!liste) return;
+  let gorunen = 0;
+  $$('.sk', liste).forEach(k => {
+    const uyar = !SEKTOR_ARAMA || (k.dataset.ara || '').indexOf(SEKTOR_ARAMA) >= 0;
+    k.classList.toggle('gizli', !uyar);
+    if (uyar) gorunen++;
+  });
+  liste.classList.toggle('bos', gorunen === 0);
 }
 
 function sablonAltBaslik() {
@@ -14117,6 +14170,13 @@ async function eylemCalistir(el) {
 
   if (e === 'sektorlere')     { location.hash = '#/sektorler'; return; }
   if (e === 'sektor-ekle')    return sektorDuzenle(null);
+  if (e === 'sektor-sirala') {
+    const sec = await secenekSor('Sıralama', SK_SIRA);
+    if (!sec) return;
+    SEKTOR_SIRA = sec;
+    return render();
+  }
+
   if (e === 'sektor-duzenle') return sektorDuzenle(id);
 
   if (e === 'sablonlara')     { location.hash = '#/sablonlar'; return; }
@@ -15371,6 +15431,9 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (e.target.matches('#ek-ara')) {
       EKIP_ARAMA = e.target.value.trim().toLocaleLowerCase('tr');
       ekipAramaUygula();
+    } else if (e.target.matches('#sk-ara')) {
+      SEKTOR_ARAMA = e.target.value.trim().toLocaleLowerCase('tr');
+      skAramaUygula();
     } else if (e.target.matches('#sh-ara')) {
       SOHBET_ARAMA = e.target.value.trim().toLocaleLowerCase('tr');
       sohbetAramaUygula();

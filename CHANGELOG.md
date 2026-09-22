@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## v0.170.0
+- **Sektörler ekranı yenilendi.** Başlık, arama kutusu, sıralama düğmesi ve kırmızı "Yeni" tek satırda; altında kart kart sektörler (pembe ikon karosu, ad, modül sayısı).
+- Sıralama: kendi sırası, ada göre veya modül sayısına göre. Arama yazarken ekran yeniden çizilmiyor, uymayan kartlar gizleniyor.
+
 ## v0.169.9
 - **Kütüphane ekranı dört büyük karta dönüştü:** Sektörler, Şablonlar, Nizam Standartları ve Templateler. Her kartta kendi rengi, ikonu, bir cümlelik açıklaması ve gerçek sayısı var (12 sektör, 18 tarif gibi).
 - "Projeleri kilitle" Kütüphane'den çıktı, Uygulama ve bakım başlığına taşındı — Kütüphane yalnızca kaynaklara ayrıldı.
