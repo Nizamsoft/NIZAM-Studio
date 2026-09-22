@@ -8341,3 +8341,12 @@ a.asr:active{ transform:scale(.99); }
 }
 .sh2.yeni { background: var(--red-soft); border-radius: 12px; }
 .sh2.yeni .sh2-orta i { color: var(--ink); font-weight: 600; }
+
+/* ---- Üst çubuk: buzlu cam yok ----
+   Koyu temadan kalma `backdrop-filter: blur(18px)` beyaz zeminde hiçbir şey
+   katmıyordu ama her sayfa değişiminde telefonun altındaki bütün içeriği
+   yeniden bulanıklaştırıyor, geçişi gözle görülür yavaşlatıyordu. */
+#topbar {
+  background: var(--surface);
+  backdrop-filter: none; -webkit-backdrop-filter: none;
+}

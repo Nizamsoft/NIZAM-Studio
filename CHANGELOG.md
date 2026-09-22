@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.169.1
+- **Ekran geçişleri telefonda hızlandı.** Üst çubuktaki buzlu cam (koyu temadan kalma) her sayfa değişiminde altındaki bütün içeriği yeniden bulanıklaştırıyordu; kaldırıldı, çubuk düz beyaz. Beyaz zeminde zaten görünmüyordu.
+
 ## v0.169.0
 **Mesajlaşma çalışıyor.**
 - Kişiden kişiye mesaj; yazıp gönderiyorsun, karşı taraftaki anında görüyor (canlı bağlantı).
