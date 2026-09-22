@@ -7604,6 +7604,7 @@ function templateAyarlari(projeId) {
   const paketler  = (DB.paketler || []).filter(k => paketinAkisi(k) !== 'ozel');
   const sektorler = DB.sektorler || [];
   const yayinAdres = String(pl.alanAdi || '').trim();
+  const hazir = !!pl.cekirdekTemizlendi;
 
   modalAc(`
     <div class="pd-tepe">
@@ -7671,12 +7672,14 @@ function templateAyarlari(projeId) {
     </div>
 
     <div class="tp-isler">
-      <button class="tp-is" type="button" data-ta="kurulum">
+      ${/* Kurulum adımları (depo, SQL, temizlik) template'i AYAĞA KALDIRMAK
+            için. Kurulum bitince burada durmasının anlamı yok. */''}
+      ${hazir ? '' : `<button class="tp-is" type="button" data-ta="kurulum">
         <span class="tp-is-ik">${svg(ICON.dal, 19)}</span>
         <span class="tp-is-yz"><b>Kurulum Adımları</b>
-          <i>GitHub, SQL ve Claude bağlantılarını yapılandır.</i></span>
+          <i>Depo, kurulum SQL'i ve temizlik — template'i hazır hâle getirir.</i></span>
         ${svg(ICON.chevron, 16)}
-      </button>
+      </button>`}
       ${yayinAdres ? `<button class="tp-is" type="button" data-ta="yayin">
         <span class="tp-is-ik">${svg(ICON.disari, 19)}</span>
         <span class="tp-is-yz"><b>Uygulamayı Aç</b>
@@ -7746,7 +7749,8 @@ function templateAyarlari(projeId) {
       kutucuk.classList.toggle('sec', i === -1);
     }));
 
-    $('[data-ta="kurulum"]', kutu).addEventListener('click', () => {
+    const kurulumDug = $('[data-ta="kurulum"]', kutu);
+    if (kurulumDug) kurulumDug.addEventListener('click', () => {
       modalKapat();
       cekirdekKurulumAc(p.id);
     });
@@ -8799,7 +8803,7 @@ function cekirdekKurulumHtml(p, liste) {
       <button class="sh-kapat" data-ck="kapat" type="button" aria-label="Kapat">
         ${svg(ICON.kapat, 15)}
       </button>
-      <span class="sh-ad">${esc(projeAdi(p))} — Template kurulumu</span>
+      <span class="sh-ad">${esc(p.firma || 'Template')} — Template kurulumu</span>
       ${AUTH.yonetici ? `<button class="sh-kapat" data-ck="sil" type="button"
                 aria-label="Template'i sil" title="Template'i sil">
           ${svg(ICON.cop, 15)}

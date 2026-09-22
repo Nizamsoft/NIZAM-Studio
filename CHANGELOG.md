@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## v0.172.4
+- **Kurulum Adımları satırı, kurulum bitince görünmüyor.** O adımlar (depo, kurulum SQL'i, temizlik) template'i ayağa kaldırmak için; hazır bir template'te durmalarının anlamı yoktu.
+- Template kurulum penceresinin başlığında artık template'in kendi adı yazıyor, arkasına modül adı eklenmiyor.
+
 ## v0.172.3
 - **Arka plan rengi artık seçilmiyor, kendiliğinden veriliyor.** Listedeki her template bir öncekinden farklı renk alıyor; beş renk bitince başa dönüyor.
 - "Karıştır" kutusu, renk seçme satırı ve sektör kutularındaki ikonlar kaldırıldı — sektörler sade yazı olarak duruyor.
