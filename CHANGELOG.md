@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.166.2
+- Açık görev yoksa "En yakın bitiş" satırında **"Görev yok"** yazıyor; uydurma tarih kalktı. Görev varsa ama teslim tarihi girilmemişse "Tarih yok".
+
 ## v0.166.1
 - **Onarım:** proje detayı açılmıyordu ("Can't find variable: biten"). Yüzde hesabı ortak fonksiyona taşınırken adım sayacı yanlışlıkla silinmişti.
 

@@ -14228,12 +14228,13 @@ function panelSayilar(projeler) {
 
   const aylar = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz',
                  'Ağustos','Eylül','Ekim','Kasım','Aralık'];
-  /* GEÇİCİ: en yakın bitiş tarihi. Projede teslim tarihi varsa gerçeği
-     yazılıyor; yoksa şimdilik bugünün tarihi görünüyor. Bu satırın asıl
-     mantığı (hangi tarih, neye göre) sonra kurulacak. */
-  const yakin = enYakinTeslim(projeler);
-  const t = yakin ? yakin.t : new Date();
-  const tarihYazi = `${t.getDate()} ${aylar[t.getMonth()]} ${t.getFullYear()}`;
+  /* En yakın bitiş. Açık görev yoksa tarih de yok — uydurma tarih yazmıyoruz.
+     Görev varsa projelerin teslim tarihlerinden bugünden sonraki en yakını.
+     Görev sistemi baştan yazılınca bu satırın kaynağı da değişecek. */
+  const yakin = acik ? enYakinTeslim(projeler) : null;
+  const tarihYazi = !acik ? 'Görev yok'
+    : yakin ? `${yakin.t.getDate()} ${aylar[yakin.t.getMonth()]} ${yakin.t.getFullYear()}`
+            : 'Tarih yok';
 
   const klasorDolu = '<svg viewBox="0 0 24 24" style="width:19px;height:19px">'
     + '<path fill="#fff" stroke="none" d="M3 7.5A2.5 2.5 0 0 1 5.5 5h3.2l2 2h8.8A2.5 2.5 0 0 1 22 9.5v8A2.5 2.5 0 0 1 19.5 20h-15A2.5 2.5 0 0 1 2 17.5z"></path></svg>';
