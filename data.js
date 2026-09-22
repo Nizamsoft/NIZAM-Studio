@@ -854,20 +854,34 @@ const DB = {
 
     let { data, error } = await yaz(alanlar);
     let uyari = null;
-    /* Sütun yoksa hata metni sunucunun sürümüne göre değişiyor; "tanim"
-       geçmese de sütun/şema hatasıysa onsuz bir daha deniyoruz. */
+    /* Sütun yoksa hata metni sunucunun sürümüne göre değişiyor; alan adı
+       geçmese de sütun/şema hatasıysa yeni alanlar olmadan bir daha
+       deniyoruz — paketin geri kalanı yine kaydedilsin. */
+    const YENI_ALANLAR = ['tanim', 'varsayilan'];
     const sutunHatasi = e => {
       const m = (e && e.message) || '';
-      return /tanim/.test(m) || /column|schema cache|PGRST204/i.test(m);
+      return YENI_ALANLAR.some(x => m.includes(x))
+          || /column|schema cache|PGRST204/i.test(m);
     };
-    if (error && alanlar.tanim !== undefined && sutunHatasi(error)) {
+    if (error && YENI_ALANLAR.some(x => alanlar[x] !== undefined) && sutunHatasi(error)) {
       const kopya = Object.assign({}, alanlar);
-      delete kopya.tanim;
+      YENI_ALANLAR.forEach(x => { delete kopya[x]; });
       ({ data, error } = await yaz(kopya));
-      uyari = 'Paket kaydedildi; prompt tanımı için sql/26-paket-tanim.sql çalıştırılmamış.';
+      uyari = 'Paket kaydedildi; yeni alanlar için sql/27-paket-varsayilan.sql çalıştırılmamış.';
     }
     if (error) throw new Error(paketHatasi(error));
     if (!data || !data.length) throw new Error(paketHatasi({}));
+
+    /* Varsayılan tek olmalı: bu pakete işaret konduysa diğerlerinden kalkar. */
+    if (!uyari && alanlar.varsayilan === true) {
+      const yeniId = id || (data[0] && data[0].id);
+      if (yeniId) {
+        const temiz = await AUTH.db.from('packages')
+          .update({ varsayilan: false }).neq('id', yeniId);
+        if (temiz.error) throw new Error(paketHatasi(temiz.error));
+      }
+    }
+
     await this.tazele('paketler');
     return { uyari };
   },

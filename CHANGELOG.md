@@ -1,5 +1,14 @@
 # Değişiklik Günlüğü
 
+## v0.171.0
+**Paket penceresi yeniden tasarlandı.**
+- Turuncu ikon, başlıkta paketin adı, sağ üstte kapatma; Paket Adı, Açıklama ve "Promptda nasıl anlatılsın?" alanları, altta tam genişlikte Kaldır, kırmızı Kaydet.
+- Uzun metin kutuları **içeriğe göre uzuyor** ve sağ altta **karakter sayacı** var (500 / 1000).
+- **"Varsayılan olarak işaretle"** geldi: sıfırdan proje kurulurken artık bu paket bağlanıyor. Aynı anda yalnız bir paket varsayılan olabiliyor; kartta rozetle görünüyor.
+- **"Promptda nasıl anlatılsın?" artık serbest bir paragraf.** Eskiden cümlenin içine gömülüyordu ve ek uyumu için kısa bir ad olmak zorundaydı; şimdi promptlara "Bu paket nedir" başlığıyla olduğu gibi giriyor. Boşsa o başlık hiç basılmıyor.
+- "Yol haritası" seçimi tasarımda yoktu ama korundu — olmazsa ikinci bir "hazır program" paketi kurulamıyor.
+- **Kurulum:** `sql/27-paket-varsayilan.sql` → Supabase SQL Editor'de çalıştır. (sql/26 çalıştırılmadıysa onu da kapatıyor.)
+
 ## v0.170.5
 - **"Promptta nasıl anlatılsın?" sessizce boş kalıyordu.** Sütun veritabanında yoksa alan kaydedilemiyor ama bunu yalnızca kaybolup giden bir bildirim söylüyordu. Artık Paketler ekranının tepesinde kalıcı bir uyarı ve kutunun altında hangi SQL'in çalıştırılacağı yazıyor.
 - Sütun eksikliği hatasının metni sunucu sürümüne göre değişebiliyordu; yakalama genişletildi, paketin diğer alanları her hâlükârda kaydediliyor.

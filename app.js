@@ -113,6 +113,11 @@ let LOGO_ZAMANLAYICI = null;
    tek katman kalır — onlar simge değil, yön gösterir. */
 
 const ICON = {
+  /* Yıldız — "varsayılan" işareti. */
+  yildiz: {
+    d: '<path d="M12 3.6l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.8-5.2 2.8 1-5.8-4.3-4.1 5.9-.9z"></path>',
+    c: '<path d="M12 3.6l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.8-5.2 2.8 1-5.8-4.3-4.1 5.9-.9z"></path>',
+  },
   /* Paket — kapaklı kutu. */
   paket: {
     d: '<path d="M12 3l8 4.2v9.6L12 21l-8-4.2V7.2z"></path>',
@@ -620,7 +625,7 @@ const VIEWS = {
     const liste = DB.paketler || [];
     /* Sütun yoksa okunan satırda anahtar hiç bulunmuyor. Kaydederken çıkan
        uyarı kayboluyordu; burada kalıcı duruyor. */
-    const tanimYok = liste.length && !('tanim' in liste[0]);
+    const tanimYok = paketYeniAlanlarKapali();
 
     return `
       <div class="pj-tepe">
@@ -634,9 +639,10 @@ const VIEWS = {
 
       ${tanimYok ? `<div class="note" style="margin-bottom:14px">
         ${svg(ICON.uyari, 15)}
-        <span><b>"Promptta nasıl anlatılsın?"</b> kaydedilemiyor —
-        <b class="mono">sql/26-paket-tanim.sql</b> dosyası Supabase'de
-        çalıştırılmamış. Paketin diğer alanları normal kaydediliyor.</span>
+        <span><b>"Promptda nasıl anlatılsın?"</b> ve <b>varsayılan işareti</b>
+        kaydedilemiyor — <b class="mono">sql/27-paket-varsayilan.sql</b> dosyası
+        Supabase'de çalıştırılmamış. Paketin diğer alanları normal
+        kaydediliyor.</span>
       </div>` : ''}
 
       ${liste.length
@@ -1236,14 +1242,21 @@ function sablonMu(p) {
   return paketAkisi(p) === 'muhasebe';
 }
 
-/* Claude'a giden promptlarda bu paket nasıl anlatılıyor. Cümlenin içine düz
-   bir ad gibi giriyor ("çalışan bir <tanim> var"), o yüzden ek almayan bir
-   ad bekliyoruz. Yazılmamışsa nötr bir sözcüğe düşüyoruz — eskiden buralarda
+/* Claude'a giden promptlarda bu paketi anlatan metin. Serbest bir paragraf:
+   cümlenin içine gömülmüyor, "Bu paket nedir" başlığıyla olduğu gibi
+   giriyor — böylece Türkçe ek uyumu derdi olmuyor ve istediğin kadar
+   uzun yazabiliyorsun. Boşsa o başlık hiç basılmıyor; eskiden buralarda
    "muhasebe programı" düz yazı duruyordu ve ikinci bir paket eklendiğinde
    Claude'a yanlış şey anlatıyordu. */
 function paketTanimi(p) {
   const k = projePaketi(p);
-  return (k && String(k.tanim || '').trim()) || 'program';
+  return (k && String(k.tanim || '').trim()) || '';
+}
+
+/* Promptun içine düşen blok — tanım yoksa hiçbir şey eklemiyor. */
+function paketTanimBloku(p) {
+  const t = paketTanimi(p);
+  return t ? ['## Bu paket nedir', '', t, ''] : [];
 }
 
 /* DURAKLAR'daki statik durak nesnesinin (ad/aciklama) şablon durumuna göre
@@ -7192,7 +7205,7 @@ function paketKarti(x) {
     <button class="lk" type="button" data-eylem="paket-duzenle" data-id="${esc(x.id)}">
       <span class="lk-ikon turuncu">${svg(ICON.paket, 26)}</span>
       <span class="lk-yz">
-        <b>${esc(x.ad)}</b>
+        <b>${esc(x.ad)}${x.varsayilan ? '<u class="lk-rozet">Varsayılan</u>' : ''}</b>
         <i>${esc(x.aciklama || paketAkisAdi(x.akis))}</i>
         <em>${svg(ICON.folder, 15)}${n ? n + ' proje' : 'proje yok'}</em>
       </span>
@@ -7200,64 +7213,108 @@ function paketKarti(x) {
     </button>`;
 }
 
-/* Paket yazma / düzenleme. Akış kodda tanımlı; burada yalnız hangisinin
-   kullanılacağı seçiliyor. */
+/* Paket penceresi. Akış kodda tanımlı; burada yalnız hangisinin
+   kullanılacağı seçiliyor — o alan tasarımda yoktu ama olmazsa ikinci bir
+   "hazır program" paketi hiç kurulamıyor. */
 function paketDuzenle(id) {
   modalHepsiniKapat();
   const x = id ? (DB.paketler || []).find(k => k.id === id) : null;
   let akis = x ? (x.akis || 'ozel') : 'ozel';
-  /* Sütun kurulmadıysa kutuyu göstermeye devam ediyoruz ama neden
-     kaydedilmediğini altında yazıyoruz. */
-  const tanimKapali = (DB.paketler || []).length && !('tanim' in DB.paketler[0]);
+  let varsayilan = !!(x && x.varsayilan);
+  /* Sütunlar kurulmadıysa kutular görünür ama neden kaydedilmediği yazılır. */
+  const yeniKapali = paketYeniAlanlarKapali();
+
+  const sayac = (deger, sinir) => `${String(deger || '').length}/${sinir}`;
 
   modalAc(`
-    ${modalBaslik(ICON.paket, x ? 'Paketi düzenle' : 'Yeni paket',
-      'Paket, projenin hangi yol haritasından geçeceğini söyler.')}
+    <div class="pd-tepe">
+      <span class="pd-ikon">${svg(ICON.paket, 26)}</span>
+      <span class="pd-yz">
+        <b>${esc(x ? x.ad : 'Yeni paket')}</b>
+        <i>Paket bilgilerini düzenleyin.</i>
+      </span>
+      <button class="pd-kapat" type="button" data-pk="iptal" aria-label="Kapat">
+        ${svg(ICON.kapat, 18)}
+      </button>
+    </div>
 
-    <label class="field">
-      <span>Paket adı</span>
-      <input type="text" id="pk-ad" value="${esc(x ? x.ad : '')}"
+    <label class="pd-alan">
+      <span class="pd-et">Paket Adı</span>
+      <input class="pd-giris" type="text" id="pk-ad" value="${esc(x ? x.ad : '')}"
              placeholder="Örn. Muhasebe-2" maxlength="40" autocomplete="off">
     </label>
 
-    <label class="field">
-      <span>Açıklama <em class="ipucu">isteğe bağlı</em></span>
-      <input type="text" id="pk-aciklama" value="${esc(x ? (x.aciklama || '') : '')}"
-             placeholder="Bir cümleyle ne olduğu" maxlength="120" autocomplete="off">
+    <label class="pd-alan">
+      <span class="pd-et">Açıklama</span>
+      <span class="pd-kutu">
+        <textarea class="pd-giris" id="pk-aciklama" rows="3" maxlength="500"
+          placeholder="Bu paket kısaca ne?">${esc(x ? (x.aciklama || '') : '')}</textarea>
+        <em class="pd-sayac" data-sayac="pk-aciklama" data-sinir="500">${
+          sayac(x && x.aciklama, 500)}</em>
+      </span>
     </label>
 
-    <label class="field">
-      <span>Promptta nasıl anlatılsın? <em class="ipucu">isteğe bağlı</em></span>
-      <input type="text" id="pk-tanim" value="${esc(x ? (x.tanim || '') : '')}"
-             placeholder="Örn. muhasebe programı" maxlength="60" autocomplete="off">
-      <p class="ipucu">${tanimKapali
-        ? 'Bu alan için sql/26-paket-tanim.sql dosyası Supabase\'de çalıştırılmalı.'
-        : 'Claude\'a giden metinlerde "çalışan bir <b>…</b> var" diye geçiyor. Ek almayan bir ad yaz.'}</p>
+    <label class="pd-alan">
+      <span class="pd-et">Promptda nasıl anlatılsın?
+        <button class="pd-info" type="button" data-eylem="paket-tanim-bilgi"
+                aria-label="Bu alan ne işe yarar?">${svg(ICON.info, 16)}</button>
+      </span>
+      <span class="pd-kutu">
+        <textarea class="pd-giris" id="pk-tanim" rows="4" maxlength="1000"
+          placeholder="Claude'a bu paketi anlatan birkaç cümle…">${
+            esc(x ? (x.tanim || '') : '')}</textarea>
+        <em class="pd-sayac" data-sayac="pk-tanim" data-sinir="1000">${
+          sayac(x && x.tanim, 1000)}</em>
+      </span>
+      ${yeniKapali ? `<i class="pd-ipucu uyari">Bu alan için
+        <b class="mono">sql/27-paket-varsayilan.sql</b> çalıştırılmalı.</i>` : ''}
     </label>
 
-    <div class="field">
-      <span>Yol haritası</span>
+    <div class="pd-alan">
+      <span class="pd-et">Yol haritası</span>
       <div class="secenek-serit" id="pk-akis">
         ${PAKET_AKISLARI.map(a => `<button class="ss ${akis === a.anahtar ? 'sec' : ''}"
           data-pk-akis="${a.anahtar}" type="button">${esc(a.ad)}</button>`).join('')}
       </div>
-      <p class="ipucu" id="pk-akis-alt">${esc(
-        (PAKET_AKISLARI.find(a => a.anahtar === akis) || PAKET_AKISLARI[0]).alt)}</p>
+      <i class="pd-ipucu" id="pk-akis-alt">${esc(
+        (PAKET_AKISLARI.find(a => a.anahtar === akis) || PAKET_AKISLARI[0]).alt)}</i>
     </div>
 
-    <div class="note note-kucuk">
-      ${svg(ICON.info, 15)}
-      <span>Yol haritasını değiştirmek kurulmuş projeleri de etkiler —
-      o pakete bağlı her projenin adımları bu listeye göre çizilir.</span>
-    </div>
+    <button class="pd-anahtar ${varsayilan ? 'acik' : ''}" type="button" data-pk="varsayilan"
+            role="switch" aria-checked="${varsayilan}">
+      <span class="pd-anahtar-ikon">${svg(ICON.yildiz, 20)}</span>
+      <span class="pd-anahtar-yz">
+        <b>Varsayılan olarak işaretle</b>
+        <i>Yeni proje oluştururken bu paket seçili olsun.</i>
+      </span>
+      <span class="pd-anahtar-kol"><u></u></span>
+    </button>
+
+    ${x ? `<button class="pd-kaldir" type="button" data-pk="sil">
+      ${svg(ICON.cop, 17)}<span>Kaldır</span></button>` : ''}
 
     <div class="modal-alt">
-      ${x ? '<button class="btn btn-ghost tehlike" data-pk="sil" type="button">Kaldır</button>' : ''}
       <button class="btn btn-ghost" data-pk="iptal" type="button">Vazgeç</button>
-      <button class="btn btn-primary" data-pk="kaydet" type="button"><span>Kaydet</span></button>
+      <button class="btn btn-primary pd-kaydet" data-pk="kaydet" type="button"><span>Kaydet</span></button>
     </div>`, kutu => {
     setTimeout(() => $('#pk-ad', kutu).focus(), 40);
-    $('[data-pk="iptal"]', kutu).addEventListener('click', modalKapat);
+    $$('[data-pk="iptal"]', kutu).forEach(b => b.addEventListener('click', modalKapat));
+
+    /* Sayaçlar yazdıkça güncelleniyor. Kutu da içeriğe göre uzuyor: sabit
+       yükseklikte kalsaydı uzun metin kayar ve sayacın altına girerdi. */
+    const buyut = t => {
+      t.style.height = 'auto';
+      t.style.height = Math.min(t.scrollHeight, 280) + 'px';
+    };
+    $$('[data-sayac]', kutu).forEach(em => {
+      const alan = $('#' + em.dataset.sayac, kutu);
+      if (!alan) return;
+      buyut(alan);
+      alan.addEventListener('input', () => {
+        em.textContent = alan.value.length + '/' + em.dataset.sinir;
+        buyut(alan);
+      });
+    });
 
     $$('[data-pk-akis]', kutu).forEach(b => b.addEventListener('click', () => {
       akis = b.dataset.pkAkis;
@@ -7265,6 +7322,13 @@ function paketDuzenle(id) {
       const a = PAKET_AKISLARI.find(y => y.anahtar === akis);
       $('#pk-akis-alt', kutu).textContent = a ? a.alt : '';
     }));
+
+    const anahtar = $('[data-pk="varsayilan"]', kutu);
+    anahtar.addEventListener('click', () => {
+      varsayilan = !varsayilan;
+      anahtar.classList.toggle('acik', varsayilan);
+      anahtar.setAttribute('aria-checked', String(varsayilan));
+    });
 
     const silDug = $('[data-pk="sil"]', kutu);
     if (silDug) silDug.addEventListener('click', async () => {
@@ -7289,15 +7353,19 @@ function paketDuzenle(id) {
     $('[data-pk="kaydet"]', kutu).addEventListener('click', async () => {
       const ad = $('#pk-ad', kutu).value.trim();
       if (!ad) { toast('Paket adını yaz.'); return; }
-      const aciklama = $('#pk-aciklama', kutu).value.trim();
 
       const yazi = $('[data-pk="kaydet"] span', kutu);
       yazi.textContent = 'Kaydediliyor…';
       try {
         /* Anahtar adres gibi: bir kez kurulur, sonra değişmez. Değişseydi
            o pakete bağlı projeler paketini kaybederdi. */
-        const alanlar = { ad, aciklama: aciklama || null, akis,
-                          tanim: $('#pk-tanim', kutu).value.trim() || null };
+        const alanlar = {
+          ad,
+          aciklama: $('#pk-aciklama', kutu).value.trim() || null,
+          akis,
+          tanim: $('#pk-tanim', kutu).value.trim() || null,
+          varsayilan,
+        };
         if (!id) alanlar.anahtar = paketAnahtariUret(ad);
         const sonuc = await DB.paketKaydet(id, alanlar);
         modalKapat();
@@ -7310,6 +7378,18 @@ function paketDuzenle(id) {
       }
     });
   });
+}
+
+/* Yeni sütunlar kurulmuş mu — okunan satırda anahtar hiç yoksa kurulmamıştır. */
+function paketYeniAlanlarKapali() {
+  const l = DB.paketler || [];
+  return !!l.length && (!('tanim' in l[0]) || !('varsayilan' in l[0]));
+}
+
+/* Sıfırdan kurulan proje hangi pakete bağlanacak. */
+function varsayilanPaket() {
+  const l = DB.paketler || [];
+  return l.find(k => k.varsayilan) || l.find(k => k.anahtar === 'ozel') || null;
 }
 
 /* Addan adres üretir: "Muhasebe-2" → "muhasebe-2". Çakışırsa sonuna sayı. */
@@ -10219,7 +10299,10 @@ async function sihirbazKaydet() {
        yerde sorulmayacak, o durak gelene kadar proje tek kullanıcılık
        davranır (bkz. PROMPT.yetkiBlogu). */
     try {
-      await DB.paletKaydet(id, { gorulenSurum: APP.version, projeTuru: SIHIRBAZ.tur || 'gercek' });
+      const vp = varsayilanPaket();
+      await DB.paletKaydet(id, Object.assign(
+        { gorulenSurum: APP.version, projeTuru: SIHIRBAZ.tur || 'gercek' },
+        vp ? { paket: vp.anahtar } : {}));
     } catch (h) { /* kritik değil, Firma durağından sonra girilebilir */ }
 
     /* Logo ve işletme görseli ancak proje kurulduktan sonra yüklenebilir:
@@ -14324,6 +14407,12 @@ async function eylemCalistir(el) {
   }
 
   if (e === 'sektorlere')     { location.hash = '#/sektorler'; return; }
+  if (e === 'paket-tanim-bilgi') {
+    toast('Bu metin Claude\'a giden promptlara "Bu paket nedir" başlığıyla '
+        + 'olduğu gibi giriyor.');
+    return;
+  }
+
   if (e === 'template-ayar')  return templateAyarlari(el.dataset.proje);
 
   if (e === 'paketlere')      { location.hash = '#/paketler'; return; }
