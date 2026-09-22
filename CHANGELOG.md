@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.172.1
+- **Template kapağı artık yükleme değil, seçim.** Üç hazır laptop görselinden (Muhasebe · Stok · Restoran) birini seçiyorsun, ayrıca beş arka plan renginden birini: pembe, turuncu, mavi, yeşil, mor.
+- Seçim penceresinde küçük görsellerin zemini de seçtiğin renge dönüyor — kartta nasıl duracağını orada görüyorsun.
+- Görseller `kapak/` klasöründe. Yüklenen PNG'ler 1,2 MB'dı; 900×600 WebP'ye çevrildi, 32–52 KB'a indi. Gözle fark yok. Kaynak PNG'ler `kapak/kaynak/` altında duruyor.
+- Yeni görsel eklemek: dosyayı `kapak/` içine at, `config.js` içindeki `KAPAK_GORSELLERI` listesine bir satır ekle.
+
 ## v0.172.0
 **Templateler ekranı yenilendi.**
 - Başlık, **arama** kutusu ve kırmızı **Yeni** düğmesi; altında kart kart template'ler: solda kapak görseli, sağda ad, açıklama ve modül sayısı.

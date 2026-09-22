@@ -8,20 +8,23 @@ duruyor. Kullanıcı yükleme yapmıyor; template ayarlarından bunlardan birini
 
 | Dosya | İçerik |
 |---|---|
-| `muhasebe.png` | Muhasebe ekranı |
-| `stok.png` | Stok ekranı |
-| `restaurant.png` | Restoran ekranı |
+| `muhasebe.webp` | Muhasebe ekranı |
+| `stok.webp` | Stok ekranı |
+| `restaurant.webp` | Restoran ekranı |
 
-Adlar birebir böyle olmalı: küçük harf, Türkçe karakter yok, `.png`.
+Uygulamanın okuduğu dosyalar bunlar. Yüklediğin büyük PNG'ler `kaynak/`
+klasöründe duruyor — gerekirse oradan yeniden üretilir.
+
+WebP tercih edildi çünkü aynı görsel PNG olarak 320–430 KB, WebP olarak
+32–51 KB. Gözle fark yok, indirme on kat hafif.
 
 ## Kurallar
 
-1. **Şeffaf PNG** — sadece laptop, arka plan yok.
-2. **1200 × 900 px** civarı, 4:3 oranında.
+1. **Şeffaf arka plan** — sadece laptop; renk uygulamada seçiliyor.
+2. **900 × 600 px** (3:2). Büyük PNG at, küçültme ve WebP'ye çevirme bizde.
 3. Üçünde de laptop **aynı boyutta ve aynı yerde** dursun; kartlar alt alta
    gelince zıplamasın.
 4. Kenarlarda az da olsa boşluk kalsın, laptop kadraja yapışmasın.
-5. Her dosya **200 KB'ın altında** olsun — uygulama açılışta indiriyor.
 
 ## Yeni görsel eklemek
 

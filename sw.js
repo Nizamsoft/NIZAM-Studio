@@ -21,7 +21,7 @@
    Bir resim yeniden yüklenince eski kopya önbellekte kalırdı; uygulama
    `postMessage({ tip: 'unut', yol })` gönderiyor, o kayıt siliniyor. */
 
-const CACHE = 'nizam-studio-v0.172.0';
+const CACHE = 'nizam-studio-v0.172.1';
 
 /* Resimler AYRI ve SÜRÜMSÜZ bir önbellekte duruyor.
 
@@ -36,6 +36,7 @@ const SHELL = [
   './vendor/supabase.js',
   './manifest.webmanifest', './icon-192.png', './icon-512.png', './icon-180.png',
   './logo.png', './ofis.webp',
+  './kapak/muhasebe.webp', './kapak/stok.webp', './kapak/restaurant.webp',
   './gorseller/panel-ofis.webp', './gorseller/giris-ofis.webp',
   './font/grotesk-600.woff2', './font/grotesk-700.woff2'
 ];

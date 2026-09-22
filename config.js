@@ -7,7 +7,7 @@ const APP = {
   name:     'NIZAM | Studio',
   short:    'NIZAM Studio',
   owner:    'Nizam Soft',
-  version: 'v0.172.0',
+  version: 'v0.172.1',
   build:    '2026-09-17',
   /* Studio'nun kendi deposu — "bütün programlarda geçerli olsun"
      istekleri buraya gider. */
@@ -895,6 +895,26 @@ const SABLON_GUNSONU_HAZIR = [
    Akışın kendisi kodda (bkz. projeDuraklari); paket yalnızca hangisini
    seçtiğini söyler. Yeni bir akış eklemek kod işi, paket eklemek değil.
    ========================================================================== */
+
+/* ==========================================================================
+   Template kapakları — hazır laptop görselleri ve arka plan renkleri.
+   Görseller `kapak/` klasöründe; yenisini eklemek için dosyayı oraya atıp
+   buraya bir satır yazmak yetiyor.
+   ========================================================================== */
+
+const KAPAK_GORSELLERI = [
+  { anahtar: 'muhasebe',   ad: 'Muhasebe',  dosya: 'kapak/muhasebe.webp' },
+  { anahtar: 'stok',       ad: 'Stok',      dosya: 'kapak/stok.webp' },
+  { anahtar: 'restaurant', ad: 'Restoran',  dosya: 'kapak/restaurant.webp' },
+];
+
+const KAPAK_RENKLERI = [
+  { anahtar: 'pembe',   ad: 'Pembe',   deger: '#fdf0ef' },
+  { anahtar: 'turuncu', ad: 'Turuncu', deger: '#fdf2e7' },
+  { anahtar: 'mavi',    ad: 'Mavi',    deger: '#eef3fc' },
+  { anahtar: 'yesil',   ad: 'Yeşil',   deger: '#ecf7f1' },
+  { anahtar: 'mor',     ad: 'Mor',     deger: '#f2eefc' },
+];
 
 const PAKET_AKISLARI = [
   { anahtar: 'ozel',     ad: 'Normal kurulum',

@@ -8771,6 +8771,7 @@ textarea.pd-giris { resize: vertical; display: block; }
 }
 .tp-kapak svg { fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linejoin: round; }
 .tp-kapak .dolgu { display: none; }
+.tp-kapak img { width: 100%; height: 100%; object-fit: contain; display: block; }
 .tp-yz { display: flex; flex-direction: column; gap: 5px; min-width: 0; flex: 1; }
 .tp-yz b { font-size: 15.5px; font-weight: 700; color: var(--ink-strong); }
 .tp-yz i {
@@ -8786,16 +8787,22 @@ textarea.pd-giris { resize: vertical; display: block; }
 .tp-ok { flex-shrink: 0; line-height: 0; color: var(--ink-soluk); }
 .tp-ok svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
 
-/* Ayar penceresindeki kapak seçici */
+/* Ayar penceresindeki kapak seçici — yükleme yok, hazır görsellerden biri. */
 .pd-ikon.mor { background: #f2eefc; color: #6a45c8; }
-.tp-kapak-sec {
-  display: flex; align-items: center; gap: 14px; width: 100%; text-align: left;
-  padding: 0; border: 0; background: none; cursor: pointer; font-family: inherit;
+.kp-izgara { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.kp {
+  display: block; padding: 6px; cursor: pointer; overflow: hidden;
+  border: 2px solid var(--line-3); border-radius: 14px; background: var(--yuva);
 }
-.tp-kapak.buyuk { width: 132px; height: 92px; }
-.tp-kapak-yz { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1; }
-.tp-kapak-yz b { font-size: 14.5px; font-weight: 700; color: var(--ink-strong); }
-.tp-kapak-yz i { font-style: normal; font-size: 12.5px; line-height: 1.45; color: var(--ink-dim); }
+.kp img { width: 100%; height: 100%; object-fit: contain; display: block; aspect-ratio: 3 / 2; }
+.kp.sec { border-color: var(--red); }
+
+.kp-renkler { display: flex; flex-wrap: wrap; gap: 10px; }
+.kp-renk {
+  width: 44px; height: 44px; border-radius: 999px; cursor: pointer;
+  border: 2px solid var(--line-2); padding: 0;
+}
+.kp-renk.sec { border-color: var(--red); box-shadow: inset 0 0 0 3px #fff; }
 
 /* Kurulum / yayın / kilit satırları */
 .tp-isler { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }

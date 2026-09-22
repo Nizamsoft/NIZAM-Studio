@@ -7490,6 +7490,19 @@ function templateModulSayisi(p) {
   return DB.modulleri(p.id).filter(m => m.ad !== GENEL_MODUL).length;
 }
 
+/* Template'in kapağı: hazır görsellerden biri + arka plan rengi. İkisi de
+   paletindeki cekirdek nesnesinde; dosya yüklenmiyor, seçiliyor. */
+function templateKapagi(p) {
+  const cek = ((p || {}).palet || {}).cekirdek || {};
+  return KAPAK_GORSELLERI.find(x => x.anahtar === cek.kapak) || null;
+}
+
+function templateKapakRengi(p) {
+  const cek = ((p || {}).palet || {}).cekirdek || {};
+  const r = KAPAK_RENKLERI.find(x => x.anahtar === cek.kapakRenk);
+  return r ? r.deger : 'var(--yuva)';
+}
+
 /* Template'in açıklaması — paletinde duruyor, ayrı sütun gerekmiyor. */
 function templateAciklamasi(p) {
   return String(((((p || {}).palet) || {}).cekirdek || {}).aciklama || '').trim();
@@ -7502,15 +7515,15 @@ function templateKarti(p) {
   const pl    = p.palet || {};
   const hazir = !!pl.cekirdekTemizlendi;
   const n     = templateModulSayisi(p);
-  const adres = DB.logoAdres[p.id];
+  const kapak = templateKapagi(p);
   const aciklama = templateAciklamasi(p);
 
   return `
     <button class="tp" type="button" data-eylem="template-ayar" data-proje="${p.id}"
             data-ara="${esc(((p.firma || '') + ' ' + aciklama).toLocaleLowerCase('tr'))}">
-      <span class="tp-kapak ${adres ? 'yukleniyor' : ''}"
-            ${adres ? `data-logo="${esc(adres)}"` : ''}>
-        ${adres ? '<span class="donen"></span>' : svg(ICON.resim, 26)}
+      <span class="tp-kapak" style="background-color:${templateKapakRengi(p)}">
+        ${kapak ? `<img src="${esc(kapak.dosya)}" alt="" loading="lazy">`
+                : svg(ICON.resim, 26)}
       </span>
       <span class="tp-yz">
         <b>${esc(p.firma || 'Template')}</b>
@@ -7582,6 +7595,9 @@ function templateAyarlari(projeId) {
   const pl = p.palet || {};
   let secili = templateSektorIdleri(p).slice();
   let paket  = templatePaketAnahtari(p);
+  const cek0 = pl.cekirdek || {};
+  let kapak     = cek0.kapak || '';
+  let kapakRenk = cek0.kapakRenk || KAPAK_RENKLERI[0].anahtar;
   const paketler  = (DB.paketler || []).filter(k => paketinAkisi(k) !== 'ozel');
   const sektorler = DB.sektorler || [];
   const yayinAdres = String(pl.alanAdi || '').trim();
@@ -7601,16 +7617,23 @@ function templateAyarlari(projeId) {
 
     <div class="pd-alan">
       <span class="pd-et">Kapak görseli</span>
-      <button class="tp-kapak-sec" type="button" data-ta="kapak">
-        <span class="tp-kapak buyuk" id="ta-kapak"
-              style="${DB.logoAdres[p.id] ? `background-image:url('${esc(DB.logoAdres[p.id])}')` : ''}">
-          ${DB.logoAdres[p.id] ? '' : svg(ICON.bulut, 24)}
-        </span>
-        <span class="tp-kapak-yz">
-          <b>${DB.logoAdres[p.id] ? 'Değiştir' : 'Görsel yükle'}</b>
-          <i>Listede bu görsel çıkar. PNG veya JPG, en fazla 4 MB.</i>
-        </span>
-      </button>
+      <div class="kp-izgara" id="ta-kapak">
+        ${KAPAK_GORSELLERI.map(g => `
+          <button class="kp ${kapak === g.anahtar ? 'sec' : ''}" type="button"
+                  data-ta-kapak="${esc(g.anahtar)}" aria-label="${esc(g.ad)}">
+            <img src="${esc(g.dosya)}" alt="" loading="lazy">
+          </button>`).join('')}
+      </div>
+    </div>
+
+    <div class="pd-alan">
+      <span class="pd-et">Arka plan rengi</span>
+      <div class="kp-renkler" id="ta-renk">
+        ${KAPAK_RENKLERI.map(r => `
+          <button class="kp-renk ${kapakRenk === r.anahtar ? 'sec' : ''}" type="button"
+                  data-ta-renk="${esc(r.anahtar)}" aria-label="${esc(r.ad)}"
+                  style="background:${r.deger}"></button>`).join('')}
+      </div>
     </div>
 
     <label class="pd-alan">
@@ -7678,18 +7701,25 @@ function templateAyarlari(projeId) {
       });
     });
 
-    /* Kapak, projenin logo alanına yükleniyor; pencere açık kalıyor ki
-       yazdığın açıklama kaybolmasın. */
-    $('[data-ta="kapak"]', kutu).addEventListener('click', () => {
-      templateKapakSec(p.id, () => {
-        const kutucuk = $('#ta-kapak', kutu);
-        const yeni = DB.logoAdres[p.id];
-        if (kutucuk && yeni) {
-          kutucuk.innerHTML = '';
-          kutucuk.style.backgroundImage = `url('${yeni}')`;
-        }
-      });
-    });
+    /* Görsel ve renk: seçim, yükleme yok. Seçilen renk küçük görsellerin
+       de zeminine vuruyor ki kartta nasıl duracağı burada görünsün. */
+    const zeminYaz = () => {
+      const r = KAPAK_RENKLERI.find(x => x.anahtar === kapakRenk);
+      $$('.kp', kutu).forEach(b => { b.style.background = r ? r.deger : ''; });
+    };
+    zeminYaz();
+
+    $$('[data-ta-kapak]', kutu).forEach(b => b.addEventListener('click', () => {
+      kapak = kapak === b.dataset.taKapak ? '' : b.dataset.taKapak;
+      $$('[data-ta-kapak]', kutu).forEach(o =>
+        o.classList.toggle('sec', o.dataset.taKapak === kapak));
+    }));
+
+    $$('[data-ta-renk]', kutu).forEach(b => b.addEventListener('click', () => {
+      kapakRenk = b.dataset.taRenk;
+      $$('[data-ta-renk]', kutu).forEach(o => o.classList.toggle('sec', o === b));
+      zeminYaz();
+    }));
 
     $$('[data-ta-paket]', kutu).forEach(b => b.addEventListener('click', () => {
       paket = b.dataset.taPaket;
@@ -7743,6 +7773,8 @@ function templateAyarlari(projeId) {
           paket,
           sektorler: secili,
           aciklama: $('#ta-aciklama', kutu).value.trim() || null,
+          kapak: kapak || null,
+          kapakRenk,
         });
         await DB.paletKaydet(p.id, Object.assign({}, eskiPalet, { cekirdek: cek }));
         modalKapat();
@@ -7756,30 +7788,6 @@ function templateAyarlari(projeId) {
   });
 }
 
-/* Kapak görselini seçtirir ve yükler. Template bir proje olduğu için
-   projenin logo alanı kullanılıyor — yeni kova ve yeni sütun gerekmiyor,
-   müşteri kopyasına da taşınmıyor. */
-function templateKapakSec(projeId, sonra) {
-  const alan = document.createElement('input');
-  alan.type = 'file';
-  alan.accept = 'image/*';
-  alan.style.display = 'none';
-  document.body.appendChild(alan);
-
-  alan.addEventListener('change', async () => {
-    const dosya = alan.files && alan.files[0];
-    alan.remove();
-    if (!dosya) return;
-    toast('Görsel yükleniyor…');
-    try {
-      await DB.logoYukle(projeId, dosya);
-      toast('Kapak görseli güncellendi.', 'basari');
-      if (sonra) sonra();
-    } catch (h) { toast(h.message, 'hata'); }
-  });
-
-  alan.click();
-}
 
 function ekipAltBaslik() {
   if (YUKLENIYOR) return 'yükleniyor…';
@@ -8401,6 +8409,7 @@ function baslangicTuruSec(tur, sektorId) {
     });
   });
 }
+
 
 
 /* Kurulmaya hazır template'ler — istenirse tek bir sektörünkiler. */
