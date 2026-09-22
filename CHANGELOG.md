@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## v0.172.5
+- **Template kurulumunda tek sayfa kaldı: Kurulum SQL'i.** Üç parça yapıştırma alanı ve yedek GitHub linki. GitHub ve "Claude ile temizle" adımları kaldırıldı — adım şeridi ve ileri/geri de gitti, altta tek "Kapat" var.
+- Bir template artık "temizlendi" işareti beklemeden yeni proje akışında listeleniyor; kartta "kuruluyor" yazısı kalktı.
+- Template penceresindeki satırın adı **Kurulum SQL'i** oldu ve her zaman duruyor — SQL'i sonradan da güncelleyebilirsin.
+
 ## v0.172.4
 - **Kurulum Adımları satırı, kurulum bitince görünmüyor.** O adımlar (depo, kurulum SQL'i, temizlik) template'i ayağa kaldırmak için; hazır bir template'te durmalarının anlamı yoktu.
 - Template kurulum penceresinin başlığında artık template'in kendi adı yazıyor, arkasına modül adı eklenmiyor.

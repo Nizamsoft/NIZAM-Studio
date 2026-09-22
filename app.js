@@ -7516,9 +7516,7 @@ function templateAciklamasi(p) {
    kullanıyor: template zaten bir proje, kova ve imzalı adres hazır.
    Müşteri kopyasına taşınmıyor (bkz. DB.projeKopyala). */
 function templateKarti(p) {
-  const pl    = p.palet || {};
-  const hazir = !!pl.cekirdekTemizlendi;
-  const n     = templateModulSayisi(p);
+  const n = templateModulSayisi(p);
   const kapak = templateKapagi(p);
   const aciklama = templateAciklamasi(p);
 
@@ -7532,8 +7530,7 @@ function templateKarti(p) {
       <span class="tp-yz">
         <b>${esc(p.firma || 'Template')}</b>
         <i>${esc(aciklama || 'Açıklama yazılmadı.')}</i>
-        <em>${svg(ICON.katman, 15)}${n ? n + ' modül' : 'modül yok'}${
-          hazir ? '' : ' · kuruluyor'}</em>
+        <em>${svg(ICON.katman, 15)}${n ? n + ' modül' : 'modül yok'}</em>
       </span>
       <span class="tp-ok">${svg(ICON.chevron, 18)}</span>
     </button>`;
@@ -7604,7 +7601,6 @@ function templateAyarlari(projeId) {
   const paketler  = (DB.paketler || []).filter(k => paketinAkisi(k) !== 'ozel');
   const sektorler = DB.sektorler || [];
   const yayinAdres = String(pl.alanAdi || '').trim();
-  const hazir = !!pl.cekirdekTemizlendi;
 
   modalAc(`
     <div class="pd-tepe">
@@ -7672,14 +7668,12 @@ function templateAyarlari(projeId) {
     </div>
 
     <div class="tp-isler">
-      ${/* Kurulum adımları (depo, SQL, temizlik) template'i AYAĞA KALDIRMAK
-            için. Kurulum bitince burada durmasının anlamı yok. */''}
-      ${hazir ? '' : `<button class="tp-is" type="button" data-ta="kurulum">
-        <span class="tp-is-ik">${svg(ICON.dal, 19)}</span>
-        <span class="tp-is-yz"><b>Kurulum Adımları</b>
-          <i>Depo, kurulum SQL'i ve temizlik — template'i hazır hâle getirir.</i></span>
+      <button class="tp-is" type="button" data-ta="kurulum">
+        <span class="tp-is-ik">${svg(ICON.kova, 19)}</span>
+        <span class="tp-is-yz"><b>Kurulum SQL'i</b>
+          <i>Üç parça SQL ve yedek GitHub linki.</i></span>
         ${svg(ICON.chevron, 16)}
-      </button>`}
+      </button>
       ${yayinAdres ? `<button class="tp-is" type="button" data-ta="yayin">
         <span class="tp-is-ik">${svg(ICON.disari, 19)}</span>
         <span class="tp-is-yz"><b>Uygulamayı Aç</b>
@@ -8421,7 +8415,7 @@ function baslangicTuruSec(tur, sektorId) {
 /* Kurulmaya hazır template'ler — istenirse tek bir sektörünkiler. */
 function hazirTemplateler(sektorId) {
   return (DB.projeler || []).filter(p =>
-    !p.arsiv && cekirdekMi(p) && (p.palet || {}).cekirdekTemizlendi
+    !p.arsiv && cekirdekMi(p)
     && (!sektorId || templateSektorIdleri(p).includes(sektorId)));
 }
 
@@ -8721,23 +8715,24 @@ async function cekirdekAdiSor(kaynakId, paket) {
    bir template'in gerçek bir servise bağlı olması zaten istenmiyor. */
 const CEKIRDEK_KURULUM = { adim: 1, projeId: null };
 
-function cekirdekKurulumListesi() { return ['github', 'sql', 'claude']; }
+/* Template kurulumunda tek iş kaldı: kurulum SQL'i. Depo bağlama ve
+   "Claude ile temizle" adımları kaldırıldı — depo müşteri projesinin kendi
+   Bağlantılar durağında bağlanıyor, temizlik de template oluşturulurken
+   zaten yapılıyordu. */
+function cekirdekKurulumListesi() { return ['sql']; }
 
 function cekirdekKurulumAdimBittiMi(k, p) {
-  if (k === 'github') return !!p.repo;
-  /* SQL isteğe bağlı — bir template'in mutlaka veritabanı olması gerekmez,
-     o yüzden bu adım hiç doldurulmasa da geçilebiliyor. Metin ya da link,
-     ikisinden biri yeterli. */
+  /* SQL isteğe bağlı — bir template'in mutlaka veritabanı olması gerekmez.
+     Metin ya da link, ikisinden biri yeterli. */
   if (k === 'sql') {
     const cekirdek = (p.palet || {}).cekirdek || {};
     return !!cekirdek.sqlLink || !!cekirdek.sqlMetinVar;
   }
-  if (k === 'claude')  return !!(p.palet || {}).cekirdekTemizlendi;
   return false;
 }
 
 function cekirdekKurulumEtiket(k) {
-  return { github: 'GitHub', sql: 'SQL', claude: 'Claude' }[k] || '';
+  return { sql: 'SQL' }[k] || '';
 }
 
 function cekirdekKurulumAc(projeId) {
@@ -8774,6 +8769,8 @@ function cekirdekKurulumCiz() {
 }
 
 function cekirdekKurulumSerit(liste, simdi, p) {
+  /* Tek adım kaldıysa şerit gereksiz. */
+  if (liste.length < 2) return '';
   return `<div class="sh-adimlar">${liste.map((k, i) => {
     const n = i + 1;
     const bitti = cekirdekKurulumAdimBittiMi(k, p);
@@ -8787,16 +8784,15 @@ function cekirdekKurulumSerit(liste, simdi, p) {
 
 function cekirdekKurulumHtml(p, liste) {
   const k = liste[CEKIRDEK_KURULUM.adim - 1];
-  const govde = k === 'github' ? baglantiAdimGithub(p)
-    : k === 'sql' ? cekirdekAdimSqlGovde(p)
-    : cekirdekAdimClaudeGovde(p);
+  const govde = cekirdekAdimSqlGovde(p);
 
-  const geri = CEKIRDEK_KURULUM.adim > 1
+  /* Tek adımda ileri-geri yok, tek kapatma düğmesi var. */
+  const geri = liste.length > 1 && CEKIRDEK_KURULUM.adim > 1
     ? `<button class="btn btn-ghost" data-ck="geri" type="button">← Geri</button>`
-    : `<button class="btn btn-ghost" data-ck="kapat" type="button">Kapat</button>`;
+    : '';
   const ileri = CEKIRDEK_KURULUM.adim < liste.length
     ? `<button class="btn btn-primary" data-ck="ileri" type="button"><span>Sıradaki →</span></button>`
-    : `<button class="btn btn-primary" data-ck="kapat" type="button"><span>Bitti ✓</span></button>`;
+    : `<button class="btn btn-primary" data-ck="kapat" type="button"><span>Kapat</span></button>`;
 
   return `
     <div class="sh-tepe">
@@ -10054,30 +10050,6 @@ function guvenlikSonucTablosu(sonuc, ustKatmanUyarisi, kalintilar, harita, tablo
   }
 
   return uyari + semaUyarisi + gocUyarisi + ozet + kalintiUyarisi + kopyalaDugmesi + sunucuIslevNotu + aTablosu + dBolumu;
-}
-
-/* 4 · Claude — firma izini kaldırma, tasarımı standarda döndürme ve
-   gerçek bağlantıları koparma promptu (bkz. PROMPT.cekirdekTemizle). */
-function cekirdekAdimClaudeGovde(p) {
-  const pl    = p.palet || {};
-  const depo  = !!p.repo;
-  const hazir = !!pl.cekirdekTemizlendi;
-
-  const buton = !depo
-    ? `<p class="ipucu" style="margin-bottom:14px">Önce GitHub adımından depo bağlanmalı.</p>`
-    : `<div class="kur-dug">
-        ${promptBaglantisi({ tur: 'cekirdekTemizle', proje: p.id, slug: depoSlug(p.repo),
-          hedef: 'claude-yeni', yazi: 'Prompt oluştur ve Claude\'u aç' })}
-      </div>`;
-
-  return shBaslikServis('claude', 'Claude ile temizle',
-      'Firma izini kaldırıp tasarımı standarda döndürecek, Supabase gibi gerçek bağlantıları koparacak prompt.')
-    + buton
-    + (hazir
-        ? `<div class="kur-deger duz">${svg(ICON.tik, 13)} Temizlendi, template kilitli</div>`
-        : `<label class="kur-onay" data-eylem="cekirdek-temizlendi-onay" data-proje="${p.id}"
-                  role="button" tabindex="0" ${depo ? '' : 'style="opacity:.5;pointer-events:none"'}>
-            <span class="kur-kutu">${svg(ICON.tik, 12)}</span> Temizlendi, template olarak kaydet</label>`);
 }
 
 function sihirbaziBaslat(tur, sektorId) {
@@ -14662,21 +14634,6 @@ async function eylemCalistir(el) {
     const adres = el.dataset.adres;
     if (adres) window.open('https://' + adres, '_blank', 'noopener');
     return;
-  }
-
-  if (e === 'cekirdek-temizlendi-onay') {
-    const pr = DB.proje(el.dataset.proje);
-    if (!pr) return;
-    if (!await onaySor({
-      baslik: 'Template olarak kaydedilsin mi?',
-      mesaj: 'Claude temizleme promptunu çalıştırıp kontrol ettiysen onayla — '
-           + 'proje otomatik kilitlenecek.',
-      buton: 'Eminim',
-    })) return;
-    const pl = pr.palet || {};
-    return isYap(() => DB.paletKaydet(pr.id,
-      Object.assign({}, pl, { cekirdekTemizlendi: true, kilitli: true })),
-      'Template hazır ve kilitlendi.');
   }
 
   if (e === 'cekirdek-sql-kaydet') {
