@@ -14216,12 +14216,15 @@ function enYakinTeslim(projeler) {
 }
 
 function panelSayilar(projeler) {
-  const gorevler = DB.gorevler || [];
-  const bitmis = gorevler.filter(g => g.durum === 'tamamlandi').length;
-  const acik = gorevler.length - bitmis;
-
   /* Şeritteki "Aktif Projeler" ile aynı ölçü: biten proje sayılmıyor. */
   const devam = projeler.filter(p => !projeBittiMi(p));
+
+  /* Açık görev YALNIZ devam eden projelerden sayılıyor. Eskiden bütün
+     görevler sayılıyordu: arşivlenmiş projenin, şablonun ve bitmiş projenin
+     görevleri de panele "açık iş" gibi yansıyordu. */
+  const devamIds = devam.map(p => p.id);
+  const acik = (DB.gorevler || []).filter(g =>
+    g.durum !== 'tamamlandi' && devamIds.includes(g.proje_id)).length;
   const yuzdeler = devam.map(p => projeAsamaYuzde(p));
   const ortalama = yuzdeler.length
     ? Math.round(yuzdeler.reduce((t, x) => t + x, 0) / yuzdeler.length) : 0;

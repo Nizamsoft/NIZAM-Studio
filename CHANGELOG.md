@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.166.3
+- **Açık görev sayısı düzeltildi.** Eskiden veritabanındaki bütün görevler sayılıyordu; arşivlenmiş projenin, şablonun ve bitmiş projenin görevleri de panele "açık iş" gibi yansıyordu. Artık yalnız devam eden projelerin görevleri sayılıyor.
+
 ## v0.166.2
 - Açık görev yoksa "En yakın bitiş" satırında **"Görev yok"** yazıyor; uydurma tarih kalktı. Görev varsa ama teslim tarihi girilmemişse "Tarih yok".
 
