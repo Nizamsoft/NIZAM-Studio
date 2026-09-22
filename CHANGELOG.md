@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.167.0
+- **Aktif Projeler kartları yeni tasarımda:** beyaz kart, üstte proje logosu (yoksa baş harf), altında ince ilerleme halkası ve yüzde, en altta proje adı. Bir ekrana beş kart sığıyor.
+- En son dokunulan proje kartı hafif kırmızı — kaldığın yer belli olsun.
+- %75'i geçen projenin halkası yeşil.
+- Karttaki durum yazısı ("Geliştiriliyor" vb.) kalktı; yüzde zaten aynı şeyi söylüyor.
+
 ## v0.166.4
 - Proje adlarında her kelimenin baş harfi büyük gösteriliyor ("güllüoğlu kübban" → "Güllüoğlu Kübban"). Kelimenin geri kalanına dokunulmuyor, "QR" gibi kısaltmalar bozulmuyor. Panelde, Projeler ekranında ve proje künyesinde geçerli.
 

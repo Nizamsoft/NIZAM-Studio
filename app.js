@@ -14292,29 +14292,26 @@ function panelSayilar(projeler) {
 /* ---------- Aktif projeler ----------
    Koyu kartlar, yan yana kayan bir şerit. Her kartta halka içinde yüzde,
    altında durum ve son güncelleme. Bitmiş projede yeşil onay rozeti. */
-function pzProjeKarti(p) {
+function pzProjeKarti(p, i = 0) {
   const yuzde = projeAsamaYuzde(p);
-  const bitti = projeBittiMi(p);
-  /* Ad kutuya sığsın: önce "Firma - Modül", sığmazsa yalnız firma adı,
-     o da uzunsa yazı küçülüp iki satıra iniyor. Ada her kartta iki
-     satırlık yer ayrıldığı için kartlar aynı hizada kalıyor. */
+  const adres = DB.logoAdres[p.id];
+  /* Ad kutuya sığsın: "Firma - Modül" uzun geliyorsa yalnız firma adı. */
   const tam = basHarfleriBuyuk(projeAdi(p));
-  const ad = tam.length > 18 ? basHarfleriBuyuk(p.firma || tam) : tam;
-  const uzun = ad.length > 13 ? ' uzun' : '';
+  const ad  = tam.length > 18 ? basHarfleriBuyuk(p.firma || tam) : tam;
 
   return `
-    <div class="pk2 ${bitti ? 'bitti' : ''}" data-eylem="proje-ac" data-id="${p.id}"
-         role="button" tabindex="0">
+    <div class="pk2 ${i === 0 ? 'son' : ''} ${yuzde >= 75 ? 'iyi' : ''}"
+         data-eylem="proje-ac" data-id="${p.id}" role="button" tabindex="0">
       ${AUTH.yonetici ? `<button class="pk2-menu only-desktop" data-eylem="proje-menu"
         data-id="${p.id}" type="button" aria-label="Proje menüsü">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.6"></circle><circle cx="12" cy="12" r="1.6"></circle><circle cx="12" cy="19" r="1.6"></circle></svg>
       </button>` : ''}
-      <b class="pk2-ad${uzun}" title="${esc(tam)}">${esc(ad)}</b>
-      <span class="pk2-halka">
-        ${pzHalka(yuzde, 52, 5)}<u>${yuzde}%</u>
-        ${bitti ? `<em class="pk2-tik">${svg(ICON.tik, 11)}</em>` : ''}
+      <span class="pk2-logo ${adres ? 'yukleniyor' : ''}" ${adres ? `data-logo="${esc(adres)}"` : ''}>
+        <b class="logo-harf">${esc(basHarf(p.firma))}</b>
+        ${adres ? '<span class="donen"></span>' : ''}
       </span>
-      <span class="pk2-durum">${p.durum === 'yeni' ? '' : esc(DURUM_ADI[p.durum] || p.durum)}</span>
+      <span class="pk2-halka">${pzHalka(yuzde, 38, 4)}<u>${yuzde}%</u></span>
+      <b class="pk2-ad" title="${esc(tam)}">${esc(ad)}</b>
     </div>`;
 }
 
@@ -14337,7 +14334,7 @@ function panelProjeler(projeler) {
       <a class="pz-tum" href="#/projeler">Tüm Projeler ${svg(ICON.chevron, 13)}</a>
     </span>
     <div class="pk2-sarma">
-      <div class="pk2-serit"><div class="pk2-sira">${sirali.slice(0, 6).map(pzProjeKarti).join('')}</div></div>
+      <div class="pk2-serit"><div class="pk2-sira">${sirali.slice(0, 6).map((p, i) => pzProjeKarti(p, i)).join('')}</div></div>
       <button class="pk2-kaydir only-desktop" data-eylem="serit-kaydir" type="button"
         aria-label="Sonraki projeler">${svg(ICON.chevron, 16)}</button>
     </div>
