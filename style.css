@@ -8797,13 +8797,6 @@ textarea.pd-giris { resize: vertical; display: block; }
 .kp img { width: 100%; height: 100%; object-fit: contain; display: block; aspect-ratio: 3 / 2; }
 .kp.sec { border-color: var(--red); }
 
-.kp-renkler { display: flex; flex-wrap: wrap; gap: 10px; }
-.kp-renk {
-  width: 44px; height: 44px; border-radius: 999px; cursor: pointer;
-  border: 2px solid var(--line-2); padding: 0;
-}
-.kp-renk.sec { border-color: var(--red); box-shadow: inset 0 0 0 3px #fff; }
-
 /* Kurulum / yayın / kilit satırları */
 .tp-isler { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
 .tp-is {
@@ -8865,21 +8858,6 @@ textarea.pd-giris { resize: vertical; display: block; }
 }
 .kp.sec .kp-tik { display: flex; }
 .kp-tik svg { fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; }
-.kp-karistir {
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 6px; background: var(--yuva); color: var(--ink);
-  font-family: inherit; font-size: 12.5px; font-weight: 600;
-}
-.kp-karistir svg { fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
-.kp-karistir .dolgu { display: none; }
-
-.kp-renkler { display: flex; flex-wrap: wrap; gap: 10px; }
-.kp-renk {
-  width: 44px; height: 44px; border-radius: 999px; cursor: pointer;
-  border: 2px solid var(--line-2); padding: 0;
-}
-.kp-renk.sec { border-color: var(--red); box-shadow: inset 0 0 0 3px #fff; }
-
 /* Paket: tek seçimlik haplar */
 .rd-izgara { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
 .rd {
@@ -8904,10 +8882,7 @@ textarea.pd-giris { resize: vertical; display: block; }
   font-family: inherit; font-size: 14px; font-weight: 600; color: var(--ink-strong);
 }
 .sb span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.sb svg { flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-.sb .dolgu { display: none; }
 .sb.sec { border-color: var(--red); background: var(--red-soft); color: var(--red-ink); }
-.sb.sec .dolgu { display: block; fill: currentColor; fill-opacity: .18; }
 
 /* İş satırları: ikon kutusu + başlık + alt yazı */
 .tp-is { height: auto; padding: 12px 14px; align-items: center; }

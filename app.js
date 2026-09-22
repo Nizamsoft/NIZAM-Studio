@@ -114,21 +114,6 @@ let LOGO_ZAMANLAYICI = null;
    tek katman kalır — onlar simge değil, yön gösterir. */
 
 const ICON = {
-  /* Sektör kutularının ikonları — adına göre seçiliyor (sektorIkonu). */
-  kalp: {
-    d: '<path d="M12 20.5s-7.5-4.8-7.5-10A4.3 4.3 0 0 1 12 8.2a4.3 4.3 0 0 1 7.5 2.3c0 5.2-7.5 10-7.5 10z"></path>',
-    c: '<path d="M12 20.5s-7.5-4.8-7.5-10A4.3 4.3 0 0 1 12 8.2a4.3 4.3 0 0 1 7.5 2.3c0 5.2-7.5 10-7.5 10z"></path>',
-  },
-  sepet: {
-    d: '<circle cx="10" cy="20" r="1.4"></circle><circle cx="17.5" cy="20" r="1.4"></circle>',
-    c: '<path d="M3 4h2.2l2.3 11.2h11L21 7.5H6.2"></path>'
-     + '<circle cx="10" cy="20" r="1.4"></circle><circle cx="17.5" cy="20" r="1.4"></circle>',
-  },
-  karistir: {
-    d: '',
-    c: '<path d="M3 6h3.5l9 12H21M3 18h3.5l3-4M14.5 8l1.5-2H21"></path>'
-     + '<path d="M18.5 3.5L21 6l-2.5 2.5M18.5 15.5L21 18l-2.5 2.5"></path>',
-  },
   /* Yıldız — "varsayılan" işareti. */
   yildiz: {
     d: '<path d="M12 3.6l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.8-5.2 2.8 1-5.8-4.3-4.1 5.9-.9z"></path>',
@@ -7505,20 +7490,6 @@ function templateModulSayisi(p) {
   return DB.modulleri(p.id).filter(m => m.ad !== GENEL_MODUL).length;
 }
 
-/* Sektörün kutusunda çıkacak ikon — adındaki sözcüğe bakıyor. Eşleşme
-   yoksa nötr dükkan ikonu. */
-function sektorIkonu(ad) {
-  const a = String(ad || '').toLocaleLowerCase('tr');
-  const bul = liste => liste.some(x => a.includes(x));
-  if (bul(['sağlık', 'saglik', 'klinik', 'hastane', 'diş', 'dis', 'doktor'])) return ICON.kalp;
-  if (bul(['ticaret', 'market', 'perakende', 'mağaza', 'magaza', 'toptan'])) return ICON.sepet;
-  if (bul(['hizmet', 'danış', 'danis', 'ajans'])) return ICON.kisi;
-  if (bul(['üretim', 'uretim', 'inşaat', 'insaat', 'fabrika', 'imalat'])) return ICON.kova;
-  if (bul(['eğitim', 'egitim', 'okul', 'kurs'])) return ICON.katman;
-  if (bul(['muhasebe', 'finans', 'mali'])) return ICON.para;
-  return ICON.dukkan;
-}
-
 /* Template'in kapağı: hazır görsellerden biri + arka plan rengi. İkisi de
    paletindeki cekirdek nesnesinde; dosya yüklenmiyor, seçiliyor. */
 function templateKapagi(p) {
@@ -7526,9 +7497,13 @@ function templateKapagi(p) {
   return KAPAK_GORSELLERI.find(x => x.anahtar === cek.kapak) || null;
 }
 
+/* Arka plan rengi seçilmiyor, sıraya göre dönüyor: listedeki her template
+   bir öncekinden farklı renk alıyor, renkler bitince başa dönüyor.
+   Saklanmıyor — sırayla hesaplanıyor, hep tutarlı çıkıyor. */
 function templateKapakRengi(p) {
-  const cek = ((p || {}).palet || {}).cekirdek || {};
-  const r = KAPAK_RENKLERI.find(x => x.anahtar === cek.kapakRenk);
+  const liste = (DB.projeler || []).filter(x => !x.arsiv && cekirdekMi(x));
+  const i = liste.findIndex(x => x.id === (p || {}).id);
+  const r = KAPAK_RENKLERI[(i < 0 ? 0 : i) % KAPAK_RENKLERI.length];
   return r ? r.deger : 'var(--yuva)';
 }
 
@@ -7625,12 +7600,10 @@ function templateAyarlari(projeId) {
   let secili = templateSektorIdleri(p).slice();
   let paket  = templatePaketAnahtari(p);
   const cek0 = pl.cekirdek || {};
-  let kapak     = cek0.kapak || '';
-  let kapakRenk = cek0.kapakRenk || KAPAK_RENKLERI[0].anahtar;
+  let kapak = cek0.kapak || '';
   const paketler  = (DB.paketler || []).filter(k => paketinAkisi(k) !== 'ozel');
   const sektorler = DB.sektorler || [];
   const yayinAdres = String(pl.alanAdi || '').trim();
-  const kilitli = !!pl.kilitli;
 
   modalAc(`
     <div class="pd-tepe">
@@ -7656,20 +7629,9 @@ function templateAyarlari(projeId) {
             <img src="${esc(g.dosya)}" alt="" loading="lazy">
             <u class="kp-tik">${svg(ICON.tik, 12)}</u>
           </button>`).join('')}
-        <button class="kp kp-karistir" type="button" data-ta="karistir">
-          ${svg(ICON.karistir, 22)}<span>Karıştır</span>
-        </button>
       </div>
-    </div>
-
-    <div class="pd-alan">
-      <span class="pd-et">Arka Plan Rengi</span>
-      <div class="kp-renkler" id="ta-renk">
-        ${KAPAK_RENKLERI.map(r => `
-          <button class="kp-renk ${kapakRenk === r.anahtar ? 'sec' : ''}" type="button"
-                  data-ta-renk="${esc(r.anahtar)}" aria-label="${esc(r.ad)}"
-                  style="background:${r.deger}"></button>`).join('')}
-      </div>
+      <i class="pd-ipucu">Arka plan rengi kendiliğinden veriliyor; her
+      template bir öncekinden farklı renk alıyor.</i>
     </div>
 
     <label class="pd-alan">
@@ -7701,7 +7663,7 @@ function templateAyarlari(projeId) {
         ${sektorler.map(x => `
           <button class="sb ${secili.includes(x.id) ? 'sec' : ''}" type="button"
                   data-ta-sektor="${esc(x.id)}">
-            ${svg(sektorIkonu(x.ad), 20)}<span>${esc(x.ad)}</span>
+            <span>${esc(x.ad)}</span>
           </button>`).join('')}
       </div>` : '<i class="pd-ipucu">Önce Kütüphane > Sektörler\'den sektör ekle.</i>'}
       <i class="pd-ipucu">Sektör seçmezsen bu template yeni proje akışında
@@ -7721,12 +7683,6 @@ function templateAyarlari(projeId) {
           <i>${esc(yayinAdres)}</i></span>
         ${svg(ICON.chevron, 16)}
       </button>` : ''}
-      <button class="tp-is" type="button" data-ta="kilit">
-        <span class="tp-is-ik">${svg(ICON.kilit, 19)}</span>
-        <span class="tp-is-yz"><b>${kilitli ? 'Kilidi Aç' : 'Kilitle'}</b>
-          <i>${kilitli ? 'Şu an silinemez durumda.' : 'Yanlışlıkla silinmesini engeller.'}</i></span>
-        ${svg(ICON.chevron, 16)}
-      </button>
     </div>
 
     <button class="pd-kaldir" type="button" data-ta="sil">
@@ -7751,21 +7707,18 @@ function templateAyarlari(projeId) {
 
     /* Görsel ve renk: seçim, yükleme yok. Seçilen renk küçük görsellerin
        de zeminine vuruyor ki kartta nasıl duracağı burada görünsün. */
-    const zeminYaz = () => {
-      const r = KAPAK_RENKLERI.find(x => x.anahtar === kapakRenk);
-      $$('[data-ta-kapak]', kutu).forEach(b => { b.style.background = r ? r.deger : ''; });
-    };
+    /* Küçük görsellerin zemini kartta çıkacak renkle aynı. */
+    $$('[data-ta-kapak]', kutu).forEach(b => {
+      b.style.background = templateKapakRengi(p);
+    });
     const kapakYaz = () => {
       $$('[data-ta-kapak]', kutu).forEach(o =>
         o.classList.toggle('sec', o.dataset.taKapak === kapak));
-      $$('[data-ta-renk]', kutu).forEach(o =>
-        o.classList.toggle('sec', o.dataset.taRenk === kapakRenk));
       const sayac = $('#ta-sayac', kutu);
       if (sayac) {
         sayac.textContent = (KAPAK_GORSELLERI.findIndex(g => g.anahtar === kapak) + 1)
           + ' / ' + KAPAK_GORSELLERI.length;
       }
-      zeminYaz();
     };
     kapakYaz();
 
@@ -7773,21 +7726,6 @@ function templateAyarlari(projeId) {
       kapak = kapak === b.dataset.taKapak ? '' : b.dataset.taKapak;
       kapakYaz();
     }));
-
-    $$('[data-ta-renk]', kutu).forEach(b => b.addEventListener('click', () => {
-      kapakRenk = b.dataset.taRenk;
-      kapakYaz();
-    }));
-
-    /* Karıştır: görsel ve rengi rastgele seçer — ikisini de tek tek
-       denemeden hızlıca bir görünüm bulmak için. */
-    $('[data-ta="karistir"]', kutu).addEventListener('click', () => {
-      const g = KAPAK_GORSELLERI[Math.floor(Math.random() * KAPAK_GORSELLERI.length)];
-      const r = KAPAK_RENKLERI[Math.floor(Math.random() * KAPAK_RENKLERI.length)];
-      kapak = g.anahtar;
-      kapakRenk = r.anahtar;
-      kapakYaz();
-    });
 
     $$('[data-ta-paket]', kutu).forEach(b => b.addEventListener('click', () => {
       paket = b.dataset.taPaket;
@@ -7818,15 +7756,6 @@ function templateAyarlari(projeId) {
       window.open(/^https?:/.test(yayinAdres) ? yayinAdres : 'https://' + yayinAdres, '_blank');
     });
 
-    $('[data-ta="kilit"]', kutu).addEventListener('click', async () => {
-      try {
-        await DB.paletKaydet(p.id, Object.assign({}, p.palet || {}, { kilitli: !kilitli }));
-        modalKapat();
-        render();
-        toast(kilitli ? 'Kilit açıldı.' : 'Template kilitlendi.', 'basari');
-      } catch (h) { toast(h.message, 'hata'); }
-    });
-
     $('[data-ta="sil"]', kutu).addEventListener('click', () => {
       modalKapat();
       /* Silme kuralları (kilit kontrolü, onay, depoda kalanlar) tek yerde
@@ -7848,7 +7777,6 @@ function templateAyarlari(projeId) {
           sektorler: secili,
           aciklama: $('#ta-aciklama', kutu).value.trim() || null,
           kapak: kapak || null,
-          kapakRenk,
         });
         await DB.paletKaydet(p.id, Object.assign({}, eskiPalet, { cekirdek: cek }));
         modalKapat();

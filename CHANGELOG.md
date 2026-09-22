@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## v0.172.3
+- **Arka plan rengi artık seçilmiyor, kendiliğinden veriliyor.** Listedeki her template bir öncekinden farklı renk alıyor; beş renk bitince başa dönüyor.
+- "Karıştır" kutusu, renk seçme satırı ve sektör kutularındaki ikonlar kaldırıldı — sektörler sade yazı olarak duruyor.
+- "Kilitle / Kilidi aç" satırı template penceresinden çıkarıldı.
+
 ## v0.172.2
 **Template penceresi yeniden tasarlandı.**
 - **Kapak Fotoğrafı Seç** yatay şerit oldu; sağ üstte "1 / 3" sayacı, sonda **Karıştır** kutusu — görsel ve rengi rastgele seçiyor.
