@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## v0.171.2
+- **Yol haritası artık projeye kurulduğu anda donuyor.** Eskiden her açılışta paketten türetiliyordu; paketin "varsayılan" işaretini değiştirmek aylar önce teslim edilmiş bir müşterinin adımlarını da değiştirirdi. Paket artık ileriye dönük: yalnız bundan sonra kurulacak projeleri etkiliyor.
+- Anahtarın altındaki uyarı da bunu söylüyor: *"Kurulmuş N proje etkilenmez."*
+- **Kurulum:** `sql/28-proje-akis-dondur.sql` → daha önce kurulmuş projelerin bugünkü yol haritasını kalıcı hâle getirir. Çalıştırmazsan yalnız eski projeler paketten türemeye devam eder.
+
 ## v0.171.1
 - **"Yol haritası" seçimi kalktı — varsayılan işareti zaten söylüyor.** Varsayılan paket sıfırdan kurulan projelerin paketi, orada değiştirilecek hazır bir program yok → normal akış. Varsayılan olmayan bir pakete ancak bir template üzerinden geliniyor → hazır programın kurulumu akışı. İki durumun dışında bir hâl yok, ayrı bir seçim gereksizdi.
 - Anahtarın altında artık tek satırda hangi duraklardan geçileceği yazıyor; pakete bağlı proje varsa "işareti değiştirirsen onların adımları da değişir" uyarısı çıkıyor.

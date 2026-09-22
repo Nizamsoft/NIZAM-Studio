@@ -584,6 +584,9 @@ const DB = {
            Eskiden burada `sablon` yazıyordu; artık paket anahtarı. Eski
            projelerdeki `sablon` işareti okunmaya devam ediyor. */
         paket: sablon,
+        /* Yol haritası kopyalandığı anda donuyor (bkz. app.js paketAkisi):
+           paketin işareti sonradan değişse de bu proje aynı yoldan gider. */
+        akis: 'muhasebe',
         sablonSqlLink: (kaynak.palet && kaynak.palet.cekirdek && kaynak.palet.cekirdek.sqlLink) || null,
         sablonSqlMetinVar: !!(kaynak.palet && kaynak.palet.cekirdek && kaynak.palet.cekirdek.sqlMetinVar),
         modulAdi: null, roller: null, veriKatmani: null,

@@ -1241,12 +1241,20 @@ function projePaketi(p) {
    paket tablosu hiç yoksa (sql/25) projenin eski şablon işaretine düşüyoruz —
    ekran yine de doğru yol haritasını çiziyor. */
 function paketAkisi(p) {
+  const pl = (p && p.palet) || {};
+  /* Yol haritası projeye KURULDUĞU AN donuyor. Paketten her seferinde
+     türetseydik, bugün paketin işaretini değiştirmek aylar önce teslim
+     edilmiş bir müşterinin adımlarını da değiştirirdi. Paket ileriye
+     dönüktür: yalnız bundan sonra kurulacak projeleri etkiler. */
+  if (pl.akis) return pl.akis;
+
+  /* Donmamış eski projeler (bu sürümden önce kurulanlar) paketten türer. */
   const k = projePaketi(p);
   if (k) {
     if ('varsayilan' in k) return k.varsayilan ? 'ozel' : 'muhasebe';
     return k.akis || 'ozel';
   }
-  return ((p && p.palet) || {}).sablon ? 'muhasebe' : 'ozel';
+  return pl.sablon ? 'muhasebe' : 'ozel';
 }
 
 /* Bir paketin akışı — projesiz de sorulabilsin diye ayrı. */
@@ -7298,7 +7306,7 @@ function paketDuzenle(id) {
       <span class="pd-anahtar-kol"><u></u></span>
     </button>
 
-    <i class="pd-ipucu ${projeSayisi ? 'uyari' : ''}" id="pk-akis-alt">${
+    <i class="pd-ipucu" id="pk-akis-alt">${
       esc(paketAkisOzeti(varsayilan, projeSayisi))}</i>
 
     ${x ? `<button class="pd-kaldir" type="button" data-pk="sil">
@@ -7334,7 +7342,6 @@ function paketDuzenle(id) {
       anahtar.classList.toggle('acik', varsayilan);
       anahtar.setAttribute('aria-checked', String(varsayilan));
       ozet.textContent = paketAkisOzeti(varsayilan, projeSayisi);
-      ozet.classList.toggle('uyari', !!projeSayisi);
     });
 
     const silDug = $('[data-pk="sil"]', kutu);
@@ -7395,8 +7402,8 @@ function paketAkisOzeti(varsayilan, projeSayisi) {
   const a = PAKET_AKISLARI.find(x => x.anahtar === (varsayilan ? 'ozel' : 'muhasebe'));
   const yol = a ? a.alt : '';
   return projeSayisi
-    ? `${yol} · Bu paket ${projeSayisi} projede kullanılıyor — işareti `
-      + 'değiştirirsen onların adımları da değişir.'
+    ? `${yol} · Kurulmuş ${projeSayisi} proje etkilenmez; bu ayar yalnız `
+      + 'bundan sonra kurulacaklara uygulanır.'
     : yol;
 }
 
@@ -10325,7 +10332,8 @@ async function sihirbazKaydet() {
       const vp = varsayilanPaket();
       await DB.paletKaydet(id, Object.assign(
         { gorulenSurum: APP.version, projeTuru: SIHIRBAZ.tur || 'gercek' },
-        vp ? { paket: vp.anahtar } : {}));
+        /* Yol haritası burada donuyor — bkz. paketAkisi. */
+        vp ? { paket: vp.anahtar, akis: paketinAkisi(vp) } : { akis: 'ozel' }));
     } catch (h) { /* kritik değil, Firma durağından sonra girilebilir */ }
 
     /* Logo ve işletme görseli ancak proje kurulduktan sonra yüklenebilir:
