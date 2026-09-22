@@ -1661,7 +1661,7 @@ function baglantilarSayfasi(p, d) {
   const pl = p.palet || {};
   const sunuculu    = sunuculuMu(p);
   const namecheapMi = pl.alanTuru === 'namecheap';
-  const sqlliMi     = sunuculu && (!!pl.sablonSqlLink || !!pl.sablonSqlMetinVar);
+  const sqlliMi     = sunuculu && !!pl.sablonSqlMetinVar;
   const supabaseTam = !!String(pl.supabaseUrl || '').trim() && !!String(pl.supabaseAnon || '').trim();
   const depoTam     = !!p.repo;
   const yayinTam    = !!pl.yayinda;
@@ -6021,7 +6021,7 @@ function projeDuraklari(p) {
              && (pl0.alanTuru !== 'namecheap' || !!pl0.namecheapBaglandi)
              /* Template'in SQL'i (link ya da metin) varsa yükleme de burada
                 bitmiş olmalı — bkz. baglantiAdimListesi. */
-             && ((!pl0.sablonSqlLink && !pl0.sablonSqlMetinVar) || !!pl0.sqlYuklendi),
+             && (!pl0.sablonSqlMetinVar || !!pl0.sqlYuklendi),
       ozet: !p.repo
         ? 'Depo, sohbet, adres ve yayın burada kurulacak.'
         : !pl0.yayinda
@@ -8726,7 +8726,7 @@ function cekirdekKurulumAdimBittiMi(k, p) {
      Metin ya da link, ikisinden biri yeterli. */
   if (k === 'sql') {
     const cekirdek = (p.palet || {}).cekirdek || {};
-    return !!cekirdek.sqlLink || !!cekirdek.sqlMetinVar;
+    return !!cekirdek.sqlMetinVar;
   }
   return false;
 }
@@ -8855,8 +8855,7 @@ function cekirdekKurulumBagla(kutu) {
 function cekirdekAdimSqlGovde(p) {
   const pl = p.palet || {};
   const cekirdek = pl.cekirdek || {};
-  const mevcutLink  = cekirdek.sqlLink || '';
-  const metinVar    = !!cekirdek.sqlMetinVar;
+  const metinVar = !!cekirdek.sqlMetinVar;
   /* Birleşik kurulum SQL'i tek blok olarak Claude Code sohbetine
      sığmıyor (20 bin+ satır) — o yüzden üç parçaya bölünüp geliyor,
      her biri ayrı kaydediliyor (bkz. sql/19-sablon-sql-parca.sql). */
@@ -8875,17 +8874,7 @@ function cekirdekAdimSqlGovde(p) {
       'Bu template\'ten açılan her müşteri kopyasında, Supabase bağlanırken bu SQL kullanılacak — üç parça halinde.')
     + parcaKutusu(1) + parcaKutusu(2) + parcaKutusu(3)
     + (metinVar ? `<div class="kur-deger duz">${svg(ICON.tik, 13)} Metin kayıtlı — müşteri
-        projelerinde bundan otomatik kopya çıkacak</div>` : '')
-    + `<label class="field" style="margin-top:18px">
-        <span>GitHub linki — depo public'se yeterli, metin girilmediyse yedek olarak kullanılır</span>
-        <input type="text" id="ck-sql-link" value="${esc(mevcutLink)}"
-               placeholder="https://github.com/.../blob/main/....sql"
-               autocomplete="off" spellcheck="false"></label>
-      <div class="kur-dug">
-        <button class="sayfa-dug ikincil" type="button" data-eylem="cekirdek-sql-kaydet"
-                data-proje="${p.id}">${svg(ICON.check, 15)} Kaydet</button>
-      </div>`
-    + (mevcutLink ? `<div class="kur-deger duz">${svg(ICON.tik, 13)} Link kayıtlı</div>` : '');
+        projelerinde bundan otomatik kopya çıkacak</div>` : '');
 }
 
 /* ==========================================================================
@@ -10828,7 +10817,7 @@ function baglantiAdimListesi(p) {
          "giriş ve yetki kaldırıldı") — ilk giriş, normal projelerdeki gibi
          ilk kurulum promptunun kendi bootstrap girişinden geliyor (bkz.
          yetkiBlogu), ayrı bir "İlk kullanıcı" adımına gerek yok. */
-      if (pl.sablonSqlLink || pl.sablonSqlMetinVar) liste.push('sql');
+      if (pl.sablonSqlMetinVar) liste.push('sql');
     }
     if (pl.alanTuru === 'namecheap') liste.push('namecheap');
     liste.push('claude');
@@ -11151,18 +11140,15 @@ function baglantiAdimSupabase(p) {
 }
 
 /* Şablon kopyalarına özel ara adım: template'in hazır SQL'i (bkz. Templateler
-   > kurulum sihirbazı, `cekirdek.sqlLink`) yeni Supabase projesine yükleniyor.
-   Link her müşteri kopyasında aynı — template'in kendi deposunu gösterir,
-   içerik zaten kopyalandığı için sorun değil. */
+   > Kurulum SQL'i) yeni Supabase projesine yükleniyor. Metin üç parça
+   halinde template'in kaydından okunuyor. */
 function baglantiAdimSql(p) {
   const pl = p.palet || {};
   const metinVar = !!pl.sablonSqlMetinVar;
-  const link     = String(pl.sablonSqlLink || '').trim();
   const yuklendi = !!pl.sqlYuklendi;
 
-  /* Metin varsa öncelik onda: depo private olsa da çalışır (bkz.
-     sablon-sql-metin-kopyala). Yalnız link tanımlıysa eskisi gibi
-     "aç, elle kopyala" akışına düşülüyor. Metin üç parça halinde
+  /* SQL metin olarak saklanıyor; depolarımız private olduğu için
+     "GitHub'daki dosyayı aç" yolu kaldırıldı. Metin üç parça halinde
      (bkz. sql/19-sablon-sql-parca.sql) — sırayla kopyalanıp çalıştırılır. */
   const parcaSirasi = ['1.', '2.', '3.'];
   const govde = metinVar ? `
@@ -11177,12 +11163,6 @@ function baglantiAdimSql(p) {
       <div class="fbd-not">${svg(ICON.info, 13)}
         <span>Her parça panoya kopyalanır — Supabase projendeki <b>SQL Editor</b>'e
         sırayla yapıştır ve çalıştır (Run): önce 1., bitince 2., sonra 3.</span></div>`
-    : link ? `
-      <a class="sayfa-dug ikincil" target="_blank" rel="noopener" href="${esc(link)}">
-        ${svg(ICON.disari, 15)} SQL dosyasını aç</a>
-      <div class="fbd-not">${svg(ICON.info, 13)}
-        <span>Açılan sayfadaki kodun tamamını kopyala, Supabase projendeki
-        <b>SQL Editor</b>'e yapıştır ve çalıştır (Run).</span></div>`
     : `<div class="note uyari">${svg(ICON.uyari, 15)}
         <span>Bu template için SQL tanımlanmamış — Templateler'den ekleyebilirsin.</span></div>`;
 
@@ -14634,17 +14614,6 @@ async function eylemCalistir(el) {
     const adres = el.dataset.adres;
     if (adres) window.open('https://' + adres, '_blank', 'noopener');
     return;
-  }
-
-  if (e === 'cekirdek-sql-kaydet') {
-    const pr = DB.proje(el.dataset.proje);
-    if (!pr) return;
-    const alan = document.getElementById('ck-sql-link');
-    const link = alan ? alan.value.trim() : '';
-    if (!link) { toast('Önce bir link yaz.', 'uyari'); return; }
-    const pl = pr.palet || {};
-    const cekirdek = Object.assign({}, pl.cekirdek || {}, { sqlLink: link });
-    return isYap(() => DB.paletKaydet(pr.id, Object.assign({}, pl, { cekirdek })), 'Kaydedildi.');
   }
 
   if (e === 'cekirdek-sql-metin-kaydet') {

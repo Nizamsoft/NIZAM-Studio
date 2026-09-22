@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.172.6
+- **GitHub linki alanı kaldırıldı.** Yalnız public depoda işe yarıyordu, bizim depolarımız private. Template kurulumunda üç parça SQL kaldı; müşteri projesinde de "SQL dosyasını aç" yolu kalktı, tek yol kopyala-yapıştır.
+
 ## v0.172.5
 - **Template kurulumunda tek sayfa kaldı: Kurulum SQL'i.** Üç parça yapıştırma alanı ve yedek GitHub linki. GitHub ve "Claude ile temizle" adımları kaldırıldı — adım şeridi ve ileri/geri de gitti, altta tek "Kapat" var.
 - Bir template artık "temizlendi" işareti beklemeden yeni proje akışında listeleniyor; kartta "kuruluyor" yazısı kalktı.

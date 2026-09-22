@@ -574,8 +574,7 @@ const DB = {
            katmanı da bu firmaya özel — boş gelip yeniden doldurulmalı.
            Kurulum ve yapı (modül/sayfa) yapısı ise KALIYOR, o üstteki
            `modulleri`/`sayfalari` kopyalamasından geliyor.
-           `sablonSqlLink`: kaynağın (template'in) kendi `cekirdek.sqlLink`'i —
-           Bağlantılar ve temel'deki SQL/İlk kullanıcı adımları bunu okuyor.
+           Bağlantılar ve temel'deki SQL adımı aşağıdaki bayrağı okuyor.
            `sablonSqlMetinVar`: SQL metin olarak da kayıtlıysa (bkz.
            sql/18-sablon-sql-metni.sql) bu bayrak true olur — asıl metin
            `kopyaKaynagi` (yani bu template'in id'si) üzerinden ayrı tablodan
@@ -587,7 +586,6 @@ const DB = {
         /* Yol haritası kopyalandığı anda donuyor (bkz. app.js paketAkisi):
            paketin işareti sonradan değişse de bu proje aynı yoldan gider. */
         akis: 'muhasebe',
-        sablonSqlLink: (kaynak.palet && kaynak.palet.cekirdek && kaynak.palet.cekirdek.sqlLink) || null,
         sablonSqlMetinVar: !!(kaynak.palet && kaynak.palet.cekirdek && kaynak.palet.cekirdek.sqlMetinVar),
         modulAdi: null, roller: null, veriKatmani: null,
         sablonTanimlar: null, sablonDegisimTamamlandi: false, sablonGirisTamamlandi: false,
