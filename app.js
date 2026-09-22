@@ -1226,6 +1226,16 @@ function sablonMu(p) {
   return paketAkisi(p) === 'muhasebe';
 }
 
+/* Claude'a giden promptlarda bu paket nasıl anlatılıyor. Cümlenin içine düz
+   bir ad gibi giriyor ("çalışan bir <tanim> var"), o yüzden ek almayan bir
+   ad bekliyoruz. Yazılmamışsa nötr bir sözcüğe düşüyoruz — eskiden buralarda
+   "muhasebe programı" düz yazı duruyordu ve ikinci bir paket eklendiğinde
+   Claude'a yanlış şey anlatıyordu. */
+function paketTanimi(p) {
+  const k = projePaketi(p);
+  return (k && String(k.tanim || '').trim()) || 'program';
+}
+
 /* DURAKLAR'daki statik durak nesnesinin (ad/aciklama) şablon durumuna göre
    değişen bir kopyası — sayfa başlığı (adimBasligi) bunu okuyor. */
 function sablonD(d, ad, aciklama) {
@@ -7203,6 +7213,14 @@ function paketDuzenle(id) {
              placeholder="Bir cümleyle ne olduğu" maxlength="120" autocomplete="off">
     </label>
 
+    <label class="field">
+      <span>Promptta nasıl anlatılsın? <em class="ipucu">isteğe bağlı</em></span>
+      <input type="text" id="pk-tanim" value="${esc(x ? (x.tanim || '') : '')}"
+             placeholder="Örn. muhasebe programı" maxlength="60" autocomplete="off">
+      <p class="ipucu">Claude'a giden metinlerde "çalışan bir <b>…</b> var" diye
+      geçiyor. Ek almayan bir ad yaz.</p>
+    </label>
+
     <div class="field">
       <span>Yol haritası</span>
       <div class="secenek-serit" id="pk-akis">
@@ -7264,12 +7282,14 @@ function paketDuzenle(id) {
       try {
         /* Anahtar adres gibi: bir kez kurulur, sonra değişmez. Değişseydi
            o pakete bağlı projeler paketini kaybederdi. */
-        const alanlar = { ad, aciklama: aciklama || null, akis };
+        const alanlar = { ad, aciklama: aciklama || null, akis,
+                          tanim: $('#pk-tanim', kutu).value.trim() || null };
         if (!id) alanlar.anahtar = paketAnahtariUret(ad);
-        await DB.paketKaydet(id, alanlar);
+        const sonuc = await DB.paketKaydet(id, alanlar);
         modalKapat();
         render();
-        toast(id ? 'Paket güncellendi.' : 'Paket eklendi.', 'basari');
+        toast((sonuc && sonuc.uyari) || (id ? 'Paket güncellendi.' : 'Paket eklendi.'),
+          sonuc && sonuc.uyari ? 'uyari' : 'basari');
       } catch (h) {
         yazi.textContent = 'Kaydet';
         toast(h.message, 'hata');

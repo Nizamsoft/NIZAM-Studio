@@ -840,14 +840,30 @@ const DB = {
      Akışın kendisi kodda; paket yalnız hangisinin kullanılacağını seçer. */
   async paketKaydet(id, alanlar) {
     yazmaKontrol();
-    const q = id
-      ? AUTH.db.from('packages').update(alanlar).eq('id', id)
-      : AUTH.db.from('packages')
-          .insert(Object.assign({ sira: this.paketler.length + 1 }, alanlar));
-    const { data, error } = await q.select('id');
+
+    /* `tanim` sonradan eklenen bir sütun (sql/26). SQL çalıştırılmadıysa
+       sorgu patlıyor; o zaman onsuz bir daha deniyoruz ve kullanıcıyı
+       uyarıyoruz — paketin geri kalanı yine kaydedilsin. */
+    const yaz = async govde => {
+      const q = id
+        ? AUTH.db.from('packages').update(govde).eq('id', id)
+        : AUTH.db.from('packages')
+            .insert(Object.assign({ sira: this.paketler.length + 1 }, govde));
+      return q.select('id');
+    };
+
+    let { data, error } = await yaz(alanlar);
+    let uyari = null;
+    if (error && /tanim/.test(error.message || '')) {
+      const kopya = Object.assign({}, alanlar);
+      delete kopya.tanim;
+      ({ data, error } = await yaz(kopya));
+      uyari = 'Paket kaydedildi; prompt tanımı için sql/26-paket-tanim.sql çalıştırılmamış.';
+    }
     if (error) throw new Error(paketHatasi(error));
     if (!data || !data.length) throw new Error(paketHatasi({}));
     await this.tazele('paketler');
+    return { uyari };
   },
 
   /* Silmiyoruz, pasife çekiyoruz: o pakete bağlı projelerin yol haritası

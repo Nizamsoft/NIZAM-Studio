@@ -322,8 +322,10 @@ const PROMPT = {
       s.push('> ve söyle.', '');
     }
 
-    s.push('Bu depo **sıfırdan bir proje değil** — çalışan bir muhasebe');
-    s.push('programının birebir kopyası. Amacımız bu kopyayı ');
+    /* Paketin adı promptun içine düz bir ad gibi giriyor — ek almasın diye
+       cümle "…var, birebir kopyalandı" biçiminde kuruldu. */
+    s.push('Bu depo **sıfırdan bir proje değil**: çalışan bir ' + paketTanimi(p) + ' var,');
+    s.push('birebir kopyalandı. Amacımız bu kopyayı ');
     s.push((p.firma ? '**' + p.firma + '**' : 'yeni bir firma') + ' için uyarlamak.');
     s.push('Kod yapısını, sayfaları ve modülleri **değiştirmeyeceksin** —');
     s.push('sadece bu firmaya özel olanı uygulayacaksın.', '');
@@ -1536,7 +1538,7 @@ const PROMPT = {
       s.push('> Bu oturum yalnız bu depoya bağlı olmalı. Deposu farklıysa dur');
       s.push('> ve söyle.', '');
     }
-    s.push('Bu proje bir muhasebe programı şablonundan kopyalandı. Aşağıdaki');
+    s.push('Bu proje bir ' + paketTanimi(p) + ' şablonundan kopyalandı. Aşağıdaki');
     s.push('bilgiler bu firmaya özel — bunları koda işle. **Modül, sayfa ve');
     s.push('genel yapıyı değiştirme**, yalnız aşağıdaki bilgilere göre uyarla.');
     s.push('"Excel yapısı" başlıklarının altında bir JSON alan listesi ve');

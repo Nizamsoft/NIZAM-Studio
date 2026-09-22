@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü
 
+## v0.170.4
+**Promptlar pakete bağlandı — yapının son adımı.**
+- Claude'a giden metinlerde "muhasebe programı" düz yazı duruyordu; ikinci bir paket eklendiği anda yanlış konuşacaktı. Artık **paketin kendi tanımından** geliyor.
+- Paket penceresine **"Promptta nasıl anlatılsın?"** alanı eklendi (Muhasebe-1 için "muhasebe programı"). Yazılmazsa nötr "program" kullanılıyor.
+- **Kurulum:** `sql/26-paket-tanim.sql` → Supabase SQL Editor'de çalıştır. Çalıştırmazsan paket yine kaydediliyor, yalnız tanım alanı yazılamıyor ve uyarı çıkıyor.
+
+Bununla birlikte yeni yapı tamamlandı: **Sektör → Paket → Template** üçlüsü; şablon ve şablon türü kavramları kalktı.
+
 ## v0.170.3
 **Modül Şablonları kalktı — yapının 4. adımı.**
 - Kütüphane artık dört kart: **Sektörler · Paketler · Templateler · Nizam Standartları**. "Şablonlar" ekranı ve yan menüdeki "Modül Şablonları" kaldırıldı.
