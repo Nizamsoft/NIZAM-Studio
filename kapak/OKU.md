@@ -8,9 +8,9 @@ duruyor. Kullanıcı yükleme yapmıyor; template ayarlarından bunlardan birini
 
 | Dosya | İçerik |
 |---|---|
-| `pano.png` | Muhasebe / gösterge ekranı |
-| `liste.png` | Tablo-liste ekranı |
-| `takvim.png` | Takvim / randevu ekranı |
+| `muhasebe.png` | Muhasebe ekranı |
+| `stok.png` | Stok ekranı |
+| `restaurant.png` | Restoran ekranı |
 
 Adlar birebir böyle olmalı: küçük harf, Türkçe karakter yok, `.png`.
 
