@@ -648,7 +648,8 @@ const VIEWS = {
   sohbet: () => {
     if (YUKLENIYOR) return iskeletler(4);
     if (DB.hata)    return hataKutusu(DB.hata);
-    return sohbetEkrani();
+    const kisi = rota().id;
+    return kisi ? yazismaEkrani(kisi) : sohbetEkrani();
   },
 
   /* ---------- Güvenlik Testi ---------- */
@@ -6642,8 +6643,12 @@ function render() {
   $('#main').classList.toggle('susulu', key === 'panel' && !detay);
   /* Adım akışları kaydırılmaz: üç parça ekrana bölüşür. Yapı durağı ancak
      akış açıkken sabit; kurulu modül listesi normal kaydırılan sayfadır. */
+  /* Yazışma tam ekran: kendi başlığı ve alttaki yazma çubuğu var,
+     uygulamanın üst çubuğu ve sekmeleri gizleniyor. */
+  const yazisma = key === 'sohbet' && !!id;
+  $('#app').classList.toggle('yazisma', yazisma);
   $('#view').classList.toggle('sabit',
-    sayfa === 'tasarim' || sayfa === 'yapi' || sayfa === 'beta');
+    yazisma || sayfa === 'tasarim' || sayfa === 'yapi' || sayfa === 'beta');
   ustEylemYaz(key, detay, id);
   artiYaz(key, detay, id);
   /* Geri oku hiç kaybolmuyor: gidilecek bir yer yoksa yalnız soluyor ve
@@ -7325,9 +7330,9 @@ function ekipEkrani() {
    Şimdilik yalnız liste: ekip üyeleri ve Nizam Studio duyuru satırı.
    Mesajlaşmanın kendisi henüz yazılmadı; satıra basınca haber veriyor.
    Yazılınca son mesaj, saat ve okunmamış rozeti bu satırlara girecek. */
-function sohbetSatiri({ ad, alt, avatar, foto, acik, marka }) {
+function sohbetSatiri({ id, ad, alt, avatar, foto, acik, marka }) {
   return `
-    <button class="sh2" type="button" data-eylem="sohbet-ac"
+    <button class="sh2" type="button" data-eylem="sohbet-ac" data-id="${esc(id)}"
             data-ara="${esc(String(ad).toLocaleLowerCase('tr'))}">
       <span class="sh2-foto ${foto ? 'resimli' : ''} ${marka ? 'marka' : ''}"
             ${foto ? `style="background-image:url('${esc(foto)}')"` : ''}>
@@ -7360,12 +7365,14 @@ function sohbetEkrani() {
     .sort((a, b) => (DB.cevrimicimi(b.id) ? 1 : 0) - (DB.cevrimicimi(a.id) ? 1 : 0));
 
   const satirlar = kisiler.map(k => sohbetSatiri({
+    id: k.id,
     ad: k.ad || 'İsimsiz',
     alt: DB.cevrimicimi(k.id) ? 'Şu an aktif.' : 'Henüz mesaj yok',
     avatar: basHarf(k.ad || '?'),
     foto: k.foto,
     acik: DB.cevrimicimi(k.id),
   })).join('') + sohbetSatiri({
+    id: 'studio',
     ad: 'Nizam Studio',
     alt: 'Duyurular burada görünecek',
     avatar: 'NS',
@@ -7390,6 +7397,70 @@ function sohbetEkrani() {
 
     <div class="sh2-liste">${satirlar}
       <div class="pj-bos-arama">Aramana uyan kişi yok.</div>
+    </div>`;
+}
+
+/* ---------- Yazışma ekranı ----------
+   Tasarım hazır, mesajlaşmanın kendisi henüz yazılmadı: gövde boş
+   duruyor, yazıp göndermek şimdilik haber veriyor. Mesaj kaydı geldiğinde
+   yalnız .yz-govde'nin içi dolacak. */
+function yazismaEkrani(kisiId) {
+  const k = (DB.kisilerHepsi || []).find(x => x.id === kisiId);
+  const marka = kisiId === 'studio';
+  if (!k && !marka) {
+    return `<div class="card">${empty(ICON.kisi, 'Kişi bulunamadı',
+      'Sohbet listesine dön.', 'Sohbet', 'sohbete')}</div>`;
+  }
+
+  const ad   = marka ? 'Nizam Studio' : (k.ad || 'İsimsiz');
+  const acik = marka ? false : DB.cevrimicimi(k.id);
+  const son  = marka ? '' : ekipSonGorulme(k);
+  const alt  = marka ? 'Duyurular' : (acik ? 'Çevrimiçi' : (son ? esc(pzZaman(son)) : 'Çevrimdışı'));
+
+  const ikon = (ad2, yol) => `<button class="yz-ik" type="button" data-eylem="sohbet-yakinda"
+    aria-label="${ad2}"><svg viewBox="0 0 24 24">${yol}</svg></button>`;
+
+  return `
+    <div class="yz">
+      <div class="yz-ust">
+        <button class="yz-geri" type="button" data-eylem="sohbete" aria-label="Geri">
+          <svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"></path></svg>
+        </button>
+        <span class="yz-foto ${!marka && k.foto ? 'resimli' : ''} ${marka ? 'marka' : ''}"
+              ${!marka && k.foto ? `style="background-image:url('${esc(k.foto)}')"` : ''}>
+          ${marka ? '<img src="logo.png" alt="">' : `<b>${esc(basHarf(ad))}</b>`}
+        </span>
+        <span class="yz-kim">
+          <b>${esc(ad)}</b>
+          <i class="${acik ? 'acik' : ''}">${acik ? '<u></u>' : ''}${alt}</i>
+        </span>
+        ${ikon('Sesli ara', '<path d="M6.5 3.5h3l1.5 4-2 1.5a12 12 0 0 0 6 6l1.5-2 4 1.5v3a2 2 0 0 1-2.2 2C11.8 22.2 1.8 12.2 1.3 5.7A2 2 0 0 1 3.3 3.5z"></path>')}
+        ${ikon('Görüntülü ara', '<rect x="2.5" y="6" width="13" height="12" rx="3"></rect><path d="M15.5 11l6-3.5v9l-6-3.5z"></path>')}
+        ${ikon('Seçenekler', '<circle cx="12" cy="5" r="1.4"></circle><circle cx="12" cy="12" r="1.4"></circle><circle cx="12" cy="19" r="1.4"></circle>')}
+      </div>
+
+      <div class="yz-govde">
+        <div class="yz-bos">
+          <span>${svg(ICON.kisi, 26)}</span>
+          <b>Henüz mesaj yok</b>
+          <i>Mesajlaşma yakında açılacak.</i>
+        </div>
+      </div>
+
+      <div class="yz-alt">
+        <button class="yz-ek" type="button" data-eylem="sohbet-yakinda" aria-label="Dosya ekle">
+          <svg viewBox="0 0 24 24"><path d="M20 11.5l-8.2 8.2a4.6 4.6 0 0 1-6.5-6.5l8.4-8.4a3 3 0 0 1 4.3 4.3l-8.3 8.3a1.5 1.5 0 0 1-2.1-2.1l7.6-7.6"></path></svg>
+        </button>
+        <label class="yz-kutu">
+          <input type="text" id="yz-metin" placeholder="Mesaj yaz…" autocomplete="off">
+          <button class="yz-emoji" type="button" data-eylem="sohbet-yakinda" aria-label="Emoji">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="M9 10v.01M15 10v.01M8.5 14.5a4.5 4.5 0 0 0 7 0"></path></svg>
+          </button>
+        </label>
+        <button class="yz-gonder" type="button" data-eylem="sohbet-yakinda" aria-label="Gönder">
+          <svg viewBox="0 0 24 24"><path d="M21 3L3 10.5l7 3 3 7z"></path><path d="M10 13.5L21 3"></path></svg>
+        </button>
+      </div>
     </div>`;
 }
 
@@ -12514,7 +12585,9 @@ async function eylemCalistir(el) {
 
   /* Mesajlaşma henüz yazılmadı; düğmenin yeri tasarımda hazır. */
   if (e === 'mesaj-gonder') { location.hash = '#/sohbet'; return; }
-  if (e === 'sohbet-ac')    { toast('Mesajlaşma yakında gelecek.'); return; }
+  if (e === 'sohbet-ac')      { location.hash = '#/sohbet/' + id; return; }
+  if (e === 'sohbete')        { location.hash = '#/sohbet'; return; }
+  if (e === 'sohbet-yakinda') { toast('Mesajlaşma yakında gelecek.'); return; }
 
   if (e === 'ekip-suz') {
     EKIP_SUZ = el.dataset.deger;

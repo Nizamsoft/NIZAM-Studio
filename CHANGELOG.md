@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## v0.168.1
+- **Yazışma ekranı eklendi:** sohbet listesinde birine basınca açılıyor. Kendi başlığı var (geri, fotoğraf, ad, çevrimiçi durumu, arama/görüntülü/seçenek düğmeleri), altında yazma çubuğu; uygulamanın üst çubuğu ve alt sekmeleri bu ekranda gizleniyor.
+- Mesajlaşma henüz yazılmadı: gövde "Henüz mesaj yok" diyor, düğmeler haber veriyor. Mesaj kaydı gelince yalnız gövdenin içi dolacak.
+
 ## v0.168.0
 - **Sohbet ekranı geldi** (üst çubuktaki simgeden): başlık, kişi araması ve liste. Satırlar gerçek ekip üyelerinden; çevrimiçi olanlar üstte ve yeşil noktalı. En altta "Nizam Studio" duyuru satırı.
 - Mesajlaşmanın kendisi henüz yazılmadı: satıra basınca haber veriyor, son mesaj ve saat alanları özellik gelince dolacak.
