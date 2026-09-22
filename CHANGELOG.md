@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## v0.169.5
+- **Alt çubuğun sağındaki Profil, yerini Ayarlar'a bıraktı.** Profil zaten sağ üstteki hesap kartından açılıyor.
+- **Ayarlar iki kata ayrıldı — telefon ayarları gibi.** Üstte hesap kartı ve beş başlık (Hesap, Kütüphane, Güvenlik, Yayın, Uygulama ve bakım); başlığa basınca kendi sayfası açılıyor, geri oku listeye döner.
+- Eski upuzun tek sayfa dağıtıldı: sektör/şablon/standart/template/kilit → Kütüphane, güvenlik testi → Güvenlik, kök alan adı ve bağlantılar → Yayın, sürüm ve yedekleme → Uygulama ve bakım. Ekip Yönetimi satırı kalktı; Ekip zaten kendi sekmesinde.
+
 ## v0.169.4
 - **Projeler sayfası sadeleşti.** Filtrele, Sıralama ve ızgara/liste görünüm düğmeleri kaldırıldı; sekmeler ve arama kutusu yetiyor. Sıra sabit: en son dokunulan proje üstte.
 

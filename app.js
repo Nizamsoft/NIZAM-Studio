@@ -112,6 +112,25 @@ let LOGO_ZAMANLAYICI = null;
    tek katman kalır — onlar simge değil, yön gösterir. */
 
 const ICON = {
+  /* Yayın: ortadan dışarı açılan dalga. Ayarlar'daki "Yayın" başlığı için. */
+  yayin: {
+    d: '<circle cx="12" cy="12" r="2.2"></circle>',
+    c: '<circle cx="12" cy="12" r="2.2"></circle>'
+     + '<path d="M7.8 7.8a6 6 0 0 0 0 8.4M16.2 16.2a6 6 0 0 0 0-8.4"></path>'
+     + '<path d="M4.9 4.9a10 10 0 0 0 0 14.2M19.1 19.1a10 10 0 0 0 0-14.2"></path>',
+  },
+  /* Dişli — "ayar" ikonu sürgü çizgileri; başlık kartında dişli isteniyor. */
+  disli: {
+    d: '<circle cx="12" cy="12" r="3.2"></circle>',
+    c: '<circle cx="12" cy="12" r="3.2"></circle>'
+     + '<path d="M19.4 14.6a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0'
+     + ' -1.9-.3 1.7 1.7 0 0 0-1 1.5v.3a2 2 0 1 1-4 0v-.2a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0'
+     + ' -1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3.7a2 2'
+     + ' 0 1 1 0-4h.2a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7'
+     + ' 1.7 0 0 0 1.9.3h.1a1.7 1.7 0 0 0 1-1.5V3.7a2 2 0 1 1 4 0v.2a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0'
+     + ' 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9v.1a1.7 1.7 0 0 0 1.5 1h.3a2'
+     + ' 2 0 1 1 0 4h-.2a1.7 1.7 0 0 0-1.5 1z"></path>',
+  },
   folder: {
     d: '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>',
     c: '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>',
@@ -744,9 +763,26 @@ const VIEWS = {
     `;
   },
 
-  ayarlar: () => `
-    <div class="section" style="margin-top:0">
-      <span class="label">Hesap</span>
+  /* Ayarlar iki katlı: önce başlıklar, başlığa basınca kendi sayfası.
+     Telefon ayarları gibi. Adres #/ayarlar/<grup>; geri oku listeye döner. */
+  ayarlar: () => {
+    const g = AYAR_GRUP[rota().id];
+    return g ? ayarSayfasi(g) : ayarListesi();
+  },
+};
+
+/* ==========================================================================
+   AYARLAR
+   ========================================================================== */
+
+/* Başlıklar tek yerde: listedeki kart da, açılan sayfa da buradan okunuyor.
+   `goster` false dönen başlık listede hiç çıkmaz — boş sayfaya girilmesin. */
+const AYAR_GRUP = {
+  hesap: {
+    ad: 'Hesap', renk: 'kirmizi', ikon: 'kisi',
+    aciklama: 'Fotoğraf, ad, e-posta ve rolün.',
+    goster: () => true,
+    ciz: () => `
       <div class="card">
         <div class="row-list">
           <div class="row" data-eylem="foto-degistir" role="button" tabindex="0">
@@ -766,39 +802,60 @@ const VIEWS = {
           ${infoRow('E-posta', AUTH.mail, true)}
           ${infoRow('Rol', AUTH.rolAdi)}
         </div>
-      </div>
-    </div>
+      </div>`,
+  },
 
-    <div class="section">
-      <span class="label">Uygulama</span>
-      <div class="card">
-        <div class="row-list">
-          ${infoRow('Ad', APP.name)}
-          ${infoRow('Sürüm', APP.version, true)}
-          ${infoRow('Aşama', APP.stage)}
-          ${infoRow('Derleme', APP.build, true)}
-        </div>
-      </div>
-    </div>
-
-    ${AUTH.yonetici ? `
-      <div class="section">
-        <span class="label">Ekip</span>
+  kutuphane: {
+    ad: 'Kütüphane', renk: 'mavi', ikon: 'folder',
+    aciklama: 'Sektörler, şablonlar, standartlar ve proje kaynakları.',
+    goster: () => true,
+    ciz: () => `
+      <div class="section" style="margin-top:0">
+        <span class="label">İçerik</span>
         <div class="card">
           <div class="row-list">
-            <div class="row" data-eylem="ekibe" role="button" tabindex="0">
-              <div class="row-main">
-                <span class="row-title">Ekip Yönetimi</span>
-                <span class="row-sub">${ekipAltBaslik()} · kullanıcı ekle, rol ve erişim ver</span>
-              </div>
-              <span class="row-val">${svg(ICON.chevron, 15)}</span>
-            </div>
+            ${ayarSatir('sektorlere', 'Sektörler',
+              sektorAltBaslik() + ' · modül önerisini belirler')}
+            ${ayarSatir('sablonlara', 'Modül Şablonları',
+              sablonAltBaslik() + ' · yeni projelerde çıkan hazır modüller')}
+            ${ayarSatir('standartlara', 'Nizam Standartları',
+              DB.standartlar.length + ' tarif · prompta kendiliğinden eklenir')}
           </div>
         </div>
-      </div>` : ''}
+      </div>
 
-    ${AUTH.yonetici ? `
       <div class="section">
+        <span class="label">Projeler</span>
+        <div class="card">
+          <div class="row-list">
+            ${ayarSatir('templatelere', 'Templateler',
+              cekirdekAltBaslik() + ' · yeni proje kurarken kaynak olarak seçilir')}
+            ${ayarSatir('kilitlere', 'Projeleri kilitle',
+              kilitAltBaslik() + ' · kilitli proje yanlışlıkla silinemez')}
+          </div>
+        </div>
+      </div>`,
+  },
+
+  guvenlik: {
+    ad: 'Güvenlik', renk: 'yesil', ikon: 'gGuvenlik',
+    aciklama: 'Projelerin satır güvenliğini dışarıdan dene.',
+    goster: () => AUTH.yonetici,
+    ciz: () => `
+      <div class="card">
+        <div class="row-list">
+          ${ayarSatir('guvenlige', 'Güvenlik Testi',
+            'Herhangi bir Supabase projesini ziyaretçi/personel kimliğiyle dener')}
+        </div>
+      </div>`,
+  },
+
+  yayin: {
+    ad: 'Yayın', renk: 'turuncu', ikon: 'yayin',
+    aciklama: 'Alan adı, Supabase ve dış bağlantılar.',
+    goster: () => AUTH.yonetici,
+    ciz: () => `
+      <div class="section" style="margin-top:0">
         <span class="label">Yayın</span>
         <div class="card">
           <div class="row-list">
@@ -826,119 +883,137 @@ const VIEWS = {
             </div>
           </div>
         </div>
-      </div>` : ''}
-
-    <div class="section">
-      <span class="label">Projeler</span>
-      <div class="card">
-        <div class="row-list">
-          <div class="row" data-eylem="kilitlere" role="button" tabindex="0">
-            <div class="row-main">
-              <span class="row-title">Projeleri kilitle</span>
-              <span class="row-sub">${kilitAltBaslik()} · kilitli proje yanlışlıkla silinemez</span>
-            </div>
-            <span class="row-val">${svg(ICON.chevron, 15)}</span>
-          </div>
-          <div class="row" data-eylem="templatelere" role="button" tabindex="0">
-            <div class="row-main">
-              <span class="row-title">Templateler</span>
-              <span class="row-sub">${cekirdekAltBaslik()} · yeni proje kurarken kaynak olarak seçilir</span>
-            </div>
-            <span class="row-val">${svg(ICON.chevron, 15)}</span>
-          </div>
-        </div>
       </div>
-    </div>
 
-    ${AUTH.yonetici ? `
       <div class="section">
-        <span class="label">Güvenlik</span>
+        <span class="label">Bağlantılar</span>
         <div class="card">
           <div class="row-list">
-            <div class="row" data-eylem="guvenlige" role="button" tabindex="0">
+            ${connRow('Supabase', AUTH.bagli ? 'Bağlı' : 'Demo modu', AUTH.bagli)}
+            ${connRow('GitHub', 'Bağlı değil', false)}
+          </div>
+        </div>
+      </div>`,
+  },
+
+  uygulama: {
+    ad: 'Uygulama ve bakım', renk: 'mor', ikon: 'disli',
+    aciklama: 'Sürüm bilgisi, güncelleme ve yedekleme.',
+    goster: () => true,
+    ciz: () => `
+      <div class="section" style="margin-top:0">
+        <span class="label">Uygulama</span>
+        <div class="card">
+          <div class="row-list">
+            ${infoRow('Ad', APP.name)}
+            ${infoRow('Sürüm', APP.version, true)}
+            ${infoRow('Aşama', APP.stage)}
+            ${infoRow('Derleme', APP.build, true)}
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <span class="label">Bakım</span>
+        <div class="card">
+          <div class="row-list">
+            <div class="row">
               <div class="row-main">
-                <span class="row-title">Güvenlik Testi</span>
-                <span class="row-sub">Herhangi bir Supabase projesini ziyaretçi/personel kimliğiyle dener</span>
+                <span class="row-title">Güncellemeleri denetle</span>
+                <span class="row-sub">Yeni sürüm varsa kendini yeniler</span>
               </div>
-              <span class="row-val">${svg(ICON.chevron, 15)}</span>
+              <button class="btn btn-ghost" data-eylem="guncelle" type="button">Denetle</button>
+            </div>
+            <div class="row">
+              <div class="row-main">
+                <span class="row-title">Yedek al</span>
+                <span class="row-sub">Tüm projeler, görevler ve standartlar tek dosyada</span>
+              </div>
+              <button class="btn btn-ghost" data-eylem="yedek-al" type="button">İndir</button>
+            </div>
+            <div class="row">
+              <div class="row-main">
+                <span class="row-title">Yedeği incele</span>
+                <span class="row-sub">Dosyanın içinde ne var, geri yüklemeden gösterir</span>
+              </div>
+              <button class="btn btn-ghost" data-eylem="yedek-oku" type="button">Dosya seç</button>
             </div>
           </div>
         </div>
-      </div>` : ''}
-
-    <div class="section">
-      <span class="label">Kütüphane</span>
-      <div class="card">
-        <div class="row-list">
-          <div class="row" data-eylem="sektorlere" role="button" tabindex="0">
-            <div class="row-main">
-              <span class="row-title">Sektörler</span>
-              <span class="row-sub">${sektorAltBaslik()} · modül önerisini belirler</span>
-            </div>
-            <span class="row-val">${svg(ICON.chevron, 15)}</span>
-          </div>
-          <div class="row" data-eylem="sablonlara" role="button" tabindex="0">
-            <div class="row-main">
-              <span class="row-title">Modül Şablonları</span>
-              <span class="row-sub">${sablonAltBaslik()} · yeni projelerde çıkan hazır modüller</span>
-            </div>
-            <span class="row-val">${svg(ICON.chevron, 15)}</span>
-          </div>
-          <div class="row" data-eylem="standartlara" role="button" tabindex="0">
-            <div class="row-main">
-              <span class="row-title">Nizam Standartları</span>
-              <span class="row-sub">${DB.standartlar.length} tarif · prompta kendiliğinden eklenir</span>
-            </div>
-            <span class="row-val">${svg(ICON.chevron, 15)}</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="section">
-      <span class="label">Bağlantılar</span>
-      <div class="card">
-        <div class="row-list">
-          ${connRow('Supabase', AUTH.bagli ? 'Bağlı' : 'Demo modu', AUTH.bagli)}
-          ${connRow('GitHub', 'Bağlı değil', false)}
-        </div>
-      </div>
-    </div>
-
-    <div class="section">
-      <span class="label">Bakım</span>
-      <div class="card">
-        <div class="row-list">
-          <div class="row">
-            <div class="row-main">
-              <span class="row-title">Güncellemeleri denetle</span>
-              <span class="row-sub">Yeni sürüm varsa kendini yeniler</span>
-            </div>
-            <button class="btn btn-ghost" data-eylem="guncelle" type="button">Denetle</button>
-          </div>
-          <div class="row">
-            <div class="row-main">
-              <span class="row-title">Yedek al</span>
-              <span class="row-sub">Tüm projeler, görevler ve standartlar tek dosyada</span>
-            </div>
-            <button class="btn btn-ghost" data-eylem="yedek-al" type="button">İndir</button>
-          </div>
-          <div class="row">
-            <div class="row-main">
-              <span class="row-title">Yedeği incele</span>
-              <span class="row-sub">Dosyanın içinde ne var, geri yüklemeden gösterir</span>
-            </div>
-            <button class="btn btn-ghost" data-eylem="yedek-oku" type="button">Dosya seç</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="section">
-      <button class="btn btn-ghost" id="btn-logout" type="button">Çıkış Yap</button>
-    </div>
-  `,
+      </div>`,
+  },
 };
+
+/* Sağ oklu, bir yere götüren ayar satırı. */
+function ayarSatir(eylem, baslik, alt) {
+  return `
+    <div class="row" data-eylem="${eylem}" role="button" tabindex="0">
+      <div class="row-main">
+        <span class="row-title">${esc(baslik)}</span>
+        <span class="row-sub">${esc(alt)}</span>
+      </div>
+      <span class="row-val">${svg(ICON.chevron, 15)}</span>
+    </div>`;
+}
+
+/* Ayarların ilk katı: hesap kartı + başlıklar. */
+function ayarListesi() {
+  const anahtarlar = Object.keys(AYAR_GRUP)
+    .filter(k => k !== 'hesap' && AYAR_GRUP[k].goster());
+
+  return `
+    <div class="pj-tepe">
+      <div class="pj-tepe-yz">
+        <h1>Ayarlar</h1>
+        <p>Uygulama tercihlerini buradan yönetebilirsin.</p>
+      </div>
+    </div>
+
+    <a class="ay-hesap" href="#/ayarlar/hesap" draggable="false">
+      <span class="ay-foto">${fotoKutu('ay')}<u class="ay-kalem">${svg(ICON.kalem, 12)}</u></span>
+      <span class="ay-hesap-yz">
+        <b>${esc(AUTH.ad)}</b>
+        <i>${esc(AUTH.mail || '')}</i>
+        <em>${esc(AUTH.rolAdi)}</em>
+      </span>
+      <span class="ay-ok">${svg(ICON.chevron, 18)}</span>
+    </a>
+
+    <div class="ay-liste">
+      ${anahtarlar.map(k => {
+        const g = AYAR_GRUP[k];
+        return `
+          <a class="ay-grup" href="#/ayarlar/${k}" draggable="false">
+            <span class="ay-ikon ${g.renk}">${svg(ICON[g.ikon], 24)}</span>
+            <span class="ay-grup-yz">
+              <b>${esc(g.ad)}</b>
+              <i>${esc(g.aciklama)}</i>
+            </span>
+            <span class="ay-ok">${svg(ICON.chevron, 18)}</span>
+          </a>`;
+      }).join('')}
+    </div>
+
+    <div class="section ay-cikis">
+      <button class="btn btn-ghost" id="btn-logout" type="button">Çıkış Yap</button>
+    </div>`;
+}
+
+/* Bir başlığın kendi sayfası. */
+function ayarSayfasi(g) {
+  if (!g.goster()) {
+    return `<div class="card">${empty(ICON.kilit, 'Bu ekran yöneticiye ait',
+      'Bu ayarları yalnızca yönetici görebilir.')}</div>`;
+  }
+  return `
+    <div class="pj-tepe">
+      <div class="pj-tepe-yz">
+        <h1>${esc(g.ad)}</h1>
+        <p>${esc(g.aciklama)}</p>
+      </div>
+    </div>
+    ${g.ciz()}`;
+}
 
 /* ==========================================================================
    PARÇA ÜRETİCİLER
@@ -6586,6 +6661,8 @@ function render() {
   } else if (detay) {
     const p = DB.proje(id);
     baslik.textContent = p ? projeAdi(p) : 'Proje';
+  } else if (key === 'ayarlar' && AYAR_GRUP[id]) {
+    baslik.textContent = AYAR_GRUP[id].ad;
   } else {
     baslik.textContent = ROUTES[key].kisa || ROUTES[key].title;
   }
@@ -6861,14 +6938,6 @@ function menuyuCiz() {
       ${svg(ICON[m.ikon], 23)}
       <span>${esc(m.tabAd || m.ad)}</span>
     </a>`);
-
-  /* Profil bir ekran değil, üstten açılan hesap paneli — o yüzden sekme
-     bağlantı değil düğme. */
-  sekmeler.push(`
-    <button class="tab" id="tab-profil" type="button">
-      ${svg(ICON.kisi, 23)}
-      <span>Profil</span>
-    </button>`);
 
   $('#tabbar').innerHTML = sekmeler.join('');
 }
@@ -15100,7 +15169,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   /* Profil sekmesi menüde değil, hesap panelini açıyor. */
   document.addEventListener('click', e => {
-    if (e.target.closest('#tab-profil')) { hesapMenusu(); }
   });
 
   /* Yazma kutusunda Enter gönderiyor. */
