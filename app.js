@@ -832,6 +832,10 @@ const AYAR_GRUP = {
                  value="${esc(AUTH.mail || '')}" placeholder="ornek@nizam.studio">`,
           'Değiştirirsen yeni adrese doğrulama bağlantısı gider.')}
 
+        ${hesapAlani('telefon', 'Telefon', `
+          <input class="hs-giris" id="hs-tel" type="tel" autocomplete="tel"
+                 value="${esc(AUTH.telefon)}" placeholder="0500 000 00 00">`)}
+
         ${hesapAlani('kilit', 'Şifre', `
           <span class="hs-sifre">
             <input class="hs-giris" id="hs-sifre" type="password" autocomplete="new-password"
@@ -13295,6 +13299,7 @@ async function eylemCalistir(el) {
   if (e === 'hesap-kaydet') {
     const ad   = ($('#hs-ad').value.trim() + ' ' + $('#hs-soyad').value.trim()).trim();
     const mail = $('#hs-mail').value.trim().toLowerCase();
+    const tel  = $('#hs-tel').value.trim();
     const rol  = $('#hs-rol') && !$('#hs-rol').disabled ? $('#hs-rol').value : AUTH.rol;
 
     if (!ad) { toast('Ad boş kalamaz.', 'hata'); return; }
@@ -13303,6 +13308,7 @@ async function eylemCalistir(el) {
     const rolDegisti    = rol !== AUTH.rol;
     /* Kaydettikten sonra AUTH tazeleniyor; karşılaştırmayı şimdi yapıyoruz. */
     const adDegisti     = ad !== AUTH.ad;
+    const telDegisti    = tel !== AUTH.telefon;
 
     /* Yönetici kendini geliştiriciye çevirebiliyor; bir daha geri alamaz.
        Sormadan yapılacak iş değil. */
@@ -13318,6 +13324,7 @@ async function eylemCalistir(el) {
 
     try {
       if (adDegisti)     await DB.adKaydet(ad);
+      if (telDegisti)    await DB.telefonumuKaydet(tel);
       if (rolDegisti)    await DB.rolumuDegistir(rol);
       if (epostaDegisti) await DB.epostamiDegistir(mail);
 
@@ -13327,7 +13334,7 @@ async function eylemCalistir(el) {
 
       toast(epostaDegisti
         ? 'Kaydedildi. Yeni adrese doğrulama bağlantısı gönderildi.'
-        : (adDegisti || rolDegisti) ? 'Kaydedildi.' : 'Değişen bir şey yok.',
+        : (adDegisti || telDegisti || rolDegisti) ? 'Kaydedildi.' : 'Değişen bir şey yok.',
         'basari');
     } catch (h) { toast(h.message, 'hata'); }
     return;

@@ -984,6 +984,21 @@ const DB = {
     if (error) throw new Error(error.message || 'E-posta değiştirilemedi.');
   },
 
+  /* Kendi telefonun. Sütun sonradan eklendi; SQL çalıştırılmadıysa hata
+     "telefon" diye geliyor, kullanıcıya ne yapacağını söylüyoruz. */
+  async telefonumuKaydet(telefon) {
+    if (!AUTH.user) throw new Error('Oturum yok.');
+    try {
+      await this.kisiKaydet(AUTH.user.id, { telefon: telefon || null });
+    } catch (h) {
+      if ((h.message || '').indexOf('telefon') >= 0) {
+        throw new Error('Telefon kaydedilemedi — sql/21-ekip-iletisim.sql çalıştırılmamış.');
+      }
+      throw h;
+    }
+    await AUTH.profilOku();
+  },
+
   /* Kendi rolün. Veritabanındaki kilit yalnız yöneticiye izin veriyor;
      burada da düğme yalnız yöneticide açık. */
   async rolumuDegistir(rol) {

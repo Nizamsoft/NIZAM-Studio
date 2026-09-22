@@ -135,6 +135,8 @@ const AUTH = {
 
   get foto() { return (this.profile && this.profile.foto) || ''; },
 
+  get telefon() { return (this.profile && this.profile.telefon) || ''; },
+
   /* Pasif kullanıcı hiçbir veriye ulaşamaz (rolum() null döner);
      ekranı boş bırakmak yerine açıkça geri çeviriyoruz. */
   get pasif() { return !!(this.profile && this.profile.aktif === false); },

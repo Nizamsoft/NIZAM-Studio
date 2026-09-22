@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.169.7
+- Hesap sayfasına **Telefon** alanı eklendi; E-posta ile Şifre'nin arasında, "Değişiklikleri Kaydet" ile birlikte kaydediliyor.
+
 ## v0.169.6
 - **Ayarlar › Hesap sayfası yeniden yapıldı.** Profil fotoğrafı kartı (kamera rozetine basınca fotoğraf seçiliyor), Ad ve Soyad ayrı kutularda, E-posta, Şifre ve Rol — her biri kendi kartında, altta "Değişiklikleri Kaydet".
 - **Şifreni artık kendin değiştirebiliyorsun.** Yeni şifreni yaz, gözle kontrol et, "Değiştir"e bas. Yönetici olmana gerek yok.
