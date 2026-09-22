@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.168.4
+- **Sayfa geçişi hızlandı:** 0,24 sn'lik kayarak belirme 0,15 sn'ye indi, kayma mesafesi kısaldı. Sohbet ve yazışma ekranlarında animasyon hiç yok — anında açılıyorlar.
+
 ## v0.168.3
 - Sohbet simgesi yeniden çizildi: yuvarlak köşeli düzgün bir konuşma balonu, ortada üç nokta. Eskisi elle çizilmiş eğri bir balondu, yamuk duruyordu.
 

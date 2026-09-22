@@ -6647,6 +6647,8 @@ function render() {
      uygulamanın üst çubuğu ve sekmeleri gizleniyor. */
   const yazisma = key === 'sohbet' && !!id;
   $('#app').classList.toggle('yazisma', yazisma);
+  /* Sohbet ve yazışmada geçiş animasyonu yok: anında açılsın. */
+  $('#app').classList.toggle('sohbette', key === 'sohbet');
   $('#view').classList.toggle('sabit',
     yazisma || sayfa === 'tasarim' || sayfa === 'yapi' || sayfa === 'beta');
   ustEylemYaz(key, detay, id);
