@@ -999,14 +999,6 @@ const DB = {
     await AUTH.profilOku();
   },
 
-  /* Kendi rolün. Veritabanındaki kilit yalnız yöneticiye izin veriyor;
-     burada da düğme yalnız yöneticide açık. */
-  async rolumuDegistir(rol) {
-    if (!AUTH.user) throw new Error('Oturum yok.');
-    await this.kisiKaydet(AUTH.user.id, { rol });
-    await AUTH.profilOku();
-  },
-
   /* Ekip: bir kişinin adını, rolünü, aktifliğini değiştirir.
      Neyin değişebileceğine veritabanındaki kilit karar veriyor. */
   async kisiKaydet(id, alanlar) {

@@ -846,17 +846,19 @@ const AYAR_GRUP = {
           <button class="hs-degistir" type="button" data-eylem="sifre-degistir">Değiştir</button>`,
           'Şifreni güvenliğin için düzenli olarak değiştir.')}
 
+        ${/* Kendi rolüne kimse dokunamıyor — yönetici bile. Veritabanındaki
+              kilit (sql/10-ekip.sql) bilerek böyle: son yönetici kendini
+              geliştirici yapıp sistemi kilitleyemesin diye. Açık bir kutu
+              koymak yalan olurdu; sessizce eski değere dönüyordu. */''}
         ${hesapAlani('kisiler', 'Rol', `
           <span class="hs-secim">
-            <select class="hs-giris" id="hs-rol" ${AUTH.yonetici ? '' : 'disabled'}>
-              <option value="yonetici" ${AUTH.rol === 'yonetici' ? 'selected' : ''}>Yönetici</option>
-              <option value="gelistirici" ${AUTH.rol === 'yonetici' ? '' : 'selected'}>Geliştirici</option>
+            <select class="hs-giris" id="hs-rol" disabled>
+              <option>${esc(AUTH.rolAdi)}</option>
             </select>
             ${svg(ICON.chevron, 16)}
           </span>`,
-          AUTH.yonetici
-            ? 'Ekip içerisindeki yetki seviyeni belirler.'
-            : 'Rolünü yalnızca yönetici değiştirebilir.')}
+          'Ekip içerisindeki yetki seviyeni belirler. Kendi rolünü '
+          + 'değiştiremezsin; bunu başka bir yönetici yapar.')}
 
         <button class="hs-kaydet" type="button" data-eylem="hesap-kaydet">
           ${svg(ICON.kaydet, 18)}<span>Değişiklikleri Kaydet</span>
@@ -13300,32 +13302,16 @@ async function eylemCalistir(el) {
     const ad   = ($('#hs-ad').value.trim() + ' ' + $('#hs-soyad').value.trim()).trim();
     const mail = $('#hs-mail').value.trim().toLowerCase();
     const tel  = $('#hs-tel').value.trim();
-    const rol  = $('#hs-rol') && !$('#hs-rol').disabled ? $('#hs-rol').value : AUTH.rol;
-
     if (!ad) { toast('Ad boş kalamaz.', 'hata'); return; }
 
     const epostaDegisti = !!mail && mail !== String(AUTH.mail || '').toLowerCase();
-    const rolDegisti    = rol !== AUTH.rol;
     /* Kaydettikten sonra AUTH tazeleniyor; karşılaştırmayı şimdi yapıyoruz. */
     const adDegisti     = ad !== AUTH.ad;
     const telDegisti    = tel !== AUTH.telefon;
 
-    /* Yönetici kendini geliştiriciye çevirebiliyor; bir daha geri alamaz.
-       Sormadan yapılacak iş değil. */
-    if (rolDegisti && rol !== 'yonetici') {
-      const emin = await onaySor({
-        baslik: 'Yöneticilikten çıkılsın mı?',
-        mesaj: 'Kendini geliştirici yaparsan ekip yönetimi ve ayarların çoğu kapanır. '
-             + 'Geri almak için başka bir yöneticiye ihtiyacın olur.',
-        buton: 'Devam et',
-      });
-      if (!emin) return;
-    }
-
     try {
       if (adDegisti)     await DB.adKaydet(ad);
       if (telDegisti)    await DB.telefonumuKaydet(tel);
-      if (rolDegisti)    await DB.rolumuDegistir(rol);
       if (epostaDegisti) await DB.epostamiDegistir(mail);
 
       kullaniciYaz();
@@ -13334,7 +13320,7 @@ async function eylemCalistir(el) {
 
       toast(epostaDegisti
         ? 'Kaydedildi. Yeni adrese doğrulama bağlantısı gönderildi.'
-        : (adDegisti || telDegisti || rolDegisti) ? 'Kaydedildi.' : 'Değişen bir şey yok.',
+        : (adDegisti || telDegisti) ? 'Kaydedildi.' : 'Değişen bir şey yok.',
         'basari');
     } catch (h) { toast(h.message, 'hata'); }
     return;

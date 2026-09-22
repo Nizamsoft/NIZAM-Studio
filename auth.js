@@ -101,13 +101,18 @@ const AUTH = {
   async profilOku() {
     if (this.demo || !this.user) { this.profile = demoProfil(); return this.profile; }
 
+    /* telefon sonradan eklenen bir sütun (sql/21). Okumaya katmazsak ekranda
+       hep boş görünüyor — kaydedilse bile. Sütun yoksa sorgu patlıyor;
+       o zaman onsuz bir daha deniyoruz ki eski kurulumlar da açılsın. */
+    const oku = alanlar => this.db
+      .from('profiles').select(alanlar).eq('id', this.user.id).maybeSingle();
+
     let sonuc;
     try {
-      sonuc = await this.db
-        .from('profiles')
-        .select('ad, rol, aktif, foto')
-        .eq('id', this.user.id)
-        .maybeSingle();
+      sonuc = await oku('ad, rol, aktif, foto, telefon');
+      if (sonuc.error && /telefon/.test(sonuc.error.message || '')) {
+        sonuc = await oku('ad, rol, aktif, foto');
+      }
     } catch (e) {
       return null;
     }

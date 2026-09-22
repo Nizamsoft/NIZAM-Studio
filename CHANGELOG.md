@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## v0.169.8
+- **Telefon kaydediliyordu ama ekranda görünmüyordu.** Profil okunurken yalnızca ad, rol, aktiflik ve fotoğraf çekiliyordu; telefon sorguya katılmadığı için kutu her açılışta boş geliyordu. Artık geri okunuyor.
+- **Rol kutusu artık herkeste kilitli.** Kendi rolüne veritabanı zaten dokundurmuyor (son yönetici kendini geliştirici yapıp sistemi kilitlemesin diye); açık bir kutu göstermek yanıltıcıydı — seçim sessizce eski değere dönüyordu. Rolünü başka bir yönetici değiştirir.
+
 ## v0.169.7
 - Hesap sayfasına **Telefon** alanı eklendi; E-posta ile Şifre'nin arasında, "Değişiklikleri Kaydet" ile birlikte kaydediliyor.
 
