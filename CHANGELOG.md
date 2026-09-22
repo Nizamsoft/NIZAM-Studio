@@ -1,5 +1,21 @@
 # Değişiklik Günlüğü
 
+## v0.175.0
+**Proje aşamaları artık tek bir akışın adımları gibi.** Durak sayfalarının
+içeriği değişmedi; değişen, etrafındaki çerçeve:
+
+- **Adım şeridi** — geniş ekranda numaralı halkalar ve adları, aralarında
+  "buraya kadar tamam" diyen yeşil çizgi. Sığmazsa şerit kayıyor ve
+  bulunduğun adım ortaya geliyor.
+- **Telefonda** şerit ince: "2 / 9", noktalar ve **Aşamalar** düğmesi.
+  Düğme alttan bütün aşamaları listeleyen bir sayfa açıyor.
+- **Proje özeti paneli** (1280 pikselden geniş ekranlarda sağda) — firma,
+  sektör, paket, platform, adres, yüzde ve sıradaki aşama.
+- **Geri / Devam Et** alt çubuğu. Sıradaki aşama henüz kilitliyse düğme
+  sönük ve altında hangi aşamanın açılacağı yazıyor.
+- Adım başlığındaki küçük ilerleme noktaları kalktı — aynı bilgi artık
+  şeritte.
+
 ## v0.174.0
 **Yeni Template Oluştur artık yedi adımlık bir sihirbaz.**
 1. **Kaynak proje** — aranabilir liste; logo, ürün adı ve son güncelleme tarihiyle

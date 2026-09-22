@@ -1380,7 +1380,219 @@ function durakSayfasi(projeId, anahtar) {
     return `<div class="card">${empty(ICON.uyari, 'Proje bulunamadı',
       'Silinmiş veya arşive alınmış olabilir.', 'Projelere dön', 'projelere')}</div>`;
   }
-  return DURAKLAR[anahtar].ciz(p, DURAKLAR[anahtar]);
+  const ic = DURAKLAR[anahtar].ciz(p, DURAKLAR[anahtar]);
+  return `
+    <div class="dsh">
+      <div class="dsh-ana">
+        ${durakSerit(p, anahtar)}
+        <div class="dsh-govde">${ic}</div>
+        ${durakAyak(p, anahtar)}
+      </div>
+      ${durakOzetPaneli(p)}
+    </div>
+    ${durakAsamaSayfasi(p, anahtar)}`;
+}
+
+/* ---------- Durak kabuğu ----------
+   Sekiz durak ayrı ayrı sayfa gibi duruyordu; kullanıcı hangi adımda
+   olduğunu ancak geri dönüp listeye bakarak anlıyordu. Artık hepsi tek bir
+   akışın adımı: tepede şerit, geniş ekranda sağda projenin künyesi, altta
+   Geri / Devam Et. Durakların kendi içerikleri hiç değişmedi — bu kabuk
+   onları sarıyor, yerlerini almıyor. */
+
+/* Görünür duraklar; anahtarı, sırası ve kilit durumu üstünde.
+   Kilit kuralı asamaSatiri ile birebir aynı: bitmemiş ilk duraktan
+   sonrası kapalı, Güvenlik kontrolü hariç (o bir görev değil, ölçü aleti). */
+function durakAkisi(p) {
+  const tum   = Object.keys(DURAKLAR);
+  const liste = projeDuraklari(p)
+    .map((d, i) => Object.assign({}, d, { anahtar: tum[i] }))
+    .filter(d => !d.gizli);
+  const simdi = liste.findIndex(d => !d.bitti);
+  return liste.map((d, i) => Object.assign(d, {
+    sira: i,
+    kilitli: d.anahtar !== 'guvenlik' && simdi !== -1 && i > simdi,
+  }));
+}
+
+/* Adım şeridi. Geniş ekranda numaralı halkalar ve adları; dar ekranda tek
+   satır — kaç adımdan kaçıncısı, adı ve listeyi açan düğme. Sekiz adı yan
+   yana dizmek telefonda okunmuyordu, o yüzden orada liste ayrı sayfada. */
+function durakSerit(p, anahtar) {
+  const liste = durakAkisi(p);
+  const su    = liste.findIndex(d => d.anahtar === anahtar);
+  const simdi = liste[su] || {};
+  const yuzde = liste.length ? Math.round(((su + 1) / liste.length) * 100) : 0;
+
+  const halkalar = liste.map((d, i) => {
+    const hal = i === su ? 'su' : d.bitti ? 'bitti' : d.kilitli ? 'kilitli' : 'acik';
+    /* Halkaları birleştiren çizgi ÖNCEKİ adımın durumunu gösteriyor: yeşil
+       çizgi "buraya kadar tamam" demek. Kendi durumuna bakarsa aradaki
+       bitmemiş adım gizleniyordu. */
+    const bagli = i > 0 && liste[i - 1].bitti ? ' bagli' : '';
+    const ic  = `
+      <span class="dsr-yuv">${
+        d.bitti && i !== su ? svg(ICON.tik, 13)
+        : d.kilitli         ? svg(ICON.kilit, 12)
+        : `<b class="mono">${i + 1}</b>`}</span>
+      <span class="dsr-ad">${esc(d.ad)}</span>`;
+    return (d.kilitli || i === su)
+      ? `<span class="dsr-a ${hal}${bagli}">${ic}</span>`
+      : `<a class="dsr-a ${hal}${bagli}" href="#/projeler/${p.id}/${d.anahtar}">${ic}</a>`;
+  }).join('');
+
+  /* Telefonda adım adlarını yan yana dizmek okunmuyordu: orada şerit
+     yalnız "kaçıncı adımdayım" diyor, adlar aşama sayfasında. Durağın adı
+     zaten hemen altındaki başlık kartında yazıyor — iki kez yazılmıyor. */
+  const noktalar = liste.map((d, i) => `<i class="${
+    i === su ? 'su' : d.bitti ? 'bitti' : ''}"></i>`).join('');
+
+  return `
+    <div class="dsr only-desktop">${halkalar}</div>
+    <button class="dsm" type="button" data-eylem="asamalar-ac">
+      <span class="dsm-say mono">${su + 1} / ${liste.length}</span>
+      <span class="dsm-nk">${noktalar}</span>
+      <span class="dsm-liste">Aşamalar ${svg(ICON.panel, 14)}</span>
+      <span class="dsm-ray"><i style="width:${yuzde}%"></i></span>
+    </button>`;
+}
+
+/* Şerit sığmayınca (on duraklı projede) bulunduğun adım ekranın dışında
+   kalıyordu — açılışta ortaya getiriyoruz. */
+function duraklariOrtala() {
+  const serit = $('.dsr');
+  if (!serit || serit.scrollWidth <= serit.clientWidth) return;
+  const su = $('.dsr-a.su', serit);
+  if (!su) return;
+  serit.scrollLeft = su.offsetLeft - (serit.clientWidth - su.offsetWidth) / 2;
+}
+
+/* Geniş ekranda sağda duran künye. Adımın içinde çalışırken "hangi
+   projedeyim, neresi eksik" sorusu için geri dönmek gerekmesin diye. */
+function durakOzetPaneli(p) {
+  const liste   = durakAkisi(p);
+  const sayilan = liste.filter(d => !d.sayilmaz);
+  const biten   = sayilan.filter(d => d.bitti).length;
+  const yuzde   = projeAsamaYuzde(p);
+  const paket   = projePaketi(p);
+  const pl      = p.palet || {};
+  const adres   = DB.logoAdres[p.id];
+
+  const satirlar = [
+    ['Firma',    p.firma],
+    ['Sektör',   p.sektor],
+    ['Paket',    paket ? paket.ad : ''],
+    ['Platform', PLATFORM_ADI[p.platform]],
+    ['Veri',     VERI_ADI[p.veri]],
+    ['Adres',    pl.alanAdi],
+  ].filter(x => x[1]).map(x => `
+    <span class="dso-s"><i>${esc(x[0])}</i><b>${esc(x[1])}</b></span>`).join('');
+
+  /* Sıradaki iş: bitmemiş ilk durak. Hepsi bittiyse satır hiç çıkmıyor. */
+  const sirada = liste.find(d => !d.bitti && !d.sayilmaz);
+
+  return `
+    <aside class="dso" style="${renkDegiskenleri(p.renk)}">
+      <div class="dso-kart">
+        <div class="dso-bas">
+          <span class="dso-logo ${adres ? 'yukleniyor' : ''}"
+                ${adres ? `data-logo="${esc(adres)}"` : ''}>
+            <span class="logo-harf">${esc(basHarf(p.firma))}</span>
+          </span>
+          <span class="dso-bas-yz">
+            <b>${esc(projeAdi(p))}</b>
+            <i>Proje özeti</i>
+          </span>
+        </div>
+
+        <div class="dso-ilerleme">
+          <span class="dso-il-ust"><i>Tamamlanan</i><u class="mono">%${yuzde}</u></span>
+          <span class="dso-ray"><i style="width:${yuzde}%"></i></span>
+          <span class="dso-il-alt mono">${biten} / ${sayilan.length} aşama</span>
+        </div>
+
+        <div class="dso-liste">${satirlar}</div>
+
+        ${sirada ? `
+          <div class="dso-sirada">
+            <i>Sıradaki</i>
+            <b>${esc(sirada.ad)}</b>
+            <em>${esc(sirada.ozet || '')}</em>
+          </div>` : ''}
+
+        <a class="dso-dug" href="#/projeler/${p.id}">
+          ${svg(ICON.panel, 14)} Tüm aşamalar
+        </a>
+      </div>
+    </aside>`;
+}
+
+/* Alt çubuk: Geri / Devam Et. Sıradaki durak kilitliyse düğme sönük —
+   kilit kuralı tek yerden (durakAkisi) geliyor, burada ikinci bir mantık yok. */
+function durakAyak(p, anahtar) {
+  const liste   = durakAkisi(p);
+  const i       = liste.findIndex(d => d.anahtar === anahtar);
+  const onceki  = i > 0 ? liste[i - 1] : null;
+  const sonraki = (i >= 0 && i < liste.length - 1) ? liste[i + 1] : null;
+  const ok      = svg(ICON.chevron, 15);
+
+  const geri = onceki
+    ? `<a class="dsa-btn geri" href="#/projeler/${p.id}/${onceki.anahtar}">${ok} Geri</a>`
+    : `<a class="dsa-btn geri" href="#/projeler/${p.id}">${ok} Proje</a>`;
+
+  const kilit = !!(sonraki && sonraki.kilitli);
+  const ileri = !sonraki
+    ? `<a class="dsa-btn ana" href="#/projeler/${p.id}">Projeye dön ${ok}</a>`
+    : kilit
+      ? `<span class="dsa-btn ana pasif">Devam Et ${svg(ICON.kilit, 14)}</span>`
+      : `<a class="dsa-btn ana" href="#/projeler/${p.id}/${sonraki.anahtar}">Devam Et ${ok}</a>`;
+
+  return `
+    <div class="dsa">
+      ${geri}
+      <span class="dsa-orta mono">${i + 1} / ${liste.length}</span>
+      ${ileri}
+    </div>
+    ${kilit ? `<p class="dsa-ipucu">Bu aşamayı tamamlayınca «${esc(sonraki.ad)}» açılır.</p>` : ''}`;
+}
+
+/* Telefonda aşama listesi: alttan çıkan sayfa. Şeritteki düğme açıyor,
+   perdeye ya da kapatmaya dokunmak kapatıyor; bir adıma dokununca adres
+   değiştiği için ekran zaten kapalı olarak yeniden çiziliyor. */
+function durakAsamaSayfasi(p, anahtar) {
+  const liste = durakAkisi(p);
+
+  const satirlar = liste.map((d, i) => {
+    const su  = d.anahtar === anahtar;
+    const hal = su ? 'su' : d.bitti ? 'bitti' : d.kilitli ? 'kilitli' : '';
+    const ic  = `
+      <span class="dsl-no mono">${String(i + 1).padStart(2, '0')}</span>
+      <span class="dsl-yz">
+        <b>${esc(d.ad)}</b>
+        <i>${esc(d.ozet || '')}</i>
+      </span>
+      <span class="dsl-durum">${
+        d.bitti   ? svg(ICON.tik, 14)
+        : d.kilitli ? svg(ICON.kilit, 13)
+        : svg(ICON.chevron, 14)}</span>`;
+    return (d.kilitli || su)
+      ? `<span class="dsl ${hal}">${ic}</span>`
+      : `<a class="dsl ${hal}" href="#/projeler/${p.id}/${d.anahtar}">${ic}</a>`;
+  }).join('');
+
+  return `
+    <div class="dsp" id="asama-sayfasi">
+      <span class="dsp-perde" data-eylem="asamalar-kapat"></span>
+      <div class="dsp-kagit">
+        <span class="dsp-tut"></span>
+        <div class="dsp-bas">
+          <b>Aşamalar</b>
+          <button class="dsp-kapat" type="button" data-eylem="asamalar-kapat"
+                  aria-label="Kapat">${svg(ICON.kapat, 16)}</button>
+        </div>
+        <div class="dsp-liste">${satirlar}</div>
+      </div>
+    </div>`;
 }
 
 /* Her durak sayfasının tepesi: logo, firma adı, rozetler.
@@ -1427,30 +1639,19 @@ function bolumBas(ad) {
    başlık ve zeminde adımın rengiyle yayılan hafif ışık. Ötekiler 28 piksel
    karo ve 12,5 punto — sayfanın neyle ilgili olduğu ilk bakışta okunuyor. */
 function adimBasligi(p, d, sayac) {
-  /* `no` her girdiye kendi sırasından (1-indeksli) yeniden veriliyor, sonra
-     gizli olanlar çıkarılıyor — böylece `su` (hangi nokta aktif) hâlâ `d.no`
-     ile doğru eşleşiyor, aradan bir durak eksilse bile kayma olmuyor. */
-  const duraklar = projeDuraklari(p)
-    .map((x, i) => Object.assign({}, x, { no: i + 1 }))
-    .filter(x => !x.gizli);
-  const su   = duraklar.findIndex(x => x.no === d.no);
   const renk = d.renk || 'var(--metal-2)';
   const ikon = ICON[d.ikon] || ICON.bayrak;
 
   /* Yapı proje künyesiyle birebir aynı: 54 piksellik karo, iki satır yazı,
      sağda değer ve etiketi. İki sayfanın tek farkı içerik olsun, ölçü değil.
-     İlerleme noktaları firma adının yanına alındı — üçüncü satır kartı
-     künyeden uzun yapıyordu. */
+     İlerleme noktaları buradan kalktı: aynı bilgi artık sayfanın tepesindeki
+     adım şeridinde, iki kez göstermek yer israfıydı. */
   return `
     <div class="bs2" style="--kr:${renk}">
       <span class="bs2-ik">${svg(ikon, 26)}</span>
       <span class="bs2-yz">
         <span class="bs2-firma">
           <span class="bs2-ad2">${esc(projeAdi(p))}</span>
-          <span class="bs2-nk">
-            ${duraklar.map((x, i) => `<i class="${
-              i === su ? 'su' : x.bitti ? 'bitti' : ''}"></i>`).join('')}
-          </span>
         </span>
         <span class="bs2-ad">${esc(d.ad)}</span>
       </span>
@@ -6951,6 +7152,7 @@ function render() {
   $$('[data-route]').forEach(el => el.classList.toggle('active', el.dataset.route === key));
 
   logolariGoster();
+  duraklariOrtala();
   /* Yazışma açıldığında en alta in ve gelen mesajları okundu say. */
   if (yazisma) {
     const govde = $('#yz-govde');
@@ -13474,6 +13676,15 @@ async function eylemCalistir(el) {
   if (e === 'proje-ac')  { location.hash = '#/projeler/' + id; return; }
 
   if (e === 'gorev-ac')   return gorevKartiAc(id);
+
+  /* Aşama sayfası (telefonda alttan çıkan liste) — ekranı yeniden çizmeden
+     açılıp kapanıyor; yeniden çizim yarım kalmış yazıyı ve kaydırmayı
+     kaybettiriyordu. */
+  if (e === 'asamalar-ac' || e === 'asamalar-kapat') {
+    const s = $('#asama-sayfasi');
+    if (s) s.classList.toggle('acik', e === 'asamalar-ac');
+    return;
+  }
 
   /* Mesajlaşma henüz yazılmadı; düğmenin yeri tasarımda hazır. */
   if (e === 'mesaj-gonder') { gitVeCiz('#/sohbet'); return; }

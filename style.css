@@ -8985,3 +8985,243 @@ textarea.pd-giris { resize: vertical; display: block; }
   background: var(--red); border-color: var(--red); color: #fff;
 }
 #template-sihirbaz .btn-primary:hover { background: var(--red-koyu); border-color: var(--red-koyu); }
+
+/* ==========================================================================
+   22 · DURAK KABUĞU — adım şeridi, özet paneli, aşama sayfası
+   Sekiz durak tek bir akışın adımları gibi duruyor: tepede nerede olduğunu
+   gösteren şerit, geniş ekranda sağda projenin künyesi, altta Geri/Devam Et.
+   Durakların kendi içeriği değişmedi; bu katman yalnız etrafını sarıyor.
+   ========================================================================== */
+
+.dsh-ana { min-width: 0; }
+
+/* 1280'in altında künye panelini açmıyoruz: yan menü 236px, içerik alanı
+   panelle birlikte okunmayacak kadar daralıyor. */
+@media (min-width: 1280px) {
+  .dsh {
+    display: grid; grid-template-columns: minmax(0, 1fr) 296px;
+    gap: 22px; align-items: start;
+  }
+}
+
+/* ---------- Adım şeridi (geniş ekran) ---------- */
+.dsr {
+  display: flex; align-items: flex-start; margin-bottom: 16px;
+  padding: 15px 8px 13px; border-radius: 16px;
+  background: var(--surface); border: 1px solid var(--line-3);
+  /* Adımlar sığmazsa (final sonrası "Geliştirme" ile on durak oluyor)
+     adları kısaltmak yerine şerit kayıyor — yarım kelime okunmuyor. */
+  overflow-x: auto; scrollbar-width: none;
+}
+.dsr::-webkit-scrollbar { display: none; }
+.dsr-a {
+  position: relative; flex: 1 0 86px; min-width: 0;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  padding: 0 2px; text-align: center; text-decoration: none;
+}
+/* Halkaları birleştiren çizgi: her adımın kendi solundan öncekine uzanıyor. */
+.dsr-a::before {
+  content: ''; position: absolute; top: 15px; left: -50%; right: 50%;
+  height: 2px; background: var(--line-2);
+}
+.dsr-a:first-child::before { display: none; }
+.dsr-a.bagli::before { background: var(--st-done); }
+.dsr-yuv {
+  position: relative; z-index: 1;
+  display: flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; border-radius: 999px;
+  background: var(--surface); border: 2px solid var(--line-2);
+  color: var(--ink-dim); font-size: 13px; font-weight: 700;
+}
+.dsr-yuv svg { fill: none; stroke: currentColor; stroke-width: 2.2; }
+.dsr-yuv .dolgu { display: none; }
+.dsr-a.acik  .dsr-yuv { border-color: var(--line-parlak); color: var(--ink-soft); }
+.dsr-a.bitti .dsr-yuv { background: var(--done-soft); border-color: var(--st-done); color: var(--st-done-t); }
+.dsr-a.su    .dsr-yuv {
+  background: var(--red); border-color: var(--red); color: #fff;
+  box-shadow: 0 0 0 4px var(--red-soft);
+}
+.dsr-ad {
+  max-width: 100%;
+  font-family: var(--yazi-etiket); font-weight: 600;
+  font-size: 10.5px; line-height: 1.32; color: var(--ink-dim);
+  /* Uzun adlar komşu sütunun üstüne biniyordu. Kelimenin ortasından
+     kırmak yerine en fazla iki satır: sığmayan kuyruk üç noktaya iner. */
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.dsr-a.bitti .dsr-ad { color: var(--ink-soft); }
+.dsr-a.su    .dsr-ad { color: var(--ink-strong); }
+.dsr-a.kilitli { cursor: default; }
+
+/* ---------- Adım şeridi (telefon) ---------- */
+.dsm {
+  position: relative; display: flex; align-items: center; gap: 11px;
+  width: 100%; padding: 10px 11px 13px; margin-bottom: 12px;
+  border-radius: 16px; overflow: hidden; text-align: left; cursor: pointer;
+  background: var(--surface); border: 1px solid var(--line-3);
+  font-family: inherit;
+}
+@media (min-width: 901px) { .dsm { display: none; } }
+.dsm-say {
+  flex: 0 0 auto; padding: 5px 10px; border-radius: 10px;
+  background: var(--red-soft); color: var(--red-ink);
+  font-size: 13px; font-weight: 700;
+}
+.dsm-nk { flex: 1; min-width: 0; display: flex; align-items: center; gap: 5px; }
+.dsm-nk i {
+  width: 7px; height: 7px; border-radius: 999px; background: var(--line);
+}
+.dsm-nk i.bitti { background: var(--st-done); }
+.dsm-nk i.su { width: 20px; background: var(--red); }
+.dsm-liste {
+  flex: 0 0 auto; display: flex; align-items: center; gap: 6px;
+  height: 34px; padding: 0 11px; border-radius: 11px;
+  background: var(--yuva); color: var(--ink-soft);
+  font-family: var(--yazi-etiket); font-size: 12.5px; font-weight: 600;
+}
+.dsm-liste svg { fill: none; stroke: currentColor; stroke-width: 1.8; }
+.dsm-liste .dolgu { display: none; }
+.dsm-ray { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: var(--bar-bos); }
+.dsm-ray i { display: block; height: 100%; background: var(--red); border-radius: 0 3px 3px 0; }
+
+/* ---------- Alt çubuk: Geri / Devam Et ---------- */
+.dsa {
+  display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 10px;
+  margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--line-3);
+}
+.dsa-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  height: 44px; padding: 0 16px; border-radius: 13px;
+  border: 1.5px solid var(--line-2); background: var(--surface);
+  color: var(--ink); text-decoration: none;
+  font-family: var(--yazi-etiket); font-size: 14px; font-weight: 600;
+}
+.dsa-btn svg { fill: none; stroke: currentColor; stroke-width: 2; }
+.dsa-btn .dolgu { display: none; }
+.dsa-btn.geri { justify-self: start; }
+.dsa-btn.geri svg { transform: rotate(180deg); }
+.dsa-btn.ana {
+  justify-self: end; background: var(--red); border-color: var(--red); color: #fff;
+}
+/* Kilitli "Devam Et" kırmızı kalınca basılabilir görünüyordu: sönük
+   kırmızı da kırmızıdır. Kapalı düğme nötr gri. */
+.dsa-btn.ana.pasif {
+  background: var(--surface-2); border-color: var(--line-2);
+  color: var(--ink-dim); cursor: default;
+}
+.dsa-orta { font-size: 12.5px; color: var(--ink-dim); }
+.dsa-ipucu { margin: 9px 0 0; font-size: 12px; color: var(--ink-dim); text-align: right; }
+
+/* ---------- Proje özeti paneli (yalnız geniş ekran) ---------- */
+.dso { display: none; }
+@media (min-width: 1280px) { .dso { display: block; position: sticky; top: 0; } }
+.dso-kart {
+  display: flex; flex-direction: column; gap: 16px;
+  padding: 16px; border-radius: 18px;
+  background: var(--surface); border: 1px solid var(--line-3);
+}
+.dso-bas { display: flex; align-items: center; gap: 11px; min-width: 0; }
+.dso-logo {
+  flex: 0 0 auto; display: flex; align-items: center; justify-content: center;
+  width: 42px; height: 42px; border-radius: 13px;
+  background: var(--proje-koyu, var(--metal-2)) center / cover no-repeat;
+  color: #fff; font-family: var(--yazi-baslik); font-weight: 700; font-size: 16px;
+}
+.dso-bas-yz { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.dso-bas-yz b {
+  font-size: 15px; font-weight: 700; color: var(--ink-strong);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.dso-bas-yz i { font-style: normal; font-size: 11.5px; color: var(--ink-dim); }
+
+.dso-ilerleme { display: flex; flex-direction: column; gap: 6px; }
+.dso-il-ust { display: flex; align-items: baseline; justify-content: space-between; }
+.dso-il-ust i { font-style: normal; font-size: 12px; color: var(--ink-soft); }
+.dso-il-ust u { text-decoration: none; font-size: 15px; font-weight: 700; color: var(--ink-strong); }
+.dso-ray { display: block; height: 6px; border-radius: 999px; background: var(--bar-bos); overflow: hidden; }
+.dso-ray i { display: block; height: 100%; background: var(--st-done); border-radius: 999px; }
+.dso-il-alt { font-size: 11.5px; color: var(--ink-dim); }
+
+.dso-liste { display: flex; flex-direction: column; }
+.dso-s {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+  padding: 8px 0; border-top: 1px solid var(--line-3);
+}
+.dso-s:first-child { border-top: 0; padding-top: 0; }
+.dso-s i { font-style: normal; font-size: 12px; color: var(--ink-dim); flex: 0 0 auto; }
+.dso-s b {
+  font-size: 12.5px; font-weight: 600; color: var(--ink); text-align: right;
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.dso-sirada {
+  display: flex; flex-direction: column; gap: 3px;
+  padding: 11px 12px; border-radius: 13px; background: var(--yuva);
+}
+.dso-sirada i { font-style: normal; font-size: 11px; color: var(--ink-dim); text-transform: uppercase; letter-spacing: .06em; }
+.dso-sirada b { font-size: 13.5px; font-weight: 700; color: var(--ink-strong); }
+.dso-sirada em { font-style: normal; font-size: 12px; line-height: 1.45; color: var(--ink-soft); }
+.dso-dug {
+  display: flex; align-items: center; justify-content: center; gap: 7px;
+  height: 40px; border-radius: 12px; text-decoration: none;
+  border: 1.5px solid var(--line-2); background: var(--surface);
+  color: var(--ink); font-family: var(--yazi-etiket); font-size: 13px; font-weight: 600;
+}
+.dso-dug svg { fill: none; stroke: currentColor; stroke-width: 1.8; }
+.dso-dug .dolgu { display: none; }
+
+/* ---------- Aşamalar sayfası (telefonda alttan çıkar) ---------- */
+.dsp { display: none; }
+.dsp.acik { display: block; }
+@media (min-width: 901px) { .dsp.acik { display: none; } }
+.dsp-perde {
+  position: fixed; inset: 0; z-index: 400;
+  background: var(--perde); animation: fadeIn .18s ease both;
+}
+@keyframes dspGir { from { transform: translateY(100%); } to { transform: none; } }
+.dsp-kagit {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 401;
+  display: flex; flex-direction: column; max-height: 80vh;
+  padding: 8px 14px calc(16px + env(safe-area-inset-bottom, 0px));
+  background: var(--panel-kart); border-radius: 22px 22px 0 0;
+  box-shadow: var(--golge-yuksek);
+  animation: dspGir .26s var(--ease) both;
+}
+.dsp-tut {
+  width: 40px; height: 4px; margin: 0 auto 8px; border-radius: 999px;
+  background: var(--line-parlak);
+}
+.dsp-bas { display: flex; align-items: center; justify-content: space-between; padding: 2px 2px 10px; }
+.dsp-bas b { font-family: var(--yazi-baslik); font-size: 17px; font-weight: 700; color: var(--ink-strong); }
+.dsp-kapat {
+  display: flex; align-items: center; justify-content: center;
+  width: 34px; height: 34px; border-radius: 11px; cursor: pointer;
+  background: var(--yuva); border: 0; color: var(--ink-soft);
+}
+.dsp-kapat svg { fill: none; stroke: currentColor; stroke-width: 2; }
+.dsp-kapat .dolgu { display: none; }
+.dsp-liste { overflow-y: auto; overscroll-behavior: contain; display: flex; flex-direction: column; gap: 6px; padding-bottom: 4px; }
+.dsl {
+  display: flex; align-items: center; gap: 11px;
+  padding: 11px 12px; border-radius: 14px; text-decoration: none;
+  background: var(--surface); border: 1px solid var(--line-3);
+}
+.dsl-no {
+  flex: 0 0 auto; display: flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; border-radius: 10px;
+  background: var(--yuva); color: var(--ink-dim); font-size: 12px; font-weight: 700;
+}
+.dsl-yz { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.dsl-yz b { font-size: 14px; font-weight: 700; color: var(--ink-strong); }
+.dsl-yz i {
+  font-style: normal; font-size: 11.5px; color: var(--ink-dim);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.dsl-durum { flex: 0 0 auto; color: var(--ink-dim); line-height: 0; }
+.dsl-durum svg { fill: none; stroke: currentColor; stroke-width: 2; }
+.dsl-durum .dolgu { display: none; }
+.dsl.bitti .dsl-no { background: var(--done-soft); color: var(--st-done-t); }
+.dsl.bitti .dsl-durum { color: var(--st-done); }
+.dsl.su { border-color: var(--red); background: var(--red-soft); }
+.dsl.su .dsl-no { background: var(--red); color: #fff; }
+.dsl.kilitli { opacity: .55; }
