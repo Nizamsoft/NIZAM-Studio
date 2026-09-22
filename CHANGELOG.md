@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## v0.169.2
+- **Sohbet ve yazışma dokunur dokunmaz açılıyor.** Eskiden adres değişip tarayıcının `hashchange` olayı beklenip sonra çiziliyordu; artık adres değişince ekran aynı anda çiziliyor.
+- Ölçüm ve bağlama işleri (önizleme boyu, yapı ağacı bağları, yol izi) ilk boyamadan sonraya alındı — sayfa önce görünüyor, ayarlar sonra yapılıyor.
+
 ## v0.169.1
 - **Ekran geçişleri telefonda hızlandı.** Üst çubuktaki buzlu cam (koyu temadan kalma) her sayfa değişiminde altındaki bütün içeriği yeniden bulanıklaştırıyordu; kaldırıldı, çubuk düz beyaz. Beyaz zeminde zaten görünmüyordu.
 

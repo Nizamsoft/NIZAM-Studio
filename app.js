@@ -6599,6 +6599,16 @@ function connRow(k, v, ok) {
    ÇİZİM
    ========================================================================== */
 
+/* Adres değiştirip HEMEN çiziyoruz. `hashchange` olayı tarayıcıda bir
+   sonraki tura kalıyor; beklemek dokunuşla ekranın açılması arasına
+   gözle görülür bir boşluk koyuyordu. Olay sonra da gelse aynı ekran
+   yeniden çizilir, ucuz. */
+function gitVeCiz(hash) {
+  if (location.hash === hash) { render(); return; }
+  location.hash = hash;
+  render();
+}
+
 function render() {
   /* Kaydırma yeri: akış içindeki bir seçim sonrası liste başa dönmesin. */
   const kaydiran = $('.dk-govde, .kunye-kaydir, .ozet-kaydir, .palet-kaydir');
@@ -6722,12 +6732,14 @@ function render() {
     const yeni = $('.dk-govde, .kunye-kaydir, .ozet-kaydir, .palet-kaydir');
     if (yeni) yeni.scrollTop = kaydirmaYeri;
   }
-  onizlemeSigdir();
-  /* Bir kare sonra bir daha: sayfa geçiş animasyonu sürerken ölçülen kutu
-     gerçek boyunda olmuyor, önizleme gereksiz yere küçülüyordu. */
-  requestAnimationFrame(onizlemeSigdir);
-  yapiBaglari();
-  yolIziKaydir();
+  /* Aşağıdakiler ekranın görünmesini beklemesin: ölçüm ve bağlama işleri
+     ilk boyamadan sonra yapılıyor. Önce sayfa çıkıyor, sonra ayarlanıyor. */
+  requestAnimationFrame(() => {
+    onizlemeSigdir();
+    yapiBaglari();
+    yolIziKaydir();
+    requestAnimationFrame(onizlemeSigdir);
+  });
   /* Bir kare sonra bir daha: sayfa geçiş animasyonu sürerken ölçülen kutu
      gerçek boyunda olmuyor, dirsekler yanlış yere düşüyordu. */
 
@@ -12707,8 +12719,8 @@ async function eylemCalistir(el) {
   if (e === 'gorev-ac')   return gorevKartiAc(id);
 
   /* Mesajlaşma henüz yazılmadı; düğmenin yeri tasarımda hazır. */
-  if (e === 'mesaj-gonder') { location.hash = '#/sohbet'; return; }
-  if (e === 'sohbet-ac')      { location.hash = '#/sohbet/' + id; return; }
+  if (e === 'mesaj-gonder') { gitVeCiz('#/sohbet'); return; }
+  if (e === 'sohbet-ac')      { gitVeCiz('#/sohbet/' + id); return; }
   /* Yazışmadan çıkış GERİ gitmeli: yeni adres atamak geçmişe bir kayıt
      daha ekliyor, sonra üst çubuktaki geri oku yazışmaya dönüyordu. */
   if (e === 'sohbete') {
@@ -15196,7 +15208,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   /* Sohbet henüz yazılmadı; düğmenin yeri tasarımda hazır. */
   const sohbet = $('#btn-sohbet');
-  if (sohbet) sohbet.addEventListener('click', () => { location.hash = '#/sohbet'; });
+  if (sohbet) sohbet.addEventListener('click', () => gitVeCiz('#/sohbet'));
 
   /* Zil bekleyen işlere götürüyor. */
   const zil = $('#btn-zil');
