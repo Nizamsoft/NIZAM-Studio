@@ -7517,6 +7517,7 @@ function templateAciklamasi(p) {
    Müşteri kopyasına taşınmıyor (bkz. DB.projeKopyala). */
 function templateKarti(p) {
   const n = templateModulSayisi(p);
+  const hazir = !!(p.palet || {}).cekirdekTemizlendi;
   const kapak = templateKapagi(p);
   const aciklama = templateAciklamasi(p);
 
@@ -7530,7 +7531,8 @@ function templateKarti(p) {
       <span class="tp-yz">
         <b>${esc(p.firma || 'Template')}</b>
         <i>${esc(aciklama || 'Açıklama yazılmadı.')}</i>
-        <em>${svg(ICON.katman, 15)}${n ? n + ' modül' : 'modül yok'}</em>
+        <em>${svg(ICON.katman, 15)}${n ? n + ' modül' : 'modül yok'}${
+          hazir ? '' : ' · kuruluyor'}</em>
       </span>
       <span class="tp-ok">${svg(ICON.chevron, 18)}</span>
     </button>`;
@@ -8454,7 +8456,7 @@ function baslangicTuruSec(tur, sektorId) {
 /* Kurulmaya hazır template'ler — istenirse tek bir sektörünkiler. */
 function hazirTemplateler(sektorId) {
   return (DB.projeler || []).filter(p =>
-    !p.arsiv && cekirdekMi(p)
+    !p.arsiv && cekirdekMi(p) && (p.palet || {}).cekirdekTemizlendi
     && (!sektorId || templateSektorIdleri(p).includes(sektorId)));
 }
 
@@ -8566,10 +8568,10 @@ function sablonSec(kaynakId, tur) {
    değiliz) — o yüzden doğrudan soruyoruz. Kapalıysa Settings sayfasını
    açıyoruz, pencere açık kalıyor; işaretleyip döndüğünde "Açık, devam et"
    diyor. Kaynağın hiç deposu yoksa soru anlamsız, direkt kopyalıyoruz. */
-function templateOnaySor(kaynakId, tur, sablon, cekirdek) {
+function templateOnaySor(kaynakId, tur, sablon) {
   const kaynak = DB.proje(kaynakId);
   const slug = kaynak ? depoSlug(kaynak.repo) : '';
-  if (!slug) return templateSonrakiAdim(kaynakId, tur, sablon, cekirdek);
+  if (!slug) return templateSonrakiAdim(kaynakId, tur, sablon);
 
   modalHepsiniKapat();
   modalAc(`
@@ -8591,13 +8593,13 @@ function templateOnaySor(kaynakId, tur, sablon, cekirdek) {
       const t = ev.target.closest('[data-tp]');
       if (!t || t.dataset.tp === 'kapat') return;
       if (t.dataset.tp === 'ac') {
-        TEMPLATE_BEKLIYOR[kaynakId] = { tur, sablon, cekirdek };
+        TEMPLATE_BEKLIYOR[kaynakId] = { tur, sablon };
         window.open('https://github.com/' + slug + '/settings', '_blank', 'noopener');
         modalKapat();
         return;
       }
       modalKapat();
-      templateSonrakiAdim(kaynakId, tur, sablon, cekirdek);
+      templateSonrakiAdim(kaynakId, tur, sablon);
     });
   });
 }
@@ -8605,7 +8607,7 @@ function templateOnaySor(kaynakId, tur, sablon, cekirdek) {
 /* Ayarlar sekmesinden dönünce: işaretlemeyi gerçekten yaptı mı, yoksa
    sekmeye göz atıp mı döndü, Studio bilemez — kopyalamayı otomatik
    başlatmak yerine aynı soruyu bir daha soruyor. */
-function templateDonusOnaySor(kaynakId, tur, sablon, cekirdek) {
+function templateDonusOnaySor(kaynakId, tur, sablon) {
   const kaynak = DB.proje(kaynakId);
   if (!kaynak) return;
 
@@ -8629,16 +8631,15 @@ function templateDonusOnaySor(kaynakId, tur, sablon, cekirdek) {
       const t = ev.target.closest('[data-tp2]');
       if (!t || t.dataset.tp2 !== 'evet') return modalKapat();
       modalKapat();
-      templateSonrakiAdim(kaynakId, tur, sablon, cekirdek);
+      templateSonrakiAdim(kaynakId, tur, sablon);
     });
   });
 }
 
-/* Bu adımdan sonra iki yoldan biri: normal müşteri kopyası (projeKopyalaVeAc)
-   ya da template oluşturma (cekirdekOlusturVeAc) — GitHub'ın "Template
-   repository" onayı ikisinde de aynı, sadece sonucu farklı. */
-function templateSonrakiAdim(kaynakId, tur, sablon, cekirdek) {
-  return cekirdek ? cekirdekOlusturVeAc(kaynakId, cekirdek) : projeKopyalaVeAc(kaynakId, tur, sablon);
+/* GitHub "Template repository" onayından sonra müşteri kopyası kuruluyor.
+   Template oluşturma artık kendi sihirbazından geçiyor (templateSihirbaziAc). */
+function templateSonrakiAdim(kaynakId, tur, sablon) {
+  return projeKopyalaVeAc(kaynakId, tur, sablon);
 }
 
 async function projeKopyalaVeAc(kaynakId, tur, sablon) {
@@ -8656,96 +8657,411 @@ async function projeKopyalaVeAc(kaynakId, tur, sablon) {
 /* Template oluşturma: proje kopyalanır ama normal proje detayına değil,
    Templateler'e ve oradaki 2 adımlık kurulum sihirbazına (GitHub + Claude
    temizleme) düşülür. */
-async function cekirdekOlusturVeAc(kaynakId, cekirdek) {
-  try {
-    const id = await DB.projeKopyala(kaynakId, { tur: 'gercek', cekirdek });
-    sayaclariYaz();
-    toast('Template oluşturuldu.', 'basari');
-    location.hash = '#/templateler';
-    render();
-    /* Kurulum SQL'i, sektör ve paket hepsi bu pencerede. */
-    templateAyarlari(id);
-  } catch (h) {
-    toast(h.message, 'hata');
-  }
-}
+/* ==========================================================================
+   Yeni Template Oluştur — yedi adım
+   1 Kaynak proje · 2 Ad ve açıklama · 3 Paket ve sektörler · 4 Kapak
+   5 Depo · 6 Kurulum SQL'i · 7 Claude ile temizlik
 
-/* ---------- Template oluşturma sihirbazı ----------
-   Modal zinciri (kaynak → tür → ad) mevcut kopya-kaynağı akışıyla aynı
-   kalıp. Onaylanınca templateOnaySor'a düşer — GitHub "Template
-   repository" kontrolü müşteri kopyasıyla birebir aynı. */
-function cekirdekOlusturBaslat() {
+   Template kaydı 4. adımdan sonra gerçekten oluşuyor: ilk dört adım bilgi
+   topluyor, son üç adım o kaydın üstünde çalışıyor (depo bağlama ve SQL
+   yazma proje kimliği istiyor).
+   ========================================================================== */
+
+const TS = {
+  adim: 1, kaynakId: '', ad: '', aciklama: '', paket: '',
+  sektorler: [], kapak: '', projeId: '', kuruluyor: false,
+};
+
+const TS_ADIMLAR = [
+  { ad: 'Yeni Template Oluştur', alt: 'Hangi proje üzerinden yeni template oluşturmak istiyorsun?' },
+  { ad: 'Ad ve açıklama',        alt: 'Template listesinde nasıl görünecek?' },
+  { ad: 'Paket ve sektörler',    alt: 'Bu template hangi yol haritasını getirecek, hangi sektörlerde çıkacak?' },
+  { ad: 'Kapak görseli',         alt: 'Listede kartın solunda çıkacak görsel.' },
+  { ad: 'Depo',                  alt: 'Template\'in GitHub deposu — müşteri kopyaları buradan üretiliyor.' },
+  { ad: 'Kurulum SQL\'i',        alt: 'Müşteri projesi kurulurken Supabase\'e yapıştırılacak SQL.' },
+  { ad: 'Claude ile temizlik',   alt: 'Firma izini kaldırıp template\'i yayına hazır hâle getir.' },
+];
+
+function templateSihirbaziAc() {
   modalHepsiniKapat();
   const liste = DB.projeler.filter(p => !p.arsiv && !cekirdekMi(p));
   if (!liste.length) { toast('Template yapılacak proje yok.', 'uyari'); return; }
 
-  modalAc(`
-    ${modalBaslik(ICON.katman, 'Hangi projeden template yapalım?',
-      'Bu projenin bir kopyası temizlenip yeniden kullanılabilir bir template olacak.')}
-    <div class="secim">
-      ${liste.map(p => `
-        <div class="satir sec-satir" data-proje="${p.id}" role="button" tabindex="0">
-          <span class="sec-yazi"><b>${esc(p.firma)}</b><i>${esc(p.sektor || 'Sektör girilmedi')}</i></span>
-        </div>`).join('')}
-    </div>
-    <div class="modal-alt">
-      <button class="btn btn-ghost" data-bt="kapat" type="button">Vazgeç</button>
-    </div>`, kutu => {
-    $('[data-bt="kapat"]', kutu).addEventListener('click', modalKapat);
-    kutu.addEventListener('click', ev => {
-      const t = ev.target.closest('[data-proje]');
-      if (!t) return;
-      modalKapat();
-      cekirdekTuruSec(t.dataset.proje);
-    });
-  }, 'genis');
+  Object.assign(TS, {
+    adim: 1, kaynakId: '', ad: '', aciklama: '', paket: '',
+    sektorler: [], kapak: KAPAK_GORSELLERI[0].anahtar, projeId: '', kuruluyor: false,
+  });
+  const varsayilanDisi = (DB.paketler || []).filter(k => paketinAkisi(k) !== 'ozel');
+  TS.paket = varsayilanDisi.length ? varsayilanDisi[0].anahtar : '';
+
+  const el = document.createElement('div');
+  el.id = 'template-sihirbaz';
+  el.className = 'sihirbaz';
+  document.body.appendChild(el);
+  templateSihirbaziCiz();
 }
 
-function cekirdekTuruSec(kaynakId) {
-  modalHepsiniKapat();
-  /* Template ancak "hazır program" paketine bağlanır — varsayılan paket
-     sıfırdan kurulanların paketi, template'i olmaz. */
+function templateSihirbaziKapat() {
+  const el = $('#template-sihirbaz');
+  if (!el) return;
+  el.classList.remove('acik');
+  setTimeout(() => el.remove(), 260);
+}
+
+function templateSihirbaziCiz() {
+  const el = $('#template-sihirbaz');
+  if (!el) return;
+  el.innerHTML = templateSihirbaziHtml();
+  templateSihirbaziBagla(el);
+  requestAnimationFrame(() => el.classList.add('acik'));
+}
+
+/* Adım geçilebilir mi — "Devam Et" buna göre sönük duruyor. */
+function tsGecilir() {
+  if (TS.adim === 1) return !!TS.kaynakId;
+  if (TS.adim === 2) return !!TS.ad.trim();
+  if (TS.adim === 3) return !!TS.paket;
+  return true;
+}
+
+function templateSihirbaziHtml() {
+  const a = TS_ADIMLAR[TS.adim - 1];
+  const oran = Math.round(TS.adim / TS_ADIMLAR.length * 100);
+  const son = TS.adim === TS_ADIMLAR.length;
+
+  const govde = [tsAdimKaynak, tsAdimKimlik, tsAdimPaket, tsAdimKapak,
+                 tsAdimDepo, tsAdimSql, tsAdimTemizlik][TS.adim - 1]();
+
+  return `
+    <div class="sh-tepe">
+      <button class="sh-kapat" data-ts="kapat" type="button" aria-label="Kapat">
+        ${svg(ICON.kapat, 15)}
+      </button>
+      <span class="sh-ad">Template</span>
+    </div>
+
+    <div class="sh-sayfa">
+      <div class="sh-icerik">
+        <div class="ts-serit">
+          <span class="ts-cubuk"><u style="width:${oran}%"></u></span>
+          <em>${TS.adim} / ${TS_ADIMLAR.length}</em>
+        </div>
+        <h2 class="ts-baslik">${esc(a.ad)}</h2>
+        <p class="ts-alt">${esc(a.alt)}</p>
+        ${govde}
+      </div>
+
+      <div class="sh-dip">
+        ${TS.adim > 1 ? '<button class="btn btn-ghost" data-ts="geri" type="button">← Geri</button>' : ''}
+        <button class="btn btn-primary ts-ileri ${tsGecilir() ? '' : 'pasif'}"
+                data-ts="${son ? 'bitir' : 'ileri'}" type="button">
+          <span>${son ? 'Bitir ✓' : 'Devam Et →'}</span>
+        </button>
+      </div>
+    </div>`;
+}
+
+/* 1 · Kaynak proje */
+function tsAdimKaynak() {
+  const liste = DB.projeler.filter(p => !p.arsiv && !cekirdekMi(p));
+  return `
+    <label class="pj-ara ts-ara">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.4"></circle><path d="M15.8 15.8L20.5 20.5"></path></svg>
+      <input id="ts-ara" type="search" autocomplete="off" placeholder="Proje ara…">
+    </label>
+    <div class="ts-liste" id="ts-projeler">
+      ${liste.map(p => {
+        const adres = DB.logoAdres[p.id];
+        const son = pzSonDokunus(p.id);
+        return `
+        <button class="ts-sec ${TS.kaynakId === p.id ? 'sec' : ''}" type="button"
+                data-ts-proje="${p.id}"
+                data-ara="${esc((p.firma + ' ' + (modulAdi(p) || '')).toLocaleLowerCase('tr'))}">
+          <span class="ts-logo ${adres ? 'yukleniyor' : ''}"
+                ${adres ? `data-logo="${esc(adres)}"` : ''}
+                style="${renkDegiskenleri(p.renk)}">
+            ${adres ? '<span class="donen"></span>' : `<b>${esc(basHarf(p.firma))}</b>`}
+          </span>
+          <span class="ts-sec-yz">
+            <b>${esc(p.firma)}</b>
+            <i>${esc(modulAdi(p) || 'Ürün adı yok')}</i>
+            <em>Son güncelleme: ${son ? pjTarih(son) : '—'}</em>
+          </span>
+          <u class="ts-radyo"></u>
+        </button>`;
+      }).join('')}
+      <div class="pj-bos-arama">Aramana uyan proje yok.</div>
+    </div>`;
+}
+
+/* 2 · Ad ve açıklama */
+function tsAdimKimlik() {
+  return `
+    <label class="pd-alan">
+      <span class="pd-et">Template Adı</span>
+      <input class="pd-giris" type="text" id="ts-ad" value="${esc(TS.ad)}"
+             placeholder="Örn. Muhasebe Programı" maxlength="60" autocomplete="off">
+    </label>
+
+    <label class="pd-alan">
+      <span class="pd-et">Açıklama</span>
+      <span class="pd-kutu">
+        <textarea class="pd-giris" id="ts-aciklama" rows="4" maxlength="300"
+          placeholder="Bu template ne işe yarar?">${esc(TS.aciklama)}</textarea>
+        <em class="pd-sayac" data-sayac="ts-aciklama" data-sinir="300">${TS.aciklama.length}/300</em>
+      </span>
+    </label>`;
+}
+
+/* 3 · Paket ve sektörler */
+function tsAdimPaket() {
   const paketler = (DB.paketler || []).filter(k => paketinAkisi(k) !== 'ozel');
-  if (!paketler.length) {
-    toast('Varsayılan olmayan bir paket yok — önce Paketler\'den bir paket ekle.', 'uyari');
-    return;
+  const sektorler = DB.sektorler || [];
+  return `
+    <div class="pd-alan">
+      <span class="pd-et">Paket Seç</span>
+      ${paketler.length ? `<div class="rd-izgara">
+        ${paketler.map(k => `
+          <button class="rd ${TS.paket === k.anahtar ? 'sec' : ''}" type="button"
+                  data-ts-paket="${esc(k.anahtar)}">
+            <u class="rd-nokta"></u><span>${esc(k.ad)}</span>
+          </button>`).join('')}
+      </div>` : '<i class="pd-ipucu">Varsayılan olmayan bir paket yok — önce Paketler\'den ekle.</i>'}
+    </div>
+
+    <div class="pd-alan">
+      <span class="pd-et">Sektör Seç <em class="pd-sag">Çoklu seçim</em></span>
+      ${sektorler.length ? `<div class="sb-izgara">
+        ${sektorler.map(x => `
+          <button class="sb ${TS.sektorler.includes(x.id) ? 'sec' : ''}" type="button"
+                  data-ts-sektor="${esc(x.id)}"><span>${esc(x.ad)}</span></button>`).join('')}
+      </div>` : '<i class="pd-ipucu">Önce Kütüphane > Sektörler\'den sektör ekle.</i>'}
+      <i class="pd-ipucu">Sektör seçmezsen bu template yeni proje akışında
+      hiçbir sektörün altında çıkmaz. Sonradan da seçebilirsin.</i>
+    </div>`;
+}
+
+/* 4 · Kapak görseli */
+function tsAdimKapak() {
+  return `
+    <div class="kp-serit">
+      ${KAPAK_GORSELLERI.map(g => `
+        <button class="kp ${TS.kapak === g.anahtar ? 'sec' : ''}" type="button"
+                data-ts-kapak="${esc(g.anahtar)}" aria-label="${esc(g.ad)}">
+          <img src="${esc(g.dosya)}" alt="" loading="lazy">
+          <u class="kp-tik">${svg(ICON.tik, 12)}</u>
+        </button>`).join('')}
+    </div>
+    <i class="pd-ipucu">Arka plan rengi kendiliğinden veriliyor; her template
+    bir öncekinden farklı renk alıyor.</i>`;
+}
+
+/* 5 · Depo — template kaydı burada hazır, bileşen normal projeyle aynı. */
+function tsAdimDepo() {
+  const p = DB.proje(TS.projeId);
+  if (!p) return '<i class="pd-ipucu">Template henüz oluşturulmadı.</i>';
+  return baglantiAdimGithub(p);
+}
+
+/* 6 · Kurulum SQL'i */
+function tsAdimSql() {
+  const p = DB.proje(TS.projeId);
+  const cek = ((p || {}).palet || {}).cekirdek || {};
+  const kayitli = [1, 2, 3].map(no => !!(cek.sqlParca || {})[no]);
+  return `
+    <div class="sq-liste">
+      ${[1, 2, 3].map(no => `
+        <label class="sq ${kayitli[no - 1] ? 'sec' : ''}">
+          <span class="sq-et">
+            <b>Parça ${no}</b>
+            <u class="sq-tik">${svg(ICON.tik, 11)}<i>kayıtlı</i></u>
+          </span>
+          <textarea class="sq-alan" id="ts-sql-${no}" rows="3" spellcheck="false"
+            placeholder="${no}. parçayı buraya yapıştır…"></textarea>
+        </label>`).join('')}
+    </div>
+    <i class="pd-ipucu">Yapıştırınca kendiliğinden kaydedilir. SQL zorunlu
+    değil — veritabanı gerekmiyorsa boş bırakabilirsin.</i>`;
+}
+
+/* 7 · Claude ile temizlik */
+function tsAdimTemizlik() {
+  const p = DB.proje(TS.projeId);
+  if (!p) return '<i class="pd-ipucu">Template henüz oluşturulmadı.</i>';
+  const pl = p.palet || {};
+  const hazir = !!pl.cekirdekTemizlendi;
+
+  return `
+    <div class="ts-bilgi">${svg(ICON.info, 15)}
+      <span>Bu prompt firma izini kaldırır, tasarımı standarda döndürür ve
+      Supabase gibi gerçek bağlantıları koparır.</span></div>
+
+    ${p.repo ? `<div class="kur-dug">
+        ${promptBaglantisi({ tur: 'cekirdekTemizle', proje: p.id, slug: depoSlug(p.repo),
+          hedef: 'claude-yeni', yazi: 'Prompt oluştur ve Claude\'u aç' })}
+      </div>` : '<i class="pd-ipucu">Önce Depo adımından bir depo bağlanmalı.</i>'}
+
+    ${hazir
+      ? `<div class="kur-deger duz">${svg(ICON.tik, 13)} Temizlendi — template hazır ve kilitli</div>`
+      : `<label class="kur-onay" data-ts="temizlendi" role="button" tabindex="0"
+                ${p.repo ? '' : 'style="opacity:.5;pointer-events:none"'}>
+          <span class="kur-kutu">${svg(ICON.tik, 12)}</span>
+          Temizlendi, template olarak kaydet</label>`}`;
+}
+
+function templateSihirbaziBagla(el) {
+  const ileri = $('.ts-ileri', el);
+
+  const tazele = () => { if (ileri) ileri.classList.toggle('pasif', !tsGecilir()); };
+
+  /* 1 · kaynak seçimi + arama */
+  $$('[data-ts-proje]', el).forEach(b => b.addEventListener('click', () => {
+    TS.kaynakId = b.dataset.tsProje;
+    $$('[data-ts-proje]', el).forEach(o => o.classList.toggle('sec', o === b));
+    /* Ad boşsa kaynağın adından öneri: çoğu zaman aynen kullanılıyor. */
+    const p = DB.proje(TS.kaynakId);
+    if (p && !TS.ad.trim()) TS.ad = (modulAdi(p) || p.firma || '') + ' Template';
+    tazele();
+  }));
+  const ara = $('#ts-ara', el);
+  if (ara) ara.addEventListener('input', () => {
+    const q = ara.value.trim().toLocaleLowerCase('tr');
+    const liste = $('#ts-projeler', el);
+    let gorunen = 0;
+    $$('.ts-sec', liste).forEach(x => {
+      const uyar = !q || (x.dataset.ara || '').indexOf(q) >= 0;
+      x.classList.toggle('gizli', !uyar);
+      if (uyar) gorunen++;
+    });
+    liste.classList.toggle('bos', gorunen === 0);
+  });
+
+  /* 2 · ad ve açıklama */
+  const adAlan = $('#ts-ad', el);
+  if (adAlan) adAlan.addEventListener('input', () => { TS.ad = adAlan.value; tazele(); });
+  const acAlan = $('#ts-aciklama', el);
+  if (acAlan) {
+    const sayac = $('[data-sayac="ts-aciklama"]', el);
+    acAlan.addEventListener('input', () => {
+      TS.aciklama = acAlan.value;
+      if (sayac) sayac.textContent = acAlan.value.length + '/300';
+    });
   }
 
-  modalAc(`
-    ${modalBaslik(ICON.paket, 'Hangi paket?',
-      'Bu template\'ten kurulan projeler bu paketin yol haritasından geçer.')}
-    <div class="secim">
-      ${paketler.map(k => `
-        <div class="satir sec-satir" data-tur="${esc(k.anahtar)}" role="button" tabindex="0">
-          <span class="sec-yazi"><b>${esc(k.ad)}</b>
-            <i>${esc(k.aciklama || paketAkisAdi(paketinAkisi(k)))}</i></span>
-        </div>`).join('')}
-    </div>
-    <div class="modal-alt">
-      <button class="btn btn-ghost" data-tur="kapat" type="button">Vazgeç</button>
-    </div>`, kutu => {
-    $('[data-tur="kapat"]', kutu).addEventListener('click', modalKapat);
-    kutu.addEventListener('click', ev => {
-      const t = ev.target.closest('[data-tur]');
-      if (!t || t.dataset.tur === 'kapat') return;
-      modalKapat();
-      cekirdekAdiSor(kaynakId, t.dataset.tur);
+  /* 3 · paket ve sektörler */
+  $$('[data-ts-paket]', el).forEach(b => b.addEventListener('click', () => {
+    TS.paket = b.dataset.tsPaket;
+    $$('[data-ts-paket]', el).forEach(o => o.classList.toggle('sec', o === b));
+    tazele();
+  }));
+  $$('[data-ts-sektor]', el).forEach(b => b.addEventListener('click', () => {
+    const id = b.dataset.tsSektor;
+    const i = TS.sektorler.indexOf(id);
+    i === -1 ? TS.sektorler.push(id) : TS.sektorler.splice(i, 1);
+    b.classList.toggle('sec', i === -1);
+  }));
+
+  /* 4 · kapak */
+  $$('[data-ts-kapak]', el).forEach(b => b.addEventListener('click', () => {
+    TS.kapak = b.dataset.tsKapak;
+    $$('[data-ts-kapak]', el).forEach(o => o.classList.toggle('sec', o === b));
+  }));
+
+  /* 6 · SQL parçaları — yapıştırınca kaydediliyor */
+  [1, 2, 3].forEach(no => {
+    const alan = $('#ts-sql-' + no, el);
+    if (!alan) return;
+    const kaydet = async () => {
+      const metin = alan.value.trim();
+      if (!metin || !TS.projeId) return;
+      const kutucuk = alan.closest('.sq');
+      kutucuk.classList.add('yaziliyor');
+      try {
+        await DB.sablonSqlParcaYaz(TS.projeId, no, metin);
+        alan.value = '';
+        kutucuk.classList.remove('yaziliyor');
+        kutucuk.classList.add('sec');
+        toast(no + '. parça kaydedildi.', 'basari');
+      } catch (h) {
+        kutucuk.classList.remove('yaziliyor');
+        toast(h.message, 'hata');
+      }
+    };
+    alan.addEventListener('paste', () => setTimeout(kaydet, 0));
+    alan.addEventListener('change', kaydet);
+  });
+
+  /* 7 · temizlendi onayı */
+  const onay = $('[data-ts="temizlendi"]', el);
+  if (onay) onay.addEventListener('click', async () => {
+    const p = DB.proje(TS.projeId);
+    if (!p) return;
+    if (!await onaySor({
+      baslik: 'Template olarak kaydedilsin mi?',
+      mesaj: 'Claude temizleme promptunu çalıştırıp kontrol ettiysen onayla — '
+           + 'template otomatik kilitlenecek.',
+      buton: 'Eminim',
+    })) return;
+    const pl = p.palet || {};
+    try {
+      await DB.paletKaydet(p.id, Object.assign({}, pl,
+        { cekirdekTemizlendi: true, kilitli: true }));
+      templateSihirbaziCiz();
+      toast('Template hazır ve kilitlendi.', 'basari');
+    } catch (h) { toast(h.message, 'hata'); }
+  });
+
+  /* Alt düğmeler */
+  $$('[data-ts]', el).forEach(b => {
+    const t = b.dataset.ts;
+    if (!['kapat', 'geri', 'ileri', 'bitir'].includes(t)) return;
+    b.addEventListener('click', async () => {
+      if (t === 'kapat' || t === 'bitir') {
+        templateSihirbaziKapat();
+        render();
+        return;
+      }
+      if (t === 'geri') {
+        /* Template kurulduktan sonra kimlik adımlarına dönülmüyor: orası
+           artık template'in kendi ayar penceresinin işi. */
+        if (TS.projeId && TS.adim <= 5) return;
+        TS.adim--;
+        return templateSihirbaziCiz();
+      }
+      if (!tsGecilir()) return;
+
+      /* 4. adımdan çıkarken template gerçekten oluşuyor. */
+      if (TS.adim === 4 && !TS.projeId) {
+        if (TS.kuruluyor) return;
+        TS.kuruluyor = true;
+        b.classList.add('pasif');
+        try {
+          const id = await DB.projeKopyala(TS.kaynakId, {
+            tur: 'gercek',
+            cekirdek: {
+              ad: TS.ad.trim(),
+              paket: TS.paket,
+              sektorler: TS.sektorler.slice(),
+              kapak: TS.kapak,
+              aciklama: TS.aciklama.trim() || null,
+            },
+          });
+          TS.projeId = id;
+          sayaclariYaz();
+        } catch (h) {
+          TS.kuruluyor = false;
+          b.classList.remove('pasif');
+          toast(h.message, 'hata');
+          return;
+        }
+        TS.kuruluyor = false;
+      }
+      TS.adim++;
+      templateSihirbaziCiz();
     });
   });
-}
 
-async function cekirdekAdiSor(kaynakId, paket) {
-  const k = (DB.paketler || []).find(x => x.anahtar === paket);
-  const ad = await metinSor({
-    baslik: 'Template adı',
-    aciklama: 'Templateler listesinde bu adla görünecek.',
-    deger: (k ? k.ad : 'Yeni') + ' Template',
-    buton: 'Oluştur',
-  });
-  if (!ad || !ad.trim()) return;
-  /* Sektör burada sorulmuyor: template kurulduktan sonra listedeki ayar
-     düğmesinden seçiliyor (bkz. templateAyarlari). */
-  templateOnaySor(kaynakId, null, null, { ad: ad.trim(), paket, sektorler: [] });
+  requestAnimationFrame(() => logolariGoster());
 }
 
 /* ==========================================================================
@@ -14474,7 +14790,7 @@ async function eylemCalistir(el) {
 
   if (e === 'templatelere')       { location.hash = '#/templateler'; return; }
   if (e === 'guvenlige')          { location.hash = '#/guvenlik'; return; }
-  if (e === 'template-olustur-ac') return cekirdekOlusturBaslat();
+  if (e === 'template-olustur-ac') return templateSihirbaziAc();
   if (e === 'template-kur-ac')     return templateAyarlari(el.dataset.proje);
 
   /* Satırın kendisi template-kur-ac'ı açıyor — bu düğme ayrı bir data-eylem
@@ -15564,9 +15880,9 @@ document.addEventListener('DOMContentLoaded', () => {
     /* Burada da otomatik kopyalamıyoruz — GitHub Ayarlar sekmesine gidip
        işaretlemeden dönmüş olabilir. Aynı soru bir daha soruluyor. */
     Object.keys(TEMPLATE_BEKLIYOR).forEach(kaynakId => {
-      const { tur, sablon, cekirdek } = TEMPLATE_BEKLIYOR[kaynakId];
+      const { tur, sablon } = TEMPLATE_BEKLIYOR[kaynakId];
       delete TEMPLATE_BEKLIYOR[kaynakId];
-      templateDonusOnaySor(kaynakId, tur, sablon, cekirdek);
+      templateDonusOnaySor(kaynakId, tur, sablon);
     });
   });
 

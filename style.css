@@ -8924,3 +8924,64 @@ textarea.pd-giris { resize: vertical; display: block; }
 }
 .sq-alan:focus { border-color: var(--line); }
 .sq.yaziliyor { opacity: .6; pointer-events: none; }
+
+/* ---- Yeni Template sihirbazı ---- */
+.ts-serit { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
+.ts-cubuk {
+  flex: 1; height: 5px; border-radius: 999px; background: var(--line-3); overflow: hidden;
+}
+.ts-cubuk u { display: block; height: 100%; background: var(--red); transition: width .2s var(--ease); }
+.ts-serit em {
+  flex-shrink: 0; font-style: normal; font-size: 13px;
+  font-weight: 600; color: var(--ink-dim);
+  font-variant-numeric: lining-nums tabular-nums;
+}
+.ts-baslik {
+  margin: 0 0 6px; font-size: 26px; font-weight: 700;
+  color: var(--ink-strong); letter-spacing: -.01em;
+}
+.ts-alt { margin: 0 0 20px; font-size: 14.5px; line-height: 1.5; color: var(--ink-dim); }
+.ts-ara { margin-bottom: 14px; }
+
+.ts-liste { display: flex; flex-direction: column; gap: 10px; }
+.ts-liste.bos .pj-bos-arama { display: block; }
+.ts-sec.gizli { display: none; }
+.ts-sec {
+  display: flex; align-items: center; gap: 14px; width: 100%; text-align: left;
+  padding: 12px 14px; border-radius: 16px; cursor: pointer;
+  background: var(--surface); border: 1.5px solid var(--line-3); font-family: inherit;
+}
+.ts-sec.sec { border-color: var(--red); background: var(--red-soft); }
+.ts-logo {
+  display: flex; align-items: center; justify-content: center;
+  width: 52px; height: 52px; flex-shrink: 0; border-radius: 14px;
+  background: var(--proje-koyu, #2a2a2e) center / cover no-repeat; color: #fff;
+  font-family: var(--yazi-baslik); font-weight: 700; font-size: 17px;
+}
+.ts-sec-yz { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.ts-sec-yz b { font-size: 15.5px; font-weight: 700; color: var(--ink-strong); }
+.ts-sec-yz i,
+.ts-sec-yz em {
+  font-style: normal; font-size: 12.5px; color: var(--ink-dim);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.ts-sec-yz em { color: var(--ink-soluk); }
+.ts-radyo {
+  flex-shrink: 0; width: 22px; height: 22px; border-radius: 999px;
+  border: 2px solid var(--line);
+}
+.ts-sec.sec .ts-radyo { border-color: var(--red); box-shadow: inset 0 0 0 4px var(--red); }
+
+.ts-ileri.pasif { opacity: .45; pointer-events: none; }
+.ts-bilgi {
+  display: flex; gap: 10px; padding: 12px 14px; margin-bottom: 16px;
+  border-radius: 12px; background: var(--yuva);
+  font-size: 13px; line-height: 1.5; color: var(--ink-dim);
+}
+.ts-bilgi svg { flex-shrink: 0; margin-top: 2px; fill: none; stroke: currentColor; stroke-width: 1.8; }
+.ts-bilgi .dolgu { display: none; }
+/* Sihirbazın ana düğmesi kırmızı — tasarımda öyle. */
+#template-sihirbaz .btn-primary {
+  background: var(--red); border-color: var(--red); color: #fff;
+}
+#template-sihirbaz .btn-primary:hover { background: var(--red-koyu); border-color: var(--red-koyu); }

@@ -1,5 +1,19 @@
 # Değişiklik Günlüğü
 
+## v0.174.0
+**Yeni Template Oluştur artık yedi adımlık bir sihirbaz.**
+1. **Kaynak proje** — aranabilir liste; logo, ürün adı ve son güncelleme tarihiyle
+2. **Ad ve açıklama** — ad, seçtiğin projeden kendiliğinden öneriliyor
+3. **Paket ve sektörler**
+4. **Kapak görseli**
+5. **Depo** — GitHub bağlama (geri geldi)
+6. **Kurulum SQL'i** — üç parça, yapıştırınca kaydediliyor
+7. **Claude ile temizlik** — prompt + "Temizlendi" onayı (geri geldi)
+
+- Üstte ilerleme çubuğu ve "1 / 7" sayacı var; adım tamamlanmadan "Devam Et" sönük duruyor.
+- Template kaydı **4. adımdan sonra** gerçekten oluşuyor; son üç adım o kaydın üstünde çalışıyor.
+- Temizlenmemiş template yeni proje akışında yine listelenmiyor, kartta "kuruluyor" yazıyor.
+
 ## v0.173.0
 - **Kurulum SQL'i artık template ekranının içinde.** Ayrı kurulum sayfası tamamen kalktı; pencerede üç küçük yapıştırma kutusu var, yapıştırdığın parça **kendiliğinden kaydediliyor** ve yanında yeşil "kayıtlı" tiki çıkıyor. Başlıkta da kaç parçanın kayıtlı olduğu yazıyor (2 / 3 gibi).
 - Yeni bir template oluşturunca doğrudan bu pencere açılıyor.
