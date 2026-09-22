@@ -34,6 +34,14 @@ const DEFAULT_ROUTE = 'panel';
    (Eskiden biten görev / toplam görevdi; aynı proje sıfır görevle %0,
    tek görevle %100 görünüyordu — gerçek durumu anlatmıyordu.)
    Gizli ve "sayilmaz" adımlar hesaba girmiyor. */
+/* Her kelimenin baş harfi büyük — "güllüoğlu kübban" kartta "Güllüoğlu
+   Kübban" görünsün. Kelimenin geri kalanına dokunulmuyor: "QR Menu" gibi
+   bilerek büyük yazılmış kısaltmalar bozulmasın. Türkçe kuralı: i → İ. */
+function basHarfleriBuyuk(metin) {
+  return String(metin || '').replace(/(^|[\s\-\/(])([\p{L}])/gu,
+    (_, once, harf) => once + harf.toLocaleUpperCase('tr'));
+}
+
 function projeAsamaYuzde(p) {
   if (!p) return 0;
   const sayilan = projeDuraklari(p).filter(d => !d.gizli && !d.sayilmaz);
@@ -5666,7 +5674,7 @@ function projeKunyesi(p) {
         ${adres ? '<span class="donen"></span>' : ''}
       </span>
       <span class="pk-yz">
-        <span class="pk-ad">${esc(projeAdi(p))}
+        <span class="pk-ad">${esc(basHarfleriBuyuk(projeAdi(p)))}
           ${(p.palet || {}).projeTuru === 'test' ? '<span class="pill dev">Test</span>' : ''}</span>
         <span class="pk-alt">${alt}</span>
       </span>
@@ -6069,7 +6077,7 @@ function pjKarti(p) {
         type="button" aria-label="Proje seçenekleri">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.7"></circle><circle cx="12" cy="12" r="1.7"></circle><circle cx="12" cy="19" r="1.7"></circle></svg>
       </button>` : ''}
-      <b class="pj-ad">${esc(projeAdi(p))}</b>
+      <b class="pj-ad">${esc(basHarfleriBuyuk(projeAdi(p)))}</b>
       ${p.sektor ? `<i class="pj-aciklama">${esc(p.sektor)}</i>` : '<i class="pj-aciklama bos"></i>'}
       <span class="pj-etiketler">
         <em>${esc(PLATFORM_ADI[p.platform] || p.platform)}</em>
@@ -14290,8 +14298,8 @@ function pzProjeKarti(p) {
   /* Ad kutuya sığsın: önce "Firma - Modül", sığmazsa yalnız firma adı,
      o da uzunsa yazı küçülüp iki satıra iniyor. Ada her kartta iki
      satırlık yer ayrıldığı için kartlar aynı hizada kalıyor. */
-  const tam = projeAdi(p);
-  const ad = tam.length > 18 ? (p.firma || tam) : tam;
+  const tam = basHarfleriBuyuk(projeAdi(p));
+  const ad = tam.length > 18 ? basHarfleriBuyuk(p.firma || tam) : tam;
   const uzun = ad.length > 13 ? ' uzun' : '';
 
   return `
