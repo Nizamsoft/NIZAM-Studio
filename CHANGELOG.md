@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü
 
+## v0.170.1
+**Paketler — yeni yapının 1. adımı.**
+- **Paket**, yeni projenin hangi yol haritasından geçeceğini söyleyen kavram. İki paketle başlıyor: **Özel Proje** (normal kurulum) ve **Muhasebe-1** (hazır programın kurulumu).
+- Kütüphane'ye **Paketler** kartı eklendi; paket ekleme, düzenleme ve kaldırma var. Bir pakette proje varsa kaldırılamıyor.
+- Kurulmuş projelerin yol haritası **değişmedi**: paket, projenin eskiden taşıdığı şablon işaretinden türetiliyor. Veri göçü yok.
+- **Kurulum:** `sql/25-paketler.sql` → Supabase SQL Editor'de çalıştır. Çalıştırmazsan ekran "paket yok" der, uygulamanın geri kalanı etkilenmez.
+- Sektör ve paket kartlarının sınıf adları `.sk` → `.lk` oldu; `.sk` adı yapı ağacındaki "dışarıda kalanlar" listesinde zaten kullanılıyordu ve v0.170.0 onun görünümünü bozuyordu.
+
 ## v0.170.0
 - **Sektörler ekranı yenilendi.** Başlık, arama kutusu, sıralama düğmesi ve kırmızı "Yeni" tek satırda; altında kart kart sektörler (pembe ikon karosu, ad, modül sayısı).
 - Sıralama: kendi sırası, ada göre veya modül sayısına göre. Arama yazarken ekran yeniden çizilmiyor, uymayan kartlar gizleniyor.

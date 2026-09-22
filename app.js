@@ -18,6 +18,7 @@ const ROUTES = {
   standartlar: { title: 'Nizam Standartları', kisa: 'Standartlar', sub: () => standartAltBaslik() },
   sablonlar:   { title: 'Modül Şablonları',   kisa: 'Şablonlar',   sub: () => sablonAltBaslik() },
   sektorler:   { title: 'Sektörler',           kisa: 'Sektörler',   sub: () => sektorAltBaslik() },
+  paketler:    { title: 'Paketler',            kisa: 'Paketler',    sub: () => paketAltBaslik() },
   kilitler:    { title: 'Kilitli Projeler',    kisa: 'Kilit',       sub: () => kilitAltBaslik() },
   templateler: { title: 'Templateler',         kisa: 'Template',    sub: () => cekirdekAltBaslik() },
   ekip:        { title: 'Ekip',               kisa: 'Ekip',        sub: () => ekipAltBaslik() },
@@ -114,6 +115,12 @@ let LOGO_ZAMANLAYICI = null;
    tek katman kalır — onlar simge değil, yön gösterir. */
 
 const ICON = {
+  /* Paket — kapaklı kutu. */
+  paket: {
+    d: '<path d="M12 3l8 4.2v9.6L12 21l-8-4.2V7.2z"></path>',
+    c: '<path d="M12 3l8 4.2v9.6L12 21l-8-4.2V7.2z"></path>'
+     + '<path d="M4 7.2l8 4.2 8-4.2M12 11.4V21"></path>',
+  },
   /* Sıralama düğmesi — üstte uzun, altta kısa çizgi ve aşağı ok. */
   suzgecSira: '<path fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"'
     + ' d="M4 7h13M4 12h9M4 17h5M17 13v7M17 20l-2.6-2.6M17 20l2.6-2.6"></path>',
@@ -597,12 +604,38 @@ const VIEWS = {
       </div>
 
       ${liste.length
-        ? `<div class="sk-liste">${liste.map(sektorKarti).join('')}
+        ? `<div class="lk-liste">${liste.map(sektorKarti).join('')}
              <div class="pj-bos-arama">Aramana uyan sektör yok.</div>
            </div>`
         : `<div class="card">${empty(ICON.folder, 'Sektör yok',
             'Sektör eklersen sihirbazda çıkar ve modülleri önden işaretler.',
             AUTH.yonetici ? 'Yeni Sektör' : null, 'sektor-ekle')}</div>`}
+    `;
+  },
+
+  /* ---------- Paketler ---------- */
+
+  paketler: () => {
+    if (YUKLENIYOR) return iskeletler(3);
+    if (DB.hata)    return hataKutusu(DB.hata);
+
+    const liste = DB.paketler || [];
+
+    return `
+      <div class="pj-tepe">
+        <div class="pj-tepe-yz">
+          <h1>Paketler</h1>
+          <p>Yeni projenin hangi yol haritasından geçeceğini paket belirler.</p>
+        </div>
+        ${AUTH.yonetici ? `<button class="pj-yeni" type="button" data-eylem="paket-ekle">
+          ${svg(ICON.arti, 16)}<span>Yeni</span></button>` : ''}
+      </div>
+
+      ${liste.length
+        ? `<div class="lk-liste">${liste.map(paketKarti).join('')}</div>`
+        : `<div class="card">${empty(ICON.paket, 'Paket yok',
+            'Paket listesi için sql/25-paketler.sql dosyasını Supabase\'de çalıştır.',
+            AUTH.yonetici ? 'Yeni Paket' : null, 'paket-ekle')}</div>`}
     `;
   },
 
@@ -1037,6 +1070,14 @@ const KUTUPHANE = [
        + '<rect x="42" y="2" width="13" height="54" rx="4"></rect>',
   },
   {
+    ad: 'Paketler', adres: '#/paketler', renk: 'turuncu', ikon: 'paket',
+    aciklama: 'Yeni projenin hangi yol haritasından geçeceği.',
+    sayi: () => (DB.paketler || []).length + ' paket',
+    susCizgi: true,
+    sus: '<rect x="6" y="20" width="48" height="34" rx="6"></rect>'
+       + '<path d="M6 30h48M24 20v-8h12v8"></path>',
+  },
+  {
     ad: 'Şablonlar', adres: '#/sablonlar', renk: 'mavi', ikon: 'dokuman',
     aciklama: 'Hızlı başlangıç için hazır proje şablonlarını keşfet.',
     sayi: () => DB.modulSablonlari().length + ' şablon',
@@ -1203,8 +1244,31 @@ function logolariGoster() {
    (görev/kontrol sistemi) içine aldı — kontroller artık beta aşamasında. */
 /* Proje bir şablon kopyasıysa ("Muhasebe şablonu" vb.) DURAKLAR.yapi ve
    DURAKLAR.beta yerlerini "Temel tanımlar" ve "Değişim"e bırakıyor. */
+/* ---------- Paket ----------
+   Paket, projenin hangi yol haritasından geçeceğini söyler. Henüz projeye
+   yazmıyoruz: eski `palet.sablon` işaretinden türetiyoruz, böylece kurulmuş
+   hiçbir projenin yolu değişmiyor. Proje paketi kendi alanında tutmaya
+   yeni proje akışı geldiğinde geçilecek. */
+function paketAnahtari(p) {
+  const pl = (p && p.palet) || {};
+  return pl.paket || (pl.sablon ? 'muhasebe-1' : 'ozel');
+}
+
+function projePaketi(p) {
+  const anahtar = paketAnahtari(p);
+  return (DB.paketler || []).find(x => x.anahtar === anahtar) || null;
+}
+
+/* Hangi akış çizilecek. Paket tablosu henüz kurulmadıysa (sql/25 çalışmadı)
+   eski işarete düşüyoruz — ekran yine de doğru yol haritasını gösteriyor. */
+function paketAkisi(p) {
+  const paket = projePaketi(p);
+  if (paket) return paket.akis || 'ozel';
+  return ((p && p.palet) || {}).sablon ? 'muhasebe' : 'ozel';
+}
+
 function sablonMu(p) {
-  return !!((p && p.palet) || {}).sablon;
+  return paketAkisi(p) === 'muhasebe';
 }
 
 /* DURAKLAR'daki statik durak nesnesinin (ad/aciklama) şablon durumuna göre
@@ -7131,15 +7195,155 @@ function sektorAltBaslik() {
 function sektorKarti(x) {
   const n = (x.moduller || []).length;
   return `
-    <button class="sk" type="button" data-eylem="sektor-duzenle" data-id="${esc(x.id)}"
+    <button class="lk" type="button" data-eylem="sektor-duzenle" data-id="${esc(x.id)}"
             data-ara="${esc(String(x.ad || '').toLocaleLowerCase('tr'))}">
-      <span class="sk-ikon">${svg(ICON.katman, 26)}</span>
-      <span class="sk-yz">
+      <span class="lk-ikon">${svg(ICON.katman, 26)}</span>
+      <span class="lk-yz">
         <b>${esc(x.ad)}</b>
         <em>${svg(ICON.katman, 15)}${n ? n + ' modül' : 'modül önerisi yok'}</em>
       </span>
-      <span class="sk-ok">${svg(ICON.chevron, 18)}</span>
+      <span class="lk-ok">${svg(ICON.chevron, 18)}</span>
     </button>`;
+}
+
+function paketAltBaslik() {
+  if (YUKLENIYOR) return 'yükleniyor…';
+  return (DB.paketler || []).length + ' paket';
+}
+
+function paketAkisAdi(akis) {
+  return (PAKET_AKISLARI.find(x => x.anahtar === akis) || PAKET_AKISLARI[0]).ad;
+}
+
+/* Bir pakete kaç proje bağlı — template'ler ve arşiv sayılmıyor. */
+function paketProjeSayisi(anahtar) {
+  return (DB.projeler || []).filter(p =>
+    !p.arsiv && !cekirdekMi(p) && paketAnahtari(p) === anahtar).length;
+}
+
+function paketKarti(x) {
+  const n = paketProjeSayisi(x.anahtar);
+  return `
+    <button class="lk" type="button" data-eylem="paket-duzenle" data-id="${esc(x.id)}">
+      <span class="lk-ikon turuncu">${svg(ICON.paket, 26)}</span>
+      <span class="lk-yz">
+        <b>${esc(x.ad)}</b>
+        <i>${esc(x.aciklama || paketAkisAdi(x.akis))}</i>
+        <em>${svg(ICON.folder, 15)}${n ? n + ' proje' : 'proje yok'}</em>
+      </span>
+      <span class="lk-ok">${svg(ICON.chevron, 18)}</span>
+    </button>`;
+}
+
+/* Paket yazma / düzenleme. Akış kodda tanımlı; burada yalnız hangisinin
+   kullanılacağı seçiliyor. */
+function paketDuzenle(id) {
+  modalHepsiniKapat();
+  const x = id ? (DB.paketler || []).find(k => k.id === id) : null;
+  let akis = x ? (x.akis || 'ozel') : 'ozel';
+
+  modalAc(`
+    ${modalBaslik(ICON.paket, x ? 'Paketi düzenle' : 'Yeni paket',
+      'Paket, projenin hangi yol haritasından geçeceğini söyler.')}
+
+    <label class="field">
+      <span>Paket adı</span>
+      <input type="text" id="pk-ad" value="${esc(x ? x.ad : '')}"
+             placeholder="Örn. Muhasebe-2" maxlength="40" autocomplete="off">
+    </label>
+
+    <label class="field">
+      <span>Açıklama <em class="ipucu">isteğe bağlı</em></span>
+      <input type="text" id="pk-aciklama" value="${esc(x ? (x.aciklama || '') : '')}"
+             placeholder="Bir cümleyle ne olduğu" maxlength="120" autocomplete="off">
+    </label>
+
+    <div class="field">
+      <span>Yol haritası</span>
+      <div class="secenek-serit" id="pk-akis">
+        ${PAKET_AKISLARI.map(a => `<button class="ss ${akis === a.anahtar ? 'sec' : ''}"
+          data-pk-akis="${a.anahtar}" type="button">${esc(a.ad)}</button>`).join('')}
+      </div>
+      <p class="ipucu" id="pk-akis-alt">${esc(
+        (PAKET_AKISLARI.find(a => a.anahtar === akis) || PAKET_AKISLARI[0]).alt)}</p>
+    </div>
+
+    <div class="note note-kucuk">
+      ${svg(ICON.info, 15)}
+      <span>Yol haritasını değiştirmek kurulmuş projeleri de etkiler —
+      o pakete bağlı her projenin adımları bu listeye göre çizilir.</span>
+    </div>
+
+    <div class="modal-alt">
+      ${x ? '<button class="btn btn-ghost tehlike" data-pk="sil" type="button">Kaldır</button>' : ''}
+      <button class="btn btn-ghost" data-pk="iptal" type="button">Vazgeç</button>
+      <button class="btn btn-primary" data-pk="kaydet" type="button"><span>Kaydet</span></button>
+    </div>`, kutu => {
+    setTimeout(() => $('#pk-ad', kutu).focus(), 40);
+    $('[data-pk="iptal"]', kutu).addEventListener('click', modalKapat);
+
+    $$('[data-pk-akis]', kutu).forEach(b => b.addEventListener('click', () => {
+      akis = b.dataset.pkAkis;
+      $$('[data-pk-akis]', kutu).forEach(o => o.classList.toggle('sec', o === b));
+      const a = PAKET_AKISLARI.find(y => y.anahtar === akis);
+      $('#pk-akis-alt', kutu).textContent = a ? a.alt : '';
+    }));
+
+    const silDug = $('[data-pk="sil"]', kutu);
+    if (silDug) silDug.addEventListener('click', async () => {
+      const n = paketProjeSayisi(x.anahtar);
+      if (n) {
+        toast(`"${x.ad}" paketi ${n} projede kullanılıyor — kaldırılamaz.`, 'hata');
+        return;
+      }
+      const ok = await onaySor({
+        baslik: 'Paket kaldırılsın mı?',
+        mesaj: `"${x.ad}" listeden çıkacak. Hiçbir projede kullanılmıyor.`,
+      });
+      if (!ok) return;
+      try {
+        await DB.paketSil(x.id);
+        modalKapat();
+        render();
+        toast('Paket kaldırıldı.', 'basari');
+      } catch (h) { toast(h.message, 'hata'); }
+    });
+
+    $('[data-pk="kaydet"]', kutu).addEventListener('click', async () => {
+      const ad = $('#pk-ad', kutu).value.trim();
+      if (!ad) { toast('Paket adını yaz.'); return; }
+      const aciklama = $('#pk-aciklama', kutu).value.trim();
+
+      const yazi = $('[data-pk="kaydet"] span', kutu);
+      yazi.textContent = 'Kaydediliyor…';
+      try {
+        /* Anahtar adres gibi: bir kez kurulur, sonra değişmez. Değişseydi
+           o pakete bağlı projeler paketini kaybederdi. */
+        const alanlar = { ad, aciklama: aciklama || null, akis };
+        if (!id) alanlar.anahtar = paketAnahtariUret(ad);
+        await DB.paketKaydet(id, alanlar);
+        modalKapat();
+        render();
+        toast(id ? 'Paket güncellendi.' : 'Paket eklendi.', 'basari');
+      } catch (h) {
+        yazi.textContent = 'Kaydet';
+        toast(h.message, 'hata');
+      }
+    });
+  });
+}
+
+/* Addan adres üretir: "Muhasebe-2" → "muhasebe-2". Çakışırsa sonuna sayı. */
+function paketAnahtariUret(ad) {
+  const harf = { 'ç': 'c', 'ğ': 'g', 'ı': 'i', 'ö': 'o', 'ş': 's', 'ü': 'u' };
+  let kok = String(ad).toLocaleLowerCase('tr')
+    .replace(/[çğıöşü]/g, h => harf[h] || h)
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'paket';
+  const var_ = a => (DB.paketler || []).some(p => p.anahtar === a);
+  if (!var_(kok)) return kok;
+  let i = 2;
+  while (var_(kok + '-' + i)) i++;
+  return kok + '-' + i;
 }
 
 const SK_SIRA = [
@@ -7165,10 +7369,10 @@ function skSirala(liste) {
 
 /* Arama yazarken ekran yeniden çizilmiyor: kartlar yerinde, uymayan gizleniyor. */
 function skAramaUygula() {
-  const liste = $('.sk-liste');
+  const liste = $('.lk-liste');
   if (!liste) return;
   let gorunen = 0;
-  $$('.sk', liste).forEach(k => {
+  $$('.lk', liste).forEach(k => {
     const uyar = !SEKTOR_ARAMA || (k.dataset.ara || '').indexOf(SEKTOR_ARAMA) >= 0;
     k.classList.toggle('gizli', !uyar);
     if (uyar) gorunen++;
@@ -14169,6 +14373,10 @@ async function eylemCalistir(el) {
   }
 
   if (e === 'sektorlere')     { location.hash = '#/sektorler'; return; }
+  if (e === 'paketlere')      { location.hash = '#/paketler'; return; }
+  if (e === 'paket-ekle')     return paketDuzenle(null);
+  if (e === 'paket-duzenle')  return paketDuzenle(id);
+
   if (e === 'sektor-ekle')    return sektorDuzenle(null);
   if (e === 'sektor-sirala') {
     const sec = await secenekSor('Sıralama', SK_SIRA);

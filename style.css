@@ -8567,48 +8567,55 @@ a.asr:active{ transform:scale(.99); }
   .kt-liste { max-width: 760px; }
 }
 
-/* ---- Sektörler ----
-   Ad ve modül sayısı; açıklama alanı yok. Kart yüksekliği ona göre. */
-.sk-liste { display: flex; flex-direction: column; gap: 12px; }
-.sk-liste.bos .pj-bos-arama { display: block; }
-.sk.gizli { display: none; }
-.sk {
+/* ---- Liste kartı (.lk) ----
+   Sektörler ve Paketler ekranlarının ortak kartı: ikon karosu, ad, isteğe
+   bağlı açıklama, sayı satırı ve ok. `.sk` önekini KULLANMIYORUZ — o ad
+   yapı ağacındaki "dışarıda kalanlar" listesinde zaten dolu. */
+.lk-liste { display: flex; flex-direction: column; gap: 12px; }
+.lk-liste.bos .pj-bos-arama { display: block; }
+.lk.gizli { display: none; }
+.lk {
   display: flex; align-items: center; gap: 16px; width: 100%;
   padding: 14px 16px; border-radius: 16px; cursor: pointer; text-align: left;
   background: var(--surface); border: 1px solid var(--line-3);
   font-family: inherit;
 }
-.sk:hover { border-color: var(--line-2); }
-.sk-ikon {
+.lk:hover { border-color: var(--line-2); }
+.lk-ikon {
   display: flex; align-items: center; justify-content: center;
   width: 58px; height: 58px; flex-shrink: 0; border-radius: 16px;
   background: var(--red-soft); color: var(--red);
 }
-.sk-ikon svg { fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linejoin: round; }
-.sk-ikon .dolgu { display: none; }
-.sk-yz { display: flex; flex-direction: column; gap: 7px; min-width: 0; flex: 1; }
-.sk-yz b {
+.lk-ikon.turuncu { background: #fdeee2; color: #cf6f1b; }
+.lk-ikon svg { fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linejoin: round; }
+.lk-ikon .dolgu { display: none; }
+.lk-yz { display: flex; flex-direction: column; gap: 7px; min-width: 0; flex: 1; }
+.lk-yz b {
   font-size: 16.5px; font-weight: 700; color: var(--ink-strong);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.sk-yz em {
+/* Açıklama satırı — sektör kartında yok, paket kartında var. */
+.lk-yz > i {
+  font-style: normal; font-size: 13.5px; line-height: 1.45; color: var(--ink-dim);
+}
+.lk-yz em {
   display: flex; align-items: center; gap: 7px;
   font-style: normal; font-size: 13.5px; color: var(--ink-dim);
 }
-.sk-yz em svg { flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linejoin: round; }
-.sk-yz em .dolgu { display: none; }
-.sk-ok { flex-shrink: 0; line-height: 0; color: var(--ink-soluk); }
-.sk-ok svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.lk-yz em svg { flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linejoin: round; }
+.lk-yz em .dolgu { display: none; }
+.lk-ok { flex-shrink: 0; line-height: 0; color: var(--ink-soluk); }
+.lk-ok svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
 
 /* Yalnız ikon taşıyan araç düğmesi (sıralama) kare dursun. */
 .pj-arac.tekil { width: 46px; padding: 0; justify-content: center; }
 .pj-arac.tekil svg { fill: none; }
 
 @media (hover: none) {
-  .sk:active { transform: scale(.985); transition: transform .1s var(--ease); }
+  .lk:active { transform: scale(.985); transition: transform .1s var(--ease); }
 }
 @media (min-width: 901px) {
-  .sk-liste { max-width: 760px; }
+  .lk-liste { max-width: 760px; }
 }
 /* Araç çubuğundaki "Yeni" arama kutusuyla aynı boyda dursun. */
 .pj-araclar .pj-yeni { height: 46px; padding: 0 20px; }

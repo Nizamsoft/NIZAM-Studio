@@ -18,6 +18,7 @@ const DB = {
   kisilerHepsi: [],
   sablonlar: [],
   sektorler: [],
+  paketler: [],
   /* Logolar private kovada; adres her oturumda yeniden üretilir. */
   logoAdres: {},
   /* Görsel yuvalarının imzalı adresleri: gorselAdres[projeId + '/' + no] */
@@ -44,7 +45,7 @@ const DB = {
     tasks: 'gorevler', task_events: 'hareketler', profiles: 'kisiler',
     messages: 'mesajlar',
     standards: 'standartlar', task_standards: 'gorevStandart',
-    module_templates: 'sablonlar', sectors: 'sektorler',
+    module_templates: 'sablonlar', sectors: 'sektorler', packages: 'paketler',
   },
 
   canliBasla(tazele) {
@@ -255,6 +256,7 @@ const DB = {
     gorevStandart:db => db.from('task_standards').select('gorev_id, standart_id'),
     sablonlar:    db => db.from('module_templates').select('*').eq('aktif', true).order('sira'),
     sektorler:    db => db.from('sectors').select('*').eq('aktif', true).order('sira'),
+    paketler:     db => db.from('packages').select('*').eq('aktif', true).order('sira'),
     /* Mesajlar da sınırsız büyüyor; son beş yüz satır yetiyor. Satır
        güvenliği zaten yalnız kendi yazışmalarını veriyor. */
     mesajlar:     db => db.from('messages').select('*')
@@ -263,7 +265,7 @@ const DB = {
   },
 
   /* Tablosu henüz kurulmamış olabilecekler — hata verme, boş bırak. */
-  ISTEGE_BAGLI: ['sablonlar', 'sektorler', 'mesajlar'],
+  ISTEGE_BAGLI: ['sablonlar', 'sektorler', 'mesajlar', 'paketler'],
 
   yerlestir(ad, sonuc) {
     if (sonuc.error) {
@@ -325,7 +327,7 @@ const DB = {
       this.projeler = []; this.moduller = []; this.sayfalar = [];
       this.gorevler = []; this.hareketler = []; this.kisiler = []; this.kisilerHepsi = [];
       this.mesajlar = [];
-      this.sablonlar = []; this.sektorler = [];
+      this.sablonlar = []; this.sektorler = []; this.paketler = [];
       this.standartlar = []; this.gorevStandart = [];
       this.yuklendi = true;
       return;
@@ -837,6 +839,30 @@ const DB = {
      şablonlar bir sonraki açılışta geri geliyordu. */
   modulSablonlari() {
     return this.sablonlar;
+  },
+
+  /* ---------- Paketler ----------
+     Paket, yeni projenin hangi yol haritasından geçeceğini söyler.
+     Akışın kendisi kodda; paket yalnız hangisinin kullanılacağını seçer. */
+  async paketKaydet(id, alanlar) {
+    yazmaKontrol();
+    const q = id
+      ? AUTH.db.from('packages').update(alanlar).eq('id', id)
+      : AUTH.db.from('packages')
+          .insert(Object.assign({ sira: this.paketler.length + 1 }, alanlar));
+    const { data, error } = await q.select('id');
+    if (error) throw new Error(paketHatasi(error));
+    if (!data || !data.length) throw new Error(paketHatasi({}));
+    await this.tazele('paketler');
+  },
+
+  /* Silmiyoruz, pasife çekiyoruz: o pakete bağlı projelerin yol haritası
+     kaybolmasın — anahtar hâlâ okunabilir olmalı. */
+  async paketSil(id) {
+    yazmaKontrol();
+    const { error } = await AUTH.db.from('packages').update({ aktif: false }).eq('id', id);
+    if (error) throw new Error(paketHatasi(error));
+    await this.tazele('paketler');
   },
 
   async sektorKaydet(id, alanlar) {
@@ -1528,6 +1554,14 @@ function yazmaKontrol() {
 
 /* Depo hatalarını Türkçeye çevirir — çıplak İngilizce mesaj gösterme. */
 /* sectors tablosu henüz kurulmamışsa açık söyle. */
+function paketHatasi(e) {
+  const m = (e && e.message) || '';
+  if (/relation .*packages.* does not exist|Could not find the table/i.test(m)) {
+    return 'Paket listesi için sql/25-paketler.sql dosyasını Supabase\'de çalıştır.';
+  }
+  return veriHatasi(e);
+}
+
 function sektorHatasi(e) {
   const m = (e && e.message) || '';
   if (/relation .*sectors.* does not exist|Could not find the table/i.test(m)) {

@@ -7,7 +7,7 @@ const APP = {
   name:     'NIZAM | Studio',
   short:    'NIZAM Studio',
   owner:    'Nizam Soft',
-  version: 'v0.170.0',
+  version: 'v0.170.1',
   build:    '2026-09-17',
   /* Studio'nun kendi deposu — "bütün programlarda geçerli olsun"
      istekleri buraya gider. */
@@ -895,6 +895,19 @@ const CEKIRDEK_TUR_LISTESI = [
 ];
 
 /* ==========================================================================
+   Paket akışları — bir paketin hangi yol haritasını kullanacağı.
+   Akışın kendisi kodda (bkz. projeDuraklari); paket yalnızca hangisini
+   seçtiğini söyler. Yeni bir akış eklemek kod işi, paket eklemek değil.
+   ========================================================================== */
+
+const PAKET_AKISLARI = [
+  { anahtar: 'ozel',     ad: 'Normal kurulum',
+    alt: 'Kurulum ve yapı → Beta ve geliştirme' },
+  { anahtar: 'muhasebe', ad: 'Hazır programın kurulumu',
+    alt: 'Değişim → Test ve Güncelle' },
+];
+
+/* ==========================================================================
    Görev durumları — dört tane, sırayla ilerler.
    "Kontrolde" yöneticinin onayını bekliyor demektir.
    Revize ayrı bir durum değil: Kontrolde'den Geliştiriliyor'a geri düşme.
@@ -937,6 +950,7 @@ const MENU = [
   { id: 'ekip',        ad: 'Ekip',               ikon: 'kisi', sadeceYonetici: true, tab: true },
   /* Standartlar alt çubukta değil — Ayarlar'ın içinden açılıyor. */
   { id: 'sektorler',   ad: 'Sektörler',          ikon: 'folder', sadeceYonetici: true, alt: true },
+  { id: 'paketler',    ad: 'Paketler',           ikon: 'paket',  sadeceYonetici: true, alt: true },
   { id: 'sablonlar',   ad: 'Modül Şablonları',   ikon: 'katman', sadeceYonetici: true, alt: true },
   { id: 'standartlar', ad: 'Nizam Standartları', ikon: 'katman', alt: true },
   { id: 'ayarlar',     ad: 'Ayarlar',            ikon: 'disli',  alt: true, tab: true },
