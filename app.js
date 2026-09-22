@@ -112,6 +112,23 @@ let LOGO_ZAMANLAYICI = null;
    tek katman kalır — onlar simge değil, yön gösterir. */
 
 const ICON = {
+  /* Hesap ekranı: fotoğraf rozeti, kaydet düğmesi ve rol satırı. */
+  kamera: {
+    d: '<circle cx="12" cy="13" r="3.4"></circle>',
+    c: '<path d="M4 8h3l1.6-2h6.8L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"></path>'
+     + '<circle cx="12" cy="13" r="3.4"></circle>',
+  },
+  kaydet: {
+    d: '<rect x="8" y="4" width="8" height="5" rx="1"></rect>',
+    c: '<path d="M5 4h11l4 4v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z"></path>'
+     + '<path d="M8 4v5h8V4"></path><rect x="8" y="13" width="8" height="6" rx="1"></rect>',
+  },
+  kisiler: {
+    d: '<circle cx="9.5" cy="8" r="3.2"></circle>',
+    c: '<circle cx="9.5" cy="8" r="3.2"></circle>'
+     + '<path d="M3.5 19a6 6 0 0 1 12 0"></path>'
+     + '<path d="M16.5 5.4a3.2 3.2 0 0 1 0 5.2M18 13.4a6 6 0 0 1 2.5 4.6"></path>',
+  },
   /* Yayın: ortadan dışarı açılan dalga. Ayarlar'daki "Yayın" başlığı için. */
   yayin: {
     d: '<circle cx="12" cy="12" r="2.2"></circle>',
@@ -780,29 +797,67 @@ const VIEWS = {
 const AYAR_GRUP = {
   hesap: {
     ad: 'Hesap', renk: 'kirmizi', ikon: 'kisi',
-    aciklama: 'Fotoğraf, ad, e-posta ve rolün.',
+    aciklama: 'Profil bilgilerini yönet.',
     goster: () => true,
-    ciz: () => `
-      <div class="card">
-        <div class="row-list">
-          <div class="row" data-eylem="foto-degistir" role="button" tabindex="0">
-            <div class="row-main">
-              <span class="row-title">Fotoğraf</span>
-              <span class="row-sub">${AUTH.foto ? 'Değiştirmek için dokun' : 'Yüklemek için dokun · en fazla 4 MB'}</span>
-            </div>
-            <span class="row-val">${fotoKutu('kucuk')}</span>
-          </div>
-          <div class="row" data-eylem="ad-degistir" role="button" tabindex="0">
-            <div class="row-main">
-              <span class="row-title">Ad Soyad</span>
-              <span class="row-sub">Karşılamada ve üst çubukta bu ad görünür</span>
-            </div>
-            <span class="row-val">${esc(AUTH.ad)} ${svg(ICON.kalem, 13)}</span>
-          </div>
-          ${infoRow('E-posta', AUTH.mail, true)}
-          ${infoRow('Rol', AUTH.rolAdi)}
+    ciz: () => {
+      /* Veritabanında tek "ad" alanı var; ekranda Ad ve Soyad ayrı duruyor.
+         Son sözcük soyad, kalanı ad — kaydederken yine birleşiyor. */
+      const parca = String(AUTH.ad || '').trim().split(/\s+/).filter(Boolean);
+      const soyad = parca.length > 1 ? parca.pop() : '';
+      const ad    = parca.join(' ');
+
+      return `
+        <div class="hs-kart hs-foto">
+          <span class="hs-foto-yz">
+            <b>Profil Fotoğrafı</b>
+            <i>JPG, PNG veya WEBP. Maks. 4 MB.</i>
+          </span>
+          <button class="hs-foto-kutu" type="button" data-eylem="foto-degistir"
+                  aria-label="Fotoğrafı değiştir">
+            ${fotoKutu('hs')}
+            <u class="hs-kamera">${svg(ICON.kamera, 16)}</u>
+          </button>
         </div>
-      </div>`,
+
+        ${hesapAlani('kisi', 'Ad', `
+          <input class="hs-giris" id="hs-ad" type="text" autocomplete="given-name"
+                 value="${esc(ad)}" placeholder="Adın">`)}
+
+        ${hesapAlani('kisi', 'Soyad', `
+          <input class="hs-giris" id="hs-soyad" type="text" autocomplete="family-name"
+                 value="${esc(soyad)}" placeholder="Soyadın">`)}
+
+        ${hesapAlani('mail', 'E-posta', `
+          <input class="hs-giris" id="hs-mail" type="email" autocomplete="email"
+                 value="${esc(AUTH.mail || '')}" placeholder="ornek@nizam.studio">`,
+          'Değiştirirsen yeni adrese doğrulama bağlantısı gider.')}
+
+        ${hesapAlani('kilit', 'Şifre', `
+          <span class="hs-sifre">
+            <input class="hs-giris" id="hs-sifre" type="password" autocomplete="new-password"
+                   placeholder="Yeni şifre" value="">
+            <button class="hs-goz" type="button" data-eylem="hesap-goz"
+                    aria-label="Şifreyi göster">${svg(ICON.goz, 17)}</button>
+          </span>
+          <button class="hs-degistir" type="button" data-eylem="sifre-degistir">Değiştir</button>`,
+          'Şifreni güvenliğin için düzenli olarak değiştir.')}
+
+        ${hesapAlani('kisiler', 'Rol', `
+          <span class="hs-secim">
+            <select class="hs-giris" id="hs-rol" ${AUTH.yonetici ? '' : 'disabled'}>
+              <option value="yonetici" ${AUTH.rol === 'yonetici' ? 'selected' : ''}>Yönetici</option>
+              <option value="gelistirici" ${AUTH.rol === 'yonetici' ? '' : 'selected'}>Geliştirici</option>
+            </select>
+            ${svg(ICON.chevron, 16)}
+          </span>`,
+          AUTH.yonetici
+            ? 'Ekip içerisindeki yetki seviyeni belirler.'
+            : 'Rolünü yalnızca yönetici değiştirebilir.')}
+
+        <button class="hs-kaydet" type="button" data-eylem="hesap-kaydet">
+          ${svg(ICON.kaydet, 18)}<span>Değişiklikleri Kaydet</span>
+        </button>`;
+    },
   },
 
   kutuphane: {
@@ -943,6 +998,16 @@ const AYAR_GRUP = {
       </div>`,
   },
 };
+
+/* Hesap ekranındaki tek alan kartı: solda ikon+etiket, altında kutu. */
+function hesapAlani(ikon, etiket, icerik, ipucu = '') {
+  return `
+    <div class="hs-kart">
+      <span class="hs-etiket">${svg(ICON[ikon], 19)}<b>${esc(etiket)}</b></span>
+      <span class="hs-alan">${icerik}</span>
+      ${ipucu ? `<i class="hs-ipucu">${esc(ipucu)}</i>` : ''}
+    </div>`;
+}
 
 /* Sağ oklu, bir yere götüren ayar satırı. */
 function ayarSatir(eylem, baslik, alt) {
@@ -13199,6 +13264,74 @@ async function eylemCalistir(el) {
   }
 
   if (e === 'foto-degistir') return fotoSec();
+
+  /* Hesap ekranı: şifre kutusunun gözü. */
+  if (e === 'hesap-goz') {
+    const alan = $('#hs-sifre');
+    if (!alan) return;
+    alan.type = alan.type === 'password' ? 'text' : 'password';
+    el.classList.toggle('acik', alan.type === 'text');
+    return;
+  }
+
+  /* Şifre kutusunun yanındaki "Değiştir". Kaydet düğmesini beklemiyor:
+     şifre tek başına duran bir iş, ad/rol ile birlikte gitmesi gerekmiyor. */
+  if (e === 'sifre-degistir') {
+    const alan = $('#hs-sifre');
+    const sifre = alan ? alan.value : '';
+    if (!sifre) { toast('Önce yeni şifreni yaz.', 'hata'); if (alan) alan.focus(); return; }
+    try {
+      await DB.sifremiDegistir(sifre);
+      alan.value = '';
+      alan.type = 'password';
+      toast('Şifren değişti.', 'basari');
+    } catch (h) { toast(h.message, 'hata'); }
+    return;
+  }
+
+  /* Ad, e-posta ve (yöneticide) rol tek düğmeyle kaydediliyor. Hangi alan
+     gerçekten değiştiyse yalnız o yazılıyor — dokunulmamış alan için
+     sunucuya gitmenin anlamı yok. */
+  if (e === 'hesap-kaydet') {
+    const ad   = ($('#hs-ad').value.trim() + ' ' + $('#hs-soyad').value.trim()).trim();
+    const mail = $('#hs-mail').value.trim().toLowerCase();
+    const rol  = $('#hs-rol') && !$('#hs-rol').disabled ? $('#hs-rol').value : AUTH.rol;
+
+    if (!ad) { toast('Ad boş kalamaz.', 'hata'); return; }
+
+    const epostaDegisti = !!mail && mail !== String(AUTH.mail || '').toLowerCase();
+    const rolDegisti    = rol !== AUTH.rol;
+    /* Kaydettikten sonra AUTH tazeleniyor; karşılaştırmayı şimdi yapıyoruz. */
+    const adDegisti     = ad !== AUTH.ad;
+
+    /* Yönetici kendini geliştiriciye çevirebiliyor; bir daha geri alamaz.
+       Sormadan yapılacak iş değil. */
+    if (rolDegisti && rol !== 'yonetici') {
+      const emin = await onaySor({
+        baslik: 'Yöneticilikten çıkılsın mı?',
+        mesaj: 'Kendini geliştirici yaparsan ekip yönetimi ve ayarların çoğu kapanır. '
+             + 'Geri almak için başka bir yöneticiye ihtiyacın olur.',
+        buton: 'Devam et',
+      });
+      if (!emin) return;
+    }
+
+    try {
+      if (adDegisti)     await DB.adKaydet(ad);
+      if (rolDegisti)    await DB.rolumuDegistir(rol);
+      if (epostaDegisti) await DB.epostamiDegistir(mail);
+
+      kullaniciYaz();
+      menuyuCiz();
+      render();
+
+      toast(epostaDegisti
+        ? 'Kaydedildi. Yeni adrese doğrulama bağlantısı gönderildi.'
+        : (adDegisti || rolDegisti) ? 'Kaydedildi.' : 'Değişen bir şey yok.',
+        'basari');
+    } catch (h) { toast(h.message, 'hata'); }
+    return;
+  }
 
   if (e === 'ad-degistir') {
     const ad = await metinSor({

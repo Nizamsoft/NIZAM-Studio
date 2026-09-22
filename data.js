@@ -962,6 +962,36 @@ const DB = {
     await AUTH.profilOku();
   },
 
+  /* ---------- Kendi hesabın ----------
+     Şifre ve e-posta Supabase'in kullanıcı tablosunda. Başkasının satırına
+     ancak sunucudaki fonksiyon dokunabiliyor ama kendi satırına oturumun
+     kendisi dokunabiliyor — yönetici olmayan da kendi şifresini
+     değiştirebilsin diye buradan gidiyoruz. */
+  async sifremiDegistir(sifre) {
+    if (!AUTH.db || !AUTH.user) throw new Error('Oturum yok.');
+    if (String(sifre || '').length < 8) throw new Error('Şifre en az 8 karakter olsun.');
+    const { error } = await AUTH.db.auth.updateUser({ password: sifre });
+    if (error) throw new Error(error.message || 'Şifre değiştirilemedi.');
+  },
+
+  /* Yeni adrese doğrulama bağlantısı gidiyor; tıklanana kadar eski adres
+     geçerli kalıyor. Bu yüzden profiles.eposta'yı şimdi yazmıyoruz. */
+  async epostamiDegistir(eposta) {
+    if (!AUTH.db || !AUTH.user) throw new Error('Oturum yok.');
+    const temiz = String(eposta || '').trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(temiz)) throw new Error('E-posta geçerli değil.');
+    const { error } = await AUTH.db.auth.updateUser({ email: temiz });
+    if (error) throw new Error(error.message || 'E-posta değiştirilemedi.');
+  },
+
+  /* Kendi rolün. Veritabanındaki kilit yalnız yöneticiye izin veriyor;
+     burada da düğme yalnız yöneticide açık. */
+  async rolumuDegistir(rol) {
+    if (!AUTH.user) throw new Error('Oturum yok.');
+    await this.kisiKaydet(AUTH.user.id, { rol });
+    await AUTH.profilOku();
+  },
+
   /* Ekip: bir kişinin adını, rolünü, aktifliğini değiştirir.
      Neyin değişebileceğine veritabanındaki kilit karar veriyor. */
   async kisiKaydet(id, alanlar) {

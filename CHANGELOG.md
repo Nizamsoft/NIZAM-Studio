@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.169.6
+- **Ayarlar › Hesap sayfası yeniden yapıldı.** Profil fotoğrafı kartı (kamera rozetine basınca fotoğraf seçiliyor), Ad ve Soyad ayrı kutularda, E-posta, Şifre ve Rol — her biri kendi kartında, altta "Değişiklikleri Kaydet".
+- **Şifreni artık kendin değiştirebiliyorsun.** Yeni şifreni yaz, gözle kontrol et, "Değiştir"e bas. Yönetici olmana gerek yok.
+- **E-postanı da değiştirebiliyorsun**; yeni adrese doğrulama bağlantısı gidiyor, tıklanana kadar eski adres geçerli kalıyor.
+- **Rol kutusu yalnızca yöneticide açık.** Geliştiricide rolü görüyorsun ama değiştiremiyorsun. Yönetici kendini geliştiriciye çevirmek isterse önce uyarı çıkıyor.
+
 ## v0.169.5
 - **Alt çubuğun sağındaki Profil, yerini Ayarlar'a bıraktı.** Profil zaten sağ üstteki hesap kartından açılıyor.
 - **Ayarlar iki kata ayrıldı — telefon ayarları gibi.** Üstte hesap kartı ve beş başlık (Hesap, Kütüphane, Güvenlik, Yayın, Uygulama ve bakım); başlığa basınca kendi sayfası açılıyor, geri oku listeye döner.

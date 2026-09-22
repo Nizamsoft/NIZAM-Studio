@@ -8400,3 +8400,104 @@ a.asr:active{ transform:scale(.99); }
 @media (min-width: 901px) {
   .ay-hesap, .ay-liste, .ay-cikis { max-width: 760px; }
 }
+
+/* ---- Hesap ekranı (Ayarlar › Hesap) ----
+   Her alan kendi beyaz kartında: üstte ikon+etiket, altında gri kutu. */
+.hs-kart {
+  padding: 16px 18px; margin-bottom: 12px;
+  border-radius: 16px; background: var(--surface); border: 1px solid var(--line-3);
+}
+.hs-etiket { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+.hs-etiket svg {
+  flex-shrink: 0; fill: none; stroke: var(--ink-strong);
+  stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round;
+}
+.hs-etiket .dolgu { display: none; }
+.hs-etiket b { font-size: 15.5px; font-weight: 700; color: var(--ink-strong); }
+.hs-alan { display: flex; align-items: center; gap: 10px; }
+.hs-ipucu {
+  display: block; margin-top: 10px; font-style: normal;
+  font-size: 13px; line-height: 1.45; color: var(--ink-dim);
+}
+
+.hs-giris {
+  flex: 1; min-width: 0; width: 100%; height: 48px; padding: 0 16px;
+  border: 1px solid transparent; border-radius: 12px;
+  background: var(--yuva); color: var(--ink-strong);
+  font-family: inherit; font-size: 15px; outline: none;
+  appearance: none; -webkit-appearance: none;
+}
+.hs-giris::placeholder { color: var(--ink-soluk); }
+.hs-giris:focus { border-color: var(--line); background: var(--surface); }
+.hs-giris:disabled { color: var(--ink-dim); cursor: default; }
+
+/* Şifre: kutunun içinde göz, yanında Değiştir. */
+.hs-sifre { position: relative; display: flex; flex: 1; min-width: 0; }
+.hs-sifre .hs-giris { padding-right: 46px; }
+.hs-goz {
+  position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+  display: flex; align-items: center; justify-content: center;
+  width: 34px; height: 34px; border: 0; border-radius: 9px;
+  background: none; color: var(--ink-dim); cursor: pointer;
+}
+.hs-goz svg { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
+.hs-goz .dolgu { display: none; }
+.hs-goz.acik { color: var(--ink-strong); }
+.hs-degistir {
+  flex-shrink: 0; height: 48px; padding: 0 20px;
+  border: 0; border-radius: 12px; cursor: pointer;
+  background: var(--red-soft); color: var(--red);
+  font-family: inherit; font-size: 14.5px; font-weight: 600;
+}
+.hs-degistir:hover { background: rgba(229, 52, 42, .14); }
+
+/* Rol: seçim kutusu ve kendi oku. */
+.hs-secim { position: relative; display: flex; flex: 1; min-width: 0; }
+.hs-secim .hs-giris { padding-right: 42px; cursor: pointer; }
+.hs-secim > svg {
+  position: absolute; right: 14px; top: 50%; transform: translateY(-50%) rotate(90deg);
+  pointer-events: none; fill: none; stroke: var(--ink-dim);
+  stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+}
+
+/* Fotoğraf kartı — yazı solda, fotoğraf sağda. */
+.hs-kart.hs-foto { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.hs-foto-yz { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.hs-foto-yz b { font-size: 16.5px; font-weight: 700; color: var(--ink-strong); }
+.hs-foto-yz i { font-style: normal; font-size: 13px; line-height: 1.4; color: var(--ink-dim); }
+.hs-foto-kutu {
+  position: relative; flex-shrink: 0; display: inline-flex;
+  padding: 0; border: 0; background: none; cursor: pointer;
+}
+.foto.hs { width: 86px; height: 86px; }
+.foto.hs > b { font-size: 28px; }
+.hs-kamera {
+  position: absolute; right: -2px; bottom: 2px;
+  display: flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px; border-radius: 999px;
+  background: var(--red); color: #fff; border: 3px solid var(--surface);
+}
+.hs-kamera svg { fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linejoin: round; }
+.hs-kamera .dolgu { display: none; }
+
+/* Kaydet — sayfanın altında tam genişlik, kırmızı. */
+.hs-kaydet {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  width: 100%; height: 56px; margin-top: 18px;
+  border: 0; border-radius: 14px; cursor: pointer;
+  background: var(--red); color: #fff;
+  font-family: inherit; font-size: 16px; font-weight: 700;
+}
+.hs-kaydet svg { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linejoin: round; }
+.hs-kaydet .dolgu { display: none; }
+.hs-kaydet:hover { background: var(--red-koyu, #cf3028); }
+
+@media (hover: none) {
+  .hs-kaydet:active, .hs-degistir:active, .hs-foto-kutu:active {
+    transform: scale(.985); transition: transform .1s var(--ease);
+  }
+}
+
+@media (min-width: 901px) {
+  .hs-kart, .hs-kaydet { max-width: 760px; }
+}
