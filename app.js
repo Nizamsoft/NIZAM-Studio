@@ -114,6 +114,21 @@ let LOGO_ZAMANLAYICI = null;
    tek katman kalır — onlar simge değil, yön gösterir. */
 
 const ICON = {
+  /* Sektör kutularının ikonları — adına göre seçiliyor (sektorIkonu). */
+  kalp: {
+    d: '<path d="M12 20.5s-7.5-4.8-7.5-10A4.3 4.3 0 0 1 12 8.2a4.3 4.3 0 0 1 7.5 2.3c0 5.2-7.5 10-7.5 10z"></path>',
+    c: '<path d="M12 20.5s-7.5-4.8-7.5-10A4.3 4.3 0 0 1 12 8.2a4.3 4.3 0 0 1 7.5 2.3c0 5.2-7.5 10-7.5 10z"></path>',
+  },
+  sepet: {
+    d: '<circle cx="10" cy="20" r="1.4"></circle><circle cx="17.5" cy="20" r="1.4"></circle>',
+    c: '<path d="M3 4h2.2l2.3 11.2h11L21 7.5H6.2"></path>'
+     + '<circle cx="10" cy="20" r="1.4"></circle><circle cx="17.5" cy="20" r="1.4"></circle>',
+  },
+  karistir: {
+    d: '',
+    c: '<path d="M3 6h3.5l9 12H21M3 18h3.5l3-4M14.5 8l1.5-2H21"></path>'
+     + '<path d="M18.5 3.5L21 6l-2.5 2.5M18.5 15.5L21 18l-2.5 2.5"></path>',
+  },
   /* Yıldız — "varsayılan" işareti. */
   yildiz: {
     d: '<path d="M12 3.6l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.8-5.2 2.8 1-5.8-4.3-4.1 5.9-.9z"></path>',
@@ -7490,6 +7505,20 @@ function templateModulSayisi(p) {
   return DB.modulleri(p.id).filter(m => m.ad !== GENEL_MODUL).length;
 }
 
+/* Sektörün kutusunda çıkacak ikon — adındaki sözcüğe bakıyor. Eşleşme
+   yoksa nötr dükkan ikonu. */
+function sektorIkonu(ad) {
+  const a = String(ad || '').toLocaleLowerCase('tr');
+  const bul = liste => liste.some(x => a.includes(x));
+  if (bul(['sağlık', 'saglik', 'klinik', 'hastane', 'diş', 'dis', 'doktor'])) return ICON.kalp;
+  if (bul(['ticaret', 'market', 'perakende', 'mağaza', 'magaza', 'toptan'])) return ICON.sepet;
+  if (bul(['hizmet', 'danış', 'danis', 'ajans'])) return ICON.kisi;
+  if (bul(['üretim', 'uretim', 'inşaat', 'insaat', 'fabrika', 'imalat'])) return ICON.kova;
+  if (bul(['eğitim', 'egitim', 'okul', 'kurs'])) return ICON.katman;
+  if (bul(['muhasebe', 'finans', 'mali'])) return ICON.para;
+  return ICON.dukkan;
+}
+
 /* Template'in kapağı: hazır görsellerden biri + arka plan rengi. İkisi de
    paletindeki cekirdek nesnesinde; dosya yüklenmiyor, seçiliyor. */
 function templateKapagi(p) {
@@ -7605,10 +7634,10 @@ function templateAyarlari(projeId) {
 
   modalAc(`
     <div class="pd-tepe">
-      <span class="pd-ikon mor">${svg(ICON.izgaraDort, 26)}</span>
+      <span class="pd-ikon kirmizi">${svg(ICON.izgaraDort, 26)}</span>
       <span class="pd-yz">
         <b>${esc(p.firma || 'Template')}</b>
-        <i>Template bilgilerini düzenleyin.</i>
+        <i>${esc(templateAciklamasi(p) || 'Template bilgilerini düzenleyin.')}</i>
       </span>
       <button class="pd-kapat" type="button" data-ta="iptal" aria-label="Kapat">
         ${svg(ICON.kapat, 18)}
@@ -7616,18 +7645,25 @@ function templateAyarlari(projeId) {
     </div>
 
     <div class="pd-alan">
-      <span class="pd-et">Kapak görseli</span>
-      <div class="kp-izgara" id="ta-kapak">
+      <span class="pd-et">Kapak Fotoğrafı Seç
+        <em class="pd-sag" id="ta-sayac">${
+          (KAPAK_GORSELLERI.findIndex(g => g.anahtar === kapak) + 1)} / ${KAPAK_GORSELLERI.length}</em>
+      </span>
+      <div class="kp-serit" id="ta-kapak">
         ${KAPAK_GORSELLERI.map(g => `
           <button class="kp ${kapak === g.anahtar ? 'sec' : ''}" type="button"
                   data-ta-kapak="${esc(g.anahtar)}" aria-label="${esc(g.ad)}">
             <img src="${esc(g.dosya)}" alt="" loading="lazy">
+            <u class="kp-tik">${svg(ICON.tik, 12)}</u>
           </button>`).join('')}
+        <button class="kp kp-karistir" type="button" data-ta="karistir">
+          ${svg(ICON.karistir, 22)}<span>Karıştır</span>
+        </button>
       </div>
     </div>
 
     <div class="pd-alan">
-      <span class="pd-et">Arka plan rengi</span>
+      <span class="pd-et">Arka Plan Rengi</span>
       <div class="kp-renkler" id="ta-renk">
         ${KAPAK_RENKLERI.map(r => `
           <button class="kp-renk ${kapakRenk === r.anahtar ? 'sec' : ''}" type="button"
@@ -7647,22 +7683,26 @@ function templateAyarlari(projeId) {
     </label>
 
     <div class="pd-alan">
-      <span class="pd-et">Paket</span>
-      ${paketler.length ? `<div class="secenek-serit" id="ta-paket">
-        ${paketler.map(k => `<button class="ss ${paket === k.anahtar ? 'sec' : ''}"
-          data-ta-paket="${esc(k.anahtar)}" type="button">${esc(k.ad)}</button>`).join('')}
+      <span class="pd-et">Paket Seç</span>
+      ${paketler.length ? `<div class="rd-izgara" id="ta-paket">
+        ${paketler.map(k => `
+          <button class="rd ${paket === k.anahtar ? 'sec' : ''}" type="button"
+                  data-ta-paket="${esc(k.anahtar)}">
+            <u class="rd-nokta"></u><span>${esc(k.ad)}</span>
+          </button>`).join('')}
       </div>` : '<i class="pd-ipucu">Varsayılan olmayan bir paket yok — önce Paketler\'den ekle.</i>'}
     </div>
 
     <div class="pd-alan">
-      <span class="pd-et">Sektörler</span>
-      ${sektorler.length ? `<div class="secim" id="ta-sektor">
+      <span class="pd-et">Sektör Seç
+        <em class="pd-sag">Çoklu seçim</em>
+      </span>
+      ${sektorler.length ? `<div class="sb-izgara" id="ta-sektor">
         ${sektorler.map(x => `
-          <div class="satir sec-satir ${secili.includes(x.id) ? 'sec' : ''}"
-               data-ta-sektor="${esc(x.id)}" role="button" tabindex="0">
-            <span class="sec-yazi"><b>${esc(x.ad)}</b></span>
-            <span class="kare">${secili.includes(x.id) ? svg(ICON.tik, 12) : ''}</span>
-          </div>`).join('')}
+          <button class="sb ${secili.includes(x.id) ? 'sec' : ''}" type="button"
+                  data-ta-sektor="${esc(x.id)}">
+            ${svg(sektorIkonu(x.ad), 20)}<span>${esc(x.ad)}</span>
+          </button>`).join('')}
       </div>` : '<i class="pd-ipucu">Önce Kütüphane > Sektörler\'den sektör ekle.</i>'}
       <i class="pd-ipucu">Sektör seçmezsen bu template yeni proje akışında
       hiçbir sektörün altında çıkmaz.</i>
@@ -7670,14 +7710,22 @@ function templateAyarlari(projeId) {
 
     <div class="tp-isler">
       <button class="tp-is" type="button" data-ta="kurulum">
-        ${svg(ICON.dal, 17)}<span>Kurulum adımları</span>${svg(ICON.chevron, 15)}
+        <span class="tp-is-ik">${svg(ICON.dal, 19)}</span>
+        <span class="tp-is-yz"><b>Kurulum Adımları</b>
+          <i>GitHub, SQL ve Claude bağlantılarını yapılandır.</i></span>
+        ${svg(ICON.chevron, 16)}
       </button>
       ${yayinAdres ? `<button class="tp-is" type="button" data-ta="yayin">
-        ${svg(ICON.disari, 17)}<span>Uygulamayı aç</span>${svg(ICON.chevron, 15)}
+        <span class="tp-is-ik">${svg(ICON.disari, 19)}</span>
+        <span class="tp-is-yz"><b>Uygulamayı Aç</b>
+          <i>${esc(yayinAdres)}</i></span>
+        ${svg(ICON.chevron, 16)}
       </button>` : ''}
       <button class="tp-is" type="button" data-ta="kilit">
-        ${svg(ICON.kilit, 17)}<span>${kilitli ? 'Kilidi aç' : 'Kilitle'}</span>
-        ${svg(ICON.chevron, 15)}
+        <span class="tp-is-ik">${svg(ICON.kilit, 19)}</span>
+        <span class="tp-is-yz"><b>${kilitli ? 'Kilidi Aç' : 'Kilitle'}</b>
+          <i>${kilitli ? 'Şu an silinemez durumda.' : 'Yanlışlıkla silinmesini engeller.'}</i></span>
+        ${svg(ICON.chevron, 16)}
       </button>
     </div>
 
@@ -7705,33 +7753,59 @@ function templateAyarlari(projeId) {
        de zeminine vuruyor ki kartta nasıl duracağı burada görünsün. */
     const zeminYaz = () => {
       const r = KAPAK_RENKLERI.find(x => x.anahtar === kapakRenk);
-      $$('.kp', kutu).forEach(b => { b.style.background = r ? r.deger : ''; });
+      $$('[data-ta-kapak]', kutu).forEach(b => { b.style.background = r ? r.deger : ''; });
     };
-    zeminYaz();
+    const kapakYaz = () => {
+      $$('[data-ta-kapak]', kutu).forEach(o =>
+        o.classList.toggle('sec', o.dataset.taKapak === kapak));
+      $$('[data-ta-renk]', kutu).forEach(o =>
+        o.classList.toggle('sec', o.dataset.taRenk === kapakRenk));
+      const sayac = $('#ta-sayac', kutu);
+      if (sayac) {
+        sayac.textContent = (KAPAK_GORSELLERI.findIndex(g => g.anahtar === kapak) + 1)
+          + ' / ' + KAPAK_GORSELLERI.length;
+      }
+      zeminYaz();
+    };
+    kapakYaz();
 
     $$('[data-ta-kapak]', kutu).forEach(b => b.addEventListener('click', () => {
       kapak = kapak === b.dataset.taKapak ? '' : b.dataset.taKapak;
-      $$('[data-ta-kapak]', kutu).forEach(o =>
-        o.classList.toggle('sec', o.dataset.taKapak === kapak));
+      kapakYaz();
     }));
 
     $$('[data-ta-renk]', kutu).forEach(b => b.addEventListener('click', () => {
       kapakRenk = b.dataset.taRenk;
-      $$('[data-ta-renk]', kutu).forEach(o => o.classList.toggle('sec', o === b));
-      zeminYaz();
+      kapakYaz();
     }));
+
+    /* Karıştır: görsel ve rengi rastgele seçer — ikisini de tek tek
+       denemeden hızlıca bir görünüm bulmak için. */
+    $('[data-ta="karistir"]', kutu).addEventListener('click', () => {
+      const g = KAPAK_GORSELLERI[Math.floor(Math.random() * KAPAK_GORSELLERI.length)];
+      const r = KAPAK_RENKLERI[Math.floor(Math.random() * KAPAK_RENKLERI.length)];
+      kapak = g.anahtar;
+      kapakRenk = r.anahtar;
+      kapakYaz();
+    });
 
     $$('[data-ta-paket]', kutu).forEach(b => b.addEventListener('click', () => {
       paket = b.dataset.taPaket;
       $$('[data-ta-paket]', kutu).forEach(o => o.classList.toggle('sec', o === b));
     }));
 
-    $$('[data-ta-sektor]', kutu).forEach(satir => satir.addEventListener('click', () => {
-      const id = satir.dataset.taSektor;
+    /* Başlıktaki alt yazı açıklamayı gösteriyor; yazdıkça güncelleniyor. */
+    const ustAlt = $('.pd-yz i', kutu);
+    const acAlan = $('#ta-aciklama', kutu);
+    if (ustAlt && acAlan) acAlan.addEventListener('input', () => {
+      ustAlt.textContent = acAlan.value.trim() || 'Template bilgilerini düzenleyin.';
+    });
+
+    $$('[data-ta-sektor]', kutu).forEach(kutucuk => kutucuk.addEventListener('click', () => {
+      const id = kutucuk.dataset.taSektor;
       const i = secili.indexOf(id);
       i === -1 ? secili.push(id) : secili.splice(i, 1);
-      satir.classList.toggle('sec', i === -1);
-      $('.kare', satir).innerHTML = i === -1 ? svg(ICON.tik, 12) : '';
+      kutucuk.classList.toggle('sec', i === -1);
     }));
 
     $('[data-ta="kurulum"]', kutu).addEventListener('click', () => {

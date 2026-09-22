@@ -1,5 +1,12 @@
 # Değişiklik Günlüğü
 
+## v0.172.2
+**Template penceresi yeniden tasarlandı.**
+- **Kapak Fotoğrafı Seç** yatay şerit oldu; sağ üstte "1 / 3" sayacı, sonda **Karıştır** kutusu — görsel ve rengi rastgele seçiyor.
+- **Paket Seç** tek seçimlik yuvarlak işaretli kutular, **Sektör Seç** ikonlu çoklu seçim kutuları (sektörün adına göre ikon: sağlık kalp, e-ticaret sepet, hizmet kişi…).
+- Kurulum, yayın ve kilit satırları ikon kutulu, açıklamalı hâle geldi.
+- Pencere başlığında template'in açıklaması görünüyor; yazdıkça güncelleniyor.
+
 ## v0.172.1
 - **Template kapağı artık yükleme değil, seçim.** Üç hazır laptop görselinden (Muhasebe · Stok · Restoran) birini seçiyorsun, ayrıca beş arka plan renginden birini: pembe, turuncu, mavi, yeşil, mor.
 - Seçim penceresinde küçük görsellerin zemini de seçtiğin renge dönüyor — kartta nasıl duracağını orada görüyorsun.
