@@ -6677,6 +6677,9 @@ function render() {
   /* Aynı ekran yeniden çizilirken kullanıcı bulunduğu yerde kalsın:
      tepeye fırlamak, yarıda bir seçim yaparken can sıkıcı. */
   const dikey = gecis ? 0 : view.scrollTop;
+  /* Yazışmada yarım kalan mesaj kaybolmasın: karşıdan mesaj gelince ekran
+     yeniden çiziliyor, kutudaki yazı silinirdi. */
+  const yarim = (!gecis && $('#yz-metin')) ? $('#yz-metin').value : null;
   const yatay = gecis ? [] : $$('.raf', view).map(r => r.scrollLeft);
 
   /* Çizim patlarsa ekran boş kalıyor ve altındaki satırlar hiç çalışmıyordu:
@@ -6691,6 +6694,7 @@ function render() {
     view.innerHTML = cizimHatasi(h, sayfa || kova || key);
   }
   view.scrollTop = dikey;
+  if (yarim !== null && $('#yz-metin')) $('#yz-metin').value = yarim;
   if (yatay.length) $$('.raf', view).forEach((r, i) => { r.scrollLeft = yatay[i] || 0; });
 
   view.classList.remove('swap');
@@ -6704,6 +6708,12 @@ function render() {
   $$('[data-route]').forEach(el => el.classList.toggle('active', el.dataset.route === key));
 
   logolariGoster();
+  /* Yazışma açıldığında en alta in ve gelen mesajları okundu say. */
+  if (yazisma) {
+    const govde = $('#yz-govde');
+    if (govde) govde.scrollTop = govde.scrollHeight;
+    if (id !== 'studio') DB.okunduIsaretle(id).then(d => { if (d) zilNoktasi(); });
+  }
   /* Arama kutusundaki yazı ekran yeniden çizilince de geçerli kalsın. */
   pjAramaUygula();
   ekipAramaUygula();
@@ -6912,14 +6922,21 @@ function menuyuCiz() {
    Yöneticide onay bekleyen (Kontrolde) görevler, geliştiricide kendine
    atanmış bitmemiş işler. Sayı yazmıyoruz: nokta "bir şey var" demek
    için yeter, sayı zaten Görevler ekranında. */
+/* İki kırmızı nokta var: zilde bekleyen iş, sohbette okunmamış mesaj.
+   Aynı sınıfı taşıdıkları için ikisi de kendi düğmesinin içinden
+   seçiliyor; yoksa biri ötekinin yerine yazılıyordu. */
 function zilNoktasi() {
-  const n = $('.zil-nokta');
-  if (!n) return;
-  const bekleyen = AUTH.yonetici
-    ? DB.gorevleri({ durum: 'kontrolde' }).length
-    : DB.gorevleri({ kisi: AUTH.user ? AUTH.user.id : '' })
-        .filter(g => g.durum !== 'tamamlandi').length;
-  n.classList.toggle('hidden', !bekleyen);
+  const zilN = $('#btn-zil .zil-nokta');
+  if (zilN) {
+    const bekleyen = AUTH.yonetici
+      ? DB.gorevleri({ durum: 'kontrolde' }).length
+      : DB.gorevleri({ kisi: AUTH.user ? AUTH.user.id : '' })
+          .filter(g => g.durum !== 'tamamlandi').length;
+    zilN.classList.toggle('hidden', !bekleyen);
+  }
+
+  const sohbetN = $('#btn-sohbet .zil-nokta');
+  if (sohbetN) sohbetN.classList.toggle('hidden', !DB.okunmamis());
 }
 
 function sayaclariYaz() {
@@ -7332,9 +7349,9 @@ function ekipEkrani() {
    Şimdilik yalnız liste: ekip üyeleri ve Nizam Studio duyuru satırı.
    Mesajlaşmanın kendisi henüz yazılmadı; satıra basınca haber veriyor.
    Yazılınca son mesaj, saat ve okunmamış rozeti bu satırlara girecek. */
-function sohbetSatiri({ id, ad, alt, avatar, foto, acik, marka }) {
+function sohbetSatiri({ id, ad, alt, avatar, foto, acik, marka, saat, sayi }) {
   return `
-    <button class="sh2" type="button" data-eylem="sohbet-ac" data-id="${esc(id)}"
+    <button class="sh2 ${sayi ? 'yeni' : ''}" type="button" data-eylem="sohbet-ac" data-id="${esc(id)}"
             data-ara="${esc(String(ad).toLocaleLowerCase('tr'))}">
       <span class="sh2-foto ${foto ? 'resimli' : ''} ${marka ? 'marka' : ''}"
             ${foto ? `style="background-image:url('${esc(foto)}')"` : ''}>
@@ -7345,7 +7362,10 @@ function sohbetSatiri({ id, ad, alt, avatar, foto, acik, marka }) {
         <b>${esc(ad)}</b>
         <i>${esc(alt)}</i>
       </span>
-      <span class="sh2-sag"></span>
+      <span class="sh2-sag">
+        ${saat ? `<i>${esc(saat)}</i>` : ''}
+        ${sayi ? `<em>${sayi > 99 ? '99+' : sayi}</em>` : ''}
+      </span>
     </button>`;
 }
 
@@ -7362,18 +7382,32 @@ function sohbetAramaUygula() {
 }
 
 function sohbetEkrani() {
+  /* Sıra: son yazışılan en üstte; hiç yazışılmamışlarda çevrimiçi olan önde. */
   const kisiler = (DB.kisiler || [])
     .filter(k => !(AUTH.user && k.id === AUTH.user.id))
-    .sort((a, b) => (DB.cevrimicimi(b.id) ? 1 : 0) - (DB.cevrimicimi(a.id) ? 1 : 0));
+    .sort((a, b) => {
+      const sa = DB.sonMesaj(a.id), sb = DB.sonMesaj(b.id);
+      if (sa && sb) return (sb.olusturuldu || '').localeCompare(sa.olusturuldu || '');
+      if (sa || sb) return sa ? -1 : 1;
+      return (DB.cevrimicimi(b.id) ? 1 : 0) - (DB.cevrimicimi(a.id) ? 1 : 0);
+    });
 
-  const satirlar = kisiler.map(k => sohbetSatiri({
-    id: k.id,
-    ad: k.ad || 'İsimsiz',
-    alt: DB.cevrimicimi(k.id) ? 'Şu an aktif.' : 'Henüz mesaj yok',
-    avatar: basHarf(k.ad || '?'),
-    foto: k.foto,
-    acik: DB.cevrimicimi(k.id),
-  })).join('') + sohbetSatiri({
+  const ben = AUTH.user && AUTH.user.id;
+  const satirlar = kisiler.map(k => {
+    const son = DB.sonMesaj(k.id);
+    return sohbetSatiri({
+      id: k.id,
+      ad: k.ad || 'İsimsiz',
+      alt: son
+        ? (son.gonderen === ben ? 'Sen: ' : '') + son.metin
+        : (DB.cevrimicimi(k.id) ? 'Şu an aktif.' : 'Henüz mesaj yok'),
+      avatar: basHarf(k.ad || '?'),
+      foto: k.foto,
+      acik: DB.cevrimicimi(k.id),
+      saat: son ? pzZamanKisa(son.olusturuldu) : '',
+      sayi: DB.okunmamis(k.id),
+    });
+  }).join('') + sohbetSatiri({
     id: 'studio',
     ad: 'Nizam Studio',
     alt: 'Duyurular burada görünecek',
@@ -7406,6 +7440,95 @@ function sohbetEkrani() {
    Tasarım hazır, mesajlaşmanın kendisi henüz yazılmadı: gövde boş
    duruyor, yazıp göndermek şimdilik haber veriyor. Mesaj kaydı geldiğinde
    yalnız .yz-govde'nin içi dolacak. */
+/* Mesaj saati ve gün ayracı. */
+function mesajSaat(iso) {
+  const t = new Date(iso);
+  const p = n => String(n).padStart(2, '0');
+  return p(t.getHours()) + ':' + p(t.getMinutes());
+}
+
+function mesajGunu(iso) {
+  const t = new Date(iso);
+  const bugun = new Date();
+  const dun = new Date(bugun.getTime() - 86400000);
+  const ayni = (a, b) => a.toDateString() === b.toDateString();
+  if (ayni(t, bugun)) return 'Bugün';
+  if (ayni(t, dun))   return 'Dün';
+  const aylar = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz',
+                 'Ağustos','Eylül','Ekim','Kasım','Aralık'];
+  return `${t.getDate()} ${aylar[t.getMonth()]}${
+    t.getFullYear() === bugun.getFullYear() ? '' : ' ' + t.getFullYear()}`;
+}
+
+/* Çift tik: gönderdiğim mesaj karşı tarafça okunduysa dolu. */
+const CIFT_TIK = '<svg viewBox="0 0 24 24" class="yz-tik"><path d="M1.5 12.5l3.5 3.5 7-7.5"></path>'
+  + '<path d="M8 12.5l3.5 3.5 10-10.5"></path></svg>';
+
+function mesajBalonu(m, benimMi, foto, harf) {
+  return `
+    <div class="yz-sat ${benimMi ? 'benim' : ''}">
+      ${benimMi ? '' : `<span class="yz-av ${foto ? 'resimli' : ''}"
+        ${foto ? `style="background-image:url('${esc(foto)}')"` : ''}><b>${esc(harf)}</b></span>`}
+      <div class="yz-balon">
+        <p>${esc(m.metin)}</p>
+        <span class="yz-saat">${mesajSaat(m.olusturuldu)}${benimMi
+          ? `<em class="${m.okundu ? 'okundu' : ''}">${CIFT_TIK}</em>` : ''}</span>
+      </div>
+    </div>`;
+}
+
+function yazismaGovdesi(kisiId) {
+  const k = (DB.kisilerHepsi || []).find(x => x.id === kisiId);
+  const ben = AUTH.user && AUTH.user.id;
+  const liste = DB.yazisma(kisiId);
+
+  if (!liste.length) {
+    return `<div class="yz-bos">
+      <span>${svg(ICON.kisi, 26)}</span>
+      <b>Henüz mesaj yok</b>
+      <i>İlk mesajı sen yaz.</i>
+    </div>`;
+  }
+
+  let gun = '';
+  return liste.map(m => {
+    const g = mesajGunu(m.olusturuldu);
+    const ayrac = g === gun ? '' : `<div class="yz-gun"><span>${esc(g)}</span></div>`;
+    gun = g;
+    return ayrac + mesajBalonu(m, m.gonderen === ben,
+      k && k.foto, basHarf((k && k.ad) || '?'));
+  }).join('');
+}
+
+/* Gönderme: kutuyu hemen boşaltıp mesajı ekrana koyuyoruz, sunucu
+   cevabını beklemiyoruz — yazışma akıcı hissetsin. Hata olursa yazı geri
+   kutuya dönüyor. */
+async function mesajYolla(kisiId) {
+  const kutu = $('#yz-metin');
+  if (!kutu) return;
+  const metin = kutu.value.trim();
+  if (!metin) return;
+
+  kutu.value = '';
+  kutu.focus();
+  try {
+    await DB.mesajGonder(kisiId, metin);
+    yazismayiTazele(kisiId);
+  } catch (h) {
+    kutu.value = metin;
+    toast(h.message, 'hata');
+  }
+}
+
+/* Yalnız mesaj gövdesini yeniden çiziyoruz: bütün ekranı çizmek yazma
+   kutusundaki imleci ve klavyeyi kapatıyor. */
+function yazismayiTazele(kisiId) {
+  const govde = $('#yz-govde');
+  if (!govde) return;
+  govde.innerHTML = yazismaGovdesi(kisiId);
+  govde.scrollTop = govde.scrollHeight;
+}
+
 function yazismaEkrani(kisiId) {
   const k = (DB.kisilerHepsi || []).find(x => x.id === kisiId);
   const marka = kisiId === 'studio';
@@ -7441,15 +7564,12 @@ function yazismaEkrani(kisiId) {
         ${ikon('Seçenekler', '<circle cx="12" cy="5" r="1.4"></circle><circle cx="12" cy="12" r="1.4"></circle><circle cx="12" cy="19" r="1.4"></circle>')}
       </div>
 
-      <div class="yz-govde">
-        <div class="yz-bos">
-          <span>${svg(ICON.kisi, 26)}</span>
-          <b>Henüz mesaj yok</b>
-          <i>Mesajlaşma yakında açılacak.</i>
-        </div>
-      </div>
+      <div class="yz-govde" id="yz-govde">${marka
+        ? `<div class="yz-bos"><span>${svg(ICON.bayrak, 26)}</span>
+             <b>Duyuru yok</b><i>Studio duyuruları burada görünecek.</i></div>`
+        : yazismaGovdesi(kisiId)}</div>
 
-      <div class="yz-alt">
+      <div class="yz-alt ${marka ? 'kapali' : ''}">
         <button class="yz-ek" type="button" data-eylem="sohbet-yakinda" aria-label="Dosya ekle">
           <svg viewBox="0 0 24 24"><path d="M20 11.5l-8.2 8.2a4.6 4.6 0 0 1-6.5-6.5l8.4-8.4a3 3 0 0 1 4.3 4.3l-8.3 8.3a1.5 1.5 0 0 1-2.1-2.1l7.6-7.6"></path></svg>
         </button>
@@ -7459,7 +7579,8 @@ function yazismaEkrani(kisiId) {
             <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="M9 10v.01M15 10v.01M8.5 14.5a4.5 4.5 0 0 0 7 0"></path></svg>
           </button>
         </label>
-        <button class="yz-gonder" type="button" data-eylem="sohbet-yakinda" aria-label="Gönder">
+        <button class="yz-gonder" type="button" data-eylem="mesaj-yolla"
+                data-id="${esc(kisiId)}" aria-label="Gönder">
           <svg viewBox="0 0 24 24"><path d="M21 3L3 10.5l7 3 3 7z"></path><path d="M10 13.5L21 3"></path></svg>
         </button>
       </div>
@@ -12595,7 +12716,9 @@ async function eylemCalistir(el) {
     else location.hash = '#/sohbet';
     return;
   }
-  if (e === 'sohbet-yakinda') { toast('Mesajlaşma yakında gelecek.'); return; }
+  if (e === 'sohbet-yakinda') { toast('Bu kısım yakında gelecek.'); return; }
+
+  if (e === 'mesaj-yolla') return mesajYolla(id);
 
   if (e === 'ekip-suz') {
     EKIP_SUZ = el.dataset.deger;
@@ -15041,6 +15164,14 @@ document.addEventListener('DOMContentLoaded', () => {
   /* Profil sekmesi menüde değil, hesap panelini açıyor. */
   document.addEventListener('click', e => {
     if (e.target.closest('#tab-profil')) { hesapMenusu(); }
+  });
+
+  /* Yazma kutusunda Enter gönderiyor. */
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Enter' || !e.target.matches('#yz-metin')) return;
+    e.preventDefault();
+    const dug = $('.yz-gonder');
+    if (dug) mesajYolla(dug.dataset.id);
   });
 
   /* Projeler ekranındaki arama. Kutu her çizimde yeniden doğduğu için

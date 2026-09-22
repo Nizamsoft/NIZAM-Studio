@@ -13,6 +13,7 @@ const DB = {
   sayfalar: [],
   gorevler: [],
   hareketler: [],
+  mesajlar: [],
   kisiler: [],
   kisilerHepsi: [],
   sablonlar: [],
@@ -41,6 +42,7 @@ const DB = {
   TABLO_ADI: {
     projects: 'projeler', modules: 'moduller', pages: 'sayfalar',
     tasks: 'gorevler', task_events: 'hareketler', profiles: 'kisiler',
+    messages: 'mesajlar',
     standards: 'standartlar', task_standards: 'gorevStandart',
     module_templates: 'sablonlar', sectors: 'sektorler',
   },
@@ -253,10 +255,15 @@ const DB = {
     gorevStandart:db => db.from('task_standards').select('gorev_id, standart_id'),
     sablonlar:    db => db.from('module_templates').select('*').eq('aktif', true).order('sira'),
     sektorler:    db => db.from('sectors').select('*').eq('aktif', true).order('sira'),
+    /* Mesajlar da sınırsız büyüyor; son beş yüz satır yetiyor. Satır
+       güvenliği zaten yalnız kendi yazışmalarını veriyor. */
+    mesajlar:     db => db.from('messages').select('*')
+                          .order('olusturuldu', { ascending: false })
+                          .limit(500),
   },
 
   /* Tablosu henüz kurulmamış olabilecekler — hata verme, boş bırak. */
-  ISTEGE_BAGLI: ['sablonlar', 'sektorler'],
+  ISTEGE_BAGLI: ['sablonlar', 'sektorler', 'mesajlar'],
 
   yerlestir(ad, sonuc) {
     if (sonuc.error) {
@@ -268,6 +275,11 @@ const DB = {
     }
     const veri = sonuc.data || [];
 
+    if (ad === 'mesajlar') {
+      /* Sondan çektik; ekranda eskiden yeniye diziliyor. */
+      this.mesajlar = veri.slice().reverse();
+      return;
+    }
     if (ad === 'hareketler') {
       /* Sondan çektik, ekranda eskiden yeniye gösteriliyor. */
       this.hareketler = veri.slice().reverse();
@@ -312,6 +324,7 @@ const DB = {
     if (!AUTH.bagli) {                      // demo modu — veri yok
       this.projeler = []; this.moduller = []; this.sayfalar = [];
       this.gorevler = []; this.hareketler = []; this.kisiler = []; this.kisilerHepsi = [];
+      this.mesajlar = [];
       this.sablonlar = []; this.sektorler = [];
       this.standartlar = []; this.gorevStandart = [];
       this.yuklendi = true;
@@ -1047,6 +1060,62 @@ const DB = {
     if (data && data.hata) throw new Error(data.hata);
 
     await this.tazele('kisiler');
+  },
+
+  /* ---------- Mesajlaşma ----------
+     Yazışma iki kişi arasında; grup yok. Satır güvenliği zaten yalnız
+     tarafların satırlarını veriyor, burada sadece süzüyoruz. */
+  yazisma(kisiId) {
+    const ben = AUTH.user && AUTH.user.id;
+    if (!ben) return [];
+    return (this.mesajlar || []).filter(m =>
+      (m.gonderen === ben && m.alici === kisiId) ||
+      (m.gonderen === kisiId && m.alici === ben));
+  },
+
+  sonMesaj(kisiId) {
+    const l = this.yazisma(kisiId);
+    return l.length ? l[l.length - 1] : null;
+  },
+
+  /* Bana gelen, henüz okumadığım mesajlar. */
+  okunmamis(kisiId) {
+    const ben = AUTH.user && AUTH.user.id;
+    if (!ben) return 0;
+    return (this.mesajlar || []).filter(m =>
+      m.alici === ben && !m.okundu && (!kisiId || m.gonderen === kisiId)).length;
+  },
+
+  async mesajGonder(alici, metin) {
+    yazmaKontrol();
+    const temiz = String(metin || '').trim();
+    if (!temiz) return null;
+
+    const { data, error } = await AUTH.db.from('messages')
+      .insert({ gonderen: AUTH.user.id, alici, metin: temiz })
+      .select().single();
+    if (error) throw new Error(veriHatasi(error));
+
+    /* Canlı kanalı beklemeden ekrana koyuyoruz: kendi mesajın anında
+       görünsün. Kanal aynı satırı getirirse kimliğinden anlaşılıyor. */
+    if (!this.mesajlar.some(m => m.id === data.id)) this.mesajlar.push(data);
+    return data;
+  },
+
+  /* Yazışmayı açınca o kişinin mesajları okunmuş sayılır. */
+  async okunduIsaretle(kisiId) {
+    if (!AUTH.bagli || !AUTH.user) return false;
+    const bekleyen = (this.mesajlar || []).filter(m =>
+      m.alici === AUTH.user.id && m.gonderen === kisiId && !m.okundu);
+    if (!bekleyen.length) return false;
+
+    const simdi = new Date().toISOString();
+    bekleyen.forEach(m => { m.okundu = simdi; });
+    try {
+      await AUTH.db.from('messages').update({ okundu: simdi })
+        .eq('alici', AUTH.user.id).eq('gonderen', kisiId).is('okundu', null);
+    } catch (e) { /* ağ yoksa bir dahaki açılışta yine denenir */ }
+    return true;
   },
 
   /* ---------- Firma logosu ve paleti ---------- */

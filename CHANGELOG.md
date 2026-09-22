@@ -1,5 +1,15 @@
 # Değişiklik Günlüğü
 
+## v0.169.0
+**Mesajlaşma çalışıyor.**
+- Kişiden kişiye mesaj; yazıp gönderiyorsun, karşı taraftaki anında görüyor (canlı bağlantı).
+- Balonlar: seninkiler sağda kırmızımsı, karşınınki solda; saat ve gün ayracı var.
+- **Okundu çift tiki:** karşı taraf yazışmayı açınca tik kırmızıya dönüyor.
+- Sohbet listesinde **son mesaj, saati ve okunmamış rozeti**; en son yazışılan üstte. Üst çubuktaki sohbet simgesinde okunmamış varsa kırmızı nokta.
+- Enter ile de gönderiliyor. Mesaj yazarken karşıdan mesaj gelirse kutudaki yazı silinmiyor.
+- Duyuru satırı (Nizam Studio) şimdilik boş; dosya ve fotoğraf göndermek henüz yok.
+- **Kurulum:** `sql/24-mesajlar.sql` → Supabase SQL Editor'de çalıştır.
+
 ## v0.168.4
 - **Sayfa geçişi hızlandı:** 0,24 sn'lik kayarak belirme 0,15 sn'ye indi, kayma mesafesi kısaldı. Sohbet ve yazışma ekranlarında animasyon hiç yok — anında açılıyorlar.
 
