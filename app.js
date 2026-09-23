@@ -1545,9 +1545,6 @@ function durakOzetPaneli(p) {
             <em>${esc(sirada.ozet || '')}</em>
           </div>` : ''}
 
-        <a class="dso-dug" href="#/projeler/${p.id}">
-          ${svg(ICON.panel, 14)} Tüm aşamalar
-        </a>
       </div>
     </aside>`;
 }
@@ -1563,7 +1560,7 @@ function durakAyak(p, anahtar) {
 
   const geri = onceki
     ? `<a class="dsa-btn geri" href="#/projeler/${p.id}/${onceki.anahtar}">${ok} Geri</a>`
-    : `<a class="dsa-btn geri" href="#/projeler/${p.id}">${ok} Proje</a>`;
+    : `<a class="dsa-btn geri" href="#/projeler">${ok} Projeler</a>`;
 
   /* Düzenleme kipindeyken ileri gitmek yerine kaydedip kipten çıkılıyor:
      alanlar zaten yazdıkça kaydediliyor, düğme "işim bitti" demek. */
@@ -1580,7 +1577,7 @@ function durakAyak(p, anahtar) {
 
   const kilit = !!(sonraki && sonraki.kilitli);
   const ileri = !sonraki
-    ? `<a class="dsa-btn ana" href="#/projeler/${p.id}">Projeye dön ${ok}</a>`
+    ? `<a class="dsa-btn ana" href="#/projeler">Projelere dön ${ok}</a>`
     : kilit
       ? `<span class="dsa-btn ana pasif">Devam Et ${svg(ICON.kilit, 14)}</span>`
       : `<a class="dsa-btn ana" href="#/projeler/${p.id}/${sonraki.anahtar}">Devam Et ${ok}</a>`;
@@ -1948,23 +1945,39 @@ function firmaSayfasi(p, d) {
     + `</div></div>`;
 }
 
-/* Logo ve işletme görseli: ikisi de isteğe bağlı ama her zaman görünür.
-   Aşama tamamlandıktan sonra da duruyorlar — sonradan logo eklemek için
-   "Düzenle"ye basmak gerekmesin. */
+/* Logo alanı: isteğe bağlı ama her zaman görünür — aşama tamamlandıktan
+   sonra da duruyor. */
 function fmLogoAlani(p, logo, salt) {
-  /* Aşama tamamlandıysa kutu yalnız gösteriyor: yanlışlıkla dokunup logo
-     değiştirmek yok. Değiştirmek için "Düzenle" gerekiyor. */
+  /* İki hâli var. Düzenlerken: büyük kare "Logo seçin" kutusu. Aşama
+     tamamlanınca: öteki dolu alanlar gibi tek satır — solda küçük önizleme,
+     ortada adı, sağda yeşil tik. Yanlışlıkla dokunup değiştirmek yok. */
+  if (salt) {
+    return `
+      <div class="fm">
+        <span class="fm-et">Logo</span>
+        <span class="fm-kutu ${logo ? 'dolu' : ''}">
+          <span class="fm-lk ${logo ? '' : 'bos'}"
+                ${logo ? `style="background-image:url('${esc(logo)}')"` : ''}>
+            ${logo ? '' : svg(ICON.resim, 15)}
+          </span>
+          <span class="fm-oku ${logo ? '' : 'bos'}">${
+            logo ? esc(projeAdi(p)) : 'Eklenmedi'}</span>
+          ${logo ? `<span class="fm-tik">${svg(ICON.tik, 14)}</span>` : ''}
+        </span>
+      </div>`;
+  }
+
   const ic = logo ? '' : `${svg(ICON.resim, 20)}<b>Logo seçin</b><i>PNG, JPG (maks. 5MB)</i>`;
-  const zemin = logo ? `style="background-image:url('${esc(logo)}')"` : '';
   return `
     <div class="fm">
       <span class="fm-et">Logo <i>(Opsiyonel)</i></span>
-      ${salt
-        ? `<span class="fm-logo ${logo ? 'dolu' : ''} salt" ${zemin}>${ic}</span>`
-        : `<button class="fm-logo ${logo ? 'dolu' : ''}" type="button"
-             data-eylem="logo-yukle" data-proje="${p.id}" ${zemin}>${ic}</button>`}
+      <button class="fm-logo ${logo ? 'dolu' : ''}" type="button"
+              data-eylem="logo-yukle" data-proje="${p.id}"
+              ${logo ? `style="background-image:url('${esc(logo)}')"` : ''}>${ic}</button>
     </div>`;
-}/* 2 · Program temeli — bu paketin adı, kim kullanacak, verisi nerede
+}
+
+/* 2 · Program temeli — bu paketin adı, kim kullanacak, verisi nerede
    duracak. Eskiden "Kurulum ve yapı" durağının içindeydi (Yer + Kim
    kullanacak? ayrı ayrı); tek karar oldukları için tek karta indi. */
 function programSayfasi(p, d) {
@@ -7196,10 +7209,23 @@ function render() {
   const detay = key === 'projeler' && id && !kova;
   let sayfa = detay && DURAKLAR[durak] ? durak : null;
   /* Kilit sıkı: adres çubuğuna elle yazılsa da kilitli durak açılmıyor,
-     projenin yol haritasına düşülüyor. */
+     projenin kalınan aşamasına düşülüyor. */
   if (sayfa && durakKilitli(id, sayfa)) {
-    location.replace('#/projeler/' + id);
-    sayfa = null;
+    location.replace(projeAdresi(id));
+    sayfa = rota().durak && DURAKLAR[rota().durak] ? rota().durak : null;
+  }
+
+  /* Ayrı bir "proje ekranı" yok: projeye girmek, kalınan aşamayı açmak
+     demek. Eski adres (#/projeler/<id>) hâlâ çalışıyor, oradan aşamaya
+     yönleniyor. Veri henüz gelmediyse yönlendirme beklenir. */
+  if (detay && !sayfa && !YUKLENIYOR) {
+    const hedef = DB.proje(id) ? projeAdresi(id) : '#/projeler';
+    if (hedef !== location.hash) {
+      location.replace(hedef);
+      const y = rota();
+      sayfa = (y.id === id && DURAKLAR[y.durak]) ? y.durak : null;
+      if (!sayfa) return render();
+    }
   }
 
   /* Başka bir aşamaya geçildiyse düzenleme kipi kapanır. */
@@ -8999,7 +9025,7 @@ async function projeKopyalaVeAc(kaynakId, tur, sablon) {
     const id = await DB.projeKopyala(kaynakId, { tur, sablon });
     sayaclariYaz();
     toast('Proje kopyalandı.', 'basari');
-    location.hash = '#/projeler/' + id;
+    location.hash = projeAdresi(id);
     render();
   } catch (h) {
     toast(h.message, 'hata');
@@ -11010,9 +11036,9 @@ async function sihirbazKaydet() {
     sihirbazKapat();
     sayaclariYaz();
     toast(SIHIRBAZ.firma.trim() + ' kuruldu.');
-    /* Firma bilgileri durağı zaten bu ekranda dolduruldu — proje kurulunca
-       durak haritasına dönüyoruz, tekrar firma sayfasına girmeye gerek yok. */
-    location.hash = '#/projeler/' + id;
+    /* Yeni proje doğrudan kalınan aşamasında açılıyor — ayrı bir proje
+       ekranı yok. */
+    location.hash = projeAdresi(id);
     render();
   } catch (e) {
     toast(e.message, 'hata');

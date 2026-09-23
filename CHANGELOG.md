@@ -1,5 +1,12 @@
 # Değişiklik Günlüğü
 
+## v0.187.0
+- **Proje ekranı kalktı.** Projeye girmek artık doğrudan kalınan aşamayı
+  açmak demek; eski adres (#/projeler/&lt;id&gt;) oraya yönlendiriyor.
+  İlk aşamadaki "Proje" düğmesi "Projeler" oldu.
+- Tamamlanmış aşamada **logo tek satır**: solda küçük önizleme, ortada adı,
+  sağda yeşil tik.
+
 ## v0.186.0
 - Firma bilgilerinden **İşletme görseli** kalktı; tek görsel alanı kaldı: logo.
   (Görsel hâlâ proje kartının zemini olarak duruyor ve kartın üstündeki

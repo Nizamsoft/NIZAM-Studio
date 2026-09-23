@@ -9491,3 +9491,15 @@ textarea.fm-gir { height: auto; padding: 0 0 12px; resize: vertical; line-height
 /* Biten satırın madalyonu her durumda yeşil ve çerçevesiz — şimdiki adım
    kuralından (kırmızı çerçeve) sonra geldiği için o kuralı eziyor. */
 .dsl.bitti .dsl-durum { border: 0; background: var(--st-done); color: #fff; }
+
+/* Tamamlanmış aşamadaki logo satırı: solda küçük kare önizleme. */
+.fm-lk {
+  flex: 0 0 auto; display: flex; align-items: center; justify-content: center;
+  width: 38px; height: 38px; border-radius: 11px;
+  background: var(--surface) center / cover no-repeat;
+  border: 1px solid var(--line-2); color: var(--ink-dim);
+}
+.fm-lk.bos { background: var(--surface-2); border-style: dashed; }
+.fm-lk svg { fill: none; stroke: currentColor; stroke-width: 1.7; }
+.fm-lk .dolgu { display: none; }
+.fm-oku.bos { color: var(--ink-dim); }
