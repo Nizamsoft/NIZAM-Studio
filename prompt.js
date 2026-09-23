@@ -1781,10 +1781,24 @@ const PROMPT = {
       s.push('Mobil çizeceksen masaüstünü daraltarak verme; mobil yerleşimi');
       s.push('baştan düşün.');
     }
-    s.push('Ekteki ekranın oranında, yüksek çözünürlüklü, tek bir arayüz');
-    s.push('mockup\'ı çiz. Görselin **içine** açıklama yazısı, ölçü oku, renk');
-    s.push('paleti şeridi ya da "önce/sonra" etiketi koyma — yalnız ekranın');
-    s.push('kendisi görünsün.', '');
+    s.push('');
+    /* Çıkan görseller Studio'da sabit oranlı iki kutuya giriyor (bkz.
+       style.css · .tu-kutu.masa / .tu-kutu.mobil). Ölçü serbest bırakılınca
+       her seferinde başka orandan geliyor, kutuya ya kırpılarak ya da
+       kenarında boşlukla oturuyordu. O yüzden ölçü artık pazarlık değil. */
+    s.push('### Ölçü — buna birebir uy');
+    s.push('- **Masaüstü tasarımı:** tam olarak **' + TASARIM_OLCU.masa
+      + ' piksel** (16:10, yatay).');
+    s.push('- **Mobil tasarım:** tam olarak **' + TASARIM_OLCU.mobil
+      + ' piksel** (9:16, dikey).');
+    s.push('');
+    s.push('Başka bir en-boy oranı ya da başka bir çözünürlük verme. Oranı');
+    s.push('tutturmak için kenara beyaz/şeffaf dolgu ekleme — tasarımı baştan');
+    s.push('o ölçüye göre kur. Telefon kasası, tarayıcı çerçevesi, gölge, açılı');
+    s.push('sunum zemini ya da "mockup sahnesi" koyma: görsel baştan sona');
+    s.push('ekranın kendisi olsun, kenarından taşan hiçbir şey olmasın.');
+    s.push('Görselin **içine** açıklama yazısı, ölçü oku, renk paleti şeridi');
+    s.push('ya da "önce/sonra" etiketi koyma.', '');
     s.push('Görselden sonra, mesajın metninde (görselin içinde değil) kullandığın');
     s.push('renk kodlarını, yazı tipi adlarını, köşe yarıçapını, gölge ve boşluk');
     s.push('ölçeğini kısa bir liste hâlinde yaz — bu listeyi tasarımı koda');

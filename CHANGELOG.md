@@ -1,5 +1,12 @@
 # Değişiklik Günlüğü
 
+## v0.218.0
+- **Tasarım promptu artık sabit ölçü istiyor:** masaüstü 1600 x 1000
+  (16:10), mobil 1080 x 1920 (9:16). Bu ölçüler «Uygulanmış tasarımlar»
+  kutularının oranıyla birebir aynı, gelen görsel kırpılmadan oturuyor.
+  Prompt ayrıca telefon kasası, tarayıcı çerçevesi ve sunum zemini
+  eklenmesini yasaklıyor — kenarından taşan şey kutuda boşluk bırakıyordu.
+
 ## v0.217.0
 - **Görsel yüklenmemiş tasarımlar artık boş kutu değil:** her yönün
   temsili karesi kendi promptunun tarifinden çiziliyor (zemin, kart,

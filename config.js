@@ -7,7 +7,7 @@ const APP = {
   name:     'NIZAM | Studio',
   short:    'NIZAM Studio',
   owner:    'Nizam Soft',
-  version: 'v0.217.0',
+  version: 'v0.218.0',
   build:    '2026-09-17',
   /* Studio'nun kendi deposu — "bütün programlarda geçerli olsun"
      istekleri buraya gider. */
@@ -129,6 +129,12 @@ const GRUP_SIMGE = {
    klişesine kayıp uygulamayı başka bir sektörün uygulamasına çeviriyor.
    Müşteri beğendiğini seçiyor; gerçek renk/tipografi uygulaması artık
    Studio dışında, doğrudan Claude Code sohbetiyle yapılıyor. */
+/* Tasarım mockup'larının sabit ölçüsü. ChatGPT promptu bunu istiyor
+   (prompt.js · tasarimYonu), Studio'daki yükleme kutuları da aynı oranda
+   (style.css · .tu-kutu.masa 16/10, .tu-kutu.mobil 9/16). Birini
+   değiştirirsen üçünü birden değiştir, yoksa görsel kutuya oturmaz. */
+const TASARIM_OLCU = { masa: '1600 x 1000', mobil: '1080 x 1920' };
+
 const TASARIM_YON = [
   { anahtar: 'marka', ad: 'Editoryal / Fotoğraflı', renk: '#c9753c',
     ozet: 'Dergi düzeni: iri serif başlık, gerçek fotoğraf, bol boşluk, tek vurgu.',
