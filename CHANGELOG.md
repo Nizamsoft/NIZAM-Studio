@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü
 
+## v0.220.0
+- **Yetkilendirme yeniden kuruldu:** her katman için tek kart — ikon, adı,
+  merdivendeki yeri ve yetkileri yazdığın kutu (altında karakter sayacı).
+  Kutular odak çıkınca kendiliğinden kaydediliyor, ayrı «Kaydet» yok.
+  Hepsi dolunca **«Prompt oluştur»**, en altta **«Claude'un verdiği JSON'u
+  aktar»** kartı ve kırmızı **«JSON aktar»**. JSON aktarılınca aşama da
+  tamamlanıyor — ayrıca bir onay düğmesi kalktı.
+
 ## v0.219.0
 - «Müşteri bunu seçti»ye basıldıysa **Uygulanmış tasarımlar sekmesinin
   üstünde yeşil bir şerit** duruyor: «Müşteri 2. tasarımı seçti» ve altında

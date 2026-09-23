@@ -10119,3 +10119,17 @@ textarea.fm-gir { height: auto; padding: 0 0 12px; resize: vertical; line-height
   color: var(--st-done-t);
 }
 .tu-secim-yz i { font-style: normal; font-size: 13px; color: var(--ink-soft); }
+
+/* Yetkilendirme · katman kartlarındaki renk tonları ve sıra rozeti. */
+.btk-ik.kirmizi { background: var(--red-soft); color: var(--red-ink); }
+.btk-ik.mavi    { background: #eef3fc; color: #3a62a8; }
+.btk-ik.yesil   { background: var(--done-soft); color: var(--st-done-t); }
+.btk-no {
+  flex: 0 0 auto; align-self: flex-start;
+  padding: 3px 9px; border-radius: 999px;
+  background: var(--yuva); color: var(--ink-soft);
+  font-style: normal; font-size: 12px; font-weight: 600;
+}
+.btk-no.kirmizi { background: var(--red-soft); color: var(--red-ink); }
+.btk-no.mavi    { background: #eef3fc; color: #3a62a8; }
+.btk-no.yesil   { background: var(--done-soft); color: var(--st-done-t); }

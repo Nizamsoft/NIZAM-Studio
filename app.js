@@ -4869,6 +4869,27 @@ function yapiBaglari() {
       }
     });
   }
+  /* Yetkilendirme kutuları: yazarken sayaç canlı, odak çıkınca kaydediliyor
+     — ayrı bir "Kaydet" düğmesi yoktu, yazıp geçilen satır kaybolurdu. */
+  $$('[data-yk-gorev]').forEach(el => {
+    if (el.dataset.bagli) return;
+    el.dataset.bagli = '1';
+    const say = $(`[data-yk-say="${el.dataset.ykGorev.replace(/"/g, '\\"')}"]`);
+    el.addEventListener('input', () => {
+      if (say) say.textContent = el.value.length + ' karakter';
+    });
+    el.addEventListener('change', () => {
+      const pr = DB.proje(el.dataset.proje);
+      if (!pr) return;
+      const pl = pr.palet || {};
+      const eski = String((pl.rolGorev || {})[el.dataset.ykGorev] || '');
+      if (eski === el.value.trim()) return;
+      const rolGorev = Object.assign({}, pl.rolGorev || {});
+      rolGorev[el.dataset.ykGorev] = el.value.trim();
+      isYap(() => DB.paletKaydet(pr.id, Object.assign({}, pl, { rolGorev })));
+    });
+  });
+
   $$('[data-ky]').forEach(el => {
     if (el.dataset.bagli) return;
     el.dataset.bagli = '1';
@@ -6474,34 +6495,81 @@ function yetkiBilgiKarti() {
   </div>`;
 }
 
+/* ---------- 9 · Yetkilendirme ----------
+   Her katman için bir kart: ne yapabileceğini kendi kutusuna yazıyorsun,
+   yazdıkların promptun içine birebir giriyor. Eski hâlinde katman listesi,
+   görev kartı, prompt kartı ve kod kartı ayrı ayrı duruyordu — aynı işin
+   dört kutuya bölünmüş hâliydi. */
 function yetkiSayfasi(p, d) {
-  const pl = p.palet || {};
-  const roller = rolListesi(pl.roller);
-  const adimlar = [roller.length > 0, !!pl.yetkiKodTamamlandi];
-  const biten = adimlar.filter(Boolean).length;
-  const tamam = !!pl.yetkiTamamlandi;
+  const pl     = p.palet || {};
+  const roller = rolListesi(pl.roller).slice().reverse();   /* geniş → dar */
+  const gorev  = pl.rolGorev || {};
+  const dolu   = roller.filter(ad => String(gorev[ad] || '').trim()).length;
+  const tamam  = !!pl.yetkiTamamlandi;
+
+  if (!roller.length) {
+    return `<div class="fb-govde">`
+      + adimBasligi(p, d, '0/0')
+      + `<div class="bos-kutu">${svg(ICON.uyari, 18)}
+          <span><b>Katman yok.</b> <b>Program temeli</b> durağında kaç katman
+          olacağını belirle, sonra buraya dön.</span></div>`
+      + `</div>`;
+  }
+
+  /* Katmanın adı projeye özel (Admin, Kasiyer, Garson…) — açıklamayı
+     merdivendeki yerinden türetiyoruz, uydurmuyoruz. */
+  const alt = i => i === 0 ? 'En geniş yetki — her şeyi görür ve yönetir.'
+    : i === roller.length - 1 ? 'En dar yetki — yalnız günlük işler.'
+    : 'Ara katman — kendi işinin tamamı.';
+  const tint = i => i === 0 ? 'kirmizi' : i === roller.length - 1 ? 'yesil' : 'mavi';
+
+  const rolKarti = (ad, i) => {
+    const metin = gorev[ad] || '';
+    return `
+      <div class="btk">
+        <div class="btk-ust">
+          <span class="btk-ik ${tint(i)}">${svg(i === 0 ? ICON.anahtar : ICON.kisi, 22)}</span>
+          <span class="btk-yz"><b>${esc(ad)}</b><i>${alt(i)}</i></span>
+          <em class="btk-no mono ${tint(i)}">${i + 1}/${roller.length}</em>
+        </div>
+        <textarea class="anl-kutu btk-yazi" data-yk-gorev="${esc(ad)}"
+          data-proje="${p.id}"
+          placeholder="Bu rolün sahip olacağı yetkileri detaylı olarak yazın…">${esc(metin)}</textarea>
+        <span class="anl-say" data-yk-say="${esc(ad)}">${metin.length} karakter</span>
+      </div>`;
+  };
+
+  const hepsiDolu = dolu === roller.length;
+  const jsonKart = pl.yetkiKodTamamlandi ? `
+    <div class="btk">
+      <div class="btk-ust">
+        <span class="btk-ik yesil">${svg(ICON.tik, 22)}</span>
+        <span class="btk-yz"><b>Kod hazır</b>
+          <i>Claude'un verdiği JSON aktarıldı, kısıtlamalar koda işlendi.</i></span>
+      </div>
+    </div>` : `
+    <div class="btk">
+      <div class="btk-ust">
+        <span class="btk-ik mavi">${svg(ICON.dosya, 22)}</span>
+        <span class="btk-yz"><b>Claude'un verdiği JSON'u aktar</b>
+          <i>Claude işi bitirince bir JSON bloğu verir — olduğu gibi buraya yapıştır.</i></span>
+      </div>
+      <textarea class="anl-kutu btk-yazi" id="yk-json-${p.id}"
+        placeholder="Claude'un verdiği JSON verisini buraya yapıştırın…"></textarea>
+      <button class="sayfa-dug bitir" type="button" data-eylem="yetki-kod-onayla"
+              data-proje="${p.id}">${svg(ICON.dosya, 15)} JSON aktar</button>
+    </div>`;
 
   return `<div class="fb-govde">`
-    + adimBasligi(p, d, `${tamam ? adimlar.length : biten}/${adimlar.length}`)
-    + balon('Katmanlar ve kullanıcı ekleme zaten kurulu — şimdiye kadar her katman her şeyi yapabiliyordu.',
-        'Her katmanın ne yapabileceğini yaz, kodu Claude\'a ver — sonra Güvenlik kontrolü ölçecek.')
-    + fbKart('#a15fc4', ICON.gGuvenlik, 'Katmanlar', null, p.id,
-        roller.length
-          ? `<div>${roller.slice().reverse().map(ad => `<span style="display:inline-flex;
-              padding:4px 10px;margin:0 6px 6px 0;border-radius:999px;
-              background:var(--surface-2);border:1px solid var(--line);
-              font-size:12.5px;color:var(--ink-soft)">${esc(ad)}</span>`).join('')}</div>
-             <p class="ipucu" style="margin-top:8px">Program temeli'nde belirlendi.</p>`
-          : `<p class="fb-neden">Program temeli'nde henüz katman seçilmedi.</p>`)
-    + yetkiGorevKarti(p, pl)
-    + yetkiPromptKarti(p, pl)
-    + yetkiKoduKarti(p, pl)
-    + yetkiBilgiKarti()
-    + (AUTH.yonetici ? (tamam
-        ? `<div class="kur-deger duz">${svg(ICON.tik, 13)} Bu aşama tamamlandı</div>`
-        : `<button class="sayfa-dug ikincil" type="button" data-eylem="yetki-tamamlandi"
-                    data-proje="${p.id}" ${biten === adimlar.length ? '' : 'disabled'}>
-             ${svg(ICON.check, 15)} Yetkilendirme tamamlandı</button>`) : '')
+    + adimBasligi(p, d, dolu + '/' + roller.length)
+    + (tamam ? fmTamamBar(p, 'yetki', 'Katman yetkileri koda işlendi.', false) : '')
+    + roller.map(rolKarti).join('')
+    + (hepsiDolu
+        ? promptBaglantisi({ tur: 'yetkiKur', proje: p.id, slug: depoSlug(p.repo),
+            hedef: 'claude-yeni', yazi: 'Prompt oluştur' })
+        : `<button class="sayfa-dug" type="button" disabled>
+             ${svg(ICON.yildiz, 15)} Önce her katmanı doldur</button>`)
+    + jsonKart
     + `</div>`;
 }
 
@@ -14564,8 +14632,10 @@ async function eylemCalistir(el) {
       return;
     }
     const pl = pr.palet || {};
-    return isYap(() => DB.paletKaydet(pr.id,
-      Object.assign({}, pl, { yetkiKodTamamlandi: true })), 'Kaydedildi.');
+    /* JSON geldiyse kısıtlamalar koda işlenmiş demektir; ayrıca bir
+       "tamamlandı" düğmesine basmak fazlalıktı. */
+    return isYap(() => DB.paletKaydet(pr.id, Object.assign({}, pl,
+      { yetkiKodTamamlandi: true, yetkiTamamlandi: true })), 'Yetkiler kuruldu.');
   }
 
   if (e === 'yetki-tamamlandi') {
