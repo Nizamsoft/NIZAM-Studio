@@ -9930,20 +9930,23 @@ textarea.fm-gir { height: auto; padding: 0 0 12px; resize: vertical; line-height
 /* ---------- Sekme 1 · Prompt listesi ---------- */
 .tp-liste { display: flex; flex-direction: column; }
 .tp {
-  display: flex; align-items: flex-start; gap: 12px;
+  display: flex; align-items: center; gap: 12px;
   padding: 14px 0; border-bottom: 1px solid var(--line-3);
 }
 .tp:last-child { border-bottom: 0; }
 .tp-kare {
   flex: 0 0 auto; display: flex; align-items: center; justify-content: center;
-  width: 92px; height: 66px; border-radius: 10px; cursor: pointer;
+  width: 148px; height: 104px; border-radius: 12px; cursor: pointer;
   background: var(--yuva) center/cover no-repeat; border: 1px solid var(--line-3);
   color: var(--ink-faint);
 }
 .tp-kare svg { fill: none; stroke: currentColor; stroke-width: 1.7; }
 .tp-kare .dolgu { display: none; }
 .tp-kare.var { border-color: var(--line-2); }
-.tp-yz { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.tp-yz {
+  flex: 1; min-width: 0; display: flex; flex-direction: column;
+  justify-content: center; gap: 10px;
+}
 .tp-bas { display: flex; align-items: center; gap: 8px; }
 .tp-bas b {
   flex: 1; min-width: 0; font-family: var(--yazi-etiket);
@@ -9957,7 +9960,7 @@ textarea.fm-gir { height: auto; padding: 0 0 12px; resize: vertical; line-height
 .tp-yz > i { font-style: normal; font-size: 13px; line-height: 1.45; color: var(--ink-dim); }
 .tp-kop {
   align-self: flex-start; display: inline-flex; align-items: center; gap: 7px;
-  margin-top: 6px; height: 36px; padding: 0 13px; border-radius: 10px; cursor: pointer;
+  height: 36px; padding: 0 13px; border-radius: 10px; cursor: pointer;
   background: var(--surface); border: 1px solid var(--line-2);
   font-family: var(--yazi-etiket); font-size: 13px; font-weight: 600; color: var(--ink);
 }
@@ -9982,16 +9985,19 @@ textarea.fm-gir { height: auto; padding: 0 0 12px; resize: vertical; line-height
 .tu-kare svg { fill: none; stroke: currentColor; stroke-width: 1.7; }
 .tu-kare .dolgu { display: none; }
 .tu-yz { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.tu-yz { text-align: center; }
 .tu-yz b { font-family: var(--yazi-etiket); font-size: 15px; font-weight: 700; color: var(--ink-strong); }
-.tu-yz i { font-style: normal; font-size: 12.5px; color: var(--ink-dim); }
-.tu-btn {
-  flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px;
-  height: 36px; padding: 0 12px; border-radius: 10px; cursor: pointer;
-  background: var(--yuva); border: 1px solid var(--line-2);
-  font-family: var(--yazi-etiket); font-size: 12.5px; font-weight: 600; color: var(--ink);
+.tu-yz i { font-style: normal; font-size: 12px; color: var(--ink-faint); }
+/* Tasarımlar arasında gezinme okları — açılır liste yerine ileri/geri. */
+.tu-ok {
+  flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center;
+  width: 38px; height: 38px; border-radius: 11px; cursor: pointer;
+  background: var(--yuva); border: 1px solid var(--line-2); color: var(--ink-soft);
 }
-.tu-btn svg { fill: none; stroke: currentColor; stroke-width: 1.9; }
-.tu-btn .dolgu { display: none; }
+.tu-ok svg { fill: none; stroke: currentColor; stroke-width: 2.2; transform: rotate(180deg); }
+.tu-ok.ileri svg { transform: none; }
+.tu-ok .dolgu { display: none; }
+.tu-ok:active { background: var(--surface-2); }
 .tu-blok {
   margin-bottom: 14px; padding: 12px; border-radius: 16px;
   background: var(--surface); border: 1px solid var(--line-3);

@@ -2650,7 +2650,6 @@ function tasarimPromptListesi(p) {
         </span>
         <span class="tp-yz">
           <span class="tp-bas"><b>${esc(y.ad)}</b><em class="mono">#${i + 1}</em></span>
-          <i>${esc(y.ozet || '')}</i>
           <button class="tp-kop" type="button" data-eylem="tasarim-yon-kopyala"
                   data-proje="${p.id}" data-alan="${esc(y.anahtar)}" data-kip="ayni">
             ${svg(ICON.kopya, 14)} Prompt kopyala</button>
@@ -2666,6 +2665,7 @@ function tasarimUygulanmisEkrani(p) {
   const odak   = tasarimOdagi(p);
   const kare   = (DB.tasarimGorsel || {})[odak.anahtar] || '';
   const secili = pl.secilenYon === odak.anahtar;
+  const sira   = TASARIM_YON.indexOf(odak);
 
   /* Her yönün kendi çifti var: bir masaüstü, bir mobil. Yuva adı yönün
      anahtarından türüyor, böylece yönler birbirinin görselini ezmiyor. */
@@ -2693,14 +2693,18 @@ function tasarimUygulanmisEkrani(p) {
 
   return `
     <div class="tu-tepe">
+      <button class="tu-ok" type="button" data-eylem="tasarim-odak-git"
+              data-proje="${p.id}" data-yon="-1" aria-label="Önceki tasarım">
+        ${svg(ICON.chevron, 16)}</button>
       <span class="tu-kare ${kare ? 'var' : ''}"
             ${kare ? `style="background-image:url('${esc(kare)}')"` : ''}>
         ${kare ? '' : svg(ICON.resim, 18)}
       </span>
       <span class="tu-yz"><b>${esc(odak.ad)}</b>
-        <i>Seçilen prompt ile oluşturulan tasarımlar.</i></span>
-      <button class="tu-btn" type="button" data-eylem="tasarim-odak-degis"
-              data-proje="${p.id}">${svg(ICON.geriAl, 14)} Değiştir</button>
+        <i class="mono">${sira + 1} / ${TASARIM_YON.length}</i></span>
+      <button class="tu-ok ileri" type="button" data-eylem="tasarim-odak-git"
+              data-proje="${p.id}" data-yon="1" aria-label="Sonraki tasarım">
+        ${svg(ICON.chevron, 16)}</button>
     </div>
     ${kutu('masa', 'Masaüstü tasarımı', ICON.panel)}
     ${kutu('mobil', 'Mobil tasarım', ICON.telefon)}
@@ -14449,30 +14453,16 @@ async function eylemCalistir(el) {
     return render();
   }
 
-  /* Uygulanmış sekmesinde hangi yöne bakılacağı — küçük bir liste. */
-  if (e === 'tasarim-odak-degis') {
+  /* Uygulanmış sekmesinde tasarımlar arasında ileri/geri gezinme — açılır
+     liste yerine ok: on iki yön için liste açmak fazla adımdı. */
+  if (e === 'tasarim-odak-git') {
     const pr = DB.proje(el.dataset.proje);
-    const simdi = pr ? tasarimOdagi(pr).anahtar : '';
-    modalAc(`
-      ${modalBaslik(ICON.gTasarim, 'Hangi tasarım?',
-        'Her tasarımın kendi masaüstü ve mobil görseli var.')}
-      <div class="td-liste">
-        ${TASARIM_YON.map(y => `
-          <button class="td ${y.anahtar === simdi ? 'on' : ''}" type="button"
-                  data-td="${esc(y.anahtar)}">
-            <b>${esc(y.ad)}</b><i>${esc(y.ozet || '')}</i>
-            ${y.anahtar === simdi ? svg(ICON.tik, 16) : ''}
-          </button>`).join('')}
-      </div>
-      <div class="modal-alt">
-        <button class="btn btn-ghost" data-m="kapat" type="button">Kapat</button>
-      </div>`, kutu => {
-      $$('[data-td]', kutu).forEach(d => d.addEventListener('click', () => {
-        TASARIM_ODAK = d.dataset.td;
-        modalKapat(); render();
-      }));
-    });
-    return;
+    if (!pr) return;
+    const n = TASARIM_YON.length;
+    const su = TASARIM_YON.indexOf(tasarimOdagi(pr));
+    const adim = Number(el.dataset.yon) < 0 ? -1 : 1;
+    TASARIM_ODAK = TASARIM_YON[(su + adim + n) % n].anahtar;
+    return render();
   }
 
   if (e === 'tasarim-uygulanmis-yukle') {

@@ -1,5 +1,12 @@
 # Değişiklik Günlüğü
 
+## v0.216.0
+- Tasarım promptları listesinde **açıklama kalktı**: yalnız başlık ve
+  «Prompt kopyala». Yazı sağa kaydı, örnek kare belirgin biçimde büyüdü.
+- Uygulanmış tasarımlarda **«Değiştir» yerine ileri/geri okları** —
+  açılır liste açmadan tasarımlar arasında geçiliyor, kaçıncısında
+  olduğun başlığın altında yazıyor.
+
 ## v0.215.0
 - **Profesyonel tasarım iki sekmeye ayrıldı.** *Tasarım promptları*: her
   hazır yönün örnek karesi, adı, özeti ve tek bir «Prompt kopyala»
