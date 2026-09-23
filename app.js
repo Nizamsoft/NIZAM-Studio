@@ -4032,27 +4032,8 @@ function agacEkrani(p, t) {
         <span class="md-bas-ik">${svg(ICON.izgaraDort, 22)}</span>
         <span class="md-bas-yz"><b>Modüller</b><i>Programın bölümleri ve sayfaları.</i></span>
       </div>`
-    /* Tek işlem: koddaki yapıyla buradaki kaydı karşılaştırmak. Ekleme,
-       silme, düzenleme yok — yapı Claude'un bloğundan geliyor. */
-    + `<a class="md-is" target="_blank" rel="noopener"
-         data-pano="modulGuncelle:${encodeURIComponent(moduller[0] ? moduller[0].ad : '')}"
-         data-proje="${p.id}" data-hedef="Claude Code"
-         href="${esc(claudeAdresi(depoSlug(p.repo)))}">
-        <span class="md-is-ik">${svg(ICON.geriAl, 18)}</span>
-        <span class="md-yz">
-          <b>Modülleri güncelle</b>
-          <i>Koddaki yapıyla buradaki kaydı karşılaştırır, eksikleri bulur.</i>
-        </span>
-        <span class="md-ok">${svg(ICON.chevron, 15)}</span>
-      </a>
-      <button class="md-is ikincil" type="button" data-eylem="yapi-kur-pano" data-proje="${p.id}">
-        <span class="md-is-ik">${svg(ICON.ice, 18)}</span>
-        <span class="md-yz">
-          <b>Yapıyı kur</b>
-          <i>Claude'un verdiği blok panodayken bas.</i>
-        </span>
-        <span class="md-ok">${svg(ICON.chevron, 15)}</span>
-      </button>`
+    /* Önce modüllerin kendisi; işlemler aşağıda, ayraçla ayrılmış — yoksa
+       "güncelle" satırları da bir modülmüş gibi okunuyordu. */
     + (moduller.length ? `<div class="md-liste">
         ${moduller.map((m, i) => `
           <button class="md-satir" type="button" data-eylem="agac-modul-ac"
@@ -4068,6 +4049,28 @@ function agacEkrani(p, t) {
       </div>` : `<div class="md-not">${svg(ICON.info, 16)}
         <span><b>Henüz modül yok</b>Claude'un verdiği bloğu yapıştırınca burada görünecek.</span>
       </div>`)
+
+    + `<div class="md-ayrac"></div>`
+    + `<div class="md-grup">Güncelleme</div>`
+    + `<a class="md-is" target="_blank" rel="noopener"
+         data-pano="modulGuncelle:${encodeURIComponent(moduller[0] ? moduller[0].ad : '')}"
+         data-proje="${p.id}" data-hedef="Claude Code"
+         href="${esc(claudeAdresi(depoSlug(p.repo)))}">
+        <span class="md-is-ik">${svg(ICON.kopya, 18)}</span>
+        <span class="md-yz">
+          <b>Güncelleme promptu</b>
+          <i>Koddaki yapıyla buradaki kaydı karşılaştırır, eksikleri bulur.</i>
+        </span>
+        <span class="md-ok">${svg(ICON.chevron, 15)}</span>
+      </a>
+      <button class="md-is ikincil" type="button" data-eylem="yapi-kur-pano" data-proje="${p.id}">
+        <span class="md-is-ik">${svg(ICON.ice, 18)}</span>
+        <span class="md-yz">
+          <b>Güncelle</b>
+          <i>Claude'un verdiği blok panodayken bas.</i>
+        </span>
+        <span class="md-ok">${svg(ICON.chevron, 15)}</span>
+      </button>`
     + `</div>`;
 }
 

@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## v0.204.0
+- Modüller ekranında **modül listesi en üstte**; işlemler ayraçla ayrılmış
+  "Güncelleme" başlığı altında — modülmüş gibi okunmuyorlar.
+- "Modülleri güncelle" → **"Güncelleme promptu"**, "Yapıyı kur" → **"Güncelle"**.
+
 ## v0.203.0
 - "Cevabı yapıştır" düğmesi **"Yapıyı kur"** oldu ve **pencere açmıyor**:
   panodaki bloğu doğrudan okuyup kuruyor.
