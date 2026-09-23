@@ -1332,46 +1332,60 @@ const DURAKLAR = {
      her şey "beta" slotunda toplanıyor. Sıra ve numaralar aynı kalıyor,
      yalnız şablon kopyasında bir durak daha az görünüyor. Bkz. sablonD(),
      sablonDegisimSayfasi(). */
-  yapi:        { no: 4, ad: 'Kurulum ve yapı',
+  yapi:        { no: 4, ad: 'Yapı planlama',
                  ciz: (p, d) => sablonMu(p)
                    ? sayfaHero(p, sablonD(d, 'Değişim', '')) + `<div class="card">${empty(ICON.check,
                        'Bu aşama Değişim\'e taşındı', 'Temel tanımlar artık "Değişim" durağının içinde.')}</div>`
                    : yapiSayfasi(p, d),
                  renk: '#8fae4a', ikon: 'gAltyapi', resim: 'yapi',
                  aciklama: p => sablonMu(p) ? 'Bu aşama Değişim\'e taşındı.'
-                   : 'Kurulum dosyaları ve proje yapısı.' },
-  beta:        { no: 5, ad: 'Beta ve geliştirme',
+                   : 'Modüller, sayfalar ve proje yapısı.' },
+  /* Kurulum ile Beta bilerek ayrı iki durak: ilki "kodu yazdır" (plan +
+     beş aşama, sırayla ilerleyen kapalı bir liste), ikincisi "deneyip
+     eksikleri anlat" (bitiş tarihi olmayan bir döngü). Tek durakta
+     dururken adım şeridi yediyi bitirdiğin anda bambaşka bir ekrana
+     dönüşüyordu — nerede olduğun kaybolmuştu. */
+  kurulum:     { no: 5, ad: 'Kurulum',
                  ciz: (p, d) => sablonMu(p) ? sablonDegisimSayfasi(p,
-                   sablonD(d, 'Değişim', 'Temel tanımlar, veri/format ve giriş kurulumu burada.')) : betaSayfasi(p, d),
-                 renk: '#c9753c', ikon: 'gOptimizasyon', resim: 'beta',
+                     sablonD(d, 'Değişim', 'Temel tanımlar, veri/format ve giriş kurulumu burada.'))
+                   : betaKurulumOzeti(p, d, kurulumSihirbazListesi(p)),
+                 renk: '#5b8def', ikon: 'gAltyapi', resim: 'beta',
                  aciklama: p => sablonMu(p) ? 'Temel tanımlar, veri/format ve giriş kurulumu burada.'
-                   : 'Testler ve geliştirme süreci.' },
+                   : 'Plan depoya yazılır, kod aşama aşama kurulur.' },
+  beta:        { no: 6, ad: 'Beta ve geliştirme',
+                 ciz: (p, d) => sablonMu(p)
+                   ? sayfaHero(p, sablonD(d, 'Değişim', '')) + `<div class="card">${empty(ICON.check,
+                       'Bu aşama Değişim\'e taşındı', 'Bu akış "Değişim" durağının içinde.')}</div>`
+                   : betaGelistirmeEkrani(p, d),
+                 renk: '#c9753c', ikon: 'gOptimizasyon', resim: 'beta',
+                 aciklama: p => sablonMu(p) ? 'Bu aşama Değişim\'e taşındı.'
+                   : 'Uygulamayı dene, eksikleri Claude\'a yazdır.' },
   /* Yalnız şablon kopyalarında anlamlı: normal projede bu döngü zaten Beta
      ve geliştirme'nin içinde. Slot her projede var (sıra bozulmasın diye,
      bkz. projeDuraklari), normal projede otomatik geçilmiş sayılıyor. */
-  deneme:      { no: 6, ad: 'Test ve Güncelle',       ciz: denemeSayfasi,
+  deneme:      { no: 7, ad: 'Test ve Güncelle',       ciz: denemeSayfasi,
                  renk: '#5a9b8f', ikon: 'gOptimizasyon', resim: 'deneme',
                  aciklama: p => sablonMu(p) ? 'Uygulamayı dene, eksikleri Claude\'a yazdır.'
                    : 'Bu proje için geçerli değil.' },
-  tasarim:     { no: 7, ad: 'Profesyonel tasarım',   ciz: tasarimSayfasi,
+  tasarim:     { no: 8, ad: 'Profesyonel tasarım',   ciz: tasarimSayfasi,
                  renk: '#5f86c4', ikon: 'gTasarim', resim: 'tasarim',
                  aciklama: 'Arayüz ve kullanıcı deneyimi.' },
   /* Finalden bir önceki durak. Katmanlar (Program temeli) ve kullanıcı
      ekleme (Bağlantılar ve temel'deki ilk kurulum promptu) zaten kurulu —
      başlangıçta her katman her şeyi yapabiliyor. Burada yalnız gerçek
      kısıtlamalar ("kim ne yapabilir") tanımlanıp koda işleniyor. */
-  yetki:       { no: 8, ad: 'Yetkilendirme',         ciz: yetkiSayfasi,
+  yetki:       { no: 9, ad: 'Yetkilendirme',         ciz: yetkiSayfasi,
                  renk: '#a15fc4', ikon: 'gGuvenlik', resim: 'yetki',
                  aciklama: 'Her katman ne yapabilir?' },
   /* Yetkilendirme kuralları yazdı — burada ÖLÇÜLÜYOR. Ayrı bir durak olması
      bilerek: "kuruldu" demek bir iddiadır, açık olup olmadığını ancak
      saldırarak anlarsın. Final bu ölçüm temiz çıkmadan açılmıyor. */
-  guvenlik:    { no: 9, ad: 'Güvenlik kontrolü',    ciz: guvenlikDurakSayfasi,
+  guvenlik:    { no: 10, ad: 'Güvenlik kontrolü',    ciz: guvenlikDurakSayfasi,
                  renk: '#3f9d7a', ikon: 'gGuvenlik', resim: 'guvenlik',
                  aciklama: 'Kurulan kurallar gerçekten tutuyor mu?' },
-  final:       { no: 10, ad: 'Final',                ciz: finalSayfasi,
+  final:       { no: 11, ad: 'Final',                ciz: finalSayfasi,
                  resim: 'final', aciklama: 'Son kontroller ve yayına hazırlık.' },
-  guncelleme:  { no: 11, ad: 'Geliştirme',           ciz: guncellemeSayfasi,
+  guncelleme:  { no: 12, ad: 'Geliştirme',           ciz: guncellemeSayfasi,
                  resim: 'gelistirme', aciklama: 'Yayın sonrası yeni özellikler.' },
 };
 
@@ -4045,7 +4059,7 @@ function agacEkrani(p, t) {
   /* ---------- 1 · Modüller ---------- */
   return `<div class="fb-govde">`
     + `<button class="md-yol" type="button" data-eylem="yapi-anlat" data-proje="${p.id}">
-        ${svg(ICON.chevron, 14)} Kurulum ve yapı</button>`
+        ${svg(ICON.chevron, 14)} Yapı planlama</button>`
     + `<div class="md-bas">
         <span class="md-bas-ik">${svg(ICON.izgaraDort, 22)}</span>
         <span class="md-bas-yz"><b>Modüller</b><i>Programın bölümleri ve sayfaları.</i></span>
@@ -4997,12 +5011,6 @@ async function depoAdresiTamamla(p) {
    B) Sürekli geliştirme: ilk kurulum bitince ekran buna döner. Görev/aşama
       takibi yok — dene, eksik gördüğünü anlat, prompt oluştur, Claude'a
       yapıştır; yapıyı da etkiliyorsa döndüğü JSON'u yükle. */
-function betaSayfasi(p, d) {
-  const liste = kurulumSihirbazListesi(p);
-  const tamamMi = liste.every(k => kurulumSihirbazAdimBittiMi(k, p));
-  return tamamMi ? betaGelistirmeEkrani(p, d) : betaKurulumOzeti(p, d, liste);
-}
-
 /* İlk kurulum zinciri — Bağlantılar ve temel'deki kalıbın aynısı: adımlar
    tek sayfada alt alta, sıradaki kendiliğinden açık. Eskiden "Doldur"
    düğmesi tam ekran bir sihirbaz açıyordu; yedi adımı görmeden içeri
@@ -5046,7 +5054,7 @@ function betaKurulumOzeti(p, d, liste) {
 
   return `<div class="fb-govde">`
     + adimBasligi(p, d, biten + '/' + liste.length)
-    + `<p class="bgz-not">Kurulum ve yapı'da hazırlanan plan burada gerçek koda
+    + `<p class="bgz-not">Yapı planlama'da hazırlanan plan burada gerçek koda
         dönüşüyor. <b>Adımlar sırayla ilerlenir.</b></p>`
     + `<div class="bgz">${satirlar}</div>`
     + `</div>`;
@@ -5274,7 +5282,7 @@ function kurulumAdimBlokGovde(p) {
 
   return durum
     + (kunyeVar ? '' : `<div class="note uyari">${svg(ICON.uyari, 15)}
-        <span><b>Sayfa künyesi yok.</b> Önce <b>Kurulum ve yapı</b> durağında
+        <span><b>Sayfa künyesi yok.</b> Önce <b>Yapı planlama</b> durağında
         modülü kur.</span></div>`)
     + (yayin ? '' : `<div class="note uyari">${svg(ICON.uyari, 15)}
         <span><b>Yayın adresi yok.</b> Claude uygulamayı hangi adrese
@@ -6695,7 +6703,7 @@ function projeDuraklari(p) {
     } : {
       /* Sıra kilitli olduğu için bu durağa gelindiğinde Bağlantılar zaten
          bitmiş oluyor — burada tekrar depo/sohbet kontrolü gerekmiyor. */
-      ad: 'Kurulum ve yapı',
+      ad: 'Yapı planlama',
       bitti: gercek > 0 && s.sayfa > 0,
       ozet: gercek && s.sayfa
         ? `${gercek} modül · ${s.sayfa} sayfa`
@@ -6715,17 +6723,32 @@ function projeDuraklari(p) {
         return 'Veri ve format hazır — sıra giriş ve kullanıcı eklemede.';
       })(),
     } : {
-      /* İki bölüm: ilk kurulum (plan + beş aşama) bitmeden sürekli
-         geliştirme ekranı gösterilmiyor (bkz. betaSayfasi). "Bitti" burada
-         da kullanıcının elle "Beta ve geliştirme bitti" demesine bağlı. */
-      ad: 'Beta ve geliştirme',
-      bitti: gelistirmeBitti(p),
+      /* Plan + (varsa) veritabanı + beş kod aşaması. Hepsi bitmeden Beta
+         açılmıyor — denenecek bir uygulama yok. */
+      ad: 'Kurulum',
+      bitti: kurulumSihirbazListesi(p).every(k => kurulumSihirbazAdimBittiMi(k, p)),
       ozet: (() => {
         const liste = kurulumSihirbazListesi(p);
         const biten = liste.filter(k => kurulumSihirbazAdimBittiMi(k, p)).length;
-        if (biten < liste.length) return `İlk kurulum: ${biten}/${liste.length} adım`;
-        return gelistirmeBitti(p) ? 'Tamamlandı.' : 'Yayında — dene, eksik gördüğünü anlat.';
+        return biten < liste.length
+          ? `${biten}/${liste.length} adım` : 'Kurulum tamamlandı.';
       })(),
+    },
+    paketli ? {
+      /* Şablon kopyasında bu döngü "Değişim" durağının içinde — slot sırayı
+         bozmasın diye duruyor, tamamen gizli. */
+      ad: 'Beta ve geliştirme',
+      bitti: true,
+      sayilmaz: true,
+      gizli: true,
+      ozet: 'Değişim durağına taşındı.',
+    } : {
+      /* "Bitti" kullanıcının elle "Beta ve geliştirme bitti" demesine bağlı:
+         denemenin kendiliğinden biteceği bir an yok. */
+      ad: 'Beta ve geliştirme',
+      bitti: gelistirmeBitti(p),
+      ozet: gelistirmeBitti(p)
+        ? 'Tamamlandı.' : 'Yayında — dene, eksik gördüğünü anlat.',
     },
     paketli ? {
       /* Yalnız şablon kopyalarında görünür: normal projede bu döngü zaten
@@ -7489,7 +7512,7 @@ function render() {
   }
   /* Bağlantılar aşamasından çıkınca açık kart hatırlanmasın. */
   if (sayfa !== 'baglantilar') ACIK_BAGLANTI = null;
-  if (sayfa !== 'beta') ACIK_KURULUM = null;
+  if (sayfa !== 'kurulum') ACIK_KURULUM = null;
 
   /* Kurulum durağından çıkıldıysa modül ağacı kapanır — aynı sebeple:
      geri gelindiğinde ağacın içine değil kurulum ızgarasına düşülsün.

@@ -7,7 +7,7 @@ const APP = {
   name:     'NIZAM | Studio',
   short:    'NIZAM Studio',
   owner:    'Nizam Soft',
-  version: 'v0.211.0',
+  version: 'v0.212.0',
   build:    '2026-09-17',
   /* Studio'nun kendi deposu — "bütün programlarda geçerli olsun"
      istekleri buraya gider. */
@@ -918,7 +918,7 @@ const KAPAK_RENKLERI = [
 
 const PAKET_AKISLARI = [
   { anahtar: 'ozel',     ad: 'Normal kurulum',
-    alt: 'Kurulum ve yapı → Beta ve geliştirme' },
+    alt: 'Yapı planlama → Kurulum → Beta' },
   { anahtar: 'muhasebe', ad: 'Hazır programın kurulumu',
     alt: 'Değişim → Test ve Güncelle' },
 ];

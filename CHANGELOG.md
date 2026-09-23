@@ -1,5 +1,12 @@
 # Değişiklik Günlüğü
 
+## v0.212.0
+- **Kurulum adımı 10 oldu.** «Beta ve geliştirme» ikiye ayrıldı: yedi adımlık
+  zincir artık kendi durağı — **Kurulum**; onun ardından gelen deneme ve
+  geliştirme döngüsü **Beta ve geliştirme** olarak ayrı duruyor. Tek durakken
+  yedinci adım işaretlenir işaretlenmez ekran bambaşka bir şeye dönüşüyordu.
+- «Kurulum ve yapı» durağının adı **Yapı planlama** oldu.
+
 ## v0.211.0
 - **Beta ve geliştirme, Bağlantılar ve temel'le birebir aynı kalıba geçti.**
   Açılan adımın içi artık kısa numaralı yapılacaklar listesi + iki düğme:
