@@ -104,6 +104,8 @@ let SON_EKRAN      = '';
 /* Tamamlanmış bir aşamaya dönünce form değil özet görünüyor; "Düzenle"
    denince o aşama bu değişkende tutuluyor ve alanlar yeniden açılıyor.
    Başka bir aşamaya geçilince kendiliğinden sıfırlanıyor (bkz. render). */
+/* Bağlantılar aşamasında açık duran bağlantı (kullanıcı başlığa dokununca). */
+let ACIK_BAGLANTI = null;
 let DUZENLENEN_DURAK = null;
 /* Düzenlemeye girerken alınan kopya: "İptal" bu hâle geri döndürüyor.
    (Logo ve işletme görseli ayrı yüklendiği için geri alınmıyor.) */
@@ -2047,38 +2049,68 @@ function fmKartSecim(etiket, kartlar, secili, eylem, projeId) {
    tanışma promptu Claude adımıyla zaten gidiyor, geriye Claude'un
    kurduğunu işaretlemek kalıyor. */
 function baglantilarSayfasi(p, d) {
-  const liste  = baglantiAdimListesi(p);
-  const biten  = liste.filter(k => baglantiAdimBittiMi(k, p)).length;
+  const liste = baglantiAdimListesi(p);
+  const biten = liste.filter(k => baglantiAdimBittiMi(k, p)).length;
+  const pl    = p.palet || {};
 
-  /* Her bağlantı kendi bölümü: biten bağlantı tek satıra iniyor (adres ya da
-     ad yanında yeşil tik), bitmeyen açık duruyor. Eskiden hepsi ayrı bir tam
-     ekran sihirbazın adımıydı; aynı içerik artık aşamanın kendi sayfasında. */
-  /* "Düzenle" denince bağlanmış bölümler de yeniden açılıyor. */
+  /* Açık duran bağlantı: kullanıcı elle açtıysa o, yoksa sıradaki (bitmemiş
+     ilk) bağlantı. "Düzenle" kipinde hepsi açık. */
   const hepsiAcik = durakDuzenlemede(p, 'baglantilar');
-  const bolumler = liste.map(k => {
+  const sirada    = liste.find(k => !baglantiAdimBittiMi(k, p));
+  const acik      = ACIK_BAGLANTI && liste.indexOf(ACIK_BAGLANTI) !== -1
+    ? ACIK_BAGLANTI : sirada;
+
+  /* Bitmiş bağlantının kartında görünen değer — ne bağlandığı bir bakışta
+     okunsun diye. */
+  const deger = k => k === 'github' ? (depoSlug(p.repo) || p.repo || '')
+    : k === 'claude'    ? String(pl.sohbetAdi || '').trim()
+    : k === 'pages'     ? (pl.alanAdi || 'Yayında')
+    : k === 'supabase'  ? String(pl.supabaseUrl || '').trim()
+    : k === 'sql'       ? 'Veritabanı yüklendi'
+    : (pl.alanAdi || 'Bağlandı');
+
+  const satirlar = liste.map((k, i) => {
     const tamam = baglantiAdimBittiMi(k, p);
-    const bitti = tamam && !hepsiAcik;
-    const bas = `
-      <div class="bg-bas">
-        <span class="bg-ik">${servisIkon(BAGLANTI_SERVIS[k], 20)}</span>
-        <span class="bg-ad">${esc(BAGLANTI_ETIKET[k])}</span>
-        <span class="bg-durum ${tamam ? 'tamam' : ''}">${
-          tamam ? `${svg(ICON.tik, 13)} Bağlandı` : 'bekliyor'}</span>
+    const acikMi = hepsiAcik || k === acik;
+    const hal = tamam ? 'bitti' : acikMi ? 'acik' : '';
+    const dg = tamam ? deger(k) : '';
+
+    return `
+      <div class="bgz-s ${hal} ${i === liste.length - 1 ? 'son' : ''}">
+        <span class="bgz-no">${tamam ? svg(ICON.tik, 14) : i + 1}</span>
+        <div class="bgz-kart">
+          <button class="bgz-bas" type="button"
+                  data-eylem="baglanti-ac" data-anahtar="${k}">
+            <span class="bgz-logo">${servisIkon(BAGLANTI_SERVIS[k], 22)}</span>
+            <span class="bgz-yz">
+              <b>${esc(BAGLANTI_ETIKET[k])}</b>
+              <i>${esc(BAGLANTI_ALT[k] || '')}</i>
+            </span>
+            <span class="bgz-durum ${tamam ? 'tamam' : ''}">${
+              tamam ? svg(ICON.tik, 14) : 'Bekliyor'}</span>
+            <span class="bgz-ok ${acikMi ? 'acik' : ''}">${svg(ICON.chevron, 14)}</span>
+          </button>
+          ${tamam && dg && !acikMi ? `<span class="bgz-deger">${esc(dg)}</span>` : ''}
+          ${acikMi ? `
+            <div class="bgz-ic">
+              ${(BAGLANTI_ADIMLARI[k] || []).length ? `
+                <ol class="bgz-adimlar">
+                  ${BAGLANTI_ADIMLARI[k].map(x => `<li>${esc(x)}</li>`).join('')}
+                </ol>` : ''}
+              ${baglantiGovdesi(k, p)}
+            </div>` : ''}
+        </div>
       </div>`;
-    return `<div class="bg-k ${bitti ? 'bitti' : ''}">
-      ${bas}
-      ${bitti ? '' : `<div class="bg-ic">${baglantiGovdesi(k, p)}</div>`}
-    </div>`;
   }).join('');
 
   return `<div class="fb-govde">`
     + adimBasligi(p, d, biten + '/' + liste.length)
     + (biten === liste.length
         ? fmTamamBar(p, 'baglantilar', 'Bütün bağlantılar kuruldu.') : '')
-    + `<div class="fm-liste">${bolumler}</div>`
+    + `<div class="bgz">${satirlar}</div>`
     /* Depoyu elle yapıştırmak ve kimlik dosyasını görmek her zaman
        açık kalsın — bağlantılar bitse de buraya dönülüyor. */
-    + `<div class="fb-kg tek" style="margin-top:14px">
+    + `<div class="fb-kg tek" style="margin-top:16px">
         ${kunyeSatiri('#b8926b', ICON.dal,   'Kod deposu',
                       depoSlug(p.repo) || p.repo, 'repo', p.id, false, 'dokun, yapıştır')}
         ${kunyeSatiri('#9b7fd4', ICON.dosya, 'Proje kimliği', 'NIZAM.md', 'kimlik', p.id)}
@@ -2086,6 +2118,29 @@ function baglantilarSayfasi(p, d) {
     + `</div>`;
 }
 
+/* Her bağlantının tek satırlık tanımı ve yapılacak işlerin kısa listesi.
+   Uzun "neden iyi" listelerinin yerini bunlar aldı: kullanıcı ne yapacağını
+   okusun, servisin reklamını değil. */
+const BAGLANTI_ALT = {
+  github: 'Kodun durduğu yer.',
+  claude: 'Kurulumu yapan asistan.',
+  pages: 'Siteyi canlıya al.',
+  supabase: 'Veritabanı bağlantısı.',
+  sql: 'Hazır veritabanı.',
+  namecheap: 'Kendi alan adın.',
+};
+
+const BAGLANTI_ADIMLARI = {
+  github: ['GitHub\'da yeni depo açın.', 'Depo oluştuysa onaylayın.'],
+  claude: ['Başlangıç metnini kopyalayın.', 'Claude\'a yeni sohbet açıp yapıştırın.',
+           'Sohbete bir ad verin.'],
+  pages: ['Yayın ayarlarını açın.', 'Site açıldıysa onaylayın.'],
+  supabase: ['Supabase\'de proje açın.', 'Proje adresi ile anon key\'i yapıştırın.'],
+  sql: ['Üç parçayı sırayla kopyalayın.', 'Supabase\'in SQL ekranında çalıştırın.',
+        '"Yüklendi" diye işaretleyin.'],
+  namecheap: ['DNS kayıtlarını kopyalayın.', 'Alan adı sağlayıcınıza girin.',
+              '"Bağlandı" diye işaretleyin.'],
+};
 /* Bir bağlantının gövdesi. Eski sihirbazın adım gövdeleri olduğu gibi
    kullanılıyor — içerikleri değişmedi, yalnız yerleri değişti. */
 function baglantiGovdesi(k, p) {
@@ -13852,6 +13907,12 @@ async function eylemCalistir(el) {
     if (od && od.blur) od.blur();
     setTimeout(() => { DUZENLENEN_DURAK = null; DUZENLEME_YEDEK = null; render(); }, 60);
     return;
+  }
+
+  /* Bağlantı kartını aç/kapat. */
+  if (e === 'baglanti-ac') {
+    ACIK_BAGLANTI = ACIK_BAGLANTI === el.dataset.anahtar ? '' : el.dataset.anahtar;
+    return render();
   }
 
   /* Tamamlanmış aşamayı yeniden aç — girerken bir kopya alınıyor ki

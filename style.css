@@ -9568,3 +9568,104 @@ textarea.fm-gir { height: auto; padding: 0 0 12px; resize: vertical; line-height
 }
 .fm .rol-rozet { font-size: 11px; padding: 5px 11px; letter-spacing: 0; }
 .fm .rol-sayi-cp { padding: 15px 4px; font-size: 13px; border-radius: 13px; }
+
+/* ==========================================================================
+   24 · BAĞLANTI ZİNCİRİ — solda numaralı dikey çizgi, sağda kartlar
+   ========================================================================== */
+.bgz { display: flex; flex-direction: column; }
+.bgz-s { position: relative; display: flex; gap: 12px; padding-bottom: 12px; }
+/* Numaraları birleştiren dikey çizgi. */
+.bgz-s::before {
+  content: ''; position: absolute; left: 15px; top: 34px; bottom: -2px;
+  width: 2px; background: var(--line-2);
+}
+.bgz-s.son::before { display: none; }
+.bgz-s.bitti::before { background: var(--st-done); }
+.bgz-no {
+  position: relative; z-index: 1; flex: 0 0 32px;
+  display: flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; margin-top: 12px; border-radius: 999px;
+  background: var(--surface-3); color: var(--ink-dim);
+  font-family: var(--yazi-etiket); font-size: 13.5px; font-weight: 700;
+}
+.bgz-no svg { fill: none; stroke: currentColor; stroke-width: 2.6; }
+.bgz-no .dolgu { display: none; }
+.bgz-s.bitti .bgz-no { background: var(--st-done); color: #fff; }
+.bgz-s.acik  .bgz-no { background: var(--red); color: #fff; }
+
+.bgz-kart {
+  flex: 1; min-width: 0; border-radius: 16px; overflow: hidden;
+  background: var(--surface); border: 1.5px solid var(--line-3);
+}
+.bgz-s.acik .bgz-kart { border-color: var(--red-cizgi); background: var(--red-soft); }
+.bgz-s.bitti .bgz-kart { background: var(--yuva); }
+.bgz-bas {
+  display: flex; align-items: center; gap: 11px; width: 100%;
+  padding: 13px 13px; text-align: left; cursor: pointer;
+  background: none; border: 0; font-family: inherit;
+}
+.bgz-logo {
+  flex: 0 0 auto; display: flex; align-items: center; justify-content: center;
+  width: 42px; height: 42px; border-radius: 12px;
+  background: var(--surface); border: 1px solid var(--line-3);
+}
+.bgz-yz { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.bgz-yz b {
+  font-family: var(--yazi-baslik); font-size: 15.5px; font-weight: 700;
+  color: var(--ink-strong);
+}
+.bgz-yz i {
+  font-style: normal; font-size: 12.5px; line-height: 1.35; color: var(--ink-dim);
+  /* Kısa açıklama sığmazsa üç noktaya inmesin, ikinci satıra insin. */
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.bgz-durum {
+  flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center;
+  gap: 5px; padding: 5px 9px; border-radius: 999px;
+  background: var(--surface-2); color: var(--ink-soft);
+  font-size: 11.5px; font-weight: 700; white-space: nowrap;
+}
+.bgz-durum::before {
+  content: ''; width: 7px; height: 7px; border-radius: 999px; background: var(--ink-dim);
+}
+.bgz-s.acik .bgz-durum { background: var(--red-soft); color: var(--red-ink); }
+.bgz-s.acik .bgz-durum::before { background: var(--red); }
+.bgz-durum.tamam {
+  width: 30px; height: 30px; padding: 0; background: var(--st-done); color: #fff;
+}
+.bgz-durum.tamam::before { display: none; }
+.bgz-durum svg { fill: none; stroke: currentColor; stroke-width: 2.6; }
+.bgz-durum .dolgu { display: none; }
+.bgz-ok { flex: 0 0 auto; line-height: 0; color: var(--ink-dim); transition: transform .2s var(--ease); }
+.bgz-ok svg { fill: none; stroke: currentColor; stroke-width: 2; }
+.bgz-ok .dolgu { display: none; }
+.bgz-ok.acik { transform: rotate(-90deg); }
+.bgz-deger {
+  display: block; margin: 0 13px 13px; padding: 7px 11px; border-radius: 10px;
+  background: var(--surface); border: 1px solid var(--line-3);
+  font-family: var(--yazi-kod); font-size: 12.5px; color: var(--ink-soft);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.bgz-ic { padding: 0 13px 14px; }
+/* Yapılacaklar: kısa, numaralı. */
+.bgz-adimlar {
+  list-style: none; counter-reset: bgz; margin: 0 0 14px; padding: 0;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.bgz-adimlar li {
+  counter-increment: bgz; position: relative; padding-left: 32px;
+  font-size: 13.5px; line-height: 1.45; color: var(--ink);
+}
+.bgz-adimlar li::before {
+  content: counter(bgz); position: absolute; left: 0; top: -1px;
+  display: flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px; border-radius: 999px;
+  background: var(--surface); border: 1px solid var(--line-2);
+  font-family: var(--yazi-etiket); font-size: 11.5px; font-weight: 700; color: var(--ink-soft);
+}
+/* Eski sihirbaz gövdesinden gelen başlık ve "neden iyi" listeleri burada
+   fazlalık: kartın başlığı zaten servisi söylüyor, adımlar da yukarıda. */
+.bgz-ic .sh-bas { display: none; }
+.bgz-ic .ba-oz-liste { display: none; }
+.bgz-ic .sayfa-dug { width: 100%; justify-content: center; }

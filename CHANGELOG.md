@@ -1,5 +1,15 @@
 # Değişiklik Günlüğü
 
+## v0.192.0
+**Bağlantılar ve temel yeniden kuruldu.** Bağlantılar artık solda numaralı
+dikey bir zincir, sağda kartlar:
+- Biten bağlantının numarası yeşil tik, kartında ne bağlandığı yazıyor
+  (depo adı, sohbet adı, adres…).
+- Sıradaki bağlantı açık ve kırmızı çerçeveli; başlığa dokunarak istediğin
+  bağlantıyı açıp kapatabiliyorsun.
+- Açık kartta önce **yapılacaklar** kısa ve numaralı, sonra düğmeler geliyor.
+- Servislerin "neden iyi" listeleri kaldırıldı.
+
 ## v0.191.0
 - **Katmanlar yeni tasarım**: her katman iri bir kart — numara rozeti, renkli
   simge, adı ve tek satır açıklaması ("Tüm yetkilere sahiptir.", "Yönetim ve
