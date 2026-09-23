@@ -1,5 +1,12 @@
 # Değişiklik Günlüğü
 
+## v0.206.0
+- Yeşil şeritteki **"Yeni bölüm" düğmesi kaldırıldı** — "tamamlandı" yazısı
+  yeterli.
+- **Güncelleme promptu** ve **Güncelle**, Modüller ekranından çıkıp aşamanın
+  en altına taşındı; adım tamamlanınca orada görünüyorlar. Modüller ekranı
+  yalnız listeden ibaret.
+
 ## v0.205.0
 - Modül kurulduysa "Kurulum ve yapı" aşaması **tamamlandı görünümüne**
   geçiyor: yeşil şerit + "Modülleri incele". İki adım kartı boşuna açık

@@ -1751,9 +1751,9 @@ function fmTamamBar(p, anahtar, mesaj, dugmeAd) {
         <b>Bu adım tamamlandı</b>
         <i>${esc(mesaj || 'Zorunlu bilgiler dolduruldu.')}</i>
       </span>
-      <button class="fm-duzenle" type="button" data-eylem="durak-duzenle"
-              data-proje="${p.id}" data-durak="${anahtar}">
-        ${svg(ICON.kalem, 14)} ${esc(dugmeAd || 'Düzenle')}</button>
+      ${dugmeAd === false ? '' : `<button class="fm-duzenle" type="button"
+              data-eylem="durak-duzenle" data-proje="${p.id}" data-durak="${anahtar}">
+        ${svg(ICON.kalem, 14)} ${esc(dugmeAd || 'Düzenle')}</button>`}
     </div>`;
 }
 
@@ -4050,28 +4050,35 @@ function agacEkrani(p, t) {
         <span><b>Henüz modül yok</b>Claude'un verdiği bloğu yapıştırınca burada görünecek.</span>
       </div>`)
 
-    + `<div class="md-ayrac"></div>`
-    + `<div class="md-grup">Güncelleme</div>`
-    + `<a class="md-is" target="_blank" rel="noopener"
-         data-pano="modulGuncelle:${encodeURIComponent(moduller[0] ? moduller[0].ad : '')}"
-         data-proje="${p.id}" data-hedef="Claude Code"
-         href="${esc(claudeAdresi(depoSlug(p.repo)))}">
-        <span class="md-is-ik">${svg(ICON.kopya, 18)}</span>
-        <span class="md-yz">
-          <b>Güncelleme promptu</b>
-          <i>Koddaki yapıyla buradaki kaydı karşılaştırır, eksikleri bulur.</i>
-        </span>
-        <span class="md-ok">${svg(ICON.chevron, 15)}</span>
-      </a>
-      <button class="md-is ikincil" type="button" data-eylem="yapi-kur-pano" data-proje="${p.id}">
-        <span class="md-is-ik">${svg(ICON.ice, 18)}</span>
-        <span class="md-yz">
-          <b>Güncelle</b>
-          <i>Claude'un verdiği blok panodayken bas.</i>
-        </span>
-        <span class="md-ok">${svg(ICON.chevron, 15)}</span>
-      </button>`
     + `</div>`;
+}
+
+/* Güncelleme işleri: promptu al, cevabı kur. Aşamanın en altında duruyor —
+   modül listesinin içinde dururken modülmüş gibi okunuyordu. */
+function yapiGuncellemeIsleri(p) {
+  const ilk = (DB.modulleri(p.id).find(m => m.ad !== GENEL_MODUL) || {}).ad || '';
+  return `
+    <div class="md-ayrac"></div>
+    <div class="md-grup">Güncelleme</div>
+    <a class="md-is" target="_blank" rel="noopener"
+       data-pano="modulGuncelle:${encodeURIComponent(ilk)}"
+       data-proje="${p.id}" data-hedef="Claude Code"
+       href="${esc(claudeAdresi(depoSlug(p.repo)))}">
+      <span class="md-is-ik">${svg(ICON.kopya, 18)}</span>
+      <span class="md-yz">
+        <b>Güncelleme promptu</b>
+        <i>Koddaki yapıyla buradaki kaydı karşılaştırır, eksikleri bulur.</i>
+      </span>
+      <span class="md-ok">${svg(ICON.chevron, 15)}</span>
+    </a>
+    <button class="md-is ikincil" type="button" data-eylem="yapi-kur-pano" data-proje="${p.id}">
+      <span class="md-is-ik">${svg(ICON.ice, 18)}</span>
+      <span class="md-yz">
+        <b>Güncelle</b>
+        <i>Claude'un verdiği blok panodayken bas.</i>
+      </span>
+      <span class="md-ok">${svg(ICON.chevron, 15)}</span>
+    </button>`;
 }
 
 /* Sayfa satırının altındaki tek satır: amacın ilk cümlesi. */
@@ -4297,8 +4304,9 @@ function anlatEkrani(p, t, d) {
   if (moduller.length && !durakDuzenlemede(p, 'yapi')) {
     return `<div class="fb-govde">`
       + adimBasligi(p, d, '2/2')
-      + fmTamamBar(p, 'yapi', 'Programın yapısı kuruldu.', 'Yeni bölüm')
+      + fmTamamBar(p, 'yapi', 'Programın yapısı kuruldu.', false)
       + incele
+      + yapiGuncellemeIsleri(p)
       + `</div>`;
   }
 
