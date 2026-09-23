@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.189.0
+- Logo kutusu: **düzenlerken iri**, tamamlanmış aşamada daha küçük.
+
 ## v0.188.0
 - Tamamlanmış aşamada logo yine **kare kutu** olarak görünüyor (satır değil),
   düzenleme kutusundan biraz daha iri ve tıklanmıyor.

@@ -1948,8 +1948,8 @@ function firmaSayfasi(p, d) {
 /* Logo alanı: isteğe bağlı ama her zaman görünür — aşama tamamlandıktan
    sonra da duruyor. */
 function fmLogoAlani(p, logo, salt) {
-  /* İki hâlde de aynı kare kutu — tamamlanmış aşamada biraz daha büyük ve
-     tıklanmıyor: yanlışlıkla dokunup logo değiştirmek yok, değiştirmek için
+  /* İki hâlde de aynı kare kutu. Düzenlerken daha iri (dokunulacak alan),
+     tamamlanmış aşamada daha küçük ve tıklanmıyor — değiştirmek için
      "Düzenle" gerekiyor. */
   const ic = logo ? '' : (salt
     ? `${svg(ICON.resim, 22)}<b>Logo yok</b>`
@@ -1960,8 +1960,8 @@ function fmLogoAlani(p, logo, salt) {
     <div class="fm">
       <span class="fm-et">Logo${salt ? '' : ' <i>(Opsiyonel)</i>'}</span>
       ${salt
-        ? `<span class="fm-logo buyuk salt ${logo ? 'dolu' : ''}" ${zemin}>${ic}</span>`
-        : `<button class="fm-logo ${logo ? 'dolu' : ''}" type="button"
+        ? `<span class="fm-logo salt ${logo ? 'dolu' : ''}" ${zemin}>${ic}</span>`
+        : `<button class="fm-logo buyuk ${logo ? 'dolu' : ''}" type="button"
              data-eylem="logo-yukle" data-proje="${p.id}" ${zemin}>${ic}</button>`}
     </div>`;
 }
