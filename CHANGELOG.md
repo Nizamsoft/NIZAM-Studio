@@ -1,5 +1,15 @@
 # Değişiklik Günlüğü
 
+## v0.224.0
+- Güvenlik kontrolündeki kurulum maddeleri sadeleşti: **«Edge Function
+  oluşturdum» maddesi kalktı** — o gerçekten tek seferlik ve Studio'nun
+  kendi Supabase'inde duruyor; kod güncellenirse diye kopyalama düğmesi
+  alttaki nota indi. Kalan iki madde artık projenin adıyla konuşuyor
+  («… projesinin Supabase hesabında») ve secret'ın silinmeden
+  değiştirilebildiği yazıyor.
+- İşaretler tarayıcı yerine **projeye** kaydediliyor: jeton hesaba ait,
+  her müşterinin Supabase hesabı ayrı olabiliyor.
+
 ## v0.223.0
 - Güvenlik kontrolü görsele göre yeniden çizildi: kurulum maddeleri tek
   kartta satır satır (solda renkli ikon, sağda büyük yeşil tik), erişim

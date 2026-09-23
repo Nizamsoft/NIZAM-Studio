@@ -6708,42 +6708,34 @@ function guvenlikSonTestKarti(p, pl) {
       da SQL'de bir şey değiştiyse yeniden ölç — eski sonuç yeni hâli anlatmaz.</p>`);
 }
 
-/* Köprü kurulumu bir kere yapılıyor ve bütün projelerde geçerli — o yüzden
-   projeye değil tarayıcıya yazılıyor. Üç madde de işaretlenince liste tek
-   satıra iniyor: ekranda asıl iş test etmek, kurulumu anlatmak değil. */
-const GUVENLIK_KURULUM_ANAHTAR = 'ns-guvenlik-kurulum';
-
-function guvenlikKurulumOku() {
-  try { return JSON.parse(localStorage.getItem(GUVENLIK_KURULUM_ANAHTAR) || '{}') || {}; }
-  catch (h) { return {}; }
-}
-function guvenlikKurulumYaz(o) {
-  try { localStorage.setItem(GUVENLIK_KURULUM_ANAHTAR, JSON.stringify(o)); } catch (h) {}
-}
-/* Liste kapalıyken "Düzenle"ye basılınca açılıyor — yalnız ekran durumu. */
+/* Kurulum artık projeye yazılıyor, tarayıcıya değil: jeton hesaba ait ve
+   her müşterinin Supabase hesabı ayrı olabiliyor — yeni projede jeton da
+   secret de yeniden yapılıyor. Edge Function maddesi kalktı; o gerçekten
+   tek seferlik ve Studio'nun kendi Supabase'inde duruyor. */
 let GUVENLIK_KURULUM_ACIK = false;
 
 const GUVENLIK_KURULUM_ADIM = [
-  { no: 'jeton', ikon: 'gVeri', ad: 'Supabase jetonu oluşturdum',
-    alt: 'Projelerin durduğu Supabase hesabından legacy access token aldım.',
+  { no: 'jeton', ikon: 'anahtar', ad: 'Jetonu oluşturdum',
+    alt: p => (projeAdi(p) || 'Bu proje') + ' projesinin Supabase hesabında '
+       + 'Account → Access Tokens → Generate new token → Create legacy token '
+       + 'yaptım. Değer sbp_ ile başlıyor.',
     adres: 'https://supabase.com/dashboard/account/tokens', adresAd: 'Jeton sayfasını aç' },
-  { no: 'fonksiyon', ikon: 'gAltyapi', ad: 'Edge Function oluşturdum',
-    alt: 'Studio\'nun Supabase\'inde adı guvenlik-sql olan fonksiyonu kurdum.',
-    eylem: 'guvenlik-sql-kopyala', eylemAd: 'Fonksiyon kodunu kopyala' },
-  { no: 'secret', ikon: 'kilit', ad: 'Jetonu fonksiyona ekledim',
-    alt: 'Settings → Secrets → NS_SUPABASE_JETON adıyla kaydettim.' },
+  { no: 'secret', ikon: 'kilit', ad: 'Jetonu Studio\'ya tanıttım',
+    alt: () => 'Studio\'nun Supabase\'inde guvenlik-sql fonksiyonu → Settings → '
+       + 'Secrets → NS_SUPABASE_JETON değerini bu jetonla değiştirdim. '
+       + 'Aynı adla kaydetmek üzerine yazıyor, silmeye gerek yok.' },
 ];
 
-function guvenlikKurulumBolumu() {
-  const durum = guvenlikKurulumOku();
+function guvenlikKurulumBolumu(p) {
+  const durum = (p.palet || {}).guvenlikKurulum || {};
   const hepsi = GUVENLIK_KURULUM_ADIM.every(a => durum[a.no]);
 
   if (hepsi && !GUVENLIK_KURULUM_ACIK) {
     return `
       <div class="gk-ozet">
         <span class="gk-ozet-ik">${svg(ICON.tik, 15)}</span>
-        <span class="gk-ozet-yz"><b>Köprü kurulu</b>
-          <i>Bir kere kurulur, bütün projelerde geçerli.</i></span>
+        <span class="gk-ozet-yz"><b>Jeton hazır</b>
+          <i>Bu projenin hesabından alınan jeton Studio'ya tanıtıldı.</i></span>
         <button class="gk-ozet-btn" type="button" data-eylem="guvenlik-kurulum-ac">Düzenle</button>
       </div>`;
   }
@@ -6755,21 +6747,22 @@ function guvenlikKurulumBolumu() {
           <span class="gk-ik">${svg(ICON[a.ikon], 20)}</span>
           <span class="gk-yz">
             <b>${esc(a.ad)}</b>
-            <i>${esc(a.alt)}</i>
-            ${durum[a.no] ? '' : (a.adres ? `
+            <i>${esc(a.alt(p))}</i>
+            ${durum[a.no] || !a.adres ? '' : `
               <a class="gk-btn" target="_blank" rel="noopener" href="${a.adres}">
-                ${svg(ICON.disari, 13)} ${esc(a.adresAd)}</a>` : '')}
-            ${durum[a.no] ? '' : (a.eylem ? `
-              <button class="gk-btn" type="button" data-eylem="${a.eylem}">
-                ${svg(ICON.kopya, 13)} ${esc(a.eylemAd)}</button>` : '')}
+                ${svg(ICON.disari, 13)} ${esc(a.adresAd)}</a>`}
           </span>
           <button class="gk-tik" type="button" data-eylem="guvenlik-kurulum-tik"
-                  data-no="${a.no}" aria-label="${esc(a.ad)}">${svg(ICON.tik, 15)}</button>
+                  data-proje="${p.id}" data-no="${a.no}"
+                  aria-label="${esc(a.ad)}">${svg(ICON.tik, 15)}</button>
         </div>`).join('')}
     </div>
     <p class="gk-not">${svg(ICON.info, 13)}
-      <span>Studio yeni sürüm çıkarınca fonksiyonun <b>Code</b> sekmesine kodu
-      yeniden yapıştırıp deploy et — Secrets\'a dokunma.</span></p>`;
+      <span>Köprü fonksiyonu (<b>guvenlik-sql</b>) Studio'nun Supabase'inde bir
+      kere kuruldu, projeye göre değişmiyor. Yalnız «fonksiyon kodu güncellendi»
+      dediğimde yeniden yapıştır:
+      <button class="gk-ic-btn" type="button" data-eylem="guvenlik-sql-kopyala">
+        kodu kopyala</button></span></p>`;
 }
 
 /* ---------- 10 · Güvenlik kontrolü ----------
@@ -6794,7 +6787,7 @@ function guvenlikDurakSayfasi(p, d) {
 
   return `<div class="fb-govde">`
     + adimBasligi(p, d, '')
-    + guvenlikKurulumBolumu()
+    + guvenlikKurulumBolumu(p)
     + (o ? `
       <div class="gk-son ${o.acik ? 'acik' : 'temiz'}">
         <span class="gk-son-ik">${svg(o.acik ? ICON.uyari : ICON.tik, 16)}</span>
@@ -16065,12 +16058,15 @@ async function eylemCalistir(el) {
   }
 
   if (e === 'guvenlik-kurulum-tik') {
-    const durum = guvenlikKurulumOku();
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const pl = pr.palet || {};
+    const durum = Object.assign({}, pl.guvenlikKurulum || {});
     durum[el.dataset.no] = !durum[el.dataset.no];
-    guvenlikKurulumYaz(durum);
     /* Hepsi işaretlenince liste kendiliğinden kapanıyor. */
     if (GUVENLIK_KURULUM_ADIM.every(a => durum[a.no])) GUVENLIK_KURULUM_ACIK = false;
-    return render();
+    return isYap(() => DB.paletKaydet(pr.id,
+      Object.assign({}, pl, { guvenlikKurulum: durum })));
   }
 
   if (e === 'guvenlik-sifre-goster') {

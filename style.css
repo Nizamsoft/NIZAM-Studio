@@ -10252,3 +10252,9 @@ textarea.fm-gir { height: auto; padding: 0 0 12px; resize: vertical; line-height
 .gk-son.temiz .gk-son-yz b { color: var(--st-done-t); }
 .gk-son.acik  .gk-son-yz b { color: var(--red-ink); }
 .gk-son-yz i { font-style: normal; font-size: 12.5px; color: var(--ink-soft); }
+/* Not satırının içindeki küçük düğme — ayrı bir kutu açmıyor. */
+.gk-ic-btn {
+  padding: 0; border: 0; background: none; cursor: pointer;
+  font: inherit; font-weight: 700; color: var(--ink-strong);
+  text-decoration: underline; text-underline-offset: 2px;
+}
