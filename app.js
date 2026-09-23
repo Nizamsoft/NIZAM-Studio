@@ -2133,8 +2133,9 @@ const BAGLANTI_ALT = {
 const BAGLANTI_ADIMLARI = {
   github: ['GitHub\'da yeni depo açın.',
            'Depo oluştuktan sonra buradan bağlandığını işaretleyin.'],
-  claude: ['Başlangıç metnini kopyalayın.', 'Claude\'a yeni sohbet açıp yapıştırın.',
-           'Sohbete bir ad verin.'],
+  claude: ['Düğmeye basın: metin kopyalanır, Claude açılır.',
+           'Yeni sohbet açıp yapıştırın.',
+           'Sohbete verdiğiniz adı aşağıya yazıp işaretleyin.'],
   pages: ['Yayın ayarlarını açın.', 'Site açıldıysa onaylayın.'],
   supabase: ['Supabase\'de proje açın.', 'Proje adresi ile anon key\'i yapıştırın.'],
   sql: ['Üç parçayı sırayla kopyalayın.', 'Supabase\'in SQL ekranında çalıştırın.',
@@ -11625,32 +11626,31 @@ function baglantiAdimGithub(p) {
 /* 2 · Claude — tanışma promptu kopyalanınca sohbet adı soruluyor, aynen
    eskisi gibi (`tanisma-prompt` / `sohbet-adi` eylemleri). */
 function baglantiAdimClaude(p) {
-  const pl    = p.palet || {};
-  const depo  = !!p.repo;
-  const kopya = !!pl.sohbetAcildi;
-  const isim  = String(pl.sohbetAdi || '').trim();
+  const pl   = p.palet || {};
+  const depo = !!p.repo;
+  const isim = String(pl.sohbetAdi || '').trim();
 
-  const durum = isim ? baDurum('Bağlantı kuruldu', isim) : '';
+  if (!depo) {
+    return shBaslikServis('claude', 'Claude\'a bağlan', '')
+      + `<p class="ipucu">Önce GitHub adımından depo bağlanmalı.</p>`;
+  }
 
-  const buton = !depo
-    ? `<p class="ipucu" style="margin-bottom:14px">Önce GitHub adımından depo bağlanmalı.</p>`
-    : isim ? ''
-      : kopya
-        ? `<button class="sayfa-dug" type="button" data-eylem="sohbet-adi" data-proje="${p.id}">
-            ${svg(ICON.dosya, 15)} Sohbete ad ver</button>`
-        : `<button class="sayfa-dug" type="button" data-eylem="tanisma-prompt" data-proje="${p.id}">
-            ${svg(ICON.dosya, 15)} Claude ile bağlan</button>`;
-
-  return shBaslikServis('claude', 'Claude\'a bağlan',
-    'Depoyu Claude Code\'a tanıtan ilk prompt. Kimlik dosyasını ve kurulumu buradan alır.')
-    + durum + buton
-    + baOzellikler([
-      'Nizam Standardı ve kimlik dosyası otomatik kurulur',
-      'Görevler doğrudan bu sohbette işlenir',
-      'Sonra hangi sohbete döneceğini adıyla bulursun',
-    ]);
+  /* Tek düğme: başlangıç metnini panoya yazıp Claude'u açıyor. Sohbetin adı
+     ayrı bir pencerede değil, hemen altındaki kutuda — ekran değiştirmeden
+     yazılıp işaretleniyor. */
+  return shBaslikServis('claude', 'Claude\'a bağlan', '')
+    + `<button class="sayfa-dug" type="button" data-eylem="tanisma-prompt" data-proje="${p.id}">
+        ${svg(ICON.kopya, 15)} Kopyala ve Claude'u aç</button>
+      <span class="fm-kutu" style="margin:10px 0">
+        <span class="fm-ik">${svg(ICON.dosya, 16)}</span>
+        <input class="fm-gir" type="text" id="ba-sohbet" value="${esc(isim)}"
+               placeholder="Sohbete verdiğiniz adı yazın…" autocomplete="off"
+               maxlength="60">
+      </span>
+      <button class="sayfa-dug ikincil" type="button"
+              data-eylem="sohbet-adi-kaydet" data-proje="${p.id}">
+        ${svg(ICON.tik, 15)} Bağlandı olarak işaretle</button>`;
 }
-
 /* 3 · Yayın (GitHub Pages) — bilerek Claude'dan sonra: kod daha
    yazılmadan siteyi yayına almanın anlamı yok. Sekmeden dönünce
    PAGES_BEKLIYOR üzerinden bir onay kutusu çıkıyor — "yayında" ancak
@@ -14694,6 +14694,16 @@ async function eylemCalistir(el) {
     supabaseOrgYaz(deger);
     render();
     return toast(deger.trim() ? 'Supabase organizasyonu kaydedildi.' : 'Supabase organizasyonu silindi.');
+  }
+
+  /* Sohbet adı kartın içindeki kutudan kaydediliyor — ayrı pencere yok. */
+  if (e === 'sohbet-adi-kaydet') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const ad = String((($('#ba-sohbet') || {}).value) || '').trim();
+    if (!ad) return toast('Önce sohbete verdiğin adı yaz.', 'uyari');
+    return isYap(() => DB.paletKaydet(pr.id, Object.assign({}, pr.palet || {},
+      { sohbetAdi: ad, sohbetAcildi: true })), 'Claude bağlantısı kaydedildi.');
   }
 
   if (e === 'sohbet-adi') {

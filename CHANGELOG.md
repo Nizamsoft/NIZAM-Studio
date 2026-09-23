@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## v0.194.0
+- Claude bağlantısı tek ekranda: **"Kopyala ve Claude'u aç"** düğmesi metni
+  panoya alıp Claude'u açıyor, hemen altındaki kutuya sohbetin adını yazıp
+  **"Bağlandı olarak işaretle"** diyorsun. Ayrı ad sorma penceresi kalktı.
+
 ## v0.193.0
 - GitHub bağlantısında tek düğme: **"Bağlandı olarak işaretle"**. İki seçenekli
   onay ("Bağlandı, devam et" / "Henüz bağlanmadı") ve "depo gerçekten oluştu
