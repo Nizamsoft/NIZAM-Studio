@@ -9649,6 +9649,15 @@ textarea.fm-gir { height: auto; padding: 0 0 12px; resize: vertical; line-height
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .bgz-ic { padding: 0 13px 14px; }
+/* Zincirin üstündeki tek cümle: bu adımlar ne işe yarıyor. */
+.bgz-not {
+  margin: 0 0 14px; font-size: 13.5px; line-height: 1.5; color: var(--ink-soft);
+}
+.bgz-not b { color: var(--ink-strong); font-weight: 700; }
+/* Açılan adımın giriş cümlesi — eski sihirbaz başlığının yerine geçti. */
+.bgz-gir {
+  margin: 0 0 12px; font-size: 13.5px; line-height: 1.5; color: var(--ink-soft);
+}
 /* Yapılacaklar: kısa, numaralı. */
 .bgz-adimlar {
   list-style: none; counter-reset: bgz; margin: 0 0 14px; padding: 0;
@@ -9670,6 +9679,10 @@ textarea.fm-gir { height: auto; padding: 0 0 12px; resize: vertical; line-height
 .bgz-ic .sh-bas { display: none; }
 .bgz-ic .ba-oz-liste { display: none; }
 .bgz-ic .sayfa-dug { width: 100%; justify-content: center; }
+/* Eski sihirbaz gövdesi düğmeleri 37px içeriden başlıyordu (orada solda
+   adım numarası vardı); zincirde numara kartın dışında, girinti yersiz. */
+.bgz-ic .kur-dug { margin: 0 0 10px; }
+.bgz-ic .kur-deger { margin-left: 0; }
 
 /* Kurulum ve yapı: "anlat" kartlarının kendi parçaları. */
 .bgz-bas.sabit { cursor: default; }

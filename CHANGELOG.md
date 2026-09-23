@@ -1,5 +1,12 @@
 # Değişiklik Günlüğü
 
+## v0.210.0
+- **Beta ve geliştirme: «Doldur» ve tam ekran sihirbaz kalktı.** İlk kurulumun
+  yedi adımı artık Bağlantılar ve temel'deki gibi numaralı dikey zincir:
+  hepsi tek sayfada, sıradaki kendiliğinden açık, başlığa dokununca açılıp
+  kapanıyor. Adımların içindeki onay kutuları tek düğmeye dönüştü
+  («… olarak işaretle»), gövdelerdeki çift başlıklar kalktı.
+
 ## v0.209.0
 - **«Kurulum ve yapı» ekranı kaydırılmıyordu.** Bu durak (tasarım ve beta ile
   birlikte) hâlâ eski «kaydırılmaz akış» kipinde açılıyordu: üç parçanın

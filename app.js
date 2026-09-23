@@ -106,6 +106,8 @@ let SON_EKRAN      = '';
    Başka bir aşamaya geçilince kendiliğinden sıfırlanıyor (bkz. render). */
 /* Bağlantılar aşamasında açık duran bağlantı (kullanıcı başlığa dokununca). */
 let ACIK_BAGLANTI = null;
+/* Beta durağındaki ilk kurulum zincirinde açık duran adım — aynı mekanik. */
+let ACIK_KURULUM = null;
 let DUZENLENEN_DURAK = null;
 /* Düzenlemeye girerken alınan kopya: "İptal" bu hâle geri döndürüyor.
    (Logo ve işletme görseli ayrı yüklendiği için geri alınmıyor.) */
@@ -5001,16 +5003,77 @@ function betaSayfasi(p, d) {
   return tamamMi ? betaGelistirmeEkrani(p, d) : betaKurulumOzeti(p, d, liste);
 }
 
+/* İlk kurulum zinciri — Bağlantılar ve temel'deki kalıbın aynısı: adımlar
+   tek sayfada alt alta, sıradaki kendiliğinden açık. Eskiden "Doldur"
+   düğmesi tam ekran bir sihirbaz açıyordu; yedi adımı görmeden içeri
+   girmek gerekiyordu. */
 function betaKurulumOzeti(p, d, liste) {
-  const biten = liste.filter(k => kurulumSihirbazAdimBittiMi(k, p)).length;
+  const biten  = liste.filter(k => kurulumSihirbazAdimBittiMi(k, p)).length;
+  const sirada = liste.find(k => !kurulumSihirbazAdimBittiMi(k, p));
+  const acik   = kurulumAcik(liste, sirada);
+
+  const satirlar = liste.map((k, i) => {
+    const tamam  = kurulumSihirbazAdimBittiMi(k, p);
+    const acikMi = k === acik;
+    const servis = k === 'sql' ? 'supabase' : 'claude';
+
+    return `
+      <div class="bgz-s ${tamam ? 'bitti' : acikMi ? 'acik' : ''} ${
+        i === liste.length - 1 ? 'son' : ''}">
+        <span class="bgz-no">${tamam ? svg(ICON.tik, 14) : i + 1}</span>
+        <div class="bgz-kart">
+          <button class="bgz-bas" type="button"
+                  data-eylem="kurulum-ac" data-anahtar="${k}">
+            <span class="bgz-logo">${servisIkon(servis, 22)}</span>
+            <span class="bgz-yz">
+              <b>${esc(kurulumSihirbazEtiket(k))}</b>
+              <i>${esc(kurulumAdimAlt(k, p))}</i>
+            </span>
+            <span class="bgz-durum ${tamam ? 'tamam' : ''}">${
+              tamam ? svg(ICON.tik, 14) : 'Bekliyor'}</span>
+            <span class="bgz-ok ${acikMi ? 'acik' : ''}">${svg(ICON.chevron, 14)}</span>
+          </button>
+          ${acikMi ? `<div class="bgz-ic">${kurulumGovdesi(k, p)}</div>` : ''}
+        </div>
+      </div>`;
+  }).join('');
+
   return `<div class="fb-govde">`
     + adimBasligi(p, d, biten + '/' + liste.length)
-    + fbBosKart('#5b8def', ICON.gAltyapi, 'İlk kurulum', biten + '/' + liste.length,
-        'Kurulum ve yapı\'da hazırlanan plan burada gerçek koda dönüşüyor — önce '
-        + 'plan depoya yazılır, sonra beş aşamada uygulama kodu yazılır. '
-        + '<b>Aşamalar sırayla ilerlenir.</b>',
-        'kurulum-sihirbazi-ac', p.id, true)
+    + `<p class="bgz-not">Kurulum ve yapı'da hazırlanan plan burada gerçek koda
+        dönüşüyor. <b>Adımlar sırayla ilerlenir.</b></p>`
+    + `<div class="bgz">${satirlar}</div>`
     + `</div>`;
+}
+
+/* Şu an hangi adım açık: kullanıcı elle açtıysa o, kapattıysa hiçbiri,
+   dokunmadıysa sıradaki. ('-' = kullanıcı açık kartı kapattı.) */
+function kurulumAcik(liste, sirada) {
+  if (ACIK_KURULUM === '-') return '';
+  return (ACIK_KURULUM && liste.indexOf(ACIK_KURULUM) !== -1) ? ACIK_KURULUM : sirada;
+}
+
+/* Satır başlığının altındaki tek cümle — ne yapılacağını söylüyor. */
+const KURULUM_ALT = {
+  blok: 'Plan dosyaları depoya yazılır.',
+  sql:  'Tabloları Supabase\'de kur.',
+};
+const KURULUM_ASAMA_ALT = [
+  'Kabuk, renk ve boş ekranlar.',
+  'Tablolar, panel ve ilk liste.',
+  'Ekleme, düzenleme ve silme.',
+  'Boş/hata ekranları ve ayarlar.',
+  'Animasyon, güncelleme ve hız.',
+];
+function kurulumAdimAlt(k, p) {
+  if (KURULUM_ALT[k]) return KURULUM_ALT[k];
+  return KURULUM_ASAMA_ALT[Number(k.slice(6))] || '';
+}
+
+function kurulumGovdesi(k, p) {
+  return k === 'blok' ? kurulumAdimBlokGovde(p)
+    : k === 'sql'     ? kurulumAdimSqlGovde(p)
+    : kurulumAdimAsamaGovde(p, Number(k.slice(6)));
 }
 
 /* Sürekli geliştirme: yayın adresine gir, dene, eksik gördüğünü anlat,
@@ -5185,9 +5248,8 @@ function kurulumAdimBlokGovde(p) {
   const sunuculu = sunuculuMu(p);
   const durum = pl.blokVerildi ? baDurum('Verildi', 'Dosyalar depoya yazıldı') : '';
 
-  return shBaslikServis('claude', 'Plan depoya yazılsın',
-      'Kurulum ve yapı\'da hazırlanan plan burada gerçek dosyalara dönüşüyor. '
-      + 'Kod henüz yazılmıyor.')
+  return `<p class="bgz-gir">Plan burada gerçek dosyalara dönüşüyor —
+      kod henüz yazılmıyor.</p>`
     + durum
     + (kunyeVar ? '' : `<div class="note uyari">${svg(ICON.uyari, 15)}
         <span><b>Sayfa künyesi yok.</b> Önce <b>Kurulum ve yapı</b> durağında
@@ -5210,9 +5272,10 @@ function kurulumAdimBlokGovde(p) {
           ikincil: !(kunyeVar && yayin),
           yazi: 'Kopyala ve Claude Code\'da aç', kapali: !yayin || !kunyeVar })}
       </div>`
-    + `<label class="kur-onay ${pl.blokVerildi ? 'on' : ''}" data-eylem="beta-blok-onay"
-             data-proje="${p.id}" role="button" tabindex="0">
-        <span class="kur-kutu">${svg(ICON.tik, 12)}</span> Bloğu verdim, dosyalar yazıldı</label>`;
+    + (pl.blokVerildi ? '' : `
+      <button class="sayfa-dug ikincil" type="button" data-eylem="beta-blok-onay"
+              data-proje="${p.id}">
+        ${svg(ICON.tik, 15)} Dosyalar yazıldı olarak işaretle</button>`);
 }
 
 /* 2 · Veritabanı — sunuculu projede SQL'i Supabase'e çalıştırma rehberi.
@@ -5226,9 +5289,9 @@ function kurulumAdimSqlGovde(p) {
   const adres = sqlEditorAdresi(pl.supabaseUrl);
   const adim = (no, ic) => `<div class="adm"><b>${no}</b><span>${ic}</span></div>`;
 
-  return shBaslik(ICON.gVeri, 'Veritabanını kur',
-      'Claude SQL dosyasını yazdı; çalıştıran sensin. Claude Code senin '
-      + 'Supabase\'ine bağlanamıyor.')
+  return `<p class="bgz-gir">Claude SQL dosyasını yazdı; çalıştıran sensin —
+      Claude Code senin Supabase'ine bağlanamıyor.</p>`
+    + (pl.sqlKuruldu ? baDurum('Kuruldu', 'Tablolar Supabase\'de') : '')
     + (bagli ? '' : `<div class="note uyari">${svg(ICON.uyari, 15)}
         <span><b>Supabase bağlantısı girilmemiş.</b> <b>Bağlantılar ve temel</b>
         durağına proje adresini ve anon anahtarını yaz.</span></div>`)
@@ -5251,9 +5314,10 @@ function kurulumAdimSqlGovde(p) {
         <a class="sayfa-dug ${bagli ? '' : 'ikincil'}" target="_blank" rel="noopener"
            href="${esc(adres)}">${svg(ICON.disari, 15)} 2 · SQL editörünü aç</a>
       </div>`
-    + `<label class="kur-onay ${pl.sqlKuruldu ? 'on' : ''}" data-eylem="sql-onay"
-             data-proje="${p.id}" role="button" tabindex="0">
-        <span class="kur-kutu">${svg(ICON.tik, 12)}</span> Tabloları kurdum</label>`;
+    + (pl.sqlKuruldu ? '' : `
+      <button class="sayfa-dug ikincil" type="button" data-eylem="sql-onay"
+              data-proje="${p.id}">
+        ${svg(ICON.tik, 15)} Tabloları kurdum olarak işaretle</button>`);
 }
 
 /* 3-7 · Beş aşamadan biri — gerçek uygulama kodu burada yazılır. Hangi
@@ -5265,8 +5329,9 @@ function kurulumAdimAsamaGovde(p, i) {
   const pl = p.palet || {};
   const bitti = (Array.isArray(pl.asama) ? pl.asama : []).indexOf(i) > -1;
 
-  return shBaslikServis('claude', (i + 1) + ' · ' + a.ad,
-      'Komut kısa — bilgiyi taşımıyor, depodaki dosyaları gösteriyor.')
+  return `<p class="bgz-gir">Komut kısa — bilgiyi taşımıyor, depodaki
+      dosyaları gösteriyor.</p>`
+    + (bitti ? baDurum('Bitti', 'Bu aşamanın kodu yazıldı') : '')
     + `<span class="label">Bu aşamada</span>
        <div class="card"><div class="row-list">
         ${a.yap.map(x => `<div class="row"><div class="row-main">
@@ -5278,9 +5343,10 @@ function kurulumAdimAsamaGovde(p, i) {
         ${promptBaglantisi({ tur: 'asama:' + i, proje: p.id, hedef: 'claude-yeni',
           slug: depoSlug(p.repo), yazi: 'Kopyala ve Claude\'u aç' })}
       </div>`
-    + `<label class="kur-onay ${bitti ? 'on' : ''}" data-eylem="asama-onay"
-             data-proje="${p.id}" data-deger="${i}" role="button" tabindex="0">
-        <span class="kur-kutu">${svg(ICON.tik, 12)}</span> Bu aşama bitti</label>`;
+    + (bitti ? '' : `
+      <button class="sayfa-dug ikincil" type="button" data-eylem="asama-onay"
+              data-proje="${p.id}" data-deger="${i}">
+        ${svg(ICON.tik, 15)} Bu aşama bitti olarak işaretle</button>`);
 }
 
 /* Şema dosyasının depodaki yeri. 3. blok bu adı söylüyor; Studio da aynı
@@ -7433,6 +7499,7 @@ function render() {
   }
   /* Bağlantılar aşamasından çıkınca açık kart hatırlanmasın. */
   if (sayfa !== 'baglantilar') ACIK_BAGLANTI = null;
+  if (sayfa !== 'beta') ACIK_KURULUM = null;
 
   /* Kurulum durağından çıkıldıysa modül ağacı kapanır — aynı sebeple:
      geri gelindiğinde ağacın içine değil kurulum ızgarasına düşülsün.
@@ -14023,6 +14090,16 @@ async function eylemCalistir(el) {
     const sir = pr ? lst.find(x => !baglantiAdimBittiMi(x, pr)) : '';
     /* Açık olana tekrar dokunmak kapatıyor. */
     ACIK_BAGLANTI = baglantiAcik(lst, sir) === el.dataset.anahtar
+      ? '-' : el.dataset.anahtar;
+    return render();
+  }
+
+  /* Kurulum adımını aç/kapat — bağlantı kartlarıyla aynı mekanik. */
+  if (e === 'kurulum-ac') {
+    const pr = DB.proje(rota().id);
+    const lst = pr ? kurulumSihirbazListesi(pr) : [];
+    const sir = pr ? lst.find(x => !kurulumSihirbazAdimBittiMi(x, pr)) : '';
+    ACIK_KURULUM = kurulumAcik(lst, sir) === el.dataset.anahtar
       ? '-' : el.dataset.anahtar;
     return render();
   }
