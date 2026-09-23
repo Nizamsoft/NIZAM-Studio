@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.203.0
+- "Cevabı yapıştır" düğmesi **"Yapıyı kur"** oldu ve **pencere açmıyor**:
+  panodaki bloğu doğrudan okuyup kuruyor.
+- Pano okunamazsa ya da içindeki metin blok değilse eski yapıştırma penceresi
+  açılıyor.
+
 ## v0.202.0
 - "Kurulum ve yapı" aşamasının altına **"Modülleri incele"** düğmesi geldi;
   yanında kaç modül ve kaç sayfa kurulduğu yazıyor.

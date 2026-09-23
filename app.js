@@ -4045,11 +4045,11 @@ function agacEkrani(p, t) {
         </span>
         <span class="md-ok">${svg(ICON.chevron, 15)}</span>
       </a>
-      <button class="md-is ikincil" type="button" data-eylem="anlat-aktar" data-proje="${p.id}">
+      <button class="md-is ikincil" type="button" data-eylem="yapi-kur-pano" data-proje="${p.id}">
         <span class="md-is-ik">${svg(ICON.ice, 18)}</span>
         <span class="md-yz">
-          <b>Cevabı yapıştır</b>
-          <i>Claude'un verdiği bloğu buraya yapıştır.</i>
+          <b>Yapıyı kur</b>
+          <i>Claude'un verdiği blok panodayken bas.</i>
         </span>
         <span class="md-ok">${svg(ICON.chevron, 15)}</span>
       </button>`
@@ -4253,14 +4253,14 @@ function anlatEkrani(p, t, d) {
         <div class="bgz-bas sabit">
           <span class="bgz-yz">
             <b>Yapıyı kur</b>
-            <i>Claude'un verdiği bloğu yapıştır.</i>
+            <i>Claude'un verdiği blok panodayken bas.</i>
           </span>
           <span class="bgz-durum">${dolu ? 'Şimdi' : 'Bekliyor'}</span>
         </div>
         <div class="bgz-ic">
           ${dolu
-            ? `<button class="sayfa-dug" type="button" data-eylem="anlat-aktar" data-proje="${p.id}">
-                ${svg(ICON.ice, 15)} Cevabı yapıştır</button>`
+            ? `<button class="sayfa-dug" type="button" data-eylem="yapi-kur-pano" data-proje="${p.id}">
+                ${svg(ICON.ice, 15)} Yapıyı kur</button>`
             : `<div class="bgz-bos">
                 <span class="bgz-bos-ik">${svg(ICON.dokuman, 20)}</span>
                 <span class="bgz-bos-yz">
@@ -13181,6 +13181,30 @@ function kb(n) {
 }
 
 /* Çözümleme cevabını okur: sayfalar, künyeler ve açık sorular. */
+/* Okunan bloğu taslağa işleyip yapıyı kurar. Hem panodan doğrudan kurmada
+   hem de yapıştırma penceresinde aynı yol kullanılıyor. */
+async function cozumKur(p, t, cozum, guncelleMi) {
+  cozumlemeUygula(t, cozum, p);
+  if (!t.modul) {
+    const digerVarMi = DB.modulleri(p.id).some(m => m.ad !== GENEL_MODUL);
+    if (!digerVarMi) {
+      /* İlk ve tek bölüm: adını Program temeli'nde zaten almıştı. */
+      t.modul = modulAdi(p) || 'Program';
+    } else {
+      await new Promise(r => setTimeout(r, 260));
+      t.modul = await metinSor({ baslik: 'Bu bölümün adı',
+        aciklama: 'Blokta yazmıyordu, sen yaz.', yerTutucu: 'Örn. İnsan Kaynakları',
+        buton: 'Tamam', deger: '' }) || 'Yeni bölüm';
+    }
+  }
+  try {
+    await yapiTaslagiKur(p, t);
+    delete YAPI_TASLAK[p.id];
+    toast(cozum.sayfalar.length + ' sayfa ' + (guncelleMi ? 'güncellendi.' : 'kuruldu.'));
+    render();
+  } catch (err) { toast(err.message, 'hata'); }
+}
+
 function anlatAktarAc(projeId) {
   modalHepsiniKapat();
   const p = DB.proje(projeId);
@@ -13235,32 +13259,8 @@ function anlatAktarAc(projeId) {
       /* Modül zaten kuruluysa bu bir "Modülü güncelle" yapıştırması: elle
          "Kur" adımı yok, yapıştırınca doğrudan kaydedilir. */
       const guncelleMi = t.modul && DB.modulleri(p.id).some(m => m.ad === t.modul);
-      cozumlemeUygula(t, cozum, p);
       modalKapat();
-      if (!t.modul) {
-        const digerVarMi = DB.modulleri(p.id).some(m => m.ad !== GENEL_MODUL);
-        if (!digerVarMi) {
-          /* İlk ve tek bölüm: ayrıca isim sorup kullanıcıyı yormaya gerek
-             yok, program zaten adını Program temeli'nde almıştı. */
-          t.modul = modulAdi(p) || 'Program';
-        } else {
-          /* İkinci bölüm: aynı adı kullanamayız, ayırt edici bir ad gerek.
-             Pencere kapanışıyla çakışmasın diye bir kare bekliyoruz. */
-          await new Promise(r => setTimeout(r, 260));
-          t.modul = await metinSor({ baslik: 'Bu bölümün adı',
-            aciklama: 'Blokta yazmıyordu, sen yaz.', yerTutucu: 'Örn. İnsan Kaynakları',
-            buton: 'Tamam', deger: '' }) || 'Yeni bölüm';
-        }
-      }
-      /* Yapıştırma her hâlde doğrudan kuruyor: ayrı bir "Kur" adımı yok,
-         künyeleri elle doldurmak da gerekmiyor — yapı Claude'un bloğundan
-         geliyor. */
-      try {
-        await yapiTaslagiKur(p, t);
-        delete YAPI_TASLAK[p.id];
-        toast(cozum.sayfalar.length + ' sayfa ' + (guncelleMi ? 'güncellendi.' : 'kuruldu.'));
-        render();
-      } catch (err) { toast(err.message, 'hata'); }
+      await cozumKur(p, t, cozum, guncelleMi);
     });
   });
 }
@@ -15225,6 +15225,23 @@ async function eylemCalistir(el) {
   }
 
   /* ---- Anlat: çözümleme döngüsü ---- */
+  /* "Yapıyı kur": pencere açmadan doğrudan panodaki bloğu okur. Pano
+     okunamazsa (tarayıcı izin vermedi) eski yapıştırma penceresine düşer. */
+  if (e === 'yapi-kur-pano') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    let metin = '';
+    try { metin = await navigator.clipboard.readText(); } catch (h) { metin = ''; }
+    const cozum = metin ? cozumlemeOku(metin) : null;
+    if (!cozum) {
+      if (metin && metin.trim()) toast('Panodaki metin blok değil — elle yapıştır.', 'uyari');
+      return anlatAktarAc(pr.id);
+    }
+    const t = yapiTaslak(pr);
+    const guncelleMi = t.modul && DB.modulleri(pr.id).some(m => m.ad === t.modul);
+    return cozumKur(pr, t, cozum, guncelleMi);
+  }
+
   if (e === 'anlat-aktar') {
     const pr = DB.proje(el.dataset.proje);
     if (!pr) return;
