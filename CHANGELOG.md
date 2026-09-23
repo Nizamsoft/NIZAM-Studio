@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## v0.181.0
+- Aşama tamamlandıktan sonra da **Logo** ve **İşletme görseli** kutuları
+  duruyor; sonradan görsel eklemek için "Düzenle"ye basmak gerekmiyor.
+
 ## v0.180.0
 - **Tamamlanmış aşamaya dönünce form değil özet çıkıyor**: yeşil "Bu adım
   tamamlandı" şeridi, yanında **Düzenle**, altında değerler yeşil zeminli ve

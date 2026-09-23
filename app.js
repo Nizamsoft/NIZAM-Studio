@@ -1909,14 +1909,7 @@ function firmaSayfasi(p, d) {
       + fmOkuma('Telefon', ICON.telefon, p.telefon)
       + fmOkuma('E-posta', ICON.mail, p.eposta)
       + fmOkuma('Sektör', ICON.dukkan, p.sektor)
-      + (logo ? `<div class="fm">
-          <span class="fm-et">Logo</span>
-          <span class="fm-onizleme" style="background-image:url('${esc(logo)}')"></span>
-        </div>` : '')
-      + (gorsel ? `<div class="fm">
-          <span class="fm-et">İşletme görseli</span>
-          <span class="fm-onizleme genis" style="background-image:url('${esc(gorsel)}')"></span>
-        </div>` : '')
+      + fmGorselAlanlari(p, logo, gorsel)
       + `</div></div>`;
   }
 
@@ -1930,23 +1923,31 @@ function firmaSayfasi(p, d) {
     + fmAlan({ etiket: 'E-posta', tip: 'email', ikon: ICON.mail, alan: 'eposta', proje: p.id,
                deger: p.eposta, ipucu: 'Örn. bilgi@firma.com', maxlength: 120 })
     + fmSecim('Sektör', sektorler, 'Promptun ilk satırları ve kimlik dosyası bunlardan çıkıyor.')
-    + `<div class="fm">
-        <span class="fm-et">Logo <i>(Opsiyonel)</i></span>
-        <button class="fm-logo ${logo ? 'dolu' : ''}" type="button"
-                data-eylem="logo-yukle" data-proje="${p.id}"
-                ${logo ? `style="background-image:url('${esc(logo)}')"` : ''}>
-          ${logo ? '' : `${svg(ICON.resim, 20)}<b>Logo seçin</b><i>PNG, JPG (maks. 5MB)</i>`}
-        </button>
-      </div>
-      <div class="fm">
-        <span class="fm-et">İşletme görseli <i>(Opsiyonel)</i></span>
-        <button class="fm-gorsel ${gorsel ? 'dolu' : ''}" type="button"
-                data-eylem="proje-gorsel" data-id="${p.id}">
-          ${gorsel ? `<img src="${esc(gorsel)}" alt="" decoding="async">`
-            : `${svg(ICON.resim, 20)}<b>Görsel seçin</b><i>Vitrin, menü, ürün fotoğrafı…</i>`}
-        </button>
-      </div>
-    </div></div>`;
+    + fmGorselAlanlari(p, logo, gorsel)
+    + `</div></div>`;
+}
+
+/* Logo ve işletme görseli: ikisi de isteğe bağlı ama her zaman görünür.
+   Aşama tamamlandıktan sonra da duruyorlar — sonradan logo eklemek için
+   "Düzenle"ye basmak gerekmesin. */
+function fmGorselAlanlari(p, logo, gorsel) {
+  return `
+    <div class="fm">
+      <span class="fm-et">Logo <i>(Opsiyonel)</i></span>
+      <button class="fm-logo ${logo ? 'dolu' : ''}" type="button"
+              data-eylem="logo-yukle" data-proje="${p.id}"
+              ${logo ? `style="background-image:url('${esc(logo)}')"` : ''}>
+        ${logo ? '' : `${svg(ICON.resim, 20)}<b>Logo seçin</b><i>PNG, JPG (maks. 5MB)</i>`}
+      </button>
+    </div>
+    <div class="fm">
+      <span class="fm-et">İşletme görseli <i>(Opsiyonel)</i></span>
+      <button class="fm-gorsel ${gorsel ? 'dolu' : ''}" type="button"
+              data-eylem="proje-gorsel" data-id="${p.id}">
+        ${gorsel ? `<img src="${esc(gorsel)}" alt="" decoding="async">`
+          : `${svg(ICON.resim, 20)}<b>Görsel seçin</b><i>Vitrin, menü, ürün fotoğrafı…</i>`}
+      </button>
+    </div>`;
 }
 /* 2 · Program temeli — bu paketin adı, kim kullanacak, verisi nerede
    duracak. Eskiden "Kurulum ve yapı" durağının içindeydi (Yer + Kim
