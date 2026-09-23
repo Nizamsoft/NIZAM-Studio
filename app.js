@@ -1443,7 +1443,8 @@ const DURAKLAR = {
                  renk: '#3f9d7a', ikon: 'gGuvenlik', resim: 'guvenlik',
                  aciklama: 'Kurulan kurallar gerçekten tutuyor mu?' },
   final:       { no: 11, ad: 'Final',                ciz: finalSayfasi,
-                 resim: 'final', aciklama: 'Son kontroller ve yayına hazırlık.' },
+                 renk: '#5a6169', ikon: 'bayrak', resim: 'final',
+                 aciklama: 'Son kontroller ve yayına hazırlık.' },
   guncelleme:  { no: 12, ad: 'Geliştirme',           ciz: guncellemeSayfasi,
                  resim: 'gelistirme', aciklama: 'Yayın sonrası yeni özellikler.' },
 };
@@ -6849,66 +6850,77 @@ function finalNotlariOku(pl) {
 }
 
 /* 9 · Final — görevler bitti, incele, ya final ver ya da bulduğunu not et. */
+/* ---------- 11 · Final ----------
+   Öteki duraklarla aynı kalıp: başlık kartı, yeşil tamamlandı şeridi,
+   kartlar ve altta tek kırmızı düğme. Eski hero + takvim çubuğu kalktı —
+   çubuk projenin kaldırılan renginden besleniyordu ve sayıyı zaten
+   başlıktaki rozet söylüyor. */
 function finalSayfasi(p, d) {
-  const pl = p.palet || {};
+  const pl      = p.palet || {};
   const verildi = !!pl.finalVerildi;
-  const notlar = finalNotlariOku(pl);
-  const s = DB.sayim(p.id);
-  const hazir = gelistirmeBitti(p);
+  const notlar  = finalNotlariOku(pl);
+  const s       = DB.sayim(p.id);
+  const hazir   = gelistirmeBitti(p);
+  const bitmis  = notlar.filter(n => n.tamam).length;
 
-  /* Not bildirildiyse üstteki çubuk artık onun tamamlanma durumunu gösterir
-     — bu sayfada asıl takip edilen şey o. Hiç not yoksa projenin genel görev
-     ilerlemesi görünür, en azından boş bir çubuk kalmasın. */
-  const notVar   = notlar.length > 0;
-  const bitmis   = notVar ? notlar.filter(n => n.tamam).length : s.bitmis;
-  const toplam   = notVar ? notlar.length : s.gorev;
-  const yuzde    = toplam ? Math.round(bitmis / toplam * 100) : 0;
-  const etiket   = notVar ? 'not tamamlandı' : 'görev bitti';
+  const notListesi = !notlar.length ? '' : `
+    <div class="btk">
+      <div class="btk-ust">
+        <span class="btk-ik kirmizi">${svg(ICON.uyari, 22)}</span>
+        <span class="btk-yz"><b>Bildirilen notlar</b>
+          <i>Final vermeden önce kapanması gerekenler.</i></span>
+        <em class="btk-no mono">${bitmis}/${notlar.length}</em>
+      </div>
+      <div class="fn-liste">
+        ${notlar.map((n, i) => `
+          <div class="fn ${n.tamam ? 'on' : ''}">
+            <button class="fn-tik" type="button" data-eylem="final-not-tamam"
+                    data-proje="${p.id}" data-deger="${i}"
+                    aria-label="Tamamlandı">${svg(ICON.tik, 13)}</button>
+            <span class="fn-yz">${esc(n.metin)}</span>
+            ${n.tamam ? '' : `
+              <a class="fn-btn" target="_blank" rel="noopener" data-pano="finalNot:${i}"
+                 data-proje="${p.id}" data-hedef="Claude Code"
+                 href="${esc(claudeAdresi(depoSlug(p.repo)))}">
+                ${svg(ICON.kopya, 13)} Prompt</a>`}
+            <button class="fn-btn sil" type="button" data-eylem="final-not-sil"
+                    data-proje="${p.id}" data-deger="${i}" aria-label="Notu sil">
+              ${svg(ICON.cop, 13)}</button>
+          </div>`).join('')}
+      </div>
+    </div>`;
 
-  return sayfaHero(p, d) + `
-    <div class="takvim" style="${renkDegiskenleri(p.renk)}">
-      <div class="tk-ust"><b>${bitmis}/${toplam} ${etiket}</b><em>%${yuzde}</em></div>
-      <div class="ray"><i style="width:${yuzde}%"></i><b style="left:${yuzde}%"></b></div>
-    </div>`
-    + `<div class="card">
-        <p class="fb-neden">${hazir || verildi
-          ? (s.gorev > 0 ? 'Bütün görevler bitti.' : 'Geliştirmeye ihtiyaç yoktu.')
-            + ' Uygulamayı son bir kez dene — sorunsuzsa final ver, bir şey bulursan bildir.'
-          : `<b class="eksik">Önce açık görevleri bitir.</b> Final, <b>${
-              sablonMu(p) ? 'Değişim' : 'Beta ve geliştirme'
-            }</b> durağı tamamlandığında verilebilir.`}</p>
-        ${verildi
-          ? `<div class="kur-deger duz">${svg(ICON.tik, 13)} Final sürüm verildi</div>`
-          : `<button class="sayfa-dug" type="button" data-eylem="final-onay"
-                     data-proje="${p.id}" ${hazir ? '' : 'disabled'}>
-               ${svg(ICON.bayrak, 16)} Final ver</button>`}
-        <button class="sayfa-dug ikincil" type="button" data-eylem="final-not-ekle"
-                data-proje="${p.id}">
-          ${svg(ICON.uyari, 15)} Hata veya güncelleme bildir</button>
+  return `<div class="fb-govde">`
+    + adimBasligi(p, d, notlar.length ? bitmis + '/' + notlar.length : '')
+    + (verildi ? fmTamamBar(p, 'final', 'Final sürüm teslim edildi.', false) : '')
+    + `<div class="btk">
+        <div class="btk-ust">
+          <span class="btk-ik ${hazir ? 'yesil' : 'mavi'}">${svg(ICON.bayrak, 22)}</span>
+          <span class="btk-yz"><b>Son kontrol</b>
+            <i>${hazir || verildi
+              ? (s.gorev > 0 ? 'Bütün görevler bitti. ' : 'Geliştirmeye ihtiyaç yoktu. ')
+                + 'Uygulamayı son bir kez dene — sorunsuzsa final ver.'
+              : 'Final, <b>' + (sablonMu(p) ? 'Değişim' : 'Beta ve geliştirme')
+                + '</b> durağı tamamlandığında verilebilir.'}</i></span>
+        </div>
       </div>`
-    + (notlar.length ? bolumBas('Bildirilen notlar') + `
-        <div class="card liste">
-          ${notlar.map((n, i) => `
-            <div class="sr" style="align-items:flex-start; flex-wrap:wrap">
-              <label class="kur-onay ${n.tamam ? 'on' : ''}" style="margin:0"
-                     data-eylem="final-not-tamam" data-proje="${p.id}" data-deger="${i}"
-                     role="button" tabindex="0" title="Güncelleme tamamlandı">
-                <span class="kur-kutu">${svg(ICON.tik, 12)}</span>
-              </label>
-              <span style="flex:1;min-width:140px;${n.tamam
-                ? 'text-decoration:line-through;color:var(--ink-dim)' : ''}">${esc(n.metin)}</span>
-              ${n.tamam ? '' : `
-                <a target="_blank" rel="noopener" class="mini-link" data-pano="finalNot:${i}"
-                   data-proje="${p.id}" data-hedef="Claude Code"
-                   href="${esc(claudeAdresi(depoSlug(p.repo)))}">
-                  ${svg(ICON.kopya, 13)} Prompt oluştur</a>`}
-              <button class="mini-link tehlike" type="button" data-eylem="final-not-sil"
-                      data-proje="${p.id}" data-deger="${i}" aria-label="Notu sil">
-                ${svg(ICON.cop, 13)}</button>
-            </div>`).join('')}
-        </div>` : '')
-    + `<div class="note note-kucuk">${svg(ICON.info, 15)}
-        <span>Finalden sonra gelen istekler <b>Geliştirme</b> durağında yürür.</span></div>`;
+    + `<div class="btk">
+        <div class="btk-ust">
+          <span class="btk-ik mavi">${svg(ICON.kalem, 22)}</span>
+          <span class="btk-yz"><b>Hata veya güncelleme bildir</b>
+            <i>Denerken bir şey bulduysan not düş — notlar kapanmadan final verme.</i></span>
+          <button class="btk-dug" type="button" data-eylem="final-not-ekle"
+                  data-proje="${p.id}">${svg(ICON.arti, 15)} Not ekle</button>
+        </div>
+      </div>`
+    + notListesi
+    + (verildi ? '' : `
+      <button class="sayfa-dug bitir" type="button" data-eylem="final-onay"
+              data-proje="${p.id}" ${hazir ? '' : 'disabled'}>
+        ${svg(ICON.bayrak, 16)} Final ver</button>`)
+    + `<p class="gk-not">${svg(ICON.info, 13)}
+        <span>Finalden sonra gelen istekler <b>Geliştirme</b> durağında yürür.</span></p>`
+    + `</div>`;
 }
 
 /* 8 · Geliştirme (eski Güncellemeler) — proje yaşadıkça açık kalan durak.

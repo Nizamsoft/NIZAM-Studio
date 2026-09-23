@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü
 
+## v0.225.0
+- **Final aşaması öteki duraklarla aynı kalıba geçti:** başlık kartı,
+  bitince yeşil «Bu adım tamamlandı» şeridi, «Son kontrol» ve «Hata veya
+  güncelleme bildir» kartları, notlar için tik/prompt/sil satırları ve
+  altta tek kırmızı «Final ver». Eski hero ve renkli takvim çubuğu kalktı
+  — çubuk kaldırılan proje renginden besleniyordu, sayıyı zaten başlıktaki
+  rozet söylüyor.
+
 ## v0.224.0
 - Güvenlik kontrolündeki kurulum maddeleri sadeleşti: **«Edge Function
   oluşturdum» maddesi kalktı** — o gerçekten tek seferlik ve Studio'nun

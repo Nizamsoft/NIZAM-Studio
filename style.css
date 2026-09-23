@@ -10258,3 +10258,30 @@ textarea.fm-gir { height: auto; padding: 0 0 12px; resize: vertical; line-height
   font: inherit; font-weight: 700; color: var(--ink-strong);
   text-decoration: underline; text-underline-offset: 2px;
 }
+
+/* Final · bildirilen notlar listesi. */
+.fn-liste { margin-top: 12px; border-top: 1px solid var(--line-3); }
+.fn {
+  display: flex; align-items: center; gap: 10px;
+  padding: 11px 0; border-bottom: 1px solid var(--line-3);
+}
+.fn:last-child { border-bottom: 0; }
+.fn-tik {
+  flex: 0 0 auto; display: flex; align-items: center; justify-content: center;
+  width: 26px; height: 26px; border-radius: 999px; cursor: pointer;
+  background: var(--surface); border: 1.5px solid var(--line-2); color: transparent;
+}
+.fn-tik svg { fill: none; stroke: currentColor; stroke-width: 3; }
+.fn-tik .dolgu { display: none; }
+.fn.on .fn-tik { background: var(--st-done); border-color: var(--st-done); color: #fff; }
+.fn-yz { flex: 1; min-width: 0; font-size: 13.5px; line-height: 1.45; color: var(--ink); }
+.fn.on .fn-yz { color: var(--ink-dim); text-decoration: line-through; }
+.fn-btn {
+  flex: 0 0 auto; display: inline-flex; align-items: center; gap: 5px;
+  height: 30px; padding: 0 10px; border-radius: 9px; cursor: pointer;
+  text-decoration: none; background: var(--yuva); border: 1px solid var(--line-2);
+  font-family: var(--yazi-etiket); font-size: 12px; font-weight: 600; color: var(--ink);
+}
+.fn-btn.sil { padding: 0 8px; color: var(--red-ink); border-color: var(--red-cizgi); }
+.fn-btn svg { fill: none; stroke: currentColor; stroke-width: 1.9; }
+.fn-btn .dolgu { display: none; }
