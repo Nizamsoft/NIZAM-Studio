@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## v0.193.0
+- GitHub bağlantısında tek düğme: **"Bağlandı olarak işaretle"**. İki seçenekli
+  onay ("Bağlandı, devam et" / "Henüz bağlanmadı") ve "depo gerçekten oluştu
+  mu?" uyarısı kalktı. Düğme sekmeden dönmeyi beklemeden hep duruyor.
+
 ## v0.192.0
 **Bağlantılar ve temel yeniden kuruldu.** Bağlantılar artık solda numaralı
 dikey bir zincir, sağda kartlar:

@@ -2131,7 +2131,8 @@ const BAGLANTI_ALT = {
 };
 
 const BAGLANTI_ADIMLARI = {
-  github: ['GitHub\'da yeni depo açın.', 'Depo oluştuysa onaylayın.'],
+  github: ['GitHub\'da yeni depo açın.',
+           'Depo oluştuktan sonra buradan bağlandığını işaretleyin.'],
   claude: ['Başlangıç metnini kopyalayın.', 'Claude\'a yeni sohbet açıp yapıştırın.',
            'Sohbete bir ad verin.'],
   pages: ['Yayın ayarlarını açın.', 'Site açıldıysa onaylayın.'],
@@ -11582,20 +11583,13 @@ function baglantiAdimGithub(p) {
   const buton = depo ? '' : `<a class="sayfa-dug" target="_blank" rel="noopener" data-depo-ac="${p.id}" href="${depoAdresi}">
       ${svg(ICON.dal, 15)} ${kopyaMi ? 'GitHub\'a bağlan ve kopyala' : 'GitHub\'da depo aç'}</a>`;
 
-  /* Sekmeye dönüş "bağlandı" demek değil — GitHub tarafı hata verip boş
-     sayfa açmış olabilir. Studio depoya bakamadığı için tahmin etmiyor,
-     kullanıcı gerçekten oluştuğunu görüp kendi onaylıyor. */
-  const onayBekliyor = !depo && DEPO_BEKLIYOR[p.id];
-  const onayKutusu = !onayBekliyor ? '' : `
-    <div class="note" style="margin-top:10px">${svg(ICON.info, 15)}
-      <span>GitHub'da depo gerçekten oluştu mu? Oluştuysa onayla. Hata
-      aldıysan yukarıdaki bağlantıyla tekrar dene, onaylama.</span></div>
-    <div class="kur-dug" style="margin-top:8px">
-      <button class="sayfa-dug" type="button" data-eylem="depo-baglandi-onay" data-proje="${p.id}">
-        ${svg(ICON.tik, 15)} Bağlandı, devam et</button>
-      <button class="sayfa-dug ikincil" type="button" data-eylem="depo-baglandi-vazgec" data-proje="${p.id}">
-        Henüz bağlanmadı</button>
-    </div>`;
+  /* Studio depoya bakamıyor: depo gerçekten açıldı mı, kullanıcı söylüyor.
+     Tek düğme — "oldu mu?" diye sormak, iki seçenek koymak ve sekmeden
+     dönmeyi beklemek fazlalıktı; işaretlemeyen zaten devam edemiyor. */
+  const onayKutusu = depo ? '' : `
+    <button class="sayfa-dug ikincil" type="button"
+            data-eylem="depo-baglandi-onay" data-proje="${p.id}">
+      ${svg(ICON.tik, 15)} Bağlandı olarak işaretle</button>`;
 
   const kopyaSatir = (etiket, deger) => `
     <div class="ak-s">
