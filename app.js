@@ -2107,14 +2107,9 @@ function baglantilarSayfasi(p, d) {
     + adimBasligi(p, d, biten + '/' + liste.length)
     + (biten === liste.length
         ? fmTamamBar(p, 'baglantilar', 'Bütün bağlantılar kuruldu.') : '')
+    /* Sayfanın altındaki "Kod deposu / Proje kimliği" satırları kalktı:
+       depo adresi zaten GitHub kartında ve proje menüsünde. */
     + `<div class="bgz">${satirlar}</div>`
-    /* Depoyu elle yapıştırmak ve kimlik dosyasını görmek her zaman
-       açık kalsın — bağlantılar bitse de buraya dönülüyor. */
-    + `<div class="fb-kg tek" style="margin-top:16px">
-        ${kunyeSatiri('#b8926b', ICON.dal,   'Kod deposu',
-                      depoSlug(p.repo) || p.repo, 'repo', p.id, false, 'dokun, yapıştır')}
-        ${kunyeSatiri('#9b7fd4', ICON.dosya, 'Proje kimliği', 'NIZAM.md', 'kimlik', p.id)}
-      </div>`
     + `</div>`;
 }
 

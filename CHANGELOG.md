@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## v0.197.0
+- Bağlantılar sayfasının altındaki **"Kod deposu" ve "Proje kimliği"
+  satırları kaldırıldı.** Depo adresi zaten GitHub kartında; elle değiştirmek
+  gerekirse proje menüsündeki "Depo adresi" duruyor.
+
 ## v0.196.0
 - **Yayın ve Supabase adımları da GitHub/Claude kalıbına geçti**: bir koyu
   düğme işi açıyor, altındaki açık düğme "yaptım" diyor.
