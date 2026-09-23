@@ -3392,18 +3392,17 @@ a.durak:active { transform: scale(.99); transition: transform .1s var(--ease); }
     #tabbar { background: var(--surface-2); }
   }
 
-  /* Alt çubuk yüzüyor: içerik her hâlükârda altında kalmasın. Bu pay eskiden
-     yalnız uygulama kipinde veriliyordu; tarayıcı sekmesinde son kart çubuğun
-     arkasına giriyordu. */
-  .view { padding-bottom: 96px; }
+  /* Alt çubuk yüzüyor: içerik her hâlükârda altında kalmasın. Ana ekran
+     çizgisinin payı (safe-area) her kipte ekleniyor — eskiden yalnız
+     uygulama kipinde vardı ve telefonun tarayıcısında sayfanın son satırı
+     çubuğun arkasında kalıyordu; içerik tam sığdığı için kaydırma da
+     yapılamıyordu. */
+  .view { padding-bottom: calc(104px + env(safe-area-inset-bottom, 0px)); }
 
-  /* Uygulama kipinde ana ekran çizgisinin payı da eklenir. */
   @media (display-mode: standalone) {
     #tabbar { margin-bottom: max(14px, calc(env(safe-area-inset-bottom, 0px) - 8px)); }
-    .view   { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
   }
   html.uygulama #tabbar { margin-bottom: max(14px, calc(env(safe-area-inset-bottom, 0px) - 8px)); }
-  html.uygulama .view   { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
 
   .tab {
     display: flex; flex-direction: column; align-items: center; justify-content: center;

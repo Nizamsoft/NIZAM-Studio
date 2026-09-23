@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## v0.207.0
+- **Telefonda sayfanın sonu alt çubuğun arkasında kalıyordu** ve içerik tam
+  sığdığı için kaydırma da yapılamıyordu. Alt pay artık her kipte ana ekran
+  çizgisinin (safe-area) payını da içeriyor.
+
 ## v0.206.0
 - Yeşil şeritteki **"Yeni bölüm" düğmesi kaldırıldı** — "tamamlandı" yazısı
   yeterli.
