@@ -9056,45 +9056,49 @@ textarea.pd-giris { resize: vertical; display: block; }
 
 /* ---------- Adım şeridi (telefon) ---------- */
 .dsm {
-  display: flex; flex-direction: column; gap: 11px;
-  padding: 12px 13px 11px; margin-bottom: 14px;
-  border-radius: 16px; background: var(--surface); border: 1px solid var(--line-3);
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 13px; margin-bottom: 14px; border-radius: 18px;
+  background: var(--red-soft); border: 1px solid var(--red-cizgi);
 }
+.dsm.tamam { background: var(--done-soft); border-color: var(--done-cizgi); }
 @media (min-width: 901px) { .dsm { display: none; } }
-/* Üst satır: bağlı noktalar. Geçilen adımlar kırmızı ve aralarındaki
-   çizgi de kırmızı — "buraya kadar geldim". */
-.dsm-nk { display: flex; align-items: center; }
+.dsm-sol { flex: 0 0 auto; display: flex; flex-direction: column; gap: 1px; }
+.dsm-sol i {
+  font-style: normal; font-size: 10px; font-weight: 700; letter-spacing: .07em;
+  text-transform: uppercase; color: var(--ink-dim);
+}
+.dsm-sol b { font-size: 21px; font-weight: 700; color: var(--ink-strong); line-height: 1.1; }
+
+/* Bağlı noktalar: geçilen yeşil, şimdiki kırmızı, sıradakiler gri.
+   Noktalar eşit aralıkla yayılıyor, çizgi arkalarında tek parça — böylece
+   dokuz durakta da sığıyor. */
+.dsm-nk {
+  position: relative; flex: 1; min-width: 0;
+  display: flex; align-items: center; justify-content: space-between;
+  margin: 0 4px;
+}
+.dsm-nk::before, .dsm-nk::after {
+  content: ''; position: absolute; left: 4px; top: 50%; height: 2px;
+  transform: translateY(-50%);
+}
+.dsm-nk::before { right: 4px; background: var(--line-2); }
+.dsm-nk::after { width: var(--ilerleme, 0%); background: var(--st-done); }
 .dsm-nk i {
-  position: relative; flex: 0 0 auto;
+  position: relative; z-index: 1; flex: 0 0 auto;
   width: 9px; height: 9px; border-radius: 999px; background: var(--line);
 }
-.dsm-nk i + i { margin-left: 26px; }
-.dsm-nk i + i::before {
-  content: ''; position: absolute; right: 100%; top: 50%; width: 26px; height: 2px;
-  transform: translateY(-50%); background: var(--line-2);
-}
-.dsm-nk i.bitti { background: var(--red); }
-.dsm-nk i.bitti::before { background: var(--red); }
+.dsm-nk i.bitti { background: var(--st-done); }
 .dsm-nk i.su {
-  width: 15px; height: 15px; margin-left: 23px; background: var(--red);
+  width: 15px; height: 15px; background: var(--red);
   box-shadow: 0 0 0 4px var(--red-soft);
 }
-.dsm-nk i.su::before { right: calc(100% + 0px); background: var(--red); }
-.dsm-nk i.su + i { margin-left: 23px; }
+.dsm-nk i.su.tamam { background: var(--st-done); box-shadow: 0 0 0 4px var(--done-soft); }
 
-.dsm-alt { display: flex; align-items: center; gap: 12px; }
-.dsm-say {
-  flex: 0 0 auto; font-size: 17px; font-weight: 700; color: var(--ink-strong);
-}
-.dsm-ad {
-  flex: 1; min-width: 0; text-align: right;
-  font-size: 14.5px; font-weight: 600; color: var(--ink-soft);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
 .dsm-liste {
   flex: 0 0 auto; display: flex; align-items: center; justify-content: center;
-  width: 42px; height: 42px; border-radius: 13px; cursor: pointer;
-  background: var(--surface); border: 1.5px solid var(--line-2); color: var(--ink);
+  width: 44px; height: 44px; border-radius: 14px; cursor: pointer;
+  background: var(--surface); border: 1px solid var(--line-3); color: var(--ink);
+  margin-left: 4px;
 }
 .dsm-liste svg { fill: none; stroke: currentColor; stroke-width: 1.9; }
 .dsm-liste .dolgu { display: none; }

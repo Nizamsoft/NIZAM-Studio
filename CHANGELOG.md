@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.198.0
+- **Üstteki şerit yeni tasarım**: solda "KURULUM ADIMI 3 / 9", ortada bağlı
+  noktalar, sağda aşama listesi düğmesi.
+- **Tamamlanmış adımlar yeşil**, bulunduğun adım kırmızı (kendisi de bittiyse
+  yeşil), sırası gelmemişler gri. Dokuz durak da sığıyor.
+
 ## v0.197.0
 - Bağlantılar sayfasının altındaki **"Kod deposu" ve "Proje kimliği"
   satırları kaldırıldı.** Depo adresi zaten GitHub kartında; elle değiştirmek

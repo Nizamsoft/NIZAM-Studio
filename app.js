@@ -1458,19 +1458,22 @@ function durakSerit(p, anahtar) {
   /* Telefonda adım adlarını yan yana dizmek okunmuyordu: orada şerit iki
      satır — üstte bağlı noktalar, altta sayaç, durağın adı ve listeyi açan
      düğme. */
+  /* Nokta şeridi: tamamlanmış adımlar yeşil, bulunduğun adım kırmızı
+     (kendisi de bittiyse yeşil), sırası gelmemişler gri. */
   const noktalar = liste.map((d, i) => `<i class="${
-    i === su ? 'su' : i < su ? 'bitti' : ''}"></i>`).join('');
+    i === su ? (d.bitti ? 'su tamam' : 'su') : d.bitti ? 'bitti' : ''}"></i>`).join('');
 
   return `
     <div class="dsr only-desktop">${halkalar}</div>
-    <div class="dsm">
-      <div class="dsm-nk ${suBitti ? 'tamam' : ''}">${noktalar}</div>
-      <div class="dsm-alt">
-        <span class="dsm-say mono">${su + 1}/${liste.length}</span>
-        <span class="dsm-ad">${esc(simdi.ad || '')}</span>
-        <button class="dsm-liste" type="button" data-eylem="asamalar-ac"
-                aria-label="Aşamalar">${svg(ICON.panel, 17)}</button>
-      </div>
+    <div class="dsm ${suBitti ? 'tamam' : ''}">
+      <span class="dsm-sol">
+        <i>Kurulum adımı</i>
+        <b class="mono">${su + 1} / ${liste.length}</b>
+      </span>
+      <span class="dsm-nk" style="--ilerleme:${
+        liste.length > 1 ? Math.round((su / (liste.length - 1)) * 100) : 0}%">${noktalar}</span>
+      <button class="dsm-liste" type="button" data-eylem="asamalar-ac"
+              aria-label="Aşamalar">${svg(ICON.panel, 17)}</button>
     </div>`;
 }
 
