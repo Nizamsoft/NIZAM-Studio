@@ -691,8 +691,6 @@ const VIEWS = {
           <h1>Paketler</h1>
           <p>Yeni projenin hangi yol haritasından geçeceğini paket belirler.</p>
         </div>
-        ${AUTH.yonetici ? `<button class="pj-yeni" type="button" data-eylem="paket-ekle">
-          ${svg(ICON.arti, 16)}<span>Yeni</span></button>` : ''}
       </div>
 
       ${tanimYok ? `<div class="note" style="margin-bottom:14px">
@@ -706,8 +704,7 @@ const VIEWS = {
       ${liste.length
         ? `<div class="lk-liste">${liste.map(paketKarti).join('')}</div>`
         : `<div class="card">${empty(ICON.paket, 'Paket yok',
-            'Paket listesi için sql/25-paketler.sql dosyasını Supabase\'de çalıştır.',
-            AUTH.yonetici ? 'Yeni Paket' : null, 'paket-ekle')}</div>`}
+            'Paket listesi için sql/25-paketler.sql dosyasını Supabase\'de çalıştır.')}</div>`}
     `;
   },
 
@@ -987,116 +984,88 @@ const AYAR_GRUP = {
     ad: 'Güvenlik', renk: 'yesil', ikon: 'gGuvenlik',
     aciklama: 'Projelerin satır güvenliğini dışarıdan dene.',
     goster: () => AUTH.yonetici,
-    ciz: () => `
-      <div class="card">
-        <div class="row-list">
-          ${ayarSatir('guvenlige', 'Güvenlik Testi',
-            'Herhangi bir Supabase projesini ziyaretçi/personel kimliğiyle dener')}
-        </div>
-      </div>`,
+    ciz: () => `<div class="kt-liste">${ayarKarti({
+      ad: 'Güvenlik Testi', adres: '#/guvenlik', renk: 'yesil', ikon: 'gGuvenlik',
+      aciklama: 'Herhangi bir Supabase projesini ziyaretçi ve personel kimliğiyle dener.',
+      deger: 'ziyaretçi · personel · sunucu işlevi', degerIkon: 'gGuvenlik',
+      susCizgi: true,
+      sus: '<path d="M30 3l24 9v18c0 15-10 25-24 30C16 55 6 45 6 30V12z"></path>'
+         + '<path d="M20 30l7 7 14-14"></path>',
+    })}</div>`,
   },
 
   yayin: {
     ad: 'Yayın', renk: 'turuncu', ikon: 'yayin',
     aciklama: 'Alan adı, Supabase ve dış bağlantılar.',
     goster: () => AUTH.yonetici,
-    ciz: () => `
-      <div class="section" style="margin-top:0">
-        <span class="label">Yayın</span>
-        <div class="card">
-          <div class="row-list">
-            <div class="row" data-eylem="kok-alan" role="button" tabindex="0">
-              <div class="row-main">
-                <span class="row-title">Kök alan adı</span>
-                <span class="row-sub">${kokAlan()
-                  ? 'Her projeye firma adından alt alan türetilir'
-                  : 'Yazılmazsa alan adı adımı Ayarlar\'a yollar'}</span>
-              </div>
-              <span class="row-val">${kokAlan()
-                ? `<b class="mono">${esc(kokAlan())}</b>`
-                : '<b class="eksik">yazılmadı</b>'} ${svg(ICON.kalem, 13)}</span>
-            </div>
-            <div class="row" data-eylem="supabase-org" role="button" tabindex="0">
-              <div class="row-main">
-                <span class="row-title">Supabase organizasyonu</span>
-                <span class="row-sub">${supabaseOrg()
-                  ? '"Supabase\'de proje aç" doğrudan bu organizasyona gider'
-                  : 'Yazılmazsa Supabase önce yeni organizasyon kurdurur'}</span>
-              </div>
-              <span class="row-val">${supabaseOrg()
-                ? `<b class="mono">${esc(supabaseOrg())}</b>`
-                : '<b class="eksik">yazılmadı</b>'} ${svg(ICON.kalem, 13)}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="section">
-        <span class="label">Bağlantılar</span>
-        <div class="card">
-          <div class="row-list">
-            ${connRow('Supabase', AUTH.bagli ? 'Bağlı' : 'Demo modu', AUTH.bagli)}
-            ${connRow('GitHub', 'Bağlı değil', false)}
-          </div>
-        </div>
-      </div>`,
+    ciz: () => `<div class="kt-liste">
+      ${ayarKarti({
+        ad: 'Kök alan adı', eylem: 'kok-alan', renk: 'turuncu', ikon: 'bulut',
+        aciklama: kokAlan()
+          ? 'Her projeye firma adından bir alt alan türetilir.'
+          : 'Yazılmazsa alan adı adımı kullanıcıyı Ayarlar\'a yollar.',
+        deger: kokAlan() ? esc(kokAlan()) : '<b class="eksik">yazılmadı</b>',
+        degerIkon: 'bulut', susCizgi: true,
+        sus: '<circle cx="30" cy="30" r="26"></circle>'
+           + '<path d="M4 30h52M30 4c9 8 9 44 0 52M30 4c-9 8-9 44 0 52"></path>',
+      })}
+      ${ayarKarti({
+        ad: 'Supabase organizasyonu', eylem: 'supabase-org', renk: 'yesil', ikon: 'gVeri',
+        aciklama: supabaseOrg()
+          ? '"Supabase\'de proje aç" doğrudan bu organizasyona gider.'
+          : 'Yazılmazsa Supabase önce yeni bir organizasyon kurdurur.',
+        deger: supabaseOrg() ? esc(supabaseOrg()) : '<b class="eksik">yazılmadı</b>',
+        degerIkon: 'gVeri', susCizgi: true,
+        sus: '<ellipse cx="30" cy="14" rx="22" ry="8"></ellipse>'
+           + '<path d="M8 14v32c0 4 10 8 22 8s22-4 22-8V14"></path>'
+           + '<path d="M8 30c0 4 10 8 22 8s22-4 22-8"></path>',
+      })}
+      ${ayarKarti({
+        ad: 'Bağlantılar', renk: 'mavi', ikon: 'dal',
+        aciklama: 'Studio hangi servislere bağlı, bir bakışta.',
+        deger: 'Supabase: ' + (AUTH.bagli ? 'bağlı' : 'demo modu'),
+        degerIkon: 'dal', susCizgi: true,
+        sus: '<circle cx="16" cy="14" r="8"></circle><circle cx="16" cy="46" r="8"></circle>'
+           + '<circle cx="46" cy="30" r="8"></circle><path d="M22 18l18 8M22 42l18-8"></path>',
+      })}
+    </div>`,
   },
 
   uygulama: {
     ad: 'Uygulama ve bakım', renk: 'mor', ikon: 'disli',
     aciklama: 'Sürüm bilgisi, güncelleme ve yedekleme.',
     goster: () => true,
-    ciz: () => `
-      <div class="section" style="margin-top:0">
-        <span class="label">Uygulama</span>
-        <div class="card">
-          <div class="row-list">
-            ${infoRow('Ad', APP.name)}
-            ${infoRow('Sürüm', APP.version, true)}
-            ${infoRow('Aşama', APP.stage)}
-            ${infoRow('Derleme', APP.build, true)}
-          </div>
-        </div>
-      </div>
-
-      <div class="section" ${''}>
-        <span class="label">Projeler</span>
-        <div class="card">
-          <div class="row-list">
-            ${ayarSatir('kilitlere', 'Projeleri kilitle',
-              kilitAltBaslik() + ' · kilitli proje yanlışlıkla silinemez')}
-          </div>
-        </div>
-      </div>
-
-      <div class="section">
-        <span class="label">Bakım</span>
-        <div class="card">
-          <div class="row-list">
-            <div class="row">
-              <div class="row-main">
-                <span class="row-title">Güncellemeleri denetle</span>
-                <span class="row-sub">Yeni sürüm varsa kendini yeniler</span>
-              </div>
-              <button class="btn btn-ghost" data-eylem="guncelle" type="button">Denetle</button>
-            </div>
-            <div class="row">
-              <div class="row-main">
-                <span class="row-title">Yedek al</span>
-                <span class="row-sub">Tüm projeler, görevler ve standartlar tek dosyada</span>
-              </div>
-              <button class="btn btn-ghost" data-eylem="yedek-al" type="button">İndir</button>
-            </div>
-            <div class="row">
-              <div class="row-main">
-                <span class="row-title">Yedeği incele</span>
-                <span class="row-sub">Dosyanın içinde ne var, geri yüklemeden gösterir</span>
-              </div>
-              <button class="btn btn-ghost" data-eylem="yedek-oku" type="button">Dosya seç</button>
-            </div>
-          </div>
-        </div>
-      </div>`,
+    ciz: () => `<div class="kt-liste">
+      ${ayarKarti({
+        ad: 'Sürüm', eylem: 'guncelle', renk: 'mor', ikon: 'ayar',
+        aciklama: 'Yeni sürüm varsa uygulama kendini yeniler.',
+        deger: esc(APP.version + ' · ' + APP.stage),
+        degerIkon: 'ayar', dugme: 'Denetle', susCizgi: true,
+        sus: '<circle cx="30" cy="30" r="12"></circle>'
+           + '<path d="M30 2v10M30 48v10M2 30h10M48 30h10M10 10l7 7M43 43l7 7M50 10l-7 7M17 43l-7 7"></path>',
+      })}
+      ${ayarKarti({
+        ad: 'Projeleri kilitle', adres: '#/kilitler', renk: 'kirmizi', ikon: 'kilit',
+        aciklama: 'Kilitli proje yanlışlıkla silinemez.',
+        deger: kilitAltBaslik(), degerIkon: 'kilit', susCizgi: true,
+        sus: '<rect x="12" y="26" width="36" height="28" rx="6"></rect>'
+           + '<path d="M20 26v-8a10 10 0 0120 0v8"></path>',
+      })}
+      ${ayarKarti({
+        ad: 'Yedek al', eylem: 'yedek-al', renk: 'mavi', ikon: 'kaydet',
+        aciklama: 'Tüm projeler, görevler ve standartlar tek dosyada iner.',
+        dugme: 'İndir', susCizgi: true,
+        sus: '<path d="M30 6v32M18 28l12 12 12-12"></path>'
+           + '<path d="M8 44v6a4 4 0 004 4h36a4 4 0 004-4v-6"></path>',
+      })}
+      ${ayarKarti({
+        ad: 'Yedeği incele', eylem: 'yedek-oku', renk: 'turuncu', ikon: 'dosya',
+        aciklama: 'Dosyanın içinde ne var, geri yüklemeden gösterir.',
+        dugme: 'Dosya seç', susCizgi: true,
+        sus: '<rect x="12" y="6" width="36" height="48" rx="5"></rect>'
+           + '<path d="M20 20h20M20 30h20M20 40h12"></path>',
+      })}
+    </div>`,
   },
 };
 
@@ -1178,6 +1147,26 @@ function hesapAlani(ikon, etiket, icerik, ipucu = '') {
 }
 
 /* Sağ oklu, bir yere götüren ayar satırı. */
+/* Kütüphane kartının ayarlar için genel hâli. Aynı biçim: solda renkli
+   ikon, ortada ad + açıklama + tek satır değer, sağda ok. Tıklanınca ya
+   bir adrese gider (adres) ya da bir eylem çalıştırır (eylem). */
+function ayarKarti(k) {
+  const govde = `
+    <span class="kt-sus ${k.susCizgi ? 'cizgi' : ''}"><svg viewBox="0 0 60 60">${k.sus || ''}</svg></span>
+    <span class="kt-ikon">${svg(ICON[k.ikon], 30)}</span>
+    <span class="kt-yz">
+      <b>${esc(k.ad)}</b>
+      <i>${esc(k.aciklama)}</i>
+      ${k.deger ? `<em>${svg(ICON[k.degerIkon || 'katman'], 15)}${k.deger}</em>` : ''}
+    </span>
+    ${k.dugme ? `<span class="kt-dug">${esc(k.dugme)}</span>`
+      : (k.adres || k.eylem) ? `<span class="kt-ok">${svg(ICON.chevron, 20)}</span>` : ''}`;
+
+  if (k.adres) return `<a class="kt kt-${k.renk}" href="${k.adres}" draggable="false">${govde}</a>`;
+  if (k.eylem) return `<button class="kt kt-${k.renk}" type="button" data-eylem="${k.eylem}">${govde}</button>`;
+  return `<div class="kt kt-${k.renk} duz">${govde}</div>`;
+}
+
 function ayarSatir(eylem, baslik, alt) {
   return `
     <div class="row" data-eylem="${eylem}" role="button" tabindex="0">
@@ -7345,18 +7334,14 @@ function pjKisiSayisi(pid) {
 }
 
 function pjKarti(p) {
-  const s     = DB.sayim(p.id);
-  const adres = DB.logoAdres[p.id];
-  const kisi  = pjKisiSayisi(p.id);
-  const teslim = pjTarih(p.teslim);
-  const yuzde = projeAsamaYuzde(p);
-  const bitti = projeBittiMi(p);
-
-  const ayak = [
-    `<span>${svg(ICON.check, 14)}${s.gorev} görev</span>`,
-    kisi ? `<span>${svg(ICON.kisi, 14)}${kisi} kişi</span>` : '',
-    teslim ? `<span>${svg(ICON.takvim, 14)}${esc(teslim)}</span>` : '',
-  ].filter(Boolean).join('');
+  const adres  = DB.logoAdres[p.id];
+  const yuzde  = projeAsamaYuzde(p);
+  const bitti  = projeBittiMi(p);
+  /* Kartta yalnız kalıcı bilgi duruyor: kim, hangi iş, ne zaman başladı,
+     nerede. Görev/kişi sayısı ve platform/durum etiketleri kalktı —
+     projelerin çoğunda "0 görev" ve "yeni" yazıyordu, ikisi de bir şey
+     anlatmıyordu. */
+  const baslangic = pjTarih(p.olusturuldu);
 
   return `
     <div class="pj ${bitti ? 'bitti' : ''}" data-eylem="proje-ac" data-id="${p.id}"
@@ -7366,18 +7351,15 @@ function pjKarti(p) {
         ${adres ? '<span class="donen"></span>' : ''}
       </span>
       ${AUTH.yonetici ? `<button class="pj-menu" data-eylem="proje-menu" data-id="${p.id}"
-        type="button" aria-label="Proje seçenekleri">
+        type="button" aria-label="Projeyi sil">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.7"></circle><circle cx="12" cy="12" r="1.7"></circle><circle cx="12" cy="19" r="1.7"></circle></svg>
       </button>` : ''}
       <b class="pj-ad">${esc(basHarfleriBuyuk(projeAdi(p)))}</b>
       ${p.sektor ? `<i class="pj-aciklama">${esc(p.sektor)}</i>` : '<i class="pj-aciklama bos"></i>'}
-      <span class="pj-etiketler">
-        <em>${esc(PLATFORM_ADI[p.platform] || p.platform)}</em>
-        <em class="${durumSinif(p.durum)}">${esc(DURUM_ADI[p.durum] || p.durum)}</em>
-      </span>
       <span class="pj-halka">${pzHalka(yuzde, 58, 5)}<u>${yuzde}%</u></span>
       <span class="pj-ok">${svg(ICON.chevron, 16)}</span>
-      <span class="pj-ayak">${ayak}</span>
+      <span class="pj-ayak">${baslangic
+        ? `<span>${svg(ICON.takvim, 14)}${esc(baslangic)}</span>` : ''}</span>
     </div>`;
 }
 
@@ -15418,46 +15400,13 @@ async function eylemCalistir(el) {
     const proje = DB.proje(id);
     if (!proje) return;
 
+    /* Menüde yalnız silme var: ad, renk ve depo adresi artık aşamaların
+       kendi içinde düzenleniyor, arşiv de kullanılmıyordu. */
     const sec = await secenekSor(projeAdi(proje), [
-      { anahtar: 'ad',    ad: 'Adı değiştir',   ikon: ICON.kalem },
-      { anahtar: 'renk',  ad: 'Rengi değiştir', ikon: ICON.boya },
-      { anahtar: 'repo',  ad: 'Depo adresi',    ikon: ICON.katman, alt: proje.repo || 'henüz eklenmedi' },
-      { anahtar: 'arsiv', ad: 'Arşive kaldır',  ikon: ICON.arsiv, alt: 'Listeden çıkar, veriyi silmez', tehlike: true },
-      { anahtar: 'sil',   ad: 'Projeyi sil',    ikon: ICON.cop,   alt: 'Her şeyi siler, geri gelmez', tehlike: true },
+      { anahtar: 'sil', ad: 'Projeyi sil', ikon: ICON.cop,
+        alt: 'Her şeyi siler, geri gelmez', tehlike: true },
     ]);
     if (!sec) return;
-
-    if (sec === 'ad') {
-      const ad = await metinSor({ baslik: 'Firma adı', deger: proje.firma, buton: 'Kaydet' });
-      if (!ad || ad === proje.firma) return;
-      return isYap(() => DB.projeGuncelle(id, { firma: ad }), 'Ad güncellendi.');
-    }
-
-    if (sec === 'renk') {
-      const renk = await renkSor(proje.renk);
-      if (!renk || renk === proje.renk) return;
-      return isYap(() => DB.projeGuncelle(id, { renk }), 'Renk güncellendi.');
-    }
-
-    if (sec === 'repo') {
-      const adres = await metinSor({
-        baslik: 'Depo adresi', aciklama: 'Prompt hangi depoda çalışılacağını buradan söyler.',
-        deger: proje.repo || '', yerTutucu: 'github.com/nizamsoft/musteri-projesi', buton: 'Kaydet',
-      });
-      if (adres === null) return;
-      return isYap(() => DB.projeGuncelle(id, { repo: adres }), 'Depo adresi kaydedildi.');
-    }
-
-    if (sec === 'arsiv') {
-      const ok = await onaySor({
-        baslik: 'Proje arşive kaldırılsın mı?',
-        mesaj: `"${projeAdi(proje)}" listeden çıkar. Modülleri, sayfaları ve görevleri silinmez — geri getirilebilir.`,
-        buton: 'Arşive kaldır',
-      });
-      if (!ok) return;
-      if (rota().id === id) location.hash = '#/projeler';
-      return isYap(() => DB.projeArsivle(id), 'Proje arşive kaldırıldı.');
-    }
 
     if (sec === 'sil') {
       if ((proje.palet || {}).kilitli) {
@@ -15476,8 +15425,7 @@ async function eylemCalistir(el) {
       const ok = await onaySor({
         baslik: 'Proje tamamen silinsin mi?',
         mesaj: `"${projeAdi(proje)}"${kayip ? ` ve içindeki ${kayip}` : ''} silinecek. `
-             + 'Logo, görseller ve tasarım tarifi de gidecek. Bu işlem geri alınamaz. '
-             + 'Sadece listeden kaldırmak istiyorsan "Arşive kaldır" kullan.',
+             + 'Logo, görseller ve tasarım tarifi de gidecek. Bu işlem geri alınamaz.',
         buton: 'Kalıcı olarak sil',
       });
       if (!ok) return;
@@ -15910,7 +15858,6 @@ async function eylemCalistir(el) {
   if (e === 'template-ayar')  return templateAyarlari(el.dataset.proje);
 
   if (e === 'paketlere')      { location.hash = '#/paketler'; return; }
-  if (e === 'paket-ekle')     return paketDuzenle(null);
   if (e === 'paket-duzenle')  return paketDuzenle(id);
 
   if (e === 'sektor-ekle')    return sektorDuzenle(null);

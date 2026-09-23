@@ -10285,3 +10285,23 @@ textarea.fm-gir { height: auto; padding: 0 0 12px; resize: vertical; line-height
 .fn-btn.sil { padding: 0 8px; color: var(--red-ink); border-color: var(--red-cizgi); }
 .fn-btn svg { fill: none; stroke: currentColor; stroke-width: 1.9; }
 .fn-btn .dolgu { display: none; }
+
+/* Ayarlardaki kütüphane biçimli kartlar: düğme ve tıklanmayan hâl. */
+button.kt {
+  width: 100%; text-align: left; font: inherit; cursor: pointer;
+  -webkit-appearance: none; appearance: none;
+}
+.kt.duz { cursor: default; }
+.kt-dug {
+  position: relative; z-index: 1;
+  flex: 0 0 auto; align-self: center;
+  padding: 8px 14px; border-radius: 10px;
+  background: var(--surface); border: 1px solid var(--line-2);
+  font-family: var(--yazi-etiket); font-size: 13px; font-weight: 600; color: var(--ink);
+}
+.kt-yz em .eksik { color: var(--uyari, #b8801a); font-weight: 700; }
+/* Düğmeli ayar kartı dar ekranda: düğme alta, tam genişlikte. */
+@media (max-width: 520px) {
+  .kt { flex-wrap: wrap; }
+  .kt-dug { width: 100%; text-align: center; margin-top: 12px; position: relative; z-index: 1; }
+}

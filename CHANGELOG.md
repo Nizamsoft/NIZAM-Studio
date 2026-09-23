@@ -1,5 +1,15 @@
 # Değişiklik Günlüğü
 
+## v0.226.0
+- **Proje kartı sadeleşti:** logo, ad, sektör, başlangıç tarihi ve yüzde
+  kaldı. «0 görev», «X kişi», platform ve durum etiketleri kalktı — çoğu
+  projede bir şey anlatmıyorlardı. Sağ üstteki üç nokta menüsünde artık
+  yalnız **Projeyi sil** var.
+- **Paketlerde «Yeni» düğmesi kalktı** — paket yalnız SQL ile eklenir.
+- **Ayarlar > Güvenlik, Yayın ve Uygulama ve bakım** bölümleri Kütüphane
+  kartlarıyla aynı biçime geçti: solda renkli ikon, açıklama, tek satır
+  değer, sağda ok ya da düğme.
+
 ## v0.225.0
 - **Final aşaması öteki duraklarla aynı kalıba geçti:** başlık kartı,
   bitince yeşil «Bu adım tamamlandı» şeridi, «Son kontrol» ve «Hata veya
