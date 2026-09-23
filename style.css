@@ -9276,16 +9276,16 @@ textarea.pd-giris { resize: vertical; display: block; }
 .dsl-durum:empty { width: 0; }
 .dsl-durum svg { fill: none; stroke: currentColor; stroke-width: 2.4; }
 .dsl-durum .dolgu { display: none; }
-.dsl.bitti .dsl-durum { background: var(--red); color: #fff; }
+.dsl.bitti .dsl-durum { background: var(--st-done); color: #fff; border: 0; }
 .dsl.bitti .dsl-durum svg { width: 16px !important; height: 16px !important; }
 .dsl.su .dsl-durum { border: 2px solid var(--red); }
 .dsl.su .dsl-durum svg { width: 18px !important; height: 18px !important; fill: currentColor; }
-/* Biten ve şimdiki adımın numarası kırmızı: "buraya kadar geldim" dili
-   şeritteki noktalarla aynı. */
-.dsl.bitti .dsl-no, .dsl.su .dsl-no { background: var(--red); color: #fff; }
-.dsl.su {
-  background: var(--red-soft); border-color: var(--red-cizgi);
-}
+/* Şimdiki adım kırmızı, biten adım yeşil. Üstünde durduğun aşama
+   tamamlanmışsa yeşil kazanıyor — "burada yapılacak iş yok". */
+.dsl.su .dsl-no { background: var(--red); color: #fff; }
+.dsl.bitti .dsl-no { background: var(--st-done); color: #fff; }
+.dsl.su { background: var(--red-soft); border-color: var(--red-cizgi); }
+.dsl.su.bitti { background: var(--done-soft); border-color: var(--done-cizgi-2); }
 .dsl.kilitli .dsl-yz b { color: var(--ink-soft); }
 
 /* Proje ekranındaki tek yol düğmesi: uzun aşama listesinin yerine geçti. */
@@ -9484,3 +9484,10 @@ textarea.fm-gir { height: auto; padding: 0 0 12px; resize: vertical; line-height
 /* Tamamlanmış aşamada görsel kutuları yalnız gösterim: tıklanmıyor. */
 .fm-logo.salt, .fm-gorsel.salt { cursor: default; }
 .fm-logo.salt:not(.dolu), .fm-gorsel.salt:not(.dolu) { opacity: .6; }
+
+/* Düzenleme kipindeki "Kaydet" düğmesi yeşil: kırmızı "Devam Et" ile
+   karışmasın, basınca ileri gitmiyor. */
+.dsa-btn.ana.yesil { background: var(--st-done); border-color: var(--st-done); }
+/* Biten satırın madalyonu her durumda yeşil ve çerçevesiz — şimdiki adım
+   kuralından (kırmızı çerçeve) sonra geldiği için o kuralı eziyor. */
+.dsl.bitti .dsl-durum { border: 0; background: var(--st-done); color: #fff; }

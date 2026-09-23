@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.184.0
+- **Düzenle'ye basınca alt çubuktaki "Devam Et" yeşil "Kaydet" oluyor**;
+  Kaydet'e basınca düzenleme kapanıyor ve düğme yine "Devam Et" oluyor.
+- Aşamalar listesinde **tamamlanmış adım yeşil** — üstünde durduğun aşama
+  bitmişse de kırmızı değil yeşil görünüyor.
+
 ## v0.183.0
 - Tamamlanmış aşamada **logo ve görsel kutuları tıklanmıyor** — yanlışlıkla
   dokunup değiştirmek yok. Değiştirmek için "Düzenle".

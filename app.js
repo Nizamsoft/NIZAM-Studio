@@ -1562,6 +1562,18 @@ function durakAyak(p, anahtar) {
     ? `<a class="dsa-btn geri" href="#/projeler/${p.id}/${onceki.anahtar}">${ok} Geri</a>`
     : `<a class="dsa-btn geri" href="#/projeler/${p.id}">${ok} Proje</a>`;
 
+  /* Düzenleme kipindeyken ileri gitmek yerine kaydedip kipten çıkılıyor:
+     alanlar zaten yazdıkça kaydediliyor, düğme "işim bitti" demek. */
+  if (durakDuzenlemede(p, anahtar)) {
+    return `
+      <div class="dsa">
+        ${geri}
+        <span class="dsa-orta mono">${i + 1} / ${liste.length}</span>
+        <button class="dsa-btn ana yesil" type="button" data-eylem="durak-kaydet">
+          ${svg(ICON.tik, 15)} Kaydet</button>
+      </div>`;
+  }
+
   const kilit = !!(sonraki && sonraki.kilitli);
   const ileri = !sonraki
     ? `<a class="dsa-btn ana" href="#/projeler/${p.id}">Projeye dön ${ok}</a>`
@@ -1586,7 +1598,9 @@ function durakAsamaSayfasi(p, anahtar) {
 
   const satirlar = liste.map((d, i) => {
     const su  = d.anahtar === anahtar;
-    const hal = su ? 'su' : d.bitti ? 'bitti' : d.kilitli ? 'kilitli' : '';
+    /* "Şimdiki" ve "bitti" birlikte olabilir: üstünde durduğun aşama zaten
+       tamamlanmışsa satır kırmızı değil yeşil görünüyor. */
+    const hal = (su ? 'su ' : '') + (d.bitti ? 'bitti' : d.kilitli ? 'kilitli' : '');
     const def = DURAKLAR[d.anahtar] || {};
     const acik = typeof def.aciklama === 'function' ? def.aciklama(p) : def.aciklama;
     const ic  = `
@@ -1596,8 +1610,8 @@ function durakAsamaSayfasi(p, anahtar) {
         <i>${esc(acik || d.ozet || '')}</i>
       </span>
       <span class="dsl-durum">${
-        su        ? svg(ICON.nokta, 22)
-        : d.bitti ? svg(ICON.tik, 22)
+        d.bitti ? svg(ICON.tik, 22)
+        : su    ? svg(ICON.nokta, 22)
         : ''}</span>`;
     return (d.kilitli || su)
       ? `<span class="dsl ${hal}">${ic}</span>`
@@ -13817,6 +13831,15 @@ async function eylemCalistir(el) {
   if (e === 'proje-ac')  { location.hash = projeAdresi(id); return; }
 
   if (e === 'gorev-ac')   return gorevKartiAc(id);
+
+  /* Düzenleme kipinden çık. Odaktaki alan varsa önce onu kaydettiriyoruz:
+     blur, change dinleyicisini tetikliyor. */
+  if (e === 'durak-kaydet') {
+    const od = document.activeElement;
+    if (od && od.blur) od.blur();
+    setTimeout(() => { DUZENLENEN_DURAK = null; render(); }, 60);
+    return;
+  }
 
   /* Tamamlanmış aşamayı yeniden aç. */
   if (e === 'durak-duzenle') {
