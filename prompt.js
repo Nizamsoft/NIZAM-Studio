@@ -882,6 +882,56 @@ const PROMPT = {
     s.push('  başarısız oluyor. Gerçek bir kurulumda tam bu yüzden bir göç hiç');
     s.push('  çalışmamıştı, fark edilmesi haftalar sürdü.');
     s.push('');
+    /* Studio'nun saldırı testi (Güvenlik kontrolü durağı) bu dosyayı
+       okuyor: tablo listesi, denenecek fonksiyon, saldırılacak Edge
+       Function ve programa özel SQL senaryosu oradan geliyor. Dosyayı
+       yazacak tek doğru an burası — kuralları az önce Claude'un kendisi
+       yazdı, saldırı senaryosunu ancak o kurabilir. Dosya yoksa testin
+       C ve Ç katmanları sessizce atlanıyordu. */
+    s.push('## `guvenlik.json` — saldırı testinin künyesi');
+    s.push('');
+    s.push('Deponun **köküne** `guvenlik.json` yaz (varsa güncelle) ve aynı');
+    s.push('commit\'e koy. Sıradaki aşamada Studio bu dosyaya bakıp programa');
+    s.push('saldırıyor; dosya yoksa testin yarısı hiç çalışmıyor.');
+    s.push('');
+    s.push('```json');
+    s.push('{');
+    s.push('  "veritabani_surumu": "<bu işte yazdığın göç dosyasının numarası>",');
+    s.push('  "tablolar": { "liste": ["tablo_adi", "..."] },');
+    s.push('  "fonksiyonlar": { "deneme_guvenli": "<rpc adi>" },');
+    s.push('  "sunucu_islevi": { "ad": "<edge function adi>" },');
+    s.push('  "sql_testi": {');
+    s.push('    "parcalar": ["guvenlik/01-kur.sql", "guvenlik/02-dene.sql", "guvenlik/03-temizle.sql"],');
+    s.push('    "sonuc_tablosu": "ns_guvenlik_sonuc"');
+    s.push('  }');
+    s.push('}');
+    s.push('```');
+    s.push('');
+    s.push('Alanlar:');
+    s.push('- **`tablolar.liste`** — satır güvenliği altındaki **bütün** tabloların');
+    s.push('  adları. Studio bunları dışarıdan okumayı/değiştirmeyi deneyecek.');
+    s.push('- **`fonksiyonlar.deneme_guvenli`** — dışarıdan çağrılması zararsız');
+    s.push('  **tek** rpc fonksiyonunun adı (veri değiştirmeyen bir tanesi).');
+    s.push('  Böyle bir fonksiyon yoksa alanı hiç yazma.');
+    s.push('- **`sunucu_islevi.ad`** — yetki isteyen Edge Function\'ın adı (genelde');
+    s.push('  kullanıcı ekleme). Yoksa alanı hiç yazma.');
+    s.push('- **`sql_testi.parcalar`** — dosya yolları `guvenlik.json`\'un bulunduğu');
+    s.push('  klasöre **göre**. Üç parça yaz ve sırayla çalışacak biçimde kur:');
+    s.push('  **1)** sahte kullanıcı/veri ile sahneyi kur ve `sonuc_tablosu`\'nu aç,');
+    s.push('  **2)** o sahte kullanıcının kimliğiyle yetkisi olmayan şeylere');
+    s.push('  erişmeyi dene ve her denemeyi sonuç tablosuna yaz,');
+    s.push('  **3)** açtığın her şeyi (tablo dahil) temizle.');
+    s.push('  Parçalar **ayrı ayrı** çalıştırılıyor; bir parçanın açtığı şeyi');
+    s.push('  sonraki parça görebilir ama aynı istekte değil.');
+    s.push('- **`sql_testi.sonuc_tablosu`** — 2. parçanın yazdığı tablo. Sütunları');
+    s.push('  şunlar olsun: `kim` (hangi katman), `deneme` (ne denendi),');
+    s.push('  `sonuc` (**`AÇIK`** / **`KAPALI`** / `BİLGİ`), `ayrinti` (kısa açıklama).');
+    s.push('  Hükmü sen veriyorsun — Studio bu satırları olduğu gibi gösteriyor.');
+    s.push('');
+    s.push('Saldırı senaryosunu yukarıda yazdığın kurallara göre kur: hangi');
+    s.push('katman neyi görmemeliyse **tam onu** denesin. Geçeceğini bildiğin');
+    s.push('şeyleri değil, kapıda durması gerekenleri dene.');
+    s.push('');
     s.push('## Bitirince');
     s.push('');
     s.push('**Bu iş "yazdım, oldu" ile bitmiyor.** Sıradaki aşama (Güvenlik');
@@ -891,14 +941,19 @@ const PROMPT = {
     s.push('bloğu vermeden önce kendi yazdığını bir kez daha oku: bir yerde');
     s.push('kapıyı gevşettin mi, bir politikayı `true` bıraktın mı?');
     s.push('');
-    s.push('Önce göç dosyasını commit\'e gönder, sonra SQL bloğunu ver.');
+    s.push('Önce göç dosyasını ve `guvenlik.json`\'u commit\'e gönder, sonra SQL');
+    s.push('bloğunu ver.');
     s.push('Ardından, başka hiçbir şey yazmadan, yalnızca aşağıdaki bloğu');
     s.push('doldurup ver — Studio bu bloğu okuyup kurulumun bittiğini');
     s.push('anlayacak:');
     s.push('');
     s.push('```json');
-    s.push('{ "kuruldu": true }');
+    s.push('{ "kuruldu": true, "guvenlik_json": true }');
     s.push('```');
+    s.push('');
+    s.push('`guvenlik_json` alanını `guvenlik.json`\'u gerçekten yazıp commit\'e');
+    s.push('gönderdiysen `true` yap; yazmadıysan `false` — Studio saldırı testinde');
+    s.push('bu dosyayı arayacak, yoksa boşuna beklemesin.');
     return s.join('\n');
   },
 

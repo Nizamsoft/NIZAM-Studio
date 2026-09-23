@@ -1,5 +1,14 @@
 # Değişiklik Günlüğü
 
+## v0.221.0
+- **`guvenlik.json` artık kuruluyor.** Hiçbir prompt bu dosyayı üretmiyordu;
+  yeni projelerde saldırı testinin C (programa özel) ve Ç (sunucu işlevi)
+  katmanları sessizce atlanıyordu. Yetkilendirme promptu artık dosyayı
+  deponun köküne yazdırıyor: tablo listesi, denenecek rpc, saldırılacak
+  Edge Function, üç parçalı SQL senaryosu ve sonuç tablosunun sütunları
+  tarif ediliyor. Dönen blokta `guvenlik_json` alanı dosyanın yazılıp
+  yazılmadığını söylüyor, Studio da kaydediyor.
+
 ## v0.220.0
 - **Yetkilendirme yeniden kuruldu:** her katman için tek kart — ikon, adı,
   merdivendeki yeri ve yetkileri yazdığın kutu (altında karakter sayacı).

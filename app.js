@@ -14633,9 +14633,16 @@ async function eylemCalistir(el) {
     }
     const pl = pr.palet || {};
     /* JSON geldiyse kısıtlamalar koda işlenmiş demektir; ayrıca bir
-       "tamamlandı" düğmesine basmak fazlalıktı. */
-    return isYap(() => DB.paletKaydet(pr.id, Object.assign({}, pl,
-      { yetkiKodTamamlandi: true, yetkiTamamlandi: true })), 'Yetkiler kuruldu.');
+       "tamamlandı" düğmesine basmak fazlalıktı. Claude aynı blokta
+       guvenlik.json'u yazıp yazmadığını da söylüyor — Güvenlik kontrolü
+       durağı dosyayı boşuna aramasın. */
+    return isYap(() => DB.paletKaydet(pr.id, Object.assign({}, pl, {
+      yetkiKodTamamlandi: true,
+      yetkiTamamlandi: true,
+      guvenlikJsonVar: o.guvenlik_json === true,
+    })), o.guvenlik_json === true
+      ? 'Yetkiler kuruldu, guvenlik.json hazır.'
+      : 'Yetkiler kuruldu.');
   }
 
   if (e === 'yetki-tamamlandi') {
