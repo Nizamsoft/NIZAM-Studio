@@ -9356,11 +9356,9 @@ textarea.fm-gir { height: auto; padding: 0 0 12px; resize: vertical; line-height
 .fm-cip.on { background: var(--red); border-color: var(--red); color: #fff; }
 
 /* Logo / renk / işletme görseli */
-.fm-marka { display: flex; gap: 10px; align-items: stretch; }
 .fm-logo {
-  flex: 1; min-width: 0; display: flex; flex-direction: column;
-  align-items: center; justify-content: center; gap: 3px;
-  height: 110px; border-radius: 14px; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 3px; width: 100%; height: 118px; border-radius: 14px; cursor: pointer;
   background: var(--surface) center / cover no-repeat;
   border: 1.5px dashed var(--line); color: var(--ink-dim);
 }
@@ -9368,17 +9366,8 @@ textarea.fm-gir { height: auto; padding: 0 0 12px; resize: vertical; line-height
 .fm-logo i { font-style: normal; font-size: 11.5px; }
 .fm-logo svg { fill: none; stroke: currentColor; stroke-width: 1.7; }
 .fm-logo .dolgu { display: none; }
-.fm-logo.dolu { border-style: solid; border-color: var(--line-2); }
-.fm-renk {
-  flex: 0 0 auto; display: flex; flex-direction: column; align-items: center;
-  justify-content: center; gap: 8px; width: 96px; border-radius: 14px; cursor: pointer;
-  background: var(--surface); border: 1.5px solid var(--line-2);
-  font-family: var(--yazi-etiket); font-size: 12.5px; font-weight: 600; color: var(--ink);
-}
-.fm-renk-top {
-  width: 30px; height: 30px; border-radius: 999px;
-  background: linear-gradient(140deg, var(--p1, var(--metal-1)), var(--p2, var(--metal-2)));
-}
+.fm-logo.dolu { border-style: solid; border-color: var(--line-2); background-size: contain; }
+
 .fm-gorsel {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: 3px; width: 100%; height: 132px; border-radius: 14px; overflow: hidden;

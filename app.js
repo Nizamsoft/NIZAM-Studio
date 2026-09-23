@@ -1872,17 +1872,11 @@ function firmaSayfasi(p, d) {
     + fmSecim('Sektör', sektorler, 'Promptun ilk satırları ve kimlik dosyası bunlardan çıkıyor.')
     + `<div class="fm">
         <span class="fm-et">Logo <i>(Opsiyonel)</i></span>
-        <div class="fm-marka">
-          <button class="fm-logo ${logo ? 'dolu' : ''}" type="button"
-                  data-eylem="logo-yukle" data-proje="${p.id}"
-                  ${logo ? `style="background-image:url('${esc(logo)}')"` : ''}>
-            ${logo ? '' : `${svg(ICON.resim, 20)}<b>Logo seçin</b><i>PNG, JPG (maks. 5MB)</i>`}
-          </button>
-          <button class="fm-renk" type="button" data-eylem="marka-renk" data-proje="${p.id}"
-                  style="${renkDegiskenleri(p.renk)}">
-            <span class="fm-renk-top"></span>${esc(renkAdi(p.renk))}
-          </button>
-        </div>
+        <button class="fm-logo ${logo ? 'dolu' : ''}" type="button"
+                data-eylem="logo-yukle" data-proje="${p.id}"
+                ${logo ? `style="background-image:url('${esc(logo)}')"` : ''}>
+          ${logo ? '' : `${svg(ICON.resim, 20)}<b>Logo seçin</b><i>PNG, JPG (maks. 5MB)</i>`}
+        </button>
       </div>
       <div class="fm">
         <span class="fm-et">İşletme görseli <i>(Opsiyonel)</i></span>

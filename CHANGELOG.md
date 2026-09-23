@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.178.0
+- Firma bilgilerinden **proje rengi** seçimi kalktı; logo kutusu tam genişlik.
+
 ## v0.177.0
 **Aşamaların içi artık form.** Firma / Program / Bağlantılar'ı doldurmak için
 açılan tam ekran sihirbazlar kalktı; alanlar aşamanın kendi sayfasında:
