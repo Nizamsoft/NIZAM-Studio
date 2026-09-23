@@ -5171,13 +5171,18 @@ function betaGelistirmeEkrani(p, d) {
       </div>
     </div>`;
 
+  /* Bitince öteki duraklardaki yeşil "Bu adım tamamlandı" barı çıkıyor —
+     küçük bir satır yazı, aşamanın bittiğini yeterince söylemiyordu.
+     Kartlar kaybolmuyor: yayına çıkmış uygulama işaretlendikten sonra da
+     güncelleniyor. */
   return `<div class="fb-govde">`
     + adimBasligi(p, d, '')
-    + site + guncelle + json
     + (pl.betaTamamlandi
-        ? `<div class="kur-deger duz">${svg(ICON.tik, 13)} Bu aşama tamamlandı</div>`
-        : `<button class="sayfa-dug bitir" type="button" data-eylem="beta-tamamlandi"
-                    data-proje="${p.id}">${svg(ICON.bayrak, 15)} Geliştirme bitti</button>`)
+        ? fmTamamBar(p, 'beta', 'Deneme ve geliştirme bitti.', false) : '')
+    + site + guncelle + json
+    + (pl.betaTamamlandi ? '' : `
+      <button class="sayfa-dug bitir" type="button" data-eylem="beta-tamamlandi"
+              data-proje="${p.id}">${svg(ICON.bayrak, 15)} Geliştirme bitti</button>`)
     + `</div>`;
 }
 

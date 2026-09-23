@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.214.0
+- **«Geliştirme bitti»ye basınca artık öteki aşamalardaki yeşil
+  «Bu adım tamamlandı» barı çıkıyor** — küçük bir satır yazı yerine.
+  Kartlar yerinde kalıyor: yayındaki uygulama işaretlendikten sonra da
+  güncellenebiliyor.
+
 ## v0.213.0
 - **Beta ve geliştirme yeniden kuruldu:** üç kart — *Siteyi incele* (kartın
   tamamı bağlantı, dokununca doğrudan siteye gider), *Güncelleme yap*
