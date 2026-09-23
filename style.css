@@ -9432,10 +9432,7 @@ textarea.fm-gir { height: auto; padding: 0 0 12px; resize: vertical; line-height
 .fm-tamam-ik svg { fill: none; stroke: currentColor; stroke-width: 2.6; }
 .fm-tamam-ik .dolgu { display: none; }
 .fm-tamam-yz { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-.fm-tamam-yz b {
-  font-size: 14px; font-weight: 700; color: var(--st-done-t);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
+.fm-tamam-yz b { font-size: 14px; font-weight: 700; color: var(--st-done-t); }
 .fm-tamam-yz i { font-style: normal; font-size: 12.5px; color: var(--ink-soft); }
 .fm-duzenle {
   flex: 0 0 auto; display: inline-flex; align-items: center; gap: 5px;

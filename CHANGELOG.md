@@ -1,5 +1,12 @@
 # Değişiklik Günlüğü
 
+## v0.205.0
+- Modül kurulduysa "Kurulum ve yapı" aşaması **tamamlandı görünümüne**
+  geçiyor: yeşil şerit + "Modülleri incele". İki adım kartı boşuna açık
+  kalmıyor.
+- Yeni bir bölüm anlatmak için yeşil şeritteki **"Yeni bölüm"** düğmesi
+  kartları geri açıyor.
+
 ## v0.204.0
 - Modüller ekranında **modül listesi en üstte**; işlemler ayraçla ayrılmış
   "Güncelleme" başlığı altında — modülmüş gibi okunmuyorlar.

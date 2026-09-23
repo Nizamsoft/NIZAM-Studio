@@ -1743,7 +1743,7 @@ function fmSecim(etiket, secenekler, ipucu) {
 }
 
 /* Tamamlanmış aşamanın tepesindeki yeşil şerit + "Düzenle". */
-function fmTamamBar(p, anahtar, mesaj) {
+function fmTamamBar(p, anahtar, mesaj, dugmeAd) {
   return `
     <div class="fm-tamam">
       <span class="fm-tamam-ik">${svg(ICON.tik, 17)}</span>
@@ -1753,7 +1753,7 @@ function fmTamamBar(p, anahtar, mesaj) {
       </span>
       <button class="fm-duzenle" type="button" data-eylem="durak-duzenle"
               data-proje="${p.id}" data-durak="${anahtar}">
-        ${svg(ICON.kalem, 14)} Düzenle</button>
+        ${svg(ICON.kalem, 14)} ${esc(dugmeAd || 'Düzenle')}</button>
     </div>`;
 }
 
@@ -4218,6 +4218,8 @@ function onizlemeEkrani(p, t) {
 function anlatEkrani(p, t, d) {
   const metin = t.anlat || '';
   const dolu  = metin.trim().length > 20;
+  const moduller = DB.modulleri(p.id).filter(m => m.ad !== GENEL_MODUL);
+  const sayfaSayisi = moduller.reduce((n, m) => n + DB.sayfalari(m.id).length, 0);
 
   /* Öteki aşamalarla aynı dil: numaralı iki kart. Birincisi ne istediğini
      yazdırıp promptu veriyor, ikincisi Claude'un cevabını alıp yapıyı
@@ -4277,8 +4279,6 @@ function anlatEkrani(p, t, d) {
 
   /* Kurulu yapıya bakmak için tek kapı: modül sayısı burada da görünüyor
      ki kullanıcı bir şeyin kurulu olduğunu ekrandan anlasın. */
-  const moduller = DB.modulleri(p.id).filter(m => m.ad !== GENEL_MODUL);
-  const sayfaSayisi = moduller.reduce((n, m) => n + DB.sayfalari(m.id).length, 0);
   const incele = `
     <button class="md-is" type="button" data-eylem="yapi-moduller" data-proje="${p.id}">
       <span class="md-is-ik">${svg(ICON.izgaraDort, 18)}</span>
@@ -4290,6 +4290,17 @@ function anlatEkrani(p, t, d) {
       </span>
       <span class="md-ok">${svg(ICON.chevron, 15)}</span>
     </button>`;
+
+  /* Modül kurulduysa aşama bitti: iki kart "şimdi/bekliyor" diye açık
+     kalmasın. Yeni bir bölüm anlatmak isteyen yeşil şeritteki düğmeyle
+     kartları geri açıyor. */
+  if (moduller.length && !durakDuzenlemede(p, 'yapi')) {
+    return `<div class="fb-govde">`
+      + adimBasligi(p, d, '2/2')
+      + fmTamamBar(p, 'yapi', 'Programın yapısı kuruldu.', 'Yeni bölüm')
+      + incele
+      + `</div>`;
+  }
 
   return `<div class="fb-govde">`
     + adimBasligi(p, d, (dolu ? 1 : 0) + '/2')
