@@ -7460,16 +7460,18 @@ function render() {
   /* Zemin fotoğrafı yalnızca Panel'de. Sayfa değişince koyuluk sıfırlanır,
      yoksa panele döndüğünde fotoğraf kararmış geliyor. */
   $('#main').classList.toggle('susulu', key === 'panel' && !detay);
-  /* Adım akışları kaydırılmaz: üç parça ekrana bölüşür. Yapı durağı ancak
-     akış açıkken sabit; kurulu modül listesi normal kaydırılan sayfadır. */
   /* Yazışma tam ekran: kendi başlığı ve alttaki yazma çubuğu var,
      uygulamanın üst çubuğu ve sekmeleri gizleniyor. */
   const yazisma = key === 'sohbet' && !!id;
   $('#app').classList.toggle('yazisma', yazisma);
   /* Sohbet ve yazışmada geçiş animasyonu yok: anında açılsın. */
   $('#app').classList.toggle('sohbette', key === 'sohbet');
-  $('#view').classList.toggle('sabit',
-    yazisma || sayfa === 'tasarim' || sayfa === 'yapi' || sayfa === 'beta');
+  /* Kaydırılmayan tek ekran yazışma: yazma çubuğu altta sabit duruyor.
+     Tasarım/Yapı/Beta durakları da eskiden buradaydı — üç parçaya bölünen
+     akış ekranlarıydılar. O akışlar kalktı, yerlerine normal form sayfaları
+     geldi; sınıf kalınca sayfa kaydırılamıyor, «Devam Et» alt çubuğun
+     arkasında kalıyordu. */
+  $('#view').classList.toggle('sabit', yazisma);
   ustEylemYaz(key, detay, id);
   artiYaz(key, detay, id);
   /* Geri oku hiç kaybolmuyor: gidilecek bir yer yoksa yalnız soluyor ve

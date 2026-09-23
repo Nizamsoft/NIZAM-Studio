@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.209.0
+- **«Kurulum ve yapı» ekranı kaydırılmıyordu.** Bu durak (tasarım ve beta ile
+  birlikte) hâlâ eski «kaydırılmaz akış» kipinde açılıyordu: üç parçanın
+  ekranı bölüştüğü o akışlar kalkmıştı ama sınıf kalmıştı, sayfa uzayınca
+  alt kısmına ulaşılamıyordu. Artık yalnız yazışma ekranı kaydırılmaz.
+
 ## v0.208.0
 - **Telefonda sayfa hâlâ kaydırılamıyordu, «Devam Et» düğmesine basılamıyordu.**
   İki sebep vardı: gövde yüksekliği `dvh` ile ölçülüyordu ve sayfa sabit
