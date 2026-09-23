@@ -1429,8 +1429,12 @@ function durakSerit(p, anahtar) {
   const su    = liste.findIndex(d => d.anahtar === anahtar);
   const simdi = liste[su] || {};
 
+  /* Bulunduğun aşama tamamlandıysa şerit yeşile dönüyor: "buradaki iş
+     bitti" bilgisini sayfanın en tepesinde de vermek gerekiyor. */
+  const suBitti = !!(liste[su] && liste[su].bitti);
+
   const halkalar = liste.map((d, i) => {
-    const hal = i === su ? 'su' : d.bitti ? 'bitti' : d.kilitli ? 'kilitli' : 'acik';
+    const hal = i === su ? ('su' + (suBitti ? ' tamam' : '')) : d.bitti ? 'bitti' : d.kilitli ? 'kilitli' : 'acik';
     /* Halkaları birleştiren çizgi ÖNCEKİ adımın durumunu gösteriyor: yeşil
        çizgi "buraya kadar tamam" demek. Kendi durumuna bakarsa aradaki
        bitmemiş adım gizleniyordu. */
@@ -1455,7 +1459,7 @@ function durakSerit(p, anahtar) {
   return `
     <div class="dsr only-desktop">${halkalar}</div>
     <div class="dsm">
-      <div class="dsm-nk">${noktalar}</div>
+      <div class="dsm-nk ${suBitti ? 'tamam' : ''}">${noktalar}</div>
       <div class="dsm-alt">
         <span class="dsm-say mono">${su + 1}/${liste.length}</span>
         <span class="dsm-ad">${esc(simdi.ad || '')}</span>

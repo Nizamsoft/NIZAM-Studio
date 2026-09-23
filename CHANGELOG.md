@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.182.0
+- Bulunduğun aşama tamamlandıysa **üstteki şerit yeşile** dönüyor (noktalar,
+  aradaki çizgi ve şimdiki halka).
+- **Logo ve işletme görseli dolu ise yeşil** çerçeveli — formdaki öteki dolu
+  alanlarla aynı dil.
+
 ## v0.181.0
 - Aşama tamamlandıktan sonra da **Logo** ve **İşletme görseli** kutuları
   duruyor; sonradan görsel eklemek için "Düzenle"ye basmak gerekmiyor.

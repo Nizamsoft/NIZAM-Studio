@@ -9463,3 +9463,20 @@ textarea.fm-gir { height: auto; padding: 0 0 12px; resize: vertical; line-height
   background: var(--surface) center / cover no-repeat; border: 1.5px solid var(--line-2);
 }
 .fm-onizleme.genis { width: 100%; aspect-ratio: 16 / 9; }
+
+/* Bulunduğun aşama tamamlandıysa şerit yeşil: geçilen noktalar, aradaki
+   çizgi ve şimdiki nokta hep birden renk değiştiriyor. */
+.dsm-nk.tamam i.bitti,
+.dsm-nk.tamam i.su { background: var(--st-done); }
+.dsm-nk.tamam i.bitti::before,
+.dsm-nk.tamam i.su::before { background: var(--st-done); }
+.dsm-nk.tamam i.su { box-shadow: 0 0 0 4px var(--done-soft); }
+.dsr-a.su.tamam .dsr-yuv {
+  background: var(--st-done); border-color: var(--st-done); color: #fff;
+  box-shadow: 0 0 0 4px var(--done-soft);
+}
+
+/* Dolu görsel kutuları da yeşil: formdaki öteki dolu alanlarla aynı dil. */
+.fm-logo.dolu, .fm-gorsel.dolu {
+  border-color: var(--done-cizgi-2); box-shadow: 0 0 0 3px var(--done-soft);
+}
