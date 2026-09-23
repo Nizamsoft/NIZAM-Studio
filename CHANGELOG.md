@@ -1,5 +1,12 @@
 # Değişiklik Günlüğü
 
+## v0.195.0
+- **Sohbete ad verme kalktı.** Ad hiçbir yerde kullanılmıyordu, sadece fazladan
+  bir adımdı. Claude bağlantısı artık "Bağlandı olarak işaretle" ile bitiyor.
+- "Kopyala ve Claude'u aç" düğmesi **doğrudan Claude'u açıyor**; araya küçük
+  pencere girmiyor.
+- Eski projelerde girilmiş sohbet adı kartta görünmeye devam ediyor.
+
 ## v0.194.0
 - Claude bağlantısı tek ekranda: **"Kopyala ve Claude'u aç"** düğmesi metni
   panoya alıp Claude'u açıyor, hemen altındaki kutuya sohbetin adını yazıp

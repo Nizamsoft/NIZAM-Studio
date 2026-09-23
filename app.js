@@ -2063,7 +2063,7 @@ function baglantilarSayfasi(p, d) {
   /* Bitmiş bağlantının kartında görünen değer — ne bağlandığı bir bakışta
      okunsun diye. */
   const deger = k => k === 'github' ? (depoSlug(p.repo) || p.repo || '')
-    : k === 'claude'    ? String(pl.sohbetAdi || '').trim()
+    : k === 'claude'    ? (String(pl.sohbetAdi || '').trim() || 'Bağlandı')
     : k === 'pages'     ? (pl.alanAdi || 'Yayında')
     : k === 'supabase'  ? String(pl.supabaseUrl || '').trim()
     : k === 'sql'       ? 'Veritabanı yüklendi'
@@ -2135,7 +2135,7 @@ const BAGLANTI_ADIMLARI = {
            'Depo oluştuktan sonra buradan bağlandığını işaretleyin.'],
   claude: ['Düğmeye basın: metin kopyalanır, Claude açılır.',
            'Yeni sohbet açıp yapıştırın.',
-           'Sohbete verdiğiniz adı aşağıya yazıp işaretleyin.'],
+           'Dönünce "Bağlandı olarak işaretle" deyin.'],
   pages: ['Yayın ayarlarını açın.', 'Site açıldıysa onaylayın.'],
   supabase: ['Supabase\'de proje açın.', 'Proje adresi ile anon key\'i yapıştırın.'],
   sql: ['Üç parçayı sırayla kopyalayın.', 'Supabase\'in SQL ekranında çalıştırın.',
@@ -6463,7 +6463,7 @@ function projeDuraklari(p) {
          "Kuruldu" kutusu) kalktı: Studio depoya bakamadığı için elle
          onaylatmak gereksiz bir sürtünmeydi, sihirbazı bitirmek yetiyor. */
       ad: 'Bağlantılar ve temel',
-      bitti: !!p.repo && !!String(pl0.sohbetAdi || '').trim()
+      bitti: !!p.repo && claudeBaglandiMi(p)
              && !!pl0.alanAdi && !!pl0.yayinda
              && (!sunuculuMu(p) || (!!String(pl0.supabaseUrl || '').trim()
                                      && !!String(pl0.supabaseAnon || '').trim()))
@@ -11446,7 +11446,7 @@ function baglantiAdimListesi(p) {
 function baglantiAdimBittiMi(k, p) {
   const pl = p.palet || {};
   if (k === 'github')       return !!p.repo;
-  if (k === 'claude')       return !!String(pl.sohbetAdi || '').trim();
+  if (k === 'claude')       return claudeBaglandiMi(p);
   if (k === 'pages')        return !!pl.yayinda;
   if (k === 'supabase')     return !!String(pl.supabaseUrl || '').trim() && !!String(pl.supabaseAnon || '').trim();
   if (k === 'sql')          return !!pl.sqlYuklendi;
@@ -11623,35 +11623,33 @@ function baglantiAdimGithub(p) {
     ]);
 }
 
-/* 2 · Claude — tanışma promptu kopyalanınca sohbet adı soruluyor, aynen
-   eskisi gibi (`tanisma-prompt` / `sohbet-adi` eylemleri). */
+/* 2 · Claude — düğme tanışma promptunu panoya yazıp Claude'u aynı anda
+   açıyor (data-pano + gerçek bağlantı), araya pencere girmiyor. */
 function baglantiAdimClaude(p) {
-  const pl   = p.palet || {};
-  const depo = !!p.repo;
-  const isim = String(pl.sohbetAdi || '').trim();
-
-  if (!depo) {
+  if (!p.repo) {
     return shBaslikServis('claude', 'Claude\'a bağlan', '')
       + `<p class="ipucu">Önce GitHub adımından depo bağlanmalı.</p>`;
   }
 
-  /* Tek düğme: başlangıç metnini panoya yazıp Claude'u açıyor. Sohbetin adı
-     ayrı bir pencerede değil, hemen altındaki kutuda — ekran değiştirmeden
-     yazılıp işaretleniyor. */
+  /* Tek düğme metni panoya yazıp Claude'u açıyor, ikincisi "yaptım" diyor.
+     Sohbete ad verme kutusu kalktı: ad hiçbir yerde kullanılmıyordu, yalnız
+     bir adım daha ekliyordu. */
   return shBaslikServis('claude', 'Claude\'a bağlan', '')
-    + `<button class="sayfa-dug" type="button" data-eylem="tanisma-prompt" data-proje="${p.id}">
-        ${svg(ICON.kopya, 15)} Kopyala ve Claude'u aç</button>
-      <span class="fm-kutu" style="margin:10px 0">
-        <span class="fm-ik">${svg(ICON.dosya, 16)}</span>
-        <input class="fm-gir" type="text" id="ba-sohbet" value="${esc(isim)}"
-               placeholder="Sohbete verdiğiniz adı yazın…" autocomplete="off"
-               maxlength="60">
-      </span>
-      <button class="sayfa-dug ikincil" type="button"
-              data-eylem="sohbet-adi-kaydet" data-proje="${p.id}">
+    + `<a class="sayfa-dug" target="_blank" rel="noopener"
+         href="${esc(claudeAdresi(depoSlug(p.repo)))}"
+         data-pano="tanisma" data-proje="${p.id}">
+        ${svg(ICON.kopya, 15)} Kopyala ve Claude'u aç</a>
+      <button class="sayfa-dug ikincil" type="button" style="margin-top:10px"
+              data-eylem="claude-baglandi" data-proje="${p.id}">
         ${svg(ICON.tik, 15)} Bağlandı olarak işaretle</button>`;
 }
-/* 3 · Yayın (GitHub Pages) — bilerek Claude'dan sonra: kod daha
+
+/* Claude bağlantısı kuruldu mu? Eskiden sohbet adına bakıyordu; ad kalkınca
+   kullanıcının işaretine bakıyor. Eski projelerde ad varsa o da sayılıyor. */
+function claudeBaglandiMi(p) {
+  const pl = (p && p.palet) || {};
+  return !!pl.claudeBaglandi || !!String(pl.sohbetAdi || '').trim();
+}/* 3 · Yayın (GitHub Pages) — bilerek Claude'dan sonra: kod daha
    yazılmadan siteyi yayına almanın anlamı yok. Sekmeden dönünce
    PAGES_BEKLIYOR üzerinden bir onay kutusu çıkıyor — "yayında" ancak
    kullanıcı onaylayınca yazılıyor (bkz. pagesBaglandiOnayla). */
@@ -12700,9 +12698,9 @@ function fdKart(renk, ikon, baslik, ic) {
    Yazılım bilmeyen biri için tek soruya odaklanmak, uzun formu
    taramaktan kolay. */
 
-/* Tanışma promptu panoya alındıktan sonraki üç adımı gösteren küçük
-   pencere — "sohbet-adi" karesi de bu ekranın devamı olduğu için burada
-   hatırlatılıyor. */
+/* Tanışma promptu panoya alındıktan sonraki adımları gösteren küçük
+   pencere. Bağlantılar aşamasında artık kullanılmıyor (düğme Claude'u
+   doğrudan açıyor); eski çağrı yolları için duruyor. */
 function sohbetYonlendir(p) {
   const adim = (no, ic) => `<div class="adm"><b>${no}</b><span>${ic}</span></div>`;
   modalAc(`
@@ -14696,30 +14694,11 @@ async function eylemCalistir(el) {
     return toast(deger.trim() ? 'Supabase organizasyonu kaydedildi.' : 'Supabase organizasyonu silindi.');
   }
 
-  /* Sohbet adı kartın içindeki kutudan kaydediliyor — ayrı pencere yok. */
-  if (e === 'sohbet-adi-kaydet') {
+  if (e === 'claude-baglandi') {
     const pr = DB.proje(el.dataset.proje);
     if (!pr) return;
-    const ad = String((($('#ba-sohbet') || {}).value) || '').trim();
-    if (!ad) return toast('Önce sohbete verdiğin adı yaz.', 'uyari');
     return isYap(() => DB.paletKaydet(pr.id, Object.assign({}, pr.palet || {},
-      { sohbetAdi: ad, sohbetAcildi: true })), 'Claude bağlantısı kaydedildi.');
-  }
-
-  if (e === 'sohbet-adi') {
-    const pr = DB.proje(el.dataset.proje);
-    if (!pr) return;
-    const ad = await metinSor({
-      baslik: 'Claude Code sohbeti',
-      aciklama: 'Oturumu hangi adla açtın? Sonra hangi sohbete döneceğini '
-              + 'aramadan bulursun.',
-      deger: (pr.palet || {}).sohbetAdi || '',
-      yerTutucu: depoAdi(pr),
-      buton: 'Kaydet',
-    });
-    if (ad === null) return;
-    return isYap(() => DB.paletKaydet(pr.id,
-      Object.assign({}, pr.palet || {}, { sohbetAdi: ad })), 'Sohbet adı kaydedildi.');
+      { claudeBaglandi: true, sohbetAcildi: true })), 'Claude bağlantısı kuruldu.');
   }
 
   if (e === 'final-onay') {
