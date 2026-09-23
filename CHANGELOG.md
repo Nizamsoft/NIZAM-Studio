@@ -1,5 +1,14 @@
 # Değişiklik Günlüğü
 
+## v0.180.0
+- **Tamamlanmış aşamaya dönünce form değil özet çıkıyor**: yeşil "Bu adım
+  tamamlandı" şeridi, yanında **Düzenle**, altında değerler yeşil zeminli ve
+  tikli olarak salt okunur duruyor.
+- Düzenle'ye basınca alanlar yeniden açılıyor; başka bir aşamaya geçince
+  kendiliğinden kapanıyor.
+- Bağlantılar aşamasında da hepsi bağlandıysa aynı yeşil şerit çıkıyor;
+  Düzenle bütün bağlantı bölümlerini yeniden açıyor.
+
 ## v0.179.0
 - Firma bilgilerindeki **logo kutusu kare** oldu.
 

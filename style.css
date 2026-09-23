@@ -9413,3 +9413,53 @@ textarea.fm-gir { height: auto; padding: 0 0 12px; resize: vertical; line-height
 /* Bölüm başlığı zaten servisi söylüyor — gövdedeki ikinci logo fazlalık. */
 .bg-ic .sh-bas .sh-rozet { display: none; }
 .bg-ic .sh-bas { gap: 0; }
+
+/* Tamamlanmış aşama: yeşil şerit + salt okunur alanlar */
+.fm-tamam {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px; margin-bottom: 18px; border-radius: 15px;
+  background: var(--done-soft); border: 1px solid var(--done-cizgi);
+}
+.fm-tamam-ik {
+  flex: 0 0 auto; display: flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px; border-radius: 999px;
+  background: var(--st-done); color: #fff;
+}
+.fm-tamam-ik svg { fill: none; stroke: currentColor; stroke-width: 2.6; }
+.fm-tamam-ik .dolgu { display: none; }
+.fm-tamam-yz { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.fm-tamam-yz b {
+  font-size: 14px; font-weight: 700; color: var(--st-done-t);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.fm-tamam-yz i { font-style: normal; font-size: 12.5px; color: var(--ink-soft); }
+.fm-duzenle {
+  flex: 0 0 auto; display: inline-flex; align-items: center; gap: 5px;
+  height: 34px; padding: 0 11px; border-radius: 11px; cursor: pointer;
+  background: var(--surface); border: 1.5px solid var(--done-cizgi-2);
+  color: var(--st-done-t);
+  font-family: var(--yazi-etiket); font-size: 13px; font-weight: 700;
+}
+.fm-duzenle svg { fill: none; stroke: currentColor; stroke-width: 1.9; }
+.fm-duzenle .dolgu { display: none; }
+
+.fm-kutu.dolu {
+  background: var(--done-soft); border-color: var(--done-cizgi); padding: 13px 12px;
+}
+.fm-kutu.dolu .fm-ik { color: var(--ink-soft); }
+.fm-oku {
+  flex: 1; min-width: 0; font-size: 15px; color: var(--ink-strong);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+/* Dolu alanın tiki her zaman görünür: yeşil daire, beyaz tik. */
+.fm-kutu.dolu .fm-tik {
+  opacity: 1; transform: none;
+  display: flex; align-items: center; justify-content: center;
+  width: 24px; height: 24px; border-radius: 999px;
+  background: var(--st-done); color: #fff;
+}
+.fm-onizleme {
+  display: block; width: 148px; aspect-ratio: 1 / 1; border-radius: 14px;
+  background: var(--surface) center / cover no-repeat; border: 1.5px solid var(--line-2);
+}
+.fm-onizleme.genis { width: 100%; aspect-ratio: 16 / 9; }

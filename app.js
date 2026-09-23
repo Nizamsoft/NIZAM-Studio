@@ -101,6 +101,10 @@ let SOHBET_ARAMA = '';
 let EKIP_SUZ   = 'tumu';
 let EKIP_SIRA  = 'aktiflik';
 let SON_EKRAN      = '';
+/* Tamamlanmış bir aşamaya dönünce form değil özet görünüyor; "Düzenle"
+   denince o aşama bu değişkende tutuluyor ve alanlar yeniden açılıyor.
+   Başka bir aşamaya geçilince kendiliğinden sıfırlanıyor (bkz. render). */
+let DUZENLENEN_DURAK = null;
 const ACIK_STANDART = new Set();
 /* Gruplar akordeon: aynı anda yalnızca biri açık kalır. */
 let ACIK_GRUP = null;
@@ -1714,6 +1718,39 @@ function fmSecim(etiket, secenekler, ipucu) {
     </div>`;
 }
 
+/* Tamamlanmış aşamanın tepesindeki yeşil şerit + "Düzenle". */
+function fmTamamBar(p, anahtar, mesaj) {
+  return `
+    <div class="fm-tamam">
+      <span class="fm-tamam-ik">${svg(ICON.tik, 17)}</span>
+      <span class="fm-tamam-yz">
+        <b>Bu adım tamamlandı</b>
+        <i>${esc(mesaj || 'Zorunlu bilgiler dolduruldu.')}</i>
+      </span>
+      <button class="fm-duzenle" type="button" data-eylem="durak-duzenle"
+              data-proje="${p.id}" data-durak="${anahtar}">
+        ${svg(ICON.kalem, 14)} Düzenle</button>
+    </div>`;
+}
+
+/* Salt okunur alan: yazılamaz, yeşil zeminli, sağında tik. */
+function fmOkuma(etiket, ikon, deger) {
+  return `
+    <div class="fm">
+      <span class="fm-et">${esc(etiket)}</span>
+      <span class="fm-kutu dolu">
+        ${ikon ? `<span class="fm-ik">${svg(ikon, 17)}</span>` : ''}
+        <span class="fm-oku">${esc(deger)}</span>
+        <span class="fm-tik">${svg(ICON.tik, 14)}</span>
+      </span>
+    </div>`;
+}
+
+/* Bu aşama şu an düzenleme kipinde mi? */
+function durakDuzenlemede(p, anahtar) {
+  return DUZENLENEN_DURAK === p.id + '/' + anahtar;
+}
+
 /* Yazılan değeri kaydet. Ekranı hemen yeniden çizmiyoruz: kullanıcı bir
    sonraki alana geçtiyse imleç kaçardı. Odak formdan çıkmışsa çiziyoruz ki
    şerit ve "Devam Et" güncel kalsın. */
@@ -1860,6 +1897,29 @@ function firmaSayfasi(p, d) {
   }
   sektorler.push({ ad: 'Diğer…', deger: '', secili: false, eylem: 'durak-sektor-yeni', proje: p.id });
 
+  /* Aşama bitmişse ve kullanıcı "Düzenle" demediyse: form yerine özet.
+     Dolu bir formu yeniden doldurulacakmış gibi göstermek, geri dönen
+     kullanıcıya "burada bir işim mi kaldı?" dedirtiyordu. */
+  if (dolu === 4 && !durakDuzenlemede(p, 'firma')) {
+    return `<div class="fb-govde">`
+      + adimBasligi(p, d, dolu + '/4')
+      + fmTamamBar(p, 'firma')
+      + `<div class="fm-liste">`
+      + fmOkuma('Firma adı', ICON.etiket, p.firma)
+      + fmOkuma('Telefon', ICON.telefon, p.telefon)
+      + fmOkuma('E-posta', ICON.mail, p.eposta)
+      + fmOkuma('Sektör', ICON.dukkan, p.sektor)
+      + (logo ? `<div class="fm">
+          <span class="fm-et">Logo</span>
+          <span class="fm-onizleme" style="background-image:url('${esc(logo)}')"></span>
+        </div>` : '')
+      + (gorsel ? `<div class="fm">
+          <span class="fm-et">İşletme görseli</span>
+          <span class="fm-onizleme genis" style="background-image:url('${esc(gorsel)}')"></span>
+        </div>` : '')
+      + `</div></div>`;
+  }
+
   return `<div class="fb-govde">`
     + adimBasligi(p, d, dolu + '/4')
     + `<div class="fm-liste">`
@@ -1897,6 +1957,19 @@ function programSayfasi(p, d) {
   const dolu   = [!!pl.modulAdi, roller.length > 0, !!pl.veriKatmani].filter(Boolean).length;
   const veri   = pl.veriKatmani
     || (TEKNIK_ALAN.find(x => x.anahtar === 'veriKatmani') || {}).varsayilan;
+
+  if (dolu === 3 && !durakDuzenlemede(p, 'program')) {
+    const alanKarti = ALAN_TURU_KARTI[pl.alanTuru || 'githubio'] || {};
+    return `<div class="fb-govde">`
+      + adimBasligi(p, d, dolu + '/3')
+      + fmTamamBar(p, 'program')
+      + `<div class="fm-liste">`
+      + fmOkuma('Program adı', ICON.katman, pl.modulAdi)
+      + fmOkuma('Katmanlar', ICON.gGuvenlik, roller.slice().reverse().join(' · '))
+      + fmOkuma('Veriler nerede duracak', ICON.gVeri, veri)
+      + fmOkuma('Alan adı', ICON.dil, alanKarti.ad || pl.alanTuru || '')
+      + `</div></div>`;
+  }
 
   return `<div class="fb-govde">`
     + adimBasligi(p, d, dolu + '/3')
@@ -1960,14 +2033,17 @@ function baglantilarSayfasi(p, d) {
   /* Her bağlantı kendi bölümü: biten bağlantı tek satıra iniyor (adres ya da
      ad yanında yeşil tik), bitmeyen açık duruyor. Eskiden hepsi ayrı bir tam
      ekran sihirbazın adımıydı; aynı içerik artık aşamanın kendi sayfasında. */
+  /* "Düzenle" denince bağlanmış bölümler de yeniden açılıyor. */
+  const hepsiAcik = durakDuzenlemede(p, 'baglantilar');
   const bolumler = liste.map(k => {
-    const bitti = baglantiAdimBittiMi(k, p);
+    const tamam = baglantiAdimBittiMi(k, p);
+    const bitti = tamam && !hepsiAcik;
     const bas = `
       <div class="bg-bas">
         <span class="bg-ik">${servisIkon(BAGLANTI_SERVIS[k], 20)}</span>
         <span class="bg-ad">${esc(BAGLANTI_ETIKET[k])}</span>
-        <span class="bg-durum ${bitti ? 'tamam' : ''}">${
-          bitti ? `${svg(ICON.tik, 13)} Bağlandı` : 'bekliyor'}</span>
+        <span class="bg-durum ${tamam ? 'tamam' : ''}">${
+          tamam ? `${svg(ICON.tik, 13)} Bağlandı` : 'bekliyor'}</span>
       </div>`;
     return `<div class="bg-k ${bitti ? 'bitti' : ''}">
       ${bas}
@@ -1977,6 +2053,8 @@ function baglantilarSayfasi(p, d) {
 
   return `<div class="fb-govde">`
     + adimBasligi(p, d, biten + '/' + liste.length)
+    + (biten === liste.length
+        ? fmTamamBar(p, 'baglantilar', 'Bütün bağlantılar kuruldu.') : '')
     + `<div class="fm-liste">${bolumler}</div>`
     /* Depoyu elle yapıştırmak ve kimlik dosyasını görmek her zaman
        açık kalsın — bağlantılar bitse de buraya dönülüyor. */
@@ -7107,6 +7185,9 @@ function render() {
     location.replace('#/projeler/' + id);
     sayfa = null;
   }
+
+  /* Başka bir aşamaya geçildiyse düzenleme kipi kapanır. */
+  if (DUZENLENEN_DURAK && DUZENLENEN_DURAK !== id + '/' + sayfa) DUZENLENEN_DURAK = null;
 
   /* Kurulum durağından çıkıldıysa modül ağacı kapanır — aynı sebeple:
      geri gelindiğinde ağacın içine değil kurulum ızgarasına düşülsün.
@@ -13727,6 +13808,12 @@ async function eylemCalistir(el) {
   if (e === 'proje-ac')  { location.hash = projeAdresi(id); return; }
 
   if (e === 'gorev-ac')   return gorevKartiAc(id);
+
+  /* Tamamlanmış aşamayı yeniden aç. */
+  if (e === 'durak-duzenle') {
+    DUZENLENEN_DURAK = el.dataset.proje + '/' + el.dataset.durak;
+    return render();
+  }
 
   /* --- Aşama formlarının seçmeli alanları --- */
   if (e === 'durak-sektor') {
