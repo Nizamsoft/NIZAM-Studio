@@ -10017,8 +10017,10 @@ textarea.fm-gir { height: auto; padding: 0 0 12px; resize: vertical; line-height
   background: var(--yuva) center/cover no-repeat;
   border: 1.5px dashed var(--line-2); color: var(--ink-faint);
 }
+/* Masaüstü yatay, mobil telefon oranında ve dar: ikisi aynı kutuda
+   dururken hangisinin hangisi olduğu görünmüyordu. */
 .tu-kutu.masa  { aspect-ratio: 16 / 10; }
-.tu-kutu.mobil { aspect-ratio: 16 / 11; }
+.tu-kutu.mobil { aspect-ratio: 9 / 16; max-width: 58%; margin: 0 auto; }
 .tu-kutu.var { border-style: solid; border-color: var(--line-3); }
 .tu-kutu svg { fill: none; stroke: currentColor; stroke-width: 1.7; }
 .tu-kutu .dolgu { display: none; }

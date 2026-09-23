@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## v0.216.2
+- Uygulanmış tasarımlarda **mobil görsel kutusu telefon oranına geçti**:
+  sağdan soldan daraldı, ortada duruyor. Masaüstü kutusu aynı kaldı.
+
 ## v0.216.1
 - Tasarım promptu satırlarında örnek kare kartın kenarına yapışıyordu —
   satıra iç boşluk verildi, «Prompt kopyala» tek satırda kalıyor.
