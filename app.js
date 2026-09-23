@@ -1307,9 +1307,11 @@ const DURAKLAR = {
                  renk: '#c4a05c', ikon: 'etiket', resim: 'firma',
                  aciklama: 'İşletme ve marka bilgilerinizi girin.' },
   program:     { no: 2, ad: 'Program temeli',        ciz: programSayfasi,
-                 resim: 'program', aciklama: 'Programın amacı ve temel özellikleri.' },
+                 renk: '#4fa8c9', ikon: 'katman', resim: 'program',
+                 aciklama: 'Programın amacı ve temel özellikleri.' },
   baglantilar: { no: 3, ad: 'Bağlantılar ve temel',  ciz: baglantilarSayfasi,
-                 resim: 'baglantilar', aciklama: 'Gerekli bağlantıları ayarlayın.' },
+                 renk: '#b8926b', ikon: 'dal', resim: 'baglantilar',
+                 aciklama: 'Gerekli bağlantıları ayarlayın.' },
   /* Yapı tasarımdan önce: ChatGPT ekranları çizerken hangi modüllerin ve
      sayfaların olduğunu bilmeli. Bilmezse altı genel ekran çiziyor; künye
      elindeyken gerçek modülleri, gerçek alanları ve o işe ait simgeleri
@@ -1401,7 +1403,7 @@ function durakSayfasi(projeId, anahtar) {
    onları sarıyor, yerlerini almıyor. */
 
 /* Görünür duraklar; anahtarı, sırası ve kilit durumu üstünde.
-   Kilit kuralı asamaSatiri ile birebir aynı: bitmemiş ilk duraktan
+   Kilit kuralı tek yerde: bitmemiş ilk duraktan
    sonrası kapalı, Güvenlik kontrolü hariç (o bir görev değil, ölçü aleti). */
 function durakAkisi(p) {
   const tum   = Object.keys(DURAKLAR);
@@ -1422,7 +1424,6 @@ function durakSerit(p, anahtar) {
   const liste = durakAkisi(p);
   const su    = liste.findIndex(d => d.anahtar === anahtar);
   const simdi = liste[su] || {};
-  const yuzde = liste.length ? Math.round(((su + 1) / liste.length) * 100) : 0;
 
   const halkalar = liste.map((d, i) => {
     const hal = i === su ? 'su' : d.bitti ? 'bitti' : d.kilitli ? 'kilitli' : 'acik';
@@ -1441,20 +1442,33 @@ function durakSerit(p, anahtar) {
       : `<a class="dsr-a ${hal}${bagli}" href="#/projeler/${p.id}/${d.anahtar}">${ic}</a>`;
   }).join('');
 
-  /* Telefonda adım adlarını yan yana dizmek okunmuyordu: orada şerit
-     yalnız "kaçıncı adımdayım" diyor, adlar aşama sayfasında. Durağın adı
-     zaten hemen altındaki başlık kartında yazıyor — iki kez yazılmıyor. */
+  /* Telefonda adım adlarını yan yana dizmek okunmuyordu: orada şerit iki
+     satır — üstte bağlı noktalar, altta sayaç, durağın adı ve listeyi açan
+     düğme. */
   const noktalar = liste.map((d, i) => `<i class="${
-    i === su ? 'su' : d.bitti ? 'bitti' : ''}"></i>`).join('');
+    i === su ? 'su' : i < su ? 'bitti' : ''}"></i>`).join('');
 
   return `
     <div class="dsr only-desktop">${halkalar}</div>
-    <button class="dsm" type="button" data-eylem="asamalar-ac">
-      <span class="dsm-say mono">${su + 1} / ${liste.length}</span>
-      <span class="dsm-nk">${noktalar}</span>
-      <span class="dsm-liste">Aşamalar ${svg(ICON.panel, 14)}</span>
-      <span class="dsm-ray"><i style="width:${yuzde}%"></i></span>
-    </button>`;
+    <div class="dsm">
+      <div class="dsm-nk">${noktalar}</div>
+      <div class="dsm-alt">
+        <span class="dsm-say mono">${su + 1}/${liste.length}</span>
+        <span class="dsm-ad">${esc(simdi.ad || '')}</span>
+        <button class="dsm-liste" type="button" data-eylem="asamalar-ac"
+                aria-label="Aşamalar">${svg(ICON.panel, 17)}</button>
+      </div>
+    </div>`;
+}
+
+/* Projeye basınca ara bir liste ekranı açılmıyor: kalınan aşama doğrudan
+   geliyor. Aşama değiştirmek için şeritteki liste düğmesi var. */
+function projeAdresi(projeId) {
+  const p = DB.proje(projeId);
+  if (!p) return '#/projeler/' + projeId;
+  const liste = durakAkisi(p);
+  const su = liste.find(d => !d.bitti) || liste[liste.length - 1];
+  return '#/projeler/' + projeId + (su ? '/' + su.anahtar : '');
 }
 
 /* Şerit sığmayınca (on duraklı projede) bulunduğun adım ekranın dışında
@@ -1565,16 +1579,18 @@ function durakAsamaSayfasi(p, anahtar) {
   const satirlar = liste.map((d, i) => {
     const su  = d.anahtar === anahtar;
     const hal = su ? 'su' : d.bitti ? 'bitti' : d.kilitli ? 'kilitli' : '';
+    const def = DURAKLAR[d.anahtar] || {};
+    const acik = typeof def.aciklama === 'function' ? def.aciklama(p) : def.aciklama;
     const ic  = `
-      <span class="dsl-no mono">${String(i + 1).padStart(2, '0')}</span>
+      <span class="dsl-no">${i + 1}</span>
       <span class="dsl-yz">
         <b>${esc(d.ad)}</b>
-        <i>${esc(d.ozet || '')}</i>
+        <i>${esc(acik || d.ozet || '')}</i>
       </span>
       <span class="dsl-durum">${
-        d.bitti   ? svg(ICON.tik, 14)
-        : d.kilitli ? svg(ICON.kilit, 13)
-        : svg(ICON.chevron, 14)}</span>`;
+        su        ? svg(ICON.nokta, 22)
+        : d.bitti ? svg(ICON.tik, 22)
+        : ''}</span>`;
     return (d.kilitli || su)
       ? `<span class="dsl ${hal}">${ic}</span>`
       : `<a class="dsl ${hal}" href="#/projeler/${p.id}/${d.anahtar}">${ic}</a>`;
@@ -1588,9 +1604,10 @@ function durakAsamaSayfasi(p, anahtar) {
         <div class="dsp-bas">
           <b>Aşamalar</b>
           <button class="dsp-kapat" type="button" data-eylem="asamalar-kapat"
-                  aria-label="Kapat">${svg(ICON.kapat, 16)}</button>
+                  aria-label="Kapat">${svg(ICON.kapat, 17)}</button>
         </div>
         <div class="dsp-liste">${satirlar}</div>
+        <button class="dsp-dug" type="button" data-eylem="asamalar-kapat">Kapat</button>
       </div>
     </div>`;
 }
@@ -1641,24 +1658,19 @@ function bolumBas(ad) {
 function adimBasligi(p, d, sayac) {
   const renk = d.renk || 'var(--metal-2)';
   const ikon = ICON[d.ikon] || ICON.bayrak;
+  const acik = typeof d.aciklama === 'function' ? d.aciklama(p) : d.aciklama;
 
-  /* Yapı proje künyesiyle birebir aynı: 54 piksellik karo, iki satır yazı,
-     sağda değer ve etiketi. İki sayfanın tek farkı içerik olsun, ölçü değil.
-     İlerleme noktaları buradan kalktı: aynı bilgi artık sayfanın tepesindeki
-     adım şeridinde, iki kez göstermek yer israfıydı. */
+  /* Aşamanın kapağı: kendi renginde zemin, iri simge, adı ve ne iş yaptığı.
+     Proje adı ve adım sayacı buradan kalktı — proje adı üst çubukta, sıra
+     bilgisi şeritte zaten yazıyor; aynı şeyi üç kez söylemek yer israfıydı. */
   return `
-    <div class="bs2" style="--kr:${renk}">
-      <span class="bs2-ik">${svg(ikon, 26)}</span>
-      <span class="bs2-yz">
-        <span class="bs2-firma">
-          <span class="bs2-ad2">${esc(projeAdi(p))}</span>
-        </span>
-        <span class="bs2-ad">${esc(d.ad)}</span>
+    <div class="ab" style="--kr:${renk}">
+      <span class="ab-ik">${svg(ikon, 26)}</span>
+      <span class="ab-yz">
+        <b>${esc(d.ad)}</b>
+        ${acik ? `<i>${esc(acik)}</i>` : ''}
       </span>
-      <span class="bs2-sag">
-        <b class="mono">${esc(sayac || String(d.no).padStart(2, '0'))}</b>
-        <i>${sayac ? 'adım' : 'aşama'}</i>
-      </span>
+      ${sayac ? `<span class="ab-say mono">${esc(sayac)}</span>` : ''}
     </div>`;
 }
 
@@ -6378,73 +6390,30 @@ function yolOku(yesil) {
     </div>`;
 }
 
-/* Firma bilgileri, Program temeli ve Bağlantılar ve temel tam ekran
-   sihirbazla dolduruluyor — satıra dokununca aradaki özet durak sayfası
-   (Doldur/Düzenle düğmeli kart) atlanıp doğrudan sihirbaz açılıyor. */
-const ASAMA_SIHIRBAZ_EYLEM = {
-  firma: 'marka-duzenle', program: 'program-duzenle', baglantilar: 'baglanti-duzenle',
-};
-
-/* Aşama satırı: dikey liste, yeri sabit. Solda numara + kendi ikonu
-   (ikon/asama/ altındaki PNG, CSS mask ile boyanıyor — gri kilitli,
-   yeşil şimdiki/biten), ortada ad + sabit açıklama, sağda durum ve ok. */
-function asamaSatiri(p, d, i, simdi, anahtar) {
-  const su      = i === simdi;
-  /* Kilit iki yerde hesaplanıyor: burada (kartın kendisi) ve durakKilitli'de
-     (adres denetimi). İkisi de aynı istisnayı tanımalı — yalnız birini
-     gevşetmek kartı tıklanmaz bırakır. */
-  const kilitli = anahtar !== 'guvenlik' && simdi !== -1 && i > simdi;
-  const hal     = d.bitti ? 'bitti' : su ? 'simdi' : (kilitli ? 'kilitli' : 'simdi');
-  const def     = DURAKLAR[anahtar] || {};
-  const durum   = d.bitti ? svg(ICON.tik, 14) : (su || !kilitli) ? '' : svg(ICON.kilit, 13);
-
-  const ic = `
-    <span class="asr-no mono">${String(i + 1).padStart(2, '0')}</span>
-    <span class="asr-ikon">
-      <span class="asr-ikon-img" style="--ik:url('ikon/asama/${def.resim}.png')"></span>
-    </span>
-    <span class="asr-yz">
-      <span class="asr-ad">${esc(d.ad)}${
-        d.rozet ? `<span class="ya-rozet">${d.rozet}</span>` : ''}</span>
-      <span class="asr-alt">${esc((typeof def.aciklama === 'function' ? def.aciklama(p) : def.aciklama) || '')}</span>
-    </span>
-    <span class="asr-durum">${durum}</span>
-    <span class="asr-chev">${svg(ICON.chevron, 15)}</span>`;
-
-  /* Kilitli adım bağlantı bile değil: adresle de açılmıyor. */
-  if (kilitli) return `<span class="asr ${hal}">${ic}</span>`;
-
-  const sihirbazEylem = ASAMA_SIHIRBAZ_EYLEM[anahtar];
-  return sihirbazEylem
-    ? `<a class="asr ${hal}" href="#/projeler/${p.id}/${anahtar}"
-         data-eylem="${sihirbazEylem}" data-proje="${p.id}">${ic}</a>`
-    : `<a class="asr ${hal}" href="#/projeler/${p.id}/${anahtar}">${ic}</a>`;
-}
 
 function projeYolu(p) {
-  const anahtarlarTum = Object.keys(DURAKLAR);
-  /* `gizli` işaretli duraklar (ör. normal projede "Test ve Güncelle") hiç
-     listelenmiyor — sırf sayaçtan hariç tutmak (sayilmaz) satırı gizlemeye
-     yetmiyordu. Anahtar her durağın kendi nesnesine taşınıyor ki filtreden
-     sonra da hangi DURAKLAR girdisine karşılık geldiği kaybolmasın. */
-  const duraklar = projeDuraklari(p)
-    .map((d, i) => Object.assign({}, d, { anahtar: anahtarlarTum[i] }))
-    .filter(d => !d.gizli);
-  /* Şimdiki durak: bitmemiş ilk durak. Hepsi bitmişse -1. */
-  const simdi = duraklar.findIndex(d => !d.bitti);
-  /* Geliştirme (sayilmaz) hiç bitmediği için yüzdeye girerse final verilmiş
-     bir proje asla %100 görünmezdi — o yüzden sayaç dışında tutuluyor. */
-  const sayilan = duraklar.filter(d => !d.sayilmaz);
+  const liste   = durakAkisi(p);
+  const sayilan = liste.filter(d => !d.sayilmaz);
   const biten   = sayilan.filter(d => d.bitti).length;
   const yuzde   = projeAsamaYuzde(p);
+  /* Kaldığın aşama: bitmemiş ilk durak. Hepsi bittiyse sonuncusu. */
+  const su      = liste.find(d => !d.bitti) || liste[liste.length - 1];
 
-  const liste = duraklar.map((d, i) => asamaSatiri(p, d, i, simdi, d.anahtar)).join('');
-
+  /* Uzun aşama listesi buradan kalktı: aşamalar arasında gezinmek artık
+     durak sayfasının kendi şeridiyle ve alttan çıkan "Aşamalar" sayfasıyla
+     oluyor. Bu ekranda projenin künyesi, takvimi ve nerede kaldığın var. */
   return projeKunyesi(p)
     + fbTakvimSeridi(p)
-    + `<div class="asr-liste">${liste}</div>
+    + (su ? `
+      <a class="pyd" href="#/projeler/${p.id}/${su.anahtar}">
+        <span class="pyd-yz">
+          <i>Kaldığın aşama</i>
+          <b>${esc(su.ad)}</b>
+        </span>
+        <span class="pyd-ok">${svg(ICON.chevron, 16)}</span>
+      </a>` : '')
 
-    <div class="genel">
+    + `<div class="genel">
       <div class="genel-ust"><b>Adımlar</b><u class="mono">%${yuzde}</u></div>
       <div class="genel-ray"><i style="width:${yuzde}%"></i></div>
       <div class="genel-alt mono">${biten} / ${sayilan.length} tamamlandı</div>
@@ -13673,7 +13642,7 @@ async function eylemCalistir(el) {
   if (e === 'sihirbaz')  return sihirbaziAc();
   if (e === 'tazele')    return veriTazele();
   if (e === 'projelere') { location.hash = '#/projeler'; return; }
-  if (e === 'proje-ac')  { location.hash = '#/projeler/' + id; return; }
+  if (e === 'proje-ac')  { location.hash = projeAdresi(id); return; }
 
   if (e === 'gorev-ac')   return gorevKartiAc(id);
 

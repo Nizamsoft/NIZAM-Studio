@@ -1,5 +1,16 @@
 # Değişiklik Günlüğü
 
+## v0.176.0
+- **Projeye basınca doğrudan kaldığın aşama açılıyor.** Aradaki uzun aşama
+  listesi ekranı kalktı.
+- **Aşamalar alttan çıkıyor.** Şeritteki liste düğmesi bütün aşamaları
+  numaralı olarak açıyor: biten kırmızı tik, şimdiki üç nokta, sırası
+  gelmemiş gri.
+- **Şerit yenilendi** — telefonda bağlı noktalar, "3/9" sayacı ve aşamanın adı.
+- **Her aşamanın tepesinde kapak kartı**: kendi renginde zemin, iri simge,
+  adı ve ne işe yaradığı.
+- Proje ekranında artık künye, takvim, "Kaldığın aşama" düğmesi ve yüzde var.
+
 ## v0.175.0
 **Proje aşamaları artık tek bir akışın adımları gibi.** Durak sayfalarının
 içeriği değişmedi; değişen, etrafındaki çerçeve:
