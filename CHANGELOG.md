@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü
 
+## v0.200.0
+**Kurulum ve yapı aşamasının girişi de öteki aşamalar gibi.** İki numaralı
+kart:
+1. **Ne yapmak istediğini yaz** — kutuya yazıyorsun, 2000 karakter sayacı
+   altında; "Prompt oluştur ve Claude'u aç" metni panoya alıp Claude'u açıyor.
+2. **Yapıyı kur** — Claude'un verdiği bloğu yapıştırıyorsun. Henüz prompt
+   üretilmediyse yerinde "Önce bir prompt oluştur." kutusu duruyor.
+
 ## v0.199.0
 - Supabase adımındaki **service_role uyarısı** kaldırıldı.
 - Bağlantı kartları **açılıp kapanıyor**: açık karta tekrar dokununca kapanıyor.

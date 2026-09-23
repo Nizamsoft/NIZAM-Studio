@@ -3827,7 +3827,7 @@ function kunyeAdimTam(k, anahtar) {
 
 function yapiAkisi(p, d) {
   const t = yapiTaslak(p);
-  if (t.mod === 'anlat') return anlatEkrani(p, t);
+  if (t.mod === 'anlat') return anlatEkrani(p, t, d);
   if (t.mod === 'mkural' && t.modul) return modulKuralEkrani(p, t);
   if (t.mod === 'onizle' && t.odak) return onizlemeEkrani(p, t);
   if (t.dal && t.odak && t.sayfalar.includes(t.odak)) return duzenEkrani(p, t);
@@ -4165,32 +4165,71 @@ function onizlemeEkrani(p, t) {
 /* Anlat: önizleme yok, yalnız metin ve iki düğme. Modül adı hiç sorulmuyor —
    Claude soru-cevabın sonunda kendi karar veriyor: tek bölüm mü yeter, yoksa
    gerçekten ayrı iki alan mı var. Studio yalnız gelen bloğu kuruyor. */
-function anlatEkrani(p, t) {
-  const dolu = (t.anlat || '').trim().length > 20;
-  const govde = `
-    ${balon('Nasıl bir program istediğini anlat. Konuşur gibi yaz — ekranlar, '
-      + 'tutulacak bilgiler, neyin neyi etkilediği.',
-      'Promptu Claude\'a ver; o sana sorar, her şeyi öğrenince bloğu verir.')}
-    <textarea class="anl-kutu" data-anlat="${p.id}"
-      placeholder="Örn. Bir muhasebe programı istiyorum. Hesaplar sayfası olacak. 100-Kasa, 102-Banka gibi ana hesaplar, altlarında 102.01 gibi alt hesaplar…">${esc(t.anlat || '')}</textarea>
-    <div class="anl-dug">
-      ${dolu
-        ? `<a target="_blank" rel="noopener" data-pano="cozumleme" data-proje="${p.id}"
-             data-hedef="Claude Code" href="${esc(claudeAdresi(depoSlug(p.repo)))}">
-             ${svg(ICON.kopya, 15)} Kopyala ve aç</a>`
-        : `<button type="button" disabled>${svg(ICON.kopya, 15)} Prompt oluştur</button>`}
-      <button class="ana" type="button" data-eylem="anlat-aktar" data-proje="${p.id}">
-        ${svg(ICON.ice, 15)} Cevabı yapıştır</button>
-    </div>
-    <p class="anl-not">Claude önce sana soru soracak. Anlaştıktan sonra verdiği bloğu
-      buraya yapıştır — yapı kendiliğinden kurulur.</p>`;
+function anlatEkrani(p, t, d) {
+  const metin = t.anlat || '';
+  const dolu  = metin.trim().length > 20;
 
-  return agacKabuk(p, yolCipleri([
-    { ad: p.firma, eylem: 'agac-koke', proje: p.id },
-    { ad: t.modul || 'Anlat' },
-  ]), govde, '');
+  /* Öteki aşamalarla aynı dil: numaralı iki kart. Birincisi ne istediğini
+     yazdırıp promptu veriyor, ikincisi Claude'un cevabını alıp yapıyı
+     kuruyor. Modül ağacı ikinci adımdan sonra açılıyor. */
+  const kart1 = `
+    <div class="bgz-s acik">
+      <span class="bgz-no">1</span>
+      <div class="bgz-kart">
+        <div class="bgz-bas sabit">
+          <span class="bgz-yz">
+            <b>Ne yapmak istediğini yaz</b>
+            <i>Hangi ekranlar, hangi özellikler olsun?</i>
+          </span>
+          <span class="bgz-durum ${dolu ? 'tamam' : ''}">${
+            dolu ? svg(ICON.tik, 14) : 'Şimdi'}</span>
+        </div>
+        <div class="bgz-ic">
+          <textarea class="anl-kutu" data-anlat="${p.id}" maxlength="2000"
+            placeholder="Örn. Bir muhasebe programı istiyorum. Hesaplar sayfası olacak. 100-Kasa, 102-Banka gibi ana hesaplar, altlarında 102.01 gibi alt hesaplar…">${esc(metin)}</textarea>
+          <span class="anl-say mono" id="anlat-say">${metin.length} / 2000</span>
+          ${dolu
+            ? `<a class="sayfa-dug" target="_blank" rel="noopener"
+                 data-pano="cozumleme" data-proje="${p.id}" data-hedef="Claude Code"
+                 href="${esc(claudeAdresi(depoSlug(p.repo)))}">
+                ${svg(ICON.kopya, 15)} Prompt oluştur ve Claude'u aç</a>`
+            : `<button class="sayfa-dug" type="button" disabled>
+                ${svg(ICON.kopya, 15)} Prompt oluştur</button>`}
+        </div>
+      </div>
+    </div>`;
+
+  const kart2 = `
+    <div class="bgz-s son ${dolu ? 'acik' : ''}">
+      <span class="bgz-no">2</span>
+      <div class="bgz-kart">
+        <div class="bgz-bas sabit">
+          <span class="bgz-yz">
+            <b>Yapıyı kur</b>
+            <i>Claude'un verdiği bloğu yapıştır.</i>
+          </span>
+          <span class="bgz-durum">${dolu ? 'Şimdi' : 'Bekliyor'}</span>
+        </div>
+        <div class="bgz-ic">
+          ${dolu
+            ? `<button class="sayfa-dug" type="button" data-eylem="anlat-aktar" data-proje="${p.id}">
+                ${svg(ICON.ice, 15)} Cevabı yapıştır</button>`
+            : `<div class="bgz-bos">
+                <span class="bgz-bos-ik">${svg(ICON.dokuman, 20)}</span>
+                <span class="bgz-bos-yz">
+                  <b>Önce bir prompt oluştur.</b>
+                  <i>Claude'un vereceği blok burada kurulacak.</i>
+                </span>
+              </div>`}
+        </div>
+      </div>
+    </div>`;
+
+  return `<div class="fb-govde">`
+    + adimBasligi(p, d, (dolu ? 1 : 0) + '/2')
+    + `<div class="bgz">${kart1}${kart2}</div>`
+    + `</div>`;
 }
-
 /* Önizleme ancak gösterecek bir şey varken çizilir. Boşken uydurma veri
    göstermek yerine ne yapılması gerektiğini söylüyoruz. */
 function onizlemeAlani(p, k, dal, gost) {
@@ -4502,6 +4541,8 @@ function yapiBaglari() {
       const pr = DB.proje(anlat.dataset.anlat);
       if (!pr) return;
       yapiTaslak(pr).anlat = anlat.value;
+      const say = $('#anlat-say');
+      if (say) say.textContent = anlat.value.length + ' / 2000';
       /* Düğme artık gerçek bir bağlantı; açık/kapalı hâli çizimde belirleniyor.
          Eşiği geçtiğimiz anda bir kez yeniden çiziyoruz, her tuşta değil. */
       const acik = anlat.value.trim().length > 20;

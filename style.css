@@ -9673,3 +9673,34 @@ textarea.fm-gir { height: auto; padding: 0 0 12px; resize: vertical; line-height
 .bgz-ic .sh-bas { display: none; }
 .bgz-ic .ba-oz-liste { display: none; }
 .bgz-ic .sayfa-dug { width: 100%; justify-content: center; }
+
+/* Kurulum ve yapı: "anlat" kartlarının kendi parçaları. */
+.bgz-bas.sabit { cursor: default; }
+.bgz-ic .anl-kutu {
+  width: 100%; min-height: 120px; padding: 12px; border-radius: 13px; resize: vertical;
+  background: var(--surface); border: 1.5px solid var(--line-2);
+  font-family: inherit; font-size: 14.5px; line-height: 1.5; color: var(--ink-strong);
+}
+.bgz-ic .anl-kutu:focus { outline: none; border-color: var(--red); box-shadow: 0 0 0 3px var(--red-soft); }
+.anl-say { display: block; margin: 6px 2px 12px; text-align: right; font-size: 12px; color: var(--ink-dim); }
+.bgz-ic .sayfa-dug[disabled] { opacity: .45; pointer-events: none; }
+.bgz-bos {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px; border-radius: 13px; background: var(--yuva);
+}
+.bgz-bos-ik {
+  flex: 0 0 auto; display: flex; align-items: center; justify-content: center;
+  width: 44px; height: 44px; border-radius: 12px;
+  background: var(--surface); border: 1px solid var(--line-3); color: var(--ink-dim);
+}
+.bgz-bos-ik svg { fill: none; stroke: currentColor; stroke-width: 1.7; }
+.bgz-bos-ik .dolgu { display: none; }
+.bgz-bos-yz { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.bgz-bos-yz b { font-size: 14px; font-weight: 700; color: var(--ink-soft); }
+.bgz-bos-yz i { font-style: normal; font-size: 12.5px; color: var(--ink-dim); }
+/* Açık kartın tik rozeti de yeşil kalsın (açık kart kuralı rengi eziyordu). */
+.bgz-s.acik .bgz-durum.tamam { background: var(--st-done); color: #fff; }
+/* Kapalı düğme nötr: koyu kalırsa basılabilir sanılıyor. */
+.bgz-ic .sayfa-dug[disabled] {
+  opacity: 1; background: var(--surface-2); border-color: var(--line-2); color: var(--ink-dim);
+}
