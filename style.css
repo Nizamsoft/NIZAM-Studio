@@ -10133,3 +10133,89 @@ textarea.fm-gir { height: auto; padding: 0 0 12px; resize: vertical; line-height
 .btk-no.kirmizi { background: var(--red-soft); color: var(--red-ink); }
 .btk-no.mavi    { background: #eef3fc; color: #3a62a8; }
 .btk-no.yesil   { background: var(--done-soft); color: var(--st-done-t); }
+
+/* ==========================================================================
+   28 · GÜVENLİK KONTROLÜ — bir kerelik köprü kurulumu
+   ========================================================================== */
+.gk-liste { margin-bottom: 14px; }
+.gk {
+  display: flex; align-items: flex-start; gap: 11px;
+  padding: 12px 0; border-bottom: 1px solid var(--line-3);
+}
+.gk-tik {
+  flex: 0 0 auto; display: flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; border-radius: 999px; cursor: pointer;
+  background: var(--surface); border: 1.5px solid var(--line-2);
+  font-family: var(--yazi-etiket); font-size: 12.5px; font-weight: 700;
+  color: var(--ink-dim);
+}
+.gk-tik svg { fill: none; stroke: currentColor; stroke-width: 2.8; }
+.gk-tik .dolgu { display: none; }
+.gk.on .gk-tik { background: var(--st-done); border-color: var(--st-done); color: #fff; }
+.gk-yz { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.gk-yz b {
+  font-family: var(--yazi-etiket); font-size: 14.5px; font-weight: 700;
+  color: var(--ink-strong);
+}
+.gk.on .gk-yz b { color: var(--ink-soft); }
+.gk-yz i { font-style: normal; font-size: 12.5px; line-height: 1.5; color: var(--ink-dim); }
+.gk-yz code {
+  padding: 1px 5px; border-radius: 5px; background: var(--yuva);
+  font-family: var(--yazi-kod); font-size: 11.5px; color: var(--ink);
+}
+.gk-btn {
+  align-self: flex-start; display: inline-flex; align-items: center; gap: 6px;
+  margin-top: 4px; height: 32px; padding: 0 11px; border-radius: 9px; cursor: pointer;
+  text-decoration: none; background: var(--yuva); border: 1px solid var(--line-2);
+  font-family: var(--yazi-etiket); font-size: 12.5px; font-weight: 600; color: var(--ink);
+}
+.gk-btn svg { fill: none; stroke: currentColor; stroke-width: 1.9; }
+.gk-btn .dolgu { display: none; }
+.gk-not {
+  display: flex; align-items: flex-start; gap: 7px; margin: 12px 0 0;
+  font-size: 12px; line-height: 1.5; color: var(--ink-faint);
+}
+.gk-not svg { flex: 0 0 auto; margin-top: 2px; fill: none; stroke: currentColor; stroke-width: 1.9; }
+.gk-not .dolgu { display: none; }
+
+/* Kurulum bitince tek satır. */
+.gk-ozet {
+  display: flex; align-items: center; gap: 11px; margin-bottom: 14px;
+  padding: 11px 13px; border-radius: 14px;
+  background: var(--done-soft); border: 1px solid var(--done-cizgi);
+}
+.gk-ozet-ik {
+  flex: 0 0 auto; display: flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; border-radius: 999px; background: var(--st-done); color: #fff;
+}
+.gk-ozet-ik svg { fill: none; stroke: currentColor; stroke-width: 2.8; }
+.gk-ozet-ik .dolgu { display: none; }
+.gk-ozet-yz { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.gk-ozet-yz b { font-family: var(--yazi-etiket); font-size: 14px; font-weight: 700; color: var(--st-done-t); }
+.gk-ozet-yz i { font-style: normal; font-size: 12px; line-height: 1.4; color: var(--ink-soft); }
+.gk-ozet-btn {
+  flex: 0 0 auto; height: 32px; padding: 0 12px; border-radius: 9px; cursor: pointer;
+  background: var(--surface); border: 1px solid var(--done-cizgi-2, var(--line-2));
+  font-family: var(--yazi-etiket); font-size: 12.5px; font-weight: 600; color: var(--ink);
+}
+
+/* Son ölçüm şeridi. */
+.gk-son {
+  display: flex; align-items: center; gap: 11px; margin-bottom: 14px;
+  padding: 12px 13px; border-radius: 14px; border: 1px solid var(--line-3);
+}
+.gk-son.temiz { background: var(--done-soft); border-color: var(--done-cizgi); }
+.gk-son.acik  { background: var(--red-soft); border-color: var(--red-cizgi); }
+.gk-son-ik {
+  flex: 0 0 auto; display: flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px; border-radius: 999px; color: #fff;
+}
+.gk-son.temiz .gk-son-ik { background: var(--st-done); }
+.gk-son.acik  .gk-son-ik { background: var(--red); }
+.gk-son-ik svg { fill: none; stroke: currentColor; stroke-width: 2.4; }
+.gk-son-ik .dolgu { display: none; }
+.gk-son-yz { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.gk-son-yz b { font-family: var(--yazi-etiket); font-size: 14.5px; font-weight: 700; }
+.gk-son.temiz .gk-son-yz b { color: var(--st-done-t); }
+.gk-son.acik  .gk-son-yz b { color: var(--red-ink); }
+.gk-son-yz i { font-style: normal; font-size: 12.5px; color: var(--ink-soft); }

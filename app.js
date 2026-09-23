@@ -6708,27 +6708,132 @@ function guvenlikSonTestKarti(p, pl) {
       da SQL'de bir şey değiştiyse yeniden ölç — eski sonuç yeni hâli anlatmaz.</p>`);
 }
 
+/* Köprü kurulumu bir kere yapılıyor ve bütün projelerde geçerli — o yüzden
+   projeye değil tarayıcıya yazılıyor. Üç madde de işaretlenince liste tek
+   satıra iniyor: ekranda asıl iş test etmek, kurulumu anlatmak değil. */
+const GUVENLIK_KURULUM_ANAHTAR = 'ns-guvenlik-kurulum';
+
+function guvenlikKurulumOku() {
+  try { return JSON.parse(localStorage.getItem(GUVENLIK_KURULUM_ANAHTAR) || '{}') || {}; }
+  catch (h) { return {}; }
+}
+function guvenlikKurulumYaz(o) {
+  try { localStorage.setItem(GUVENLIK_KURULUM_ANAHTAR, JSON.stringify(o)); } catch (h) {}
+}
+/* Liste kapalıyken "Düzenle"ye basılınca açılıyor — yalnız ekran durumu. */
+let GUVENLIK_KURULUM_ACIK = false;
+
+const GUVENLIK_KURULUM_ADIM = [
+  { no: 'jeton', ad: 'Supabase jetonu oluşturdum',
+    alt: 'Projelerin durduğu Supabase <b>hesabından</b> (projeden değil): '
+       + 'Account → Access Tokens → Generate new token → <b>Create legacy token</b>. '
+       + 'Değer <code>sbp_</code> ile başlar.',
+    adres: 'https://supabase.com/dashboard/account/tokens', adresAd: 'Jeton sayfasını aç' },
+  { no: 'fonksiyon', ad: 'Edge Function oluşturdum, adı guvenlik-sql',
+    alt: 'Studio\'nun kendi Supabase\'inde: Edge Functions → New Function, '
+       + 'adı <code>guvenlik-sql</code>, kodu yapıştır, deploy et.',
+    eylem: 'guvenlik-sql-kopyala', eylemAd: 'Fonksiyon kodunu kopyala' },
+  { no: 'secret', ad: 'Jetonu fonksiyonun Secrets\'ına ekledim',
+    alt: 'Aynı fonksiyon → Settings → Secrets → ad <code>NS_SUPABASE_JETON</code>, '
+       + 'değer az önce aldığın jeton.' },
+];
+
+function guvenlikKurulumBolumu() {
+  const durum = guvenlikKurulumOku();
+  const biten = GUVENLIK_KURULUM_ADIM.filter(a => durum[a.no]).length;
+  const hepsi = biten === GUVENLIK_KURULUM_ADIM.length;
+
+  if (hepsi && !GUVENLIK_KURULUM_ACIK) {
+    return `
+      <div class="gk-ozet">
+        <span class="gk-ozet-ik">${svg(ICON.tik, 15)}</span>
+        <span class="gk-ozet-yz"><b>Köprü kurulu</b>
+          <i>Jeton, fonksiyon ve secret hazır — bir kere kurulur, bütün projelerde geçerli.</i></span>
+        <button class="gk-ozet-btn" type="button" data-eylem="guvenlik-kurulum-ac">Düzenle</button>
+      </div>`;
+  }
+
+  return `
+    <div class="gk-liste">
+      ${GUVENLIK_KURULUM_ADIM.map((a, i) => `
+        <div class="gk ${durum[a.no] ? 'on' : ''}">
+          <button class="gk-tik" type="button" data-eylem="guvenlik-kurulum-tik"
+                  data-no="${a.no}" aria-label="${esc(a.ad)}">
+            ${durum[a.no] ? svg(ICON.tik, 14) : (i + 1)}
+          </button>
+          <div class="gk-yz">
+            <b>${esc(a.ad)}</b>
+            <i>${a.alt}</i>
+            ${a.adres ? `<a class="gk-btn" target="_blank" rel="noopener" href="${a.adres}">
+              ${svg(ICON.disari, 13)} ${esc(a.adresAd)}</a>` : ''}
+            ${a.eylem ? `<button class="gk-btn" type="button" data-eylem="${a.eylem}">
+              ${svg(ICON.kopya, 13)} ${esc(a.eylemAd)}</button>` : ''}
+          </div>
+        </div>`).join('')}
+      <p class="gk-not">${svg(ICON.info, 13)} Studio yeni sürüm çıkarınca fonksiyonun
+        <b>Code</b> sekmesine kodu yeniden yapıştırıp deploy et — Secrets\'a dokunma.</p>
+    </div>`;
+}
+
+/* ---------- 10 · Güvenlik kontrolü ----------
+   Ekranda üç şey var: bir kerelik köprü kurulumu (bitince tek satıra
+   iniyor), test hesabı ve sonuç. Supabase adresi/anon key kartı kalktı —
+   Bağlantılar ve temel'de zaten girildi, burada göstermenin faydası yoktu. */
 function guvenlikDurakSayfasi(p, d) {
   const pl = p.palet || {};
   if (!sunuculuMu(p)) {
     return `<div class="fb-govde">`
       + adimBasligi(p, d, '')
-      + balon('Bu projenin verisi tarayıcıda duruyor.',
-          'Sunucu tarafı olmadığı için saldırılacak bir kapı da yok — bu aşama atlandı.')
+      + `<div class="bos-kutu">${svg(ICON.gGuvenlik, 18)}
+          <span>Bu projenin verisi tarayıcıda duruyor. Sunucu tarafı olmadığı
+          için saldırılacak bir kapı da yok — bu aşama atlandı.</span></div>`
       + `</div>`;
   }
+
   const g = durakGuvenlikDurum(p.id);
+  const hazir = !!String(pl.supabaseUrl || '').trim() && !!String(pl.supabaseAnon || '').trim();
+  const depo = String(pl.guvenlikDepoAdresi || p.repo || '').trim();
+  const o = pl.guvenlikOlcum;
 
   return `<div class="fb-govde">`
     + adimBasligi(p, d, '')
-    + balon('Bu aşama bitmiş sayılmaz — her açtığında yeniden ölçersin.',
-        'Ziyaretçi, personel ve sunucu işlevi saldırıları. Son testin tarihi ve sonucu aşağıda.')
-    + guvenlikSonTestKarti(p, pl)
-    + guvenlikBaglantiKarti(p, pl)
-    + guvenlikTestKarti(p, pl, g)
-    + guvenlikHazirlikKarti(p)
+    + guvenlikKurulumBolumu()
+    + (o ? `
+      <div class="gk-son ${o.acik ? 'acik' : 'temiz'}">
+        <span class="gk-son-ik">${svg(o.acik ? ICON.uyari : ICON.tik, 16)}</span>
+        <span class="gk-son-yz">
+          <b>${o.acik ? o.acik + ' açık bulundu' : 'Son ölçüm temiz'}</b>
+          <i>${esc(olcumTarihi(o))} · ${o.toplam} deneme</i>
+        </span>
+      </div>` : '')
+    + `<div class="btk">
+        <div class="btk-ust">
+          <span class="btk-ik mavi">${svg(ICON.kisi, 22)}</span>
+          <span class="btk-yz"><b>Test hesabı</b>
+            <i>Bu projedeki <b>yönetici olmayan</b> bir hesap. Şifre hiçbir yere
+               kaydedilmiyor.</i></span>
+        </div>
+        <label class="field"><span>E-posta</span>
+          <input type="text" id="gvd-eposta-${p.id}" value="${esc(g.eposta || '')}"
+                 placeholder="personel@firma.com" autocomplete="off"
+                 spellcheck="false" autocapitalize="off"></label>
+        <label class="field" style="margin-top:10px"><span>Şifre</span>
+          <input type="password" id="gvd-sifre-${p.id}" placeholder="••••••••"
+                 autocomplete="off"></label>
+        <label class="field" style="margin-top:10px"><span>guvenlik.json adresi</span>
+          <input type="text" id="gvd-depo-${p.id}" value="${esc(depo)}"
+                 placeholder="github.com/sahip/depo ya da https://.../guvenlik.json"
+                 autocomplete="off" spellcheck="false" autocapitalize="off"></label>
+        ${pl.guvenlikJsonVar === false ? `<p class="ipucu">Yetkilendirme adımında
+          <code>guvenlik.json</code> yazılmadı — programa özel denetimler atlanacak.</p>` : ''}
+        <button class="sayfa-dug bitir" type="button" data-eylem="guvenlik-durak-test"
+                data-proje="${p.id}" ${g.calisiyor || !hazir ? 'disabled' : ''}>
+          ${svg(ICON.gGuvenlik, 15)} ${g.calisiyor ? 'Test ediliyor…' : 'Test Et'}</button>
+        ${hazir ? '' : `<p class="ipucu">Supabase adresi ya da anon key kayıtlı değil —
+          <b>Bağlantılar ve temel</b> durağına dön.</p>`}
+      </div>`
     + guvenlikSonucTablosu(g.sonuc, g.ustKatmanUyarisi, g.kalintilar, g.harita, g.tabloKaynagi, p.id)
-    + (pl.guvenlikOlcum && pl.guvenlikOlcum.acik ? `<div class="note uyari" style="margin-top:14px">${svg(ICON.uyari, 15)}
+    + (o && o.acik ? `<div class="note uyari" style="margin-top:14px">${svg(ICON.uyari, 15)}
         <span><b>Açık varken Final açılmaz.</b> Bulguları Claude'a ver, düzeltmeyi
         <b>yeni numaralı bir göç</b> olarak yazsın — yazılmış SQL düzeltilmez.
         Sonra burada yeniden ölç.</span></div>` : '')
@@ -7762,6 +7867,7 @@ function render() {
   if (sayfa !== 'baglantilar') ACIK_BAGLANTI = null;
   if (sayfa !== 'kurulum') ACIK_KURULUM = null;
   if (sayfa !== 'tasarim') { TASARIM_SEKME = 'promptlar'; TASARIM_ODAK = null; }
+  if (sayfa !== 'guvenlik') GUVENLIK_KURULUM_ACIK = false;
 
   /* Kurulum durağından çıkıldıysa modül ağacı kapanır — aynı sebeple:
      geri gelindiğinde ağacın içine değil kurulum ızgarasına düşülsün.
@@ -15948,6 +16054,20 @@ async function eylemCalistir(el) {
     const ok = await panoyaKopyala(metin);
     toast(ok ? 'Rapor kopyalandı.' : 'Kopyalanamadı, tarayıcı izin vermedi.', ok ? 'basari' : 'hata');
     return;
+  }
+
+  if (e === 'guvenlik-kurulum-tik') {
+    const durum = guvenlikKurulumOku();
+    durum[el.dataset.no] = !durum[el.dataset.no];
+    guvenlikKurulumYaz(durum);
+    /* Hepsi işaretlenince liste kendiliğinden kapanıyor. */
+    if (GUVENLIK_KURULUM_ADIM.every(a => durum[a.no])) GUVENLIK_KURULUM_ACIK = false;
+    return render();
+  }
+
+  if (e === 'guvenlik-kurulum-ac') {
+    GUVENLIK_KURULUM_ACIK = true;
+    return render();
   }
 
   if (e === 'guvenlik-sql-kopyala') {

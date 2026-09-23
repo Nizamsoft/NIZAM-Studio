@@ -1,5 +1,15 @@
 # Değişiklik Günlüğü
 
+## v0.222.0
+- **Güvenlik kontrolü sadeleşti.** En üstte bir kerelik köprü kurulumu üç
+  işaretlenebilir madde hâlinde (jeton · guvenlik-sql fonksiyonu · secret);
+  üçü de işaretlenince tek yeşil satıra iniyor, «Düzenle» ile geri açılıyor.
+  Altında son ölçüm şeridi, sonra tek kart hâlinde test hesabı
+  (e-posta · şifre · guvenlik.json adresi) ve «Test Et».
+- **Supabase bağlantı kartı kalktı** — adres ve anon key Bağlantılar'da
+  zaten giriliyor, burada göstermenin faydası yoktu. Uzun hazırlık
+  anlatımı da işaretlenebilir maddelerin içine girdi.
+
 ## v0.221.0
 - **`guvenlik.json` artık kuruluyor.** Hiçbir prompt bu dosyayı üretmiyordu;
   yeni projelerde saldırı testinin C (programa özel) ve Ç (sunucu işlevi)
