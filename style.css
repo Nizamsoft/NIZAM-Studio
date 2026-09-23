@@ -9480,3 +9480,7 @@ textarea.fm-gir { height: auto; padding: 0 0 12px; resize: vertical; line-height
 .fm-logo.dolu, .fm-gorsel.dolu {
   border-color: var(--done-cizgi-2); box-shadow: 0 0 0 3px var(--done-soft);
 }
+
+/* Tamamlanmış aşamada görsel kutuları yalnız gösterim: tıklanmıyor. */
+.fm-logo.salt, .fm-gorsel.salt { cursor: default; }
+.fm-logo.salt:not(.dolu), .fm-gorsel.salt:not(.dolu) { opacity: .6; }

@@ -1913,7 +1913,7 @@ function firmaSayfasi(p, d) {
       + fmOkuma('Telefon', ICON.telefon, p.telefon)
       + fmOkuma('E-posta', ICON.mail, p.eposta)
       + fmOkuma('Sektör', ICON.dukkan, p.sektor)
-      + fmGorselAlanlari(p, logo, gorsel)
+      + fmGorselAlanlari(p, logo, gorsel, true)
       + `</div></div>`;
   }
 
@@ -1934,23 +1934,27 @@ function firmaSayfasi(p, d) {
 /* Logo ve işletme görseli: ikisi de isteğe bağlı ama her zaman görünür.
    Aşama tamamlandıktan sonra da duruyorlar — sonradan logo eklemek için
    "Düzenle"ye basmak gerekmesin. */
-function fmGorselAlanlari(p, logo, gorsel) {
+function fmGorselAlanlari(p, logo, gorsel, salt) {
+  /* Aşama tamamlandıysa kutular yalnız gösteriyor: yanlışlıkla dokunup
+     görsel değiştirmek yok. Değiştirmek için "Düzenle" gerekiyor. */
+  const kutu = (sinif, ic, eylem, ekOznitelik) => salt
+    ? `<span class="${sinif} salt" ${ekOznitelik}>${ic}</span>`
+    : `<button class="${sinif}" type="button" ${eylem} ${ekOznitelik}>${ic}</button>`;
+
   return `
     <div class="fm">
       <span class="fm-et">Logo <i>(Opsiyonel)</i></span>
-      <button class="fm-logo ${logo ? 'dolu' : ''}" type="button"
-              data-eylem="logo-yukle" data-proje="${p.id}"
-              ${logo ? `style="background-image:url('${esc(logo)}')"` : ''}>
-        ${logo ? '' : `${svg(ICON.resim, 20)}<b>Logo seçin</b><i>PNG, JPG (maks. 5MB)</i>`}
-      </button>
+      ${kutu(`fm-logo ${logo ? 'dolu' : ''}`,
+        logo ? '' : `${svg(ICON.resim, 20)}<b>Logo seçin</b><i>PNG, JPG (maks. 5MB)</i>`,
+        `data-eylem="logo-yukle" data-proje="${p.id}"`,
+        logo ? `style="background-image:url('${esc(logo)}')"` : '')}
     </div>
     <div class="fm">
       <span class="fm-et">İşletme görseli <i>(Opsiyonel)</i></span>
-      <button class="fm-gorsel ${gorsel ? 'dolu' : ''}" type="button"
-              data-eylem="proje-gorsel" data-id="${p.id}">
-        ${gorsel ? `<img src="${esc(gorsel)}" alt="" decoding="async">`
-          : `${svg(ICON.resim, 20)}<b>Görsel seçin</b><i>Vitrin, menü, ürün fotoğrafı…</i>`}
-      </button>
+      ${kutu(`fm-gorsel ${gorsel ? 'dolu' : ''}`,
+        gorsel ? `<img src="${esc(gorsel)}" alt="" decoding="async">`
+          : `${svg(ICON.resim, 20)}<b>Görsel seçin</b><i>Vitrin, menü, ürün fotoğrafı…</i>`,
+        `data-eylem="proje-gorsel" data-id="${p.id}"`, '')}
     </div>`;
 }
 /* 2 · Program temeli — bu paketin adı, kim kullanacak, verisi nerede

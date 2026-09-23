@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## v0.183.0
+- Tamamlanmış aşamada **logo ve görsel kutuları tıklanmıyor** — yanlışlıkla
+  dokunup değiştirmek yok. Değiştirmek için "Düzenle".
+
 ## v0.182.0
 - Bulunduğun aşama tamamlandıysa **üstteki şerit yeşile** dönüyor (noktalar,
   aradaki çizgi ve şimdiki halka).
