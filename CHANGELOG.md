@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.219.0
+- «Müşteri bunu seçti»ye basıldıysa **Uygulanmış tasarımlar sekmesinin
+  üstünde yeşil bir şerit** duruyor: «Müşteri 2. tasarımı seçti» ve altında
+  tasarımın adı. Hangi tasarımda kaldığını hatırlamak için okları
+  gezdirmek gerekmiyor.
+
 ## v0.218.0
 - **Tasarım promptu artık sabit ölçü istiyor:** masaüstü 1600 x 1000
   (16:10), mobil 1080 x 1920 (9:16). Bu ölçüler «Uygulanmış tasarımlar»

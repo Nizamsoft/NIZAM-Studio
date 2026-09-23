@@ -10099,3 +10099,23 @@ textarea.fm-gir { height: auto; padding: 0 0 12px; resize: vertical; line-height
 .tp-kare .ty-mini-dug { padding: 3px 8px; font-size: 7px; }
 .tp-kare .ty-mini-cizgi { height: 2px; }
 .tp-kare .ty-mini-kart { padding: 6px 7px; gap: 3px; }
+
+/* Uygulanmış tasarımlar · seçim şeridi. */
+.tu-secim {
+  display: flex; align-items: center; gap: 11px; margin-bottom: 12px;
+  padding: 12px 13px; border-radius: 14px;
+  background: var(--done-soft); border: 1px solid var(--done-cizgi);
+}
+.tu-secim-ik {
+  flex: 0 0 auto; display: flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px; border-radius: 999px;
+  background: var(--st-done); color: #fff;
+}
+.tu-secim-ik svg { fill: none; stroke: currentColor; stroke-width: 2.6; }
+.tu-secim-ik .dolgu { display: none; }
+.tu-secim-yz { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.tu-secim-yz b {
+  font-family: var(--yazi-etiket); font-size: 14.5px; font-weight: 700;
+  color: var(--st-done-t);
+}
+.tu-secim-yz i { font-style: normal; font-size: 13px; color: var(--ink-soft); }

@@ -2691,7 +2691,19 @@ function tasarimUygulanmisEkrani(p) {
       </div>`;
   };
 
-  return `
+  /* Seçim yapıldıysa sekmenin en üstünde duruyor: hangi tasarımda
+     kaldığını hatırlamak için okları gezdirmek gerekmesin. */
+  const secilen = TASARIM_YON.find(y => y.anahtar === pl.secilenYon);
+  const secimSeridi = secilen ? `
+    <div class="tu-secim">
+      <span class="tu-secim-ik">${svg(ICON.tik, 16)}</span>
+      <span class="tu-secim-yz">
+        <b>Müşteri ${TASARIM_YON.indexOf(secilen) + 1}. tasarımı seçti</b>
+        <i>${esc(secilen.ad)}</i>
+      </span>
+    </div>` : '';
+
+  return secimSeridi + `
     <div class="tu-tepe">
       <button class="tu-ok" type="button" data-eylem="tasarim-odak-git"
               data-proje="${p.id}" data-yon="-1" aria-label="Önceki tasarım">
