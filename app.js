@@ -2136,8 +2136,9 @@ const BAGLANTI_ADIMLARI = {
   claude: ['Düğmeye basın: metin kopyalanır, Claude açılır.',
            'Yeni sohbet açıp yapıştırın.',
            'Dönünce "Bağlandı olarak işaretle" deyin.'],
-  pages: ['Yayın ayarlarını açın.', 'Site açıldıysa onaylayın.'],
-  supabase: ['Supabase\'de proje açın.', 'Proje adresi ile anon key\'i yapıştırın.'],
+  pages: ['Yayın ayarlarını açın.', 'Dönünce yayına alındığını işaretleyin.'],
+  supabase: ['Supabase\'de proje açın.',
+             'Proje adresi ile anon key\'i yapıştırıp işaretleyin.'],
   sql: ['Üç parçayı sırayla kopyalayın.', 'Supabase\'in SQL ekranında çalıştırın.',
         '"Yüklendi" diye işaretleyin.'],
   namecheap: ['DNS kayıtlarını kopyalayın.', 'Alan adı sağlayıcınıza girin.',
@@ -11654,44 +11655,26 @@ function claudeBaglandiMi(p) {
    PAGES_BEKLIYOR üzerinden bir onay kutusu çıkıyor — "yayında" ancak
    kullanıcı onaylayınca yazılıyor (bkz. pagesBaglandiOnayla). */
 function baglantiAdimPages(p) {
-  const pl    = p.palet || {};
-  const slug  = depoSlug(p.repo);
-  const depo  = !!p.repo;
-  const alan  = String(pl.alanAdi || '').trim();
-  const yayin = !!pl.yayinda;
+  const pl   = p.palet || {};
+  const slug = depoSlug(p.repo);
+  const alan = String(pl.alanAdi || '').trim();
 
-  const durum = yayin ? baDurum('Bağlantı kuruldu', alan || slug) : '';
+  if (!p.repo) {
+    return shBaslikServis('github', 'Yayına al', '')
+      + `<p class="ipucu">Önce GitHub adımından depo bağlanmalı.</p>`;
+  }
 
-  const buton = !depo
-    ? `<p class="ipucu" style="margin-bottom:14px">Önce GitHub adımından depo bağlanmalı.</p>`
-    : yayin ? ''
-      : `<a class="sayfa-dug" target="_blank" rel="noopener" data-pages-ac="${p.id}"
-           ${alan ? `data-alan-kopya="${esc(alan)}"` : ''}
-           href="https://github.com/${esc(slug)}/settings/pages">
-          ${svg(ICON.dal, 15)} GitHub Pages'i aç</a>`;
-
-  const onayBekliyor = depo && !yayin && PAGES_BEKLIYOR[p.id];
-  const onayKutusu = !onayBekliyor ? '' : `
-    <div class="note" style="margin-top:10px">${svg(ICON.info, 15)}
-      <span>GitHub Pages gerçekten açıldı mı? Açıldıysa onayla. Hata
-      aldıysan yukarıdaki bağlantıyla tekrar dene, onaylama.</span></div>
-    <div class="kur-dug" style="margin-top:8px">
-      <button class="sayfa-dug" type="button" data-eylem="pages-baglandi-onay" data-proje="${p.id}">
-        ${svg(ICON.tik, 15)} Yayında, devam et</button>
-      <button class="sayfa-dug ikincil" type="button" data-eylem="pages-baglandi-vazgec" data-proje="${p.id}">
-        Henüz açılmadı</button>
-    </div>`;
-
-  return shBaslikServis('github', 'Yayına al',
-    'Claude görevi bitirince kodun canlıya çıktığı yer. GitHub Pages tek adımda açılıyor.')
-    + durum + buton + onayKutusu
-    + baOzellikler([
-      'Ek sunucu kurulumu gerekmez',
-      'Depo güncellenince adres kendiliğinden yenilenir',
-      'Adres kendiliğinden yazılır, elle girmene gerek yok',
-    ]);
+  /* GitHub ve Claude adımlarıyla aynı kalıp: bir koyu düğme işi açıyor,
+     altındaki açık düğme "yaptım" diyor. */
+  return shBaslikServis('github', 'Yayına al', '')
+    + `<a class="sayfa-dug" target="_blank" rel="noopener" data-pages-ac="${p.id}"
+         ${alan ? `data-alan-kopya="${esc(alan)}"` : ''}
+         href="https://github.com/${esc(slug)}/settings/pages">
+        ${svg(ICON.dal, 15)} Yayın ayarlarını aç</a>
+      <button class="sayfa-dug ikincil" type="button" style="margin-top:10px"
+              data-eylem="pages-baglandi-onay" data-proje="${p.id}">
+        ${svg(ICON.tik, 15)} Yayına alındı olarak işaretle</button>`;
 }
-
 /* 4 · Supabase — gerçek adres ve anahtar, otomatik algılanamaz; alanlar
    burada, "Kaydet" `supabase-baglan` eylemine gidiyor. */
 function baglantiAdimSupabase(p) {
@@ -11700,49 +11683,35 @@ function baglantiAdimSupabase(p) {
   const key = String(pl.supabaseAnon || '').trim();
   const org = supabaseOrg();
 
-  const durum = (url && key) ? baDurum('Bağlantı kuruldu', url) : '';
-
-  /* Organizasyon kodu yazılmadıysa Supabase önce "yeni organizasyon kur"
-     diye soruyor — Ayarlar'daki satırla bir kere yazılınca bu adres
-     doğrudan o organizasyonun içinde proje açma ekranına düşüyor. */
+  /* Organizasyon kodu Ayarlar'da yazılıysa doğrudan o organizasyonda proje
+     açma ekranına düşüyoruz. */
   const acHref = org
     ? 'https://supabase.com/dashboard/new/' + encodeURIComponent(org)
     : 'https://supabase.com/dashboard/new';
-  const orgNotu = org ? '' : `
-    <p class="ipucu" style="margin:-4px 0 12px">Her seferinde "yeni organizasyon
-    kur" sormasın diye <a href="#/ayarlar">Ayarlar</a>'da Supabase organizasyon
-    kodunu bir kez yaz.</p>`;
 
-  return shBaslikServis('supabase', 'Supabase\'e bağlan',
-    'Programın verisinin, girişin ve gerçek zamanlı güncellemelerin tutulduğu yer.')
-    + durum
-    + `<a class="sayfa-dug ikincil" target="_blank" rel="noopener"
-         href="${esc(acHref)}">
-        ${svg(ICON.bulut, 15)} Supabase'de proje aç</a>`
-    + orgNotu
-    + `<label class="field"><span>Proje adresi</span>
-        <input type="text" id="ba-sb-url" value="${esc(url)}"
-               placeholder="https://xxxx.supabase.co" autocomplete="off"
-               spellcheck="false" autocapitalize="off"></label>
-      <label class="field"><span>anon key</span>
-        <input type="text" id="ba-sb-key" value="${esc(key)}"
-               placeholder="sb_publishable_… ya da eyJhbG…" autocomplete="off"
-               spellcheck="false" autocapitalize="off"></label>
-      <button class="sayfa-dug" type="button" data-eylem="supabase-baglan" data-proje="${p.id}">
-        ${svg(ICON.bulut, 15)} Kaydet</button>
-      <div class="fbd-not">${svg(ICON.info, 13)}
-        <span>Proje kurulunca <b>Settings → API</b> sayfasından <b>Project URL</b> ve
-        <b>anon key</b>'i kopyalayıp yukarıya yapıştır.</span></div>
-      <div class="note uyari">${svg(ICON.uyari, 15)}
-        <span><b>service_role</b> anahtarını buraya yazma. anon key tarayıcıya zaten
-        iniyor, veriyi satır güvenliği (RLS) koruyor — o normal.</span></div>`
-    + baOzellikler([
-      'Veriler her cihazdan aynı anda görünür',
-      'Girişler ve yetkiler buradan yönetilir',
-      'Yedekleme ve güvenlik Supabase tarafında',
-    ]);
+  return shBaslikServis('supabase', 'Supabase\'e bağlan', '')
+    + `<a class="sayfa-dug" target="_blank" rel="noopener" href="${esc(acHref)}">
+        ${svg(ICON.bulut, 15)} Supabase'de proje aç</a>
+      <span class="fm-kutu" style="margin:10px 0 8px">
+        <span class="fm-ik">${svg(ICON.bulut, 16)}</span>
+        <input class="fm-gir" type="text" id="ba-sb-url" value="${esc(url)}"
+               placeholder="Proje adresi (https://xxxx.supabase.co)"
+               autocomplete="off" spellcheck="false" autocapitalize="off">
+      </span>
+      <span class="fm-kutu" style="margin-bottom:10px">
+        <span class="fm-ik">${svg(ICON.anahtar, 16)}</span>
+        <input class="fm-gir" type="text" id="ba-sb-key" value="${esc(key)}"
+               placeholder="anon key" autocomplete="off" spellcheck="false"
+               autocapitalize="off">
+      </span>
+      <button class="sayfa-dug ikincil" type="button"
+              data-eylem="supabase-baglan" data-proje="${p.id}">
+        ${svg(ICON.tik, 15)} Bağlandı olarak işaretle</button>
+      ${/* Bu uyarı bilerek duruyor: service_role anahtarı buraya yazılırsa
+            veritabanı herkese açılır. Güvenlik uyarısı fazlalık değil. */ ''}
+      <div class="note uyari" style="margin-top:10px">${svg(ICON.uyari, 15)}
+        <span><b>service_role</b> anahtarını yazma, <b>anon key</b> olacak.</span></div>`;
 }
-
 /* Şablon kopyalarına özel ara adım: template'in hazır SQL'i (bkz. Templateler
    > Kurulum SQL'i) yeni Supabase projesine yükleniyor. Metin üç parça
    halinde template'in kaydından okunuyor. */

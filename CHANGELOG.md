@@ -1,5 +1,12 @@
 # Değişiklik Günlüğü
 
+## v0.196.0
+- **Yayın ve Supabase adımları da GitHub/Claude kalıbına geçti**: bir koyu
+  düğme işi açıyor, altındaki açık düğme "yaptım" diyor.
+- Yayın'daki ikili onay ve "gerçekten açıldı mı?" uyarısı kalktı.
+- Supabase'de adres ve anon key kutuları sadeleşti; yalnız **service_role
+  uyarısı** duruyor (güvenlik).
+
 ## v0.195.0
 - **Sohbete ad verme kalktı.** Ad hiçbir yerde kullanılmıyordu, sadece fazladan
   bir adımdı. Claude bağlantısı artık "Bağlandı olarak işaretle" ile bitiyor.
