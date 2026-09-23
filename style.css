@@ -9905,3 +9905,165 @@ textarea.fm-gir { height: auto; padding: 0 0 12px; resize: vertical; line-height
   .btk-ust { flex-wrap: wrap; }
   .btk-yz { flex-basis: 60%; }
 }
+
+/* ==========================================================================
+   27 · PROFESYONEL TASARIM — iki sekme
+   Solda hazır promptlar (kütüphaneden gelen örnek kare + tek prompt),
+   sağda bu proje için üretilmiş masaüstü/mobil görseller.
+   ========================================================================== */
+.tsk {
+  display: flex; gap: 0; margin: 4px 0 16px;
+  border-bottom: 1px solid var(--line-3);
+}
+.tsk-s {
+  flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  height: 46px; padding: 0 6px; border: 0; background: none; cursor: pointer;
+  border-bottom: 2px solid transparent; margin-bottom: -1px;
+  font-family: var(--yazi-etiket); font-size: 13px; font-weight: 600;
+  color: var(--ink-dim); white-space: nowrap;
+}
+.tsk-s svg { flex: 0 0 auto; }
+.tsk-s svg { fill: none; stroke: currentColor; stroke-width: 1.9; }
+.tsk-s .dolgu { display: none; }
+.tsk-s.on { color: var(--red-ink); border-bottom-color: var(--red); }
+
+/* ---------- Sekme 1 · Prompt listesi ---------- */
+.tp-liste { display: flex; flex-direction: column; }
+.tp {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 14px 0; border-bottom: 1px solid var(--line-3);
+}
+.tp:last-child { border-bottom: 0; }
+.tp-kare {
+  flex: 0 0 auto; display: flex; align-items: center; justify-content: center;
+  width: 92px; height: 66px; border-radius: 10px; cursor: pointer;
+  background: var(--yuva) center/cover no-repeat; border: 1px solid var(--line-3);
+  color: var(--ink-faint);
+}
+.tp-kare svg { fill: none; stroke: currentColor; stroke-width: 1.7; }
+.tp-kare .dolgu { display: none; }
+.tp-kare.var { border-color: var(--line-2); }
+.tp-yz { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.tp-bas { display: flex; align-items: center; gap: 8px; }
+.tp-bas b {
+  flex: 1; min-width: 0; font-family: var(--yazi-etiket);
+  font-size: 15px; font-weight: 700; color: var(--ink-strong);
+}
+.tp-bas em {
+  flex: 0 0 auto; padding: 2px 7px; border-radius: 999px;
+  background: var(--red-soft); color: var(--red-ink);
+  font-style: normal; font-size: 11.5px; font-weight: 600;
+}
+.tp-yz > i { font-style: normal; font-size: 13px; line-height: 1.45; color: var(--ink-dim); }
+.tp-kop {
+  align-self: flex-start; display: inline-flex; align-items: center; gap: 7px;
+  margin-top: 6px; height: 36px; padding: 0 13px; border-radius: 10px; cursor: pointer;
+  background: var(--surface); border: 1px solid var(--line-2);
+  font-family: var(--yazi-etiket); font-size: 13px; font-weight: 600; color: var(--ink);
+}
+.tp-kop svg { fill: none; stroke: currentColor; stroke-width: 1.9; }
+.tp-kop .dolgu { display: none; }
+.tp-ok { flex: 0 0 auto; align-self: center; line-height: 0; color: var(--ink-faint); cursor: pointer; }
+.tp-ok svg { fill: none; stroke: currentColor; stroke-width: 2; }
+.tp-ok .dolgu { display: none; }
+
+/* ---------- Sekme 2 · Uygulanmış tasarımlar ---------- */
+.tu-tepe {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 14px;
+  padding: 11px; border-radius: 14px;
+  background: var(--surface); border: 1px solid var(--line-3);
+}
+.tu-kare {
+  flex: 0 0 auto; display: flex; align-items: center; justify-content: center;
+  width: 62px; height: 44px; border-radius: 9px;
+  background: var(--yuva) center/cover no-repeat; border: 1px solid var(--line-3);
+  color: var(--ink-faint);
+}
+.tu-kare svg { fill: none; stroke: currentColor; stroke-width: 1.7; }
+.tu-kare .dolgu { display: none; }
+.tu-yz { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.tu-yz b { font-family: var(--yazi-etiket); font-size: 15px; font-weight: 700; color: var(--ink-strong); }
+.tu-yz i { font-style: normal; font-size: 12.5px; color: var(--ink-dim); }
+.tu-btn {
+  flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px;
+  height: 36px; padding: 0 12px; border-radius: 10px; cursor: pointer;
+  background: var(--yuva); border: 1px solid var(--line-2);
+  font-family: var(--yazi-etiket); font-size: 12.5px; font-weight: 600; color: var(--ink);
+}
+.tu-btn svg { fill: none; stroke: currentColor; stroke-width: 1.9; }
+.tu-btn .dolgu { display: none; }
+.tu-blok {
+  margin-bottom: 14px; padding: 12px; border-radius: 16px;
+  background: var(--surface); border: 1px solid var(--line-3);
+}
+.tu-bas {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 10px;
+  font-family: var(--yazi-etiket); font-size: 13.5px; font-weight: 700; color: var(--ink-strong);
+}
+.tu-bas svg { fill: none; stroke: currentColor; stroke-width: 1.9; color: var(--ink-soft); }
+.tu-bas .dolgu { display: none; }
+.tu-kutu {
+  position: relative; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 7px;
+  border-radius: 12px; cursor: pointer; overflow: hidden;
+  background: var(--yuva) center/cover no-repeat;
+  border: 1.5px dashed var(--line-2); color: var(--ink-faint);
+}
+.tu-kutu.masa  { aspect-ratio: 16 / 10; }
+.tu-kutu.mobil { aspect-ratio: 16 / 11; }
+.tu-kutu.var { border-style: solid; border-color: var(--line-3); }
+.tu-kutu svg { fill: none; stroke: currentColor; stroke-width: 1.7; }
+.tu-kutu .dolgu { display: none; }
+.tu-kutu i { font-style: normal; font-size: 12px; }
+.tu-degis {
+  display: inline-flex; align-items: center; gap: 6px; margin-top: 10px;
+  height: 34px; padding: 0 12px; border-radius: 9px; cursor: pointer;
+  background: var(--yuva); border: 1px solid var(--line-2);
+  font-family: var(--yazi-etiket); font-size: 12.5px; font-weight: 600; color: var(--ink-soft);
+}
+.tu-degis svg { fill: none; stroke: currentColor; stroke-width: 1.9; }
+.tu-degis .dolgu { display: none; }
+
+/* Hangi tasarıma bakılacağı penceresi. */
+.td-liste { display: flex; flex-direction: column; gap: 8px; }
+.td {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 12px; border-radius: 12px; cursor: pointer; text-align: left;
+  background: var(--surface); border: 1px solid var(--line-3);
+}
+.td.on { border-color: var(--st-done); background: var(--done-soft); }
+.td b { flex: 1 0 100%; font-size: 14.5px; font-weight: 700; color: var(--ink-strong); }
+.td i { flex: 1; min-width: 0; font-style: normal; font-size: 12.5px; color: var(--ink-dim); }
+.td svg { flex: 0 0 auto; fill: none; stroke: var(--st-done); stroke-width: 2.4; }
+.td .dolgu { display: none; }
+.tk-buyuk { display: block; width: 100%; border-radius: 12px; }
+
+/* ---------- Kütüphane · Tasarımlar ---------- */
+.tk-liste { display: flex; flex-direction: column; }
+.tk {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding: 14px 0; border-bottom: 1px solid var(--line-3);
+}
+.tk:last-child { border-bottom: 0; }
+.tk-kare {
+  flex: 0 0 auto; display: flex; align-items: center; justify-content: center;
+  width: 84px; height: 60px; border-radius: 10px;
+  background: var(--yuva) center/cover no-repeat; border: 1px solid var(--line-3);
+  color: var(--ink-faint);
+}
+.tk-kare svg { fill: none; stroke: currentColor; stroke-width: 1.7; }
+.tk-kare .dolgu { display: none; }
+.tk-yz { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.tk-yz b { font-family: var(--yazi-etiket); font-size: 15px; font-weight: 700; color: var(--ink-strong); }
+.tk-yz i { font-style: normal; font-size: 12.5px; line-height: 1.45; color: var(--ink-dim); }
+.tk-no { flex: 0 0 auto; font-size: 12px; color: var(--ink-faint); }
+.tk-dug { flex: 1 0 100%; display: flex; gap: 8px; }
+.tk-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  height: 36px; padding: 0 13px; border-radius: 10px; cursor: pointer;
+  background: var(--surface); border: 1px solid var(--line-2);
+  font-family: var(--yazi-etiket); font-size: 13px; font-weight: 600; color: var(--ink);
+}
+.tk-btn.sil { padding: 0 11px; color: var(--red-ink); border-color: var(--red-cizgi); }
+.tk-btn svg { fill: none; stroke: currentColor; stroke-width: 1.9; }
+.tk-btn .dolgu { display: none; }

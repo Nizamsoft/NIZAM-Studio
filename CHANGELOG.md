@@ -1,5 +1,17 @@
 # Değişiklik Günlüğü
 
+## v0.215.0
+- **Profesyonel tasarım iki sekmeye ayrıldı.** *Tasarım promptları*: her
+  hazır yönün örnek karesi, adı, özeti ve tek bir «Prompt kopyala»
+  düğmesi. *Uygulanmış tasarımlar*: seçtiğin yön için bir masaüstü, bir
+  mobil görsel yüklüyorsun; «Değiştir» ile başka yöne geçiyorsun, her
+  yönün kendi çifti duruyor. «Müşteri bunu seçti» aynı anda aşamayı da
+  tamamlıyor.
+- **Yeni: Kütüphane › Tasarımlar.** Hazır tasarım yönlerinin örnek
+  karelerini buradan yüklüyorsun; yükledikleri bütün projelerde görünür.
+  (Supabase'de `tasarimlar` adında **public** bir kova açıp
+  `sql/29-tasarimlar.sql` dosyasını çalıştırmak gerekiyor.)
+
 ## v0.214.0
 - **«Geliştirme bitti»ye basınca artık öteki aşamalardaki yeşil
   «Bu adım tamamlandı» barı çıkıyor** — küçük bir satır yazı yerine.

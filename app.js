@@ -20,6 +20,7 @@ const ROUTES = {
   paketler:    { title: 'Paketler',            kisa: 'Paketler',    sub: () => paketAltBaslik() },
   kilitler:    { title: 'Kilitli Projeler',    kisa: 'Kilit',       sub: () => kilitAltBaslik() },
   templateler: { title: 'Templateler',         kisa: 'Template',    sub: () => cekirdekAltBaslik() },
+  tasarimlar:  { title: 'Tasarımlar',          kisa: 'Tasarım',     sub: () => TASARIM_YON.length + ' hazır tasarım' },
   ekip:        { title: 'Ekip',               kisa: 'Ekip',        sub: () => ekipAltBaslik() },
   sohbet:      { title: 'Sohbet',             kisa: 'Sohbet',      sub: () => 'Ekip ile iletişimde kal' },
   guvenlik:    { title: 'Güvenlik Testi',     kisa: 'Güvenlik',    sub: () => 'anon key ve istersen personel girişiyle test et' },
@@ -628,6 +629,51 @@ const VIEWS = {
     `;
   },
 
+  /* ---------- Tasarımlar (kütüphane) ----------
+     Yönlerin adı, özeti ve promptu kodda sabit; buradan değiştirilmiyor.
+     Değişen tek şey her yönün temsili karesi — projeye değil uygulamaya
+     ait olduğu için tasarım durağında bütün projelerde aynı görünüyor. */
+
+  tasarimlar: () => {
+    if (YUKLENIYOR) return iskeletler(3);
+    if (DB.hata)    return hataKutusu(DB.hata);
+
+    const harita = DB.tasarimGorsel || {};
+    const satir = (y, i) => {
+      const resim = harita[y.anahtar] || '';
+      return `
+        <div class="tk">
+          <span class="tk-kare ${resim ? 'var' : ''}"
+                ${resim ? `style="background-image:url('${esc(resim)}')"` : ''}>
+            ${resim ? '' : svg(ICON.resim, 20)}
+          </span>
+          <span class="tk-yz">
+            <b>${esc(y.ad)}</b>
+            <i>${esc(y.ozet || '')}</i>
+          </span>
+          <span class="tk-no mono">#${i + 1}</span>
+          ${AUTH.yonetici ? `
+            <span class="tk-dug">
+              <button class="tk-btn" type="button" data-eylem="tasarim-kare-yukle"
+                      data-alan="${esc(y.anahtar)}">
+                ${svg(ICON.folder, 14)} ${resim ? 'Değiştir' : 'Görsel yükle'}</button>
+              ${resim ? `<button class="tk-btn sil" type="button" data-eylem="tasarim-kare-sil"
+                      data-alan="${esc(y.anahtar)}">${svg(ICON.cop, 14)}</button>` : ''}
+            </span>` : ''}
+        </div>`;
+    };
+
+    return `
+      <div class="pj-tepe">
+        <div class="pj-tepe-yz">
+          <h1>Tasarımlar</h1>
+          <p>Hazır tasarım promptlarının örnek görselleri. Buraya yüklediğin
+             kare, bütün projelerin «Profesyonel tasarım» adımında görünür.</p>
+        </div>
+      </div>
+      <div class="tk-liste">${TASARIM_YON.map(satir).join('')}</div>`;
+  },
+
   /* ---------- Paketler ---------- */
 
   paketler: () => {
@@ -1082,6 +1128,19 @@ const KUTUPHANE = [
     sus: '<rect x="20" y="2" width="38" height="38" rx="8"></rect>'
        + '<rect x="4" y="18" width="38" height="38" rx="8"></rect>'
        + '<path d="M17 31l-4 6 4 6M29 31l4 6-4 6"></path>',
+  },
+  {
+    /* Tasarım yönlerinin kendisi kodda sabit (config.js · TASARIM_YON);
+       buradan yalnız her yönün temsili karesi yükleniyor. */
+    ad: 'Tasarımlar', adres: '#/tasarimlar', renk: 'mavi', ikon: 'gTasarim',
+    aciklama: 'Hazır tasarım promptlarının örnek görselleri.',
+    sayi: () => TASARIM_YON.filter(y => (DB.tasarimGorsel || {})[y.anahtar]).length
+      + ' / ' + TASARIM_YON.length + ' görsel',
+    susCizgi: true,
+    sus: '<rect x="4" y="6" width="24" height="24" rx="5"></rect>'
+       + '<rect x="32" y="6" width="24" height="24" rx="5"></rect>'
+       + '<rect x="4" y="34" width="24" height="24" rx="5"></rect>'
+       + '<rect x="32" y="34" width="24" height="24" rx="5"></rect>',
   },
   {
     ad: 'Nizam Standartları', adres: '#/standartlar', renk: 'yesil', ikon: 'gGuvenlik',
@@ -2394,6 +2453,20 @@ function yonOrnekEkran(yon, kip) {
 
 /* Pencere · iki düğme bir görüntüyü değiştiriyor, pencere yeniden
    açılmıyor: karşılaştırma tek dokunuşla olsun. */
+/* Kütüphaneden yüklenen örnek kare — tam boy. */
+function tasarimKaresiAc(anahtar, adres) {
+  const yon = TASARIM_YON.find(y => y.anahtar === anahtar) || {};
+  modalAc(`
+    <div class="modal-bas">
+      <span class="modal-baslik">${esc(yon.ad || 'Tasarım')}</span>
+      <p class="modal-alt-yazi">${esc(yon.ozet || '')}</p>
+    </div>
+    <img class="tk-buyuk" src="${esc(adres)}" alt="${esc(yon.ad || '')}">
+    <div class="modal-alt">
+      <button class="btn btn-ghost" data-m="kapat" type="button">Kapat</button>
+    </div>`);
+}
+
 function yonOrnekAc(anahtar) {
   const yon = TASARIM_YON.find(y => y.anahtar === anahtar);
   if (!yon || !yon.onizleme) { toast('Bu yönün örnek ekranı yok.', 'uyari'); return; }
@@ -2529,54 +2602,113 @@ function serbestTasarimKarti(p, pl) {
       </div>` : ''}`);
 }
 
+/* ---------- 7 · Profesyonel tasarım ----------
+   İki sekme. Solda hazır tasarım promptları: her yönün örnek karesi
+   (Kütüphane > Tasarımlar'dan yüklenir, bütün projelerde ortak) ve tek
+   promptu. Sağda uygulanmış tasarımlar: ChatGPT'ye promptu verip ürettiğin
+   görselleri her yön için ayrı ayrı (bir masaüstü, bir mobil) yüklüyorsun,
+   müşteri bakıp birini seçiyor. */
+let TASARIM_SEKME = 'promptlar';
+/* Uygulanmış sekmesinde hangi yöne bakılıyor — seçili yön yoksa ilki. */
+let TASARIM_ODAK = null;
+
+function tasarimOdagi(p) {
+  const istek = TASARIM_ODAK || (p.palet || {}).secilenYon;
+  return TASARIM_YON.find(y => y.anahtar === istek) || TASARIM_YON[0];
+}
+
 function tasarimSayfasi(p, d) {
   const pl = p.palet || {};
-  const serbest = pl.secilenYon === 'serbest';
+  const sekme = TASARIM_SEKME === 'uygulanmis' ? 'uygulanmis' : 'promptlar';
+
   return `<div class="fb-govde">`
     + adimBasligi(p, d, pl.secilenYon ? '1/1' : '0/1')
-    + balon('5 hazır yönü sırayla ChatGPT\'ye ver — her biri işletmenin gerçek '
-        + 'ekran görüntüsünü alıp farklı bir görsel yön öneriyor. Müşterinin kendi '
-        + 'getirdiği bir referans görsel varsa "Serbest tasarım"ı kullan.',
-        'Dönen görselleri buraya yükle, müşteriye göster, seçtiğini işaretle.')
-    + `<div class="ty-izgara">${TASARIM_YON.map(y => tasarimYonKarti(p, pl, y)).join('')
-        + serbestTasarimKarti(p, pl)}</div>`
-    /* Eskiden seçilmiş bir yön listeden kaldırılmış olabilir (yön listesi
-       zaman zaman yenileniyor). O zaman "Sıradaki adım" kartı boş isimle
-       çıkmasın — müşteriye yeniden seçtirelim. */
-    + (pl.secilenYon && !serbest && !TASARIM_YON.some(y => y.anahtar === pl.secilenYon) ? `
-      <div class="fb-kart" style="--kr:var(--metal-2)">
-        <div class="fb-ust">
-          <span class="fb-ik">${svg(ICON.gTasarim, 14)}</span>
-          <span class="fb-bas">Seçilen yön artık listede yok</span>
-        </div>
-        <p class="fb-neden">Daha önce seçilen tasarım yönü kaldırıldı. Yukarıdaki
-          yönlerden birini müşteriye yeniden seçtir.</p>
-      </div>` : '')
-    + (pl.secilenYon && (serbest || TASARIM_YON.some(y => y.anahtar === pl.secilenYon)) ? `
-      <div class="fb-kart" style="--kr:${serbest ? 'var(--metal-2)' : (TASARIM_YON.find(y => y.anahtar === pl.secilenYon) || {}).renk || 'var(--metal-2)'}">
-        <div class="fb-ust">
-          <span class="fb-ik">${svg(ICON.gTasarim, 14)}</span>
-          <span class="fb-bas">Sıradaki adım</span>
-        </div>
-        <p class="fb-neden">${serbest
-          ? 'Müşteri kendi referans görselini kullanmayı seçti. Bu promptu kopyala, '
-            + 'referans görselle birlikte Claude Code\'a yapıştır — Claude hem tasarımı '
-            + 'uygulayacak hem de ihtiyaç olan görsel/ikonlar için ChatGPT\'ye vereceğin '
-            + 'numaralı promptları yazacak.'
-          : `Müşteri <b>${esc((TASARIM_YON.find(y => y.anahtar === pl.secilenYon) || {}).ad || '')}</b>
-            yönünü seçti. Bu promptu kopyala, seçilen yönün mockup görseliyle birlikte
-            Claude Code'a yapıştır — Claude sana, ihtiyaç olan her görsel/ikon için
-            ChatGPT'ye vereceğin, ayrı ayrı hazır promptlar yazacak.`}</p>
-        <button class="sayfa-dug" type="button" data-eylem="tasarim-varlik-kopyala"
-                data-proje="${p.id}" data-alan="${pl.secilenYon}">
-          ${svg(ICON.kopya, 15)} Promptu kopyala</button>
-      </div>` : '')
-    + (AUTH.yonetici ? (pl.tasarimTamamlandi
-        ? `<div class="kur-deger duz">${svg(ICON.tik, 13)} Bu aşama tamamlandı</div>`
-        : `<button class="sayfa-dug ikincil" type="button" data-eylem="tasarim-tamamlandi"
-                    data-proje="${p.id}" ${pl.secilenYon ? '' : 'disabled'}>
-             ${svg(ICON.check, 15)} Profesyonel tasarım tamamlandı</button>`) : '')
+    + (pl.tasarimTamamlandi
+        ? fmTamamBar(p, 'tasarim', 'Müşteri tasarımını seçti.', false) : '')
+    + `<div class="tsk">
+        <button class="tsk-s ${sekme === 'promptlar' ? 'on' : ''}" type="button"
+                data-eylem="tasarim-sekme" data-deger="promptlar">
+          ${svg(ICON.dokuman, 16)} Tasarım promptları</button>
+        <button class="tsk-s ${sekme === 'uygulanmis' ? 'on' : ''}" type="button"
+                data-eylem="tasarim-sekme" data-deger="uygulanmis">
+          ${svg(ICON.resim, 16)} Uygulanmış tasarımlar</button>
+      </div>`
+    + (sekme === 'promptlar' ? tasarimPromptListesi(p) : tasarimUygulanmisEkrani(p))
     + `</div>`;
+}
+
+function tasarimPromptListesi(p) {
+  const harita = DB.tasarimGorsel || {};
+  return `<div class="tp-liste">` + TASARIM_YON.map((y, i) => {
+    const resim = harita[y.anahtar] || '';
+    return `
+      <div class="tp">
+        <span class="tp-kare ${resim ? 'var' : ''}" data-eylem="tasarim-yon-ornek"
+              data-alan="${esc(y.anahtar)}" role="button" tabindex="0"
+              ${resim ? `style="background-image:url('${esc(resim)}')"` : ''}>
+          ${resim ? '' : svg(ICON.resim, 20)}
+        </span>
+        <span class="tp-yz">
+          <span class="tp-bas"><b>${esc(y.ad)}</b><em class="mono">#${i + 1}</em></span>
+          <i>${esc(y.ozet || '')}</i>
+          <button class="tp-kop" type="button" data-eylem="tasarim-yon-kopyala"
+                  data-proje="${p.id}" data-alan="${esc(y.anahtar)}" data-kip="ayni">
+            ${svg(ICON.kopya, 14)} Prompt kopyala</button>
+        </span>
+        <span class="tp-ok" data-eylem="tasarim-yon-ornek" data-alan="${esc(y.anahtar)}"
+              role="button" tabindex="0">${svg(ICON.chevron, 16)}</span>
+      </div>`;
+  }).join('') + `</div>`;
+}
+
+function tasarimUygulanmisEkrani(p) {
+  const pl     = p.palet || {};
+  const odak   = tasarimOdagi(p);
+  const kare   = (DB.tasarimGorsel || {})[odak.anahtar] || '';
+  const secili = pl.secilenYon === odak.anahtar;
+
+  /* Her yönün kendi çifti var: bir masaüstü, bir mobil. Yuva adı yönün
+     anahtarından türüyor, böylece yönler birbirinin görselini ezmiyor. */
+  const kutu = (tur, etiket, ikon) => {
+    const no = 'Y_' + odak.anahtar + '_' + tur;
+    const resim = gorselAdresi(p, no);
+    return `
+      <div class="tu-blok">
+        <span class="tu-bas">${svg(ikon, 15)} ${esc(etiket)}</span>
+        <div class="tu-kutu ${resim ? 'var' : ''} ${tur}"
+             ${AUTH.yonetici ? `data-eylem="tasarim-uygulanmis-yukle" data-proje="${p.id}"
+               data-alan="${esc(odak.anahtar)}" data-tur="${tur}" role="button" tabindex="0"` : ''}
+             ${resim ? `style="background-image:url('${esc(resim)}')"` : ''}>
+          ${resim ? '' : `${svg(ICON.folder, 22)}<i>${AUTH.yonetici
+            ? 'dokun, görseli yükle' : 'görsel yok'}</i>`}
+          ${GORSEL_YUKLENIYOR[p.id] && GORSEL_YUKLENIYOR[p.id].no === no
+            ? gorselYuklemeKatmani(p.id) : ''}
+        </div>
+        ${resim && AUTH.yonetici ? `
+          <button class="tu-degis" type="button" data-eylem="tasarim-uygulanmis-yukle"
+                  data-proje="${p.id}" data-alan="${esc(odak.anahtar)}" data-tur="${tur}">
+            ${svg(ICON.folder, 13)} Değiştir</button>` : ''}
+      </div>`;
+  };
+
+  return `
+    <div class="tu-tepe">
+      <span class="tu-kare ${kare ? 'var' : ''}"
+            ${kare ? `style="background-image:url('${esc(kare)}')"` : ''}>
+        ${kare ? '' : svg(ICON.resim, 18)}
+      </span>
+      <span class="tu-yz"><b>${esc(odak.ad)}</b>
+        <i>Seçilen prompt ile oluşturulan tasarımlar.</i></span>
+      <button class="tu-btn" type="button" data-eylem="tasarim-odak-degis"
+              data-proje="${p.id}">${svg(ICON.geriAl, 14)} Değiştir</button>
+    </div>
+    ${kutu('masa', 'Masaüstü tasarımı', ICON.panel)}
+    ${kutu('mobil', 'Mobil tasarım', ICON.telefon)}
+    ${AUTH.yonetici ? `
+      <button class="sayfa-dug ${secili ? 'ikincil' : 'bitir'}" type="button"
+              data-eylem="tasarim-yon-sec" data-proje="${p.id}"
+              data-alan="${esc(odak.anahtar)}">
+        ${svg(ICON.tik, 15)} ${secili ? 'Seçildi — kaldır' : 'Müşteri bunu seçti'}</button>` : ''}`;
 }
 
 /* ---------- Önizleme: seçimlerin bir arada nasıl durduğu ----------
@@ -7545,6 +7677,7 @@ function render() {
   /* Bağlantılar aşamasından çıkınca açık kart hatırlanmasın. */
   if (sayfa !== 'baglantilar') ACIK_BAGLANTI = null;
   if (sayfa !== 'kurulum') ACIK_KURULUM = null;
+  if (sayfa !== 'tasarim') { TASARIM_SEKME = 'promptlar'; TASARIM_ODAK = null; }
 
   /* Kurulum durağından çıkıldıysa modül ağacı kapanır — aynı sebeple:
      geri gelindiğinde ağacın içine değil kurulum ızgarasına düşülsün.
@@ -14279,6 +14412,29 @@ async function eylemCalistir(el) {
     return render();
   }
 
+  /* Kütüphane · Tasarımlar — yönün temsili karesi (uygulama geneli). */
+  if (e === 'tasarim-kare-yukle') {
+    const anahtar = el.dataset.alan;
+    const alan = document.createElement('input');
+    alan.type = 'file'; alan.accept = 'image/*'; alan.style.display = 'none';
+    document.body.appendChild(alan);
+    alan.addEventListener('change', async () => {
+      const dosya = alan.files && alan.files[0];
+      alan.remove();
+      if (!dosya) return;
+      await isYap(() => DB.tasarimGorselYukle(anahtar, dosya), 'Görsel yüklendi.');
+    });
+    alan.click();
+    return;
+  }
+
+  if (e === 'tasarim-kare-sil') {
+    const anahtar = el.dataset.alan;
+    if (!await onaySor({ baslik: 'Görsel silinsin mi?',
+      mesaj: 'Bu tasarımın örnek karesi kaldırılacak.', buton: 'Sil' })) return;
+    return isYap(() => DB.tasarimGorselSil(anahtar), 'Görsel silindi.');
+  }
+
   if (e === 'tasarim-yon-gorsel') {
     const alan = el.dataset.alan;
     if (alan === 'serbest') { gorselSecVeYukle(el.dataset.proje, 'Y_serbest', 'Serbest tasarım'); return; }
@@ -14288,7 +14444,49 @@ async function eylemCalistir(el) {
     return;
   }
 
+  if (e === 'tasarim-sekme') {
+    TASARIM_SEKME = el.dataset.deger === 'uygulanmis' ? 'uygulanmis' : 'promptlar';
+    return render();
+  }
+
+  /* Uygulanmış sekmesinde hangi yöne bakılacağı — küçük bir liste. */
+  if (e === 'tasarim-odak-degis') {
+    const pr = DB.proje(el.dataset.proje);
+    const simdi = pr ? tasarimOdagi(pr).anahtar : '';
+    modalAc(`
+      ${modalBaslik(ICON.gTasarim, 'Hangi tasarım?',
+        'Her tasarımın kendi masaüstü ve mobil görseli var.')}
+      <div class="td-liste">
+        ${TASARIM_YON.map(y => `
+          <button class="td ${y.anahtar === simdi ? 'on' : ''}" type="button"
+                  data-td="${esc(y.anahtar)}">
+            <b>${esc(y.ad)}</b><i>${esc(y.ozet || '')}</i>
+            ${y.anahtar === simdi ? svg(ICON.tik, 16) : ''}
+          </button>`).join('')}
+      </div>
+      <div class="modal-alt">
+        <button class="btn btn-ghost" data-m="kapat" type="button">Kapat</button>
+      </div>`, kutu => {
+      $$('[data-td]', kutu).forEach(d => d.addEventListener('click', () => {
+        TASARIM_ODAK = d.dataset.td;
+        modalKapat(); render();
+      }));
+    });
+    return;
+  }
+
+  if (e === 'tasarim-uygulanmis-yukle') {
+    const yon = TASARIM_YON.find(y => y.anahtar === el.dataset.alan);
+    if (!yon) return;
+    const tur = el.dataset.tur === 'mobil' ? 'mobil' : 'masa';
+    gorselSecVeYukle(el.dataset.proje, 'Y_' + yon.anahtar + '_' + tur,
+      yon.ad + ' · ' + (tur === 'mobil' ? 'mobil' : 'masaüstü'));
+    return;
+  }
+
   if (e === 'tasarim-yon-ornek') {
+    const kare = (DB.tasarimGorsel || {})[el.dataset.alan];
+    if (kare) return tasarimKaresiAc(el.dataset.alan, kare);
     yonOrnekAc(el.dataset.alan);
     return;
   }
@@ -14319,7 +14517,10 @@ async function eylemCalistir(el) {
     if (!pr) return;
     const pl = pr.palet || {};
     const secili = pl.secilenYon === el.dataset.alan ? null : el.dataset.alan;
-    return isYap(() => DB.paletKaydet(pr.id, Object.assign({}, pl, { secilenYon: secili })),
+    /* Müşteri seçtiği anda aşama biter: ayrıca bir "tamamlandı" düğmesine
+       basmak fazlalıktı, seçimden sonra yapılacak bir iş kalmıyor. */
+    return isYap(() => DB.paletKaydet(pr.id, Object.assign({}, pl,
+      { secilenYon: secili, tasarimTamamlandi: !!secili })),
       secili ? 'Seçildi.' : 'Seçim kaldırıldı.');
   }
 

@@ -339,6 +339,7 @@ const DB = {
       this.yuklendi = true;
       await this.logolariTazele();
       await this.gorselleriTazele();
+      await this.tasarimGorselleriTazele();
       /* Resimler burada indirilmeye başlıyor; açılış çubuğu `isitma`
          sözünü bekliyor (bkz. boot). Uygulama içinde beklenmiyor. */
       this.isitma = this.resimleriIsit();
@@ -1450,6 +1451,68 @@ const DB = {
     /* Yuva kalıyor, yalnız dosyası gidiyor — tarif onu hâlâ istiyor. */
     yuvalar[i] = Object.assign({}, yuvalar[i], { yol: '', boyut: 0, tur: '' });
     await this.paletKaydet(projeId, Object.assign({}, pl, { gorseller: yuvalar }));
+  },
+
+  /* ---- Hazır tasarım yönlerinin temsili görselleri ----
+     Bunlar projeye değil uygulamaya ait: her yönün "kabaca böyle duruyor"
+     karesi. Ayrı bir tablo açmadık — dosyanın adı yönün anahtarı, kova
+     (tasarimlar) genel erişime açık. Liste bir kere okunup haritaya
+     çevriliyor; sürüm damgası (?v=) yeni yüklenen dosyanın eskisinin
+     yerine gerçekten görünmesi için. */
+  tasarimGorsel: {},
+  tasarimGorselDosya: {},
+
+  async tasarimGorselleriTazele() {
+    this.tasarimGorsel = {}; this.tasarimGorselDosya = {};
+    if (!AUTH.db) return;
+    let liste;
+    try {
+      const { data, error } = await AUTH.db.storage.from('tasarimlar')
+        .list('', { limit: 200 });
+      if (error) return;
+      liste = data || [];
+    } catch (h) { return; }
+
+    liste.forEach(d => {
+      if (!d || !d.name || d.name.startsWith('.')) return;
+      const anahtar = String(d.name).replace(/\.[^.]+$/, '');
+      const { data: u } = AUTH.db.storage.from('tasarimlar').getPublicUrl(d.name);
+      if (!u || !u.publicUrl) return;
+      const damga = String(d.updated_at || d.created_at || '').replace(/\D/g, '').slice(0, 14);
+      this.tasarimGorsel[anahtar] = u.publicUrl + (damga ? '?v=' + damga : '');
+      this.tasarimGorselDosya[anahtar] = d.name;
+    });
+  },
+
+  async tasarimGorselYukle(anahtar, dosya) {
+    yazmaKontrol();
+    if (!/^image\//.test(dosya.type)) throw new Error('Yalnızca resim yükleyebilirsin.');
+    if (dosya.size > 4 * 1024 * 1024) throw new Error('Dosya 4 MB\'ı geçmesin.');
+
+    const kucuk  = await this.gorseliKucult(dosya, 1400, 0.82);
+    const uzanti = (kucuk.name.split('.').pop() || 'png').toLowerCase().slice(0, 5);
+    const yol    = anahtar + '.' + uzanti;
+
+    /* Uzantı değişirse (png → webp) eski dosya ortada kalır ve listede iki
+       kayıt olur; önce eskisini siliyoruz. */
+    const eski = this.tasarimGorselDosya[anahtar];
+    if (eski && eski !== yol) {
+      try { await AUTH.db.storage.from('tasarimlar').remove([eski]); } catch (h) {}
+    }
+    const yukle = await AUTH.db.storage.from('tasarimlar')
+      .upload(yol, kucuk, { upsert: true, contentType: kucuk.type });
+    if (yukle.error) throw new Error(depoHatasi(yukle.error, 'tasarimlar'));
+    await this.onbellektenSil(this.tasarimGorsel[anahtar]);
+    await this.tasarimGorselleriTazele();
+  },
+
+  async tasarimGorselSil(anahtar) {
+    yazmaKontrol();
+    const ad = this.tasarimGorselDosya[anahtar];
+    if (!ad) return;
+    try { await AUTH.db.storage.from('tasarimlar').remove([ad]); } catch (h) {}
+    await this.onbellektenSil(this.tasarimGorsel[anahtar]);
+    await this.tasarimGorselleriTazele();
   },
 
   /* Bütün projelerin dolu yuvaları için tek çağrıda imzalı adres. */
