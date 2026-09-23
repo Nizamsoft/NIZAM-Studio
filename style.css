@@ -9654,10 +9654,7 @@ textarea.fm-gir { height: auto; padding: 0 0 12px; resize: vertical; line-height
   margin: 0 0 14px; font-size: 13.5px; line-height: 1.5; color: var(--ink-soft);
 }
 .bgz-not b { color: var(--ink-strong); font-weight: 700; }
-/* Açılan adımın giriş cümlesi — eski sihirbaz başlığının yerine geçti. */
-.bgz-gir {
-  margin: 0 0 12px; font-size: 13.5px; line-height: 1.5; color: var(--ink-soft);
-}
+
 /* Yapılacaklar: kısa, numaralı. */
 .bgz-adimlar {
   list-style: none; counter-reset: bgz; margin: 0 0 14px; padding: 0;

@@ -1,5 +1,12 @@
 # Değişiklik Günlüğü
 
+## v0.211.0
+- **Beta ve geliştirme, Bağlantılar ve temel'le birebir aynı kalıba geçti.**
+  Açılan adımın içi artık kısa numaralı yapılacaklar listesi + iki düğme:
+  giriş cümleleri, dosya listesi, "Bu aşamada" kartı ve "Bitince dene"
+  kutusu kalktı — test cümlesi listenin son maddesi oldu. Satır alt
+  yazıları tek satıra sığacak kadar kısaltıldı.
+
 ## v0.210.0
 - **Beta ve geliştirme: «Doldur» ve tam ekran sihirbaz kalktı.** İlk kurulumun
   yedi adımı artık Bağlantılar ve temel'deki gibi numaralı dikey zincir:

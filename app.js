@@ -5033,7 +5033,13 @@ function betaKurulumOzeti(p, d, liste) {
               tamam ? svg(ICON.tik, 14) : 'Bekliyor'}</span>
             <span class="bgz-ok ${acikMi ? 'acik' : ''}">${svg(ICON.chevron, 14)}</span>
           </button>
-          ${acikMi ? `<div class="bgz-ic">${kurulumGovdesi(k, p)}</div>` : ''}
+          ${acikMi ? `
+            <div class="bgz-ic">
+              <ol class="bgz-adimlar">
+                ${kurulumYapilacaklar(k, p).map(x => `<li>${esc(x)}</li>`).join('')}
+              </ol>
+              ${kurulumGovdesi(k, p)}
+            </div>` : ''}
         </div>
       </div>`;
   }).join('');
@@ -5055,16 +5061,35 @@ function kurulumAcik(liste, sirada) {
 
 /* Satır başlığının altındaki tek cümle — ne yapılacağını söylüyor. */
 const KURULUM_ALT = {
-  blok: 'Plan dosyaları depoya yazılır.',
-  sql:  'Tabloları Supabase\'de kur.',
+  blok: 'Plan depoya yazılır.',
+  sql:  'Tabloları kur.',
 };
 const KURULUM_ASAMA_ALT = [
-  'Kabuk, renk ve boş ekranlar.',
-  'Tablolar, panel ve ilk liste.',
-  'Ekleme, düzenleme ve silme.',
-  'Boş/hata ekranları ve ayarlar.',
-  'Animasyon, güncelleme ve hız.',
+  'Kabuk ve tema.',
+  'Tablolar ve listeler.',
+  'Ekle, düzenle, sil.',
+  'Uç durumlar, ayarlar.',
+  'Animasyon ve hız.',
 ];
+
+/* Adımın içindeki kısa yapılacaklar listesi — bağlantı zincirindeki
+   BAGLANTI_ADIMLARI'nın karşılığı. Beş kod aşamasında liste projeye göre
+   değişiyor (rolsüz/sunucusuz projede bazı maddeler düşüyor), o yüzden
+   sabit değil, hesaplanıyor. */
+const KURULUM_YAPILACAK = {
+  blok: ['Düğmeye basın: plan kopyalanır, Claude Code açılır.',
+         'Claude dosyaları yazsın.',
+         'Dönünce "Dosyalar yazıldı" diye işaretleyin.'],
+  sql:  ['SQL dosyasını açıp metni kopyalayın.',
+         'SQL editörünü açın, yapıştırın ve Run\'a basın.',
+         'Tabloların geldiğini görün.',
+         'Dönünce "Tabloları kurdum" diye işaretleyin.'],
+};
+function kurulumYapilacaklar(k, p) {
+  if (KURULUM_YAPILACAK[k]) return KURULUM_YAPILACAK[k];
+  const a = kurulumAdimListesi(p)[Number(k.slice(6))] || { yap: [], test: '' };
+  return a.yap.concat('Bitince dene: ' + a.test);
+}
 function kurulumAdimAlt(k, p) {
   if (KURULUM_ALT[k]) return KURULUM_ALT[k];
   return KURULUM_ASAMA_ALT[Number(k.slice(6))] || '';
@@ -5245,28 +5270,15 @@ function kurulumAdimBlokGovde(p) {
   const pl = p.palet || {};
   const kunyeVar = Object.keys(pl.kunye || {}).length > 0;
   const yayin = pl.alanAdi || '';
-  const sunuculu = sunuculuMu(p);
   const durum = pl.blokVerildi ? baDurum('Verildi', 'Dosyalar depoya yazıldı') : '';
 
-  return `<p class="bgz-gir">Plan burada gerçek dosyalara dönüşüyor —
-      kod henüz yazılmıyor.</p>`
-    + durum
+  return durum
     + (kunyeVar ? '' : `<div class="note uyari">${svg(ICON.uyari, 15)}
         <span><b>Sayfa künyesi yok.</b> Önce <b>Kurulum ve yapı</b> durağında
         modülü kur.</span></div>`)
     + (yayin ? '' : `<div class="note uyari">${svg(ICON.uyari, 15)}
         <span><b>Yayın adresi yok.</b> Claude uygulamayı hangi adrese
         kuracağını bilmeli.</span></div>`)
-    + `<div class="adm-l">
-        <div class="adm"><b>1</b><span><b class="mono">nizam/sayfalar.md</b> —
-          modül kuralları ve sayfa künyeleri</span></div>
-        <div class="adm"><b>2</b><span><b class="mono">nizam/kararlar.md</b> —
-          yetki kuralları ve verilmiş cevaplar</span></div>
-        ${sunuculu ? `<div class="adm"><b>3</b><span><b class="mono">sql/01-tablolar.sql</b>
-          — tablolar, ilişkiler ve satır güvenliği</span></div>` : ''}
-        <div class="adm"><b>${sunuculu ? 4 : 3}</b><span><b class="mono">nizam/durum.md</b>
-          — beş aşama, hepsi bekliyor</span></div>
-      </div>`
     + `<div class="kur-dug">
         ${promptBaglantisi({ tur: 'yapi', proje: p.id, slug: depoSlug(p.repo),
           ikincil: !(kunyeVar && yayin),
@@ -5287,23 +5299,11 @@ function kurulumAdimSqlGovde(p) {
   const slug = depoSlug(p.repo);
   const sqlAdres = slug ? 'https://github.com/' + slug + '/raw/main/' + SQL_DOSYA : '';
   const adres = sqlEditorAdresi(pl.supabaseUrl);
-  const adim = (no, ic) => `<div class="adm"><b>${no}</b><span>${ic}</span></div>`;
 
-  return `<p class="bgz-gir">Claude SQL dosyasını yazdı; çalıştıran sensin —
-      Claude Code senin Supabase'ine bağlanamıyor.</p>`
-    + (pl.sqlKuruldu ? baDurum('Kuruldu', 'Tablolar Supabase\'de') : '')
+  return (pl.sqlKuruldu ? baDurum('Kuruldu', 'Tablolar Supabase\'de') : '')
     + (bagli ? '' : `<div class="note uyari">${svg(ICON.uyari, 15)}
         <span><b>Supabase bağlantısı girilmemiş.</b> <b>Bağlantılar ve temel</b>
         durağına proje adresini ve anon anahtarını yaz.</span></div>`)
-    + `<div class="adm-l">
-        ${adim(1, '<b>SQL dosyasını aç</b> — düz metin olarak açılır. Metne '
-          + '<b>uzun bas</b> → <b>Tümünü Seç</b> → <b>Kopyala</b>.')}
-        ${adim(2, '<b>SQL editörünü aç</b> — Supabase açılır.')}
-        ${adim(3, 'Yapıştır ve <b>Run</b>\'a bas. Hata çıkarsa metni Claude\'a '
-          + 'göster, düzeltsin.')}
-        ${adim(4, '<b>Table Editor</b>\'de tabloların geldiğini gör, buraya '
-          + 'dönüp işaretle.')}
-      </div>`
     + `<div class="kur-dug">
         ${sqlAdres ? `<a class="sayfa-dug" target="_blank" rel="noopener" href="${esc(sqlAdres)}">
               ${svg(ICON.dosya, 15)} 1 · SQL dosyasını aç</a>`
@@ -5325,20 +5325,10 @@ function kurulumAdimSqlGovde(p) {
    geçmişine değil depodaki dosyalara güvenecek şekilde yazılıyor, o yüzden
    ister aynı sohbette ister yeni bir sohbette sorun çıkarmaz. */
 function kurulumAdimAsamaGovde(p, i) {
-  const a = kurulumAdimListesi(p)[i];
   const pl = p.palet || {};
   const bitti = (Array.isArray(pl.asama) ? pl.asama : []).indexOf(i) > -1;
 
-  return `<p class="bgz-gir">Komut kısa — bilgiyi taşımıyor, depodaki
-      dosyaları gösteriyor.</p>`
-    + (bitti ? baDurum('Bitti', 'Bu aşamanın kodu yazıldı') : '')
-    + `<span class="label">Bu aşamada</span>
-       <div class="card"><div class="row-list">
-        ${a.yap.map(x => `<div class="row"><div class="row-main">
-          <span class="row-title">${esc(x)}</span></div></div>`).join('')}
-       </div></div>`
-    + `<div class="note">${svg(ICON.goz, 15)}
-        <span><b>Bitince dene:</b> ${esc(a.test)}</span></div>`
+  return (bitti ? baDurum('Bitti', 'Bu aşamanın kodu yazıldı') : '')
     + `<div class="kur-dug">
         ${promptBaglantisi({ tur: 'asama:' + i, proje: p.id, hedef: 'claude-yeni',
           slug: depoSlug(p.repo), yazi: 'Kopyala ve Claude\'u aç' })}
