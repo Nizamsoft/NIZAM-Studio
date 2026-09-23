@@ -1948,24 +1948,29 @@ function firmaSayfasi(p, d) {
 /* Logo alanı: isteğe bağlı ama her zaman görünür — aşama tamamlandıktan
    sonra da duruyor. */
 function fmLogoAlani(p, logo, salt) {
-  /* İki hâlde de aynı kare kutu. Düzenlerken daha iri (dokunulacak alan),
-     tamamlanmış aşamada daha küçük ve tıklanmıyor — değiştirmek için
-     "Düzenle" gerekiyor. */
-  const ic = logo ? '' : (salt
-    ? `${svg(ICON.resim, 22)}<b>Logo yok</b>`
-    : `${svg(ICON.resim, 20)}<b>Logo seçin</b><i>PNG, JPG (maks. 5MB)</i>`);
-  const zemin = logo ? `style="background-image:url('${esc(logo)}')"` : '';
+  /* İki hâlde de aynı satır: solda küçük kare önizleme, ortada "Logo" ve
+     altında adı, sağda yeşil tik. Tamamlanmış aşamada satır biraz daha iri
+     ve tıklanmıyor — değiştirmek için "Düzenle" gerekiyor. */
+  const deger = logo ? projeAdi(p) : (salt ? 'Eklenmedi' : 'Seçmek için dokun');
+  const ic = `
+    <span class="fm-lk ${logo ? '' : 'bos'}"
+          ${logo ? `style="background-image:url('${esc(logo)}')"` : ''}>
+      ${logo ? '' : svg(ICON.resim, 16)}
+    </span>
+    <span class="fm-lyz">
+      <b>Logo</b>
+      <i class="${logo ? '' : 'bos'}">${esc(deger)}</i>
+    </span>
+    ${logo ? `<span class="fm-tik">${svg(ICON.tik, 14)}</span>` : ''}`;
 
   return `
     <div class="fm">
-      <span class="fm-et">Logo${salt ? '' : ' <i>(Opsiyonel)</i>'}</span>
       ${salt
-        ? `<span class="fm-logo salt ${logo ? 'dolu' : ''}" ${zemin}>${ic}</span>`
-        : `<button class="fm-logo buyuk ${logo ? 'dolu' : ''}" type="button"
-             data-eylem="logo-yukle" data-proje="${p.id}" ${zemin}>${ic}</button>`}
+        ? `<span class="fm-lsatir buyuk ${logo ? 'dolu' : ''}">${ic}</span>`
+        : `<button class="fm-lsatir ${logo ? 'dolu' : ''}" type="button"
+             data-eylem="logo-yukle" data-proje="${p.id}">${ic}</button>`}
     </div>`;
-}
-/* 2 · Program temeli — bu paketin adı, kim kullanacak, verisi nerede
+}/* 2 · Program temeli — bu paketin adı, kim kullanacak, verisi nerede
    duracak. Eskiden "Kurulum ve yapı" durağının içindeydi (Yer + Kim
    kullanacak? ayrı ayrı); tek karar oldukları için tek karta indi. */
 function programSayfasi(p, d) {

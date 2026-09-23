@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## v0.190.0
+- Logo her iki ekranda da **tek satır**: solda kare önizleme, ortada "Logo"
+  ve altında adı, sağda yeşil tik. Tamamlanmış aşamada satır biraz daha iri,
+  yeşil ve tıklanmıyor; düzenlerken tıklanıp değiştiriliyor.
+
 ## v0.189.0
 - Logo kutusu: **düzenlerken iri**, tamamlanmış aşamada daha küçük.
 

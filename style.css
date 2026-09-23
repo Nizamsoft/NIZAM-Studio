@@ -9503,5 +9503,45 @@ textarea.fm-gir { height: auto; padding: 0 0 12px; resize: vertical; line-height
 .fm-lk svg { fill: none; stroke: currentColor; stroke-width: 1.7; }
 .fm-lk .dolgu { display: none; }
 .fm-oku.bos { color: var(--ink-dim); }
-/* Düzenleme kipindeki logo kutusu, tamamlanmış aşamadakinden biraz daha iri. */
-.fm-logo.buyuk { width: 182px; }
+
+
+/* ---------- Logo satırı ----------
+   Solda kare önizleme, ortada ad, sağda tik. Düzenlerken tıklanabilir ve
+   nötr; tamamlanmış aşamada biraz daha iri, yeşil ve tıklanmıyor. */
+.fm-lsatir {
+  display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
+  padding: 11px 12px; border-radius: 14px; cursor: pointer;
+  background: var(--surface); border: 1.5px solid var(--line-2);
+  font-family: inherit;
+}
+.fm-lsatir.buyuk { padding: 15px 14px; gap: 14px; cursor: default; }
+.fm-lsatir.buyuk.dolu { background: var(--done-soft); border-color: var(--done-cizgi); }
+.fm-lk {
+  flex: 0 0 auto; display: flex; align-items: center; justify-content: center;
+  width: 44px; height: 44px; border-radius: 12px;
+  background: var(--surface) center / cover no-repeat;
+  border: 1px solid var(--line-2); color: var(--ink-dim);
+}
+.fm-lsatir.buyuk .fm-lk { width: 58px; height: 58px; border-radius: 15px; }
+.fm-lk.bos { background: var(--surface-2); border-style: dashed; }
+.fm-lk svg { fill: none; stroke: currentColor; stroke-width: 1.7; }
+.fm-lk .dolgu { display: none; }
+.fm-lyz { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.fm-lyz b {
+  font-family: var(--yazi-etiket); font-size: 14px; font-weight: 700;
+  color: var(--ink-strong);
+}
+.fm-lsatir.buyuk .fm-lyz b { font-size: 15.5px; }
+.fm-lyz i {
+  font-style: normal; font-size: 13px; color: var(--ink-soft);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.fm-lsatir.buyuk .fm-lyz i { font-size: 14px; }
+.fm-lyz i.bos { color: var(--ink-dim); }
+.fm-lsatir .fm-tik {
+  opacity: 1; transform: none;
+  display: flex; align-items: center; justify-content: center;
+  width: 24px; height: 24px; border-radius: 999px;
+  background: var(--st-done); color: #fff;
+}
+.fm-lsatir.buyuk .fm-tik { width: 28px; height: 28px; }
