@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## v0.186.0
+- Firma bilgilerinden **İşletme görseli** kalktı; tek görsel alanı kaldı: logo.
+  (Görsel hâlâ proje kartının zemini olarak duruyor ve kartın üstündeki
+  düğmeyle değiştirilebiliyor.)
+
 ## v0.185.0
 - Düzenleme kipinde alt çubuk **İptal — Kaydet** oluyor ("Proje" düğmesi
   o sırada görünmüyor).

@@ -1907,7 +1907,6 @@ function fbCip(renk, ikon, ic, eylem, projeId, adres) {
 function firmaSayfasi(p, d) {
   const dolu   = [p.firma, p.telefon, p.eposta, p.sektor].filter(Boolean).length;
   const logo   = DB.logoAdres[p.id];
-  const gorsel = gorselAdresi(p, 'G0');
 
   const sektorler = (DB.sektorler || []).map(x => ({
     ad: x.ad, deger: x.ad, secili: p.sektor === x.ad,
@@ -1931,7 +1930,7 @@ function firmaSayfasi(p, d) {
       + fmOkuma('Telefon', ICON.telefon, p.telefon)
       + fmOkuma('E-posta', ICON.mail, p.eposta)
       + fmOkuma('Sektör', ICON.dukkan, p.sektor)
-      + fmGorselAlanlari(p, logo, gorsel, true)
+      + fmLogoAlani(p, logo, true)
       + `</div></div>`;
   }
 
@@ -1945,37 +1944,27 @@ function firmaSayfasi(p, d) {
     + fmAlan({ etiket: 'E-posta', tip: 'email', ikon: ICON.mail, alan: 'eposta', proje: p.id,
                deger: p.eposta, ipucu: 'Örn. bilgi@firma.com', maxlength: 120 })
     + fmSecim('Sektör', sektorler, 'Promptun ilk satırları ve kimlik dosyası bunlardan çıkıyor.')
-    + fmGorselAlanlari(p, logo, gorsel)
+    + fmLogoAlani(p, logo)
     + `</div></div>`;
 }
 
 /* Logo ve işletme görseli: ikisi de isteğe bağlı ama her zaman görünür.
    Aşama tamamlandıktan sonra da duruyorlar — sonradan logo eklemek için
    "Düzenle"ye basmak gerekmesin. */
-function fmGorselAlanlari(p, logo, gorsel, salt) {
-  /* Aşama tamamlandıysa kutular yalnız gösteriyor: yanlışlıkla dokunup
-     görsel değiştirmek yok. Değiştirmek için "Düzenle" gerekiyor. */
-  const kutu = (sinif, ic, eylem, ekOznitelik) => salt
-    ? `<span class="${sinif} salt" ${ekOznitelik}>${ic}</span>`
-    : `<button class="${sinif}" type="button" ${eylem} ${ekOznitelik}>${ic}</button>`;
-
+function fmLogoAlani(p, logo, salt) {
+  /* Aşama tamamlandıysa kutu yalnız gösteriyor: yanlışlıkla dokunup logo
+     değiştirmek yok. Değiştirmek için "Düzenle" gerekiyor. */
+  const ic = logo ? '' : `${svg(ICON.resim, 20)}<b>Logo seçin</b><i>PNG, JPG (maks. 5MB)</i>`;
+  const zemin = logo ? `style="background-image:url('${esc(logo)}')"` : '';
   return `
     <div class="fm">
       <span class="fm-et">Logo <i>(Opsiyonel)</i></span>
-      ${kutu(`fm-logo ${logo ? 'dolu' : ''}`,
-        logo ? '' : `${svg(ICON.resim, 20)}<b>Logo seçin</b><i>PNG, JPG (maks. 5MB)</i>`,
-        `data-eylem="logo-yukle" data-proje="${p.id}"`,
-        logo ? `style="background-image:url('${esc(logo)}')"` : '')}
-    </div>
-    <div class="fm">
-      <span class="fm-et">İşletme görseli <i>(Opsiyonel)</i></span>
-      ${kutu(`fm-gorsel ${gorsel ? 'dolu' : ''}`,
-        gorsel ? `<img src="${esc(gorsel)}" alt="" decoding="async">`
-          : `${svg(ICON.resim, 20)}<b>Görsel seçin</b><i>Vitrin, menü, ürün fotoğrafı…</i>`,
-        `data-eylem="proje-gorsel" data-id="${p.id}"`, '')}
+      ${salt
+        ? `<span class="fm-logo ${logo ? 'dolu' : ''} salt" ${zemin}>${ic}</span>`
+        : `<button class="fm-logo ${logo ? 'dolu' : ''}" type="button"
+             data-eylem="logo-yukle" data-proje="${p.id}" ${zemin}>${ic}</button>`}
     </div>`;
-}
-/* 2 · Program temeli — bu paketin adı, kim kullanacak, verisi nerede
+}/* 2 · Program temeli — bu paketin adı, kim kullanacak, verisi nerede
    duracak. Eskiden "Kurulum ve yapı" durağının içindeydi (Yer + Kim
    kullanacak? ayrı ayrı); tek karar oldukları için tek karta indi. */
 function programSayfasi(p, d) {
