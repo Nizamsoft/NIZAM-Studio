@@ -1487,6 +1487,22 @@ function projeAdresi(projeId) {
   return '#/projeler/' + projeId + (su ? '/' + su.anahtar : '');
 }
 
+/* Alt çubuk yüzdüğü için sayfanın son satırı onun arkasında kalabiliyor.
+   Payı sabit bir sayıyla yazmak yetmedi: ana ekran çizgisi (safe-area),
+   yazı boyu ve tarayıcı çubuğu telefondan telefona değişiyor, içerik
+   çubuğun altında kalınca "Devam Et" düğmesine basılamıyordu. Çubuğun
+   gerçek yüksekliği ölçülüp sayfanın alt payına yazılıyor. */
+function altCubukOlc() {
+  const kok = document.documentElement;
+  const t = $('#tabbar');
+  if (!t || !t.offsetHeight) { kok.style.removeProperty('--alt-cubuk'); return; }
+  const cs = getComputedStyle(t);
+  const pay = t.offsetHeight + (parseFloat(cs.marginBottom) || 0) + 20;
+  kok.style.setProperty('--alt-cubuk', Math.round(pay) + 'px');
+}
+addEventListener('resize', altCubukOlc);
+addEventListener('orientationchange', altCubukOlc);
+
 /* Şerit sığmayınca (on duraklı projede) bulunduğun adım ekranın dışında
    kalıyordu — açılışta ortaya getiriyoruz. */
 function duraklariOrtala() {
@@ -7512,6 +7528,7 @@ function render() {
 
   logolariGoster();
   duraklariOrtala();
+  altCubukOlc();
   /* Katman merdiveninin "kaç katman" düğmeleri her çizimde yeniden bağlanır. */
   if ($('.rol-kat', view)) rolBagla(view);
   /* Yazışma açıldığında en alta in ve gelen mesajları okundu say. */

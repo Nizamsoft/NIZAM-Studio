@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü
 
+## v0.208.0
+- **Telefonda sayfa hâlâ kaydırılamıyordu, «Devam Et» düğmesine basılamıyordu.**
+  İki sebep vardı: gövde yüksekliği `dvh` ile ölçülüyordu ve sayfa sabit
+  olduğu için iOS'ta tarayıcı çubuğu kapanınca kısalmıyordu — alt kısım
+  çubuğun arkasında kalıyor, sayfa "sığıyor" sanılıp kaydırma kapanıyordu.
+  Artık `svh` kullanılıyor. Ayrıca sayfanın alt payı sabit bir sayı değil,
+  alt çubuğun ekrandaki gerçek yüksekliğinden ölçülüyor.
+
 ## v0.207.0
 - **Telefonda sayfanın sonu alt çubuğun arkasında kalıyordu** ve içerik tam
   sığdığı için kaydırma da yapılamıyordu. Alt pay artık her kipte ana ekran

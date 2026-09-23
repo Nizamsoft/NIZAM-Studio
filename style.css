@@ -158,8 +158,11 @@ body {
   position: fixed;
   top: 0; left: 0; right: 0;
   height: 100%;
-  /* Tarayıcıda dvh doğrudur: adres çubuğu açılıp kapandıkça değişir. */
-  height: 100dvh;
+  /* svh = adres çubuğu açıkken kalan en küçük alan. dvh denendi: iOS'ta
+     sayfa sabit (position:fixed) olduğu için çubuk kapanınca gövde
+     kısalmıyor, alt kısmı tarayıcı çubuğunun arkasında kalıyordu —
+     sayfa "sığıyor" sanılıp kaydırma da kapanıyordu. */
+  height: 100svh;
   overflow: hidden;
   overscroll-behavior: none;
   background: var(--bg);
@@ -3392,12 +3395,10 @@ a.durak:active { transform: scale(.99); transition: transform .1s var(--ease); }
     #tabbar { background: var(--surface-2); }
   }
 
-  /* Alt çubuk yüzüyor: içerik her hâlükârda altında kalmasın. Ana ekran
-     çizgisinin payı (safe-area) her kipte ekleniyor — eskiden yalnız
-     uygulama kipinde vardı ve telefonun tarayıcısında sayfanın son satırı
-     çubuğun arkasında kalıyordu; içerik tam sığdığı için kaydırma da
-     yapılamıyordu. */
-  .view { padding-bottom: calc(104px + env(safe-area-inset-bottom, 0px)); }
+  /* Alt çubuk yüzüyor: içerik her hâlükârda altında kalmasın. Pay,
+     çubuğun ekrandaki gerçek yüksekliğinden ölçülüyor (app.js ·
+     altCubukOlc); ölçüm yetişmezse safe-area'lı sabit değere düşüyor. */
+  .view { padding-bottom: var(--alt-cubuk, calc(104px + env(safe-area-inset-bottom, 0px))); }
 
   @media (display-mode: standalone) {
     #tabbar { margin-bottom: max(14px, calc(env(safe-area-inset-bottom, 0px) - 8px)); }
