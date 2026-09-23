@@ -1,5 +1,17 @@
 # Değişiklik Günlüğü
 
+## v0.177.0
+**Aşamaların içi artık form.** Firma / Program / Bağlantılar'ı doldurmak için
+açılan tam ekran sihirbazlar kalktı; alanlar aşamanın kendi sayfasında:
+
+- **Firma bilgileri** — firma adı, telefon, e-posta, sektör çipleri, logo,
+  renk ve işletme görseli. Yazıp alandan çıkınca kaydediliyor, yanında yeşil
+  tik çıkıyor; ayrı "Kaydet" düğmesi yok.
+- **Program temeli** — program adı, katman merdiveni, "veriler nerede" ve
+  "alan adı" kartları aynı sayfada.
+- **Bağlantılar ve temel** — her bağlantı kendi bölümünde: bağlananlar tek
+  satıra iniyor, bekleyenler açık duruyor.
+
 ## v0.176.0
 - **Projeye basınca doğrudan kaldığın aşama açılıyor.** Aradaki uzun aşama
   listesi ekranı kalktı.

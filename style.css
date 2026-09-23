@@ -9303,3 +9303,121 @@ textarea.pd-giris { resize: vertical; display: block; }
 .pyd-ok { flex: 0 0 auto; line-height: 0; color: var(--red-ink); }
 .pyd-ok svg { fill: none; stroke: currentColor; stroke-width: 2; }
 .pyd-ok .dolgu { display: none; }
+
+/* ==========================================================================
+   23 · AŞAMA FORMLARI — alanlar artık aşamanın kendi sayfasında
+   ========================================================================== */
+
+.fm-liste { display: flex; flex-direction: column; gap: 18px; }
+.fm { display: flex; flex-direction: column; gap: 8px; }
+.fm-et {
+  font-family: var(--yazi-etiket); font-size: 14px; font-weight: 700;
+  color: var(--ink-strong);
+}
+.fm-et i { font-style: normal; font-weight: 500; color: var(--ink-dim); }
+.fm-kutu {
+  position: relative; display: flex; align-items: center; gap: 10px;
+  padding: 0 12px; border-radius: 13px;
+  background: var(--surface); border: 1.5px solid var(--line-2);
+}
+.fm-kutu.cok { align-items: flex-start; padding-top: 11px; }
+.fm-kutu:focus-within { border-color: var(--red); box-shadow: 0 0 0 3px var(--red-soft); }
+.fm-ik { flex: 0 0 auto; line-height: 0; color: var(--ink-dim); }
+.fm-ik svg { fill: none; stroke: currentColor; stroke-width: 1.8; }
+.fm-ik .dolgu { display: none; }
+.fm-gir {
+  flex: 1; min-width: 0; height: 50px; padding: 0; border: 0; background: none;
+  font-family: inherit; font-size: 15px; color: var(--ink-strong);
+}
+textarea.fm-gir { height: auto; padding: 0 0 12px; resize: vertical; line-height: 1.5; }
+.fm-gir:focus { outline: none; }
+.fm-gir::placeholder { color: var(--ink-dim); }
+/* Kaydedilince kısa bir tik: "yazdım ama kaydoldu mu?" sorusunu siliyor. */
+.fm-tik {
+  flex: 0 0 auto; line-height: 0; color: var(--st-done);
+  opacity: 0; transform: scale(.7); transition: opacity .2s, transform .2s var(--yay);
+}
+.fm-tik svg { fill: none; stroke: currentColor; stroke-width: 2.4; }
+.fm-tik .dolgu { display: none; }
+.fm-kutu.kayitli .fm-tik { opacity: 1; transform: none; }
+.fm-kutu.yaziyor { border-color: var(--line-parlak); }
+.fm-not { font-size: 12.5px; line-height: 1.45; color: var(--ink-dim); }
+
+/* Çip seçimi (sektör) */
+.fm-cipler { display: flex; flex-wrap: wrap; gap: 8px; }
+.fm-cip {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 38px; padding: 0 14px; border-radius: 11px; cursor: pointer;
+  background: var(--surface); border: 1.5px solid var(--line-2); color: var(--ink);
+  font-family: var(--yazi-etiket); font-size: 13.5px; font-weight: 600;
+}
+.fm-cip svg { fill: none; stroke: currentColor; stroke-width: 2.4; }
+.fm-cip .dolgu { display: none; }
+.fm-cip.on { background: var(--red); border-color: var(--red); color: #fff; }
+
+/* Logo / renk / işletme görseli */
+.fm-marka { display: flex; gap: 10px; align-items: stretch; }
+.fm-logo {
+  flex: 1; min-width: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 3px;
+  height: 110px; border-radius: 14px; cursor: pointer;
+  background: var(--surface) center / cover no-repeat;
+  border: 1.5px dashed var(--line); color: var(--ink-dim);
+}
+.fm-logo b { font-size: 13.5px; font-weight: 700; color: var(--ink); }
+.fm-logo i { font-style: normal; font-size: 11.5px; }
+.fm-logo svg { fill: none; stroke: currentColor; stroke-width: 1.7; }
+.fm-logo .dolgu { display: none; }
+.fm-logo.dolu { border-style: solid; border-color: var(--line-2); }
+.fm-renk {
+  flex: 0 0 auto; display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 8px; width: 96px; border-radius: 14px; cursor: pointer;
+  background: var(--surface); border: 1.5px solid var(--line-2);
+  font-family: var(--yazi-etiket); font-size: 12.5px; font-weight: 600; color: var(--ink);
+}
+.fm-renk-top {
+  width: 30px; height: 30px; border-radius: 999px;
+  background: linear-gradient(140deg, var(--p1, var(--metal-1)), var(--p2, var(--metal-2)));
+}
+.fm-gorsel {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 3px; width: 100%; height: 132px; border-radius: 14px; overflow: hidden;
+  cursor: pointer; background: var(--surface);
+  border: 1.5px dashed var(--line); color: var(--ink-dim);
+}
+.fm-gorsel b { font-size: 13.5px; font-weight: 700; color: var(--ink); }
+.fm-gorsel i { font-style: normal; font-size: 11.5px; }
+.fm-gorsel svg { fill: none; stroke: currentColor; stroke-width: 1.7; }
+.fm-gorsel .dolgu { display: none; }
+.fm-gorsel.dolu { border-style: solid; border-color: var(--line-2); padding: 0; }
+.fm-gorsel img { width: 100%; height: 100%; object-fit: cover; }
+
+/* Bağlantı bölümleri */
+.bg-k {
+  border-radius: 16px; background: var(--surface);
+  border: 1.5px solid var(--line-2); overflow: hidden;
+}
+.bg-k.bitti { background: var(--yuva); border-color: var(--line-3); }
+.bg-bas { display: flex; align-items: center; gap: 11px; padding: 13px 14px; }
+.bg-ik { flex: 0 0 auto; line-height: 0; }
+.bg-ad {
+  flex: 1; min-width: 0; font-family: var(--yazi-baslik);
+  font-size: 15.5px; font-weight: 700; color: var(--ink-strong);
+}
+.bg-durum {
+  flex: 0 0 auto; display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 10px; border-radius: 999px;
+  background: var(--surface-2); color: var(--ink-dim);
+  font-size: 12px; font-weight: 700;
+}
+.bg-durum.tamam { background: var(--done-soft); color: var(--st-done-t); }
+.bg-durum svg { fill: none; stroke: currentColor; stroke-width: 2.6; }
+.bg-durum .dolgu { display: none; }
+.bg-ic { padding: 0 14px 14px; border-top: 1px solid var(--line-3); padding-top: 14px; }
+/* Bölüm gövdesi eski sihirbazdan geliyor: oradaki ilk başlık burada
+   fazladan büyük duruyordu. */
+.bg-ic .sh-bas { margin-bottom: 12px; }
+.bg-ic .sh-bas h2 { font-size: 15px; }
+/* Bölüm başlığı zaten servisi söylüyor — gövdedeki ikinci logo fazlalık. */
+.bg-ic .sh-bas .sh-rozet { display: none; }
+.bg-ic .sh-bas { gap: 0; }

@@ -1674,6 +1674,80 @@ function adimBasligi(p, d, sayac) {
     </div>`;
 }
 
+/* ---------- Aşama formu ----------
+   Alanlar artık ayrı bir sihirbaz penceresinde değil, aşamanın kendi
+   sayfasında: etiket üstte, simgeli kutu altında. Yazıp alandan çıkınca
+   kaydediliyor — ayrı "Kaydet" düğmesi yok, unutulacak bir adım da yok. */
+function fmAlan(o) {
+  const cok = !!o.coksatir;
+  const ortak = `class="fm-gir" data-fm="${o.alan}" data-fmk="${o.kap || 'proje'}"
+    data-proje="${o.proje}" placeholder="${esc(o.ipucu || '')}"
+    autocomplete="off" spellcheck="false"
+    ${o.maxlength ? `maxlength="${o.maxlength}"` : ''}`;
+
+  return `
+    <label class="fm">
+      <span class="fm-et">${esc(o.etiket)}${
+        o.opsiyonel ? ' <i>(Opsiyonel)</i>' : ''}</span>
+      <span class="fm-kutu ${cok ? 'cok' : ''}">
+        ${o.ikon ? `<span class="fm-ik">${svg(o.ikon, 17)}</span>` : ''}
+        ${cok
+          ? `<textarea ${ortak} rows="3">${esc(o.deger || '')}</textarea>`
+          : `<input type="${o.tip || 'text'}" ${ortak} value="${esc(o.deger || '')}">`}
+        <span class="fm-tik">${svg(ICON.tik, 14)}</span>
+      </span>
+      ${o.not ? `<span class="fm-not">${o.not}</span>` : ''}
+    </label>`;
+}
+
+/* Seçmeli alan: etiket + çipler. Seçim anında kaydediliyor. */
+function fmSecim(etiket, secenekler, ipucu) {
+  return `
+    <div class="fm">
+      <span class="fm-et">${esc(etiket)}</span>
+      <div class="fm-cipler">${secenekler.map(x => `
+        <button class="fm-cip ${x.secili ? 'on' : ''}" type="button"
+                data-eylem="${x.eylem}" data-proje="${x.proje}" data-deger="${esc(x.deger)}">
+          ${x.secili ? svg(ICON.tik, 12) : ''}${esc(x.ad)}
+        </button>`).join('')}</div>
+      ${ipucu ? `<span class="fm-not">${ipucu}</span>` : ''}
+    </div>`;
+}
+
+/* Yazılan değeri kaydet. Ekranı hemen yeniden çizmiyoruz: kullanıcı bir
+   sonraki alana geçtiyse imleç kaçardı. Odak formdan çıkmışsa çiziyoruz ki
+   şerit ve "Devam Et" güncel kalsın. */
+async function fmKaydet(el) {
+  const p = DB.proje(el.dataset.proje);
+  if (!p) return;
+  const ad   = el.dataset.fm;
+  const kap  = el.dataset.fmk || 'proje';
+  const yeni = String(el.value || '').trim();
+  const eski = kap === 'palet'
+    ? String((p.palet || {})[ad] || '')
+    : String(p[ad] || '');
+  if (yeni === eski) return;
+
+  const kutu = el.closest('.fm-kutu');
+  if (kutu) kutu.classList.add('yaziyor');
+  try {
+    if (kap === 'palet') {
+      await DB.paletKaydet(p.id, Object.assign({}, p.palet || {}, { [ad]: yeni }));
+    } else {
+      await DB.projeGuncelle(p.id, { [ad]: yeni });
+    }
+    if (kutu) { kutu.classList.remove('yaziyor'); kutu.classList.add('kayitli'); }
+    /* Odak hâlâ formdaysa çizme — yazmaya devam ediyor. */
+    setTimeout(() => {
+      const od = document.activeElement;
+      if (!od || !od.closest || !od.closest('.fm-gir, [data-rol]')) render();
+    }, 30);
+  } catch (h) {
+    if (kutu) kutu.classList.remove('yaziyor');
+    toast(h.message || 'Kaydedilemedi.', 'hata');
+  }
+}
+
 /* Künye satırı: renkli simge, üstte etiket, altta değer. Değer yoksa
    satır kaybolmuyor — sarı "girilmedi" yazıyor ki eksik göze çarpsın. */
 function kunyeSatiri(renk, ikon, etiket, deger, eylem, projeId, pasif, bosYazi) {
@@ -1772,94 +1846,109 @@ function fbCip(renk, ikon, ic, eylem, projeId, adres) {
 /* 1 · Firma bilgileri — müşteriyle konuşurken öğrendiklerin. Teknik karar yok:
    firma kim, kime ulaşacağız, hangi işi yapıyor, markası neye benziyor. */
 function firmaSayfasi(p, d) {
-  const alt   = [p.telefon, p.eposta].filter(Boolean).length;
-  const logo  = DB.logoAdres[p.id];
+  const dolu   = [p.firma, p.telefon, p.eposta, p.sektor].filter(Boolean).length;
+  const logo   = DB.logoAdres[p.id];
   const gorsel = gorselAdresi(p, 'G0');
-  const dolu  = [p.firma, p.telefon, p.eposta, p.sektor].filter(Boolean).length;
 
-  const marka = dolu <= 1
-    ? fbBosKart('var(--fb-kisi)', ICON.etiket, 'Firma bilgileri', dolu + '/4',
-        'Firma kim, soru çıkarsa kime ulaşacağız, hangi işi yapıyor? '
-        + '<b>Promptun ilk satırları</b> ve kimlik dosyası bunlardan çıkıyor.',
-        'marka-duzenle', p.id, true)
-    : fbKart('var(--fb-kisi)', ICON.etiket, 'Firma bilgileri',
-      'marka-duzenle', p.id, `
-    <div class="fb-kisi">
-      <span class="fb-av" style="${renkDegiskenleri(p.renk)}">${esc(basHarf(p.firma))}</span>
-      <span class="fb-kyz">
-        <b>${esc(p.firma)}</b>
-        <i>${p.sektor ? esc(p.sektor) : 'Sektör girilmedi'}</i>
-      </span>
-    </div>
-    <div class="fb-kg tek" style="margin-top:10px">
-      ${kunyeSatiri('#5fb37f', ICON.telefon, 'Telefon',  p.telefon)}
-      ${kunyeSatiri('#4fa8c9', ICON.mail,    'E-posta',  p.eposta)}
-      ${kunyeSatiri('#8fae4a', ICON.dukkan,  'Sektör',   p.sektor)}
-    </div>
-    ${alt ? `<div class="fb-cip" style="margin-top:10px">
-      ${p.telefon ? fbCip('#5fb37f', ICON.telefon, 'Ara', '', '',
-        'tel:' + p.telefon.replace(/\s/g, '')) : ''}
-      ${p.eposta ? fbCip('#4fa8c9', ICON.mail, 'E-posta', '', '', 'mailto:' + p.eposta) : ''}
-      ${fbCip('#b8b2ad', ICON.kopya, 'Kopyala', 'yetkili-kopyala', p.id)}
-    </div>` : ''}
-
-    ${/* Logo, renk ve işletme görseli markanın görünen yüzü — aynı ayracın
-          altında duruyorlar. Tasarım görselleri (G1, G2…) 3. aşamada kalıyor:
-          onlar ChatGPT'ye tarif için gidiyor, markanın parçası değil. */ ''}
-    <div class="fb-ayrac">
-      <span class="fb-et">Marka</span>
-      <div class="fb-marka">
-        <button class="fb-logo ${logo ? 'dolu' : ''}" type="button"
-                data-eylem="logo-yukle" data-proje="${p.id}"
-                ${logo ? `style="background-image:url('${esc(logo)}')"` : ''}>
-          ${logo ? '' : svg(ICON.etiket, 17)}
-        </button>
-        <span class="fb-myz">
-          <i>Logo</i>
-          <b class="${logo ? '' : 'eksik'}">${logo ? 'Yüklendi' : 'dokun, yükle'}</b>
-        </span>
-        ${fbCip('#9b7fd4', ICON.boya, esc(renkAdi(p.renk)), 'marka-renk', p.id)}
-      </div>
-      <button class="fb-gorsel ${gorsel ? 'dolu' : ''}" type="button"
-              data-eylem="proje-gorsel" data-id="${p.id}">
-        ${gorsel ? `<img src="${esc(gorsel)}" alt="" decoding="async">` : ''}
-        <span class="fb-gyz">${svg(gorsel ? ICON.tik : ICON.arti, 13)}
-          ${gorsel ? 'İşletme görseli' : 'İşletme görseli ekle'}</span>
-      </button>
-    </div>`, dolu + '/4');
+  const sektorler = (DB.sektorler || []).map(x => ({
+    ad: x.ad, deger: x.ad, secili: p.sektor === x.ad,
+    eylem: 'durak-sektor', proje: p.id,
+  }));
+  /* Listede olmayan bir sektör elle yazılmışsa kaybolmasın. */
+  if (p.sektor && !sektorler.some(x => x.secili)) {
+    sektorler.push({ ad: p.sektor, deger: p.sektor, secili: true, eylem: 'durak-sektor', proje: p.id });
+  }
+  sektorler.push({ ad: 'Diğer…', deger: '', secili: false, eylem: 'durak-sektor-yeni', proje: p.id });
 
   return `<div class="fb-govde">`
-    + adimBasligi(p, d, dolu + '/4') + marka
-    + `</div>`;
+    + adimBasligi(p, d, dolu + '/4')
+    + `<div class="fm-liste">`
+    + fmAlan({ etiket: 'Firma adı', ikon: ICON.etiket, alan: 'firma', proje: p.id,
+               deger: p.firma, ipucu: 'Örn. Egz Yapı', maxlength: 80 })
+    + fmAlan({ etiket: 'Telefon', tip: 'tel', ikon: ICON.telefon, alan: 'telefon', proje: p.id,
+               deger: p.telefon, ipucu: 'Örn. 0538 956 88 59', maxlength: 30 })
+    + fmAlan({ etiket: 'E-posta', tip: 'email', ikon: ICON.mail, alan: 'eposta', proje: p.id,
+               deger: p.eposta, ipucu: 'Örn. bilgi@firma.com', maxlength: 120 })
+    + fmSecim('Sektör', sektorler, 'Promptun ilk satırları ve kimlik dosyası bunlardan çıkıyor.')
+    + `<div class="fm">
+        <span class="fm-et">Logo <i>(Opsiyonel)</i></span>
+        <div class="fm-marka">
+          <button class="fm-logo ${logo ? 'dolu' : ''}" type="button"
+                  data-eylem="logo-yukle" data-proje="${p.id}"
+                  ${logo ? `style="background-image:url('${esc(logo)}')"` : ''}>
+            ${logo ? '' : `${svg(ICON.resim, 20)}<b>Logo seçin</b><i>PNG, JPG (maks. 5MB)</i>`}
+          </button>
+          <button class="fm-renk" type="button" data-eylem="marka-renk" data-proje="${p.id}"
+                  style="${renkDegiskenleri(p.renk)}">
+            <span class="fm-renk-top"></span>${esc(renkAdi(p.renk))}
+          </button>
+        </div>
+      </div>
+      <div class="fm">
+        <span class="fm-et">İşletme görseli <i>(Opsiyonel)</i></span>
+        <button class="fm-gorsel ${gorsel ? 'dolu' : ''}" type="button"
+                data-eylem="proje-gorsel" data-id="${p.id}">
+          ${gorsel ? `<img src="${esc(gorsel)}" alt="" decoding="async">`
+            : `${svg(ICON.resim, 20)}<b>Görsel seçin</b><i>Vitrin, menü, ürün fotoğrafı…</i>`}
+        </button>
+      </div>
+    </div></div>`;
 }
-
 /* 2 · Program temeli — bu paketin adı, kim kullanacak, verisi nerede
    duracak. Eskiden "Kurulum ve yapı" durağının içindeydi (Yer + Kim
    kullanacak? ayrı ayrı); tek karar oldukları için tek karta indi. */
 function programSayfasi(p, d) {
-  const pl = p.palet || {};
+  const pl     = p.palet || {};
   const roller = rolListesi(pl.roller);
-  const dolu = [!!pl.modulAdi, roller.length > 0, !!pl.veriKatmani].filter(Boolean).length;
-
-  const kart = dolu === 0
-    ? fbBosKart('#4fa8c9', ICON.katman, 'Program temeli', dolu + '/3',
-        'Bu paketin adı, katmanları ve verisi nerede duracak? '
-        + '<b>Kod bu kararlara göre yazılıyor.</b>',
-        'program-duzenle', p.id, true)
-    : fbKart('#4fa8c9', ICON.katman, 'Program temeli', 'program-duzenle', p.id, `
-    <div class="fb-kg tek">
-      ${kunyeSatiri('#c48a5c', ICON.katman, 'Program adı', pl.modulAdi, '', p.id, true, 'girilmedi')}
-      ${kunyeSatiri('#a15fc4', ICON.gGuvenlik, 'Katmanlar',
-                    roller.length ? roller.slice().reverse().join(' · ') : '', '', p.id, true, 'girilmedi')}
-      ${kunyeSatiri('#3ecf8e', ICON.gVeri, 'Veriler nerede', pl.veriKatmani, '', p.id, true, 'girilmedi')}
-    </div>`, dolu + '/3');
+  const dolu   = [!!pl.modulAdi, roller.length > 0, !!pl.veriKatmani].filter(Boolean).length;
+  const veri   = pl.veriKatmani
+    || (TEKNIK_ALAN.find(x => x.anahtar === 'veriKatmani') || {}).varsayilan;
 
   return `<div class="fb-govde">`
-    + adimBasligi(p, d, dolu + '/3') + kart
-    + `</div>`;
+    + adimBasligi(p, d, dolu + '/3')
+    + `<div class="fm-liste">`
+    + fmAlan({ etiket: 'Program adı', ikon: ICON.katman, alan: 'modulAdi', kap: 'palet',
+               proje: p.id, deger: pl.modulAdi, ipucu: 'Örn. Muhasebe', maxlength: 60,
+               not: 'Bu ad prompt ve kimlik dosyasında kullanılacak.' })
+    + `<div class="fm">
+        <span class="fm-et">Katmanlar</span>
+        <span class="fm-not" style="margin:-2px 0 4px">Kim kullanacak? Sıralama yetki seviyesini belirler; ilk kullanıcı hesabı en üstteki (Admin) katmanla açılacak.</span>
+        ${rolMerdiveni(roller, 'durak', true)}
+      </div>`
+    + fmKartSecim('Veriler nerede duracak', VERI_KATMANI_KARTI, veri, 'durak-veri', p.id)
+    + fmKartSecim('Alan adı', ALAN_TURU_KARTI, pl.alanTuru || 'githubio', 'durak-alanturu', p.id)
+    + `</div></div>`;
 }
 
-/* 3 · Bağlantılar ve temel — GitHub, Claude, (seçiliyse) Supabase ve
+/* Kart biçiminde seçim — Program temeli'ndeki "veriler nerede" ve "alan adı"
+   kararları. Görünüm eski sihirbazdaki kartların aynısı (.pa-veri-*), yalnız
+   tıklama artık genel eylem dağıtıcısından geçiyor. */
+function fmKartSecim(etiket, kartlar, secili, eylem, projeId) {
+  return `
+    <div class="fm">
+      <span class="fm-et">${esc(etiket)}</span>
+      <div class="pa-veri-liste">
+        ${Object.keys(kartlar).map(k => {
+          const kart = kartlar[k];
+          return `
+          <label class="pa-veri-kart ${secili === k ? 'on' : ''}" style="--ki:${kart.renk}"
+                 data-eylem="${eylem}" data-proje="${projeId}" data-deger="${esc(k)}">
+            <span class="pa-veri-ust">
+              <span class="pa-veri-ik${kart.servis ? ' servis' : ''}">${
+                kart.servis ? servisIkon(kart.servis, 20) : svg(ICON[kart.ikon], 18)}</span>
+              <span class="pa-veri-ad">${esc(kart.ad || k)}</span>
+              ${kart.onerilen ? '<span class="pa-veri-rozet">Önerilen</span>' : ''}
+              <span class="pa-veri-radyo"></span>
+            </span>
+            <span class="pa-veri-oz-liste">
+              ${kart.ozellikler.map(o => `<span class="pa-veri-oz ${o.iyi ? 'iyi' : 'kotu'}">
+                ${svg(o.iyi ? ICON.tik : ICON.kapat, 11)} ${esc(o.yazi)}</span>`).join('')}
+            </span>
+          </label>`;
+        }).join('')}
+      </div>
+    </div>`;
+}/* 3 · Bağlantılar ve temel — GitHub, Claude, (seçiliyse) Supabase ve
    Namecheap + sabit iskelet onayı. Kaç bağlantı gerektiği Program
    temeli'ndeki iki karara bağlı (veri katmanı, alan adı türü) — karar
    orada, bağlantı burada. Her bağlantı artık kendi tam ekran adımında:
@@ -1871,46 +1960,33 @@ function programSayfasi(p, d) {
    tanışma promptu Claude adımıyla zaten gidiyor, geriye Claude'un
    kurduğunu işaretlemek kalıyor. */
 function baglantilarSayfasi(p, d) {
-  const pl = p.palet || {};
-  const sunuculu    = sunuculuMu(p);
-  const namecheapMi = pl.alanTuru === 'namecheap';
-  const sqlliMi     = sunuculu && !!pl.sablonSqlMetinVar;
-  const supabaseTam = !!String(pl.supabaseUrl || '').trim() && !!String(pl.supabaseAnon || '').trim();
-  const depoTam     = !!p.repo;
-  const yayinTam    = !!pl.yayinda;
-  const sohbetAdi   = String(pl.sohbetAdi || '').trim();
+  const liste  = baglantiAdimListesi(p);
+  const biten  = liste.filter(k => baglantiAdimBittiMi(k, p)).length;
 
-  const bagDolu = [depoTam, !!sohbetAdi, yayinTam].concat(sunuculu ? [supabaseTam] : [])
-    .concat(sqlliMi ? [!!pl.sqlYuklendi] : [])
-    .concat(namecheapMi ? [!!pl.namecheapBaglandi] : []).filter(Boolean).length;
-  const bagToplam = 3 + (sunuculu ? 1 : 0) + (sqlliMi ? 1 : 0) + (namecheapMi ? 1 : 0);
-
-  const kart = bagDolu === 0
-    ? fbBosKart('#b8926b', ICON.dal, 'Bağlantılar', bagDolu + '/' + bagToplam,
-        'GitHub, Claude, Yayın'
-        + (sunuculu ? ', Supabase' : '') + (namecheapMi ? ', Namecheap' : '')
-        + ' — programın çalışması için gereken bağlantılar. '
-        + '<b>Her biri kendi ekranında, sırayla.</b>',
-        'baglanti-duzenle', p.id, true)
-    : fbKart('#b8926b', ICON.dal, 'Bağlantılar', 'baglanti-duzenle', p.id, `
-    <div class="fb-kg tek">
-      ${kunyeSatiri('#b8926b', ICON.dal,   'GitHub',
-                    depoTam ? (depoSlug(p.repo) || 'Bağlandı') : '', '', p.id, true, 'bağlı değil')}
-      ${kunyeSatiri('#9b7fd4', ICON.dosya, 'Claude', sohbetAdi, '', p.id, true, 'bağlı değil')}
-      ${kunyeSatiri('#b8926b', ICON.dal,   'Yayın',
-                    yayinTam ? (pl.alanAdi || 'Yayında') : '', '', p.id, true, 'bağlı değil')}
-      ${sunuculu ? kunyeSatiri('#3ecf8e', ICON.bulut, 'Supabase',
-                    supabaseTam ? 'Bağlandı' : '', '', p.id, true, 'bağlı değil') : ''}
-      ${sqlliMi ? kunyeSatiri('#3ecf8e', ICON.bulut, 'Veritabanı',
-                    pl.sqlYuklendi ? 'Yüklendi' : '', '', p.id, true, 'bekliyor') : ''}
-      ${namecheapMi ? kunyeSatiri('#c48a5c', ICON.dil, 'Namecheap',
-                    pl.namecheapBaglandi ? (pl.alanAdi || 'Bağlandı') : '', '', p.id, true, 'bağlı değil') : ''}
-    </div>`, bagDolu + '/' + bagToplam);
+  /* Her bağlantı kendi bölümü: biten bağlantı tek satıra iniyor (adres ya da
+     ad yanında yeşil tik), bitmeyen açık duruyor. Eskiden hepsi ayrı bir tam
+     ekran sihirbazın adımıydı; aynı içerik artık aşamanın kendi sayfasında. */
+  const bolumler = liste.map(k => {
+    const bitti = baglantiAdimBittiMi(k, p);
+    const bas = `
+      <div class="bg-bas">
+        <span class="bg-ik">${servisIkon(BAGLANTI_SERVIS[k], 20)}</span>
+        <span class="bg-ad">${esc(BAGLANTI_ETIKET[k])}</span>
+        <span class="bg-durum ${bitti ? 'tamam' : ''}">${
+          bitti ? `${svg(ICON.tik, 13)} Bağlandı` : 'bekliyor'}</span>
+      </div>`;
+    return `<div class="bg-k ${bitti ? 'bitti' : ''}">
+      ${bas}
+      ${bitti ? '' : `<div class="bg-ic">${baglantiGovdesi(k, p)}</div>`}
+    </div>`;
+  }).join('');
 
   return `<div class="fb-govde">`
-    + adimBasligi(p, d, bagDolu + '/' + bagToplam)
-    + kart
-    + `<div class="fb-kg tek" style="margin-top:11px">
+    + adimBasligi(p, d, biten + '/' + liste.length)
+    + `<div class="fm-liste">${bolumler}</div>`
+    /* Depoyu elle yapıştırmak ve kimlik dosyasını görmek her zaman
+       açık kalsın — bağlantılar bitse de buraya dönülüyor. */
+    + `<div class="fb-kg tek" style="margin-top:14px">
         ${kunyeSatiri('#b8926b', ICON.dal,   'Kod deposu',
                       depoSlug(p.repo) || p.repo, 'repo', p.id, false, 'dokun, yapıştır')}
         ${kunyeSatiri('#9b7fd4', ICON.dosya, 'Proje kimliği', 'NIZAM.md', 'kimlik', p.id)}
@@ -1918,6 +1994,16 @@ function baglantilarSayfasi(p, d) {
     + `</div>`;
 }
 
+/* Bir bağlantının gövdesi. Eski sihirbazın adım gövdeleri olduğu gibi
+   kullanılıyor — içerikleri değişmedi, yalnız yerleri değişti. */
+function baglantiGovdesi(k, p) {
+  return k === 'github'   ? baglantiAdimGithub(p)
+    : k === 'claude'      ? baglantiAdimClaude(p)
+    : k === 'pages'       ? baglantiAdimPages(p)
+    : k === 'supabase'    ? baglantiAdimSupabase(p)
+    : k === 'sql'         ? baglantiAdimSql(p)
+    : baglantiAdimNamecheap(p);
+}
 /* ---------- Rol merdiveni ----------
    En altta en dar yetki, en üstte en geniş. Sayıyı değiştirince adlar
    korunur; azaltınca üsttekiler düşer, artırınca örnek adla gelir.
@@ -1925,7 +2011,7 @@ function baglantilarSayfasi(p, d) {
    Program temeli bunu çağırıyor (bkz. programAdimKatman) — roller yalnız
    orada tanımlanıp değiştiriliyor. Yetkilendirme durağı (yetkiSayfasi)
    rolleri yalnız salt-okunur gösteriyor, bu bileşeni tekrar çağırmıyor. */
-function rolMerdiveni(roller, onek) {
+function rolMerdiveni(roller, onek, sade) {
   const liste = rolListesi(roller);
   const n = liste.length || 2;
   return `
@@ -1936,8 +2022,8 @@ function rolMerdiveni(roller, onek) {
           <button class="rol-sayi-cp ${k === n ? 'on' : ''}" type="button"
                   data-rol-sayi="${k}">${k} katman</button>`).join('')}
       </div>
-      <span class="fbd-et" style="margin-top:14px">Katmanlar</span>
-      <p class="ipucu" style="margin:-4px 0 8px">Sıralama yetki seviyesini belirler.</p>
+      ${sade ? '' : `<span class="fbd-et" style="margin-top:14px">Katmanlar</span>
+      <p class="ipucu" style="margin:-4px 0 8px">Sıralama yetki seviyesini belirler.</p>`}
       <div class="rol-liste">
         ${Array.from({ length: n }, (_, i) => {
           const sira = n - 1 - i;                      /* üstten alta çiz */
@@ -7122,6 +7208,8 @@ function render() {
 
   logolariGoster();
   duraklariOrtala();
+  /* Katman merdiveninin "kaç katman" düğmeleri her çizimde yeniden bağlanır. */
+  if ($('.rol-kat', view)) rolBagla(view);
   /* Yazışma açıldığında en alta in ve gelen mesajları okundu say. */
   if (yazisma) {
     const govde = $('#yz-govde');
@@ -13646,6 +13734,44 @@ async function eylemCalistir(el) {
 
   if (e === 'gorev-ac')   return gorevKartiAc(id);
 
+  /* --- Aşama formlarının seçmeli alanları --- */
+  if (e === 'durak-sektor') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    if (pr.sektor === el.dataset.deger) return;
+    return isYap(() => DB.projeGuncelle(pr.id, { sektor: el.dataset.deger }), '');
+  }
+
+  if (e === 'durak-sektor-yeni') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const ad = await metinSor({ baslik: 'Sektör', aciklama: 'Firma hangi işi yapıyor?',
+      deger: pr.sektor || '', yerTutucu: 'Örn. Kuruyemiş' });
+    if (ad === null) return;
+    return isYap(() => DB.projeGuncelle(pr.id, { sektor: String(ad).trim() }), '');
+  }
+
+  if (e === 'durak-veri' || e === 'durak-alanturu') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const alan = e === 'durak-veri' ? 'veriKatmani' : 'alanTuru';
+    const pl   = pr.palet || {};
+    if ((pl[alan] || '') === el.dataset.deger) return;
+    return isYap(() => DB.paletKaydet(pr.id,
+      Object.assign({}, pl, { [alan]: el.dataset.deger })), '');
+  }
+
+  /* Katman merdiveni: adlar ve sayı değişince palete yazılıyor. */
+  if (e === 'durak-roller') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const yeni = rolOku($('#view'));
+    const eski = rolListesi((pr.palet || {}).roller);
+    if (yeni.join('|') === eski.join('|')) return;
+    return isYap(() => DB.paletKaydet(pr.id,
+      Object.assign({}, pr.palet || {}, { roller: yeni })), '');
+  }
+
   /* Aşama sayfası (telefonda alttan çıkan liste) — ekranı yeniden çizmeden
      açılıp kapanıyor; yeniden çizim yarım kalmış yazıyı ve kaydırmayı
      kaybettiriyordu. */
@@ -15957,6 +16083,41 @@ document.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('click', e => {
     const el = e.target.closest('[data-eylem]');
     if (el) { e.preventDefault(); eylemCalistir(el); }
+  });
+
+  /* Aşama formundaki alanlar: yazıp çıkınca kaydediliyor. */
+  document.addEventListener('change', e => {
+    const el = e.target.closest('[data-fm]');
+    if (el) fmKaydet(el);
+  });
+
+  /* Katmanlar: ad değişince ya da katman sayısı değişince palete yaz.
+     Sayı düğmesi merdiveni yeniden çiziyor (rolBagla); bu dinleyici ondan
+     sonra çalıştığı için yeni adları okuyor. */
+  const rolYaz = () => {
+    if (!$('[data-rol-onek="durak"]', $('#view'))) return;
+    const p = DB.proje(rota().id);
+    if (!p) return;
+    const yeni = rolOku($('#view'));
+    if (!yeni.length) return;
+    if (yeni.join('|') === rolListesi((p.palet || {}).roller).join('|')) return;
+    isYap(() => DB.paletKaydet(p.id, Object.assign({}, p.palet || {}, { roller: yeni })), '');
+  };
+  document.addEventListener('change', e => {
+    if (e.target.closest('[data-rol]')) rolYaz();
+  });
+  document.addEventListener('click', e => {
+    if (e.target.closest('[data-rol-sayi]')) setTimeout(rolYaz, 0);
+  });
+
+  /* Küçük kopyala düğmeleri (depo adı, kaynak depo…) artık sayfanın
+     içinde de çalışıyor — eskiden yalnız sihirbaz penceresinde bağlıydı. */
+  document.addEventListener('click', async e => {
+    const b = e.target.closest('[data-ak-kopya]');
+    if (!b || b.closest('#baglanti-adim, #template-sihirbaz')) return;
+    const ok = await panoyaKopyala(b.dataset.akKopya);
+    b.classList.toggle('oldu', ok);
+    toast(ok ? 'Kopyalandı.' : 'Kopyalanamadı.', ok ? 'basari' : 'hata');
   });
 
   /* Dışarı açılan bağlantılar panoya da yazıyor. Ayrı dinleyici, çünkü
