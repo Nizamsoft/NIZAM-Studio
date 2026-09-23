@@ -9837,3 +9837,5 @@ textarea.fm-gir { height: auto; padding: 0 0 12px; resize: vertical; line-height
 .kn-tablo.alan .kn-s.bas > span { color: var(--ink-dim); }
 .kn-z svg { fill: none; stroke: currentColor; stroke-width: 2.6; }
 .kn-z .dolgu { display: none; }
+/* "Modülleri incele" kartını akıştan ayıran ince çizgi. */
+.md-ayrac { height: 1px; margin: 18px 0 14px; background: var(--line-3); }

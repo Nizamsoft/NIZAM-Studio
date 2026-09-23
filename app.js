@@ -3705,12 +3705,9 @@ function yapiTaslak(p) {
      kullanıcı hiçbir zaman "hangi modül" diye seçmesin diye otomatik
      seçilip sayfaları gösterilir. İkiden fazlaysa (Claude öyle kurmayı
      uygun gördüyse) seçim gerçekten gerekli, o zaman harita kalır. */
-  if (!t.acildi && DB.yuklendi) {
-    t.acildi = true;
-    const gercek = DB.modulleri(p.id).filter(m => m.ad !== GENEL_MODUL);
-    if (gercek.length === 1) modulYukle(p, t, gercek[0].ad);
-    else if (!gercek.length) t.mod = 'anlat';
-  }
+  /* Aşamaya her girişte "anlat" ekranı açılıyor; kurulu yapıya bakmak
+     ayrı bir adım (bkz. yapi-moduller). */
+  if (!t.acildi && DB.yuklendi) { t.acildi = true; t.mod = 'anlat'; }
   return t;
 }
 
@@ -3827,7 +3824,9 @@ function kunyeAdimTam(k, anahtar) {
 
 function yapiAkisi(p, d) {
   const t = yapiTaslak(p);
-  if (t.mod === 'anlat') return anlatEkrani(p, t, d);
+  /* Aşamanın kendisi "anlat" ekranı: yeni bir bölüm her zaman buradan
+     anlatılıyor. Kurulmuş yapıya bakmak için alttaki "Modülleri incele". */
+  if (t.mod !== 'agac') return anlatEkrani(p, t, d);
   if (t.mod === 'mkural' && t.modul) return modulKuralEkrani(p, t);
   if (t.mod === 'onizle' && t.odak) return onizlemeEkrani(p, t);
   if (t.dal && t.odak && t.sayfalar.includes(t.odak)) return duzenEkrani(p, t);
@@ -4027,6 +4026,8 @@ function agacEkrani(p, t) {
 
   /* ---------- 1 · Modüller ---------- */
   return `<div class="fb-govde">`
+    + `<button class="md-yol" type="button" data-eylem="yapi-anlat" data-proje="${p.id}">
+        ${svg(ICON.chevron, 14)} Kurulum ve yapı</button>`
     + `<div class="md-bas">
         <span class="md-bas-ik">${svg(ICON.izgaraDort, 22)}</span>
         <span class="md-bas-yz"><b>Modüller</b><i>Programın bölümleri ve sayfaları.</i></span>
@@ -4271,9 +4272,27 @@ function anlatEkrani(p, t, d) {
       </div>
     </div>`;
 
+  /* Kurulu yapıya bakmak için tek kapı: modül sayısı burada da görünüyor
+     ki kullanıcı bir şeyin kurulu olduğunu ekrandan anlasın. */
+  const moduller = DB.modulleri(p.id).filter(m => m.ad !== GENEL_MODUL);
+  const sayfaSayisi = moduller.reduce((n, m) => n + DB.sayfalari(m.id).length, 0);
+  const incele = `
+    <button class="md-is" type="button" data-eylem="yapi-moduller" data-proje="${p.id}">
+      <span class="md-is-ik">${svg(ICON.izgaraDort, 18)}</span>
+      <span class="md-yz">
+        <b>Modülleri incele</b>
+        <i>${moduller.length
+          ? `${moduller.length} modül · ${sayfaSayisi} sayfa`
+          : 'Henüz kurulu bir modül yok.'}</i>
+      </span>
+      <span class="md-ok">${svg(ICON.chevron, 15)}</span>
+    </button>`;
+
   return `<div class="fb-govde">`
     + adimBasligi(p, d, (dolu ? 1 : 0) + '/2')
     + `<div class="bgz">${kart1}${kart2}</div>`
+    + `<div class="md-ayrac"></div>`
+    + incele
     + `</div>`;
 }
 /* Önizleme ancak gösterecek bir şey varken çizilir. Boşken uydurma veri
@@ -14913,6 +14932,17 @@ async function eylemCalistir(el) {
   }
 
   /* ---- Yapı ağacı ---- */
+  /* Kurulu yapıyı incele / anlat ekranına dön. */
+  if (e === 'yapi-moduller' || e === 'yapi-anlat') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const t = yapiTaslak(pr);
+    t.mod = e === 'yapi-moduller' ? 'agac' : 'anlat';
+    t.modul = ''; t.odak = null; t.dal = null; t.sayfalar = []; t.kunye = {};
+    render();
+    return;
+  }
+
   if (e === 'agac-modul-ac') {
     const pr = DB.proje(el.dataset.proje);
     if (!pr) return;

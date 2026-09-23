@@ -1,5 +1,12 @@
 # Değişiklik Günlüğü
 
+## v0.202.0
+- "Kurulum ve yapı" aşamasının altına **"Modülleri incele"** düğmesi geldi;
+  yanında kaç modül ve kaç sayfa kurulduğu yazıyor.
+- Aşamaya her girişte **anlat ekranı** açılıyor — yeni bir bölüm her zaman
+  buradan anlatılabiliyor. Modüller görünümünden **"‹ Kurulum ve yapı"** ile
+  geri dönülüyor.
+
 ## v0.201.0
 **Modüller ekranı yeniden kuruldu — artık yalnız gösterim.**
 - **Modüller**: bölümler alt alta (adı + kaç sayfası), üstte "Modülleri
