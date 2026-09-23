@@ -1,5 +1,14 @@
 # Değişiklik Günlüğü
 
+## v0.213.0
+- **Beta ve geliştirme yeniden kuruldu:** üç kart — *Siteyi incele* (kartın
+  tamamı bağlantı, dokununca doğrudan siteye gider), *Güncelleme yap*
+  (kutuya yaz, promptu oluştur) ve *JSON yükle*. Altta kırmızı
+  **Geliştirme bitti**.
+- **JSON yükle artık ekran açmıyor:** Claude'un verdiği blok panodayken
+  düğmeye basmak yetiyor, panoyu kendisi okuyup kuruyor. Tarayıcı pano
+  okumaya izin vermezse eski elle yapıştırma ekranına düşüyor.
+
 ## v0.212.0
 - **Kurulum adımı 10 oldu.** «Beta ve geliştirme» ikiye ayrıldı: yedi adımlık
   zincir artık kendi durağı — **Kurulum**; onun ardından gelen deneme ve

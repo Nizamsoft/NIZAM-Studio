@@ -9846,3 +9846,62 @@ textarea.fm-gir { height: auto; padding: 0 0 12px; resize: vertical; line-height
 .kn-z .dolgu { display: none; }
 /* "Modülleri incele" kartını akıştan ayıran ince çizgi. */
 .md-ayrac { height: 1px; margin: 18px 0 14px; background: var(--line-3); }
+
+/* ==========================================================================
+   26 · BETA VE GELİŞTİRME — üç kart
+   Siteyi incele (kartın tamamı bağlantı), güncelleme kutusu ve JSON yükle.
+   ========================================================================== */
+.btk {
+  display: block; margin-bottom: 12px; padding: 14px;
+  border-radius: 16px; background: var(--surface); border: 1px solid var(--line-3);
+  text-decoration: none; color: inherit;
+}
+.btk-ust { display: flex; align-items: flex-start; gap: 12px; }
+.btk-ik {
+  flex: 0 0 auto; display: flex; align-items: center; justify-content: center;
+  width: 46px; height: 46px; border-radius: 13px;
+  background: var(--yuva); color: var(--ink-soft);
+}
+.btk-ik svg { fill: none; stroke: currentColor; stroke-width: 1.9; }
+.btk-ik .dolgu { display: none; }
+.btk-yz { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.btk-yz b {
+  font-family: var(--yazi-etiket); font-size: 15.5px; font-weight: 700;
+  color: var(--ink-strong);
+}
+.btk-yz i { font-style: normal; font-size: 13px; line-height: 1.45; color: var(--ink-dim); }
+/* Yayın adresi satırı: kart zaten bağlantı, bu satır nereye gideceğini söylüyor. */
+.btk-adres {
+  display: flex; align-items: center; gap: 9px; margin-top: 12px;
+  padding: 11px 12px; border-radius: 12px;
+  background: var(--yuva); border: 1px solid var(--line-3);
+  font-family: var(--yazi-kod); font-size: 13px; color: var(--ink);
+}
+.btk-adres b {
+  flex: 1; min-width: 0; font-weight: 400;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.btk-adres svg { flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 1.9; color: var(--ink-dim); }
+.btk-adres .dolgu { display: none; }
+.btk-yazi { margin-top: 12px; min-height: 108px; }
+/* Kartın sağındaki tek düğme (JSON yükle) — satırı bölmeden duruyor. */
+.btk-dug {
+  flex: 0 0 auto; align-self: center;
+  display: inline-flex; align-items: center; gap: 7px;
+  height: 42px; padding: 0 14px; border-radius: 12px; cursor: pointer;
+  background: var(--yuva); border: 1px solid var(--line-2);
+  font-family: var(--yazi-etiket); font-size: 13px; font-weight: 600; color: var(--ink);
+}
+.btk-dug svg { fill: none; stroke: currentColor; stroke-width: 2; }
+.btk-dug .dolgu { display: none; }
+/* Aşamayı bitiren düğme: sayfadaki tek kırmızı, geri dönüşü olan son adım. */
+.sayfa-dug.bitir {
+  background: linear-gradient(180deg, var(--red-acik), var(--red));
+  box-shadow: 0 10px 24px -12px rgba(229, 52, 42, .7);
+  margin-top: 16px;
+}
+@media (max-width: 460px) {
+  .btk-dug { width: 100%; margin-top: 12px; justify-content: center; }
+  .btk-ust { flex-wrap: wrap; }
+  .btk-yz { flex-basis: 60%; }
+}

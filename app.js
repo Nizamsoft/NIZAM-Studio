@@ -5116,41 +5116,68 @@ function kurulumGovdesi(k, p) {
 const BETA_ISTEK = {};
 
 function betaGelistirmeEkrani(p, d) {
-  const pl = p.palet || {};
+  const pl    = p.palet || {};
   const yayin = pl.alanAdi || '';
   const istek = BETA_ISTEK[p.id] || '';
-  const dolu = istek.trim().length > 20;
+  const dolu  = istek.trim().length > 20;
+
+  /* 1 · Siteyi incele — kartın tamamı bağlantı, dokunan doğrudan siteye
+     gidiyor; araya bir ekran girmiyor. */
+  const site = yayin ? `
+    <a class="btk" target="_blank" rel="noopener" href="https://${esc(yayin)}">
+      <div class="btk-ust">
+        <span class="btk-ik">${svg(ICON.disari, 22)}</span>
+        <span class="btk-yz"><b>Siteyi incele</b>
+          <i>Canlı siteyi açıp mevcut durumu incele.</i></span>
+      </div>
+      <span class="btk-adres">${svg(ICON.bulut, 15)}
+        <b>${esc(yayin)}</b>${svg(ICON.disari, 15)}</span>
+    </a>` : `
+    <div class="bos-kutu">${svg(ICON.bulut, 18)}
+      <span>Yayın adresi yok. <b>Bağlantılar ve temel</b> durağındaki
+      <b>Yayın</b> adımını tamamla.</span></div>`;
+
+  /* 2 · Güncelleme yap — ne istediğini yaz, prompt Claude'a gitsin. */
+  const guncelle = `
+    <div class="btk">
+      <div class="btk-ust">
+        <span class="btk-ik">${svg(ICON.kalem, 22)}</span>
+        <span class="btk-yz"><b>Güncelleme yap</b>
+          <i>Yapılacak değişikliği yaz, prompt oluştur ve Claude ile güncelleme yap.</i></span>
+      </div>
+      <textarea class="anl-kutu btk-yazi" data-beta-istek="${p.id}"
+        placeholder="Yapılacak güncellemeyi detaylı şekilde yazın…">${esc(istek)}</textarea>
+      ${dolu
+        ? `<a class="sayfa-dug" target="_blank" rel="noopener" data-pano="betaIstek"
+             data-proje="${p.id}" data-hedef="Claude Code"
+             href="${esc(claudeAdresi(depoSlug(p.repo)))}">
+             ${svg(ICON.yildiz, 15)} Prompt oluştur</a>`
+        : `<button class="sayfa-dug" type="button" disabled>
+             ${svg(ICON.yildiz, 15)} Prompt oluştur</button>`}
+    </div>`;
+
+  /* 3 · JSON yükle — Claude'un verdiği blok panodayken tek dokunuş yetiyor:
+     düğme panoyu kendisi okuyup kuruyor, yapıştırma ekranı açılmıyor.
+     Pano okunamazsa (tarayıcı izin vermezse) eski elle yapıştırma ekranına
+     düşüyor — bkz. yapi-kur-pano. */
+  const json = `
+    <div class="btk">
+      <div class="btk-ust">
+        <span class="btk-ik">${svg(ICON.dosya, 22)}</span>
+        <span class="btk-yz"><b>JSON yükle</b>
+          <i>Claude yapıyı da değiştirdiyse verdiği bloğu kopyala, buraya bas.</i></span>
+        <button class="btk-dug" type="button" data-eylem="yapi-kur-pano"
+                data-proje="${p.id}">${svg(ICON.ice, 15)} JSON yükle</button>
+      </div>
+    </div>`;
 
   return `<div class="fb-govde">`
     + adimBasligi(p, d, '')
-    + (yayin ? `
-      <div class="kur-deger duz">${svg(ICON.bulut, 13)} Yayın adresi
-        <b class="mono"><a target="_blank" rel="noopener"
-          href="https://${esc(yayin)}">${esc(yayin)}</a></b></div>` : `
-      <div class="bos-kutu">${svg(ICON.bulut, 18)}
-        <span>Yayın adresi yok. <b>Bağlantılar ve temel</b> durağındaki
-        <b>Yayın</b> adımını tamamla.</span></div>`)
-    + balon('Uygulamayı dene — eksik ya da güncellenmesi gereken bir şey '
-        + 'bulursan anlat. Konuşur gibi yaz.',
-        'Promptu Claude\'a ver; düzeltir, gerekiyorsa yapıyı da tamamlar.')
-    + `<textarea class="anl-kutu" data-beta-istek="${p.id}"
-         placeholder="Örn. Sipariş listesinde tarihe göre filtre yok, onu ekle.">${esc(istek)}</textarea>
-      <div class="anl-dug">
-        ${dolu
-          ? `<a target="_blank" rel="noopener" data-pano="betaIstek" data-proje="${p.id}"
-               data-hedef="Claude Code" href="${esc(claudeAdresi(depoSlug(p.repo)))}">
-               ${svg(ICON.kopya, 15)} Kopyala ve aç</a>`
-          : `<button type="button" disabled>${svg(ICON.kopya, 15)} Prompt oluştur</button>`}
-        <button class="ana" type="button" data-eylem="anlat-aktar" data-proje="${p.id}">
-          ${svg(ICON.ice, 15)} JSON varsa yükle</button>
-      </div>
-      <p class="anl-not">Claude düzeltmeyi yapar. Bu güncelleme yapıyı da (yeni
-        sayfa ya da alan) etkiliyorsa sonunda bir JSON bloğu verir — onu
-        yukarıdaki <b>JSON varsa yükle</b> ile yapıştır.</p>`
+    + site + guncelle + json
     + (pl.betaTamamlandi
         ? `<div class="kur-deger duz">${svg(ICON.tik, 13)} Bu aşama tamamlandı</div>`
-        : `<button class="sayfa-dug ikincil" type="button" data-eylem="beta-tamamlandi"
-                    data-proje="${p.id}">${svg(ICON.check, 15)} Beta ve geliştirme bitti</button>`)
+        : `<button class="sayfa-dug bitir" type="button" data-eylem="beta-tamamlandi"
+                    data-proje="${p.id}">${svg(ICON.bayrak, 15)} Geliştirme bitti</button>`)
     + `</div>`;
 }
 
