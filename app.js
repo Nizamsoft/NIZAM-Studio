@@ -1948,35 +1948,23 @@ function firmaSayfasi(p, d) {
 /* Logo alanı: isteğe bağlı ama her zaman görünür — aşama tamamlandıktan
    sonra da duruyor. */
 function fmLogoAlani(p, logo, salt) {
-  /* İki hâli var. Düzenlerken: büyük kare "Logo seçin" kutusu. Aşama
-     tamamlanınca: öteki dolu alanlar gibi tek satır — solda küçük önizleme,
-     ortada adı, sağda yeşil tik. Yanlışlıkla dokunup değiştirmek yok. */
-  if (salt) {
-    return `
-      <div class="fm">
-        <span class="fm-et">Logo</span>
-        <span class="fm-kutu ${logo ? 'dolu' : ''}">
-          <span class="fm-lk ${logo ? '' : 'bos'}"
-                ${logo ? `style="background-image:url('${esc(logo)}')"` : ''}>
-            ${logo ? '' : svg(ICON.resim, 15)}
-          </span>
-          <span class="fm-oku ${logo ? '' : 'bos'}">${
-            logo ? esc(projeAdi(p)) : 'Eklenmedi'}</span>
-          ${logo ? `<span class="fm-tik">${svg(ICON.tik, 14)}</span>` : ''}
-        </span>
-      </div>`;
-  }
+  /* İki hâlde de aynı kare kutu — tamamlanmış aşamada biraz daha büyük ve
+     tıklanmıyor: yanlışlıkla dokunup logo değiştirmek yok, değiştirmek için
+     "Düzenle" gerekiyor. */
+  const ic = logo ? '' : (salt
+    ? `${svg(ICON.resim, 22)}<b>Logo yok</b>`
+    : `${svg(ICON.resim, 20)}<b>Logo seçin</b><i>PNG, JPG (maks. 5MB)</i>`);
+  const zemin = logo ? `style="background-image:url('${esc(logo)}')"` : '';
 
-  const ic = logo ? '' : `${svg(ICON.resim, 20)}<b>Logo seçin</b><i>PNG, JPG (maks. 5MB)</i>`;
   return `
     <div class="fm">
-      <span class="fm-et">Logo <i>(Opsiyonel)</i></span>
-      <button class="fm-logo ${logo ? 'dolu' : ''}" type="button"
-              data-eylem="logo-yukle" data-proje="${p.id}"
-              ${logo ? `style="background-image:url('${esc(logo)}')"` : ''}>${ic}</button>
+      <span class="fm-et">Logo${salt ? '' : ' <i>(Opsiyonel)</i>'}</span>
+      ${salt
+        ? `<span class="fm-logo buyuk salt ${logo ? 'dolu' : ''}" ${zemin}>${ic}</span>`
+        : `<button class="fm-logo ${logo ? 'dolu' : ''}" type="button"
+             data-eylem="logo-yukle" data-proje="${p.id}" ${zemin}>${ic}</button>`}
     </div>`;
 }
-
 /* 2 · Program temeli — bu paketin adı, kim kullanacak, verisi nerede
    duracak. Eskiden "Kurulum ve yapı" durağının içindeydi (Yer + Kim
    kullanacak? ayrı ayrı); tek karar oldukları için tek karta indi. */

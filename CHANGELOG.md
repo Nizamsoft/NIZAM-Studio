@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## v0.188.0
+- Tamamlanmış aşamada logo yine **kare kutu** olarak görünüyor (satır değil),
+  düzenleme kutusundan biraz daha iri ve tıklanmıyor.
+
 ## v0.187.0
 - **Proje ekranı kalktı.** Projeye girmek artık doğrudan kalınan aşamayı
   açmak demek; eski adres (#/projeler/&lt;id&gt;) oraya yönlendiriyor.

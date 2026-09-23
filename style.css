@@ -9503,3 +9503,5 @@ textarea.fm-gir { height: auto; padding: 0 0 12px; resize: vertical; line-height
 .fm-lk svg { fill: none; stroke: currentColor; stroke-width: 1.7; }
 .fm-lk .dolgu { display: none; }
 .fm-oku.bos { color: var(--ink-dim); }
+/* Tamamlanmış aşamadaki logo kutusu düzenleme kutusundan biraz daha iri. */
+.fm-logo.buyuk { width: 182px; }
