@@ -6724,55 +6724,52 @@ function guvenlikKurulumYaz(o) {
 let GUVENLIK_KURULUM_ACIK = false;
 
 const GUVENLIK_KURULUM_ADIM = [
-  { no: 'jeton', ad: 'Supabase jetonu oluşturdum',
-    alt: 'Projelerin durduğu Supabase <b>hesabından</b> (projeden değil): '
-       + 'Account → Access Tokens → Generate new token → <b>Create legacy token</b>. '
-       + 'Değer <code>sbp_</code> ile başlar.',
+  { no: 'jeton', ikon: 'gVeri', ad: 'Supabase jetonu oluşturdum',
+    alt: 'Projelerin durduğu Supabase hesabından legacy access token aldım.',
     adres: 'https://supabase.com/dashboard/account/tokens', adresAd: 'Jeton sayfasını aç' },
-  { no: 'fonksiyon', ad: 'Edge Function oluşturdum, adı guvenlik-sql',
-    alt: 'Studio\'nun kendi Supabase\'inde: Edge Functions → New Function, '
-       + 'adı <code>guvenlik-sql</code>, kodu yapıştır, deploy et.',
+  { no: 'fonksiyon', ikon: 'gAltyapi', ad: 'Edge Function oluşturdum',
+    alt: 'Studio\'nun Supabase\'inde adı guvenlik-sql olan fonksiyonu kurdum.',
     eylem: 'guvenlik-sql-kopyala', eylemAd: 'Fonksiyon kodunu kopyala' },
-  { no: 'secret', ad: 'Jetonu fonksiyonun Secrets\'ına ekledim',
-    alt: 'Aynı fonksiyon → Settings → Secrets → ad <code>NS_SUPABASE_JETON</code>, '
-       + 'değer az önce aldığın jeton.' },
+  { no: 'secret', ikon: 'kilit', ad: 'Jetonu fonksiyona ekledim',
+    alt: 'Settings → Secrets → NS_SUPABASE_JETON adıyla kaydettim.' },
 ];
 
 function guvenlikKurulumBolumu() {
   const durum = guvenlikKurulumOku();
-  const biten = GUVENLIK_KURULUM_ADIM.filter(a => durum[a.no]).length;
-  const hepsi = biten === GUVENLIK_KURULUM_ADIM.length;
+  const hepsi = GUVENLIK_KURULUM_ADIM.every(a => durum[a.no]);
 
   if (hepsi && !GUVENLIK_KURULUM_ACIK) {
     return `
       <div class="gk-ozet">
         <span class="gk-ozet-ik">${svg(ICON.tik, 15)}</span>
         <span class="gk-ozet-yz"><b>Köprü kurulu</b>
-          <i>Jeton, fonksiyon ve secret hazır — bir kere kurulur, bütün projelerde geçerli.</i></span>
+          <i>Bir kere kurulur, bütün projelerde geçerli.</i></span>
         <button class="gk-ozet-btn" type="button" data-eylem="guvenlik-kurulum-ac">Düzenle</button>
       </div>`;
   }
 
   return `
-    <div class="gk-liste">
-      ${GUVENLIK_KURULUM_ADIM.map((a, i) => `
+    <div class="gk-kart">
+      ${GUVENLIK_KURULUM_ADIM.map(a => `
         <div class="gk ${durum[a.no] ? 'on' : ''}">
-          <button class="gk-tik" type="button" data-eylem="guvenlik-kurulum-tik"
-                  data-no="${a.no}" aria-label="${esc(a.ad)}">
-            ${durum[a.no] ? svg(ICON.tik, 14) : (i + 1)}
-          </button>
-          <div class="gk-yz">
+          <span class="gk-ik">${svg(ICON[a.ikon], 20)}</span>
+          <span class="gk-yz">
             <b>${esc(a.ad)}</b>
-            <i>${a.alt}</i>
-            ${a.adres ? `<a class="gk-btn" target="_blank" rel="noopener" href="${a.adres}">
-              ${svg(ICON.disari, 13)} ${esc(a.adresAd)}</a>` : ''}
-            ${a.eylem ? `<button class="gk-btn" type="button" data-eylem="${a.eylem}">
-              ${svg(ICON.kopya, 13)} ${esc(a.eylemAd)}</button>` : ''}
-          </div>
+            <i>${esc(a.alt)}</i>
+            ${durum[a.no] ? '' : (a.adres ? `
+              <a class="gk-btn" target="_blank" rel="noopener" href="${a.adres}">
+                ${svg(ICON.disari, 13)} ${esc(a.adresAd)}</a>` : '')}
+            ${durum[a.no] ? '' : (a.eylem ? `
+              <button class="gk-btn" type="button" data-eylem="${a.eylem}">
+                ${svg(ICON.kopya, 13)} ${esc(a.eylemAd)}</button>` : '')}
+          </span>
+          <button class="gk-tik" type="button" data-eylem="guvenlik-kurulum-tik"
+                  data-no="${a.no}" aria-label="${esc(a.ad)}">${svg(ICON.tik, 15)}</button>
         </div>`).join('')}
-      <p class="gk-not">${svg(ICON.info, 13)} Studio yeni sürüm çıkarınca fonksiyonun
-        <b>Code</b> sekmesine kodu yeniden yapıştırıp deploy et — Secrets\'a dokunma.</p>
-    </div>`;
+    </div>
+    <p class="gk-not">${svg(ICON.info, 13)}
+      <span>Studio yeni sürüm çıkarınca fonksiyonun <b>Code</b> sekmesine kodu
+      yeniden yapıştırıp deploy et — Secrets\'a dokunma.</span></p>`;
 }
 
 /* ---------- 10 · Güvenlik kontrolü ----------
@@ -6808,30 +6805,41 @@ function guvenlikDurakSayfasi(p, d) {
       </div>` : '')
     + `<div class="btk">
         <div class="btk-ust">
-          <span class="btk-ik mavi">${svg(ICON.kisi, 22)}</span>
-          <span class="btk-yz"><b>Test hesabı</b>
-            <i>Bu projedeki <b>yönetici olmayan</b> bir hesap. Şifre hiçbir yere
-               kaydedilmiyor.</i></span>
+          <span class="btk-ik kirmizi">${svg(ICON.anahtar, 22)}</span>
+          <span class="btk-yz"><b>Erişim bilgileri</b>
+            <i>Bu projedeki yönetici olmayan bir hesap. Şifre kaydedilmiyor.</i></span>
         </div>
-        <label class="field"><span>E-posta</span>
-          <input type="text" id="gvd-eposta-${p.id}" value="${esc(g.eposta || '')}"
-                 placeholder="personel@firma.com" autocomplete="off"
-                 spellcheck="false" autocapitalize="off"></label>
-        <label class="field" style="margin-top:10px"><span>Şifre</span>
-          <input type="password" id="gvd-sifre-${p.id}" placeholder="••••••••"
-                 autocomplete="off"></label>
-        <label class="field" style="margin-top:10px"><span>guvenlik.json adresi</span>
-          <input type="text" id="gvd-depo-${p.id}" value="${esc(depo)}"
-                 placeholder="github.com/sahip/depo ya da https://.../guvenlik.json"
-                 autocomplete="off" spellcheck="false" autocapitalize="off"></label>
+        <label class="gf">
+          <span class="gf-et">E-posta</span>
+          <span class="gf-kutu">${svg(ICON.mail, 17)}
+            <input type="text" id="gvd-eposta-${p.id}" value="${esc(g.eposta || '')}"
+                   placeholder="personel@firma.com" autocomplete="off"
+                   spellcheck="false" autocapitalize="off"></span>
+        </label>
+        <label class="gf">
+          <span class="gf-et">Şifre</span>
+          <span class="gf-kutu">${svg(ICON.kilit, 17)}
+            <input type="password" id="gvd-sifre-${p.id}" placeholder="Hesabın şifresi"
+                   autocomplete="off">
+            <button class="gf-goz" type="button" data-eylem="guvenlik-sifre-goster"
+                    data-hedef="gvd-sifre-${p.id}" aria-label="Şifreyi göster">
+              ${svg(ICON.goz, 16)}</button></span>
+        </label>
+        <label class="gf">
+          <span class="gf-et">guvenlik.json adresi</span>
+          <span class="gf-kutu">${svg(ICON.dal, 17)}
+            <input type="text" id="gvd-depo-${p.id}" value="${esc(depo)}"
+                   placeholder="github.com/sahip/depo" autocomplete="off"
+                   spellcheck="false" autocapitalize="off"></span>
+        </label>
         ${pl.guvenlikJsonVar === false ? `<p class="ipucu">Yetkilendirme adımında
           <code>guvenlik.json</code> yazılmadı — programa özel denetimler atlanacak.</p>` : ''}
-        <button class="sayfa-dug bitir" type="button" data-eylem="guvenlik-durak-test"
-                data-proje="${p.id}" ${g.calisiyor || !hazir ? 'disabled' : ''}>
-          ${svg(ICON.gGuvenlik, 15)} ${g.calisiyor ? 'Test ediliyor…' : 'Test Et'}</button>
         ${hazir ? '' : `<p class="ipucu">Supabase adresi ya da anon key kayıtlı değil —
           <b>Bağlantılar ve temel</b> durağına dön.</p>`}
       </div>`
+    + `<button class="sayfa-dug bitir" type="button" data-eylem="guvenlik-durak-test"
+               data-proje="${p.id}" ${g.calisiyor || !hazir ? 'disabled' : ''}>
+        ${svg(ICON.gGuvenlik, 16)} ${g.calisiyor ? 'Test ediliyor…' : 'Test Et'}</button>`
     + guvenlikSonucTablosu(g.sonuc, g.ustKatmanUyarisi, g.kalintilar, g.harita, g.tabloKaynagi, p.id)
     + (o && o.acik ? `<div class="note uyari" style="margin-top:14px">${svg(ICON.uyari, 15)}
         <span><b>Açık varken Final açılmaz.</b> Bulguları Claude'a ver, düzeltmeyi
@@ -16063,6 +16071,14 @@ async function eylemCalistir(el) {
     /* Hepsi işaretlenince liste kendiliğinden kapanıyor. */
     if (GUVENLIK_KURULUM_ADIM.every(a => durum[a.no])) GUVENLIK_KURULUM_ACIK = false;
     return render();
+  }
+
+  if (e === 'guvenlik-sifre-goster') {
+    const alan = document.getElementById(el.dataset.hedef);
+    if (!alan) return;
+    alan.type = alan.type === 'password' ? 'text' : 'password';
+    el.classList.toggle('on', alan.type === 'text');
+    return;
   }
 
   if (e === 'guvenlik-kurulum-ac') {

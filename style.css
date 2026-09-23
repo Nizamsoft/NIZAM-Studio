@@ -10137,42 +10137,47 @@ textarea.fm-gir { height: auto; padding: 0 0 12px; resize: vertical; line-height
 /* ==========================================================================
    28 · GÜVENLİK KONTROLÜ — bir kerelik köprü kurulumu
    ========================================================================== */
-.gk-liste { margin-bottom: 14px; }
+.gk-kart {
+  margin-bottom: 10px; border-radius: 16px; overflow: hidden;
+  background: var(--surface); border: 1px solid var(--line-3);
+}
 .gk {
-  display: flex; align-items: flex-start; gap: 11px;
-  padding: 12px 0; border-bottom: 1px solid var(--line-3);
+  display: flex; align-items: center; gap: 12px;
+  padding: 13px; border-bottom: 1px solid var(--line-3);
 }
-.gk-tik {
+.gk:last-child { border-bottom: 0; }
+.gk-ik {
   flex: 0 0 auto; display: flex; align-items: center; justify-content: center;
-  width: 28px; height: 28px; border-radius: 999px; cursor: pointer;
-  background: var(--surface); border: 1.5px solid var(--line-2);
-  font-family: var(--yazi-etiket); font-size: 12.5px; font-weight: 700;
-  color: var(--ink-dim);
+  width: 44px; height: 44px; border-radius: 12px;
+  background: #eef3fc; color: #3a62a8;
 }
-.gk-tik svg { fill: none; stroke: currentColor; stroke-width: 2.8; }
-.gk-tik .dolgu { display: none; }
-.gk.on .gk-tik { background: var(--st-done); border-color: var(--st-done); color: #fff; }
-.gk-yz { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.gk-ik svg { fill: none; stroke: currentColor; stroke-width: 1.8; }
+.gk-ik .dolgu { display: none; }
+.gk-yz { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
 .gk-yz b {
   font-family: var(--yazi-etiket); font-size: 14.5px; font-weight: 700;
   color: var(--ink-strong);
 }
-.gk.on .gk-yz b { color: var(--ink-soft); }
-.gk-yz i { font-style: normal; font-size: 12.5px; line-height: 1.5; color: var(--ink-dim); }
-.gk-yz code {
-  padding: 1px 5px; border-radius: 5px; background: var(--yuva);
-  font-family: var(--yazi-kod); font-size: 11.5px; color: var(--ink);
-}
+.gk-yz i { font-style: normal; font-size: 12.5px; line-height: 1.45; color: var(--ink-dim); }
 .gk-btn {
   align-self: flex-start; display: inline-flex; align-items: center; gap: 6px;
-  margin-top: 4px; height: 32px; padding: 0 11px; border-radius: 9px; cursor: pointer;
+  margin-top: 5px; height: 31px; padding: 0 11px; border-radius: 9px; cursor: pointer;
   text-decoration: none; background: var(--yuva); border: 1px solid var(--line-2);
   font-family: var(--yazi-etiket); font-size: 12.5px; font-weight: 600; color: var(--ink);
 }
 .gk-btn svg { fill: none; stroke: currentColor; stroke-width: 1.9; }
 .gk-btn .dolgu { display: none; }
+/* Sağdaki yuvarlak: boşken ince çizgi, işaretliyken dolu yeşil. */
+.gk-tik {
+  flex: 0 0 auto; display: flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; border-radius: 999px; cursor: pointer;
+  background: var(--surface); border: 1.5px solid var(--line-2); color: transparent;
+}
+.gk-tik svg { fill: none; stroke: currentColor; stroke-width: 2.8; }
+.gk-tik .dolgu { display: none; }
+.gk.on .gk-tik { background: var(--st-done); border-color: var(--st-done); color: #fff; }
 .gk-not {
-  display: flex; align-items: flex-start; gap: 7px; margin: 12px 0 0;
+  display: flex; align-items: flex-start; gap: 7px; margin: 0 0 14px;
   font-size: 12px; line-height: 1.5; color: var(--ink-faint);
 }
 .gk-not svg { flex: 0 0 auto; margin-top: 2px; fill: none; stroke: currentColor; stroke-width: 1.9; }
@@ -10195,9 +10200,37 @@ textarea.fm-gir { height: auto; padding: 0 0 12px; resize: vertical; line-height
 .gk-ozet-yz i { font-style: normal; font-size: 12px; line-height: 1.4; color: var(--ink-soft); }
 .gk-ozet-btn {
   flex: 0 0 auto; height: 32px; padding: 0 12px; border-radius: 9px; cursor: pointer;
-  background: var(--surface); border: 1px solid var(--done-cizgi-2, var(--line-2));
+  background: var(--surface); border: 1px solid var(--line-2);
   font-family: var(--yazi-etiket); font-size: 12.5px; font-weight: 600; color: var(--ink);
 }
+
+/* Erişim bilgileri alanları: etiket üstte, kutunun solunda ikon. */
+.gf { display: block; margin-top: 14px; }
+.gf-et {
+  display: block; margin-bottom: 7px;
+  font-family: var(--yazi-etiket); font-size: 13px; font-weight: 700; color: var(--ink-strong);
+}
+.gf-kutu {
+  display: flex; align-items: center; gap: 10px;
+  height: 52px; padding: 0 13px; border-radius: 14px;
+  background: var(--yuva); border: 1.5px solid var(--line-2);
+}
+.gf-kutu > svg { flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 1.8; color: var(--ink-faint); }
+.gf-kutu > .dolgu { display: none; }
+.gf-kutu:focus-within { border-color: var(--ink-strong); background: var(--surface); }
+.gf-kutu input {
+  flex: 1; min-width: 0; height: 100%; border: 0; background: none; outline: none;
+  font-family: inherit; font-size: 15px; color: var(--ink-strong);
+}
+.gf-kutu input::placeholder { color: var(--ink-faint); }
+.gf-goz {
+  flex: 0 0 auto; display: flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px; border: 0; background: none; cursor: pointer;
+  color: var(--ink-faint);
+}
+.gf-goz svg { fill: none; stroke: currentColor; stroke-width: 1.8; }
+.gf-goz .dolgu { display: none; }
+.gf-goz.on { color: var(--ink-strong); }
 
 /* Son ölçüm şeridi. */
 .gk-son {

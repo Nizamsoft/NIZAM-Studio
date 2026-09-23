@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.223.0
+- Güvenlik kontrolü görsele göre yeniden çizildi: kurulum maddeleri tek
+  kartta satır satır (solda renkli ikon, sağda büyük yeşil tik), erişim
+  bilgileri etiketi üstte / ikonu solda kutularda, şifrenin yanında göz
+  düğmesi, altta tam genişlikte kırmızı «Test Et».
+
 ## v0.222.0
 - **Güvenlik kontrolü sadeleşti.** En üstte bir kerelik köprü kurulumu üç
   işaretlenebilir madde hâlinde (jeton · guvenlik-sql fonksiyonu · secret);
