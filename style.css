@@ -9545,3 +9545,26 @@ textarea.fm-gir { height: auto; padding: 0 0 12px; resize: vertical; line-height
   background: var(--st-done); color: #fff;
 }
 .fm-lsatir.buyuk .fm-tik { width: 28px; height: 28px; }
+
+/* ---------- Katman kartları (mockup'a göre iri hâl) ----------
+   Numara rozeti, renkli simge karosu, ad + tek satır açıklama, "Sabit /
+   En dar" çipi. Program temeli sayfasındaki merdiven bu ölçüde. */
+.fm .rol-liste { gap: 10px; }
+.fm .rol-satir {
+  gap: 12px; padding: 13px 13px; border-radius: 15px;
+  border: 1.5px solid var(--line-2); background: var(--surface);
+}
+.fm .rol-no {
+  flex: 0 0 38px; height: 38px; border-radius: 11px; font-size: 13px;
+}
+.fm .rol-ik { flex: 0 0 38px; width: 38px; height: 38px; border-radius: 11px; }
+.fm .rol-ik svg { fill: none; stroke: currentColor; stroke-width: 1.8; }
+.fm .rol-ik .dolgu { display: none; }
+.fm .rol-orta { display: flex; flex-direction: column; gap: 2px; }
+.fm .rol-satir input { font-size: 15.5px; font-weight: 700; }
+.fm .rol-orta i {
+  font-style: normal; font-size: 12.5px; color: var(--ink-dim);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.fm .rol-rozet { font-size: 11px; padding: 5px 11px; letter-spacing: 0; }
+.fm .rol-sayi-cp { padding: 15px 4px; font-size: 13px; border-radius: 13px; }

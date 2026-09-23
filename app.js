@@ -1940,7 +1940,7 @@ function firmaSayfasi(p, d) {
                deger: p.telefon, ipucu: 'Örn. 0538 956 88 59', maxlength: 30 })
     + fmAlan({ etiket: 'E-posta', tip: 'email', ikon: ICON.mail, alan: 'eposta', proje: p.id,
                deger: p.eposta, ipucu: 'Örn. bilgi@firma.com', maxlength: 120 })
-    + fmSecim('Sektör', sektorler, 'Promptun ilk satırları ve kimlik dosyası bunlardan çıkıyor.')
+    + fmSecim('Sektör', sektorler)
     + fmLogoAlani(p, logo)
     + `</div></div>`;
 }
@@ -1997,11 +1997,9 @@ function programSayfasi(p, d) {
     + adimBasligi(p, d, dolu + '/3')
     + `<div class="fm-liste">`
     + fmAlan({ etiket: 'Program adı', ikon: ICON.katman, alan: 'modulAdi', kap: 'palet',
-               proje: p.id, deger: pl.modulAdi, ipucu: 'Örn. Muhasebe', maxlength: 60,
-               not: 'Bu ad prompt ve kimlik dosyasında kullanılacak.' })
+               proje: p.id, deger: pl.modulAdi, ipucu: 'Örn. Muhasebe', maxlength: 60 })
     + `<div class="fm">
         <span class="fm-et">Katmanlar</span>
-        <span class="fm-not" style="margin:-2px 0 4px">Kim kullanacak? Sıralama yetki seviyesini belirler; ilk kullanıcı hesabı en üstteki (Admin) katmanla açılacak.</span>
         ${rolMerdiveni(roller, 'durak', true)}
       </div>`
     + fmKartSecim('Veriler nerede duracak', VERI_KATMANI_KARTI, veri, 'durak-veri', p.id)
@@ -2116,8 +2114,7 @@ function rolMerdiveni(roller, onek, sade) {
           <button class="rol-sayi-cp ${k === n ? 'on' : ''}" type="button"
                   data-rol-sayi="${k}">${k} katman</button>`).join('')}
       </div>
-      ${sade ? '' : `<span class="fbd-et" style="margin-top:14px">Katmanlar</span>
-      <p class="ipucu" style="margin:-4px 0 8px">Sıralama yetki seviyesini belirler.</p>`}
+      ${sade ? '' : `<span class="fbd-et" style="margin-top:14px">Katmanlar</span>`}
       <div class="rol-liste">
         ${Array.from({ length: n }, (_, i) => {
           const sira = n - 1 - i;                      /* üstten alta çiz */
@@ -2127,27 +2124,29 @@ function rolMerdiveni(roller, onek, sade) {
              adla açılıyor (bkz. Bağlantılar ve temel / ilk kurulum promptu),
              o yüzden burada sabit ve salt okunur — silinemez, değiştirilemez. */
           const ad = ust ? 'Admin' : (liste[sira] || (ROL_ORNEK[n] || [])[sira] || '');
-          /* Simgeler sayfadaki rol rozetleriyle aynı: en geniş kalkan,
+          /* Her katmanın ne demek olduğu tek satırda: en geniş kalkan,
              en dar kilit, aradakiler kişi. */
+          const alt = ust ? 'Tüm yetkilere sahiptir.'
+            : dar ? 'Sınırlı erişim yetkileri.'
+            : 'Yönetim ve düzenleme yetkileri.';
           return `
             <label class="rol-satir ${ust ? 'ust' : ''}"
                    style="--ki:${ust ? '#d8a63f' : dar ? '#7d93b8' : '#3fa694'}">
               <span class="rol-no mono">${sira + 1}</span>
-              <span class="rol-ik">${svg(ust ? ICON.gGuvenlik : dar ? ICON.kilit : ICON.kisi, 15)}</span>
+              <span class="rol-ik">${svg(ust ? ICON.gGuvenlik : dar ? ICON.kilit : ICON.kisi, 16)}</span>
               <span class="rol-orta">
                 <input type="text" data-rol="${sira}" value="${esc(ad)}"
                        ${ust ? 'readonly' : ''}
                        placeholder="${esc((ROL_ORNEK[n] || [])[sira] || 'Rol adı')}"
                        maxlength="40" autocomplete="off">
+                <i>${esc(alt)}</i>
               </span>
               ${ust ? '<span class="rol-rozet">Sabit</span>' : dar ? '<span class="rol-rozet">En dar</span>' : ''}
             </label>`;
         }).join('')}
       </div>
-      ${fdNot('Üstteki katman her zaman Admin. Alttakiler serbestçe adlandırılır, daha sonra da düzenlenebilir.')}
     </div>`;
 }
-
 /* Merdiveni canlı tut: sayı değişince yeniden çiz, adları koru. */
 function rolBagla(kutu) {
   const kat = $('.rol-kat', kutu);

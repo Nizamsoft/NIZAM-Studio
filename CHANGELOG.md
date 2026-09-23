@@ -1,5 +1,12 @@
 # Değişiklik Günlüğü
 
+## v0.191.0
+- **Katmanlar yeni tasarım**: her katman iri bir kart — numara rozeti, renkli
+  simge, adı ve tek satır açıklaması ("Tüm yetkilere sahiptir.", "Yönetim ve
+  düzenleme yetkileri.", "Sınırlı erişim yetkileri."), yanında Sabit / En dar.
+- Aşama sayfalarındaki **fazla bilgilendirme yazıları kaldırıldı**
+  (program adı notu, katman açıklaması, sektör notu, merdiven altındaki not).
+
 ## v0.190.0
 - Logo her iki ekranda da **tek satır**: solda kare önizleme, ortada "Logo"
   ve altında adı, sağda yeşil tik. Tamamlanmış aşamada satır biraz daha iri,
