@@ -1,5 +1,17 @@
 # Değişiklik Günlüğü
 
+## v0.201.0
+**Modüller ekranı yeniden kuruldu — artık yalnız gösterim.**
+- **Modüller**: bölümler alt alta (adı + kaç sayfası), üstte "Modülleri
+  güncelle" ve "Cevabı yapıştır".
+- **Bir modül**: ortak kuralı ve sayfaları öbek öbek (Kayıtlar, Raporlar…),
+  her sayfanın tek satırlık özetiyle.
+- **Bir sayfa**: dört başlık — ne işe yarar, nasıl bir ekran (tür, ölçek,
+  kalıp, ayrıntılar), neler yazılacak (alan tablosu: ad, tür, zorunlu,
+  seçenekler) ve modül kuralından farkı.
+- Ekleme/silme/düzenleme kalktı; yapı Claude'un bloğundan geliyor ve
+  **yapıştırınca doğrudan kuruluyor** (ayrı "Kur" adımı yok).
+
 ## v0.200.0
 **Kurulum ve yapı aşamasının girişi de öteki aşamalar gibi.** İki numaralı
 kart:

@@ -3969,135 +3969,181 @@ function agacSatir(renk, ikon, ad, alt, eksik, eylem, veri) {
 }
 
 function agacEkrani(p, t) {
-  if (!t.modul && t.sayfalar.length) t.modul = 'Yeni Modül';
-
-  const kurulu = DB.modulleri(p.id).filter(m => m.ad !== GENEL_MODUL);
-  const kunye  = (p.palet || {}).kunye || {};
-  const acik   = t.odak && t.sayfalar.includes(t.odak) ? t.odak : null;
-
-  const modeller = kurulu.map(m => m.ad);
-  if (t.modul && !modeller.includes(t.modul)) modeller.push(t.modul);
-
-  /* Ortak kural isteğe bağlı — "Kur"u ona bağlamak, kuralı olmayan modülü
-     kurdurmuyordu. */
-  const tam = t.modul && t.sayfalar.length
-    && t.sayfalar.every(sf => kunyeTam(t.kunye[sf]));
-  /* Kurulduktan sonra bu aşamada elle işlem kalmıyor — "Anlatım"/"Kur"
-     yerini "Modülü güncelle"ye bırakıyor. Kod ilerledikçe depo ile künye
-     arasında açılan farkın tek köprüsü bu: Claude depoyu inceleyip eksik
-     bulursa aynı çözümleme bloğuyla tamamlıyor, var olanın üstüne yazmıyor. */
-  const kuruluMu = t.modul && kurulu.some(x => x.ad === t.modul);
-  const dugmeler = kuruluMu ? `
-    <a class="ag-dug" target="_blank" rel="noopener" data-pano="modulGuncelle:${encodeURIComponent(t.modul)}"
-       data-proje="${p.id}" data-hedef="Claude Code" href="${esc(claudeAdresi(depoSlug(p.repo)))}">
-      ${svg(ICON.kopya, 15)} Modülü güncelle</a>
-    <button class="ag-dug ana" type="button" data-eylem="anlat-aktar" data-proje="${p.id}">
-      ${svg(ICON.ice, 15)} Cevabı yapıştır</button>`
-    : t.modul ? `
-    <button class="ag-dug" type="button" data-eylem="agac-anlat" data-proje="${p.id}">
-      ${svg(ICON.kopya, 15)} Anlatım</button>
-    <button class="ag-dug ana" type="button" ${tam ? '' : 'disabled'}
-            data-eylem="yapi-kur" data-proje="${p.id}">
-      ${svg(ICON.check, 15)} Kur</button>` : '';
-
-  const basamak = [{ ad: p.firma }];
-  if (t.modul) basamak.push({ ad: t.modul, eylem: 'agac-modul-ad', proje: p.id });
-  if (acik) basamak.push({ ad: acik });
+  const moduller = DB.modulleri(p.id).filter(m => m.ad !== GENEL_MODUL);
+  const kunyeler = (p.palet || {}).kunye || {};
+  const mkler    = (p.palet || {}).modulKunye || {};
 
   /* ---------- 3 · Bir sayfanın künyesi ---------- */
-  if (acik) {
-    const k = yapiKunye(t, acik);
-    const adimlar = kunyeAdimlari();
-    const bitmis = adimlar.filter(a => kunyeAdimTam(k, a.anahtar)).length;
-
-    const govde = agacBaslik('#4fa8c9', ICON.dosya, t.modul, acik,
-                             bitmis + '/' + adimlar.length, 'tamam')
-      + adimlar.map(a => agacSatir(
-          DAL_RENK[a.anahtar] || '#8d8378', ICON.etiket, a.ad,
-          dalOzeti(k, a.anahtar), !kunyeAdimTam(k, a.anahtar), 'agac-dal',
-          `data-proje="${p.id}" data-sayfa="${esc(acik)}" data-ad="${a.anahtar}"`)).join('')
-      + agacSatir('#4fa8c9', ICON.goz, 'Önizlemeyi aç',
-          'Bu sayfa müşterinin ekranında nasıl görünecek?',
-          false, 'agac-onizle', `data-proje="${p.id}"`);
-    return agacKabuk(p, yolCipleri(basamak), govde, dugmeler);
-  }
+  if (t.modul && t.odak) return kunyeEkrani(p, t.modul, t.odak, kunyeler);
 
   /* ---------- 2 · Bir modülün sayfaları ---------- */
   if (t.modul) {
-    const m  = kurulu.find(x => x.ad === t.modul);
-    const mk = t.mk || {};
-    const bitmis = t.sayfalar.filter(sf => kunyeTam(t.kunye[sf])).length;
+    const m      = moduller.find(x => x.ad === t.modul);
+    const sayfa  = m ? DB.sayfalari(m.id).map(x => x.ad) : (t.sayfalar || []);
+    const kural  = ((mkler[t.modul] || {}).kural || '').trim();
 
-    const govde = agacBaslik('#c48a5c', ICON.katman,
-                             m ? 'kurulu modül' : 'taslak modül', t.modul,
-                             String(t.sayfalar.length), 'sayfa')
-      + agacSatir('#d8a63f', ICON.gGuvenlik, 'Ortak kural',
-          (mk.kural || '').trim()
-            || 'bütün modülde geçerli bir kural varsa yaz — isteğe bağlı',
-          false, 'agac-modul-kural', `data-proje="${p.id}"`)
-      /* Sayfa ekle/kaldır, modül kaldır — bilerek yok. Bu aşamada iş tek
-         seferlik: anlat, Claude'un bloğunu yapıştır, kur, bitti. Eksik ya
-         da fazla bir şey varsa sonraki aşamada ele alınacak. */
-      + (() => {
-          /* Yirmi sayfa düz bir ızgarada aranmıyor. Öbekleri Claude veriyor
-             ("Raporlar", "Ayarlar", "Panolar"): sayfa türünden daha anlamlı,
-             çünkü işe göre ayırıyor. Öbek sırası Claude'un verdiği sıra —
-             o da bir karar, alfabeye çevirip bozmuyoruz. Öbeğin içi ise
-             alfabetik: yirmi sayfada gözle aramak ancak öyle mümkün.
+    /* Öbekler Claude'un verdiği sıradan geliyor; "Diğer" hep sonda. */
+    const sira = [];
+    const obek = {};
+    sayfa.forEach((sf, i) => {
+      const g = ((kunyeler[t.modul + ' · ' + sf] || {}).grup || '').trim() || 'Diğer';
+      if (!obek[g]) { obek[g] = []; sira.push(g); }
+      obek[g].push({ sf, i });
+    });
+    sira.sort((a, b) => (a === 'Diğer') - (b === 'Diğer'));
 
-             Kırmızı yalnız sıradaki sayfada: hepsi kırmızı olunca ekran
-             uyarı tablosuna dönüyor ve "önce hangisi" kayboluyor. */
-          const ilkEksik = t.sayfalar.findIndex(sf => !kunyeTam(t.kunye[sf]));
-
-          const sira = [];
-          const obek = {};
-          t.sayfalar.forEach((sf, i) => {
-            const g = ((t.kunye[sf] || {}).grup || '').trim() || 'Diğer';
-            if (!obek[g]) { obek[g] = []; sira.push(g); }
-            obek[g].push({ sf, i });
-          });
-          /* "Diğer" hep en sonda: adı konmamış olan aranan değil, kalan. */
-          sira.sort((a, b) => (a === 'Diğer') - (b === 'Diğer'));
-
-          return sira.map(g => `
-            ${sayfaObekBasligi(g, obek[g].length)}
-            <div class="ya-satir">
-              ${obek[g].slice()
-                .sort((a, b) => a.sf.localeCompare(b.sf, 'tr'))
-                .map(({ sf, i }) => agacKare(
-                  String(i + 1).padStart(2, '0'),
-                  kunyeTam(t.kunye[sf]) ? 'bitti' : i === ilkEksik ? 'simdi' : 'eksik',
-                  sf, agacSayfaAlt(t.kunye[sf] || {}), 'agac-sayfa',
-                  `data-proje="${p.id}" data-ad="${esc(sf)}"`)).join('')}
-            </div>`).join('');
-        })();
-    return agacKabuk(p, yolCipleri(basamak), govde, dugmeler);
+    return `<div class="fb-govde">`
+      + `<button class="md-yol" type="button" data-eylem="agac-modul-ac"
+                 data-proje="${p.id}" data-ad="${esc(t.modul)}">
+          ${svg(ICON.chevron, 14)} Modüller</button>`
+      + `<div class="md-bas">
+          <span class="md-bas-ik">${svg(ICON.katman, 22)}</span>
+          <span class="md-bas-yz"><b>${esc(t.modul)}</b><i>${sayfa.length} sayfa</i></span>
+        </div>`
+      + (kural ? `<div class="md-not">
+          ${svg(ICON.info, 16)}
+          <span><b>Ortak kural</b>${esc(kural)}</span>
+        </div>` : '')
+      + sira.map(g => `
+          <div class="md-grup">${esc(g)} <u>${obek[g].length}</u></div>
+          <div class="md-liste">
+            ${obek[g].map(({ sf, i }) => {
+              const k = kunyeler[t.modul + ' · ' + sf] || {};
+              return `
+              <button class="md-satir" type="button" data-eylem="agac-sayfa"
+                      data-proje="${p.id}" data-ad="${esc(sf)}">
+                <span class="md-no">${i + 1}</span>
+                <span class="md-ik">${svg(ICON.dosya, 17)}</span>
+                <span class="md-yz">
+                  <b>${esc(sf)}</b>
+                  <i>${esc(kisaOzet(k.amac))}</i>
+                </span>
+                <span class="md-ok">${svg(ICON.chevron, 15)}</span>
+              </button>`;
+            }).join('')}
+          </div>`).join('')
+      + `</div>`;
   }
 
   /* ---------- 1 · Modüller ---------- */
-  const govde = agacBaslik('#8fae4a', ICON.gAltyapi, projeAdi(p),
-                           'Modüller', String(modeller.length), 'modül')
-    + `<div class="ya-satir">
-        ${(() => {
-          const tamlik = modeller.map(ad => {
-            const m  = kurulu.find(x => x.ad === ad);
-            const sf = m ? DB.sayfalari(m.id) : [];
-            return sf.length && sf.every(x => kunyeTam(kunye[ad + ' · ' + x.ad]));
-          });
-          const ilkEksik = tamlik.indexOf(false);
-          return modeller.map((ad, i) => {
-          const m  = kurulu.find(x => x.ad === ad);
-          const sf = m ? DB.sayfalari(m.id) : [];
-          return agacKare(String(i + 1).padStart(2, '0'),
-            tamlik[i] ? 'bitti' : i === ilkEksik ? 'simdi' : 'eksik',
-            ad, sf.length + ' sayfa', 'agac-modul-ac',
-            `data-proje="${p.id}" data-ad="${esc(ad)}"`);
-        }).join('');
-        })()}
-      </div>`;
-  return agacKabuk(p, yolCipleri(basamak), govde, '');
+  return `<div class="fb-govde">`
+    + `<div class="md-bas">
+        <span class="md-bas-ik">${svg(ICON.izgaraDort, 22)}</span>
+        <span class="md-bas-yz"><b>Modüller</b><i>Programın bölümleri ve sayfaları.</i></span>
+      </div>`
+    /* Tek işlem: koddaki yapıyla buradaki kaydı karşılaştırmak. Ekleme,
+       silme, düzenleme yok — yapı Claude'un bloğundan geliyor. */
+    + `<a class="md-is" target="_blank" rel="noopener"
+         data-pano="modulGuncelle:${encodeURIComponent(moduller[0] ? moduller[0].ad : '')}"
+         data-proje="${p.id}" data-hedef="Claude Code"
+         href="${esc(claudeAdresi(depoSlug(p.repo)))}">
+        <span class="md-is-ik">${svg(ICON.geriAl, 18)}</span>
+        <span class="md-yz">
+          <b>Modülleri güncelle</b>
+          <i>Koddaki yapıyla buradaki kaydı karşılaştırır, eksikleri bulur.</i>
+        </span>
+        <span class="md-ok">${svg(ICON.chevron, 15)}</span>
+      </a>
+      <button class="md-is ikincil" type="button" data-eylem="anlat-aktar" data-proje="${p.id}">
+        <span class="md-is-ik">${svg(ICON.ice, 18)}</span>
+        <span class="md-yz">
+          <b>Cevabı yapıştır</b>
+          <i>Claude'un verdiği bloğu buraya yapıştır.</i>
+        </span>
+        <span class="md-ok">${svg(ICON.chevron, 15)}</span>
+      </button>`
+    + (moduller.length ? `<div class="md-liste">
+        ${moduller.map((m, i) => `
+          <button class="md-satir" type="button" data-eylem="agac-modul-ac"
+                  data-proje="${p.id}" data-ad="${esc(m.ad)}">
+            <span class="md-no">${i + 1}</span>
+            <span class="md-ik">${svg(ICON.katman, 17)}</span>
+            <span class="md-yz">
+              <b>${esc(m.ad)}</b>
+              <i>${DB.sayfalari(m.id).length} sayfa</i>
+            </span>
+            <span class="md-ok">${svg(ICON.chevron, 15)}</span>
+          </button>`).join('')}
+      </div>` : `<div class="md-not">${svg(ICON.info, 16)}
+        <span><b>Henüz modül yok</b>Claude'un verdiği bloğu yapıştırınca burada görünecek.</span>
+      </div>`)
+    + `</div>`;
 }
 
+/* Sayfa satırının altındaki tek satır: amacın ilk cümlesi. */
+function kisaOzet(metin) {
+  const x = String(metin || '').trim().replace(/\s+/g, ' ');
+  if (!x) return 'açıklama yok';
+  const nokta = x.indexOf('. ');
+  const ilk = nokta > 10 ? x.slice(0, nokta) : x;
+  return ilk.length > 70 ? ilk.slice(0, 68) + '…' : ilk;
+}
+
+/* Bir sayfanın künyesi — yalnız gösterim. Dört başlık, tablolar, düzenleme
+   yok: yapıda değişiklik gerekiyorsa "Modülleri güncelle" var. */
+function kunyeEkrani(p, modul, sayfa, kunyeler) {
+  const k    = kunyeler[modul + ' · ' + sayfa] || {};
+  const kl   = KALIP.find(x => x.anahtar === (k.kalip || [])[0]);
+  const olcek = { 'Az': 'Az (yüzlerce kayıt)', 'Orta': 'Orta (birkaç bin)',
+                  'Çok': 'Çok (on binlerce)' }[k.olcek] || k.olcek || '—';
+
+  /* Kalıbın kendi cevapları "Ayrıntılar" satırında toplanıyor. */
+  const ayrinti = kl
+    ? (kl.sorular || []).map(so => (k.kalipCevap || {})[so.anahtar])
+        .filter(Boolean).join(' · ')
+    : '';
+
+  const satir = (et, dg) => `
+    <div class="kn-s"><span class="kn-et">${esc(et)}</span>
+      <span class="kn-dg">${esc(dg || '—')}</span></div>`;
+
+  const alanlar = (k.alanlar || []);
+  const bolum = (no, ikon, ad, ic) => `
+    <div class="kn-bolum">
+      <div class="kn-bas">
+        <span class="kn-bas-ik">${svg(ikon, 16)}</span>
+        <span class="kn-no">${no}</span>
+        <b>${esc(ad)}</b>
+      </div>
+      ${ic}
+    </div>`;
+
+  return `<div class="fb-govde">`
+    + `<button class="md-yol" type="button" data-eylem="agac-sayfa"
+               data-proje="${p.id}" data-ad="${esc(sayfa)}">
+        ${svg(ICON.chevron, 14)} ${esc(modul)}</button>`
+    + `<div class="md-bas">
+        <span class="md-bas-ik">${svg(ICON.dosya, 22)}</span>
+        <span class="md-bas-yz"><b>${esc(sayfa)}</b><i>${esc(kisaOzet(k.amac))}</i></span>
+      </div>`
+    + bolum(1, ICON.info, 'Ne işe yarar?',
+        `<p class="kn-metin">${esc(k.amac || 'Henüz yazılmadı.')}</p>`)
+    + bolum(2, ICON.panel, 'Nasıl bir ekran?', `
+        <div class="kn-tablo">
+          ${satir('Ekran türü', k.tur)}
+          ${satir('Kayıt ölçeği', olcek)}
+          ${satir('Kalıp', kl ? kl.ad : 'Basit liste')}
+          ${ayrinti ? satir('Ayrıntılar', ayrinti) : ''}
+          ${satir('Aynı kaydı yazan', k.ayniKayit || 'Yok')}
+        </div>`)
+    + bolum(3, ICON.katman, 'Neler yazılacak?', alanlar.length ? `
+        <div class="kn-tablo alan">
+          <div class="kn-s bas">
+            <span>Alan adı</span><span>Türü</span><span>Zorunlu</span><span>Seçenekler</span>
+          </div>
+          ${alanlar.map(x => `
+            <div class="kn-s">
+              <span><b>${esc(x.ad)}</b></span>
+              <span>${esc(x.tur || '')}</span>
+              <span class="kn-z">${x.zorunlu ? svg(ICON.tik, 13) : '–'}</span>
+              <span>${esc((x.degerler || []).filter(Boolean).join(', ') || (x.kaynak || '–'))}</span>
+            </div>`).join('')}
+        </div>` : `<p class="kn-metin">Henüz alan yazılmadı.</p>`)
+    + bolum(4, ICON.etiket, 'Farklı mı?',
+        `<p class="kn-metin">${esc(((k.fark || {}).kural || '').trim()
+          || 'Hayır, modülün ortak kuralı geçerli.')}</p>`)
+    + `</div>`;
+}
 /* Ağaçta bir kat yukarı: dal → sayfa → modül → firma. */
 function yapiGeri(t, projeId) {
   if (t.mod === 'anlat') {
@@ -13187,19 +13233,15 @@ function anlatAktarAc(projeId) {
             buton: 'Tamam', deger: '' }) || 'Yeni bölüm';
         }
       }
-      if (guncelleMi) {
-        try {
-          await yapiTaslagiKur(p, t);
-          delete YAPI_TASLAK[p.id];
-          toast(cozum.sayfalar.length + ' sayfa güncellendi.');
-          render();
-        } catch (err) { toast(err.message, 'hata'); }
-        return;
-      }
-      /* Aktarımdan sonra ağaca dön: sonucu görmesi gereken yer orası. */
-      t.mod = 'agac'; t.odak = null; t.dal = null;
-      toast(cozum.sayfalar.length + ' sayfa aktarıldı.');
-      render();
+      /* Yapıştırma her hâlde doğrudan kuruyor: ayrı bir "Kur" adımı yok,
+         künyeleri elle doldurmak da gerekmiyor — yapı Claude'un bloğundan
+         geliyor. */
+      try {
+        await yapiTaslagiKur(p, t);
+        delete YAPI_TASLAK[p.id];
+        toast(cozum.sayfalar.length + ' sayfa ' + (guncelleMi ? 'güncellendi.' : 'kuruldu.'));
+        render();
+      } catch (err) { toast(err.message, 'hata'); }
     });
   });
 }
