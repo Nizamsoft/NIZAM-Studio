@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.185.0
+- Düzenleme kipinde alt çubuk **İptal — Kaydet** oluyor ("Proje" düğmesi
+  o sırada görünmüyor).
+- **İptal gerçekten geri alıyor**: düzenlemeye girerken alınan kopyaya
+  dönülüyor. (Logo ve işletme görseli ayrı yüklendiği için geri alınmaz.)
+
 ## v0.184.0
 - **Düzenle'ye basınca alt çubuktaki "Devam Et" yeşil "Kaydet" oluyor**;
   Kaydet'e basınca düzenleme kapanıyor ve düğme yine "Devam Et" oluyor.

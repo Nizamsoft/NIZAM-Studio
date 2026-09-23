@@ -105,6 +105,9 @@ let SON_EKRAN      = '';
    denince o aşama bu değişkende tutuluyor ve alanlar yeniden açılıyor.
    Başka bir aşamaya geçilince kendiliğinden sıfırlanıyor (bkz. render). */
 let DUZENLENEN_DURAK = null;
+/* Düzenlemeye girerken alınan kopya: "İptal" bu hâle geri döndürüyor.
+   (Logo ve işletme görseli ayrı yüklendiği için geri alınmıyor.) */
+let DUZENLEME_YEDEK = null;
 const ACIK_STANDART = new Set();
 /* Gruplar akordeon: aynı anda yalnızca biri açık kalır. */
 let ACIK_GRUP = null;
@@ -1567,7 +1570,8 @@ function durakAyak(p, anahtar) {
   if (durakDuzenlemede(p, anahtar)) {
     return `
       <div class="dsa">
-        ${geri}
+        <button class="dsa-btn" type="button" data-eylem="durak-iptal">
+          ${svg(ICON.kapat, 14)} İptal</button>
         <span class="dsa-orta mono">${i + 1} / ${liste.length}</span>
         <button class="dsa-btn ana yesil" type="button" data-eylem="durak-kaydet">
           ${svg(ICON.tik, 15)} Kaydet</button>
@@ -7210,7 +7214,9 @@ function render() {
   }
 
   /* Başka bir aşamaya geçildiyse düzenleme kipi kapanır. */
-  if (DUZENLENEN_DURAK && DUZENLENEN_DURAK !== id + '/' + sayfa) DUZENLENEN_DURAK = null;
+  if (DUZENLENEN_DURAK && DUZENLENEN_DURAK !== id + '/' + sayfa) {
+    DUZENLENEN_DURAK = null; DUZENLEME_YEDEK = null;
+  }
 
   /* Kurulum durağından çıkıldıysa modül ağacı kapanır — aynı sebeple:
      geri gelindiğinde ağacın içine değil kurulum ızgarasına düşülsün.
@@ -13837,14 +13843,43 @@ async function eylemCalistir(el) {
   if (e === 'durak-kaydet') {
     const od = document.activeElement;
     if (od && od.blur) od.blur();
-    setTimeout(() => { DUZENLENEN_DURAK = null; render(); }, 60);
+    setTimeout(() => { DUZENLENEN_DURAK = null; DUZENLEME_YEDEK = null; render(); }, 60);
     return;
   }
 
-  /* Tamamlanmış aşamayı yeniden aç. */
+  /* Tamamlanmış aşamayı yeniden aç — girerken bir kopya alınıyor ki
+     "İptal" gerçekten eski hâle dönebilsin. */
   if (e === 'durak-duzenle') {
+    const pr = DB.proje(el.dataset.proje);
     DUZENLENEN_DURAK = el.dataset.proje + '/' + el.dataset.durak;
+    DUZENLEME_YEDEK = pr ? {
+      firma: pr.firma || '', telefon: pr.telefon || '',
+      eposta: pr.eposta || '', sektor: pr.sektor || '',
+      palet: JSON.parse(JSON.stringify(pr.palet || {})),
+    } : null;
     return render();
+  }
+
+  /* İptal: yazılanları geri al ve düzenleme kipini kapat. */
+  if (e === 'durak-iptal') {
+    const od = document.activeElement;
+    if (od && od.blur) od.blur();
+    const pr = DB.proje((DUZENLENEN_DURAK || '').split('/')[0]);
+    const y  = DUZENLEME_YEDEK;
+    DUZENLENEN_DURAK = null; DUZENLEME_YEDEK = null;
+    if (!pr || !y) return render();
+
+    const alanlar = {};
+    ['firma', 'telefon', 'eposta', 'sektor'].forEach(k => {
+      if (String(pr[k] || '') !== y[k]) alanlar[k] = y[k];
+    });
+    const paletDegisti = JSON.stringify(pr.palet || {}) !== JSON.stringify(y.palet);
+    if (!Object.keys(alanlar).length && !paletDegisti) return render();
+
+    return isYap(async () => {
+      if (Object.keys(alanlar).length) await DB.projeGuncelle(pr.id, alanlar);
+      if (paletDegisti) await DB.paletKaydet(pr.id, y.palet);
+    }, 'Değişiklikler geri alındı.');
   }
 
   /* --- Aşama formlarının seçmeli alanları --- */
