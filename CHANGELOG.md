@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.179.0
+- Firma bilgilerindeki **logo kutusu kare** oldu.
+
 ## v0.178.0
 - Firma bilgilerinden **proje rengi** seçimi kalktı; logo kutusu tam genişlik.
 
