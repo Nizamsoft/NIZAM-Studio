@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## v0.216.1
+- Tasarım promptu satırlarında örnek kare kartın kenarına yapışıyordu —
+  satıra iç boşluk verildi, «Prompt kopyala» tek satırda kalıyor.
+
 ## v0.216.0
 - Tasarım promptları listesinde **açıklama kalktı**: yalnız başlık ve
   «Prompt kopyala». Yazı sağa kaydı, örnek kare belirgin biçimde büyüdü.

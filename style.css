@@ -8756,7 +8756,7 @@ textarea.pd-giris { resize: vertical; display: block; }
 .tp-liste.bos .pj-bos-arama { display: block; }
 .tp.gizli { display: none; }
 .tp {
-  display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
+  display: flex; align-items: center; gap: 11px; width: 100%; text-align: left;
   padding: 12px; border-radius: 18px; cursor: pointer;
   background: var(--surface); border: 1px solid var(--line-3);
   font-family: inherit;
@@ -9931,12 +9931,13 @@ textarea.fm-gir { height: auto; padding: 0 0 12px; resize: vertical; line-height
 .tp-liste { display: flex; flex-direction: column; }
 .tp {
   display: flex; align-items: center; gap: 12px;
-  padding: 14px 0; border-bottom: 1px solid var(--line-3);
+  /* Kare kartın kenarına yapışmasın: satırın kendi iç boşluğu var. */
+  padding: 12px; border-bottom: 1px solid var(--line-3);
 }
 .tp:last-child { border-bottom: 0; }
 .tp-kare {
   flex: 0 0 auto; display: flex; align-items: center; justify-content: center;
-  width: 148px; height: 104px; border-radius: 12px; cursor: pointer;
+  width: 134px; height: 96px; border-radius: 12px; cursor: pointer;
   background: var(--yuva) center/cover no-repeat; border: 1px solid var(--line-3);
   color: var(--ink-faint);
 }
@@ -9960,7 +9961,8 @@ textarea.fm-gir { height: auto; padding: 0 0 12px; resize: vertical; line-height
 .tp-yz > i { font-style: normal; font-size: 13px; line-height: 1.45; color: var(--ink-dim); }
 .tp-kop {
   align-self: flex-start; display: inline-flex; align-items: center; gap: 7px;
-  height: 36px; padding: 0 13px; border-radius: 10px; cursor: pointer;
+  height: 36px; padding: 0 12px; border-radius: 10px; cursor: pointer;
+  white-space: nowrap;
   background: var(--surface); border: 1px solid var(--line-2);
   font-family: var(--yazi-etiket); font-size: 13px; font-weight: 600; color: var(--ink);
 }
