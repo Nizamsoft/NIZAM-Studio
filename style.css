@@ -9936,8 +9936,9 @@ textarea.fm-gir { height: auto; padding: 0 0 12px; resize: vertical; line-height
 }
 .tp:last-child { border-bottom: 0; }
 .tp-kare {
+  position: relative; overflow: hidden;
   flex: 0 0 auto; display: flex; align-items: center; justify-content: center;
-  width: 134px; height: 96px; border-radius: 12px; cursor: pointer;
+  width: 134px; height: 108px; border-radius: 12px; cursor: pointer;
   background: var(--yuva) center/cover no-repeat; border: 1px solid var(--line-3);
   color: var(--ink-faint);
 }
@@ -9979,6 +9980,7 @@ textarea.fm-gir { height: auto; padding: 0 0 12px; resize: vertical; line-height
   background: var(--surface); border: 1px solid var(--line-3);
 }
 .tu-kare {
+  position: relative; overflow: hidden;
   flex: 0 0 auto; display: flex; align-items: center; justify-content: center;
   width: 62px; height: 44px; border-radius: 9px;
   background: var(--yuva) center/cover no-repeat; border: 1px solid var(--line-3);
@@ -10056,6 +10058,7 @@ textarea.fm-gir { height: auto; padding: 0 0 12px; resize: vertical; line-height
 }
 .tk:last-child { border-bottom: 0; }
 .tk-kare {
+  position: relative; overflow: hidden;
   flex: 0 0 auto; display: flex; align-items: center; justify-content: center;
   width: 84px; height: 60px; border-radius: 10px;
   background: var(--yuva) center/cover no-repeat; border: 1px solid var(--line-3);
@@ -10077,3 +10080,22 @@ textarea.fm-gir { height: auto; padding: 0 0 12px; resize: vertical; line-height
 .tk-btn.sil { padding: 0 11px; color: var(--red-ink); border-color: var(--red-cizgi); }
 .tk-btn svg { fill: none; stroke: currentColor; stroke-width: 1.9; }
 .tk-btn .dolgu { display: none; }
+
+/* Görsel yüklenmemiş yönlerde promptun kendi tarifinden çizilen temsili
+   kare (bkz. yonOnizlemesi). Küçük kutularda ölçüler daraltılıyor. */
+.tu-kare .ty-mini { padding: 5px 6px; gap: 4px; }
+.tu-kare .ty-mini-baslik { font-size: 7px; }
+.tu-kare .ty-mini-nokta { width: 6px; height: 6px; }
+.tu-kare .ty-mini-etiket { font-size: 6px; }
+.tu-kare .ty-mini-sayi { font-size: 11px; }
+.tu-kare .ty-mini-dug { padding: 2px 6px; font-size: 6px; }
+.tk-kare .ty-mini { padding: 7px 8px; gap: 5px; }
+.tk-kare .ty-mini-sayi { font-size: 15px; }
+.tp-kare .ty-mini { padding: 7px 8px; gap: 5px; }
+.tp-kare .ty-mini-baslik { font-size: 8px; }
+.tp-kare .ty-mini-nokta { width: 7px; height: 7px; }
+.tp-kare .ty-mini-etiket { font-size: 6.5px; }
+.tp-kare .ty-mini-sayi { font-size: 14px; }
+.tp-kare .ty-mini-dug { padding: 3px 8px; font-size: 7px; }
+.tp-kare .ty-mini-cizgi { height: 2px; }
+.tp-kare .ty-mini-kart { padding: 6px 7px; gap: 3px; }

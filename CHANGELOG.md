@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.217.0
+- **Görsel yüklenmemiş tasarımlar artık boş kutu değil:** her yönün
+  temsili karesi kendi promptunun tarifinden çiziliyor (zemin, kart,
+  köşe, gölge, vurgu rengi, yazı tipi). Kütüphaneden gerçek bir kare
+  yüklenince onun yerini alıyor.
+
 ## v0.216.2
 - Uygulanmış tasarımlarda **mobil görsel kutusu telefon oranına geçti**:
   sağdan soldan daraldı, ortada duruyor. Masaüstü kutusu aynı kaldı.

@@ -645,7 +645,7 @@ const VIEWS = {
         <div class="tk">
           <span class="tk-kare ${resim ? 'var' : ''}"
                 ${resim ? `style="background-image:url('${esc(resim)}')"` : ''}>
-            ${resim ? '' : svg(ICON.resim, 20)}
+            ${resim ? '' : yonOnizlemesi(y)}
           </span>
           <span class="tk-yz">
             <b>${esc(y.ad)}</b>
@@ -2646,7 +2646,7 @@ function tasarimPromptListesi(p) {
         <span class="tp-kare ${resim ? 'var' : ''}" data-eylem="tasarim-yon-ornek"
               data-alan="${esc(y.anahtar)}" role="button" tabindex="0"
               ${resim ? `style="background-image:url('${esc(resim)}')"` : ''}>
-          ${resim ? '' : svg(ICON.resim, 20)}
+          ${resim ? '' : yonOnizlemesi(y)}
         </span>
         <span class="tp-yz">
           <span class="tp-bas"><b>${esc(y.ad)}</b><em class="mono">#${i + 1}</em></span>
@@ -2698,7 +2698,7 @@ function tasarimUygulanmisEkrani(p) {
         ${svg(ICON.chevron, 16)}</button>
       <span class="tu-kare ${kare ? 'var' : ''}"
             ${kare ? `style="background-image:url('${esc(kare)}')"` : ''}>
-        ${kare ? '' : svg(ICON.resim, 18)}
+        ${kare ? '' : yonOnizlemesi(odak)}
       </span>
       <span class="tu-yz"><b>${esc(odak.ad)}</b>
         <i class="mono">${sira + 1} / ${TASARIM_YON.length}</i></span>
