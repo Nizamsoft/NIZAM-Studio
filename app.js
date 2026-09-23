@@ -2060,8 +2060,8 @@ function baglantilarSayfasi(p, d) {
      ilk) bağlantı. "Düzenle" kipinde hepsi açık. */
   const hepsiAcik = durakDuzenlemede(p, 'baglantilar');
   const sirada    = liste.find(k => !baglantiAdimBittiMi(k, p));
-  const acik      = ACIK_BAGLANTI && liste.indexOf(ACIK_BAGLANTI) !== -1
-    ? ACIK_BAGLANTI : sirada;
+  /* '-' = kullanıcı açık kartı kapattı; hiçbiri açık değil. */
+  const acik      = baglantiAcik(liste, sirada);
 
   /* Bitmiş bağlantının kartında görünen değer — ne bağlandığı bir bakışta
      okunsun diye. */
@@ -2114,6 +2114,13 @@ function baglantilarSayfasi(p, d) {
        depo adresi zaten GitHub kartında ve proje menüsünde. */
     + `<div class="bgz">${satirlar}</div>`
     + `</div>`;
+}
+
+/* Şu an hangi bağlantı açık: kullanıcı elle açtıysa o, kapattıysa hiçbiri,
+   dokunmadıysa sıradaki. */
+function baglantiAcik(liste, sirada) {
+  if (ACIK_BAGLANTI === '-') return '';
+  return (ACIK_BAGLANTI && liste.indexOf(ACIK_BAGLANTI) !== -1) ? ACIK_BAGLANTI : sirada;
 }
 
 /* Her bağlantının tek satırlık tanımı ve yapılacak işlerin kısa listesi.
@@ -7280,6 +7287,8 @@ function render() {
   if (DUZENLENEN_DURAK && DUZENLENEN_DURAK !== id + '/' + sayfa) {
     DUZENLENEN_DURAK = null; DUZENLEME_YEDEK = null;
   }
+  /* Bağlantılar aşamasından çıkınca açık kart hatırlanmasın. */
+  if (sayfa !== 'baglantilar') ACIK_BAGLANTI = null;
 
   /* Kurulum durağından çıkıldıysa modül ağacı kapanır — aynı sebeple:
      geri gelindiğinde ağacın içine değil kurulum ızgarasına düşülsün.
@@ -11704,11 +11713,7 @@ function baglantiAdimSupabase(p) {
       </span>
       <button class="sayfa-dug ikincil" type="button"
               data-eylem="supabase-baglan" data-proje="${p.id}">
-        ${svg(ICON.tik, 15)} Bağlandı olarak işaretle</button>
-      ${/* Bu uyarı bilerek duruyor: service_role anahtarı buraya yazılırsa
-            veritabanı herkese açılır. Güvenlik uyarısı fazlalık değil. */ ''}
-      <div class="note uyari" style="margin-top:10px">${svg(ICON.uyari, 15)}
-        <span><b>service_role</b> anahtarını yazma, <b>anon key</b> olacak.</span></div>`;
+        ${svg(ICON.tik, 15)} Bağlandı olarak işaretle</button>`;
 }
 /* Şablon kopyalarına özel ara adım: template'in hazır SQL'i (bkz. Templateler
    > Kurulum SQL'i) yeni Supabase projesine yükleniyor. Metin üç parça
@@ -13870,7 +13875,12 @@ async function eylemCalistir(el) {
 
   /* Bağlantı kartını aç/kapat. */
   if (e === 'baglanti-ac') {
-    ACIK_BAGLANTI = ACIK_BAGLANTI === el.dataset.anahtar ? '' : el.dataset.anahtar;
+    const pr = DB.proje(rota().id);
+    const lst = pr ? baglantiAdimListesi(pr) : [];
+    const sir = pr ? lst.find(x => !baglantiAdimBittiMi(x, pr)) : '';
+    /* Açık olana tekrar dokunmak kapatıyor. */
+    ACIK_BAGLANTI = baglantiAcik(lst, sir) === el.dataset.anahtar
+      ? '-' : el.dataset.anahtar;
     return render();
   }
 

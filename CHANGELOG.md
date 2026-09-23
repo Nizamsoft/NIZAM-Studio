@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## v0.199.0
+- Supabase adımındaki **service_role uyarısı** kaldırıldı.
+- Bağlantı kartları **açılıp kapanıyor**: açık karta tekrar dokununca kapanıyor.
+
 ## v0.198.0
 - **Üstteki şerit yeni tasarım**: solda "KURULUM ADIMI 3 / 9", ortada bağlı
   noktalar, sağda aşama listesi düğmesi.
