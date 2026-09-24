@@ -16700,17 +16700,17 @@ function pzHalka(yuzde, boy, kalin) {
 
 /* ---------- İki sayı kartı ----------
    Solda halka: devam eden projelerin ortalama ilerlemesi.
-   Sağda en yakın teslim tarihi: projelerin `teslim` alanından, bugünden
-   sonraki en yakın olanı. Tarihi olan proje yoksa satır hiç çıkmıyor —
-   uydurma bir tarih yazmaktansa kart sade kalsın. */
-function enYakinTeslim(projeler) {
-  const bugun = new Date(bugunTarih());
-  const gelecek = projeler
-    .filter(p => p.teslim && p.durum !== 'tamamlandi')
-    .map(p => ({ p, t: new Date(p.teslim) }))
-    .filter(x => x.t >= bugun)
-    .sort((x, y) => x.t - y.t);
-  return gelecek.length ? gelecek[0] : null;
+   Sağda en yakın bitiş: açık görevlerin `bitis` tarihlerinden en yakını,
+   altında kaç gün kaldığı. Eskiden projenin `teslim` alanına bakıyordu;
+   görev sistemi kurulunca tarih görevin kendisinde durmaya başladı.
+   Geçmiş tarihli görev varsa en önce o çıkıyor — asıl acil olan o. */
+function enYakinGorevBitis(gorevler) {
+  const bugun = new Date(); bugun.setHours(0, 0, 0, 0);
+  return gorevler
+    .filter(g => g.bitis)
+    .map(g => ({ g, t: new Date(g.bitis + 'T00:00:00') }))
+    .filter(x => !isNaN(x.t))
+    .sort((x, y) => x.t - y.t)[0] || null;
 }
 
 function panelSayilar(projeler) {
@@ -16721,8 +16721,12 @@ function panelSayilar(projeler) {
      görevler sayılıyordu: arşivlenmiş projenin, şablonun ve bitmiş projenin
      görevleri de panele "açık iş" gibi yansıyordu. */
   const devamIds = devam.map(p => p.id);
-  const acik = (DB.gorevler || []).filter(g =>
-    g.durum !== 'tamamlandi' && devamIds.includes(g.proje_id)).length;
+  /* Açık = henüz onaylanmamış. Genel görevlerin projesi yok, onlar da
+     sayılıyor. (Eskiden 'tamamlandi' aranıyordu; yeni görev sisteminde
+     öyle bir durum yok, yüzden hepsi açık görünüyordu.) */
+  const acikGorevler = (DB.gorevler || []).filter(g =>
+    g.durum !== 'onaylandi' && (!g.proje_id || devamIds.includes(g.proje_id)));
+  const acik = acikGorevler.length;
   const yuzdeler = devam.map(p => projeAsamaYuzde(p));
   const ortalama = yuzdeler.length
     ? Math.round(yuzdeler.reduce((t, x) => t + x, 0) / yuzdeler.length) : 0;
@@ -16730,9 +16734,9 @@ function panelSayilar(projeler) {
   const aylar = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz',
                  'Ağustos','Eylül','Ekim','Kasım','Aralık'];
   /* En yakın bitiş. Açık görev yoksa tarih de yok — uydurma tarih yazmıyoruz.
-     Görev varsa projelerin teslim tarihlerinden bugünden sonraki en yakını.
-     Görev sistemi baştan yazılınca bu satırın kaynağı da değişecek. */
-  const yakin = acik ? enYakinTeslim(projeler) : null;
+     Tarihi girilmiş görev yoksa da satır "Tarih yok" diyor. */
+  const yakin = acik ? enYakinGorevBitis(acikGorevler) : null;
+  const sure  = yakin ? gorevSure(yakin.g.bitis) : null;
   const tarihYazi = !acik ? 'Görev yok'
     : yakin ? `${yakin.t.getDate()} ${aylar[yakin.t.getMonth()]} ${yakin.t.getFullYear()}`
             : 'Tarih yok';
@@ -16773,7 +16777,8 @@ function panelSayilar(projeler) {
       <b class="ps-sayi">${acik}</b>
       <span class="ps-bitis">
         ${svg(ICON.takvim, 14)}
-        <span><i>En yakın bitiş</i><b>${esc(tarihYazi)}</b></span>
+        <span><i>En yakın bitiş</i><b>${esc(tarihYazi)}</b>${sure
+          ? `<em class="ps-kalan ${sure.sinif}">${esc(sure.yazi)}</em>` : ''}</span>
       </span>
     </a>
   </div>`;
@@ -16889,6 +16894,7 @@ function panelEkip() {
 const AKTIVITE_IKON = {
   olusturuldu: 'folder', atandi: 'kisi', baslandi: 'kalem',
   kontrole: 'saat', revize: 'uyari', onaylandi: 'tik', geri: 'geriAl',
+  bitirdi: 'check',
 };
 
 function aktiviteSatiri(h) {
@@ -16910,7 +16916,13 @@ function aktiviteSatiri(h) {
 }
 
 function panelAktivite() {
-  const hepsi = (DB.hareketler || []).slice()
+  /* Yalnız hâlâ duran görevlerin hareketleri. Silinmiş görevlerden ve eski
+     deneme kayıtlarından kalan öksüz satırlar listeyi kirletiyordu: görev
+     yok olunca satırda yalnız "biri görevi oluşturdu" kalıyordu. */
+  const gecerli = new Set((DB.gorevler || [])
+    .filter(g => DB.gorevGecerli(g)).map(g => g.id));
+  const hepsi = (DB.hareketler || [])
+    .filter(h => h.gorev_id && gecerli.has(h.gorev_id))
     .sort((a, b) => (b.olusturuldu || '').localeCompare(a.olusturuldu || ''))
     .slice(0, 5);
   if (!hepsi.length) return '';

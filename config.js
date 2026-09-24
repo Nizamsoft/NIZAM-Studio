@@ -7,7 +7,7 @@ const APP = {
   name:     'NIZAM | Studio',
   short:    'NIZAM Studio',
   owner:    'Nizam Soft',
-  version: 'v0.231.1',
+  version: 'v0.232.0',
   build:    '2026-09-17',
   /* Studio'nun kendi deposu — "bütün programlarda geçerli olsun"
      istekleri buraya gider. */
@@ -963,6 +963,7 @@ const HAREKET_ADI = {
   revize:      'revize istedi',
   onaylandi:   'görevi onayladı',
   geri:        'görevi geri aldı',
+  bitirdi:     '«bitirdim» dedi',
 };
 
 /* Görev detayındaki geçmiş satırları — yeni görev sisteminin dili.

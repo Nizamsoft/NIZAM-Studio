@@ -1,5 +1,16 @@
 # Değişiklik Günlüğü
 
+## v0.232.0
+- **Son Aktiviteler temizlendi.** Silinmiş görevlerden kalan öksüz kayıtlar
+  listeye girmiyor; yalnız hâlâ duran görevlerin hareketleri görünüyor.
+  «Bitirdim» hareketinin de artık adı ve ikonu var.
+- **Panelde «En yakın bitiş» görevlerden geliyor.** Açık görevler içinde
+  bitiş tarihi en yakın olanın tarihi yazıyor, altında kaç gün kaldığı:
+  *Bugün*, *Yarın*, *2 gün kaldı*, geçmişse kırmızı *3 gün geçti*.
+- **Açık görev sayısı düzeldi.** Eski durum adına (`tamamlandi`) bakıyordu,
+  o yüzden onaylanmış görevler de açık sayılıyordu; genel görevler ise hiç
+  sayılmıyordu.
+
 ## v0.231.1
 - **Ek satırlarında boyut yerine fotoğrafın kendisi.** Hem «Görev ver»
   penceresinde hem görev detayında resim ekleri küçük önizlemesiyle
