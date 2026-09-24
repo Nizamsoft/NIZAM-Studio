@@ -10510,9 +10510,12 @@ button.kt {
 }
 .gek-ik {
   flex: 0 0 auto; display: flex; align-items: center; justify-content: center;
-  width: 36px; height: 36px; border-radius: 10px;
+  width: 46px; height: 46px; border-radius: 11px;
   background: var(--surface); border: 1px solid var(--line-3); color: var(--ink-soft);
 }
+/* Fotoğraf ekiyse kutunun içi doğrudan görselin kendisi oluyor. */
+.gek-ik.gek-on { padding: 0; overflow: hidden; background: var(--yuva); }
+.gek-ik.gek-on img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .gek-ik svg, .gek-in svg, .gek-sil svg { fill: none; stroke: currentColor; stroke-width: 1.9; }
 .gek-ik .dolgu, .gek-in .dolgu, .gek-sil .dolgu { display: none; }
 .gek-yz { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }

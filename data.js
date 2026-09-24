@@ -777,9 +777,11 @@ const DB = {
     if (dosya.size > 10 * 1024 * 1024) throw new Error('Dosya 10 MB\'ı geçmesin.');
 
     /* Resimse küçültülüyor: ek olarak gönderilen ekran görüntüleri
-       gereksiz yere megabaytlarca yer kaplıyordu. */
+       gereksiz yere megabaytlarca yer kaplıyordu. 1200 piksel ekranda
+       rahat okunuyor, WebP'ye çevrilince 1 MB'lık fotoğraf ~150 KB kalıyor.
+       PDF, Excel gibi dosyalar olduğu gibi gidiyor. */
     const gonderilecek = /^image\//.test(dosya.type) && !/svg/i.test(dosya.type)
-      ? await this.gorseliKucult(dosya, 1600, 0.85) : dosya;
+      ? await this.gorseliKucult(dosya, 1200, 0.72) : dosya;
 
     const temizAd = String(gonderilecek.name || 'dosya')
       .replace(/[^\w.\-]+/g, '-').slice(-60);

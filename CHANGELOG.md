@@ -1,5 +1,14 @@
 # Değişiklik Günlüğü
 
+## v0.231.1
+- **Ek satırlarında boyut yerine fotoğrafın kendisi.** Hem «Görev ver»
+  penceresinde hem görev detayında resim ekleri küçük önizlemesiyle
+  görünüyor, diğer dosyalar (PDF, Excel, Word…) dosya ikonuyla; KB/MB
+  yazısı kaldırıldı.
+- **Ekler daha az yer kaplıyor.** Resimler 1600 px / 0,85 yerine
+  1200 px / 0,72 ile WebP'ye çevriliyor; 1 MB'lık bir fotoğraf depoda
+  yaklaşık 150 KB tutuyor.
+
 ## v0.231.0
 - **Göreve ek eklenebiliyor.** «Görev ver» penceresinde *Dosya ekle* ile
   birden çok dosya seçiliyor (resimler yüklenirken küçültülüyor, sınır

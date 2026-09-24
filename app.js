@@ -12831,17 +12831,24 @@ function gorevVerAc() {
     /* Dosyalar görev kaydı açıldıktan SONRA yükleniyor (yolu görev
        kimliğinden türüyor); o yüzden burada yalnız bekletiliyor. */
     const dosyalar = [];
+    /* Resimlerin küçük önizlemesi: adres dosya seçilince üretiliyor,
+       satır silinince geri veriliyor. */
+    const onizleme = new Map();
+    const resimMi = d => /^image\//.test((d && d.type) || '');
 
     const ekleriCiz = () => {
       $('#gvr-ekler', kutu).innerHTML = dosyalar.map((d, i) => `
         <div class="gek">
-          <span class="gek-ik">${svg(ICON.dosya, 16)}</span>
-          <span class="gek-yz"><b>${esc(d.name)}</b><i>${kb(d.size)}</i></span>
+          <span class="gek-ik${resimMi(d) ? ' gek-on' : ''}">${resimMi(d)
+            ? `<img src="${onizleme.get(d)}" alt="">` : svg(ICON.dosya, 16)}</span>
+          <span class="gek-yz"><b>${esc(d.name)}</b></span>
           <button class="gek-sil" type="button" data-gvr-sil="${i}"
                   aria-label="Kaldır">${svg(ICON.kapat, 14)}</button>
         </div>`).join('');
       $$('[data-gvr-sil]', kutu).forEach(b => b.addEventListener('click', () => {
-        dosyalar.splice(Number(b.dataset.gvrSil), 1); ekleriCiz();
+        const [cikan] = dosyalar.splice(Number(b.dataset.gvrSil), 1);
+        if (onizleme.has(cikan)) { URL.revokeObjectURL(onizleme.get(cikan)); onizleme.delete(cikan); }
+        ekleriCiz();
       }));
     };
 
@@ -12852,6 +12859,7 @@ function gorevVerAc() {
       alan.addEventListener('change', () => {
         Array.from(alan.files || []).forEach(d => {
           if (d.size > 10 * 1024 * 1024) { toast(d.name + ' 10 MB\'ı geçiyor.', 'uyari'); return; }
+          if (resimMi(d)) onizleme.set(d, URL.createObjectURL(d));
           dosyalar.push(d);
         });
         alan.remove(); ekleriCiz();
@@ -12964,12 +12972,15 @@ function gorevKartiHtml(g) {
 
     ${(g.ekler || []).length ? `<span class="label">Ekler</span>
       <div class="gek-liste">
-        ${g.ekler.map(x => `
+        ${g.ekler.map(x => {
+          const resim = /^image\//.test(x.tur || '');
+          return `
           <button class="gek" type="button" data-gk="ek" data-deger="${esc(x.yol)}">
-            <span class="gek-ik">${svg(ICON.dosya, 16)}</span>
-            <span class="gek-yz"><b>${esc(x.ad)}</b><i>${kb(x.boyut || 0)}</i></span>
+            <span class="gek-ik${resim ? ' gek-on' : ''}">${resim
+              ? `<img data-gek-yol="${esc(x.yol)}" alt="">` : svg(ICON.dosya, 16)}</span>
+            <span class="gek-yz"><b>${esc(x.ad)}</b></span>
             <span class="gek-in">${svg(ICON.ice, 15)}</span>
-          </button>`).join('')}
+          </button>`; }).join('')}
       </div>` : ''}
 
     ${hareket.length ? `<span class="label">Geçmiş</span>
@@ -12997,6 +13008,12 @@ function gorevKartiHtml(g) {
 function gorevKartiBagla(kutu, id) {
   $$('[data-gk]', kutu).forEach(el => {
     el.addEventListener('click', () => gorevEylemi(el.dataset.gk, id, el.dataset.deger));
+  });
+  /* Kova private: önizlemenin adresi de imzayla üretiliyor. */
+  $$('[data-gek-yol]', kutu).forEach(im => {
+    DB.gorevEkAdresi(im.dataset.gekYol)
+      .then(adres => { if (adres) im.src = adres; })
+      .catch(() => { im.remove(); });
   });
 }
 
