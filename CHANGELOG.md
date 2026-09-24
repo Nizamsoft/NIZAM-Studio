@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.233.2
+- **Görev atanmış üye silinemiyordu.** Üye silinince veritabanı görevlerin
+  «atanan» alanını boşaltmaya çalışıyor, bu güncelleme de görev kilidi
+  tetikleyicisine takılıyordu. `sql/32-gorev-kilit-uye-silme.sql` bunu
+  düzeltiyor — Supabase'de bir kez çalıştırılmalı.
+
 ## v0.233.1
 - **«Bitirdim» düğmesi «Onaya gönder» oldu.** Görevi alan basınca görev
   *Onay bekliyor*'a düşüyor, görevi verene bildirim gidiyor; veren

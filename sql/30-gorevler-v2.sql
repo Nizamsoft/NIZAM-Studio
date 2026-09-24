@@ -85,6 +85,12 @@ as $$
 begin
   new.guncellendi := now();
 
+  /* Oturum yok: güncelleme sunucudan geliyor (örneğin üye silinince yabancı
+     anahtarın kendi yaptığı güncelleme). Kural işletilmiyor — bkz. sql/32. */
+  if auth.uid() is null then
+    return new;
+  end if;
+
   /* Görevi veren her şeyi değiştirebilir. */
   if old.olusturan = auth.uid() then
     return new;
