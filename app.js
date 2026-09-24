@@ -12759,7 +12759,7 @@ function onaySor({ baslik, mesaj, buton = 'Sil' }) {
 /* Görev ver — kime, genel mi proje mi, başlık, metin, bitiş tarihi.
    Eski "yeniGorevAc" penceresi modül/sayfa/öncelik/standart soruyordu;
    bu sistemde görev insana veriliyor, o alanların karşılığı yok. */
-function gorevVerAc() {
+function gorevVerAc(secili = '') {
   modalHepsiniKapat();
   const ben = AUTH.user ? AUTH.user.id : '';
   const kisiler = (DB.kisilerHepsi || DB.kisiler || []).filter(k => k.aktif !== false);
@@ -12770,13 +12770,16 @@ function gorevVerAc() {
     return;
   }
 
+  /* Ekip kartının menüsünden gelindiyse o üye seçili açılıyor. */
+  const ilk = kisiler.find(k => k.id === secili) || kisiler[0];
+
   modalAc(`
     ${modalBaslik(ICON.check, 'Görev ver', 'Ekipten birine iş ver, bitiş tarihini yaz.')}
 
     <span class="gf-et" style="margin-bottom:8px">Kime</span>
     <div class="gvr-kisiler">
-      ${kisiler.map((k, i) => `
-        <button class="gvr-k ${i === 0 ? 'on' : ''}" type="button" data-gvr-kisi="${k.id}">
+      ${kisiler.map(k => `
+        <button class="gvr-k ${k.id === ilk.id ? 'on' : ''}" type="button" data-gvr-kisi="${k.id}">
           <span class="gv-foto ${k.foto ? 'resimli' : ''}"
                 ${k.foto ? `style="background-image:url('${esc(k.foto)}')"` : ''}>
             <b>${esc(basHarf(k.ad || k.ad_soyad || '?'))}</b></span>
@@ -12827,7 +12830,7 @@ function gorevVerAc() {
       <button class="btn btn-ghost" data-gvr="iptal" type="button">Vazgeç</button>
       <button class="btn btn-primary" data-gvr="gonder" type="button"><span>Gönder</span></button>
     </div>`, kutu => {
-    let kisi = kisiler[0].id, konu = 'genel';
+    let kisi = ilk.id, konu = 'genel';
     /* Dosyalar görev kaydı açıldıktan SONRA yükleniyor (yolu görev
        kimliğinden türüyor); o yüzden burada yalnız bekletiliyor. */
     const dosyalar = [];
@@ -15358,12 +15361,15 @@ async function eylemCalistir(el) {
     const ben = AUTH.user && k.id === AUTH.user.id;
 
     const sec = await secenekSor(k.ad || 'Ekip üyesi', [
+      { anahtar: 'gorev', ad: 'Görev ver', ikon: ICON.check,
+        alt: ben ? 'Kendine iş yaz' : 'Bu üyeye iş ver' },
       { anahtar: 'duzenle', ad: 'Düzenle', ikon: ICON.kalem },
       ben
         ? { anahtar: 'yok', ad: 'Kendini silemezsin', ikon: ICON.kilit, alt: 'Başka bir yönetici silebilir' }
         : { anahtar: 'sil', ad: 'Üyeyi sil', ikon: ICON.cop, tehlike: true, alt: 'Geri alınamaz' },
     ]);
     if (!sec || sec === 'yok') return;
+    if (sec === 'gorev')   return gorevVerAc(id);
     if (sec === 'duzenle') return kisiDuzenle(id);
 
     const onay = await yazarakOnaySor({

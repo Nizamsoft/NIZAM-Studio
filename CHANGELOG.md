@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## v0.232.1
+- **Ekip kartının üç nokta menüsüne «Görev ver» eklendi.** Basınca görev
+  penceresi o üye seçili olarak açılıyor.
+
 ## v0.232.0
 - **Son Aktiviteler temizlendi.** Silinmiş görevlerden kalan öksüz kayıtlar
   listeye girmiyor; yalnız hâlâ duran görevlerin hareketleri görünüyor.
