@@ -13,6 +13,12 @@
 -- İki kez çalıştırsan da bozulmaz.
 -- ==========================================================================
 
+-- 0) Eski kilidi kaldır ----------------------------------------------------
+--    Aşağıdaki UPDATE durumları çeviriyor; eski tetikleyici SQL editöründe
+--    "kullanıcı kimliği yok" diye buna izin vermiyordu. Yeni hâli en sonda
+--    yeniden kuruluyor.
+drop trigger if exists gorev_kilit_tetik on public.tasks;
+
 -- 1) Proje artık zorunlu değil — "Genel" görevler için ---------------------
 alter table public.tasks alter column proje_id drop not null;
 
@@ -107,3 +113,8 @@ begin
   raise exception 'Bu görev seninle ilgili değil.';
 end;
 $$;
+
+drop trigger if exists gorev_kilit_tetik on public.tasks;
+create trigger gorev_kilit_tetik
+  before update on public.tasks
+  for each row execute function public.gorev_kilit();

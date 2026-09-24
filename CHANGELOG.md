@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.230.1
+- `sql/30-gorevler-v2.sql` düzeltildi: eski görev tetikleyicisi durum
+  çevirme adımını reddediyordu («Bu durumu yalnızca yönetici verebilir»),
+  çünkü SQL editöründe kullanıcı kimliği yok. Tetikleyici artık en başta
+  düşürülüp en sonda yeniden kuruluyor.
+
 ## v0.230.0
 - **Görev sistemi baştan kuruldu.** Görev artık «Claude'a verilecek iş»
   değil, **ekip üyesine verilen iş**: kime · genel mi bir proje hakkında mı ·
