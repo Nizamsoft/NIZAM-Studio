@@ -10545,3 +10545,75 @@ button.kt {
 }
 .gek-ekle svg { fill: none; stroke: currentColor; stroke-width: 1.9; }
 .gek-ekle .dolgu { display: none; }
+
+/* ==========================================================================
+   30 · BİLDİRİMLER
+   ========================================================================== */
+
+.bld-tepe {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 16px;
+}
+.bld-tepe .modal-h {
+  flex: 1; font-family: var(--yazi-baslik); font-size: 23px; font-weight: 800;
+  letter-spacing: -.02em;
+}
+.bld-hepsi {
+  flex: 0 0 auto; display: inline-flex; align-items: center; gap: 7px;
+  height: 38px; padding: 0 14px; border-radius: 999px; cursor: pointer;
+  background: var(--red-soft);
+  border: 1px solid var(--red-cizgi);
+  font-family: var(--yazi-etiket); font-size: 12.5px; font-weight: 700;
+  color: var(--red-ink); white-space: nowrap;
+}
+.bld-hepsi svg { fill: none; stroke: currentColor; stroke-width: 2.2; }
+.bld-hepsi .dolgu { display: none; }
+
+.bld-liste { display: flex; flex-direction: column; }
+.bld {
+  display: flex; align-items: flex-start; gap: 13px; width: 100%; text-align: left;
+  padding: 15px 2px; cursor: pointer; font-family: inherit;
+  background: none; border: 0; border-bottom: 1px solid var(--line-3);
+}
+.bld:last-child { border-bottom: 0; }
+.bld .gv-foto { margin-top: 1px; }
+
+.bld-orta { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.bld-orta b {
+  font-size: 14.5px; font-weight: 600; color: var(--ink-soft); line-height: 1.35;
+}
+.bld.yeni .bld-orta b { font-weight: 700; color: var(--ink-strong); }
+.bld-orta i {
+  font-style: normal; font-size: 13px; color: var(--ink-faint); line-height: 1.35;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+/* Görevin nereye ait olduğunu söyleyen küçük etiket. */
+.bld-orta em {
+  align-self: flex-start; margin-top: 4px; font-style: normal;
+  padding: 3px 9px; border-radius: 7px;
+  background: var(--yuva); border: 1px solid var(--line-3);
+  font-family: var(--yazi-etiket); font-size: 11.5px; font-weight: 600;
+  color: var(--ink-dim); max-width: 100%;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+.bld-sag {
+  flex: 0 0 auto; display: flex; align-items: center; gap: 8px; margin-top: 2px;
+}
+.bld-sag u { text-decoration: none; font-size: 12px; color: var(--ink-faint); white-space: nowrap; }
+.bld-sag s {
+  width: 8px; height: 8px; border-radius: 999px;
+  background: var(--red); text-decoration: none;
+}
+
+/* Liste uzun: pencere ekranı taşırmasın, kendi içinde kaysın. */
+.bld-pencere .bld-liste { max-height: 62vh; overflow-y: auto; }
+
+@media (max-width: 520px) {
+  .bld-tepe .modal-h { font-size: 21px; }
+  .bld-hepsi { height: 34px; padding: 0 11px; font-size: 11.5px; }
+  .bld-orta b { font-size: 13.5px; }
+  /* Saat ile nokta yan yana kalsın; yazı küçülüyor ki başlık bölünmesin. */
+  .bld-sag { gap: 7px; }
+  .bld-sag u { font-size: 11px; }
+  .bld-sag s { width: 7px; height: 7px; }
+}

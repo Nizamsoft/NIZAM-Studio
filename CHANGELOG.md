@@ -1,5 +1,14 @@
 # Değişiklik Günlüğü
 
+## v0.233.0
+- **Zil artık bildirimleri açıyor.** Üstteki zile basınca «Bildirimler»
+  listesi açılıyor: kim ne yaptı, hangi görevde, ne kadar önce. Kategori
+  sekmesi yok, hepsi tek listede.
+- Okunmamışlar kalın ve yanında kırmızı nokta; **Tümünü okundu say** ile
+  hepsi temizleniyor. Bir bildirime basınca o görevin kartı açılıyor.
+- **Zilin kırmızı noktası** artık okunmamış bildirimi gösteriyor. Eskiden
+  kaldırılmış durum adlarına bakıyordu, hiç sönmüyordu.
+
 ## v0.232.1
 - **Ekip kartının üç nokta menüsüne «Görev ver» eklendi.** Basınca görev
   penceresi o üye seçili olarak açılıyor.

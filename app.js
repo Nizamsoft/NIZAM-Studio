@@ -7561,6 +7561,143 @@ function projelerEkrani(kova) {
     ${govde}`;
 }
 
+/* ==========================================================================
+   BİLDİRİMLER
+   ==========================================================================
+   Ayrı bir bildirim tablosu yok: liste görev hareketlerinden türüyor.
+   Beni ilgilendiren hareket, bana verilmiş ya da benim verdiğim bir görevde
+   BAŞKASININ yaptığı harekettir; kendi yaptığım şey bana haber olmaz.
+   "Okundu" bilgisi bu cihazda duruyor (localStorage): sunucuda bir sütun
+   açmadan çalışsın diye. Başka cihazda tekrar okunmamış görünür. */
+const BILDIRIM_OKUNDU = 'ns-bildirim-okundu';
+
+function bildirimOkunanlar() {
+  try { return new Set(JSON.parse(localStorage.getItem(BILDIRIM_OKUNDU) || '[]')); }
+  catch (_) { return new Set(); }
+}
+
+/* Son 300 kayıt yetiyor; liste zaten bu kadar geriye bakmıyor. */
+function bildirimOkunanYaz(kume) {
+  try { localStorage.setItem(BILDIRIM_OKUNDU, JSON.stringify(Array.from(kume).slice(-300))); }
+  catch (_) {}
+}
+
+const BILDIRIM_BASLIK = {
+  olusturuldu: 'yeni bir görev verdi',
+  atandi:      'görevi sana aktardı',
+  bitirdi:     'görevi bitirdi',
+  onaylandi:   'görevi onayladı',
+  geri:        'görevi geri gönderdi',
+  baslandi:    'görevi yeniden açtı',
+};
+
+function bildirimListesi() {
+  const ben = AUTH.user ? AUTH.user.id : '';
+  if (!ben) return [];
+  const okunan = bildirimOkunanlar();
+
+  return (DB.hareketler || []).map(h => {
+    const g = DB.gorev(h.gorev_id);
+    if (!g || !DB.gorevGecerli(g)) return null;
+    if (h.kim === ben) return null;
+    const bana = g.atanan === ben;
+    if (!bana && g.olusturan !== ben) return null;
+    /* Görev verildi haberi yalnız görevi alana gider. */
+    if ((h.tip === 'olusturuldu' || h.tip === 'atandi') && !bana) return null;
+    const ne = BILDIRIM_BASLIK[h.tip];
+    if (!ne) return null;
+
+    const pr = g.proje_id ? DB.proje(g.proje_id) : null;
+    return {
+      id: h.id, gorev: g.id, kim: h.kim,
+      baslik: (DB.kisiAdi(h.kim) || 'Biri') + ' ' + ne,
+      alt: g.baslik || '',
+      etiket: pr ? projeAdi(pr) : 'Genel',
+      zaman: h.olusturuldu,
+      okundu: okunan.has(h.id),
+    };
+  }).filter(Boolean)
+    .sort((a, b) => (b.zaman || '').localeCompare(a.zaman || ''))
+    .slice(0, 40);
+}
+
+function bildirimOkunmamis() {
+  return bildirimListesi().filter(b => !b.okundu).length;
+}
+
+/* "5 dakika önce" — bildirimde saat değil, ne kadar önce olduğu okunuyor. */
+function bildirimZaman(iso) {
+  if (!iso) return '';
+  const fark = Math.round((Date.now() - new Date(iso)) / 1000);
+  if (fark < 60)     return 'az önce';
+  if (fark < 3600)   return Math.floor(fark / 60) + ' dakika önce';
+  if (fark < 86400)  return Math.floor(fark / 3600) + ' saat önce';
+  if (fark < 604800) return Math.floor(fark / 86400) + ' gün önce';
+  return tarihYaz(iso);
+}
+
+function bildirimSatiri(b) {
+  const k = (DB.kisilerHepsi || DB.kisiler || []).find(x => x.id === b.kim);
+  const foto = k && k.foto;
+  return `
+    <button class="bld ${b.okundu ? '' : 'yeni'}" type="button" data-bl="${esc(b.gorev)}"
+            data-bl-h="${esc(b.id)}">
+      <span class="gv-foto ${foto ? 'resimli' : ''}"
+            ${foto ? `style="background-image:url('${esc(foto)}')"` : ''}>
+        <b>${esc(basHarf((k && k.ad) || '?'))}</b></span>
+      <span class="bld-orta">
+        <b>${esc(b.baslik)}</b>
+        ${b.alt ? `<i>${esc(b.alt)}</i>` : ''}
+        <em>${esc(b.etiket)}</em>
+      </span>
+      <span class="bld-sag">
+        <u>${esc(bildirimZaman(b.zaman))}</u>
+        ${b.okundu ? '' : '<s aria-label="Okunmadı"></s>'}
+      </span>
+    </button>`;
+}
+
+function bildirimlerAc() {
+  modalHepsiniKapat();
+  const liste = bildirimListesi();
+
+  modalAc(`
+    <div class="bld-tepe">
+      <h3 class="modal-h">Bildirimler</h3>
+      ${liste.some(b => !b.okundu)
+        ? `<button class="bld-hepsi" type="button" data-bl-hepsi="1">
+             ${svg(ICON.check, 15)}<span>Tümünü okundu say</span></button>` : ''}
+    </div>
+    ${liste.length
+      ? `<div class="bld-liste">${liste.map(bildirimSatiri).join('')}</div>`
+      : `<div class="bos-kutu">${svg(ICON.zil, 18)}
+           <span><b>Henüz bildirim yok.</b> Sana bir görev verildiğinde ya da
+           verdiğin görevde bir hareket olduğunda burada görünür.</span></div>`}
+    <div class="modal-alt">
+      <button class="btn btn-ghost" data-bl-kapat="1" type="button">Kapat</button>
+    </div>`, kutu => {
+    $('[data-bl-kapat]', kutu).addEventListener('click', modalKapat);
+
+    const hepsi = $('[data-bl-hepsi]', kutu);
+    if (hepsi) hepsi.addEventListener('click', () => {
+      const okunan = bildirimOkunanlar();
+      liste.forEach(b => okunan.add(b.id));
+      bildirimOkunanYaz(okunan);
+      zilNoktasi();
+      modalKapat();
+      bildirimlerAc();
+    });
+
+    $$('[data-bl]', kutu).forEach(el => el.addEventListener('click', () => {
+      const okunan = bildirimOkunanlar();
+      okunan.add(el.dataset.blH);
+      bildirimOkunanYaz(okunan);
+      zilNoktasi();
+      gorevKartiAc(el.dataset.bl);
+    }));
+  }, 'genis bld-pencere');
+}
+
 /* Ağaç içindeki tek satırlık görev */
 function gorevSatiri(g) {
   return `
@@ -8313,13 +8450,9 @@ function menuyuCiz() {
    seçiliyor; yoksa biri ötekinin yerine yazılıyordu. */
 function zilNoktasi() {
   const zilN = $('#btn-zil .zil-nokta');
-  if (zilN) {
-    const bekleyen = AUTH.yonetici
-      ? DB.gorevleri({ durum: 'kontrolde' }).length
-      : DB.gorevleri({ kisi: AUTH.user ? AUTH.user.id : '' })
-          .filter(g => g.durum !== 'tamamlandi').length;
-    zilN.classList.toggle('hidden', !bekleyen);
-  }
+  /* Nokta = okunmamış bildirim. Eskiden 'kontrolde'/'tamamlandi' durumlarına
+     bakıyordu; yeni görev sisteminde o adlar yok, nokta hiç sönmüyordu. */
+  if (zilN) zilN.classList.toggle('hidden', !bildirimOkunmamis());
 
   const sohbetN = $('#btn-sohbet .zil-nokta');
   if (sohbetN) sohbetN.classList.toggle('hidden', !DB.okunmamis());
@@ -17466,9 +17599,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const sohbet = $('#btn-sohbet');
   if (sohbet) sohbet.addEventListener('click', () => gitVeCiz('#/sohbet'));
 
-  /* Zil bekleyen işlere götürüyor. */
+  /* Zil bildirim listesini açıyor. */
   const zil = $('#btn-zil');
-  if (zil) zil.addEventListener('click', () => { location.hash = '#/gorevler'; });
+  if (zil) zil.addEventListener('click', bildirimlerAc);
 
   boot();
 });
