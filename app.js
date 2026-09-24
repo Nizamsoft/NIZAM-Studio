@@ -6828,20 +6828,12 @@ const GUVENLIK_KURULUM_ADIM = [
    test ise projeye bağlı değil: elinde bir adres olmayabilir, program
    Studio akışından hiç geçmemiş olabilir. O yüzden burada dosya adresi
    sorulmuyor; Claude'a prompt veriliyor, dönen JSON yapıştırılıyor.
-   Projeye bağlı olmadığı için künye bu tarayıcıda duruyor. */
-const GUVENLIK_KUNYE_ANAHTAR = 'ns-guvenlik-kunye';
-
-function guvenlikKunyeOku() {
-  try { return JSON.parse(localStorage.getItem(GUVENLIK_KUNYE_ANAHTAR) || 'null'); }
-  catch (_) { return null; }
-}
-
-function guvenlikKunyeYaz(json) {
-  try {
-    if (json) localStorage.setItem(GUVENLIK_KUNYE_ANAHTAR, JSON.stringify(json));
-    else localStorage.removeItem(GUVENLIK_KUNYE_ANAHTAR);
-  } catch (_) {}
-}
+   Künye SAKLANMIYOR: bu ekrandan her seferinde başka bir program test
+   edilebiliyor, kayıtlı bir künye bir sonraki testte yanlış programı
+   anlatırdı. Yapıştırılan künye yalnız ekran açıkken bellekte duruyor,
+   sayfa yenilenince gidiyor — kullan at. */
+function guvenlikKunyeOku() { return GUVENLIK_SAYFA.kunye || null; }
+function guvenlikKunyeYaz(json) { GUVENLIK_SAYFA.kunye = json || null; }
 
 function guvenlikKunyeOzeti(j) {
   if (!j) return '';
@@ -6865,13 +6857,13 @@ function guvenlikKunyeKarti() {
         <span class="btk-yz"><b>Programa özel künye</b>
           <i>${kayitli
             ? esc(guvenlikKunyeOzeti(kayitli))
-            : 'Hangi tablolar var, hangi katman neyi görmemeli — programı tanıyan künye. Claude yazar, sen yapıştırırsın.'}</i></span>
+            : 'Hangi tablolar var, hangi katman neyi görmemeli — test edeceğin programı tanıyan künye. Claude yazar, sen yapıştırırsın.'}</i></span>
       </div>
       ${kayitli ? `
         <div class="gk-ozet" style="margin:0">
           <span class="gk-ozet-ik">${svg(ICON.tik, 15)}</span>
           <span class="gk-ozet-yz"><b>Künye hazır</b>
-            <i>Programa özel denetimler bu künyeyle çalışacak.</i></span>
+            <i>Yalnız bu test için — saklanmıyor, sayfayı yenileyince gider.</i></span>
           <button class="gk-ozet-btn" type="button" data-eylem="guvenlik-kunye-sil">Kaldır</button>
         </div>` : ''}
       ${promptBaglantisi({ tur: 'guvenlikJson',
@@ -10442,7 +10434,8 @@ function templateSihirbaziBagla(el) {
    jetonudur (bütün projelerde SQL çalıştırır); o da AŞAMA 2'de tarayıcıya
    hiç inmeyecek, tek bir Edge Function'ın gizli değişkeni olarak duracak. */
 const GUVENLIK_SAYFA = { url: '', anon: '', eposta: '', calisiyor: false,
-  sonuc: null, harita: null, ustKatmanUyarisi: false, kalintilar: [], tabloKaynagi: '', depo: '' };
+  sonuc: null, harita: null, ustKatmanUyarisi: false, kalintilar: [], tabloKaynagi: '',
+  depo: '', kunye: null };
 
 function guvenlikUuid() {
   if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
@@ -16491,7 +16484,7 @@ async function eylemCalistir(el) {
     const q = json.sql_testi && (Array.isArray(json.sql_testi.sql) || Array.isArray(json.sql_testi.parcalar));
     if (!t && !q) { toast('Künye boş görünüyor — tablolar.liste ya da sql_testi yok.', 'uyari'); return; }
     guvenlikKunyeYaz(json);
-    toast('Künye kaydedildi — ' + guvenlikKunyeOzeti(json) + '.', 'basari');
+    toast('Künye alındı — ' + guvenlikKunyeOzeti(json) + '.', 'basari');
     render();
     return;
   }
@@ -16499,7 +16492,7 @@ async function eylemCalistir(el) {
   if (e === 'guvenlik-kunye-sil') {
     const onay = await onaySor({
       baslik: 'Künye kaldırılsın mı?',
-      mesaj: 'Programa özel senaryolar atlanır; dış kapı ve yetki haritası testleri çalışmaya devam eder.',
+      mesaj: 'Programa özel senaryolar atlanır; dış kapı ve yetki haritası testleri yine çalışır.',
       buton: 'Kaldır',
     });
     if (!onay) return;

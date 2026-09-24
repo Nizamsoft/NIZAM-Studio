@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## v0.235.2
+- **Ayarlar'daki künye saklanmıyor.** O ekrandan her seferinde başka bir
+  program test edilebildiği için yapıştırılan künye yalnız o test boyunca
+  bellekte duruyor; sayfa yenilenince gidiyor.
+
 ## v0.235.1
 - **Künye kartı doğru yere taşındı.** «Programa özel künye» artık
   Ayarlar › Güvenlik Testi'nde; oradaki *guvenlik.json adresi* alanı
