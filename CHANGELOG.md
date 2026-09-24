@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.226.1
+- **Hayalet görevler sayaçlardan düştü.** Silinmiş ya da arşive kaldırılmış
+  bir projenin görev satırları veritabanında kalıyordu; Ekip kartında hiç
+  görevi olmayan kişide «1 proje · 2 görev» yazıyordu. Artık yaşamayan
+  projenin görevi hiçbir sayaca girmiyor (template projelerininki de).
+
 ## v0.226.0
 - **Proje kartı sadeleşti:** logo, ad, sektör, başlangıç tarihi ve yüzde
   kaldı. «0 görev», «X kişi», platform ve durum etiketleri kalktı — çoğu

@@ -8895,6 +8895,8 @@ function ekipKidem(k) {
   return Math.floor(ay / 12) + ' yıl';
 }
 
+/* Hayalet görevler (silinmiş projeden kalan satırlar) DB.gorevleri'nde
+   zaten süzülüyor — bkz. data.js · gorevGecerli. */
 function ekipProjeSayisi(kisiId) {
   const p = new Set();
   DB.gorevleri({ kisi: kisiId }).forEach(g => { if (g.proje_id) p.add(g.proje_id); });

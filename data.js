@@ -356,9 +356,23 @@ const DB = {
   modulleri(pid)   { return this.moduller.filter(m => m.proje_id === pid).sort(siraya); },
   sayfalari(mid)   { return this.sayfalar.filter(s => s.modul_id === mid).sort(siraya); },
 
+  /* Silinmiş ya da arşive kaldırılmış bir projenin görev satırları
+     veritabanında kalabiliyor: proje_id artık hiçbir projeyi göstermiyor.
+     Bu hayalet satırlar sayaçlara giriyordu — hiç görevi olmayan kişinin
+     kartında "1 proje · 2 görev" yazıyordu. Proje adı verilerek sorulan
+     çağrılara dokunulmuyor (orada proje zaten belli).
+     `yuklendi` beklemesi önemli: liste henüz gelmeden süzersek bütün
+     görevler bir an için yok oluyor. */
+  gorevGecerli(g) {
+    if (!this.yuklendi || !g.proje_id) return true;
+    const pr = this.proje(g.proje_id);
+    if (!pr || pr.arsiv) return false;
+    return typeof cekirdekMi !== 'function' || !cekirdekMi(pr);
+  },
+
   gorevleri(sec = {}) {
     return this.gorevler.filter(g =>
-      (sec.proje ? g.proje_id === sec.proje : true) &&
+      (sec.proje ? g.proje_id === sec.proje : this.gorevGecerli(g)) &&
       (sec.modul ? g.modul_id === sec.modul : true) &&
       (sec.sayfa ? g.sayfa_id === sec.sayfa : true) &&
       (sec.kisi  ? g.atanan   === sec.kisi  : true) &&
