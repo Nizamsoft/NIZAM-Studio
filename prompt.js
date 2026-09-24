@@ -798,6 +798,92 @@ const PROMPT = {
      içinde çalıştı); burada yalnız gerçek kısıtlamalar ("kim ne
      yapabilir") koda işleniyor. Sonunda istenen JSON, Studio'nun
      kurulumun bittiğini bilmesi için — palete yazılıyor (bkz. yetki-kod-onayla). */
+  /* Güvenlik kontrolü durağı — programa özel saldırı testinin künyesi.
+     yetkiKur() bu dosyayı depoya YAZDIRIYOR; bu prompt ise dosyası hiç
+     olmayan (Studio akışından geçmemiş, eski) programlar için: Claude
+     JSON'u cevabında veriyor, kullanıcı Studio'ya yapıştırıyor, depoya
+     hiçbir şey yazılmıyor. O yüzden SQL de dosya yolu değil, JSON'un
+     İÇİNDE metin olarak isteniyor. */
+  guvenlikJsonKur(projeId) {
+    const p = DB.proje(projeId);
+    if (!p) return '';
+    const pl = p.palet || {};
+    const roller = rolListesi(pl.roller);
+
+    const s = [];
+    const slug = depoSlug(p.repo);
+    if (slug) {
+      s.push('> ### Depo: `' + slug + '`');
+      s.push('> Bu oturum yalnız bu depoya bağlı olmalı. Deposu farklıysa dur');
+      s.push('> ve söyle.');
+      s.push('');
+    }
+    s.push('# Saldırı testi künyesi (`guvenlik.json`)');
+    s.push('');
+    s.push('Bu programın güvenliğini dışarıdan ölçeceğim. Bunun için programı');
+    s.push('tanıyan bir künyeye ihtiyacım var: hangi tablolar var, hangi');
+    s.push('katman neyi görmemeli, bunu sınayan SQL ne.');
+    s.push('');
+    s.push('**Depoya hiçbir şey yazma, commit atma.** Yalnız aşağıdaki JSON\'u');
+    s.push('cevabında tek bir blok olarak ver — onu kopyalayıp Studio\'ya');
+    s.push('yapıştıracağım.');
+    s.push('');
+    if (roller.length) {
+      s.push('## Katmanlar (dar yetkiden genişe)');
+      s.push('');
+      const gorev = pl.rolGorev || {};
+      roller.forEach((ad, i) => {
+        const g = (gorev[ad] || '').trim();
+        s.push(`${i + 1}. **${ad}**${g ? ' — ' + g : ''}`);
+      });
+      s.push('');
+    }
+    s.push('## İstediğim JSON');
+    s.push('');
+    s.push('```json');
+    s.push('{');
+    s.push('  "veritabani_surumu": "<depodaki en son göç dosyasının numarası>",');
+    s.push('  "tablolar": { "liste": ["tablo_adi", "..."] },');
+    s.push('  "fonksiyonlar": { "deneme_guvenli": "<rpc adi>" },');
+    s.push('  "sunucu_islevi": { "ad": "<edge function adi>" },');
+    s.push('  "sql_testi": {');
+    s.push('    "sql": ["<1. parça>", "<2. parça>", "<3. parça>"],');
+    s.push('    "sonuc_tablosu": "ns_guvenlik_sonuc"');
+    s.push('  }');
+    s.push('}');
+    s.push('```');
+    s.push('');
+    s.push('Alanlar:');
+    s.push('- **`tablolar.liste`** — satır güvenliği altındaki **bütün**');
+    s.push('  tabloların adları. Dışarıdan okumayı/değiştirmeyi deneyeceğim.');
+    s.push('- **`fonksiyonlar.deneme_guvenli`** — dışarıdan çağrılması zararsız');
+    s.push('  **tek** rpc fonksiyonunun adı (veri değiştirmeyen bir tanesi).');
+    s.push('  Böyle bir fonksiyon yoksa alanı hiç yazma.');
+    s.push('- **`sunucu_islevi.ad`** — yetki isteyen Edge Function\'ın adı');
+    s.push('  (genelde kullanıcı ekleme). Yoksa alanı hiç yazma.');
+    s.push('- **`sql_testi.sql`** — dosya yolu DEĞİL, SQL\'in kendisi: üç metin,');
+    s.push('  sırayla çalıştırılacak biçimde:');
+    s.push('  **1)** sahte kullanıcı/veri ile sahneyi kur ve `sonuc_tablosu`\'nu aç,');
+    s.push('  **2)** o sahte kullanıcının kimliğiyle yetkisi olmayan şeylere');
+    s.push('  erişmeyi dene ve her denemeyi sonuç tablosuna yaz,');
+    s.push('  **3)** açtığın her şeyi (tablo dahil) temizle.');
+    s.push('  Parçalar **ayrı ayrı** çalıştırılıyor; birinin açtığını sonraki');
+    s.push('  görür ama aynı istekte değil. JSON içinde metin oldukları için');
+    s.push('  satır sonlarını `\\n` ile yaz.');
+    s.push('- **`sql_testi.sonuc_tablosu`** — 2. parçanın yazdığı tablo.');
+    s.push('  Sütunları: `kim` (hangi katman), `deneme` (ne denendi), `sonuc`');
+    s.push('  (**`AÇIK`** / **`KAPALI`** / `BİLGİ`), `ayrinti` (kısa açıklama).');
+    s.push('  Hükmü sen veriyorsun — bu satırları olduğu gibi göstereceğim.');
+    s.push('');
+    s.push('Saldırı senaryosunu programın **gerçek** kurallarına göre kur:');
+    s.push('önce depodaki göç dosyalarını ve politikaları oku, hangi katman');
+    s.push('neyi görmemeliyse **tam onu** denesin. Geçeceğini bildiğin şeyleri');
+    s.push('değil, kapıda durması gerekenleri dene.');
+    s.push('');
+    s.push('Başka hiçbir şey yazma — yalnız tek bir JSON bloğu ver.');
+    return s.join('\n');
+  },
+
   yetkiKur(projeId) {
     const p = DB.proje(projeId);
     if (!p) return '';

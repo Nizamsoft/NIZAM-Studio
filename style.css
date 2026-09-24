@@ -10189,6 +10189,7 @@ textarea.fm-gir { height: auto; padding: 0 0 12px; resize: vertical; line-height
 .btk-ik.kirmizi { background: var(--red-soft); color: var(--red-ink); }
 .btk-ik.mavi    { background: #eef3fc; color: #3a62a8; }
 .btk-ik.yesil   { background: var(--done-soft); color: var(--st-done-t); }
+.btk-ik.mor     { background: #f0ebfd; color: #6a45c8; }
 .btk-no {
   flex: 0 0 auto; align-self: flex-start;
   padding: 3px 9px; border-radius: 999px;

@@ -1,5 +1,14 @@
 # Değişiklik Günlüğü
 
+## v0.235.0
+- **`guvenlik.json`'u olmayan program da tam test edilebiliyor.** Güvenlik
+  kontrolü durağına «Programa özel künye» kartı eklendi: Claude'a prompt
+  verilir, dönen JSON panodan yapıştırılır, projenin kaydında durur. Depoya
+  hiçbir şey yazılmaz, adres alanı da kullanılmaz.
+- Programa özel SQL artık künyenin **içinde** de gelebiliyor
+  (`sql_testi.sql`); eski dosya yolu biçimi (`sql_testi.parcalar`) aynen
+  çalışmaya devam ediyor.
+
 ## v0.234.0
 - **Ayarlar'a masaüstüne özel düzen.** Geniş ekranda tek dar sütun yerine
   iki sütunlu kart ızgarası: hesap künyesi tepede tam genişlikte ve
