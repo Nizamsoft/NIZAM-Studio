@@ -737,11 +737,14 @@ const DB = {
 
   /* ---------- Görevler ---------- */
 
-  async gorevOlustur({ proje_id, modul_id, sayfa_id, baslik, aciklama, oncelik, atanan, standartlar }) {
+  async gorevOlustur({ proje_id, modul_id, sayfa_id, baslik, aciklama, oncelik,
+                      atanan, bitis, standartlar }) {
     yazmaKontrol();
 
     const { data, error } = await AUTH.db.from('tasks').insert({
-      proje_id,
+      /* Proje boş olabilir: "Genel" görev hiçbir projeye bağlı değil. */
+      proje_id: proje_id || null,
+      bitis: bitis || null,
       modul_id: modul_id || null,
       sayfa_id: sayfa_id || null,
       baslik: baslik.trim(),
@@ -776,12 +779,13 @@ const DB = {
     const gorev = this.gorev(id);
     if (!gorev) throw new Error('Görev bulunamadı.');
 
+    /* Üç durum: bekliyor → bitirdi → onaylandi. "bekliyor"a dönüş ancak
+       veren geri gönderdiğinde olur, o yüzden hareketin adı "geri". */
     const tip = {
-      gelistiriliyor: gorev.durum === 'kontrolde' ? 'revize' : 'baslandi',
-      kontrolde:      'kontrole',
-      tamamlandi:     'onaylandi',
-      yapilacak:      'geri',
-    }[yeniDurum];
+      bitirdi:   'bitirdi',
+      onaylandi: 'onaylandi',
+      bekliyor:  gorev.durum === 'bitirdi' ? 'geri' : 'baslandi',
+    }[yeniDurum] || yeniDurum;
 
     const { error } = await AUTH.db.from('tasks').update({ durum: yeniDurum }).eq('id', id);
     if (error) throw new Error(veriHatasi(error));

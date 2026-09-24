@@ -10361,3 +10361,142 @@ button.kt {
 .gf .anl-kutu.kisa { min-height: 88px; }
 /* Seçim kutusundaki ok aşağıyı göstersin. */
 .gf-kutu select ~ svg { transform: rotate(90deg); }
+
+/* ==========================================================================
+   29 · GÖREVLER — kişiye verilen iş
+   ========================================================================== */
+.gv-sekme {
+  display: flex; gap: 0; margin: 4px 0 14px;
+  border-bottom: 1px solid var(--line-3); overflow-x: auto;
+  scrollbar-width: none;
+}
+.gv-sekme::-webkit-scrollbar { display: none; }
+.gv-s {
+  flex: 0 0 auto; display: inline-flex; align-items: center; gap: 7px;
+  height: 46px; padding: 0 14px; border: 0; background: none; cursor: pointer;
+  border-bottom: 2px solid transparent; margin-bottom: -1px; white-space: nowrap;
+  font-family: var(--yazi-etiket); font-size: 13.5px; font-weight: 600; color: var(--ink-dim);
+}
+.gv-s em {
+  padding: 1px 7px; border-radius: 999px; background: var(--yuva);
+  font-style: normal; font-size: 11.5px; font-weight: 700; color: var(--ink-soft);
+}
+.gv-s.on { color: var(--red-ink); border-bottom-color: var(--red); }
+.gv-s.on em { background: var(--red-soft); color: var(--red-ink); }
+
+.gv-liste { display: flex; flex-direction: column; gap: 10px; }
+.gv {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 13px; border-radius: 16px; cursor: pointer;
+  background: var(--surface); border: 1px solid var(--line-3);
+}
+.gv-foto {
+  flex: 0 0 auto; display: flex; align-items: center; justify-content: center;
+  width: 42px; height: 42px; border-radius: 999px;
+  background: var(--yuva) center/cover no-repeat; border: 1px solid var(--line-3);
+}
+.gv-foto b { font-family: var(--yazi-etiket); font-size: 14px; font-weight: 700; color: var(--ink-soft); }
+.gv-foto.resimli b { display: none; }
+.gv-foto.kucuk { width: 30px; height: 30px; }
+.gv-foto.kucuk b { font-size: 11px; }
+.gv-yz { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.gv-ust { display: flex; align-items: center; gap: 8px; }
+.gv-ust b {
+  flex: 1; min-width: 0; font-family: var(--yazi-etiket); font-size: 13px;
+  font-weight: 600; color: var(--ink-soft);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.gv-durum {
+  flex: 0 0 auto; padding: 3px 9px; border-radius: 999px;
+  background: var(--yuva); color: var(--ink-soft);
+  font-style: normal; font-size: 11.5px; font-weight: 600;
+}
+.gv-durum.bitirdi   { background: #eef3fc; color: #3a62a8; }
+.gv-durum.onaylandi { background: var(--done-soft); color: var(--st-done-t); }
+.gv-durum.buyuk {
+  display: inline-block; margin: 0 0 14px; padding: 5px 12px; font-size: 13px;
+}
+.gv-baslik {
+  font-family: var(--yazi-etiket); font-size: 15px; font-weight: 700;
+  line-height: 1.35; color: var(--ink-strong);
+}
+.gv-alt { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 3px; }
+.gv-alt em {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-style: normal; font-size: 12px; color: var(--ink-dim);
+}
+.gv-alt em svg { fill: none; stroke: currentColor; stroke-width: 1.9; }
+.gv-alt em .dolgu { display: none; }
+.gv-proje {
+  padding: 2px 9px; border-radius: 999px; background: var(--yuva); color: var(--ink-soft) !important;
+}
+.gv-sure { font-weight: 600; }
+.gv-sure.yakin { color: var(--uyari, #b8801a) !important; }
+.gv-sure.gecti { color: var(--red-ink) !important; }
+.gv-ok { flex: 0 0 auto; align-self: center; line-height: 0; color: var(--ink-faint); }
+.gv-ok svg { fill: none; stroke: currentColor; stroke-width: 2; }
+.gv-ok .dolgu { display: none; }
+
+/* ---------- Görev detayı ---------- */
+.gd-liste { display: flex; flex-direction: column; }
+.gd-s {
+  display: flex; align-items: center; gap: 12px;
+  padding: 11px 0; border-bottom: 1px solid var(--line-3);
+}
+.gd-s:last-child { border-bottom: 0; }
+.gd-et {
+  flex: 0 0 auto; display: inline-flex; align-items: center; gap: 7px;
+  min-width: 110px; font-size: 13px; color: var(--ink-dim);
+}
+.gd-et svg { fill: none; stroke: currentColor; stroke-width: 1.9; }
+.gd-et .dolgu { display: none; }
+.gd-dg {
+  flex: 1; min-width: 0; display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
+  font-size: 14px; color: var(--ink-strong);
+}
+.gd-dg b { font-weight: 700; }
+.gd-dg i { font-style: normal; font-size: 12px; color: var(--ink-faint); }
+.gd-metin {
+  margin-bottom: 4px; padding: 13px; border-radius: 14px;
+  background: var(--yuva); border: 1px solid var(--line-3);
+  font-size: 14px; line-height: 1.6; color: var(--ink); white-space: pre-wrap;
+}
+.gd-gecmis { display: flex; flex-direction: column; }
+.gd-h {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 9px 0; border-bottom: 1px solid var(--line-3);
+}
+.gd-h:last-child { border-bottom: 0; }
+.gd-h-nokta {
+  flex: 0 0 auto; width: 9px; height: 9px; margin-top: 5px;
+  border-radius: 999px; background: var(--line-2);
+}
+.gd-h:first-child .gd-h-nokta { background: var(--red); }
+.gd-h-yz { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.gd-h-yz b { font-size: 13.5px; font-weight: 700; color: var(--ink-strong); }
+.gd-h-yz i { font-style: normal; font-size: 12.5px; color: var(--ink-dim); }
+.gd-h-zaman { flex: 0 0 auto; font-size: 11.5px; color: var(--ink-faint); }
+
+/* ---------- Görev ver penceresi ---------- */
+.gvr-kisiler { display: flex; flex-wrap: wrap; gap: 8px; }
+.gvr-k {
+  display: inline-flex; align-items: center; gap: 9px;
+  padding: 7px 13px 7px 7px; border-radius: 999px; cursor: pointer;
+  background: var(--surface); border: 1.5px solid var(--line-2);
+  font-family: inherit;
+}
+.gvr-k i { font-style: normal; font-size: 13.5px; font-weight: 600; color: var(--ink); }
+.gvr-k .gv-foto { width: 30px; height: 30px; }
+.gvr-k .gv-foto b { font-size: 11px; }
+.gvr-k.on { border-color: var(--ink-strong); background: var(--yuva); }
+.gvr-konu { display: flex; gap: 8px; }
+.gvr-t {
+  flex: 1; height: 42px; border-radius: 12px; cursor: pointer;
+  background: var(--surface); border: 1.5px solid var(--line-2);
+  font-family: var(--yazi-etiket); font-size: 13.5px; font-weight: 600; color: var(--ink-soft);
+}
+.gvr-t.on { border-color: var(--ink-strong); background: var(--yuva); color: var(--ink-strong); }
+.gvr-proje[hidden] { display: none; }
+/* Üç sekme 390px'e sığsın; detaydaki süre rozeti eğik durmasın. */
+.gv-s { padding: 0 10px; font-size: 13px; }
+.gd-dg em { font-style: normal; }

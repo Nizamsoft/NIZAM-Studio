@@ -89,6 +89,51 @@ function rota() {
 
 let YUKLENIYOR     = false;
 let GOREV_FILTRE   = '';
+/* Görevler ekranındaki üç kova. "benim verdiklerim"den kendi kendine
+   verdiklerin çıkarılıyor — yoksa aynı görev iki sekmede birden duruyor. */
+let GOREV_KOVA = 'bana';
+const GOREV_KOVASI = {
+  bana: {
+    ad: 'Bana verilenler', sayac: 'bana',
+    sec: ben => g => g.atanan === ben && g.durum !== 'onaylandi',
+    bosBaslik: 'Sana verilmiş görev yok',
+    bosAlt: 'Şu anda tamamlaman gereken bir görev bulunmuyor.',
+  },
+  benim: {
+    ad: 'Benim verdiklerim', sayac: 'benim',
+    sec: ben => g => g.olusturan === ben && g.atanan !== ben && g.durum !== 'onaylandi',
+    bosBaslik: 'Kimseye görev vermedin',
+    bosAlt: '«Görev ver» ile ekipten birine iş verebilirsin.',
+  },
+  biten: {
+    ad: 'Tamamlananlar', sayac: 'biten',
+    sec: ben => g => g.durum === 'onaylandi' && (g.atanan === ben || g.olusturan === ben),
+    bosBaslik: 'Tamamlanan görev yok',
+    bosAlt: 'Onaylanan görevler buraya düşer.',
+  },
+};
+
+/* Bitişi yakın olan üstte; tarihi olmayanlar en sonda. */
+function gorevSirala(liste) {
+  return liste.slice().sort((a, b) => {
+    const x = a.bitis || '9999-12-31', y = b.bitis || '9999-12-31';
+    return x.localeCompare(y) || (b.olusturuldu || '').localeCompare(a.olusturuldu || '');
+  });
+}
+
+/* Bitiş tarihinden kalan süre: yazısı ve rengi. Tarih yoksa hiç çıkmaz. */
+function gorevSure(bitis) {
+  if (!bitis) return null;
+  const bugun = new Date(); bugun.setHours(0, 0, 0, 0);
+  const son = new Date(bitis + 'T00:00:00');
+  if (isNaN(son)) return null;
+  const gun = Math.round((son - bugun) / 86400000);
+  if (gun < 0)  return { yazi: (-gun) + ' gün geçti', sinif: 'gecti' };
+  if (gun === 0) return { yazi: 'Bugün', sinif: 'gecti' };
+  if (gun === 1) return { yazi: 'Yarın', sinif: 'yakin' };
+  if (gun <= 3)  return { yazi: gun + ' gün kaldı', sinif: 'yakin' };
+  return { yazi: gun + ' gün kaldı', sinif: '' };
+}
 /* Projeler ekranının araçları. Arama DOM üstünde çalışıyor (her harfte
    ekranı yeniden çizmek yazarken imleci kaçırıyor), diğerleri yeniden
    çizdiriyor. Görünüm tercihi kalıcı: kullanıcı her girişte seçmesin. */
@@ -541,29 +586,39 @@ const VIEWS = {
     if (YUKLENIYOR) return iskeletler(4);
     if (DB.hata)    return hataKutusu(DB.hata);
 
-    const benim = AUTH.user ? DB.gorevleri({ kisi: AUTH.user.id }) : [];
-    const acik  = benim.filter(g => g.durum !== 'tamamlandi');
+    const ben   = AUTH.user ? AUTH.user.id : '';
+    const hepsi = DB.gorevleri();
+    const kova  = GOREV_KOVASI[GOREV_KOVA] ? GOREV_KOVA : 'bana';
 
-    if (!benim.length) {
-      return `<div class="card">${empty(ICON.check, 'Sana atanmış iş yok',
-        'Bir görev sana atandığında burada projesi, sayfası ve promptu ile birlikte listelenecek.')}</div>`;
-    }
-
-    const listelenen = GOREV_FILTRE
-      ? benim.filter(g => g.durum === GOREV_FILTRE)
-      : acik;
-
-    const say = d => benim.filter(g => g.durum === d).length;
+    const sayilar = {
+      bana:   hepsi.filter(g => g.atanan === ben && g.durum !== 'onaylandi').length,
+      benim:  hepsi.filter(g => g.olusturan === ben && g.atanan !== ben && g.durum !== 'onaylandi').length,
+      biten:  hepsi.filter(g => g.durum === 'onaylandi'
+                 && (g.atanan === ben || g.olusturan === ben)).length,
+    };
+    const liste = gorevSirala(hepsi.filter(GOREV_KOVASI[kova].sec(ben)));
 
     return `
-      <div class="filtre">
-        ${filtreDugmesi('', 'Açık işler', acik.length)}
-        ${DURUMLAR.map(d => filtreDugmesi(d.anahtar, d.ad, say(d.anahtar))).join('')}
+      <div class="pj-tepe">
+        <div class="pj-tepe-yz">
+          <h1>Görevler</h1>
+          <p>Ekipteki görevleri yönet, yeni görev ver ve ilerlemeyi takip et.</p>
+        </div>
+        <button class="pj-yeni" type="button" data-eylem="gorev-ver">
+          ${svg(ICON.arti, 16)}<span>Görev ver</span></button>
       </div>
 
-      ${listelenen.length
-        ? `<div class="card liste">${listelenen.map(gorevKarti).join('')}</div>`
-        : `<div class="card">${empty(ICON.check, 'Bu bölümde iş yok', 'Başka bir filtre dene.')}</div>`}
+      <div class="gv-sekme">
+        ${Object.keys(GOREV_KOVASI).map(k => `
+          <button class="gv-s ${k === kova ? 'on' : ''}" type="button"
+                  data-eylem="gorev-kova" data-deger="${k}">
+            ${esc(GOREV_KOVASI[k].ad)}<em>${sayilar[GOREV_KOVASI[k].sayac]}</em></button>`).join('')}
+      </div>
+
+      ${liste.length
+        ? `<div class="gv-liste">${liste.map(gorevSatiri).join('')}</div>`
+        : `<div class="card">${empty(ICON.check, GOREV_KOVASI[kova].bosBaslik,
+            GOREV_KOVASI[kova].bosAlt)}</div>`}
     `;
   },
 
@@ -6444,7 +6499,7 @@ function denemeSayfasi(p, d) {
         </div>
       </div>`
     + (gorevler.length ? bolumBas('Açık istekler')
-        + `<div class="card liste">${gorevler.slice(0, 12).map(gorevKarti).join('')}</div>` : '')
+        + `<div class="card liste">${gorevler.slice(0, 12).map(gorevSatiri).join('')}</div>` : '')
     + (AUTH.yonetici ? (tamam
         ? `<div class="kur-deger duz">${svg(ICON.tik, 13)} Bu aşama tamamlandı</div>`
         : `<button class="sayfa-dug ikincil" type="button" data-eylem="deneme-tamamlandi"
@@ -7015,7 +7070,7 @@ function guncellemeSayfasi(p, d) {
       </div>`
     + bolumBas('Açık istekler')
     + (gorevler.length
-        ? `<div class="card liste">${gorevler.slice(0, 12).map(gorevKarti).join('')}</div>`
+        ? `<div class="card liste">${gorevler.slice(0, 12).map(gorevSatiri).join('')}</div>`
         : `<div class="bos-kutu">${svg(ICON.check, 18)}
             <span>Açık istek yok. Yeni bir şey istendiğinde görev olarak aç;
             burada listelenir.</span></div>`)
@@ -7519,21 +7574,46 @@ function gorevSatiri(g) {
 }
 
 /* Bana Atananlar listesindeki geniş görev satırı */
-function gorevKarti(g, i = 0) {
+/* Listedeki tek satır. Kimin fotoğrafı görünüyor: bana verilenlerde VEREN,
+   benim verdiklerimde ALAN — karşı taraf kim, o duruyor. */
+function gorevSatiri(g) {
+  const ben    = AUTH.user ? AUTH.user.id : '';
+  const karsi  = g.atanan === ben ? g.olusturan : g.atanan;
+  const kisi   = DB.kisi ? DB.kisi(karsi) : null;
+  const ad     = DB.kisiAdi ? DB.kisiAdi(karsi) : '';
+  const pr     = g.proje_id ? DB.proje(g.proje_id) : null;
+  const sure   = gorevSure(g.bitis);
+  const durum  = GOREV_DURUM[g.durum] || GOREV_DURUM.bekliyor;
+
   return `
-    <div class="gsatir" data-eylem="gorev-ac" data-id="${g.id}" role="button" tabindex="0" style="--i:${i}">
-      <span class="gsol" style="background:var(--st-${DURUM_SINIF[g.durum]})"></span>
-      <span class="gorta">
-        <span class="gust">
-          <span class="gorev-no mono">${gorevNo(g)}</span>
-          <span class="gbaslik">${esc(g.baslik)}</span>
-          ${g.oncelik === 'acil' ? '<span class="acil">Acil</span>' : ''}
-        </span>
-        <span class="gyol">${gorevYolu(g)}</span>
+    <div class="gv" data-eylem="gorev-ac" data-id="${g.id}" role="button" tabindex="0">
+      <span class="gv-foto ${kisi && kisi.foto ? 'resimli' : ''}"
+            ${kisi && kisi.foto ? `style="background-image:url('${esc(kisi.foto)}')"` : ''}>
+        <b>${esc(basHarf(ad || '?'))}</b>
       </span>
-      ${durumRozeti(g.durum)}
+      <span class="gv-yz">
+        <span class="gv-ust">
+          <b>${esc(ad || 'Bilinmiyor')}</b>
+          <em class="gv-durum ${durum.sinif}">${esc(durum.ad)}</em>
+        </span>
+        <span class="gv-baslik">${esc(g.baslik)}</span>
+        <span class="gv-alt">
+          <em class="gv-proje">${esc(pr ? projeAdi(pr) : 'Genel')}</em>
+          ${g.bitis ? `<em class="gv-tarih">${svg(ICON.takvim, 13)}${esc(gvTarih(g.bitis))}</em>` : ''}
+          ${sure ? `<em class="gv-sure ${sure.sinif}">${svg(ICON.saat, 13)}${esc(sure.yazi)}</em>` : ''}
+        </span>
+      </span>
+      <span class="gv-ok">${svg(ICON.chevron, 16)}</span>
     </div>`;
 }
+
+/* "24 Eyl 2026" — listede ve detayda aynı biçim. */
+function gvTarih(iso) {
+  const t = new Date(String(iso) + 'T00:00:00');
+  if (isNaN(t)) return '';
+  return `${t.getDate()} ${AY_KISA[t.getMonth()]} ${t.getFullYear()}`;
+}
+
 
 function durumRozeti(d) {
   return `<span class="durum d-${DURUM_SINIF[d]}"><i></i>${DURUM_GOREV_ADI[d]}</span>`;
@@ -12676,6 +12756,103 @@ function onaySor({ baslik, mesaj, buton = 'Sil' }) {
    GÖREV KARTI
    ========================================================================== */
 
+/* Görev ver — kime, genel mi proje mi, başlık, metin, bitiş tarihi.
+   Eski "yeniGorevAc" penceresi modül/sayfa/öncelik/standart soruyordu;
+   bu sistemde görev insana veriliyor, o alanların karşılığı yok. */
+function gorevVerAc() {
+  modalHepsiniKapat();
+  const ben = AUTH.user ? AUTH.user.id : '';
+  const kisiler = (DB.kisilerHepsi || DB.kisiler || []).filter(k => k.aktif !== false);
+  const projeler = DB.projeler.filter(p => !p.arsiv && !cekirdekMi(p));
+
+  if (!kisiler.length) {
+    toast('Önce Ekip ekranından üye ekle.', 'uyari');
+    return;
+  }
+
+  modalAc(`
+    ${modalBaslik(ICON.check, 'Görev ver', 'Ekipten birine iş ver, bitiş tarihini yaz.')}
+
+    <span class="gf-et" style="margin-bottom:8px">Kime</span>
+    <div class="gvr-kisiler">
+      ${kisiler.map((k, i) => `
+        <button class="gvr-k ${i === 0 ? 'on' : ''}" type="button" data-gvr-kisi="${k.id}">
+          <span class="gv-foto ${k.foto ? 'resimli' : ''}"
+                ${k.foto ? `style="background-image:url('${esc(k.foto)}')"` : ''}>
+            <b>${esc(basHarf(k.ad || k.ad_soyad || '?'))}</b></span>
+          <i>${esc(k.ad || k.ad_soyad || 'İsimsiz')}${k.id === ben ? ' (sen)' : ''}</i>
+        </button>`).join('')}
+    </div>
+
+    <span class="gf-et" style="margin:16px 0 8px">Konu</span>
+    <div class="gvr-konu">
+      <button class="gvr-t on" type="button" data-gvr-konu="genel">Genel</button>
+      <button class="gvr-t" type="button" data-gvr-konu="proje">Bir proje hakkında</button>
+    </div>
+    <label class="gf gvr-proje" hidden>
+      <span class="gf-kutu">${svg(ICON.folder, 17)}
+        <select id="gvr-proje">
+          ${projeler.map(p => `<option value="${p.id}">${esc(projeAdi(p))}</option>`).join('')}
+        </select>
+        ${svg(ICON.chevron, 15)}</span>
+    </label>
+
+    <label class="gf">
+      <span class="gf-et">Başlık</span>
+      <span class="gf-kutu">${svg(ICON.etiket, 17)}
+        <input type="text" id="gvr-baslik" maxlength="90" autocomplete="off"
+               placeholder="Örn. Güvenlik kontrolü sayfası tasarımı"></span>
+    </label>
+
+    <label class="gf">
+      <span class="gf-et">Görev</span>
+      <textarea class="anl-kutu kisa" id="gvr-metin" rows="4"
+        placeholder="Ne yapılacak? Konuşur gibi yaz."></textarea>
+    </label>
+
+    <label class="gf">
+      <span class="gf-et">Bitiş tarihi</span>
+      <span class="gf-kutu">${svg(ICON.takvim, 17)}
+        <input type="date" id="gvr-bitis"></span>
+    </label>
+
+    <div class="modal-alt">
+      <button class="btn btn-ghost" data-gvr="iptal" type="button">Vazgeç</button>
+      <button class="btn btn-primary" data-gvr="gonder" type="button"><span>Gönder</span></button>
+    </div>`, kutu => {
+    let kisi = kisiler[0].id, konu = 'genel';
+
+    $$('[data-gvr-kisi]', kutu).forEach(b => b.addEventListener('click', () => {
+      kisi = b.dataset.gvrKisi;
+      $$('[data-gvr-kisi]', kutu).forEach(x => x.classList.toggle('on', x === b));
+    }));
+    $$('[data-gvr-konu]', kutu).forEach(b => b.addEventListener('click', () => {
+      konu = b.dataset.gvrKonu;
+      $$('[data-gvr-konu]', kutu).forEach(x => x.classList.toggle('on', x === b));
+      $('.gvr-proje', kutu).hidden = konu !== 'proje';
+    }));
+
+    $('[data-gvr="iptal"]', kutu).addEventListener('click', modalKapat);
+    $('[data-gvr="gonder"]', kutu).addEventListener('click', async () => {
+      const baslik = $('#gvr-baslik', kutu).value.trim();
+      const metin  = $('#gvr-metin', kutu).value.trim();
+      const bitis  = $('#gvr-bitis', kutu).value || null;
+      const proje  = konu === 'proje' ? $('#gvr-proje', kutu).value : null;
+
+      if (!baslik) { toast('Başlığı yaz — görev tek cümlede ne?'); return; }
+      if (konu === 'proje' && !proje) { toast('Proje seç ya da «Genel» de.'); return; }
+
+      try {
+        await DB.gorevOlustur({ proje_id: proje, baslik, aciklama: metin,
+                                atanan: kisi, bitis });
+        modalKapat(); sayaclariYaz(); render();
+        toast(DB.kisiAdi(kisi) + ' kişisine görev verildi.', 'basari');
+      } catch (h) { toast(h.message, 'hata'); }
+    });
+    setTimeout(() => $('#gvr-baslik', kutu).focus(), 60);
+  });
+}
+
 function gorevKartiAc(id) {
   modalHepsiniKapat();
   const g = DB.gorev(id);
@@ -12684,117 +12861,84 @@ function gorevKartiAc(id) {
 }
 
 function gorevKartiHtml(g) {
-  const benim   = AUTH.user && g.atanan === AUTH.user.id;
-  const yon     = AUTH.yonetici;
-  const sira    = DURUM_SIRA.indexOf(g.durum);
+  const ben    = AUTH.user ? AUTH.user.id : '';
+  const alan   = g.atanan === ben;
+  const veren  = g.olusturan === ben;
+  const pr     = g.proje_id ? DB.proje(g.proje_id) : null;
+  const sure   = gorevSure(g.bitis);
+  const durum  = GOREV_DURUM[g.durum] || GOREV_DURUM.bekliyor;
+
+  const kisiSatiri = (etiket, kimId, altYazi) => {
+    const k = DB.kisi ? DB.kisi(kimId) : null;
+    const ad = DB.kisiAdi ? DB.kisiAdi(kimId) : '';
+    return `
+      <div class="gd-s">
+        <span class="gd-et">${svg(ICON.kisi, 14)} ${esc(etiket)}</span>
+        <span class="gd-dg">
+          <span class="gv-foto kucuk ${k && k.foto ? 'resimli' : ''}"
+                ${k && k.foto ? `style="background-image:url('${esc(k.foto)}')"` : ''}>
+            <b>${esc(basHarf(ad || '?'))}</b></span>
+          <b>${esc(ad || 'Bilinmiyor')}</b>
+          ${altYazi ? `<i>${esc(altYazi)}</i>` : ''}
+        </span>
+      </div>`;
+  };
+
+  /* Duruma göre tek ana düğme: alan "bitirdim" der, veren onaylar. */
+  const dugme = g.durum === 'bekliyor' && alan ? `
+      <button class="sayfa-dug bitir" type="button" data-gk="bitirdim">
+        ${svg(ICON.tik, 16)} Bitirdim</button>`
+    : g.durum === 'bitirdi' && veren ? `
+      <button class="sayfa-dug bitir" type="button" data-gk="onayla">
+        ${svg(ICON.tik, 16)} Onayla</button>
+      <button class="sayfa-dug ikincil" type="button" data-gk="geri">
+        ${svg(ICON.geriAl, 15)} Geri gönder</button>`
+    : g.durum === 'bekliyor' && veren ? `
+      <p class="ipucu">${esc(DB.kisiAdi(g.atanan))} henüz bitirmedi.</p>` : '';
+
   const hareket = DB.hareketleri(g.id);
 
-  const serit = DURUMLAR.map((d, i) => {
-    const gecti = i < sira, simdi = i === sira;
-    const tiklanir = yon;
-    return `<button class="st ${gecti ? 'gecti' : ''} ${simdi ? 'simdi ' + d.sinif : ''}"
-      ${tiklanir ? `data-gk="durum" data-deger="${d.anahtar}"` : 'disabled'}
-      type="button">${d.ad}</button>`;
-  }).join('');
-
   return `
-    <div class="gk-ust">
-      <span class="gk-no mono">${gorevNo(g)}</span>
-      ${g.oncelik === 'acil' ? '<span class="acil">Acil</span>' : ''}
-      <button class="gk-x" data-gk="kapat" type="button" aria-label="Kapat">${svg(ICON.kapat, 15)}</button>
+    ${modalBaslik(ICON.check, g.baslik, '')}
+    <span class="gv-durum ${durum.sinif} buyuk">${esc(durum.ad)}</span>
+
+    <div class="gd-liste">
+      <div class="gd-s">
+        <span class="gd-et">${svg(ICON.folder, 14)} Proje</span>
+        <span class="gd-dg"><b>${esc(pr ? projeAdi(pr) : 'Genel')}</b></span>
+      </div>
+      <div class="gd-s">
+        <span class="gd-et">${svg(ICON.takvim, 14)} Bitiş tarihi</span>
+        <span class="gd-dg"><b>${g.bitis ? esc(gvTarih(g.bitis)) : 'yok'}</b>
+          ${sure ? `<em class="gv-sure ${sure.sinif}">${svg(ICON.saat, 13)}${esc(sure.yazi)}</em>` : ''}</span>
+      </div>
+      ${kisiSatiri('Veren', g.olusturan, pzZaman ? pzZaman(g.olusturuldu) : '')}
+      ${kisiSatiri('Alan', g.atanan, '')}
     </div>
 
-    <h3 class="gk-baslik">${esc(g.baslik)}</h3>
-    <p class="gk-yol">${gorevYolu(g)}</p>
+    ${g.aciklama ? `<span class="label">Görev</span>
+      <div class="gd-metin">${esc(g.aciklama)}</div>` : ''}
 
-    <div class="serit">${serit}</div>
-    <p class="serit-not">${seritNotu(g, benim, yon)}</p>
-
-    <div class="gk-meta">
-      <div class="mi">
-        <span class="mil">Atanan</span>
-        <span class="miv">
-          ${g.atanan ? avatar(g.atanan, 'kucuk') : ''}${esc(DB.kisiAdi(g.atanan))}
-          ${yon ? `<button class="mini-link" data-gk="ata" type="button">değiştir</button>` : ''}
-        </span>
-      </div>
-      <div class="mi">
-        <span class="mil">Öncelik</span>
-        <span class="miv">
-          ${g.oncelik === 'acil' ? '<span class="acil">Acil</span>' : 'Normal'}
-          ${yon ? `<button class="mini-link" data-gk="oncelik" type="button">değiştir</button>` : ''}
-        </span>
-      </div>
-    </div>
-
-    ${g.aciklama ? `
-      <div class="gk-blok">
-        <span class="gk-cap">Ne yapılacak</span>
-        <div class="gk-aciklama">${esc(g.aciklama)}</div>
+    ${hareket.length ? `<span class="label">Geçmiş</span>
+      <div class="gd-gecmis">
+        ${hareket.map(h => `
+          <div class="gd-h">
+            <span class="gd-h-nokta"></span>
+            <span class="gd-h-yz">
+              <b>${esc(GOREV_HAREKET[h.tip] || HAREKET_ADI[h.tip] || h.tip)}</b>
+              <i>${esc(DB.kisiAdi(h.kim) || '')}${h.notu ? ' — ' + esc(h.notu) : ''}</i>
+            </span>
+            <span class="gd-h-zaman">${esc(pzZaman ? pzZaman(h.olusturuldu) : '')}</span>
+          </div>`).join('')}
       </div>` : ''}
 
-    <div class="gk-blok">
-      <span class="gk-cap">Nizam Standartları</span>
-      ${DB.gorevinStandartlari(g.id).length
-        ? `<div class="std-etiketler">${DB.gorevinStandartlari(g.id)
-            .map(st => `<span class="std-etiket">${esc(st.ad)}</span>`).join('')}
-           ${yon ? `<button class="std-etiket ekle" data-gk="standart" type="button">${svg(ICON.kalem, 12)} değiştir</button>` : ''}</div>`
-        : `<div class="std-etiketler">
-             <span class="ipucu">Bu göreve standart bağlanmamış.</span>
-             ${yon ? `<button class="std-etiket ekle" data-gk="standart" type="button">${svg(ICON.arti, 12)} ekle</button>` : ''}
-           </div>`}
-    </div>
-
-    ${hareket.length ? `
-      <div class="gk-blok">
-        <span class="gk-cap">Hareketler</span>
-        <div class="iz">${hareket.map((h, i) => hareketSatiri(h, i === hareket.length - 1)).join('')}</div>
-      </div>` : ''}
-
-    <div class="modal-alt">${gorevButonlari(g, benim, yon)}</div>`;
-}
-
-function seritNotu(g, benim, yon) {
-  if (g.durum === 'kontrolde' && yon)    return 'Onayla ya da not yazarak geliştiriciye geri gönder.';
-  if (g.durum === 'kontrolde')           return 'Yöneticinin onayı bekleniyor.';
-  if (g.durum === 'gelistiriliyor' && benim) return 'Bitirince "Kontrole Gönder" de — onaya düşer.';
-  if (g.durum === 'yapilacak' && benim)  return 'Başladığında işaretle ki ekip görsün.';
-  if (g.durum === 'tamamlandi')          return 'Bu iş onaylandı ve kapandı.';
-  return 'Görev henüz başlamadı.';
-}
-
-function hareketSatiri(h, sonMu) {
-  const renk = { revize: 'var(--red)', kontrole: 'var(--st-check)',
-                 onaylandi: 'var(--st-done)', baslandi: 'var(--st-dev)' }[h.tip] || '#3a3f45';
-  return `
-    <div class="izs">
-      <span class="izn"><span class="izd" style="background:${renk}"></span>${sonMu ? '' : '<span class="izl"></span>'}</span>
-      <span class="izy">
-        ${esc(DB.kisiAdi(h.kim))} ${HAREKET_ADI[h.tip] || h.tip}
-        ${h.notu ? `<span class="revize">${esc(h.notu)}</span>` : ''}
-        <em>${tarihYaz(h.olusturuldu)}</em>
-      </span>
+    ${dugme}
+    ${veren || AUTH.yonetici ? `
+      <button class="fn-btn sil" type="button" data-gk="sil" style="margin-top:12px">
+        ${svg(ICON.cop, 13)} Görevi sil</button>` : ''}
+    <div class="modal-alt">
+      <button class="btn btn-ghost" data-gk="kapat" type="button">Kapat</button>
     </div>`;
-}
-
-function gorevButonlari(g, benim, yon) {
-  const prompt = `<button class="btn" data-gk="prompt" type="button">
-    ${svg(ICON.kopya, 15)}<span>Prompt Kopyala</span></button>`;
-
-  if (g.durum === 'kontrolde' && yon) {
-    return `<button class="btn btn-red" data-gk="revize" type="button"><span>Revize İste</span></button>
-            <button class="btn btn-onay" data-gk="onayla" type="button"><span>Onayla</span></button>`;
-  }
-  if (g.durum === 'yapilacak' && (benim || yon)) {
-    return prompt + `<button class="btn btn-primary" data-gk="basla" type="button"><span>Başla</span></button>`;
-  }
-  if (g.durum === 'gelistiriliyor' && (benim || yon)) {
-    return prompt + `<button class="btn btn-primary" data-gk="kontrole" type="button"><span>Kontrole Gönder</span></button>`;
-  }
-  if (yon) {
-    return prompt + `<button class="btn btn-red" data-gk="sil" type="button"><span>Görevi Sil</span></button>`;
-  }
-  return prompt;
 }
 
 function gorevKartiBagla(kutu, id) {
@@ -12833,20 +12977,19 @@ async function gorevEylemi(tip, id, deger) {
     return;
   }
 
-  if (tip === 'basla')    return gorevDurum(id, 'gelistiriliyor');
-  if (tip === 'kontrole') return gorevDurum(id, 'kontrolde');
-  if (tip === 'onayla')   return gorevDurum(id, 'tamamlandi');
+  if (tip === 'bitirdim') return gorevDurum(id, 'bitirdi');
+  if (tip === 'onayla')   return gorevDurum(id, 'onaylandi');
   if (tip === 'durum')    return gorevDurum(id, deger);
 
-  if (tip === 'revize') {
+  if (tip === 'geri') {
     const notu = await metinSor({
       baslik: 'Neyi düzeltsin?',
-      aciklama: 'Not geliştiriciye gider, görev Geliştiriliyor\'a düşer.',
-      yerTutucu: 'Örn. Tarih aralığı seçilince liste yenilenmiyor.',
-      buton: 'Geri Gönder',
+      aciklama: 'Not görevi alana gider, görev yeniden «Bekliyor»a düşer.',
+      yerTutucu: 'Örn. Mobilde başlık taşıyor, onu da düzelt.',
+      buton: 'Geri gönder',
     });
     if (!notu) { gorevKartiAc(id); return; }
-    return gorevDurum(id, 'gelistiriliyor', notu);
+    return gorevDurum(id, 'bekliyor', notu);
   }
 
   if (tip === 'ata') {
@@ -12884,8 +13027,9 @@ async function gorevEylemi(tip, id, deger) {
 async function gorevDurum(id, durum, notu = '') {
   try {
     await DB.durumDegistir(id, durum, notu);
-    sonrasi(id, durum === 'tamamlandi' ? 'Onaylandı.' :
-                durum === 'kontrolde'  ? 'Kontrole gönderildi.' : 'Durum güncellendi.');
+    sonrasi(id, durum === 'onaylandi' ? 'Onaylandı, görev kapandı.'
+              : durum === 'bitirdi'   ? 'Bitirdin — onayı bekleniyor.'
+              : 'Geri gönderildi.');
   } catch (e) {
     toast(e.message, 'hata');
     gorevKartiAc(id);
@@ -14654,6 +14798,10 @@ async function eylemCalistir(el) {
     serit.scrollTo({ left: serit.scrollLeft >= son ? 0 : serit.scrollLeft + adim, behavior: 'smooth' });
     return;
   }
+
+  if (e === 'gorev-kova') { GOREV_KOVA = el.dataset.deger; return render(); }
+  if (e === 'gorev-ac')   return gorevKartiAc(el.dataset.id);
+  if (e === 'gorev-ver')  return gorevVerAc();
 
   if (e === 'gorev-ekle') return yeniGorevAc({
     proje: el.dataset.proje || rota().id,

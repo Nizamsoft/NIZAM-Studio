@@ -1,5 +1,20 @@
 # Değişiklik Günlüğü
 
+## v0.230.0
+- **Görev sistemi baştan kuruldu.** Görev artık «Claude'a verilecek iş»
+  değil, **ekip üyesine verilen iş**: kime · genel mi bir proje hakkında mı ·
+  başlık · görev metni · bitiş tarihi.
+- Üç durum: **Bekliyor → Bitirdi → Onaylandı**. Görevi alan «Bitirdim» der,
+  veren onaylar ya da not yazıp geri gönderir — tek taraflı kapanmıyor.
+- Görevler ekranı üç sekme: *Bana verilenler · Benim verdiklerim ·
+  Tamamlananlar*. Satırda karşı tarafın fotoğrafı, başlık, proje etiketi,
+  bitiş tarihi ve kalan süre (normal · yakın · geçmiş ayrı renkte).
+- Görev detayında proje, tarih, veren/alan, görev metni ve geçmiş
+  (verildi → bitirdim → geri gönderildi → onaylandı) satır satır duruyor.
+- **Çalıştırılacak SQL: `sql/30-gorevler-v2.sql`** — proje artık boş
+  olabiliyor, bitiş tarihi sütunu ekleniyor, eski durumlar yenilerine
+  çevriliyor ve görevi veren de görevi görebiliyor.
+
 ## v0.229.0
 - **Nizam Standartları yeni tasarım diline geçti.** İki araç kartı
   («Standart ekleme promptu» · «Kuralı yapıştır») öteki ekranlardaki kart

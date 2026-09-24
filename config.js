@@ -7,7 +7,7 @@ const APP = {
   name:     'NIZAM | Studio',
   short:    'NIZAM Studio',
   owner:    'Nizam Soft',
-  version: 'v0.229.0',
+  version: 'v0.230.0',
   build:    '2026-09-17',
   /* Studio'nun kendi deposu — "bütün programlarda geçerli olsun"
      istekleri buraya gider. */
@@ -802,6 +802,14 @@ const PLATFORM_ADI = { web: 'Web', mobil: 'Mobil', ikisi: 'Web · Mobil' };
 const VERI_ADI     = { sifirdan: 'Sıfırdan veritabanı', mevcut: 'Mevcut veritabanı', excel: "Excel'den taşınacak" };
 const DURUM_ADI    = { yeni: 'Yeni', gelistiriliyor: 'Geliştiriliyor', kontrolde: 'Kontrolde', tamamlandi: 'Tamamlandı' };
 
+/* Görevin üç hâli. Bilerek üç: görevi alan "bitirdim" der, veren onaylar —
+   tek taraflı kapanan iş kontrol edilmeden kapanmış oluyordu. */
+const GOREV_DURUM = {
+  bekliyor:  { ad: 'Bekliyor',  sinif: 'bekliyor' },
+  bitirdi:   { ad: 'Bitirdi',   sinif: 'bitirdi' },
+  onaylandi: { ad: 'Onaylandı', sinif: 'onaylandi' },
+};
+
 /* Muhasebe şablonu — proje kopyalarken seçilebilen tek şablon türü.
    Bu üç bankanın ekstre yapısı zaten programda hazır kayıtlı; başka bir
    banka gerekirse "ekle" ile aynı excel-öğret akışından geçiyor.
@@ -955,6 +963,17 @@ const HAREKET_ADI = {
   revize:      'revize istedi',
   onaylandi:   'görevi onayladı',
   geri:        'görevi geri aldı',
+};
+
+/* Görev detayındaki geçmiş satırları — yeni görev sisteminin dili.
+   HAREKET_ADI hâlâ eski akış ekranlarında kullanılıyor, ona dokunulmuyor. */
+const GOREV_HAREKET = {
+  olusturuldu: 'Görev verildi',
+  atandi:      'Atandı',
+  bitirdi:     '«Bitirdim» dedi',
+  onaylandi:   'Onaylandı',
+  geri:        'Geri gönderildi',
+  baslandi:    'Yeniden açıldı',
 };
 
 /* ==========================================================================
