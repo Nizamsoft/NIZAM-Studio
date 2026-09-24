@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.226.2
+- Ekip kartındaki sayılar artık **bitmiş görevleri saymıyor**: «Görev»
+  yazan yer «Açık iş» oldu ve proje sayısı da yalnız açık işlerden
+  hesaplanıyor. Bütün görevlerini bitirmiş kişide kart «1 proje · 2 görev»
+  derken alt çubuktaki rozet 0 diyordu; iki sayı birbirini yalanlıyordu.
+
 ## v0.226.1
 - **Hayalet görevler sayaçlardan düştü.** Silinmiş ya da arşive kaldırılmış
   bir projenin görev satırları veritabanında kalıyordu; Ekip kartında hiç

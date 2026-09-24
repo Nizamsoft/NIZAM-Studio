@@ -8895,11 +8895,18 @@ function ekipKidem(k) {
   return Math.floor(ay / 12) + ' yıl';
 }
 
-/* Hayalet görevler (silinmiş projeden kalan satırlar) DB.gorevleri'nde
-   zaten süzülüyor — bkz. data.js · gorevGecerli. */
+/* Kartta sayılan şey "bu kişinin ÜSTÜNDEKİ iş": bitmiş görevler girmiyor.
+   Eskiden bütün görevler sayılıyordu; hepsini bitirmiş bir kişide "1 proje ·
+   2 görev" yazıyor, alt çubuktaki Görevler rozeti ise 0 diyordu — iki sayı
+   birbirini yalanlıyordu. Hayalet görevler (silinmiş projeden kalan
+   satırlar) DB.gorevleri'nde zaten süzülüyor, bkz. data.js · gorevGecerli. */
+function ekipAcikIsleri(kisiId) {
+  return DB.gorevleri({ kisi: kisiId }).filter(g => g.durum !== 'tamamlandi');
+}
+
 function ekipProjeSayisi(kisiId) {
   const p = new Set();
-  DB.gorevleri({ kisi: kisiId }).forEach(g => { if (g.proje_id) p.add(g.proje_id); });
+  ekipAcikIsleri(kisiId).forEach(g => { if (g.proje_id) p.add(g.proje_id); });
   return p.size;
 }
 
@@ -8908,7 +8915,7 @@ function ekipKarti(k) {
   const acik = DB.cevrimicimi(k.id);
   const son  = ekipSonGorulme(k);
   const kidem = ekipKidem(k);
-  const gorev = DB.gorevleri({ kisi: k.id }).length;
+  const gorev = ekipAcikIsleri(k.id).length;
 
   const durumYazi = acik ? 'Şu an aktif.'
     : (son ? esc(pzZaman(son)) : 'Henüz girmedi');
@@ -8932,7 +8939,7 @@ function ekipKarti(k) {
       </span>
       <span class="ek2-sayilar">
         <span><b>${svg(ICON.folder, 14)}${ekipProjeSayisi(k.id)}</b><i>Proje</i></span>
-        <span><b>${svg(ICON.check, 14)}${gorev}</b><i>Görev</i></span>
+        <span><b>${svg(ICON.check, 14)}${gorev}</b><i>Açık iş</i></span>
         <span>${k.kurucu
           /* Kurucuda süre yok: simge üstte, "Kurucu" onun altında — yan yana
              yazınca kartın dışına taşıyordu. */
