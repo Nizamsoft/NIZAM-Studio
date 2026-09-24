@@ -1280,41 +1280,48 @@ function ayarListesi() {
   const anahtarlar = Object.keys(AYAR_GRUP)
     .filter(k => k !== 'hesap' && AYAR_GRUP[k].goster());
 
+  /* Mobilde alt alta satırlar, masaüstünde iki sütunlu kart ızgarası.
+     Fark yalnız CSS'te: `.ay-duzenle` ve `.ay-ac` mobilde gizli, masaüstünde
+     sağdaki oku bırakıp yerlerini alıyorlar. */
   return `
-    <div class="pj-tepe">
-      <div class="pj-tepe-yz">
-        <h1>Ayarlar</h1>
-        <p>Uygulama tercihlerini buradan yönetebilirsin.</p>
+    <div class="ay-sayfa">
+      <div class="pj-tepe">
+        <div class="pj-tepe-yz">
+          <h1>Ayarlar</h1>
+          <p>Uygulama tercihlerini buradan yönetebilirsin.</p>
+        </div>
       </div>
-    </div>
 
-    <a class="ay-hesap" href="#/ayarlar/hesap" draggable="false">
-      <span class="ay-foto">${fotoKutu('ay')}<u class="ay-kalem">${svg(ICON.kalem, 12)}</u></span>
-      <span class="ay-hesap-yz">
-        <b>${esc(AUTH.ad)}</b>
-        <i>${esc(AUTH.mail || '')}</i>
-        <em>${esc(AUTH.rolAdi)}</em>
-      </span>
-      <span class="ay-ok">${svg(ICON.chevron, 18)}</span>
-    </a>
+      <a class="ay-hesap" href="#/ayarlar/hesap" draggable="false">
+        <span class="ay-foto">${fotoKutu('ay')}<u class="ay-kalem">${svg(ICON.kalem, 12)}</u></span>
+        <span class="ay-hesap-yz">
+          <b>${esc(AUTH.ad)}</b>
+          <i>${esc(AUTH.mail || '')}</i>
+          <em>${esc(AUTH.rolAdi)}</em>
+        </span>
+        <span class="ay-duzenle">${svg(ICON.kalem, 15)} Profili düzenle</span>
+        <span class="ay-ok">${svg(ICON.chevron, 18)}</span>
+      </a>
 
-    <div class="ay-liste">
-      ${anahtarlar.map(k => {
-        const g = AYAR_GRUP[k];
-        return `
-          <a class="ay-grup" href="#/ayarlar/${k}" draggable="false">
-            <span class="ay-ikon ${g.renk}">${svg(ICON[g.ikon], 24)}</span>
-            <span class="ay-grup-yz">
-              <b>${esc(g.ad)}</b>
-              <i>${esc(g.aciklama)}</i>
-            </span>
-            <span class="ay-ok">${svg(ICON.chevron, 18)}</span>
-          </a>`;
-      }).join('')}
-    </div>
+      <div class="ay-liste">
+        ${anahtarlar.map(k => {
+          const g = AYAR_GRUP[k];
+          return `
+            <a class="ay-grup" href="#/ayarlar/${k}" draggable="false">
+              <span class="ay-ikon ${g.renk}">${svg(ICON[g.ikon], 24)}</span>
+              <span class="ay-grup-yz">
+                <b>${esc(g.ad)}</b>
+                <i>${esc(g.aciklama)}</i>
+              </span>
+              <span class="ay-ac">Aç ${svg(ICON.chevron, 14)}</span>
+              <span class="ay-ok">${svg(ICON.chevron, 18)}</span>
+            </a>`;
+        }).join('')}
+      </div>
 
-    <div class="section ay-cikis">
-      <button class="btn btn-ghost" id="btn-logout" type="button">Çıkış Yap</button>
+      <div class="section ay-cikis">
+        <button class="btn btn-ghost" id="btn-logout" type="button">Çıkış Yap</button>
+      </div>
     </div>`;
 }
 

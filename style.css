@@ -8403,9 +8403,67 @@ a.asr:active{ transform:scale(.99); }
   }
 }
 
-/* Masaüstünde kartlar sayfanın tamamını kaplamasın. */
+/* Mobilde bu ikisi yok: sağdaki ok yeterli. */
+.ay-duzenle, .ay-ac { display: none; }
+
+/* ---- Masaüstüne özel düzen ----
+   Dar tek sütun geniş ekranda yarım kalmış duruyordu. Burada kartlar
+   iki sütuna yayılıyor, ok yerine "Aç" yazısı geçiyor ve hesap kartı
+   sayfanın tepesinde tam genişlikte bir künye oluyor. */
 @media (min-width: 901px) {
-  .ay-hesap, .ay-liste, .ay-cikis { max-width: 760px; }
+  .ay-sayfa { max-width: 1120px; }
+
+  .ay-hesap {
+    gap: 24px; padding: 26px 28px; margin-bottom: 20px; border-radius: 24px;
+  }
+  .ay-hesap .foto.ay { width: 78px; height: 78px; }
+  .ay-hesap .foto.ay > b { font-size: 26px; }
+  .ay-hesap-yz { gap: 6px; }
+  .ay-hesap-yz b { font-size: 21px; }
+  .ay-hesap-yz i { font-size: 14px; }
+  .ay-hesap .ay-ok { display: none; }
+  .ay-duzenle {
+    flex-shrink: 0; display: inline-flex; align-items: center; gap: 8px;
+    height: 42px; padding: 0 18px; border-radius: 999px;
+    background: var(--surface); border: 1px solid var(--red-cizgi);
+    font-family: var(--yazi-etiket); font-size: 13.5px; font-weight: 700;
+    color: var(--red-ink);
+  }
+  .ay-duzenle svg { fill: none; stroke: currentColor; stroke-width: 2; }
+  .ay-duzenle .dolgu { display: none; }
+  .ay-hesap:hover .ay-duzenle { background: var(--red); border-color: var(--red); color: #fff; }
+
+  .ay-liste {
+    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px;
+  }
+  .ay-grup {
+    flex-direction: column; align-items: flex-start; gap: 0;
+    padding: 24px 24px 20px; border-radius: 22px; min-height: 196px;
+    transition: border-color .16s var(--ease), transform .16s var(--ease),
+                box-shadow .16s var(--ease);
+  }
+  .ay-grup:hover {
+    border-color: var(--red-cizgi); transform: translateY(-2px);
+    box-shadow: 0 10px 26px rgba(20, 20, 24, .06);
+  }
+  .ay-grup .ay-ok { display: none; }
+  .ay-grup .ay-ikon { width: 54px; height: 54px; margin-bottom: 18px; }
+  .ay-grup-yz { flex: 1; gap: 7px; }
+  .ay-grup-yz b { font-size: 18.5px; }
+  .ay-grup-yz i { font-size: 14px; max-width: 34ch; }
+  .ay-ac {
+    display: inline-flex; align-items: center; gap: 6px; margin-top: 18px;
+    font-family: var(--yazi-etiket); font-size: 13px; font-weight: 700;
+    letter-spacing: .02em; color: var(--ink-dim);
+  }
+  .ay-ac svg { fill: none; stroke: currentColor; stroke-width: 2.4; }
+  .ay-ac .dolgu { display: none; }
+  .ay-grup:hover .ay-ac { color: var(--red-ink); }
+
+  /* .section sütun akıyor; burada satıra çevriliyor ki düğme sağda
+     kendi genişliğinde dursun. */
+  .ay-cikis { flex-direction: row; justify-content: flex-end; margin-top: 24px; }
+  .ay-cikis .btn { flex: 0 0 auto; width: auto; min-width: 210px; }
 }
 
 /* ---- Hesap ekranı (Ayarlar › Hesap) ----

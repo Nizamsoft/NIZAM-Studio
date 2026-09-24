@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.234.0
+- **Ayarlar'a masaüstüne özel düzen.** Geniş ekranda tek dar sütun yerine
+  iki sütunlu kart ızgarası: hesap künyesi tepede tam genişlikte ve
+  «Profili düzenle» düğmesiyle, başlık kartlarında sağdaki ok yerine «Aç»
+  satırı, «Çıkış Yap» sağ altta kendi genişliğinde. Mobil görünüm aynı.
+
 ## v0.233.2
 - **Görev atanmış üye silinemiyordu.** Üye silinince veritabanı görevlerin
   «atanan» alanını boşaltmaya çalışıyor, bu güncelleme de görev kilidi
