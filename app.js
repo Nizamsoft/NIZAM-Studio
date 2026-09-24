@@ -575,18 +575,31 @@ const VIEWS = {
        yapıştır. Standart yazmak için forma oturmak gerekmiyor. */
     const araclar = AUTH.yonetici ? stdAracKartlari() : '';
 
+    /* "Yeni" düğmesi ekranın kendi başlığında: masaüstünde üst çubuktaki
+       ana düğme bu işi yapıyordu ama telefonda o düğme yok — standart elle
+       hiç eklenemiyordu. Sektörler ekranıyla aynı kalıp. */
+    const tepe = `
+      <div class="pj-tepe">
+        <div class="pj-tepe-yz">
+          <h1>Nizam Standartları</h1>
+          <p>Her programda geçerli olan kurallar. Claude'a promptu ver,
+             döndürdüğü kuralı buraya yapıştır.</p>
+        </div>
+        ${AUTH.yonetici ? `<button class="pj-yeni" type="button" data-eylem="standart-ekle">
+          ${svg(ICON.arti, 16)}<span>Yeni</span></button>` : ''}
+      </div>`;
+
     if (!DB.standartlar.length) {
-      return `
+      return tepe + araclar + `
         <div class="card">${empty(ICON.katman, 'Standart yok',
           'Supabase\'de önce sql/05-standartlar.sql, sonra sql/17-standart.sql '
           + 'dosyasını çalıştır — hazır standartlar kurulur.',
-          AUTH.yonetici ? 'Elle ekle' : null, 'standart-ekle')}</div>
-        ${araclar}`;
+          AUTH.yonetici ? 'Elle ekle' : null, 'standart-ekle')}</div>`;
     }
 
     /* Açıklama şeridi kalktı: liste zaten kendini anlatıyor, her açılışta
        aynı üç satırı okumak yalnız yer kaplıyordu. */
-    return araclar + DB.standartGruplari().map(grupKarti).join('');
+    return tepe + araclar + DB.standartGruplari().map(grupKarti).join('');
   },
 
   /* ---------- Sektörler ---------- */

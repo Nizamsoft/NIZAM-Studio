@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.228.1
+- **Nizam Standartları'na «Yeni» düğmesi geldi.** Elle standart eklemek
+  yalnız masaüstündeki üst çubuk düğmesiyle mümkündü; telefonda o düğme
+  olmadığı için hiç eklenemiyordu. Ekran artık kendi başlığını ve
+  düğmesini taşıyor.
+
 ## v0.228.0
 - **Projeleri kilitle** ekranı yenilendi: başlık, «1/2 proje kilitli»
   şeridi ve tek kartta satırlar — solda kilit ikonu (kilitliyken kırmızı),
