@@ -10500,3 +10500,38 @@ button.kt {
 /* Üç sekme 390px'e sığsın; detaydaki süre rozeti eğik durmasın. */
 .gv-s { padding: 0 10px; font-size: 13px; }
 .gd-dg em { font-style: normal; }
+
+/* Görev ekleri — pencerede seçilenler ve detaydaki indirme satırları. */
+.gek-liste { display: flex; flex-direction: column; gap: 8px; }
+.gek {
+  display: flex; align-items: center; gap: 11px; width: 100%; text-align: left;
+  padding: 10px 12px; border-radius: 13px; cursor: pointer;
+  background: var(--yuva); border: 1px solid var(--line-3); font-family: inherit;
+}
+.gek-ik {
+  flex: 0 0 auto; display: flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; border-radius: 10px;
+  background: var(--surface); border: 1px solid var(--line-3); color: var(--ink-soft);
+}
+.gek-ik svg, .gek-in svg, .gek-sil svg { fill: none; stroke: currentColor; stroke-width: 1.9; }
+.gek-ik .dolgu, .gek-in .dolgu, .gek-sil .dolgu { display: none; }
+.gek-yz { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.gek-yz b {
+  font-size: 13.5px; font-weight: 600; color: var(--ink-strong);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.gek-yz i { font-style: normal; font-size: 12px; color: var(--ink-faint); }
+.gek-in { flex: 0 0 auto; line-height: 0; color: var(--ink-dim); }
+.gek-sil {
+  flex: 0 0 auto; display: flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; border: 0; background: none; cursor: pointer;
+  color: var(--ink-faint);
+}
+.gek-ekle {
+  display: inline-flex; align-items: center; gap: 8px; margin-top: 8px;
+  height: 42px; padding: 0 14px; border-radius: 12px; cursor: pointer;
+  background: var(--surface); border: 1.5px dashed var(--line-2);
+  font-family: var(--yazi-etiket); font-size: 13.5px; font-weight: 600; color: var(--ink-soft);
+}
+.gek-ekle svg { fill: none; stroke: currentColor; stroke-width: 1.9; }
+.gek-ekle .dolgu { display: none; }

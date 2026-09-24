@@ -12816,11 +12816,48 @@ function gorevVerAc() {
         <input type="date" id="gvr-bitis"></span>
     </label>
 
+    <div class="gf">
+      <span class="gf-et">Ekler <em>isteğe bağlı</em></span>
+      <div class="gek-liste" id="gvr-ekler"></div>
+      <button class="gek-ekle" type="button" data-gvr="dosya">
+        ${svg(ICON.folder, 15)} Dosya ekle</button>
+    </div>
+
     <div class="modal-alt">
       <button class="btn btn-ghost" data-gvr="iptal" type="button">Vazgeç</button>
       <button class="btn btn-primary" data-gvr="gonder" type="button"><span>Gönder</span></button>
     </div>`, kutu => {
     let kisi = kisiler[0].id, konu = 'genel';
+    /* Dosyalar görev kaydı açıldıktan SONRA yükleniyor (yolu görev
+       kimliğinden türüyor); o yüzden burada yalnız bekletiliyor. */
+    const dosyalar = [];
+
+    const ekleriCiz = () => {
+      $('#gvr-ekler', kutu).innerHTML = dosyalar.map((d, i) => `
+        <div class="gek">
+          <span class="gek-ik">${svg(ICON.dosya, 16)}</span>
+          <span class="gek-yz"><b>${esc(d.name)}</b><i>${kb(d.size)}</i></span>
+          <button class="gek-sil" type="button" data-gvr-sil="${i}"
+                  aria-label="Kaldır">${svg(ICON.kapat, 14)}</button>
+        </div>`).join('');
+      $$('[data-gvr-sil]', kutu).forEach(b => b.addEventListener('click', () => {
+        dosyalar.splice(Number(b.dataset.gvrSil), 1); ekleriCiz();
+      }));
+    };
+
+    $('[data-gvr="dosya"]', kutu).addEventListener('click', () => {
+      const alan = document.createElement('input');
+      alan.type = 'file'; alan.multiple = true; alan.style.display = 'none';
+      document.body.appendChild(alan);
+      alan.addEventListener('change', () => {
+        Array.from(alan.files || []).forEach(d => {
+          if (d.size > 10 * 1024 * 1024) { toast(d.name + ' 10 MB\'ı geçiyor.', 'uyari'); return; }
+          dosyalar.push(d);
+        });
+        alan.remove(); ekleriCiz();
+      });
+      alan.click();
+    });
 
     $$('[data-gvr-kisi]', kutu).forEach(b => b.addEventListener('click', () => {
       kisi = b.dataset.gvrKisi;
@@ -12842,12 +12879,18 @@ function gorevVerAc() {
       if (!baslik) { toast('Başlığı yaz — görev tek cümlede ne?'); return; }
       if (konu === 'proje' && !proje) { toast('Proje seç ya da «Genel» de.'); return; }
 
+      const dugme = $('[data-gvr="gonder"]', kutu);
+      dugme.disabled = true;
       try {
-        await DB.gorevOlustur({ proje_id: proje, baslik, aciklama: metin,
-                                atanan: kisi, bitis });
+        const id = await DB.gorevOlustur({ proje_id: proje, baslik, aciklama: metin,
+                                           atanan: kisi, bitis });
+        for (const d of dosyalar) {
+          try { await DB.gorevEkYukle(id, d); }
+          catch (h) { toast(d.name + ' yüklenemedi: ' + h.message, 'uyari'); }
+        }
         modalKapat(); sayaclariYaz(); render();
         toast(DB.kisiAdi(kisi) + ' kişisine görev verildi.', 'basari');
-      } catch (h) { toast(h.message, 'hata'); }
+      } catch (h) { toast(h.message, 'hata'); dugme.disabled = false; }
     });
     setTimeout(() => $('#gvr-baslik', kutu).focus(), 60);
   });
@@ -12919,6 +12962,16 @@ function gorevKartiHtml(g) {
     ${g.aciklama ? `<span class="label">Görev</span>
       <div class="gd-metin">${esc(g.aciklama)}</div>` : ''}
 
+    ${(g.ekler || []).length ? `<span class="label">Ekler</span>
+      <div class="gek-liste">
+        ${g.ekler.map(x => `
+          <button class="gek" type="button" data-gk="ek" data-deger="${esc(x.yol)}">
+            <span class="gek-ik">${svg(ICON.dosya, 16)}</span>
+            <span class="gek-yz"><b>${esc(x.ad)}</b><i>${kb(x.boyut || 0)}</i></span>
+            <span class="gek-in">${svg(ICON.ice, 15)}</span>
+          </button>`).join('')}
+      </div>` : ''}
+
     ${hareket.length ? `<span class="label">Geçmiş</span>
       <div class="gd-gecmis">
         ${hareket.map(h => `
@@ -12974,6 +13027,15 @@ async function gorevEylemi(tip, id, deger) {
       await DB.gorevStandartYaz(id, secilen);
       sonrasi(id, 'Standartlar güncellendi.');
     } catch (e) { toast(e.message, 'hata'); gorevKartiAc(id); }
+    return;
+  }
+
+  if (tip === 'ek') {
+    try {
+      const adres = await DB.gorevEkAdresi(deger);
+      if (adres) disariAc(adres);
+      else toast('Dosyanın adresi alınamadı.', 'hata');
+    } catch (h) { toast(h.message, 'hata'); }
     return;
   }
 

@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü
 
+## v0.231.0
+- **Göreve ek eklenebiliyor.** «Görev ver» penceresinde *Dosya ekle* ile
+  birden çok dosya seçiliyor (resimler yüklenirken küçültülüyor, sınır
+  10 MB); görev detayında *Ekler* bölümünde adı ve boyutuyla duruyor,
+  dokununca iniyor. Görev silinince ekleri de siliniyor.
+- **Çalıştırılacak SQL: `sql/31-gorev-ekleri.sql`** — önce Supabase'de
+  `gorevler` adında **private** bir kova aç, sonra dosyayı çalıştır.
+
 ## v0.230.1
 - `sql/30-gorevler-v2.sql` düzeltildi: eski görev tetikleyicisi durum
   çevirme adımını reddediyordu («Bu durumu yalnızca yönetici verebilir»),

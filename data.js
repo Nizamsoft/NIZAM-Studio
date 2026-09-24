@@ -768,6 +768,45 @@ const DB = {
     return data.id;
   },
 
+  /* ---- Görev ekleri ----
+     Dosya `gorevler` kovasında görevin klasöründe duruyor; listesi görevin
+     `ekler` sütununda. Kova private: indirme adresi her seferinde imzayla
+     üretiliyor, bir saat geçerli. */
+  async gorevEkYukle(gorevId, dosya) {
+    yazmaKontrol();
+    if (dosya.size > 10 * 1024 * 1024) throw new Error('Dosya 10 MB\'ı geçmesin.');
+
+    /* Resimse küçültülüyor: ek olarak gönderilen ekran görüntüleri
+       gereksiz yere megabaytlarca yer kaplıyordu. */
+    const gonderilecek = /^image\//.test(dosya.type) && !/svg/i.test(dosya.type)
+      ? await this.gorseliKucult(dosya, 1600, 0.85) : dosya;
+
+    const temizAd = String(gonderilecek.name || 'dosya')
+      .replace(/[^\w.\-]+/g, '-').slice(-60);
+    const yol = gorevId + '/' + Date.now() + '-' + temizAd;
+
+    const yukle = await AUTH.db.storage.from('gorevler')
+      .upload(yol, gonderilecek, { upsert: false, contentType: gonderilecek.type });
+    if (yukle.error) throw new Error(depoHatasi(yukle.error, 'gorevler'));
+
+    const g = this.gorev(gorevId);
+    const ekler = ((g && g.ekler) || []).concat([{
+      ad: String(dosya.name || temizAd), yol,
+      boyut: gonderilecek.size, tur: gonderilecek.type,
+    }]);
+    const { error } = await AUTH.db.from('tasks').update({ ekler }).eq('id', gorevId);
+    if (error) throw new Error(veriHatasi(error));
+    await this.tazele('gorevler');
+  },
+
+  async gorevEkAdresi(yol) {
+    if (!AUTH.db) return '';
+    const { data, error } = await AUTH.db.storage.from('gorevler')
+      .createSignedUrl(yol, 3600);
+    if (error) throw new Error(depoHatasi(error, 'gorevler'));
+    return (data && data.signedUrl) || '';
+  },
+
   async gorevGuncelle(id, alanlar) {
     const { error } = await AUTH.db.from('tasks').update(alanlar).eq('id', id);
     if (error) throw new Error(veriHatasi(error));
@@ -1633,6 +1672,13 @@ const DB = {
   },
 
   async gorevSil(id) {
+    /* Ekler kovada kalmasın — görev kaydı gidince onları bulacak bir yol
+       da kalmıyor. */
+    const g = this.gorev(id);
+    const yollar = ((g && g.ekler) || []).map(e => e.yol).filter(Boolean);
+    if (yollar.length) {
+      try { await AUTH.db.storage.from('gorevler').remove(yollar); } catch (h) {}
+    }
     yazmaKontrol();
     const { error } = await AUTH.db.from('tasks').delete().eq('id', id);
     if (error) throw new Error(veriHatasi(error));
