@@ -1,5 +1,15 @@
 # Değişiklik Günlüğü
 
+## v0.228.0
+- **Projeleri kilitle** ekranı yenilendi: başlık, «1/2 proje kilitli»
+  şeridi ve tek kartta satırlar — solda kilit ikonu (kilitliyken kırmızı),
+  sağda yeşil tik. Satıra dokunmak kilidi açıp kapatıyor.
+- **Ayarlar › Güvenlik Testi** ekranı durak içindeki güvenlik ekranıyla aynı
+  dile geçti: üstte işaretlenebilir köprü kurulumu, altında «Bağlantı» ve
+  «Personel girişi» kartları (etiketli, ikonlu kutular, şifrede göz
+  düğmesi), en altta tam genişlikte kırmızı «Test Et». Paragraf paragraf
+  anlatım kısaldı.
+
 ## v0.227.0
 - **Güvenlik kontrolüne «Güvenlik kontrolü başarılı» düğmesi geldi.** Test
   sıfır açıkla bitince düğme çıkıyor, basınca aşama tamamlanıyor ve üstte

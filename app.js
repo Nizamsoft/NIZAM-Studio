@@ -719,17 +719,26 @@ const VIEWS = {
     /* Template'ler kendi "Templateler" bölümünde ayrıca yönetiliyor —
        burada tekrar göstermeye gerek yok. */
     const liste = DB.projeler.filter(p => !p.arsiv && !cekirdekMi(p));
+    const kilitli = liste.filter(p => (p.palet || {}).kilitli).length;
 
     return `
-      <div class="note" style="margin-bottom:12px">
-        ${svg(ICON.info, 15)}
-        <span>Kilitlediğin proje yanlışlıkla silinemez — "Projeyi sil" desen
-        bile önce buradan kilidi açman istenir.</span>
+      <div class="pj-tepe">
+        <div class="pj-tepe-yz">
+          <h1>Projeleri kilitle</h1>
+          <p>Kilitlediğin proje yanlışlıkla silinemez — «Projeyi sil» desen
+             bile önce buradan kilidi açman istenir.</p>
+        </div>
       </div>
 
-      ${liste.length
-        ? `<div class="card liste">${liste.map(kilitSatiri).join('')}</div>`
-        : `<div class="card">${empty(ICON.folder, 'Proje yok', 'Kilitlenecek proje bulunmuyor.')}</div>`}
+      ${liste.length ? `
+        <div class="gk-ozet" style="background:var(--yuva);border-color:var(--line-3)">
+          <span class="gk-ozet-ik" style="background:var(--ink-strong)">${svg(ICON.kilit, 15)}</span>
+          <span class="gk-ozet-yz"><b style="color:var(--ink-strong)">${kilitli}/${liste.length} proje kilitli</b>
+            <i>Satıra dokunarak kilidi aç ya da kapat.</i></span>
+        </div>
+        <div class="gk-kart">${liste.map(kilitSatiri).join('')}</div>`
+        : `<div class="card">${empty(ICON.folder, 'Proje yok',
+            'Kilitlenecek proje bulunmuyor.')}</div>`}
     `;
   },
 
@@ -797,93 +806,113 @@ const VIEWS = {
         'Güvenlik testini yalnızca yönetici çalıştırabilir.')}</div>`;
     }
     const g = GUVENLIK_SAYFA;
-    return `
-      <div class="note" style="margin-bottom:14px">${svg(ICON.info, 15)}
-        <span>Herhangi bir Supabase projesinin (Studio'da kayıtlı olması
-        gerekmez) önce ziyaretçi, sonra girdiğin hesapla giriş yapmış bir
-        personelin ne yapabildiğini REST üzerinden dener. Veri bozmaz —
-        yazdığı her şeyi hemen siler. En iyisi: test için açılmış,
-        yetkisiz, ayrı bir personel hesabı kullan.</span></div>
+    const durum = guvenlikKurulumOku();
+    const hepsi = GUVENLIK_KURULUM_ADIM.every(a => durum[a.no]);
 
-      <div class="section" style="margin-top:0">
-        <span class="label">Bağlantı</span>
-        <div class="card" style="padding:14px">
-          <label class="field"><span>Supabase adresi</span>
+    /* Durak içindeki güvenlik ekranıyla aynı dil: bir kerelik köprü
+       kurulumu üstte işaretlenebilir maddeler, altında tek kart hâlinde
+       bağlantı ve hesap alanları, en altta kırmızı «Test Et». Eski hâli
+       dört ayrı "section" ve paragraf paragraf anlatımdı. */
+    const kurulum = hepsi && !GUVENLIK_KURULUM_ACIK ? `
+      <div class="gk-ozet">
+        <span class="gk-ozet-ik">${svg(ICON.tik, 15)}</span>
+        <span class="gk-ozet-yz"><b>Köprü kurulu</b>
+          <i>B, C ve sunucu işlevi denetimleri çalışabiliyor.</i></span>
+        <button class="gk-ozet-btn" type="button" data-eylem="guvenlik-kurulum-ac">Düzenle</button>
+      </div>` : `
+      <div class="gk-kart">
+        ${GUVENLIK_KURULUM_ADIM.map(a => `
+          <div class="gk ${durum[a.no] ? 'on' : ''}">
+            <span class="gk-ik">${svg(ICON[a.ikon], 20)}</span>
+            <span class="gk-yz">
+              <b>${esc(a.ad)}</b>
+              <i>${esc(a.alt(null))}</i>
+              ${durum[a.no] || !a.adres ? '' : `
+                <a class="gk-btn" target="_blank" rel="noopener" href="${a.adres}">
+                  ${svg(ICON.disari, 13)} ${esc(a.adresAd)}</a>`}
+            </span>
+            <button class="gk-tik" type="button" data-eylem="guvenlik-kurulum-tik"
+                    data-no="${a.no}" aria-label="${esc(a.ad)}">${svg(ICON.tik, 15)}</button>
+          </div>`).join('')}
+      </div>
+      <p class="gk-not">${svg(ICON.info, 13)}
+        <span>Köprü fonksiyonu (<b>guvenlik-sql</b>) Studio'nun Supabase'inde bir
+        kere kurulur. Kod güncellenirse yeniden yapıştır:
+        <button class="gk-ic-btn" type="button" data-eylem="guvenlik-sql-kopyala">
+          kodu kopyala</button></span></p>`;
+
+    return `
+      <div class="pj-tepe">
+        <div class="pj-tepe-yz">
+          <h1>Güvenlik Testi</h1>
+          <p>Herhangi bir Supabase projesini önce ziyaretçi, sonra personel
+             kimliğiyle dener. Veri bozmaz — yazdığı her şeyi hemen siler.</p>
+        </div>
+      </div>
+
+      ${kurulum}
+
+      <div class="btk">
+        <div class="btk-ust">
+          <span class="btk-ik mavi">${svg(ICON.gVeri, 22)}</span>
+          <span class="btk-yz"><b>Bağlantı</b>
+            <i>Test edilecek projenin adresi ve anon key'i.</i></span>
+        </div>
+        <label class="gf">
+          <span class="gf-et">Supabase adresi</span>
+          <span class="gf-kutu">${svg(ICON.bulut, 17)}
             <input type="text" id="gv-url" value="${esc(g.url)}"
                    placeholder="https://xxxx.supabase.co" autocomplete="off"
-                   spellcheck="false" autocapitalize="off"></label>
-          <label class="field" style="margin-top:10px"><span>anon key</span>
+                   spellcheck="false" autocapitalize="off"></span>
+        </label>
+        <label class="gf">
+          <span class="gf-et">anon key</span>
+          <span class="gf-kutu">${svg(ICON.anahtar, 17)}
             <input type="text" id="gv-anon" value="${esc(g.anon)}"
                    placeholder="sb_publishable_… ya da eyJhbG…" autocomplete="off"
-                   spellcheck="false" autocapitalize="off"></label>
-        </div>
+                   spellcheck="false" autocapitalize="off"></span>
+        </label>
       </div>
 
-      <div class="section">
-        <span class="label">Personel girişi</span>
-        <div class="card" style="padding:14px">
-          <p class="ipucu" style="margin:0 0 10px">Test edilecek projedeki bir
-            hesabın e-postası ve şifresi — dördü de gerekli. Giriş
-            başarısız olursa test hiç başlamaz. Şifre hiçbir yerde
-            saklanmıyor.</p>
-          <label class="field"><span>E-posta</span>
+      <div class="btk">
+        <div class="btk-ust">
+          <span class="btk-ik kirmizi">${svg(ICON.kisi, 22)}</span>
+          <span class="btk-yz"><b>Personel girişi</b>
+            <i>Test edilecek projedeki bir hesap. Giriş başarısız olursa test
+               hiç başlamaz; şifre hiçbir yerde saklanmıyor.</i></span>
+        </div>
+        <label class="gf">
+          <span class="gf-et">E-posta</span>
+          <span class="gf-kutu">${svg(ICON.mail, 17)}
             <input type="text" id="gv-eposta" value="${esc(g.eposta)}"
                    placeholder="personel@firma.com" autocomplete="off"
-                   spellcheck="false" autocapitalize="off"></label>
-          <label class="field" style="margin-top:10px"><span>Şifre</span>
-            <input type="password" id="gv-sifre" placeholder="••••••••" autocomplete="off"></label>
-        </div>
-      </div>
-
-      <div class="section">
-        <span class="label">guvenlik.json adresi (opsiyonel)</span>
-        <div class="card" style="padding:14px">
-          <p class="ipucu" style="margin:0 0 10px">Tablo listesi önce otomatik keşfedilir; olmazsa
-            programın <code>guvenlik.json</code>'undan okunur — bu yedek için gerekli. Depo GİZLİYSE
-            (github.com/… adresi 401/404 verir) dosyanın yayında olduğu doğrudan adresi gir (ör.
-            GitHub Pages). Depo PUBLIC'se github.com/sahip/depo yazman yeterli.</p>
-          <label class="field"><span>Adres</span>
+                   spellcheck="false" autocapitalize="off"></span>
+        </label>
+        <label class="gf">
+          <span class="gf-et">Şifre</span>
+          <span class="gf-kutu">${svg(ICON.kilit, 17)}
+            <input type="password" id="gv-sifre" placeholder="Hesabın şifresi" autocomplete="off">
+            <button class="gf-goz" type="button" data-eylem="guvenlik-sifre-goster"
+                    data-hedef="gv-sifre" aria-label="Şifreyi göster">
+              ${svg(ICON.goz, 16)}</button></span>
+        </label>
+        <label class="gf">
+          <span class="gf-et">guvenlik.json adresi</span>
+          <span class="gf-kutu">${svg(ICON.dal, 17)}
             <input type="text" id="gv-depo" value="${esc(g.depo)}"
-                   placeholder="https://.../guvenlik.json ya da github.com/sahip/depo" autocomplete="off"
-                   spellcheck="false" autocapitalize="off"></label>
-        </div>
+                   placeholder="github.com/sahip/depo" autocomplete="off"
+                   spellcheck="false" autocapitalize="off"></span>
+        </label>
+        <p class="ipucu">Tablo listesi önce kendiliğinden keşfedilir; olmazsa
+          programın <code>guvenlik.json</code>'undan okunur. Depo gizliyse
+          dosyanın yayında olduğu doğrudan adresi yaz.</p>
       </div>
 
-      <div class="kur-dug">
-        <button class="sayfa-dug" type="button" data-eylem="guvenlik-test-calistir"
-                ${g.calisiyor ? 'disabled' : ''}>
-          ${svg(ICON.gGuvenlik, 15)} ${g.calisiyor ? 'Test ediliyor…' : 'Test Et'}
-        </button>
-      </div>
+      <button class="sayfa-dug bitir" type="button" data-eylem="guvenlik-test-calistir"
+              ${g.calisiyor ? 'disabled' : ''}>
+        ${svg(ICON.gGuvenlik, 16)} ${g.calisiyor ? 'Test ediliyor…' : 'Test Et'}</button>
 
       ${guvenlikSonucTablosu(g.sonuc, g.ustKatmanUyarisi, g.kalintilar, g.harita, g.tabloKaynagi)}
-
-      <div class="section">
-        <span class="label">2. Aşama · B, C ve Sunucu işlevi testleri (bir kere kurulur)</span>
-        <div class="card" style="padding:14px">
-          <p class="ipucu" style="margin:0 0 10px">Yapısal (B), programa özel (C) ve sunucu işlevi
-            saldırıları denetimi bir Supabase erişim jetonu (personal access token) ister. Bir kere kur,
-            sonrası otomatik: <b>Test Et</b> her çalıştığında üçünü de dener; fonksiyon kurulu değilse
-            sessizce atlar. Fonksiyon kodu güncellendiyse (yeni sürüm çıktığında) mevcut
-            <code>guvenlik-sql</code> fonksiyonunun <b>Code</b> sekmesinden kodu yeniden yapıştırıp
-            deploy etmen yeterli — Secrets'a dokunman gerekmez.</p>
-          <p class="ipucu" style="margin:0 0 10px"><b>1) Jetonu ŞURADAN AL</b> — test edeceğin projelerin
-            bulunduğu Supabase HESABI (jeton projeye değil hesaba aittir; template/müşteri projeleri
-            Studio'nun kendi hesabından ayrı bir hesaptaysa oradan alınır) → <code>supabase.com/dashboard/
-            account/tokens</code> → <b>Generate new token</b> → <b>Create legacy token</b> (scoped/granular
-            değil, Management API'nin SQL ucu onu istiyor). Değer <code>sbp_</code> ile başlar.</p>
-          <p class="ipucu" style="margin:0 0 10px"><b>2) Jetonu ŞURAYA KOY</b> — Studio'nun kendi Supabase'i
-            (bu jeton nereden alındığından bağımsız, yalnız KASA görevi görür) → <b>Edge Functions →
-            New Function</b>, adı <code>guvenlik-sql</code>, kodu yapıştır, deploy et. Sonra o fonksiyonun
-            <b>Settings → Secrets</b> bölümüne <code>NS_SUPABASE_JETON</code> ekle. Kaydettikten sonra hata
-            hemen devam ederse fonksiyonu bir kere yeniden dağıt (redeploy) ya da bir dakika bekleyip
-            tekrar dene — eski değer bir süre takılı kalabiliyor.</p>
-          <div class="kur-dug">
-            <button class="sayfa-dug ikincil" type="button" data-eylem="guvenlik-sql-kopyala">
-              ${svg(ICON.kopya, 15)} Fonksiyon kodunu kopyala</button>
-          </div>
-        </div>
-      </div>
     `;
   },
 
@@ -6698,15 +6727,25 @@ function guvenlikSonTestKarti(p, pl) {
       da SQL'de bir şey değiştiyse yeniden ölç — eski sonuç yeni hâli anlatmaz.</p>`);
 }
 
-/* Kurulum artık projeye yazılıyor, tarayıcıya değil: jeton hesaba ait ve
-   her müşterinin Supabase hesabı ayrı olabiliyor — yeni projede jeton da
-   secret de yeniden yapılıyor. Edge Function maddesi kalktı; o gerçekten
-   tek seferlik ve Studio'nun kendi Supabase'inde duruyor. */
+/* Durak içindeki kurulum PROJEYE yazılıyor: jeton hesaba ait ve her
+   müşterinin Supabase hesabı ayrı olabiliyor, yeni projede jeton da secret
+   de yeniden yapılıyor. Ayarlar > Güvenlik Testi ekranı ise tek bir projeye
+   bağlı değil — orada aynı liste tarayıcıya yazılıyor. */
 let GUVENLIK_KURULUM_ACIK = false;
+
+const GUVENLIK_KURULUM_ANAHTAR = 'ns-guvenlik-kurulum';
+function guvenlikKurulumOku() {
+  try { return JSON.parse(localStorage.getItem(GUVENLIK_KURULUM_ANAHTAR) || '{}') || {}; }
+  catch (h) { return {}; }
+}
+function guvenlikKurulumYaz(o) {
+  try { localStorage.setItem(GUVENLIK_KURULUM_ANAHTAR, JSON.stringify(o)); } catch (h) {}
+}
 
 const GUVENLIK_KURULUM_ADIM = [
   { no: 'jeton', ikon: 'anahtar', ad: 'Jetonu oluşturdum',
-    alt: p => (projeAdi(p) || 'Bu proje') + ' projesinin Supabase hesabında '
+    alt: p => (p ? projeAdi(p) + ' projesinin' : 'Test edilecek projenin')
+       + ' Supabase hesabında '
        + 'Account → Access Tokens → Generate new token → Create legacy token '
        + 'yaptım. Değer sbp_ ile başlıyor.',
     adres: 'https://supabase.com/dashboard/account/tokens', adresAd: 'Jeton sayfasını aç' },
@@ -7881,7 +7920,7 @@ function render() {
   if (sayfa !== 'baglantilar') ACIK_BAGLANTI = null;
   if (sayfa !== 'kurulum') ACIK_KURULUM = null;
   if (sayfa !== 'tasarim') { TASARIM_SEKME = 'promptlar'; TASARIM_ODAK = null; }
-  if (sayfa !== 'guvenlik') GUVENLIK_KURULUM_ACIK = false;
+  if (sayfa !== 'guvenlik' && key !== 'guvenlik') GUVENLIK_KURULUM_ACIK = false;
 
   /* Kurulum durağından çıkıldıysa modül ağacı kapanır — aynı sebeple:
      geri gelindiğinde ağacın içine değil kurulum ızgarasına düşülsün.
@@ -8497,14 +8536,14 @@ function kilitAltBaslik() {
 function kilitSatiri(p) {
   const kilitli = !!(p.palet || {}).kilitli;
   return `
-    <div class="row">
-      <div class="row-main">
-        <span class="row-title">${esc(projeAdi(p))}</span>
-        <span class="row-sub">${kilitli ? 'Kilitli — silinemez' : 'Kilitli değil'}</span>
-      </div>
-      <label class="kur-onay ${kilitli ? 'on' : ''}" data-eylem="proje-kilit-degistir"
-             data-proje="${p.id}" role="button" tabindex="0">
-        <span class="kur-kutu">${svg(ICON.kilit, 12)}</span></label>
+    <div class="gk ${kilitli ? 'on' : ''}" data-eylem="proje-kilit-degistir"
+         data-proje="${p.id}" role="button" tabindex="0">
+      <span class="gk-ik ${kilitli ? 'kirmizi' : ''}">${svg(ICON.kilit, 20)}</span>
+      <span class="gk-yz">
+        <b>${esc(projeAdi(p))}</b>
+        <i>${kilitli ? 'Kilitli — silinemez.' : 'Kilitli değil, silinebilir.'}</i>
+      </span>
+      <span class="gk-tik">${svg(ICON.tik, 15)}</span>
     </div>`;
 }
 
@@ -16058,13 +16097,15 @@ async function eylemCalistir(el) {
   }
 
   if (e === 'guvenlik-kurulum-tik') {
-    const pr = DB.proje(el.dataset.proje);
-    if (!pr) return;
-    const pl = pr.palet || {};
-    const durum = Object.assign({}, pl.guvenlikKurulum || {});
+    /* Durak içinde proje kimliği var, Ayarlar ekranında yok — orada aynı
+       liste tarayıcıya yazılıyor. */
+    const pr = el.dataset.proje ? DB.proje(el.dataset.proje) : null;
+    const pl = pr ? (pr.palet || {}) : null;
+    const durum = Object.assign({}, pr ? (pl.guvenlikKurulum || {}) : guvenlikKurulumOku());
     durum[el.dataset.no] = !durum[el.dataset.no];
     /* Hepsi işaretlenince liste kendiliğinden kapanıyor. */
     if (GUVENLIK_KURULUM_ADIM.every(a => durum[a.no])) GUVENLIK_KURULUM_ACIK = false;
+    if (!pr) { guvenlikKurulumYaz(durum); return render(); }
     return isYap(() => DB.paletKaydet(pr.id,
       Object.assign({}, pl, { guvenlikKurulum: durum })));
   }

@@ -10305,3 +10305,7 @@ button.kt {
   .kt { flex-wrap: wrap; }
   .kt-dug { width: 100%; text-align: center; margin-top: 12px; position: relative; z-index: 1; }
 }
+/* Kilit listesindeki satır: kilitliyken ikon kırmızı. */
+.gk-ik.kirmizi { background: var(--red-soft); color: var(--red-ink); }
+.gk[role="button"] { cursor: pointer; }
+.gk[role="button"] .gk-tik { pointer-events: none; }
