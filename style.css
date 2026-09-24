@@ -10309,3 +10309,55 @@ button.kt {
 .gk-ik.kirmizi { background: var(--red-soft); color: var(--red-ink); }
 .gk[role="button"] { cursor: pointer; }
 .gk[role="button"] .gk-tik { pointer-events: none; }
+
+/* ---------- Nizam Standartları · yeni liste ---------- */
+.std-grup { margin-bottom: 12px; }
+.std-ok {
+  flex: 0 0 auto; line-height: 0; color: var(--ink-faint);
+  transition: transform .2s var(--ease);
+}
+.std-ok svg { fill: none; stroke: currentColor; stroke-width: 2; }
+.std-ok .dolgu { display: none; }
+.std-ok.acik { transform: rotate(90deg); }
+.std-grup > .gk { cursor: pointer; }
+.std-grup.acik > .gk { border-bottom-color: var(--line-2); }
+.std-alan-bas {
+  display: flex; align-items: center; gap: 10px;
+  padding: 11px 13px 6px;
+  font-family: var(--yazi-etiket); font-size: 11.5px; font-weight: 700;
+  letter-spacing: .06em; text-transform: uppercase; color: var(--ink-faint);
+}
+.std-alan-bas::after {
+  content: ''; flex: 1; height: 1px; background: var(--line-3);
+}
+.std-alan-bas em {
+  flex: 0 0 auto; font-style: normal; font-size: 11px; color: var(--ink-faint);
+}
+.std { border-bottom: 1px solid var(--line-3); }
+.std:last-child { border-bottom: 0; }
+.std > .gk { cursor: pointer; border-bottom: 0; padding: 11px 13px; }
+.std-kullanim {
+  flex: 0 0 auto; padding: 3px 8px; border-radius: 999px;
+  background: var(--yuva); font-size: 11px; color: var(--ink-soft);
+}
+.std-govde { padding: 0 13px 14px; }
+.std-govde p {
+  margin: 0 0 10px; font-size: 13.5px; line-height: 1.6; color: var(--ink);
+}
+.std-yerel { color: var(--ink-soft) !important; }
+.std-yerel b { color: var(--ink-strong); }
+.std-dug { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* Standart penceresindeki alanlar: gf kutusu select ve textarea ile de. */
+.gf-et em {
+  font-style: normal; font-weight: 500; font-size: 12px; color: var(--ink-faint);
+}
+.gf-kutu select {
+  flex: 1; min-width: 0; height: 100%; border: 0; background: none; outline: none;
+  -webkit-appearance: none; appearance: none; cursor: pointer;
+  font-family: inherit; font-size: 15px; color: var(--ink-strong);
+}
+.gf .anl-kutu { min-height: 150px; }
+.gf .anl-kutu.kisa { min-height: 88px; }
+/* Seçim kutusundaki ok aşağıyı göstersin. */
+.gf-kutu select ~ svg { transform: rotate(90deg); }

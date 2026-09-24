@@ -7728,30 +7728,24 @@ let STD_KOPYALANDI = false;
 function stdAracKartlari() {
   const k = STD_KOPYALANDI;
   return `
-    <div class="std-arac ${k ? 'adim2' : ''}">
-      <button class="sa-kart ana ${k ? 'kopyalandi' : ''}" type="button" data-eylem="std-prompt">
-        <span class="sa-ust">
-          <span class="sa-ikon">${svg(ICON.kopya, 18)}${svg(ICON.tik, 18)}</span>
-          <span class="sa-adim">1</span>
-        </span>
-        <span class="sa-yazi">
-          <span class="sa-ad">${k ? 'Prompt panoda' : 'Standart ekleme promptu'}</span>
-          <span class="sa-alt">${k ? 'Claude\'a yapıştır' : 'Panoya kopyalar'}</span>
-        </span>
-      </button>
-
-      <span class="sa-bag"><i></i><em>${svg(ICON.chevron, 13)}</em></span>
-
-      <button class="sa-kart ${k ? 'sirada' : 'bekliyor'}" type="button" data-eylem="standart-ice-aktar">
-        <span class="sa-ust">
-          <span class="sa-ikon">${svg(ICON.ice, 18)}</span>
-          <span class="sa-adim">2</span>
-        </span>
-        <span class="sa-yazi">
-          <span class="sa-ad">Kuralı yapıştır</span>
-          <span class="sa-alt">Claude'un bloğunu bırak</span>
-        </span>
-      </button>
+    <div class="btk">
+      <div class="btk-ust">
+        <span class="btk-ik ${k ? 'yesil' : 'kirmizi'}">${svg(k ? ICON.tik : ICON.kopya, 22)}</span>
+        <span class="btk-yz"><b>${k ? 'Prompt panoda' : 'Standart ekleme promptu'}</b>
+          <i>${k ? 'Claude\'a yapıştır, döndürdüğü kuralı aşağıdan aktar.'
+                 : 'Claude\'a "son değişiklikten bir kural çıkar mı?" diye sorar.'}</i></span>
+        <button class="btk-dug" type="button" data-eylem="std-prompt">
+          ${svg(ICON.kopya, 15)} ${k ? 'Yeniden kopyala' : 'Kopyala'}</button>
+      </div>
+    </div>
+    <div class="btk">
+      <div class="btk-ust">
+        <span class="btk-ik mavi">${svg(ICON.ice, 22)}</span>
+        <span class="btk-yz"><b>Kuralı yapıştır</b>
+          <i>Claude'un döndürdüğü bloğu bırak — Studio çözümleyip kaydeder.</i></span>
+        <button class="btk-dug" type="button" data-eylem="standart-ice-aktar">
+          ${svg(ICON.ice, 15)} Yapıştır</button>
+      </div>
     </div>`;
 }
 
@@ -7766,34 +7760,28 @@ function grupSimgesi(ad) {
 /* Bir standart grubu. Başlığa basınca açılır; başka bir grup açılınca kapanır.
    İçeride alan adları ara başlık — ayrı bir açılır katman değil, çünkü üç
    kademe açıp kapamak telefonda yoruyor. */
-function grupKarti(g, i = 0) {
+function grupKarti(g) {
   const acik = ACIK_GRUP === g.ad;
-  const kac  = g.liste.length;
   const sim  = grupSimgesi(g.ad);
 
   return `
-    <div class="card modul standart-grup" style="--i:${i}">
-      <div class="modul-bas ${acik ? 'acik' : ''}" data-eylem="standart-grup-ac" data-ad="${esc(g.ad)}"
+    <div class="gk-kart std-grup ${acik ? 'acik' : ''}">
+      <div class="gk" data-eylem="standart-grup-ac" data-ad="${esc(g.ad)}"
            role="button" tabindex="0" aria-expanded="${acik}">
-        <span class="chev">${svg(ICON.chevron, 15)}</span>
-        <span class="modul-ikon grup-ikon ${sim.sinif}">${svg(sim.ikon, 16)}</span>
-        <span class="modul-yazi">
-          <span class="modul-ad">${esc(g.ad)}</span>
-          <span class="modul-alt">${g.alanlar.length} alan · ${kac} kural</span>
+        <span class="gk-ik ${sim.sinif}">${svg(sim.ikon, 20)}</span>
+        <span class="gk-yz">
+          <b>${esc(g.ad)}</b>
+          <i>${g.alanlar.length} alan · ${g.liste.length} kural</i>
         </span>
+        <span class="std-ok ${acik ? 'acik' : ''}">${svg(ICON.chevron, 16)}</span>
       </div>
-
-      ${acik ? `<div class="grup-govde ${sim.sinif}">
-        ${g.alanlar.map(a => `
-          <div class="std-alan">
-            <div class="std-alan-bas">${esc(a.ad)}<em>${a.liste.length}</em></div>
-            ${a.liste.map(standartKarti).join('')}
-          </div>`).join('')}
-      </div>` : ''}
+      ${acik ? g.alanlar.map(a => `
+        <div class="std-alan-bas">${esc(a.ad)}<em>${a.liste.length}</em></div>
+        ${a.liste.map(standartKarti).join('')}`).join('') : ''}
     </div>`;
 }
 
-function standartKarti(st, i = 0) {
+function standartKarti(st) {
   const acik = ACIK_STANDART.has(st.id);
   const kac  = DB.standartKullanimi(st.id);
   /* Özet alanı artık doldurulmuyor: başlık zaten kuralın ne dediğini
@@ -7801,30 +7789,26 @@ function standartKarti(st, i = 0) {
   const alt  = st.ozet || String(st.tarif || '').split(/(?<=\.)\s/)[0] || '';
 
   return `
-    <div class="card standart" style="--i:${i}">
-      <div class="standart-bas ${acik ? 'acik' : ''}" data-eylem="standart-ac" data-id="${st.id}"
-           role="button" tabindex="0">
-        <span class="chev">${svg(ICON.chevron, 15)}</span>
-        <span class="modul-ikon">${svg(ICON.katman, 16)}</span>
-        <span class="modul-yazi">
-          <span class="modul-ad">${esc(st.ad)}</span>
-          <span class="modul-alt">${esc(alt)}</span>
+    <div class="std ${acik ? 'acik' : ''}">
+      <div class="gk" data-eylem="standart-ac" data-id="${st.id}" role="button" tabindex="0">
+        <span class="gk-yz">
+          <b>${esc(st.ad)}</b>
+          <i>${esc(alt)}</i>
         </span>
-        ${kac ? `<span class="kullanim mono">${kac} projede</span>` : ''}
+        ${kac ? `<em class="std-kullanim mono">${kac} projede</em>` : ''}
+        <span class="std-ok ${acik ? 'acik' : ''}">${svg(ICON.chevron, 16)}</span>
       </div>
-
       ${acik ? `
-        <div class="standart-govde">
-          <p class="standart-tarif">${st.tarif ? esc(st.tarif) : '<em class="ipucu">Kural henüz yazılmadı.</em>'}</p>
-          ${st.yerel ? `<p class="standart-tarif yerel">
-            <b>Sunucusuz projede:</b> ${esc(st.yerel)}</p>` : ''}
+        <div class="std-govde">
+          <p>${st.tarif ? esc(st.tarif) : '<em class="ipucu">Kural henüz yazılmadı.</em>'}</p>
+          ${st.yerel ? `<p class="std-yerel"><b>Sunucusuz projede:</b> ${esc(st.yerel)}</p>` : ''}
           ${AUTH.yonetici ? `
-            <div class="modul-araclar" style="padding-left:0;margin-top:12px">
-              <button class="mini-link" data-eylem="standart-duzenle" data-id="${st.id}" type="button">
+            <div class="std-dug">
+              <button class="fn-btn" data-eylem="standart-duzenle" data-id="${st.id}" type="button">
                 ${svg(ICON.kalem, 13)} Düzenle</button>
-              <button class="mini-link" data-eylem="standart-kopyala" data-id="${st.id}" type="button">
+              <button class="fn-btn" data-eylem="standart-kopyala" data-id="${st.id}" type="button">
                 ${svg(ICON.kopya, 13)} Kuralı kopyala</button>
-              <button class="mini-link tehlike" data-eylem="standart-sil" data-id="${st.id}"
+              <button class="fn-btn sil" data-eylem="standart-sil" data-id="${st.id}"
                       data-ad="${esc(st.ad)}" type="button">${svg(ICON.cop, 13)} Kaldır</button>
             </div>` : ''}
         </div>` : ''}
@@ -14386,34 +14370,39 @@ function standartDuzenle(id) {
   modalAc(`
     ${modalBaslik(ICON.katman, st ? 'Standardı düzenle' : 'Yeni standart', 'Kural prompta olduğu gibi girer — net ve emir kipinde yaz.')}
 
-    <label class="field">
-      <span>Grup <em class="ipucu">işin cinsi</em></span>
-      <select id="sd-grup">
-        ${STANDART_GRUPLARI.map(g => `<option value="${esc(g)}"${
-          (st ? st.grup : VARSAYILAN_GRUP) === g ? ' selected' : ''}>${esc(g)}</option>`).join('')}
-      </select>
+    <label class="gf">
+      <span class="gf-et">Grup <em>işin cinsi</em></span>
+      <span class="gf-kutu">${svg(ICON.katman, 17)}
+        <select id="sd-grup">
+          ${STANDART_GRUPLARI.map(g => `<option value="${esc(g)}"${
+            (st ? st.grup : VARSAYILAN_GRUP) === g ? ' selected' : ''}>${esc(g)}</option>`).join('')}
+        </select>
+        ${svg(ICON.chevron, 15)}</span>
     </label>
-    <label class="field">
-      <span>Alan <em class="ipucu">ekranın hangi parçası</em></span>
-      <input type="text" id="sd-alan" list="sd-alanlar" maxlength="60" autocomplete="off"
-             value="${esc(st ? (st.alan || st.ad) : '')}" placeholder="Örn. Üst çubuk">
+    <label class="gf">
+      <span class="gf-et">Alan <em>ekranın hangi parçası</em></span>
+      <span class="gf-kutu">${svg(ICON.panel, 17)}
+        <input type="text" id="sd-alan" list="sd-alanlar" maxlength="60" autocomplete="off"
+               value="${esc(st ? (st.alan || st.ad) : '')}" placeholder="Örn. Üst çubuk"></span>
       <datalist id="sd-alanlar">
         ${alanSecenekleri().map(a => `<option value="${esc(a)}"></option>`).join('')}
       </datalist>
     </label>
-    <label class="field">
-      <span>Başlık <em class="ipucu">kural ne diyor, iki üç kelime</em></span>
-      <input type="text" id="sd-ad" value="${esc(st ? st.ad : '')}"
-             placeholder="Örn. Araç düğmeleri profil panelinde" maxlength="80" autocomplete="off">
+    <label class="gf">
+      <span class="gf-et">Başlık <em>kural ne diyor, iki üç kelime</em></span>
+      <span class="gf-kutu">${svg(ICON.etiket, 17)}
+        <input type="text" id="sd-ad" value="${esc(st ? st.ad : '')}"
+               placeholder="Örn. Araç düğmeleri profil panelinde" maxlength="80"
+               autocomplete="off"></span>
     </label>
-    <label class="field">
-      <span>Kural <em class="ipucu">prompta giren metin</em></span>
-      <textarea id="sd-tarif" rows="7"
+    <label class="gf">
+      <span class="gf-et">Kural <em>prompta giren metin</em></span>
+      <textarea class="anl-kutu" id="sd-tarif" rows="7"
         placeholder="Üst çubukta yalnız marka, sayfa adı ve kullanıcı kutusu durur…">${esc(st ? st.tarif : '')}</textarea>
     </label>
-    <label class="field">
-      <span>Sunucusuz projede <em class="ipucu">boş bırakılabilir</em></span>
-      <textarea id="sd-yerel" rows="3"
+    <label class="gf">
+      <span class="gf-et">Sunucusuz projede <em>boş bırakılabilir</em></span>
+      <textarea class="anl-kutu kisa" id="sd-yerel" rows="3"
         placeholder="Veri kullanıcının cihazında kalan projelerde bu kuralın karşılığı ne? Yoksa boş bırak.">${esc(st ? (st.yerel || '') : '')}</textarea>
     </label>
 

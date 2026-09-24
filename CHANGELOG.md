@@ -1,5 +1,12 @@
 # Değişiklik Günlüğü
 
+## v0.229.0
+- **Nizam Standartları yeni tasarım diline geçti.** İki araç kartı
+  («Standart ekleme promptu» · «Kuralı yapıştır») öteki ekranlardaki kart
+  biçiminde; gruplar ve kurallar tek kartta satır satır, açılınca kuralın
+  metni ve Düzenle/Kopyala/Kaldır düğmeleri çıkıyor. «Yeni standart»
+  penceresindeki alanlar da etiketi üstte, ikonu solda kutulara döndü.
+
 ## v0.228.1
 - **Nizam Standartları'na «Yeni» düğmesi geldi.** Elle standart eklemek
   yalnız masaüstündeki üst çubuk düğmesiyle mümkündü; telefonda o düğme
