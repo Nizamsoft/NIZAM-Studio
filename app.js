@@ -7585,7 +7585,7 @@ function bildirimOkunanYaz(kume) {
 const BILDIRIM_BASLIK = {
   olusturuldu: 'yeni bir görev verdi',
   atandi:      'görevi sana aktardı',
-  bitirdi:     'görevi bitirdi',
+  bitirdi:     'görevi onaya gönderdi',
   onaylandi:   'görevi onayladı',
   geri:        'görevi geri gönderdi',
   baslandi:    'görevi yeniden açtı',
@@ -13071,17 +13071,21 @@ function gorevKartiHtml(g) {
       </div>`;
   };
 
-  /* Duruma göre tek ana düğme: alan "bitirdim" der, veren onaylar. */
+  /* Duruma göre tek ana düğme: alan işi bitirince onaya gönderiyor,
+     veren onaylıyor. Onaylanınca görev kapanıyor. */
   const dugme = g.durum === 'bekliyor' && alan ? `
       <button class="sayfa-dug bitir" type="button" data-gk="bitirdim">
-        ${svg(ICON.tik, 16)} Bitirdim</button>`
+        ${svg(ICON.tik, 16)} Onaya gönder</button>
+      <p class="ipucu">${esc(DB.kisiAdi(g.olusturan))} kontrol etsin diye haber gider.</p>`
     : g.durum === 'bitirdi' && veren ? `
       <button class="sayfa-dug bitir" type="button" data-gk="onayla">
         ${svg(ICON.tik, 16)} Onayla</button>
       <button class="sayfa-dug ikincil" type="button" data-gk="geri">
         ${svg(ICON.geriAl, 15)} Geri gönder</button>`
+    : g.durum === 'bitirdi' && alan ? `
+      <p class="ipucu">${esc(DB.kisiAdi(g.olusturan))} onayı bekleniyor.</p>`
     : g.durum === 'bekliyor' && veren ? `
-      <p class="ipucu">${esc(DB.kisiAdi(g.atanan))} henüz bitirmedi.</p>` : '';
+      <p class="ipucu">${esc(DB.kisiAdi(g.atanan))} henüz onaya göndermedi.</p>` : '';
 
   const hareket = DB.hareketleri(g.id);
 
@@ -13242,8 +13246,11 @@ async function gorevEylemi(tip, id, deger) {
 async function gorevDurum(id, durum, notu = '') {
   try {
     await DB.durumDegistir(id, durum, notu);
-    sonrasi(id, durum === 'onaylandi' ? 'Onaylandı, görev kapandı.'
-              : durum === 'bitirdi'   ? 'Bitirdin — onayı bekleniyor.'
+    const g = DB.gorev(id);
+    sonrasi(id, durum === 'onaylandi' ? 'Onaylandı, görev tamamlandı.'
+              : durum === 'bitirdi'
+                ? 'Onaya gönderildi — ' + (DB.kisiAdi(g && g.olusturan) || 'veren kişi')
+                  + ' haberdar edildi.'
               : 'Geri gönderildi.');
   } catch (e) {
     toast(e.message, 'hata');

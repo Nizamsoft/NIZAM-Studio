@@ -1,5 +1,12 @@
 # Değişiklik Günlüğü
 
+## v0.233.1
+- **«Bitirdim» düğmesi «Onaya gönder» oldu.** Görevi alan basınca görev
+  *Onay bekliyor*'a düşüyor, görevi verene bildirim gidiyor; veren
+  «Onayla» deyince görev tamamlanıyor, «Geri gönder» deyince geri dönüyor.
+- Ekranda kimin sırası olduğu yazıyor: alan tarafta *«… onayı bekleniyor»*,
+  veren tarafta *«… henüz onaya göndermedi»*.
+
 ## v0.233.0
 - **Zil artık bildirimleri açıyor.** Üstteki zile basınca «Bildirimler»
   listesi açılıyor: kim ne yaptı, hangi görevde, ne kadar önce. Kategori
