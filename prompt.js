@@ -805,13 +805,15 @@ const PROMPT = {
      hiçbir şey yazılmıyor. O yüzden SQL de dosya yolu değil, JSON'un
      İÇİNDE metin olarak isteniyor. */
   guvenlikJsonKur(projeId) {
-    const p = DB.proje(projeId);
-    if (!p) return '';
-    const pl = p.palet || {};
+    /* Projesiz de çağrılıyor (Ayarlar > Güvenlik Testi): o zaman depo ve
+       katman bilgisi yok, prompt genel kalıyor — hangi programın önünde
+       olduğunu Claude'un kendi oturumu zaten biliyor. */
+    const p = projeId ? DB.proje(projeId) : null;
+    const pl = (p && p.palet) || {};
     const roller = rolListesi(pl.roller);
 
     const s = [];
-    const slug = depoSlug(p.repo);
+    const slug = p ? depoSlug(p.repo) : '';
     if (slug) {
       s.push('> ### Depo: `' + slug + '`');
       s.push('> Bu oturum yalnız bu depoya bağlı olmalı. Deposu farklıysa dur');
@@ -820,9 +822,11 @@ const PROMPT = {
     }
     s.push('# Saldırı testi künyesi (`guvenlik.json`)');
     s.push('');
-    s.push('Bu programın güvenliğini dışarıdan ölçeceğim. Bunun için programı');
-    s.push('tanıyan bir künyeye ihtiyacım var: hangi tablolar var, hangi');
-    s.push('katman neyi görmemeli, bunu sınayan SQL ne.');
+    s.push('Şu an açık olduğun programın güvenliğini dışarıdan ölçeceğim.');
+    s.push('Bunun için programı tanıyan bir künyeye ihtiyacım var: hangi');
+    s.push('tablolar var, hangi katman neyi görmemeli, bunu sınayan SQL ne.');
+    s.push('Deposunda `guvenlik.json` varsa onu oku ve güncel hâlini ver;');
+    s.push('yoksa kodu ve göç dosyalarını okuyup sıfırdan çıkar.');
     s.push('');
     s.push('**Depoya hiçbir şey yazma, commit atma.** Yalnız aşağıdaki JSON\'u');
     s.push('cevabında tek bir blok olarak ver — onu kopyalayıp Studio\'ya');
@@ -836,6 +840,11 @@ const PROMPT = {
         const g = (gorev[ad] || '').trim();
         s.push(`${i + 1}. **${ad}**${g ? ' — ' + g : ''}`);
       });
+      s.push('');
+    }
+    if (!roller.length) {
+      s.push('Katmanları (rolleri) kodun kendisinden çıkar — kimin ne');
+      s.push('görebildiğini gerçek kurallardan oku, varsayma.');
       s.push('');
     }
     s.push('## İstediğim JSON');

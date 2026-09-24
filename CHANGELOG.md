@@ -1,5 +1,14 @@
 # Değişiklik Günlüğü
 
+## v0.235.1
+- **Künye kartı doğru yere taşındı.** «Programa özel künye» artık
+  Ayarlar › Güvenlik Testi'nde; oradaki *guvenlik.json adresi* alanı
+  kaldırıldı, yerine prompt kopyala + JSON yapıştır geldi (künye bu
+  tarayıcıda saklanıyor, projeye bağlı değil).
+- Proje kurulumundaki **Güvenlik kontrolü** durağı eskisi gibi: dosya
+  Yetkilendirme adımında zaten yazıldığı için orada yalnız
+  `guvenlik.json` adresi soruluyor.
+
 ## v0.235.0
 - **`guvenlik.json`'u olmayan program da tam test edilebiliyor.** Güvenlik
   kontrolü durağına «Programa özel künye» kartı eklendi: Claude'a prompt
