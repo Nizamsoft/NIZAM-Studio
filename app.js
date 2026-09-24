@@ -6775,8 +6775,13 @@ function guvenlikDurakSayfasi(p, d) {
   const depo = String(pl.guvenlikDepoAdresi || p.repo || '').trim();
   const o = pl.guvenlikOlcum;
 
+  const temiz  = !!(o && !o.acik);
+  const onayli = !!pl.guvenlikTamamlandi && temiz;
+
   return `<div class="fb-govde">`
     + adimBasligi(p, d, '')
+    + (onayli ? fmTamamBar(p, 'guvenlik',
+        'Son ölçüm temiz çıktı ve onaylandı.', false) : '')
     + guvenlikKurulumBolumu(p)
     + (o ? `
       <div class="gk-son ${o.acik ? 'acik' : 'temiz'}">
@@ -6820,9 +6825,18 @@ function guvenlikDurakSayfasi(p, d) {
         ${hazir ? '' : `<p class="ipucu">Supabase adresi ya da anon key kayıtlı değil —
           <b>Bağlantılar ve temel</b> durağına dön.</p>`}
       </div>`
-    + `<button class="sayfa-dug bitir" type="button" data-eylem="guvenlik-durak-test"
+    + `<button class="sayfa-dug ${onayli ? 'ikincil' : 'bitir'}" type="button"
+               data-eylem="guvenlik-durak-test"
                data-proje="${p.id}" ${g.calisiyor || !hazir ? 'disabled' : ''}>
-        ${svg(ICON.gGuvenlik, 16)} ${g.calisiyor ? 'Test ediliyor…' : 'Test Et'}</button>`
+        ${svg(ICON.gGuvenlik, 16)} ${g.calisiyor ? 'Test ediliyor…'
+          : onayli ? 'Yeniden test et' : 'Test Et'}</button>`
+    /* Onay ölçümden ayrı: temiz çıkan sonucu okuyup kendin işaretliyorsun.
+       Onaylı hâlde de test düğmesi duruyor — kodda bir şey değişince
+       yeniden ölçmek gerekiyor. */
+    + (temiz && !onayli ? `
+      <button class="sayfa-dug" type="button" data-eylem="guvenlik-onayla"
+              data-proje="${p.id}">
+        ${svg(ICON.tik, 16)} Güvenlik kontrolü başarılı</button>` : '')
     + guvenlikSonucTablosu(g.sonuc, g.ustKatmanUyarisi, g.kalintilar, g.harita, g.tabloKaynagi, p.id)
     + (o && o.acik ? `<div class="note uyari" style="margin-top:14px">${svg(ICON.uyari, 15)}
         <span><b>Açık varken Final açılmaz.</b> Bulguları Claude'a ver, düzeltmeyi
@@ -7146,8 +7160,13 @@ function projeDuraklari(p) {
       /* Bu durak "tamamlandı" işareti taşımıyor: elle onaylanan bir görev
          değil, her çalıştırıldığında o anki hâli söyleyen bir ölçü aleti.
          Listede duran şey son testin tarihi ve sonucu. */
+      /* İki koşul birden: son ölçüm temiz OLACAK ve kullanıcı "başarılı"
+         diyecek. Yalnız ölçüme bakmak yetmiyordu — test bittiği anda aşama
+         kendiliğinden kapanıyor, sonucu okumaya fırsat kalmıyordu. Açık
+         çıkan yeni bir ölçüm onayı kendiliğinden düşürüyor (bkz.
+         guvenlik-durak-test). */
       ad: 'Güvenlik kontrolü',
-      bitti: !!(pl0.guvenlikOlcum && !pl0.guvenlikOlcum.acik),
+      bitti: !!pl0.guvenlikTamamlandi && !!(pl0.guvenlikOlcum && !pl0.guvenlikOlcum.acik),
       ozet: !pl0.guvenlikOlcum
         ? 'Henüz test edilmedi.'
         : olcumOzeti(pl0.guvenlikOlcum),
@@ -16001,9 +16020,10 @@ async function eylemCalistir(el) {
         await DB.paletKaydet(pr.id, Object.assign({}, pr.palet || {},
           { guvenlikOlcum: { tarih: Date.now(), toplam, acik },
             guvenlikDepoAdresi: depo,
-            /* Eski sürümlerden kalan elle onay işareti — artık kullanılmıyor,
-               duruyorsa temizleniyor ki iki ayrı doğruluk kaynağı olmasın. */
-            guvenlikTamamlandi: undefined }));
+            /* Açık bulunan yeni ölçüm önceki onayı düşürür — eski "başarılı"
+               işareti yeni açığın üstünü örtmesin. Temiz ölçümde onay
+               kullanıcıya bırakılıyor. */
+            guvenlikTamamlandi: acik ? false : (pr.palet || {}).guvenlikTamamlandi }));
       }
     } catch (h) {
       toast('Test çalıştırılamadı: ' + h.message, 'hata');
@@ -16023,6 +16043,18 @@ async function eylemCalistir(el) {
     const ok = await panoyaKopyala(metin);
     toast(ok ? 'Rapor kopyalandı.' : 'Kopyalanamadı, tarayıcı izin vermedi.', ok ? 'basari' : 'hata');
     return;
+  }
+
+  if (e === 'guvenlik-onayla') {
+    const pr = DB.proje(el.dataset.proje);
+    if (!pr) return;
+    const pl = pr.palet || {};
+    if (!pl.guvenlikOlcum || pl.guvenlikOlcum.acik) {
+      toast('Önce sıfır açıkla biten bir ölçüm gerekiyor.', 'uyari');
+      return;
+    }
+    return isYap(() => DB.paletKaydet(pr.id,
+      Object.assign({}, pl, { guvenlikTamamlandi: true })), 'Güvenlik kontrolü onaylandı.');
   }
 
   if (e === 'guvenlik-kurulum-tik') {

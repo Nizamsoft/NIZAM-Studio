@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü
 
+## v0.227.0
+- **Güvenlik kontrolüne «Güvenlik kontrolü başarılı» düğmesi geldi.** Test
+  sıfır açıkla bitince düğme çıkıyor, basınca aşama tamamlanıyor ve üstte
+  yeşil şerit beliriyor. Aşama artık ölçüm biter bitmez kendiliğinden
+  kapanmıyor — sonucu okuyup sen işaretliyorsun.
+- Onaydan sonra da **«Yeniden test et»** duruyor; açık bulan yeni bir ölçüm
+  önceki onayı kendiliğinden düşürüyor.
+
 ## v0.226.2
 - Ekip kartındaki sayılar artık **bitmiş görevleri saymıyor**: «Görev»
   yazan yer «Açık iş» oldu ve proje sayısı da yalnız açık işlerden
