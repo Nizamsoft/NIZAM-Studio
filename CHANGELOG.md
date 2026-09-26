@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.237.0
+- **Yönetici projeyi doğrudan tamamlanana taşıyabiliyor.** Proje kartının
+  üç nokta menüsünde «Tamamlandı say» var: hangi aşamada olursa olsun
+  (3. aşamada bile) proje Tamamlanan Projeler'e geçiyor. Aşamalar
+  silinmiyor; aynı menüden «Tamamlandıyı geri al» ile geri dönüyor.
+
 ## v0.236.0
 - **Tasarımı uygulatan prompt geri geldi.** Profesyonel tasarım aşaması
   yeniden yazılırken ekrandan düşmüştü (kodu duruyordu, düğmesi yoktu).

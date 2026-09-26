@@ -15921,13 +15921,41 @@ async function eylemCalistir(el) {
     const proje = DB.proje(id);
     if (!proje) return;
 
-    /* Menüde yalnız silme var: ad, renk ve depo adresi artık aşamaların
-       kendi içinde düzenleniyor, arşiv de kullanılmıyordu. */
+    /* Menüde iki şey var: yöneticinin kestirmesi (aşamaları beklemeden
+       projeyi Tamamlanan'a taşımak — devralınan ya da akış dışında biten
+       işler için) ve silme. Ad, renk, depo adresi aşamaların kendi içinde
+       düzenleniyor, arşiv de kullanılmıyordu. */
+    const bitti = !!(proje.palet || {}).finalVerildi;
     const sec = await secenekSor(projeAdi(proje), [
+      ...(AUTH.yonetici ? [bitti
+        ? { anahtar: 'geri', ad: 'Tamamlandıyı geri al', ikon: ICON.geriAl,
+            alt: 'Proje yeniden «Başlamış» olur' }
+        : { anahtar: 'bitir', ad: 'Tamamlandı say', ikon: ICON.bayrak,
+            alt: 'Kalan aşamaları beklemeden Tamamlanan\'a taşır' }] : []),
       { anahtar: 'sil', ad: 'Projeyi sil', ikon: ICON.cop,
         alt: 'Her şeyi siler, geri gelmez', tehlike: true },
     ]);
     if (!sec) return;
+
+    if (sec === 'bitir') {
+      const yuzde = projeAsamaYuzde(proje);
+      if (!await onaySor({
+        baslik: 'Proje tamamlandı sayılsın mı?',
+        mesaj: `"${projeAdi(proje)}" şu an %${yuzde} — kalan aşamalar atlanacak ve `
+             + 'proje «Tamamlanan Projeler»e taşınacak. Aşamalar silinmiyor, '
+             + 'istersen buradan geri alabilirsin.',
+        buton: 'Tamamlandı say',
+      })) return;
+      return isYap(() => DB.paletKaydet(proje.id,
+        Object.assign({}, proje.palet || {}, { finalVerildi: true })),
+        projeAdi(proje) + ' tamamlanan projelere taşındı.');
+    }
+
+    if (sec === 'geri') {
+      return isYap(() => DB.paletKaydet(proje.id,
+        Object.assign({}, proje.palet || {}, { finalVerildi: false })),
+        projeAdi(proje) + ' yeniden başlamış projelerde.');
+    }
 
     if (sec === 'sil') {
       if ((proje.palet || {}).kilitli) {
