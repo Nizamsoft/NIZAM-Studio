@@ -1,5 +1,12 @@
 # Değişiklik Günlüğü
 
+## v0.238.0
+- **Görev konusuna «Nizam Studio» eklendi.** Görev verirken konu üç şıklı:
+  Genel · Nizam Studio · Bir proje hakkında. Listelerde, görev kartında ve
+  bildirimlerde etiket olarak görünüyor.
+- `sql/33-gorev-konu.sql` çalıştırılmalı. Çalıştırılmadan da görev açılıyor
+  (alan sessizce düşürülüyor), yalnız «Nizam Studio» ayrımı kaydedilmiyor.
+
 ## v0.237.0
 - **Yönetici projeyi doğrudan tamamlanana taşıyabiliyor.** Proje kartının
   üç nokta menüsünde «Tamamlandı say» var: hangi aşamada olursa olsun

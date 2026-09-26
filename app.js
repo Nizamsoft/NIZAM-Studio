@@ -7674,7 +7674,7 @@ function bildirimListesi() {
       id: h.id, gorev: g.id, kim: h.kim,
       baslik: (DB.kisiAdi(h.kim) || 'Biri') + ' ' + ne,
       alt: g.baslik || '',
-      etiket: pr ? projeAdi(pr) : 'Genel',
+      etiket: gorevKonuAdi(g),
       zaman: h.olusturuldu,
       okundu: okunan.has(h.id),
     };
@@ -7760,6 +7760,13 @@ function bildirimlerAc() {
   }, 'genis bld-pencere');
 }
 
+/* Görevin konu etiketi: proje adı, «Nizam Studio» ya da «Genel». */
+function gorevKonuAdi(g) {
+  const pr = g && g.proje_id ? DB.proje(g.proje_id) : null;
+  if (pr) return projeAdi(pr);
+  return g && g.konu === 'studio' ? GOREV_KONU.studio.kisa : GOREV_KONU.genel.kisa;
+}
+
 /* Ağaç içindeki tek satırlık görev */
 function gorevSatiri(g) {
   return `
@@ -7797,7 +7804,7 @@ function gorevSatiri(g) {
         </span>
         <span class="gv-baslik">${esc(g.baslik)}</span>
         <span class="gv-alt">
-          <em class="gv-proje">${esc(pr ? projeAdi(pr) : 'Genel')}</em>
+          <em class="gv-proje">${esc(gorevKonuAdi(g))}</em>
           ${g.bitis ? `<em class="gv-tarih">${svg(ICON.takvim, 13)}${esc(gvTarih(g.bitis))}</em>` : ''}
           ${sure ? `<em class="gv-sure ${sure.sinif}">${svg(ICON.saat, 13)}${esc(sure.yazi)}</em>` : ''}
         </span>
@@ -12999,7 +13006,8 @@ function gorevVerAc(secili = '') {
     <span class="gf-et" style="margin:16px 0 8px">Konu</span>
     <div class="gvr-konu">
       <button class="gvr-t on" type="button" data-gvr-konu="genel">Genel</button>
-      <button class="gvr-t" type="button" data-gvr-konu="proje">Bir proje hakkında</button>
+      <button class="gvr-t" type="button" data-gvr-konu="studio">Nizam Studio</button>
+      <button class="gvr-t genis" type="button" data-gvr-konu="proje">Bir proje hakkında</button>
     </div>
     <label class="gf gvr-proje" hidden>
       <span class="gf-kutu">${svg(ICON.folder, 17)}
@@ -13103,7 +13111,7 @@ function gorevVerAc(secili = '') {
       dugme.disabled = true;
       try {
         const id = await DB.gorevOlustur({ proje_id: proje, baslik, aciklama: metin,
-                                           atanan: kisi, bitis });
+                                           atanan: kisi, bitis, konu });
         for (const d of dosyalar) {
           try { await DB.gorevEkYukle(id, d); }
           catch (h) { toast(d.name + ' yüklenemedi: ' + h.message, 'uyari'); }
@@ -13172,7 +13180,7 @@ function gorevKartiHtml(g) {
     <div class="gd-liste">
       <div class="gd-s">
         <span class="gd-et">${svg(ICON.folder, 14)} Proje</span>
-        <span class="gd-dg"><b>${esc(pr ? projeAdi(pr) : 'Genel')}</b></span>
+        <span class="gd-dg"><b>${esc(gorevKonuAdi(g))}</b></span>
       </div>
       <div class="gd-s">
         <span class="gd-et">${svg(ICON.takvim, 14)} Bitiş tarihi</span>

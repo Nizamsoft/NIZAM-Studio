@@ -738,11 +738,12 @@ const DB = {
   /* ---------- Görevler ---------- */
 
   async gorevOlustur({ proje_id, modul_id, sayfa_id, baslik, aciklama, oncelik,
-                      atanan, bitis, standartlar }) {
+                      atanan, bitis, standartlar, konu }) {
     yazmaKontrol();
 
-    const { data, error } = await AUTH.db.from('tasks').insert({
-      /* Proje boş olabilir: "Genel" görev hiçbir projeye bağlı değil. */
+    const govde = {
+      /* Proje boş olabilir: "Genel" ve "Nizam Studio" görevleri hiçbir
+         projeye bağlı değil — ikisini `konu` ayırıyor. */
       proje_id: proje_id || null,
       bitis: bitis || null,
       modul_id: modul_id || null,
@@ -752,8 +753,19 @@ const DB = {
       oncelik: oncelik || 'normal',
       atanan: atanan || null,
       olusturan: AUTH.user.id,
-    }).select().single();
-    if (error) throw new Error(veriHatasi(error));
+      konu: proje_id ? 'proje' : (konu || 'genel'),
+    };
+
+    /* `konu` sütunu sql/33 çalıştırılmadan yok; o durumda alanı düşürüp
+       görevi yine de aç — kullanıcı SQL'i beklemek zorunda kalmasın. */
+    let data = null, error = null;
+    for (const g of [govde, Object.assign({}, govde, { konu: undefined })]) {
+      const sonuc = await AUTH.db.from('tasks').insert(g).select().single();
+      if (!sonuc.error) { data = sonuc.data; error = null; break; }
+      error = sonuc.error;
+      if (!/column .* does not exist|Could not find the/i.test(error.message || '')) break;
+    }
+    if (!data) throw new Error(veriHatasi(error));
 
     if (standartlar && standartlar.length) {
       const kayitlar = standartlar.map(sid => ({ gorev_id: data.id, standart_id: sid }));

@@ -10555,9 +10555,12 @@ button.kt {
 .gvr-k .gv-foto { width: 30px; height: 30px; }
 .gvr-k .gv-foto b { font-size: 11px; }
 .gvr-k.on { border-color: var(--ink-strong); background: var(--yuva); }
-.gvr-konu { display: flex; gap: 8px; }
+/* Üç seçenek: ikisi yan yana, uzun olan alt satırda tam genişlikte —
+   390px'de tek sıraya sığmıyorlardı. */
+.gvr-konu { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.gvr-t.genis { grid-column: 1 / -1; }
 .gvr-t {
-  flex: 1; height: 42px; border-radius: 12px; cursor: pointer;
+  height: 42px; border-radius: 12px; cursor: pointer;
   background: var(--surface); border: 1.5px solid var(--line-2);
   font-family: var(--yazi-etiket); font-size: 13.5px; font-weight: 600; color: var(--ink-soft);
 }

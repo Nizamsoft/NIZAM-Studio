@@ -7,7 +7,7 @@ const APP = {
   name:     'NIZAM | Studio',
   short:    'NIZAM Studio',
   owner:    'Nizam Soft',
-  version: 'v0.237.0',
+  version: 'v0.238.0',
   build:    '2026-09-17',
   /* Studio'nun kendi deposu — "bütün programlarda geçerli olsun"
      istekleri buraya gider. */
@@ -805,6 +805,14 @@ const DURUM_ADI    = { yeni: 'Yeni', gelistiriliyor: 'Geliştiriliyor', kontrold
 /* Görevin üç hâli. Bilerek üç: işi bitiren onaya gönderiyor, veren onaylıyor
    ve görev ancak o zaman kapanıyor — tek taraflı kapanan iş kontrol
    edilmeden bitmiş sayılıyordu. */
+/* Görev neyle ilgili: hiçbiriyle (Genel), bir müşteri projesiyle ya da
+   Studio'nun kendisiyle. Proje seçilince konu zaten 'proje' oluyor. */
+const GOREV_KONU = {
+  genel:  { ad: 'Genel',        kisa: 'Genel' },
+  proje:  { ad: 'Bir proje hakkında', kisa: 'Proje' },
+  studio: { ad: 'Nizam Studio', kisa: 'Nizam Studio' },
+};
+
 const GOREV_DURUM = {
   bekliyor:  { ad: 'Bekliyor',  sinif: 'bekliyor' },
   bitirdi:   { ad: 'Onay bekliyor', sinif: 'bitirdi' },
