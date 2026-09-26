@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.239.1
+- **WhatsApp'ta artık kişi seçtirmiyor.** Düğme, verdiğin bütün açık
+  görevlerin listesini kişi kişi çıkarıp WhatsApp'ın paylaşım ekranını
+  açıyor — kişiyi ya da **grubu** orada seçiyorsun. Telefon numarası
+  kayıtlı olması da gerekmiyor.
+
 ## v0.239.0
 - **WhatsApp'tan bildir.** Bildirimler penceresine düğme eklendi: verdiğin
   açık görevleri olan kişileri listeliyor, seçince WhatsApp hazır mesajla

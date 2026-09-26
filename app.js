@@ -7740,8 +7740,8 @@ function bildirimlerAc() {
            verdiğin görevde bir hareket olduğunda burada görünür.</span></div>`}
     <button class="sayfa-dug ikincil" type="button" data-bl-wa="1">
       ${svg(ICON.whatsapp, 16)} WhatsApp'tan bildir</button>
-    <p class="ipucu">Verdiğin görevleri ekip üyesine WhatsApp'tan yollar —
-      mesaj hazır gelir, göndermeye sen karar verirsin.</p>
+    <p class="ipucu">Verdiğin açık görevlerin listesini çıkarır ve WhatsApp'ı
+      açar; kişiyi ya da grubu orada seçersin, mesaj hazır gelir.</p>
     <div class="modal-alt">
       <button class="btn btn-ghost" data-bl-kapat="1" type="button">Kapat</button>
     </div>`, kutu => {
@@ -7770,43 +7770,33 @@ function bildirimlerAc() {
 
 /* ---------- WhatsApp'tan haber verme ----------
    Görev verildiğinde kimseye bildirim gitmiyor: Studio'nun zili yalnız
-   uygulamanın içinde çalıyor. Bu yol dışarı çıkan tek kanal — sunucu, ücret
-   ve API gerektirmiyor: WhatsApp'ı hazır mesajla açıyor, göndermeye
-   kullanıcı karar veriyor. */
-function whatsappNumarasi(tel) {
-  const rakam = String(tel || '').replace(/\D+/g, '');
-  if (!rakam) return '';
-  /* Türkiye için kısayol: 5xx… ve 05xx… başına 90 ekleniyor. Zaten ülke
-     kodu yazılmışsa olduğu gibi gidiyor. */
-  if (rakam.length === 10 && rakam[0] === '5') return '90' + rakam;
-  if (rakam.length === 11 && rakam.slice(0, 2) === '05') return '90' + rakam.slice(1);
-  return rakam;
-}
+   uygulamanın içinde çalıyor. Bu yol dışarı çıkan tek kanal — sunucu,
+   ücret ve API gerektirmiyor.
 
-function whatsappGorevMetni(ad, gorevler) {
+   Numara YAZILMIYOR: `wa.me/?text=` biçimi WhatsApp'ı açıp "kime?" diye
+   soruyor, orada grup da seçilebiliyor. Grubu doğrudan açan bir bağlantı
+   WhatsApp'ta yok — davet bağlantısı sohbeti değil katılma ekranını açar.
+   Kişinin telefonunun kayıtlı olması da gerekmiyor. */
+function whatsappGorevMetni(kisiler) {
   const s = [];
-  s.push('Merhaba ' + (ad || '') + ' 👋');
+  s.push('📋 Görev listesi — ' + APP.short);
   s.push('');
-  s.push(gorevler.length === 1
-    ? 'Sana bir görev verdim:'
-    : 'Sana ' + gorevler.length + ' görev verdim:');
-  s.push('');
-  gorevler.forEach((g, i) => {
-    const sure = g.bitis ? gorevSure(g.bitis) : null;
-    s.push((i + 1) + '. ' + g.baslik);
-    s.push('   Konu: ' + gorevKonuAdi(g));
-    if (g.bitis) {
-      s.push('   Son gün: ' + gvTarih(g.bitis) + (sure ? ' (' + sure.yazi + ')' : ''));
-    }
-    if (i < gorevler.length - 1) s.push('');
+  kisiler.forEach((k, i) => {
+    s.push('*' + k.ad + '*');
+    k.gorevler.forEach((g, j) => {
+      const sure = g.bitis ? gorevSure(g.bitis) : null;
+      s.push((j + 1) + '. ' + g.baslik
+        + ' · ' + gorevKonuAdi(g)
+        + (g.bitis ? ' · son gün ' + gvTarih(g.bitis) + (sure ? ' (' + sure.yazi + ')' : '') : ''));
+    });
+    if (i < kisiler.length - 1) s.push('');
   });
   s.push('');
-  s.push('Ayrıntılar ve varsa dosyalar ' + APP.short + "'da. Bitirince");
-  s.push('«Onaya gönder» dersen haberim olur.');
+  s.push('Bitirince «Onaya gönder» deyin, haberim olsun.');
   return s.join('\n');
 }
 
-/* Kime haber verilecek: bana değil, BENİM VERDİĞİM açık görevleri olanlara. */
+/* Kimler yazılacak: bana değil, BENİM VERDİĞİM açık görevleri olanlar. */
 function whatsappAlicilar() {
   const ben = AUTH.user ? AUTH.user.id : '';
   const kisiler = [];
@@ -7815,9 +7805,7 @@ function whatsappAlicilar() {
     if (g.durum === 'onaylandi' || !DB.gorevGecerli(g)) return;
     let k = kisiler.find(x => x.id === g.atanan);
     if (!k) {
-      const kisi = (DB.kisilerHepsi || DB.kisiler || []).find(x => x.id === g.atanan) || {};
-      k = { id: g.atanan, ad: kisi.ad || DB.kisiAdi(g.atanan) || 'İsimsiz',
-            tel: kisi.telefon || '', gorevler: [] };
+      k = { id: g.atanan, ad: DB.kisiAdi(g.atanan) || 'İsimsiz', gorevler: [] };
       kisiler.push(k);
     }
     k.gorevler.push(g);
@@ -7826,29 +7814,13 @@ function whatsappAlicilar() {
   return kisiler;
 }
 
-async function whatsappBildirAc() {
+function whatsappBildirAc() {
   const kisiler = whatsappAlicilar();
   if (!kisiler.length) {
     toast('Haber verilecek açık görev yok — verdiğin görevlerin hepsi onaylanmış.');
     return;
   }
-
-  const sec = await secenekSor('WhatsApp\'tan bildir', kisiler.map(k => ({
-    anahtar: k.id,
-    ad: k.ad,
-    ikon: ICON.whatsapp,
-    alt: k.gorevler.length + ' açık görev' + (whatsappNumarasi(k.tel) ? '' : ' · telefonu yok'),
-  })));
-  if (!sec) return;
-
-  const k = kisiler.find(x => x.id === sec);
-  if (!k) return;
-  const no = whatsappNumarasi(k.tel);
-  if (!no) {
-    toast(k.ad + ' için telefon kayıtlı değil — Ekip ekranından ekle.', 'uyari');
-    return;
-  }
-  disariAc('https://wa.me/' + no + '?text=' + encodeURIComponent(whatsappGorevMetni(k.ad, k.gorevler)));
+  disariAc('https://wa.me/?text=' + encodeURIComponent(whatsappGorevMetni(kisiler)));
 }
 
 /* Görevin konu etiketi: proje adı, «Nizam Studio» ya da «Genel». */
