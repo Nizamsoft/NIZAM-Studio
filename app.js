@@ -2810,7 +2810,16 @@ function tasarimUygulanmisEkrani(p) {
       <button class="sayfa-dug ${secili ? 'ikincil' : 'bitir'}" type="button"
               data-eylem="tasarim-yon-sec" data-proje="${p.id}"
               data-alan="${esc(odak.anahtar)}">
-        ${svg(ICON.tik, 15)} ${secili ? 'Seçildi — kaldır' : 'Müşteri bunu seçti'}</button>` : ''}`;
+        ${svg(ICON.tik, 15)} ${secili ? 'Seçildi — kaldır' : 'Müşteri bunu seçti'}</button>` : ''}
+    ${/* Görsel yüklenmişse iş bitmedi: asıl adım o görseli Claude'a verip
+         uygulamayı ona benzetmek. Prompt buradan kopyalanıyor, görseli
+         sohbete kullanıcı ekliyor (dosyayı Studio gönderemiyor). */''}
+    ${AUTH.yonetici && (gorselAdresi(p, 'Y_' + odak.anahtar + '_masa')
+                     || gorselAdresi(p, 'Y_' + odak.anahtar + '_mobil')) ? `
+      ${promptBaglantisi({ tur: 'tasarimVarlik', proje: p.id, slug: depoSlug(p.repo),
+        yazi: 'Uygulama promptunu kopyala', ikincil: !secili })}
+      <p class="ipucu">Promptu yapıştırdıktan sonra bu tasarımın görselini de
+        sohbete ekle — Claude ona bakarak uygulayacak.</p>` : ''}`;
 }
 
 /* ---------- Önizleme: seçimlerin bir arada nasıl durduğu ----------
@@ -13966,6 +13975,8 @@ const PANO_PROMPT = {
   yapi:          p => PROMPT.yapi(p.id),
   yetkiKur:      p => PROMPT.yetkiKur(p.id),
   guvenlikJson:  p => PROMPT.guvenlikJsonKur(p ? p.id : ''),
+  /* Uygulanmış tasarımlar sekmesinde odakta hangi yön varsa o. */
+  tasarimVarlik: p => PROMPT.tasarimVarlikIstek(p.id, tasarimOdagi(p).anahtar),
   /* Projesiz: bir programda doğan kuralı standarda çeviren prompt. */
   standartEkle:  () => PROMPT.standartEkle(),
 };

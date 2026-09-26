@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü
 
+## v0.236.0
+- **Tasarımı uygulatan prompt geri geldi.** Profesyonel tasarım aşaması
+  yeniden yazılırken ekrandan düşmüştü (kodu duruyordu, düğmesi yoktu).
+  Artık «Uygulanmış tasarımlar» sekmesinde, o tasarımın görseli
+  yüklendiğinde **Uygulama promptunu kopyala** düğmesi çıkıyor: prompt
+  panoya gidiyor, Claude Code o deponun seçili olduğu yeni bir oturumda
+  açılıyor, görseli sohbete sen ekliyorsun.
+
 ## v0.235.2
 - **Ayarlar'daki künye saklanmıyor.** O ekrandan her seferinde başka bir
   program test edilebildiği için yapıştırılan künye yalnız o test boyunca
