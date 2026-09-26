@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü
 
+## v0.239.0
+- **WhatsApp'tan bildir.** Bildirimler penceresine düğme eklendi: verdiğin
+  açık görevleri olan kişileri listeliyor, seçince WhatsApp hazır mesajla
+  açılıyor — görev başlıkları, konusu ve son günü yazılı. Göndermeye sen
+  karar veriyorsun; sunucu, ücret ya da API gerekmiyor.
+- Telefonu kayıtlı olmayan kişide uyarı çıkıyor (Ekip ekranından eklenir).
+  Numara 0532… / 532… / +90… biçimlerinin hepsini kabul ediyor.
+
 ## v0.238.0
 - **Görev konusuna «Nizam Studio» eklendi.** Görev verirken konu üç şıklı:
   Genel · Nizam Studio · Bir proje hakkında. Listelerde, görev kartında ve
