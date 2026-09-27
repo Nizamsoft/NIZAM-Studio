@@ -13038,7 +13038,10 @@ function onaySor({ baslik, mesaj, buton = 'Sil' }) {
 /* Görev ver — kime, genel mi proje mi, başlık, metin, bitiş tarihi.
    Eski "yeniGorevAc" penceresi modül/sayfa/öncelik/standart soruyordu;
    bu sistemde görev insana veriliyor, o alanların karşılığı yok. */
-function gorevVerAc(secili = '') {
+/* Aynı pencere iki iş görüyor: yeni görev vermek ve var olanı düzenlemek.
+   `duzenle` doluysa alanlar o görevle doluyor ve Gönder yerine Kaydet
+   çıkıyor — yanlış yazılan tarihi düzeltmek için ayrı bir ekran gereksizdi. */
+function gorevVerAc(secili = '', duzenle = null) {
   modalHepsiniKapat();
   const ben = AUTH.user ? AUTH.user.id : '';
   const kisiler = (DB.kisilerHepsi || DB.kisiler || []).filter(k => k.aktif !== false);
@@ -13049,11 +13052,17 @@ function gorevVerAc(secili = '') {
     return;
   }
 
-  /* Ekip kartının menüsünden gelindiyse o üye seçili açılıyor. */
-  const ilk = kisiler.find(k => k.id === secili) || kisiler[0];
+  /* Ekip kartının menüsünden ya da düzenlemeden gelindiyse o üye seçili. */
+  const ilk = kisiler.find(k => k.id === (duzenle ? duzenle.atanan : secili)) || kisiler[0];
+  const ilkKonu = duzenle
+    ? (duzenle.proje_id ? 'proje' : (duzenle.konu === 'studio' ? 'studio' : 'genel'))
+    : 'genel';
 
   modalAc(`
-    ${modalBaslik(ICON.check, 'Görev ver', 'Ekipten birine iş ver, bitiş tarihini yaz.')}
+    ${modalBaslik(ICON.check,
+      duzenle ? 'Görevi düzenle' : 'Görev ver',
+      duzenle ? 'Yanlış yazdığın alanı düzelt, kaydet.'
+              : 'Ekipten birine iş ver, bitiş tarihini yaz.')}
 
     <span class="gf-et" style="margin-bottom:8px">Kime</span>
     <div class="gvr-kisiler">
@@ -13068,14 +13077,16 @@ function gorevVerAc(secili = '') {
 
     <span class="gf-et" style="margin:16px 0 8px">Konu</span>
     <div class="gvr-konu">
-      <button class="gvr-t on" type="button" data-gvr-konu="genel">Genel</button>
-      <button class="gvr-t" type="button" data-gvr-konu="studio">Nizam Studio</button>
-      <button class="gvr-t genis" type="button" data-gvr-konu="proje">Bir proje hakkında</button>
+      ${[['genel', 'Genel', ''], ['studio', 'Nizam Studio', ''],
+         ['proje', 'Bir proje hakkında', ' genis']].map(([a, ad, ek]) => `
+        <button class="gvr-t${ek}${ilkKonu === a ? ' on' : ''}" type="button"
+                data-gvr-konu="${a}">${ad}</button>`).join('')}
     </div>
-    <label class="gf gvr-proje" hidden>
+    <label class="gf gvr-proje" ${ilkKonu === 'proje' ? '' : 'hidden'}>
       <span class="gf-kutu">${svg(ICON.folder, 17)}
         <select id="gvr-proje">
-          ${projeler.map(p => `<option value="${p.id}">${esc(projeAdi(p))}</option>`).join('')}
+          ${projeler.map(p => `<option value="${p.id}"
+            ${duzenle && duzenle.proje_id === p.id ? 'selected' : ''}>${esc(projeAdi(p))}</option>`).join('')}
         </select>
         ${svg(ICON.chevron, 15)}</span>
     </label>
@@ -13084,23 +13095,24 @@ function gorevVerAc(secili = '') {
       <span class="gf-et">Başlık</span>
       <span class="gf-kutu">${svg(ICON.etiket, 17)}
         <input type="text" id="gvr-baslik" maxlength="90" autocomplete="off"
+               value="${esc(duzenle ? duzenle.baslik || '' : '')}"
                placeholder="Örn. Güvenlik kontrolü sayfası tasarımı"></span>
     </label>
 
     <label class="gf">
       <span class="gf-et">Görev</span>
       <textarea class="anl-kutu kisa" id="gvr-metin" rows="4"
-        placeholder="Ne yapılacak? Konuşur gibi yaz."></textarea>
+        placeholder="Ne yapılacak? Konuşur gibi yaz.">${esc(duzenle ? duzenle.aciklama || '' : '')}</textarea>
     </label>
 
     <label class="gf">
       <span class="gf-et">Bitiş tarihi</span>
       <span class="gf-kutu">${svg(ICON.takvim, 17)}
-        <input type="date" id="gvr-bitis"></span>
+        <input type="date" id="gvr-bitis" value="${esc(duzenle ? duzenle.bitis || '' : '')}"></span>
     </label>
 
     <div class="gf">
-      <span class="gf-et">Ekler <em>isteğe bağlı</em></span>
+      <span class="gf-et">${duzenle ? 'Yeni ek' : 'Ekler'} <em>isteğe bağlı</em></span>
       <div class="gek-liste" id="gvr-ekler"></div>
       <button class="gek-ekle" type="button" data-gvr="dosya">
         ${svg(ICON.folder, 15)} Dosya ekle</button>
@@ -13108,9 +13120,10 @@ function gorevVerAc(secili = '') {
 
     <div class="modal-alt">
       <button class="btn btn-ghost" data-gvr="iptal" type="button">Vazgeç</button>
-      <button class="btn btn-primary" data-gvr="gonder" type="button"><span>Gönder</span></button>
+      <button class="btn btn-primary" data-gvr="gonder" type="button">
+        <span>${duzenle ? 'Kaydet' : 'Gönder'}</span></button>
     </div>`, kutu => {
-    let kisi = ilk.id, konu = 'genel';
+    let kisi = ilk.id, konu = ilkKonu;
     /* Dosyalar görev kaydı açıldıktan SONRA yükleniyor (yolu görev
        kimliğinden türüyor); o yüzden burada yalnız bekletiliyor. */
     const dosyalar = [];
@@ -13173,14 +13186,18 @@ function gorevVerAc(secili = '') {
       const dugme = $('[data-gvr="gonder"]', kutu);
       dugme.disabled = true;
       try {
-        const id = await DB.gorevOlustur({ proje_id: proje, baslik, aciklama: metin,
-                                           atanan: kisi, bitis, konu });
+        const id = duzenle
+          ? (await DB.gorevGuncelle(duzenle.id, { proje_id: proje, baslik, aciklama: metin,
+                                                  atanan: kisi, bitis, konu }), duzenle.id)
+          : await DB.gorevOlustur({ proje_id: proje, baslik, aciklama: metin,
+                                    atanan: kisi, bitis, konu });
         for (const d of dosyalar) {
           try { await DB.gorevEkYukle(id, d); }
           catch (h) { toast(d.name + ' yüklenemedi: ' + h.message, 'uyari'); }
         }
         modalKapat(); sayaclariYaz(); render();
-        toast(DB.kisiAdi(kisi) + ' kişisine görev verildi.', 'basari');
+        toast(duzenle ? 'Görev güncellendi.'
+                      : DB.kisiAdi(kisi) + ' kişisine görev verildi.', 'basari');
       } catch (h) { toast(h.message, 'hata'); dugme.disabled = false; }
     });
     setTimeout(() => $('#gvr-baslik', kutu).focus(), 60);
@@ -13284,6 +13301,9 @@ function gorevKartiHtml(g) {
       </div>` : ''}
 
     ${dugme}
+    ${veren && g.durum !== 'onaylandi' ? `
+      <button class="sayfa-dug ikincil" type="button" data-gk="duzenle">
+        ${svg(ICON.kalem, 15)} Görevi düzenle</button>` : ''}
     ${veren || AUTH.yonetici ? `
       <button class="fn-btn sil" type="button" data-gk="sil" style="margin-top:12px">
         ${svg(ICON.cop, 13)} Görevi sil</button>` : ''}
@@ -13343,6 +13363,7 @@ async function gorevEylemi(tip, id, deger) {
     return;
   }
 
+  if (tip === 'duzenle') return gorevVerAc('', g);
   if (tip === 'bitirdim') return gorevDurum(id, 'bitirdi');
   if (tip === 'onayla')   return gorevDurum(id, 'onaylandi');
   if (tip === 'durum')    return gorevDurum(id, deger);

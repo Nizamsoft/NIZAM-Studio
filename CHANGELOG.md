@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.240.0
+- **Görevi veren düzenleyebiliyor.** Görev kartında «Görevi düzenle»
+  düğmesi: kişi, konu/proje, başlık, açıklama ve bitiş tarihi
+  değiştirilebiliyor, yeni ek de eklenebiliyor. Onaylanmış görevde
+  düğme çıkmıyor.
+
 ## v0.239.1
 - **WhatsApp'ta artık kişi seçtirmiyor.** Düğme, verdiğin bütün açık
   görevlerin listesini kişi kişi çıkarıp WhatsApp'ın paylaşım ekranını

@@ -822,9 +822,19 @@ const DB = {
   },
 
   async gorevGuncelle(id, alanlar) {
-    const { error } = await AUTH.db.from('tasks').update(alanlar).eq('id', id);
-    if (error) throw new Error(veriHatasi(error));
-    await this.tazele('gorevler');
+    /* `konu` sütunu sql/33 çalıştırılmadan yok — gorevOlustur'daki gibi,
+       sütun yoksa alanı düşürüp güncellemeyi yine de yap. */
+    const yedek = Object.assign({}, alanlar);
+    delete yedek.konu;
+    for (const g of alanlar.konu === undefined ? [alanlar] : [alanlar, yedek]) {
+      const { error } = await AUTH.db.from('tasks').update(g).eq('id', id);
+      if (!error) { await this.tazele('gorevler'); return; }
+      if (!/column .* does not exist|Could not find the/i.test(error.message || '')) {
+        throw new Error(veriHatasi(error));
+      }
+      var son = error;
+    }
+    throw new Error(veriHatasi(son));
   },
 
   /* Durum değişimi hep buradan geçer; hareket kaydı kendiliğinden düşer. */
