@@ -738,7 +738,7 @@ const DB = {
   /* ---------- Görevler ---------- */
 
   async gorevOlustur({ proje_id, modul_id, sayfa_id, baslik, aciklama, oncelik,
-                      atanan, bitis, standartlar, konu }) {
+                      atanan, bitis, standartlar, konu, sira }) {
     yazmaKontrol();
 
     const govde = {
@@ -754,12 +754,14 @@ const DB = {
       atanan: atanan || null,
       olusturan: AUTH.user.id,
       konu: proje_id ? 'proje' : (konu || 'genel'),
+      /* Yeni görev listenin sonuna gidiyor (bkz. sql/34). */
+      sira: sira || 0,
     };
 
-    /* `konu` sütunu sql/33 çalıştırılmadan yok; o durumda alanı düşürüp
-       görevi yine de aç — kullanıcı SQL'i beklemek zorunda kalmasın. */
+    /* `konu` ve `sira` sütunları sql/33-34 çalıştırılmadan yok; o durumda
+       alanları düşürüp görevi yine de aç — SQL beklenmesin. */
     let data = null, error = null;
-    for (const g of [govde, Object.assign({}, govde, { konu: undefined })]) {
+    for (const g of [govde, Object.assign({}, govde, { konu: undefined, sira: undefined })]) {
       const sonuc = await AUTH.db.from('tasks').insert(g).select().single();
       if (!sonuc.error) { data = sonuc.data; error = null; break; }
       error = sonuc.error;
@@ -825,8 +827,11 @@ const DB = {
     /* `konu` sütunu sql/33 çalıştırılmadan yok — gorevOlustur'daki gibi,
        sütun yoksa alanı düşürüp güncellemeyi yine de yap. */
     const yedek = Object.assign({}, alanlar);
-    delete yedek.konu;
-    for (const g of alanlar.konu === undefined ? [alanlar] : [alanlar, yedek]) {
+    ['konu', 'sira', 'plan', 'plan_onay'].forEach(a => { delete yedek[a]; });
+    const denemeler = Object.keys(yedek).length === Object.keys(alanlar).length
+      ? [alanlar] : [alanlar, yedek];
+    for (const g of denemeler) {
+      if (!Object.keys(g).length) break;
       const { error } = await AUTH.db.from('tasks').update(g).eq('id', id);
       if (!error) { await this.tazele('gorevler'); return; }
       if (!/column .* does not exist|Could not find the/i.test(error.message || '')) {

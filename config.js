@@ -7,7 +7,7 @@ const APP = {
   name:     'NIZAM | Studio',
   short:    'NIZAM Studio',
   owner:    'Nizam Soft',
-  version: 'v0.240.0',
+  version: 'v0.241.0',
   build:    '2026-09-17',
   /* Studio'nun kendi deposu — "bütün programlarda geçerli olsun"
      istekleri buraya gider. */
@@ -811,6 +811,18 @@ const GOREV_KONU = {
   genel:  { ad: 'Genel',        kisa: 'Genel' },
   proje:  { ad: 'Bir proje hakkında', kisa: 'Proje' },
   studio: { ad: 'Nizam Studio', kisa: 'Nizam Studio' },
+};
+
+/* Görevin ekranda görünen aşaması. `durum` sütununda üç değer var
+   (bekliyor · bitirdi · onaylandi); plan adımı onun içinde, `plan` ve
+   `plan_onay` alanlarından türüyor — böylece durum sütununa dokunmadan
+   araya bir onay basamağı girdi. */
+const GOREV_ASAMA = {
+  plansiz:   { ad: 'Plan bekleniyor',    sinif: 'bekliyor'  },
+  planda:    { ad: 'Plan onayı bekliyor', sinif: 'bitirdi'   },
+  basladi:   { ad: 'Devam ediyor',       sinif: 'bekliyor'  },
+  bitirdi:   { ad: 'Onay bekliyor',      sinif: 'bitirdi'   },
+  onaylandi: { ad: 'Onaylandı',          sinif: 'onaylandi' },
 };
 
 const GOREV_DURUM = {

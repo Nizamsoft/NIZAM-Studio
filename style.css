@@ -10679,3 +10679,48 @@ button.kt {
   .bld-sag u { font-size: 11px; }
   .bld-sag s { width: 7px; height: 7px; }
 }
+
+/* ==========================================================================
+   31 · GÖREV SIRALAMA
+   ========================================================================== */
+
+/* Ekran başlığındaki iki düğme: telefonda alt alta, masaüstünde yan yana. */
+.gv-tepe-dug { display: flex; gap: 10px; flex-wrap: wrap; }
+.pj-yeni.ikincil {
+  background: var(--surface); border: 1px solid var(--line-2); color: var(--ink-soft);
+}
+.pj-yeni.ikincil svg { fill: none; stroke: currentColor; stroke-width: 2; }
+.pj-yeni.ikincil .dolgu { display: none; }
+
+.gsr-liste { display: flex; flex-direction: column; gap: 8px; max-height: 58vh; overflow-y: auto; }
+.gsr {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 12px; border-radius: 13px;
+  background: var(--yuva); border: 1px solid var(--line-3);
+}
+.gsr-no {
+  flex: 0 0 auto; display: flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; border-radius: 9px;
+  background: var(--surface); border: 1px solid var(--line-3);
+  font-family: var(--yazi-etiket); font-size: 12.5px; font-weight: 700; color: var(--ink-soft);
+}
+.gsr-yz { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.gsr-yz b {
+  font-size: 13.5px; font-weight: 600; color: var(--ink-strong);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.gsr-yz i {
+  font-style: normal; font-size: 11.5px; color: var(--ink-faint);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.gsr-oklar { flex: 0 0 auto; display: flex; gap: 6px; }
+.gsr-ok {
+  display: flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; border-radius: 9px; cursor: pointer;
+  background: var(--surface); border: 1px solid var(--line-2); color: var(--ink-soft);
+}
+/* chevron sağa bakıyor: yukarı için -90°, aşağı için +90°. */
+.gsr-ok svg { fill: none; stroke: currentColor; stroke-width: 2.2; transform: rotate(-90deg); }
+.gsr-ok .dolgu { display: none; }
+.gsr-ok.asagi svg { transform: rotate(90deg); }
+.gsr-ok[disabled] { opacity: .35; cursor: default; }

@@ -1,5 +1,16 @@
 # Değişiklik Günlüğü
 
+## v0.241.0
+- **Görevler sıralanabiliyor.** «Görev ver»in yanında «Görevleri sırala»
+  düğmesi: yeni görev otomatik sona gidiyor, oklarla istediğin sıraya
+  diziyorsun. Sıra kişi başına tutuluyor.
+- **Plan onayı adımı geldi.** Görevi alan «Nasıl yapacağımı yaz» der,
+  veren okur; onaylarsa iş başlar, beğenmezse notla geri gönderir.
+  Aşamalar: Plan bekleniyor → Plan onayı bekliyor → Devam ediyor →
+  Onay bekliyor → Onaylandı.
+- `sql/34-gorev-plan-sira.sql` çalıştırılmalı. Çalıştırılmadan da uygulama
+  çalışıyor, yalnız plan ve sıra kaydedilmiyor.
+
 ## v0.240.0
 - **Görevi veren düzenleyebiliyor.** Görev kartında «Görevi düzenle»
   düğmesi: kişi, konu/proje, başlık, açıklama ve bitiş tarihi

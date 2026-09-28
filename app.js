@@ -114,11 +114,38 @@ const GOREV_KOVASI = {
 };
 
 /* Bitişi yakın olan üstte; tarihi olmayanlar en sonda. */
+/* El ile verilmiş sıra varsa o geçerli; yoksa bitiş tarihine göre.
+   Sıra kişi başına tutuluyor (bkz. sql/34), o yüzden karışık listede de
+   aynı kişinin görevleri kendi içinde doğru diziliyor. */
 function gorevSirala(liste) {
   return liste.slice().sort((a, b) => {
+    const sa = Number(a.sira) || 0, sb = Number(b.sira) || 0;
+    if (sa && sb && sa !== sb) return sa - sb;
     const x = a.bitis || '9999-12-31', y = b.bitis || '9999-12-31';
     return x.localeCompare(y) || (b.olusturuldu || '').localeCompare(a.olusturuldu || '');
   });
+}
+
+/* Görevin ekrandaki aşaması. Plan adımı `durum` sütununa değil, plan ve
+   plan_onay alanlarına bakıyor — bkz. GOREV_ASAMA. */
+function gorevAsama(g) {
+  if (!g) return 'plansiz';
+  if (g.durum === 'onaylandi') return 'onaylandi';
+  if (g.durum === 'bitirdi')   return 'bitirdi';
+  if (!String(g.plan || '').trim()) return 'plansiz';
+  return g.plan_onay ? 'basladi' : 'planda';
+}
+
+function gorevAsamaBilgi(g) {
+  return GOREV_ASAMA[gorevAsama(g)] || GOREV_ASAMA.plansiz;
+}
+
+/* Yeni görev listenin sonuna gider: o kişinin en büyük sırasının bir fazlası. */
+function gorevSonrakiSira(atanan) {
+  const say = (DB.gorevler || [])
+    .filter(g => g.atanan === atanan)
+    .map(g => Number(g.sira) || 0);
+  return (say.length ? Math.max.apply(null, say) : 0) + 1;
 }
 
 /* Bitiş tarihinden kalan süre: yazısı ve rengi. Tarih yoksa hiç çıkmaz. */
@@ -296,6 +323,8 @@ const ICON = {
     c: '<path d="M4 15.5v-3a8 8 0 0 1 16 0v3M4 14.5h2.2a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H5.2a1.2 1.2 0 0 1-1.2-1.2zM20 14.5h-2.2a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h1a1.2 1.2 0 0 0 1.2-1.2z"></path>',
   },
   cikis: '<path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 16l4-4-4-4M14 12H3"></path>',
+  /* Sıralama — üç çizgi ve yanında aşağı ok. */
+  sirala: '<path d="M4 7h10M4 12h7M4 17h4M17 8v9M17 17l3-3M17 17l-3-3"></path>',
   /* WhatsApp — konuşma balonu ve içinde ahize. Markanın kendi logosu
      değil, ona benzeyen sade bir çizim: diğer ikonlarla aynı dilde dursun. */
   whatsapp: '<path d="M3.8 20.2l1.3-4a8 8 0 1 1 3 3z"></path><path d="M9.2 9.1c.2-.5.4-.5.7-.5h.5c.2 0 .4 0 .6.5l.7 1.6c.1.3 0 .5-.1.7l-.4.5c-.1.2-.2.4 0 .6a7 7 0 0 0 2.3 2c.3.2.5.1.6 0l.5-.6c.2-.2.4-.2.6-.1l1.5.8c.3.2.4.4.4.6a1.9 1.9 0 0 1-1.7 1.6c-.6 0-2.4-.2-4.4-2.2s-2.2-3.8-2.2-4.4a2 2 0 0 1 .4-1.1z"></path>',
@@ -607,8 +636,12 @@ const VIEWS = {
           <h1>Görevler</h1>
           <p>Ekipteki görevleri yönet, yeni görev ver ve ilerlemeyi takip et.</p>
         </div>
-        <button class="pj-yeni" type="button" data-eylem="gorev-ver">
-          ${svg(ICON.arti, 16)}<span>Görev ver</span></button>
+        <div class="gv-tepe-dug">
+          <button class="pj-yeni ikincil" type="button" data-eylem="gorev-sirala">
+            ${svg(ICON.sirala, 16)}<span>Görevleri sırala</span></button>
+          <button class="pj-yeni" type="button" data-eylem="gorev-ver">
+            ${svg(ICON.arti, 16)}<span>Görev ver</span></button>
+        </div>
       </div>
 
       <div class="gv-sekme">
@@ -7768,6 +7801,97 @@ function bildirimlerAc() {
   }, 'genis bld-pencere');
 }
 
+/* ---------- Görevleri el ile sıralama ----------
+   Yeni görev otomatik sona gidiyor; burada yukarı/aşağı oklarıyla sıra
+   değiştiriliyor. Sıra kişi başına tutuluyor, o yüzden önce kişi seçiliyor
+   (tek kişi varsa doğrudan liste açılıyor). */
+function gorevSiraGruplari() {
+  const ben = AUTH.user ? AUTH.user.id : '';
+  const acik = g => g.durum !== 'onaylandi' && DB.gorevGecerli(g);
+  const gruplar = [];
+
+  const benimkiler = (DB.gorevler || []).filter(g => g.atanan === ben && acik(g));
+  if (benimkiler.length > 1) {
+    gruplar.push({ id: ben, ad: 'Bana verilenler', gorevler: benimkiler });
+  }
+  (DB.gorevler || []).forEach(g => {
+    if (g.olusturan !== ben || !g.atanan || g.atanan === ben || !acik(g)) return;
+    let k = gruplar.find(x => x.id === g.atanan);
+    if (!k) {
+      k = { id: g.atanan, ad: DB.kisiAdi(g.atanan) || 'İsimsiz', gorevler: [] };
+      gruplar.push(k);
+    }
+    k.gorevler.push(g);
+  });
+  gruplar.forEach(k => { k.gorevler = gorevSirala(k.gorevler); });
+  return gruplar.filter(k => k.gorevler.length > 1);
+}
+
+async function gorevSiralaAc() {
+  const gruplar = gorevSiraGruplari();
+  if (!gruplar.length) {
+    toast('Sıralanacak bir şey yok — tek görevin sırası da olmuyor.');
+    return;
+  }
+
+  let grup = gruplar[0];
+  if (gruplar.length > 1) {
+    const sec = await secenekSor('Kimin görevleri?', gruplar.map(k => ({
+      anahtar: k.id, ad: k.ad, ikon: ICON.kisi,
+      alt: k.gorevler.length + ' açık görev',
+    })));
+    if (!sec) return;
+    grup = gruplar.find(x => x.id === sec);
+    if (!grup) return;
+  }
+
+  const sira = grup.gorevler.slice();
+
+  modalAc(`
+    ${modalBaslik(ICON.sirala, 'Görevleri sırala', grup.ad + ' · en üstteki ilk yapılacak')}
+    <div class="gsr-liste" id="gsr-liste"></div>
+    <div class="modal-alt">
+      <button class="btn btn-ghost" data-gsr="iptal" type="button">Vazgeç</button>
+      <button class="btn btn-primary" data-gsr="kaydet" type="button"><span>Kaydet</span></button>
+    </div>`, kutu => {
+    const ciz = () => {
+      $('#gsr-liste', kutu).innerHTML = sira.map((g, i) => `
+        <div class="gsr">
+          <span class="gsr-no">${i + 1}</span>
+          <span class="gsr-yz"><b>${esc(g.baslik)}</b>
+            <i>${esc(gorevKonuAdi(g))}${g.bitis ? ' · ' + esc(gvTarih(g.bitis)) : ''}</i></span>
+          <span class="gsr-oklar">
+            <button class="gsr-ok" type="button" data-gsr-tasi="${i}" data-yon="-1"
+                    ${i === 0 ? 'disabled' : ''} aria-label="Yukarı">${svg(ICON.chevron, 14)}</button>
+            <button class="gsr-ok asagi" type="button" data-gsr-tasi="${i}" data-yon="1"
+                    ${i === sira.length - 1 ? 'disabled' : ''} aria-label="Aşağı">${svg(ICON.chevron, 14)}</button>
+          </span>
+        </div>`).join('');
+      $$('[data-gsr-tasi]', kutu).forEach(b => b.addEventListener('click', () => {
+        const i = Number(b.dataset.gsrTasi), j = i + Number(b.dataset.yon);
+        if (j < 0 || j >= sira.length) return;
+        const t = sira[i]; sira[i] = sira[j]; sira[j] = t;
+        ciz();
+      }));
+    };
+    ciz();
+
+    $('[data-gsr="iptal"]', kutu).addEventListener('click', modalKapat);
+    $('[data-gsr="kaydet"]', kutu).addEventListener('click', async () => {
+      const dug = $('[data-gsr="kaydet"]', kutu);
+      dug.disabled = true;
+      try {
+        for (let i = 0; i < sira.length; i++) {
+          if (Number(sira[i].sira) === i + 1) continue;
+          await DB.gorevGuncelle(sira[i].id, { sira: i + 1 });
+        }
+        modalKapat(); render();
+        toast('Sıra kaydedildi.', 'basari');
+      } catch (h) { toast(h.message, 'hata'); dug.disabled = false; }
+    });
+  });
+}
+
 /* ---------- WhatsApp'tan haber verme ----------
    Görev verildiğinde kimseye bildirim gitmiyor: Studio'nun zili yalnız
    uygulamanın içinde çalıyor. Bu yol dışarı çıkan tek kanal — sunucu,
@@ -7852,7 +7976,7 @@ function gorevSatiri(g) {
   const ad     = DB.kisiAdi ? DB.kisiAdi(karsi) : '';
   const pr     = g.proje_id ? DB.proje(g.proje_id) : null;
   const sure   = gorevSure(g.bitis);
-  const durum  = GOREV_DURUM[g.durum] || GOREV_DURUM.bekliyor;
+  const durum  = gorevAsamaBilgi(g);
 
   return `
     <div class="gv" data-eylem="gorev-ac" data-id="${g.id}" role="button" tabindex="0">
@@ -13190,7 +13314,8 @@ function gorevVerAc(secili = '', duzenle = null) {
           ? (await DB.gorevGuncelle(duzenle.id, { proje_id: proje, baslik, aciklama: metin,
                                                   atanan: kisi, bitis, konu }), duzenle.id)
           : await DB.gorevOlustur({ proje_id: proje, baslik, aciklama: metin,
-                                    atanan: kisi, bitis, konu });
+                                    atanan: kisi, bitis, konu,
+                                    sira: gorevSonrakiSira(kisi) });
         for (const d of dosyalar) {
           try { await DB.gorevEkYukle(id, d); }
           catch (h) { toast(d.name + ' yüklenemedi: ' + h.message, 'uyari'); }
@@ -13217,7 +13342,7 @@ function gorevKartiHtml(g) {
   const veren  = g.olusturan === ben;
   const pr     = g.proje_id ? DB.proje(g.proje_id) : null;
   const sure   = gorevSure(g.bitis);
-  const durum  = GOREV_DURUM[g.durum] || GOREV_DURUM.bekliyor;
+  const durum  = gorevAsamaBilgi(g);
 
   const kisiSatiri = (etiket, kimId, altYazi) => {
     const k = DB.kisi ? DB.kisi(kimId) : null;
@@ -13235,21 +13360,38 @@ function gorevKartiHtml(g) {
       </div>`;
   };
 
-  /* Duruma göre tek ana düğme: alan işi bitirince onaya gönderiyor,
-     veren onaylıyor. Onaylanınca görev kapanıyor. */
-  const dugme = g.durum === 'bekliyor' && alan ? `
+  /* Sıra: önce plan (alan yazar, veren onaylar), sonra iş, sonunda onay.
+     Her aşamada ekranda tek bir ana düğme duruyor. */
+  const asama = gorevAsama(g);
+  const dugme =
+      asama === 'plansiz' && alan ? `
+      <button class="sayfa-dug bitir" type="button" data-gk="plan">
+        ${svg(ICON.kalem, 16)} Nasıl yapacağımı yaz</button>
+      <p class="ipucu">Kısaca yaz; ${esc(DB.kisiAdi(g.olusturan))} onaylayınca işe başla.</p>`
+    : asama === 'plansiz' && veren ? `
+      <p class="ipucu">${esc(DB.kisiAdi(g.atanan))} henüz planını yazmadı.</p>`
+    : asama === 'planda' && veren ? `
+      <button class="sayfa-dug bitir" type="button" data-gk="plan-onay">
+        ${svg(ICON.tik, 16)} Planı onayla</button>
+      <button class="sayfa-dug ikincil" type="button" data-gk="plan-geri">
+        ${svg(ICON.geriAl, 15)} Planı düzelttir</button>`
+    : asama === 'planda' && alan ? `
+      <button class="sayfa-dug ikincil" type="button" data-gk="plan">
+        ${svg(ICON.kalem, 15)} Planı düzelt</button>
+      <p class="ipucu">${esc(DB.kisiAdi(g.olusturan))} onayı bekleniyor.</p>`
+    : asama === 'basladi' && alan ? `
       <button class="sayfa-dug bitir" type="button" data-gk="bitirdim">
         ${svg(ICON.tik, 16)} Onaya gönder</button>
       <p class="ipucu">${esc(DB.kisiAdi(g.olusturan))} kontrol etsin diye haber gider.</p>`
-    : g.durum === 'bitirdi' && veren ? `
+    : asama === 'basladi' && veren ? `
+      <p class="ipucu">${esc(DB.kisiAdi(g.atanan))} üzerinde çalışıyor.</p>`
+    : asama === 'bitirdi' && veren ? `
       <button class="sayfa-dug bitir" type="button" data-gk="onayla">
         ${svg(ICON.tik, 16)} Onayla</button>
       <button class="sayfa-dug ikincil" type="button" data-gk="geri">
         ${svg(ICON.geriAl, 15)} Geri gönder</button>`
-    : g.durum === 'bitirdi' && alan ? `
-      <p class="ipucu">${esc(DB.kisiAdi(g.olusturan))} onayı bekleniyor.</p>`
-    : g.durum === 'bekliyor' && veren ? `
-      <p class="ipucu">${esc(DB.kisiAdi(g.atanan))} henüz onaya göndermedi.</p>` : '';
+    : asama === 'bitirdi' && alan ? `
+      <p class="ipucu">${esc(DB.kisiAdi(g.olusturan))} onayı bekleniyor.</p>` : '';
 
   const hareket = DB.hareketleri(g.id);
 
@@ -13273,6 +13415,10 @@ function gorevKartiHtml(g) {
 
     ${g.aciklama ? `<span class="label">Görev</span>
       <div class="gd-metin">${esc(g.aciklama)}</div>` : ''}
+
+    ${String(g.plan || '').trim() ? `
+      <span class="label">Nasıl yapılacak${g.plan_onay ? ' · onaylandı' : ''}</span>
+      <div class="gd-metin">${esc(g.plan)}</div>` : ''}
 
     ${(g.ekler || []).length ? `<span class="label">Ekler</span>
       <div class="gek-liste">
@@ -13364,6 +13510,52 @@ async function gorevEylemi(tip, id, deger) {
   }
 
   if (tip === 'duzenle') return gorevVerAc('', g);
+
+  /* Plan adımı: alan yazar, veren onaylar. Plan değişince onay düşüyor
+     (kural veritabanında da var — bkz. sql/34). */
+  if (tip === 'plan') {
+    const metin = await metinSor({
+      baslik: 'Nasıl yapacaksın?',
+      aciklama: 'Birkaç cümle yeter — ' + (DB.kisiAdi(g.olusturan) || 'görevi veren')
+              + ' okuyup onaylayacak.',
+      yerTutucu: 'Örn. Önce filtre kutusunu ekleyip sonra listeyi ona bağlayacağım.',
+      buton: 'Gönder',
+      deger: g.plan || '',
+      cok: true,
+    });
+    if (metin === null || !String(metin).trim()) return;
+    try {
+      await DB.gorevGuncelle(id, { plan: String(metin).trim(), plan_onay: false });
+      sonrasi(id, 'Plan gönderildi — onay bekleniyor.');
+    } catch (e) { toast(e.message, 'hata'); gorevKartiAc(id); }
+    return;
+  }
+
+  if (tip === 'plan-onay') {
+    try {
+      await DB.gorevGuncelle(id, { plan_onay: true });
+      sonrasi(id, 'Plan onaylandı, iş başlayabilir.');
+    } catch (e) { toast(e.message, 'hata'); gorevKartiAc(id); }
+    return;
+  }
+
+  if (tip === 'plan-geri') {
+    const notu = await metinSor({
+      baslik: 'Planda ne değişsin?',
+      aciklama: 'Not görevi alana gider, planı yeniden yazar.',
+      yerTutucu: 'Örn. Önce mobil görünümü halledelim.',
+      buton: 'Gönder',
+      cok: true,
+    });
+    if (notu === null) return;
+    try {
+      await DB.gorevGuncelle(id, { plan: '', plan_onay: false });
+      if (String(notu).trim()) await DB.hareketEkle(id, 'revize', String(notu).trim());
+      sonrasi(id, 'Plan geri gönderildi.');
+    } catch (e) { toast(e.message, 'hata'); gorevKartiAc(id); }
+    return;
+  }
+
   if (tip === 'bitirdim') return gorevDurum(id, 'bitirdi');
   if (tip === 'onayla')   return gorevDurum(id, 'onaylandi');
   if (tip === 'durum')    return gorevDurum(id, deger);
@@ -15195,6 +15387,7 @@ async function eylemCalistir(el) {
   if (e === 'gorev-kova') { GOREV_KOVA = el.dataset.deger; return render(); }
   if (e === 'gorev-ac')   return gorevKartiAc(el.dataset.id);
   if (e === 'gorev-ver')  return gorevVerAc();
+  if (e === 'gorev-sirala') return gorevSiralaAc();
 
   if (e === 'gorev-ekle') return yeniGorevAc({
     proje: el.dataset.proje || rota().id,
