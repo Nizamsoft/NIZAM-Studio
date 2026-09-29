@@ -1,5 +1,14 @@
 # Değişiklik Günlüğü
 
+## v0.245.0
+- **Canlı teste iki yeni denetim.** İkisi de yalnız okur, hiçbir şey yazmaz:
+  - **Kayıt ayarları:** programda herkes kendi kendine hesap açabiliyor mu,
+    anonim giriş açık mı. Kayıt açıksa açık sayılır — bizim programlarda
+    kullanıcıyı yönetici ekler.
+  - **Dosya kovaları:** giriş yapmamış biri kovalardaki dosya adlarını
+    listeleyebiliyor mu; herkese açık (public) kova varsa bilgi olarak
+    yazılır.
+
 ## v0.244.0
 - **Güvenlik testine Claude kod denetimi geldi.** Studio bir prompt veriyor;
   Claude programın deposunu okuyup 11 maddelik listeyi (gizli anahtar,

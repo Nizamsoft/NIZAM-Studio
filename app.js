@@ -11115,6 +11115,69 @@ function guvenlikJwtCoz(token) {
    yanlış alarm verirdi. Asıl soru: ÇALINAN bir belirteç ne kadar süre
    geçerli kalır? Giriş cevabındaki access_token'ın exp - iat farkına
    bakılır; hiçbir şey çağrılmaz. */
+/* ---------- E1 · Kayıt ayarları ----------
+   /auth/v1/settings herkese açık ve yalnız okunur. Bizim programlarda
+   kullanıcıyı yönetici ekler; kayıt açıksa anon key'i bilen herkes hesap
+   açıp "giriş yapmış kullanıcı" kurallarından geçer. Kayıt bilerek açık
+   bir programda bu satır yok sayılabilir — ayrıntıda söyleniyor. */
+async function guvenlikGirisAyarTesti(istek, ekle) {
+  const r = await istek('/auth/v1/settings');
+  if (r.hata || r.durum !== 200 || !r.govde) {
+    ekle('Giriş', 'kayıt ayarları', 'BİLGİ', guvenlikAyrinti(r.durum, r.govde, r.hata, 'Ayarlar okunamadı'));
+    return;
+  }
+  const g = r.govde;
+  if (g.disable_signup === false) {
+    ekle('Giriş', 'Herkes kendi kendine hesap açabiliyor mu', 'AÇIK',
+      (g.mailer_autoconfirm ? 'Kayıt açık ve e-posta onayı kapalı — hesap anında açılıyor. '
+                            : 'Kayıt açık. ')
+      + 'Supabase → Authentication → Sign In / Providers → "Allow new users to sign up" kapatılmalı; '
+      + 'kullanıcıyı yönetici eklemeli. Program bilerek herkese açıksa bu satırı yok say.');
+  } else if (g.disable_signup === true) {
+    ekle('Giriş', 'Herkes kendi kendine hesap açabiliyor mu', 'KAPALI', 'Kayıt kapalı.');
+  }
+  const dis = g.external || {};
+  if (dis.anonymous_users === true) {
+    ekle('Giriş', 'Anonim giriş açık mı', 'AÇIK',
+      'Hesapsız "anonim kullanıcı" oturumu açılabiliyor; bu oturumlar "giriş yapmış" sayılır. '
+      + 'Gerekmiyorsa Authentication ayarlarından kapat.');
+  } else if (dis.anonymous_users === false) {
+    ekle('Giriş', 'Anonim giriş açık mı', 'KAPALI', 'Anonim giriş kapalı.');
+  }
+}
+
+/* ---------- E2 · Dosya kovaları ----------
+   Kova listesi personel oturumuyla okunur (ziyaretçi çoğu zaman listeyi hiç
+   göremez). Sonra her kovada ZİYARETÇİ olarak dosya listesi istenir —
+   yalnız ad listesi, dosya indirilmez. Boş kovada liste boş döner; o
+   durumda "kapalı" demek kesin değil, ayrıntıda söyleniyor. */
+async function guvenlikDepolamaTesti(istek, ekle, belirtec) {
+  const r = await istek('/storage/v1/bucket', { belirtec });
+  if (r.hata || r.durum !== 200 || !Array.isArray(r.govde)) {
+    ekle('Depolama', 'kova listesi', 'BİLGİ',
+      guvenlikAyrinti(r.durum, r.govde, r.hata, 'Kovalar okunamadı — personel hesabı kovaları göremiyor olabilir'));
+    return;
+  }
+  if (!r.govde.length) { ekle('Depolama', 'kova listesi', 'ATLANDI', 'Projede dosya kovası yok.'); return; }
+  for (const k of r.govde.slice(0, 20)) {
+    const ad = String(k.id || k.name || '');
+    if (!ad) continue;
+    const l = await istek('/storage/v1/object/list/' + encodeURIComponent(ad), {
+      method: 'POST', body: JSON.stringify({ prefix: '', limit: 5, offset: 0 }) });
+    const goruyor = !l.hata && l.durum === 200 && Array.isArray(l.govde) && l.govde.length > 0;
+    const bos = !l.hata && l.durum === 200 && Array.isArray(l.govde) && !l.govde.length;
+    ekle('Depolama', 'Ziyaretçi "' + ad + '" kovasındaki dosyaları listeleyebiliyor mu',
+      goruyor ? 'AÇIK' : 'KAPALI',
+      goruyor ? 'Giriş yapmadan ' + l.govde.length + '+ dosya adı göründü.'
+        : bos ? 'Liste boş döndü — kova boşsa bu kesin değil, içine dosya koyup tekrar dene.'
+        : guvenlikAyrinti(l.durum, l.govde, l.hata));
+    if (k.public) {
+      ekle('Depolama', '"' + ad + '" kovası herkese açık mı', 'BİLGİ',
+        'Public kova: dosyanın adresini bilen herkes indirebilir. Profil fotoğrafı için normal, iş belgesi için değil.');
+    }
+  }
+}
+
 function guvenlikBelirtecOmruTesti(ekle, girisGovdesi) {
   const yuk = guvenlikJwtCoz(girisGovdesi && girisGovdesi.access_token);
   if (!yuk || !yuk.exp || !yuk.iat) {
@@ -11275,6 +11338,10 @@ async function guvenlikTestiCalistir({ url, anon, eposta, sifre, depo, kayitliJs
 
   /* A7 · belirteç ömrü — hiçbir şey çağırmaz, giriş cevabını okur. */
   guvenlikBelirtecOmruTesti(ekle, gSonuc.govde);
+
+  /* E · Kayıt ayarları ve dosya kovaları — yalnız okur, hiçbir şey yazmaz. */
+  await guvenlikGirisAyarTesti(istek, ekle);
+  await guvenlikDepolamaTesti(istek, ekle, belirtec);
 
   /* B · Veritabanı röntgeni — programın sahibi SQL Editor'de çalıştırıp
      yapıştırdı. Jeton yok, köprü yok (bkz. GUVENLIK_RONTGEN_SQL). */
