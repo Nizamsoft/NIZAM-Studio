@@ -1,5 +1,19 @@
 # Değişiklik Günlüğü
 
+## v0.244.0
+- **Güvenlik testine Claude kod denetimi geldi.** Studio bir prompt veriyor;
+  Claude programın deposunu okuyup 11 maddelik listeyi (gizli anahtar,
+  satır güvenliği, güçlü fonksiyonlar, Edge Function'lar, XSS, giriş
+  akışı, dosya kovaları…) tek tek denetliyor ve bir JSON bloğu dönüyor.
+  Hiçbir dosyayı değiştirmiyor. Sen bloğu Studio'ya yapıştırıyorsun.
+- Kritik/yüksek/orta bulgular açık sayılıyor; Claude'un atladığı madde de
+  açık sayılıyor — denetlenmemiş alan "temiz" görünmesin.
+- Açık bulunca **"N açığı Claude'a düzelttir"** düğmesi: bütün bulgular tek
+  promptta Claude'a gidiyor, düzeltince test yeniden koşuluyor.
+- Programa özel künye ekranı ve proje adımındaki guvenlik.json alanı
+  kalktı; tablo listesini artık kod denetimi veriyor.
+- Proje adımında test için kod denetimi ve röntgen ikisi de şart.
+
 ## v0.243.0
 - **Güvenlik testi artık tehlikeli jeton istemiyor.** Hesabın bütün
   projelerine erişen Supabase jetonu (`sbp_`) ve `guvenlik-sql` köprü

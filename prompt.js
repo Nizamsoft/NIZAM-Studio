@@ -8,6 +8,34 @@
 
 'use strict';
 
+/* Güvenlik kod denetiminin kontrol listesi. Hem Claude'a giden prompt
+   (PROMPT.kodDenetimi) hem Studio'nun yapıştırılan sonucu okuyan kısmı
+   (guvenlikKodOku) bu listeyi kullanıyor. */
+const GUVENLIK_KOD_ALANLARI = [
+  { anahtar: 'gizli_anahtar',   ad: 'Gizli anahtar',
+    soru: 'Depoda ya da git geçmişinde service_role anahtarı, sbp_ jetonu, veritabanı şifresi ya da başka bir gizli değer var mı?' },
+  { anahtar: 'istemci_anahtar', ad: 'Tarayıcıdaki anahtar',
+    soru: 'Tarayıcıya giden kodda yalnız publishable/anon anahtar mı var; gizli anahtar istemciye sızıyor mu?' },
+  { anahtar: 'satir_guvenligi', ad: 'Satır güvenliği (göçler)',
+    soru: 'Göç dosyalarında her public tabloda RLS açık mı; kurallar gerçekten sahibine/rolüne göre mi, "using (true)" gibi herkese açık kural var mı?' },
+  { anahtar: 'guclu_fonksiyon', ad: 'Güçlü fonksiyonlar',
+    soru: 'security definer fonksiyonlar çağıranın yetkisini kendi içinde denetliyor mu, search_path sabit mi, ziyaretçiye (anon) açık mı?' },
+  { anahtar: 'sunucu_fonksiyonu', ad: 'Edge Function\'lar',
+    soru: 'Her Edge Function çağıranın kim olduğunu ve yetkisini doğruluyor mu, girdiyi denetliyor mu, CORS gereğinden geniş mi, service_role ile yaptığı işi kime açıyor?' },
+  { anahtar: 'yetki_istemcide', ad: 'Yetki kararı',
+    soru: 'Yetki kararları yalnız arayüzde mi veriliyor (düğmeyi gizlemek gibi); aynı işlem sunucuda/RLS\'te de engelleniyor mu? Kullanıcı rolünü kendisi değiştirebiliyor mu?' },
+  { anahtar: 'giris_akisi',     ad: 'Giriş ve oturum',
+    soru: 'Kayıt, giriş, şifre sıfırlama ve çıkış doğru mu; herkes kayıt olabiliyor mu (olmamalıysa); pasif kullanıcı hâlâ girebiliyor mu?' },
+  { anahtar: 'xss',             ad: 'Sayfaya kod sızdırma (XSS)',
+    soru: 'Kullanıcıdan ya da veritabanından gelen metin innerHTML, template string gibi yollarla kaçışsız sayfaya basılıyor mu?' },
+  { anahtar: 'depolama',        ad: 'Dosya kovaları',
+    soru: 'Storage kovaları gereğinden açık mı (public), kurallar dosyayı sahibine göre mi kısıtlıyor, dosya türü/boyutu denetleniyor mu?' },
+  { anahtar: 'hassas_veri',     ad: 'Hassas veri',
+    soru: 'Kişisel veri ya da oturum bilgisi konsola, localStorage\'a, URL\'ye ya da loglara yazılıyor mu?' },
+  { anahtar: 'bagimlilik',      ad: 'Dış kütüphaneler',
+    soru: 'Dışarıdan yüklenen kütüphaneler sabit sürümlü ve güvenilir kaynaktan mı; bilinen açığı olan eski sürüm var mı?' },
+];
+
 const PROMPT = {
 
   /* ---- Supabase bağlantısı ----
@@ -798,98 +826,111 @@ const PROMPT = {
      içinde çalıştı); burada yalnız gerçek kısıtlamalar ("kim ne
      yapabilir") koda işleniyor. Sonunda istenen JSON, Studio'nun
      kurulumun bittiğini bilmesi için — palete yazılıyor (bkz. yetki-kod-onayla). */
-  /* Güvenlik kontrolü durağı — programa özel saldırı testinin künyesi.
-     yetkiKur() bu dosyayı depoya YAZDIRIYOR; bu prompt ise dosyası hiç
-     olmayan (Studio akışından geçmemiş, eski) programlar için: Claude
-     JSON'u cevabında veriyor, kullanıcı Studio'ya yapıştırıyor, depoya
-     hiçbir şey yazılmıyor. O yüzden SQL de dosya yolu değil, JSON'un
-     İÇİNDE metin olarak isteniyor. */
-  guvenlikJsonKur(projeId) {
-    /* Projesiz de çağrılıyor (Ayarlar > Güvenlik Testi): o zaman depo ve
-       katman bilgisi yok, prompt genel kalıyor — hangi programın önünde
-       olduğunu Claude'un kendi oturumu zaten biliyor. */
+  /* Güvenlik testi · Claude kod denetimi. Claude deponun içinde kodu
+     okur, HİÇBİR ŞEYİ DEĞİŞTİRMEZ, sonunda tek bir JSON bloğu verir;
+     kullanıcı o bloğu Studio'ya yapıştırır (bkz. guvenlikKodOku). Kontrol
+     listesi GUVENLIK_KOD_ALANLARI'nda — Studio da aynı listeyle okuyor,
+     ikisi ayrı yazılsa zamanla birbirinden kopardı. Projesiz de çağrılıyor
+     (Ayarlar > Güvenlik Testi): o zaman depo bilgisi yok, Claude'un kendi
+     oturumu hangi deponun önünde olduğunu zaten biliyor. */
+  kodDenetimi(projeId) {
     const p = projeId ? DB.proje(projeId) : null;
-    const pl = (p && p.palet) || {};
-    const roller = rolListesi(pl.roller);
+    const slug = p ? depoSlug(p.repo) : '';
 
     const s = [];
-    const slug = p ? depoSlug(p.repo) : '';
     if (slug) {
       s.push('> ### Depo: `' + slug + '`');
       s.push('> Bu oturum yalnız bu depoya bağlı olmalı. Deposu farklıysa dur');
       s.push('> ve söyle.');
       s.push('');
     }
-    s.push('# Saldırı testi künyesi (`guvenlik.json`)');
+    s.push('# Güvenlik kod denetimi');
     s.push('');
-    s.push('Şu an açık olduğun programın güvenliğini dışarıdan ölçeceğim.');
-    s.push('Bunun için programı tanıyan bir künyeye ihtiyacım var: hangi');
-    s.push('tablolar var, hangi katman neyi görmemeli, bunu sınayan SQL ne.');
-    s.push('Deposunda `guvenlik.json` varsa onu oku ve güncel hâlini ver;');
-    s.push('yoksa kodu ve göç dosyalarını okuyup sıfırdan çıkar.');
+    s.push('Bu depodaki programın güvenliğini kod tarafından denetle. Bu depo');
+    s.push('bize ait; amaç açıkları kötü niyetli biri bulmadan önce bulmak.');
     s.push('');
-    s.push('**Depoya hiçbir şey yazma, commit atma.** Yalnız aşağıdaki JSON\'u');
-    s.push('cevabında tek bir blok olarak ver — onu kopyalayıp Studio\'ya');
-    s.push('yapıştıracağım.');
+    s.push('## Kurallar');
+    s.push('- **Hiçbir dosyayı değiştirme, commit atma, bir şey çalıştırıp');
+    s.push('  canlı sisteme istek gönderme.** Yalnız oku ve raporla.');
+    s.push('- Her bulgu için dosya yolunu ve satırı ver. Kodda göremediğin bir');
+    s.push('  şeyi bulgu diye yazma; emin değilsen `onem: "dusuk"` ver ve');
+    s.push('  açıklamaya "doğrulanmadı" yaz.');
+    s.push('- Gizli bir değer bulursan değerin kendisini **yazma** — yalnız');
+    s.push('  nerede olduğunu ve ne tür bir anahtar olduğunu söyle.');
+    s.push('- Git geçmişine de bak (`git log -p` ile eski commit\'lerde silinmiş');
+    s.push('  anahtar kalmış mı). Silinmiş anahtar hâlâ geçerli sayılır.');
     s.push('');
-    if (roller.length) {
-      s.push('## Katmanlar (dar yetkiden genişe)');
-      s.push('');
-      const gorev = pl.rolGorev || {};
-      roller.forEach((ad, i) => {
-        const g = (gorev[ad] || '').trim();
-        s.push(`${i + 1}. **${ad}**${g ? ' — ' + g : ''}`);
-      });
-      s.push('');
-    }
-    if (!roller.length) {
-      s.push('Katmanları (rolleri) kodun kendisinden çıkar — kimin ne');
-      s.push('görebildiğini gerçek kurallardan oku, varsayma.');
-      s.push('');
-    }
-    s.push('## İstediğim JSON');
+    s.push('## Kontrol listesi');
+    s.push('Her maddeye tek tek bak. Maddenin programda karşılığı yoksa');
+    s.push('(ör. hiç Edge Function yok) durumunu `yok` yaz.');
+    s.push('');
+    GUVENLIK_KOD_ALANLARI.forEach(a => s.push('- `' + a.anahtar + '` — ' + a.soru));
+    s.push('');
+    s.push('## Önem dereceleri');
+    s.push('- `kritik` — dışarıdan biri başkasının verisini okuyabilir/silebilir,');
+    s.push('  hesap ele geçirebilir ya da sunucu anahtarı sızmış.');
+    s.push('- `yuksek` — giriş yapmış bir kullanıcı yetkisi olmayan bir şeyi yapabilir.');
+    s.push('- `orta` — tek başına zarar vermez ama başka bir açıkla birleşince verir.');
+    s.push('- `dusuk` — iyi uygulama eksikliği ya da doğrulanamayan şüphe.');
+    s.push('');
+    s.push('## Cevap');
+    s.push('En sonda **yalnız tek bir JSON bloğu** ver, başka açıklama yazma:');
     s.push('');
     s.push('```json');
     s.push('{');
-    s.push('  "veritabani_surumu": "<depodaki en son göç dosyasının numarası>",');
-    s.push('  "tablolar": { "liste": ["tablo_adi", "..."] },');
-    s.push('  "fonksiyonlar": { "deneme_guvenli": "<rpc adi>" },');
-    s.push('  "sunucu_islevi": { "ad": "<edge function adi>" },');
-    s.push('  "sql_testi": {');
-    s.push('    "sql": ["<1. parça>", "<2. parça>", "<3. parça>"],');
-    s.push('    "sonuc_tablosu": "ns_guvenlik_sonuc"');
-    s.push('  }');
+    s.push('  "nizam_kod_denetimi": 1,');
+    s.push('  "depo": "sahip/depo",');
+    s.push('  "commit": "denetlenen commit\'in kısa kimliği",');
+    s.push('  "tablolar": ["göç dosyalarındaki public tabloların adları"],');
+    s.push('  "kontroller": [');
+    s.push('    { "alan": "' + GUVENLIK_KOD_ALANLARI[0].anahtar + '", "durum": "temiz | sorunlu | yok", "not": "tek cümle" }');
+    s.push('  ],');
+    s.push('  "bulgular": [');
+    s.push('    { "onem": "kritik | yuksek | orta | dusuk", "alan": "kontrol listesindeki anahtar",');
+    s.push('      "baslik": "kısa başlık", "dosya": "yol/dosya.js:42",');
+    s.push('      "aciklama": "ne yanlış ve neden tehlikeli", "oneri": "nasıl düzeltilir" }');
+    s.push('  ]');
     s.push('}');
     s.push('```');
     s.push('');
-    s.push('Alanlar:');
-    s.push('- **`tablolar.liste`** — satır güvenliği altındaki **bütün**');
-    s.push('  tabloların adları. Dışarıdan okumayı/değiştirmeyi deneyeceğim.');
-    s.push('- **`fonksiyonlar.deneme_guvenli`** — dışarıdan çağrılması zararsız');
-    s.push('  **tek** rpc fonksiyonunun adı (veri değiştirmeyen bir tanesi).');
-    s.push('  Böyle bir fonksiyon yoksa alanı hiç yazma.');
-    s.push('- **`sunucu_islevi.ad`** — yetki isteyen Edge Function\'ın adı');
-    s.push('  (genelde kullanıcı ekleme). Yoksa alanı hiç yazma.');
-    s.push('- **`sql_testi.sql`** — dosya yolu DEĞİL, SQL\'in kendisi: üç metin,');
-    s.push('  sırayla çalıştırılacak biçimde:');
-    s.push('  **1)** sahte kullanıcı/veri ile sahneyi kur ve `sonuc_tablosu`\'nu aç,');
-    s.push('  **2)** o sahte kullanıcının kimliğiyle yetkisi olmayan şeylere');
-    s.push('  erişmeyi dene ve her denemeyi sonuç tablosuna yaz,');
-    s.push('  **3)** açtığın her şeyi (tablo dahil) temizle.');
-    s.push('  Parçalar **ayrı ayrı** çalıştırılıyor; birinin açtığını sonraki');
-    s.push('  görür ama aynı istekte değil. JSON içinde metin oldukları için');
-    s.push('  satır sonlarını `\\n` ile yaz.');
-    s.push('- **`sql_testi.sonuc_tablosu`** — 2. parçanın yazdığı tablo.');
-    s.push('  Sütunları: `kim` (hangi katman), `deneme` (ne denendi), `sonuc`');
-    s.push('  (**`AÇIK`** / **`KAPALI`** / `BİLGİ`), `ayrinti` (kısa açıklama).');
-    s.push('  Hükmü sen veriyorsun — bu satırları olduğu gibi göstereceğim.');
+    s.push('`kontroller` listesinde **her madde bir kez** olsun. Bulgu yoksa');
+    s.push('`bulgular` boş liste olsun.');
+    return s.join('\n');
+  },
+
+  /* Güvenlik testinden sonra: açık bulunan satırlardan düzeltme promptu.
+     `satirlar` guvenlikTestiCalistir'in AÇIK satırları; kod bulgularında
+     ayrinti öneriyi de taşıyor. */
+  guvenlikDuzelt(projeId, satirlar) {
+    const p = projeId ? DB.proje(projeId) : null;
+    const slug = p ? depoSlug(p.repo) : '';
+    const s = [];
+    if (slug) {
+      s.push('> ### Depo: `' + slug + '`');
+      s.push('> Bu oturum yalnız bu depoya bağlı olmalı. Deposu farklıysa dur');
+      s.push('> ve söyle.');
+      s.push('');
+    }
+    s.push('# Güvenlik açıklarını kapat');
     s.push('');
-    s.push('Saldırı senaryosunu programın **gerçek** kurallarına göre kur:');
-    s.push('önce depodaki göç dosyalarını ve politikaları oku, hangi katman');
-    s.push('neyi görmemeliyse **tam onu** denesin. Geçeceğini bildiğin şeyleri');
-    s.push('değil, kapıda durması gerekenleri dene.');
+    s.push('Studio\'nun güvenlik testi bu programda aşağıdaki açıkları buldu.');
+    s.push('Hepsini kapat.');
     s.push('');
-    s.push('Başka hiçbir şey yazma — yalnız tek bir JSON bloğu ver.');
+    satirlar.forEach((r, i) => {
+      s.push((i + 1) + '. **' + r.kim + ' · ' + r.deneme + '**' + (r.ayrinti ? ' — ' + r.ayrinti : ''));
+    });
+    s.push('');
+    s.push('## Kurallar');
+    s.push('- Veritabanı değişikliğini **yeni numaralı bir göç dosyası** olarak');
+    s.push('  yaz; daha önce çalıştırılmış göç dosyasını değiştirme.');
+    s.push('- Bir açığı kapatırken programın çalışan bir özelliğini bozma; emin');
+    s.push('  değilsen o maddeyi atla ve nedenini yaz.');
+    s.push('- Bir anahtar sızmışsa yalnız koddan silmek yetmez: sonunda bana');
+    s.push('  hangi anahtarı nereden **yenilemem** gerektiğini söyle.');
+    s.push('- İş bitince commit\'le ve gönder. Göç dosyası varsa bana hangi');
+    s.push('  dosyayı SQL Editor\'de çalıştırmam gerektiğini söyle.');
+    s.push('');
+    s.push('Sonunda madde madde neyi nasıl kapattığını tek satırla yaz.');
     return s.join('\n');
   },
 

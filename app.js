@@ -931,8 +931,9 @@ const VIEWS = {
       <div class="pj-tepe">
         <div class="pj-tepe-yz">
           <h1>Güvenlik Testi</h1>
-          <p>Herhangi bir Supabase projesini önce ziyaretçi, sonra personel
-             kimliğiyle dener. Veri bozmaz — yazdığı her şeyi hemen siler.</p>
+          <p>Üç ayaklı: Claude kodu okur, röntgen veritabanının içine bakar,
+             canlı deneme ziyaretçi ve personel kimliğiyle kapıları zorlar.
+             Veri bozmaz — yazdığı her şeyi hemen siler.</p>
         </div>
       </div>
 
@@ -983,9 +984,9 @@ const VIEWS = {
         </label>
       </div>
 
-      ${guvenlikRontgenKarti(g.rontgen, '', g.url)}
+      ${guvenlikKodKarti(g.kod, '')}
 
-      ${guvenlikKunyeKarti()}
+      ${guvenlikRontgenKarti(g.rontgen, '', g.url)}
 
       <button class="sayfa-dug bitir" type="button" data-eylem="guvenlik-test-calistir"
               ${g.calisiyor ? 'disabled' : ''}>
@@ -6723,62 +6724,91 @@ function olcumOzeti(olcum) {
 function durakGuvenlikDurum(projeId) {
   if (!DURAK_GUVENLIK[projeId]) {
     DURAK_GUVENLIK[projeId] = { calisiyor: false, sonuc: null, harita: null,
-      ustKatmanUyarisi: false, kalintilar: [], tabloKaynagi: '', rontgen: null };
+      ustKatmanUyarisi: false, kalintilar: [], tabloKaynagi: '', rontgen: null, kod: null };
   }
   return DURAK_GUVENLIK[projeId];
 }
 
-/* ---------- Programa özel künye (Ayarlar > Güvenlik Testi) ----------
-   Proje durağındaki test künyeyi depodaki `guvenlik.json`'dan okuyor —
-   orada dosya zaten Yetkilendirme adımında yazılmış oluyor. Ayarlar'daki
-   test ise projeye bağlı değil: elinde bir adres olmayabilir, program
-   Studio akışından hiç geçmemiş olabilir. O yüzden burada dosya adresi
-   sorulmuyor; Claude'a prompt veriliyor, dönen JSON yapıştırılıyor.
-   Künye SAKLANMIYOR: bu ekrandan her seferinde başka bir program test
-   edilebiliyor, kayıtlı bir künye bir sonraki testte yanlış programı
-   anlatırdı. Yapıştırılan künye yalnız ekran açıkken bellekte duruyor,
-   sayfa yenilenince gidiyor — kullan at. */
-function guvenlikKunyeOku() { return GUVENLIK_SAYFA.kunye || null; }
-function guvenlikKunyeYaz(json) { GUVENLIK_SAYFA.kunye = json || null; }
-
-function guvenlikKunyeOzeti(j) {
-  if (!j) return '';
-  const t = j.tablolar && Array.isArray(j.tablolar.liste) ? j.tablolar.liste.length : 0;
-  const q = j.sql_testi && (Array.isArray(j.sql_testi.sql) ? j.sql_testi.sql.length
-          : Array.isArray(j.sql_testi.parcalar) ? j.sql_testi.parcalar.length : 0);
-  const par = [];
-  if (t) par.push(t + ' tablo');
-  if (q) par.push(q + ' SQL parçası');
-  if (j.sunucu_islevi && j.sunucu_islevi.ad) par.push('sunucu işlevi: ' + j.sunucu_islevi.ad);
-  return par.join(' · ') || 'künye kayıtlı';
+/* ---------- Claude kod denetimi ----------
+   Studio promptu verir (PROMPT.kodDenetimi), Claude depoda kodu okur ve tek
+   bir JSON bloğu döndürür, kullanıcı onu buraya yapıştırır. Claude'un
+   iddiası olduğu gibi "AÇIK" sayılmıyor: kritik/yüksek/orta bulgular açık,
+   düşük olanlar bilgi. Kontrol listesinde atlanan madde "denetlenmedi"
+   diye AÇIK görünür — sessizce temiz sayılmaz. Röntgen gibi bellekte durur. */
+function guvenlikKodOku(metin) {
+  const t = String(metin || '');
+  const bas = t.indexOf('{'), son = t.lastIndexOf('}');
+  if (bas < 0 || son <= bas) return null;
+  let j = null;
+  try { j = JSON.parse(t.slice(bas, son + 1)); } catch (h) { j = null; }
+  if (!j || j.nizam_kod_denetimi !== 1) return null;
+  const yazi = (v, n) => String(v == null ? '' : v).trim().slice(0, n);
+  const alanlar = GUVENLIK_KOD_ALANLARI.map(a => a.anahtar);
+  const onemler = ['kritik', 'yuksek', 'orta', 'dusuk'];
+  const kontroller = (Array.isArray(j.kontroller) ? j.kontroller : [])
+    .filter(k => k && alanlar.includes(k.alan))
+    .map(k => ({ alan: k.alan,
+                 durum: ['temiz', 'sorunlu', 'yok'].includes(k.durum) ? k.durum : 'sorunlu',
+                 not: yazi(k.not, 400) }));
+  const bulgular = (Array.isArray(j.bulgular) ? j.bulgular : []).slice(0, 80)
+    .filter(b => b && (b.baslik || b.aciklama))
+    .map(b => ({ onem: onemler.includes(b.onem) ? b.onem : 'orta',
+                 alan: alanlar.includes(b.alan) ? b.alan : '',
+                 baslik: yazi(b.baslik, 160), dosya: yazi(b.dosya, 200),
+                 aciklama: yazi(b.aciklama, 800), oneri: yazi(b.oneri, 600) }));
+  const tablolar = (Array.isArray(j.tablolar) ? j.tablolar : [])
+    .filter(x => typeof x === 'string' && /^[A-Za-z_][A-Za-z0-9_]{0,62}$/.test(x)).slice(0, 200);
+  return { depo: yazi(j.depo, 120), commit: yazi(j.commit, 40), tablolar, kontroller,
+           bulgular, tarih: Date.now() };
 }
 
-function guvenlikKunyeKarti() {
-  const kayitli = guvenlikKunyeOku();
+const GUVENLIK_ONEM_AD = { kritik: 'KRİTİK', yuksek: 'YÜKSEK', orta: 'ORTA', dusuk: 'DÜŞÜK' };
 
+function guvenlikKodEkle(ekle, kod) {
+  if (!kod) {
+    ekle('Kod', 'kod denetimi', 'ATLANDI', 'Kod denetimi yapıştırılmadı — kaynak kod incelenmedi.');
+    return;
+  }
+  const alanAdi = a => (GUVENLIK_KOD_ALANLARI.find(x => x.anahtar === a) || {}).ad || 'Genel';
+  kod.bulgular.forEach(b => ekle('Kod', alanAdi(b.alan) + ': ' + b.baslik,
+    b.onem === 'dusuk' ? 'BİLGİ' : 'AÇIK',
+    '[' + GUVENLIK_ONEM_AD[b.onem] + '] ' + [b.dosya, b.aciklama].filter(Boolean).join(' — ')
+      + (b.oneri ? ' · Öneri: ' + b.oneri : '')));
+  GUVENLIK_KOD_ALANLARI.forEach(a => {
+    const k = kod.kontroller.find(x => x.alan === a.anahtar);
+    const bulguVar = kod.bulgular.some(b => b.alan === a.anahtar && b.onem !== 'dusuk');
+    /* Atlanan madde temiz sayılmaz: denetlenmemiş bir alan kanıtlanmış
+       sayılırsa her şeyi atlayan bir cevap "sıfır açık" çıkardı. */
+    if (!k) { ekle('Kod', a.ad, 'AÇIK', 'Denetlenmedi — Claude bu maddeyi atladı. Kod denetimini tekrarla.'); return; }
+    if (k.durum === 'yok') { ekle('Kod', a.ad, 'ATLANDI', k.not || 'Programda karşılığı yok.'); return; }
+    if (k.durum === 'temiz' && !bulguVar) { ekle('Kod', a.ad, 'KAPALI', k.not); return; }
+    /* "sorunlu" deyip bulgu yazmadıysa madde yine açık sayılır. */
+    if (!bulguVar) ekle('Kod', a.ad, 'AÇIK', k.not || 'Sorunlu işaretlendi, ayrıntı verilmedi.');
+  });
+}
+
+/* Kod denetimi kartı — Ayarlar'da da, proje durağında da aynı. */
+function guvenlikKodKarti(k, projeId) {
+  const acik = k ? k.bulgular.filter(b => b.onem !== 'dusuk').length : 0;
   return `
     <div class="btk">
       <div class="btk-ust">
-        <span class="btk-ik ${kayitli ? 'yesil' : 'mor'}">${svg(ICON.dosya, 22)}</span>
-        <span class="btk-yz"><b>Programa özel künye</b>
-          <i>${kayitli
-            ? esc(guvenlikKunyeOzeti(kayitli))
-            : 'Hangi tablolar var, hangi katman neyi görmemeli — test edeceğin programı tanıyan künye. Claude yazar, sen yapıştırırsın.'}</i></span>
+        <span class="btk-ik ${k ? 'yesil' : 'mor'}">${svg(ICON.dosya, 22)}</span>
+        <span class="btk-yz"><b>Kod denetimi</b>
+          <i>${k
+            ? esc([k.depo, k.commit].filter(Boolean).join(' @ ') + (k.depo || k.commit ? ' · ' : '')
+                + k.kontroller.length + '/' + GUVENLIK_KOD_ALANLARI.length + ' madde · '
+                + (acik ? acik + ' bulgu' : 'bulgu yok') + ' · ' + olcumTarihi(k))
+            : 'Claude programın deposunu okur, açıkları listeler. Hiçbir dosyayı değiştirmez.'}</i></span>
       </div>
-      ${kayitli ? `
-        <div class="gk-ozet" style="margin:0">
-          <span class="gk-ozet-ik">${svg(ICON.tik, 15)}</span>
-          <span class="gk-ozet-yz"><b>Künye hazır</b>
-            <i>Yalnız bu test için — saklanmıyor, sayfayı yenileyince gider.</i></span>
-          <button class="gk-ozet-btn" type="button" data-eylem="guvenlik-kunye-sil">Kaldır</button>
-        </div>` : ''}
-      ${promptBaglantisi({ tur: 'guvenlikJson',
-        yazi: kayitli ? 'Promptu yeniden kopyala' : 'Promptu kopyala',
-        ikincil: !!kayitli })}
-      <button class="sayfa-dug ikincil" type="button" data-eylem="guvenlik-kunye-yapistir">
-        ${svg(ICON.ice, 15)} ${kayitli ? 'Yeni künyeyi yapıştır' : 'JSON yapıştır'}</button>
-      <p class="ipucu">Künye yoksa test yine çalışır — dış kapılar ve yetki
-        haritası ölçülür, yalnız programa özel senaryolar atlanır.</p>
+      <div class="gv-adimlar">
+        ${promptBaglantisi({ tur: 'kodDenetimi', proje: projeId || '',
+          yazi: '1 · Promptu kopyala', ikincil: true,
+          slug: projeId && DB.proje(projeId) ? depoSlug(DB.proje(projeId).repo) : '' })}
+        <button class="sayfa-dug ${k ? 'ikincil' : ''}" type="button" data-eylem="guvenlik-kod-yapistir"
+                data-proje="${esc(projeId || '')}">
+          ${svg(ICON.ice, 15)} 2 · ${k ? 'Yeni sonucu yapıştır' : 'Claude\'un cevabını yapıştır'}</button>
+      </div>
     </div>`;
 }
 
@@ -6830,8 +6860,8 @@ function guvenlikDurakSayfasi(p, d) {
 
   const g = durakGuvenlikDurum(p.id);
   const hazir = !!String(pl.supabaseUrl || '').trim() && !!String(pl.supabaseAnon || '').trim();
-  const depo = String(pl.guvenlikDepoAdresi || p.repo || '').trim();
   const o = pl.guvenlikOlcum;
+  const eksik = !g.kod ? 'Önce kod denetimini yapıştır' : !g.rontgen ? 'Önce röntgeni yapıştır' : '';
 
   const temiz  = !!(o && !o.acik);
   const onayli = !!pl.guvenlikTamamlandi && temiz;
@@ -6840,6 +6870,7 @@ function guvenlikDurakSayfasi(p, d) {
     + adimBasligi(p, d, '')
     + (onayli ? fmTamamBar(p, 'guvenlik',
         'Son ölçüm temiz çıktı ve onaylandı.', false) : '')
+    + guvenlikKodKarti(g.kod, p.id)
     + guvenlikRontgenKarti(g.rontgen, p.id, pl.supabaseUrl)
     + (o ? `
       <div class="gk-son ${o.acik ? 'acik' : 'temiz'}">
@@ -6871,24 +6902,14 @@ function guvenlikDurakSayfasi(p, d) {
                     data-hedef="gvd-sifre-${p.id}" aria-label="Şifreyi göster">
               ${svg(ICON.goz, 16)}</button></span>
         </label>
-        <label class="gf">
-          <span class="gf-et">guvenlik.json adresi</span>
-          <span class="gf-kutu">${svg(ICON.dal, 17)}
-            <input type="text" id="gvd-depo-${p.id}" value="${esc(depo)}"
-                   placeholder="github.com/sahip/depo" autocomplete="off"
-                   spellcheck="false" autocapitalize="off"></span>
-        </label>
-        ${pl.guvenlikJsonVar === false ? `<p class="ipucu">Yetkilendirme adımında
-          <code>guvenlik.json</code> yazılmadı — programa özel denetimler atlanacak.</p>` : ''}
         ${hazir ? '' : `<p class="ipucu">Supabase adresi ya da anon key kayıtlı değil —
           <b>Bağlantılar ve temel</b> durağına dön.</p>`}
       </div>`
     + `<button class="sayfa-dug ${onayli ? 'ikincil' : 'bitir'}" type="button"
                data-eylem="guvenlik-durak-test"
-               data-proje="${p.id}" ${g.calisiyor || !hazir || !g.rontgen ? 'disabled' : ''}>
+               data-proje="${p.id}" ${g.calisiyor || !hazir || eksik ? 'disabled' : ''}>
         ${svg(ICON.gGuvenlik, 16)} ${g.calisiyor ? 'Test ediliyor…'
-          : !g.rontgen ? 'Önce röntgeni yapıştır'
-          : onayli ? 'Yeniden test et' : 'Test Et'}</button>`
+          : eksik || (onayli ? 'Yeniden test et' : 'Test Et')}</button>`
     /* Onay ölçümden ayrı: temiz çıkan sonucu okuyup kendin işaretliyorsun.
        Onaylı hâlde de test düğmesi duruyor — kodda bir şey değişince
        yeniden ölçmek gerekiyor. */
@@ -10600,7 +10621,7 @@ function templateSihirbaziBagla(el) {
    Supabase jetonu artık hiç kullanılmıyor. */
 const GUVENLIK_SAYFA = { url: '', anon: '', eposta: '', calisiyor: false,
   sonuc: null, harita: null, ustKatmanUyarisi: false, kalintilar: [], tabloKaynagi: '',
-  depo: '', kunye: null, rontgen: null };
+  depo: '', rontgen: null, kod: null };
 
 function guvenlikUuid() {
   if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
@@ -11196,7 +11217,7 @@ async function guvenlikPersonelHaritasi(istek, belirtec, sema, kalintilar) {
   return satirlar;
 }
 
-async function guvenlikTestiCalistir({ url, anon, eposta, sifre, depo, kayitliJson, rontgen }) {
+async function guvenlikTestiCalistir({ url, anon, eposta, sifre, depo, kayitliJson, rontgen, kod }) {
   const taban = String(url || '').trim().replace(/\/+$/, '');
   const istek = guvenlikIstekYap(taban, anon);
   const sonuclar = [];
@@ -11220,15 +11241,18 @@ async function guvenlikTestiCalistir({ url, anon, eposta, sifre, depo, kayitliJs
     return { sonuc: sonuclar, harita: null, ustKatmanUyarisi: false, kalintilar, tabloKaynagi: '' };
   }
 
-  /* guvenlik.json bir kez okunur — hem tablo listesi yedeği (3.2) hem A4'ün
-     güvenli deneme fonksiyonu (fonksiyonlar.deneme_guvenli) hem de C
-     katmanının SQL parçaları (sql_testi.parcalar) için kullanılır. */
-  /* Projeye yapıştırılmış künye varsa adres hiç kurcalanmıyor — dosya
-     depoda olmayan (Studio akışından geçmemiş) programlar böyle test
-     ediliyor. SQL'i de künyenin içinde geliyor, indirilecek bir şey yok. */
-  const { json: guvenlikJson, hata: guvenlikJsonHata, kaynakUrl: guvenlikJsonUrl } =
-    kayitliJson ? { json: kayitliJson, hata: '', kaynakUrl: null }
-                : await guvenlikJsonOku(depo);
+  /* guvenlik.json (depo varsa) bir kez okunur — tablo listesi yedeği (3.2)
+     ve A4'ün güvenli deneme fonksiyonu (fonksiyonlar.deneme_guvenli) için.
+     Kod denetimi tablo listesi verdiyse ve dosyada liste yoksa o kullanılır:
+     Studio akışından geçmemiş programlarda dosya hiç olmayabiliyor. */
+  const okunan = kayitliJson ? { json: kayitliJson, hata: '' }
+    : depo ? await guvenlikJsonOku(depo) : { json: null, hata: 'depo adresi yok' };
+  const dosyadaListe = okunan.json && okunan.json.tablolar && Array.isArray(okunan.json.tablolar.liste)
+    && okunan.json.tablolar.liste.length;
+  const guvenlikJson = !dosyadaListe && kod && kod.tablolar.length
+    ? Object.assign({}, okunan.json || {}, { tablolar: { liste: kod.tablolar } })
+    : okunan.json;
+  const guvenlikJsonHata = guvenlikJson ? '' : okunan.hata;
 
   /* 1 · Tablo listesi — üç kaynaktan sırayla (bkz. guvenlikTabloListesiKesfet):
      OpenAPI keşfi (sütun şemasıyla birlikte) → guvenlik.json (yalnız
@@ -11255,6 +11279,9 @@ async function guvenlikTestiCalistir({ url, anon, eposta, sifre, depo, kayitliJs
   /* B · Veritabanı röntgeni — programın sahibi SQL Editor'de çalıştırıp
      yapıştırdı. Jeton yok, köprü yok (bkz. GUVENLIK_RONTGEN_SQL). */
   guvenlikRontgenEkle(ekle, rontgen);
+
+  /* K · Claude kod denetimi — yapıştırılan bulgular. */
+  guvenlikKodEkle(ekle, kod);
 
   /* D · personel yetki haritası. */
   let harita = null;
@@ -11324,7 +11351,12 @@ function guvenlikSonucTablosu(sonuc, ustKatmanUyarisi, kalintilar, harita, tablo
       <span><b>Veritabanında temizlenmemiş test kaydı kaldı.</b> Şu SQL'i
       Supabase SQL Editör'de çalıştırıp temizle:<br>
       ${kalintilar.map(k => `<code>${esc(k)}</code>`).join('<br>')}</span></div>` : '';
+  /* Açık varsa önce düzeltme promptu: bulgular Claude'a tek seferde gider,
+     düzeltilince test yeniden koşulur. */
   const kopyalaDugmesi = `<div class="kur-dug" style="margin-top:10px">
+      ${acik ? promptBaglantisi({ tur: 'guvenlikDuzelt', proje: projeId || '',
+        yazi: acik + ' açığı Claude\'a düzelttir',
+        slug: projeId && DB.proje(projeId) ? depoSlug(DB.proje(projeId).repo) : '' }) : ''}
       <button class="sayfa-dug ikincil" type="button" data-eylem="guvenlik-rapor-kopyala"
               ${projeId ? `data-proje="${esc(projeId)}"` : ''}>
         ${svg(ICON.kopya, 15)} Raporu kopyala</button>
@@ -13855,7 +13887,11 @@ const PANO_PROMPT = {
   cekirdekTemizle: p => PROMPT.cekirdekTemizle(p.id),
   yapi:          p => PROMPT.yapi(p.id),
   yetkiKur:      p => PROMPT.yetkiKur(p.id),
-  guvenlikJson:  p => PROMPT.guvenlikJsonKur(p ? p.id : ''),
+  kodDenetimi:   p => PROMPT.kodDenetimi(p ? p.id : ''),
+  /* Testten sonra açık kalan satırlardan düzeltme promptu — projesiz de
+     (Ayarlar > Güvenlik Testi) çalışıyor. */
+  guvenlikDuzelt: p => PROMPT.guvenlikDuzelt(p ? p.id : '',
+    ((p ? durakGuvenlikDurum(p.id) : GUVENLIK_SAYFA).sonuc || []).filter(x => x.sonuc === 'AÇIK')),
   /* Uygulanmış tasarımlar sekmesinde odakta hangi yön varsa o. */
   tasarimVarlik: p => PROMPT.tasarimVarlikIstek(p.id, tasarimOdagi(p).anahtar),
   /* Projesiz: bir programda doğan kuralı standarda çeviren prompt. */
@@ -16386,8 +16422,8 @@ async function eylemCalistir(el) {
     try {
       /* Burada depo adresi sorulmuyor; künye yapıştırmadan geliyor. */
       const { sonuc, harita, ustKatmanUyarisi, kalintilar, tabloKaynagi } = await guvenlikTestiCalistir({
-        url, anon, eposta, sifre, depo: '', kayitliJson: guvenlikKunyeOku(),
-        rontgen: GUVENLIK_SAYFA.rontgen });
+        url, anon, eposta, sifre, depo: '', rontgen: GUVENLIK_SAYFA.rontgen,
+        kod: GUVENLIK_SAYFA.kod });
       GUVENLIK_SAYFA.sonuc = sonuc;
       GUVENLIK_SAYFA.harita = harita;
       GUVENLIK_SAYFA.ustKatmanUyarisi = ustKatmanUyarisi;
@@ -16401,35 +16437,17 @@ async function eylemCalistir(el) {
     return;
   }
 
-  /* Künye yapıştırma: pano doğrudan okunuyor, pencere açılmıyor —
-     Beta'daki "JSON yükle" ile aynı mekanik. */
-  if (e === 'guvenlik-kunye-yapistir') {
+  /* Kod denetimi sonucu pano üzerinden okunuyor (röntgenle aynı mekanik). */
+  if (e === 'guvenlik-kod-yapistir') {
     let metin = '';
     try { metin = await navigator.clipboard.readText(); } catch (h) { metin = ''; }
-    if (!metin || !metin.trim()) { toast('Pano boş — önce JSON\'u kopyala.', 'uyari'); return; }
-    /* Claude cevabı ```json ile sarabiliyor; gövdedeki ilk { … } alınıyor. */
-    const bas = metin.indexOf('{'), son = metin.lastIndexOf('}');
-    let json = null;
-    if (bas >= 0 && son > bas) { try { json = JSON.parse(metin.slice(bas, son + 1)); } catch (h) { json = null; } }
-    if (!json || typeof json !== 'object') { toast('Panodaki metin geçerli bir JSON değil.', 'hata'); return; }
-    const t = json.tablolar && Array.isArray(json.tablolar.liste) ? json.tablolar.liste.length : 0;
-    const q = json.sql_testi && (Array.isArray(json.sql_testi.sql) || Array.isArray(json.sql_testi.parcalar));
-    if (!t && !q) { toast('Künye boş görünüyor — tablolar.liste ya da sql_testi yok.', 'uyari'); return; }
-    guvenlikKunyeYaz(json);
-    toast('Künye alındı — ' + guvenlikKunyeOzeti(json) + '.', 'basari');
-    render();
-    return;
-  }
-
-  if (e === 'guvenlik-kunye-sil') {
-    const onay = await onaySor({
-      baslik: 'Künye kaldırılsın mı?',
-      mesaj: 'Programa özel senaryolar atlanır; dış kapı ve yetki haritası testleri yine çalışır.',
-      buton: 'Kaldır',
-    });
-    if (!onay) return;
-    guvenlikKunyeYaz(null);
-    toast('Künye kaldırıldı.');
+    if (!metin || !metin.trim()) { toast('Pano boş — önce Claude\'un cevabını kopyala.', 'uyari'); return; }
+    const k = guvenlikKodOku(metin);
+    if (!k) { toast('Bu bir kod denetimi sonucu değil. Claude\'un verdiği JSON bloğunu olduğu gibi kopyala.', 'hata'); return; }
+    const hedef = el.dataset.proje ? durakGuvenlikDurum(el.dataset.proje) : GUVENLIK_SAYFA;
+    hedef.kod = k;
+    const acik = k.bulgular.filter(b => b.onem !== 'dusuk').length;
+    toast('Kod denetimi alındı — ' + (acik ? acik + ' bulgu.' : 'bulgu yok.'), acik ? 'uyari' : 'basari');
     render();
     return;
   }
@@ -16445,16 +16463,20 @@ async function eylemCalistir(el) {
     const anon = String(pl.supabaseAnon || '').trim();
     if (!url || !anon) { toast('Supabase adresi ve anon key eksik.', 'uyari'); return; }
     const al = son => { const x = $('#gvd-' + son + '-' + pr.id); return x ? x.value.trim() : ''; };
-    const eposta = al('eposta'), sifre = al('sifre'), depo = al('depo');
+    const eposta = al('eposta'), sifre = al('sifre');
+    /* guvenlik.json adresi artık sorulmuyor: tablo listesini kod denetimi
+       veriyor. Eskiden kaydedilmiş adres varsa yine okunuyor. */
+    const depo = String(pl.guvenlikDepoAdresi || pr.repo || '').trim();
     if (!eposta || !sifre) { toast('E-posta ve şifre gerekli.', 'uyari'); return; }
 
     const g = durakGuvenlikDurum(pr.id);
+    if (!g.kod) { toast('Önce kod denetimini yapıştır.', 'uyari'); return; }
     if (!g.rontgen) { toast('Önce veritabanı röntgenini yapıştır.', 'uyari'); return; }
     Object.assign(g, { eposta, calisiyor: true, sonuc: null, harita: null,
       ustKatmanUyarisi: false, kalintilar: [], tabloKaynagi: '' });
     render();
     try {
-      const r = await guvenlikTestiCalistir({ url, anon, eposta, sifre, depo, rontgen: g.rontgen });
+      const r = await guvenlikTestiCalistir({ url, anon, eposta, sifre, depo, rontgen: g.rontgen, kod: g.kod });
       g.sonuc = r.sonuc;
       g.harita = r.harita;
       g.ustKatmanUyarisi = r.ustKatmanUyarisi;
@@ -16469,7 +16491,6 @@ async function eylemCalistir(el) {
       } else {
         await DB.paletKaydet(pr.id, Object.assign({}, pr.palet || {},
           { guvenlikOlcum: { tarih: Date.now(), toplam, acik },
-            guvenlikDepoAdresi: depo,
             /* Açık bulunan yeni ölçüm önceki onayı düşürür — eski "başarılı"
                işareti yeni açığın üstünü örtmesin. Temiz ölçümde onay
                kullanıcıya bırakılıyor. */
