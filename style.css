@@ -10821,3 +10821,8 @@ a.lk.tl-kart { text-decoration: none; color: inherit; }
 @media (min-width: 901px) {
   .tl-geri, .tl-tepe, .tl-baglar, .tl-kutu, .tl-donustur { max-width: 760px; }
 }
+
+/* Güvenlik Testi · röntgen kartındaki üç adım: kopyala, aç, yapıştır. */
+.gv-adimlar { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+.gv-adimlar .sayfa-dug { margin-top: 0; }
+.gv-adimlar .gv-link { align-self: stretch; justify-content: center; height: 44px; margin-top: 0; }

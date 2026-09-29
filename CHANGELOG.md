@@ -1,5 +1,19 @@
 # Değişiklik Günlüğü
 
+## v0.243.0
+- **Güvenlik testi artık tehlikeli jeton istemiyor.** Hesabın bütün
+  projelerine erişen Supabase jetonu (`sbp_`) ve `guvenlik-sql` köprü
+  fonksiyonu kaldırıldı. Yerine **Veritabanı röntgeni** geldi: Studio'nun
+  verdiği SQL'i programın kendi SQL Editor'ünde çalıştırıyorsun, çıkan tek
+  hücreyi yapıştırıyorsun. SQL yalnız okur, hiçbir şeyi değiştirmez.
+- Röntgen hem Ayarlar → Güvenlik Testi'nde hem projenin Güvenlik
+  adımında. Proje adımında röntgen yapıştırılmadan test başlamıyor.
+- Jetona bağlı programa özel SQL ve sunucu işlevi denemeleri çıktı; kod
+  tarafını bir sonraki sürümde Claude kod denetimi karşılayacak.
+- Yapman gereken: Supabase'de `guvenlik-sql` fonksiyonunu ve
+  `NS_SUPABASE_JETON` secret'ını sil, jetonu Account → Access Tokens'dan
+  iptal et.
+
 ## v0.242.0
 - **Talepler geldi.** Web sitesindeki ön analiz formunu dolduran müşteri
   artık Studio'da görünüyor. Panelde «Devam Eden Proje» kartının yerinde
