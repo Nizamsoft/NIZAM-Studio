@@ -10724,3 +10724,100 @@ button.kt {
 .gsr-ok .dolgu { display: none; }
 .gsr-ok.asagi svg { transform: rotate(90deg); }
 .gsr-ok[disabled] { opacity: .35; cursor: default; }
+
+/* ==========================================================================
+   Talepler — web sitesindeki ön analiz formundan gelenler
+   ========================================================================== */
+a.lk.tl-kart { text-decoration: none; color: inherit; }
+.lk-ikon.gri { background: #f2f2f4; color: #4a4a50; }
+.tl-kart .lk-yz em { flex-wrap: wrap; }
+
+/* Durum etiketi: rengi satırdan geliyor, zemini onun soluk hâli. */
+.tl-etiket {
+  --tl-renk: #83838b;
+  display: inline-flex; align-items: center; margin-left: 4px;
+  padding: 2px 9px; border-radius: 999px; text-decoration: none;
+  font-size: 11.5px; font-weight: 700; color: var(--tl-renk);
+  background: color-mix(in srgb, var(--tl-renk) 12%, #fff);
+}
+
+/* Panel kartı: halka yok, tarih hapı sağa yakın dursun. */
+@media (min-width: 901px) {
+  .ps-talep .ps-bitis { margin-right: 30px; }
+}
+
+/* ---- Detay ---- */
+.tl-geri {
+  display: inline-flex; align-items: center; gap: 6px; margin-bottom: 14px;
+  font-size: 13px; font-weight: 600; color: var(--ink-soft); text-decoration: none;
+}
+.tl-geri svg { fill: none; stroke: currentColor; stroke-width: 2.2; transform: rotate(180deg); }
+.tl-tepe h1 {
+  margin: 0; font-family: var(--yazi-baslik); font-size: 24px; line-height: 1.2;
+  color: var(--ink-strong); overflow-wrap: anywhere;
+}
+.tl-tepe p { margin: 4px 0 0; font-size: 13.5px; color: var(--ink-soft); }
+.tl-tepe p:empty { display: none; }
+.tl-tepe .tl-zaman { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; color: var(--ink-dim); }
+.tl-tepe .tl-zaman svg { fill: none; stroke: currentColor; stroke-width: 1.8; }
+.tl-tepe .tl-zaman b { color: var(--ink-soft); }
+
+.tl-baglar { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.tl-bag {
+  display: inline-flex; align-items: center; gap: 8px; max-width: 100%;
+  padding: 9px 13px; border-radius: 8px; text-decoration: none;
+  background: #f6f6f8; border: 1px solid var(--line-3);
+  font-size: 13.5px; font-weight: 600; color: var(--ink-strong);
+}
+.tl-bag span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tl-bag svg { flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linejoin: round; }
+.tl-bag .dolgu { display: none; }
+
+.tl-kutu {
+  margin-top: 16px; padding: 16px; border-radius: 8px;
+  background: var(--surface); border: 1px solid var(--line-3);
+}
+.tl-et {
+  display: block; margin-bottom: 10px;
+  font-family: var(--yazi-etiket); font-size: 11.5px; font-weight: 700;
+  letter-spacing: .06em; text-transform: uppercase; color: var(--ink-dim);
+}
+.tl-durumlar { display: flex; flex-wrap: wrap; gap: 8px; }
+.tl-durum {
+  --tl-renk: #83838b;
+  padding: 8px 13px; border-radius: 999px; cursor: pointer;
+  font: 600 13px/1.2 inherit; font-family: inherit;
+  color: var(--ink-soft); background: #fff; border: 1px solid var(--line-3);
+}
+.tl-durum.sec {
+  color: var(--tl-renk); border-color: var(--tl-renk);
+  background: color-mix(in srgb, var(--tl-renk) 10%, #fff);
+}
+
+.tl-bolum + .tl-bolum { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line-3); }
+.tl-bolum h3 {
+  margin: 0 0 10px; font-family: var(--yazi-etiket); font-size: 12px; font-weight: 700;
+  letter-spacing: .06em; text-transform: uppercase; color: var(--ink-strong);
+}
+.tl-bolum dl { margin: 0; }
+.tl-bolum dt { margin-top: 12px; font-size: 12.5px; color: var(--ink-dim); }
+.tl-bolum dt:first-child { margin-top: 0; }
+.tl-bolum dd {
+  margin: 3px 0 0; font-size: 14.5px; line-height: 1.5; color: var(--ink-strong);
+  white-space: pre-wrap; overflow-wrap: anywhere;
+}
+
+/* Projeye dönüştürme henüz yok: düğme görünür ama basılmaz. */
+.tl-donustur {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  width: 100%; margin: 18px 0 8px; padding: 14px 18px; border-radius: 8px;
+  font: 700 14.5px/1.2 inherit; font-family: inherit;
+  color: #fff; background: #17171a; border: 0; opacity: .45; cursor: not-allowed;
+}
+.tl-donustur u {
+  text-decoration: none; padding: 2px 8px; border-radius: 999px;
+  font-size: 11px; background: rgba(255, 255, 255, .18);
+}
+@media (min-width: 901px) {
+  .tl-geri, .tl-tepe, .tl-baglar, .tl-kutu, .tl-donustur { max-width: 760px; }
+}

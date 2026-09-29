@@ -16,6 +16,7 @@ const ROUTES = {
   projeler:    { title: 'Projeler',           kisa: 'Projeler',    sub: () => projelerAltBaslik() },
   gorevler:    { title: 'Bana Atananlar',     kisa: 'Görevler',    sub: () => gorevlerAltBaslik() },
   standartlar: { title: 'Nizam Standartları', kisa: 'Standartlar', sub: () => standartAltBaslik() },
+  talepler:    { title: 'Talepler',            kisa: 'Talepler',    sub: () => talepAltBaslik() },
   sektorler:   { title: 'Sektörler',           kisa: 'Sektörler',   sub: () => sektorAltBaslik() },
   paketler:    { title: 'Paketler',            kisa: 'Paketler',    sub: () => paketAltBaslik() },
   kilitler:    { title: 'Kilitli Projeler',    kisa: 'Kilit',       sub: () => kilitAltBaslik() },
@@ -691,6 +692,21 @@ const VIEWS = {
     /* Açıklama şeridi kalktı: liste zaten kendini anlatıyor, her açılışta
        aynı üç satırı okumak yalnız yer kaplıyordu. */
     return tepe + araclar + DB.standartGruplari().map(grupKarti).join('');
+  },
+
+  /* ---------- Talepler ----------
+     Web sitesindeki Ön Analiz formundan gelenler. #/talepler liste,
+     #/talepler/<id> detay. İçinde kişisel bilgi var: yalnız yönetici. */
+
+  talepler: () => {
+    if (YUKLENIYOR) return iskeletler(3);
+    if (DB.hata)    return hataKutusu(DB.hata);
+    if (!AUTH.yonetici) {
+      return `<div class="card">${empty(ICON.mail, 'Bu ekran yöneticiye ait',
+        'Talepleri yalnızca yönetici görebilir.')}</div>`;
+    }
+    const id = rota().id;
+    return id ? talepDetay(id) : talepListesi();
   },
 
   /* ---------- Sektörler ---------- */
@@ -8740,6 +8756,117 @@ function sektorTemplateSayisi(sektorId) {
 }
 
 /* Sektör kartı. Açıklama alanı yok — kartta ad ve template sayısı duruyor. */
+/* ---------- Talepler ----------
+   Durum etiketi yalnız takip için: talebe baktın mı, görüştün mü.
+   Renkler görev durumlarıyla aynı aileden; kırmızı yok. */
+const TALEP_DURUM = {
+  yeni:        { ad: 'Yeni',        renk: '#2f62c4' },
+  inceleniyor: { ad: 'İnceleniyor', renk: '#b8801a' },
+  gorusuluyor: { ad: 'Görüşülüyor', renk: '#b8801a' },
+  onaylandi:   { ad: 'Onaylandı',   renk: '#2f7d5c' },
+  reddedildi:  { ad: 'Reddedildi',  renk: '#83838b' },
+};
+
+function talepDurumu(t) {
+  return TALEP_DURUM[t && t.durum] || TALEP_DURUM.yeni;
+}
+
+function talepAltBaslik() {
+  if (YUKLENIYOR) return 'yükleniyor…';
+  const hepsi = DB.talepler || [];
+  const yeni = hepsi.filter(t => t.durum === 'yeni').length;
+  return yeni ? yeni + ' yeni talep' : hepsi.length + ' talep';
+}
+
+function talepEtiketi(t) {
+  const d = talepDurumu(t);
+  return `<u class="tl-etiket" style="--tl-renk:${d.renk}">${esc(d.ad)}</u>`;
+}
+
+function talepKarti(t) {
+  const alt = [t.yetkili, t.sektor].filter(Boolean).join(' · ');
+  return `
+    <a class="lk tl-kart" href="#/talepler/${esc(t.id)}">
+      <span class="lk-ikon gri">${svg(ICON.mail, 26)}</span>
+      <span class="lk-yz">
+        <b>${esc(t.firma || t.yetkili || 'İsimsiz talep')}</b>
+        ${alt ? `<i>${esc(alt)}</i>` : ''}
+        <em>${svg(ICON.saat, 15)}${esc(tarihYaz(t.gonderildi))}${talepEtiketi(t)}</em>
+      </span>
+      <span class="lk-ok">${svg(ICON.chevron, 18)}</span>
+    </a>`;
+}
+
+function talepListesi() {
+  const liste = DB.talepler || [];
+  return `
+    <div class="pj-tepe">
+      <div class="pj-tepe-yz">
+        <h1>Talepler</h1>
+        <p>Web sitesindeki ön analiz formundan gelenler.</p>
+      </div>
+    </div>
+    ${liste.length
+      ? `<div class="lk-liste">${liste.map(talepKarti).join('')}</div>`
+      : `<div class="card">${empty(ICON.mail, 'Henüz talep yok',
+          'Müşteri sitedeki ön analiz formunu gönderdiğinde burada görünecek.')}</div>`}`;
+}
+
+/* Detay: iletişim, durum, formdaki bütün soru ve cevaplar. Sorular
+   sitenin formundan adlarıyla geliyor; form değişse de burası değişmiyor. */
+function talepDetay(id) {
+  const t = (DB.talepler || []).find(x => x.id === id);
+  if (!t) {
+    return `<div class="card">${empty(ICON.mail, 'Talep bulunamadı',
+      'Silinmiş olabilir. Talepler listesine dön.')}</div>`;
+  }
+  const tel = String(t.telefon || '').replace(/[^+\d]/g, '');
+  const bolumler = Array.isArray(t.bolumler) ? t.bolumler : [];
+
+  const iletisim = [
+    t.telefon ? `<a class="tl-bag" href="tel:${esc(tel)}">${svg(ICON.telefon, 16)}<span>${esc(t.telefon)}</span></a>` : '',
+    t.eposta  ? `<a class="tl-bag" href="mailto:${esc(encodeURIComponent(t.eposta))}">${svg(ICON.mail, 16)}<span>${esc(t.eposta)}</span></a>` : '',
+  ].join('');
+
+  const durumlar = Object.entries(TALEP_DURUM).map(([k, d]) => `
+    <button class="tl-durum ${talepDurumu(t) === d ? 'sec' : ''}" type="button"
+            style="--tl-renk:${d.renk}" data-eylem="talep-durum"
+            data-id="${esc(t.id)}" data-durum="${k}">${esc(d.ad)}</button>`).join('');
+
+  const cevaplar = bolumler.length
+    ? bolumler.map(b => `
+        <section class="tl-bolum">
+          <h3>${esc(b.baslik || '')}</h3>
+          <dl>${(b.sorular || []).map(x => `
+            <dt>${esc(x.soru)}</dt>
+            <dd>${esc(x.cevap || 'Belirtilmedi')}</dd>`).join('')}
+          </dl>
+        </section>`).join('')
+    : `<section class="tl-bolum"><h3>İhtiyaç</h3>
+         <dl><dd>${esc(t.ozet || 'Belirtilmedi')}</dd></dl></section>`;
+
+  return `
+    <a class="tl-geri" href="#/talepler">${svg(ICON.chevron, 14)} Talepler</a>
+    <div class="tl-tepe">
+      <h1>${esc(t.firma || t.yetkili || 'İsimsiz talep')}</h1>
+      <p>${esc([t.yetkili, t.sektor].filter(Boolean).join(' · '))}</p>
+      <p class="tl-zaman">${svg(ICON.saat, 14)} ${esc(tarihYaz(t.gonderildi))}
+        ${t.iletisim ? ` · İletişim tercihi: <b>${esc(t.iletisim)}</b>` : ''}</p>
+    </div>
+    ${iletisim ? `<div class="tl-baglar">${iletisim}</div>` : ''}
+
+    <div class="tl-kutu">
+      <span class="tl-et">Durum</span>
+      <div class="tl-durumlar">${durumlar}</div>
+    </div>
+
+    <div class="tl-kutu">${cevaplar}</div>
+
+    <button class="tl-donustur" type="button" disabled aria-disabled="true">
+      Projeye Dönüştür <u>Yakında</u>
+    </button>`;
+}
+
 function sektorKarti(x) {
   const n = sektorTemplateSayisi(x.id);
   return `
@@ -15235,6 +15362,16 @@ async function eylemCalistir(el) {
 
   if (e === 'gorev-ac')   return gorevKartiAc(id);
 
+  if (e === 'talep-durum') {
+    try {
+      await DB.talepDurum(id, el.dataset.durum);
+      render();
+    } catch (err) {
+      toast(err.message, 'hata');
+    }
+    return;
+  }
+
   /* Düzenleme kipinden çık. Odaktaki alan varsa önce onu kaydettiriyoruz:
      blur, change dinleyicisini tetikliyor. */
   if (e === 'durak-kaydet') {
@@ -17329,8 +17466,32 @@ function panelSayilar(projeler) {
     + '<path d="M60 84l10 10 20-22" fill="none" stroke="#fff" stroke-width="7"'
     + ' stroke-linecap="round" stroke-linejoin="round" opacity=".7"></path></svg>';
 
+  /* Yöneticide ilk kart Talepler: siteden gelen, henüz bakılmamış iş.
+     Geliştirici talepleri göremiyor; onda eski proje kartı duruyor. */
+  const zarfDolu = '<svg viewBox="0 0 24 24" style="width:19px;height:19px">'
+    + '<rect x="3" y="5.5" width="18" height="13" rx="2.8" fill="#fff" stroke="none"></rect>'
+    + '<path d="M4.2 7.4l7.8 5.6 7.8-5.6" fill="none" stroke="#e5342a" stroke-width="1.8"'
+    + ' stroke-linecap="round" stroke-linejoin="round"></path></svg>';
+  const talepler = DB.talepler || [];
+  const yeniTalep = talepler.filter(t => t.durum === 'yeni').length;
+  const haftaOnce = Date.now() - 7 * 864e5;
+  const buHafta = talepler.filter(t => new Date(t.gonderildi).getTime() >= haftaOnce).length;
+
+  const ilkKart = AUTH.yonetici ? `
+    <a class="ps ps-proje ps-talep" href="#/talepler">
+      <span class="ps-ok" aria-hidden="true">${svg(ICON.chevron, 14)}</span>
+      <span class="ps-ikon">${zarfDolu}</span>
+      <b class="ps-bas">Talepler</b>
+      <i class="ps-aciklama">Bakılmayı bekleyen yeni talep</i>
+      <b class="ps-sayi">${yeniTalep}</b>
+      <span class="ps-bitis">
+        ${svg(ICON.takvim, 14)}
+        <span><i>Bu hafta gelen</i><b>${buHafta} talep</b></span>
+      </span>
+    </a>` : null;
+
   return `<div class="ps-izgara">
-    <a class="ps ps-proje" href="#/projeler">
+    ${ilkKart || `<a class="ps ps-proje" href="#/projeler">
       <span class="ps-ok" aria-hidden="true">${svg(ICON.chevron, 14)}</span>
       <span class="ps-ikon">${klasorDolu}</span>
       <b class="ps-bas">Devam Eden Proje</b>
@@ -17340,7 +17501,7 @@ function panelSayilar(projeler) {
         ${pzHalka(ortalama, 80, 8)}
         <span class="ps-halka-ic"><b>%${ortalama}</b><i>tamamlandı</i></span>
       </span>
-    </a>
+    </a>`}
     <a class="ps ps-gorev" href="#/gorevler">
       <span class="ps-cizim" aria-hidden="true">${gorevCizimi}</span>
       <span class="ps-ok" aria-hidden="true">${svg(ICON.chevron, 14)}</span>

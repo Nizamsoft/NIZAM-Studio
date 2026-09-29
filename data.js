@@ -18,6 +18,8 @@ const DB = {
   kisilerHepsi: [],
   sektorler: [],
   paketler: [],
+  /* Web sitesinden gelen talepler — yalnız yöneticiye dolu gelir. */
+  talepler: [],
   /* Logolar private kovada; adres her oturumda yeniden üretilir. */
   logoAdres: {},
   /* Görsel yuvalarının imzalı adresleri: gorselAdres[projeId + '/' + no] */
@@ -45,6 +47,7 @@ const DB = {
     messages: 'mesajlar',
     standards: 'standartlar', task_standards: 'gorevStandart',
     sectors: 'sektorler', packages: 'paketler',
+    talepler: 'talepler',
   },
 
   canliBasla(tazele) {
@@ -260,10 +263,15 @@ const DB = {
     mesajlar:     db => db.from('messages').select('*')
                           .order('olusturuldu', { ascending: false })
                           .limit(500),
+    /* Satır güvenliği geliştiriciye boş liste veriyor. Son iki yüz talep
+       yetiyor; eskiler zaten işlenmiş oluyor. */
+    talepler:     db => db.from('talepler').select('*')
+                          .order('gonderildi', { ascending: false })
+                          .limit(200),
   },
 
   /* Tablosu henüz kurulmamış olabilecekler — hata verme, boş bırak. */
-  ISTEGE_BAGLI: ['sektorler', 'mesajlar', 'paketler'],
+  ISTEGE_BAGLI: ['sektorler', 'mesajlar', 'paketler', 'talepler'],
 
   yerlestir(ad, sonuc) {
     if (sonuc.error) {
@@ -325,7 +333,7 @@ const DB = {
       this.projeler = []; this.moduller = []; this.sayfalar = [];
       this.gorevler = []; this.hareketler = []; this.kisiler = []; this.kisilerHepsi = [];
       this.mesajlar = [];
-      this.sektorler = []; this.paketler = [];
+      this.sektorler = []; this.paketler = []; this.talepler = [];
       this.standartlar = []; this.gorevStandart = [];
       this.yuklendi = true;
       return;
@@ -993,6 +1001,17 @@ const DB = {
     if (error) throw new Error(sektorHatasi(error));
     if (!data || !data.length) throw new Error(sektorHatasi({}));
     await this.tazele('sektorler');
+  },
+
+  /* Talebin durum etiketi: yeni · inceleniyor · gorusuluyor · onaylandi ·
+     reddedildi. Talep satırını yalnız yönetici değiştirebilir. */
+  async talepDurum(id, durum) {
+    yazmaKontrol();
+    const { data, error } = await AUTH.db.from('talepler')
+      .update({ durum }).eq('id', id).select('id');
+    if (error) throw new Error(veriHatasi(error));
+    if (!data || !data.length) throw new Error('Talep güncellenemedi.');
+    await this.tazele('talepler');
   },
 
   async sektorSil(id) {

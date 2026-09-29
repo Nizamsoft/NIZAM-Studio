@@ -1,5 +1,19 @@
 # Değişiklik Günlüğü
 
+## v0.242.0
+- **Talepler geldi.** Web sitesindeki ön analiz formunu dolduran müşteri
+  artık Studio'da görünüyor. Panelde «Devam Eden Proje» kartının yerinde
+  **Talepler** kartı: yeni talep sayısı ve bu hafta gelenler. Kartına
+  basınca liste, talebe basınca formdaki bütün cevaplar açılıyor.
+- Her talebin durum etiketi var: Yeni · İnceleniyor · Görüşülüyor ·
+  Onaylandı · Reddedildi.
+- «Projeye Dönüştür» düğmesi yerinde ama **Yakında** — henüz çalışmıyor.
+- Talepleri yalnız yönetici görüyor; geliştiricinin panelinde eski proje
+  kartı duruyor.
+- Kurulum: `sql/35-talepler.sql` çalıştırılmalı ve
+  `supabase/functions/talep-al` fonksiyonu yüklenmeli (JWT doğrulaması
+  kapalı, `TALEP_ANAHTARI` secret'ı girili).
+
 ## v0.241.0
 - **Görevler sıralanabiliyor.** «Görev ver»in yanında «Görevleri sırala»
   düğmesi: yeni görev otomatik sona gidiyor, oklarla istediğin sıraya
