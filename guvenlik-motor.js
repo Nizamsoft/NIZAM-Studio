@@ -545,3 +545,50 @@ function guvenlikDenetimOzeti(sonuclar) {
     kapali: say(S.KAPALI),
   };
 }
+
+/* ==========================================================================
+   Faz 7 · Final kilidi hesaplama (saf)
+
+   Final yalnız GERÇEK, geçerli bir yeni Security denetimindeki KRİTİK/YÜKSEK
+   AÇIK bulgu için kilitlenir. DOGRULANAMADI, AKTIF_TEST_GEREKLI, ORTA, DÜŞÜK
+   ve BİLGİ tek başına kilitlemez. Geçerli "bilerek böyle" kararı bulguyu
+   örter; kararı eski commit'e aitse örtmez ama yeniden değerlendirme uyarısı
+   düşer. IO yok — çağıran DB verisini hazır verir. */
+
+function guvenlikFinalHesapla({ sonDenetim, acikBulgular, kararlar, guncelCommit }) {
+  const nedenler = [], uyarilar = [], yeniden = [];
+  const kararHarita = {};
+  for (const k of (kararlar || [])) kararHarita[k.bulgu_imzasi] = k;
+
+  let acik_kritik = 0, acik_yuksek = 0, acik_orta = 0;
+  for (const b of (acikBulgular || [])) {
+    if (b.son_durum !== 'ACIK') continue;
+    const karar = kararHarita[b.imza];
+    if (karar) {
+      const gecerli = karar.gecerli_commit && guncelCommit && karar.gecerli_commit === guncelCommit;
+      if (gecerli) continue;                 // geçerli karar → örtülü, sayma
+      /* Eski commit'e ait karar: örtmez ama yeniden değerlendirilsin. */
+      yeniden.push({ imza: b.imza, baslik: b.baslik, onem: b.onem,
+        karar_commit: karar.gecerli_commit || '', guncel_commit: guncelCommit || '' });
+    }
+    if (b.onem === 'kritik') { acik_kritik++; nedenler.push(b); }
+    else if (b.onem === 'yuksek') { acik_yuksek++; nedenler.push(b); }
+    else if (b.onem === 'orta') { acik_orta++; uyarilar.push({ tur: 'orta', bulgu: b }); }
+    /* dusuk / bilgi → etkisiz */
+  }
+
+  const ozet = (sonDenetim && sonDenetim.ozet) || {};
+  const dogrulanamadi = ozet.dogrulanamadi || 0;
+  const aktif_gerekli = ozet.aktif_gerekli || 0;
+  if (dogrulanamadi) uyarilar.push({ tur: 'dogrulanamadi', sayi: dogrulanamadi });
+  if (aktif_gerekli) uyarilar.push({ tur: 'aktif_gerekli', sayi: aktif_gerekli });
+
+  return {
+    kilitli: (acik_kritik + acik_yuksek) > 0,
+    nedenler, uyarilar, yeniden_degerlendirme: yeniden,
+    acik_kritik, acik_yuksek, acik_orta,
+    dogrulanamadi, aktif_gerekli,
+    son_denetim_no: sonDenetim ? sonDenetim.no : null,
+    son_denetim_tarih: sonDenetim ? sonDenetim.olusturuldu : null,
+  };
+}

@@ -7352,85 +7352,57 @@ function guvenlikDurakSayfasi(p, d) {
       + adimBasligi(p, d, '')
       + `<div class="bos-kutu">${svg(ICON.gGuvenlik, 18)}
           <span>Bu projenin verisi tarayıcıda duruyor. Sunucu tarafı olmadığı
-          için saldırılacak bir kapı da yok — bu aşama atlandı.</span></div>`
+          için güvenlik denetimi yapılmıyor.</span></div>`
       + `</div>`;
   }
+  /* Faz 7: durak artık yeni NIZAM Security'nin özetini gösterir; test burada
+     çalışmaz, "Security'ye Git" ile yeni akışa gidilir. Veri async gelir. */
+  const fd = guvenlikFinalDurumu(p.id);
+  if (fd === null) { guvenlikFinalYukle(p.id); }
 
-  const g = durakGuvenlikDurum(p.id);
-  const hazir = !!String(pl.supabaseUrl || '').trim() && !!String(pl.supabaseAnon || '').trim();
-  const o = pl.guvenlikOlcum;
-  /* Claude'un tanıdığı programa göre: Supabase yoksa röntgen ve canlı
-     deneme, giriş ekranı yoksa hesap bilgisi istenmez. */
-  const supa = guvenlikSupabaseli(g.kod);
-  const girissiz = guvenlikGirissiz(g.kod);
-  const eksik = !g.kod ? 'Önce kod denetimini yapıştır'
-    : supa && !g.rontgen ? 'Önce röntgeni yapıştır' : '';
+  const git = `<button class="sayfa-dug bitir" type="button"
+      onclick="location.hash='#/guvenlik/${esc(p.id)}'">
+      ${svg(ICON.gGuvenlik, 16)} Security'ye Git</button>`;
 
-  const temiz  = !!(o && !o.acik);
-  const onayli = !!pl.guvenlikTamamlandi && temiz;
+  let govde;
+  if (fd === null || fd === 'yukleniyor' || GUV_FINAL[p.id] === 'yukleniyor') {
+    govde = iskeletler(1);
+  } else if (fd.hata) {
+    govde = `<div class="note uyari">${svg(ICON.uyari, 15)}<span>Durum okunamadı: ${esc(fd.hata)}</span></div>`;
+  } else if (fd.durum === 'hedef_yok') {
+    govde = `<div class="note">${svg(ICON.info, 15)}<span><b>Security hedefi oluşturulmamış.</b>
+      Bu proje için henüz güvenlik denetimi başlatılmadı.</span></div>
+      <button class="sayfa-dug bitir" type="button" onclick="location.hash='#/guvenlik/${esc(p.id)}'">
+        ${svg(ICON.gGuvenlik, 16)} Security'yi Aç</button>`;
+  } else if (fd.denetimYok) {
+    govde = `<div class="note">${svg(ICON.info, 15)}<span><b>Henüz denetim yok.</b>
+      Hedef hazır ama bir güvenlik denetimi çalıştırılmadı.</span></div>` + git;
+  } else {
+    const bilgi = (et, dg) => `<div class="gk-son ${dg ? '' : ''}"><span class="gk-son-yz"><b>${esc(et)}</b><i>${esc(dg)}</i></span></div>`;
+    const rozet = fd.kilitli
+      ? `<div class="note uyari">${svg(ICON.uyari, 15)}<span><b>${fd.acik_kritik + fd.acik_yuksek} kritik/yüksek açık bulgu — Final kilitli.</b></span></div>`
+      : `<div class="note">${svg(ICON.tik, 15)}<span>Kritik/yüksek açık bulgu yok — Final güvenlik açısından açık.</span></div>`;
+    const uyari = [];
+    if (fd.dogrulanamadi) uyari.push(fd.dogrulanamadi + ' test doğrulanamadı');
+    if (fd.aktif_gerekli) uyari.push(fd.aktif_gerekli + ' aktif test üretimde çalıştırılmadı');
+    if (fd.acik_orta) uyari.push(fd.acik_orta + ' orta açık (kilitlemez)');
+    govde = rozet
+      + `<div class="btk">`
+      + bilgi('Son denetim', '#' + String(fd.son_denetim_no).padStart(3, '0') + ' · ' + tarihYaz(fd.son_denetim_tarih))
+      + bilgi('Açık kritik / yüksek', fd.acik_kritik + ' / ' + fd.acik_yuksek)
+      + (uyari.length ? bilgi('Notlar', uyari.join(' · ')) : '')
+      + (fd.yeniden_degerlendirme && fd.yeniden_degerlendirme.length
+          ? `<div class="note uyari" style="margin-top:10px">${svg(ICON.uyari, 15)}<span>${fd.yeniden_degerlendirme.length} bulgunun "bilerek böyle" kararı eski commit'e ait — yeniden değerlendirilmeli.</span></div>` : '')
+      + `</div>`
+      + git;
+  }
 
-  return `<div class="fb-govde">`
-    + adimBasligi(p, d, '')
-    + (onayli ? fmTamamBar(p, 'guvenlik',
-        'Son ölçüm temiz çıktı ve onaylandı.', false) : '')
-    + guvenlikKodKarti(g.kod, p.id)
-    + guvenlikManifestKarti(g.manifest, p.id)
-    + guvenlikDogrulamaKarti(g, p.id)
-    + guvenlikMatrisKarti(g, p.id)
-    + guvenlikTaramaKarti(g, p.id)
-    + guvenlikProgramNotu(g.kod)
-    + (g.kod && supa ? guvenlikRontgenKarti(g.rontgen, p.id, pl.supabaseUrl) : '')
-    + (o ? `
-      <div class="gk-son ${o.acik ? 'acik' : 'temiz'}">
-        <span class="gk-son-ik">${svg(o.acik ? ICON.uyari : ICON.tik, 16)}</span>
-        <span class="gk-son-yz">
-          <b>${o.acik ? o.acik + ' açık bulundu' : 'Son ölçüm temiz'}</b>
-          <i>${esc(olcumTarihi(o))} · ${o.toplam} deneme</i>
-        </span>
-      </div>` : '')
-    + (!g.kod || !supa || girissiz ? '' : `<div class="btk">
-        <div class="btk-ust">
-          <span class="btk-ik kirmizi">${svg(ICON.anahtar, 22)}</span>
-          <span class="btk-yz"><b>Erişim bilgileri</b>
-            <i>Bu projedeki yönetici olmayan bir hesap. Şifre kaydedilmiyor.</i></span>
-        </div>
-        <label class="gf">
-          <span class="gf-et">E-posta</span>
-          <span class="gf-kutu">${svg(ICON.mail, 17)}
-            <input type="text" id="gvd-eposta-${p.id}" value="${esc(g.eposta || '')}"
-                   placeholder="personel@firma.com" autocomplete="off"
-                   spellcheck="false" autocapitalize="off"></span>
-        </label>
-        <label class="gf">
-          <span class="gf-et">Şifre</span>
-          <span class="gf-kutu">${svg(ICON.kilit, 17)}
-            <input type="password" id="gvd-sifre-${p.id}" placeholder="Hesabın şifresi"
-                   autocomplete="off">
-            <button class="gf-goz" type="button" data-eylem="guvenlik-sifre-goster"
-                    data-hedef="gvd-sifre-${p.id}" aria-label="Şifreyi göster">
-              ${svg(ICON.goz, 16)}</button></span>
-        </label>
-        ${hazir ? '' : `<p class="ipucu">Supabase adresi ya da anon key kayıtlı değil —
-          <b>Bağlantılar ve temel</b> durağına dön.</p>`}
-      </div>`)
-    + `<button class="sayfa-dug ${onayli ? 'ikincil' : 'bitir'}" type="button"
-               data-eylem="guvenlik-durak-test"
-               data-proje="${p.id}" ${g.calisiyor || (supa && !hazir) || eksik ? 'disabled' : ''}>
-        ${svg(ICON.gGuvenlik, 16)} ${g.calisiyor ? 'Test ediliyor…'
-          : eksik || (!supa ? 'Raporu oluştur' : onayli ? 'Yeniden test et' : 'Test Et')}</button>`
-    /* Onay ölçümden ayrı: temiz çıkan sonucu okuyup kendin işaretliyorsun.
-       Onaylı hâlde de test düğmesi duruyor — kodda bir şey değişince
-       yeniden ölçmek gerekiyor. */
-    + (temiz && !onayli ? `
-      <button class="sayfa-dug" type="button" data-eylem="guvenlik-onayla"
-              data-proje="${p.id}">
-        ${svg(ICON.tik, 16)} Güvenlik kontrolü başarılı</button>` : '')
-    + guvenlikSonucTablosu(g.sonuc, g.ustKatmanUyarisi, g.kalintilar, g.harita, g.tabloKaynagi, p.id)
-    + (o && o.acik ? `<div class="note uyari" style="margin-top:14px">${svg(ICON.uyari, 15)}
-        <span><b>Açık varken Final açılmaz.</b> Bulguları Claude'a ver, düzeltmeyi
-        <b>yeni numaralı bir göç</b> olarak yazsın — yazılmış SQL düzeltilmez.
-        Sonra burada yeniden ölç.</span></div>` : '')
-    + `</div>`;
+  /* Eski ölçüm yalnız GEÇMİŞ uyumluluk bilgisi olarak; yeni karara dönüşmez. */
+  const eski = pl.guvenlikOlcum
+    ? `<p class="ipucu" style="margin-top:12px">Eski güvenlik ölçümü (yalnız bilgi):
+        ${esc(olcumOzeti(pl.guvenlikOlcum))}. Yeni Security kararı için kullanılmıyor.</p>` : '';
+
+  return `<div class="fb-govde">` + adimBasligi(p, d, '') + govde + eski + `</div>`;
 }
 
 /* Final notları — eski kayıtlarda düz metindi; obje biçimine ({metin, tamam})
@@ -7446,12 +7418,54 @@ function finalNotlariOku(pl) {
    kartlar ve altta tek kırmızı düğme. Eski hero + takvim çubuğu kalktı —
    çubuk projenin kaldırılan renginden besleniyordu ve sayıyı zaten
    başlıktaki rozet söylüyor. */
+/* Final ekranındaki güvenlik özeti kartı (Faz 7). fd = guvenlikFinalDurumu. */
+function guvenlikFinalKart(p, fd) {
+  if (!sunuculuMu(p)) return '';
+  if (fd === null || fd === 'yukleniyor' || GUV_FINAL[p.id] === 'yukleniyor') {
+    return `<div class="btk"><div class="btk-ust"><span class="btk-ik mavi">${svg(ICON.gGuvenlik, 22)}</span>
+      <span class="btk-yz"><b>Güvenlik</b><i>durum yükleniyor…</i></span></div></div>`;
+  }
+  const git = `<button class="sayfa-dug ikincil" type="button"
+      onclick="location.hash='#/guvenlik/${esc(p.id)}'">${svg(ICON.gGuvenlik, 15)} Security'ye Git</button>`;
+  if (fd.hata) return `<div class="btk"><div class="note uyari">${svg(ICON.uyari, 15)}<span>Güvenlik durumu okunamadı.</span></div>${git}</div>`;
+  if (fd.durum === 'hedef_yok' || fd.denetimYok) {
+    return `<div class="btk"><div class="btk-ust"><span class="btk-ik mavi">${svg(ICON.gGuvenlik, 22)}</span>
+      <span class="btk-yz"><b>Güvenlik</b><i>Yeni Security denetimi henüz yapılmadı.</i></span></div>
+      <p class="ipucu">Final güvenlik açısından engellenmiyor, ama denetim önerilir.</p>${git}</div>`;
+  }
+  const bulguListe = (fd.nedenler || []).map(b => `<div class="gk-son acik">
+      <span class="gk-son-ik">${svg(ICON.uyari, 16)}</span>
+      <span class="gk-son-yz"><b>${esc(b.baslik || b.imza)}</b>
+        <i>${esc((b.onem || '').toUpperCase())} · son denetim #${String(fd.son_denetim_no).padStart(3,'0')}</i></span></div>`).join('');
+  const uyariMetin = [];
+  if (fd.dogrulanamadi) uyariMetin.push(fd.dogrulanamadi + ' güvenlik testi doğrulanamadı.');
+  if (fd.aktif_gerekli) uyariMetin.push(fd.aktif_gerekli + ' aktif güvenlik testi üretim ortamında çalıştırılmadı.');
+  if (fd.acik_orta) uyariMetin.push(fd.acik_orta + ' orta seviye açık (Final\'i kilitlemez).');
+  const yeniden = (fd.yeniden_degerlendirme || []).length
+    ? `<div class="note uyari" style="margin-top:10px">${svg(ICON.uyari, 15)}<span>${fd.yeniden_degerlendirme.length} "bilerek böyle" kararı eski commit'e ait — yeniden değerlendir.</span></div>` : '';
+  const bas = fd.kilitli
+    ? `<div class="note uyari">${svg(ICON.uyari, 15)}<span><b>Kritik/Yüksek güvenlik bulguları nedeniyle Final kilitli.</b></span></div>`
+    : `<div class="note">${svg(ICON.tik, 15)}<span>Kritik/yüksek açık bulgu yok.</span></div>`;
+  return `<div class="btk">
+    <div class="btk-ust"><span class="btk-ik ${fd.kilitli ? 'kirmizi' : 'yesil'}">${svg(ICON.gGuvenlik, 22)}</span>
+      <span class="btk-yz"><b>Güvenlik</b><i>Son denetim #${String(fd.son_denetim_no).padStart(3,'0')} · ${esc(tarihYaz(fd.son_denetim_tarih))}</i></span></div>
+    ${bas}${bulguListe}${yeniden}
+    ${uyariMetin.length ? `<p class="ipucu">${esc(uyariMetin.join(' '))}</p>` : ''}
+    ${git}</div>`;
+}
+
 function finalSayfasi(p, d) {
   const pl      = p.palet || {};
   const verildi = !!pl.finalVerildi;
   const notlar  = finalNotlariOku(pl);
   const s       = DB.sayim(p.id);
   const hazir   = gelistirmeBitti(p);
+  /* Faz 7: Final ayrıca yeni Security kilidine bağlı. Durum async gelir. */
+  const guvVar  = sunuculuMu(p);
+  const fd      = guvVar ? guvenlikFinalDurumu(p.id) : null;
+  if (guvVar && fd === null) guvenlikFinalYukle(p.id);
+  const guvKilit = !!(fd && fd.kilitli);
+  const finalHazir = hazir && !guvKilit;
   const bitmis  = notlar.filter(n => n.tamam).length;
 
   const notListesi = !notlar.length ? '' : `
@@ -7505,10 +7519,11 @@ function finalSayfasi(p, d) {
         </div>
       </div>`
     + notListesi
+    + guvenlikFinalKart(p, fd)
     + (verildi ? '' : `
       <button class="sayfa-dug bitir" type="button" data-eylem="final-onay"
-              data-proje="${p.id}" ${hazir ? '' : 'disabled'}>
-        ${svg(ICON.bayrak, 16)} Final ver</button>`)
+              data-proje="${p.id}" ${finalHazir ? '' : 'disabled'}>
+        ${svg(ICON.bayrak, 16)} ${guvKilit ? 'Güvenlik nedeniyle kilitli' : 'Final ver'}</button>`)
     + `<p class="gk-not">${svg(ICON.info, 13)}
         <span>Finalden sonra gelen istekler <b>Geliştirme</b> durağında yürür.</span></p>`
     + `</div>`;
@@ -7754,10 +7769,22 @@ function projeDuraklari(p) {
          çıkan yeni bir ölçüm onayı kendiliğinden düşürüyor (bkz.
          guvenlik-durak-test). */
       ad: 'Güvenlik kontrolü',
-      bitti: !!pl0.guvenlikTamamlandi && !!(pl0.guvenlikOlcum && !pl0.guvenlikOlcum.acik),
-      ozet: !pl0.guvenlikOlcum
-        ? 'Henüz test edilmedi.'
-        : olcumOzeti(pl0.guvenlikOlcum),
+      /* Faz 7: yeni Security kaynak gerçekliktir. Durum önbellekte yüklüyse
+         ondan; yoksa listede ağır sorgu tetiklememek için nötr (bitmemiş).
+         Eski palet.guvenlikOlcum yeni karara DÖNÜŞTÜRÜLMEZ. */
+      bitti: (function () {
+        const fd = (typeof guvenlikFinalDurumu === 'function') ? guvenlikFinalDurumu(p.id) : null;
+        if (fd && !fd.hata && fd.var !== false && !fd.denetimYok) return !fd.kilitli;
+        return false;
+      })(),
+      ozet: (function () {
+        const fd = (typeof guvenlikFinalDurumu === 'function') ? guvenlikFinalDurumu(p.id) : null;
+        if (fd && fd.var !== false && !fd.denetimYok && !fd.hata) {
+          return 'Denetim #' + String(fd.son_denetim_no).padStart(3, '0') + ' · '
+            + (fd.kilitli ? (fd.acik_kritik + fd.acik_yuksek) + ' kritik/yüksek açık' : 'kritik/yüksek açık yok');
+        }
+        return 'Yeni Security denetimi henüz yapılmadı.';
+      })(),
     } : {
       /* Verisi tarayıcıda duran projede sunucu tarafı yok: saldırılacak bir
          kapı da yok. Gizlenmezse Final sonsuza kadar kilitli kalırdı. */
@@ -16395,6 +16422,12 @@ async function eylemCalistir(el) {
     if (pl.finalVerildi) {
       return isYap(() => DB.paletKaydet(pr.id,
         Object.assign({}, pl, { finalVerildi: false })), 'İşaret kaldırıldı.');
+    }
+    /* Faz 7: güvenlik kilidini sunucuda değil ama son savunma olarak burada
+       da doğrula — kilitliyse final verilmez. */
+    if (sunuculuMu(pr)) {
+      const fd = guvenlikFinalDurumu(pr.id);
+      if (fd && fd.kilitli) { toast('Kritik/yüksek güvenlik bulgusu var — Final kilitli.', 'uyari'); return; }
     }
     if (!await onaySor({
       baslik: 'Final verilsin mi?',

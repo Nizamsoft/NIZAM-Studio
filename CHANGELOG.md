@@ -1,5 +1,19 @@
 # Değişiklik Günlüğü
 
+## v0.254.0
+- **NIZAM Security · Faz 7 (proje durağı + Final kilidi).** Final artık yeni
+  Security'ye bağlı. Merkezi `guvenlikFinalHesapla` (+ ekranda
+  `guvenlikFinalDurumu`) son denetim, açık bulgular ve geçerli kararlardan
+  kilit durumu üretiyor.
+- Final YALNIZCA geçerli bir yeni denetimde kritik/yüksek AÇIK bulgu varsa
+  kilitlenir. DOGRULANAMADI, AKTİF_TEST_GEREKLİ, ORTA, DÜŞÜK ve BİLGİ
+  kilitlemez — yalnız uyarı gösterir. Geçerli "bilerek böyle" kararı bulguyu
+  örter; kararı eski commit'e aitse örtmez ve "yeniden değerlendir" uyarısı düşer.
+- Proje durağı 10 yeni Security özetini gösteriyor ("Security'ye Git");
+  eski palet.guvenlikOlcum yeni karara dönüştürülmüyor, yalnız bilgi olarak
+  duruyor. Eski ekran #/guvenlik-eski'de kalmaya devam ediyor.
+- Kararlar auth.uid() ile; eski denetimler değiştirilemez.
+
 ## v0.253.0
 - **NIZAM Security · Faz 6 (yeni ekranlar).** `#/guvenlik` artık gerçek bir
   denetim arayüzü: Ana ekran (hedef listesi, gerçek sayılar, yanıltıcı skor

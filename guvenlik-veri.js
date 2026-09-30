@@ -60,6 +60,16 @@ const GUVENLIK_VERI = {
     return this.hedefGuncelle(id, alanlar);
   },
 
+  /* Bir NIZAM projesi için hedef bul; YOKSA oluşturmaz (yalnız okur).
+     Proje durağı / Final durumu bunu kullanır — sessizce hedef açmamak için. */
+  async hedefProjeBul(projeId) {
+    if (!AUTH.bagli) return null;
+    const { data, error } = await AUTH.db.from('guvenlik_hedefleri')
+      .select('*').eq('proje_id', projeId).limit(1);
+    if (error) throw new Error(veriHatasi(error));
+    return (data && data.length) ? data[0] : null;
+  },
+
   /* Bir NIZAM projesi için hedef bul; yoksa oluştur. Hedefler projelere
      bağlı (Faz 1 kararı), her projenin en fazla bir hedefi olur. */
   async hedefProjeIcin(projeId, ad) {

@@ -22,6 +22,47 @@ const GUV_EKRAN = {
   acikDenetim: null, seciliBulgu: null, bulguFiltre: 'hepsi',
 };
 
+/* Proje bazında Final güvenlik durumu önbelleği (Faz 7). Değer:
+   null = hiç istenmedi · 'yukleniyor' · {…durum} · {hata}. */
+const GUV_FINAL = {};
+
+/* Bir projenin Final güvenlik durumunu DB'den hesaplar ve önbelleğe koyar.
+   Yeni Security kaynak gerçekliktir; eski palet.guvenlikOlcum kullanılmaz.
+   Tek seferde: hedef → son denetim → açık bulgular → kararlar → son commit. */
+function guvenlikFinalDurumu(projeId) {
+  const v = GUV_FINAL[projeId];
+  return (v && typeof v === 'object') ? v : null;
+}
+
+function guvenlikFinalYukle(projeId, zorla) {
+  if (!projeId) return;
+  if (!zorla && GUV_FINAL[projeId] !== undefined) return;   // bir kez
+  if (GUV_FINAL[projeId] === 'yukleniyor') return;
+  GUV_FINAL[projeId] = 'yukleniyor';
+  Promise.resolve().then(async () => {
+    if (!AUTH.bagli) { GUV_FINAL[projeId] = { var: false, denetimYok: true, kilitli: false }; return; }
+    const hedef = await GUVENLIK_VERI.hedefProjeBul(projeId);
+    if (!hedef) { GUV_FINAL[projeId] = { var: false, kilitli: false, durum: 'hedef_yok' }; return; }
+    const gecmis = await GUVENLIK_VERI.denetimGecmisi(hedef.id);
+    if (!gecmis.length) { GUV_FINAL[projeId] = { var: true, denetimYok: true, kilitli: false, hedefId: hedef.id }; return; }
+    const son = await GUVENLIK_VERI.denetimGetir(gecmis[0].id);
+    const bulgular = await GUVENLIK_VERI.bulgulariGetir(hedef.id);
+    const kararlar = await GUVENLIK_VERI.kararlariGetir(hedef.id);
+    /* Güncel commit: son denetimin manifest'inin commit'i. */
+    let guncelCommit = '';
+    if (son && son.manifest_id) {
+      const man = await GUVENLIK_VERI.manifestGetir(son.manifest_id);
+      guncelCommit = (man && man.commit) || '';
+    }
+    const hesap = guvenlikFinalHesapla({ sonDenetim: son,
+      acikBulgular: bulgular.filter(b => b.son_durum === 'ACIK'),
+      kararlar, guncelCommit });
+    GUV_FINAL[projeId] = Object.assign({ var: true, denetimYok: false, hedefId: hedef.id,
+      guncel_commit: guncelCommit }, hesap);
+  }).catch(h => { GUV_FINAL[projeId] = { hata: h.message || String(h), kilitli: false }; })
+    .finally(() => render());
+}
+
 /* Bir yükleyiciyi bir kez çalıştırır, bitince ekranı tazeler. */
 function guvEkranYukle(anahtar, isFn) {
   if (GUV_EKRAN.yukleniyor[anahtar]) return;
