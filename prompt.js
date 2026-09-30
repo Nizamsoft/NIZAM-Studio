@@ -973,42 +973,6 @@ const PROMPT = {
     return s.join('\n');
   },
 
-  /* Güvenlik testinden sonra: açık bulunan satırlardan düzeltme promptu.
-     `satirlar` guvenlikTestiCalistir'in AÇIK satırları; kod bulgularında
-     ayrinti öneriyi de taşıyor. */
-  guvenlikDuzelt(projeId, satirlar) {
-    const p = projeId ? DB.proje(projeId) : null;
-    const slug = p ? depoSlug(p.repo) : '';
-    const s = [];
-    if (slug) {
-      s.push('> ### Depo: `' + slug + '`');
-      s.push('> Bu oturum yalnız bu depoya bağlı olmalı. Deposu farklıysa dur');
-      s.push('> ve söyle.');
-      s.push('');
-    }
-    s.push('# Güvenlik açıklarını kapat');
-    s.push('');
-    s.push('Studio\'nun güvenlik testi bu programda aşağıdaki açıkları buldu.');
-    s.push('Hepsini kapat.');
-    s.push('');
-    satirlar.forEach((r, i) => {
-      s.push((i + 1) + '. **' + r.kim + ' · ' + r.deneme + '**' + (r.ayrinti ? ' — ' + r.ayrinti : ''));
-    });
-    s.push('');
-    s.push('## Kurallar');
-    s.push('- Veritabanı değişikliğini **yeni numaralı bir göç dosyası** olarak');
-    s.push('  yaz; daha önce çalıştırılmış göç dosyasını değiştirme.');
-    s.push('- Bir açığı kapatırken programın çalışan bir özelliğini bozma; emin');
-    s.push('  değilsen o maddeyi atla ve nedenini yaz.');
-    s.push('- Bir anahtar sızmışsa yalnız koddan silmek yetmez: sonunda bana');
-    s.push('  hangi anahtarı nereden **yenilemem** gerektiğini söyle.');
-    s.push('- İş bitince commit\'le ve gönder. Göç dosyası varsa bana hangi');
-    s.push('  dosyayı SQL Editor\'de çalıştırmam gerektiğini söyle.');
-    s.push('');
-    s.push('Sonunda madde madde neyi nasıl kapattığını tek satırla yaz.');
-    return s.join('\n');
-  },
-
   yetkiKur(projeId) {
     const p = DB.proje(projeId);
     if (!p) return '';

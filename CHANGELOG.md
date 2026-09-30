@@ -1,5 +1,27 @@
 # Değişiklik Günlüğü
 
+## v0.257.0
+- **NIZAM Security · Faz 8C-1 (eski motorun tamamen kaldırılması).** Artık
+  kullanılmayan eski test motoru, eski Röntgen sistemi, eski rapor sistemi
+  ve ölü handler'lar silindi (~1110 satır).
+- Silinen fonksiyonlar: guvenlikTestiCalistir, guvenlikYalnizKod,
+  guvenlikDisTest, guvenlikPersonelHaritasi, guvenlikKendiKatmanim,
+  guvenlikBelirtecOmruTesti, guvenlikGirisAyarTesti, guvenlikDepolamaTesti,
+  guvenlikTabloListesiKesfet, guvenlikSemaKesfet, guvenlikBosGovdeIleEkle,
+  guvenlikYazDeneVeYorumla, guvenlikMetinAlaniSatirdan,
+  guvenlikEklemeKesinReddedildiMi, guvenlikJwtCoz, guvenlikUrlIndir,
+  guvenlikJsonOku, guvenlikIstekYap, guvenlikAyrinti, guvenlikUuid,
+  guvenlikProjeRef, GUVENLIK_UUID_RE, GUVENLIK_TARIH_RE.
+- Eski Röntgen: GUVENLIK_RONTGEN_SQL, guvenlikRontgenOku/Ac/Ekle/Karti.
+  (Yeni GUVENLIK_SCAN_SQL / guvenlikScanOku korundu.)
+- Eski rapor: guvenlikSonucTablosu, guvenlikRaporMetni, guvenlikRaporDugmesi,
+  guvenlikTestDugmesi, guvenlikBaglantiAlanlari, guvenlikPersonelAlanlari.
+- Silinen ölü handler'lar: guvenlik-test-calistir, guvenlik-rapor-kopyala,
+  guvenlik-sifre-goster, guvenlik-rontgen-kopyala, guvenlik-rontgen-yapistir.
+- prompt.js'ten PROMPT.guvenlikDuzelt ve kaydı kaldırıldı; kopya
+  securityManifest map girişi tekilleştirildi.
+- GUVENLIK_SAYFA ve fallback'ler bilinçli olarak korundu (Faz 8C-2).
+
 ## v0.256.0
 - **NIZAM Security · Faz 8B (eski ekran girişi kaldırıldı).** Eski test
   ekranının UI girişi tamamen kalktı: `#/guvenlik-eski` route'u, onun
