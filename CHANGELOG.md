@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü
 
+## v0.260.0
+- **NIZAM Security — manifest yanlış-pozitif düzeltmesi (İlk Kullanım Bulgu #1).**
+  Hassas değer filtresinden `/service[_-]?role/i` deseni kaldırıldı: düz
+  "service_role" kelimesi manifestte meşrudur (bir roldür ve sunucu bölümü
+  onu anlatmak zorunda). Gerçek anahtar sızıntısı diğer desenlerce yakalanmaya
+  devam ediyor (JWT `eyJ`, `sb_secret_`, `sbp_`, parolalı bağlantı dizesi,
+  `"service_role_key":"..."` JSON alanı).
+
 ## v0.259.0
 - **NIZAM Security · Faz 8D (eski DB kolonlarının temizliği).** Yeni migration
   `sql/38-guvenlik-eski-temizlik.sql`: artık kullanılmayan

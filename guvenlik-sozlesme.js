@@ -116,7 +116,10 @@ const GUVENLIK_MANIFEST_DIZILER = ['roller', 'varliklar', 'yetkiler', 'kurallar'
 /* Hassas değer desenleri — manifeste anahtar/şifre sızarsa parser reddeder.
    Bunlar manifestte HİÇ bulunmamalı; Claude'a da sorulmuyor. */
 const GUVENLIK_HASSAS_DESEN = [
-  /service[_-]?role/i,
+  // Not: düz "service_role" kelimesi manifestte MEŞRUDUR — bir roldür ve
+  // sunucu bölümü onu anlatmak zorunda. Gerçek anahtar sızıntısı zaten
+  // aşağıdaki desenlerce yakalanır (eski service_role anahtarı bir JWT'dir →
+  // eyJ deseni; yeni gizli anahtar → sb_secret_; JSON alanı → service_role_key).
   /\bsbp_[a-z0-9]{8,}/i,               // Supabase kişisel erişim jetonu
   /\bsb_secret_[a-z0-9]/i,             // Supabase gizli anahtar
   /\beyJ[a-zA-Z0-9_-]{20,}\.[a-zA-Z0-9_-]{10,}\.[a-zA-Z0-9_-]{10,}/, // JWT
