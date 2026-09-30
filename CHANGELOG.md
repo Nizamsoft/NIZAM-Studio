@@ -1,5 +1,16 @@
 # Değişiklik Günlüğü
 
+## v0.259.0
+- **NIZAM Security · Faz 8D (eski DB kolonlarının temizliği).** Yeni migration
+  `sql/38-guvenlik-eski-temizlik.sql`: artık kullanılmayan
+  `sablon_sql_metinleri.guvenlik1/2/3` kolonlarını düşürür
+  (`drop column if exists`, idempotent). Canlı ön kontrolde üç kolon da
+  boştu — veri kaybı yok.
+- Eski `projects.palet` anahtarları (guvenlikOlcum/guvenlikTamamlandi) için
+  bir şey yapılmadı: canlı kontrolde 0 kayıt çıktı, uygulama zaten okumuyor.
+- Yeni Security tabloları/RPC (sql/36, sql/37) ve eski migration'lar
+  değiştirilmedi. Migration henüz canlı DB'de çalıştırılmadı.
+
 ## v0.258.0
 - **NIZAM Security · Faz 8C-2 (son eski izlerin temizliği).** Eski
   `GUVENLIK_SAYFA` durum nesnesi ve ona düşen `: GUVENLIK_SAYFA`
