@@ -1,5 +1,16 @@
 # Değişiklik Günlüğü
 
+## v0.248.0
+- **NIZAM Security · Faz 1 (kalıcı veri altyapısı).** Studio'nun kendi
+  Supabase'inde beş yeni tablo: guvenlik_hedefleri, _manifestleri,
+  _denetimleri, _bulgulari, _kararlari. Hepsi yalnız yöneticiye açık;
+  manifest ve denetim kayıtları değiştirilemez/silinemez (RLS seviyesinde).
+  Veri erişimi `guvenlik-veri.js`'te toplandı. Eski güvenlik testi bu
+  tablolara bağlı değil, aynı çalışıyor.
+- **Çalıştırılacak SQL: `sql/36-guvenlik-tablolari.sql`** (Supabase → SQL
+  Editor). Müşteri Supabase'lerine hiçbir şey eklenmez; bu tablolara
+  anahtar/şifre yazılmaz.
+
 ## v0.247.0
 - **NIZAM Security · Faz 0 (iç altyapı).** Güvenlik testinin sabitleri tek
   bir dosyaya toplandı: `guvenlik-sozlesme.js`. Kontrol listesi
