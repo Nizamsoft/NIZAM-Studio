@@ -1,5 +1,18 @@
 # Değişiklik Günlüğü
 
+## v0.253.0
+- **NIZAM Security · Faz 6 (yeni ekranlar).** `#/guvenlik` artık gerçek bir
+  denetim arayüzü: Ana ekran (hedef listesi, gerçek sayılar, yanıltıcı skor
+  yok) → Hedef detay → Yeni Denetim akışı → Denetim Geçmişi → Bulgular →
+  Bulgu detay. Motor yeniden yazılmadı; Faz 2-5 fonksiyonları ve kartları
+  aynen kullanılıyor.
+- Denetim geçmişi değişmez snapshot gösteriyor; aynı imzalı bulgu tek kayıt;
+  «Bilerek böyle» kararı auth.uid() ile kaydediliyor (veren istemciden
+  alınmıyor); düzeltme için mevcut PROMPT.guvenlikDuzelt kopyala-yapıştır.
+- Eski ekran `#/guvenlik-eski` altında korunuyor; proje durağı ve Final
+  kilidi bu faz değişmedi. Şifre/jeton hiçbir yerde kalıcılaşmıyor.
+- Ekranlar `guvenlik-ekran.js`'te; masaüstü ve mobil çalışıyor.
+
 ## v0.252.0
 - **NIZAM Security · Faz 5 (Canlı tarama + denetim snapshot).** Test matrisi
   artık gerçek testlere bağlandı. Hesap A/B ile yalnız güvenli okuma (SELECT)

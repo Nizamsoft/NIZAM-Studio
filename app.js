@@ -24,7 +24,8 @@ const ROUTES = {
   tasarimlar:  { title: 'Tasarımlar',          kisa: 'Tasarım',     sub: () => TASARIM_YON.length + ' hazır tasarım' },
   ekip:        { title: 'Ekip',               kisa: 'Ekip',        sub: () => ekipAltBaslik() },
   sohbet:      { title: 'Sohbet',             kisa: 'Sohbet',      sub: () => 'Ekip ile iletişimde kal' },
-  guvenlik:    { title: 'Güvenlik Testi',     kisa: 'Güvenlik',    sub: () => 'anon key ve istersen personel girişiyle test et' },
+  guvenlik:    { title: 'Güvenlik',            kisa: 'Güvenlik',    sub: () => 'NIZAM Security · denetim ve bulgular' },
+  'guvenlik-eski': { title: 'Güvenlik (eski)',  kisa: 'Güvenlik',    sub: () => 'eski test ekranı' },
   ayarlar:     { title: 'Ayarlar',            kisa: 'Ayarlar',     sub: () => APP.version + ' · ' + APP.stage },
 };
 
@@ -920,7 +921,9 @@ const VIEWS = {
 
   /* ---------- Güvenlik Testi ---------- */
 
-  guvenlik: () => {
+  guvenlik: () => guvenlikAnaEkran(),
+
+  'guvenlik-eski': () => {
     if (!AUTH.yonetici) {
       return `<div class="card">${empty(ICON.gGuvenlik, 'Bu ekran yöneticiye ait',
         'Güvenlik testini yalnızca yönetici çalıştırabilir.')}</div>`;
@@ -15469,6 +15472,9 @@ function renkSor(mevcut) {
 async function eylemCalistir(el) {
   const e  = el.dataset.eylem;
   const id = el.dataset.id;
+
+  /* NIZAM Security yeni ekran eylemleri (guvenlik-ekran.js). */
+  if (e && e.indexOf('guv-') === 0) { if (await guvenlikEkranEylem(e, el)) return; }
 
   if (e === 'sihirbaz')  return sihirbaziAc();
   if (e === 'tazele')    return veriTazele();
