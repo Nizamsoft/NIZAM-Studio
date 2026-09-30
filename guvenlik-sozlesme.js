@@ -95,4 +95,33 @@ const GUVENLIK_FINAL_POLITIKA = {
   aktif_test_gerekli:'notlar',   // üretimde yapılamayan test: yalnız not
 };
 
+/* ---------- Security Manifest sözleşmesi ----------
+   Manifest, programın İDDİA EDİLEN güvenlik modelidir; güvenlik sonucu
+   değildir. Claude üretir, parser doğrular, snapshot olarak saklanır.
+   Bu bölümler manifestin gövdesinde beklenen üst başlıklar. */
+const GUVENLIK_MANIFEST_BOLUMLERI = [
+  'uygulama', 'kimlik', 'roller', 'izolasyon', 'varliklar', 'yetkiler',
+  'sunucu', 'kurallar', 'kontroller', 'hassas_veriler', 'belirsizler',
+  'onerilen_testler',
+];
+
+/* Kanıt gerektiren her iddiada { deger, kanit, guven }. Güven yalnız bu üç
+   değerden biri olabilir. */
+const GUVENLIK_GUVEN = ['kanitli', 'cikarim', 'bilinmiyor'];
+
+/* Dizi olması gereken bölümler — parser tip doğrular. */
+const GUVENLIK_MANIFEST_DIZILER = ['roller', 'varliklar', 'yetkiler', 'kurallar',
+  'kontroller', 'hassas_veriler', 'belirsizler', 'onerilen_testler'];
+
+/* Hassas değer desenleri — manifeste anahtar/şifre sızarsa parser reddeder.
+   Bunlar manifestte HİÇ bulunmamalı; Claude'a da sorulmuyor. */
+const GUVENLIK_HASSAS_DESEN = [
+  /service[_-]?role/i,
+  /\bsbp_[a-z0-9]{8,}/i,               // Supabase kişisel erişim jetonu
+  /\bsb_secret_[a-z0-9]/i,             // Supabase gizli anahtar
+  /\beyJ[a-zA-Z0-9_-]{20,}\.[a-zA-Z0-9_-]{10,}\.[a-zA-Z0-9_-]{10,}/, // JWT
+  /postgres(?:ql)?:\/\/[^\s"']+:[^\s"']+@/i, // parolalı bağlantı dizesi
+  /"(?:sifre|password|passwd|secret|service_role_key|db_password)"\s*:\s*"[^"]+"/i,
+];
+
 /* Tarayıcıda global; ES module değil (Studio derlemesiz çalışıyor). */

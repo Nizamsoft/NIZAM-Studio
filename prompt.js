@@ -893,6 +893,86 @@ const PROMPT = {
     return s.join('\n');
   },
 
+  /* NIZAM Security · Manifest üretimi. Claude programı tanır ve İDDİA
+     EDİLEN güvenlik modelini tek bir JSON (Security Manifest) olarak verir.
+     Bu bir güvenlik SONUCU değil, sonraki fazların doğrulayacağı bir model.
+     Kodu değiştirmez. Projesiz de çağrılabilir (Ayarlar). */
+  securityManifest(projeId) {
+    const p = projeId ? DB.proje(projeId) : null;
+    const slug = p ? depoSlug(p.repo) : '';
+    const s = [];
+    if (slug) {
+      s.push('> ### Depo: `' + slug + '`');
+      s.push('> Bu oturum yalnız bu depoya bağlı olmalı. Deposu farklıysa dur');
+      s.push('> ve söyle.');
+      s.push('');
+    }
+    s.push('# NIZAM Security · Uygulama tanıma (Security Manifest)');
+    s.push('');
+    s.push('Bu depodaki programın güvenlik modelini çıkar. Amaç açık bulmak');
+    s.push('DEĞİL; programın hangi güvenlik modelini KURDUĞUNU haritalamak.');
+    s.push('Bunu sonra ben (NIZAM) gerçek veritabanıyla karşılaştıracağım.');
+    s.push('');
+    s.push('## Kurallar');
+    s.push('- **Hiçbir dosyayı değiştirme, commit atma, komut çalıştırma.** Yalnız oku.');
+    s.push('- Koddan/göçten kanıt bulamadığın hiçbir şeyi uydurma. Emin');
+    s.push('  değilsen `guven: "bilinmiyor"` ver ve `belirsizler`e yaz.');
+    s.push('- Kanıt gerektiren her değeri `{ "deger": "...", "kanit": "dosya:satir",');
+    s.push('  "guven": "kanitli|cikarim|bilinmiyor" }` biçiminde ver.');
+    s.push('- **Gizli değer YAZMA:** service_role, sbp_, sb_secret_, JWT, veritabanı');
+    s.push('  şifresi ya da bağlantı dizesi manifeste GİRMESİN. Yalnız "var/yok"');
+    s.push('  ve nerede olduğunu söyle, değerini asla.');
+    s.push('- Arayüzdeki yetki kontrolü (gizli düğme) ile sunucu/RLS kontrolünü');
+    s.push('  AYIR: `kontroller` bölümünde her birinin katmanını belirt.');
+    s.push('');
+    s.push('## Çıkaracağın bölümler');
+    s.push('- **uygulama**: amaç, tür (web/mobil/masaustu/karma), veri yeri');
+    s.push('- **kimlik**: giriş yöntemi, kayıt açık mı, anonim giriş');
+    s.push('- **roller**: koddaki roller ve seviyeleri');
+    s.push('- **izolasyon**: kullanıcı/şirket/şube modeli, sahiplik ve kiracı alanı');
+    s.push('- **varliklar**: tablolar; her biri için sahiplik alanı, kiracı alanı,');
+    s.push('  üst varlık, hassas mı, beklenen RLS (select/insert/update/delete)');
+    s.push('- **yetkiler**: rol × varlık × işlem → beklenen ALLOW/DENY');
+    s.push('- **sunucu**: Edge Function\'lar, API\'ler, Storage kovaları');
+    s.push('- **kurallar**: önemli iş kuralları ve nasıl uygulandığı (rls/tetik/');
+    s.push('  fonksiyon/yalniz_arayuz)');
+    s.push('- **kontroller**: yetki kontrolleri; her biri arayuz mü sunucu mu');
+    s.push('- **hassas_veriler**: kişisel/finansal alanlar');
+    s.push('- **belirsizler**: kanıtlayamadığın noktalar');
+    s.push('- **onerilen_testler**: yapılmasını önerdiğin yetki testleri');
+    s.push('');
+    s.push('## Cevap');
+    s.push('En sonda **yalnız tek bir JSON bloğu** ver, başka açıklama yazma:');
+    s.push('');
+    s.push('```json');
+    s.push('{');
+    s.push('  "manifest_surumu": "' + GUVENLIK_MANIFEST_SURUMU + '",');
+    s.push('  "commit": "incelediğin commit\'in kısa kimliği; bilmiyorsan \\"bilinmiyor\\"",');
+    s.push('  "uygulama": { "amac": {…}, "tur": {…}, "veri": {…} },');
+    s.push('  "kimlik": { "yontem": {…}, "kayit": {…}, "anonim": {…} },');
+    s.push('  "roller": [ { "ad": "yonetici", "seviye": 1, "kanit": "", "guven": "" } ],');
+    s.push('  "izolasyon": { "model": {…}, "sahiplik_alani": {…}, "kiraci_alani": {…} },');
+    s.push('  "varliklar": [ { "ad": "faturalar", "sahiplik_alani": {…}, "kiraci_alani": {…},');
+    s.push('     "ust_varlik": {…}, "hassas": true, "rls_beklentisi": {…} } ],');
+    s.push('  "yetkiler": [ { "rol": "kasiyer", "varlik": "faturalar", "islem": "delete",');
+    s.push('     "beklenen": "DENY", "kaynak": "koddan", "kanit": "", "guven": "" } ],');
+    s.push('  "sunucu": { "edge_functions": [], "storage": [], "api": [] },');
+    s.push('  "kurallar": [ { "ad": "", "uygulanma": "rls|tetik|fonksiyon|yalniz_arayuz",');
+    s.push('     "kanit": "", "guven": "" } ],');
+    s.push('  "kontroller": [ { "ne": "", "katman": "arayuz|sunucu",');
+    s.push('     "sunucuda_var_mi": {…} } ],');
+    s.push('  "hassas_veriler": [ { "varlik": "", "alan": "", "tur": "" } ],');
+    s.push('  "belirsizler": [ { "konu": "", "neden": "" } ],');
+    s.push('  "onerilen_testler": [ { "aktor_rol": "", "varlik": "", "kapsam": "",');
+    s.push('     "islem": "", "beklenen": "", "neden": "" } ]');
+    s.push('}');
+    s.push('```');
+    s.push('');
+    s.push('Bölümlerin hepsi bulunsun; karşılığı yoksa boş dizi ya da');
+    s.push('`{ "deger": "yok", "guven": "kanitli" }` ver.');
+    return s.join('\n');
+  },
+
   /* Güvenlik testinden sonra: açık bulunan satırlardan düzeltme promptu.
      `satirlar` guvenlikTestiCalistir'in AÇIK satırları; kod bulgularında
      ayrinti öneriyi de taşıyor. */

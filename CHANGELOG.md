@@ -1,5 +1,18 @@
 # Değişiklik Günlüğü
 
+## v0.249.0
+- **NIZAM Security · Faz 2 (Manifest sistemi).** Kod denetiminin altına
+  «Security Manifest» bölümü geldi. Claude programın güvenlik modelini tek
+  bir JSON olarak çıkarıyor (iddia, sonuç değil); NIZAM bunu doğrulayıp
+  saklıyor. Manifest bir güvenlik sonucu üretmez — gerçek doğrulama
+  sonraki fazlarda.
+- Parser JSON dışını, eksik bölümü, yanlış tipi ve geçersiz güven değerini
+  reddediyor; içine gizli anahtar/şifre sızmış manifesti kaydetmiyor.
+- Geçerli manifest, projeye bağlı hedef için guvenlik_manifestleri'ne
+  değişmez snapshot olarak yazılıyor; hedefin son_manifest_id'si
+  güncelleniyor. Eski manifest hiç değişmiyor.
+- Eski kod denetimi, röntgen ve canlı test aynen çalışıyor.
+
 ## v0.248.0
 - **NIZAM Security · Faz 1 (kalıcı veri altyapısı).** Studio'nun kendi
   Supabase'inde beş yeni tablo: guvenlik_hedefleri, _manifestleri,

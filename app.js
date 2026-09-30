@@ -945,6 +945,7 @@ const VIEWS = {
 
 
       ${guvenlikKodKarti(g.kod, '')}
+      ${guvenlikManifestKarti(g.manifest, '')}
       ${guvenlikProgramNotu(g.kod)}
       ${!g.kod ? '' : !supa ? guvenlikRaporDugmesi() : guvenlikRontgenKarti(g.rontgen, '', url)
           + guvenlikBaglantiAlanlari(g, url)
@@ -6683,7 +6684,7 @@ function olcumOzeti(olcum) {
 function durakGuvenlikDurum(projeId) {
   if (!DURAK_GUVENLIK[projeId]) {
     DURAK_GUVENLIK[projeId] = { calisiyor: false, sonuc: null, harita: null,
-      ustKatmanUyarisi: false, kalintilar: [], tabloKaynagi: '', rontgen: null, kod: null };
+      ustKatmanUyarisi: false, kalintilar: [], tabloKaynagi: '', rontgen: null, kod: null, manifest: null };
   }
   return DURAK_GUVENLIK[projeId];
 }
@@ -6694,6 +6695,104 @@ function durakGuvenlikDurum(projeId) {
    iddiası olduğu gibi "AÇIK" sayılmıyor: kritik/yüksek/orta bulgular açık,
    düşük olanlar bilgi. Kontrol listesinde atlanan madde "denetlenmedi"
    diye AÇIK görünür — sessizce temiz sayılmaz. Röntgen gibi bellekte durur. */
+/* Manifestte gizli değer var mı — anahtar/şifre sızmışsa reddedilir. */
+function guvenlikHassasVar(metin) {
+  const t = String(metin || '');
+  return GUVENLIK_HASSAS_DESEN.some(re => re.test(t));
+}
+
+/* NIZAM Security Manifest okuyucu — Claude'un JSON'unu doğrular. JSON dışı
+   çıktı, eksik bölüm, yanlış tip ya da geçersiz güven değeri reddedilir;
+   geçersiz manifest DB'ye YAZILMAZ. Claude fazladan açıklama eklerse ilk
+   { … } bloğu alınır, ama blok geçerli değilse reddedilir. Hata mesajı
+   `hata` alanında döner, çağıran kullanıcıya gösterir. */
+function guvenlikManifestOku(metin) {
+  const t = String(metin || '');
+  if (guvenlikHassasVar(t)) {
+    return { hata: 'Manifeste gizli bir anahtar/şifre sızmış görünüyor — kaydedilmedi. Claude gizli değer yazmamalı.' };
+  }
+  const bas = t.indexOf('{'), son = t.lastIndexOf('}');
+  if (bas < 0 || son <= bas) return { hata: 'Geçerli bir JSON bulunamadı.' };
+  let j = null;
+  try { j = JSON.parse(t.slice(bas, son + 1)); } catch (h) { return { hata: 'JSON çözülemedi — Claude\'un verdiği bloğu olduğu gibi kopyala.' }; }
+  if (!j || typeof j !== 'object' || Array.isArray(j)) return { hata: 'Manifest bir nesne değil.' };
+
+  if (String(j.manifest_surumu || '') !== GUVENLIK_MANIFEST_SURUMU) {
+    return { hata: 'Manifest sürümü uyuşmuyor (beklenen ' + GUVENLIK_MANIFEST_SURUMU + '). Promptu yeniden kopyalayıp güncel manifest üret.' };
+  }
+  /* Bölümlerin hepsi bulunmalı; dizi olması gerekenler dizi olmalı. */
+  for (const b of GUVENLIK_MANIFEST_BOLUMLERI) {
+    if (!(b in j)) return { hata: '"' + b + '" bölümü eksik.' };
+    if (GUVENLIK_MANIFEST_DIZILER.includes(b) && !Array.isArray(j[b])) {
+      return { hata: '"' + b + '" bir liste olmalı.' };
+    }
+  }
+  /* Güven değerleri yalnız üç değerden biri olabilir — nerede geçerse. */
+  let guvenHatasi = null;
+  (function tara(x) {
+    if (guvenHatasi || !x || typeof x !== 'object') return;
+    if (typeof x.guven === 'string' && !GUVENLIK_GUVEN.includes(x.guven)) {
+      guvenHatasi = 'Geçersiz güven değeri: "' + x.guven + '" (kanitli|cikarim|bilinmiyor).';
+      return;
+    }
+    for (const k of Object.keys(x)) tara(x[k]);
+  })(j);
+  if (guvenHatasi) return { hata: guvenHatasi };
+
+  const yazi = (v, n) => String(v == null ? '' : v).trim().slice(0, n);
+  return {
+    manifest: {
+      manifest_surumu: GUVENLIK_MANIFEST_SURUMU,
+      commit: yazi(j.commit, 60) || 'bilinmiyor',
+      govde: j,
+      tarih: Date.now(),
+    },
+  };
+}
+
+/* Manifestte gizli değer var mı — anahtar/şifre sızmışsa reddedilir. */
+function guvenlikHassasVar(metin) {
+  const t = String(metin || '');
+  return GUVENLIK_HASSAS_DESEN.some(re => re.test(t));
+}
+
+/* NIZAM Security Manifest okuyucu — Claude'un JSON'unu doğrular. JSON dışı
+   çıktı, eksik bölüm, yanlış tip ya da geçersiz güven değeri reddedilir;
+   geçersiz manifest DB'ye YAZILMAZ. Hata `hata` alanında döner. */
+function guvenlikManifestOku(metin) {
+  const t = String(metin || '');
+  if (guvenlikHassasVar(t)) {
+    return { hata: 'Manifeste gizli bir anahtar/şifre sızmış görünüyor — kaydedilmedi. Claude gizli değer yazmamalı.' };
+  }
+  const bas = t.indexOf('{'), son = t.lastIndexOf('}');
+  if (bas < 0 || son <= bas) return { hata: 'Geçerli bir JSON bulunamadı.' };
+  let j = null;
+  try { j = JSON.parse(t.slice(bas, son + 1)); } catch (h) { return { hata: 'JSON çözülemedi — Claude\'un verdiği bloğu olduğu gibi kopyala.' }; }
+  if (!j || typeof j !== 'object' || Array.isArray(j)) return { hata: 'Manifest bir nesne değil.' };
+  if (String(j.manifest_surumu || '') !== GUVENLIK_MANIFEST_SURUMU) {
+    return { hata: 'Manifest sürümü uyuşmuyor (beklenen ' + GUVENLIK_MANIFEST_SURUMU + '). Promptu yeniden kopyalayıp güncel manifest üret.' };
+  }
+  for (const b of GUVENLIK_MANIFEST_BOLUMLERI) {
+    if (!(b in j)) return { hata: '"' + b + '" bölümü eksik.' };
+    if (GUVENLIK_MANIFEST_DIZILER.includes(b) && !Array.isArray(j[b])) {
+      return { hata: '"' + b + '" bir liste olmalı.' };
+    }
+  }
+  let guvenHatasi = null;
+  (function tara(x) {
+    if (guvenHatasi || !x || typeof x !== 'object') return;
+    if (typeof x.guven === 'string' && !GUVENLIK_GUVEN.includes(x.guven)) {
+      guvenHatasi = 'Geçersiz güven değeri: "' + x.guven + '" (kanitli|cikarim|bilinmiyor).';
+      return;
+    }
+    for (const k of Object.keys(x)) tara(x[k]);
+  })(j);
+  if (guvenHatasi) return { hata: guvenHatasi };
+  const yazi = (v, n) => String(v == null ? '' : v).trim().slice(0, n);
+  return { manifest: { manifest_surumu: GUVENLIK_MANIFEST_SURUMU,
+    commit: yazi(j.commit, 60) || 'bilinmiyor', govde: j, tarih: Date.now() } };
+}
+
 function guvenlikKodOku(metin) {
   const t = String(metin || '');
   const bas = t.indexOf('{'), son = t.lastIndexOf('}');
@@ -6808,6 +6907,35 @@ function guvenlikKodKarti(k, projeId) {
                 data-proje="${esc(projeId || '')}">
           ${svg(ICON.ice, 15)} 2 · ${k ? 'Yeni sonucu yapıştır' : 'Claude\'un cevabını yapıştır'}</button>
       </div>
+    </div>`;
+}
+
+/* NIZAM Security Manifest kartı — Faz 2. Kod denetiminin altında ayrı bir
+   bölüm; programın İDDİA EDİLEN güvenlik modelini Claude'dan alıp snapshot
+   olarak saklar. Projeli ekranda DB'ye kaydeder (hedef proje başına),
+   projesiz (Ayarlar) ekranda yalnız belleğe alıp doğrular. */
+function guvenlikManifestKarti(m, projeId) {
+  const kayitli = m && m.commit;
+  return `
+    <div class="btk">
+      <div class="btk-ust">
+        <span class="btk-ik ${kayitli ? 'yesil' : 'mor'}">${svg(ICON.gGuvenlik, 22)}</span>
+        <span class="btk-yz"><b>Security Manifest</b>
+          <i>${kayitli
+            ? esc('commit ' + (m.commit || '—') + ' · ' + olcumTarihi(m)
+                + (projeId ? ' · kaydedildi' : ' · bellekte'))
+            : 'Claude programın güvenlik modelini çıkarır (iddia). NIZAM ileride bunu gerçek veritabanıyla karşılaştıracak.'}</i></span>
+      </div>
+      <div class="gv-adimlar">
+        ${promptBaglantisi({ tur: 'securityManifest', proje: projeId || '',
+          yazi: '1 · Manifest promptunu kopyala', ikincil: true,
+          slug: projeId && DB.proje(projeId) ? depoSlug(DB.proje(projeId).repo) : '' })}
+        <button class="sayfa-dug ${kayitli ? 'ikincil' : ''}" type="button" data-eylem="guvenlik-manifest-yapistir"
+                data-proje="${esc(projeId || '')}">
+          ${svg(ICON.ice, 15)} 2 · ${kayitli ? 'Yeni manifesti yapıştır' : 'Manifesti yapıştır'}</button>
+      </div>
+      <p class="ipucu">Manifest bir güvenlik sonucu değil, programın iddia ettiği
+        modeldir. "RLS güvenli" yazması açık kapandı anlamına gelmez.</p>
     </div>`;
 }
 
@@ -6958,6 +7086,7 @@ function guvenlikDurakSayfasi(p, d) {
     + (onayli ? fmTamamBar(p, 'guvenlik',
         'Son ölçüm temiz çıktı ve onaylandı.', false) : '')
     + guvenlikKodKarti(g.kod, p.id)
+    + guvenlikManifestKarti(g.manifest, p.id)
     + guvenlikProgramNotu(g.kod)
     + (g.kod && supa ? guvenlikRontgenKarti(g.rontgen, p.id, pl.supabaseUrl) : '')
     + (o ? `
@@ -10709,7 +10838,7 @@ function templateSihirbaziBagla(el) {
    Supabase jetonu artık hiç kullanılmıyor. */
 const GUVENLIK_SAYFA = { url: '', anon: '', eposta: '', calisiyor: false,
   sonuc: null, harita: null, ustKatmanUyarisi: false, kalintilar: [], tabloKaynagi: '',
-  depo: '', rontgen: null, kod: null };
+  depo: '', rontgen: null, kod: null, manifest: null };
 
 function guvenlikUuid() {
   if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
@@ -14078,6 +14207,8 @@ const PANO_PROMPT = {
   yapi:          p => PROMPT.yapi(p.id),
   yetkiKur:      p => PROMPT.yetkiKur(p.id),
   kodDenetimi:   p => PROMPT.kodDenetimi(p ? p.id : ''),
+  securityManifest: p => PROMPT.securityManifest(p ? p.id : ''),
+  securityManifest: p => PROMPT.securityManifest(p ? p.id : ''),
   /* Testten sonra açık kalan satırlardan düzeltme promptu — projesiz de
      (Ayarlar > Güvenlik Testi) çalışıyor. */
   guvenlikDuzelt: p => PROMPT.guvenlikDuzelt(p ? p.id : '',
@@ -16648,6 +16779,38 @@ async function eylemCalistir(el) {
     hedef.kod = k;
     const acik = k.bulgular.filter(b => b.onem !== 'dusuk').length;
     toast('Kod denetimi alındı — ' + (acik ? acik + ' bulgu.' : 'bulgu yok.'), acik ? 'uyari' : 'basari');
+    render();
+    return;
+  }
+
+  /* NIZAM Security Manifest yapıştır. Projeli ekranda hedef proje için
+     bulunur/oluşturulur ve manifest snapshot olarak KAYDEDİLİR; projesiz
+     (Ayarlar) ya da demo modda yalnız belleğe alınır. */
+  if (e === 'guvenlik-manifest-yapistir') {
+    let metin = '';
+    try { metin = await navigator.clipboard.readText(); } catch (h) { metin = ''; }
+    if (!metin || !metin.trim()) { toast('Pano boş — önce Claude\'un manifestini kopyala.', 'uyari'); return; }
+    const okundu = guvenlikManifestOku(metin);
+    if (okundu.hata) { toast(okundu.hata, 'hata'); return; }
+    const projeId = el.dataset.proje;
+    const hedef = projeId ? durakGuvenlikDurum(projeId) : GUVENLIK_SAYFA;
+    hedef.manifest = okundu.manifest;
+    if (!projeId || !AUTH.bagli) {
+      toast('Manifest alındı ve doğrulandı' + (AUTH.bagli ? ' (kaydetmek için proje güvenlik adımını kullan).' : ' (demo — kaydedilmedi).'), 'basari');
+      render();
+      return;
+    }
+    try {
+      const pr = DB.proje(projeId);
+      const h = await GUVENLIK_VERI.hedefProjeIcin(projeId, pr ? (pr.firma || projeAdi(pr)) : '');
+      const kayit = await GUVENLIK_VERI.manifestOlustur({
+        hedefId: h.id, commit: okundu.manifest.commit,
+        surum: okundu.manifest.manifest_surumu, govde: okundu.manifest.govde });
+      await GUVENLIK_VERI.hedefReferansYaz(h.id, { manifestId: kayit.id });
+      toast('Manifest kaydedildi (snapshot #' + kayit.id.slice(0, 8) + ').', 'basari');
+    } catch (err) {
+      toast('Manifest kaydedilemedi: ' + err.message, 'hata');
+    }
     render();
     return;
   }

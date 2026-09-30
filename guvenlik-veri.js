@@ -60,6 +60,17 @@ const GUVENLIK_VERI = {
     return this.hedefGuncelle(id, alanlar);
   },
 
+  /* Bir NIZAM projesi için hedef bul; yoksa oluştur. Hedefler projelere
+     bağlı (Faz 1 kararı), her projenin en fazla bir hedefi olur. */
+  async hedefProjeIcin(projeId, ad) {
+    if (!AUTH.bagli) return null;
+    const { data, error } = await AUTH.db.from('guvenlik_hedefleri')
+      .select('*').eq('proje_id', projeId).limit(1);
+    if (error) throw new Error(veriHatasi(error));
+    if (data && data.length) return data[0];
+    return this.hedefOlustur({ ad: ad || '', proje_id: projeId });
+  },
+
   /* ---------- Manifest (immutable) ---------- */
 
   async manifestOlustur({ hedefId, commit, surum, govde }) {
