@@ -6,8 +6,14 @@
 --   1) (hedef_id, no) benzersiz  → çakışma DB'de yakalanır
 --   2) guvenlik_denetim_kaydet() → hedef başına advisory lock ile seri yazar
 --
--- Fonksiyon security definer ama içeride yönetici kontrolü yapar; kayıt yine
--- yalnız yöneticiye açık. Immutable tablodur — bu fonksiyon yalnız EKLER.
+-- GÜVENLİK:
+--   - SECURITY DEFINER: RLS arkasından kontrollü INSERT için gerekli.
+--   - Yönetici kontrolü NULL-güvenli: `is distinct from`. rolum() NULL
+--     dönerse (anon ya da profilsiz/rolsüz kullanıcı) reddedilir.
+--   - EXECUTE yetkisi PUBLIC'ten alınır, yalnız authenticated'a verilir.
+--     Ama authenticated olmak tek başına yetmez; gövdedeki yönetici
+--     kontrolü asıl kapıdır.
+--   - search_path = public sabit.
 --
 -- Supabase → SQL Editor → yapıştır → Run. İki kez çalıştırmak zarar vermez.
 -- ============================================================================
@@ -28,7 +34,10 @@ declare
   v_no int;
   v_satir public.guvenlik_denetimleri;
 begin
-  if public.rolum() <> 'yonetici' then
+  -- NULL-güvenli yönetici kontrolü: rolum() NULL ya da 'yonetici' değilse
+  -- reddedilir. (NULL <> 'yonetici' NULL döndürür ve IF'i atlardı; is
+  -- distinct from bunu güvenle 'true' yapar.)
+  if public.rolum() is distinct from 'yonetici' then
     raise exception 'Bu işlem için yönetici olman gerekiyor.';
   end if;
   -- Hedef başına seri: aynı anda iki denetim aynı numarayı almaz.
@@ -44,3 +53,8 @@ begin
   return v_satir;
 end;
 $$;
+
+-- 3) Yetkiler: PUBLIC'ten al, yalnız authenticated'a ver.
+--    (Gövdedeki yönetici kontrolü yine de asıl kapı; bu savunma katmanı.)
+revoke execute on function public.guvenlik_denetim_kaydet(uuid, uuid, jsonb, jsonb, jsonb) from public;
+grant  execute on function public.guvenlik_denetim_kaydet(uuid, uuid, jsonb, jsonb, jsonb) to authenticated;
