@@ -1,5 +1,16 @@
 # Değişiklik Günlüğü
 
+## v0.255.0
+- **NIZAM Security · Faz 8A (eski sistemin ölü kod temizliği).** Artık hiçbir
+  düğmenin tetiklemediği iki ölü işleyici kaldırıldı: `guvenlik-durak-test`
+  ve `guvenlik-onayla`. Bunlarla birlikte `palet.guvenlikOlcum` /
+  `guvenlikTamamlandi` YAZAN son yerler de gitti; bu alanlar yalnız eski
+  ölçümü "bilgi" olarak göstermek için OKUNMAYA devam ediyor.
+- `guvenlikHassasVar` ve `guvenlikManifestOku` iki kez tanımlıydı (davranış
+  birebir aynı, yalnız yorum/biçim farkı) — tekilleştirildi.
+- Eski ekran (#/guvenlik-eski) ve motoru bu fazda KORUNDU; silme sonraki
+  fazın işi.
+
 ## v0.254.0
 - **NIZAM Security · Faz 7 (proje durağı + Final kilidi).** Final artık yeni
   Security'ye bağlı. Merkezi `guvenlikFinalHesapla` (+ ekranda

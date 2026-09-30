@@ -6756,49 +6756,6 @@ function guvenlikManifestOku(metin) {
   };
 }
 
-/* Manifestte gizli değer var mı — anahtar/şifre sızmışsa reddedilir. */
-function guvenlikHassasVar(metin) {
-  const t = String(metin || '');
-  return GUVENLIK_HASSAS_DESEN.some(re => re.test(t));
-}
-
-/* NIZAM Security Manifest okuyucu — Claude'un JSON'unu doğrular. JSON dışı
-   çıktı, eksik bölüm, yanlış tip ya da geçersiz güven değeri reddedilir;
-   geçersiz manifest DB'ye YAZILMAZ. Hata `hata` alanında döner. */
-function guvenlikManifestOku(metin) {
-  const t = String(metin || '');
-  if (guvenlikHassasVar(t)) {
-    return { hata: 'Manifeste gizli bir anahtar/şifre sızmış görünüyor — kaydedilmedi. Claude gizli değer yazmamalı.' };
-  }
-  const bas = t.indexOf('{'), son = t.lastIndexOf('}');
-  if (bas < 0 || son <= bas) return { hata: 'Geçerli bir JSON bulunamadı.' };
-  let j = null;
-  try { j = JSON.parse(t.slice(bas, son + 1)); } catch (h) { return { hata: 'JSON çözülemedi — Claude\'un verdiği bloğu olduğu gibi kopyala.' }; }
-  if (!j || typeof j !== 'object' || Array.isArray(j)) return { hata: 'Manifest bir nesne değil.' };
-  if (String(j.manifest_surumu || '') !== GUVENLIK_MANIFEST_SURUMU) {
-    return { hata: 'Manifest sürümü uyuşmuyor (beklenen ' + GUVENLIK_MANIFEST_SURUMU + '). Promptu yeniden kopyalayıp güncel manifest üret.' };
-  }
-  for (const b of GUVENLIK_MANIFEST_BOLUMLERI) {
-    if (!(b in j)) return { hata: '"' + b + '" bölümü eksik.' };
-    if (GUVENLIK_MANIFEST_DIZILER.includes(b) && !Array.isArray(j[b])) {
-      return { hata: '"' + b + '" bir liste olmalı.' };
-    }
-  }
-  let guvenHatasi = null;
-  (function tara(x) {
-    if (guvenHatasi || !x || typeof x !== 'object') return;
-    if (typeof x.guven === 'string' && !GUVENLIK_GUVEN.includes(x.guven)) {
-      guvenHatasi = 'Geçersiz güven değeri: "' + x.guven + '" (kanitli|cikarim|bilinmiyor).';
-      return;
-    }
-    for (const k of Object.keys(x)) tara(x[k]);
-  })(j);
-  if (guvenHatasi) return { hata: guvenHatasi };
-  const yazi = (v, n) => String(v == null ? '' : v).trim().slice(0, n);
-  return { manifest: { manifest_surumu: GUVENLIK_MANIFEST_SURUMU,
-    commit: yazi(j.commit, 60) || 'bilinmiyor', govde: j, tarih: Date.now() } };
-}
-
 function guvenlikKodOku(metin) {
   const t = String(metin || '');
   const bas = t.indexOf('{'), son = t.lastIndexOf('}');
@@ -17259,61 +17216,6 @@ async function eylemCalistir(el) {
     return;
   }
 
-  /* Güvenlik kontrolü durağı — Ayarlar'daki testin aynısı, bağlantı
-     projeden. Sonucun özeti palete yazılıyor ki sayfa yenilenince de
-     "ölçüldü mü, temiz mi" bilgisi kaybolmasın. */
-  if (e === 'guvenlik-durak-test') {
-    const pr = DB.proje(el.dataset.proje);
-    if (!pr) return;
-    const pl = pr.palet || {};
-    const g = durakGuvenlikDurum(pr.id);
-    if (!g.kod) { toast('Önce kod denetimini yapıştır.', 'uyari'); return; }
-    const supa = guvenlikSupabaseli(g.kod);
-    const girissiz = guvenlikGirissiz(g.kod);
-    const url = String(pl.supabaseUrl || '').trim();
-    const anon = String(pl.supabaseAnon || '').trim();
-    if (supa && (!url || !anon)) { toast('Supabase adresi ve anon key eksik.', 'uyari'); return; }
-    const al = son => { const x = $('#gvd-' + son + '-' + pr.id); return x ? x.value.trim() : ''; };
-    const eposta = al('eposta'), sifre = al('sifre');
-    /* guvenlik.json adresi artık sorulmuyor: tablo listesini kod denetimi
-       veriyor. Eskiden kaydedilmiş adres varsa yine okunuyor. */
-    const depo = String(pl.guvenlikDepoAdresi || pr.repo || '').trim();
-    if (supa && !girissiz && (!eposta || !sifre)) { toast('E-posta ve şifre gerekli.', 'uyari'); return; }
-    if (supa && !g.rontgen) { toast('Önce veritabanı röntgenini yapıştır.', 'uyari'); return; }
-    Object.assign(g, { eposta, calisiyor: true, sonuc: null, harita: null,
-      ustKatmanUyarisi: false, kalintilar: [], tabloKaynagi: '' });
-    render();
-    try {
-      const r = supa
-        ? await guvenlikTestiCalistir({ url, anon, eposta, sifre, depo, rontgen: g.rontgen, kod: g.kod, girissiz })
-        : guvenlikYalnizKod(g.kod);
-      g.sonuc = r.sonuc;
-      g.harita = r.harita;
-      g.ustKatmanUyarisi = r.ustKatmanUyarisi;
-      g.kalintilar = r.kalintilar || [];
-      g.tabloKaynagi = r.tabloKaynagi || '';
-      const toplam = (r.sonuc || []).length;
-      const acik = (r.sonuc || []).filter(x => x.sonuc === 'AÇIK').length;
-      /* Üst katman hesabıyla yapılan ölçüm geçerli sayılmaz — yetki haritası
-         atlanıyor, "sıfır açık" yanıltıcı olur. Ölçüm kaydedilmiyor. */
-      if (r.ustKatmanUyarisi) {
-        toast('Üst katman hesabıyla ölçüm geçerli değil — personel hesabı ver.', 'uyari');
-      } else {
-        await DB.paletKaydet(pr.id, Object.assign({}, pr.palet || {},
-          { guvenlikOlcum: { tarih: Date.now(), toplam, acik },
-            /* Açık bulunan yeni ölçüm önceki onayı düşürür — eski "başarılı"
-               işareti yeni açığın üstünü örtmesin. Temiz ölçümde onay
-               kullanıcıya bırakılıyor. */
-            guvenlikTamamlandi: acik ? false : (pr.palet || {}).guvenlikTamamlandi }));
-      }
-    } catch (h) {
-      toast('Test çalıştırılamadı: ' + h.message, 'hata');
-    }
-    g.calisiyor = false;
-    render();
-    return;
-  }
-
   if (e === 'guvenlik-rapor-kopyala') {
     /* Aynı tablo iki yerde çiziliyor: Ayarlar > Güvenlik Testi ve proje
        durağı. data-proje varsa durağın kendi sonucu kopyalanır. */
@@ -17324,18 +17226,6 @@ async function eylemCalistir(el) {
     const ok = await panoyaKopyala(metin);
     toast(ok ? 'Rapor kopyalandı.' : 'Kopyalanamadı, tarayıcı izin vermedi.', ok ? 'basari' : 'hata');
     return;
-  }
-
-  if (e === 'guvenlik-onayla') {
-    const pr = DB.proje(el.dataset.proje);
-    if (!pr) return;
-    const pl = pr.palet || {};
-    if (!pl.guvenlikOlcum || pl.guvenlikOlcum.acik) {
-      toast('Önce sıfır açıkla biten bir ölçüm gerekiyor.', 'uyari');
-      return;
-    }
-    return isYap(() => DB.paletKaydet(pr.id,
-      Object.assign({}, pl, { guvenlikTamamlandi: true })), 'Güvenlik kontrolü onaylandı.');
   }
 
   if (e === 'guvenlik-sifre-goster') {
