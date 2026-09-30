@@ -1,5 +1,22 @@
 # Değişiklik Günlüğü
 
+## v0.252.0
+- **NIZAM Security · Faz 5 (Canlı tarama + denetim snapshot).** Test matrisi
+  artık gerçek testlere bağlandı. Hesap A/B ile yalnız güvenli okuma (SELECT)
+  yapılıyor; INSERT/UPDATE/DELETE ve hesap oluşturma yok. Yazma testleri
+  «aktif_gerekli» olarak işaretlenip çalıştırılmıyor.
+- Sonuçlar 7 durumlu: KAPALI/AÇIK/DOGRULANDI/DOGRULANAMADI/AKTİF_TEST_GEREKLİ/
+  ATLANDI/BİLGİ. Karar tek başına HTTP koduna değil; durum+satır sayısı+hata
+  türü+beklenene göre veriliyor. Bağlantı/500 hatası açık sayılmıyor.
+  «Başkasının kaydı» için id uydurulmuyor; B'nin gerçek kaydı yoksa ölçülemedi.
+- İlk kez denetim snapshot'ı kaydediliyor (guvenlik_denetimleri), numara
+  hedef başına yarış-güvenli artıyor (advisory lock, sql/37). AÇIK bulgular
+  imzayla izleniyor: aynı açık çoğalmıyor, kapanınca durum güncelleniyor;
+  geçmiş snapshot değişmiyor.
+- Şifre/jeton hiçbir kalıcı alana, loga ya da sonuca yazılmıyor. Eski
+  güvenlik sistemi aynen çalışıyor.
+- **Çalıştırılacak SQL: `sql/37-guvenlik-denetim-no.sql`** (Supabase → SQL Editor).
+
 ## v0.251.0
 - **NIZAM Security · Faz 4 (Test Matrisi).** Manifest + Database Scan +
   doğrulama sonucundan çalıştırılabilir yetki testleri üretiliyor. Sadece

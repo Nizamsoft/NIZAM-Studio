@@ -467,3 +467,81 @@ function guvenlikMatrisUret({ manifest, scan, dogrulama, proje }) {
   };
   return { satirlar, ozet };
 }
+
+/* ==========================================================================
+   Faz 5 · Canlı sonuç yorumlama (saf) + bulgu imzası + denetim özeti
+
+   Yorumlama HTTP koduna tek başına bakmaz: durum + satır sayısı + hata türü
+   + beklenen birlikte değerlendirilir. Bağlantı/sunucu hatası güvenlik
+   sonucu SAYILMAZ (DOGRULANAMADI). IO burada YOK — çağıran gözlemi verir. */
+
+/* gozlem: { yontem, http, satir_sayisi, hata, olcum? }  (olcum = statik doğrulama durumu)
+   Döner: { durum, gercek, aciklama }. */
+function guvenlikCanliYorumla(row, gozlem) {
+  const S = GUVENLIK_SONUC;
+  const g = gozlem || {};
+  const beklenen = String(row.beklenen || '').toUpperCase();
+
+  /* aktif_gerekli: üretimde çalıştırılmadı. */
+  if (row.test_yontemi === 'aktif_gerekli') {
+    return { durum: S.AKTIF_TEST_GEREKLI, gercek: '',
+      aciklama: 'Üretim ortamında veri değişikliği gerektirdiği için otomatik çalıştırılmadı.' };
+  }
+  /* statik: Faz 3 doğrulamasından karar. */
+  if (row.test_yontemi === 'statik') {
+    const dv = g.olcum;
+    if (dv === GUVENLIK_DOGRULAMA.CELISIYOR) return { durum: S.ACIK, gercek: 'doğrulama: çelişki', aciklama: 'DB koruması manifest beklentisiyle çelişiyor.' };
+    if (dv === GUVENLIK_DOGRULAMA.DOGRULANDI) return { durum: beklenen === 'DENY' ? S.KAPALI : S.DOGRULANDI, gercek: 'doğrulama: uyumlu', aciklama: '' };
+    return { durum: S.DOGRULANAMADI, gercek: '', aciklama: 'Statik doğrulama sonucu yetersiz.' };
+  }
+  /* yetki_sorgusu: tarayıcıdan işlemsiz yetki ölçümü yok → ölçülemedi. */
+  if (row.test_yontemi === 'yetki_sorgusu') {
+    return { durum: S.DOGRULANAMADI, gercek: '', aciklama: 'İşlemsiz yetki sorgusu bu ortamda ölçülemiyor.' };
+  }
+
+  /* okuma_canli: gerçek SELECT/GET gözlemi. */
+  if (g.hata) return { durum: S.DOGRULANAMADI, gercek: 'bağlantı hatası', aciklama: 'Bağlantı kurulamadı — güvenlik sonucu değil.' };
+  if (g.olculemedi) return { durum: S.DOGRULANAMADI, gercek: g.olculemedi, aciklama: g.aciklama || 'Güvenli test kaydı bulunamadı.' };
+  const http = g.http;
+  const satir = g.satir_sayisi;
+  const reddedildi = http === 401 || http === 403;
+  const okundu = http >= 200 && http < 300 && satir > 0;
+  const bosDondu = http >= 200 && http < 300 && (satir === 0 || satir == null);
+
+  if (beklenen === 'DENY') {
+    if (reddedildi) return { durum: S.KAPALI, gercek: 'HTTP ' + http, aciklama: 'Yetkisiz erişim reddedildi.' };
+    if (bosDondu)   return { durum: S.KAPALI, gercek: 'boş sonuç', aciklama: 'Satır güvenliği erişimi engelledi (0 satır).' };
+    if (okundu)     return { durum: S.ACIK,   gercek: 'HTTP ' + http + ' · ' + satir + ' satır', aciklama: 'Yetkisiz erişim başarılı — güvenlik açığı.' };
+    return { durum: S.DOGRULANAMADI, gercek: 'HTTP ' + (http == null ? '?' : http), aciklama: 'Sonuç sınıflandırılamadı.' };
+  }
+  if (beklenen === 'ALLOW') {
+    if (okundu)     return { durum: S.DOGRULANDI, gercek: 'HTTP ' + http + ' · ' + satir + ' satır', aciklama: 'Yetkili erişim başarılı.' };
+    if (bosDondu)   return { durum: S.DOGRULANAMADI, gercek: 'boş sonuç', aciklama: 'Erişilebilir kayıt bulunamadı — kesin değil.' };
+    if (reddedildi) return { durum: S.DOGRULANAMADI, gercek: 'HTTP ' + http, aciklama: 'Yetkili beklenen erişim reddedildi — hesap/kayıt nedeniyle olabilir.' };
+    return { durum: S.DOGRULANAMADI, gercek: 'HTTP ' + (http == null ? '?' : http), aciklama: 'Sonuç sınıflandırılamadı.' };
+  }
+  return { durum: S.BILGI, gercek: '', aciklama: '' };
+}
+
+/* Bulgu imzası — kanıt/tarih/HTTP İÇERMEZ. Aynı açık aynı imzayı üretir. */
+function guvenlikBulguImzasi(hedefId, row) {
+  return [hedefId, row.kategori, row.kaynak.varlik, row.islem, row.kaynak.kapsam]
+    .join(':').toLowerCase().replace(/\s+/g, '_');
+}
+
+/* Denetim özeti — yalnız ACIK "acik" sayılır; ölçülemedi/aktif ayrı. */
+function guvenlikDenetimOzeti(sonuclar) {
+  const S = GUVENLIK_SONUC;
+  const say = (d) => sonuclar.filter(x => x.durum === d).length;
+  const acik = sonuclar.filter(x => x.durum === S.ACIK);
+  return {
+    toplam: sonuclar.length,
+    acik: acik.length,
+    kritik: acik.filter(x => x.risk === 'kritik').length,
+    yuksek: acik.filter(x => x.risk === 'yuksek').length,
+    dogrulandi: say(S.DOGRULANDI),
+    dogrulanamadi: say(S.DOGRULANAMADI),
+    aktif_gerekli: say(S.AKTIF_TEST_GEREKLI),
+    kapali: say(S.KAPALI),
+  };
+}

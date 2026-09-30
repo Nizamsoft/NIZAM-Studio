@@ -948,6 +948,7 @@ const VIEWS = {
       ${guvenlikManifestKarti(g.manifest, '')}
       ${guvenlikDogrulamaKarti(g, '')}
       ${guvenlikMatrisKarti(g, '')}
+      ${guvenlikTaramaKarti(g, '')}
       ${guvenlikProgramNotu(g.kod)}
       ${!g.kod ? '' : !supa ? guvenlikRaporDugmesi() : guvenlikRontgenKarti(g.rontgen, '', url)
           + guvenlikBaglantiAlanlari(g, url)
@@ -6686,7 +6687,7 @@ function olcumOzeti(olcum) {
 function durakGuvenlikDurum(projeId) {
   if (!DURAK_GUVENLIK[projeId]) {
     DURAK_GUVENLIK[projeId] = { calisiyor: false, sonuc: null, harita: null,
-      ustKatmanUyarisi: false, kalintilar: [], tabloKaynagi: '', rontgen: null, kod: null, manifest: null, scan: null, dogrulama: null, matris: null };
+      ustKatmanUyarisi: false, kalintilar: [], tabloKaynagi: '', rontgen: null, kod: null, manifest: null, scan: null, dogrulama: null, matris: null, tarama: null, taraniyor: false };
   }
   return DURAK_GUVENLIK[projeId];
 }
@@ -6995,6 +6996,67 @@ function guvenlikDogrulamaTablosu(d) {
       açık değildir — NIZAM o alanı göremedi.</p></div>`;
 }
 
+/* NIZAM Security · Canlı tarama kartı (Faz 5). Hesap A/B ile güvenli okuma
+   testleri; sonuç 7 durumlu. Şifreler yalnız çalışırken bellekte. */
+function guvenlikTaramaKarti(g, projeId) {
+  if (!g.matris) return '';
+  const ek = projeId || 'ayar';
+  const o = g.tarama && g.tarama.ozet;
+  return `
+    <div class="btk">
+      <div class="btk-ust">
+        <span class="btk-ik ${g.tarama ? (o.acik ? 'kirmizi' : 'yesil') : 'kirmizi'}">${svg(ICON.gGuvenlik, 22)}</span>
+        <span class="btk-yz"><b>Canlı Tarama</b>
+          <i>${g.tarama
+            ? esc(o.acik + ' açık · ' + o.dogrulandi + ' doğrulandı · ' + o.dogrulanamadi
+                + ' ölçülemedi · ' + o.aktif_gerekli + ' aktif test gerekli')
+            : 'Matristeki güvenli testleri gerçek hesaplarla çalıştırır. Yalnız okur; yazma testleri çalıştırılmaz.'}</i></span>
+      </div>
+      <label class="gf"><span class="gf-et">Hesap A e-posta</span>
+        <span class="gf-kutu">${svg(ICON.mail, 17)}<input type="text" id="gvt-a-eposta-${ek}" placeholder="personel@firma.com" autocomplete="off" spellcheck="false"></span></label>
+      <label class="gf"><span class="gf-et">Hesap A şifre</span>
+        <span class="gf-kutu">${svg(ICON.kilit, 17)}<input type="password" id="gvt-a-sifre-${ek}" placeholder="şifre" autocomplete="off"></span></label>
+      <label class="gf"><span class="gf-et">Hesap B e-posta (yatay test için, opsiyonel)</span>
+        <span class="gf-kutu">${svg(ICON.mail, 17)}<input type="text" id="gvt-b-eposta-${ek}" placeholder="baska@firma.com" autocomplete="off" spellcheck="false"></span></label>
+      <label class="gf"><span class="gf-et">Hesap B şifre</span>
+        <span class="gf-kutu">${svg(ICON.kilit, 17)}<input type="password" id="gvt-b-sifre-${ek}" placeholder="şifre" autocomplete="off"></span></label>
+      <div class="gv-adimlar">
+        <button class="sayfa-dug" type="button" data-eylem="guvenlik-tarama-baslat"
+                data-proje="${esc(projeId || '')}" ${g.taraniyor ? 'disabled' : ''}>
+          ${svg(ICON.gGuvenlik, 15)} ${g.taraniyor ? 'Taranıyor…' : 'Tarama Başlat'}</button>
+        ${g.tarama ? `<button class="sayfa-dug ikincil" type="button" data-eylem="guvenlik-denetim-kaydet"
+                data-proje="${esc(projeId || '')}">${svg(ICON.kaydet, 15)} Denetimi Kaydet</button>` : ''}
+      </div>
+      <p class="ipucu">Şifreler hiçbir yere kaydedilmiyor; yalnız test sırasında kullanılıyor.
+        ${projeId ? '' : 'Denetimi kaydetmek için proje güvenlik adımını kullan.'}</p>
+      ${guvenlikTaramaTablosu(g.tarama)}
+    </div>`;
+}
+
+function guvenlikTaramaTablosu(t) {
+  if (!t || !t.sonuclar || !t.sonuclar.length) return '';
+  const renk = { 'AÇIK':'var(--red)','KAPALI':'var(--basari,#3d9970)','DOGRULANDI':'var(--basari,#3d9970)',
+    'DOGRULANAMADI':'var(--ink-soft)','AKTİF_TEST_GEREKLİ':'#b8801a','ATLANDI':'var(--ink-dim)','BİLGİ':'var(--ink-soft)' };
+  const sira = { 'AÇIK':0,'DOGRULANAMADI':1,'AKTİF_TEST_GEREKLİ':2,'KAPALI':3,'DOGRULANDI':4,'BİLGİ':5,'ATLANDI':6 };
+  const satirlar = t.sonuclar.slice().sort((a,b)=>(sira[a.durum]??9)-(sira[b.durum]??9)).map(x=>`<tr ${x.durum==='AÇIK'?'style="background:var(--red-soft)"':''}>
+    <td style="padding:6px 8px">${esc(x.aktor)}</td>
+    <td style="padding:6px 8px">${esc(x.varlik)}${x.kapsam?' · '+esc(x.kapsam):''}</td>
+    <td style="padding:6px 8px">${esc(x.islem)}</td>
+    <td style="padding:6px 8px">${esc(x.beklenen)}</td>
+    <td style="padding:6px 8px;color:${renk[x.durum]||'inherit'};font-weight:600">${esc(x.durum)}</td>
+    <td style="padding:6px 8px;color:var(--ink-soft)">${esc(x.kanit && x.kanit.yontem || '')}${x.kanit&&x.kanit.http!=null?' · HTTP '+x.kanit.http:''}</td>
+  </tr>`).join('');
+  return `<div style="overflow-x:auto;margin-top:12px">
+    <table style="width:100%;border-collapse:collapse;font-size:12.5px">
+      <thead><tr style="text-align:left;border-bottom:1px solid var(--line)">
+        <th style="padding:6px 8px">Aktör</th><th style="padding:6px 8px">Varlık</th>
+        <th style="padding:6px 8px">İşlem</th><th style="padding:6px 8px">Beklenen</th>
+        <th style="padding:6px 8px">Durum</th><th style="padding:6px 8px">Kanıt</th></tr></thead>
+      <tbody>${satirlar}</tbody></table>
+    <p class="ipucu" style="margin-top:8px">AÇIK = gerçek güvenlik bulgusu. «Ölçülemedi» ve
+      «aktif test gerekli» açık değildir.</p></div>`;
+}
+
 /* NIZAM Security · Test Matrix kartı (Faz 4). Manifest + scan + doğrulamadan
    çalıştırılabilir test satırları üretir. Bu faz yalnız üretir/gösterir;
    canlı çalıştırma ve kayıt sonraki faz. */
@@ -7049,6 +7111,120 @@ function guvenlikMatrisTablosu(m) {
 }
 
 /* Kod denetiminden sonra: Claude'un tanıdığı program ve atlanacak adımlar. */
+/* ==========================================================================
+   Faz 5 · Canlı güvenli tarama (IO). Yalnız SELECT/GET yapar; INSERT/UPDATE/
+   DELETE ve hesap oluşturma YOK. Şifreler yalnız bu fonksiyonun belleğinde;
+   sonuca, loga, hiçbir kalıcı alana yazılmaz. Zaman aşımı ve satır sınırı var.
+   ========================================================================== */
+
+/* Zaman aşımılı, sınırlı tek istek. Şifre taşımaz; yalnız jeton/anon. */
+async function guvenlikCanliIstek(taban, yol, { token, anon, timeoutMs = 8000 }) {
+  const kontrol = new AbortController();
+  const zaman = setTimeout(() => kontrol.abort(), timeoutMs);
+  try {
+    const r = await fetch(taban + yol, { method: 'GET', signal: kontrol.signal,
+      headers: { apikey: anon, Authorization: 'Bearer ' + (token || anon), 'Content-Type': 'application/json' } });
+    let govde = null; try { govde = await r.json(); } catch (h) {}
+    return { durum: r.status, govde };
+  } catch (h) {
+    return { durum: 0, hata: h.name === 'AbortError' ? 'zaman aşımı' : (h.message || 'bağlantı') };
+  } finally { clearTimeout(zaman); }
+}
+
+/* Şifreyi jetona çevirir; şifre burada kalır, dönmez. Başarısızsa null. */
+async function guvenlikGiris(taban, anon, eposta, sifre) {
+  if (!eposta || !sifre) return null;
+  try {
+    const r = await fetch(taban + '/auth/v1/token?grant_type=password', {
+      method: 'POST', headers: { apikey: anon, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: eposta, password: sifre }),
+      signal: AbortSignal.timeout(8000) });
+    const g = await r.json().catch(() => null);
+    return (r.status === 200 && g && g.access_token) ? g.access_token : null;
+  } catch (h) { return null; }
+}
+
+/* Bir kaydın kimliğini kalıcı kanıta koymadan referanslar (kısa hash). */
+function guvenlikRefHash(deger) {
+  const s = String(deger || '');
+  let h = 0; for (let i = 0; i < s.length; i++) { h = (h * 31 + s.charCodeAt(i)) | 0; }
+  return 'ref-' + (h >>> 0).toString(16);
+}
+
+/* Bir aktörün token'ıyla bir tablodan tek satır id'si okur (kendi görebildiği). */
+async function guvenlikOrnekId(taban, anon, token, tablo) {
+  const r = await guvenlikCanliIstek(taban, '/rest/v1/' + encodeURIComponent(tablo) + '?select=id&limit=1', { token, anon });
+  if (r.durum >= 200 && r.durum < 300 && Array.isArray(r.govde) && r.govde.length && r.govde[0] && 'id' in r.govde[0]) {
+    return r.govde[0].id;
+  }
+  return null;
+}
+
+async function guvenlikTaramaCalistir({ url, anon, hesapA, hesapB, matris, dogrulama }) {
+  const taban = String(url || '').trim().replace(/\/+$/, '');
+  const S = GUVENLIK_SONUC;
+  const satirlar = (matris && matris.satirlar) || [];
+  const sonuclar = [];
+
+  /* Giriş — jetonlar yalnız burada. */
+  const tokenA = hesapA ? await guvenlikGiris(taban, anon, hesapA.eposta, hesapA.sifre) : null;
+  const tokenB = hesapB ? await guvenlikGiris(taban, anon, hesapB.eposta, hesapB.sifre) : null;
+
+  /* "başkasının" testleri için B'nin kendi kayıt id'lerini önden topla. */
+  const bBaskaId = {};   // varlik → id
+
+  const dvBul = (varlik, islem) => (dogrulama && dogrulama.sonuclar || [])
+    .find(x => x.kategori === 'rls' && x.varlik === varlik && x.boyut === islem) || null;
+
+  for (const row of satirlar) {
+    const varlik = row.kaynak.varlik;
+    const islem = row.islem;
+    let gozlem = {};
+
+    if (row.test_yontemi === 'aktif_gerekli' || row.test_yontemi === 'yetki_sorgusu') {
+      /* IO yok — yorumcu karar verir. */
+    } else if (row.test_yontemi === 'statik') {
+      const dv = dvBul(varlik, islem);
+      gozlem = { olcum: dv ? dv.durum : null };
+    } else if (row.test_yontemi === 'okuma_canli' && islem === 'read') {
+      /* Yalnız gerçek tablolarda canlı okuma; kova/fonksiyon ölçülemez. */
+      const tabloMu = row.kategori !== 'storage' && row.kategori !== 'function';
+      if (!tabloMu) { gozlem = { olculemedi: 'canlı okuma kapsamı dışında' }; }
+      else {
+        const aktorTur = row.aktor.tur;
+        const token = aktorTur === 'anonim' ? null : (row.aktor.deger === 'hesap_B' ? tokenB : tokenA);
+        if (aktorTur !== 'anonim' && !token) { gozlem = { olculemedi: 'hesap girişi yapılamadı' }; }
+        else if (row.kaynak.kapsam === 'baskasinin' || row.kaynak.kapsam === 'baska_sirket') {
+          /* B'nin bir kaydını A ile okumayı dene — id uydurmadan. */
+          if (!(varlik in bBaskaId)) bBaskaId[varlik] = tokenB ? await guvenlikOrnekId(taban, anon, tokenB, varlik) : null;
+          const digerId = bBaskaId[varlik];
+          if (!digerId) { gozlem = { olculemedi: 'başka kullanıcı kaydı bulunamadı' }; }
+          else {
+            const r = await guvenlikCanliIstek(taban, '/rest/v1/' + encodeURIComponent(varlik) + '?id=eq.' + encodeURIComponent(digerId) + '&select=id&limit=1', { token, anon });
+            gozlem = { http: r.durum, satir_sayisi: Array.isArray(r.govde) ? r.govde.length : null, hata: r.hata, ref: guvenlikRefHash(digerId) };
+          }
+        } else {
+          /* kendi / herhangi — tek satır oku. */
+          const r = await guvenlikCanliIstek(taban, '/rest/v1/' + encodeURIComponent(varlik) + '?select=id&limit=1', { token, anon });
+          gozlem = { http: r.durum, satir_sayisi: Array.isArray(r.govde) ? r.govde.length : null, hata: r.hata };
+        }
+      }
+    } else {
+      gozlem = { olculemedi: 'yöntem uygulanamadı' };
+    }
+
+    const y = guvenlikCanliYorumla(row, gozlem);
+    /* Kanıt PII taşımaz: yalnız yöntem, http, satır sayısı, hash referans. */
+    sonuclar.push({ test_id: row.test_id, kategori: row.kategori, aktor: row.aktor.deger,
+      varlik, kapsam: row.kaynak.kapsam, islem, beklenen: row.beklenen, risk: row.risk,
+      durum: y.durum, gercek: y.gercek, aciklama: y.aciklama,
+      kanit: { yontem: row.test_yontemi, http: gozlem.http != null ? gozlem.http : null,
+        satir_sayisi: gozlem.satir_sayisi != null ? gozlem.satir_sayisi : null,
+        hata: gozlem.hata || null, ref: gozlem.ref || null } });
+  }
+  return { sonuclar, ozet: guvenlikDenetimOzeti(sonuclar) };
+}
+
 function guvenlikProgramNotu(kod) {
   if (!kod) {
     return `<div class="note" style="margin-top:14px">${svg(ICON.info, 15)}
@@ -7198,6 +7374,7 @@ function guvenlikDurakSayfasi(p, d) {
     + guvenlikManifestKarti(g.manifest, p.id)
     + guvenlikDogrulamaKarti(g, p.id)
     + guvenlikMatrisKarti(g, p.id)
+    + guvenlikTaramaKarti(g, p.id)
     + guvenlikProgramNotu(g.kod)
     + (g.kod && supa ? guvenlikRontgenKarti(g.rontgen, p.id, pl.supabaseUrl) : '')
     + (o ? `
@@ -10949,7 +11126,7 @@ function templateSihirbaziBagla(el) {
    Supabase jetonu artık hiç kullanılmıyor. */
 const GUVENLIK_SAYFA = { url: '', anon: '', eposta: '', calisiyor: false,
   sonuc: null, harita: null, ustKatmanUyarisi: false, kalintilar: [], tabloKaynagi: '',
-  depo: '', rontgen: null, kod: null, manifest: null, scan: null, dogrulama: null, matris: null };
+  depo: '', rontgen: null, kod: null, manifest: null, scan: null, dogrulama: null, matris: null, tarama: null, taraniyor: false };
 
 function guvenlikUuid() {
   if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
@@ -16981,6 +17158,64 @@ async function eylemCalistir(el) {
     } catch (err) {
       toast('Matris üretilemedi: ' + err.message, 'hata');
     }
+    render();
+    return;
+  }
+
+  /* Canlı tarama — güvenli okuma testleri; şifreler yalnız burada. */
+  if (e === 'guvenlik-tarama-baslat') {
+    const projeId = el.dataset.proje;
+    const hedef = projeId ? durakGuvenlikDurum(projeId) : GUVENLIK_SAYFA;
+    if (!hedef.matris) { toast('Önce Test Matrisi oluştur.', 'uyari'); return; }
+    const ek = projeId || 'ayar';
+    const al = id => { const x = $('#' + id); return x ? x.value.trim() : ''; };
+    let url, anon;
+    if (projeId) { const pl = (DB.proje(projeId) || {}).palet || {}; url = pl.supabaseUrl; anon = pl.supabaseAnon; }
+    else { url = GUVENLIK_SAYFA.url; anon = GUVENLIK_SAYFA.anon; }
+    if (!url || !anon) { toast('Supabase adresi ve anon key gerekli.', 'uyari'); return; }
+    hedef.taraniyor = true; render();
+    try {
+      hedef.tarama = await guvenlikTaramaCalistir({ url, anon,
+        hesapA: { eposta: al('gvt-a-eposta-' + ek), sifre: al('gvt-a-sifre-' + ek) },
+        hesapB: { eposta: al('gvt-b-eposta-' + ek), sifre: al('gvt-b-sifre-' + ek) },
+        matris: hedef.matris, dogrulama: hedef.dogrulama });
+      const o = hedef.tarama.ozet;
+      toast(o.acik ? o.acik + ' açık bulundu.' : 'Açık bulunamadı — ' + o.dogrulandi + ' doğrulandı.',
+        o.acik ? 'uyari' : 'basari');
+    } catch (err) { toast('Tarama başarısız: ' + err.message, 'hata'); }
+    hedef.taraniyor = false; render();
+    return;
+  }
+
+  /* Denetimi kaydet — manifest snapshot + denetim snapshot + bulgu takibi.
+     Yalnız projeli (hedefli) ekranda; demo modda yazmaz. */
+  if (e === 'guvenlik-denetim-kaydet') {
+    const projeId = el.dataset.proje;
+    if (!projeId) { toast('Kaydetmek için proje güvenlik adımını kullan.', 'uyari'); return; }
+    if (!AUTH.bagli) { toast('Demo modunda kayıt yapılamaz.', 'uyari'); return; }
+    const hedef = durakGuvenlikDurum(projeId);
+    if (!hedef.tarama) { toast('Önce tarama çalıştır.', 'uyari'); return; }
+    try {
+      const pr = DB.proje(projeId);
+      const h = await GUVENLIK_VERI.hedefProjeIcin(projeId, pr ? (pr.firma || projeAdi(pr)) : '');
+      let manifestId = null;
+      if (hedef.manifest) {
+        const mk = await GUVENLIK_VERI.manifestOlustur({ hedefId: h.id, commit: hedef.manifest.commit,
+          surum: hedef.manifest.manifest_surumu, govde: hedef.manifest.govde });
+        manifestId = mk.id;
+        await GUVENLIK_VERI.hedefReferansYaz(h.id, { manifestId });
+      }
+      const denetim = await GUVENLIK_VERI.denetimOlustur({ hedefId: h.id, manifestId,
+        matris: (hedef.matris && hedef.matris.satirlar) || [],
+        sonuclar: hedef.tarama.sonuclar, ozet: hedef.tarama.ozet });
+      /* ACIK bulguları izle. */
+      const acik = hedef.tarama.sonuclar.filter(x => x.durum === 'AÇIK').map(x => ({
+        imza: guvenlikBulguImzasi(h.id, { kategori: x.kategori, kaynak: { varlik: x.varlik, kapsam: x.kapsam }, islem: x.islem }),
+        kategori: x.kategori, onem: x.risk, baslik: x.aktor + ' → ' + x.varlik + ' · ' + x.islem }));
+      await GUVENLIK_VERI.bulgulariIsle(h.id, denetim.id, acik);
+      await GUVENLIK_VERI.hedefReferansYaz(h.id, { denetimId: denetim.id });
+      toast('Denetim #' + denetim.no + ' kaydedildi (' + hedef.tarama.ozet.acik + ' açık).', 'basari');
+    } catch (err) { toast('Denetim kaydedilemedi: ' + err.message, 'hata'); }
     render();
     return;
   }

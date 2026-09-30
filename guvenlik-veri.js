@@ -103,19 +103,28 @@ const GUVENLIK_VERI = {
 
   /* ---------- Denetim (immutable) ---------- */
 
-  async denetimOlustur({ hedefId, manifestId, matris, sonuclar, ozet, olusturan }) {
+  async denetimOlustur({ hedefId, manifestId, matris, sonuclar, ozet }) {
     yazmaKontrol();
-    /* `no` hedef içinde artan — son numaranın bir fazlası. */
-    const { data: sonuncu } = await AUTH.db.from('guvenlik_denetimleri')
-      .select('no').eq('hedef_id', hedefId).order('no', { ascending: false }).limit(1);
-    const no = (sonuncu && sonuncu.length ? sonuncu[0].no : 0) + 1;
-    const { data, error } = await AUTH.db.from('guvenlik_denetimleri')
-      .insert({ hedef_id: hedefId, manifest_id: manifestId || null, no,
-                matris: matris || [], sonuclar: sonuclar || [], ozet: ozet || {},
-                olusturan: olusturan || (AUTH.user && AUTH.user.id) || null }).select('*');
-    if (error) throw new Error(veriHatasi(error));
-    if (!data || !data.length) throw new Error('Denetim kaydedilemedi.');
-    return data[0];
+    /* `no` yarış-güvenli olsun diye DB fonksiyonu (advisory lock) üzerinden
+       yazılır — bkz. sql/37. Fonksiyon yoksa (SQL çalıştırılmadıysa) güvenli
+       yedeğe düşer: max+1, unique çakışırsa bir kez daha dener. */
+    const { data, error } = await AUTH.db.rpc('guvenlik_denetim_kaydet', {
+      p_hedef: hedefId, p_manifest: manifestId || null,
+      p_matris: matris || [], p_sonuclar: sonuclar || [], p_ozet: ozet || {} });
+    if (!error && data) return Array.isArray(data) ? data[0] : data;
+    /* Yedek yol — yalnız RPC bulunamadığında. */
+    for (let deneme = 0; deneme < 3; deneme++) {
+      const { data: sonuncu } = await AUTH.db.from('guvenlik_denetimleri')
+        .select('no').eq('hedef_id', hedefId).order('no', { ascending: false }).limit(1);
+      const no = (sonuncu && sonuncu.length ? sonuncu[0].no : 0) + 1;
+      const r = await AUTH.db.from('guvenlik_denetimleri')
+        .insert({ hedef_id: hedefId, manifest_id: manifestId || null, no,
+                  matris: matris || [], sonuclar: sonuclar || [], ozet: ozet || {},
+                  olusturan: (AUTH.user && AUTH.user.id) || null }).select('*');
+      if (!r.error && r.data && r.data.length) return r.data[0];
+      if (r.error && !/duplicate|unique/i.test(r.error.message || '')) throw new Error(veriHatasi(r.error));
+    }
+    throw new Error('Denetim kaydedilemedi (numara çakışması sürüyor).');
   },
 
   async denetimGetir(id) {
@@ -181,6 +190,38 @@ const GUVENLIK_VERI = {
     const { data, error } = await q.order('verildi', { ascending: false });
     if (error) throw new Error(veriHatasi(error));
     return data || [];
+  },
+
+  /* Bir denetimin ACIK bulgularını izle: yeni imza → ekle, mevcut → güncelle.
+     Kanıt/HTTP/tarih imzaya girmez; imza hedef_id:kategori:varlik:islem:kapsam.
+     Bu denetimde artık ACIK olmayan (önceden açık) bulgular "kapandi" yapılır. */
+  async bulgulariIsle(hedefId, denetimId, acikBulgular) {
+    yazmaKontrol();
+    const mevcut = await this.bulgulariGetir(hedefId);
+    const mevcutHarita = {};
+    for (const b of mevcut) mevcutHarita[b.imza] = b;
+    const buTur = new Set();
+    for (const f of acikBulgular) {
+      buTur.add(f.imza);
+      const eski = mevcutHarita[f.imza];
+      if (eski) {
+        await this.bulguGuncelle(eski.id, { son_denetim_id: denetimId,
+          son_durum: 'ACIK', duzeltme_durumu: 'acik', onem: f.onem || eski.onem,
+          baslik: f.baslik || eski.baslik });
+      } else {
+        await this.bulguOlustur({ hedef_id: hedefId, imza: f.imza,
+          kategori: f.kategori || '', onem: f.onem || '', baslik: f.baslik || '',
+          ilk_denetim_id: denetimId, son_denetim_id: denetimId,
+          son_durum: 'ACIK', duzeltme_durumu: 'acik' });
+      }
+    }
+    /* Önceden ACIK olup bu denetimde görünmeyenler kapanmış olabilir. */
+    for (const b of mevcut) {
+      if (b.son_durum === 'ACIK' && !buTur.has(b.imza)) {
+        await this.bulguGuncelle(b.id, { son_denetim_id: denetimId, son_durum: 'KAPALI',
+          duzeltme_durumu: 'kapandi' });
+      }
+    }
   },
 
   async kararOlustur({ hedefId, imza, karar, gerekce, gecerliCommit }) {
