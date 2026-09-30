@@ -10817,16 +10817,27 @@ from (
   order by case when d.sayi > 0 then 0 else 1 end, d.sira
 ) r;`;
 
-/* Yapıştırılan röntgeni okur. SQL Editor hücreyi bazen tırnak içinde,
-   iç tırnakları ikilenmiş verir — o hâli de açıyoruz. */
+/* Yapıştırılan röntgeni okur. SQL Editor'ün kopyalama seçenekleri farklı
+   biçim veriyor: "Copy as JSON" satırı [{ "rontgen": {…} }] diye sarıyor
+   (değer bazen metin olarak), CSV iç tırnakları ikiliyor, Markdown tablo
+   çizgisi ekliyor. Hepsini deniyoruz; hangisi röntgen çıkarırsa o. */
+function guvenlikRontgenAc(x) {
+  if (Array.isArray(x)) x = x[0];
+  if (x && typeof x === 'object' && !('nizam_rontgen' in x) && 'rontgen' in x) x = x.rontgen;
+  if (typeof x === 'string') { try { x = JSON.parse(x); } catch (h) { return null; } }
+  return x && typeof x === 'object' ? x : null;
+}
+
 function guvenlikRontgenOku(metin) {
-  const t = String(metin || '');
+  const t = String(metin || '').trim();
   const bas = t.indexOf('{'), son = t.lastIndexOf('}');
-  if (bas < 0 || son <= bas) return null;
-  const parca = t.slice(bas, son + 1);
+  const parca = bas >= 0 && son > bas ? t.slice(bas, son + 1) : '';
+  const adaylar = [t, parca, parca.replace(/""/g, '"')];
   let j = null;
-  try { j = JSON.parse(parca); } catch (h) {
-    try { j = JSON.parse(parca.replace(/""/g, '"')); } catch (h2) { j = null; }
+  for (const a of adaylar) {
+    if (!a) continue;
+    try { j = guvenlikRontgenAc(JSON.parse(a)); } catch (h) { j = null; }
+    if (j && j.nizam_rontgen === 1) break;
   }
   if (!j || j.nizam_rontgen !== 1 || !Array.isArray(j.satirlar)) return null;
   const satirlar = j.satirlar

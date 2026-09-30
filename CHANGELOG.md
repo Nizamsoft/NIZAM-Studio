@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## v0.246.1
+- **Röntgen sonucu her kopyalama biçimiyle yapıştırılabiliyor.** SQL
+  Editor'deki Export → Copy as JSON / CSV / Markdown ya da hücreyi doğrudan
+  kopyalamak — hepsi okunuyor. Önceden "Copy as JSON" tanınmıyordu.
+
 ## v0.246.0
 - **Güvenlik testi her türlü program için.** Kod denetiminde Claude önce
   programı tanıyor: türü (web, mobil, masaüstü), giriş ekranı var mı, veri
