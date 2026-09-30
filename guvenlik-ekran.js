@@ -119,9 +119,7 @@ function guvenlikAnaEkran() {
     </div></div>
     ${projeler.length ? `<div class="lk-liste">${kartlar}</div>`
       : `<div class="card">${empty(ICON.gGuvenlik, 'Sunuculu proje yok',
-          'Güvenlik denetimi Supabase bağlı projelerde yapılır.')}</div>`}
-    <p class="ipucu" style="margin-top:14px">Eski güvenlik ekranı:
-      <a href="#/guvenlik-eski">#/guvenlik-eski</a></p>`;
+          'Güvenlik denetimi Supabase bağlı projelerde yapılır.')}</div>`}`;
 }
 
 /* ---------- Hedef detay ---------- */

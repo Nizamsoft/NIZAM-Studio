@@ -1,5 +1,14 @@
 # Değişiklik Günlüğü
 
+## v0.256.0
+- **NIZAM Security · Faz 8B (eski ekran girişi kaldırıldı).** Eski test
+  ekranının UI girişi tamamen kalktı: `#/guvenlik-eski` route'u, onun
+  `VIEWS`/`ROUTES` kayıtları ve yeni ana ekrandaki "eski güvenlik ekranı"
+  bağlantısı silindi. Eski adres yazılırsa `panel`'e düşer (çökmez).
+- Eski Security MOTOR fonksiyonları (guvenlikTestiCalistir, rapor/röntgen,
+  GUVENLIK_RONTGEN_SQL vb.) kodda BİLİNÇLİ olarak duruyor; onların temizliği
+  Faz 8C'nin işi. Yeni #/guvenlik akışına dokunulmadı.
+
 ## v0.255.0
 - **NIZAM Security · Faz 8A (eski sistemin ölü kod temizliği).** Artık hiçbir
   düğmenin tetiklemediği iki ölü işleyici kaldırıldı: `guvenlik-durak-test`

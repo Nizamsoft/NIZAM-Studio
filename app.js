@@ -25,7 +25,6 @@ const ROUTES = {
   ekip:        { title: 'Ekip',               kisa: 'Ekip',        sub: () => ekipAltBaslik() },
   sohbet:      { title: 'Sohbet',             kisa: 'Sohbet',      sub: () => 'Ekip ile iletişimde kal' },
   guvenlik:    { title: 'Güvenlik',            kisa: 'Güvenlik',    sub: () => 'NIZAM Security · denetim ve bulgular' },
-  'guvenlik-eski': { title: 'Güvenlik (eski)',  kisa: 'Güvenlik',    sub: () => 'eski test ekranı' },
   ayarlar:     { title: 'Ayarlar',            kisa: 'Ayarlar',     sub: () => APP.version + ' · ' + APP.stage },
 };
 
@@ -922,45 +921,6 @@ const VIEWS = {
   /* ---------- Güvenlik Testi ---------- */
 
   guvenlik: () => guvenlikAnaEkran(),
-
-  'guvenlik-eski': () => {
-    if (!AUTH.yonetici) {
-      return `<div class="card">${empty(ICON.gGuvenlik, 'Bu ekran yöneticiye ait',
-        'Güvenlik testini yalnızca yönetici çalıştırabilir.')}</div>`;
-    }
-    const g = GUVENLIK_SAYFA;
-    /* Sıra: önce Claude programı tanır (kod denetimi); Studio gerisini o
-       kimliğe göre kurar — Supabase yoksa röntgen ve canlı deneme, giriş
-       ekranı yoksa personel hesabı istenmez. */
-    const supa = guvenlikSupabaseli(g.kod);
-    const girissiz = guvenlikGirissiz(g.kod);
-    const url = g.url || (g.kod && g.kod.program.supabase_url) || '';
-
-    return `
-      <div class="pj-tepe">
-        <div class="pj-tepe-yz">
-          <h1>Güvenlik Testi</h1>
-          <p>Her türlü program için: önce Claude kodu okuyup programı tanır,
-             Studio gerisini ona göre kurar — veritabanı röntgeni ve canlı
-             deneme. Veri bozmaz — yazdığı her şeyi hemen siler.</p>
-        </div>
-      </div>
-
-
-      ${guvenlikKodKarti(g.kod, '')}
-      ${guvenlikManifestKarti(g.manifest, '')}
-      ${guvenlikDogrulamaKarti(g, '')}
-      ${guvenlikMatrisKarti(g, '')}
-      ${guvenlikTaramaKarti(g, '')}
-      ${guvenlikProgramNotu(g.kod)}
-      ${!g.kod ? '' : !supa ? guvenlikRaporDugmesi() : guvenlikRontgenKarti(g.rontgen, '', url)
-          + guvenlikBaglantiAlanlari(g, url)
-          + (girissiz ? '' : guvenlikPersonelAlanlari(g))
-          + guvenlikTestDugmesi(g.calisiyor)}
-
-      ${guvenlikSonucTablosu(g.sonuc, g.ustKatmanUyarisi, g.kalintilar, g.harita, g.tabloKaynagi)}
-    `;
-  },
 
   /* Ayarlar iki katlı: önce başlıklar, başlığa basınca kendi sayfası.
      Telefon ayarları gibi. Adres #/ayarlar/<grup>; geri oku listeye döner. */
