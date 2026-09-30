@@ -11,36 +11,7 @@
 /* Güvenlik kod denetiminin kontrol listesi. Hem Claude'a giden prompt
    (PROMPT.kodDenetimi) hem Studio'nun yapıştırılan sonucu okuyan kısmı
    (guvenlikKodOku) bu listeyi kullanıyor. */
-const GUVENLIK_KOD_ALANLARI = [
-  { anahtar: 'gizli_anahtar',   ad: 'Gizli anahtar',
-    soru: 'Depoda ya da git geçmişinde service_role anahtarı, sbp_ jetonu, veritabanı şifresi ya da başka bir gizli değer var mı?' },
-  { anahtar: 'istemci_anahtar', ad: 'Tarayıcıdaki anahtar',
-    soru: 'Tarayıcıya giden kodda yalnız publishable/anon anahtar mı var; gizli anahtar istemciye sızıyor mu?' },
-  { anahtar: 'satir_guvenligi', ad: 'Satır güvenliği (göçler)',
-    soru: 'Göç dosyalarında her public tabloda RLS açık mı; kurallar gerçekten sahibine/rolüne göre mi, "using (true)" gibi herkese açık kural var mı?' },
-  { anahtar: 'guclu_fonksiyon', ad: 'Güçlü fonksiyonlar',
-    soru: 'security definer fonksiyonlar çağıranın yetkisini kendi içinde denetliyor mu, search_path sabit mi, ziyaretçiye (anon) açık mı?' },
-  { anahtar: 'sunucu_fonksiyonu', ad: 'Edge Function\'lar',
-    soru: 'Her Edge Function çağıranın kim olduğunu ve yetkisini doğruluyor mu, girdiyi denetliyor mu, CORS gereğinden geniş mi, service_role ile yaptığı işi kime açıyor?' },
-  { anahtar: 'yetki_istemcide', ad: 'Yetki kararı',
-    soru: 'Yetki kararları yalnız arayüzde mi veriliyor (düğmeyi gizlemek gibi); aynı işlem sunucuda/RLS\'te de engelleniyor mu? Kullanıcı rolünü kendisi değiştirebiliyor mu?' },
-  { anahtar: 'giris_akisi',     ad: 'Giriş ve oturum',
-    soru: 'Kayıt, giriş, şifre sıfırlama ve çıkış doğru mu; herkes kayıt olabiliyor mu (olmamalıysa); pasif kullanıcı hâlâ girebiliyor mu?' },
-  { anahtar: 'xss',             ad: 'Sayfaya kod sızdırma (XSS)',
-    soru: 'Web sayfası ya da web görünümü (WebView) varsa: kullanıcıdan ya da veritabanından gelen metin innerHTML, template string gibi yollarla kaçışsız basılıyor mu?' },
-  { anahtar: 'depolama',        ad: 'Dosya kovaları',
-    soru: 'Storage kovaları gereğinden açık mı (public), kurallar dosyayı sahibine göre mi kısıtlıyor, dosya türü/boyutu denetleniyor mu?' },
-  { anahtar: 'hassas_veri',     ad: 'Hassas veri',
-    soru: 'Kişisel veri ya da oturum bilgisi konsola, localStorage\'a, URL\'ye ya da loglara yazılıyor mu?' },
-  { anahtar: 'yerel_depolama',  ad: 'Cihazda saklanan veri',
-    soru: 'Mobil ya da masaüstü programda şifre, anahtar ya da kişisel veri cihazda düz metin olarak mı saklanıyor; yerel veritabanı ya da ayar dosyası şifreli mi?' },
-  { anahtar: 'ag_iletisimi',    ad: 'Ağ bağlantıları',
-    soru: 'Bütün bağlantılar HTTPS mi; sertifika doğrulamasını kapatan kod var mı; program başka bir sunucuya yönlendirilebiliyor mu?' },
-  { anahtar: 'dagitim',         ad: 'Kurulum ve güncelleme',
-    soru: 'Program yayında hata ayıklama (debug) modunda mı kalmış; güncellemeler güvenli kanaldan ve doğrulanarak mı iniyor?' },
-  { anahtar: 'bagimlilik',      ad: 'Dış kütüphaneler',
-    soru: 'Dışarıdan yüklenen kütüphaneler sabit sürümlü ve güvenilir kaynaktan mı; bilinen açığı olan eski sürüm var mı?' },
-];
+/* GUVENLIK_KOD_ALANLARI artık guvenlik-sozlesme.js'te (tek doğruluk kaynağı). */
 
 const PROMPT = {
 

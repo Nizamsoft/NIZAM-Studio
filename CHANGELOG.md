@@ -1,5 +1,12 @@
 # Değişiklik Günlüğü
 
+## v0.247.0
+- **NIZAM Security · Faz 0 (iç altyapı).** Güvenlik testinin sabitleri tek
+  bir dosyaya toplandı: `guvenlik-sozlesme.js`. Kontrol listesi
+  (GUVENLIK_KOD_ALANLARI), önem seviyeleri, sonuç durumları, manifest
+  sürümü ve Final politikası artık tek doğruluk kaynağı. Görünen davranış
+  aynı — bu, gelecek fazların temeli.
+
 ## v0.246.2
 - Kopyalanan güvenlik raporunda «veritabanı güncellenmemiş olabilir»
   uyarısı artık yalnız veritabanı bulgularına bakıyor; kod denetimi

@@ -6703,7 +6703,7 @@ function guvenlikKodOku(metin) {
   if (!j || j.nizam_kod_denetimi !== 1) return null;
   const yazi = (v, n) => String(v == null ? '' : v).trim().slice(0, n);
   const alanlar = GUVENLIK_KOD_ALANLARI.map(a => a.anahtar);
-  const onemler = ['kritik', 'yuksek', 'orta', 'dusuk'];
+  const onemler = GUVENLIK_ONEM_SIRA;
   const kontroller = (Array.isArray(j.kontroller) ? j.kontroller : [])
     .filter(k => k && alanlar.includes(k.alan))
     .map(k => ({ alan: k.alan,
@@ -6761,7 +6761,7 @@ function guvenlikGirissiz(kod) {
   return !!(kod && kod.program && kod.program.giris === false);
 }
 
-const GUVENLIK_ONEM_AD = { kritik: 'KRİTİK', yuksek: 'YÜKSEK', orta: 'ORTA', dusuk: 'DÜŞÜK' };
+/* GUVENLIK_ONEM_AD ve GUVENLIK_ONEM_SIRA guvenlik-sozlesme.js'te. */
 
 function guvenlikKodEkle(ekle, kod) {
   if (!kod) {
