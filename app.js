@@ -6615,14 +6615,9 @@ function yetkiSayfasi(p, d) {
 }
 
 /* ---------- 9 · Güvenlik kontrolü ----------
-   Ayarlar > Güvenlik Testi ile AYNI motor (guvenlikTestiCalistir). Tek fark:
-   Supabase adresi ve anon key projeden geliyor — "Bağlantılar ve temel"de
-   zaten girilmişti, bir daha sorulmuyor. Kullanıcı yalnız test hesabını
-   yazıyor.
-
-   Bu durak bilerek kendi kendini onaylatmıyor: ölçüm sonucu palete yazılıyor
-   (guvenlikOlcum) ve "tamamlandı" düğmesi ancak SIFIR AÇIK varken açılıyor.
-   "Kuruldu" demek bir iddiadır; açık olup olmadığı ancak saldırarak bilinir. */
+   Proje durağı yeni NIZAM Security'nin Final özetini gösterir; denetim
+   #/guvenlik akışında yapılır. "Kuruldu" demek bir iddiadır; açık olup
+   olmadığı ancak denetimle bilinir. */
 
 /* Ekranda yaşayan, kaydedilmeyen durum — proje başına. Sonucun kalıcı özeti
    palete yazılıyor, tam tablo yalnız o oturumda duruyor. */
@@ -6638,14 +6633,6 @@ function olcumTarihi(olcum) {
     + t.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
 }
 
-function olcumOzeti(olcum) {
-  if (!olcum) return 'Henüz test edilmedi.';
-  const tarih = olcumTarihi(olcum);
-  const sonuc = olcum.acik
-    ? olcum.acik + ' açık bulundu'
-    : 'sıfır açık';
-  return [tarih, olcum.toplam + ' deneme', sonuc].filter(Boolean).join(' · ');
-}
 
 function durakGuvenlikDurum(projeId) {
   if (!DURAK_GUVENLIK[projeId]) {
@@ -7215,12 +7202,7 @@ function guvenlikDurakSayfasi(p, d) {
       + git;
   }
 
-  /* Eski ölçüm yalnız GEÇMİŞ uyumluluk bilgisi olarak; yeni karara dönüşmez. */
-  const eski = pl.guvenlikOlcum
-    ? `<p class="ipucu" style="margin-top:12px">Eski güvenlik ölçümü (yalnız bilgi):
-        ${esc(olcumOzeti(pl.guvenlikOlcum))}. Yeni Security kararı için kullanılmıyor.</p>` : '';
-
-  return `<div class="fb-govde">` + adimBasligi(p, d, '') + govde + eski + `</div>`;
+  return `<div class="fb-govde">` + adimBasligi(p, d, '') + govde + `</div>`;
 }
 
 /* Final notları — eski kayıtlarda düz metindi; obje biçimine ({metin, tamam})
@@ -10947,34 +10929,6 @@ function templateSihirbaziBagla(el) {
   requestAnimationFrame(() => logolariGoster());
 }
 
-/* ==========================================================================
-   Güvenlik Testi (Ayarlar'da ve proje durağında aynı motor):
-     A · Dış      — kapılar, dışarıdan kim ne yapabiliyor (anon key)
-     B · Röntgen  — veritabanının içindeki kurallar; SQL'i programın sahibi
-                    kendi SQL Editor'ünde çalıştırıp sonucu yapıştırır
-                    (bkz. GUVENLIK_RONTGEN_SQL). Hiçbir jeton istenmez.
-     D · Personel yetki haritası — test hesabıyla her tablo denenir.
-   Hepsi anon key + personel girişiyle, tarayıcıdan çalışır.
-
-   SABİT TABLO LİSTESİ YOK: hangi tabloların/fonksiyonların var olduğu
-   PostgREST'in kendi OpenAPI belgesinden okunuyor (bkz. guvenlikSemaKesfet)
-   — bu yüzden herhangi bir Supabase projesinde çalışır, yalnız muhasebe
-   şablonunda değil. Kendi katmanını öğrenme (0.2 adımı) hâlâ muhasebe
-   şablonunun katmanlar/kullanicilar tablolarına bakıyor — en iyi çaba
-   (best effort): o tablolar yoksa üst katman kontrolü atlanır, testler
-   normal çalışır.
-
-   D bölümü HÜKÜM VERMEZ (bkz. guvenlikPersonelHaritasi) — okur/ekler/
-   değiştirir/siler durumunu gösterir, "AÇIK/KAPALI" demez; bir programda
-   serbest olan başka programda yasak olabilir, motor bunu bilemez.
-
-   Test hesabının şifresi tarayıcıda olur (A ve D testleri zaten o hesapla
-   giriş yapıyor, sıradan bir giriş formundan farkı yok) — yalnız günlüğe
-   ve sonuç ekranına yazılmaz, saklanmaz. Hesabın bütün projelerine erişen
-   Supabase jetonu artık hiç kullanılmıyor. */
-const GUVENLIK_SAYFA = { url: '', anon: '', eposta: '', calisiyor: false,
-  sonuc: null, harita: null, ustKatmanUyarisi: false, kalintilar: [], tabloKaynagi: '',
-  depo: '', rontgen: null, kod: null, manifest: null, scan: null, dogrulama: null, matris: null, tarama: null, taraniyor: false };
 
 function sihirbaziBaslat(tur, sektorId) {
   /* Sektör bir önceki adımda soruldu; sihirbaz onunla dolu başlıyor.
@@ -15985,7 +15939,7 @@ async function eylemCalistir(el) {
     if (!metin || !metin.trim()) { toast('Pano boş — önce Claude\'un cevabını kopyala.', 'uyari'); return; }
     const k = guvenlikKodOku(metin);
     if (!k) { toast('Bu bir kod denetimi sonucu değil. Claude\'un verdiği JSON bloğunu olduğu gibi kopyala.', 'hata'); return; }
-    const hedef = el.dataset.proje ? durakGuvenlikDurum(el.dataset.proje) : GUVENLIK_SAYFA;
+    const hedef = durakGuvenlikDurum(el.dataset.proje);
     hedef.kod = k;
     const acik = k.bulgular.filter(b => b.onem !== 'dusuk').length;
     toast('Kod denetimi alındı — ' + (acik ? acik + ' bulgu.' : 'bulgu yok.'), acik ? 'uyari' : 'basari');
@@ -16003,7 +15957,7 @@ async function eylemCalistir(el) {
     const okundu = guvenlikManifestOku(metin);
     if (okundu.hata) { toast(okundu.hata, 'hata'); return; }
     const projeId = el.dataset.proje;
-    const hedef = projeId ? durakGuvenlikDurum(projeId) : GUVENLIK_SAYFA;
+    const hedef = durakGuvenlikDurum(projeId);
     hedef.manifest = okundu.manifest;
     if (!projeId || !AUTH.bagli) {
       toast('Manifest alındı ve doğrulandı' + (AUTH.bagli ? ' (kaydetmek için proje güvenlik adımını kullan).' : ' (demo — kaydedilmedi).'), 'basari');
@@ -16040,7 +15994,7 @@ async function eylemCalistir(el) {
     if (!metin || !metin.trim()) { toast('Pano boş — önce scan sonucunu kopyala.', 'uyari'); return; }
     const okundu = guvenlikScanOku(metin);
     if (okundu.hata) { toast(okundu.hata, 'hata'); return; }
-    const hedef = el.dataset.proje ? durakGuvenlikDurum(el.dataset.proje) : GUVENLIK_SAYFA;
+    const hedef = durakGuvenlikDurum(el.dataset.proje);
     hedef.scan = okundu.scan;
     hedef.dogrulama = null;
     toast('Scan alındı — ' + (okundu.scan.tablolar || []).length + ' tablo. Şimdi «Doğrula».', 'basari');
@@ -16050,7 +16004,7 @@ async function eylemCalistir(el) {
 
   /* Doğrula — manifest (bellek) + scan → statik doğrulama. DB'ye yazmaz. */
   if (e === 'guvenlik-dogrula') {
-    const hedef = el.dataset.proje ? durakGuvenlikDurum(el.dataset.proje) : GUVENLIK_SAYFA;
+    const hedef = durakGuvenlikDurum(el.dataset.proje);
     if (!hedef.manifest) { toast('Önce Security Manifest yapıştır.', 'uyari'); return; }
     if (!hedef.scan) { toast('Önce Database Scan yapıştır.', 'uyari'); return; }
     try {
@@ -16070,7 +16024,7 @@ async function eylemCalistir(el) {
   /* Test Matrisi üret — manifest (bellek) + scan + doğrulamadan. Bu faz
      yalnız üretir/gösterir; DB'ye yazmaz, canlı çalıştırmaz. */
   if (e === 'guvenlik-matris-uret') {
-    const hedef = el.dataset.proje ? durakGuvenlikDurum(el.dataset.proje) : GUVENLIK_SAYFA;
+    const hedef = durakGuvenlikDurum(el.dataset.proje);
     if (!hedef.manifest) { toast('Önce Security Manifest yapıştır.', 'uyari'); return; }
     try {
       hedef.matris = guvenlikMatrisUret({
@@ -16087,13 +16041,12 @@ async function eylemCalistir(el) {
   /* Canlı tarama — güvenli okuma testleri; şifreler yalnız burada. */
   if (e === 'guvenlik-tarama-baslat') {
     const projeId = el.dataset.proje;
-    const hedef = projeId ? durakGuvenlikDurum(projeId) : GUVENLIK_SAYFA;
+    const hedef = durakGuvenlikDurum(projeId);
     if (!hedef.matris) { toast('Önce Test Matrisi oluştur.', 'uyari'); return; }
     const ek = projeId || 'ayar';
     const al = id => { const x = $('#' + id); return x ? x.value.trim() : ''; };
     let url, anon;
-    if (projeId) { const pl = (DB.proje(projeId) || {}).palet || {}; url = pl.supabaseUrl; anon = pl.supabaseAnon; }
-    else { url = GUVENLIK_SAYFA.url; anon = GUVENLIK_SAYFA.anon; }
+    const pl = (DB.proje(projeId) || {}).palet || {}; url = pl.supabaseUrl; anon = pl.supabaseAnon;
     if (!url || !anon) { toast('Supabase adresi ve anon key gerekli.', 'uyari'); return; }
     hedef.taraniyor = true; render();
     try {

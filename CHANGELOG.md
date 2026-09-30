@@ -1,5 +1,18 @@
 # Değişiklik Günlüğü
 
+## v0.258.0
+- **NIZAM Security · Faz 8C-2 (son eski izlerin temizliği).** Eski
+  `GUVENLIK_SAYFA` durum nesnesi ve ona düşen `: GUVENLIK_SAYFA`
+  fallback'leri kaldırıldı — yeni Security ekranı hep proje ID ile
+  çalışıyor, fallback'ler ölüydü. Handler'lar artık doğrudan
+  `durakGuvenlikDurum(...)` kullanıyor.
+- Eski ölçüm izleri temizlendi: `olcumOzeti` fonksiyonu ve proje durağındaki
+  "eski güvenlik ölçümü" bilgi satırı kaldırıldı. Uygulama artık
+  `palet.guvenlikOlcum` / `guvenlikTamamlandi` alanlarını hiç okumuyor
+  (DB'deki alanlara dokunulmadı — ayrı DB fazı).
+- Yeni Final (guvenlikFinalHesapla/Durumu/Yukle) bu alanlara bağımlı değil.
+- Silinen eski isimlere referans veren bayat yorumlar temizlendi.
+
 ## v0.257.0
 - **NIZAM Security · Faz 8C-1 (eski motorun tamamen kaldırılması).** Artık
   kullanılmayan eski test motoru, eski Röntgen sistemi, eski rapor sistemi

@@ -15,7 +15,7 @@
 /* ---------- Genişletilmiş Database Scan SQL ----------
    Yalnız OKUR. Tek JSON hücresi döndürür. SQL Editor ayrıcalıklı rolle
    çalıştığı için pg_catalog, pg_policies ve storage.buckets okunabilir.
-   Eski GUVENLIK_RONTGEN_SQL'e dokunulmadı; bu ayrı, daha kapsamlı sürüm. */
+   Salt-okunur, tek JSON hücresi döndüren kapsamlı tarama sürümüdür. */
 const GUVENLIK_SCAN_SQL = `-- NIZAM Security · Database Scan (yalnız okur)
 -- Çıkan tek JSON hücresini kopyala, NIZAM'a yapıştır.
 select json_build_object(
