@@ -11427,6 +11427,8 @@ async function guvenlikTestiCalistir({ url, anon, eposta, sifre, depo, kayitliJs
      GÖSTERİLMEZ (Supabase'in yeni anahtar düzeninde bu uç nokta gizli
      anahtar isteyebilir) — yalnız üçü de boşsa aşağıda bilgi satırı yazılır. */
   const sema = await guvenlikTabloListesiKesfet(istek, belirtec, guvenlikJson);
+  /* Liste dosyadan değil kod denetiminden geldiyse raporda öyle yazsın. */
+  if (sema.kaynak === 'guvenlik.json' && !dosyadaListe) sema.kaynak = 'kod denetimi';
   if (!sema.tablolar.length) {
     ekle('Dış', 'tablo listesi', 'BİLGİ',
       'Tablo listesi bulunamadı — yalnız oturumsuz denemeler çalıştı (okuma/yazma ve yetki haritası atlandı). ' +
@@ -11484,9 +11486,11 @@ function guvenlikRaporMetni(sonuc, ustKatmanUyarisi, kalintilar, harita, tabloKa
   const s = [];
   s.push('# Güvenlik Testi Sonucu');
   if (ustKatmanUyarisi) s.push('⚠ Verilen hesap en üst katmanda — yetki haritası ATLANDI.');
-  if (acik >= 3) s.push('⚠ Bu kadar çok bulgu genelde güvenlik ayarlarının eksik ya da veritabanının ' +
+  /* Tahmin yalnız veritabanı bulgularına göre — ekrandaki uyarıyla aynı ölçü. */
+  const vtAcik = sonuc.filter(x => x.sonuc === 'AÇIK' && x.kim !== 'Kod').length;
+  if (vtAcik >= 3) s.push('⚠ Bu kadar çok bulgu genelde güvenlik ayarlarının eksik ya da veritabanının ' +
     'güncellenmemiş olduğu anlamına gelir.');
-  if (tabloKaynagi === 'guvenlik.json') s.push('ℹ Tablo listesi guvenlik.json\'dan okundu (OpenAPI keşfi çalışmadı).');
+  if (tabloKaynagi && tabloKaynagi !== 'openapi') s.push('ℹ Tablo listesi ' + tabloKaynagi + ' kaynağından alındı (OpenAPI keşfi çalışmadı).');
   s.push(acik ? acik + ' GÜVENLİK AÇIĞI BULUNDU' : 'Güvenli · ' + sonuc.length + ' deneme yapıldı, hiçbiri işe yaramadı');
   if (kalintilar && kalintilar.length) {
     s.push('');
@@ -11518,8 +11522,8 @@ function guvenlikSonucTablosu(sonuc, ustKatmanUyarisi, kalintilar, harita, tablo
       <span><b>Verdiğiniz hesap EN ÜST KATMANDA.</b> Üst katman zaten her şeyi
       yapabilir, o yüzden yetki haritası anlamsız olurdu (atlandı). Gerçek
       sonuç için YÖNETİCİ OLMAYAN bir personel hesabı verin.</span></div>` : '';
-  const semaUyarisi = tabloKaynagi === 'guvenlik.json' ? `<div class="note" style="margin-top:14px">${svg(ICON.info, 15)}
-      <span>Tablo listesi <b>guvenlik.json</b>'dan okundu (OpenAPI keşfi çalışmadı).</span></div>` : '';
+  const semaUyarisi = tabloKaynagi && tabloKaynagi !== 'openapi' ? `<div class="note" style="margin-top:14px">${svg(ICON.info, 15)}
+      <span>Tablo listesi <b>${esc(tabloKaynagi)}</b> kaynağından alındı (OpenAPI keşfi çalışmadı).</span></div>` : '';
   /* "Veritabanı güncellenmemiş" tahmini yalnız veritabanı bulgularına göre —
      kod denetiminin bulguları bu uyarıyı tetiklememeli. */
   const vtAcik = sonuc.filter(x => x.sonuc === 'AÇIK' && x.kim !== 'Kod').length;

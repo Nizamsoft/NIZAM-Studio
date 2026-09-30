@@ -1,5 +1,12 @@
 # Değişiklik Günlüğü
 
+## v0.246.2
+- Kopyalanan güvenlik raporunda «veritabanı güncellenmemiş olabilir»
+  uyarısı artık yalnız veritabanı bulgularına bakıyor; kod denetimi
+  bulguları bu uyarıyı tetiklemiyor (ekranla aynı ölçü).
+- Tablo listesi kod denetiminden geldiyse rapor artık «guvenlik.json'dan
+  okundu» yerine doğru kaynağı yazıyor.
+
 ## v0.246.1
 - **Röntgen sonucu her kopyalama biçimiyle yapıştırılabiliyor.** SQL
   Editor'deki Export → Copy as JSON / CSV / Markdown ya da hücreyi doğrudan
