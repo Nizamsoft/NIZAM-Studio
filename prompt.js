@@ -27,11 +27,17 @@ const GUVENLIK_KOD_ALANLARI = [
   { anahtar: 'giris_akisi',     ad: 'Giriş ve oturum',
     soru: 'Kayıt, giriş, şifre sıfırlama ve çıkış doğru mu; herkes kayıt olabiliyor mu (olmamalıysa); pasif kullanıcı hâlâ girebiliyor mu?' },
   { anahtar: 'xss',             ad: 'Sayfaya kod sızdırma (XSS)',
-    soru: 'Kullanıcıdan ya da veritabanından gelen metin innerHTML, template string gibi yollarla kaçışsız sayfaya basılıyor mu?' },
+    soru: 'Web sayfası ya da web görünümü (WebView) varsa: kullanıcıdan ya da veritabanından gelen metin innerHTML, template string gibi yollarla kaçışsız basılıyor mu?' },
   { anahtar: 'depolama',        ad: 'Dosya kovaları',
     soru: 'Storage kovaları gereğinden açık mı (public), kurallar dosyayı sahibine göre mi kısıtlıyor, dosya türü/boyutu denetleniyor mu?' },
   { anahtar: 'hassas_veri',     ad: 'Hassas veri',
     soru: 'Kişisel veri ya da oturum bilgisi konsola, localStorage\'a, URL\'ye ya da loglara yazılıyor mu?' },
+  { anahtar: 'yerel_depolama',  ad: 'Cihazda saklanan veri',
+    soru: 'Mobil ya da masaüstü programda şifre, anahtar ya da kişisel veri cihazda düz metin olarak mı saklanıyor; yerel veritabanı ya da ayar dosyası şifreli mi?' },
+  { anahtar: 'ag_iletisimi',    ad: 'Ağ bağlantıları',
+    soru: 'Bütün bağlantılar HTTPS mi; sertifika doğrulamasını kapatan kod var mı; program başka bir sunucuya yönlendirilebiliyor mu?' },
+  { anahtar: 'dagitim',         ad: 'Kurulum ve güncelleme',
+    soru: 'Program yayında hata ayıklama (debug) modunda mı kalmış; güncellemeler güvenli kanaldan ve doğrulanarak mı iniyor?' },
   { anahtar: 'bagimlilik',      ad: 'Dış kütüphaneler',
     soru: 'Dışarıdan yüklenen kütüphaneler sabit sürümlü ve güvenilir kaynaktan mı; bilinen açığı olan eski sürüm var mı?' },
 ];
@@ -860,9 +866,17 @@ const PROMPT = {
     s.push('- Git geçmişine de bak (`git log -p` ile eski commit\'lerde silinmiş');
     s.push('  anahtar kalmış mı). Silinmiş anahtar hâlâ geçerli sayılır.');
     s.push('');
+    s.push('## Önce programı tanı');
+    s.push('Denetime başlamadan kodu okuyup programı tanı: türü (web, mobil,');
+    s.push('masaüstü), giriş ekranı var mı, veri nerede duruyor (Supabase, başka');
+    s.push('bir sunucu, yalnız cihazın içi), roller, dosya yükleme, sunucu');
+    s.push('fonksiyonu, ödeme ve dışarıya bağlanan servisler. Studio testin geri');
+    s.push('kalanını bu bilgiye göre kuruyor — tahmin etme, koddan oku.');
+    s.push('');
     s.push('## Kontrol listesi');
-    s.push('Her maddeye tek tek bak. Maddenin programda karşılığı yoksa');
-    s.push('(ör. hiç Edge Function yok) durumunu `yok` yaz.');
+    s.push('Her maddeye tek tek bak. Liste her türlü program için ortak;');
+    s.push('maddenin bu programda karşılığı yoksa (ör. web programında cihaz');
+    s.push('verisi, masaüstünde Edge Function) durumunu `yok` yaz.');
     s.push('');
     GUVENLIK_KOD_ALANLARI.forEach(a => s.push('- `' + a.anahtar + '` — ' + a.soru));
     s.push('');
@@ -881,6 +895,16 @@ const PROMPT = {
     s.push('  "nizam_kod_denetimi": 1,');
     s.push('  "depo": "sahip/depo",');
     s.push('  "commit": "denetlenen commit\'in kısa kimliği",');
+    s.push('  "program": {');
+    s.push('    "tur": "web | mobil | masaustu | karma",');
+    s.push('    "veri": "supabase | baska_sunucu | yerel | yok",');
+    s.push('    "supabase_url": "https://xxxx.supabase.co (Supabase yoksa boş)",');
+    s.push('    "giris": true,');
+    s.push('    "roller": ["koddaki rol adları"],');
+    s.push('    "dosya_yukleme": false, "sunucu_fonksiyonu": false, "odeme": false,');
+    s.push('    "dis_servisler": ["bağlandığı dış servisler"],');
+    s.push('    "ozet": "program tek cümlede"');
+    s.push('  },');
     s.push('  "tablolar": ["göç dosyalarındaki public tabloların adları"],');
     s.push('  "kontroller": [');
     s.push('    { "alan": "' + GUVENLIK_KOD_ALANLARI[0].anahtar + '", "durum": "temiz | sorunlu | yok", "not": "tek cümle" }');

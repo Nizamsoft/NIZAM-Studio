@@ -1,5 +1,20 @@
 # Değişiklik Günlüğü
 
+## v0.246.0
+- **Güvenlik testi her türlü program için.** Kod denetiminde Claude önce
+  programı tanıyor: türü (web, mobil, masaüstü), giriş ekranı var mı, veri
+  nerede (Supabase, başka sunucu, cihaz), roller, dosya yükleme, sunucu
+  fonksiyonu, ödeme. Studio testin gerisini buna göre kuruyor:
+  - Supabase yoksa röntgen ve canlı deneme gizleniyor, «Raporu oluştur»
+    yalnız kod denetiminden rapor çıkarıyor.
+  - Giriş ekranı yoksa personel hesabı istenmiyor; canlı deneme yalnız
+    ziyaretçi olarak yapılıyor, yetki haritası atlanıyor.
+- Kod denetimine mobil/masaüstü maddeleri eklendi: cihazda saklanan veri,
+  ağ bağlantıları, kurulum ve güncelleme.
+- Ayarlar'da sıra değişti: önce kod denetimi, sonra röntgen, en son
+  bağlantı ve canlı deneme. Supabase adresi kod denetiminden geliyorsa
+  kendiliğinden dolu geliyor.
+
 ## v0.245.0
 - **Canlı teste iki yeni denetim.** İkisi de yalnız okur, hiçbir şey yazmaz:
   - **Kayıt ayarları:** programda herkes kendi kendine hesap açabiliyor mu,

@@ -926,71 +926,30 @@ const VIEWS = {
         'Güvenlik testini yalnızca yönetici çalıştırabilir.')}</div>`;
     }
     const g = GUVENLIK_SAYFA;
+    /* Sıra: önce Claude programı tanır (kod denetimi); Studio gerisini o
+       kimliğe göre kurar — Supabase yoksa röntgen ve canlı deneme, giriş
+       ekranı yoksa personel hesabı istenmez. */
+    const supa = guvenlikSupabaseli(g.kod);
+    const girissiz = guvenlikGirissiz(g.kod);
+    const url = g.url || (g.kod && g.kod.program.supabase_url) || '';
 
     return `
       <div class="pj-tepe">
         <div class="pj-tepe-yz">
           <h1>Güvenlik Testi</h1>
-          <p>Üç ayaklı: Claude kodu okur, röntgen veritabanının içine bakar,
-             canlı deneme ziyaretçi ve personel kimliğiyle kapıları zorlar.
-             Veri bozmaz — yazdığı her şeyi hemen siler.</p>
+          <p>Her türlü program için: önce Claude kodu okuyup programı tanır,
+             Studio gerisini ona göre kurar — veritabanı röntgeni ve canlı
+             deneme. Veri bozmaz — yazdığı her şeyi hemen siler.</p>
         </div>
       </div>
 
-
-      <div class="btk">
-        <div class="btk-ust">
-          <span class="btk-ik mavi">${svg(ICON.gVeri, 22)}</span>
-          <span class="btk-yz"><b>Bağlantı</b>
-            <i>Test edilecek projenin adresi ve anon key'i.</i></span>
-        </div>
-        <label class="gf">
-          <span class="gf-et">Supabase adresi</span>
-          <span class="gf-kutu">${svg(ICON.bulut, 17)}
-            <input type="text" id="gv-url" value="${esc(g.url)}"
-                   placeholder="https://xxxx.supabase.co" autocomplete="off"
-                   spellcheck="false" autocapitalize="off"></span>
-        </label>
-        <label class="gf">
-          <span class="gf-et">anon key</span>
-          <span class="gf-kutu">${svg(ICON.anahtar, 17)}
-            <input type="text" id="gv-anon" value="${esc(g.anon)}"
-                   placeholder="sb_publishable_… ya da eyJhbG…" autocomplete="off"
-                   spellcheck="false" autocapitalize="off"></span>
-        </label>
-      </div>
-
-      <div class="btk">
-        <div class="btk-ust">
-          <span class="btk-ik kirmizi">${svg(ICON.kisi, 22)}</span>
-          <span class="btk-yz"><b>Personel girişi</b>
-            <i>Test edilecek projedeki bir hesap. Giriş başarısız olursa test
-               hiç başlamaz; şifre hiçbir yerde saklanmıyor.</i></span>
-        </div>
-        <label class="gf">
-          <span class="gf-et">E-posta</span>
-          <span class="gf-kutu">${svg(ICON.mail, 17)}
-            <input type="text" id="gv-eposta" value="${esc(g.eposta)}"
-                   placeholder="personel@firma.com" autocomplete="off"
-                   spellcheck="false" autocapitalize="off"></span>
-        </label>
-        <label class="gf">
-          <span class="gf-et">Şifre</span>
-          <span class="gf-kutu">${svg(ICON.kilit, 17)}
-            <input type="password" id="gv-sifre" placeholder="Hesabın şifresi" autocomplete="off">
-            <button class="gf-goz" type="button" data-eylem="guvenlik-sifre-goster"
-                    data-hedef="gv-sifre" aria-label="Şifreyi göster">
-              ${svg(ICON.goz, 16)}</button></span>
-        </label>
-      </div>
 
       ${guvenlikKodKarti(g.kod, '')}
-
-      ${guvenlikRontgenKarti(g.rontgen, '', g.url)}
-
-      <button class="sayfa-dug bitir" type="button" data-eylem="guvenlik-test-calistir"
-              ${g.calisiyor ? 'disabled' : ''}>
-        ${svg(ICON.gGuvenlik, 16)} ${g.calisiyor ? 'Test ediliyor…' : 'Test Et'}</button>
+      ${guvenlikProgramNotu(g.kod)}
+      ${!g.kod ? '' : !supa ? guvenlikRaporDugmesi() : guvenlikRontgenKarti(g.rontgen, '', url)
+          + guvenlikBaglantiAlanlari(g, url)
+          + (girissiz ? '' : guvenlikPersonelAlanlari(g))
+          + guvenlikTestDugmesi(g.calisiyor)}
 
       ${guvenlikSonucTablosu(g.sonuc, g.ustKatmanUyarisi, g.kalintilar, g.harita, g.tabloKaynagi)}
     `;
@@ -6758,8 +6717,48 @@ function guvenlikKodOku(metin) {
                  aciklama: yazi(b.aciklama, 800), oneri: yazi(b.oneri, 600) }));
   const tablolar = (Array.isArray(j.tablolar) ? j.tablolar : [])
     .filter(x => typeof x === 'string' && /^[A-Za-z_][A-Za-z0-9_]{0,62}$/.test(x)).slice(0, 200);
-  return { depo: yazi(j.depo, 120), commit: yazi(j.commit, 40), tablolar, kontroller,
+  const pr = j.program && typeof j.program === 'object' ? j.program : {};
+  const liste = (v, n) => (Array.isArray(v) ? v : []).filter(x => typeof x === 'string' && x.trim())
+    .slice(0, n).map(x => yazi(x, 40));
+  const sbUrl = String(pr.supabase_url || '').trim().replace(/\/+$/, '');
+  const program = {
+    tur:  ['web', 'mobil', 'masaustu', 'karma'].includes(pr.tur) ? pr.tur : '',
+    veri: ['supabase', 'baska_sunucu', 'yerel', 'yok'].includes(pr.veri) ? pr.veri : '',
+    supabase_url: /^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(sbUrl) ? sbUrl : '',
+    giris: pr.giris === true ? true : pr.giris === false ? false : null,
+    roller: liste(pr.roller, 12),
+    dosya_yukleme: pr.dosya_yukleme === true,
+    sunucu_fonksiyonu: pr.sunucu_fonksiyonu === true,
+    odeme: pr.odeme === true,
+    dis_servisler: liste(pr.dis_servisler, 12),
+    ozet: yazi(pr.ozet, 200),
+  };
+  return { depo: yazi(j.depo, 120), commit: yazi(j.commit, 40), program, tablolar, kontroller,
            bulgular, tarih: Date.now() };
+}
+
+/* Programın kimliği tek satırda: "Web · Supabase · giriş var · 2 rol". */
+function guvenlikProgramOzeti(kod) {
+  const p = (kod && kod.program) || {};
+  const tur  = { web: 'Web', mobil: 'Mobil', masaustu: 'Masaüstü', karma: 'Web + mobil' }[p.tur];
+  const veri = { supabase: 'Supabase', baska_sunucu: 'başka sunucu', yerel: 'veri cihazda',
+                 yok: 'veri yok' }[p.veri];
+  return [tur, veri,
+    p.giris === true ? 'giriş var' : p.giris === false ? 'giriş yok' : '',
+    p.roller && p.roller.length ? p.roller.length + ' rol' : '',
+    p.dosya_yukleme ? 'dosya yükleme' : '',
+    p.sunucu_fonksiyonu ? 'sunucu fonksiyonu' : '',
+    p.odeme ? 'ödeme' : ''].filter(Boolean).join(' · ') || 'program tanınmadı';
+}
+
+/* Canlı deneme ve röntgen yalnız Supabase'li programda anlamlı. Claude veri
+   yerini söylemediyse eski davranış: Supabase varsayılır. */
+function guvenlikSupabaseli(kod) {
+  const v = kod && kod.program && kod.program.veri;
+  return !v || v === 'supabase';
+}
+function guvenlikGirissiz(kod) {
+  return !!(kod && kod.program && kod.program.giris === false);
 }
 
 const GUVENLIK_ONEM_AD = { kritik: 'KRİTİK', yuksek: 'YÜKSEK', orta: 'ORTA', dusuk: 'DÜŞÜK' };
@@ -6812,6 +6811,89 @@ function guvenlikKodKarti(k, projeId) {
     </div>`;
 }
 
+/* Kod denetiminden sonra: Claude'un tanıdığı program ve atlanacak adımlar. */
+function guvenlikProgramNotu(kod) {
+  if (!kod) {
+    return `<div class="note" style="margin-top:14px">${svg(ICON.info, 15)}
+      <span><b>Önce kod denetimi.</b> Claude programı tanıyınca Studio hangi
+      adımların gerektiğini kendisi seçer.</span></div>`;
+  }
+  const atla = !guvenlikSupabaseli(kod) ? 'Röntgen ve canlı deneme atlanır — program Supabase kullanmıyor.'
+    : guvenlikGirissiz(kod) ? 'Personel girişi ve yetki haritası atlanır — programda giriş ekranı yok.' : '';
+  return `<div class="note" style="margin-top:14px">${svg(ICON.info, 15)}
+    <span><b>${esc(guvenlikProgramOzeti(kod))}</b>${kod.program.ozet ? ' — ' + esc(kod.program.ozet) : ''}
+    ${atla ? '<br>' + esc(atla) : ''}</span></div>`;
+}
+
+function guvenlikBaglantiAlanlari(g, url) {
+  return `
+      <div class="btk">
+        <div class="btk-ust">
+          <span class="btk-ik mavi">${svg(ICON.gVeri, 22)}</span>
+          <span class="btk-yz"><b>Bağlantı</b>
+            <i>Test edilecek projenin adresi ve anon key'i.</i></span>
+        </div>
+        <label class="gf">
+          <span class="gf-et">Supabase adresi</span>
+          <span class="gf-kutu">${svg(ICON.bulut, 17)}
+            <input type="text" id="gv-url" value="${esc(url)}"
+                   placeholder="https://xxxx.supabase.co" autocomplete="off"
+                   spellcheck="false" autocapitalize="off"></span>
+        </label>
+        <label class="gf">
+          <span class="gf-et">anon key</span>
+          <span class="gf-kutu">${svg(ICON.anahtar, 17)}
+            <input type="text" id="gv-anon" value="${esc(g.anon)}"
+                   placeholder="sb_publishable_… ya da eyJhbG…" autocomplete="off"
+                   spellcheck="false" autocapitalize="off"></span>
+        </label>
+      </div>
+`;
+}
+
+function guvenlikPersonelAlanlari(g) {
+  return `
+      <div class="btk">
+        <div class="btk-ust">
+          <span class="btk-ik kirmizi">${svg(ICON.kisi, 22)}</span>
+          <span class="btk-yz"><b>Personel girişi</b>
+            <i>Test edilecek projedeki bir hesap. Giriş başarısız olursa test
+               hiç başlamaz; şifre hiçbir yerde saklanmıyor.</i></span>
+        </div>
+        <label class="gf">
+          <span class="gf-et">E-posta</span>
+          <span class="gf-kutu">${svg(ICON.mail, 17)}
+            <input type="text" id="gv-eposta" value="${esc(g.eposta)}"
+                   placeholder="personel@firma.com" autocomplete="off"
+                   spellcheck="false" autocapitalize="off"></span>
+        </label>
+        <label class="gf">
+          <span class="gf-et">Şifre</span>
+          <span class="gf-kutu">${svg(ICON.kilit, 17)}
+            <input type="password" id="gv-sifre" placeholder="Hesabın şifresi" autocomplete="off">
+            <button class="gf-goz" type="button" data-eylem="guvenlik-sifre-goster"
+                    data-hedef="gv-sifre" aria-label="Şifreyi göster">
+              ${svg(ICON.goz, 16)}</button></span>
+        </label>
+      </div>
+`;
+}
+
+function guvenlikTestDugmesi(calisiyor) {
+  return `
+      <button class="sayfa-dug bitir" type="button" data-eylem="guvenlik-test-calistir"
+              ${calisiyor ? 'disabled' : ''}>
+        ${svg(ICON.gGuvenlik, 16)} ${calisiyor ? 'Test ediliyor…' : 'Test Et'}</button>`;
+}
+
+function guvenlikRaporDugmesi(projeId) {
+  return `
+      <button class="sayfa-dug bitir" type="button"
+              data-eylem="${projeId ? 'guvenlik-durak-test' : 'guvenlik-test-calistir'}"
+              ${projeId ? `data-proje="${esc(projeId)}"` : ''}>
+        ${svg(ICON.gGuvenlik, 16)} Raporu oluştur</button>`;
+}
+
 /* Röntgen kartı — Ayarlar'da da, proje durağında da aynı. SQL'i kopyala,
    programın SQL Editor'ünde çalıştır, çıkan tek hücreyi yapıştır. Adres
    biliniyorsa düğme doğrudan o projenin SQL Editor'ünü açıyor. */
@@ -6861,7 +6943,12 @@ function guvenlikDurakSayfasi(p, d) {
   const g = durakGuvenlikDurum(p.id);
   const hazir = !!String(pl.supabaseUrl || '').trim() && !!String(pl.supabaseAnon || '').trim();
   const o = pl.guvenlikOlcum;
-  const eksik = !g.kod ? 'Önce kod denetimini yapıştır' : !g.rontgen ? 'Önce röntgeni yapıştır' : '';
+  /* Claude'un tanıdığı programa göre: Supabase yoksa röntgen ve canlı
+     deneme, giriş ekranı yoksa hesap bilgisi istenmez. */
+  const supa = guvenlikSupabaseli(g.kod);
+  const girissiz = guvenlikGirissiz(g.kod);
+  const eksik = !g.kod ? 'Önce kod denetimini yapıştır'
+    : supa && !g.rontgen ? 'Önce röntgeni yapıştır' : '';
 
   const temiz  = !!(o && !o.acik);
   const onayli = !!pl.guvenlikTamamlandi && temiz;
@@ -6871,7 +6958,8 @@ function guvenlikDurakSayfasi(p, d) {
     + (onayli ? fmTamamBar(p, 'guvenlik',
         'Son ölçüm temiz çıktı ve onaylandı.', false) : '')
     + guvenlikKodKarti(g.kod, p.id)
-    + guvenlikRontgenKarti(g.rontgen, p.id, pl.supabaseUrl)
+    + guvenlikProgramNotu(g.kod)
+    + (g.kod && supa ? guvenlikRontgenKarti(g.rontgen, p.id, pl.supabaseUrl) : '')
     + (o ? `
       <div class="gk-son ${o.acik ? 'acik' : 'temiz'}">
         <span class="gk-son-ik">${svg(o.acik ? ICON.uyari : ICON.tik, 16)}</span>
@@ -6880,7 +6968,7 @@ function guvenlikDurakSayfasi(p, d) {
           <i>${esc(olcumTarihi(o))} · ${o.toplam} deneme</i>
         </span>
       </div>` : '')
-    + `<div class="btk">
+    + (!g.kod || !supa || girissiz ? '' : `<div class="btk">
         <div class="btk-ust">
           <span class="btk-ik kirmizi">${svg(ICON.anahtar, 22)}</span>
           <span class="btk-yz"><b>Erişim bilgileri</b>
@@ -6904,12 +6992,12 @@ function guvenlikDurakSayfasi(p, d) {
         </label>
         ${hazir ? '' : `<p class="ipucu">Supabase adresi ya da anon key kayıtlı değil —
           <b>Bağlantılar ve temel</b> durağına dön.</p>`}
-      </div>`
+      </div>`)
     + `<button class="sayfa-dug ${onayli ? 'ikincil' : 'bitir'}" type="button"
                data-eylem="guvenlik-durak-test"
-               data-proje="${p.id}" ${g.calisiyor || !hazir || eksik ? 'disabled' : ''}>
+               data-proje="${p.id}" ${g.calisiyor || (supa && !hazir) || eksik ? 'disabled' : ''}>
         ${svg(ICON.gGuvenlik, 16)} ${g.calisiyor ? 'Test ediliyor…'
-          : eksik || (onayli ? 'Yeniden test et' : 'Test Et')}</button>`
+          : eksik || (!supa ? 'Raporu oluştur' : onayli ? 'Yeniden test et' : 'Test Et')}</button>`
     /* Onay ölçümden ayrı: temiz çıkan sonucu okuyup kendin işaretliyorsun.
        Onaylı hâlde de test düğmesi duruyor — kodda bir şey değişince
        yeniden ölçmek gerekiyor. */
@@ -11280,7 +11368,7 @@ async function guvenlikPersonelHaritasi(istek, belirtec, sema, kalintilar) {
   return satirlar;
 }
 
-async function guvenlikTestiCalistir({ url, anon, eposta, sifre, depo, kayitliJson, rontgen, kod }) {
+async function guvenlikTestiCalistir({ url, anon, eposta, sifre, depo, kayitliJson, rontgen, kod, girissiz }) {
   const taban = String(url || '').trim().replace(/\/+$/, '');
   const istek = guvenlikIstekYap(taban, anon);
   const sonuclar = [];
@@ -11291,12 +11379,17 @@ async function guvenlikTestiCalistir({ url, anon, eposta, sifre, depo, kayitliJs
     return satir;
   };
 
-  /* 0.1 · Giriş — başarısızsa hiçbir şey çalıştırma, tek satırla dur. */
-  const gSonuc = await istek('/auth/v1/token?grant_type=password', {
-    belirtec: anon, method: 'POST', body: JSON.stringify({ email: eposta, password: sifre }),
-  });
-  const belirtec = !gSonuc.hata && gSonuc.durum === 200 && gSonuc.govde && gSonuc.govde.access_token;
-  const ownAuthId = belirtec && gSonuc.govde.user && gSonuc.govde.user.id;
+  /* 0.1 · Giriş — başarısızsa hiçbir şey çalıştırma, tek satırla dur.
+     Giriş ekranı olmayan programda (kod denetimi söyler) giriş denenmez:
+     her şey ziyaretçi anahtarıyla yapılır, katman ve yetki haritası atlanır. */
+  const gSonuc = girissiz ? { durum: 0, govde: null }
+    : await istek('/auth/v1/token?grant_type=password', {
+        belirtec: anon, method: 'POST', body: JSON.stringify({ email: eposta, password: sifre }),
+      });
+  const belirtec = girissiz ? anon
+    : !gSonuc.hata && gSonuc.durum === 200 && gSonuc.govde && gSonuc.govde.access_token;
+  const ownAuthId = !girissiz && belirtec && gSonuc.govde.user && gSonuc.govde.user.id;
+  if (girissiz) ekle('Personel', 'giriş', 'ATLANDI', 'Programda giriş ekranı yok — yalnız ziyaretçi olarak denendi.');
 
   if (!belirtec) {
     ekle('Personel', 'giriş', 'BİLGİ',
@@ -11331,13 +11424,14 @@ async function guvenlikTestiCalistir({ url, anon, eposta, sifre, depo, kayitliJs
 
   /* 0.2 · Hesabın katmanı (best effort) — B/C/D ve sunucu işlevi testinden
      önce hesaplanır, "en üst katmanın id'si" ikisinde de lazım. */
-  const katman = await guvenlikKendiKatmanim(istek, belirtec, ownAuthId, sema.tablolar || []);
+  const katman = girissiz ? { ustKatmandaMi: false, ust: null }
+    : await guvenlikKendiKatmanim(istek, belirtec, ownAuthId, sema.tablolar || []);
 
   /* A · Dış test (anon, oturumsuz). */
   await guvenlikDisTest(istek, ekle, sema, guvenlikJson);
 
   /* A7 · belirteç ömrü — hiçbir şey çağırmaz, giriş cevabını okur. */
-  guvenlikBelirtecOmruTesti(ekle, gSonuc.govde);
+  if (!girissiz) guvenlikBelirtecOmruTesti(ekle, gSonuc.govde);
 
   /* E · Kayıt ayarları ve dosya kovaları — yalnız okur, hiçbir şey yazmaz. */
   await guvenlikGirisAyarTesti(istek, ekle);
@@ -11352,12 +11446,23 @@ async function guvenlikTestiCalistir({ url, anon, eposta, sifre, depo, kayitliJs
 
   /* D · personel yetki haritası. */
   let harita = null;
-  if (!katman.ustKatmandaMi && sema.tablolar && sema.tablolar.length) {
+  if (!girissiz && !katman.ustKatmandaMi && sema.tablolar && sema.tablolar.length) {
     harita = await guvenlikPersonelHaritasi(istek, belirtec, sema, kalintilar);
   }
 
   return { sonuc: sonuclar, harita, ustKatmanUyarisi: katman.ustKatmandaMi, kalintilar,
     tabloKaynagi: sema.kaynak || '' };
+}
+
+/* Supabase kullanmayan program: canlı deneme ve röntgen yapılamaz, rapor
+   yalnız kod denetiminden oluşur. Sonuç biçimi motorla aynı. */
+function guvenlikYalnizKod(kod) {
+  const sonuclar = [];
+  const ekle = (kim, deneme, sonuc, ayrinti) => sonuclar.push({ kim, deneme, sonuc, ayrinti: ayrinti || '' });
+  ekle('Canlı', 'canlı deneme ve röntgen', 'ATLANDI',
+    'Program Supabase kullanmıyor (' + guvenlikProgramOzeti(kod) + ') — yalnız kod denetlendi.');
+  guvenlikKodEkle(ekle, kod);
+  return { sonuc: sonuclar, harita: null, ustKatmanUyarisi: false, kalintilar: [], tabloKaynagi: '' };
 }
 
 /* Düz metin rapor — sohbete ya da nota tek tıkla yapıştırılabilsin diye.
@@ -11404,7 +11509,10 @@ function guvenlikSonucTablosu(sonuc, ustKatmanUyarisi, kalintilar, harita, tablo
       sonuç için YÖNETİCİ OLMAYAN bir personel hesabı verin.</span></div>` : '';
   const semaUyarisi = tabloKaynagi === 'guvenlik.json' ? `<div class="note" style="margin-top:14px">${svg(ICON.info, 15)}
       <span>Tablo listesi <b>guvenlik.json</b>'dan okundu (OpenAPI keşfi çalışmadı).</span></div>` : '';
-  const gocUyarisi = acik >= 3 ? `<div class="note uyari" style="margin-top:14px">${svg(ICON.uyari, 15)}
+  /* "Veritabanı güncellenmemiş" tahmini yalnız veritabanı bulgularına göre —
+     kod denetiminin bulguları bu uyarıyı tetiklememeli. */
+  const vtAcik = sonuc.filter(x => x.sonuc === 'AÇIK' && x.kim !== 'Kod').length;
+  const gocUyarisi = vtAcik >= 3 ? `<div class="note uyari" style="margin-top:14px">${svg(ICON.uyari, 15)}
       <span><b>Bu kadar çok bulgu genelde şu demektir: güvenlik ayarları eksik
       ya da veritabanı güncellenmemiş.</b> Projenin kurulum/göç dosyalarını
       sırayla gözden geçirip testi tekrarlayın.</span></div>` : '';
@@ -16481,8 +16589,18 @@ async function eylemCalistir(el) {
 
   if (e === 'guvenlik-test-calistir') {
     const al = id => { const el2 = $('#' + id); return el2 ? el2.value.trim() : ''; };
+    const kod = GUVENLIK_SAYFA.kod;
+    if (!kod) { toast('Önce kod denetimini yapıştır.', 'uyari'); return; }
+    /* Supabase'siz program: rapor yalnız kod denetiminden. */
+    if (!guvenlikSupabaseli(kod)) {
+      Object.assign(GUVENLIK_SAYFA, guvenlikYalnizKod(kod));
+      render();
+      return;
+    }
+    const girissiz = guvenlikGirissiz(kod);
     const url = al('gv-url'), anon = al('gv-anon'), eposta = al('gv-eposta'), sifre = al('gv-sifre');
-    if (!url || !anon || !eposta || !sifre) { toast('Dört alan da gerekli.', 'uyari'); return; }
+    if (!url || !anon) { toast('Supabase adresi ve anon key gerekli.', 'uyari'); return; }
+    if (!girissiz && (!eposta || !sifre)) { toast('Personel e-postası ve şifresi gerekli.', 'uyari'); return; }
     Object.assign(GUVENLIK_SAYFA, { url, anon, eposta, depo: '', calisiyor: true, sonuc: null, harita: null,
       ustKatmanUyarisi: false, kalintilar: [], tabloKaynagi: '' });
     render();
@@ -16490,7 +16608,7 @@ async function eylemCalistir(el) {
       /* Burada depo adresi sorulmuyor; künye yapıştırmadan geliyor. */
       const { sonuc, harita, ustKatmanUyarisi, kalintilar, tabloKaynagi } = await guvenlikTestiCalistir({
         url, anon, eposta, sifre, depo: '', rontgen: GUVENLIK_SAYFA.rontgen,
-        kod: GUVENLIK_SAYFA.kod });
+        kod, girissiz });
       GUVENLIK_SAYFA.sonuc = sonuc;
       GUVENLIK_SAYFA.harita = harita;
       GUVENLIK_SAYFA.ustKatmanUyarisi = ustKatmanUyarisi;
@@ -16526,24 +16644,27 @@ async function eylemCalistir(el) {
     const pr = DB.proje(el.dataset.proje);
     if (!pr) return;
     const pl = pr.palet || {};
+    const g = durakGuvenlikDurum(pr.id);
+    if (!g.kod) { toast('Önce kod denetimini yapıştır.', 'uyari'); return; }
+    const supa = guvenlikSupabaseli(g.kod);
+    const girissiz = guvenlikGirissiz(g.kod);
     const url = String(pl.supabaseUrl || '').trim();
     const anon = String(pl.supabaseAnon || '').trim();
-    if (!url || !anon) { toast('Supabase adresi ve anon key eksik.', 'uyari'); return; }
+    if (supa && (!url || !anon)) { toast('Supabase adresi ve anon key eksik.', 'uyari'); return; }
     const al = son => { const x = $('#gvd-' + son + '-' + pr.id); return x ? x.value.trim() : ''; };
     const eposta = al('eposta'), sifre = al('sifre');
     /* guvenlik.json adresi artık sorulmuyor: tablo listesini kod denetimi
        veriyor. Eskiden kaydedilmiş adres varsa yine okunuyor. */
     const depo = String(pl.guvenlikDepoAdresi || pr.repo || '').trim();
-    if (!eposta || !sifre) { toast('E-posta ve şifre gerekli.', 'uyari'); return; }
-
-    const g = durakGuvenlikDurum(pr.id);
-    if (!g.kod) { toast('Önce kod denetimini yapıştır.', 'uyari'); return; }
-    if (!g.rontgen) { toast('Önce veritabanı röntgenini yapıştır.', 'uyari'); return; }
+    if (supa && !girissiz && (!eposta || !sifre)) { toast('E-posta ve şifre gerekli.', 'uyari'); return; }
+    if (supa && !g.rontgen) { toast('Önce veritabanı röntgenini yapıştır.', 'uyari'); return; }
     Object.assign(g, { eposta, calisiyor: true, sonuc: null, harita: null,
       ustKatmanUyarisi: false, kalintilar: [], tabloKaynagi: '' });
     render();
     try {
-      const r = await guvenlikTestiCalistir({ url, anon, eposta, sifre, depo, rontgen: g.rontgen, kod: g.kod });
+      const r = supa
+        ? await guvenlikTestiCalistir({ url, anon, eposta, sifre, depo, rontgen: g.rontgen, kod: g.kod, girissiz })
+        : guvenlikYalnizKod(g.kod);
       g.sonuc = r.sonuc;
       g.harita = r.harita;
       g.ustKatmanUyarisi = r.ustKatmanUyarisi;
