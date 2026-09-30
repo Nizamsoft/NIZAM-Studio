@@ -124,4 +124,21 @@ const GUVENLIK_HASSAS_DESEN = [
   /"(?:sifre|password|passwd|secret|service_role_key|db_password)"\s*:\s*"[^"]+"/i,
 ];
 
+/* ---------- Database Scan sözleşmesi ----------
+   Scan, hedef Supabase'in GERÇEK yapısının salt-okunur gözlemidir. SQL
+   Editor'de çalışıp tek JSON hücresi üretir, NIZAM'a yapıştırılır. Manifest
+   iddiadır; scan gerçektir — çelişkide scan kazanır. */
+const GUVENLIK_SCAN_SURUMU = '1';
+const GUVENLIK_SCAN_BOLUMLERI = ['tablolar', 'rls', 'policies', 'grants',
+  'functions', 'views', 'sequences', 'storage'];
+
+/* Doğrulama durumları — bu faz yalnız statik doğrulama üretir.
+   ACIK/KAPALI/AKTIF_TEST_GEREKLI canlı testin işi (sonraki faz). */
+const GUVENLIK_DOGRULAMA = {
+  DOGRULANDI: 'DOGRULANDI',       // manifest ve DB aynı şeyi söylüyor
+  CELISIYOR: 'CELISIYOR',         // manifest güvenlik bekliyor, DB tersini gösteriyor → bulgu adayı
+  DOGRULANAMADI: 'DOGRULANAMADI', // DB bu alanı ölçemedi / expression çözülemedi
+  BILGI: 'BİLGİ',                 // manifestte olmayan ama önemli gözlem — açık ilan edilmez
+};
+
 /* Tarayıcıda global; ES module değil (Studio derlemesiz çalışıyor). */

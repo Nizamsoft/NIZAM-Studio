@@ -946,6 +946,7 @@ const VIEWS = {
 
       ${guvenlikKodKarti(g.kod, '')}
       ${guvenlikManifestKarti(g.manifest, '')}
+      ${guvenlikDogrulamaKarti(g, '')}
       ${guvenlikProgramNotu(g.kod)}
       ${!g.kod ? '' : !supa ? guvenlikRaporDugmesi() : guvenlikRontgenKarti(g.rontgen, '', url)
           + guvenlikBaglantiAlanlari(g, url)
@@ -6684,7 +6685,7 @@ function olcumOzeti(olcum) {
 function durakGuvenlikDurum(projeId) {
   if (!DURAK_GUVENLIK[projeId]) {
     DURAK_GUVENLIK[projeId] = { calisiyor: false, sonuc: null, harita: null,
-      ustKatmanUyarisi: false, kalintilar: [], tabloKaynagi: '', rontgen: null, kod: null, manifest: null };
+      ustKatmanUyarisi: false, kalintilar: [], tabloKaynagi: '', rontgen: null, kod: null, manifest: null, scan: null, dogrulama: null };
   }
   return DURAK_GUVENLIK[projeId];
 }
@@ -6939,6 +6940,60 @@ function guvenlikManifestKarti(m, projeId) {
     </div>`;
 }
 
+/* NIZAM Security · Manifest ↔ Database doğrulama kartı (Faz 3). Scan SQL'i
+   kopyalanır, hedefin SQL Editor'ünde çalıştırılır, sonuç yapıştırılır,
+   sonra manifest ile karşılaştırılır. Sonuç bellekte (bu faz DB'ye yazmaz). */
+function guvenlikDogrulamaKarti(g, projeId) {
+  const scanVar = !!g.scan;
+  const hazir = !!g.manifest && scanVar;
+  return `
+    <div class="btk">
+      <div class="btk-ust">
+        <span class="btk-ik ${g.dogrulama ? 'yesil' : 'mavi'}">${svg(ICON.gVeri, 22)}</span>
+        <span class="btk-yz"><b>Manifest ↔ Veritabanı doğrulama</b>
+          <i>${g.dogrulama
+            ? esc(g.dogrulama.ozet.celisiyor + ' çelişki · ' + g.dogrulama.ozet.dogrulandi
+                + ' doğrulandı · ' + g.dogrulama.ozet.dogrulanamadi + ' ölçülemedi')
+            : 'Manifestin iddiasını gerçek veritabanı yapısıyla karşılaştırır. Scan yalnız okur.'}</i></span>
+      </div>
+      <div class="gv-adimlar">
+        <button class="sayfa-dug ikincil" type="button" data-eylem="guvenlik-scan-kopyala">
+          ${svg(ICON.kopya, 15)} 1 · Scan SQL'ini kopyala</button>
+        <button class="sayfa-dug ${scanVar ? 'ikincil' : ''}" type="button" data-eylem="guvenlik-scan-yapistir"
+                data-proje="${esc(projeId || '')}">
+          ${svg(ICON.ice, 15)} 2 · ${scanVar ? 'Yeni scan yapıştır' : 'Scan sonucunu yapıştır'}</button>
+        <button class="sayfa-dug" type="button" data-eylem="guvenlik-dogrula"
+                data-proje="${esc(projeId || '')}" ${hazir ? '' : 'disabled'}>
+          ${svg(ICON.gGuvenlik, 15)} 3 · ${hazir ? 'Doğrula' : (!g.manifest ? 'Önce manifest gerekli' : 'Önce scan gerekli')}</button>
+      </div>
+      ${guvenlikDogrulamaTablosu(g.dogrulama)}
+    </div>`;
+}
+
+function guvenlikDogrulamaTablosu(d) {
+  if (!d || !d.sonuclar || !d.sonuclar.length) return '';
+  const renk = { 'CELISIYOR': 'var(--red)', 'DOGRULANDI': 'var(--basari,#3d9970)',
+    'DOGRULANAMADI': 'var(--ink-soft)', 'BİLGİ': 'var(--ink-soft)' };
+  const sira = { 'CELISIYOR': 0, 'DOGRULANAMADI': 1, 'BİLGİ': 2, 'DOGRULANDI': 3 };
+  const satirlar = d.sonuclar.slice()
+    .sort((a, b) => (sira[a.durum] ?? 9) - (sira[b.durum] ?? 9))
+    .map(x => `<tr ${x.bulgu_uretir ? 'style="background:var(--red-soft)"' : ''}>
+      <td style="padding:6px 8px">${esc(x.kategori)}</td>
+      <td style="padding:6px 8px">${esc(x.varlik)}${x.boyut ? ' · ' + esc(x.boyut) : ''}</td>
+      <td style="padding:6px 8px">${esc(x.beklenen)} → ${esc(x.gercek)}</td>
+      <td style="padding:6px 8px;color:${renk[x.durum] || 'inherit'};font-weight:600">${esc(x.durum)}</td>
+    </tr>`).join('');
+  return `<div style="overflow-x:auto;margin-top:12px">
+    <table style="width:100%;border-collapse:collapse;font-size:13px">
+      <thead><tr style="text-align:left;border-bottom:1px solid var(--line)">
+        <th style="padding:6px 8px">Tür</th><th style="padding:6px 8px">Varlık</th>
+        <th style="padding:6px 8px">Beklenen → Gerçek</th><th style="padding:6px 8px">Durum</th></tr></thead>
+      <tbody>${satirlar}</tbody>
+    </table>
+    <p class="ipucu" style="margin-top:8px">Çelişkiler bulgu adayıdır (kırmızı). «Ölçülemedi»
+      açık değildir — NIZAM o alanı göremedi.</p></div>`;
+}
+
 /* Kod denetiminden sonra: Claude'un tanıdığı program ve atlanacak adımlar. */
 function guvenlikProgramNotu(kod) {
   if (!kod) {
@@ -7087,6 +7142,7 @@ function guvenlikDurakSayfasi(p, d) {
         'Son ölçüm temiz çıktı ve onaylandı.', false) : '')
     + guvenlikKodKarti(g.kod, p.id)
     + guvenlikManifestKarti(g.manifest, p.id)
+    + guvenlikDogrulamaKarti(g, p.id)
     + guvenlikProgramNotu(g.kod)
     + (g.kod && supa ? guvenlikRontgenKarti(g.rontgen, p.id, pl.supabaseUrl) : '')
     + (o ? `
@@ -10838,7 +10894,7 @@ function templateSihirbaziBagla(el) {
    Supabase jetonu artık hiç kullanılmıyor. */
 const GUVENLIK_SAYFA = { url: '', anon: '', eposta: '', calisiyor: false,
   sonuc: null, harita: null, ustKatmanUyarisi: false, kalintilar: [], tabloKaynagi: '',
-  depo: '', rontgen: null, kod: null, manifest: null };
+  depo: '', rontgen: null, kod: null, manifest: null, scan: null, dogrulama: null };
 
 function guvenlikUuid() {
   if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
@@ -16810,6 +16866,48 @@ async function eylemCalistir(el) {
       toast('Manifest kaydedildi (snapshot #' + kayit.id.slice(0, 8) + ').', 'basari');
     } catch (err) {
       toast('Manifest kaydedilemedi: ' + err.message, 'hata');
+    }
+    render();
+    return;
+  }
+
+  /* NIZAM Security · Database Scan SQL kopyala. */
+  if (e === 'guvenlik-scan-kopyala') {
+    const ok = await panoyaKopyala(GUVENLIK_SCAN_SQL);
+    toast(ok ? 'Scan SQL kopyalandı — hedefin SQL Editor\'ünde çalıştır, çıkan JSON\'u yapıştır.'
+             : 'Kopyalanamadı.', ok ? 'basari' : 'hata');
+    return;
+  }
+
+  /* Scan sonucu yapıştır — yalnız okunur, doğrulanır, belleğe alınır. */
+  if (e === 'guvenlik-scan-yapistir') {
+    let metin = '';
+    try { metin = await navigator.clipboard.readText(); } catch (h) { metin = ''; }
+    if (!metin || !metin.trim()) { toast('Pano boş — önce scan sonucunu kopyala.', 'uyari'); return; }
+    const okundu = guvenlikScanOku(metin);
+    if (okundu.hata) { toast(okundu.hata, 'hata'); return; }
+    const hedef = el.dataset.proje ? durakGuvenlikDurum(el.dataset.proje) : GUVENLIK_SAYFA;
+    hedef.scan = okundu.scan;
+    hedef.dogrulama = null;
+    toast('Scan alındı — ' + (okundu.scan.tablolar || []).length + ' tablo. Şimdi «Doğrula».', 'basari');
+    render();
+    return;
+  }
+
+  /* Doğrula — manifest (bellek) + scan → statik doğrulama. DB'ye yazmaz. */
+  if (e === 'guvenlik-dogrula') {
+    const hedef = el.dataset.proje ? durakGuvenlikDurum(el.dataset.proje) : GUVENLIK_SAYFA;
+    if (!hedef.manifest) { toast('Önce Security Manifest yapıştır.', 'uyari'); return; }
+    if (!hedef.scan) { toast('Önce Database Scan yapıştır.', 'uyari'); return; }
+    try {
+      hedef.dogrulama = guvenlikManifestDogrula({
+        manifest: hedef.manifest, scan: hedef.scan,
+        proje: el.dataset.proje ? DB.proje(el.dataset.proje) : null });
+      const o = hedef.dogrulama.ozet;
+      toast(o.celisiyor ? o.celisiyor + ' çelişki bulundu.' : 'Çelişki yok — ' + o.dogrulandi + ' doğrulandı.',
+        o.celisiyor ? 'uyari' : 'basari');
+    } catch (err) {
+      toast('Doğrulama başarısız: ' + err.message, 'hata');
     }
     render();
     return;

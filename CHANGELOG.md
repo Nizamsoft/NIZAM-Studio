@@ -1,5 +1,18 @@
 # Değişiklik Günlüğü
 
+## v0.250.0
+- **NIZAM Security · Faz 3 (Database Scan + Manifest doğrulama).** Genişletilmiş,
+  yalnız-okuyan bir Database Scan SQL'i geldi: tablolar/kolonlar, RLS, policy'ler,
+  grant'lar, fonksiyonlar, view'lar, sequence'lar ve storage kovaları tek JSON.
+  Yeni doğrulama motoru (`guvenlik-motor.js`) manifestin iddiasını gerçek DB
+  yapısıyla karşılaştırıyor: DOGRULANDI / ÇELİŞİYOR / DOGRULANAMADI / BİLGİ.
+- İlke: gerçek DB kazanır. «RLS güvenli» iddiası, DB USING(true) gösteriyorsa
+  çelişki (bulgu adayı) olur. «Anlamadım» (DOGRULANAMADI) açık sayılmaz;
+  manifestte olmayan yapı otomatik açık ilan edilmez.
+- Ayarlar ve proje güvenlik ekranına küçük bir doğrulama kartı eklendi
+  (scan yapıştır → doğrula → sonuç tablosu). Sonuç bu faz bellekte; DB'ye
+  yazılmıyor. Eski röntgen, kod denetimi ve canlı test aynen çalışıyor.
+
 ## v0.249.0
 - **NIZAM Security · Faz 2 (Manifest sistemi).** Kod denetiminin altına
   «Security Manifest» bölümü geldi. Claude programın güvenlik modelini tek
