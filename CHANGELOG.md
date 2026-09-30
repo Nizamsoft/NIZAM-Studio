@@ -1,5 +1,20 @@
 # Değişiklik Günlüğü
 
+## v0.251.0
+- **NIZAM Security · Faz 4 (Test Matrisi).** Manifest + Database Scan +
+  doğrulama sonucundan çalıştırılabilir yetki testleri üretiliyor. Sadece
+  manifestteki önerileri kopyalamıyor: izolasyon modelinden (sahiplik/
+  şirket), rollerden, fonksiyonlardan ve storage'dan kendi testlerini de
+  türetiyor. Her satır: aktör, varlık, kapsam, işlem, beklenen (ALLOW/DENY),
+  yöntem (statik/okuma_canli/yetki_sorgusu/aktif_gerekli), risk ve beklenti
+  kaynağı taşıyor.
+- Test ID deterministik; aynı kaynak aynı ID'yi üretir, tekrarlar elenir.
+  PII yok — yalnız takma ad (hesap_A/B, sirket_A/B). Yazma gerektiren
+  testler «aktif_gerekli», üretimde otomatik çalıştırılmaz.
+- Ayarlar ve proje güvenlik ekranına «Test Matrisi Oluştur» kartı ve tablo
+  eklendi. Bu faz yalnız üretir/gösterir; canlı çalıştırma ve
+  guvenlik_denetimleri kaydı sonraki faz. Eski sistem aynen çalışıyor.
+
 ## v0.250.0
 - **NIZAM Security · Faz 3 (Database Scan + Manifest doğrulama).** Genişletilmiş,
   yalnız-okuyan bir Database Scan SQL'i geldi: tablolar/kolonlar, RLS, policy'ler,

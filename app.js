@@ -947,6 +947,7 @@ const VIEWS = {
       ${guvenlikKodKarti(g.kod, '')}
       ${guvenlikManifestKarti(g.manifest, '')}
       ${guvenlikDogrulamaKarti(g, '')}
+      ${guvenlikMatrisKarti(g, '')}
       ${guvenlikProgramNotu(g.kod)}
       ${!g.kod ? '' : !supa ? guvenlikRaporDugmesi() : guvenlikRontgenKarti(g.rontgen, '', url)
           + guvenlikBaglantiAlanlari(g, url)
@@ -6685,7 +6686,7 @@ function olcumOzeti(olcum) {
 function durakGuvenlikDurum(projeId) {
   if (!DURAK_GUVENLIK[projeId]) {
     DURAK_GUVENLIK[projeId] = { calisiyor: false, sonuc: null, harita: null,
-      ustKatmanUyarisi: false, kalintilar: [], tabloKaynagi: '', rontgen: null, kod: null, manifest: null, scan: null, dogrulama: null };
+      ustKatmanUyarisi: false, kalintilar: [], tabloKaynagi: '', rontgen: null, kod: null, manifest: null, scan: null, dogrulama: null, matris: null };
   }
   return DURAK_GUVENLIK[projeId];
 }
@@ -6994,6 +6995,59 @@ function guvenlikDogrulamaTablosu(d) {
       açık değildir — NIZAM o alanı göremedi.</p></div>`;
 }
 
+/* NIZAM Security · Test Matrix kartı (Faz 4). Manifest + scan + doğrulamadan
+   çalıştırılabilir test satırları üretir. Bu faz yalnız üretir/gösterir;
+   canlı çalıştırma ve kayıt sonraki faz. */
+function guvenlikMatrisKarti(g, projeId) {
+  const hazir = !!g.manifest;
+  return `
+    <div class="btk">
+      <div class="btk-ust">
+        <span class="btk-ik ${g.matris ? 'yesil' : 'mavi'}">${svg(ICON.izgaraDort, 22)}</span>
+        <span class="btk-yz"><b>Test Matrisi</b>
+          <i>${g.matris
+            ? esc(g.matris.ozet.toplam + ' test · ' + g.matris.ozet.dis + ' dış · '
+                + g.matris.ozet.ic + ' iç · ' + g.matris.ozet.aktif_gerekli + ' aktif test gerekli')
+            : 'Manifest, scan ve doğrulamadan çalıştırılabilir güvenlik testleri üretir. Henüz çalıştırmaz.'}</i></span>
+      </div>
+      <div class="gv-adimlar">
+        <button class="sayfa-dug ${g.matris ? 'ikincil' : ''}" type="button" data-eylem="guvenlik-matris-uret"
+                data-proje="${esc(projeId || '')}" ${hazir ? '' : 'disabled'}>
+          ${svg(ICON.izgaraDort, 15)} ${hazir ? 'Test Matrisi Oluştur' : 'Önce manifest gerekli'}</button>
+      </div>
+      ${guvenlikMatrisTablosu(g.matris)}
+    </div>`;
+}
+
+function guvenlikMatrisTablosu(m) {
+  if (!m || !m.satirlar || !m.satirlar.length) return '';
+  const riskRenk = { kritik: 'var(--red)', yuksek: '#b8801a', orta: 'var(--ink-soft)', dusuk: 'var(--ink-dim)' };
+  const riskSira = { kritik: 0, yuksek: 1, orta: 2, dusuk: 3 };
+  const satirlar = m.satirlar.slice()
+    .sort((a, b) => (riskSira[a.risk] ?? 9) - (riskSira[b.risk] ?? 9))
+    .map(x => `<tr>
+      <td style="padding:6px 8px">${esc(x.aktor.deger)}</td>
+      <td style="padding:6px 8px">${esc(x.kaynak.varlik)}</td>
+      <td style="padding:6px 8px">${esc(x.kaynak.kapsam)}</td>
+      <td style="padding:6px 8px">${esc(x.islem)}</td>
+      <td style="padding:6px 8px;font-weight:600">${esc(x.beklenen)}</td>
+      <td style="padding:6px 8px;color:var(--ink-soft)">${esc(x.test_yontemi)}</td>
+      <td style="padding:6px 8px;color:${riskRenk[x.risk] || 'inherit'};font-weight:600">${esc(x.risk)}</td>
+      <td style="padding:6px 8px;color:var(--ink-soft)">${esc(x.beklenti_kaynagi)}</td>
+    </tr>`).join('');
+  return `<div style="overflow-x:auto;margin-top:12px">
+    <table style="width:100%;border-collapse:collapse;font-size:12.5px">
+      <thead><tr style="text-align:left;border-bottom:1px solid var(--line)">
+        <th style="padding:6px 8px">Aktör</th><th style="padding:6px 8px">Varlık</th>
+        <th style="padding:6px 8px">Kapsam</th><th style="padding:6px 8px">İşlem</th>
+        <th style="padding:6px 8px">Beklenen</th><th style="padding:6px 8px">Yöntem</th>
+        <th style="padding:6px 8px">Risk</th><th style="padding:6px 8px">Kaynak</th></tr></thead>
+      <tbody>${satirlar}</tbody>
+    </table>
+    <p class="ipucu" style="margin-top:8px">«aktif_gerekli» testleri yazma gerektirir;
+      üretimde otomatik çalıştırılmaz. Bu faz testleri yalnız üretiyor.</p></div>`;
+}
+
 /* Kod denetiminden sonra: Claude'un tanıdığı program ve atlanacak adımlar. */
 function guvenlikProgramNotu(kod) {
   if (!kod) {
@@ -7143,6 +7197,7 @@ function guvenlikDurakSayfasi(p, d) {
     + guvenlikKodKarti(g.kod, p.id)
     + guvenlikManifestKarti(g.manifest, p.id)
     + guvenlikDogrulamaKarti(g, p.id)
+    + guvenlikMatrisKarti(g, p.id)
     + guvenlikProgramNotu(g.kod)
     + (g.kod && supa ? guvenlikRontgenKarti(g.rontgen, p.id, pl.supabaseUrl) : '')
     + (o ? `
@@ -10894,7 +10949,7 @@ function templateSihirbaziBagla(el) {
    Supabase jetonu artık hiç kullanılmıyor. */
 const GUVENLIK_SAYFA = { url: '', anon: '', eposta: '', calisiyor: false,
   sonuc: null, harita: null, ustKatmanUyarisi: false, kalintilar: [], tabloKaynagi: '',
-  depo: '', rontgen: null, kod: null, manifest: null, scan: null, dogrulama: null };
+  depo: '', rontgen: null, kod: null, manifest: null, scan: null, dogrulama: null, matris: null };
 
 function guvenlikUuid() {
   if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
@@ -16908,6 +16963,23 @@ async function eylemCalistir(el) {
         o.celisiyor ? 'uyari' : 'basari');
     } catch (err) {
       toast('Doğrulama başarısız: ' + err.message, 'hata');
+    }
+    render();
+    return;
+  }
+
+  /* Test Matrisi üret — manifest (bellek) + scan + doğrulamadan. Bu faz
+     yalnız üretir/gösterir; DB'ye yazmaz, canlı çalıştırmaz. */
+  if (e === 'guvenlik-matris-uret') {
+    const hedef = el.dataset.proje ? durakGuvenlikDurum(el.dataset.proje) : GUVENLIK_SAYFA;
+    if (!hedef.manifest) { toast('Önce Security Manifest yapıştır.', 'uyari'); return; }
+    try {
+      hedef.matris = guvenlikMatrisUret({
+        manifest: hedef.manifest, scan: hedef.scan || { tablolar: [], storage: [] },
+        dogrulama: hedef.dogrulama, proje: el.dataset.proje ? DB.proje(el.dataset.proje) : null });
+      toast(hedef.matris.ozet.toplam + ' test üretildi.', 'basari');
+    } catch (err) {
+      toast('Matris üretilemedi: ' + err.message, 'hata');
     }
     render();
     return;

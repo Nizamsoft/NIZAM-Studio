@@ -290,3 +290,180 @@ function guvenlikManifestDogrula({ manifest, scan, proje }) {
   };
   return { sonuclar, belirsizler, ozet };
 }
+
+/* ==========================================================================
+   Faz 4 · Authorization Test Matrix üretimi
+
+   Manifest (iddia) + Scan (gerçek) + doğrulama sonucundan çalıştırılabilir
+   test satırları türetir. Manifestteki onerilen_testler'in kopyası DEĞİL:
+   NIZAM izolasyon modelinden, rollerden ve fonksiyonlardan kendi testlerini
+   de üretir. Bu faz yalnız ÜRETİR; canlı çalıştırma sonraki faz.
+
+   PII yok: yalnız takma ad (hesap_A/B, sirket_A/B). Test_id deterministik:
+   aynı kaynak → aynı id, tarih/kanıt içermez. Aynı id tekrarı elenir. */
+
+/* Bir varlığın bir işlemi için doğrulama sonucunu bulur (yöntem/güven için). */
+function guvenlikDogrulamaBul(dogrulama, varlik, islem) {
+  if (!dogrulama || !dogrulama.sonuclar) return null;
+  return dogrulama.sonuclar.find(x =>
+    x.kategori === 'rls' && x.varlik === varlik && x.boyut === islem) || null;
+}
+
+/* İşleme göre öntanımlı test yöntemi. Doğrulama statik cevap verdiyse
+   (DOGRULANDI/CELISIYOR) okuma zaten bilinir → statik; çözülemediyse okuma
+   canlı denenebilir; yazma her hâlde aktif_gerekli (üretimde çalışmaz). */
+function guvenlikYontemSec(islem, dvSonuc) {
+  if (islem === 'read') {
+    if (dvSonuc && (dvSonuc.durum === GUVENLIK_DOGRULAMA.DOGRULANDI
+      || dvSonuc.durum === GUVENLIK_DOGRULAMA.CELISIYOR)) return 'statik';
+    return 'okuma_canli';
+  }
+  if (islem === 'call') return 'aktif_gerekli';
+  return 'aktif_gerekli'; // insert/update/delete
+}
+
+/* Deterministik risk. Genel skor değil, tek testin önemi. */
+function guvenlikRisk(kategori, kapsam, islem, hassas) {
+  if (kapsam === 'baska_sirket') return 'kritik';
+  if (kapsam === 'baskasinin') return hassas ? 'yuksek' : 'yuksek';
+  if (islem === 'delete' || islem === 'call') return 'yuksek';
+  if (kategori === 'dis') return hassas ? 'yuksek' : 'orta';
+  return 'orta';
+}
+
+const GUVENLIK_ISLEM_AD = { select: 'read', insert: 'insert', update: 'update',
+  delete: 'delete', call: 'call', read: 'read' };
+
+function guvenlikMatrisUret({ manifest, scan, dogrulama, proje }) {
+  const govde = (manifest && manifest.govde) || manifest || {};
+  const scanTablolar = new Set((scan && scan.tablolar || []).map(t => t.ad));
+  const izo = govde.izolasyon || {};
+  const izoModel = String(guvenlikDeger(izo.model) || '').toLowerCase();
+  const sahiplikVar = /kullanici|sahip|owner/.test(izoModel) || !!guvenlikDeger(izo.sahiplik_alani);
+  const tenantVar = /sirket|sube|firma|tenant/.test(izoModel) || !!guvenlikDeger(izo.kiraci_alani);
+
+  const harita = new Map();  // test_id → satır (ilk kazanır, tekrar elenir)
+  const ekle = (o) => {
+    const test_id = [o.kategori, o.kaynak.varlik, o.aktor.deger, o.kaynak.kapsam, o.islem]
+      .join(':').toLowerCase().replace(/\s+/g, '_');
+    if (harita.has(test_id)) return;
+    const dv = guvenlikDogrulamaBul(dogrulama, o.kaynak.varlik, o.islem);
+    harita.set(test_id, Object.assign({
+      test_id, kategori: 'ic', durum: 'beklemede', gercek: '', kanit: '',
+      test_yontemi: guvenlikYontemSec(o.islem, dv),
+      risk: guvenlikRisk(o.kategori, o.kaynak.kapsam, o.islem, !!o.hassas),
+      dogrulama_durumu: dv ? dv.durum : '',
+    }, o));
+  };
+
+  const hassasVarliklar = new Set((govde.hassas_veriler || [])
+    .map(h => guvenlikDeger(h.varlik) || h.varlik).filter(Boolean));
+
+  /* 1) Varlık bazlı: anonim DENY + sahiplik/tenant izolasyonu. */
+  for (const v of (govde.varliklar || [])) {
+    const ad = guvenlikDeger(v.ad) || v.ad;
+    if (!ad || !scanTablolar.has(ad)) continue;   // scan'de olmayanı test etme
+    const hassas = v.hassas === true || hassasVarliklar.has(ad);
+
+    /* Dış: anonim hassas/korumalı kaynağı okuyamamalı. */
+    ekle({ kategori: 'dis', aktor: { tur: 'anonim', deger: 'anonim' },
+      kaynak: { varlik: ad, kapsam: 'herhangi' }, islem: 'read',
+      beklenen: 'DENY', beklenti_kaynagi: 'otomatik', hassas });
+
+    /* İç: sahiplik varsa kendi ALLOW + başkası DENY (read + yazma). */
+    if (sahiplikVar) {
+      ekle({ aktor: { tur: 'hesap', deger: 'hesap_A' }, kategori: 'ic',
+        kaynak: { varlik: ad, kapsam: 'kendi' }, islem: 'read',
+        beklenen: 'ALLOW', beklenti_kaynagi: 'otomatik', hassas });
+      ekle({ aktor: { tur: 'hesap', deger: 'hesap_A' }, kategori: 'ic',
+        kaynak: { varlik: ad, kapsam: 'baskasinin' }, islem: 'read',
+        beklenen: 'DENY', beklenti_kaynagi: 'dogrulama', hassas });
+      for (const islem of ['update', 'delete']) {
+        ekle({ aktor: { tur: 'hesap', deger: 'hesap_A' }, kategori: 'ic',
+          kaynak: { varlik: ad, kapsam: 'baskasinin' }, islem,
+          beklenen: 'DENY', beklenti_kaynagi: 'dogrulama', hassas });
+      }
+    }
+    /* İç: tenant varsa kendi şirketi ALLOW + başka şirket DENY. */
+    if (tenantVar) {
+      ekle({ aktor: { tur: 'hesap', deger: 'hesap_A' }, kategori: 'ic',
+        kaynak: { varlik: ad, kapsam: 'baska_sirket' }, islem: 'read',
+        beklenen: 'DENY', beklenti_kaynagi: 'dogrulama', hassas });
+    }
+  }
+
+  /* 2) Rol bazlı: manifest.yetkiler'den (yalnız anlamlı olanlar). */
+  for (const y of (govde.yetkiler || [])) {
+    const rol = guvenlikDeger(y.rol) || y.rol;
+    const varlik = guvenlikDeger(y.varlik) || y.varlik;
+    const islemHam = String(guvenlikDeger(y.islem) || y.islem || '').toLowerCase();
+    const islem = GUVENLIK_ISLEM_AD[islemHam] || islemHam;
+    const beklenen = String(guvenlikDeger(y.beklenen) || y.beklenen || '').toUpperCase();
+    if (!rol || !varlik || !islem || !['ALLOW', 'DENY'].includes(beklenen)) continue;
+    if (varlik !== '*' && !scanTablolar.has(varlik)) continue;
+    ekle({ kategori: 'ic', aktor: { tur: 'rol', deger: rol },
+      kaynak: { varlik, kapsam: 'herhangi' }, islem, beklenen,
+      beklenti_kaynagi: 'manifest', hassas: hassasVarliklar.has(varlik) });
+  }
+
+  /* 3) Fonksiyonlar: manifest.sunucu.edge_functions'tan çağıran rolü. */
+  const roller = (govde.roller || []).map(r => guvenlikDeger(r.ad) || r.ad).filter(Boolean);
+  for (const f of ((govde.sunucu && govde.sunucu.edge_functions) || [])) {
+    const ad = guvenlikDeger(f.ad) || f.ad;
+    const gerekliRol = String(guvenlikDeger(f.yetki_kontrolu) || '').toLowerCase();
+    if (!ad) continue;
+    /* Anonim her zaman DENY beklenir. */
+    ekle({ kategori: 'dis', aktor: { tur: 'anonim', deger: 'anonim' },
+      kaynak: { varlik: ad, kapsam: 'herhangi' }, islem: 'call',
+      beklenen: 'DENY', beklenti_kaynagi: 'manifest' });
+    /* Gerekli rol dışındaki roller DENY, gerekli rol ALLOW. */
+    for (const r of roller) {
+      const ayni = gerekliRol && r.toLowerCase().includes(gerekliRol);
+      ekle({ kategori: 'ic', aktor: { tur: 'rol', deger: r },
+        kaynak: { varlik: ad, kapsam: 'herhangi' }, islem: 'call',
+        beklenen: ayni ? 'ALLOW' : 'DENY', beklenti_kaynagi: 'manifest' });
+    }
+  }
+
+  /* 4) Storage: private kova için anonim/başkası DENY, sahip ALLOW. */
+  const kovaScan = (scan && scan.storage) || [];
+  for (const st of ((govde.sunucu && govde.sunucu.storage) || [])) {
+    const kova = guvenlikDeger(st.kova) || st.kova;
+    if (!kova) continue;
+    const g = kovaScan.find(x => x.kova === kova);
+    if (g && g.public === true) continue;   // public kovada DENY testi anlamsız
+    ekle({ kategori: 'dis', aktor: { tur: 'anonim', deger: 'anonim' },
+      kaynak: { varlik: kova, kapsam: 'herhangi' }, islem: 'read',
+      beklenen: 'DENY', beklenti_kaynagi: 'manifest' });
+    ekle({ kategori: 'ic', aktor: { tur: 'hesap', deger: 'hesap_A' },
+      kaynak: { varlik: kova, kapsam: 'kendi' }, islem: 'read',
+      beklenen: 'ALLOW', beklenti_kaynagi: 'manifest' });
+    ekle({ kategori: 'ic', aktor: { tur: 'hesap', deger: 'hesap_A' },
+      kaynak: { varlik: kova, kapsam: 'baskasinin' }, islem: 'read',
+      beklenen: 'DENY', beklenti_kaynagi: 'manifest' });
+  }
+
+  /* 5) Manifestin kendi önerdiği testler. */
+  for (const t of (govde.onerilen_testler || [])) {
+    const varlik = guvenlikDeger(t.varlik) || t.varlik;
+    const islemHam = String(guvenlikDeger(t.islem) || t.islem || '').toLowerCase();
+    const islem = GUVENLIK_ISLEM_AD[islemHam] || islemHam;
+    const beklenen = String(guvenlikDeger(t.beklenen) || t.beklenen || '').toUpperCase();
+    const rol = guvenlikDeger(t.aktor_rol) || t.aktor_rol || 'rol';
+    const kapsam = guvenlikDeger(t.kapsam) || t.kapsam || 'herhangi';
+    if (!varlik || !islem || !['ALLOW', 'DENY'].includes(beklenen)) continue;
+    ekle({ kategori: 'ic', aktor: { tur: 'rol', deger: rol },
+      kaynak: { varlik, kapsam }, islem, beklenen,
+      beklenti_kaynagi: 'manifest', hassas: hassasVarliklar.has(varlik) });
+  }
+
+  const satirlar = [...harita.values()];
+  const say = (k, v) => satirlar.filter(x => x[k] === v).length;
+  const ozet = {
+    toplam: satirlar.length,
+    dis: say('kategori', 'dis'), ic: say('kategori', 'ic'),
+    aktif_gerekli: say('test_yontemi', 'aktif_gerekli'),
+    kritik: say('risk', 'kritik'), yuksek: say('risk', 'yuksek'),
+  };
+  return { satirlar, ozet };
+}
