@@ -8656,6 +8656,11 @@ a.asr:active{ transform:scale(.99); }
 .lk-ikon.turuncu { background: #fdeee2; color: #cf6f1b; }
 .lk-ikon svg { fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linejoin: round; }
 .lk-ikon .dolgu { display: none; }
+/* Proje logosu: hata bildirimi kartında üçgen yerine logo. Logo yüklenince
+   (JS .dolu ekler) baş harf gizlenir; yüklenemezse baş harf kalır. */
+.lk-ikon.logo { background: #f2f2f4; color: #4a4a50; background-size: cover;
+  background-position: center; overflow: hidden; position: relative; font-weight: 700; }
+.lk-ikon.logo.dolu b { display: none; }
 .lk-yz { display: flex; flex-direction: column; gap: 7px; min-width: 0; flex: 1; }
 .lk-yz b {
   font-size: 16.5px; font-weight: 700; color: var(--ink-strong);

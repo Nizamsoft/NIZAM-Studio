@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## v0.265.0
+- **Hata bildirimi kartında proje logosu.** Liste kartındaki üçgen uyarı simgesi
+  yerine artık bildirimin geldiği projenin logosu görünür; logo yoksa firmanın
+  baş harfi, proje bulunamazsa eski uyarı simgesi.
+
 ## v0.264.0
 - **Hata bildirimi sistemi — müşteri programlarından Studio'ya.** Talepler
   sistemiyle aynı mantık: programdaki "Hata bildir" formu → `hata-al` Edge

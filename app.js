@@ -9292,9 +9292,18 @@ function hataEtiketi(h) {
 
 function hataKarti(h) {
   const ozet = String(h.mesaj || '').replace(/\n+/g, ' ').slice(0, 90);
+  const p     = h.proje_id ? DB.proje(h.proje_id) : null;
+  const adres = h.proje_id ? DB.logoAdres[h.proje_id] : null;
+  const firma = (p && p.firma) || h.proje_ad || '';
+  /* Üçgen yerine projenin logosu; logo yoksa baş harf; proje yoksa uyarı. */
+  const ikon = adres
+    ? `<span class="lk-ikon logo yukleniyor" data-logo="${esc(adres)}"><b>${esc(basHarf(firma))}</b><span class="donen"></span></span>`
+    : firma
+      ? `<span class="lk-ikon logo"><b>${esc(basHarf(firma))}</b></span>`
+      : `<span class="lk-ikon gri">${svg(ICON.uyari, 24)}</span>`;
   return `
     <a class="lk tl-kart" href="#/hatalar/${esc(h.id)}">
-      <span class="lk-ikon gri">${svg(ICON.uyari, 24)}</span>
+      ${ikon}
       <span class="lk-yz">
         <b>${esc(hataProjeAdi(h))}</b>
         ${ozet ? `<i>${esc(ozet)}</i>` : ''}
