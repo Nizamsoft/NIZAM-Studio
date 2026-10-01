@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü
 
+## v0.284.0
+- **"Programdan standart öner" geri geldi.** Nizam Standartları ekranında yeni
+  düğme: promptu bir programın Claude oturumuna yapıştırırsın, Claude repoyu
+  okuyup her programda geçerli olabilecek aday standartları çıkarır ve aynı
+  JSON biçiminde döndürür. Döndürdüğü blok "Kuralı yapıştır" ile içeri alınır.
+  (Fikir→JSON akışına geçerken düşmüştü.) Zaten kayıtlı standartları tekrar
+  önermez, program tercihlerini standart yapmaz.
+
 ## v0.283.0
 - **"Başkasının satırı" testi artık işlem bazında.** Önceden tabloda sahiplik
   sütunu olması yetiyordu; oysa okuma ORTAK olabilir (herkes tüm satırları

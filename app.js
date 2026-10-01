@@ -8822,6 +8822,16 @@ function stdAracKartlari() {
     </div>
     <div class="btk">
       <div class="btk-ust">
+        <span class="btk-ik mavi">${svg(ICON.gGuvenlik, 22)}</span>
+        <span class="btk-yz"><b>Programdan standart öner</b>
+          <i>Promptu bir programın Claude oturumuna yapıştır; Claude repoyu okuyup
+             aday standartları çıkarır. Döndürdüğü bloğu aşağıdan "Yapıştır" ile al.</i></span>
+        <button class="btk-dug" type="button" data-eylem="std-oner">
+          ${svg(ICON.kopya, 15)} Prompt oluştur</button>
+      </div>
+    </div>
+    <div class="btk">
+      <div class="btk-ust">
         <span class="btk-ik mavi">${svg(ICON.ice, 22)}</span>
         <span class="btk-yz"><b>Kuralı yapıştır</b>
           <i>Claude'un döndürdüğü bloğu bırak — Studio çözümleyip kaydeder.</i></span>
@@ -15776,6 +15786,17 @@ async function eylemCalistir(el) {
     STD_KOPYALANDI = true;
     render();
     toast('Prompt panoda — Claude\'a yapıştır.', 'basari');
+    return;
+  }
+
+  /* Programdan standart öner: repoyu okuyup aday standart çıkaran promptu kopyala. */
+  if (e === 'std-oner') {
+    let metin;
+    try { metin = PROMPT.standartOner(); }
+    catch (h) { toast('Prompt üretilemedi: ' + h.message, 'hata'); return; }
+    const oldu = await panoyaKopyala(metin);
+    if (!oldu) { toast('Kopyalanamadı.', 'hata'); return; }
+    toast('Prompt panoda — programın Claude oturumuna yapıştır.', 'basari');
     return;
   }
 

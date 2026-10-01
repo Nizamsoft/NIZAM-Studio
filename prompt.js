@@ -2307,6 +2307,92 @@ const PROMPT = {
     return s.join('\n');
   },
 
+  /* Programdan standart öner — Claude bulunduğu programın deposunu okur,
+     HER NIZAM programında geçerli olabilecek aday kuralları kendisi çıkarır
+     ve standartEkle ile AYNI JSON biçiminde döndürür. Program tercihleri
+     değil, taşınabilir kurallar istenir. Kod değiştirmez. */
+  standartOner() {
+    const mevcut = standartListesi();
+    const alanlar = [...new Set(mevcut.map(st => (st.alan || '').trim()).filter(Boolean))]
+      .sort((a, b) => a.localeCompare(b, 'tr'));
+    const basliklar = mevcut.map(st => (st.ad || '').trim()).filter(Boolean);
+
+    const s = [];
+    s.push('# Nizam standardı — programdan aday standart öner', '');
+    s.push('Bulunduğun programın deposunu incele (kod, sayfalar, bileşenler,');
+    s.push('tasarım kararları, veri ve güvenlik yaklaşımı). Amaç: bu programda');
+    s.push('verilmiş, ama **her** NIZAM programında da geçerli olabilecek');
+    s.push('kararları aday **canonical standart** olarak çıkarmak.');
+    s.push('');
+    s.push('SADECE istenen JSON bloğunu döndür. Blok dışında tek kelime yazma.');
+    s.push('Kod yazma, dosya değiştirme, commit atma — yalnız öner.');
+    s.push('');
+    s.push('## Neyi standart öner, neyi önerme', '');
+    s.push('- **Öner:** başka bir programı sıfırdan yazarken de uygulanması');
+    s.push('  gereken, taşınabilir kurallar (ör. "uzun işlemde ilerleme');
+    s.push('  göster", "hassas sütun role kapalı olur", "tehlike düğmesi kırmızı").');
+    s.push('- **Önerme:** yalnız bu programa özel tercihler (bu programın renk');
+    s.push('  seçimi, bu modülün tablo adı, tek seferlik çözümler).');
+    s.push('- Emin değilsen ekleme. Hiç uygun aday yoksa boş liste döndür: `[]`.');
+    s.push('');
+    if (basliklar.length) {
+      s.push('## Zaten var olan standartlar — bunları TEKRAR önerme', '');
+      s.push('Aşağıdakiler Studio\'da zaten kayıtlı. Aynısını ya da çok benzerini');
+      s.push('üretme; yalnız gerçekten yeni ve eksik olanı öner.');
+      s.push('');
+      basliklar.slice(0, 120).forEach(b => s.push('- ' + b));
+      s.push('');
+    }
+    s.push('## Çıktı biçimi — AYNEN böyle', '');
+    s.push('Önce tek satır `--- STANDART VERİSİ ---`, sonra bir JSON dizisi.');
+    s.push('Her aday kural dizide bir nesnedir. Başka hiçbir şey yazma.');
+    s.push('');
+    s.push('```');
+    s.push('--- STANDART VERİSİ ---');
+    s.push('[');
+    s.push('  {');
+    s.push('    "ad": "Kısa başlık (iki üç kelime)",');
+    s.push('    "grup": "Tasarım",');
+    s.push('    "alan": "Üst çubuk",');
+    s.push('    "tip": "KURAL",');
+    s.push('    "kategori": "UI",');
+    s.push('    "aile": null,');
+    s.push('    "kural": "Kuralın tam metni — emir kipi, geniş zaman.",');
+    s.push('    "kosul": "",');
+    s.push('    "istisna": "",');
+    s.push('    "neden": "Tek cümle gerekçe.",');
+    s.push('    "kapsam": "nizam",');
+    s.push('    "kaynak": "bu programda nerede görüldüğü (kısa)",');
+    s.push('    "versiyon": 1,');
+    s.push('    "a11y": false,');
+    s.push('    "yerel": ""');
+    s.push('  }');
+    s.push(']');
+    s.push('```');
+    s.push('');
+    s.push('## Alan kuralları', '');
+    s.push('- **`kanonik_id`, `id`, `eski_standartlar` YAZMA.** Bunlar Studio\'ya ait.');
+    s.push('- **`tip`**: `KURAL` (zorunlu) · `VARSAYILAN` (varsayılan tercih) ·');
+    s.push('  `KOŞULLU` (koşulu `kosul`\'a yaz).');
+    s.push('- **`kural`** kod değil, davranış anlatır: "`#btn` kaldırıldı" değil,');
+    s.push('  "kalem üst çubukta durmaz".');
+    s.push('- **`aile`** yoksa `null`; **`kosul`/`istisna`** yoksa boş string `""`.');
+    s.push('- **`kapsam`** varsayılan `"nizam"`. **`versiyon`** yeni kuralda `1`.');
+    s.push('- **`a11y`** erişilebilirlik kuralıysa `true`.');
+    s.push('');
+    s.push('## Grup — bu sekizden birini seç, yenisini uydurma', '');
+    STANDART_GRUPLARI.forEach(g => s.push('- ' + g));
+    s.push('');
+    if (alanlar.length) {
+      s.push('## Alan — uyan varsa bu listeden AYNEN seç', '');
+      alanlar.forEach(a => s.push('- ' + a));
+      s.push('');
+    }
+    s.push('Kod yazma, dosya değiştirme, commit atma. Yalnız JSON bloğunu ver.');
+
+    return s.join('\n');
+  },
+
   /* Hata bildirimi kurulum promptu — müşteri programına "Hata bildir" formunu
      ve gönderme kodunu ekletir. Adres ve anahtar TÜM programlarda sabittir
      (config.js · RAPOR); tek değişen bu projenin UUID'sidir. Bildirim Studio'ya
