@@ -9325,7 +9325,42 @@ function hataBildirimListesi() {
     ${liste.length
       ? `<div class="lk-liste">${liste.map(hataKarti).join('')}</div>`
       : `<div class="card">${empty(ICON.uyari, 'Henüz bildirim yok',
-          'Bir programda hata bildirildiğinde burada görünecek.')}</div>`}`;
+          'Bir programda hata bildirildiğinde burada görünecek.')}</div>`}
+    <button class="sayfa-dug ikincil" type="button" data-eylem="hata-kur-sec"
+            style="margin-top:14px">
+      ${svg(ICON.kopya, 15)} Programa Hata Bildirimi Kur</button>`;
+}
+
+/* Proje seç → o projenin "hata bildirimi kurulum" promptunu panoya kopyala.
+   Prompt önce programda özellik var mı bakar; varsa bağlar, yoksa sorar-kurar. */
+function hataKurProjeSec() {
+  modalHepsiniKapat();
+  const projeler = (DB.projeler || []).filter(p => !cekirdekMi(p))
+    .slice().sort((a, b) => String(projeAdi(a)).localeCompare(String(projeAdi(b)), 'tr'));
+  const satirlar = projeler.map(p => {
+    const adres = DB.logoAdres[p.id];
+    const ikon = adres
+      ? `<span class="lk-ikon logo yukleniyor" data-logo="${esc(adres)}"><b>${esc(basHarf(p.firma))}</b><span class="donen"></span></span>`
+      : `<span class="lk-ikon logo"><b>${esc(basHarf(p.firma))}</b></span>`;
+    return `
+      <button class="lk" type="button" data-eylem="hata-kur-kopya" data-id="${esc(p.id)}">
+        ${ikon}
+        <span class="lk-yz"><b>${esc(projeAdi(p))}</b></span>
+        <span class="lk-ok">${svg(ICON.kopya, 18)}</span>
+      </button>`;
+  }).join('');
+
+  modalAc(`
+    ${modalBaslik(ICON.uyari, 'Programa hata bildirimi kur',
+      'Projeyi seç — kurulum promptu panoya kopyalanır. Programın Claude oturumuna yapıştır: önce özellik var mı bakar, yoksa sorup kurar.')}
+    ${projeler.length
+      ? `<div class="lk-liste">${satirlar}</div>`
+      : `<div class="card">${empty(ICON.katman, 'Proje yok', 'Önce bir proje oluştur.')}</div>`}
+    <div class="modal-alt">
+      <button class="btn btn-ghost" data-sd="iptal" type="button">Kapat</button>
+    </div>`, kutu => {
+    $('[data-sd="iptal"]', kutu).addEventListener('click', modalKapat);
+  }, 'genis');
 }
 
 function hataBildirimDetay(id) {
@@ -14651,12 +14686,15 @@ async function eylemCalistir(el) {
     return;
   }
 
+  if (e === 'hata-kur-sec') return hataKurProjeSec();
+
   if (e === 'hata-kur-kopya') {
     let metin;
     try { metin = PROMPT.hataBildirimKur(id); }
     catch (h) { toast('Prompt üretilemedi: ' + h.message, 'hata'); return; }
     if (!metin) { toast('Proje bulunamadı.', 'hata'); return; }
     const ok = await panoyaKopyala(metin);
+    modalKapat();
     return toast(ok ? 'Kurulum promptu panoda — programın Claude oturumuna yapıştır.'
                     : 'Kopyalanamadı.', ok ? 'basari' : 'hata');
   }

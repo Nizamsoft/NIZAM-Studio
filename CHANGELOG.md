@@ -1,5 +1,12 @@
 # Değişiklik Günlüğü
 
+## v0.267.0
+- **Mevcut programlara hata bildirimi kurulumu.** Hata Bildirimleri ekranının
+  altına "Programa Hata Bildirimi Kur" düğmesi: proje seç → o projenin kurulum
+  promptu panoya kopyalanır. Prompt artık akıllı: önce programda hata/geri
+  bildirim özelliği var mı diye bakar; VARSA yeni ekran eklemeden bizim kanala
+  bağlar, YOKSA önce "kuralım mı?" diye sorup onay sonrası kurar (idempotent).
+
 ## v0.266.0
 - **Hata Bildirimleri paneli diğer kartlarla uyumlu.** Panel şeridi artık
   Talepler / Açık Görev kartlarıyla birebir aynı `ps` kart düzenini kullanıyor
