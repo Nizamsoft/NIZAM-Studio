@@ -413,22 +413,24 @@ function guvenlikMatrisUret({ manifest, scan, dogrulama, proje }) {
       beklenen: 'DENY', beklenti_kaynagi: 'otomatik', hassas,
       gerekce: 'Girişsiz (anonim) erişim engellenmeli' });
 
-    /* "Başkasının satırını görme/değiştirme" testi YALNIZ o tablonun kendi
-       satır sahibi varsa anlamlıdır. Ortak tablolarda (kullanicilar, subeler,
-       hesaplar, katmanlar gibi — herkesin okuması gereken) bu test yanlış
-       alarmdır, üretilmez. Sahipliği iki kaynaktan anlıyoruz, tablo-tablo:
-       (1) manifest sahiplik_alani yazmışsa, (2) GERÇEK select kuralı sahiplik/
-       kiracı sınıfıysa (olusturan = auth.uid() gibi). Manifest net yazmasa
-       bile gerçek kural sahiplik diyorsa test edilir — böylece kapsam düşmez. */
-    const entSahip = String(guvenlikDeger(v.sahiplik_alani) || '').trim().toLowerCase();
-    const manSahip = !!entSahip && !['', 'yok', 'hayir', 'hayır', 'none', '-', 'ortak'].includes(entSahip);
-    const dbSelect = guvenlikGercekKoruma(scan, ad, 'select').sinif;
-    const dbSahip = dbSelect === 'sahiplik' || dbSelect === 'kiraci';
-    const ozelSatir = manSahip || dbSahip;
-
-    /* İç: tablonun satır sahibi varsa kendi ALLOW + başkası DENY (read + yazma). */
-    if (ozelSatir) {
-      const g = 'sahiplik_alani: ' + (entSahip || dbSelect) + ' — satır sahibi dışındaki engellenmeli';
+    /* "Başkasının satırı" testi İŞLEM BAZINDA üretilir: o işlem (okuma /
+       güncelleme / silme) satır sahipliğine göre kısıtlıysa anlamlıdır.
+       ÖNEMLİ: tabloda sahiplik_alani olması tek başına yetmez — okuma ORTAK
+       olabilir (herkes tüm satırları okur) ama yazma sahipli olabilir. Bu
+       yüzden sahiplik_alani'na değil, o işlemin GERÇEK kuralına / manifest
+       beklentisine bakarız. Ortak okunan tabloda (kullanicilar gibi) başkasının
+       satırını okuma testi üretilmez → yanlış alarm yok. */
+    const rb = v.rls_beklentisi || {};
+    const bekSinif = (alan) => guvenlikBeklentiSinifi(guvenlikDeger(rb[alan]) || rb[alan]);
+    const sahipliIslem = (bekAlan, dbIslem) => {
+      const b = bekSinif(bekAlan);
+      if (b === 'sahiplik' || b === 'kiraci') return true;
+      if (b === 'herkes' || b === 'rol') return false;   // manifest "ortak/rol" → başkası serbest
+      const s = guvenlikGercekKoruma(scan, ad, dbIslem).sinif;
+      return s === 'sahiplik' || s === 'kiraci';
+    };
+    const g = 'Satır sahipliği kuralı — sahibi dışındaki satır engellenmeli';
+    if (sahipliIslem('select', 'select')) {
       ekle({ aktor: { tur: 'hesap', deger: 'hesap_A' }, kategori: 'ic',
         kaynak: { varlik: ad, kapsam: 'kendi' }, islem: 'read',
         beklenen: 'ALLOW', beklenti_kaynagi: 'otomatik', hassas,
@@ -436,11 +438,12 @@ function guvenlikMatrisUret({ manifest, scan, dogrulama, proje }) {
       ekle({ aktor: { tur: 'hesap', deger: 'hesap_A' }, kategori: 'ic',
         kaynak: { varlik: ad, kapsam: 'baskasinin' }, islem: 'read',
         beklenen: 'DENY', beklenti_kaynagi: 'dogrulama', hassas, gerekce: g });
-      for (const islem of ['update', 'delete']) {
-        ekle({ aktor: { tur: 'hesap', deger: 'hesap_A' }, kategori: 'ic',
-          kaynak: { varlik: ad, kapsam: 'baskasinin' }, islem,
-          beklenen: 'DENY', beklenti_kaynagi: 'dogrulama', hassas, gerekce: g });
-      }
+    }
+    for (const islem of ['update', 'delete']) {
+      if (!sahipliIslem(islem, islem)) continue;
+      ekle({ aktor: { tur: 'hesap', deger: 'hesap_A' }, kategori: 'ic',
+        kaynak: { varlik: ad, kapsam: 'baskasinin' }, islem,
+        beklenen: 'DENY', beklenti_kaynagi: 'dogrulama', hassas, gerekce: g });
     }
 
     /* Sütun düzeyi: hassas sütunlar (eposta gibi) bu tabloda kapalı, kimlik

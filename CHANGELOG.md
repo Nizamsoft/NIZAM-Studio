@@ -1,5 +1,14 @@
 # Değişiklik Günlüğü
 
+## v0.283.0
+- **"Başkasının satırı" testi artık işlem bazında.** Önceden tabloda sahiplik
+  sütunu olması yetiyordu; oysa okuma ORTAK olabilir (herkes tüm satırları
+  okur) ama yazma sahipli olabilir. Artık okuma/güncelleme/silme için ayrı
+  ayrı, o işlemin gerçek kuralına/manifest beklentisine bakılıyor. Ortak
+  okunan tabloda (kullanicilar gibi) başkasının-satırını-okuma testi
+  üretilmiyor → yanlış "YÜKSEK açık" alarmı bitti. Sahipli tablolarda
+  (faturalar gibi) test aynen sürüyor; sütun testleri de korunuyor.
+
 ## v0.282.0
 - **Sütun düzeyi güvenlik testi.** Satır okunabilir ama hassas sütun (ör.
   eposta) kapalı olabilir — test artık bunu ayrı ölçüyor: `select=<sütun>`,
