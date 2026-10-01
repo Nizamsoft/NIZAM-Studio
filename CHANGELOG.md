@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.278.0
+- **"Elle test" kalabalığı azaldı.** Fonksiyonlarda her rol için ayrı
+  "çağıramamalı" testi üretiliyordu (7 fonksiyon × 4 rol = 28 boş satır).
+  Artık sadece güvenlik açısından anlamlı olan "anonim çağıramamalı" testi
+  üretiliyor; yetkili rolün çağırabilmesi açık değil, test edilmiyor.
+
 ## v0.277.0
 - **Güvenlik akışı sadeleşti.** Artık önce bütün bilgileri yapıştırırsın
   (kod · güvenlik modeli · veritabanı röntgeni) — altta sonuç/tablo çıkmaz —

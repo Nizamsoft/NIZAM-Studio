@@ -426,23 +426,16 @@ function guvenlikMatrisUret({ manifest, scan, dogrulama, proje }) {
       beklenti_kaynagi: 'manifest', hassas: hassasVarliklar.has(varlik) });
   }
 
-  /* 3) Fonksiyonlar: manifest.sunucu.edge_functions'tan çağıran rolü. */
-  const roller = (govde.roller || []).map(r => guvenlikDeger(r.ad) || r.ad).filter(Boolean);
+  /* 3) Fonksiyonlar: yalnız güvenlik açısından anlamlı testi üret — "anonim
+     (girişsiz) bu fonksiyonu çağıramamalı". Yetkili rolün çağırabilmesi bir
+     açık değil; her rol için ayrı "çağıramamalı" satırı üretmek de boş yere
+     "elle test" sayısını şişiriyordu, üretmiyoruz. */
   for (const f of ((govde.sunucu && govde.sunucu.edge_functions) || [])) {
     const ad = guvenlikDeger(f.ad) || f.ad;
-    const gerekliRol = String(guvenlikDeger(f.yetki_kontrolu) || '').toLowerCase();
     if (!ad) continue;
-    /* Anonim her zaman DENY beklenir. */
     ekle({ kategori: 'dis', aktor: { tur: 'anonim', deger: 'anonim' },
       kaynak: { varlik: ad, kapsam: 'herhangi' }, islem: 'call',
       beklenen: 'DENY', beklenti_kaynagi: 'manifest' });
-    /* Gerekli rol dışındaki roller DENY, gerekli rol ALLOW. */
-    for (const r of roller) {
-      const ayni = gerekliRol && r.toLowerCase().includes(gerekliRol);
-      ekle({ kategori: 'ic', aktor: { tur: 'rol', deger: r },
-        kaynak: { varlik: ad, kapsam: 'herhangi' }, islem: 'call',
-        beklenen: ayni ? 'ALLOW' : 'DENY', beklenti_kaynagi: 'manifest' });
-    }
   }
 
   /* 4) Storage: private kova için anonim/başkası DENY, sahip ALLOW. */
