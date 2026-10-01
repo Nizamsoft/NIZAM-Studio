@@ -6813,12 +6813,19 @@ function guvenlikKodEkle(ekle, kod) {
 }
 
 /* Kod denetimi kartı — Ayarlar'da da, proje durağında da aynı. */
-function guvenlikKodKarti(k, projeId) {
+/* Denetim adımının numaralı/durumlu rozeti (antivirüs akışı). durum:
+   'tamam' (yeşil tik) · 'sirada' (koyu numara) · 'bekle' (gri numara). */
+function guvAdimIk(no, durum) {
+  const ic = durum === 'tamam' ? svg(ICON.tik, 17) : '<b>' + no + '</b>';
+  return '<span class="gv-rz ' + durum + '">' + ic + '</span>';
+}
+
+function guvenlikKodKarti(k, projeId, ik) {
   const acik = k ? k.bulgular.filter(b => b.onem !== 'dusuk').length : 0;
   return `
     <div class="btk">
       <div class="btk-ust">
-        <span class="btk-ik ${k ? 'yesil' : 'mor'}">${svg(ICON.dosya, 22)}</span>
+        ${ik || `<span class="btk-ik ${k ? 'yesil' : 'mor'}">${svg(ICON.dosya, 22)}</span>`}
         <span class="btk-yz"><b>Kod denetimi</b>
           <i>${k
             ? esc([k.depo, k.commit].filter(Boolean).join(' @ ') + (k.depo || k.commit ? ' · ' : '')
@@ -6841,12 +6848,12 @@ function guvenlikKodKarti(k, projeId) {
    bölüm; programın İDDİA EDİLEN güvenlik modelini Claude'dan alıp snapshot
    olarak saklar. Projeli ekranda DB'ye kaydeder (hedef proje başına),
    projesiz (Ayarlar) ekranda yalnız belleğe alıp doğrular. */
-function guvenlikManifestKarti(m, projeId) {
+function guvenlikManifestKarti(m, projeId, ik) {
   const kayitli = m && m.commit;
   return `
     <div class="btk">
       <div class="btk-ust">
-        <span class="btk-ik ${kayitli ? 'yesil' : 'mor'}">${svg(ICON.gGuvenlik, 22)}</span>
+        ${ik || `<span class="btk-ik ${kayitli ? 'yesil' : 'mor'}">${svg(ICON.gGuvenlik, 22)}</span>`}
         <span class="btk-yz"><b>Security Manifest</b>
           <i>${kayitli
             ? esc('commit ' + (m.commit || '—') + ' · ' + olcumTarihi(m)
@@ -6869,13 +6876,13 @@ function guvenlikManifestKarti(m, projeId) {
 /* NIZAM Security · Manifest ↔ Database doğrulama kartı (Faz 3). Scan SQL'i
    kopyalanır, hedefin SQL Editor'ünde çalıştırılır, sonuç yapıştırılır,
    sonra manifest ile karşılaştırılır. Sonuç bellekte (bu faz DB'ye yazmaz). */
-function guvenlikDogrulamaKarti(g, projeId) {
+function guvenlikDogrulamaKarti(g, projeId, ik) {
   const scanVar = !!g.scan;
   const hazir = !!g.manifest && scanVar;
   return `
     <div class="btk">
       <div class="btk-ust">
-        <span class="btk-ik ${g.dogrulama ? 'yesil' : 'mavi'}">${svg(ICON.gVeri, 22)}</span>
+        ${ik || `<span class="btk-ik ${g.dogrulama ? 'yesil' : 'mavi'}">${svg(ICON.gVeri, 22)}</span>`}
         <span class="btk-yz"><b>Manifest ↔ Veritabanı doğrulama</b>
           <i>${g.dogrulama
             ? esc(g.dogrulama.ozet.celisiyor + ' çelişki · ' + g.dogrulama.ozet.dogrulandi
@@ -6922,14 +6929,14 @@ function guvenlikDogrulamaTablosu(d) {
 
 /* NIZAM Security · Canlı tarama kartı (Faz 5). Hesap A/B ile güvenli okuma
    testleri; sonuç 7 durumlu. Şifreler yalnız çalışırken bellekte. */
-function guvenlikTaramaKarti(g, projeId) {
+function guvenlikTaramaKarti(g, projeId, ik) {
   if (!g.matris) return '';
   const ek = projeId || 'ayar';
   const o = g.tarama && g.tarama.ozet;
   return `
     <div class="btk">
       <div class="btk-ust">
-        <span class="btk-ik ${g.tarama ? (o.acik ? 'kirmizi' : 'yesil') : 'kirmizi'}">${svg(ICON.gGuvenlik, 22)}</span>
+        ${ik || `<span class="btk-ik ${g.tarama ? (o.acik ? 'kirmizi' : 'yesil') : 'kirmizi'}">${svg(ICON.gGuvenlik, 22)}</span>`}
         <span class="btk-yz"><b>Canlı Tarama</b>
           <i>${g.tarama
             ? esc(o.acik + ' açık · ' + o.dogrulandi + ' doğrulandı · ' + o.dogrulanamadi
@@ -7096,12 +7103,12 @@ function guvenlikTaramaTablosu(t) {
 /* NIZAM Security · Test Matrix kartı (Faz 4). Manifest + scan + doğrulamadan
    çalıştırılabilir test satırları üretir. Bu faz yalnız üretir/gösterir;
    canlı çalıştırma ve kayıt sonraki faz. */
-function guvenlikMatrisKarti(g, projeId) {
+function guvenlikMatrisKarti(g, projeId, ik) {
   const hazir = !!g.manifest;
   return `
     <div class="btk">
       <div class="btk-ust">
-        <span class="btk-ik ${g.matris ? 'yesil' : 'mavi'}">${svg(ICON.izgaraDort, 22)}</span>
+        ${ik || `<span class="btk-ik ${g.matris ? 'yesil' : 'mavi'}">${svg(ICON.izgaraDort, 22)}</span>`}
         <span class="btk-yz"><b>Test Matrisi</b>
           <i>${g.matris
             ? esc(g.matris.ozet.toplam + ' test · ' + g.matris.ozet.dis + ' dış · '

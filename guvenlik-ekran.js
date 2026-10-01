@@ -159,18 +159,39 @@ function guvenlikDenetimEkran(projeId) {
   const p = DB.proje(projeId);
   if (!p) return `<div class="card">${empty(ICON.uyari, 'Proje bulunamadı', '')}</div>`;
   const g = durakGuvenlikDurum(projeId);
+  /* Antivirüs akışı: adımların tamam/sırada/bekle durumu + üstte durum başlığı. */
+  const adimlar = [!!g.kod, !!g.manifest, !!g.dogrulama, !!g.matris, !!g.tarama];
+  const biten = adimlar.filter(Boolean).length;
+  const simdi = adimlar.indexOf(false);           // -1 = hepsi hazır
+  const yuzde = Math.round(biten / adimlar.length * 100);
+  const du = i => adimlar[i] ? 'tamam' : (i === simdi ? 'sirada' : 'bekle');
+  const o = g.tarama && g.tarama.ozet;
+  const basB = o ? (o.acik ? 'Dikkat gerekiyor' : 'Program güvenli görünüyor')
+                 : 'Taramaya hazırlanıyor';
+  const basP = o ? (o.acik ? o.acik + ' açık bulundu — gidermelisin.' : 'Yetkisiz erişim bulunamadı.')
+                 : biten + ' / ' + adimlar.length + ' adım hazır';
+  const basRenk = o ? (o.acik ? (o.kritik ? 'var(--red)' : '#b8801a') : 'var(--basari,#2f7d5c)') : 'var(--ink-strong)';
   return `
     <a class="tl-geri" href="#/guvenlik/${esc(projeId)}">${svg(ICON.chevron, 14)} ${esc(basHarfleriBuyuk(projeAdi(p)))}</a>
     <div class="pj-tepe"><div class="pj-tepe-yz">
-      <h1>Yeni Denetim</h1>
-      <p>Sırayla: kod denetimi → manifest → veritabanı doğrulama → test matrisi → canlı tarama → kaydet.</p>
+      <h1>Güvenlik Taraması</h1>
+      <p>Programı gerçek hesaplarla sınar; yalnız okur, hiçbir şeyi değiştirmez.</p>
     </div></div>
-    ${guvenlikKodKarti(g.kod, projeId)}
-    ${guvenlikManifestKarti(g.manifest, projeId)}
+    <div class="gv-tara">
+      <span class="gv-kalkan">${svg(ICON.gGuvenlik, 28)}</span>
+      <div class="gv-tara-yz">
+        <b style="color:${basRenk}">${esc(basB)}</b>
+        <p>${esc(basP)}</p>
+        <div class="gv-ilerle"><i style="width:${yuzde}%"></i></div>
+        <span class="gv-tara-say">${biten} / ${adimlar.length} adım hazır</span>
+      </div>
+    </div>
+    ${guvenlikKodKarti(g.kod, projeId, guvAdimIk(1, du(0)))}
+    ${guvenlikManifestKarti(g.manifest, projeId, guvAdimIk(2, du(1)))}
     ${guvenlikProgramNotu(g.kod)}
-    ${guvenlikDogrulamaKarti(g, projeId)}
-    ${guvenlikMatrisKarti(g, projeId)}
-    ${guvenlikTaramaKarti(g, projeId)}`;
+    ${guvenlikDogrulamaKarti(g, projeId, guvAdimIk(3, du(2)))}
+    ${guvenlikMatrisKarti(g, projeId, guvAdimIk(4, du(3)))}
+    ${guvenlikTaramaKarti(g, projeId, guvAdimIk(5, du(4)))}`;
 }
 
 /* ---------- Denetim geçmişi ---------- */

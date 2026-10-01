@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## v0.274.0
+- **Yeni Denetim ekranı artık antivirüs akışı gibi.** Üstte kalkanlı durum
+  başlığı + ilerleme çubuğu ("X / 5 adım hazır"); adımlar numaralı rozetlerle
+  (biten=yeşil tik, sıradaki=koyu numara, bekleyen=gri numara) gösteriliyor.
+
 ## v0.273.0
 - **Güvenlik sonucu artık antivirüs görünümü.** Düz tablo yerine: güvenlik skoru
   (halka), tehdit özeti (Kritik/Yüksek/Orta/Doğrulandı/Kapalı/Elle test), her açık
