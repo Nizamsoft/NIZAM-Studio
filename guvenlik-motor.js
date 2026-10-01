@@ -177,27 +177,38 @@ function guvenlikManifestDogrula({ manifest, scan, proje }) {
       continue;
     }
     const rb = v.rls_beklentisi || {};
+    /* Her tablonun 4 işlemi de gerçek RLS policy'sinden karara bağlanır
+       (yazma denenmeden — read-only). Manifest o işlem için sessizse bile
+       policy'den kesin sonuç çıkar; böylece yazma testleri "elle test"e
+       düşmez. Yalnız gerçekten çözülemeyen (karmaşık ifade) ölçülemez kalır. */
     for (const islem of ['select', 'insert', 'update', 'delete']) {
-      if (!(islem in rb)) continue;
-      const beklenen = guvenlikBeklentiSinifi(rb[islem]);
+      const beyanVar = (islem in rb);
+      const beklenen = beyanVar ? guvenlikBeklentiSinifi(rb[islem]) : null;
       const gercek = guvenlikGercekKoruma(scan, ad, islem);
+      /* Gerçek policy sınıfını kesin anlama çevir:
+         açık = rls kapalı ya da using(true); korumalı = sahiplik/kiraci/rol/
+         false/(rls açık+kural yok, Postgres varsayılan DENY). */
+      const acikMi = gercek.sinif === 'rls_kapali' || gercek.sinif === 'herkes';
+      const korumali = ['sahiplik', 'kiraci', 'rol', 'kapali', 'yok'].includes(gercek.sinif);
       let durum = D.BILGI, bulgu = false;
-      if (gercek.sinif === 'rls_kapali') {
-        durum = (beklenen === 'yok' || beklenen === 'herkes') ? D.BILGI : D.CELISIYOR;
-        bulgu = durum === D.CELISIYOR;
-      } else if (gercek.sinif === 'karmasik' || beklenen === 'bilinmiyor') {
-        durum = D.DOGRULANAMADI;
-      } else if (gercek.sinif === 'herkes') {
-        durum = (beklenen === 'herkes' || beklenen === 'yok') ? D.DOGRULANDI : D.CELISIYOR;
-        bulgu = durum === D.CELISIYOR;
+      if (gercek.sinif === 'karmasik') {
+        durum = D.DOGRULANAMADI;                 // ifade çözülemedi → gerçekten ölçülemez
+      } else if (beyanVar) {
+        /* Manifest beyan etti → beklentiyle karşılaştır. */
+        if (acikMi) {
+          durum = (beklenen === 'herkes' || beklenen === 'yok') ? D.DOGRULANDI : D.CELISIYOR;
+          bulgu = durum === D.CELISIYOR;
+        } else { durum = D.DOGRULANDI; }         // koruma var, beklentiye uygun/sıkı
       } else {
-        /* gerçek koruma var (sahiplik/kiraci/rol). Beklenenle aynıysa doğrulandı. */
-        durum = (beklenen === gercek.sinif || beklenen === 'rol' || beklenen === 'yok')
-          ? D.DOGRULANDI : D.DOGRULANDI; // koruma beklentiden sıkı → yine güvenli
+        /* Manifest sessiz → gerçek korumadan kendi kararımızı ver. */
+        if (korumali) { durum = D.DOGRULANDI; }
+        else if (islem === 'select') { durum = D.BILGI; }   // açık okuma niyetli olabilir
+        else { durum = D.CELISIYOR; bulgu = true; }         // açık yazma → gerçek risk
       }
       ekle({ iddia_id: 'varlik:' + ad + ':rls:' + islem, kategori: 'rls', varlik: ad,
-        boyut: islem, beklenen: String(rb[islem]), gercek: gercek.sinif,
-        durum, kanit_manifest: '', kanit_db: gercek.kanit, bulgu_uretir: bulgu });
+        boyut: islem, beklenen: beyanVar ? String(rb[islem]) : '(manifest sessiz)',
+        gercek: gercek.sinif, durum, kanit_manifest: '', kanit_db: gercek.kanit,
+        bulgu_uretir: bulgu });
     }
   }
 

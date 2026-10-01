@@ -1,5 +1,12 @@
 # Değişiklik Günlüğü
 
+## v0.276.0
+- **"Elle test" yığını bitti.** Önceden yazma denemeleri (başkasının kaydını
+  güncelleme/silme) canlıda çalıştırılamadığı için hepsi "aktif test gerekli"ye
+  düşüyordu. Artık her tablonun 4 işlemi de gerçek RLS policy'sinden karara
+  bağlanıyor (yazma denenmeden, yalnız okunarak) — korumalıysa KAPALI, açıksa
+  AÇIK. Sadece gerçekten çözülemeyen (karmaşık policy ifadesi) ölçülemez kalır.
+
 ## v0.275.0
 - **Güvenlik taraması artık rol hesaplarıyla test ediyor.** Hesap A/B yerine
   3 rol: yönetici · personel · başka personel. Her rol kendi girişiyle test
