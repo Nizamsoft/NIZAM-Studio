@@ -1,5 +1,12 @@
 # Değişiklik Günlüğü
 
+## v0.273.0
+- **Güvenlik sonucu artık antivirüs görünümü.** Düz tablo yerine: güvenlik skoru
+  (halka), tehdit özeti (Kritik/Yüksek/Orta/Doğrulandı/Kapalı/Elle test), her açık
+  için kart + "Düzeltme promptunu kopyala" (Claude ile düzelttir), ham tablo
+  katlanan detayda. Açık yoksa "Tehdit bulunamadı" temiz hali. Hem canlı tarama
+  hem geçmiş snapshotu bu görünümü kullanır.
+
 ## v0.272.0
 - **Güvenlik: çapraz-firma testleri varsayılan kapalı.** NIZAM modeli her firmaya
   ayrı veritabanı olduğu için "başka şirketin verisini görme" (baska_sirket)

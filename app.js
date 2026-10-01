@@ -6953,8 +6953,120 @@ function guvenlikTaramaKarti(g, projeId) {
       </div>
       <p class="ipucu">Şifreler hiçbir yere kaydedilmiyor; yalnız test sırasında kullanılıyor.
         ${projeId ? '' : 'Denetimi kaydetmek için proje güvenlik adımını kullan.'}</p>
-      ${guvenlikTaramaTablosu(g.tarama)}
+      ${guvenlikAntivirus(g.tarama)}
     </div>`;
+}
+
+/* Antivirüs tarzı sonuç görünümü: skor halkası + tehdit özeti + açık kartları
+   (+ "düzeltme promptu") + ham tablo katlanır detayda. Veri t.sonuclar/t.ozet
+   (guvenlikTaramaCalistir çıktısı); yeniden hesap yok. */
+function guvenlikAntivirus(t) {
+  if (!t || !t.sonuclar || !t.sonuclar.length) return '';
+  const o = t.ozet || {};
+  const acik = o.acik || 0, kritik = o.kritik || 0, yuksek = o.yuksek || 0;
+  const orta = Math.max(0, acik - kritik - yuksek);
+  const gecen = (o.dogrulandi || 0) + (o.kapali || 0);
+  const olculen = gecen + acik;
+  const puan = olculen ? Math.round(100 * gecen / olculen) : null;
+  const renk = kritik ? 'var(--red)' : (acik ? '#b8801a' : 'var(--basari,#2f7d5c)');
+  const cevre = 289, ofset = puan == null ? cevre : Math.round(cevre * (1 - puan / 100));
+  const durumYazi = acik === 0
+    ? 'Tehdit bulunamadı'
+    : (kritik ? 'Kritik açık var' : 'Dikkat gerekiyor');
+  const altYazi = acik === 0
+    ? `${olculen} test çalıştı, yetkisiz erişim yok.`
+    : `${olculen} testten ${gecen}'i geçti. ${acik} açık bulundu, giderilmeli.`;
+
+  const oz = (sayi, etiket, c) => `<div style="flex:1;min-width:72px;background:var(--kagit,#fff);
+    border:1px solid var(--line,#ededf0);border-radius:10px;padding:10px 8px;text-align:center">
+    <b style="display:block;font-family:var(--yazi-baslik);font-weight:700;font-size:20px;line-height:1;${c?'color:'+c:''}">${sayi}</b>
+    <i style="font-style:normal;font-size:10px;color:var(--ink-soft);display:block;margin-top:5px">${esc(etiket)}</i></div>`;
+
+  const acikListe = t.sonuclar.filter(x => x.durum === 'AÇIK')
+    .sort((a, b) => ({ kritik: 0, yuksek: 1, orta: 2, dusuk: 3 }[a.risk] ?? 4) - ({ kritik: 0, yuksek: 1, orta: 2, dusuk: 3 }[b.risk] ?? 4));
+  const riskRenk = { kritik: 'var(--red)', yuksek: '#b8801a', orta: 'var(--mavi,#2f62c4)', dusuk: 'var(--ink-dim)' };
+  const riskAd = { kritik: 'KRİTİK', yuksek: 'YÜKSEK', orta: 'ORTA', dusuk: 'DÜŞÜK' };
+  const kartlar = acikListe.map(x => {
+    const rr = riskRenk[x.risk] || 'var(--ink-soft)';
+    return `<div style="background:var(--kagit,#fff);border:1px solid var(--line,#ededf0);border-radius:12px;overflow:hidden;margin-top:10px">
+      <div style="height:3px;background:${rr}"></div>
+      <div style="padding:13px 14px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+          <span style="font-family:var(--yazi-baslik);font-weight:700;font-size:10px;letter-spacing:.05em;
+            padding:3px 8px;border-radius:999px;background:color-mix(in srgb,${rr} 14%,#fff);color:${rr}">${riskAd[x.risk] || 'BULGU'}</span>
+          <b style="font-family:var(--yazi-baslik);font-weight:600;font-size:14px">${esc(x.aktor)} → ${esc(x.varlik)}${x.kapsam && x.kapsam !== 'herhangi' ? ' · ' + esc(x.kapsam) : ''}</b>
+        </div>
+        <p style="margin:0 0 10px;color:var(--ink-soft);font-size:13px">${esc(x.aciklama || 'Yetkisiz erişim başarılı.')}</p>
+        <div style="font:12px ui-monospace,monospace;color:var(--ink-dim);background:var(--gri,#f2f2f4);border-radius:7px;padding:8px 10px;margin:0 0 11px;overflow-x:auto">${esc(x.aktor)} · ${esc(x.islem)} · ${esc(x.varlik)} · beklenen ${esc(x.beklenen)} · ${esc(x.gercek || '')}</div>
+        <button class="sayfa-dug ikincil" type="button" style="width:auto;padding:9px 13px" data-eylem="guv-duzelt-kopya"
+          data-varlik="${esc(x.varlik)}" data-aktor="${esc(x.aktor)}" data-islem="${esc(x.islem)}"
+          data-beklenen="${esc(x.beklenen)}" data-kapsam="${esc(x.kapsam || '')}" data-risk="${esc(x.risk || '')}">
+          ${svg(ICON.kopya, 14)} Düzeltme promptunu kopyala</button>
+      </div></div>`;
+  }).join('');
+
+  const temiz = acik === 0
+    ? `<div style="display:flex;align-items:center;gap:10px;background:color-mix(in srgb,var(--basari,#2f7d5c) 12%,#fff);
+        border-radius:10px;padding:13px 15px;color:var(--basari,#2f7d5c);font-family:var(--yazi-baslik);font-weight:600;font-size:13px;margin-top:10px">
+        ${svg(ICON.tik, 18)} Yetkisiz erişim bulunamadı — ölçülen testler temiz.</div>`
+    : '';
+
+  return `
+    <div style="display:flex;align-items:center;gap:16px;margin-top:14px;padding-top:14px;border-top:1px solid var(--line,#ededf0)">
+      <div style="position:relative;width:96px;height:96px;flex-shrink:0">
+        <svg width="96" height="96" viewBox="0 0 104 104" style="transform:rotate(-90deg)">
+          <circle cx="52" cy="52" r="46" fill="none" stroke="var(--line,#ededf0)" stroke-width="9"></circle>
+          <circle cx="52" cy="52" r="46" fill="none" stroke="${renk}" stroke-width="9" stroke-linecap="round"
+            stroke-dasharray="${cevre}" stroke-dashoffset="${ofset}"></circle>
+        </svg>
+        <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
+          <b style="font-family:var(--yazi-baslik);font-weight:700;font-size:27px;line-height:1">${puan == null ? '—' : puan}</b>
+          <i style="font-style:normal;font-size:9px;color:var(--ink-dim);letter-spacing:.04em;text-transform:uppercase">Güvenlik</i>
+        </div>
+      </div>
+      <div style="min-width:0">
+        <b style="font-family:var(--yazi-baslik);font-weight:700;font-size:16px;color:${renk}">${durumYazi}</b>
+        <p style="margin:4px 0 0;color:var(--ink-soft);font-size:12.5px">${esc(altYazi)}</p>
+      </div>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px">
+      ${oz(kritik, 'Kritik', kritik ? 'var(--red)' : '')}
+      ${oz(yuksek, 'Yüksek', yuksek ? '#b8801a' : '')}
+      ${oz(orta, 'Orta', '')}
+      ${oz(o.dogrulandi || 0, 'Doğrulandı', (o.dogrulandi ? 'var(--basari,#2f7d5c)' : ''))}
+      ${oz(o.kapali || 0, 'Kapalı', (o.kapali ? 'var(--basari,#2f7d5c)' : ''))}
+      ${oz((o.dogrulanamadi || 0) + (o.aktif_gerekli || 0), 'Elle test', '')}
+    </div>
+    ${kartlar}
+    ${temiz}
+    <details style="margin-top:12px;background:var(--kagit,#fff);border:1px solid var(--line,#ededf0);border-radius:12px">
+      <summary style="cursor:pointer;padding:12px 14px;font-family:var(--yazi-baslik);font-weight:600;font-size:13px;list-style:none">Tüm test sonuçları (${o.toplam || t.sonuclar.length}) ▾</summary>
+      <div style="padding:0 2px 8px">${guvenlikTaramaTablosu(t)}</div>
+    </details>`;
+}
+
+/* Bir açık bulgusu için Claude'a verilecek düzeltme promptu. */
+function guvenlikDuzeltPrompt(f) {
+  const s = [];
+  s.push('# Güvenlik açığını düzelt', '');
+  s.push('NIZAM Security canlı testinde şu açık bulundu:');
+  s.push('');
+  s.push('- **Tablo:** `' + f.varlik + '`');
+  s.push('- **Erişen:** ' + f.aktor + (f.kapsam ? ' (' + f.kapsam + ')' : ''));
+  s.push('- **İşlem:** ' + f.islem);
+  s.push('- **Olması gereken:** ' + f.beklenen + ' (engellenmeli)');
+  s.push('- **Gerçek:** erişim BAŞARILI oldu — yani RLS bu erişimi durdurmuyor.');
+  s.push('');
+  s.push('Yap:');
+  s.push('1. `' + f.varlik + '` tablosunda RLS açık mı kontrol et; değilse aç.');
+  s.push('2. Bu erişimi engelleyen doğru politikayı yaz: ' + (f.aktor === 'anonim'
+    ? 'anonim (girişsiz) bu tabloyu OKUYAMAMALI.'
+    : 'bu rol/kullanıcı yalnız yetkili olduğu satırları görmeli; ' + f.beklenen + ' olan erişim reddedilmeli.'));
+  s.push('3. Göç dosyasını (sql/) ekle, Supabase\'de çalıştırılacak biçimde ver.');
+  s.push('4. Değişikliği açıkla ve aynı testin artık KAPALI döneceğini doğrula.');
+  s.push('');
+  s.push('Yalnız bu açığı gider; başka şeyi bozma. Kimlik dosyasını güncelle, main\'e gönder.');
+  return s.join('\n');
 }
 
 function guvenlikTaramaTablosu(t) {
@@ -16487,6 +16599,17 @@ async function eylemCalistir(el) {
     } catch (err) { toast('Tarama başarısız: ' + err.message, 'hata'); }
     hedef.taraniyor = false; render();
     return;
+  }
+
+  /* Bir açık bulgusu için düzeltme promptunu panoya kopyala. */
+  if (e === 'guv-duzelt-kopya') {
+    const metin = guvenlikDuzeltPrompt({
+      varlik: el.dataset.varlik, aktor: el.dataset.aktor, islem: el.dataset.islem,
+      beklenen: el.dataset.beklenen, kapsam: el.dataset.kapsam, risk: el.dataset.risk,
+    });
+    const ok = await panoyaKopyala(metin);
+    return toast(ok ? 'Düzeltme promptu panoda — programın Claude oturumuna yapıştır.'
+                    : 'Kopyalanamadı.', ok ? 'basari' : 'hata');
   }
 
   /* Denetimi kaydet — manifest snapshot + denetim snapshot + bulgu takibi.

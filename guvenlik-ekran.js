@@ -215,8 +215,8 @@ function guvenlikBosGecmis(projeId, p) {
 function guvenlikDenetimSnapshot(projeId, p) {
   const d = GUV_EKRAN.acikDenetim;
   const sonuc = Array.isArray(d.sonuclar) ? d.sonuclar : [];
-  /* Snapshot'ı tarama sonuç tablosuyla aynı biçimde göster (yeniden hesap yok). */
-  const tablo = guvenlikTaramaTablosu({ sonuclar: sonuc, ozet: d.ozet || {} });
+  /* Snapshot'ı antivirüs görünümüyle göster (yeniden hesap yok). */
+  const tablo = guvenlikAntivirus({ sonuclar: sonuc, ozet: d.ozet || {} });
   return `
     <a class="tl-geri" href="#" data-eylem="guv-denetim-kapat">${svg(ICON.chevron, 14)} Geçmiş</a>
     <div class="pj-tepe"><div class="pj-tepe-yz"><h1>Denetim #${String(d.no).padStart(3, '0')}</h1>
