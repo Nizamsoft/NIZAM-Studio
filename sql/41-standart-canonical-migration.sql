@@ -1,47 +1,48 @@
 -- ============================================================================
--- 41 · NIZAM Standart — Canonical TAŞIMA (77 → 66)
+-- 41 · NIZAM Standart — Canonical TAŞIMA (77 → 66) · TEK-BLOK sürüm
 -- ============================================================================
 -- Migration Phase 41 — veri taşıma. ÖNCE sql/39 (şema) ve sql/40 (snapshot)
 -- çalıştırılmış olmalı. Hiçbir satır DELETE EDİLMEZ; eskiler yalnız aktif=false.
 --
--- Mantık: survivor = eskiStandartlar[0]'ın mevcut satırı → UPDATE. İlk eski
--- kod başka canonical'a atanmışsa o canonical yeni UUID ile INSERT (yalnız
--- ST-066). task_standards, survivor olmayan eski satırlardan survivor'a taşınır.
--- Canonical olmayan eskiler + ST-075 → aktif=false. Benzersizlik: kanonik_id
--- unique + partial unique(alan,ad) WHERE aktif. Sonda validation; hata olursa
--- RAISE ile transaction ROLLBACK olur. İki kez çalıştırmak güvenlidir.
+-- NEDEN TEK BLOK: Supabase SQL Editor, art arda gelen ifadeler arasında geçici
+-- (temporary) tabloları koruyamıyordu ("_kodmap does not exist"). Bu yüzden tüm
+-- taşıma TEK bir "do $$ ... $$" bloğunda çalışır; temp tablolar baştan sona aynı
+-- çalışma içinde yaşar. Mantık, eşleme ve validation önceki sürümle BİREBİR aynı.
 --
--- Legacy eşleme: canonical ad→standards.ad, kural→tarif, yerel→yerel; grup/alan
--- KORUNUR (kategori→grup / aile→alan otomatik eşleme YAPILMAZ). Canonical anlam
--- yeni kolonlardadır (kanonik_id, tip, kategori, aile, kosul, istisna, neden,
--- kapsam, kaynak, versiyon, a11y, eski_standartlar).
+-- Mantık: survivor = eskiStandartlar[0]'ın mevcut satırı → UPDATE. İlk eski kod
+-- başka canonical'a atanmışsa o canonical yeni UUID ile INSERT (yalnız ST-066).
+-- task_standards, survivor olmayan eski satırlardan survivor'a taşınır. Canonical
+-- olmayan eskiler + ST-075 → aktif=false. Benzersizlik: kanonik_id unique + partial
+-- unique(alan,ad) WHERE aktif. Sonda validation; hata olursa transaction ROLLBACK.
+--
+-- Pre-check: canlı standards snapshot ile birebir aynı set olmalı → taşıma bir kez
+-- uygulandıktan sonra (ST-066 eklenince) ikinci çalıştırmayı güvenle reddeder.
+-- Snapshot-türevli validation: beklenen_toplam = snapshot+1, aktif canonical = 66.
+-- Canlı gerçek: 86 → 87 / 66 aktif / 21 pasif. İki kez çalıştırmak güvenlidir.
 -- ============================================================================
-
 begin;
 
--- 16) Snapshot zorunlu
-do $$ begin
+do $$
+declare
+  r record;
+  v_sv jsonb; v_snap int; v_cur int; v_fark int; n int;
+  v_aktif int; v_inaktif int; v_toplam int; v_dupkan int; v_aktif_null int;
+  v_st75_aktif int; v_066 uuid; v_006 uuid; v_orphan int;
+  v_st75_task int; v_dup_task int; v_bos_eski int; v_distinct int;
+  v_snap_toplam int; v_bek_toplam int; v_bek_inaktif int;
+begin
+  -- 0) Snapshot zorunlu
   if not exists (select 1 from public.standart_gecmisi where etiket='standart-canonical-v1') then
     raise exception 'Snapshot yok (standart-canonical-v1). Önce sql/40 calistir.';
   end if;
-end $$;
 
--- 16b) Pre-check: canlı standards, snapshot ile BİREBİR aynı veri seti olmalı.
---   Snapshot alındıktan (40) sonra standards'ta beklenmeyen bir değişiklik
---   olduysa (satır eklenmiş/silinmiş) migration BAŞLAMAZ. Sayıya sabit
---   bağlı değildir; snapshot'taki gerçek sete göre çalışır.
---   Not: Bu kesinlik, taşıma bir kez uygulandıktan sonra (ST-066 eklenince)
---   ikinci kez üst üste çalıştırmayı güvenle reddeder; tekrar taşıma için
---   önce sql/42 ile snapshot durumuna dönülür.
-do $$
-declare v_sv jsonb; v_snap int; v_cur int; v_fark int;
-begin
+  -- 0b) Pre-check: canlı standards snapshot ile birebir aynı set olmalı
   select standards_veri into v_sv from public.standart_gecmisi
     where etiket='standart-canonical-v1' order by alindi asc limit 1;
   v_snap := jsonb_array_length(v_sv);
   select count(*) into v_cur from public.standards;
   if v_cur <> v_snap then
-    raise exception 'Pre-check: canli standards (%) snapshot (%) ile ayni sayida degil. Snapshot sonrasi degisiklik var.', v_cur, v_snap;
+    raise exception 'Pre-check: canli standards (%) snapshot (%) ile ayni sayida degil.', v_cur, v_snap;
   end if;
   select (select count(*) from (
             select id from public.standards
@@ -55,11 +56,10 @@ begin
   if v_fark <> 0 then
     raise exception 'Pre-check: standards ID kumesi snapshot ile ayni degil (fark=%).', v_fark;
   end if;
-end $$;
 
--- Köprü: eski ST-kodu → (grup, alan, ad)  [77]
-create temporary table _kodmap (kod text primary key, grup text, alan text, ad text) on commit drop;
-insert into _kodmap (kod, grup, alan, ad) values
+  -- Köprü: eski ST-kodu → (grup, alan, ad)  [77]
+  create temporary table _kodmap (kod text primary key, grup text, alan text, ad text) on commit drop;
+  insert into _kodmap (kod, grup, alan, ad) values
   ('ST-01','Altyapı','Dil ve çatı','Vanilla JS · HTML · CSS'),
   ('ST-02','Altyapı','Derleme','Yok'),
   ('ST-03','Altyapı','Dosya düzeni','Ekran başına ayrı dosya'),
@@ -138,13 +138,13 @@ insert into _kodmap (kod, grup, alan, ad) values
   ('ST-76','Erişilebilirlik','Dokunma tepkisi','Bekleme yalnız harekete bırakılmaz'),
   ('ST-77','Erişilebilirlik','Dokunma ve kontrast','Basılan alan simgeden büyüktür');
 
--- Canonical hedef veri  [66]
-create temporary table _canon (
-  kanonik_id text primary key, tip text, kategori text, aile text, ad text, kural text,
-  kosul text, yerel text, istisna text, neden text, kapsam text, kaynak text,
-  versiyon int, a11y boolean, eski_std jsonb, survivor_kod text, yeni_insert boolean
-) on commit drop;
-insert into _canon (kanonik_id,tip,kategori,aile,ad,kural,kosul,yerel,istisna,neden,kapsam,kaynak,versiyon,a11y,eski_std,survivor_kod,yeni_insert) values
+  -- Canonical hedef veri  [66]
+  create temporary table _canon (
+    kanonik_id text primary key, tip text, kategori text, aile text, ad text, kural text,
+    kosul text, yerel text, istisna text, neden text, kapsam text, kaynak text,
+    versiyon int, a11y boolean, eski_std jsonb, survivor_kod text, yeni_insert boolean
+  ) on commit drop;
+  insert into _canon (kanonik_id,tip,kategori,aile,ad,kural,kosul,yerel,istisna,neden,kapsam,kaynak,versiyon,a11y,eski_std,survivor_kod,yeni_insert) values
   ('ST-001','VARSAYILAN','TECH',null,'Vanilla JS · HTML · CSS','Hazır çatı (React, Vue) kullanılmaz; bağımlılık az, ömrü uzun olsun.','','','Proje gereği farklı bir yol gerekiyorsa önce sorulur.','Az bağımlılık = uzun ömür ve kolay bakım.','nizam','koken_proje',1,false,'["ST-01"]'::jsonb,'ST-01',false),
   ('ST-002','VARSAYILAN','TECH',null,'Derleme yok','Dosyalar doğrudan çalışır; build adımı, paket yöneticisi ve node_modules yoktur.','','','','Kurulumsuz çalışma ve basit yayın.','nizam','koken_proje',1,false,'["ST-02"]'::jsonb,'ST-02',false),
   ('ST-003','KURAL','TECH',null,'Ekran başına ayrı dosya','Her ekran kendi dosyasındadır; tek dosyada 1500 satır aşılmaz.','','','','Büyük dosyada bir yeri düzeltirken başka yer bozulur.','nizam','koken_proje',1,false,'["ST-03"]'::jsonb,'ST-03',false),
@@ -212,22 +212,17 @@ insert into _canon (kanonik_id,tip,kategori,aile,ad,kural,kosul,yerel,istisna,ne
   ('ST-065','VARSAYILAN','UI','SETTINGS','Geliştirme istekleri Ayarlarda toplanır','Ayarlar''da ''Geliştirme istekleri'' ekranı bulunur: kullanıcı isteğini yazar, liste cihazda birikir, ''Hepsini kopyala'' ile tek metin olarak alınır. Sunucuya gitmez, kimseye gönderilmez.','','','','İstekler tek yerde toplansın, elle iletilsin.','nizam','koken_proje',1,false,'["ST-08"]'::jsonb,'ST-08',false),
   ('ST-066','KURAL','TECH',null,'Commit etiketi: [NS-x]','Her commit mesajı ilgili görevin [NS-x] etiketiyle başlar; Studio commit''i bu etiketten tanıyıp görevi ''Kontrolde''ye çeker.','','','','Görev-commit bağı etiketsiz kurulamaz.','nizam','koken_proje',1,false,'["ST-05"]'::jsonb,'ST-05',true);
 
--- Mevcut UNIQUE(alan,ad) kısıtını ADINI VARSAYMADAN kaldır
-do $$
-declare r record;
-begin
-  -- (alan,ad) üzerindeki unique KISITI — sütun sırasından bağımsız tespit
+  -- Mevcut UNIQUE(alan,ad) kısıtını adını varsaymadan kaldır
   for r in
     select con.conname from pg_constraint con
     join pg_class c on c.oid=con.conrelid
-    join pg_namespace n on n.oid=c.relnamespace
-    where n.nspname='public' and c.relname='standards' and con.contype='u'
+    join pg_namespace ns on ns.oid=c.relnamespace
+    where ns.nspname='public' and c.relname='standards' and con.contype='u'
       and coalesce(array_length(con.conkey,1),0) = 2
       and 2 = (select count(*) from unnest(con.conkey) k
                join pg_attribute a on a.attrelid=con.conrelid and a.attnum=k
                where a.attname in ('alan','ad'))
   loop execute format('alter table public.standards drop constraint %I', r.conname); end loop;
-  -- kısıt değil de salt unique INDEX biçimindeyse (kısıt-destekli olmayan) onu da kaldır
   for r in
     select i.indexname from pg_indexes i
     where i.schemaname='public' and i.tablename='standards'
@@ -235,105 +230,89 @@ begin
       and not exists (select 1 from pg_constraint con where con.conname=i.indexname
                       and con.conrelid='public.standards'::regclass)
   loop execute format('drop index if exists public.%I', r.indexname); end loop;
-end $$;
 
--- Survivor UUID'leri çöz (önce kanonik_id ile = tekrar çalıştırma; yoksa alan+ad ile)
-create temporary table _resolve on commit drop as
-select c.kanonik_id,
-  coalesce(
-    (select s.id from public.standards s where s.kanonik_id=c.kanonik_id limit 1),
-    (select s.id from public.standards s join _kodmap m on m.kod=c.survivor_kod
-       where s.alan=m.alan and s.ad=m.ad and s.kanonik_id is null limit 1)
-  ) as survivor_id
-from _canon c where not c.yeni_insert;
+  -- Survivor UUID'leri çöz
+  create temporary table _resolve on commit drop as
+  select c.kanonik_id,
+    coalesce(
+      (select s.id from public.standards s where s.kanonik_id=c.kanonik_id limit 1),
+      (select s.id from public.standards s join _kodmap m on m.kod=c.survivor_kod
+         where s.alan=m.alan and s.ad=m.ad and s.kanonik_id is null limit 1)
+    ) as survivor_id
+  from _canon c where not c.yeni_insert;
 
-do $$ declare n int; begin
   select count(*) into n from _resolve where survivor_id is null;
   if n>0 then raise exception 'Cozulemeyen survivor sayisi: %', n; end if;
-end $$;
 
--- Survivor UPDATE (legacy ad/tarif/yerel ← canonical; grup/alan korunur)
-update public.standards s set
-  ad=c.ad, tarif=c.kural, yerel=c.yerel,
-  kanonik_id=c.kanonik_id, tip=c.tip, kategori=c.kategori, aile=c.aile,
-  kosul=c.kosul, istisna=c.istisna, neden=c.neden, kapsam=c.kapsam,
-  kaynak=c.kaynak, versiyon=c.versiyon, a11y=c.a11y, eski_standartlar=c.eski_std,
-  aktif=true
-from _canon c join _resolve r on r.kanonik_id=c.kanonik_id
-where s.id=r.survivor_id;
+  -- Survivor UPDATE
+  update public.standards s set
+    ad=c.ad, tarif=c.kural, yerel=c.yerel,
+    kanonik_id=c.kanonik_id, tip=c.tip, kategori=c.kategori, aile=c.aile,
+    kosul=c.kosul, istisna=c.istisna, neden=c.neden, kapsam=c.kapsam,
+    kaynak=c.kaynak, versiyon=c.versiyon, a11y=c.a11y, eski_standartlar=c.eski_std,
+    aktif=true
+  from _canon c join _resolve rr on rr.kanonik_id=c.kanonik_id
+  where s.id=rr.survivor_id;
 
--- Yeni INSERT (ST-066): grup/alan kaynak eski standarttan (ST-05), guard'lı
-insert into public.standards
-  (ad, grup, alan, ozet, tarif, yerel, sira, aktif, eklendi, kanonik_id, tip, kategori, aile,
-   kosul, istisna, neden, kapsam, kaynak, versiyon, a11y, eski_standartlar)
-select c.ad, m.grup, m.alan, '', c.kural, c.yerel, 0, true, 'canonical-v1',
-       c.kanonik_id, c.tip, c.kategori, c.aile, c.kosul, c.istisna, c.neden,
-       c.kapsam, c.kaynak, c.versiyon, c.a11y, c.eski_std
-from _canon c join _kodmap m on m.kod=c.survivor_kod
-where c.yeni_insert
-  and not exists (select 1 from public.standards s where s.kanonik_id=c.kanonik_id);
+  -- Yeni INSERT (ST-066)
+  insert into public.standards
+    (ad, grup, alan, ozet, tarif, yerel, sira, aktif, eklendi, kanonik_id, tip, kategori, aile,
+     kosul, istisna, neden, kapsam, kaynak, versiyon, a11y, eski_standartlar)
+  select c.ad, m.grup, m.alan, '', c.kural, c.yerel, 0, true, 'canonical-v1',
+         c.kanonik_id, c.tip, c.kategori, c.aile, c.kosul, c.istisna, c.neden,
+         c.kapsam, c.kaynak, c.versiyon, c.a11y, c.eski_std
+  from _canon c join _kodmap m on m.kod=c.survivor_kod
+  where c.yeni_insert
+    and not exists (select 1 from public.standards s where s.kanonik_id=c.kanonik_id);
 
--- task_standards re-point haritası: loser eski satır → home canonical survivor
-create temporary table _repoint on commit drop as
-select s.id as old_uuid, r.survivor_id as survivor_uuid
-from (
-  select ac.kod, ac.kanonik_id
-  from (select jsonb_array_elements_text(eski_std) kod, kanonik_id from _canon) ac
-  where ac.kod not in (select survivor_kod from _canon where not yeni_insert)
-    and ac.kod <> 'ST-75'
-) loser
-join _kodmap m on m.kod=loser.kod
-join public.standards s on s.alan=m.alan and s.ad=m.ad and s.kanonik_id is null
-join _resolve r on r.kanonik_id=loser.kanonik_id;
+  -- task_standards re-point haritası
+  create temporary table _repoint on commit drop as
+  select s.id as old_uuid, rr.survivor_id as survivor_uuid
+  from (
+    select ac.kod, ac.kanonik_id
+    from (select jsonb_array_elements_text(eski_std) kod, kanonik_id from _canon) ac
+    where ac.kod not in (select survivor_kod from _canon where not yeni_insert)
+      and ac.kod <> 'ST-75'
+  ) loser
+  join _kodmap m on m.kod=loser.kod
+  join public.standards s on s.alan=m.alan and s.ad=m.ad and s.kanonik_id is null
+  join _resolve rr on rr.kanonik_id=loser.kanonik_id;
 
-update public.task_standards ts set standart_id=rp.survivor_uuid
-from _repoint rp
-where ts.standart_id=rp.old_uuid
-  and not exists (select 1 from public.task_standards x
-                  where x.gorev_id=ts.gorev_id and x.standart_id=rp.survivor_uuid);
+  update public.task_standards ts set standart_id=rp.survivor_uuid
+  from _repoint rp
+  where ts.standart_id=rp.old_uuid
+    and not exists (select 1 from public.task_standards x
+                    where x.gorev_id=ts.gorev_id and x.standart_id=rp.survivor_uuid);
 
-delete from public.task_standards ts using _repoint rp
-where ts.standart_id=rp.old_uuid
-  and exists (select 1 from public.task_standards x
-             where x.gorev_id=ts.gorev_id and x.standart_id=rp.survivor_uuid);
+  delete from public.task_standards ts using _repoint rp
+  where ts.standart_id=rp.old_uuid
+    and exists (select 1 from public.task_standards x
+               where x.gorev_id=ts.gorev_id and x.standart_id=rp.survivor_uuid);
 
--- Aktiflik: canonical (kanonik_id dolu) aktif, diğerleri (loser + ST-075) pasif
-update public.standards set aktif=(kanonik_id is not null);
+  -- Aktiflik
+  update public.standards set aktif=(kanonik_id is not null);
 
--- Benzersizlik: kanonik_id unique + partial unique(alan,ad) WHERE aktif
-create unique index if not exists standards_kanonik_id_key
-  on public.standards (kanonik_id) where kanonik_id is not null;
-create unique index if not exists standards_alan_ad_aktif_key
-  on public.standards (alan, ad) where aktif;
+  -- Benzersizlik
+  create unique index if not exists standards_kanonik_id_key
+    on public.standards (kanonik_id) where kanonik_id is not null;
+  create unique index if not exists standards_alan_ad_aktif_key
+    on public.standards (alan, ad) where aktif;
 
--- ---------------- VALIDATION ----------------
-do $$
-declare
-  v_aktif int; v_inaktif int; v_toplam int; v_dupkan int; v_aktif_null int;
-  v_st75_aktif int; v_st75_kan text; v_066 uuid; v_006 uuid; v_orphan int;
-  v_st75_task int; v_dup_task int; v_bos_eski int; v_distinct int;
-  v_snap_toplam int; v_bek_toplam int; v_bek_inaktif int;
-begin
-  -- Snapshot'tan türetilen beklentiler (sabit 78/12 YERİNE):
-  --   beklenen_toplam = snapshot_toplam + 1 (yalnız ST-066 yeni INSERT)
-  --   beklenen_inaktif = beklenen_toplam - 66 (aktif canonical mutlak)
+  -- VALIDATION
   select jsonb_array_length(standards_veri) into v_snap_toplam
     from public.standart_gecmisi where etiket='standart-canonical-v1' order by alindi asc limit 1;
   v_bek_toplam  := v_snap_toplam + 1;
   v_bek_inaktif := v_bek_toplam - 66;
 
-  select count(*) into v_aktif   from public.standards where aktif and kanonik_id is not null;      -- A
-  select count(*) into v_inaktif from public.standards where not aktif;                             -- B
-  select count(*) into v_toplam  from public.standards;                                             -- C
-  select count(*)-count(distinct kanonik_id) into v_dupkan from public.standards where kanonik_id is not null; -- D
-  select count(*) into v_aktif_null from public.standards where aktif and kanonik_id is null;       -- E
-  -- F: ST-075 satırı (kodmap'ten alan+ad) aktif canonical olmamalı
+  select count(*) into v_aktif   from public.standards where aktif and kanonik_id is not null;
+  select count(*) into v_inaktif from public.standards where not aktif;
+  select count(*) into v_toplam  from public.standards;
+  select count(*)-count(distinct kanonik_id) into v_dupkan from public.standards where kanonik_id is not null;
+  select count(*) into v_aktif_null from public.standards where aktif and kanonik_id is null;
   select count(*) into v_st75_aktif from public.standards s join _kodmap m on m.kod='ST-75'
     where s.alan=m.alan and s.ad=m.ad and (s.aktif or s.kanonik_id is not null);
-  -- G: ST-066 var + ST-006'dan farklı uuid
   select id into v_066 from public.standards where kanonik_id='ST-066';
   select id into v_006 from public.standards where kanonik_id='ST-006';
-  -- I: canonical olmayan (kanonik_id null) satırlara bağlı task (ST-075 hariç) olmamalı
   select count(*) into v_orphan from public.task_standards ts
     join public.standards s on s.id=ts.standart_id
     where s.kanonik_id is null
@@ -342,36 +321,28 @@ begin
   select count(*) into v_st75_task from public.task_standards ts
     join public.standards s on s.id=ts.standart_id
     join _kodmap m on m.kod='ST-75' where s.alan=m.alan and s.ad=m.ad;
-  -- J: task duplicate (PK zaten engeller)
   select coalesce(sum(c-1),0) into v_dup_task from (
     select count(*) c from public.task_standards group by gorev_id, standart_id) q;
-  -- K: aktif canonical'da eski_standartlar boş olmamalı
   select count(*) into v_bos_eski from public.standards where aktif and kanonik_id is not null
     and (eski_standartlar is null or eski_standartlar='[]'::jsonb);
-  -- L: 66 distinct canonical
   select count(distinct kanonik_id) into v_distinct from public.standards where kanonik_id is not null;
 
   if v_aktif<>66 then raise exception 'A: aktif canonical %, beklenen 66', v_aktif; end if;
-  if v_inaktif<>v_bek_inaktif then raise exception 'B: inaktif %, beklenen % (snapshot turevli)', v_inaktif, v_bek_inaktif; end if;
-  if v_toplam<>v_bek_toplam then raise exception 'C: toplam %, beklenen % (snapshot+1)', v_toplam, v_bek_toplam; end if;
+  if v_inaktif<>v_bek_inaktif then raise exception 'B: inaktif %, beklenen %', v_inaktif, v_bek_inaktif; end if;
+  if v_toplam<>v_bek_toplam then raise exception 'C: toplam %, beklenen %', v_toplam, v_bek_toplam; end if;
   if v_dupkan<>0 then raise exception 'D: kanonik_id duplicate %', v_dupkan; end if;
   if v_aktif_null>0 then raise exception 'E: aktif ama kanonik_id null %', v_aktif_null; end if;
   if v_st75_aktif>0 then raise exception 'F: ST-075 aktif/canonical gorunuyor'; end if;
   if v_066 is null then raise exception 'G: ST-066 yok'; end if;
   if v_006 is null then raise exception 'G: ST-006 yok'; end if;
   if v_066=v_006 then raise exception 'G: ST-066 ile ST-006 ayni UUID'; end if;
-  if v_orphan>0 then raise exception 'I: canonical olmayan satira bagli % task (ST-075 haric)', v_orphan; end if;
+  if v_orphan>0 then raise exception 'I: canonical olmayan satira bagli % task', v_orphan; end if;
   if v_dup_task>0 then raise exception 'J: task_standards duplicate %', v_dup_task; end if;
   if v_bos_eski>0 then raise exception 'K: eski_standartlar bos % canonical', v_bos_eski; end if;
   if v_distinct<>66 then raise exception 'L: distinct canonical %, beklenen 66', v_distinct; end if;
 
   raise notice 'VALIDATION OK: aktif=% inaktif=% toplam=% distinct=% ST075_task=%',
     v_aktif, v_inaktif, v_toplam, v_distinct, v_st75_task;
-  if v_st75_task>0 then raise notice 'UYARI: ST-075 satirina bagli % task iliskisi var (bilincli canonical disi; silinmedi).', v_st75_task; end if;
 end $$;
 
 commit;
-
--- ============================================================================
--- BİTTİ — Phase 41 (taşıma). Rollback: sql/42 (snapshot standart-canonical-v1).
--- ============================================================================
