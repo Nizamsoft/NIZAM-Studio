@@ -7031,9 +7031,10 @@ function guvenlikAntivirus(t) {
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
           <span style="font-family:var(--yazi-baslik);font-weight:700;font-size:10px;letter-spacing:.05em;
             padding:3px 8px;border-radius:999px;background:color-mix(in srgb,${rr} 14%,#fff);color:${rr}">${riskAd[x.risk] || 'BULGU'}</span>
-          <b style="font-family:var(--yazi-baslik);font-weight:600;font-size:14px">${esc(x.aktor)} → ${esc(x.varlik)}${x.kapsam && x.kapsam !== 'herhangi' ? ' · ' + esc(x.kapsam) : ''}</b>
+          <b style="font-family:var(--yazi-baslik);font-weight:600;font-size:14px">${esc(x.aktor)} → ${esc(x.varlik)}${x.sutun ? ' · sütun: ' + esc(x.sutun) : (x.kapsam && x.kapsam !== 'herhangi' ? ' · ' + esc(x.kapsam) : '')}</b>
         </div>
         <p style="margin:0;color:var(--ink-soft);font-size:13px">${esc(x.aciklama || 'Yetkisiz erişim başarılı.')}</p>
+        ${x.gerekce ? `<p style="margin:7px 0 0;color:var(--ink-faint);font-size:11.5px">${svg(ICON.info, 12)} ${esc(x.gerekce)}</p>` : ''}
       </div></div>`;
   }).join('');
   const duzeltDug = acik > 0
@@ -7117,16 +7118,22 @@ function guvenlikDuzeltHepsiPrompt(liste) {
   s.push('NIZAM Security testi programda ' + liste.length + ' güvenlik açığı buldu. '
     + 'Hepsini birlikte gider:', '');
   liste.forEach((f, i) => {
-    s.push((i + 1) + ') `' + f.varlik + '` — ' + f.aktor + (f.kapsam && f.kapsam !== 'herhangi' ? ' (' + f.kapsam + ')' : '')
+    s.push((i + 1) + ') `' + f.varlik + '`' + (f.sutun ? ' · sütun `' + f.sutun + '`' : '')
+      + ' — ' + f.aktor + (f.kapsam && f.kapsam !== 'herhangi' && !f.sutun ? ' (' + f.kapsam + ')' : '')
       + ' · ' + f.islem);
     s.push('   - Olması gereken: ' + f.beklenen + ' (engellenmeli)');
-    s.push('   - Gerçek: erişim BAŞARILI — RLS bu erişimi durdurmuyor.');
+    s.push('   - Gerçek: erişim BAŞARILI — ' + (f.sutun
+      ? 'bu sütun role okunabiliyor, kapalı olmalı.'
+      : 'RLS bu erişimi durdurmuyor.'));
+    if (f.gerekce) s.push('   - Gerekçe: ' + f.gerekce);
     s.push('');
   });
   s.push('Her açık için:');
-  s.push('1. İlgili tabloda RLS açık mı kontrol et; değilse aç.');
-  s.push('2. Yetkisiz erişimi engelleyen doğru RLS politikasını yaz (anonim okuyamamalı; '
-    + 'kullanıcı/rol yalnız yetkili olduğu satırlara erişmeli).');
+  s.push('1. Satır erişimi için: ilgili tabloda RLS açık mı kontrol et; değilse aç.');
+  s.push('2. Yetkisiz erişimi engelleyen doğru kuralı yaz:');
+  s.push('   - Satır açığı → RLS politikası (anonim okuyamaz; kullanıcı/rol yalnız yetkili satıra erişir).');
+  s.push('   - Sütun açığı → sütun düzeyi izin: o sütunda SELECT iznini ilgili rolden REVOKE et '
+    + '(GRANT SELECT(izinli_sütunlar) ... ile yalnız açık sütunları ver). Hassas sütun doğrudan okunamamalı.');
   s.push('3. Değişiklikleri TEK bir göç dosyasında (sql/) topla, Supabase\'de çalışacak biçimde ver.');
   s.push('4. Her açığın artık KAPALI döneceğini kısaca açıkla.');
   s.push('');
@@ -7226,7 +7233,10 @@ async function guvenlikCanliIstek(taban, yol, { token, anon, timeoutMs = 8000 })
     const r = await fetch(taban + yol, { method: 'GET', signal: kontrol.signal,
       headers: { apikey: anon, Authorization: 'Bearer ' + (token || anon), 'Content-Type': 'application/json' } });
     let govde = null; try { govde = await r.json(); } catch (h) {}
-    return { durum: r.status, govde };
+    /* Postgres/PostgREST hata kodu (ör. 42501 = izin reddedildi) — sütun/tablo
+       izin reddini "başarısız test" değil, DENY olarak okumak için. */
+    const kod = (govde && !Array.isArray(govde) && govde.code) ? String(govde.code) : null;
+    return { durum: r.status, govde, kod };
   } catch (h) {
     return { durum: 0, hata: h.name === 'AbortError' ? 'zaman aşımı' : (h.message || 'bağlantı') };
   } finally { clearTimeout(zaman); }
@@ -7335,6 +7345,17 @@ async function guvenlikTaramaCalistir({ url, anon, hesaplar, hesapA, hesapB, mat
           gozlem = { http: r.durum, satir_sayisi: Array.isArray(r.govde) ? r.govde.length : null, hata: r.hata };
         }
       }
+    } else if (row.test_yontemi === 'sutun_canli') {
+      /* Sütun düzeyi okuma: select=<sütun(lar)>. İzin yoksa 42501/403 döner. */
+      const token = row.aktor.tur === 'anonim' ? null : jetonSec(row);
+      if (row.aktor.tur !== 'anonim' && !token) { gozlem = { olculemedi: 'bu rol için giriş bilgisi verilmedi' }; }
+      else {
+        const sutunlar = (row.kaynak.sutunlar && row.kaynak.sutunlar.length) ? row.kaynak.sutunlar : ['*'];
+        const sec = sutunlar.map(s => s === '*' ? '*' : encodeURIComponent(s)).join(',');
+        const r = await guvenlikCanliIstek(taban, '/rest/v1/' + encodeURIComponent(varlik) + '?select=' + sec + '&limit=1', { token, anon });
+        gozlem = { http: r.durum, satir_sayisi: Array.isArray(r.govde) ? r.govde.length : null,
+          hata: r.hata, kod: r.kod, sutun: sutunlar.join(',') };
+      }
     } else {
       gozlem = { olculemedi: 'yöntem uygulanamadı' };
     }
@@ -7343,10 +7364,11 @@ async function guvenlikTaramaCalistir({ url, anon, hesaplar, hesapA, hesapB, mat
     /* Kanıt PII taşımaz: yalnız yöntem, http, satır sayısı, hash referans. */
     sonuclar.push({ test_id: row.test_id, kategori: row.kategori, aktor: row.aktor.deger,
       varlik, kapsam: row.kaynak.kapsam, islem, beklenen: row.beklenen, risk: row.risk,
+      sutun: (row.kaynak.sutunlar || []).join(',') || null, gerekce: row.gerekce || '',
       durum: y.durum, gercek: y.gercek, aciklama: y.aciklama,
       kanit: { yontem: row.test_yontemi, http: gozlem.http != null ? gozlem.http : null,
         satir_sayisi: gozlem.satir_sayisi != null ? gozlem.satir_sayisi : null,
-        hata: gozlem.hata || null, ref: gozlem.ref || null } });
+        hata: gozlem.hata || null, kod: gozlem.kod || null, ref: gozlem.ref || null } });
   }
   return { sonuclar, ozet: guvenlikDenetimOzeti(sonuclar) };
 }

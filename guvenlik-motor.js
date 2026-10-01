@@ -337,6 +337,7 @@ function guvenlikYontemSec(islem, dvSonuc) {
 
 /* Deterministik risk. Genel skor değil, tek testin önemi. */
 function guvenlikRisk(kategori, kapsam, islem, hassas) {
+  if (kategori === 'sutun') return hassas ? 'yuksek' : 'orta';
   if (kapsam === 'baska_sirket') return 'kritik';
   if (kapsam === 'baskasinin') return hassas ? 'yuksek' : 'yuksek';
   if (islem === 'delete' || islem === 'call') return 'yuksek';
@@ -363,13 +364,15 @@ function guvenlikMatrisUret({ manifest, scan, dogrulama, proje }) {
 
   const harita = new Map();  // test_id → satır (ilk kazanır, tekrar elenir)
   const ekle = (o) => {
-    const test_id = [o.kategori, o.kaynak.varlik, o.aktor.deger, o.kaynak.kapsam, o.islem]
-      .join(':').toLowerCase().replace(/\s+/g, '_');
+    /* Sütun testleri aynı tablo/aktör için sütuna göre ayrışır. */
+    const sut = (o.kaynak && o.kaynak.sutunlar) ? ':' + o.kaynak.sutunlar.join('+') : '';
+    const test_id = ([o.kategori, o.kaynak.varlik, o.aktor.deger, o.kaynak.kapsam, o.islem]
+      .join(':') + sut).toLowerCase().replace(/\s+/g, '_');
     if (harita.has(test_id)) return;
     const dv = guvenlikDogrulamaBul(dogrulama, o.kaynak.varlik, o.islem);
     harita.set(test_id, Object.assign({
-      test_id, kategori: 'ic', durum: 'beklemede', gercek: '', kanit: '',
-      test_yontemi: guvenlikYontemSec(o.islem, dv),
+      test_id, kategori: 'ic', durum: 'beklemede', gercek: '', kanit: '', gerekce: '',
+      test_yontemi: o.kategori === 'sutun' ? 'sutun_canli' : guvenlikYontemSec(o.islem, dv),
       risk: guvenlikRisk(o.kategori, o.kaynak.kapsam, o.islem, !!o.hassas),
       dogrulama_durumu: dv ? dv.durum : '',
     }, o));
@@ -377,6 +380,26 @@ function guvenlikMatrisUret({ manifest, scan, dogrulama, proje }) {
 
   const hassasVarliklar = new Set((govde.hassas_veriler || [])
     .map(h => guvenlikDeger(h.varlik) || h.varlik).filter(Boolean));
+
+  /* Hangi tabloda hangi sütun KAPALI olmalı — sütun düzeyi testin kaynağı.
+     (1) hassas_veriler[].alan, (2) yetkiler'de "tablo.sutun" biçiminde DENY
+     yazan kayıtlar. Böylece satır açık ama sütun kapalı ayrımı test edilir. */
+  const hassasKolon = {};   // varlik → Set(sütun)
+  const kolonEkle = (vv, al) => {
+    if (!vv || !al) return;
+    (hassasKolon[vv] = hassasKolon[vv] || new Set()).add(String(al).trim());
+  };
+  for (const h of (govde.hassas_veriler || [])) {
+    kolonEkle(guvenlikDeger(h.varlik) || h.varlik, guvenlikDeger(h.alan) || h.alan);
+  }
+  for (const y of (govde.yetkiler || [])) {
+    const vraw = String(guvenlikDeger(y.varlik) || y.varlik || '');
+    const bek = String(guvenlikDeger(y.beklenen) || y.beklenen || '').toUpperCase();
+    const nokta = vraw.match(/^([^.()\s]+)\.([a-z0-9_]+)$/i);   // tablo.sutun
+    const alanAlan = guvenlikDeger(y.sutun) || guvenlikDeger(y.alan) || guvenlikDeger(y.kolon);
+    if (bek === 'DENY' && nokta) kolonEkle(nokta[1], nokta[2]);
+    else if (bek === 'DENY' && alanAlan && vraw && !vraw.includes('*')) kolonEkle(vraw, alanAlan);
+  }
 
   /* 1) Varlık bazlı: anonim DENY + sahiplik/tenant izolasyonu. */
   for (const v of (govde.varliklar || [])) {
@@ -387,7 +410,8 @@ function guvenlikMatrisUret({ manifest, scan, dogrulama, proje }) {
     /* Dış: anonim hassas/korumalı kaynağı okuyamamalı. */
     ekle({ kategori: 'dis', aktor: { tur: 'anonim', deger: 'anonim' },
       kaynak: { varlik: ad, kapsam: 'herhangi' }, islem: 'read',
-      beklenen: 'DENY', beklenti_kaynagi: 'otomatik', hassas });
+      beklenen: 'DENY', beklenti_kaynagi: 'otomatik', hassas,
+      gerekce: 'Girişsiz (anonim) erişim engellenmeli' });
 
     /* "Başkasının satırını görme/değiştirme" testi YALNIZ o tablonun kendi
        satır sahibi varsa anlamlıdır. Ortak tablolarda (kullanicilar, subeler,
@@ -404,17 +428,40 @@ function guvenlikMatrisUret({ manifest, scan, dogrulama, proje }) {
 
     /* İç: tablonun satır sahibi varsa kendi ALLOW + başkası DENY (read + yazma). */
     if (ozelSatir) {
+      const g = 'sahiplik_alani: ' + (entSahip || dbSelect) + ' — satır sahibi dışındaki engellenmeli';
       ekle({ aktor: { tur: 'hesap', deger: 'hesap_A' }, kategori: 'ic',
         kaynak: { varlik: ad, kapsam: 'kendi' }, islem: 'read',
-        beklenen: 'ALLOW', beklenti_kaynagi: 'otomatik', hassas });
+        beklenen: 'ALLOW', beklenti_kaynagi: 'otomatik', hassas,
+        gerekce: 'Kullanıcı kendi satırını okuyabilmeli' });
       ekle({ aktor: { tur: 'hesap', deger: 'hesap_A' }, kategori: 'ic',
         kaynak: { varlik: ad, kapsam: 'baskasinin' }, islem: 'read',
-        beklenen: 'DENY', beklenti_kaynagi: 'dogrulama', hassas });
+        beklenen: 'DENY', beklenti_kaynagi: 'dogrulama', hassas, gerekce: g });
       for (const islem of ['update', 'delete']) {
         ekle({ aktor: { tur: 'hesap', deger: 'hesap_A' }, kategori: 'ic',
           kaynak: { varlik: ad, kapsam: 'baskasinin' }, islem,
-          beklenen: 'DENY', beklenti_kaynagi: 'dogrulama', hassas });
+          beklenen: 'DENY', beklenti_kaynagi: 'dogrulama', hassas, gerekce: g });
       }
+    }
+
+    /* Sütun düzeyi: hassas sütunlar (eposta gibi) bu tabloda kapalı, kimlik
+       sütunu açık olmalı. select=<hassas> ve select=* DENY; select=id ALLOW.
+       Satır okunabilir ama sütun kapalı olabilir — asıl ayrım bu. */
+    const kols = hassasKolon[ad];
+    if (kols && kols.size) {
+      ekle({ kategori: 'sutun', aktor: { tur: 'hesap', deger: 'hesap_A' },
+        kaynak: { varlik: ad, kapsam: 'herhangi', sutunlar: ['id'] }, islem: 'read',
+        beklenen: 'ALLOW', beklenti_kaynagi: 'otomatik',
+        gerekce: 'Satır okuma açık — kimlik sütunu okunabilmeli' });
+      for (const k of kols) {
+        ekle({ kategori: 'sutun', aktor: { tur: 'hesap', deger: 'hesap_A' },
+          kaynak: { varlik: ad, kapsam: 'herhangi', sutunlar: [k] }, islem: 'read',
+          beklenen: 'DENY', beklenti_kaynagi: 'hassas_veriler', hassas: true,
+          gerekce: 'hassas_veriler: ' + k + ' sütunu role kapalı olmalı' });
+      }
+      ekle({ kategori: 'sutun', aktor: { tur: 'hesap', deger: 'hesap_A' },
+        kaynak: { varlik: ad, kapsam: 'herhangi', sutunlar: ['*'] }, islem: 'read',
+        beklenen: 'DENY', beklenti_kaynagi: 'hassas_veriler', hassas: true,
+        gerekce: 'select=* hassas sütuna takılıp reddedilmeli (42501)' });
     }
     /* İç: tenant varsa kendi şirketi ALLOW + başka şirket DENY. */
     if (tenantVar) {
@@ -522,6 +569,27 @@ function guvenlikCanliYorumla(row, gozlem) {
   /* yetki_sorgusu: tarayıcıdan işlemsiz yetki ölçümü yok → ölçülemedi. */
   if (row.test_yontemi === 'yetki_sorgusu') {
     return { durum: S.DOGRULANAMADI, gercek: '', aciklama: 'İşlemsiz yetki sorgusu bu ortamda ölçülemiyor.' };
+  }
+
+  /* sutun_canli: belirli sütun(lar) için gerçek SELECT. Sütun izni Postgres'te
+     satır seviyesinden önce bakılır: izin yoksa 42501 / HTTP 403 döner (hiç
+     satır dönmeden). 2xx = sütun okunabildi; 403/42501 = sütun kapalı. */
+  if (row.test_yontemi === 'sutun_canli') {
+    if (g.hata) return { durum: S.DOGRULANAMADI, gercek: 'bağlantı hatası', aciklama: 'Bağlantı kurulamadı — güvenlik sonucu değil.' };
+    if (g.olculemedi) return { durum: S.DOGRULANAMADI, gercek: g.olculemedi, aciklama: '' };
+    const sut = g.sutun || ((row.kaynak.sutunlar || []).join(','));
+    const reddedildi = g.http === 401 || g.http === 403 || String(g.kod || '') === '42501';
+    const erisildi = g.http >= 200 && g.http < 300;
+    if (beklenen === 'DENY') {
+      if (reddedildi) return { durum: S.KAPALI, gercek: 'izin reddedildi' + (g.kod ? ' (' + g.kod + ')' : ' (HTTP ' + g.http + ')'), aciklama: '`' + sut + '` bu role kapalı — beklendiği gibi.' };
+      if (erisildi) return { durum: S.ACIK, gercek: 'HTTP ' + g.http, aciklama: '`' + sut + '` okunabildi — kapalı olmalıydı.' };
+      return { durum: S.DOGRULANAMADI, gercek: 'HTTP ' + (g.http == null ? '?' : g.http), aciklama: 'Sonuç sınıflandırılamadı.' };
+    }
+    if (beklenen === 'ALLOW') {
+      if (erisildi) return { durum: S.DOGRULANDI, gercek: 'HTTP ' + g.http, aciklama: '`' + sut + '` okunabiliyor — beklendiği gibi.' };
+      if (reddedildi) return { durum: S.DOGRULANAMADI, gercek: 'izin reddedildi', aciklama: 'İzinli beklenen sütun reddedildi — hesap/yetki nedeniyle olabilir.' };
+      return { durum: S.DOGRULANAMADI, gercek: 'HTTP ' + (g.http == null ? '?' : g.http), aciklama: 'Sonuç sınıflandırılamadı.' };
+    }
   }
 
   /* okuma_canli: gerçek SELECT/GET gözlemi. */

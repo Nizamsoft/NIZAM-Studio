@@ -1,5 +1,16 @@
 # Değişiklik Günlüğü
 
+## v0.282.0
+- **Sütun düzeyi güvenlik testi.** Satır okunabilir ama hassas sütun (ör.
+  eposta) kapalı olabilir — test artık bunu ayrı ölçüyor: `select=<sütun>`,
+  `select=id`, `select=*` ayrı denenir. Postgres "permission denied / 42501"
+  cevabı artık DENY (kapalı) olarak okunuyor, "başarısız test" değil.
+- **Manifest beklentisine uyma.** Manifest bir erişim için ALLOW diyorsa ve
+  test başarılıysa artık "açık" değil, "beklendiği gibi" sayılıyor. Yalnız
+  DENY beklenirken erişim olursa açık denir. Gerçek açıklar hâlâ yakalanır.
+- **Her sonuca gerekçe.** Bir testin neden açık/kabul sayıldığı sonucun
+  altında yazıyor (ör. "hassas_veriler: eposta role kapalı olmalı").
+
 ## v0.281.0
 - **"Ölçülemedi" artık nedenini söylüyor.** Eskiden hepsi tek "Elle test"
   torbasındaydı; neyin ters gittiği görünmüyordu. Artık sonuçta neden dökümü
