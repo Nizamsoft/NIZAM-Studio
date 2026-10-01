@@ -6971,6 +6971,19 @@ function guvenlikTaramaKarti(g, projeId, ik) {
 /* Antivirüs tarzı sonuç görünümü: skor halkası + tehdit özeti + açık kartları
    (+ "düzeltme promptu") + ham tablo katlanır detayda. Veri t.sonuclar/t.ozet
    (guvenlikTaramaCalistir çıktısı); yeniden hesap yok. */
+/* Bir ölçülemeyen testin nedenini sade bir gruba çevirir — "14 Elle test"i
+   anlaşılır kırmak için: bağlantı mı, giriş mi, fonksiyon mu, kural mı. */
+function guvOlcumNeden(x) {
+  if (x.durum === GUVENLIK_SONUC.AKTIF_TEST_GEREKLI) return 'Fonksiyon/yazma (çağırmadan ölçülemez)';
+  const g = ((x.gercek || '') + ' ' + (x.aciklama || '')).toLowerCase();
+  if (/bağlan|connection|kurulamad/.test(g)) return 'Bağlanılamadı (adres/anon key)';
+  if (/giriş|login|hesap|rol için/.test(g)) return 'Giriş yapılamadı (hesap şifresi)';
+  if (/kayıt bulunamadı|örnek/.test(g)) return 'Örnek kayıt yok';
+  if (/karmaş|statik|yetersiz|sınıflandır|yöntem/.test(g)) return 'Kural otomatik okunamadı';
+  if (/kapsam/.test(g)) return 'Bu testin kapsamı dışı';
+  return 'Ölçülemedi';
+}
+
 function guvenlikAntivirus(t) {
   if (!t || !t.sonuclar || !t.sonuclar.length) return '';
   const o = t.ozet || {};
@@ -6981,11 +6994,22 @@ function guvenlikAntivirus(t) {
   const puan = olculen ? Math.round(100 * gecen / olculen) : null;
   const renk = kritik ? 'var(--red)' : (acik ? '#b8801a' : 'var(--basari,#2f7d5c)');
   const cevre = 289, ofset = puan == null ? cevre : Math.round(cevre * (1 - puan / 100));
+  /* Ölçülemeyenleri nedenine göre grupla (şeffaflık). */
+  const olcemeyenler = t.sonuclar.filter(x =>
+    x.durum === GUVENLIK_SONUC.DOGRULANAMADI || x.durum === GUVENLIK_SONUC.AKTIF_TEST_GEREKLI);
+  const nedenMap = {};
+  for (const x of olcemeyenler) { const n = guvOlcumNeden(x); nedenMap[n] = (nedenMap[n] || 0) + 1; }
+  const nedenler = Object.keys(nedenMap).sort((a, b) => nedenMap[b] - nedenMap[a]);
+  const olcemeyen = olcemeyenler.length;
+  const baglantiSorun = nedenler.some(n => /Bağlanılamadı|Giriş yapılamadı/.test(n));
+
   const durumYazi = acik === 0
-    ? 'Tehdit bulunamadı'
+    ? (olculen === 0 ? 'Henüz ölçülemedi' : 'Tehdit bulunamadı')
     : (kritik ? 'Kritik açık var' : 'Dikkat gerekiyor');
   const altYazi = acik === 0
-    ? `${olculen} test çalıştı, yetkisiz erişim yok.`
+    ? (olculen === 0
+        ? (baglantiSorun ? 'Hiçbir test ölçülemedi — bağlantı/giriş bilgilerini kontrol et.' : 'Otomatik ölçülebilen test çıkmadı.')
+        : `${olculen} test ölçüldü, yetkisiz erişim yok.`)
     : `${olculen} testten ${gecen}'i geçti. ${acik} açık bulundu, giderilmeli.`;
 
   const oz = (sayi, etiket, c) => `<div style="flex:1;min-width:72px;background:var(--kagit,#fff);
@@ -7048,8 +7072,15 @@ function guvenlikAntivirus(t) {
       ${oz(orta, 'Orta', '')}
       ${oz(o.dogrulandi || 0, 'Doğrulandı', (o.dogrulandi ? 'var(--basari,#2f7d5c)' : ''))}
       ${oz(o.kapali || 0, 'Kapalı', (o.kapali ? 'var(--basari,#2f7d5c)' : ''))}
-      ${oz((o.dogrulanamadi || 0) + (o.aktif_gerekli || 0), 'Elle test', '')}
+      ${oz(olcemeyen, 'Ölçülemedi', (baglantiSorun ? '#b8801a' : ''))}
     </div>
+    ${olcemeyen ? `<div style="margin-top:12px;background:var(--kagit,#fff);border:1px solid var(--line,#ededf0);border-radius:12px;padding:13px 15px">
+      <b style="font-family:var(--yazi-baslik);font-weight:600;font-size:13px;display:block;margin-bottom:9px">${olcemeyen} test ölçülemedi — nedeni:</b>
+      ${nedenler.map(n => `<div style="display:flex;justify-content:space-between;gap:10px;font-size:13px;color:var(--ink-soft);padding:4px 0">
+        <span>${esc(n)}</span><b style="color:var(--ink-strong);font-variant-numeric:tabular-nums">${nedenMap[n]}</b></div>`).join('')}
+      ${baglantiSorun ? `<p class="ipucu" style="margin-top:9px">⚠️ "Bağlanılamadı/Giriş yapılamadı" varsa Supabase adresi/anon key ya da test hesaplarını kontrol et — bunlar düzelince çoğu test ölçülür.</p>`
+        : `<p class="ipucu" style="margin-top:9px">Bunlar açık değil; yalnız otomatik ölçülemeyen (çağrı/yazma gerektiren) testler.</p>`}
+    </div>` : ''}
     ${kartlar}
     ${temiz}
     ${duzeltDug}`;

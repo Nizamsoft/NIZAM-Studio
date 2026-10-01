@@ -1,5 +1,12 @@
 # Değişiklik Günlüğü
 
+## v0.281.0
+- **"Ölçülemedi" artık nedenini söylüyor.** Eskiden hepsi tek "Elle test"
+  torbasındaydı; neyin ters gittiği görünmüyordu. Artık sonuçta neden dökümü
+  var: Bağlanılamadı (adres/anon key) · Giriş yapılamadı (hesap) · Fonksiyon/
+  yazma · Kural okunamadı. Bağlantı/giriş sorunu varsa uyarı çıkıyor —
+  düzeltilince çoğu test gerçekten ölçülür.
+
 ## v0.280.0
 - **Sahiplik artık gerçek kuraldan da anlaşılıyor.** Önceki sürümde test
   yalnız manifest'in yazdığı sahiplik_alani'na bakıyordu; manifest net
