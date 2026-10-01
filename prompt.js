@@ -946,7 +946,10 @@ const PROMPT = {
     s.push('- **uygulama**: amaç, tür (web/mobil/masaustu/karma), veri yeri');
     s.push('- **kimlik**: giriş yöntemi, kayıt açık mı, anonim giriş');
     s.push('- **roller**: koddaki roller ve seviyeleri');
-    s.push('- **izolasyon**: kullanıcı/şirket/şube modeli, sahiplik ve kiracı alanı');
+    s.push('- **izolasyon**: kullanıcı/şirket/şube modeli, sahiplik ve kiracı alanı.');
+    s.push('  **coklu_kiraci**: tek veritabanında birden çok FİRMA mı var? NIZAM\'da');
+    s.push('  genelde her firmaya AYRI veritabanı kurulur → `false`. Yalnız tek DB\'de');
+    s.push('  birden çok firma varsa `true` yaz (o zaman çapraz-firma testleri çıkar).');
     s.push('- **varliklar**: tablolar; her biri için sahiplik alanı, kiracı alanı,');
     s.push('  üst varlık, hassas mı, beklenen RLS (select/insert/update/delete)');
     s.push('- **yetkiler**: rol × varlık × işlem → beklenen ALLOW/DENY');
@@ -968,7 +971,7 @@ const PROMPT = {
     s.push('  "uygulama": { "amac": {…}, "tur": {…}, "veri": {…} },');
     s.push('  "kimlik": { "yontem": {…}, "kayit": {…}, "anonim": {…} },');
     s.push('  "roller": [ { "ad": "yonetici", "seviye": 1, "kanit": "", "guven": "" } ],');
-    s.push('  "izolasyon": { "model": {…}, "sahiplik_alani": {…}, "kiraci_alani": {…} },');
+    s.push('  "izolasyon": { "model": {…}, "sahiplik_alani": {…}, "kiraci_alani": {…}, "coklu_kiraci": false },');
     s.push('  "varliklar": [ { "ad": "faturalar", "sahiplik_alani": {…}, "kiraci_alani": {…},');
     s.push('     "ust_varlik": {…}, "hassas": true, "rls_beklentisi": {…} } ],');
     s.push('  "yetkiler": [ { "rol": "kasiyer", "varlik": "faturalar", "islem": "delete",');

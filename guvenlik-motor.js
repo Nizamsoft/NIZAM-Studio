@@ -340,7 +340,14 @@ function guvenlikMatrisUret({ manifest, scan, dogrulama, proje }) {
   const izo = govde.izolasyon || {};
   const izoModel = String(guvenlikDeger(izo.model) || '').toLowerCase();
   const sahiplikVar = /kullanici|sahip|owner/.test(izoModel) || !!guvenlikDeger(izo.sahiplik_alani);
-  const tenantVar = /sirket|sube|firma|tenant/.test(izoModel) || !!guvenlikDeger(izo.kiraci_alani);
+  /* NIZAM modeli: her firmaya AYRI program + AYRI veritabanı. Yani tek
+     veritabanında birden çok firma (çok kiracılı) YOK → "başka şirketin
+     verisini görme" testi anlamsız, üretilmez. Çapraz-firma testi YALNIZ
+     manifest açıkça çok kiracılı olduğunu söylerse çıkar (izolasyon.coklu_kiraci
+     = true ya da model metninde "çok kiracı/çok firma/multi-tenant"). */
+  const cokluKiraci = guvenlikDeger(izo.coklu_kiraci) === true
+    || /çok ?kirac|coklu ?kirac|çok ?firma|multi.?tenant/.test(izoModel);
+  const tenantVar = cokluKiraci;
 
   const harita = new Map();  // test_id → satır (ilk kazanır, tekrar elenir)
   const ekle = (o) => {

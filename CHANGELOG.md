@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.272.0
+- **Güvenlik: çapraz-firma testleri varsayılan kapalı.** NIZAM modeli her firmaya
+  ayrı veritabanı olduğu için "başka şirketin verisini görme" (baska_sirket)
+  testleri artık üretilmiyor; yalnız manifest açıkça çok kiracılı derse
+  (izolasyon.coklu_kiraci = true) çıkar. Gürültü düştü; anon ve rol testleri kalır.
+
 ## v0.271.0
 - **Firma bilgileri: yalnız firma adı zorunlu.** Aşama, firma adı girildiğinde
   tamamlanmış sayılır; iletişim, sektör ve logo isteğe bağlı.
