@@ -2304,6 +2304,75 @@ const PROMPT = {
     return s.join('\n');
   },
 
+  /* Hata bildirimi kurulum promptu — müşteri programına "Hata bildir" formunu
+     ve gönderme kodunu ekletir. Adres ve anahtar TÜM programlarda sabittir
+     (config.js · RAPOR); tek değişen bu projenin UUID'sidir. Bildirim Studio'ya
+     düşer (bkz. hata-al fonksiyonu, hata_bildirimleri tablosu). */
+  hataBildirimKur(projeId) {
+    const p = DB.proje(projeId);
+    if (!p) return '';
+    const url = (typeof RAPOR !== 'undefined' && RAPOR.url) || '';
+    const anahtar = (typeof RAPOR !== 'undefined' && RAPOR.anahtar) || '';
+
+    const s = [];
+    s.push('# ' + projeAdi(p) + ' — Hata bildirimi kurulumu', '');
+    s.push('Bu programa küçük bir **"Hata bildir"** özelliği ekle. Kullanıcı bir');
+    s.push('hatayla karşılaşınca kısa bir form açıp hatayı anlatır; gönderince');
+    s.push('bildirim bizim yönetim sistemimize (NIZAM Studio) düşer.');
+    s.push('');
+    s.push('## Sabit bağlantı bilgileri (değiştirme)', '');
+    s.push('- **Adres:** `' + url + '`');
+    s.push('- **Erişim kodu (header `x-rapor-anahtari`):** `' + anahtar + '`');
+    s.push('- **Bu programın proje kimliği (`proje`):** `' + p.id + '`');
+    s.push('');
+    s.push('> Erişim kodu gizli bir sır değildir, programda durması normaldir.');
+    s.push('');
+    s.push('## Nasıl çalışmalı', '');
+    s.push('1. Uygun bir yere (ör. ayarlar ya da üst/alt menü) **"Hata bildir"**');
+    s.push('   girişi koy; programın kendi tasarımına uy, yeni bir stil kurma.');
+    s.push('2. Açılan formda: çok satırlı **mesaj** (zorunlu) ve isteğe bağlı');
+    s.push('   **iletişim** (telefon/e-posta) alanı olsun.');
+    s.push('3. Gönderince aşağıdaki isteği at. Başarılıysa kullanıcıya kısa bir');
+    s.push('   teşekkür göster, formu kapat; hata olursa "gönderilemedi" de.');
+    s.push('');
+    s.push('## Gönderme kodu (uyarlayarak kullan)', '');
+    s.push('```js');
+    s.push('async function hataBildir(mesaj, iletisim) {');
+    s.push('  const govde = {');
+    s.push('    id: crypto.randomUUID(),');
+    s.push('    proje: ' + JSON.stringify(p.id) + ',');
+    s.push('    mesaj: mesaj,');
+    s.push('    ekran: location.hash || location.pathname,   // hangi ekrandaydı');
+    s.push('    surum: (window.APP && APP.version) || "",     // program sürümü (varsa)');
+    s.push('    iletisim: iletisim || "",');
+    s.push('    tarayici: navigator.userAgent,');
+    s.push('    gonderildi: Date.now(),');
+    s.push('  };');
+    s.push('  const y = await fetch(' + JSON.stringify(url) + ', {');
+    s.push('    method: "POST",');
+    s.push('    headers: {');
+    s.push('      "Content-Type": "application/json",');
+    s.push('      "x-rapor-anahtari": ' + JSON.stringify(anahtar) + ',');
+    s.push('    },');
+    s.push('    body: JSON.stringify(govde),');
+    s.push('  });');
+    s.push('  if (!y.ok) throw new Error("Bildirim gönderilemedi");');
+    s.push('  return y.json();');
+    s.push('}');
+    s.push('```');
+    s.push('');
+    s.push('## Kurallar', '');
+    s.push('- `proje` alanını DEĞİŞTİRME — bildirimi doğru projeye bağlayan şey o.');
+    s.push('- Gönderim başarısızsa kullanıcının yazdığı metni silme, formda bırak.');
+    s.push('- Kişisel veri toplama; yalnız kullanıcının yazdığı mesaj ve isteğe');
+    s.push('  bağlı iletişim gider.');
+    s.push('');
+    s.push('## Bitirince', '');
+    s.push('Proje kimlik dosyasını güncelle ve **main** dalına gönder:');
+    s.push('   `[' + TASK_PREFIX + '-0] Hata bildirimi — "Hata bildir" formu eklendi`');
+    return s.join('\n');
+  },
+
   /* ---------- Proje kimlik dosyası ---------- */
 
   kimlik(projeId) {

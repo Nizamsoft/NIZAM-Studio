@@ -7,7 +7,7 @@ const APP = {
   name:     'NIZAM | Studio',
   short:    'NIZAM Studio',
   owner:    'Nizam Soft',
-  version: 'v0.263.0',
+  version: 'v0.264.0',
   build:    '2026-10-01',
   /* Studio'nun kendi deposu — "bütün programlarda geçerli olsun"
      istekleri buraya gider. */
@@ -22,6 +22,16 @@ const APP = {
 const SUPABASE = {
   url: 'https://whkjkaxsojkdwcehgiwj.supabase.co',
   key: 'sb_publishable_6qCgu1aJCmK9inF5xmaopg_PayG8KDP',
+};
+
+/* Hata bildirimi kanalı — müşteri programlarındaki "Hata bildir" formu buraya
+   POST atar (bkz. supabase/functions/hata-al). Adres ve anahtar TÜM programlarda
+   aynıdır; tek değişen her programın kendi Studio proje UUID'sidir. `anahtar`
+   gerçek bir sır değildir (programın içinde durur) — Supabase'de "hata-al"
+   fonksiyonunun RAPOR_ANAHTARI gizli değeri bununla BİREBİR aynı olmalıdır. */
+const RAPOR = {
+  url:     SUPABASE.url + '/functions/v1/hata-al',
+  anahtar: 'nzmrapor_7210489390b3ad1829a41f743cdbd39f680389024ae30341',
 };
 
 /* Görev numarası öneki — commit mesajlarında bu etiket aranır: [NS-142] */

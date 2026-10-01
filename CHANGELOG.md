@@ -1,5 +1,24 @@
 # Değişiklik Günlüğü
 
+## v0.264.0
+- **Hata bildirimi sistemi — müşteri programlarından Studio'ya.** Talepler
+  sistemiyle aynı mantık: programdaki "Hata bildir" formu → `hata-al` Edge
+  Function → `hata_bildirimleri` tablosu (yalnız yönetici okur; tarayıcıdan
+  ekleme yok).
+  - `sql/43-hata-bildirimleri.sql` — tablo + RLS + realtime (bir kez çalıştır).
+  - `supabase/functions/hata-al` — CORS açık, hız/boyut sınırlı; proje UUID'si
+    Studio'da gerçekten varsa kabul eder (sahte id'lere kapalı); service_role
+    ile yazar. Tek sabit `RAPOR_ANAHTARI` (tüm programlarda aynı).
+  - `config.js · RAPOR` — sabit adres + anahtar (tüm programlar aynısını
+    kullanır; tek değişen her programın Studio proje UUID'si).
+  - Panel'de, istatistik kartlarının üstünde alçak yatay "Hata Bildirimleri"
+    şeridi (yeni sayısı + son bildirim izi) + ayrı liste/detay ekranı
+    (#/hatalar) ve durum: yeni · inceleniyor · çözüldü · yok sayıldı.
+  - Proje bağlantı adımında "Hata bildirimi kurulum promptunu kopyala" —
+    o projenin UUID'si + sabit adres/anahtar gömülü; programa formu ekletir.
+  - Kurulum (bir kez): sql/43'ü çalıştır, `hata-al`'ı deploy et, Secret
+    `RAPOR_ANAHTARI`'yı config.js'teki `RAPOR.anahtar` ile aynı yap.
+
 ## v0.263.0
 - **Standart ekleme artık elle değil: fikir → prompt → Claude → JSON.**
   Standartlar ekranındaki "Elle ekle / Yeni" düğmeleri, üstteki hızlı-ekle (+)

@@ -17,6 +17,7 @@ const ROUTES = {
   gorevler:    { title: 'Bana Atananlar',     kisa: 'Görevler',    sub: () => gorevlerAltBaslik() },
   standartlar: { title: 'Nizam Standartları', kisa: 'Standartlar', sub: () => standartAltBaslik() },
   talepler:    { title: 'Talepler',            kisa: 'Talepler',    sub: () => talepAltBaslik() },
+  hatalar:     { title: 'Hata Bildirimleri',   kisa: 'Hatalar',     sub: () => hataAltBaslik() },
   sektorler:   { title: 'Sektörler',           kisa: 'Sektörler',   sub: () => sektorAltBaslik() },
   paketler:    { title: 'Paketler',            kisa: 'Paketler',    sub: () => paketAltBaslik() },
   kilitler:    { title: 'Kilitli Projeler',    kisa: 'Kilit',       sub: () => kilitAltBaslik() },
@@ -573,6 +574,7 @@ const VIEWS = {
        "neye dokunacaksın", en sonda "kim yanında". */
     return `
       ${panelHero()}
+      ${panelHatalar()}
       ${panelSayilar(p)}
       ${panelProjeler(p)}
       <div class="pz-ikili">
@@ -705,6 +707,20 @@ const VIEWS = {
     }
     const id = rota().id;
     return id ? talepDetay(id) : talepListesi();
+  },
+
+  /* ---------- Hata Bildirimleri ----------
+     Müşteri programlarından gelen hata raporları. #/hatalar liste,
+     #/hatalar/<id> detay. Yalnız yönetici. */
+  hatalar: () => {
+    if (YUKLENIYOR) return iskeletler(3);
+    if (DB.hata)    return hataKutusu(DB.hata);
+    if (!AUTH.yonetici) {
+      return `<div class="card">${empty(ICON.uyari, 'Bu ekran yöneticiye ait',
+        'Hata bildirimlerini yalnızca yönetici görebilir.')}</div>`;
+    }
+    const id = rota().id;
+    return id ? hataBildirimDetay(id) : hataBildirimListesi();
   },
 
   /* ---------- Sektörler ---------- */
@@ -9243,6 +9259,117 @@ function talepDetay(id) {
     </button>`;
 }
 
+/* ---------- Hata bildirimleri ---------- */
+
+const HATA_DURUM = {
+  yeni:        { ad: 'Yeni',        renk: '#b4231b' },
+  inceleniyor: { ad: 'İnceleniyor', renk: '#b8801a' },
+  cozuldu:     { ad: 'Çözüldü',     renk: '#2f7d5c' },
+  yoksayildi:  { ad: 'Yok sayıldı', renk: '#83838b' },
+};
+
+function hataDurumu(h) {
+  return HATA_DURUM[h && h.durum] || HATA_DURUM.yeni;
+}
+
+function hataAltBaslik() {
+  if (YUKLENIYOR) return 'yükleniyor…';
+  const hepsi = DB.hatalar || [];
+  const yeni = hepsi.filter(h => h.durum === 'yeni').length;
+  return yeni ? yeni + ' yeni bildirim' : hepsi.length + ' bildirim';
+}
+
+/* Projenin adı: önce bağlı proje, yoksa bildirimle gelen kopya ad. */
+function hataProjeAdi(h) {
+  const p = h.proje_id ? DB.proje(h.proje_id) : null;
+  return basHarfleriBuyuk((p && p.firma) || h.proje_ad || 'Bilinmeyen proje');
+}
+
+function hataEtiketi(h) {
+  const d = hataDurumu(h);
+  return `<u class="tl-etiket" style="--tl-renk:${d.renk}">${esc(d.ad)}</u>`;
+}
+
+function hataKarti(h) {
+  const ozet = String(h.mesaj || '').replace(/\n+/g, ' ').slice(0, 90);
+  return `
+    <a class="lk tl-kart" href="#/hatalar/${esc(h.id)}">
+      <span class="lk-ikon gri">${svg(ICON.uyari, 24)}</span>
+      <span class="lk-yz">
+        <b>${esc(hataProjeAdi(h))}</b>
+        ${ozet ? `<i>${esc(ozet)}</i>` : ''}
+        <em>${svg(ICON.saat, 15)}${esc(tarihYaz(h.gonderildi))}${hataEtiketi(h)}</em>
+      </span>
+      <span class="lk-ok">${svg(ICON.chevron, 18)}</span>
+    </a>`;
+}
+
+function hataBildirimListesi() {
+  const liste = DB.hatalar || [];
+  return `
+    <div class="pj-tepe">
+      <div class="pj-tepe-yz">
+        <h1>Hata Bildirimleri</h1>
+        <p>Müşteri programlarındaki "Hata bildir" formundan gelenler.</p>
+      </div>
+    </div>
+    ${liste.length
+      ? `<div class="lk-liste">${liste.map(hataKarti).join('')}</div>`
+      : `<div class="card">${empty(ICON.uyari, 'Henüz bildirim yok',
+          'Bir programda hata bildirildiğinde burada görünecek.')}</div>`}`;
+}
+
+function hataBildirimDetay(id) {
+  const h = (DB.hatalar || []).find(x => x.id === id);
+  if (!h) {
+    return `<div class="card">${empty(ICON.uyari, 'Bildirim bulunamadı',
+      'Silinmiş olabilir. Listeye dön.')}</div>`;
+  }
+
+  const durumlar = Object.entries(HATA_DURUM).map(([k, d]) => `
+    <button class="tl-durum ${hataDurumu(h) === d ? 'sec' : ''}" type="button"
+            style="--tl-renk:${d.renk}" data-eylem="hata-durum"
+            data-id="${esc(h.id)}" data-durum="${k}">${esc(d.ad)}</button>`).join('');
+
+  const satir = (et, deg) => deg
+    ? `<dt>${esc(et)}</dt><dd>${esc(deg)}</dd>` : '';
+
+  const p = h.proje_id ? DB.proje(h.proje_id) : null;
+
+  return `
+    <a class="tl-geri" href="#/hatalar">${svg(ICON.chevron, 14)} Hata Bildirimleri</a>
+    <div class="tl-tepe">
+      <h1>${esc(hataProjeAdi(h))}</h1>
+      <p class="tl-zaman">${svg(ICON.saat, 14)} ${esc(tarihYaz(h.gonderildi))}</p>
+    </div>
+
+    <div class="tl-kutu">
+      <span class="tl-et">Durum</span>
+      <div class="tl-durumlar">${durumlar}</div>
+    </div>
+
+    <div class="tl-kutu">
+      <section class="tl-bolum">
+        <h3>Hata</h3>
+        <dl><dd>${esc(h.mesaj || 'Belirtilmedi')}</dd></dl>
+      </section>
+      <section class="tl-bolum">
+        <h3>Ayrıntı</h3>
+        <dl>
+          ${satir('Proje', hataProjeAdi(h))}
+          ${p ? '' : satir('Not', 'Proje Studio\'da bulunamadı (silinmiş olabilir).')}
+          ${satir('Ekran', h.ekran)}
+          ${satir('Program sürümü', h.surum)}
+          ${satir('İletişim', h.iletisim)}
+          ${satir('Tarayıcı', h.tarayici)}
+        </dl>
+      </section>
+    </div>
+
+    ${p ? `<button class="tl-donustur" type="button" data-eylem="proje-ac" data-id="${esc(p.id)}">
+      Projeyi Aç</button>` : ''}`;
+}
+
 function sektorKarti(x) {
   const n = sektorTemplateSayisi(x.id);
   return `
@@ -12099,7 +12226,10 @@ function baglantiAdimClaude(p) {
         ${svg(ICON.kopya, 15)} Kopyala ve Claude'u aç</a>
       <button class="sayfa-dug ikincil" type="button" style="margin-top:10px"
               data-eylem="claude-baglandi" data-proje="${p.id}">
-        ${svg(ICON.tik, 15)} Bağlandı olarak işaretle</button>`;
+        ${svg(ICON.tik, 15)} Bağlandı olarak işaretle</button>
+      <button class="sayfa-dug ikincil" type="button" style="margin-top:10px"
+              data-eylem="hata-kur-kopya" data-id="${p.id}">
+        ${svg(ICON.kopya, 15)} Hata bildirimi kurulum promptunu kopyala</button>`;
 }
 
 /* Claude bağlantısı kuruldu mu? Eskiden sohbet adına bakıyordu; ad kalkınca
@@ -14502,6 +14632,26 @@ async function eylemCalistir(el) {
     return;
   }
 
+  if (e === 'hata-durum') {
+    try {
+      await DB.hataDurum(id, el.dataset.durum);
+      render();
+    } catch (err) {
+      toast(err.message, 'hata');
+    }
+    return;
+  }
+
+  if (e === 'hata-kur-kopya') {
+    let metin;
+    try { metin = PROMPT.hataBildirimKur(id); }
+    catch (h) { toast('Prompt üretilemedi: ' + h.message, 'hata'); return; }
+    if (!metin) { toast('Proje bulunamadı.', 'hata'); return; }
+    const ok = await panoyaKopyala(metin);
+    return toast(ok ? 'Kurulum promptu panoda — programın Claude oturumuna yapıştır.'
+                    : 'Kopyalanamadı.', ok ? 'basari' : 'hata');
+  }
+
   /* Düzenleme kipinden çık. Odaktaki alan varsa önce onu kaydettiriyoruz:
      blur, change dinleyicisini tetikliyor. */
   if (e === 'durak-kaydet') {
@@ -16568,6 +16718,35 @@ function enYakinGorevBitis(gorevler) {
     .map(g => ({ g, t: new Date(g.bitis + 'T00:00:00') }))
     .filter(x => !isNaN(x.t))
     .sort((x, y) => x.t - y.t)[0] || null;
+}
+
+/* Panel'de, istatistik kartlarının ÜSTünde ince yatay bir şerit: müşteri
+   programlarından gelen hata bildirimleri. Yalnız yönetici; hiç bildirim
+   yoksa görünmez (paneli boş yere doldurmasın). Mevcut tl-kart stiliyle —
+   alçak, yatay, ek CSS gerekmez. Kırmızı yalnız "N yeni" rozetinde. */
+function panelHatalar() {
+  if (!AUTH.yonetici) return '';
+  const hepsi = DB.hatalar || [];
+  if (!hepsi.length) return '';
+  const yeni = hepsi.filter(h => h.durum === 'yeni').length;
+  const son  = hepsi[0];                       // liste gonderildi desc sıralı
+  const ozet = String(son.mesaj || '').replace(/\n+/g, ' ').slice(0, 60);
+  const iz   = ['Son: ' + hataProjeAdi(son), ozet ? '“' + ozet + '”' : '']
+               .filter(Boolean).join(' · ');
+  const rozet = yeni
+    ? `<u class="tl-etiket" style="--tl-renk:#b4231b">${yeni} yeni</u>`
+    : `<u class="tl-etiket" style="--tl-renk:#83838b">${hepsi.length}</u>`;
+  return `<div class="lk-liste pz-hatalar">
+    <a class="lk tl-kart" href="#/hatalar">
+      <span class="lk-ikon gri">${svg(ICON.uyari, 24)}</span>
+      <span class="lk-yz">
+        <b>Hata Bildirimleri</b>
+        ${iz ? `<i>${esc(iz)}</i>` : ''}
+        <em>${svg(ICON.saat, 15)}${esc(tarihYaz(son.gonderildi))}${rozet}</em>
+      </span>
+      <span class="lk-ok">${svg(ICON.chevron, 18)}</span>
+    </a>
+  </div>`;
 }
 
 function panelSayilar(projeler) {

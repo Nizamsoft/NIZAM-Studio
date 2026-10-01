@@ -20,6 +20,8 @@ const DB = {
   paketler: [],
   /* Web sitesinden gelen talepler — yalnız yöneticiye dolu gelir. */
   talepler: [],
+  /* Müşteri programlarından gelen hata bildirimleri — yalnız yöneticiye. */
+  hatalar: [],
   /* Logolar private kovada; adres her oturumda yeniden üretilir. */
   logoAdres: {},
   /* Görsel yuvalarının imzalı adresleri: gorselAdres[projeId + '/' + no] */
@@ -48,6 +50,7 @@ const DB = {
     standards: 'standartlar', task_standards: 'gorevStandart',
     sectors: 'sektorler', packages: 'paketler',
     talepler: 'talepler',
+    hata_bildirimleri: 'hatalar',
   },
 
   canliBasla(tazele) {
@@ -268,10 +271,14 @@ const DB = {
     talepler:     db => db.from('talepler').select('*')
                           .order('gonderildi', { ascending: false })
                           .limit(200),
+    /* Müşteri programlarından gelen hata bildirimleri; son iki yüz yetiyor. */
+    hatalar:      db => db.from('hata_bildirimleri').select('*')
+                          .order('gonderildi', { ascending: false })
+                          .limit(200),
   },
 
   /* Tablosu henüz kurulmamış olabilecekler — hata verme, boş bırak. */
-  ISTEGE_BAGLI: ['sektorler', 'mesajlar', 'paketler', 'talepler'],
+  ISTEGE_BAGLI: ['sektorler', 'mesajlar', 'paketler', 'talepler', 'hatalar'],
 
   yerlestir(ad, sonuc) {
     if (sonuc.error) {
@@ -333,7 +340,7 @@ const DB = {
       this.projeler = []; this.moduller = []; this.sayfalar = [];
       this.gorevler = []; this.hareketler = []; this.kisiler = []; this.kisilerHepsi = [];
       this.mesajlar = [];
-      this.sektorler = []; this.paketler = []; this.talepler = [];
+      this.sektorler = []; this.paketler = []; this.talepler = []; this.hatalar = [];
       this.standartlar = []; this.gorevStandart = [];
       this.yuklendi = true;
       return;
@@ -1012,6 +1019,17 @@ const DB = {
     if (error) throw new Error(veriHatasi(error));
     if (!data || !data.length) throw new Error('Talep güncellenemedi.');
     await this.tazele('talepler');
+  },
+
+  /* Hata bildiriminin durumu: yeni · inceleniyor · cozuldu · yoksayildi.
+     Yalnız yönetici değiştirebilir. */
+  async hataDurum(id, durum) {
+    yazmaKontrol();
+    const { data, error } = await AUTH.db.from('hata_bildirimleri')
+      .update({ durum }).eq('id', id).select('id');
+    if (error) throw new Error(veriHatasi(error));
+    if (!data || !data.length) throw new Error('Bildirim güncellenemedi.');
+    await this.tazele('hatalar');
   },
 
   async sektorSil(id) {
