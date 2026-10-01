@@ -2386,6 +2386,54 @@ const PROMPT = {
     return s.join('\n');
   },
 
+  /* Mevcut (Studio dışında yapılmış) bir programı Studio'ya eklemek için:
+     programın Claude oturumuna yapıştırılır; Claude depodaki kimlik dosyası ve
+     koddan tek bir JSON üretir, Studio bunu çözüp projeyi kurar. Proje henüz
+     Studio'da olmadığı için UUID yok — kimliği Studio kayıtta kendisi üretir. */
+  projeAktar() {
+    const s = [];
+    s.push('# Bu programı NIZAM Studio\'ya aktar', '');
+    s.push('Bu depodaki programın bilgilerini, yönetim sistemimiz NIZAM Studio\'ya');
+    s.push('kaydetmek için tek bir JSON bloğu olarak çıkar. Varsa önce depodaki');
+    s.push('kimlik dosyasına bak (`nizam/` klasörü ya da `NIZAM.md`); yoksa koddan');
+    s.push('ve README\'den çıkar. SADECE istenen bloğu döndür, başka yazma.');
+    s.push('');
+    s.push('## Çıktı biçimi — AYNEN böyle', '');
+    s.push('Önce tek satır `--- PROJE VERİSİ ---`, sonra bir JSON NESNESİ:');
+    s.push('');
+    s.push('```');
+    s.push('--- PROJE VERİSİ ---');
+    s.push('{');
+    s.push('  "firma": "Firma ya da işletme adı",');
+    s.push('  "urun": "Uygulamanın/ürünün adı",');
+    s.push('  "platform": "web",');
+    s.push('  "veriKatmani": "Supabase (bulut)",');
+    s.push('  "repo": "kullanici/depo",');
+    s.push('  "sektor": "Kısa sektör (ör. Restoran)",');
+    s.push('  "renk": "metal",');
+    s.push('  "aciklama": "Program ne işe yarıyor — bir iki cümle.",');
+    s.push('  "moduller": [');
+    s.push('    { "ad": "Modül adı", "sayfalar": ["Sayfa 1", "Sayfa 2"] }');
+    s.push('  ]');
+    s.push('}');
+    s.push('```');
+    s.push('');
+    s.push('## Alan kuralları', '');
+    s.push('- **firma** zorunlu. Bilmediğin alanı uydurma: metni boş `""`, listeyi');
+    s.push('  boş `[]` bırak.');
+    s.push('- **platform** yalnız şu üçünden biri: `web` · `mobil` · `ikisi`.');
+    s.push('- **veriKatmani** yalnız: `Supabase (bulut)` ya da `Yerel tarayıcı`.');
+    s.push('- **renk** yalnız: `metal · yesil · mor · altin · mavi · gul · lacive`');
+    s.push('  (emin değilsen `metal`).');
+    s.push('- **repo** `kullanici/depo` biçiminde (git uzak adresinden).');
+    s.push('- **moduller**: programın ana bölümleri; her birinin altında ekran');
+    s.push('  adları. "Proje Geneli" yazma — onu Studio kendi ekler.');
+    s.push('- `id`, UUID, tarih gibi teknik alanlar YAZMA — Studio üretir.');
+    s.push('');
+    s.push('Kod yazma, dosya değiştirme, commit atma. Yalnız JSON bloğunu ver.');
+    return s.join('\n');
+  },
+
   /* ---------- Proje kimlik dosyası ---------- */
 
   kimlik(projeId) {

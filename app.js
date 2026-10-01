@@ -10582,27 +10582,117 @@ const SIHIRBAZ = {
 function sihirbaziAc() {
   modalHepsiniKapat();
   modalAc(`
-    ${modalBaslik(ICON.katman, 'Nereye kuralım?', 'Bu projeyi ne için açıyorsun?')}
+    ${modalBaslik(ICON.katman, 'Proje ekle', 'Sıfırdan mı kuracaksın, yoksa var olan bir programı mı ekleyeceksin?')}
     <div class="secim">
-      <div class="satir sec-satir" data-sb0-tur="gercek" role="button" tabindex="0">
-        <span class="sec-yazi"><b>Gerçek proje</b><i>Müşteriye teslim edilecek asıl proje</i></span>
+      <div class="satir sec-satir" data-sb0="yeni" role="button" tabindex="0">
+        <span class="sec-yazi"><b>Yeni proje oluştur</b>
+          <i>Sihirbazla firma, platform, veritabanı ve modülleri sor</i></span>
       </div>
-      <div class="satir sec-satir" data-sb0-tur="test" role="button" tabindex="0">
-        <span class="sec-yazi"><b>Test güncelleme</b>
-          <i>Denemeler için — şimdilik gerçek projeyle birebir aynı kurulur</i></span>
+      <div class="satir sec-satir" data-sb0="aktar" role="button" tabindex="0">
+        <span class="sec-yazi"><b>Mevcut projeyi Studio'ya ekle</b>
+          <i>Zaten yapılmış bir programı prompt + JSON ile içe aktar</i></span>
       </div>
     </div>
     <div class="modal-alt">
       <button class="btn btn-ghost" data-sb0="kapat" type="button">Vazgeç</button>
     </div>`, kutu => {
-    $('[data-sb0="kapat"]', kutu).addEventListener('click', modalKapat);
     kutu.addEventListener('click', ev => {
-      const t = ev.target.closest('[data-sb0-tur]');
+      const t = ev.target.closest('[data-sb0]');
       if (!t) return;
+      const e = t.dataset.sb0;
+      if (e === 'kapat') return modalKapat();
       modalKapat();
-      sektorSecAc(t.dataset.sb0Tur);
+      if (e === 'yeni')  return sektorSecAc('gercek');
+      if (e === 'aktar') return projeAktarAc();
     });
   });
+}
+
+/* Mevcut programı içe aktarma penceresi: iki adım — promptu kopyala, Claude'un
+   döndürdüğü JSON'u yapıştır. Standart ekleme ekranıyla aynı his. */
+function projeAktarAc() {
+  modalHepsiniKapat();
+  modalAc(`
+    ${modalBaslik(ICON.ice, 'Mevcut projeyi ekle',
+      'Önce promptu kopyalayıp programın Claude oturumuna ver; döndürdüğü JSON\'u aşağıya yapıştır.')}
+    <button class="sayfa-dug ikincil" type="button" data-eylem="proje-aktar-prompt" style="margin-bottom:12px">
+      ${svg(ICON.kopya, 15)} 1) Prompt'u kopyala</button>
+    <label class="field">
+      <span>2) JSON'u yapıştır</span>
+      <textarea id="pa-metin" rows="10" spellcheck="false"
+        placeholder="--- PROJE VERİSİ ---&#10;{ &quot;firma&quot;: &quot;…&quot;, &quot;urun&quot;: &quot;…&quot;, &quot;platform&quot;: &quot;web&quot; }"></textarea>
+    </label>
+    <div id="pa-onizleme"></div>
+    <div class="modal-alt">
+      <button class="btn btn-ghost" data-pa-ic="iptal" type="button">Vazgeç</button>
+      <button class="btn btn-primary" data-pa-ic="kaydet" type="button" disabled><span>Studio'ya ekle</span></button>
+    </div>`, kutu => {
+    const alan  = $('#pa-metin', kutu);
+    const on    = $('#pa-onizleme', kutu);
+    const dugme = $('[data-pa-ic="kaydet"]', kutu);
+    let cozum = { ok: false };
+
+    const tazele = () => {
+      const metin = alan.value.trim();
+      if (!metin) { on.innerHTML = ''; dugme.disabled = true; return; }
+      cozum = projeAktarCozumle(metin);
+      dugme.disabled = !cozum.ok;
+      if (cozum.ok) {
+        const v = cozum.veri;
+        const modSay = (v.moduller || []).length;
+        const saySay = (v.moduller || []).reduce((t, m) => t + ((m.sayfalar || []).length), 0);
+        on.innerHTML = `<div class="card"><div class="row-list">
+          <div class="row"><div class="row-main"><span class="row-title">${esc(v.firma)}</span>
+            <span class="row-sub">${esc([v.urun, PLATFORM_ADI[v.platform] || v.platform].filter(Boolean).join(' · '))}</span></div>
+            <span class="row-val">${modSay} modül · ${saySay} sayfa</span></div>
+          ${v.repo ? `<div class="row"><div class="row-main"><span class="row-title">Depo</span>
+            <span class="row-sub">${esc(v.repo)}</span></div></div>` : ''}
+        </div></div>`;
+      } else {
+        on.innerHTML = `<div class="note uyari">${svg(ICON.uyari, 15)}
+          <span>${esc(cozum.hata || 'JSON okunamadı. --- PROJE VERİSİ --- bloğunu olduğu gibi yapıştır.')}</span></div>`;
+      }
+    };
+
+    alan.addEventListener('input', tazele);
+    setTimeout(() => alan.focus(), 40);
+    $('[data-pa-ic="iptal"]', kutu).addEventListener('click', modalKapat);
+    dugme.addEventListener('click', async () => {
+      if (!cozum.ok) return;
+      const btn = $('[data-pa-ic="kaydet"] span', kutu);
+      btn.textContent = 'Kuruluyor…';
+      try {
+        const id = await DB.projeIceAktar(cozum.veri);
+        modalKapat();
+        toast('Proje Studio\'ya eklendi.', 'basari');
+        location.hash = '#/projeler/' + id;
+        render();
+      } catch (e) {
+        toast(e.message, 'hata');
+        btn.textContent = 'Studio\'ya ekle';
+      }
+    });
+  }, 'genis');
+}
+
+/* "--- PROJE VERİSİ ---" bloğundaki JSON nesnesini çözer ve doğrular. */
+function projeAktarCozumle(metin) {
+  const AYRAC = '--- PROJE VERİSİ ---';
+  let ham = String(metin || '');
+  const i = ham.indexOf(AYRAC);
+  if (i !== -1) ham = ham.slice(i + AYRAC.length);
+  /* Kod çiti içinde geldiyse temizle. */
+  ham = ham.replace(/```[a-z]*/gi, '').trim();
+  let v;
+  try { v = JSON.parse(ham); }
+  catch (e) { return { ok: false, hata: 'JSON okunamadı (biçim hatası).' }; }
+  if (!v || typeof v !== 'object' || Array.isArray(v)) {
+    return { ok: false, hata: 'Beklenen tek bir proje nesnesi.' };
+  }
+  if (!String(v.firma || '').trim()) {
+    return { ok: false, hata: 'Firma adı yok — en az firma gerekli.' };
+  }
+  return { ok: true, veri: v };
 }
 
 /* İkinci soru: müşteri ne iş yapıyor. Sektör burada soruluyor çünkü bir
@@ -14690,6 +14780,13 @@ async function eylemCalistir(el) {
   }
 
   if (e === 'hata-kur-sec') return hataKurProjeSec();
+
+  if (e === 'proje-aktar-prompt') {
+    const metin = PROMPT.projeAktar();
+    const ok = await panoyaKopyala(metin);
+    return toast(ok ? 'Prompt panoda — programın Claude oturumuna yapıştır.'
+                    : 'Kopyalanamadı.', ok ? 'basari' : 'hata');
+  }
 
   if (e === 'hata-kur-kopya') {
     let metin;

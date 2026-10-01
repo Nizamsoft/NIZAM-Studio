@@ -514,6 +514,55 @@ const DB = {
     return proje.id;
   },
 
+  /* Mevcut (dışarıda yapılmış) bir programı, Claude'un ürettiği JSON'dan
+     Studio'ya kurar. Çözümleme/doğrulama app.js'te (projeAktarCozumle); burada
+     yalnız normalleştirilmiş veri alınır ve projeOlustur'a verilir. */
+  async projeIceAktar(v) {
+    yazmaKontrol();
+    const firma = String((v && v.firma) || '').trim();
+    if (!firma) throw new Error('Firma adı yok — proje kurulamadı.');
+
+    const PLATFORM = ['web', 'mobil', 'ikisi'];
+    const RENK = ['metal', 'yesil', 'mor', 'altin', 'mavi', 'gul', 'lacive'];
+    const platform = PLATFORM.includes(v.platform) ? v.platform : 'web';
+    const renk = RENK.includes(v.renk) ? v.renk : 'metal';
+
+    /* "Proje Geneli" Studio'nun kendi kovası; gelen listeden ayıklanır. */
+    const moduller = (Array.isArray(v.moduller) ? v.moduller : [])
+      .filter(m => m && String(m.ad || '').trim() && String(m.ad).trim() !== GENEL_MODUL)
+      .slice(0, 40)
+      .map(m => ({
+        ad: String(m.ad).trim().slice(0, 80),
+        sayfalar: (Array.isArray(m.sayfalar) ? m.sayfalar : [])
+          .map(s => String(s || '').trim()).filter(Boolean).slice(0, 60),
+      }));
+
+    const id = await this.projeOlustur({
+      firma, renk, platform, veri: 'sifirdan', moduller,
+      ek: {
+        sektor: String(v.sektor || '').trim() || null,
+        repo:   String(v.repo || '').trim() || null,
+      },
+    });
+
+    /* Ürün adı, veri katmanı ve açıklama palete yazılır (projeOlustur bunları
+       almıyor). Sürüm damgası + içe aktarma kaynağı da burada. */
+    try {
+      const yerel = /yerel/i.test(String(v.veriKatmani || ''));
+      await this.paletKaydet(id, {
+        gorulenSurum: APP.version,
+        projeTuru: 'gercek',
+        kaynak: 'ice-aktarma',
+        modulAdi: String(v.urun || '').trim(),
+        veriKatmani: yerel ? 'Yerel tarayıcı' : 'Supabase (bulut)',
+        aciklama: String(v.aciklama || '').trim(),
+        akis: 'ozel',
+      });
+    } catch (h) { /* palet yazılamazsa proje yine kuruldu; sonra düzenlenir */ }
+
+    return id;
+  },
+
   /* "Kopya proje" — Yeni Proje sihirbazında "Kopya Proje" seçilince
      çağrılıyor. Kaynak projenin künye/palet/modül/sayfa yapısını kopyalar.
      Bağlantılar ve temel BİLEREK sıfırlanıyor (depo, sohbet, Supabase,

@@ -1,5 +1,14 @@
 # Değişiklik Günlüğü
 
+## v0.269.0
+- **Mevcut projeyi Studio.ya ekleme.** "Proje ekle"deki gerçek/test seçimi
+  kaldırıldı; yerine iki seçenek: **Yeni proje oluştur** (eski sihirbaz) ve
+  **Mevcut projeyi Studio.ya ekle**. İkincisi standart ekleme mantığıyla
+  çalışır: promptu kopyala → programın Claude oturumuna ver → döndürdüğü JSON.u
+  (--- PROJE VERİSİ ---) yapıştır → önizleme → Studio.ya ekle. JSON firma, ürün,
+  platform, veri katmanı, repo, sektör, renk, açıklama ve modül/sayfa yapısını
+  taşır; proje modülleri ve sayfalarıyla kurulur (Proje Geneli otomatik).
+
 ## v0.268.0
 - **Düzeltme:** "Programa Hata Bildirimi Kur" proje seçme penceresinde bazı
   proje logoları sonsuz dönüyordu. Pencere ana çizim dışında açıldığı için logo
