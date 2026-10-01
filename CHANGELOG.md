@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## v0.268.0
+- **Düzeltme:** "Programa Hata Bildirimi Kur" proje seçme penceresinde bazı
+  proje logoları sonsuz dönüyordu. Pencere ana çizim dışında açıldığı için logo
+  yükleyici çağrılmıyordu; artık pencere açılınca logolar yükleniyor.
+
 ## v0.267.0
 - **Mevcut programlara hata bildirimi kurulumu.** Hata Bildirimleri ekranının
   altına "Programa Hata Bildirimi Kur" düğmesi: proje seç → o projenin kurulum

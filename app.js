@@ -9360,6 +9360,9 @@ function hataKurProjeSec() {
       <button class="btn btn-ghost" data-sd="iptal" type="button">Kapat</button>
     </div>`, kutu => {
     $('[data-sd="iptal"]', kutu).addEventListener('click', modalKapat);
+    /* Pencere ana render dışında açıldığı için logoları burada yüklüyoruz;
+       yoksa data-logo elemanları işlenmeden spinner sonsuz döner. */
+    logolariGoster();
   }, 'genis');
 }
 
