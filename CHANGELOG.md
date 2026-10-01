@@ -1,5 +1,25 @@
 # Değişiklik Günlüğü
 
+## v0.262.0
+- **Canonical standart entegrasyonu — kod tarafı tamamlandı.** 77 → 66 canonical
+  DB taşımasının ardından uygulama kodu yeni yapıya bağlandı:
+  - **data.js** — aktif standart sorgusu artık canonical invariantı garanti
+    ediyor: `aktif=true` **ve** `kanonik_id IS NOT NULL`. Pasif legacy satırlar
+    listelere girmez. task_standards UUID `id` mantığı değişmedi.
+  - **prompt.js** — `teknikBlogu` Claude'a giden standartları canonical
+    metadata ile zenginleştiriyor: ID, Tip, Kategori, Aile, Kural, Koşul,
+    İstisna, Neden, Kapsam, Kaynak, Versiyon, A11Y (boş alanlar basılmaz).
+    `kural` önceliklidir; `eski_standartlar` ve DB UUID prompta girmez.
+  - **app.js** — standart kartları canonical alanları gösteriyor; düzenleme
+    formu canonical alanları düzenlenebilir yapıyor (`kanonik_id` ve DB UUID
+    salt-okunur). Yeni/manuel standart `ST-###` canonical kimlik üretir —
+    aktif kayıt kanonik_id'siz kalmaz. Import parser canonical JSON'u okur
+    (eşleştirme önceliği `kanonik_id` → `(alan,ad)`; çakışmada sessiz numara
+    üretmez, açık hata verir). Export JSON'u canonical ve tekrar import
+    edilebilir (`id`/`eski_standartlar` dışarıda, `kural` adıyla).
+  - **config.js** — fallback/tohum artık canonical 66 veri setinden üretiliyor
+    (kaynak: migration verisi); DB erişilemediğinde eski 77'ye düşülmez.
+
 ## v0.261.0
 - **NIZAM Standartları · Faz A — "Tüm standartları kopyala".** Standartlar
   ekranındaki araçlara yeni düğme: tüm aktif standartları tek metin olarak

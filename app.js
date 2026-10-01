@@ -8318,7 +8318,67 @@ function stageNote(text) {
 
    Eski biçim (Ad / Grup / Özet / Tarif) da çalışmaya devam ediyor: elde
    yazılmış blokların bir gün geri yapıştırılması gerekebilir. */
+/* Yapıştırılan metni standartlara çevirir. İki biçim: (1) canonical export'un
+   `--- STANDART VERİSİ ---` JSON bloğu (canonical alanlarla), (2) eski metin
+   bloğu (Grup/Alan/Başlık/Kural). JSON varsa o, yoksa metin parser'ı çalışır. */
 function standartCozumle(metin) {
+  const ham = String(metin || '');
+  const AYRAC = '--- STANDART VERİSİ ---';
+  const i = ham.indexOf(AYRAC);
+  if (i !== -1) return standartCozumleJSON(ham.slice(i + AYRAC.length));
+  return standartCozumleMetin(ham);
+}
+
+/* Canonical JSON bloğunu çözer. `kural` canonical alandır; DB uyumu için
+   `tarif`e taşınır. `eski_standartlar` ALINMAZ (migration/history). kanonik_id
+   geldiği gibi taşınır — yazıcı eşleştirmeyi ona göre yapar, sessizce yeni
+   numara üretmez. */
+function standartCozumleJSON(jsonMetin) {
+  const kayitlar = [];
+  const hatalar  = [];
+  let veri;
+  try { veri = JSON.parse(String(jsonMetin || '').trim()); }
+  catch (e) { return { kayitlar, hatalar: ['Veri bloğu okunamadı (JSON hatası).'] }; }
+  if (!Array.isArray(veri)) return { kayitlar, hatalar: ['Veri bloğu bir liste değil.'] };
+
+  veri.forEach((it, idx) => {
+    if (!it || typeof it !== 'object') { hatalar.push(`${idx + 1}. kayıt atlandı (geçersiz).`); return; }
+    const ad   = String(it.ad || '').trim();
+    const alan = String(it.alan || '').trim() || ad;
+    if (!alan && !ad) { hatalar.push(`${idx + 1}. kayıt atlandı (ad/alan yok).`); return; }
+    /* Kural: canonical `kural`, yoksa eski `tarif`. */
+    const kural = (it.kural !== undefined ? String(it.kural || '') : String(it.tarif || '')).trim();
+    if (!kural) { hatalar.push(`"${ad || alan}" için kural boş, atlandı.`); return; }
+
+    let grup = String(it.grup || VARSAYILAN_GRUP).trim() || VARSAYILAN_GRUP;
+    if (STANDART_GRUPLARI.indexOf(grup) === -1) {
+      const denk = STANDART_GRUPLARI.find(g => g.toLocaleLowerCase('tr') === grup.toLocaleLowerCase('tr'));
+      if (denk) grup = denk;
+      else { hatalar.push(`"${grup}" diye bir grup yok, "${VARSAYILAN_GRUP}" sayıldı.`); grup = VARSAYILAN_GRUP; }
+    }
+
+    const rec = { ad: ad || alan, alan: alan || ad, grup,
+                  ozet: String(it.ozet || ''), tarif: kural, yerel: String(it.yerel || '') };
+    /* Canonical alanlar yalnız geldiyse taşınır; `eski_standartlar` ASLA. */
+    if (it.kanonik_id !== undefined) { const kid = String(it.kanonik_id || '').trim(); if (kid) rec.kanonik_id = kid; }
+    if (it.tip       !== undefined) rec.tip      = String(it.tip || '');
+    if (it.kategori  !== undefined) rec.kategori = String(it.kategori || '');
+    if (it.aile      !== undefined) rec.aile     = it.aile === null ? null : String(it.aile || '');
+    if (it.kosul     !== undefined) rec.kosul    = String(it.kosul || '');
+    if (it.istisna   !== undefined) rec.istisna  = String(it.istisna || '');
+    if (it.neden     !== undefined) rec.neden    = String(it.neden || '');
+    if (it.kapsam    !== undefined) rec.kapsam   = String(it.kapsam || '');
+    if (it.kaynak    !== undefined) rec.kaynak   = String(it.kaynak || '');
+    if (it.versiyon  !== undefined) rec.versiyon = parseInt(it.versiyon, 10) || 1;
+    if (it.a11y      !== undefined) rec.a11y     = !!it.a11y;
+    kayitlar.push(rec);
+  });
+
+  return { kayitlar, hatalar };
+}
+
+/* Eski metin bloğu parser'ı (Grup/Alan/Başlık/Kural) — davranış aynen korunur. */
+function standartCozumleMetin(metin) {
   const ANAHTAR = {
     grup: 'grup', alan: 'alan',
     'başlık': 'ad', baslik: 'ad', ad: 'ad',
@@ -8401,6 +8461,21 @@ function alanSecenekleri() {
     .sort((a, b) => a.localeCompare(b, 'tr'));
 }
 
+/* Yeni standart için sıradaki canonical kimlik: ST-001, ST-002… biçiminde.
+   Rastgele UUID DEĞİL — `id` (DB satır UUID'si) ile karıştırılmaz. Yüklü
+   aktif canonical kayıtların en büyük numarasının bir fazlası. Mevcut
+   kimlikler asla yeniden numaralandırılmaz; bu yalnız YENİ kayıt içindir.
+   Soft-silinmiş bir kimlikle çakışırsa standards_kanonik_id_key (benzersiz
+   indeks) yazmayı reddeder — güvenlik ağı DB'dedir. */
+function yeniKanonikId() {
+  let max = 0;
+  (DB.standartlar || []).forEach(st => {
+    const m = /^ST-(\d+)$/.exec(String(st.kanonik_id || ''));
+    if (m) { const n = parseInt(m[1], 10); if (n > max) max = n; }
+  });
+  return 'ST-' + String(max + 1).padStart(3, '0');
+}
+
 /* Standartlar ekranının iki adımlık aracı: promptu al → Claude'a yapıştır →
    cevabı geri yapıştır.
 
@@ -8408,45 +8483,75 @@ function alanSecenekleri() {
    çizilse de kart hâlini koruyor. Kural kaydedilince sıfırlanıyor. */
 let STD_KOPYALANDI = false;
 
-/* Faz A — Tüm standartları tek metinde dışa aktarır. Kaynak doğrudan veri
-   katmanı (DB.standartlar = aktif standartlar); tohuma düşmez. Çıktı iki
-   katmanlı: insan/Claude-okunur Markdown + kayıpsız JSON. Sıra her seferinde
-   aynı: grup sırası (STANDART_GRUPLARI) → sira → alan → ad. Tek değişen satır
-   başlıktaki tarihtir; içerik birebir yinelenir. */
+/* Aktif canonical standartları tek metinde dışa aktarır. Kaynak yalnız
+   aktif canonical (DB.standartlar zaten aktif=true + kanonik_id dolu filtreli;
+   burada ayrıca güvenceye alınır). Pasif legacy ve tohum DIŞARIDA kalır.
+   Çıktı iki katmanlı: insan/Claude-okunur Markdown + kayıpsız, tekrar
+   import edilebilir JSON. JSON deterministik olarak kanonik_id sırasında.
+
+   Canonical sözleşme:
+     - `kural` canonical alandır; DB'de `tarif` kolonunda tutulsa da JSON'a
+       `kural` adıyla yazılır (kullanıcıya `tarif` diye sunulmaz).
+     - DB UUID `id` ve `eski_standartlar` export EDİLMEZ.
+     - `aktif` canonical kimlik belirleyici değildir; JSON'a yazılmaz. */
 function standartlariDisaAktar() {
   const grupSira = {};
   STANDART_GRUPLARI.forEach((g, i) => { grupSira[g] = i; });
   const gi = g => (grupSira[g] !== undefined ? grupSira[g] : 999);
   const tr = (a, b) => String(a || '').localeCompare(String(b || ''), 'tr');
+  const kno = st => { const m = /^ST-(\d+)$/.exec(String(st.kanonik_id || '')); return m ? parseInt(m[1], 10) : 1e9; };
+  const kuralOf = st => (st.kural !== undefined && String(st.kural).trim() !== '') ? st.kural : (st.tarif || '');
 
-  const kayitlar = (DB.standartlar || []).slice().sort((x, y) =>
+  /* Yalnız aktif canonical — pasif legacy ve kanonik_id'siz satır girmez */
+  const aktifCanon = (DB.standartlar || []).filter(st => st.aktif !== false && st.kanonik_id);
+
+  /* Markdown: grup/alan düzeninde (insan okunur) */
+  const mdSira = aktifCanon.slice().sort((x, y) =>
     gi(x.grup) - gi(y.grup) || (x.sira || 0) - (y.sira || 0)
     || tr(x.alan, y.alan) || tr(x.ad, y.ad));
 
-  /* --- Markdown katmanı --- */
   const md = [];
   md.push('# NIZAM Standartları');
   md.push('Export: ' + APP.version);
-  md.push('Kayıt: ' + kayitlar.length);
+  md.push('Kayıt: ' + aktifCanon.length);
   md.push('Tarih: ' + bugunTarih());
   md.push('');
   let sonGrup = null, sonAlan = null;
-  kayitlar.forEach(st => {
+  mdSira.forEach(st => {
     const grup = (st.grup || VARSAYILAN_GRUP);
     const alan = (st.alan || st.ad || '—');
     if (grup !== sonGrup) { md.push('## ' + grup, ''); sonGrup = grup; sonAlan = null; }
     if (alan !== sonAlan) { md.push('### ' + alan); sonAlan = alan; }
-    md.push('- **' + (st.ad || '') + '**');
-    if (st.tarif)  md.push('  ' + String(st.tarif).replace(/\n+/g, ' '));
-    if (st.yerel)  md.push('  _(sunucusuz: ' + String(st.yerel).replace(/\n+/g, ' ') + ')_');
+    const etiket = [st.kanonik_id, st.tip, st.kategori].filter(Boolean).join(' · ');
+    md.push('- **' + (st.ad || '') + '**' + (etiket ? ' (' + etiket + ')' : ''));
+    const kural = kuralOf(st);
+    if (kural)      md.push('  ' + String(kural).replace(/\n+/g, ' '));
+    if (st.kosul)   md.push('  _koşul: ' + String(st.kosul).replace(/\n+/g, ' ') + '_');
+    if (st.yerel)   md.push('  _(sunucusuz: ' + String(st.yerel).replace(/\n+/g, ' ') + ')_');
   });
 
-  /* --- JSON katmanı (kayıpsız, sabit anahtar sırası) --- */
-  const veri = kayitlar.map(st => ({
-    grup: st.grup || '', alan: st.alan || '', ad: st.ad || '',
-    ozet: st.ozet || '', tarif: st.tarif || '', yerel: st.yerel || '',
-    sira: st.sira || 0, aktif: st.aktif !== false,
-    eklendi: st.eklendi || '', olusturuldu: st.olusturuldu || '',
+  /* JSON: kanonik_id sırasında, sabit anahtar sırası. `id` ve
+     `eski_standartlar` YOK; `kural` canonical adıyla. */
+  const jsonSira = aktifCanon.slice().sort((x, y) => kno(x) - kno(y) || tr(x.kanonik_id, y.kanonik_id));
+  const veri = jsonSira.map(st => ({
+    kanonik_id: st.kanonik_id,
+    ad:         st.ad || '',
+    tip:        st.tip || '',
+    kategori:   st.kategori || '',
+    aile:       st.aile || null,
+    kural:      kuralOf(st),
+    kosul:      st.kosul || '',
+    istisna:    st.istisna || '',
+    neden:      st.neden || '',
+    kapsam:     st.kapsam || 'nizam',
+    kaynak:     st.kaynak || '',
+    versiyon:   st.versiyon || 1,
+    a11y:       !!st.a11y,
+    /* legacy uyumluluk (import geri yazabilsin) */
+    grup:       st.grup || '',
+    alan:       st.alan || '',
+    yerel:      st.yerel || '',
+    sira:       st.sira || 0,
   }));
 
   return md.join('\n') + '\n\n--- STANDART VERİSİ ---\n' + JSON.stringify(veri, null, 2) + '\n';
@@ -8521,9 +8626,25 @@ function grupKarti(g) {
 function standartKarti(st) {
   const acik = ACIK_STANDART.has(st.id);
   const kac  = DB.standartKullanimi(st.id);
+  const dolu = v => v !== null && v !== undefined && String(v).trim() !== '';
+  /* Kural metni canonical alanda; eski kayıtlarda `tarif` fallback. */
+  const kural = dolu(st.kural) ? st.kural : (st.tarif || '');
   /* Özet alanı artık doldurulmuyor: başlık zaten kuralın ne dediğini
      söylüyor, altına kuralın ilk cümlesi düşüyor. */
-  const alt  = st.ozet || String(st.tarif || '').split(/(?<=\.)\s/)[0] || '';
+  const alt  = st.ozet || String(kural).split(/(?<=\.)\s/)[0] || '';
+
+  /* Kimlik şeridi: canonical ID + tip + kategori (+ aile varsa). DB UUID `id`
+     canonical kimlik olarak GÖSTERİLMEZ; `eski_standartlar` hiç gösterilmez. */
+  const ust = [];
+  if (dolu(st.kanonik_id)) ust.push(esc(st.kanonik_id));
+  if (dolu(st.tip))        ust.push(esc(st.tip));
+  if (dolu(st.kategori))   ust.push(esc(st.kategori));
+  if (dolu(st.aile))       ust.push(esc(st.aile));
+  /* Alt şerit: A11Y + versiyon (+ kapsam/kaynak varsa) */
+  const alt2 = ['A11Y: ' + (st.a11y ? 'EVET' : 'HAYIR')];
+  if (dolu(st.versiyon)) alt2.push('v' + esc(st.versiyon));
+  if (dolu(st.kapsam))   alt2.push(esc(st.kapsam));
+  if (dolu(st.kaynak))   alt2.push(esc(st.kaynak));
 
   return `
     <div class="std ${acik ? 'acik' : ''}">
@@ -8537,8 +8658,13 @@ function standartKarti(st) {
       </div>
       ${acik ? `
         <div class="std-govde">
-          <p>${st.tarif ? esc(st.tarif) : '<em class="ipucu">Kural henüz yazılmadı.</em>'}</p>
-          ${st.yerel ? `<p class="std-yerel"><b>Sunucusuz projede:</b> ${esc(st.yerel)}</p>` : ''}
+          ${ust.length ? `<p class="std-meta mono">${ust.join(' · ')}</p>` : ''}
+          <p>${kural ? esc(kural) : '<em class="ipucu">Kural henüz yazılmadı.</em>'}</p>
+          ${dolu(st.kosul)   ? `<p class="std-yerel"><b>Koşul:</b> ${esc(st.kosul)}</p>` : ''}
+          ${dolu(st.istisna) ? `<p class="std-yerel"><b>İstisna:</b> ${esc(st.istisna)}</p>` : ''}
+          ${dolu(st.neden)   ? `<p class="std-yerel"><b>Neden:</b> ${esc(st.neden)}</p>` : ''}
+          ${dolu(st.yerel)   ? `<p class="std-yerel"><b>Sunucusuz projede:</b> ${esc(st.yerel)}</p>` : ''}
+          <p class="std-meta mono">${alt2.join(' · ')}</p>
           ${AUTH.yonetici ? `
             <div class="std-dug">
               <button class="fn-btn" data-eylem="standart-duzenle" data-id="${st.id}" type="button">
@@ -14243,7 +14369,9 @@ function standartIceAktar() {
       cozum = standartCozumle(metin);
       dugme.disabled = !cozum.kayitlar.length;
 
-      const yeni = k => !DB.standartlar.some(st => (st.alan || st.ad) === k.alan && st.ad === k.ad);
+      const yeni = k => k.kanonik_id
+        ? !DB.standartlar.some(st => st.kanonik_id === k.kanonik_id)
+        : !DB.standartlar.some(st => (st.alan || st.ad) === k.alan && st.ad === k.ad);
 
       on.innerHTML = (cozum.kayitlar.length
         ? `<span class="label">${cozum.kayitlar.length} kural</span>
@@ -14294,9 +14422,20 @@ function standartDuzenle(id) {
   modalHepsiniKapat();
   const st = id ? DB.standart(id) : null;
 
+  /* Yeni kayıtta atanacak canonical kimlik; düzenlemede mevcut kimlik
+     (ikisi de salt-okunur gösterilir — kanonik_id ve DB UUID değiştirilemez). */
+  const kanonik = st ? (st.kanonik_id || '') : yeniKanonikId();
+  const TIPLER  = ['KURAL', 'VARSAYILAN', 'KOŞULLU'];
+  const KATEGORILER = ['TECH', 'DATA', 'SECURITY', 'FORMAT', 'A11Y', 'PERF', 'UI'];
+
   modalAc(`
     ${modalBaslik(ICON.katman, st ? 'Standardı düzenle' : 'Yeni standart', 'Kural prompta olduğu gibi girer — net ve emir kipinde yaz.')}
 
+    <label class="gf">
+      <span class="gf-et">Canonical kimlik <em>değiştirilemez</em></span>
+      <span class="gf-kutu">${svg(ICON.etiket, 17)}
+        <input type="text" id="sd-kanonik" value="${esc(kanonik)}" disabled></span>
+    </label>
     <label class="gf">
       <span class="gf-et">Grup <em>işin cinsi</em></span>
       <span class="gf-kutu">${svg(ICON.katman, 17)}
@@ -14323,14 +14462,74 @@ function standartDuzenle(id) {
                autocomplete="off"></span>
     </label>
     <label class="gf">
+      <span class="gf-et">Tip <em>kuralın cinsi</em></span>
+      <span class="gf-kutu">${svg(ICON.etiket, 17)}
+        <select id="sd-tip">
+          ${TIPLER.map(t => `<option value="${t}"${(st ? st.tip : 'KURAL') === t ? ' selected' : ''}>${t}</option>`).join('')}
+        </select>
+        ${svg(ICON.chevron, 15)}</span>
+    </label>
+    <label class="gf">
+      <span class="gf-et">Kategori <em>konu başlığı</em></span>
+      <span class="gf-kutu">${svg(ICON.katman, 17)}
+        <input type="text" id="sd-kategori" list="sd-kategoriler" maxlength="30" autocomplete="off"
+               value="${esc(st ? (st.kategori || '') : '')}" placeholder="Örn. UI"></span>
+      <datalist id="sd-kategoriler">
+        ${KATEGORILER.map(c => `<option value="${c}"></option>`).join('')}
+      </datalist>
+    </label>
+    <label class="gf">
+      <span class="gf-et">Aile <em>varsa — boş bırakılabilir</em></span>
+      <span class="gf-kutu">${svg(ICON.panel, 17)}
+        <input type="text" id="sd-aile" maxlength="40" autocomplete="off"
+               value="${esc(st ? (st.aile || '') : '')}" placeholder="Örn. APP_HEADER"></span>
+    </label>
+    <label class="gf">
       <span class="gf-et">Kural <em>prompta giren metin</em></span>
       <textarea class="anl-kutu" id="sd-tarif" rows="7"
         placeholder="Üst çubukta yalnız marka, sayfa adı ve kullanıcı kutusu durur…">${esc(st ? st.tarif : '')}</textarea>
     </label>
     <label class="gf">
+      <span class="gf-et">Koşul <em>ne zaman geçerli — boş bırakılabilir</em></span>
+      <textarea class="anl-kutu kisa" id="sd-kosul" rows="2"
+        placeholder="Örn. Veri katmanı sunucudaysa geçerli.">${esc(st ? (st.kosul || '') : '')}</textarea>
+    </label>
+    <label class="gf">
+      <span class="gf-et">İstisna <em>boş bırakılabilir</em></span>
+      <textarea class="anl-kutu kisa" id="sd-istisna" rows="2"
+        placeholder="Kuralın geçerli olmadığı durum.">${esc(st ? (st.istisna || '') : '')}</textarea>
+    </label>
+    <label class="gf">
+      <span class="gf-et">Neden <em>boş bırakılabilir</em></span>
+      <textarea class="anl-kutu kisa" id="sd-neden" rows="2"
+        placeholder="Bu kural neden var?">${esc(st ? (st.neden || '') : '')}</textarea>
+    </label>
+    <label class="gf">
       <span class="gf-et">Sunucusuz projede <em>boş bırakılabilir</em></span>
       <textarea class="anl-kutu kisa" id="sd-yerel" rows="3"
         placeholder="Veri kullanıcının cihazında kalan projelerde bu kuralın karşılığı ne? Yoksa boş bırak.">${esc(st ? (st.yerel || '') : '')}</textarea>
+    </label>
+    <label class="gf">
+      <span class="gf-et">Kapsam</span>
+      <span class="gf-kutu">${svg(ICON.katman, 17)}
+        <input type="text" id="sd-kapsam" maxlength="30" autocomplete="off"
+               value="${esc(st ? (st.kapsam || 'nizam') : 'nizam')}" placeholder="nizam"></span>
+    </label>
+    <label class="gf">
+      <span class="gf-et">Kaynak <em>boş bırakılabilir</em></span>
+      <span class="gf-kutu">${svg(ICON.panel, 17)}
+        <input type="text" id="sd-kaynak" maxlength="40" autocomplete="off"
+               value="${esc(st ? (st.kaynak || '') : '')}" placeholder="Örn. koken_proje"></span>
+    </label>
+    <label class="gf">
+      <span class="gf-et">Versiyon</span>
+      <span class="gf-kutu">${svg(ICON.etiket, 17)}
+        <input type="number" id="sd-versiyon" min="1" step="1"
+               value="${st ? (st.versiyon || 1) : 1}"></span>
+    </label>
+    <label class="gf gf-onay">
+      <input type="checkbox" id="sd-a11y"${st && st.a11y ? ' checked' : ''}>
+      <span class="gf-et">Erişilebilirlik (a11y) standardı</span>
     </label>
 
     <div class="modal-alt">
@@ -14341,21 +14540,53 @@ function standartDuzenle(id) {
 
     $('[data-sd="iptal"]', kutu).addEventListener('click', modalKapat);
     $('[data-sd="kaydet"]', kutu).addEventListener('click', async () => {
-      const ad    = $('#sd-ad', kutu).value.trim();
-      const alan  = $('#sd-alan', kutu).value.trim();
-      const grup  = $('#sd-grup', kutu).value.trim() || VARSAYILAN_GRUP;
-      const tarif = $('#sd-tarif', kutu).value.trim();
-      const yerel = $('#sd-yerel', kutu).value.trim();
+      const ad       = $('#sd-ad', kutu).value.trim();
+      const alan     = $('#sd-alan', kutu).value.trim();
+      const grup     = $('#sd-grup', kutu).value.trim() || VARSAYILAN_GRUP;
+      const tarif    = $('#sd-tarif', kutu).value.trim();
+      const yerel    = $('#sd-yerel', kutu).value.trim();
+      const tip      = $('#sd-tip', kutu).value.trim();
+      const kategori = $('#sd-kategori', kutu).value.trim();
+      const aile     = $('#sd-aile', kutu).value.trim();
+      const kosul    = $('#sd-kosul', kutu).value.trim();
+      const istisna  = $('#sd-istisna', kutu).value.trim();
+      const neden    = $('#sd-neden', kutu).value.trim();
+      const kapsam   = $('#sd-kapsam', kutu).value.trim() || 'nizam';
+      const kaynak   = $('#sd-kaynak', kutu).value.trim();
+      const verRaw   = parseInt($('#sd-versiyon', kutu).value, 10);
+      const versiyon = Number.isFinite(verRaw) && verRaw > 0 ? verRaw : 1;
+      const a11y     = $('#sd-a11y', kutu).checked;
 
       if (!alan)  { toast('Alanı yaz — ekranın hangi parçası?'); return; }
       if (!ad)    { toast('Başlığı yaz — kural ne diyor?'); return; }
       if (!tarif) { toast('Kuralı yaz — prompta bu metin giriyor.'); return; }
 
+      /* Canonical alanlar. `kural` kolonu DB'de `tarif` olarak tutuluyor.
+         `aile` boşsa null; kosul/istisna/neden/kaynak boşsa '' (canonical
+         varsayılanı). `eski_standartlar` BURADA HİÇ ELLENMEZ (history). */
+      const temel = {
+        ad, alan, grup, tarif, yerel,
+        tip, kategori, aile: aile || null,
+        kosul, istisna, neden, kapsam, kaynak, versiyon, a11y,
+        eklendi: APP.version,
+      };
+
+      let kayit;
+      if (id) {
+        /* Düzenleme: kanonik_id GÖNDERİLMEZ → değişmez, boşaltılamaz. */
+        kayit = temel;
+      } else {
+        /* Yeni kayıt aktif olacağından (DB varsayılanı) canonical invariant
+           gereği kanonik_id dolu olmalı. */
+        const kid = yeniKanonikId();
+        if (!kid) { toast('Canonical kimlik üretilemedi — kaydedilmedi.'); return; }
+        kayit = Object.assign({ kanonik_id: kid }, temel);
+      }
+
       const btn = $('[data-sd="kaydet"] span', kutu);
       btn.textContent = 'Kaydediliyor…';
       try {
-        await DB.standartKaydet(id, { ad, alan, grup, tarif, yerel,
-          eklendi: APP.version });
+        await DB.standartKaydet(id, kayit);
         modalKapat();
         ACIK_GRUP = grup;
         if (id) ACIK_STANDART.add(id);

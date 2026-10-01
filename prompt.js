@@ -146,25 +146,42 @@ const PROMPT = {
     }
     s.push('');
 
+    /* Canonical metadata basımı. Grup/alan düzeni (standartGruplari) UI ile
+       ortak kalıyor; prompt çıktısında ise her standardın canonical alanları
+       esas. Boş alanlar (kosul/istisna/neden/kaynak/aile) satır üretmez.
+       `id` (DB UUID) ve `eski_standartlar` (migration geçmişi) prompta GİRMEZ. */
+    const dolu = v => v !== null && v !== undefined && String(v).trim() !== '';
+    const tek  = v => String(v).replace(/\n+/g, ' ').trim();
+
     DB.standartGruplari(standartListesi()).forEach(g => {
       const satir = [];
       g.alanlar.forEach(a => {
         a.liste.forEach(st => {
-          /* Sunucusuz projede `yerel` metni tarifin yerine geçer. Yalnız
-             yerelde anlamı olan satırlar (Yedek gibi) sunuculu projede
-             boş kalır ve hiç yazılmaz. Başlık da `yerel`den okunmalı —
-             yoksa başlık bulut varsayımında kalıp açıklamayla çelişiyordu
-             ("Giriş · E-posta + şifre" başlığı, altında "Yerel PIN" yazısı). */
-          const yerelMi = yerel && st.yerel;
-          const t = yerelMi ? st.yerel : st.tarif;
-          if (!t) return;
-          /* `yerel` alanı "Değer. Açıklama" biçiminde tek metin — tohumda
-             da (standartTohum) aynı şekilde birleştiriliyor. */
-          const nokta = yerelMi ? String(st.yerel).indexOf('. ') : -1;
-          const baslik = nokta > -1 ? st.yerel.slice(0, nokta) : (yerelMi ? st.yerel : st.ad);
-          const aciklama = nokta > -1 ? st.yerel.slice(nokta + 2) : (yerelMi ? '' : t);
-          satir.push('- **' + a.ad + ' · ' + baslik + '**');
-          if (aciklama) satir.push('  - ' + String(aciklama).replace(/\n+/g, ' '));
+          /* Kural metni canonical `kural` alanındadır; eski kayıtlarla uyum
+             için `tarif` yalnız fallback. Öncelik canonical kuralda. */
+          const kural = dolu(st.kural) ? st.kural : (st.tarif || '');
+
+          satir.push('- **' + a.ad + ' · ' + st.ad + '**');
+
+          /* Kimlik satırı: canonical kimlik + tip + kategori (+ aile doluysa) */
+          const kimlik = [];
+          if (dolu(st.kanonik_id)) kimlik.push('ID: ' + st.kanonik_id);
+          if (dolu(st.tip))        kimlik.push('Tip: ' + st.tip);
+          if (dolu(st.kategori))   kimlik.push('Kategori: ' + st.kategori);
+          if (dolu(st.aile))       kimlik.push('Aile: ' + st.aile);
+          if (kimlik.length) satir.push('  - ' + kimlik.join(' · '));
+
+          if (dolu(kural))       satir.push('  - Kural: ' + tek(kural));
+          /* Sunucusuz projede kuralın yerel karşılığı (varsa) ayrıca verilir */
+          if (yerel && dolu(st.yerel))
+                                 satir.push('  - Sunucusuz karşılığı: ' + tek(st.yerel));
+          if (dolu(st.kosul))    satir.push('  - Koşul: ' + tek(st.kosul));
+          if (dolu(st.istisna))  satir.push('  - İstisna: ' + tek(st.istisna));
+          if (dolu(st.neden))    satir.push('  - Neden: ' + tek(st.neden));
+          if (dolu(st.kapsam))   satir.push('  - Kapsam: ' + tek(st.kapsam));
+          if (dolu(st.kaynak))   satir.push('  - Kaynak: ' + tek(st.kaynak));
+          if (dolu(st.versiyon)) satir.push('  - Versiyon: ' + st.versiyon);
+          satir.push('  - A11Y: ' + (st.a11y ? 'EVET' : 'HAYIR'));
         });
       });
       if (!satir.length) return;

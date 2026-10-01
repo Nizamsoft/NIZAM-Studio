@@ -254,7 +254,7 @@ const DB = {
     /* Sütun adı yazmıyoruz: foto gibi sonradan eklenen bir alan yoksa
        sorgu patlıyor ve bütün veri düşüyordu. */
     kisiler:      db => db.from('profiles').select('*'),
-    standartlar:  db => db.from('standards').select('*').eq('aktif', true).order('sira'),
+    standartlar:  db => db.from('standards').select('*').eq('aktif', true).not('kanonik_id', 'is', null).order('sira'),
     gorevStandart:db => db.from('task_standards').select('gorev_id, standart_id'),
     sektorler:    db => db.from('sectors').select('*').eq('aktif', true).order('sira'),
     paketler:     db => db.from('packages').select('*').eq('aktif', true).order('sira'),
@@ -1031,25 +1031,75 @@ const DB = {
     await this.tazele('standartlar');
   },
 
-  /* Yapıştırılan kuralları yazar. Aynı alan+başlık varsa üzerine yazar,
-     yoksa ekler. Tek tek gider ki hangisinin patladığı belli olsun.
+  /* Yapıştırılan kuralları yazar. Eşleştirme önceliği: önce canonical kimlik
+     (kanonik_id), sonra eski format için (alan+başlık). Tek tek gider ki
+     hangisinin patladığı belli olsun. Her satır bu sürümle damgalanır.
 
-     Her yazılan satır bu sürümle damgalanıyor: hangi standardın ne zaman
-     eklendiğini gösterir. */
+     Canonical kurallar:
+       - kanonik_id GELMİŞSE eşleşen satır bulunur ve GÜNCELLENİR; eşleşme
+         yoksa SESSİZCE yeni numara üretilmez, açık hata verilir (tutarsızlık).
+       - kanonik_id YOKSA (eski format veya yeni kural) (alan,ad) ile eşleşir;
+         eşleşirse mevcut satır (kimliği korunarak) güncellenir, yoksa YENİ
+         canonical kimlik üretilip eklenir → aktif kayıt kanonik_id'siz kalmaz.
+       - Güncellemede kanonik_id ve id DEĞİŞMEZ; eski_standartlar HİÇ ELLENMEZ. */
   async standartlarIceAktar(kayitlar) {
     yazmaKontrol();
     let eklenen = 0, guncellenen = 0;
 
+    /* Batch içi yeni kimlik üretimi: DB henüz tazelenmediği için aynı turda
+       eklenen kimlikleri de hesaba katarız (yeniKanonikId ile aynı ST-### mantığı). */
+    const batch = new Set();
+    const sonrakiKimlik = () => {
+      let max = 0;
+      const tara = v => { const m = /^ST-(\d+)$/.exec(String(v || '')); if (m) { const n = parseInt(m[1], 10); if (n > max) max = n; } };
+      this.standartlar.forEach(st => tara(st.kanonik_id));
+      batch.forEach(tara);
+      const yeni = 'ST-' + String(max + 1).padStart(3, '0');
+      batch.add(yeni);
+      return yeni;
+    };
+
     for (const k of kayitlar) {
-      const mevcut = this.standartlar.find(st =>
-        (st.alan || st.ad) === k.alan && st.ad === k.ad);
+      /* 1) Eşleştirme */
+      let mevcut = null;
+      if (k.kanonik_id) {
+        mevcut = this.standartlar.find(st => st.kanonik_id === k.kanonik_id);
+        if (!mevcut) {
+          throw new Error(`"${k.kanonik_id}" bu sistemde yok — içe aktarma durduruldu (veri tutarsızlığı).`);
+        }
+      } else {
+        mevcut = this.standartlar.find(st =>
+          (st.alan || st.ad) === k.alan && st.ad === k.ad);
+      }
+
+      /* 2) Yazılacak alanlar. `kural` DB'de `tarif` kolonunda tutulur.
+         Canonical alanlar yalnız importta geldiyse yazılır (eski importu
+         bozmaz). kanonik_id ve eski_standartlar BU PAYLOAD'DA YOK. */
       const alanlar = { ad: k.ad, alan: k.alan, grup: k.grup,
                         ozet: k.ozet, tarif: k.tarif, eklendi: APP.version };
+      if (k.yerel     !== undefined) alanlar.yerel    = k.yerel;
+      if (k.tip       !== undefined) alanlar.tip      = k.tip;
+      if (k.kategori  !== undefined) alanlar.kategori = k.kategori;
+      if (k.aile      !== undefined) alanlar.aile     = k.aile;
+      if (k.kosul     !== undefined) alanlar.kosul    = k.kosul;
+      if (k.istisna   !== undefined) alanlar.istisna  = k.istisna;
+      if (k.neden     !== undefined) alanlar.neden    = k.neden;
+      if (k.kapsam    !== undefined) alanlar.kapsam   = k.kapsam;
+      if (k.kaynak    !== undefined) alanlar.kaynak   = k.kaynak;
+      if (k.versiyon  !== undefined) alanlar.versiyon = k.versiyon;
+      if (k.a11y      !== undefined) alanlar.a11y     = k.a11y;
 
-      const { error } = mevcut
-        ? await AUTH.db.from('standards').update(alanlar).eq('id', mevcut.id)
-        : await AUTH.db.from('standards')
-            .insert(Object.assign({ sira: this.standartlar.length + eklenen + 1 }, alanlar));
+      let error;
+      if (mevcut) {
+        /* Güncelleme: kanonik_id/id/eski_standartlar değişmez */
+        ({ error } = await AUTH.db.from('standards').update(alanlar).eq('id', mevcut.id));
+      } else {
+        /* Yeni kayıt aktif olacağından canonical invariant gereği kanonik_id
+           dolu olmalı. */
+        const kid = sonrakiKimlik();
+        ({ error } = await AUTH.db.from('standards')
+          .insert(Object.assign({ sira: this.standartlar.length + eklenen + 1, kanonik_id: kid }, alanlar)));
+      }
 
       if (error) throw new Error(`"${k.ad}" yazılamadı — ${veriHatasi(error)}`);
       mevcut ? guncellenen++ : eklenen++;
