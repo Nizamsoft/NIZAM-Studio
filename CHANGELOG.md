@@ -1,5 +1,12 @@
 # Değişiklik Günlüğü
 
+## v0.270.0
+- **İçe aktarmada bağlantı bilgileri de alınır.** "Mevcut projeyi Studio.ya
+  ekle" promptu artık repo, yayın adresi ve Supabase url + anon anahtarı da
+  ister (service_role ASLA). İçe aktarınca bunlar palete yazılır ve kurulum
+  adımları (GitHub, Yayın, Supabase, Claude, özel alan) tamamlanmış işaretlenir
+  — proje dolu/kurulu olarak gelir.
+
 ## v0.269.0
 - **Mevcut projeyi Studio.ya ekleme.** "Proje ekle"deki gerçek/test seçimi
   kaldırıldı; yerine iki seçenek: **Yeni proje oluştur** (eski sihirbaz) ve

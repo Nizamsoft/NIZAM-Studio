@@ -10641,12 +10641,17 @@ function projeAktarAc() {
         const v = cozum.veri;
         const modSay = (v.moduller || []).length;
         const saySay = (v.moduller || []).reduce((t, m) => t + ((m.sayfalar || []).length), 0);
+        const sbVar = !!(String(v.supabaseUrl || '').trim() && String(v.supabaseAnon || '').trim());
+        const satir = (baslik, deger) => deger
+          ? `<div class="row"><div class="row-main"><span class="row-title">${esc(baslik)}</span>
+               <span class="row-sub">${esc(deger)}</span></div></div>` : '';
         on.innerHTML = `<div class="card"><div class="row-list">
           <div class="row"><div class="row-main"><span class="row-title">${esc(v.firma)}</span>
             <span class="row-sub">${esc([v.urun, PLATFORM_ADI[v.platform] || v.platform].filter(Boolean).join(' · '))}</span></div>
             <span class="row-val">${modSay} modül · ${saySay} sayfa</span></div>
-          ${v.repo ? `<div class="row"><div class="row-main"><span class="row-title">Depo</span>
-            <span class="row-sub">${esc(v.repo)}</span></div></div>` : ''}
+          ${satir('Depo', v.repo)}
+          ${satir('Yayın adresi', v.adres)}
+          ${satir('Supabase', sbVar ? 'Bağlantı + anon anahtar var' : '')}
         </div></div>`;
       } else {
         on.innerHTML = `<div class="note uyari">${svg(ICON.uyari, 15)}

@@ -545,11 +545,20 @@ const DB = {
       },
     });
 
-    /* Ürün adı, veri katmanı ve açıklama palete yazılır (projeOlustur bunları
-       almıyor). Sürüm damgası + içe aktarma kaynağı da burada. */
+    /* Ürün adı, veri katmanı, bağlantı bilgileri palete yazılır (projeOlustur
+       bunları almıyor). Amaç: içe aktarılan proje kurulum adımlarında da dolu
+       görünsün — repo (projeOlustur'da yazıldı), yayın adresi, Supabase ve
+       Claude bağlantısı burada işaretlenir. */
     try {
-      const yerel = /yerel/i.test(String(v.veriKatmani || ''));
-      await this.paletKaydet(id, {
+      const yerel   = /yerel/i.test(String(v.veriKatmani || ''));
+      const adres   = String(v.adres || '').trim();
+      const sbUrl   = String(v.supabaseUrl || '').trim();
+      const sbAnon  = String(v.supabaseAnon || '').trim();
+      /* github.io adresi hazır barındırma; başka her alan özel (namecheap). */
+      const alanTuru = !adres ? 'githubio'
+        : /github\.io/i.test(adres) ? 'githubio' : 'namecheap';
+
+      const palet = {
         gorulenSurum: APP.version,
         projeTuru: 'gercek',
         kaynak: 'ice-aktarma',
@@ -557,7 +566,17 @@ const DB = {
         veriKatmani: yerel ? 'Yerel tarayıcı' : 'Supabase (bulut)',
         aciklama: String(v.aciklama || '').trim(),
         akis: 'ozel',
-      });
+        /* Mevcut, yayında bir program: Claude ile yapılmış ve canlı sayılır. */
+        claudeBaglandi: true,
+        alanTuru,
+      };
+      /* Yayın adresi varsa yayın adımı tamamlandı say. */
+      if (adres) { palet.alanAdi = adres; palet.yayinda = true; }
+      if (adres && alanTuru === 'namecheap') palet.namecheapBaglandi = true;
+      /* Supabase anahtarları yalnız sunuculu projede ve ikisi de varsa. */
+      if (!yerel && sbUrl && sbAnon) { palet.supabaseUrl = sbUrl; palet.supabaseAnon = sbAnon; }
+
+      await this.paletKaydet(id, palet);
     } catch (h) { /* palet yazılamazsa proje yine kuruldu; sonra düzenlenir */ }
 
     return id;

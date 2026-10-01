@@ -2409,6 +2409,9 @@ const PROMPT = {
     s.push('  "platform": "web",');
     s.push('  "veriKatmani": "Supabase (bulut)",');
     s.push('  "repo": "kullanici/depo",');
+    s.push('  "adres": "yayin-adresi.com",');
+    s.push('  "supabaseUrl": "https://xxxx.supabase.co",');
+    s.push('  "supabaseAnon": "publishable/anon anahtar",');
     s.push('  "sektor": "Kısa sektör (ör. Restoran)",');
     s.push('  "renk": "metal",');
     s.push('  "aciklama": "Program ne işe yarıyor — bir iki cümle.",');
@@ -2426,6 +2429,13 @@ const PROMPT = {
     s.push('- **renk** yalnız: `metal · yesil · mor · altin · mavi · gul · lacive`');
     s.push('  (emin değilsen `metal`).');
     s.push('- **repo** `kullanici/depo` biçiminde (git uzak adresinden).');
+    s.push('- **adres**: programın yayınlandığı adres (ör. `kubban.firma.com` ya da');
+    s.push('  `kullanici.github.io/depo`). Bilmiyorsan boş bırak.');
+    s.push('- **supabaseUrl / supabaseAnon**: Supabase kullanıyorsa kodundaki');
+    s.push('  (genelde `config`/`supabase` dosyası) bağlantı adresi ve **yalnız');
+    s.push('  publishable/anon** (herkese açık) anahtar. **service_role ya da');
+    s.push('  secret anahtarı ASLA yazma.** Yerel/sunucusuz programda ikisini de');
+    s.push('  boş bırak.');
     s.push('- **moduller**: programın ana bölümleri; her birinin altında ekran');
     s.push('  adları. "Proje Geneli" yazma — onu Studio kendi ekler.');
     s.push('- `id`, UUID, tarih gibi teknik alanlar YAZMA — Studio üretir.');
