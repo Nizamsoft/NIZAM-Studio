@@ -1,5 +1,14 @@
 # Değişiklik Günlüğü
 
+## v0.277.0
+- **Güvenlik akışı sadeleşti.** Artık önce bütün bilgileri yapıştırırsın
+  (kod · güvenlik modeli · veritabanı röntgeni) — altta sonuç/tablo çıkmaz —
+  sonra hesapları girer, tek "Test Et" düğmesine basarsın. Doğrulama, matris
+  ve canlı tarama hep birlikte çalışır.
+- **Sonuç ekranı temizlendi.** Karışık tablolar kaldırıldı; antivirüs gibi
+  skor + açık kartları kaldı. Açıklar için tek bir "hepsini düzelt" promptu —
+  ayrı ayrı değil.
+
 ## v0.276.0
 - **"Elle test" yığını bitti.** Önceden yazma denemeleri (başkasının kaydını
   güncelleme/silme) canlıda çalıştırılamadığı için hepsi "aktif test gerekli"ye

@@ -159,17 +159,18 @@ function guvenlikDenetimEkran(projeId) {
   const p = DB.proje(projeId);
   if (!p) return `<div class="card">${empty(ICON.uyari, 'Proje bulunamadı', '')}</div>`;
   const g = durakGuvenlikDurum(projeId);
-  /* Antivirüs akışı: adımların tamam/sırada/bekle durumu + üstte durum başlığı. */
-  const adimlar = [!!g.kod, !!g.manifest, !!g.dogrulama, !!g.matris, !!g.tarama];
+  /* Hazırlık adımları: bilgi girişleri (kod · manifest · röntgen). Sonuç ayrı. */
+  const adimlar = [!!g.kod, !!g.manifest, !!g.scan];
   const biten = adimlar.filter(Boolean).length;
   const simdi = adimlar.indexOf(false);           // -1 = hepsi hazır
-  const yuzde = Math.round(biten / adimlar.length * 100);
   const du = i => adimlar[i] ? 'tamam' : (i === simdi ? 'sirada' : 'bekle');
+  const hazir = !!g.manifest && !!g.scan;
   const o = g.tarama && g.tarama.ozet;
+  const yuzde = o ? 100 : Math.round(biten / adimlar.length * 100);
   const basB = o ? (o.acik ? 'Dikkat gerekiyor' : 'Program güvenli görünüyor')
-                 : 'Taramaya hazırlanıyor';
+                 : (g.taraniyor ? 'Test ediliyor…' : 'Teste hazırlanıyor');
   const basP = o ? (o.acik ? o.acik + ' açık bulundu — gidermelisin.' : 'Yetkisiz erişim bulunamadı.')
-                 : biten + ' / ' + adimlar.length + ' adım hazır';
+                 : (hazir ? 'Bilgiler hazır. İstersen hesapları gir ve Test Et.' : biten + ' / 3 bilgi girildi');
   const basRenk = o ? (o.acik ? (o.kritik ? 'var(--red)' : '#b8801a') : 'var(--basari,#2f7d5c)') : 'var(--ink-strong)';
   return `
     <a class="tl-geri" href="#/guvenlik/${esc(projeId)}">${svg(ICON.chevron, 14)} ${esc(basHarfleriBuyuk(projeAdi(p)))}</a>
@@ -183,15 +184,26 @@ function guvenlikDenetimEkran(projeId) {
         <b style="color:${basRenk}">${esc(basB)}</b>
         <p>${esc(basP)}</p>
         <div class="gv-ilerle"><i style="width:${yuzde}%"></i></div>
-        <span class="gv-tara-say">${biten} / ${adimlar.length} adım hazır</span>
       </div>
     </div>
+
+    <p class="gvt-baslik">1 · Program bilgileri</p>
     ${guvenlikKodKarti(g.kod, projeId, guvAdimIk(1, du(0)))}
     ${guvenlikManifestKarti(g.manifest, projeId, guvAdimIk(2, du(1)))}
-    ${guvenlikProgramNotu(g.kod)}
     ${guvenlikDogrulamaKarti(g, projeId, guvAdimIk(3, du(2)))}
-    ${guvenlikMatrisKarti(g, projeId, guvAdimIk(4, du(3)))}
-    ${guvenlikTaramaKarti(g, projeId, guvAdimIk(5, du(4)))}`;
+    ${guvenlikProgramNotu(g.kod)}
+
+    <p class="gvt-baslik">2 · Test hesapları</p>
+    ${guvenlikTaramaKarti(g, projeId, '')}
+
+    <p class="gvt-baslik">3 · Testi çalıştır</p>
+    <button class="sayfa-dug" type="button" data-eylem="guvenlik-test-et"
+            data-proje="${esc(projeId)}" ${hazir && !g.taraniyor ? '' : 'disabled'}>
+      ${svg(ICON.gGuvenlik, 16)} ${g.taraniyor ? 'Test ediliyor…' : (g.tarama ? 'Yeniden Test Et' : 'Test Et')}</button>
+    ${!hazir ? '<p class="ipucu" style="margin-top:7px">Önce manifest ve veritabanı röntgeni JSON\'larını yapıştır.</p>' : ''}
+    ${g.tarama ? `<div class="btk" style="margin-top:14px">${guvenlikAntivirus(g.tarama)}
+      ${projeId ? `<button class="sayfa-dug ikincil" type="button" data-eylem="guvenlik-denetim-kaydet"
+        data-proje="${esc(projeId)}" style="margin-top:14px">${svg(ICON.kaydet, 15)} Denetimi Kaydet</button>` : ''}</div>` : ''}`;
 }
 
 /* ---------- Denetim geçmişi ---------- */

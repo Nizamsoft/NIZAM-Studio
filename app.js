@@ -6878,28 +6878,22 @@ function guvenlikManifestKarti(m, projeId, ik) {
    sonra manifest ile karşılaştırılır. Sonuç bellekte (bu faz DB'ye yazmaz). */
 function guvenlikDogrulamaKarti(g, projeId, ik) {
   const scanVar = !!g.scan;
-  const hazir = !!g.manifest && scanVar;
   return `
     <div class="btk">
       <div class="btk-ust">
-        ${ik || `<span class="btk-ik ${g.dogrulama ? 'yesil' : 'mavi'}">${svg(ICON.gVeri, 22)}</span>`}
-        <span class="btk-yz"><b>Manifest ↔ Veritabanı doğrulama</b>
-          <i>${g.dogrulama
-            ? esc(g.dogrulama.ozet.celisiyor + ' çelişki · ' + g.dogrulama.ozet.dogrulandi
-                + ' doğrulandı · ' + g.dogrulama.ozet.dogrulanamadi + ' ölçülemedi')
-            : 'Manifestin iddiasını gerçek veritabanı yapısıyla karşılaştırır. Scan yalnız okur.'}</i></span>
+        ${ik || `<span class="btk-ik ${scanVar ? 'yesil' : 'mavi'}">${svg(ICON.gVeri, 22)}</span>`}
+        <span class="btk-yz"><b>Veritabanı röntgeni</b>
+          <i>${scanVar
+            ? 'Röntgen alındı. Testte manifestle karşılaştırılacak.'
+            : 'SQL\'i kopyala, programın Supabase SQL Editor\'ünde çalıştır, sonucu yapıştır. Yalnız okur.'}</i></span>
       </div>
       <div class="gv-adimlar">
         <button class="sayfa-dug ikincil" type="button" data-eylem="guvenlik-scan-kopyala">
-          ${svg(ICON.kopya, 15)} 1 · Scan SQL'ini kopyala</button>
+          ${svg(ICON.kopya, 15)} 1 · Röntgen SQL'ini kopyala</button>
         <button class="sayfa-dug ${scanVar ? 'ikincil' : ''}" type="button" data-eylem="guvenlik-scan-yapistir"
                 data-proje="${esc(projeId || '')}">
-          ${svg(ICON.ice, 15)} 2 · ${scanVar ? 'Yeni scan yapıştır' : 'Scan sonucunu yapıştır'}</button>
-        <button class="sayfa-dug" type="button" data-eylem="guvenlik-dogrula"
-                data-proje="${esc(projeId || '')}" ${hazir ? '' : 'disabled'}>
-          ${svg(ICON.gGuvenlik, 15)} 3 · ${hazir ? 'Doğrula' : (!g.manifest ? 'Önce manifest gerekli' : 'Önce scan gerekli')}</button>
+          ${svg(ICON.ice, 15)} 2 · ${scanVar ? 'Yeni röntgeni yapıştır' : 'Röntgen sonucunu yapıştır'}</button>
       </div>
-      ${guvenlikDogrulamaTablosu(g.dogrulama)}
     </div>`;
 }
 
@@ -6935,6 +6929,8 @@ const GUV_ROLLER = [
   { slot: 'personel',  ad: 'Personel',        ipucu: 'personel@firma.com' },
   { slot: 'personel2', ad: 'Başka personel',  ipucu: 'baska@firma.com' },
 ];
+/* Son ekranda gösterilen açık bulgular — "hepsini düzelt" promptu için. */
+let GUV_SON_ACIKLAR = [];
 function guvHesapAnahtar(projeId) { return 'nz_guv_hesap_' + (projeId || 'ayar'); }
 function guvHesaplariOku(projeId) {
   try { return JSON.parse(localStorage.getItem(guvHesapAnahtar(projeId)) || '{}') || {}; }
@@ -6948,9 +6944,7 @@ function guvHesaplariYaz(projeId, h) {
 /* NIZAM Security · Canlı tarama kartı (Faz 5). Rol hesaplarıyla güvenli okuma
    testleri; sonuç 7 durumlu. Şifreler yalnız bu cihazda saklanır. */
 function guvenlikTaramaKarti(g, projeId, ik) {
-  if (!g.matris) return '';
   const ek = projeId || 'ayar';
-  const o = g.tarama && g.tarama.ozet;
   const h = guvHesaplariOku(projeId);
   const girilen = GUV_ROLLER.filter(r => h[r.slot] && h[r.slot].eposta).length;
   const roller = GUV_ROLLER.map(r => {
@@ -6965,25 +6959,12 @@ function guvenlikTaramaKarti(g, projeId, ik) {
   return `
     <div class="btk">
       <div class="btk-ust">
-        ${ik || `<span class="btk-ik ${g.tarama ? (o.acik ? 'kirmizi' : 'yesil') : 'kirmizi'}">${svg(ICON.gGuvenlik, 22)}</span>`}
-        <span class="btk-yz"><b>Canlı Tarama</b>
-          <i>${g.tarama
-            ? esc(o.acik + ' açık · ' + o.dogrulandi + ' doğrulandı · ' + o.dogrulanamadi
-                + ' ölçülemedi · ' + o.aktif_gerekli + ' aktif test gerekli')
-            : 'Verdiğin hesaplarla gerçekten giriş yapar, yetkisiz erişimi dener. Yalnız okur; yazma/silme denenmez.'}</i></span>
+        ${ik || `<span class="btk-ik mavi">${svg(ICON.gGuvenlik, 22)}</span>`}
+        <span class="btk-yz"><b>Test hesapları${girilen ? ' · ' + girilen + '/3 hazır' : ''}</b>
+          <i>Her rolün girişiyle test edilir. Anonim (girişsiz) erişim her hâlde denenir.</i></span>
       </div>
-      <p class="gvt-baslik">Test hesapları${girilen ? ' · ' + girilen + '/3 hazır' : ''}</p>
       ${roller}
-      <div class="gv-adimlar">
-        <button class="sayfa-dug" type="button" data-eylem="guvenlik-tarama-baslat"
-                data-proje="${esc(projeId || '')}" ${g.taraniyor ? 'disabled' : ''}>
-          ${svg(ICON.gGuvenlik, 15)} ${g.taraniyor ? 'Taranıyor…' : 'Tarama Başlat'}</button>
-        ${g.tarama ? `<button class="sayfa-dug ikincil" type="button" data-eylem="guvenlik-denetim-kaydet"
-                data-proje="${esc(projeId || '')}">${svg(ICON.kaydet, 15)} Denetimi Kaydet</button>` : ''}
-      </div>
-      <p class="ipucu">🔒 Hesaplar yalnız bu cihazda saklanır (veritabanına yazılmaz); her tarama otomatik kullanır. Anonim erişim her hâlde test edilir.
-        ${projeId ? '' : 'Denetimi kaydetmek için proje güvenlik adımını kullan.'}</p>
-      ${guvenlikAntivirus(g.tarama)}
+      <p class="ipucu">🔒 Hesaplar yalnız bu cihazda saklanır (veritabanına yazılmaz); her testte otomatik kullanılır. Yazma/silme hiç denenmez.</p>
     </div>`;
 }
 
@@ -7014,6 +6995,8 @@ function guvenlikAntivirus(t) {
 
   const acikListe = t.sonuclar.filter(x => x.durum === 'AÇIK')
     .sort((a, b) => ({ kritik: 0, yuksek: 1, orta: 2, dusuk: 3 }[a.risk] ?? 4) - ({ kritik: 0, yuksek: 1, orta: 2, dusuk: 3 }[b.risk] ?? 4));
+  /* Tek "hepsini düzelt" promptu bu listeden üretilir (handler okur). */
+  GUV_SON_ACIKLAR = acikListe;
   const riskRenk = { kritik: 'var(--red)', yuksek: '#b8801a', orta: 'var(--mavi,#2f62c4)', dusuk: 'var(--ink-dim)' };
   const riskAd = { kritik: 'KRİTİK', yuksek: 'YÜKSEK', orta: 'ORTA', dusuk: 'DÜŞÜK' };
   const kartlar = acikListe.map(x => {
@@ -7026,14 +7009,14 @@ function guvenlikAntivirus(t) {
             padding:3px 8px;border-radius:999px;background:color-mix(in srgb,${rr} 14%,#fff);color:${rr}">${riskAd[x.risk] || 'BULGU'}</span>
           <b style="font-family:var(--yazi-baslik);font-weight:600;font-size:14px">${esc(x.aktor)} → ${esc(x.varlik)}${x.kapsam && x.kapsam !== 'herhangi' ? ' · ' + esc(x.kapsam) : ''}</b>
         </div>
-        <p style="margin:0 0 10px;color:var(--ink-soft);font-size:13px">${esc(x.aciklama || 'Yetkisiz erişim başarılı.')}</p>
-        <div style="font:12px ui-monospace,monospace;color:var(--ink-dim);background:var(--gri,#f2f2f4);border-radius:7px;padding:8px 10px;margin:0 0 11px;overflow-x:auto">${esc(x.aktor)} · ${esc(x.islem)} · ${esc(x.varlik)} · beklenen ${esc(x.beklenen)} · ${esc(x.gercek || '')}</div>
-        <button class="sayfa-dug ikincil" type="button" style="width:auto;padding:9px 13px" data-eylem="guv-duzelt-kopya"
-          data-varlik="${esc(x.varlik)}" data-aktor="${esc(x.aktor)}" data-islem="${esc(x.islem)}"
-          data-beklenen="${esc(x.beklenen)}" data-kapsam="${esc(x.kapsam || '')}" data-risk="${esc(x.risk || '')}">
-          ${svg(ICON.kopya, 14)} Düzeltme promptunu kopyala</button>
+        <p style="margin:0;color:var(--ink-soft);font-size:13px">${esc(x.aciklama || 'Yetkisiz erişim başarılı.')}</p>
       </div></div>`;
   }).join('');
+  const duzeltDug = acik > 0
+    ? `<button class="sayfa-dug" type="button" data-eylem="guv-duzelt-hepsi" style="margin-top:14px">
+        ${svg(ICON.kopya, 15)} ${acik} açığı tek promptla düzelt</button>
+       <p class="ipucu" style="margin-top:7px">Promptu programın Claude oturumuna yapıştır; hepsini birden düzeltir.</p>`
+    : '';
 
   const temiz = acik === 0
     ? `<div style="display:flex;align-items:center;gap:10px;background:color-mix(in srgb,var(--basari,#2f7d5c) 12%,#fff);
@@ -7069,10 +7052,7 @@ function guvenlikAntivirus(t) {
     </div>
     ${kartlar}
     ${temiz}
-    <details style="margin-top:12px;background:var(--kagit,#fff);border:1px solid var(--line,#ededf0);border-radius:12px">
-      <summary style="cursor:pointer;padding:12px 14px;font-family:var(--yazi-baslik);font-weight:600;font-size:13px;list-style:none">Tüm test sonuçları (${o.toplam || t.sonuclar.length}) ▾</summary>
-      <div style="padding:0 2px 8px">${guvenlikTaramaTablosu(t)}</div>
-    </details>`;
+    ${duzeltDug}`;
 }
 
 /* Bir açık bulgusu için Claude'a verilecek düzeltme promptu. */
@@ -7096,6 +7076,30 @@ function guvenlikDuzeltPrompt(f) {
   s.push('4. Değişikliği açıkla ve aynı testin artık KAPALI döneceğini doğrula.');
   s.push('');
   s.push('Yalnız bu açığı gider; başka şeyi bozma. Kimlik dosyasını güncelle, main\'e gönder.');
+  return s.join('\n');
+}
+
+/* Tüm açık bulgular için TEK düzeltme promptu. */
+function guvenlikDuzeltHepsiPrompt(liste) {
+  const s = [];
+  s.push('# Güvenlik açıklarını düzelt', '');
+  s.push('NIZAM Security testi programda ' + liste.length + ' güvenlik açığı buldu. '
+    + 'Hepsini birlikte gider:', '');
+  liste.forEach((f, i) => {
+    s.push((i + 1) + ') `' + f.varlik + '` — ' + f.aktor + (f.kapsam && f.kapsam !== 'herhangi' ? ' (' + f.kapsam + ')' : '')
+      + ' · ' + f.islem);
+    s.push('   - Olması gereken: ' + f.beklenen + ' (engellenmeli)');
+    s.push('   - Gerçek: erişim BAŞARILI — RLS bu erişimi durdurmuyor.');
+    s.push('');
+  });
+  s.push('Her açık için:');
+  s.push('1. İlgili tabloda RLS açık mı kontrol et; değilse aç.');
+  s.push('2. Yetkisiz erişimi engelleyen doğru RLS politikasını yaz (anonim okuyamamalı; '
+    + 'kullanıcı/rol yalnız yetkili olduğu satırlara erişmeli).');
+  s.push('3. Değişiklikleri TEK bir göç dosyasında (sql/) topla, Supabase\'de çalışacak biçimde ver.');
+  s.push('4. Her açığın artık KAPALI döneceğini kısaca açıkla.');
+  s.push('');
+  s.push('Yalnız bu açıkları gider, başka şeyi bozma. Kimlik dosyasını güncelle, main\'e gönder.');
   return s.join('\n');
 }
 
@@ -16630,6 +16634,48 @@ async function eylemCalistir(el) {
     }
     render();
     return;
+  }
+
+  /* Tek düğme: doğrulama + matris + canlı tarama hepsi birlikte çalışır.
+     Kullanıcı önce JSON'ları + hesapları girer, sonra bir kez "Test Et" der. */
+  if (e === 'guvenlik-test-et') {
+    const projeId = el.dataset.proje;
+    const hedef = durakGuvenlikDurum(projeId);
+    if (!hedef.manifest) { toast('Önce güvenlik modeli (manifest) JSON\'unu yapıştır.', 'uyari'); return; }
+    if (!hedef.scan) { toast('Önce veritabanı röntgeni sonucunu yapıştır.', 'uyari'); return; }
+    const ek = projeId || 'ayar';
+    const al = id => { const x = $('#' + id); return x ? x.value.trim() : ''; };
+    const pl = (DB.proje(projeId) || {}).palet || {};
+    const url = pl.supabaseUrl, anon = pl.supabaseAnon;
+    if (!url || !anon) { toast('Supabase adresi ve anon key gerekli.', 'uyari'); return; }
+    /* Rol hesaplarını oku + bu cihaza kaydet (şifre DB'ye gitmez). */
+    const hesaplar = {};
+    for (const r of GUV_ROLLER) {
+      const eposta = al('gvt-' + r.slot + '-eposta-' + ek);
+      const sifre = al('gvt-' + r.slot + '-sifre-' + ek);
+      if (eposta || sifre) hesaplar[r.slot] = { eposta, sifre };
+    }
+    guvHesaplariYaz(projeId, hesaplar);
+    hedef.taraniyor = true; render();
+    try {
+      const proje = projeId ? DB.proje(projeId) : null;
+      hedef.dogrulama = guvenlikManifestDogrula({ manifest: hedef.manifest, scan: hedef.scan, proje });
+      hedef.matris = guvenlikMatrisUret({ manifest: hedef.manifest, scan: hedef.scan, dogrulama: hedef.dogrulama, proje });
+      hedef.tarama = await guvenlikTaramaCalistir({ url, anon, hesaplar, matris: hedef.matris, dogrulama: hedef.dogrulama });
+      const o = hedef.tarama.ozet;
+      toast(o.acik ? o.acik + ' açık bulundu.' : 'Açık bulunamadı — program güvenli görünüyor.',
+        o.acik ? 'uyari' : 'basari');
+    } catch (err) { toast('Test başarısız: ' + err.message, 'hata'); }
+    hedef.taraniyor = false; render();
+    return;
+  }
+
+  /* Tüm açıkları tek promptla düzelt. */
+  if (e === 'guv-duzelt-hepsi') {
+    if (!GUV_SON_ACIKLAR || !GUV_SON_ACIKLAR.length) { toast('Düzeltilecek açık yok.', 'uyari'); return; }
+    const ok = await panoyaKopyala(guvenlikDuzeltHepsiPrompt(GUV_SON_ACIKLAR));
+    return toast(ok ? 'Düzeltme promptu panoda — programın Claude oturumuna yapıştır.'
+                    : 'Kopyalanamadı.', ok ? 'basari' : 'hata');
   }
 
   /* Canlı tarama — güvenli okuma testleri; şifreler yalnız burada. */
