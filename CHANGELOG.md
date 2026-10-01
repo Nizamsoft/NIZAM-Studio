@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü
 
+## v0.279.0
+- **Ortak tablolarda yanlış alarm bitti.** Test "başkasının satırını görme"
+  denetimini artık tablo tablo yapıyor: yalnız o tablonun kendi satır sahibi
+  (sahiplik_alani) varsa üretiliyor. Ortak tablolarda (kullanicilar, subeler,
+  hesaplar, katmanlar gibi — sahip sütunu yok) herkesin okuması beklenen
+  davranış olduğundan bu test hiç üretilmiyor; eskiden hepsi "YÜKSEK açık"
+  diye yanlış işaretleniyordu. Anonim/girişsiz okuma testi aynen kalıyor.
+
 ## v0.278.0
 - **"Elle test" kalabalığı azaldı.** Fonksiyonlarda her rol için ayrı
   "çağıramamalı" testi üretiliyordu (7 fonksiyon × 4 rol = 28 boş satır).

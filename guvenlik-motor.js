@@ -352,7 +352,6 @@ function guvenlikMatrisUret({ manifest, scan, dogrulama, proje }) {
   const scanTablolar = new Set((scan && scan.tablolar || []).map(t => t.ad));
   const izo = govde.izolasyon || {};
   const izoModel = String(guvenlikDeger(izo.model) || '').toLowerCase();
-  const sahiplikVar = /kullanici|sahip|owner/.test(izoModel) || !!guvenlikDeger(izo.sahiplik_alani);
   /* NIZAM modeli: her firmaya AYRI program + AYRI veritabanı. Yani tek
      veritabanında birden çok firma (çok kiracılı) YOK → "başka şirketin
      verisini görme" testi anlamsız, üretilmez. Çapraz-firma testi YALNIZ
@@ -390,8 +389,16 @@ function guvenlikMatrisUret({ manifest, scan, dogrulama, proje }) {
       kaynak: { varlik: ad, kapsam: 'herhangi' }, islem: 'read',
       beklenen: 'DENY', beklenti_kaynagi: 'otomatik', hassas });
 
-    /* İç: sahiplik varsa kendi ALLOW + başkası DENY (read + yazma). */
-    if (sahiplikVar) {
+    /* "Başkasının satırını görme/değiştirme" testi YALNIZ o tablonun kendi
+       satır sahibi (sahiplik_alani) varsa anlamlıdır. Ortak tablolarda
+       (kullanicilar, subeler, hesaplar, katmanlar gibi — sahip sütunu yok)
+       herkesin okuması beklenen davranıştır; bu testi üretmek yanlış alarm
+       olur, üretilmez. Sahiplik tablo-tablo bakılır, genel bayrakla değil. */
+    const entSahip = String(guvenlikDeger(v.sahiplik_alani) || '').trim().toLowerCase();
+    const ozelSatir = !!entSahip && !['', 'yok', 'hayir', 'hayır', 'none', '-', 'ortak'].includes(entSahip);
+
+    /* İç: tablonun satır sahibi varsa kendi ALLOW + başkası DENY (read + yazma). */
+    if (ozelSatir) {
       ekle({ aktor: { tur: 'hesap', deger: 'hesap_A' }, kategori: 'ic',
         kaynak: { varlik: ad, kapsam: 'kendi' }, islem: 'read',
         beklenen: 'ALLOW', beklenti_kaynagi: 'otomatik', hassas });
