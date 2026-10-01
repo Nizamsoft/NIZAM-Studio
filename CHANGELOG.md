@@ -1,5 +1,12 @@
 # Değişiklik Günlüğü
 
+## v0.271.0
+- **Firma bilgileri: yalnız firma adı zorunlu.** Aşama, firma adı girildiğinde
+  tamamlanmış sayılır; iletişim, sektör ve logo isteğe bağlı.
+- **İçe aktarılan projede aşamalar kilitsiz.** "Mevcut projeyi Studio.ya ekle"
+  ile gelen proje zaten yapılmış sayıldığı için tüm duraklar açık gelir;
+  kullanıcı istediği aşamaya gidebilir (sıra kilidi uygulanmaz).
+
 ## v0.270.0
 - **İçe aktarmada bağlantı bilgileri de alınır.** "Mevcut projeyi Studio.ya
   ekle" promptu artık repo, yayın adresi ve Supabase url + anon anahtarı da

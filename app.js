@@ -1541,9 +1541,12 @@ function durakAkisi(p) {
     .map((d, i) => Object.assign({}, d, { anahtar: tum[i] }))
     .filter(d => !d.gizli);
   const simdi = liste.findIndex(d => !d.bitti);
+  /* İçe aktarılan proje zaten yapılmış/yayında: aşamalar sırayla kilitlenmez,
+     hepsi açık gelir ki kullanıcı istediği durağa gidebilsin. */
+  const serbest = (p.palet || {}).kaynak === 'ice-aktarma';
   return liste.map((d, i) => Object.assign(d, {
     sira: i,
-    kilitli: d.anahtar !== 'guvenlik' && simdi !== -1 && i > simdi,
+    kilitli: !serbest && d.anahtar !== 'guvenlik' && simdi !== -1 && i > simdi,
   }));
 }
 
@@ -7443,9 +7446,10 @@ function projeDuraklari(p) {
 
   return [
     {
-      /* Logo isteğe bağlı: markanın kendisi ad, iletişim ve sektörle kuruluyor. */
+      /* Yalnız firma adı zorunlu: iletişim, sektör ve logo isteğe bağlı —
+         ad girildiyse aşama tamamlanmış sayılır, sonraki durağa geçilir. */
       ad: 'Firma bilgileri',
-      bitti: !!p.firma && !!p.telefon && !!p.eposta && !!p.sektor,
+      bitti: !!p.firma,
       ozet: [p.sektor, p.telefon, p.eposta].filter(Boolean).join(' · ')
         || 'Firma kim, kime ulaşacağız, hangi işi yapıyor?',
     },
