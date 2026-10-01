@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü
 
+## v0.280.0
+- **Sahiplik artık gerçek kuraldan da anlaşılıyor.** Önceki sürümde test
+  yalnız manifest'in yazdığı sahiplik_alani'na bakıyordu; manifest net
+  yazmayınca sahipli tablolar da eleniyordu ("1 test çalıştı"). Artık gerçek
+  select kuralı sahiplik/kiracı sınıfıysa (olusturan = auth.uid() gibi) tablo
+  test ediliyor — manifest eksik olsa bile kapsam düşmüyor. Ortak tablolarda
+  (rol bazlı / herkese açık okuma) yanlış alarm yine çıkmıyor.
+
 ## v0.279.0
 - **Ortak tablolarda yanlış alarm bitti.** Test "başkasının satırını görme"
   denetimini artık tablo tablo yapıyor: yalnız o tablonun kendi satır sahibi

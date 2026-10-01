@@ -390,12 +390,17 @@ function guvenlikMatrisUret({ manifest, scan, dogrulama, proje }) {
       beklenen: 'DENY', beklenti_kaynagi: 'otomatik', hassas });
 
     /* "Başkasının satırını görme/değiştirme" testi YALNIZ o tablonun kendi
-       satır sahibi (sahiplik_alani) varsa anlamlıdır. Ortak tablolarda
-       (kullanicilar, subeler, hesaplar, katmanlar gibi — sahip sütunu yok)
-       herkesin okuması beklenen davranıştır; bu testi üretmek yanlış alarm
-       olur, üretilmez. Sahiplik tablo-tablo bakılır, genel bayrakla değil. */
+       satır sahibi varsa anlamlıdır. Ortak tablolarda (kullanicilar, subeler,
+       hesaplar, katmanlar gibi — herkesin okuması gereken) bu test yanlış
+       alarmdır, üretilmez. Sahipliği iki kaynaktan anlıyoruz, tablo-tablo:
+       (1) manifest sahiplik_alani yazmışsa, (2) GERÇEK select kuralı sahiplik/
+       kiracı sınıfıysa (olusturan = auth.uid() gibi). Manifest net yazmasa
+       bile gerçek kural sahiplik diyorsa test edilir — böylece kapsam düşmez. */
     const entSahip = String(guvenlikDeger(v.sahiplik_alani) || '').trim().toLowerCase();
-    const ozelSatir = !!entSahip && !['', 'yok', 'hayir', 'hayır', 'none', '-', 'ortak'].includes(entSahip);
+    const manSahip = !!entSahip && !['', 'yok', 'hayir', 'hayır', 'none', '-', 'ortak'].includes(entSahip);
+    const dbSelect = guvenlikGercekKoruma(scan, ad, 'select').sinif;
+    const dbSahip = dbSelect === 'sahiplik' || dbSelect === 'kiraci';
+    const ozelSatir = manSahip || dbSahip;
 
     /* İç: tablonun satır sahibi varsa kendi ALLOW + başkası DENY (read + yazma). */
     if (ozelSatir) {
