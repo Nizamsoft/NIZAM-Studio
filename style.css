@@ -6965,6 +6965,13 @@ a.asr:active{ transform:scale(.99); }
   background: linear-gradient(150deg, #e7e7ee 0%, #f1f1f5 48%, #fafafc 100%);
   border-color: rgba(27, 27, 30, .10);
 }
+/* Hata Bildirimleri: tam genişlik, ps kartlarıyla aynı yüzey/düzen. */
+.ps-hata {
+  background: linear-gradient(150deg, #e7e7ee 0%, #f1f1f5 48%, #fafafc 100%);
+  border-color: rgba(27, 27, 30, .10);
+  margin-bottom: 12px;
+}
+.ps-hata .ps-ikon { background: #2a2a2f; }
 
 .ps-ikon {
   position: relative; z-index: 1;

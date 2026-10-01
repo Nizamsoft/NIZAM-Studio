@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## v0.266.0
+- **Hata Bildirimleri paneli diğer kartlarla uyumlu.** Panel şeridi artık
+  Talepler / Açık Görev kartlarıyla birebir aynı `ps` kart düzenini kullanıyor
+  (tam genişlik, aynı yüzey, ikon/başlık/sayı/alt-bilgi hizası).
+
 ## v0.265.0
 - **Hata bildirimi kartında proje logosu.** Liste kartındaki üçgen uyarı simgesi
   yerine artık bildirimin geldiği projenin logosu görünür; logo yoksa firmanın

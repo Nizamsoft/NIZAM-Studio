@@ -16739,23 +16739,23 @@ function panelHatalar() {
   if (!hepsi.length) return '';
   const yeni = hepsi.filter(h => h.durum === 'yeni').length;
   const son  = hepsi[0];                       // liste gonderildi desc sıralı
-  const ozet = String(son.mesaj || '').replace(/\n+/g, ' ').slice(0, 60);
-  const iz   = ['Son: ' + hataProjeAdi(son), ozet ? '“' + ozet + '”' : '']
-               .filter(Boolean).join(' · ');
-  const rozet = yeni
-    ? `<u class="tl-etiket" style="--tl-renk:#b4231b">${yeni} yeni</u>`
-    : `<u class="tl-etiket" style="--tl-renk:#83838b">${hepsi.length}</u>`;
-  return `<div class="lk-liste pz-hatalar">
-    <a class="lk tl-kart" href="#/hatalar">
-      <span class="lk-ikon gri">${svg(ICON.uyari, 24)}</span>
-      <span class="lk-yz">
-        <b>Hata Bildirimleri</b>
-        ${iz ? `<i>${esc(iz)}</i>` : ''}
-        <em>${svg(ICON.saat, 15)}${esc(tarihYaz(son.gonderildi))}${rozet}</em>
-      </span>
-      <span class="lk-ok">${svg(ICON.chevron, 18)}</span>
-    </a>
-  </div>`;
+  /* Talepler/Açık Görev kartlarıyla birebir aynı ps kart düzeni, tam genişlik.
+     Beyaz üstünde kırmızı yazı okunsun diye bildirim simgesi beyaz üçgen. */
+  const uyariDolu = '<svg viewBox="0 0 24 24" style="width:19px;height:19px">'
+    + '<path fill="#fff" stroke="none" d="M12 3.2l9.2 16a1 1 0 0 1-.87 1.5H3.67a1 1 0 0 1-.87-1.5z"></path>'
+    + '<path d="M12 9.6v4.2" stroke="#2a2a2f" stroke-width="1.9" stroke-linecap="round"></path>'
+    + '<circle cx="12" cy="16.6" r="1.1" fill="#2a2a2f" stroke="none"></circle></svg>';
+  return `<a class="ps ps-hata" href="#/hatalar">
+    <span class="ps-ok" aria-hidden="true">${svg(ICON.chevron, 14)}</span>
+    <span class="ps-ikon">${uyariDolu}</span>
+    <b class="ps-bas">Hata Bildirimleri</b>
+    <i class="ps-aciklama">Müşteri programlarından gelen</i>
+    <b class="ps-sayi">${yeni}</b>
+    <span class="ps-bitis">
+      ${svg(ICON.saat, 14)}
+      <span><i>Son bildirim</i><b>${esc(hataProjeAdi(son))}</b></span>
+    </span>
+  </a>`;
 }
 
 function panelSayilar(projeler) {
