@@ -8408,6 +8408,50 @@ function alanSecenekleri() {
    çizilse de kart hâlini koruyor. Kural kaydedilince sıfırlanıyor. */
 let STD_KOPYALANDI = false;
 
+/* Faz A — Tüm standartları tek metinde dışa aktarır. Kaynak doğrudan veri
+   katmanı (DB.standartlar = aktif standartlar); tohuma düşmez. Çıktı iki
+   katmanlı: insan/Claude-okunur Markdown + kayıpsız JSON. Sıra her seferinde
+   aynı: grup sırası (STANDART_GRUPLARI) → sira → alan → ad. Tek değişen satır
+   başlıktaki tarihtir; içerik birebir yinelenir. */
+function standartlariDisaAktar() {
+  const grupSira = {};
+  STANDART_GRUPLARI.forEach((g, i) => { grupSira[g] = i; });
+  const gi = g => (grupSira[g] !== undefined ? grupSira[g] : 999);
+  const tr = (a, b) => String(a || '').localeCompare(String(b || ''), 'tr');
+
+  const kayitlar = (DB.standartlar || []).slice().sort((x, y) =>
+    gi(x.grup) - gi(y.grup) || (x.sira || 0) - (y.sira || 0)
+    || tr(x.alan, y.alan) || tr(x.ad, y.ad));
+
+  /* --- Markdown katmanı --- */
+  const md = [];
+  md.push('# NIZAM Standartları');
+  md.push('Export: ' + APP.version);
+  md.push('Kayıt: ' + kayitlar.length);
+  md.push('Tarih: ' + bugunTarih());
+  md.push('');
+  let sonGrup = null, sonAlan = null;
+  kayitlar.forEach(st => {
+    const grup = (st.grup || VARSAYILAN_GRUP);
+    const alan = (st.alan || st.ad || '—');
+    if (grup !== sonGrup) { md.push('## ' + grup, ''); sonGrup = grup; sonAlan = null; }
+    if (alan !== sonAlan) { md.push('### ' + alan); sonAlan = alan; }
+    md.push('- **' + (st.ad || '') + '**');
+    if (st.tarif)  md.push('  ' + String(st.tarif).replace(/\n+/g, ' '));
+    if (st.yerel)  md.push('  _(sunucusuz: ' + String(st.yerel).replace(/\n+/g, ' ') + ')_');
+  });
+
+  /* --- JSON katmanı (kayıpsız, sabit anahtar sırası) --- */
+  const veri = kayitlar.map(st => ({
+    grup: st.grup || '', alan: st.alan || '', ad: st.ad || '',
+    ozet: st.ozet || '', tarif: st.tarif || '', yerel: st.yerel || '',
+    sira: st.sira || 0, aktif: st.aktif !== false,
+    eklendi: st.eklendi || '', olusturuldu: st.olusturuldu || '',
+  }));
+
+  return md.join('\n') + '\n\n--- STANDART VERİSİ ---\n' + JSON.stringify(veri, null, 2) + '\n';
+}
+
 function stdAracKartlari() {
   const k = STD_KOPYALANDI;
   return `
@@ -8428,6 +8472,16 @@ function stdAracKartlari() {
           <i>Claude'un döndürdüğü bloğu bırak — Studio çözümleyip kaydeder.</i></span>
         <button class="btk-dug" type="button" data-eylem="standart-ice-aktar">
           ${svg(ICON.ice, 15)} Yapıştır</button>
+      </div>
+    </div>
+    <div class="btk">
+      <div class="btk-ust">
+        <span class="btk-ik mavi">${svg(ICON.kopya, 22)}</span>
+        <span class="btk-yz"><b>Tüm standartları kopyala</b>
+          <i>Bütün aktif standartları tek metin (Markdown + JSON) olarak panoya alır.
+             Başka bir Claude oturumuna yapıştır.</i></span>
+        <button class="btk-dug" type="button" data-eylem="standart-hepsini-kopyala">
+          ${svg(ICON.kopya, 15)} Kopyala</button>
       </div>
     </div>`;
 }
@@ -15206,6 +15260,13 @@ async function eylemCalistir(el) {
     if (!st) return;
     const ok = await panoyaKopyala(`### ${st.ad}\n${st.tarif}`);
     return toast(ok ? 'Tarif kopyalandı.' : 'Kopyalanamadı.');
+  }
+
+  if (e === 'standart-hepsini-kopyala') {
+    const metin = standartlariDisaAktar();
+    const ok = await panoyaKopyala(metin);
+    return toast(ok ? 'Tüm standartlar panoya kopyalandı.'
+                    : 'Kopyalanamadı, tarayıcı izin vermedi.', ok ? 'basari' : 'hata');
   }
 
   if (e === 'standart-sil') {

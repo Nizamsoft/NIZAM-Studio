@@ -1,5 +1,15 @@
 # Değişiklik Günlüğü
 
+## v0.261.0
+- **NIZAM Standartları · Faz A — "Tüm standartları kopyala".** Standartlar
+  ekranındaki araçlara yeni düğme: tüm aktif standartları tek metin olarak
+  panoya alır. Çıktı iki katmanlı — insan/Claude okunur Markdown + kayıpsız
+  JSON (grup, alan, ad, ozet, tarif, yerel, sira, aktif, eklendi, olusturuldu).
+  Sıra deterministik: grup sırası (STANDART_GRUPLARI) → sira → alan → ad;
+  yalnız başlıktaki tarih değişir. Kaynak doğrudan veri katmanı
+  (DB.standartlar); tohuma düşmez. Mevcut tekil kopyalama ve teknikBlogu
+  davranışı değişmedi.
+
 ## v0.260.0
 - **NIZAM Security — manifest yanlış-pozitif düzeltmesi (İlk Kullanım Bulgu #1).**
   Hassas değer filtresinden `/service[_-]?role/i` deseni kaldırıldı: düz
