@@ -2218,37 +2218,71 @@ const PROMPT = {
     return s.join('\n');
   },
 
-  /* Standart ekleme promptu — bir programda yeni bir kural doğduğunda,
-     o değişikliği yapan Claude oturumuna yapıştırılır. Claude kuralı sabit
-     bir blok olarak geri verir; blok Studio'ya yapıştırılınca standart
-     kendiliğinden kurulur. Amaç: standart yazmak için Studio'ya oturup
-     form doldurmak zorunda kalmamak. */
-  standartEkle() {
+  /* Standart ekleme promptu — kullanıcı aklındaki kuralı serbest metinle
+     anlatır (fikir), Studio bu promptu üretir, Claude'a verilir; Claude fikri
+     canonical standart(lar)a çevirip tek bir JSON bloğu döndürür. Blok Studio'ya
+     yapıştırılınca (standartIceAktar) çözümlenip kaydedilir. Elle form yok.
+     kanonik_id ÜRETİLMEZ — Studio ST-### atar. */
+  standartEkle(fikir) {
     const alanlar = [...new Set(standartListesi()
       .map(st => (st.alan || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'tr'));
 
     const s = [];
-    s.push('# Nizam standardı — kural çıkar', '');
+    s.push('# Nizam standardı — fikri canonical kurala çevir', '');
 
-    s.push('Bu oturumda yaptığımız **son değişikliğe** bak. İçinde bundan sonra');
-    s.push('**her** programda geçerli olması gereken bir kural var mı?');
+    s.push('Aşağıda bir fikir var. Bunu **her** NIZAM programında geçerli olacak');
+    s.push('bir ya da birkaç **canonical standarda** çevir ve SADECE istenen JSON');
+    s.push('bloğunu döndür. Blok dışında tek kelime yazma — ne giriş, ne özet.');
     s.push('');
-    s.push('- Yoksa yalnızca `YOK` yaz, başka hiçbir şey yazma.');
-    s.push('- Varsa aşağıdaki bloğu doldur. Blok dışında tek kelime yazma —');
-    s.push('  ne giriş, ne özet, ne kutlama. Metnin tamamı Studio\'ya yapıştırılacak.');
+    s.push('## Fikir', '');
+    s.push('> ' + String(fikir || '').trim().replace(/\n+/g, '\n> '));
+    s.push('');
+    s.push('Fikir gerçekten her programda geçerli bir standart değilse (yalnız');
+    s.push('tek bir programın tercihiyse) boş liste döndür: `[]`.');
     s.push('');
 
-    s.push('## Biçim', '');
+    s.push('## Çıktı biçimi — AYNEN böyle', '');
+    s.push('Önce tek satır `--- STANDART VERİSİ ---`, sonra bir JSON dizisi.');
+    s.push('Her kural dizide bir nesnedir. Başka hiçbir şey yazma.');
+    s.push('');
     s.push('```');
-    s.push('Grup: Tasarım');
-    s.push('Alan: Üst çubuk');
-    s.push('Başlık: Araç düğmeleri profil panelinde');
-    s.push('Kural: Üst çubukta yalnız marka, sayfa adı ve kullanıcı kutusu durur.');
-    s.push('Not defteri, bildirim, destek gibi araçlar kullanıcı kutusuna basınca');
-    s.push('açılan panelin satırları olur.');
+    s.push('--- STANDART VERİSİ ---');
+    s.push('[');
+    s.push('  {');
+    s.push('    "ad": "Kısa başlık (iki üç kelime)",');
+    s.push('    "grup": "Tasarım",');
+    s.push('    "alan": "Üst çubuk",');
+    s.push('    "tip": "KURAL",');
+    s.push('    "kategori": "UI",');
+    s.push('    "aile": null,');
+    s.push('    "kural": "Kuralın tam metni — emir kipi, geniş zaman.",');
+    s.push('    "kosul": "",');
+    s.push('    "istisna": "",');
+    s.push('    "neden": "Tek cümle gerekçe.",');
+    s.push('    "kapsam": "nizam",');
+    s.push('    "kaynak": "",');
+    s.push('    "versiyon": 1,');
+    s.push('    "a11y": false,');
+    s.push('    "yerel": ""');
+    s.push('  }');
+    s.push(']');
     s.push('```');
     s.push('');
-    s.push('Birden fazla kural çıktıysa blokları `---` ile ayır.');
+
+    s.push('## Alan kuralları', '');
+    s.push('- **`kanonik_id` YAZMA.** Kimliği (ST-###) Studio kendisi atar.');
+    s.push('- **`id`, `eski_standartlar` YAZMA.** Bunlar Studio\'ya ait.');
+    s.push('- **`tip`** üçünden biri: `KURAL` (uyulması zorunlu kesin kural) ·');
+    s.push('  `VARSAYILAN` (varsayılan tercih; proje gerekçeyle değiştirebilir) ·');
+    s.push('  `KOŞULLU` (yalnız bir koşulda geçerli — koşulu `kosul`\'a yaz).');
+    s.push('- **`kural`** kuralın tam metnidir (eski "tarif" değil). Kod anlatma:');
+    s.push('  "`#btn` kaldırıldı" değil, "kalem üst çubukta durmaz".');
+    s.push('- **`aile`** aynı bileşen grubundan standartları birbirine bağlar;');
+    s.push('  yoksa `null`. **`kosul`/`istisna`/`kaynak`** yoksa boş string `""`.');
+    s.push('- **`kapsam`** varsayılan `"nizam"`. **`versiyon`** yeni kuralda `1`.');
+    s.push('- **`a11y`** erişilebilirlik kuralıysa `true`, değilse `false`.');
+    s.push('- **`yerel`** yalnız sunucusuz (veri cihazda) projede kuralın karşılığı');
+    s.push('  farklıysa doldurulur; yoksa boş `""`.');
     s.push('');
 
     s.push('## Grup — bu sekizden birini seç, yenisini uydurma', '');
@@ -2256,29 +2290,16 @@ const PROMPT = {
     s.push('');
 
     if (alanlar.length) {
-      s.push('## Alan — varsa bu listeden seç', '');
-      s.push('Alan, ekranın hangi parçasından söz ettiğini söyler. Aşağıdakilerden');
-      s.push('biri uyuyorsa **aynen** onu yaz; hiçbiri uymuyorsa yeni bir tane');
-      s.push('yaz ama kısa tut, iki kelimeyi geçme.');
+      s.push('## Alan — uyan varsa bu listeden AYNEN seç', '');
+      s.push('Alan, ekranın/konunun hangi parçası olduğunu söyler. Biri uyuyorsa');
+      s.push('aynen onu yaz; hiçbiri uymuyorsa kısa yeni bir tane yaz (iki kelimeyi');
+      s.push('geçme).');
       s.push('');
       alanlar.forEach(a => s.push('- ' + a));
       s.push('');
     }
 
-    s.push('## Kuralı nasıl yazacaksın', '');
-    s.push('- **Kod anlatma.** "`#btn-not` kaldırıldı" değil, "kalem üst çubukta');
-    s.push('  durmaz". Kuralı okuyan başka bir programı sıfırdan yazacak.');
-    s.push('- **Emir kipi, geniş zaman.** "Yaptık", "kaldırdık" değil; "olur",');
-    s.push('  "durmaz", "kullanılmaz".');
-    s.push('- **Nedenini bir cümleyle söyle** — sonradan tartışma çıkmasın.');
-    s.push('- **Bu programa özel şeyi standart yapma.** "Ofis fotoğrafı panelde');
-    s.push('  arka plan olur" bir standart değil, bu programın tercihidir.');
-    s.push('  "Arka plan görseli 200 KB\'ı geçmez" standarttır.');
-    s.push('- **Başlık iki üç kelime.** Alan zaten yeri söylüyor, başlık kuralın');
-    s.push('  ne dediğini söyler.');
-    s.push('');
-
-    s.push('Kod yazma, dosya değiştirme, commit atma. Yalnız bloğu ver.');
+    s.push('Kod yazma, dosya değiştirme, commit atma. Yalnız JSON bloğunu ver.');
 
     return s.join('\n');
   },

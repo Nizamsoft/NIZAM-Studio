@@ -1,5 +1,16 @@
 # Değişiklik Günlüğü
 
+## v0.263.0
+- **Standart ekleme artık elle değil: fikir → prompt → Claude → JSON.**
+  Standartlar ekranındaki "Elle ekle / Yeni" düğmeleri, üstteki hızlı-ekle (+)
+  ve karttaki "Düzenle" kaldırıldı; `standartDuzenle` elle formu silindi.
+  Yerine: "Fikrinden standart üret" kartına aklındaki kuralı yazarsın,
+  "Prompt oluştur" ile o fikri içeren prompt panoya kopyalanır, Claude'a
+  verince canonical JSON döndürür, "Kuralı yapıştır" ile içe aktarılır.
+  `standartEkle(fikir)` promptu fikri canonical standarda çevirir (kanonik_id
+  üretmez — Studio ST-### atar; id/eski_standartlar istemez). Kart düğmeleri
+  "Kuralı kopyala" ve "Kaldır" olarak kaldı.
+
 ## v0.262.0
 - **Canonical standart entegrasyonu — kod tarafı tamamlandı.** 77 → 66 canonical
   DB taşımasının ardından uygulama kodu yeni yapıya bağlandı:

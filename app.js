@@ -674,11 +674,9 @@ const VIEWS = {
       <div class="pj-tepe">
         <div class="pj-tepe-yz">
           <h1>Nizam Standartları</h1>
-          <p>Her programda geçerli olan kurallar. Claude'a promptu ver,
-             döndürdüğü kuralı buraya yapıştır.</p>
+          <p>Her programda geçerli olan kurallar. Fikrini yaz, prompt oluştur,
+             Claude'a ver, döndürdüğü JSON'u buraya yapıştır.</p>
         </div>
-        ${AUTH.yonetici ? `<button class="pj-yeni" type="button" data-eylem="standart-ekle">
-          ${svg(ICON.arti, 16)}<span>Yeni</span></button>` : ''}
       </div>`;
 
     if (!DB.standartlar.length) {
@@ -686,7 +684,7 @@ const VIEWS = {
         <div class="card">${empty(ICON.katman, 'Standart yok',
           'Supabase\'de önce sql/05-standartlar.sql, sonra sql/17-standart.sql '
           + 'dosyasını çalıştır — hazır standartlar kurulur.',
-          AUTH.yonetici ? 'Elle ekle' : null, 'standart-ekle')}</div>`;
+          null, null)}</div>`;
     }
 
     /* Açıklama şeridi kalktı: liste zaten kendini anlatıyor, her açılışta
@@ -8482,6 +8480,10 @@ function yeniKanonikId() {
    Kopyalandı bilgisi burada duruyor, kartın sınıfında değil: ekran yeniden
    çizilse de kart hâlini koruyor. Kural kaydedilince sıfırlanıyor. */
 let STD_KOPYALANDI = false;
+/* Kullanıcının "aklına gelen" fikir metni. Prompt oluştururken buraya yazılan
+   anlatım Claude'a gider; kopyalama render'ı tetiklediğinde metin kaybolmasın
+   diye burada tutulur. */
+let STD_FIKIR = '';
 
 /* Aktif canonical standartları tek metinde dışa aktarır. Kaynak yalnız
    aktif canonical (DB.standartlar zaten aktif=true + kanonik_id dolu filtreli;
@@ -8562,12 +8564,16 @@ function stdAracKartlari() {
   return `
     <div class="btk">
       <div class="btk-ust">
-        <span class="btk-ik ${k ? 'yesil' : 'kirmizi'}">${svg(k ? ICON.tik : ICON.kopya, 22)}</span>
-        <span class="btk-yz"><b>${k ? 'Prompt panoda' : 'Standart ekleme promptu'}</b>
-          <i>${k ? 'Claude\'a yapıştır, döndürdüğü kuralı aşağıdan aktar.'
-                 : 'Claude\'a "son değişiklikten bir kural çıkar mı?" diye sorar.'}</i></span>
+        <span class="btk-ik ${k ? 'yesil' : 'kirmizi'}">${svg(k ? ICON.tik : ICON.kalem, 22)}</span>
+        <span class="btk-yz"><b>${k ? 'Prompt panoda' : 'Fikrinden standart üret'}</b>
+          <i>${k ? 'Claude\'a yapıştır; döndürdüğü JSON\'u aşağıdan aktar.'
+                 : 'Aklındaki kuralı aşağıya yaz, "Prompt oluştur"a bas; Claude bunu canonical standarda çevirir.'}</i></span>
+      </div>
+      <textarea class="anl-kutu kisa" id="std-fikir" rows="3"
+        placeholder="Örn. Uzun işlemlerde kullanıcıya tahmini süre gösterilsin; süre bilinmiyorsa belirsiz ilerleme çubuğu kullanılsın.">${esc(STD_FIKIR)}</textarea>
+      <div style="display:flex;justify-content:flex-end;margin-top:8px">
         <button class="btk-dug" type="button" data-eylem="std-prompt">
-          ${svg(ICON.kopya, 15)} ${k ? 'Yeniden kopyala' : 'Kopyala'}</button>
+          ${svg(ICON.kopya, 15)} ${k ? 'Yeniden oluştur' : 'Prompt oluştur'}</button>
       </div>
     </div>
     <div class="btk">
@@ -8667,8 +8673,6 @@ function standartKarti(st) {
           <p class="std-meta mono">${alt2.join(' · ')}</p>
           ${AUTH.yonetici ? `
             <div class="std-dug">
-              <button class="fn-btn" data-eylem="standart-duzenle" data-id="${st.id}" type="button">
-                ${svg(ICON.kalem, 13)} Düzenle</button>
               <button class="fn-btn" data-eylem="standart-kopyala" data-id="${st.id}" type="button">
                 ${svg(ICON.kopya, 13)} Kuralı kopyala</button>
               <button class="fn-btn sil" data-eylem="standart-sil" data-id="${st.id}"
@@ -8925,10 +8929,9 @@ function ustEylemYaz(key, detay, id) {
     btn.dataset.eylem = 'gorev-ekle';
     btn.dataset.proje = id;
   } else if (key === 'standartlar') {
-    btn.classList.remove('hidden');
-    btn.querySelector('span').textContent = 'Yeni Standart';
-    btn.dataset.eylem = 'standart-ekle';
-    delete btn.dataset.proje;
+    /* Standart ekleme artık elle değil: fikir yaz → prompt → Claude → JSON
+       yapıştır. Üstteki hızlı-ekle (+) düğmesi bu ekranda gizlenir. */
+    ustEylemGizle(btn);
   } else {
     /* Görevler ve Ayarlar'da da artı dursun — kaybolmasın.
        Bu ekranlarda kendine ait bir eylem yok, en sık işi yapar: yeni proje. */
@@ -13585,8 +13588,8 @@ const PANO_PROMPT = {
   securityManifest: p => PROMPT.securityManifest(p ? p.id : ''),
   /* Uygulanmış tasarımlar sekmesinde odakta hangi yön varsa o. */
   tasarimVarlik: p => PROMPT.tasarimVarlikIstek(p.id, tasarimOdagi(p).anahtar),
-  /* Projesiz: bir programda doğan kuralı standarda çeviren prompt. */
-  standartEkle:  () => PROMPT.standartEkle(),
+  /* Projesiz: kullanıcının yazdığı fikri canonical standarda çeviren prompt. */
+  standartEkle:  () => PROMPT.standartEkle(STD_FIKIR),
 };
 
 /* Claude Code adresi. Depo adresi olmadan (`https://claude.ai/code`) hiçbir
@@ -14346,11 +14349,11 @@ function standartIceAktar() {
 
   modalAc(`
     ${modalBaslik(ICON.ice, 'Kuralı yapıştır',
-      'Claude\'un verdiği bloğu olduğu gibi yapıştır. Birden fazlaysa aralarına --- koy.')}
+      'Claude\'un döndürdüğü --- STANDART VERİSİ --- bloğunu olduğu gibi yapıştır.')}
     <label class="field">
       <span>Yapıştır</span>
       <textarea id="si-metin" rows="11" spellcheck="false"
-        placeholder="Grup: Tasarım&#10;Alan: Üst çubuk&#10;Başlık: Araç düğmeleri profil panelinde&#10;Kural: Üst çubukta yalnız marka, sayfa adı ve kullanıcı kutusu durur…"></textarea>
+        placeholder="--- STANDART VERİSİ ---&#10;[&#10;  { &quot;ad&quot;: &quot;…&quot;, &quot;grup&quot;: &quot;Tasarım&quot;, &quot;tip&quot;: &quot;KURAL&quot;, &quot;kural&quot;: &quot;…&quot; }&#10;]"></textarea>
     </label>
     <div id="si-onizleme"></div>
     <div class="modal-alt">
@@ -14418,187 +14421,9 @@ function standartIceAktar() {
   }, 'genis');
 }
 
-function standartDuzenle(id) {
-  modalHepsiniKapat();
-  const st = id ? DB.standart(id) : null;
-
-  /* Yeni kayıtta atanacak canonical kimlik; düzenlemede mevcut kimlik
-     (ikisi de salt-okunur gösterilir — kanonik_id ve DB UUID değiştirilemez). */
-  const kanonik = st ? (st.kanonik_id || '') : yeniKanonikId();
-  const TIPLER  = ['KURAL', 'VARSAYILAN', 'KOŞULLU'];
-  const KATEGORILER = ['TECH', 'DATA', 'SECURITY', 'FORMAT', 'A11Y', 'PERF', 'UI'];
-
-  modalAc(`
-    ${modalBaslik(ICON.katman, st ? 'Standardı düzenle' : 'Yeni standart', 'Kural prompta olduğu gibi girer — net ve emir kipinde yaz.')}
-
-    <label class="gf">
-      <span class="gf-et">Canonical kimlik <em>değiştirilemez</em></span>
-      <span class="gf-kutu">${svg(ICON.etiket, 17)}
-        <input type="text" id="sd-kanonik" value="${esc(kanonik)}" disabled></span>
-    </label>
-    <label class="gf">
-      <span class="gf-et">Grup <em>işin cinsi</em></span>
-      <span class="gf-kutu">${svg(ICON.katman, 17)}
-        <select id="sd-grup">
-          ${STANDART_GRUPLARI.map(g => `<option value="${esc(g)}"${
-            (st ? st.grup : VARSAYILAN_GRUP) === g ? ' selected' : ''}>${esc(g)}</option>`).join('')}
-        </select>
-        ${svg(ICON.chevron, 15)}</span>
-    </label>
-    <label class="gf">
-      <span class="gf-et">Alan <em>ekranın hangi parçası</em></span>
-      <span class="gf-kutu">${svg(ICON.panel, 17)}
-        <input type="text" id="sd-alan" list="sd-alanlar" maxlength="60" autocomplete="off"
-               value="${esc(st ? (st.alan || st.ad) : '')}" placeholder="Örn. Üst çubuk"></span>
-      <datalist id="sd-alanlar">
-        ${alanSecenekleri().map(a => `<option value="${esc(a)}"></option>`).join('')}
-      </datalist>
-    </label>
-    <label class="gf">
-      <span class="gf-et">Başlık <em>kural ne diyor, iki üç kelime</em></span>
-      <span class="gf-kutu">${svg(ICON.etiket, 17)}
-        <input type="text" id="sd-ad" value="${esc(st ? st.ad : '')}"
-               placeholder="Örn. Araç düğmeleri profil panelinde" maxlength="80"
-               autocomplete="off"></span>
-    </label>
-    <label class="gf">
-      <span class="gf-et">Tip <em>kuralın cinsi</em></span>
-      <span class="gf-kutu">${svg(ICON.etiket, 17)}
-        <select id="sd-tip">
-          ${TIPLER.map(t => `<option value="${t}"${(st ? st.tip : 'KURAL') === t ? ' selected' : ''}>${t}</option>`).join('')}
-        </select>
-        ${svg(ICON.chevron, 15)}</span>
-    </label>
-    <label class="gf">
-      <span class="gf-et">Kategori <em>konu başlığı</em></span>
-      <span class="gf-kutu">${svg(ICON.katman, 17)}
-        <input type="text" id="sd-kategori" list="sd-kategoriler" maxlength="30" autocomplete="off"
-               value="${esc(st ? (st.kategori || '') : '')}" placeholder="Örn. UI"></span>
-      <datalist id="sd-kategoriler">
-        ${KATEGORILER.map(c => `<option value="${c}"></option>`).join('')}
-      </datalist>
-    </label>
-    <label class="gf">
-      <span class="gf-et">Aile <em>varsa — boş bırakılabilir</em></span>
-      <span class="gf-kutu">${svg(ICON.panel, 17)}
-        <input type="text" id="sd-aile" maxlength="40" autocomplete="off"
-               value="${esc(st ? (st.aile || '') : '')}" placeholder="Örn. APP_HEADER"></span>
-    </label>
-    <label class="gf">
-      <span class="gf-et">Kural <em>prompta giren metin</em></span>
-      <textarea class="anl-kutu" id="sd-tarif" rows="7"
-        placeholder="Üst çubukta yalnız marka, sayfa adı ve kullanıcı kutusu durur…">${esc(st ? st.tarif : '')}</textarea>
-    </label>
-    <label class="gf">
-      <span class="gf-et">Koşul <em>ne zaman geçerli — boş bırakılabilir</em></span>
-      <textarea class="anl-kutu kisa" id="sd-kosul" rows="2"
-        placeholder="Örn. Veri katmanı sunucudaysa geçerli.">${esc(st ? (st.kosul || '') : '')}</textarea>
-    </label>
-    <label class="gf">
-      <span class="gf-et">İstisna <em>boş bırakılabilir</em></span>
-      <textarea class="anl-kutu kisa" id="sd-istisna" rows="2"
-        placeholder="Kuralın geçerli olmadığı durum.">${esc(st ? (st.istisna || '') : '')}</textarea>
-    </label>
-    <label class="gf">
-      <span class="gf-et">Neden <em>boş bırakılabilir</em></span>
-      <textarea class="anl-kutu kisa" id="sd-neden" rows="2"
-        placeholder="Bu kural neden var?">${esc(st ? (st.neden || '') : '')}</textarea>
-    </label>
-    <label class="gf">
-      <span class="gf-et">Sunucusuz projede <em>boş bırakılabilir</em></span>
-      <textarea class="anl-kutu kisa" id="sd-yerel" rows="3"
-        placeholder="Veri kullanıcının cihazında kalan projelerde bu kuralın karşılığı ne? Yoksa boş bırak.">${esc(st ? (st.yerel || '') : '')}</textarea>
-    </label>
-    <label class="gf">
-      <span class="gf-et">Kapsam</span>
-      <span class="gf-kutu">${svg(ICON.katman, 17)}
-        <input type="text" id="sd-kapsam" maxlength="30" autocomplete="off"
-               value="${esc(st ? (st.kapsam || 'nizam') : 'nizam')}" placeholder="nizam"></span>
-    </label>
-    <label class="gf">
-      <span class="gf-et">Kaynak <em>boş bırakılabilir</em></span>
-      <span class="gf-kutu">${svg(ICON.panel, 17)}
-        <input type="text" id="sd-kaynak" maxlength="40" autocomplete="off"
-               value="${esc(st ? (st.kaynak || '') : '')}" placeholder="Örn. koken_proje"></span>
-    </label>
-    <label class="gf">
-      <span class="gf-et">Versiyon</span>
-      <span class="gf-kutu">${svg(ICON.etiket, 17)}
-        <input type="number" id="sd-versiyon" min="1" step="1"
-               value="${st ? (st.versiyon || 1) : 1}"></span>
-    </label>
-    <label class="gf gf-onay">
-      <input type="checkbox" id="sd-a11y"${st && st.a11y ? ' checked' : ''}>
-      <span class="gf-et">Erişilebilirlik (a11y) standardı</span>
-    </label>
-
-    <div class="modal-alt">
-      <button class="btn btn-ghost" data-sd="iptal" type="button">Vazgeç</button>
-      <button class="btn btn-primary" data-sd="kaydet" type="button"><span>Kaydet</span></button>
-    </div>`, kutu => {
-    setTimeout(() => $('#sd-alan', kutu).focus(), 40);
-
-    $('[data-sd="iptal"]', kutu).addEventListener('click', modalKapat);
-    $('[data-sd="kaydet"]', kutu).addEventListener('click', async () => {
-      const ad       = $('#sd-ad', kutu).value.trim();
-      const alan     = $('#sd-alan', kutu).value.trim();
-      const grup     = $('#sd-grup', kutu).value.trim() || VARSAYILAN_GRUP;
-      const tarif    = $('#sd-tarif', kutu).value.trim();
-      const yerel    = $('#sd-yerel', kutu).value.trim();
-      const tip      = $('#sd-tip', kutu).value.trim();
-      const kategori = $('#sd-kategori', kutu).value.trim();
-      const aile     = $('#sd-aile', kutu).value.trim();
-      const kosul    = $('#sd-kosul', kutu).value.trim();
-      const istisna  = $('#sd-istisna', kutu).value.trim();
-      const neden    = $('#sd-neden', kutu).value.trim();
-      const kapsam   = $('#sd-kapsam', kutu).value.trim() || 'nizam';
-      const kaynak   = $('#sd-kaynak', kutu).value.trim();
-      const verRaw   = parseInt($('#sd-versiyon', kutu).value, 10);
-      const versiyon = Number.isFinite(verRaw) && verRaw > 0 ? verRaw : 1;
-      const a11y     = $('#sd-a11y', kutu).checked;
-
-      if (!alan)  { toast('Alanı yaz — ekranın hangi parçası?'); return; }
-      if (!ad)    { toast('Başlığı yaz — kural ne diyor?'); return; }
-      if (!tarif) { toast('Kuralı yaz — prompta bu metin giriyor.'); return; }
-
-      /* Canonical alanlar. `kural` kolonu DB'de `tarif` olarak tutuluyor.
-         `aile` boşsa null; kosul/istisna/neden/kaynak boşsa '' (canonical
-         varsayılanı). `eski_standartlar` BURADA HİÇ ELLENMEZ (history). */
-      const temel = {
-        ad, alan, grup, tarif, yerel,
-        tip, kategori, aile: aile || null,
-        kosul, istisna, neden, kapsam, kaynak, versiyon, a11y,
-        eklendi: APP.version,
-      };
-
-      let kayit;
-      if (id) {
-        /* Düzenleme: kanonik_id GÖNDERİLMEZ → değişmez, boşaltılamaz. */
-        kayit = temel;
-      } else {
-        /* Yeni kayıt aktif olacağından (DB varsayılanı) canonical invariant
-           gereği kanonik_id dolu olmalı. */
-        const kid = yeniKanonikId();
-        if (!kid) { toast('Canonical kimlik üretilemedi — kaydedilmedi.'); return; }
-        kayit = Object.assign({ kanonik_id: kid }, temel);
-      }
-
-      const btn = $('[data-sd="kaydet"] span', kutu);
-      btn.textContent = 'Kaydediliyor…';
-      try {
-        await DB.standartKaydet(id, kayit);
-        modalKapat();
-        ACIK_GRUP = grup;
-        if (id) ACIK_STANDART.add(id);
-        render();
-        toast(id ? 'Standart güncellendi.' : 'Standart eklendi.');
-      } catch (e) {
-        toast(e.message, 'hata');
-        btn.textContent = 'Kaydet';
-      }
-    });
-  }, 'genis');
-}
+/* Standart ekleme/düzenleme formu (standartDuzenle) kaldırıldı: artık elle
+   yazım yok. Standart üretimi fikir → Prompt oluştur → Claude → canonical JSON
+   yapıştır akışıyla yapılıyor (bkz. std-prompt eylemi ve standartIceAktar). */
 
 /* ==========================================================================
    SEÇENEK PENCERESİ
@@ -15408,8 +15233,13 @@ async function eylemCalistir(el) {
      promptun panoya girmesi; sekme açmak kullanıcıyı uygulamadan çıkarıyor
      ve geri döndüğünde kart hâlini kaybediyordu. */
   if (e === 'std-prompt') {
+    /* Fikir metnini DOM'dan al ve sakla (render kutuyu yeniden kurduğunda
+       kaybolmasın). Boşsa uyar — prompt fikre göre yazılıyor. */
+    const kutu = document.getElementById('std-fikir');
+    STD_FIKIR = kutu ? kutu.value.trim() : STD_FIKIR;
+    if (!STD_FIKIR) { toast('Önce aklındaki kuralı birkaç cümleyle yaz.', 'uyari'); return; }
     let metin;
-    try { metin = PROMPT.standartEkle(); }
+    try { metin = PROMPT.standartEkle(STD_FIKIR); }
     catch (h) { toast('Prompt üretilemedi: ' + h.message, 'hata'); return; }
     const oldu = await panoyaKopyala(metin);
     if (!oldu) { toast('Kopyalanamadı.', 'hata'); return; }
@@ -15482,15 +15312,14 @@ async function eylemCalistir(el) {
 
   if (e === 'yedek-oku') return yedekSec();
 
-
-  if (e === 'standart-ekle')    return standartDuzenle(null);
-  if (e === 'standart-duzenle') return standartDuzenle(id);
+  /* Standart ekleme/düzenleme artık elle form değil: fikir → prompt → Claude
+     → JSON yapıştır (std-prompt + standart-ice-aktar). */
 
   if (e === 'standart-kopyala') {
     const st = DB.standart(id);
     if (!st) return;
-    const ok = await panoyaKopyala(`### ${st.ad}\n${st.tarif}`);
-    return toast(ok ? 'Tarif kopyalandı.' : 'Kopyalanamadı.');
+    const ok = await panoyaKopyala(`### ${st.ad}\n${st.kural || st.tarif || ''}`);
+    return toast(ok ? 'Kural kopyalandı.' : 'Kopyalanamadı.');
   }
 
   if (e === 'standart-hepsini-kopyala') {
