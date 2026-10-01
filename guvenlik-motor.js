@@ -313,13 +313,15 @@ function guvenlikDogrulamaBul(dogrulama, varlik, islem) {
    (DOGRULANDI/CELISIYOR) okuma zaten bilinir → statik; çözülemediyse okuma
    canlı denenebilir; yazma her hâlde aktif_gerekli (üretimde çalışmaz). */
 function guvenlikYontemSec(islem, dvSonuc) {
+  const statikGuvenli = dvSonuc && (dvSonuc.durum === GUVENLIK_DOGRULAMA.DOGRULANDI
+    || dvSonuc.durum === GUVENLIK_DOGRULAMA.CELISIYOR);
   if (islem === 'read') {
-    if (dvSonuc && (dvSonuc.durum === GUVENLIK_DOGRULAMA.DOGRULANDI
-      || dvSonuc.durum === GUVENLIK_DOGRULAMA.CELISIYOR)) return 'statik';
-    return 'okuma_canli';
+    return statikGuvenli ? 'statik' : 'okuma_canli';
   }
-  if (islem === 'call') return 'aktif_gerekli';
-  return 'aktif_gerekli'; // insert/update/delete
+  /* Yazma/çağrı üretimde çalıştırılmaz (yalnız okuma testi yaparız). Ama
+     gerçek RLS politikası röntgende net görüldüyse karar statik verilir —
+     böylece "aktif test gerekli" bahanesi yerine gerçek sonuç çıkar. */
+  return statikGuvenli ? 'statik' : 'aktif_gerekli';
 }
 
 /* Deterministik risk. Genel skor değil, tek testin önemi. */

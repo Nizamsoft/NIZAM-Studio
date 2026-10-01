@@ -6927,12 +6927,41 @@ function guvenlikDogrulamaTablosu(d) {
       açık değildir — NIZAM o alanı göremedi.</p></div>`;
 }
 
-/* NIZAM Security · Canlı tarama kartı (Faz 5). Hesap A/B ile güvenli okuma
-   testleri; sonuç 7 durumlu. Şifreler yalnız çalışırken bellekte. */
+/* Test hesapları: 3 rol yuvası. Giriş motora hangi jetonun kullanılacağını
+   söyler (yönetici / personel / başka personel). Şifreler SADECE bu cihazda
+   (tarayıcıda) saklanır — veritabanına veya repoya asla yazılmaz. */
+const GUV_ROLLER = [
+  { slot: 'yonetici',  ad: 'Yönetici',        ipucu: 'yonetici@firma.com' },
+  { slot: 'personel',  ad: 'Personel',        ipucu: 'personel@firma.com' },
+  { slot: 'personel2', ad: 'Başka personel',  ipucu: 'baska@firma.com' },
+];
+function guvHesapAnahtar(projeId) { return 'nz_guv_hesap_' + (projeId || 'ayar'); }
+function guvHesaplariOku(projeId) {
+  try { return JSON.parse(localStorage.getItem(guvHesapAnahtar(projeId)) || '{}') || {}; }
+  catch (e) { return {}; }
+}
+function guvHesaplariYaz(projeId, h) {
+  try { localStorage.setItem(guvHesapAnahtar(projeId), JSON.stringify(h || {})); return true; }
+  catch (e) { return false; }
+}
+
+/* NIZAM Security · Canlı tarama kartı (Faz 5). Rol hesaplarıyla güvenli okuma
+   testleri; sonuç 7 durumlu. Şifreler yalnız bu cihazda saklanır. */
 function guvenlikTaramaKarti(g, projeId, ik) {
   if (!g.matris) return '';
   const ek = projeId || 'ayar';
   const o = g.tarama && g.tarama.ozet;
+  const h = guvHesaplariOku(projeId);
+  const girilen = GUV_ROLLER.filter(r => h[r.slot] && h[r.slot].eposta).length;
+  const roller = GUV_ROLLER.map(r => {
+    const v = h[r.slot] || {};
+    return `
+      <div class="gvt-rol">
+        <span class="gvt-rol-ad">${esc(r.ad)}</span>
+        <label class="gf"><span class="gf-kutu">${svg(ICON.mail, 17)}<input type="text" id="gvt-${r.slot}-eposta-${ek}" value="${esc(v.eposta || '')}" placeholder="${esc(r.ipucu)}" autocomplete="off" spellcheck="false"></span></label>
+        <label class="gf"><span class="gf-kutu">${svg(ICON.kilit, 17)}<input type="password" id="gvt-${r.slot}-sifre-${ek}" value="${esc(v.sifre || '')}" placeholder="şifre" autocomplete="off"></span></label>
+      </div>`;
+  }).join('');
   return `
     <div class="btk">
       <div class="btk-ust">
@@ -6941,16 +6970,10 @@ function guvenlikTaramaKarti(g, projeId, ik) {
           <i>${g.tarama
             ? esc(o.acik + ' açık · ' + o.dogrulandi + ' doğrulandı · ' + o.dogrulanamadi
                 + ' ölçülemedi · ' + o.aktif_gerekli + ' aktif test gerekli')
-            : 'Matristeki güvenli testleri gerçek hesaplarla çalıştırır. Yalnız okur; yazma testleri çalıştırılmaz.'}</i></span>
+            : 'Verdiğin hesaplarla gerçekten giriş yapar, yetkisiz erişimi dener. Yalnız okur; yazma/silme denenmez.'}</i></span>
       </div>
-      <label class="gf"><span class="gf-et">Hesap A e-posta</span>
-        <span class="gf-kutu">${svg(ICON.mail, 17)}<input type="text" id="gvt-a-eposta-${ek}" placeholder="personel@firma.com" autocomplete="off" spellcheck="false"></span></label>
-      <label class="gf"><span class="gf-et">Hesap A şifre</span>
-        <span class="gf-kutu">${svg(ICON.kilit, 17)}<input type="password" id="gvt-a-sifre-${ek}" placeholder="şifre" autocomplete="off"></span></label>
-      <label class="gf"><span class="gf-et">Hesap B e-posta (yatay test için, opsiyonel)</span>
-        <span class="gf-kutu">${svg(ICON.mail, 17)}<input type="text" id="gvt-b-eposta-${ek}" placeholder="baska@firma.com" autocomplete="off" spellcheck="false"></span></label>
-      <label class="gf"><span class="gf-et">Hesap B şifre</span>
-        <span class="gf-kutu">${svg(ICON.kilit, 17)}<input type="password" id="gvt-b-sifre-${ek}" placeholder="şifre" autocomplete="off"></span></label>
+      <p class="gvt-baslik">Test hesapları${girilen ? ' · ' + girilen + '/3 hazır' : ''}</p>
+      ${roller}
       <div class="gv-adimlar">
         <button class="sayfa-dug" type="button" data-eylem="guvenlik-tarama-baslat"
                 data-proje="${esc(projeId || '')}" ${g.taraniyor ? 'disabled' : ''}>
@@ -6958,7 +6981,7 @@ function guvenlikTaramaKarti(g, projeId, ik) {
         ${g.tarama ? `<button class="sayfa-dug ikincil" type="button" data-eylem="guvenlik-denetim-kaydet"
                 data-proje="${esc(projeId || '')}">${svg(ICON.kaydet, 15)} Denetimi Kaydet</button>` : ''}
       </div>
-      <p class="ipucu">Şifreler hiçbir yere kaydedilmiyor; yalnız test sırasında kullanılıyor.
+      <p class="ipucu">🔒 Hesaplar yalnız bu cihazda saklanır (veritabanına yazılmaz); her tarama otomatik kullanır. Anonim erişim her hâlde test edilir.
         ${projeId ? '' : 'Denetimi kaydetmek için proje güvenlik adımını kullan.'}</p>
       ${guvenlikAntivirus(g.tarama)}
     </div>`;
@@ -7203,17 +7226,42 @@ async function guvenlikOrnekId(taban, anon, token, tablo) {
   return null;
 }
 
-async function guvenlikTaramaCalistir({ url, anon, hesapA, hesapB, matris, dogrulama }) {
+async function guvenlikTaramaCalistir({ url, anon, hesaplar, hesapA, hesapB, matris, dogrulama }) {
   const taban = String(url || '').trim().replace(/\/+$/, '');
   const S = GUVENLIK_SONUC;
   const satirlar = (matris && matris.satirlar) || [];
   const sonuclar = [];
 
-  /* Giriş — jetonlar yalnız burada. */
-  const tokenA = hesapA ? await guvenlikGiris(taban, anon, hesapA.eposta, hesapA.sifre) : null;
-  const tokenB = hesapB ? await guvenlikGiris(taban, anon, hesapB.eposta, hesapB.sifre) : null;
+  /* Geriye uyum: eski hesapA/hesapB çağrısı da çalışsın. */
+  const H = hesaplar || {};
+  if (!hesaplar && (hesapA || hesapB)) {
+    if (hesapA && hesapA.eposta) H.personel = hesapA;
+    if (hesapB && hesapB.eposta) H.personel2 = hesapB;
+  }
 
-  /* "başkasının" testleri için B'nin kendi kayıt id'lerini önden topla. */
+  /* Giriş — jetonlar yalnız burada, bellekte. Her rol kendi hesabıyla girer. */
+  const girisYap = (s) => (H[s] && H[s].eposta)
+    ? guvenlikGiris(taban, anon, H[s].eposta, H[s].sifre) : Promise.resolve(null);
+  const [tokYonetici, tokPersonel, tokPersonel2] = await Promise.all([
+    girisYap('yonetici'), girisYap('personel'), girisYap('personel2')]);
+  /* Bir hesap bile girilmemişse, personel yoksa yönetici jetonunu yedek kullan. */
+  const tokVars = tokPersonel || tokYonetici || tokPersonel2;
+
+  /* Bir matris satırına uygun jetonu seç. */
+  const jetonSec = (row) => {
+    const a = row.aktor || {};
+    if (a.tur === 'anonim') return null;
+    if (a.tur === 'rol') {
+      const r = String(a.deger || '').toLowerCase();
+      const yonetici = /yonet|yönet|admin|owner|patron|super|süper|sahip/.test(r);
+      return (yonetici ? tokYonetici : tokPersonel) || tokVars;
+    }
+    /* hesap: A = ilk kullanıcı (personel), B = başka kullanıcı (personel2). */
+    return (a.deger === 'hesap_B' ? tokPersonel2 : tokPersonel) || tokVars;
+  };
+
+  /* "başkasının" testlerinde karşı taraf: başka personel hesabının kayıtları. */
+  const tokenB = tokPersonel2 || tokYonetici;
   const bBaskaId = {};   // varlik → id
 
   const dvBul = (varlik, islem) => (dogrulama && dogrulama.sonuclar || [])
@@ -7235,8 +7283,8 @@ async function guvenlikTaramaCalistir({ url, anon, hesapA, hesapB, matris, dogru
       if (!tabloMu) { gozlem = { olculemedi: 'canlı okuma kapsamı dışında' }; }
       else {
         const aktorTur = row.aktor.tur;
-        const token = aktorTur === 'anonim' ? null : (row.aktor.deger === 'hesap_B' ? tokenB : tokenA);
-        if (aktorTur !== 'anonim' && !token) { gozlem = { olculemedi: 'hesap girişi yapılamadı' }; }
+        const token = aktorTur === 'anonim' ? null : jetonSec(row);
+        if (aktorTur !== 'anonim' && !token) { gozlem = { olculemedi: 'bu rol için giriş bilgisi verilmedi' }; }
         else if (row.kaynak.kapsam === 'baskasinin' || row.kaynak.kapsam === 'baska_sirket') {
           /* B'nin bir kaydını A ile okumayı dene — id uydurmadan. */
           if (!(varlik in bBaskaId)) bBaskaId[varlik] = tokenB ? await guvenlikOrnekId(taban, anon, tokenB, varlik) : null;
@@ -16594,12 +16642,18 @@ async function eylemCalistir(el) {
     let url, anon;
     const pl = (DB.proje(projeId) || {}).palet || {}; url = pl.supabaseUrl; anon = pl.supabaseAnon;
     if (!url || !anon) { toast('Supabase adresi ve anon key gerekli.', 'uyari'); return; }
+    /* Rol hesaplarını oku + bu cihaza kaydet (şifre DB'ye gitmez). */
+    const hesaplar = {};
+    for (const r of GUV_ROLLER) {
+      const eposta = al('gvt-' + r.slot + '-eposta-' + ek);
+      const sifre = al('gvt-' + r.slot + '-sifre-' + ek);
+      if (eposta || sifre) hesaplar[r.slot] = { eposta, sifre };
+    }
+    guvHesaplariYaz(projeId, hesaplar);
     hedef.taraniyor = true; render();
     try {
       hedef.tarama = await guvenlikTaramaCalistir({ url, anon,
-        hesapA: { eposta: al('gvt-a-eposta-' + ek), sifre: al('gvt-a-sifre-' + ek) },
-        hesapB: { eposta: al('gvt-b-eposta-' + ek), sifre: al('gvt-b-sifre-' + ek) },
-        matris: hedef.matris, dogrulama: hedef.dogrulama });
+        hesaplar, matris: hedef.matris, dogrulama: hedef.dogrulama });
       const o = hedef.tarama.ozet;
       toast(o.acik ? o.acik + ' açık bulundu.' : 'Açık bulunamadı — ' + o.dogrulandi + ' doğrulandı.',
         o.acik ? 'uyari' : 'basari');

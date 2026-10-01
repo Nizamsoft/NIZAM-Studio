@@ -10551,6 +10551,19 @@ button.kt {
 .gv-rz.sirada { background: var(--ink-strong, #17171a); color: #fff; }
 .gv-rz.bekle  { background: var(--yuva, #f2f2f4); color: var(--ink-faint, #9a9aa2); }
 
+/* Test hesapları (rol rol giriş) */
+.gvt-baslik {
+  font-family: var(--yazi-etiket); font-size: 11px; font-weight: 600;
+  letter-spacing: .06em; text-transform: uppercase; color: var(--ink-faint);
+  margin: 14px 0 8px;
+}
+.gvt-rol { margin-bottom: 10px; }
+.gvt-rol-ad {
+  display: block; font-family: var(--yazi-etiket); font-size: 12.5px;
+  font-weight: 600; color: var(--ink-soft); margin-bottom: 5px;
+}
+.gvt-rol .gf { margin-bottom: 6px; }
+
 /* ---------- Görev detayı ---------- */
 .gd-liste { display: flex; flex-direction: column; }
 .gd-s {

@@ -1,5 +1,15 @@
 # Değişiklik Günlüğü
 
+## v0.275.0
+- **Güvenlik taraması artık rol hesaplarıyla test ediyor.** Hesap A/B yerine
+  3 rol: yönetici · personel · başka personel. Her rol kendi girişiyle test
+  edilir, motor doğru jetonu seçer — "ölçülemedi / aktif test gerekli" azalır.
+- **Hesaplar bu cihazda saklanır.** Bir kez girilir, her tarama otomatik
+  kullanır; şifre veritabanına/repoya asla yazılmaz. Anonim erişim her hâlde
+  denenir, yazma/silme hiç denenmez.
+- **Yazma kuralları röntgenden doğrulanıyor.** RLS politikası net görüldüyse
+  insert/update/delete için "aktif test gerekli" yerine gerçek karar verilir.
+
 ## v0.274.0
 - **Yeni Denetim ekranı artık antivirüs akışı gibi.** Üstte kalkanlı durum
   başlığı + ilerleme çubuğu ("X / 5 adım hazır"); adımlar numaralı rozetlerle
