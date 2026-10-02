@@ -60,15 +60,24 @@ function projeBittiMi(p) {
       || projeAsamaYuzde(p) >= 100;
 }
 
-/* Projeler ekranının iki kovası. Adres `#/projeler/basmis` — proje kimlikleri
-   uuid olduğu için bu iki kelimeyle asla çakışmaz.
+/* Proje deneme (test) projesi mi — oluştururken seçilir, palet.projeTuru'da
+   durur. Eski kayıtlarda 'test', yeni kayıtlarda 'deneme' yazıyor; ikisi de
+   deneme sayılır. Gerçek müşteri işi 'gercek' (ya da boş). */
+function denemeMi(p) {
+  const t = ((p && p.palet) || {}).projeTuru;
+  return t === 'test' || t === 'deneme';
+}
 
-   İki kova var, üç değil: bu yüzden "başlamış" bitmiş OLMAMAYA bakıyor. */
+/* Projeler ekranının üç bölümü (TİP'e göre): Normal müşteri projeleri · Deneme
+   projeleri · Template'ler. Adres `#/projeler/<kova>` — proje kimlikleri uuid
+   olduğu için bu kelimelerle çakışmaz. */
 const PROJE_KOVASI = {
-  basmis: { ad: 'Başlamış Projeler', ikon: 'saat', sinif: 'k-basmis',
-            sec: p => !projeBittiMi(p) },
-  bitmis: { ad: 'Bitmiş Projeler',   ikon: 'bitti', sinif: 'k-bitmis',
-            sec: p => projeBittiMi(p) },
+  normal:   { ad: 'Projeler', ikon: 'katman',       sinif: 'k-normal',
+              sec: p => !cekirdekMi(p) && !denemeMi(p) },
+  deneme:   { ad: 'Deneme',   ikon: 'gOptimizasyon', sinif: 'k-deneme',
+              sec: p => !cekirdekMi(p) && denemeMi(p) },
+  template: { ad: 'Template', ikon: 'izgaraDort',    sinif: 'k-template',
+              sec: p => cekirdekMi(p) },
 };
 
 /* Template — müşteri işi değil, yeniden kullanılacak bir çekirdek proje.
@@ -589,15 +598,15 @@ const VIEWS = {
   projeler: () => {
     if (YUKLENIYOR) return iskeletler(6);
     if (DB.hata)    return hataKutusu(DB.hata);
-    /* Kovasız adres devam eden projelere düşer. */
-    return projelerEkrani('basmis');
+    /* Kovasız adres normal projelere düşer. */
+    return projelerEkrani('normal');
   },
 
-  /* Aynı ekran, sekmesi seçili hâlde: #/projeler/basmis · #/projeler/bitmis */
+  /* Aynı ekran, sekmesi seçili hâlde: #/projeler/normal · deneme · template */
   projeKovasi: (k) => {
     if (YUKLENIYOR) return iskeletler(6);
     if (DB.hata)    return hataKutusu(DB.hata);
-    return projelerEkrani(PROJE_KOVASI[k] ? k : 'basmis');
+    return projelerEkrani(PROJE_KOVASI[k] ? k : 'normal');
   },
 
   /* ---------- Proje detayı ---------- */
@@ -7640,7 +7649,7 @@ function projeKunyesi(p) {
       </span>
       <span class="pk-yz">
         <span class="pk-ad">${esc(basHarfleriBuyuk(projeAdi(p)))}
-          ${(p.palet || {}).projeTuru === 'test' ? '<span class="pill dev">Test</span>' : ''}</span>
+          ${denemeMi(p) ? '<span class="pill dev">Deneme</span>' : ''}</span>
         <span class="pk-alt">${alt}</span>
       </span>
       <span class="pk-yuz"><b>%${projeAsamaYuzde(p)}</b><i>tamam</i></span>
@@ -7966,7 +7975,7 @@ function projeKarti(p, i = 0) {
             <span class="proje-ad">${esc(projeAdi(p))}</span>
             <span class="proje-meta">${PLATFORM_ADI[p.platform] || p.platform}</span>
           </span>
-          ${(p.palet || {}).projeTuru === 'test' ? '<span class="pill dev">Test</span>' : ''}
+          ${denemeMi(p) ? '<span class="pill dev">Deneme</span>' : ''}
           <span class="pill ${durumSinif(p.durum)}">${DURUM_ADI[p.durum] || p.durum}</span>
         </div>
         <div class="proje-orta">
@@ -8061,29 +8070,31 @@ function pjSirala(liste) {
 }
 
 function projelerEkrani(kova) {
-  const hepsi  = DB.projeler.filter(p => !cekirdekMi(p));
-  const sayi   = { basmis: 0, bitmis: 0 };
-  hepsi.forEach(p => { sayi[projeBittiMi(p) ? 'bitmis' : 'basmis']++; });
+  const aktif = DB.projeler.filter(p => !p.arsiv);
+  const sayi  = { normal: 0, deneme: 0, template: 0 };
+  aktif.forEach(p => { for (const k in PROJE_KOVASI) if (PROJE_KOVASI[k].sec(p)) sayi[k]++; });
 
-  const liste = pjSirala(hepsi.filter(p => PROJE_KOVASI[kova].sec(p)));
+  const template = kova === 'template';
+  const liste = pjSirala(aktif.filter(p => PROJE_KOVASI[kova].sec(p)));
 
-  /* "Projeler" sözcüğü telefonda gizleniyor: iki sekme tek satıra sığsın,
-     yazı üç noktayla kesilmesin. */
-  const sekme = (k, ikon, ad) => `
+  const sekme = (k, ad) => `
     <a class="pj-sekme ${k === kova ? 'acik' : ''}" href="#/projeler/${k}">
-      ${svg(ICON[ikon], 17)}<span>${ad}<u> Projeler</u> (${sayi[k]})</span>
+      ${svg(ICON[PROJE_KOVASI[k].ikon], 17)}<span>${ad} (${sayi[k]})</span>
     </a>`;
 
   const govde = liste.length
-    ? `<div class="pj-izgara">${liste.map(pjKarti).join('')}
+    ? `<div class="${template ? 'tp-liste' : 'pj-izgara'}">${liste.map(template ? templateKarti : pjKarti).join('')}
          <div class="pj-bos-arama">Aramana uyan proje yok.</div>
        </div>`
     : `<div class="card">${empty(ICON[PROJE_KOVASI[kova].ikon],
         PROJE_KOVASI[kova].ad + ' yok',
-        kova === 'bitmis'
-          ? 'Final verilen ya da bütün görevleri biten projeler buraya düşer.'
-          : 'Yeni Proje sihirbazı firma, renk, platform, veritabanı ve modülleri sorar.',
-        AUTH.yonetici && kova === 'basmis' ? 'Yeni Proje' : null, 'sihirbaz')}</div>`;
+        kova === 'template'
+          ? 'Yeniden kullanacağın hazır şablonlar burada toplanır.'
+          : kova === 'deneme'
+            ? 'Denemelik projeler burada durur — gerçek müşteri işlerinden ayrı.'
+            : 'Yeni Proje sihirbazı firma, renk, platform, veritabanı ve modülleri sorar.',
+        AUTH.yonetici ? (kova === 'template' ? 'Template oluştur' : 'Yeni Proje') : null,
+        kova === 'template' ? 'template-olustur-ac' : 'sihirbaz')}</div>`;
 
   return `
     <div class="pj-tepe">
@@ -8091,22 +8102,24 @@ function projelerEkrani(kova) {
         <h1>Projeler</h1>
         <p>Tüm projeleri görüntüle, ilerlemeleri takip et.</p>
       </div>
-      ${AUTH.yonetici ? `<button class="pj-yeni" type="button" data-eylem="sihirbaz">
-        ${svg(ICON.arti, 16)}<span>Yeni Proje</span></button>` : ''}
+      ${AUTH.yonetici ? `<button class="pj-yeni" type="button"
+        data-eylem="${template ? 'template-olustur-ac' : 'sihirbaz'}">
+        ${svg(ICON.arti, 16)}<span>${template ? 'Template' : 'Yeni Proje'}</span></button>` : ''}
     </div>
 
     <div class="pj-sekmeler">
-      ${sekme('basmis', 'saat', 'Devam Eden')}
-      ${sekme('bitmis', 'bitti', 'Tamamlanan')}
+      ${sekme('normal', 'Projeler')}
+      ${sekme('deneme', 'Deneme')}
+      ${sekme('template', 'Template')}
     </div>
 
-    <div class="pj-araclar">
+    ${template ? '' : `<div class="pj-araclar">
       <label class="pj-ara">
         <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.4"></circle><path d="M15.8 15.8L20.5 20.5"></path></svg>
         <input id="pj-ara" type="search" autocomplete="off" placeholder="Proje adı, firma veya sektör ile ara…"
           value="${esc(PROJE_ARAMA)}">
       </label>
-    </div>
+    </div>`}
 
     ${govde}`;
 }
@@ -10824,7 +10837,11 @@ function sihirbaziAc() {
     <div class="secim">
       <div class="satir sec-satir" data-sb0="yeni" role="button" tabindex="0">
         <span class="sec-yazi"><b>Yeni proje oluştur</b>
-          <i>Sihirbazla firma, platform, veritabanı ve modülleri sor</i></span>
+          <i>Gerçek müşteri işi — sihirbazla firma, platform, veritabanı sor</i></span>
+      </div>
+      <div class="satir sec-satir" data-sb0="deneme" role="button" tabindex="0">
+        <span class="sec-yazi"><b>Deneme projesi oluştur</b>
+          <i>Denemelik; Projeler'de ayrı "Deneme" bölümünde durur</i></span>
       </div>
       <div class="satir sec-satir" data-sb0="aktar" role="button" tabindex="0">
         <span class="sec-yazi"><b>Mevcut projeyi Studio'ya ekle</b>
@@ -10840,8 +10857,9 @@ function sihirbaziAc() {
       const e = t.dataset.sb0;
       if (e === 'kapat') return modalKapat();
       modalKapat();
-      if (e === 'yeni')  return sektorSecAc('gercek');
-      if (e === 'aktar') return projeAktarAc();
+      if (e === 'yeni')   return sektorSecAc('gercek');
+      if (e === 'deneme') return sektorSecAc('deneme');
+      if (e === 'aktar')  return projeAktarAc();
     });
   });
 }
@@ -11634,7 +11652,7 @@ function sihirbaziBaslat(tur, sektorId) {
     dil: 'tr', para: 'TRY',
     baslangic: bugunTarih(), teslim: '',
     moduller: [], kaydediyor: false,
-    tur: tur === 'test' ? 'test' : 'gercek',
+    tur: (tur === 'test' || tur === 'deneme') ? 'deneme' : 'gercek',
   });
   sihirbazAc();
 }

@@ -1,5 +1,14 @@
 # Değişiklik Günlüğü
 
+## v0.285.0
+- **Projeler üç bölüme ayrıldı: Projeler · Deneme · Template.** Üstteki sekmeler
+  artık tipe göre: gerçek müşteri projeleri, deneme projeleri ve template'ler.
+  Template'ler Projeler ekranından da görülebiliyor (ayrı Templateler ekranı da
+  duruyor). Eski "Devam Eden / Tamamlanan" ayrımı kalktı.
+- **Deneme projesi oluşturma geri geldi.** "Proje ekle" menüsünde "Deneme
+  projesi oluştur" seçeneği; bu projeler Deneme bölümünde durur, kartında
+  "Deneme" rozeti çıkar. (İşaret oluştururken seçiliyor.)
+
 ## v0.284.0
 - **"Programdan standart öner" geri geldi.** Nizam Standartları ekranında yeni
   düğme: promptu bir programın Claude oturumuna yapıştırırsın, Claude repoyu

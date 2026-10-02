@@ -635,7 +635,7 @@ const DB = {
     try {
       const kaynakGorseller = (kaynak.palet && kaynak.palet.gorseller) || [];
       await this.paletKaydet(proje.id, Object.assign({}, kaynak.palet || {}, {
-        projeTuru: ek.tur === 'test' ? 'test' : 'gercek',
+        projeTuru: (ek.tur === 'test' || ek.tur === 'deneme') ? 'deneme' : 'gercek',
         gorulenSurum: APP.version,
         kopyaKaynagi: kaynakId,
         /* Bağlantılar ve temel sıfırdan kurulacak — kaynağın depo, sohbet,
