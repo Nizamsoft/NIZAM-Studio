@@ -26,8 +26,26 @@ const ROUTES = {
   ekip:        { title: 'Ekip',               kisa: 'Ekip',        sub: () => ekipAltBaslik() },
   sohbet:      { title: 'Sohbet',             kisa: 'Sohbet',      sub: () => 'Ekip ile iletişimde kal' },
   guvenlik:    { title: 'Güvenlik',            kisa: 'Güvenlik',    sub: () => 'NIZAM Security · denetim ve bulgular' },
+  guncellemeler:{ title: 'Güncellemeler',      kisa: 'Güncelleme',  sub: () => APP.version + ' · ' + APP.stage },
   ayarlar:     { title: 'Ayarlar',            kisa: 'Ayarlar',     sub: () => APP.version + ' · ' + APP.stage },
 };
+
+/* Güncellemeler: en son görülen Studio sürümü bu cihazda tutulur; yeni sürüm
+   çıkınca "Yeni" rozeti gösterilir, ekrana girilince temizlenir. */
+const GUNCELLEME_GORULEN = 'ns-guncelleme-gorulen';
+function guncellemeGorulenOku() {
+  try { return localStorage.getItem(GUNCELLEME_GORULEN) || ''; } catch (e) { return ''; }
+}
+function guncellemeYeniVar() {
+  const liste = (typeof GUNCELLEMELER !== 'undefined' && GUNCELLEMELER) || [];
+  const son = liste.length ? liste[0].surum : APP.version;
+  return guncellemeGorulenOku() !== son;
+}
+function guncellemeGoruldu() {
+  const liste = (typeof GUNCELLEMELER !== 'undefined' && GUNCELLEMELER) || [];
+  const son = liste.length ? liste[0].surum : APP.version;
+  try { localStorage.setItem(GUNCELLEME_GORULEN, son); } catch (e) {}
+}
 
 const DEFAULT_ROUTE = 'panel';
 
@@ -945,6 +963,9 @@ const VIEWS = {
 
   guvenlik: () => guvenlikAnaEkran(),
 
+  guncellemeler: () => guncellemelerEkran(),
+  // (gövde aşağıda guncellemelerEkran fonksiyonunda)
+
   /* Ayarlar iki katlı: önce başlıklar, başlığa basınca kendi sayfası.
      Telefon ayarları gibi. Adres #/ayarlar/<grup>; geri oku listeye döner. */
   ayarlar: () => {
@@ -952,6 +973,41 @@ const VIEWS = {
     return g ? ayarSayfasi(g) : ayarListesi();
   },
 };
+
+/* Güncellemeler ekranı — yalnız Studio'nun kendi sürümleri. Veri
+   guncellemeler.js'teki GUNCELLEMELER listesinden; en yeni üstte. Ekran
+   açılınca "en son görülen sürüm" güncellenir, böylece "Yeni" rozeti kalkar. */
+function guncellemelerEkran() {
+  const liste = (typeof GUNCELLEMELER !== 'undefined' && GUNCELLEMELER) || [];
+  const sonGorulen = guncellemeGorulenOku();
+  guncellemeGoruldu();   // girildi → okundu say
+
+  const ay = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+  const tarih = s => { const d = new Date(s); return isNaN(d) ? String(s || '') : `${d.getDate()} ${ay[d.getMonth()]} ${d.getFullYear()}`; };
+
+  const kartlar = liste.map((g, i) => {
+    const yeni = g.surum !== sonGorulen && (i === 0 || sonGorulen === '');
+    return `
+      <div class="gnc-kart">
+        <div class="gnc-ust">
+          <span class="gnc-surum">${esc(g.surum)}</span>
+          ${yeni ? '<span class="gnc-yeni">Yeni</span>' : ''}
+          <span class="gnc-tarih">${esc(tarih(g.tarih))}</span>
+        </div>
+        ${g.ozet ? `<b class="gnc-ozet">${esc(g.ozet)}</b>` : ''}
+        ${(g.maddeler || []).length
+          ? `<ul class="gnc-liste">${g.maddeler.map(m => `<li>${esc(m)}</li>`).join('')}</ul>` : ''}
+      </div>`;
+  }).join('');
+
+  return `
+    <div class="pj-tepe"><div class="pj-tepe-yz">
+      <h1>Güncellemeler</h1>
+      <p>NIZAM Studio'ya eklenen yenilikler — en yeni üstte. Şu an: ${esc(APP.version)}.</p>
+    </div></div>
+    ${liste.length ? kartlar
+      : `<div class="card">${empty(ICON.ayar, 'Henüz kayıt yok', 'Yeni sürümler buraya düşecek.')}</div>`}`;
+}
 
 /* ==========================================================================
    AYARLAR
@@ -1101,6 +1157,13 @@ const AYAR_GRUP = {
         degerIkon: 'ayar', dugme: 'Denetle', susCizgi: true,
         sus: '<circle cx="30" cy="30" r="12"></circle>'
            + '<path d="M30 2v10M30 48v10M2 30h10M48 30h10M10 10l7 7M43 43l7 7M50 10l-7 7M17 43l-7 7"></path>',
+      })}
+      ${ayarKarti({
+        ad: 'Güncellemeler', adres: '#/guncellemeler', renk: 'mor', ikon: 'yildiz',
+        aciklama: 'Studio\'ya eklenen yenilikleri gör.',
+        deger: guncellemeYeniVar() ? 'Yeni' : esc(APP.version),
+        degerIkon: 'yildiz', susCizgi: true,
+        sus: '<path d="M30 6l7 15 16 2-12 11 3 16-14-8-14 8 3-16-12-11 16-2z"></path>',
       })}
       ${ayarKarti({
         ad: 'Projeleri kilitle', adres: '#/kilitler', renk: 'kirmizi', ikon: 'kilit',

@@ -144,10 +144,11 @@ hâle gelir; panelde tam bu oldu. Sığmıyorsa kaydırmayı aç, kırpma.
 
 ## Her değişiklikte yapılacaklar
 1. `config.js` içindeki `APP.version` güncelle
-2. `CHANGELOG.md` — en yeni üstte
-3. `index.html` içindeki `?v=` numaralarını güncelle
-4. `sw.js` içindeki `CACHE` adını güncelle
-5. commit → push (`main`)
+2. `CHANGELOG.md` — en yeni üstte (teknik kayıt)
+3. `guncellemeler.js` — en üste sade, Türkçe tek madde ekle (kullanıcıya dönük; "Güncellemeler" ekranında görünür). Biçim dosyanın başında yazılı.
+4. `index.html` içindeki `?v=` numaralarını güncelle
+5. `sw.js` içindeki `CACHE` adını güncelle
+6. commit → push (`main`)
 
 ## İstenmeyenler
 - Aşırı teknik görünüm · GitHub kopyası · Jira karmaşıklığı

@@ -10515,6 +10515,31 @@ button.kt {
 .gv-ok svg { fill: none; stroke: currentColor; stroke-width: 2; }
 .gv-ok .dolgu { display: none; }
 
+/* ---------- Güncellemeler ---------- */
+.gnc-kart {
+  background: var(--kart, #fff); border: 1px solid var(--line-3);
+  border-radius: 12px; padding: 15px 16px; margin-bottom: 12px;
+}
+.gnc-ust { display: flex; align-items: center; gap: 9px; margin-bottom: 7px; }
+.gnc-surum {
+  font-family: var(--yazi-etiket); font-weight: 700; font-size: 13px;
+  color: var(--ink-strong); letter-spacing: .02em;
+}
+.gnc-yeni {
+  font-family: var(--yazi-etiket); font-weight: 700; font-size: 10px;
+  letter-spacing: .04em; text-transform: uppercase;
+  padding: 2px 8px; border-radius: 999px;
+  background: var(--red-soft, #fdeceb); color: var(--red-ink, #b4231b);
+}
+.gnc-tarih { margin-left: auto; font-size: 12px; color: var(--ink-faint); }
+.gnc-ozet {
+  display: block; font-family: var(--yazi-baslik); font-weight: 600;
+  font-size: 14.5px; color: var(--ink-strong); margin-bottom: 7px;
+}
+.gnc-liste { margin: 0; padding-left: 18px; }
+.gnc-liste li { font-size: 13px; color: var(--ink-soft); line-height: 1.5; margin-bottom: 4px; }
+.gnc-liste li:last-child { margin-bottom: 0; }
+
 /* ---------- Güvenlik tarama akışı (antivirüs görünümü) ---------- */
 .gv-tara {
   display: flex; align-items: center; gap: 16px;

@@ -1,5 +1,12 @@
 # Değişiklik Günlüğü
 
+## v0.286.0
+- **Güncellemeler ekranı eklendi.** Ayarlar → Uygulama ve bakım → Güncellemeler:
+  Studio'nun kendi sürüm yenilikleri gündelik dille, en yeni üstte listelenir.
+  Yeni sürümde kartta "Yeni" rozeti çıkar, ekrana girince temizlenir (son görülen
+  sürüm cihazda saklanır). Veri `guncellemeler.js`'ten gelir; her sürümde oraya
+  bir madde eklemek "Her değişiklikte yapılacaklar"a (CLAUDE.md) eklendi.
+
 ## v0.285.0
 - **Projeler üç bölüme ayrıldı: Projeler · Deneme · Template.** Üstteki sekmeler
   artık tipe göre: gerçek müşteri projeleri, deneme projeleri ve template'ler.

@@ -1,0 +1,71 @@
+/* ==========================================================================
+   NIZAM | Studio — Güncellemeler (yalnız Studio'nun kendi güncellemeleri)
+
+   Bu liste "Ayarlar → Uygulama ve bakım → Güncellemeler" ekranında gösterilir.
+   CHANGELOG.md teknik kayıttır; bu dosya onun GÜNDELİK DİLDE, kullanıcıya dönük
+   özetidir.
+
+   HER YENİ SÜRÜMDE buraya en üste bir madde ekle (bkz. CLAUDE.md "Her
+   değişiklikte yapılacaklar"). Biçim aynen şöyle:
+
+     { surum: 'v0.286.0', tarih: '2026-10-02',
+       ozet: 'Tek cümle başlık',
+       maddeler: [
+         'Ne değişti — kısa, sade, kullanıcıya göre.',
+         'İkinci madde (varsa).',
+       ] },
+
+   - En yeni sürüm EN ÜSTTE.
+   - `ozet` tek satır; `maddeler` kısa cümleler.
+   - Teknik terim yazma; "kullanıcı ne fark edecek" diye yaz.
+   ========================================================================== */
+
+const GUNCELLEMELER = [
+  { surum: 'v0.286.0', tarih: '2026-10-02',
+    ozet: 'Güncellemeler ekranı eklendi',
+    maddeler: [
+      'Artık Ayarlar → Uygulama ve bakım altında "Güncellemeler" var; Studio\'ya ne eklendiğini buradan görebilirsin.',
+      'Yeni sürüm çıkınca kartta "Yeni" rozeti görünür, ekrana girince kaybolur.',
+    ] },
+
+  { surum: 'v0.285.0', tarih: '2026-10-02',
+    ozet: 'Projeler üç bölüme ayrıldı',
+    maddeler: [
+      'Projeler ekranı artık üç sekme: Projeler · Deneme · Template.',
+      '"Deneme projesi oluştur" geri geldi; deneme projeleri ayrı bölümde durur, kartında "Deneme" rozeti çıkar.',
+    ] },
+
+  { surum: 'v0.284.0', tarih: '2026-10-01',
+    ozet: 'Programdan standart öner',
+    maddeler: [
+      'Nizam Standartları ekranına "Programdan standart öner" düğmesi eklendi: Claude bir programı okuyup aday standartları çıkarır.',
+    ] },
+
+  { surum: 'v0.282.0', tarih: '2026-10-01',
+    ozet: 'Güvenlik testi sütun düzeyine indi',
+    maddeler: [
+      'Satır okunabilir ama hassas sütun (e-posta gibi) kapalı olabilir — test artık bunu ayrı ölçüyor.',
+      'Her sonucun yanında neden öyle karar verildiği (gerekçe) yazıyor.',
+    ] },
+
+  { surum: 'v0.281.0', tarih: '2026-10-01',
+    ozet: 'Güvenlik sonucu daha dürüst',
+    maddeler: [
+      'Ölçülemeyen testlerin nedeni ayrı ayrı gösteriliyor (bağlantı, giriş, fonksiyon, karmaşık kural).',
+      'Yanlış "açık" alarmları azaldı; ortak tablolar artık açık sayılmıyor.',
+    ] },
+
+  { surum: 'v0.277.0', tarih: '2026-10-01',
+    ozet: 'Güvenlik akışı sadeleşti',
+    maddeler: [
+      'Önce bütün bilgileri yapıştırıyorsun, sonra tek "Test Et" düğmesine basıyorsun.',
+      'Sonuç ekranı antivirüs gibi: skor + açıklar + tek düzeltme promptu.',
+    ] },
+
+  { surum: 'v0.273.0', tarih: '2026-09-30',
+    ozet: 'Hata bildirimleri ve içe aktarma',
+    maddeler: [
+      'Müşteri programları "Hata bildir" ile Studio\'ya hata gönderebiliyor; bildirimler Hata Bildirimleri ekranına düşüyor.',
+      'Mevcut bir programı prompt + JSON ile Studio\'ya ekleyebiliyorsun.',
+    ] },
+];
