@@ -21,6 +21,13 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.288.0', tarih: '2026-10-03',
+    ozet: 'Template kapağı kendiliğinden, projeler gruplar arası taşınabiliyor',
+    maddeler: [
+      'Yeni template oluştururken kapak artık sorulmuyor; hazır kapaklardan biri rastgele konuyor.',
+      'Projenin üç nokta menüsünden projeyi Deneme ile Gerçek projeler arasında taşıyabilirsin.',
+    ] },
+
   { surum: 'v0.287.0', tarih: '2026-10-03',
     ozet: 'Paneldeki isim beyaz oldu',
     maddeler: [

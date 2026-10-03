@@ -10017,11 +10017,24 @@ function templateModulSayisi(p) {
   return DB.modulleri(p.id).filter(m => m.ad !== GENEL_MODUL).length;
 }
 
-/* Template'in kapağı: hazır görsellerden biri + arka plan rengi. İkisi de
-   paletindeki cekirdek nesnesinde; dosya yüklenmiyor, seçiliyor. */
+/* Template'in kapağı: hazır görsellerden biri. Seçilmiyor — template
+   oluşurken rastgele atanıp cekirdek.kapak'a yazılıyor. Kapağı olmayan eski
+   kayıtlar kimliğinden hesaplanan sabit bir görsel alıyor (her açılışta aynı). */
 function templateKapagi(p) {
   const cek = ((p || {}).palet || {}).cekirdek || {};
-  return KAPAK_GORSELLERI.find(x => x.anahtar === cek.kapak) || null;
+  const bulunan = KAPAK_GORSELLERI.find(x => x.anahtar === cek.kapak);
+  if (bulunan) return bulunan;
+  const id = String((p || {}).id || '');
+  if (!id || !KAPAK_GORSELLERI.length) return null;
+  let h = 0;
+  for (const c of id) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  return KAPAK_GORSELLERI[h % KAPAK_GORSELLERI.length];
+}
+
+/* Yeni template için rastgele kapak anahtarı. */
+function rastgeleKapak() {
+  const g = KAPAK_GORSELLERI[Math.floor(Math.random() * KAPAK_GORSELLERI.length)];
+  return g ? g.anahtar : '';
 }
 
 /* Arka plan rengi seçilmiyor, sıraya göre dönüyor: listedeki her template
@@ -10115,7 +10128,7 @@ function templateOzeti(p) {
   ].join(' · ');
 }
 
-/* Template'in tek yönetim ekranı: kapak, açıklama, paket, sektörler ve
+/* Template'in tek yönetim ekranı: açıklama, paket, sektörler ve
    kurulum/kilit/silme işleri. Liste kartına dokununca burası açılıyor. */
 function templateAyarlari(projeId) {
   modalHepsiniKapat();
@@ -10126,7 +10139,7 @@ function templateAyarlari(projeId) {
   let secili = templateSektorIdleri(p).slice();
   let paket  = templatePaketAnahtari(p);
   const cek0 = pl.cekirdek || {};
-  let kapak = cek0.kapak || '';
+  const kapak = cek0.kapak || '';
   const paketler  = (DB.paketler || []).filter(k => paketinAkisi(k) !== 'ozel');
   const sektorler = DB.sektorler || [];
   const yayinAdres = String(pl.alanAdi || '').trim();
@@ -10146,22 +10159,6 @@ function templateAyarlari(projeId) {
       </button>
     </div>
 
-    <div class="pd-alan">
-      <span class="pd-et">Kapak Fotoğrafı Seç
-        <em class="pd-sag" id="ta-sayac">${
-          (KAPAK_GORSELLERI.findIndex(g => g.anahtar === kapak) + 1)} / ${KAPAK_GORSELLERI.length}</em>
-      </span>
-      <div class="kp-serit" id="ta-kapak">
-        ${KAPAK_GORSELLERI.map(g => `
-          <button class="kp ${kapak === g.anahtar ? 'sec' : ''}" type="button"
-                  data-ta-kapak="${esc(g.anahtar)}" aria-label="${esc(g.ad)}">
-            <img src="${esc(g.dosya)}" alt="" loading="lazy">
-            <u class="kp-tik">${svg(ICON.tik, 12)}</u>
-          </button>`).join('')}
-      </div>
-      <i class="pd-ipucu">Arka plan rengi kendiliğinden veriliyor; her
-      template bir öncekinden farklı renk alıyor.</i>
-    </div>
 
     <label class="pd-alan">
       <span class="pd-et">Açıklama</span>
@@ -10246,28 +10243,6 @@ function templateAyarlari(projeId) {
         buyut(alan);
       });
     });
-
-    /* Görsel ve renk: seçim, yükleme yok. Seçilen renk küçük görsellerin
-       de zeminine vuruyor ki kartta nasıl duracağı burada görünsün. */
-    /* Küçük görsellerin zemini kartta çıkacak renkle aynı. */
-    $$('[data-ta-kapak]', kutu).forEach(b => {
-      b.style.background = templateKapakRengi(p);
-    });
-    const kapakYaz = () => {
-      $$('[data-ta-kapak]', kutu).forEach(o =>
-        o.classList.toggle('sec', o.dataset.taKapak === kapak));
-      const sayac = $('#ta-sayac', kutu);
-      if (sayac) {
-        sayac.textContent = (KAPAK_GORSELLERI.findIndex(g => g.anahtar === kapak) + 1)
-          + ' / ' + KAPAK_GORSELLERI.length;
-      }
-    };
-    kapakYaz();
-
-    $$('[data-ta-kapak]', kutu).forEach(b => b.addEventListener('click', () => {
-      kapak = kapak === b.dataset.taKapak ? '' : b.dataset.taKapak;
-      kapakYaz();
-    }));
 
     $$('[data-ta-paket]', kutu).forEach(b => b.addEventListener('click', () => {
       paket = b.dataset.taPaket;
@@ -11294,11 +11269,12 @@ async function projeKopyalaVeAc(kaynakId, tur, sablon) {
    Templateler'e ve oradaki 2 adımlık kurulum sihirbazına (GitHub + Claude
    temizleme) düşülür. */
 /* ==========================================================================
-   Yeni Template Oluştur — yedi adım
-   1 Kaynak proje · 2 Ad ve açıklama · 3 Paket ve sektörler · 4 Kapak
-   5 Depo · 6 Kurulum SQL'i · 7 Claude ile temizlik
+   Yeni Template Oluştur — altı adım
+   1 Kaynak proje · 2 Ad ve açıklama · 3 Paket ve sektörler
+   4 Depo · 5 Kurulum SQL'i · 6 Claude ile temizlik
+   (Kapak sorulmuyor, rastgele atanıyor.)
 
-   Template kaydı 4. adımdan sonra gerçekten oluşuyor: ilk dört adım bilgi
+   Template kaydı 3. adımdan sonra gerçekten oluşuyor: ilk üç adım bilgi
    topluyor, son üç adım o kaydın üstünde çalışıyor (depo bağlama ve SQL
    yazma proje kimliği istiyor).
    ========================================================================== */
@@ -11312,7 +11288,6 @@ const TS_ADIMLAR = [
   { ad: 'Yeni Template Oluştur', alt: 'Hangi proje üzerinden yeni template oluşturmak istiyorsun?' },
   { ad: 'Ad ve açıklama',        alt: 'Template listesinde nasıl görünecek?' },
   { ad: 'Paket ve sektörler',    alt: 'Bu template hangi yol haritasını getirecek, hangi sektörlerde çıkacak?' },
-  { ad: 'Kapak görseli',         alt: 'Listede kartın solunda çıkacak görsel.' },
   { ad: 'Depo',                  alt: 'Template\'in GitHub deposu — müşteri kopyaları buradan üretiliyor.' },
   { ad: 'Kurulum SQL\'i',        alt: 'Müşteri projesi kurulurken Supabase\'e yapıştırılacak SQL.' },
   { ad: 'Claude ile temizlik',   alt: 'Firma izini kaldırıp template\'i yayına hazır hâle getir.' },
@@ -11325,7 +11300,7 @@ function templateSihirbaziAc() {
 
   Object.assign(TS, {
     adim: 1, kaynakId: '', ad: '', aciklama: '', paket: '',
-    sektorler: [], kapak: KAPAK_GORSELLERI[0].anahtar, projeId: '', kuruluyor: false,
+    sektorler: [], kapak: rastgeleKapak(), projeId: '', kuruluyor: false,
   });
   const varsayilanDisi = (DB.paketler || []).filter(k => paketinAkisi(k) !== 'ozel');
   TS.paket = varsayilanDisi.length ? varsayilanDisi[0].anahtar : '';
@@ -11365,7 +11340,7 @@ function templateSihirbaziHtml() {
   const oran = Math.round(TS.adim / TS_ADIMLAR.length * 100);
   const son = TS.adim === TS_ADIMLAR.length;
 
-  const govde = [tsAdimKaynak, tsAdimKimlik, tsAdimPaket, tsAdimKapak,
+  const govde = [tsAdimKaynak, tsAdimKimlik, tsAdimPaket,
                  tsAdimDepo, tsAdimSql, tsAdimTemizlik][TS.adim - 1]();
 
   return `
@@ -11477,29 +11452,14 @@ function tsAdimPaket() {
     </div>`;
 }
 
-/* 4 · Kapak görseli */
-function tsAdimKapak() {
-  return `
-    <div class="kp-serit">
-      ${KAPAK_GORSELLERI.map(g => `
-        <button class="kp ${TS.kapak === g.anahtar ? 'sec' : ''}" type="button"
-                data-ts-kapak="${esc(g.anahtar)}" aria-label="${esc(g.ad)}">
-          <img src="${esc(g.dosya)}" alt="" loading="lazy">
-          <u class="kp-tik">${svg(ICON.tik, 12)}</u>
-        </button>`).join('')}
-    </div>
-    <i class="pd-ipucu">Arka plan rengi kendiliğinden veriliyor; her template
-    bir öncekinden farklı renk alıyor.</i>`;
-}
-
-/* 5 · Depo — template kaydı burada hazır, bileşen normal projeyle aynı. */
+/* 4 · Depo — template kaydı burada hazır, bileşen normal projeyle aynı. */
 function tsAdimDepo() {
   const p = DB.proje(TS.projeId);
   if (!p) return '<i class="pd-ipucu">Template henüz oluşturulmadı.</i>';
   return baglantiAdimGithub(p);
 }
 
-/* 6 · Kurulum SQL'i */
+/* 5 · Kurulum SQL'i */
 function tsAdimSql() {
   const p = DB.proje(TS.projeId);
   const cek = ((p || {}).palet || {}).cekirdek || {};
@@ -11520,7 +11480,7 @@ function tsAdimSql() {
     değil — veritabanı gerekmiyorsa boş bırakabilirsin.</i>`;
 }
 
-/* 7 · Claude ile temizlik */
+/* 6 · Claude ile temizlik */
 function tsAdimTemizlik() {
   const p = DB.proje(TS.projeId);
   if (!p) return '<i class="pd-ipucu">Template henüz oluşturulmadı.</i>';
@@ -11597,13 +11557,7 @@ function templateSihirbaziBagla(el) {
     b.classList.toggle('sec', i === -1);
   }));
 
-  /* 4 · kapak */
-  $$('[data-ts-kapak]', el).forEach(b => b.addEventListener('click', () => {
-    TS.kapak = b.dataset.tsKapak;
-    $$('[data-ts-kapak]', el).forEach(o => o.classList.toggle('sec', o === b));
-  }));
-
-  /* 6 · SQL parçaları — yapıştırınca kaydediliyor */
+  /* 5 · SQL parçaları — yapıştırınca kaydediliyor */
   [1, 2, 3].forEach(no => {
     const alan = $('#ts-sql-' + no, el);
     if (!alan) return;
@@ -11627,7 +11581,7 @@ function templateSihirbaziBagla(el) {
     alan.addEventListener('change', kaydet);
   });
 
-  /* 7 · temizlendi onayı */
+  /* 6 · temizlendi onayı */
   const onay = $('[data-ts="temizlendi"]', el);
   if (onay) onay.addEventListener('click', async () => {
     const p = DB.proje(TS.projeId);
@@ -11660,14 +11614,14 @@ function templateSihirbaziBagla(el) {
       if (t === 'geri') {
         /* Template kurulduktan sonra kimlik adımlarına dönülmüyor: orası
            artık template'in kendi ayar penceresinin işi. */
-        if (TS.projeId && TS.adim <= 5) return;
+        if (TS.projeId && TS.adim <= 4) return;
         TS.adim--;
         return templateSihirbaziCiz();
       }
       if (!tsGecilir()) return;
 
-      /* 4. adımdan çıkarken template gerçekten oluşuyor. */
-      if (TS.adim === 4 && !TS.projeId) {
+      /* 3. adımdan çıkarken template gerçekten oluşuyor. */
+      if (TS.adim === 3 && !TS.projeId) {
         if (TS.kuruluyor) return;
         TS.kuruluyor = true;
         b.classList.add('pasif');
@@ -11678,7 +11632,7 @@ function templateSihirbaziBagla(el) {
               ad: TS.ad.trim(),
               paket: TS.paket,
               sektorler: TS.sektorler.slice(),
-              kapak: TS.kapak,
+              kapak: TS.kapak || rastgeleKapak(),
               aciklama: TS.aciklama.trim() || null,
             },
           });
@@ -16122,12 +16076,18 @@ async function eylemCalistir(el) {
     const proje = DB.proje(id);
     if (!proje) return;
 
-    /* Menüde iki şey var: yöneticinin kestirmesi (aşamaları beklemeden
-       projeyi Tamamlanan'a taşımak — devralınan ya da akış dışında biten
+    /* Menüde: grup değiştirme (Deneme ↔ Gerçek), yöneticinin kestirmesi
+       (aşamaları beklemeden projeyi Tamamlanan'a taşımak — devralınan ya da akış dışında biten
        işler için) ve silme. Ad, renk, depo adresi aşamaların kendi içinde
        düzenleniyor, arşiv de kullanılmıyordu. */
     const bitti = !!(proje.palet || {}).finalVerildi;
+    const deneme = denemeMi(proje);
     const sec = await secenekSor(projeAdi(proje), [
+      ...(AUTH.yonetici && !cekirdekMi(proje) ? [deneme
+        ? { anahtar: 'gercege', ad: 'Gerçek projeye taşı', ikon: ICON.folder,
+            alt: 'Proje «Projeler» bölümüne geçer' }
+        : { anahtar: 'denemeye', ad: 'Deneme projesine taşı', ikon: ICON.folder,
+            alt: 'Proje «Deneme» bölümüne geçer' }] : []),
       ...(AUTH.yonetici ? [bitti
         ? { anahtar: 'geri', ad: 'Tamamlandıyı geri al', ikon: ICON.geriAl,
             alt: 'Proje yeniden «Başlamış» olur' }
@@ -16137,6 +16097,14 @@ async function eylemCalistir(el) {
         alt: 'Her şeyi siler, geri gelmez', tehlike: true },
     ]);
     if (!sec) return;
+
+    if (sec === 'gercege' || sec === 'denemeye') {
+      const yeni = sec === 'gercege' ? 'gercek' : 'deneme';
+      return isYap(() => DB.paletKaydet(proje.id,
+        Object.assign({}, proje.palet || {}, { projeTuru: yeni })),
+        projeAdi(proje) + (yeni === 'deneme' ? ' deneme projelerine taşındı.'
+                                             : ' gerçek projelere taşındı.'));
+    }
 
     if (sec === 'bitir') {
       const yuzde = projeAsamaYuzde(proje);

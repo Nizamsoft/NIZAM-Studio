@@ -1,5 +1,15 @@
 # Değişiklik Günlüğü
 
+## v0.288.0
+- **Template kapağı artık sorulmuyor.** Yeni Template sihirbazından "Kapak
+  görseli" adımı kalktı (7 → 6 adım; template kaydı 3. adımdan sonra oluşuyor),
+  kapak `KAPAK_GORSELLERI` içinden rastgele atanıyor (`rastgeleKapak`). Template
+  ayar penceresindeki "Kapak Fotoğrafı Seç" bölümü de kalktı; kayıtlı kapak
+  korunuyor. Kapağı olmayan eski template'ler kimliğinden hesaplanan sabit bir
+  görsel alıyor (`templateKapagi`).
+- **Proje menüsünden grup değiştirme.** Üç nokta menüsünde "Deneme projesine
+  taşı" / "Gerçek projeye taşı" (`palet.projeTuru`). Template'lerde çıkmıyor.
+
 ## v0.287.0
 - **Panel karşılamasında isim beyaz.** `.ph h1 em` rengi kırmızıdan (`--red-parlak`) beyaza alındı.
 
