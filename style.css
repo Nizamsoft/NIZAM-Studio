@@ -6919,7 +6919,7 @@ a.asr:active{ transform:scale(.99); }
   font-size: clamp(23px, 6.4vw, 30px); line-height: 1.12;
   letter-spacing: -.01em; color: #fff; text-transform: uppercase;
 }
-.ph h1 em { font-style: normal; color: var(--red-parlak); }
+.ph h1 em { font-style: normal; color: #ffffff; }
 .ph-slogan {
   margin: 9px 0 0; font-size: 14.5px; font-weight: 500;
   color: rgba(255, 255, 255, .92);

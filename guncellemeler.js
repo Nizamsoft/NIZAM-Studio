@@ -21,6 +21,12 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.287.0', tarih: '2026-10-03',
+    ozet: 'Paneldeki isim beyaz oldu',
+    maddeler: [
+      'Panelin üstündeki "Merhaba" yazısında adın artık kırmızı değil, beyaz görünüyor.',
+    ] },
+
   { surum: 'v0.286.0', tarih: '2026-10-02',
     ozet: 'Güncellemeler ekranı eklendi',
     maddeler: [

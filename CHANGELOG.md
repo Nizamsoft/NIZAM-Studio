@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.287.0
+- **Panel karşılamasında isim beyaz.** `.ph h1 em` rengi kırmızıdan (`--red-parlak`) beyaza alındı.
+
 ## v0.286.0
 - **Güncellemeler ekranı eklendi.** Ayarlar → Uygulama ve bakım → Güncellemeler:
   Studio'nun kendi sürüm yenilikleri gündelik dille, en yeni üstte listelenir.
