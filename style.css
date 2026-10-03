@@ -7767,6 +7767,11 @@ a.asr:active{ transform:scale(.99); }
   .pj-sekmeler { gap: 8px; }
   .pj-sekme { flex: 1; min-width: 0; padding: 12px 14px; font-size: 12.5px; gap: 7px; }
   .pj-sekme u { display: none; }
+  /* Telefonda üç sekme yan yana sığmıyordu ("Denem…", "Templat…"): simge
+     üste, yazı alta; yazı sekmenin bütün genişliğini kullanıyor. */
+  .pj-sekme { flex-direction: column; justify-content: center; text-align: center;
+              padding: 10px 4px; gap: 5px; }
+  .pj-sekme span { max-width: 100%; white-space: normal; line-height: 1.25; }
   /* Arama kendi satırında, üç düğme altında yan yana: dar ekranda
      düzensiz sarma oluyordu. */
   .pj-ara { flex: 1 1 100%; }

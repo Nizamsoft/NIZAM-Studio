@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## v0.290.0
+- **Projeler sekmeleri telefonda sığıyor.** 900px altında `.pj-sekme` dikey:
+  simge üstte, yazı altta; yazı gerekirse iki satıra iniyor ("Denem…",
+  "Templat…" kesilmesi bitti). Masaüstü değişmedi.
+
 ## v0.289.0
 - **Panel deneme projelerini saymıyor.** Aktif Projeler şeridi ve sayı kartları
   (açık görev, ortalama ilerleme, proje sayısı) artık `denemeMi` projeleri dışarıda

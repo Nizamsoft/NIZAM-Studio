@@ -21,6 +21,12 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.290.0', tarih: '2026-10-03',
+    ozet: 'Projeler sekmeleri telefonda tam görünüyor',
+    maddeler: [
+      'Telefonda Projeler · Deneme · Template sekmelerinin adları artık kesilmiyor; simge yazının üstünde duruyor.',
+    ] },
+
   { surum: 'v0.289.0', tarih: '2026-10-03',
     ozet: 'Panelde deneme projeleri görünmüyor',
     maddeler: [
