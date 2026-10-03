@@ -21,6 +21,12 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.289.0', tarih: '2026-10-03',
+    ozet: 'Panelde deneme projeleri görünmüyor',
+    maddeler: [
+      'Paneldeki Aktif Projeler ve sayılar artık deneme projelerini saymıyor; onlar Projeler → Deneme\'de duruyor.',
+    ] },
+
   { surum: 'v0.288.0', tarih: '2026-10-03',
     ozet: 'Template kapağı kendiliğinden, projeler gruplar arası taşınabiliyor',
     maddeler: [

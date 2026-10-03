@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## v0.289.0
+- **Panel deneme projelerini saymıyor.** Aktif Projeler şeridi ve sayı kartları
+  (açık görev, ortalama ilerleme, proje sayısı) artık `denemeMi` projeleri dışarıda
+  bırakıyor. Deneme projeleri Projeler → Deneme bölümünde duruyor.
+
 ## v0.288.0
 - **Template kapağı artık sorulmuyor.** Yeni Template sihirbazından "Kapak
   görseli" adımı kalktı (7 → 6 adım; template kaydı 3. adımdan sonra oluşuyor),

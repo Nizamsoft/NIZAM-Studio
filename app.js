@@ -590,7 +590,8 @@ const VIEWS = {
     if (YUKLENIYOR) return iskeletler(4);
     if (DB.hata)    return hataKutusu(DB.hata);
 
-    const p = DB.projeler.filter(x => !cekirdekMi(x));
+    /* Template'ler ve deneme projeleri panelde yok: ne şeritte ne sayılarda. */
+    const p = DB.projeler.filter(x => !cekirdekMi(x) && !denemeMi(x));
 
     /* Panelin dört katmanı, yukarıdan aşağı:
          hero    · selam ve marka anı,
