@@ -29,7 +29,7 @@
 
 'use strict';
 
-const SEC_HARITA_SURUM = '2';   // 2: birden fazla kolonlu kimlik (k = a|b)
+const SEC_HARITA_SURUM = '3';   // 2: çok kolonlu kimlik (k = a|b) · 3: şart kolonlarının değeri (v)
 const SEC_HARITA_SINIR = 200;                       // tablo başına haritadaki en fazla satır
 const SEC_SUBE_KOLON = /^(sube_id|şube_id|branch_id)$/i;   // yalnız açık isimler
 
@@ -51,7 +51,17 @@ function secOkumaTabloBilgi(yapiTablo, modelTablo) {
     pk: pk.length ? pk.map(k => k.ad) : null,
     sahip: modelTablo.sahip_kolon || null,
     sube: sube ? sube.ad : null,
+    sart: secSartKolonlari(modelTablo),
   };
+}
+
+/* Tablodaki şartlı satır kurallarının kullandığı kolonlar (haritada değerleri okunur). */
+function secSartKolonlari(m) {
+  const set = new Set();
+  const ekle = sat => Object.values(sat || {}).forEach(d => { if (secSartMi(d)) set.add(d.kolon); });
+  ekle(m.satir);
+  m.kolonlar.forEach(c => ekle(c.satir));
+  return [...set];
 }
 
 function secOkumaTablolar(yapi, model) {
@@ -66,12 +76,13 @@ function secHaritaSql(projeId, yapi, model, ortam) {
   const kimlik = pk => (pk ? (pk.length === 1 ? kol(pk[0]) : `concat_ws('|', ${pk.map(kol).join(', ')})`) : 'null');
   const parca = secOkumaTablolar(yapi, model).map(({ b }) =>
     `    json_build_object('ad', ${secQl(b.ad)}, 'satirlar', coalesce((select json_agg(json_build_object(`
-    + `'k', ${kimlik(b.pk)}, 's', ${kol(b.sahip)}, 'g', ${kol(b.sube)}))`
+    + `'k', ${kimlik(b.pk)}, 's', ${kol(b.sahip)}, 'g', ${kol(b.sube)}, 'v', `
+    + (b.sart.length ? `json_build_object(${b.sart.map(c => secQl(c) + ', ' + kol(c)).join(', ')})` : 'null') + '))'
     + ` from (select * from public.${secQi(b.ad)} limit ${SEC_HARITA_SINIR}) x), '[]'::json))`);
   return [
     '-- NIZAM Security · Veri haritası (YALNIZ OKUR)',
     '-- YALNIZ TEST PROJESİNDE çalıştır: ' + ortam.test_ref + '.supabase.co',
-    '-- Her tablodan yalnız kayıt kimliği, sahibi ve şubesi okunur. Hiçbir şey yazılmaz.',
+    '-- Her tablodan yalnız kayıt kimliği, sahibi, şubesi ve şartlı kuralların kolonu okunur. Hiçbir şey yazılmaz.',
     '-- Nizam test ortamı işareti yoksa (production gibi) kendini durdurur.',
     secKilitSql(projeId, false),
     '',
@@ -98,7 +109,11 @@ function secHaritaOku(metin, projeId) {
   (Array.isArray(j.tablolar) ? j.tablolar : []).forEach(t => {
     if (!t || !t.ad) return;
     tablolar[String(t.ad)] = (Array.isArray(t.satirlar) ? t.satirlar : [])
-      .map(x => ({ k: s(x.k), s: s(x.s), g: s(x.g) }));
+      .map(x => {
+        const v = {};
+        if (x.v && typeof x.v === 'object') Object.keys(x.v).forEach(c => { v[c] = s(x.v[c]); });
+        return { k: s(x.k), s: s(x.s), g: s(x.g), v };
+      });
   });
   return { harita: { tablolar, tarih: new Date().toISOString() } };
 }
@@ -107,9 +122,10 @@ function secHaritaOku(metin, projeId) {
    KURAL → BEKLENTİ
    ========================================================================== */
 
-/* Satır kuralını tanır: tum | kendi | yok | sube | null (anlaşılmadı). */
+/* Satır kuralını tanır: tum | kendi | yok | sube | sart | null (anlaşılmadı). */
 function secKuralTur(d) {
   if (!d) return null;
+  if (secSartMi(d)) return 'sart';
   if (d === 'tum' || d === 'kendi' || d === 'yok') return d;
   const t = String(d).toLocaleLowerCase('tr');
   if (/şube|sube|branch/.test(t)) return /kendi|aynı|ayni|bağlı|bagli/.test(t) ? 'sube' : null;
@@ -123,7 +139,17 @@ function secKuralTur(d) {
 function secKapsar(kural, satir, b, kisi) {
   const tur = secKuralTur(kural);
   if (!kural) return { v: null, neden: 'Modelde bu rol için satır kuralı yok' };
-  if (!tur) return { v: null, neden: 'Satır kuralı anlaşılamadı: "' + kural + '"' };
+  if (!tur) return { v: null, neden: 'Bu kural serbest metin ("' + kural + '"); otomatik test için şartlı biçimde yazın' };
+  if (tur === 'sart') {
+    if (!satir.v || !(kural.kolon in satir.v)) return { v: null, neden: 'Haritada "' + kural.kolon + '" değeri yok — haritayı yeniden al' };
+    const deger = satir.v[kural.kolon];
+    if (deger === null) return { v: null, neden: 'Kaydın "' + kural.kolon + '" değeri boş' };
+    if (kural.kosul === 'esit') return { v: deger === kural.deger };
+    if (kural.kosul === 'esit_degil') return { v: deger !== kural.deger };
+    if (kural.kosul === 'icinde') return { v: kural.deger.includes(deger) };
+    if (kural.kosul === 'icinde_degil') return { v: !kural.deger.includes(deger) };
+    return { v: null, neden: 'Bilinmeyen koşul: ' + kural.kosul };
+  }
   if (tur === 'tum') return { v: true };
   if (tur === 'yok') return { v: false };
   if (tur === 'kendi') {
@@ -328,6 +354,9 @@ function secTabloDegerlendir(sonuclar, temel, okuma, m, b, rol, ben, esler, sati
   }
   if (okuma.hata) return edilemedi('—', 'Okuma hatası: ' + okuma.hata);
 
+  /* Rolün tablo kuralı şartlıysa: şarta uyan / uymayan iki grup. */
+  if (secKuralTur(m.satir[rol]) === 'sart') return secSartTest(ekle, okuma, m, b, rol, ben, satirlar);
+
   /* Hedefler: tablonun yapısına göre gerekenler. */
   const hedefler = [];
   const kullanildi = new Set();
@@ -396,12 +425,17 @@ function secHedefTest(ekle, okuma, m, b, rol, ben, h) {
      gereken satır döndüyse o SATIR açığıdır; kolonlarını ayrıca saymıyoruz. */
   if (!geldi || bek.v !== true) return;
 
-  /* Kolonlar: yasak olanlar tek tek; izinliler ve belirsizler toplu. */
+  secKolonTest(ekle, veri, m, b, rol, ben, h.satir, h.ad);
+}
+
+/* Görülmesi gereken ve dönen bir satırda kolon testleri:
+   yasak olanlar tek tek; izinliler ve belirsizler toplu. */
+function secKolonTest(ekle, veri, m, b, rol, ben, satir, hedef) {
   const izinli = [], eksik = [], belirsiz = [];
   m.kolonlar.forEach(c => {
-    const r = secKolonBeklenen(m, c, rol, h.satir, b, ben);
+    const r = secKolonBeklenen(m, c, rol, satir, b, ben);
     const var_ = c.ad in veri;
-    const ortak = { hedef: h.ad, tur: 'Kolon', kolon: c.ad };
+    const ortak = { hedef, tur: 'Kolon', kolon: c.ad };
     if (r.v === false) {
       ekle(Object.assign(ortak, var_
         ? { beklenen: 'Görülememeli', gercek: 'Görüldü', sonuc: 'acik' }
@@ -409,7 +443,7 @@ function secHedefTest(ekle, okuma, m, b, rol, ben, h) {
     } else if (r.v === true) { izinli.push(c.ad); if (!var_) eksik.push(c.ad); }
     else belirsiz.push(c.ad + (var_ ? ' (döndü)' : ''));
   });
-  const toplu = { hedef: h.ad, tur: 'Kolon' };
+  const toplu = { hedef, tur: 'Kolon' };
   if (izinli.length) {
     ekle(Object.assign({}, toplu, { kolon: 'izinli ' + izinli.length + ' kolon', beklenen: 'Görülmeli',
       gercek: eksik.length ? 'Görülemedi: ' + eksik.join(', ') + ' — erişim fazla kısıtlı' : 'Hepsi görüldü',
@@ -418,6 +452,49 @@ function secHedefTest(ekle, okuma, m, b, rol, ben, h) {
   if (belirsiz.length) {
     ekle(Object.assign({}, toplu, { kolon: belirsiz.length + ' kolon', beklenen: '—',
       gercek: 'Kural anlaşılamadı: ' + belirsiz.join(', '), sonuc: 'edilemedi' }));
+  }
+}
+
+/* Şartlı satır kuralı: bütün kayıtlar şarta göre iki gruba ayrılır.
+   Uyanlar görülmeli (rolün okuma izni varsa), uymayanlar görülmemeli. */
+function secSartTest(ekle, okuma, m, b, rol, ben, satirlar) {
+  const kural = m.satir[rol];
+  const uyan = [], uymayan = [], bos = [];
+  satirlar.forEach(x => {
+    const r = secKapsar(kural, x, b, ben);
+    (r.v === true ? uyan : r.v === false ? uymayan : bos).push(x);
+  });
+  const sart = secSatirAd(kural);
+
+  if (!uyan.length) ekle({ hedef: 'Şarta uyan kayıt', tur: 'Satır', beklenen: sart, gercek: 'Haritada şarta uyan kayıt yok — test verisine ekle', sonuc: 'edilemedi' });
+  else {
+    const gorulmeli = uyan.filter(x => secSatirBeklenen(m, rol, x, b, ben).v === true);
+    const yasak = uyan.filter(x => secSatirBeklenen(m, rol, x, b, ben).v === false);
+    const sizan = yasak.filter(x => okuma.gorunen.has(x.k));
+    const gelen = gorulmeli.filter(x => okuma.gorunen.has(x.k));
+    const hedef = 'Şarta uyan ' + uyan.length + ' kayıt';
+    if (sizan.length) ekle({ hedef, tur: 'Satır', beklenen: 'Görülememeli (okuma izni yok)', gercek: sizan.length + ' kayıt görüldü', sonuc: 'acik' });
+    else if (gelen.length === gorulmeli.length) {
+      ekle({ hedef, tur: 'Satır', beklenen: gorulmeli.length ? 'Görülmeli' : 'Görülememeli (okuma izni yok)',
+        gercek: gorulmeli.length ? gelen.length + ' / ' + gorulmeli.length + ' görüldü' : 'Görülemedi', sonuc: 'gecti' });
+    } else {
+      ekle({ hedef, tur: 'Satır', beklenen: 'Görülmeli', gercek: gelen.length + ' / ' + gorulmeli.length + ' görüldü — erişim fazla kısıtlı', sonuc: 'edilemedi' });
+    }
+    /* Kolon testi: şarta uyan, dönen ilk kayıtta. */
+    const ornek = gelen[0];
+    if (ornek) secKolonTest(ekle, okuma.gorunen.get(ornek.k), m, b, rol, ben, ornek, hedef);
+  }
+
+  if (!uymayan.length) ekle({ hedef: 'Şarta uymayan kayıt', tur: 'Satır', beklenen: sart, gercek: 'Haritada şarta uymayan kayıt yok — test verisine ekle', sonuc: 'edilemedi' });
+  else {
+    const sizan = uymayan.filter(x => okuma.gorunen.has(x.k) && secSatirBeklenen(m, rol, x, b, ben).v === false);
+    ekle({ hedef: 'Şarta uymayan ' + uymayan.length + ' kayıt', tur: 'Satır', beklenen: 'Görülememeli',
+      gercek: sizan.length ? sizan.length + ' kayıt görüldü' : 'Hiçbiri görülmedi', sonuc: sizan.length ? 'acik' : 'gecti' });
+  }
+
+  if (bos.length) {
+    ekle({ hedef: bos.length + ' kayıt', tur: 'Satır', beklenen: sart,
+      gercek: secKapsar(kural, bos[0], b, ben).neden, sonuc: 'edilemedi' });
   }
 }
 

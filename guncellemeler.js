@@ -21,6 +21,13 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.297.0', tarih: '2026-10-04',
+    ozet: 'Nizam Security: şartlı erişim kuralları test ediliyor',
+    maddeler: [
+      '"Kullanıcı kayıtları hariç tümü" gibi bir kolona bağlı kurallar artık şart olarak yazılabiliyor ve otomatik test ediliyor.',
+      'Testte şarta uyan ve uymayan kayıtlar ayrı ayrı gösteriliyor.',
+      'Veri haritasını bir kez yeniden kopyalayıp test projesinde çalıştırman gerekiyor.',
+    ] },
   { surum: 'v0.296.0', tarih: '2026-10-04',
     ozet: 'Güvenlik Testleri: daha az "test edilemedi"',
     maddeler: [

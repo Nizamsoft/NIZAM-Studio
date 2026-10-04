@@ -1,5 +1,19 @@
 # Değişiklik Günlüğü
 
+## v0.297.0
+- **Şartlı satır kuralı.** Modelde `satir` değeri artık `{kolon, kosul, deger, aciklama}`
+  da olabilir (`kosul`: esit, esit_degil, icinde, icinde_degil). `secModelOku` →
+  `secSartOku`: kolon tabloda yoksa, koşul tanınmıyorsa ya da değer biçimi yanlışsa
+  model reddedilir. Eski biçim (`tum`/`kendi`/`yok`/düz metin) aynen geçerli.
+  Erişim Kuralları tablosunda açıklama + şart gösterilir (`secSatirAd`).
+- **Model promptu:** kolona bağlı kural şart nesnesi olarak istenir; şarta
+  çevrilemeyen kural için "otomatik test edilemeyecek" denmesi istenir.
+- **Test verisi promptu:** şartlı kuralı olan tabloya şartın iki tarafından da satır.
+- **Güvenlik Testleri:** harita sürümü `3` — şart kolonlarının değeri (`v`) okunur.
+  Rolün tablo kuralı şartlıysa `secSartTest`: "Şarta uyan N kayıt" (görülmeli + kolon
+  testi) ve "Şarta uymayan M kayıt" (görülmemeli); bir taraf yoksa ya da değer boşsa
+  🟡. Düz metin kuralda sebep: "otomatik test için şartlı biçimde yazın". Yalnız SELECT.
+
 ## v0.296.0
 - **Güvenlik Testleri — gereksiz 🟡 azaltıldı.** Şube hedefleri (kendi / başka şubenin
   kaydı) yalnız rolün o tablodaki satır kuralında şube geçiyorsa üretiliyor

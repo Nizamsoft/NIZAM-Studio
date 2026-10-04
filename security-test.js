@@ -397,6 +397,7 @@ function secTestVeriPrompt(p, yapi, model, kisiler) {
   s.push('- Yapıda şube/bölüm/firma gibi bir ayrım varsa iki ayrı kayıt aç (Şube 1, Şube 2); A\'yı birine, B\'yi ötekine bağla.');
   s.push('- Herkesin görmesi gereken ortak kayıtlar için birkaç satır ekle (ör. 2–3 ürün).');
   s.push('- Modelde kuralı olan her tabloya en az bir satır düşsün; gereğinden fazla satır yazma.');
+  s.push('- Modelde satır kuralı ŞART nesnesi olan ({kolon, kosul, deger}) her tabloda şartın İKİ TARAFINDAN da en az bir satır yaz: şartı sağlayan ve sağlamayan (ör. tablo_adi = \'kullanicilar\' olan ve olmayan). Şart kolonunu boş bırakma.');
   s.push('- auth.users tetikleyicisi bazı satırları (ör. profil) zaten oluşturmuş olabilir: bunlar için insert yerine update ya da `on conflict … do update` kullan.');
   s.push('');
   s.push('## Kurallar');

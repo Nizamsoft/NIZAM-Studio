@@ -31,6 +31,11 @@ const SEC_IZIN_AD = { oku: 'Oku', ekle: 'Ekle', degistir: 'Değiştir', sil: 'Si
 /* Bilinen satır kuralları; bunların dışındaki metin olduğu gibi gösterilir
    (ör. "Kendi şubesinin satırları"). */
 const SEC_SATIR_AD = { tum: 'Tüm satırlar', kendi: 'Kendi satırı', yok: 'Hiçbiri' };
+/* Şartlı satır kuralı: {kolon, kosul, deger, aciklama} — test aracı bunu okuyabilir.
+   Ör. {kolon:'tablo_adi', kosul:'esit_degil', deger:'kullanicilar'} */
+const SEC_KOSULLAR = ['esit', 'esit_degil', 'icinde', 'icinde_degil'];
+const SEC_KOSUL_AD = { esit: '=', esit_degil: '≠', icinde: 'şunlardan biri:', icinde_degil: 'şunlardan biri değil:' };
+const secSartMi = d => !!(d && typeof d === 'object' && !Array.isArray(d) && d.kolon);
 
 /* ---------- Gerçek yapıyı okuyan SQL ----------
    Yalnız sistem kataloğunu okur (pg_class, pg_attribute, pg_constraint,
@@ -340,12 +345,18 @@ function secModelOku(metin, yapi, projeId) {
   if (roller.length > 8) return { hata: 'Çok fazla rol var (en fazla 8).' };
   const rolVar = new Set(roller);
 
-  const satirOku = (s, yer) => {
+  /* kolonlar: tablonun gerçek kolon adları (şartlı kuralın kolonu bunlardan olmalı). */
+  const satirOku = (s, yer, kolonlar) => {
     const out = {};
     if (s === undefined || s === null) return out;
     if (typeof s !== 'object' || Array.isArray(s)) { hatalar.push(yer + ': satır erişimi nesne olmalı.'); return out; }
     for (const [rol, deger] of Object.entries(s)) {
       if (!rolVar.has(rol)) { hatalar.push(yer + ': tanımsız rol "' + rol + '".'); continue; }
+      if (deger && typeof deger === 'object') {
+        const sart = secSartOku(deger, yer + ': "' + rol + '"', kolonlar, hatalar);
+        if (sart) out[rol] = sart;
+        continue;
+      }
       const d = String(deger || '').trim();
       if (!d) { hatalar.push(yer + ': "' + rol + '" satır erişimi boş.'); continue; }
       if (d.length > 200) { hatalar.push(yer + ': "' + rol + '" satır erişimi çok uzun (' + d.length + ' karakter, en fazla 200).'); continue; }
@@ -386,9 +397,9 @@ function secModelOku(metin, yapi, projeId) {
         if (yanlis.length) { hatalar.push(ad + '.' + kad + ': bilinmeyen izin ' + yanlis.join(', ')); continue; }
         izin[rol] = SEC_IZINLER.filter(x => liste.includes(x));
       }
-      kolonlar.push({ ad: kad, izin, satir: satirOku(k.satir, ad + '.' + kad) });
+      kolonlar.push({ ad: kad, izin, satir: satirOku(k.satir, ad + '.' + kad, gercekKolon) });
     }
-    tablolar.push({ ad, sahip_kolon: sahip || undefined, satir: satirOku(t.satir, ad), kolonlar });
+    tablolar.push({ ad, sahip_kolon: sahip || undefined, satir: satirOku(t.satir, ad, gercekKolon), kolonlar });
   }
 
   if (hatalar.length) {
@@ -396,6 +407,27 @@ function secModelOku(metin, yapi, projeId) {
   }
   if (!tablolar.length) return { hata: 'Modelde hiç tablo yok.' };
   return { model: { surum: SEC_MODEL_SURUM, proje: projeId, roller, tablolar } };
+}
+
+/* Şartlı satır kuralını doğrular; hatada null döner ve hatalar'a yazar. */
+function secSartOku(d, yer, kolonlar, hatalar) {
+  if (Array.isArray(d)) { hatalar.push(yer + ': satır kuralı liste olamaz.'); return null; }
+  const kolon = String(d.kolon || '');
+  if (!kolon) { hatalar.push(yer + ': şartta "kolon" yok.'); return null; }
+  if (!kolonlar.has(kolon)) { hatalar.push(yer + ': şart kolonu veritabanında yok: ' + kolon); return null; }
+  if (!SEC_KOSULLAR.includes(d.kosul)) { hatalar.push(yer + ': bilinmeyen koşul "' + d.kosul + '" (' + SEC_KOSULLAR.join(', ') + ').'); return null; }
+  const liste = d.kosul === 'icinde' || d.kosul === 'icinde_degil';
+  let deger;
+  if (liste) {
+    if (!Array.isArray(d.deger) || !d.deger.length) { hatalar.push(yer + ': "' + d.kosul + '" için "deger" boş olmayan bir liste olmalı.'); return null; }
+    if (d.deger.some(x => x === null || typeof x === 'object')) { hatalar.push(yer + ': "deger" listesinde yalnız metin/sayı olmalı.'); return null; }
+    deger = d.deger.map(String);
+  } else {
+    if (d.deger === null || d.deger === undefined || typeof d.deger === 'object') { hatalar.push(yer + ': "' + d.kosul + '" için "deger" tek bir metin/sayı olmalı.'); return null; }
+    deger = String(d.deger);
+  }
+  const aciklama = String(d.aciklama || '').trim().slice(0, 200);
+  return aciklama ? { kolon, kosul: d.kosul, deger, aciklama } : { kolon, kosul: d.kosul, deger };
 }
 
 /* ==========================================================================
@@ -457,6 +489,11 @@ function secPrompt(p, yapi) {
   s.push('- Tablodaki `satir`: her rolün varsayılan satır erişimi. Değerler: `tum` (tüm satırlar), `kendi` (kendi satırı), `yok` (hiçbiri)');
   s.push('  ya da kısa bir açıklama (ör. "Kendi şubesinin satırları", "Tüm ürünler"). Açıklama en fazla 60 karakter olsun;');
   s.push('  hangi işlemi yapabildiği satır kuralına değil kolon izinlerine (`izin`) yazılır.');
+  s.push('- **Satır kuralı bir kolonun değerine bağlıysa düz metin YAZMA, şart nesnesi yaz.** Biçim:');
+  s.push('  `{"kolon": "tablo_adi", "kosul": "esit_degil", "deger": "kullanicilar", "aciklama": "Kullanıcı kayıtları hariç tümü"}`');
+  s.push('  `kosul`: `esit`, `esit_degil`, `icinde` (deger liste), `icinde_degil` (deger liste). `kolon` o tablonun gerçek kolonu olmalı.');
+  s.push('  Şartı sağlayan satırları rol görür, sağlamayanları göremez. Nizam bu şartı otomatik test eder.');
+  s.push('- Düz metin kural yalnız gerçekten şarta çevrilemiyorsa kalsın; o zaman bana "bu kural otomatik test edilemeyecek" de.');
   s.push('- Kolondaki `satir`: YALNIZ o kolon varsayılandan farklıysa yaz (ör. isim herkese açık, maaş yalnız kendi satırında). Gereksiz yere her kolona yazma.');
   s.push('- `sahip_kolon`: "kendi satırı" kuralı varsa satırı kullanıcıya bağlayan kolon; yoksa yazma.');
   s.push('- Gerçek yapıdaki her tabloyu ve her kolonu yaz; karar verilmeyen bir şey kalırsa bana sor.');
@@ -605,6 +642,10 @@ function secSekmeler(projeId, aktif) {
 
 function secSatirAd(d) {
   if (!d) return '—';
+  if (secSartMi(d)) {
+    const deger = Array.isArray(d.deger) ? d.deger.join(', ') : d.deger;
+    return (d.aciklama ? d.aciklama + ' · ' : '') + d.kolon + ' ' + (SEC_KOSUL_AD[d.kosul] || d.kosul) + ' ' + deger;
+  }
   return SEC_SATIR_AD[d] || d;
 }
 
