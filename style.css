@@ -10917,3 +10917,99 @@ a.lk.tl-kart { text-decoration: none; color: inherit; }
 .gv-adimlar { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
 .gv-adimlar .sayfa-dug { margin-top: 0; }
 .gv-adimlar .gv-link { align-self: stretch; justify-content: center; height: 44px; margin-top: 0; }
+
+/* ==========================================================================
+   Nizam Security · Erişim Kuralları (security.js)
+   Eski güvenlik ekranlarından bağımsız; bütün sınıflar sec- ile başlar.
+   ========================================================================== */
+.sec-adimlar { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 4px 0 22px; }
+.sec-adim {
+  display: flex; align-items: center; gap: 10px; min-width: 0;
+  padding: 12px 14px; border: 1px solid var(--line-3); border-radius: 8px; background: #fff;
+}
+.sec-no {
+  flex-shrink: 0; width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center;
+  background: var(--surface-2); color: var(--metal-2);
+  font: 700 13px var(--yazi-baslik);
+}
+.sec-adim.bitti .sec-no { background: var(--ink-strong); color: #fff; }
+.sec-adim-yz { flex: 1; min-width: 0; }
+.sec-adim-yz b { display: block; font-size: 13px; color: var(--ink-strong); }
+.sec-adim-yz i { display: block; font-style: normal; font-size: 12px; color: var(--ink-dim);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sec-dug {
+  flex-shrink: 0; padding: 6px 11px; border: 1px solid var(--line); border-radius: 8px;
+  background: #fff; color: var(--ink); font: 600 12px inherit; font-family: inherit; cursor: pointer;
+}
+.sec-dug:disabled { opacity: .4; cursor: default; }
+
+.sec-bas {
+  margin: 4px 0 10px; font-family: var(--yazi-etiket); font-size: 12px; font-weight: 700;
+  letter-spacing: .06em; text-transform: uppercase; color: var(--ink-soft);
+}
+.sec-kart { border: 1px solid var(--line-3); border-radius: 8px; margin-bottom: 18px; background: #fff; overflow: hidden; }
+.sec-ku {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px;
+  padding: 14px 16px; border-bottom: 1px solid var(--line-3);
+}
+.sec-ku h2 { margin: 0; font: 700 16px var(--yazi-baslik); color: var(--ink-strong); overflow-wrap: anywhere; }
+.sec-rozet { font-size: 12px; padding: 3px 10px; border-radius: 99px; background: var(--yuva); color: var(--metal-2); white-space: nowrap; }
+.sec-sahip { font-size: 12px; color: var(--ink-dim); }
+.sec-sahip code, .sec-kararsiz code, .sec-uyari code { font: 12px ui-monospace, Menlo, monospace; color: var(--ink-soft); }
+.sec-say { margin-left: auto; font-size: 12px; color: var(--ink-dim); }
+
+/* Telefonda tablo sağa kayar; kolon adı solda sabit kalır. */
+.sec-kaydir { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.sec-tablo {
+  border-collapse: collapse; width: 100%; table-layout: fixed;
+  min-width: calc(210px + var(--sec-rol, 2) * 400px);
+}
+.sec-tablo col.sec-ck { width: 210px; }
+.sec-tablo col.sec-cs { width: 160px; }
+.sec-tablo th, .sec-tablo td {
+  padding: 9px 10px; border-bottom: 1px solid var(--surface-2);
+  text-align: center; font-size: 13px; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis;
+}
+.sec-tablo th { font-weight: 600; font-size: 12px; color: var(--ink-soft); }
+.sec-g1 th {
+  font: 700 12px var(--yazi-etiket); letter-spacing: .06em; text-transform: uppercase;
+  color: var(--ink-strong); border-bottom-color: var(--line-3);
+}
+.sec-tablo .sec-k {
+  position: sticky; left: 0; z-index: 1; background: #fff; text-align: left;
+  border-right: 1px solid var(--line-3);
+}
+.sec-tablo td.sec-k code { font: 13px ui-monospace, Menlo, monospace; color: var(--ink-strong); }
+.sec-tablo td.sec-k small { margin-left: 6px; font-size: 11.5px; color: var(--ink-dim); }
+.sec-tablo .sec-ay { border-left: 1px solid var(--line-3); }
+.sec-tablo .sec-sa { text-align: left; font-size: 12.5px; color: var(--ink-soft); }
+.sec-tablo .sec-sa.fark { color: var(--ink-strong); font-weight: 600; }
+.sec-tablo .sec-e { color: var(--st-done); font-weight: 700; }
+.sec-tablo .sec-h { color: var(--line-parlak); }
+.sec-tablo .sec-yok { text-align: left; color: var(--ink-dim); font-size: 12.5px; }
+.sec-tablo tr.sec-var td { background: var(--yuva); font-size: 12px; color: var(--ink-soft); }
+.sec-tablo tr.sec-var td.sec-k { background: var(--yuva); }
+.sec-tablo tr:last-child td { border-bottom: 0; }
+
+.sec-kararsiz, .sec-uyari {
+  margin: 0 0 14px; padding: 12px 14px; border: 1px solid var(--line-3); border-radius: 8px;
+  font-size: 13px; color: var(--ink-soft); line-height: 1.7;
+}
+.sec-uyari { border-color: var(--red-cizgi); color: var(--red-ink); }
+.sec-not { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 2px 0 24px; font-size: 12px; color: var(--ink-dim); }
+
+.sec-yol { margin: 0 0 10px; padding-left: 20px; font-size: 13px; color: var(--ink-soft); line-height: 1.7; }
+.sec-kopya { display: inline-flex; align-items: center; gap: 6px; margin-bottom: 12px; }
+.sec-kopya svg { fill: none; stroke: currentColor; stroke-width: 2; }
+.field textarea.sec-metin { min-height: 180px; font: 12px/1.5 ui-monospace, Menlo, monospace; }
+.sec-hata { margin: 8px 0 0; padding: 10px 12px; border-radius: 8px; background: var(--red-soft);
+  color: var(--red-ink); font-size: 13px; }
+.sec-hata ul { margin: 6px 0 0; padding-left: 18px; }
+
+@media (max-width: 900px) {
+  .sec-adimlar { grid-template-columns: 1fr; gap: 8px; }
+  .sec-tablo { min-width: calc(150px + var(--sec-rol, 2) * 410px); }
+  .sec-tablo col.sec-ck { width: 150px; }
+  .sec-tablo col.sec-cs { width: 140px; }
+}

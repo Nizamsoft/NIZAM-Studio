@@ -1,5 +1,18 @@
 # Değişiklik Günlüğü
 
+## v0.291.0
+- **Nizam Security — ilk aşama: Erişim Kuralları.** Eski güvenlik sisteminden
+  (guvenlik-*.js, guvenlik_* tabloları) tamamen bağımsız yeni bölüm
+  (`security.js`, rota `#/security`, yan menü + Ayarlar → Nizam Security).
+  Akış: proje seç → `SEC_YAPI_SQL` müşterinin SQL Editor'ünde çalışır (yalnız
+  katalog: tablo, kolon, tip, PK, FK, RLS; satır verisi yok) → yapı yapıştırılır
+  (`secYapiOku`, gizli anahtar süzgeci) → `secPrompt` Claude görüşme promptu →
+  model JSON'u yapıştırılır (`secModelOku`: gerçek yapıda olmayan tablo/kolon/rol
+  reddedilir) → rol × kolon × Oku/Ekle/Değiştir/Sil + rol başına satır erişimi
+  tablosu (tablo varsayılanı, kolon farkı ↳). Yalnız görüntüleme.
+- Yeni tablo `security_modelleri` (proje başına yapi + model, yalnız yönetici):
+  `sql/44-nizam-security.sql` Supabase'de çalıştırılmalı.
+
 ## v0.290.0
 - **Projeler sekmeleri telefonda sığıyor.** 900px altında `.pj-sekme` dikey:
   simge üstte, yazı altta; yazı gerekirse iki satıra iniyor ("Denem…",

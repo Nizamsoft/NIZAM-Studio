@@ -25,6 +25,7 @@ const ROUTES = {
   tasarimlar:  { title: 'Tasarımlar',          kisa: 'Tasarım',     sub: () => TASARIM_YON.length + ' hazır tasarım' },
   ekip:        { title: 'Ekip',               kisa: 'Ekip',        sub: () => ekipAltBaslik() },
   sohbet:      { title: 'Sohbet',             kisa: 'Sohbet',      sub: () => 'Ekip ile iletişimde kal' },
+  security:    { title: 'Nizam Security',     kisa: 'Security',    sub: () => 'Erişim kuralları' },
   guvenlik:    { title: 'Güvenlik',            kisa: 'Güvenlik',    sub: () => 'NIZAM Security · denetim ve bulgular' },
   guncellemeler:{ title: 'Güncellemeler',      kisa: 'Güncelleme',  sub: () => APP.version + ' · ' + APP.stage },
   ayarlar:     { title: 'Ayarlar',            kisa: 'Ayarlar',     sub: () => APP.version + ' · ' + APP.stage },
@@ -964,6 +965,10 @@ const VIEWS = {
 
   guvenlik: () => guvenlikAnaEkran(),
 
+  /* ---------- Nizam Security (yeni, eskisinden bağımsız) ---------- */
+
+  security: () => securityEkran(),
+
   guncellemeler: () => guncellemelerEkran(),
   // (gövde aşağıda guncellemelerEkran fonksiyonunda)
 
@@ -1106,6 +1111,20 @@ const AYAR_GRUP = {
       susCizgi: true,
       sus: '<path d="M30 3l24 9v18c0 15-10 25-24 30C16 55 6 45 6 30V12z"></path>'
          + '<path d="M20 30l7 7 14-14"></path>',
+    })}</div>`,
+  },
+
+  security: {
+    ad: 'Nizam Security', renk: 'yesil', ikon: 'gGuvenlik',
+    aciklama: 'Projelerin olması istenen erişim kuralları.',
+    goster: () => AUTH.yonetici,
+    ciz: () => `<div class="kt-liste">${ayarKarti({
+      ad: 'Erişim Kuralları', adres: '#/security', renk: 'yesil', ikon: 'gGuvenlik',
+      aciklama: 'Gerçek veritabanı yapısından, Claude ile rol bazlı erişim kurallarını oluştur.',
+      deger: 'yapı · prompt · model', degerIkon: 'gGuvenlik',
+      susCizgi: true,
+      sus: '<path d="M30 3l24 9v18c0 15-10 25-24 30C16 55 6 45 6 30V12z"></path>'
+         + '<path d="M18 26h24M18 34h24M30 20v24"></path>',
     })}</div>`,
   },
 
@@ -15030,6 +15049,8 @@ async function eylemCalistir(el) {
 
   /* NIZAM Security yeni ekran eylemleri (guvenlik-ekran.js). */
   if (e && e.indexOf('guv-') === 0) { if (await guvenlikEkranEylem(e, el)) return; }
+  /* Nizam Security (security.js). */
+  if (e && e.indexOf('sec-') === 0) { if (await securityEylem(e, el)) return; }
 
   if (e === 'sihirbaz')  return sihirbaziAc();
   if (e === 'tazele')    return veriTazele();

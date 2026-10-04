@@ -21,6 +21,13 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.291.0', tarih: '2026-10-04',
+    ozet: 'Nizam Security: Erişim Kuralları',
+    maddeler: [
+      'Yeni "Nizam Security" bölümü: proje seç, gerçek veritabanı yapısını al, Claude ile kimin neyi görüp değiştirebileceğini belirle.',
+      'Sonuç her tablo için rol rol Oku / Ekle / Değiştir / Sil ve satır erişimi olarak tabloda görünüyor.',
+    ] },
+
   { surum: 'v0.290.0', tarih: '2026-10-03',
     ozet: 'Projeler sekmeleri telefonda tam görünüyor',
     maddeler: [

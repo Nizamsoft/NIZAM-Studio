@@ -7,7 +7,7 @@ const APP = {
   name:     'NIZAM | Studio',
   short:    'NIZAM Studio',
   owner:    'Nizam Soft',
-  version: 'v0.290.0',
+  version: 'v0.291.0',
   build:    '2026-10-01',
   /* Studio'nun kendi deposu — "bütün programlarda geçerli olsun"
      istekleri buraya gider. */
@@ -1081,6 +1081,7 @@ const MENU = [
   { id: 'projeler',    ad: 'Projeler',           ikon: 'folder', tab: true,  sayac: 'projeler' },
   { id: 'gorevler',    ad: 'Görevler',           ikon: 'check',  tab: true,  sayac: 'gorevler' },
   { id: 'ekip',        ad: 'Ekip',               ikon: 'kisi', sadeceYonetici: true, tab: true },
+  { id: 'security',    ad: 'Nizam Security',     ikon: 'gGuvenlik', sadeceYonetici: true },
   /* Standartlar alt çubukta değil — Ayarlar'ın içinden açılıyor. */
   { id: 'sektorler',   ad: 'Sektörler',          ikon: 'folder', sadeceYonetici: true, alt: true },
   { id: 'paketler',    ad: 'Paketler',           ikon: 'paket',  sadeceYonetici: true, alt: true },
