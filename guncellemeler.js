@@ -21,6 +21,11 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.298.0', tarih: '2026-10-04',
+    ozet: 'Güvenlik Testleri: giriş yapmamış ziyaretçi de deneniyor',
+    maddeler: [
+      'Test artık giriş yapmamış biri gibi de veri okumayı deniyor; dışarıdan bir kayıt bile görülürse güvenlik açığı olarak gösteriliyor.',
+    ] },
   { surum: 'v0.297.0', tarih: '2026-10-04',
     ozet: 'Nizam Security: şartlı erişim kuralları test ediliyor',
     maddeler: [

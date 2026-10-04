@@ -1,5 +1,12 @@
 # Değişiklik Günlüğü
 
+## v0.298.0
+- **Güvenlik Testleri — dış erişim (giriş yapmamış ziyaretçi).** Test kullanıcılarından
+  sonra her model tablosu yalnız herkese açık anahtarla (`apikey`; eski anon JWT ise
+  `Authorization`'da da) okunur (`secZiyaretciTest`). Modelde ziyaretçi rolü yok:
+  dönen her satır 🔴; reddedilirse ya da boş dönerse 🟢; tabloda test verisi yoksa
+  ya da beklenmedik hata varsa 🟡. Tablo başına tek test. Yalnız SELECT.
+
 ## v0.297.0
 - **Şartlı satır kuralı.** Modelde `satir` değeri artık `{kolon, kosul, deger, aciklama}`
   da olabilir (`kosul`: esit, esit_degil, icinde, icinde_degil). `secModelOku` →

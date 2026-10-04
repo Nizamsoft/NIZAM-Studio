@@ -207,7 +207,9 @@ function secOkumaTaban(ortam) {
 async function secOkumaGet(ortam, jeton, yol) {
   const r = await fetch(secOkumaTaban(ortam) + '/rest/v1/' + yol, {
     method: 'GET',
-    headers: { apikey: ortam.test_anahtar, Authorization: 'Bearer ' + jeton, Accept: 'application/json' },
+    /* jeton yoksa: giriş yapmamış ziyaretçi — yalnız herkese açık anahtar gider. */
+    headers: Object.assign({ apikey: ortam.test_anahtar, Accept: 'application/json' },
+      jeton ? { Authorization: 'Bearer ' + jeton } : {}),
   });
   let j = null;
   try { j = await r.json(); } catch (h) {}
@@ -320,6 +322,11 @@ async function secOkumaCalistir(projeId) {
           m, b, kisi.rol, ben, esler, harita.tablolar[b.ad] || []);
       }
     }
+    /* Dış saldırı: giriş yapmadan, yalnız uygulamanın herkese açık anahtarıyla. */
+    for (const { b } of bilgiler) {
+      ilerle('SELECT', SEC_ZIYARETCI, b.ad);
+      sonuclar.push(await secZiyaretciTest(o, b, harita.tablolar[b.ad] || []));
+    }
     SEC_OKUMA.sonuc[projeId] = { liste: sonuclar, tarih: new Date().toISOString() };
     const acik = sonuclar.filter(x => x.sonuc === 'acik').length;
     toast(acik ? acik + ' güvenlik açığı bulundu.' : 'Test bitti.', acik ? 'hata' : 'basari');
@@ -330,6 +337,28 @@ async function secOkumaCalistir(projeId) {
     SEC_OKUMA.ilerleme[projeId] = null;
     render();
   }
+}
+
+/* Giriş yapmamış ziyaretçi: modelde böyle bir rol yok, yani HİÇBİR kayıt
+   görülmemeli. Dönen her satır açıktır (haritada olsun olmasın). */
+const SEC_ZIYARETCI = 'Ziyaretçi (giriş yok)';
+
+async function secZiyaretciTest(o, b, satirlar) {
+  const temel = { kisi: SEC_ZIYARETCI, rol: 'Dış erişim', tablo: b.ad, hedef: 'Tüm kayıtlar', tur: 'Satır',
+    beklenen: 'Giriş yapmadan görülmemeli' };
+  /* Eski anon anahtarı (JWT) Authorization'da da gider; publishable anahtar yalnız apikey'de. */
+  const jeton = /^eyJ/.test(o.test_anahtar || '') ? o.test_anahtar : null;
+  let r;
+  try { r = await secOkumaGet(o, jeton, encodeURIComponent(b.ad) + '?select=*&limit=1000'); }
+  catch (h) { return Object.assign(temel, { gercek: 'Okuma hatası: ' + (h.message || h), sonuc: 'edilemedi' }); }
+  if (r.satirlar && r.satirlar.length) {
+    return Object.assign(temel, { gercek: r.satirlar.length + ' kayıt görüldü', sonuc: 'acik' });
+  }
+  const reddedildi = !r.satirlar && /permission|denied|42501|401|JWT/i.test(r.hata);
+  if (!r.satirlar && !reddedildi) return Object.assign(temel, { gercek: 'Okuma hatası: ' + r.hata, sonuc: 'edilemedi' });
+  /* Boş tabloda "hiçbir şey dönmedi" bir şey kanıtlamaz. */
+  if (!satirlar.length) return Object.assign(temel, { gercek: 'Tabloda test verisi yok', sonuc: 'edilemedi' });
+  return Object.assign(temel, { gercek: reddedildi ? 'Erişim reddedildi' : 'Hiçbiri görülmedi', sonuc: 'gecti' });
 }
 
 async function secTabloOkuGuvenli(o, jeton, b, m) {
@@ -556,9 +585,10 @@ function secOkumaEkran(projeId) {
 
   const baslatKart = `
     <div class="sec-t-kart">
-      <div class="sec-t-ku"><span class="sec-no">2</span><b>Güvenlik Testleri</b><em>${kisiler.length} test kullanıcısı · SELECT</em></div>
+      <div class="sec-t-ku"><span class="sec-no">2</span><b>Güvenlik Testleri</b><em>${kisiler.length} test kullanıcısı + ziyaretçi · SELECT</em></div>
       <p class="sec-t-not">Her test kullanıcısı test projesine kendi e-posta ve şifresiyle giriş yapar,
-        tabloları okur. Görmemesi gereken veriyi görürse güvenlik açığıdır.</p>
+        tabloları okur. Ardından giriş yapmamış bir ziyaretçi gibi, yalnız herkese açık anahtarla
+        okumayı dener. Görmemesi gereken veriyi görürse güvenlik açığıdır.</p>
       <div class="sec-t-dg">${dug(calisiyor ? 'Test çalışıyor…' : 'Testi Başlat', 'sec-o-baslat', true, !harita || calisiyor || !!engel)}</div>
     </div>`;
 
