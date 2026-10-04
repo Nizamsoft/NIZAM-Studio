@@ -189,7 +189,7 @@ function secHataTur(c) {
   return 'veri';
 }
 const SEC_HATA_AD = { kisit: 'kısıt hatası', kural: 'uygulama kuralı reddetti', veri: 'veri/istek hatası' };
-const secTekrarDene = c => ['kisit', 'veri'].includes(secHataTur(c));   // başka değerle yeniden denenebilir
+const secTekrarDene = c => ['kisit', 'kural', 'veri'].includes(secHataTur(c));   // başka değerle yeniden denenebilir
 
 /* Ortak karar. Asıl ölçü: veri gerçekten değişti mi. */
 function secKarar(cevap, degisti, bek, evet, hayir) {
@@ -234,63 +234,130 @@ const secTip = k => String((k && k.tip) || '').toLowerCase();
 const secMetinTip = t => /char|text|citext/.test(t);
 const secSayiTip = t => /int|numeric|decimal|real|double|float|money/.test(t);
 
-function secBenzersizKolonlar(bt) {
-  const set = new Set();
+/* Benzersizlik grupları: birincil anahtar + her UNIQUE kısıtı (kolon listesi). */
+function secAnahtarGruplari(bt) {
+  const gruplar = [];
+  const pk = bt.kolonlar.filter(k => k.pk).map(k => k.ad);
+  if (pk.length) gruplar.push(pk);
   (bt.kisitlar || []).forEach(k => {
-    const m = /UNIQUE\s*\(([^)]*)\)/i.exec(k.tanim || '');
-    if (m) m[1].split(',').forEach(c => set.add(c.trim().replace(/^"|"$/g, '')));
+    const m = /^\s*UNIQUE\s*(?:NULLS\s+NOT\s+DISTINCT\s*)?\(([^)]*)\)/i.exec(k.tanim || '');
+    if (m) gruplar.push(m[1].split(',').map(c => c.trim().replace(/^"|"$/g, '')));
   });
-  return set;
+  return gruplar;
 }
 
-/* Tabloda bu kolonda henüz geçmeyen bir değer (benzersiz kolon / yeni kimlik için).
-   Başka tabloya bağlı kolonda bağlı tablonun kullanılmamış değeri seçilir. */
-function secYeniDeger(cx, k, eski) {
+/* Kolonun kabul ettiği değerler: enum tipi ya da kolonu anan CHECK'teki sabitler
+   (ör. tur IN ('tatil','bloke')). Yoksa null. */
+function secIzinliDegerler(cx, k) {
+  const tip = secTip(k).replace(/^public\./, '').replace(/"/g, '');
+  if (cx.tipler && cx.tipler[tip]) return cx.tipler[tip].slice();
+  const kacis = k.ad.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const re = new RegExp('(^|[^a-z0-9_])"?' + kacis + '"?([^a-z0-9_]|$)', 'i');
+  const out = [];
+  (cx.bt.kisitlar || []).forEach(x => {
+    const t = x.tanim || '';
+    if (!/^\s*CHECK/i.test(t) || !re.test(t)) return;
+    for (const m of t.matchAll(/'((?:[^']|'')*)'::/g)) {
+      let v = m[1].replace(/''/g, "'");
+      if (secSayiTip(secTip(k)) && Number.isFinite(Number(v))) v = Number(v);
+      if (!out.some(o => secAyni(o, v))) out.push(v);
+    }
+  });
+  return out.length ? out : null;
+}
+
+/* Tipe göre üretilen, şimdikinden farklı değerler. */
+function secUretilenler(cx, k, simdi) {
   const tip = secTip(k);
-  const kullanilan = new Set(cx.ornek.map(s => JSON.stringify(s.x[k.ad])));
-  const fk = cx.fk[k.ad];
-  if (fk) {
-    const bos = fk.find(v => !kullanilan.has(JSON.stringify(v)));
-    return bos !== undefined ? bos : eski;
-  }
-  if (/uuid/.test(tip)) return crypto.randomUUID();
-  if (secMetinTip(tip)) return (eski === null || eski === undefined || k.pk ? 'nizam-test' : String(eski)) + '-' + secRastgele();
+  const izinli = secIzinliDegerler(cx, k);
+  if (izinli) return izinli;
+  if (/\[\]$/.test(tip)) return [];
+  if (/uuid/.test(tip)) return [crypto.randomUUID()];
+  if (secMetinTip(tip)) return [(simdi === null || simdi === undefined || k.pk ? 'nizam-test' : String(simdi)) + '-nt' + secRastgele().slice(0, 4)];
   if (secSayiTip(tip)) {
     const sayilar = cx.ornek.map(s => Number(s.x[k.ad])).filter(n => Number.isFinite(n));
-    return Math.floor(Math.max(0, ...sayilar)) + 1 + Math.floor(Math.random() * 1000);
+    return [Math.floor(Math.max(0, ...sayilar)) + 1 + Math.floor(Math.random() * 1000)];
   }
-  return eski;
+  if (/bool/.test(tip)) return [!simdi];
+  if (/^date$|timestamp/.test(tip)) {
+    let d = new Date(simdi || Date.now());
+    if (isNaN(d.getTime())) d = new Date();
+    d = new Date(d.getTime() + (1 + Math.floor(Math.random() * 300)) * 86400000);
+    return [/^date$/.test(tip) ? d.toISOString().slice(0, 10) : d.toISOString()];
+  }
+  if (/json/.test(tip)) {
+    const isaret = { nizam_test: secRastgele() };
+    return [simdi && typeof simdi === 'object' && !Array.isArray(simdi) ? Object.assign({}, simdi, isaret) : isaret];
+  }
+  return [];
 }
 
-/* Bir kaynak kayıttan yeni, sentetik bir kayıt: yeni kimlik, benzersiz kolonlara yeni değer. */
+/* Kimlik / benzersiz kolon için yeni değer adayları. Bağlı kolonda bağlı tablonun
+   değerleri (tabloda henüz geçmeyenler önce). */
+function secYeniAdaylar(cx, k, eski) {
+  const fk = cx.fk[k.ad];
+  if (!fk) return secUretilenler(cx, k, eski).filter(v => !secAyni(v, eski));
+  const kullanilan = new Set(cx.ornek.map(s => JSON.stringify(s.x[k.ad])));
+  return fk.filter(v => !kullanilan.has(JSON.stringify(v))).concat(fk.filter(v => kullanilan.has(JSON.stringify(v))))
+    .filter(v => !secAyni(v, eski));
+}
+
+/* Bir kaynak kayıttan yeni, sentetik bir kayıt. Her benzersizlik grubu (kimlik,
+   UNIQUE) tabloda zaten varsa grubun YALNIZ BİR kolonu değiştirilir; sahip, şube ve
+   şart kolonları (hedefin kapsamı) en son seçenektir. Gerekirse iki kolon birden. */
 function secTaslak(cx, x) {
-  const benzersiz = secBenzersizKolonlar(cx.bt);
   const t = {};
+  const kol = {};
   cx.bt.kolonlar.forEach(k => {
-    if (secAtla(k) || !(k.ad in x)) return;
-    let v = x[k.ad];
-    if (k.pk || (benzersiz.has(k.ad) && v !== null && v !== undefined)) v = secYeniDeger(cx, k, v);
-    t[k.ad] = v;
+    kol[k.ad] = k;
+    if (!secAtla(k) && k.ad in x) t[k.ad] = x[k.ad];
   });
+  const korunan = new Set([cx.b.sahip, cx.b.sube].concat(cx.b.sart || []).filter(Boolean));
+  const puan = c => (korunan.has(c) ? 8 : 0) + (cx.fk[c] ? 2 : 0) + (secIzinliDegerler(cx, kol[c]) ? 1 : 0);
+  for (const grup of secAnahtarGruplari(cx.bt)) {
+    if (grup.some(c => !(c in t) || !kol[c])) continue;            // veritabanı dolduruyor
+    if (grup.some(c => t[c] === null || t[c] === undefined)) continue; // boş değer çakışmaz
+    const var_ = new Set(cx.ornek.map(s => JSON.stringify(grup.map(c => s.x[c]))));
+    const bos = () => !var_.has(JSON.stringify(grup.map(c => t[c])));
+    if (bos()) continue;
+    const sirali = grup.slice().sort((a, b) => puan(a) - puan(b));
+    let bulundu = false;
+    for (const c of sirali) {
+      const eski = t[c];
+      for (const v of secYeniAdaylar(cx, kol[c], eski)) { t[c] = v; if (bos()) { bulundu = true; break; } }
+      if (bulundu) break;
+      t[c] = eski;
+    }
+    for (let i = 0; !bulundu && i < sirali.length; i++) {
+      for (let j = i + 1; !bulundu && j < sirali.length; j++) {
+        const [a, b] = [sirali[i], sirali[j]];
+        const ea = t[a], eb = t[b];
+        const la = [ea].concat(secYeniAdaylar(cx, kol[a], ea)).slice(0, 30);
+        const lb = [eb].concat(secYeniAdaylar(cx, kol[b], eb)).slice(0, 30);
+        for (const va of la) {
+          for (const vb of lb) { t[a] = va; t[b] = vb; if (bos()) { bulundu = true; break; } }
+          if (bulundu) break;
+        }
+        if (!bulundu) { t[a] = ea; t[b] = eb; }
+      }
+    }
+  }
   return t;
 }
 
-/* Değiştirmek için aday değerler. Bağlı kolonda bağlı tablonun değerleri; benzersiz
-   kolonda önce üretilen (çakışmayan) değer; sonra tablodaki başka kayıtların değeri
-   (kurallara uyan gerçekçi değer, ör. başka bir rol); en son tipe göre üretilen. */
+/* Değiştirmek için aday değerler. Bağlı kolonda bağlı tablonun değerleri; enum/CHECK
+   kolonunda yalnız kabul edilen değerler; yetki kolonunda önce başka kayıtların
+   değeri (ör. başka bir rol), öteki kolonlarda önce üretilen değer. */
 function secAdaylar(cx, c, simdi) {
   const out = [];
   const ekle = v => { if (v !== null && v !== undefined && !secAyni(v, simdi) && !out.some(o => secAyni(o, v))) out.push(v); };
-  const k = cx.bt.kolonlar.find(x => x.ad === c) || {};
-  const tip = secTip(k);
-  const fk = cx.fk[c];
-  if (fk) { fk.forEach(ekle); return out.slice(0, 4); }
-  if (secBenzersizKolonlar(cx.bt).has(c)) ekle(secYeniDeger(cx, k, simdi));
-  cx.ornek.forEach(s => ekle(s.x[c]));
-  if (secMetinTip(tip)) ekle(simdi === null || simdi === undefined ? 'nizam-test' : String(simdi) + ' (nizam-test)');
-  else if (secSayiTip(tip)) ekle((Number(simdi) || 0) + 1);
-  else if (/bool/.test(tip)) ekle(!simdi);
-  else if (/uuid/.test(tip)) ekle(crypto.randomUUID());
+  const k = cx.bt.kolonlar.find(x => x.ad === c) || { ad: c };
+  if (cx.fk[c]) { secYeniAdaylar(cx, k, simdi).forEach(ekle); return out.slice(0, 4); }
+  const izinli = secIzinliDegerler(cx, k);
+  if (izinli) { izinli.forEach(ekle); return out.slice(0, 4); }
+  const diger = () => cx.ornek.forEach(s => ekle(s.x[c]));
+  if (SEC_GUVENLIK_KOLON.test(c)) { diger(); secUretilenler(cx, k, simdi).forEach(ekle); }
+  else { secUretilenler(cx, k, simdi).forEach(ekle); diger(); }
   return out.slice(0, 4);
 }
 
@@ -620,7 +687,9 @@ async function secYazmaCalistir(projeId) {
     const esler = {};
     oturum.forEach(x => { if (x.uid) { esler[x.uid] = x.kisi.etiket; x.sube = secKisiSube(harita, bilgiler, x.uid); } });
 
-    const ortak = { o, gozcu, esler, bypass: !!surum.bypass };
+    const tipler = {};
+    (k.yapi.tipler || []).forEach(t => { tipler[String(t.ad).toLowerCase()] = t.degerler; });
+    const ortak = { o, gozcu, esler, tipler, bypass: !!surum.bypass };
     for (const os of oturum) {
       const temel = { kisi: os.kisi.etiket, rol: os.kisi.rol };
       if (!os.jeton) {

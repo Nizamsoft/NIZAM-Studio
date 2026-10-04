@@ -21,6 +21,14 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.302.0', tarih: '2026-10-04',
+    ozet: 'Yazma testleri: deneme kayıtları daha akıllı',
+    maddeler: [
+      'Yalnız belli değerleri kabul eden alanlarda (ör. tür: tatil / bloke) artık o değerlerden biri deneniyor.',
+      'Tarih ve JSON (yapılandırılmış veri) alanları da değiştirilerek deneniyor.',
+      'Deneme kaydı açarken çakışmayı önlemek için yalnız bir alan değiştiriliyor; kayıt kime aitse onun kalıyor.',
+      'Uygulamanın kendi kuralı bir değeri reddederse başka bir değerle yeniden deneniyor.',
+    ] },
   { surum: 'v0.301.0', tarih: '2026-10-04',
     ozet: 'Yazma testleri: çok daha az "test edilemedi"',
     maddeler: [

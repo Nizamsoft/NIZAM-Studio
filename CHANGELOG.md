@@ -1,5 +1,16 @@
 # Değişiklik Günlüğü
 
+## v0.302.0
+- **Yazma testleri — deneme değerleri** (`security-yazma.js`).
+  - `secIzinliDegerler`: enum tipi (`yapi.tipler`) ya da kolonu anan CHECK'teki sabitler;
+    bu kolonlarda yalnız bunlar denenir (`bloke_gunleri_tur_check` 23514).
+  - `secUretilenler`: tarih/zaman (+gün), json (test işareti), dizi kolonları atlanır.
+  - `secTaslak`: benzersizlik grubu (pk + her UNIQUE) tabloda varsa grubun yalnız bir
+    kolonu değişir; sahip/şube/şart kolonları en son, gerekirse iki kolon birden
+    (`kullanici_subeleri_pkey`). Önceden bütün UNIQUE kolonlar değişiyordu.
+  - `secAdaylar`: yetki kolonunda önce başka kayıtların değeri, ötekilerde önce üretilen.
+  - P0001 (uygulama kuralı) reddinde de sıradaki değerle yeniden denenir.
+
 ## v0.301.0
 - **Yazma testleri — 🟡 azaltma ve yanlış 🟢/🔴 önleme** (`security-yazma.js`).
   - `secYeniDeger`: yeni kimlik / benzersiz kolon tipe göre — uuid → yeni uuid, metin → ek,
