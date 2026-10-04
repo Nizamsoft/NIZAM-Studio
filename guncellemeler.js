@@ -21,6 +21,16 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.304.0', tarih: '2026-10-04',
+    ozet: 'Nizam Security: yazma testleri ve Erişim Kuralları birlikte daha akıllı',
+    maddeler: [
+      'Deneme değerleri artık veritabanının kurallarına uyuyor: boş olmayan metin, izinli aralıkta sayı (ör. 1–31), izinli listeden değer, tarihe tarih.',
+      'Aynı fişin bacakları gibi tek başına kaydedilemeyen kayıtlar birlikte deneniyor; irsaliye gibi alt satır isteyenlerin silme kopyası alt satırlarıyla açılıyor.',
+      '"Yetki ister" diye reddeden kurallar artık yetki sonucu sayılıyor, "test edilemedi" değil.',
+      'Erişim Kuralları görüşmesi veritabanının mevcut güvenlik tasarımını da görüyor; çatışma olursa "modeli mi, veritabanını mı değiştirelim?" diye soruyor.',
+      'Bir rol bir tabloya ekrandaki sunucu işlemiyle yazıyorsa modelde "fonksiyonla yazar" denebiliyor; o zaman doğrudan yazması beklenmiyor.',
+      'Yardımcı SQL güncellendi: test projesinde bir kez yeniden çalıştır.',
+    ] },
   { surum: 'v0.303.0', tarih: '2026-10-04',
     ozet: 'Güvenlik Testleri: "Hataları bildir" düğmesi ve yükleme yüzdesi',
     maddeler: [

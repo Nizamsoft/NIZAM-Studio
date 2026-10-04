@@ -38,6 +38,7 @@ const SEC_KOSUL_AD = { esit: '=', esit_degil: '≠', icinde: 'şunlardan biri:',
 /* Giriş yapmamış kişi için ayrılmış rol adı. Modelde yoksa ziyaretçi HİÇBİR
    şey göremez (varsayılan kapalı). Test hesabı açılmaz; giriş yapmadan denenir. */
 const SEC_ZIYARETCI_ROL = 'Ziyaretçi';
+const SEC_YAZMA_YOLLARI = ['dogrudan', 'fonksiyon_ile'];
 const secSartMi = d => !!(d && typeof d === 'object' && !Array.isArray(d) && d.kolon);
 
 /* ---------- Gerçek yapıyı okuyan SQL ----------
@@ -317,6 +318,35 @@ function secYapiOku(metin) {
   return { yapi };
 }
 
+/* Modelleme promptu için mevcut güvenlik tasarımının kısa özeti (yapi-2+):
+   tablo başına RLS kuralları ve tetikleyiciler, yetki kontrolü yapan fonksiyonlar,
+   security definer sunucu fonksiyonları. Uzun ifadeler kısaltılır. Yoksa null. */
+function secGuvenlikTasarimi(yapi) {
+  const kisa = (x, n = 240) => (x && x.length > n ? x.slice(0, n) + '…' : x);
+  const fonk = yapi.fonksiyonlar || [];
+  if (!fonk.length && !(yapi.tablolar || []).some(t => (t.politikalar || []).length || (t.tetikleyiciler || []).length)) return null;
+  const yetkiFonk = new Set(fonk.filter(f => /yetki|permission|not allowed|izin verilmez|korun/i.test(f.tanim)).map(f => f.ad));
+  const tablolar = (yapi.tablolar || []).map(t => {
+    const o = { ad: t.ad };
+    if ((t.politikalar || []).length) {
+      o.rls_kurallari = t.politikalar.map(p => ({ islem: p.islem, roller: p.roller,
+        using: kisa(p.using) || undefined, check: kisa(p.check) || undefined }));
+    }
+    const tg = (t.tetikleyiciler || []).map(x => {
+      const m = /EXECUTE (?:FUNCTION|PROCEDURE)\s+(?:public\.)?"?([a-z0-9_]+)"?/i.exec(x.tanim || '');
+      const zaman = /\b(BEFORE|AFTER|INSTEAD OF)\s+([A-Z ,]+?)\s+ON\b/i.exec(x.tanim || '');
+      return { ad: x.ad, ne_zaman: zaman ? zaman[1] + ' ' + zaman[2].trim() : undefined,
+        fonksiyon: m ? m[1] : undefined, ertelenmis: /DEFERRABLE/i.test(x.tanim || '') || undefined,
+        yetki_kontrolu: m && yetkiFonk.has(m[1]) ? true : undefined };
+    });
+    if (tg.length) o.tetikleyiciler = tg;
+    return o;
+  }).filter(o => o.rls_kurallari || o.tetikleyiciler);
+  const sunucu = fonk.filter(f => /SECURITY DEFINER/i.test(f.tanim)).map(f => ({ ad: f.ad, imza: kisa(f.imza, 160),
+    giris_yapan_cagirabilir: f.authenticated, ziyaretci_cagirabilir: f.anon }));
+  return { tablolar, sunucu_fonksiyonlari_security_definer: sunucu };
+}
+
 /* Claude'a giden modelleme promptunda yalnız tablo/kolon/ilişki/RLS yeter;
    fonksiyon gövdeleri ve kurallar promptu gereksiz büyütür. */
 function secYapiOzet(yapi) {
@@ -405,7 +435,21 @@ function secModelOku(metin, yapi, projeId) {
       }
       kolonlar.push({ ad: kad, izin, satir: satirOku(k.satir, ad + '.' + kad, gercekKolon) });
     }
-    tablolar.push({ ad, sahip_kolon: sahip || undefined, satir: satirOku(t.satir, ad, gercekKolon), kolonlar });
+    /* yazma: rol → dogrudan | fonksiyon_ile. fonksiyon_ile = rol tabloya doğrudan yazmaz,
+       işi sunucu fonksiyonu (security definer) üzerinden yapar. Varsayılan dogrudan. */
+    const yazma = {};
+    if (t.yazma !== undefined && t.yazma !== null) {
+      if (typeof t.yazma !== 'object' || Array.isArray(t.yazma)) hatalar.push(ad + ': "yazma" nesne olmalı.');
+      else {
+        for (const [rol, yol] of Object.entries(t.yazma)) {
+          if (!rolVar.has(rol)) { hatalar.push(ad + ': yazma — tanımsız rol "' + rol + '".'); continue; }
+          if (!SEC_YAZMA_YOLLARI.includes(yol)) { hatalar.push(ad + ': yazma — "' + rol + '" için ' + SEC_YAZMA_YOLLARI.join(' / ') + ' olmalı.'); continue; }
+          if (yol !== 'dogrudan') yazma[rol] = yol;
+        }
+      }
+    }
+    tablolar.push(Object.assign({ ad, sahip_kolon: sahip || undefined, satir: satirOku(t.satir, ad, gercekKolon), kolonlar },
+      Object.keys(yazma).length ? { yazma } : {}));
   }
 
   if (hatalar.length) {
@@ -483,7 +527,11 @@ function secPrompt(p, yapi) {
   s.push('5. Bir kez sor: "Giriş yapmamış biri (ziyaretçi) herhangi bir şeyi görebilsin mi?" Varsayılan cevap: hiçbir şey.');
   s.push('   Yalnız herkese açık bir şey varsa (ör. web sitesindeki ürün listesi) hangi tablo ve kolonlar olduğunu sor.');
   s.push('6. Log, ayar gibi yardımcı tabloları tek soruda topluca geç.');
-  s.push('7. Bitince kısa bir özet göster, onayımı al, sonra JSON\'u ver.');
+  s.push('7. Aşağıda veritabanının ŞU ANKİ güvenlik tasarımı var (RLS kuralları, yetki kontrolü yapan tetikleyiciler, sunucu fonksiyonları).');
+  s.push('   İstediğim bir kural bu tasarımla çatışıyorsa (ör. "Muhasebeci yazsın" diyorum ama tabloya doğrudan yazma yalnız en üst role açık,');
+  s.push('   diğerleri bir sunucu fonksiyonuyla yazıyor) bunu bana sade dille söyle ve sor: "Modeli mi değiştirelim, veritabanını mı?"');
+  s.push('   Rol işi fonksiyonla yapıyorsa `yazma` alanında `fonksiyon_ile` yaz.');
+  s.push('8. Bitince kısa bir özet göster, onayımı al, sonra JSON\'u ver.');
   s.push('');
   s.push('## Son çıktı');
   s.push('Son mesajında yalnız tek bir ```json bloğu ver. Biçim:');
@@ -506,8 +554,20 @@ function secPrompt(p, yapi) {
   s.push('- Düz metin kural yalnız gerçekten şarta çevrilemiyorsa kalsın; o zaman bana "bu kural otomatik test edilemeyecek" de.');
   s.push('- Kolondaki `satir`: YALNIZ o kolon varsayılandan farklıysa yaz (ör. isim herkese açık, maaş yalnız kendi satırında). Gereksiz yere her kolona yazma.');
   s.push('- `sahip_kolon`: "kendi satırı" kuralı varsa satırı kullanıcıya bağlayan kolon; yoksa yazma.');
+  s.push('- `yazma` (isteğe bağlı): rol → `dogrudan` ya da `fonksiyon_ile`. `fonksiyon_ile` = bu rol tabloya DOĞRUDAN yazmaz;');
+  s.push('  ekleme/değiştirme/silmeyi ekrandaki bir sunucu fonksiyonu (security definer) üzerinden yapar. O zaman tabloya doğrudan');
+  s.push('  yazması reddedilmeli; Nizam bunu böyle test eder. `izin` yine rolün iş olarak neyi yapabildiğini gösterir. Varsayılan `dogrudan`, yazmana gerek yok.');
+  s.push('  Örnek: `"yazma": {"Muhasebeci": "fonksiyon_ile"}`');
   s.push('- Gerçek yapıdaki her tabloyu ve her kolonu yaz; karar verilmeyen bir şey kalırsa bana sor.');
   s.push('');
+  const tasarim = secGuvenlikTasarimi(yapi);
+  if (tasarim) {
+    s.push('## Veritabanının şu anki güvenlik tasarımı (bilgi için — "olması istenen" değil)');
+    s.push('```json');
+    s.push(JSON.stringify(tasarim));
+    s.push('```');
+    s.push('');
+  }
   s.push('## Gerçek veritabanı yapısı (SQL Editor çıktısı)');
   s.push('```json');
   s.push(JSON.stringify(secYapiOzet(yapi)));
@@ -738,6 +798,7 @@ function secTabloKarti(t, m, roller) {
         <h2>${esc(t.ad)}</h2>
         <span class="sec-rozet">${t.rls ? '🟢 RLS: Açık' : '🔴 RLS: Kapalı'}</span>
         ${m.sahip_kolon ? `<span class="sec-sahip">kendi satırı: <code>${esc(m.sahip_kolon)}</code></span>` : ''}
+        ${m.yazma && Object.keys(m.yazma).length ? `<span class="sec-sahip" title="Bu roller tabloya doğrudan değil, sunucu fonksiyonuyla yazar">fonksiyonla yazar: ${esc(Object.keys(m.yazma).join(', '))}</span>` : ''}
         <span class="sec-say">${t.kolonlar.length} kolon</span>
       </div>
       <div class="sec-kaydir" style="--sec-rol:${n}">

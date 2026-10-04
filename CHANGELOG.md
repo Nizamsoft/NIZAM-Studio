@@ -1,5 +1,27 @@
 # Değişiklik Günlüğü
 
+## v0.304.0
+- **CHECK okuma düzeltildi** (`security-yazma.js`): izinli değer yalnız `kolon = ANY (ARRAY[...])`
+  listesinden (önceden `btrim(x) <> ''` içindeki `''` ve başka kolonların sabitleri de
+  alınıyordu → boş metin / tarih kolonuna yazı). Yeni: `secAralik` (>=, >, <=, < → sayı
+  aralık içinde), `secUzunluk` (varchar(n), char_length), `secMetinEk` (boş olmayan ek).
+- **Ad benzeri kolonlar** (`SEC_AD_KOLON`: ad, unvan, kod, *_no…) kopyada ek alır:
+  uygulamanın "aynı ad olmaz" kuralına takılmasın.
+- **P0001 + "yetki"** metni = yetki reddi (`secHataTur` → `red`): beklenen yasaksa 🟢,
+  izinliyse fazla kısıtlı.
+- **Küme** (`secKumeAc`, `secKumePlani`): tek satır reddedilirse sırayla `kardes:<fk>` (aynı
+  fişin bacakları, aynı tabloda) ve `cocuk` (üst kayıt + alt satırları, açık kimlikle) denenir;
+  çalışan mod tabloya önbelleklenir. INSERT: kardeş bacaklar tek POST dizisi. DELETE: kardeşler
+  `pk=in.(…)` tek istek. Üst+alt tablo ekleme tablo adresiyle tek istekte yapılamaz → 🟡,
+  sebebi yazar. Temizlik `sil_grup` ile tek işlemde.
+- **Yardımcı sürüm 3:** `ekle_grup`, `sil_grup` (birden fazla tablo, tek işlem; ertelenmiş
+  kurallar işlem sonunda denetlenir). Yeniden çalıştırılması gerekir.
+- **Erişim Kuralları** (`security.js`): modelde isteğe bağlı `yazma: {rol: dogrudan |
+  fonksiyon_ile}` (`secModelOku` doğrular, kartta "fonksiyonla yazar"). `fonksiyon_ile`
+  rolden doğrudan tablo yazması beklenmez (`secFonksiyonIle`). Görüşme promptu
+  `secGuvenlikTasarimi`: RLS kuralları, tetikleyiciler (ertelenmiş / yetki kontrolü),
+  security definer fonksiyonlar; çatışmada "modeli mi veritabanını mı" sorusu.
+
 ## v0.303.0
 - **Hataları bildir** (`secHataRaporu`, `security-yazma.js`): okuma + yazma sonuçlarından
   🔴 / 🟡 (fazla kısıtlı) / 🟡 (test edilemedi) grupları, tablo tablo; aynı bulgu birden

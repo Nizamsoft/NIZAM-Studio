@@ -34,9 +34,10 @@
 'use strict';
 
 const SEC_YARDIMCI = 'nizam_yazma_yardimci';
-const SEC_YARDIMCI_SURUM = '2';   // 2: anahtarlar sınırsız
+const SEC_YARDIMCI_SURUM = '3';   // 2: anahtarlar sınırsız · 3: ekle_grup / sil_grup (tek işlemde birden fazla kayıt)
 const SEC_YAZMA = { sonuc: {}, ilerleme: {}, calisiyor: {} };
 /* Değişmesi yetki yükseltmesi demek olan kolonlar (varsa önce bunlar denenir). */
+const SEC_AD_KOLON = /^(ad|adi|isim|unvan|baslik|name|title|kod|kodu|no|numara)$|_(ad|adi|isim|unvan|baslik|kod|kodu|no)$/i;
 const SEC_GUVENLIK_KOLON = /^(role|rol|roller|layer|seviye|katman|yetki|branch|branch_id|sube|sube_id|şube_id|auth_id|user_id|kullanici_id|status|durum)$/i;
 
 /* ==========================================================================
@@ -66,6 +67,9 @@ declare
   v_kol   text;
   v_n     bigint;
   v_sonuc jsonb;
+  v_oge   jsonb;
+  v_t     text;
+  v_r     jsonb;
 begin
   -- 1) Yalnız bu projenin Nizam test ortamı
   if to_regclass('public.nizam_test_ortami') is null then
@@ -83,6 +87,38 @@ begin
     return jsonb_build_object('nizam_yardimci', '${SEC_YARDIMCI_SURUM}', 'proje', v_proje,
       'bypass', (select r.rolsuper or r.rolbypassrls from pg_roles r where r.rolname = current_user));
   end if;
+  -- Grup: birden fazla kaydı TEK işlemde ekler/siler. Ertelenmiş (DEFERRABLE) kurallar
+  -- (ör. fiş denk olmalı, irsaliye en az bir satır) işlem sonunda bir kez denetlenir.
+  if p_islem in ('ekle_grup', 'sil_grup') then
+    v_sonuc := '[]'::jsonb;
+    for v_oge in select value from jsonb_array_elements(coalesce(p_veri -> 'grup', '[]'::jsonb)) loop
+      v_t := v_oge ->> 'tablo';
+      if v_t is null or v_t = 'nizam_test_ortami' or not exists (
+          select 1 from pg_class c join pg_namespace n on n.oid = c.relnamespace
+          where n.nspname = 'public' and c.relname = v_t and c.relkind in ('r', 'p')) then
+        raise exception 'NIZAM: tablo bulunamadı: %', v_t;
+      end if;
+      if p_islem = 'ekle_grup' then
+        v_satir := coalesce(v_oge -> 'satir', '{}'::jsonb);
+        select string_agg(quote_ident(k), ', ') into v_kol from jsonb_object_keys(v_satir) k;
+        if v_kol is null then raise exception 'NIZAM: boş kayıt'; end if;
+        execute format('insert into public.%I as t (%s) select %s from jsonb_populate_record(null::public.%I, $1) returning to_jsonb(t)',
+          v_t, v_kol, v_kol, v_t) into v_r using v_satir;
+        v_sonuc := v_sonuc || jsonb_build_array(jsonb_build_object('tablo', v_t, 'satir', v_r));
+      else
+        v_kosul := coalesce(v_oge -> 'kosul', '{}'::jsonb);
+        if jsonb_typeof(v_kosul) <> 'object' or v_kosul = '{}'::jsonb then
+          raise exception 'NIZAM: koşulsuz yazma reddedildi';
+        end if;
+        execute format('select count(*) from public.%I t where to_jsonb(t) @> $1', v_t) into v_n using v_kosul;
+        if v_n > 1 then raise exception 'NIZAM: koşul birden fazla kayda uyuyor — reddedildi'; end if;
+        execute format('delete from public.%I t where to_jsonb(t) @> $1', v_t) using v_kosul;
+        v_sonuc := v_sonuc || jsonb_build_array(v_n);
+      end if;
+    end loop;
+    return v_sonuc;
+  end if;
+
   -- 3) Yalnız public şemadaki gerçek tablolar
   if p_tablo is null or p_tablo = 'nizam_test_ortami' or not exists (
       select 1 from pg_class c join pg_namespace n on n.oid = c.relnamespace
@@ -163,7 +199,7 @@ async function secYardimci(o, jeton, islem, tablo, veri) {
 
 /* Test edilen kişinin yazma isteği. jeton yoksa giriş yapmamış ziyaretçi. */
 async function secYazIstek(o, jeton, yontem, yol, govde) {
-  if (yontem !== 'POST' && !/\?.+=eq\./.test(yol)) throw new Error('Filtresiz yazma isteği engellendi.');
+  if (yontem !== 'POST' && !/\?.+=(eq|in)\./.test(yol)) throw new Error('Filtresiz yazma isteği engellendi.');
   const r = await fetch(secOkumaTaban(o) + '/rest/v1/' + yol, {
     method: yontem,
     headers: Object.assign({ apikey: o.test_anahtar, 'Content-Type': 'application/json',
@@ -185,7 +221,8 @@ function secHataTur(c) {
   if (!c || (!c.kod && !c.mesaj)) return 'yok';
   if (c.kod === '42501' || /row-level security|permission denied/i.test(c.mesaj) || c.durum === 401 || c.durum === 403) return 'red';
   if (/^23/.test(c.kod)) return 'kisit';
-  if (c.kod === 'P0001') return 'kural';
+  /* Yetki kontrolü yapan tetikleyici (ör. "en üst katman yetkisi ister") bir yetki reddidir. */
+  if (c.kod === 'P0001') return /yetki/i.test(c.mesaj) ? 'red' : 'kural';
   return 'veri';
 }
 const SEC_HATA_AD = { kisit: 'kısıt hatası', kural: 'uygulama kuralı reddetti', veri: 'veri/istek hatası' };
@@ -246,37 +283,94 @@ function secAnahtarGruplari(bt) {
   return gruplar;
 }
 
-/* Kolonun kabul ettiği değerler: enum tipi ya da kolonu anan CHECK'teki sabitler
-   (ör. tur IN ('tatil','bloke')). Yoksa null. */
+const secKacis = x => String(x).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+/* Kolon adını CHECK metninde arayan parça: (kolon), "kolon", (kolon)::text … */
+const secKolonDesen = ad => '\\(*"?' + secKacis(ad) + '"?\\)*(?:::[a-z ]+(?:\\[\\])?)?\\)*';
+const secCheckler = (cx, ad) => (cx.bt.kisitlar || []).map(x => x.tanim || '')
+  .filter(t => /^\s*CHECK/i.test(t) && new RegExp('(^|[^a-z0-9_])"?' + secKacis(ad) + '"?([^a-z0-9_]|$)', 'i').test(t));
+
+/* Kolonun kabul ettiği değerler: enum tipi ya da CHECK'teki izinli liste
+   (kolon = ANY (ARRAY['a','b']) — IN (...) de böyle görünür). Yoksa null.
+   Başka sabitler (ör. btrim(x) <> '') izinli değer DEĞİLDİR. */
 function secIzinliDegerler(cx, k) {
   const tip = secTip(k).replace(/^public\./, '').replace(/"/g, '');
   if (cx.tipler && cx.tipler[tip]) return cx.tipler[tip].slice();
-  const kacis = k.ad.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const re = new RegExp('(^|[^a-z0-9_])"?' + kacis + '"?([^a-z0-9_]|$)', 'i');
+  const re = new RegExp('(?:^|[^a-z0-9_])' + secKolonDesen(k.ad) + '\\s*=\\s*ANY\\s*\\(+\\s*ARRAY\\s*\\[([^\\]]*)\\]', 'gi');
   const out = [];
-  (cx.bt.kisitlar || []).forEach(x => {
-    const t = x.tanim || '';
-    if (!/^\s*CHECK/i.test(t) || !re.test(t)) return;
-    for (const m of t.matchAll(/'((?:[^']|'')*)'::/g)) {
-      let v = m[1].replace(/''/g, "'");
-      if (secSayiTip(secTip(k)) && Number.isFinite(Number(v))) v = Number(v);
-      if (!out.some(o => secAyni(o, v))) out.push(v);
+  secCheckler(cx, k.ad).forEach(t => {
+    for (const m of t.matchAll(re)) {
+      for (const d of m[1].matchAll(/'((?:[^']|'')*)'/g)) {
+        let v = d[1].replace(/''/g, "'");
+        if (secSayiTip(secTip(k)) && Number.isFinite(Number(v))) v = Number(v);
+        if (!out.some(o => secAyni(o, v))) out.push(v);
+      }
     }
   });
   return out.length ? out : null;
 }
 
-/* Tipe göre üretilen, şimdikinden farklı değerler. */
+/* Sayı kolonunun CHECK aralığı (ör. gun >= 1 AND gun <= 31): {min, max}. */
+function secAralik(cx, k) {
+  let min = -Infinity, max = Infinity;
+  const re = new RegExp('(?:^|[^a-z0-9_])' + secKolonDesen(k.ad) + '\\s*(>=|>|<=|<)\\s*\\(*\'?(-?\\d+(?:\\.\\d+)?)', 'gi');
+  secCheckler(cx, k.ad).forEach(t => {
+    for (const m of t.matchAll(re)) {
+      const n = Number(m[2]);
+      if (m[1] === '>=') min = Math.max(min, n); else if (m[1] === '>') min = Math.max(min, n + 1);
+      else if (m[1] === '<=') max = Math.min(max, n); else max = Math.min(max, n - 1);
+    }
+  });
+  return { min, max };
+}
+
+/* Metin kolonunun en fazla uzunluğu: varchar(n) ya da CHECK length(x) <= n. */
+function secUzunluk(cx, k) {
+  const m = /character varying\((\d+)\)|varchar\((\d+)\)|character\((\d+)\)/.exec(secTip(k));
+  let n = m ? Number(m[1] || m[2] || m[3]) : Infinity;
+  const re = new RegExp('(?:char_length|length)\\s*\\(+\\s*' + secKolonDesen(k.ad) + '\\s*\\)*\\s*(<=|<)\\s*\\(*(\\d+)', 'gi');
+  secCheckler(cx, k.ad).forEach(t => {
+    for (const x of t.matchAll(re)) n = Math.min(n, Number(x[2]) - (x[1] === '<' ? 1 : 0));
+  });
+  return n;
+}
+
+/* Metne ek: boş olmayan, uzunluk sınırına sığan. */
+function secMetinEk(cx, k, simdi) {
+  const ek = ' (test ' + secRastgele().slice(0, 4) + ')';
+  const kok = simdi === null || simdi === undefined || String(simdi).trim() === '' || k.pk ? 'nizam-test' : String(simdi);
+  const n = secUzunluk(cx, k);
+  if (n === Infinity) return kok + ek;
+  const kisa = 't' + secRastgele().slice(0, 5);
+  return n >= kok.length + ek.length ? kok + ek : n >= kisa.length ? (kok.slice(0, n - kisa.length) + kisa) : secRastgele().slice(0, Math.max(1, n));
+}
+
+/* Tipe göre üretilen, şimdikinden farklı değerler (kısıtlara uyacak biçimde). */
 function secUretilenler(cx, k, simdi) {
   const tip = secTip(k);
   const izinli = secIzinliDegerler(cx, k);
   if (izinli) return izinli;
   if (/\[\]$/.test(tip)) return [];
   if (/uuid/.test(tip)) return [crypto.randomUUID()];
-  if (secMetinTip(tip)) return [(simdi === null || simdi === undefined || k.pk ? 'nizam-test' : String(simdi)) + '-nt' + secRastgele().slice(0, 4)];
+  if (secMetinTip(tip)) return [secMetinEk(cx, k, simdi)];
   if (secSayiTip(tip)) {
-    const sayilar = cx.ornek.map(s => Number(s.x[k.ad])).filter(n => Number.isFinite(n));
-    return [Math.floor(Math.max(0, ...sayilar)) + 1 + Math.floor(Math.random() * 1000)];
+    const { min, max } = secAralik(cx, k);
+    const kullanilan = new Set(cx.ornek.map(s => Number(s.x[k.ad])).filter(Number.isFinite));
+    const tam = /int/.test(tip);
+    const n = Number(simdi);
+    const out = [];
+    const ekle = v => { if (v >= min && v <= max && !(Number.isFinite(n) && v === n) && !out.includes(v)) out.push(v); };
+    if (Number.isFinite(min) || Number.isFinite(max)) {
+      /* Aralık içinde: önce tabloda geçmeyen, sonra mevcut değerin bir yanı. */
+      const alt = Number.isFinite(min) ? min : (Number.isFinite(max) ? max - 1000 : 0);
+      const ust = Number.isFinite(max) ? max : alt + 1000;
+      for (let v = alt; v <= ust && out.length < 2; v += 1) if (!kullanilan.has(v)) ekle(v);
+      if (Number.isFinite(n)) { ekle(n + 1); ekle(n - 1); }
+      ekle(alt);
+    } else {
+      const enBuyuk = Math.max(0, ...[...kullanilan]);
+      ekle((tam ? Math.floor(enBuyuk) : enBuyuk) + 1 + Math.floor(Math.random() * 1000));
+    }
+    return out;
   }
   if (/bool/.test(tip)) return [!simdi];
   if (/^date$|timestamp/.test(tip)) {
@@ -313,6 +407,12 @@ function secTaslak(cx, x) {
     if (!secAtla(k) && k.ad in x) t[k.ad] = x[k.ad];
   });
   const korunan = new Set([cx.b.sahip, cx.b.sube].concat(cx.b.sart || []).filter(Boolean));
+  /* Ad / unvan / kod gibi kolonlara ek: uygulamanın "aynı ad iki kez olmaz" kuralına takılmasın. */
+  cx.bt.kolonlar.forEach(k => {
+    if (!(k.ad in t) || k.pk || korunan.has(k.ad) || cx.fk[k.ad] || !SEC_AD_KOLON.test(k.ad)) return;
+    if (!secMetinTip(secTip(k)) || secIzinliDegerler(cx, k) || t[k.ad] === null || t[k.ad] === undefined) return;
+    t[k.ad] = secMetinEk(cx, k, t[k.ad]);
+  });
   const puan = c => (korunan.has(c) ? 8 : 0) + (cx.fk[c] ? 2 : 0) + (secIzinliDegerler(cx, kol[c]) ? 1 : 0);
   for (const grup of secAnahtarGruplari(cx.bt)) {
     if (grup.some(c => !(c in t) || !kol[c])) continue;            // veritabanı dolduruyor
@@ -366,8 +466,11 @@ function secAdaylar(cx, c, simdi) {
    ========================================================================== */
 
 /* rol null: giriş yapmamış kişi ve modelde Ziyaretçi rolü yok → her şey yasak. */
+/* Modelde rol bu tabloya "fonksiyon_ile" yazıyorsa doğrudan tablo yazması beklenmez. */
+const secFonksiyonIle = (m, rol) => !!(rol && m.yazma && m.yazma[rol] === 'fonksiyon_ile');
+
 function secYazBek(m, kolon, rol, izin, satir, b, ben) {
-  if (!rol) return { v: false };
+  if (!rol || secFonksiyonIle(m, rol)) return { v: false };
   const c = m.kolonlar.find(x => x.ad === kolon);
   if (!c) return { v: null, neden: 'Modelde "' + kolon + '" kolonu için karar yok' };
   if (!(c.izin[rol] || []).includes(izin)) return { v: false };
@@ -375,7 +478,7 @@ function secYazBek(m, kolon, rol, izin, satir, b, ben) {
 }
 
 function secSilBek(m, rol, satir, b, ben) {
-  if (!rol || !m.kolonlar.some(c => (c.izin[rol] || []).includes('sil'))) return { v: false };
+  if (!rol || secFonksiyonIle(m, rol) || !m.kolonlar.some(c => (c.izin[rol] || []).includes('sil'))) return { v: false };
   return secKapsar(m.satir[rol], satir, b, ben);
 }
 
@@ -430,34 +533,157 @@ function secHedefAd(cx, ad, satir) {
 }
 
 /* ==========================================================================
+   KÜME — tek başına geçerli olmayan kayıtlar
+   Bazı tablolar tek satırı kabul etmez (ertelenmiş kural):
+     kardes: aynı fişin bacakları birlikte (ör. borç = alacak) → aynı tabloda grup
+     cocuk:  üst kayıt en az bir alt satırla (ör. irsaliye + kalemleri) → iki tablo
+   Yardımcı bu kümeyi TEK işlemde açar ve siler (ekle_grup / sil_grup).
+   ========================================================================== */
+
+/* Alt tablo için hafif bağlam (aynı taslak/değer üreticileri). */
+function secAltCx(cx, tablo) {
+  const t = cx.tum;
+  return { bt: t.yt[tablo], fk: t.fkler[tablo] || {}, ornek: t.ornek[tablo] || [], tipler: cx.tipler,
+    b: { ad: tablo, sahip: null, sube: null, sart: [] } };
+}
+
+/* Üst kayda açıkça verilecek yeni kimlik (alt satırlar ona bağlanacak). */
+function secAcikKimlik(cx, k) {
+  const tip = secTip(k);
+  if (k.kimlik === 'a' || k.uretilmis === 's') return undefined;
+  if (/uuid/.test(tip)) return crypto.randomUUID();
+  if (secMetinTip(tip)) return 'nizam-test-' + secRastgele();
+  if (/int|numeric/.test(tip)) {
+    const say = cx.ornek.map(s => Number(s.x[k.ad])).filter(Number.isFinite);
+    return Math.floor(Math.max(0, ...say)) + 1000 + Math.floor(Math.random() * 100000);
+  }
+  return undefined;
+}
+
+/* Bir kaynak kayıttan küme planı: [{tablo, satir}] + bu tablonun taslakları. */
+async function secKumePlani(cx, x, mod) {
+  const { b, bt } = cx;
+  if (mod === 'tek') return { mod, grup: [{ tablo: b.ad, satir: secTaslak(cx, x) }] };
+  if (mod.indexOf('kardes:') === 0) {
+    const f = mod.slice(7);
+    if (x[f] === null || x[f] === undefined) return null;
+    const kardes = cx.ornek.filter(s => secAyni(s.x[f], x[f])).map(s => s.x).slice(0, 20);
+    if (kardes.length < 2) return null;
+    return { mod, grup: kardes.map(k => ({ tablo: b.ad, satir: secTaslak(cx, k) })) };
+  }
+  /* cocuk: üst kayıt açık kimlikle, alt satırlar ona bağlı. */
+  if (!b.pk || b.pk.length !== 1) return null;
+  const pkK = bt.kolonlar.find(k => k.ad === b.pk[0]);
+  const yeni = secAcikKimlik(cx, pkK);
+  if (yeni === undefined) return null;
+  const ust = secTaslak(cx, x);
+  ust[pkK.ad] = yeni;
+  const grup = [{ tablo: b.ad, satir: ust }];
+  for (const t of Object.values(cx.tum.yt)) {
+    for (const f of (t.iliskiler || [])) {
+      if (f.hedef_tablo !== b.ad || f.hedef_kolon !== pkK.ad || !f.kolon || f.kolon.indexOf(',') >= 0) continue;
+      const alt = await secYardimci(cx.o, cx.gozcu, 'oku', t.ad, { kosul: { [f.kolon]: x[pkK.ad] } });
+      const acx = secAltCx(cx, t.ad);
+      alt.slice(0, 10).forEach(a => {
+        const s = secTaslak(acx, a);
+        s[f.kolon] = yeni;
+        grup.push({ tablo: t.ad, satir: s });
+      });
+    }
+  }
+  return grup.length > 1 ? { mod, grup } : null;
+}
+
+function secKumeModlari(cx) {
+  const kardes = (cx.bt.iliskiler || []).map(f => f.kolon)
+    .filter(c => c && c.indexOf(',') < 0 && !(cx.b.pk || []).includes(c));
+  return ['tek'].concat(kardes.map(c => 'kardes:' + c), ['cocuk']);
+}
+
+/* Sentetik küme açar (yardımcıyla, tek işlemde). Tablonun çalışan modu önbelleğe
+   alınır. Dönen: {mod, satirlar (bu tablonun yeni kayıtları), temizle} | {hata}. */
+async function secKumeAc(cx, x) {
+  const onbellek = cx.tum.mod[cx.b.ad];
+  const modlar = onbellek ? [onbellek] : secKumeModlari(cx);
+  let hata = '';
+  for (const mod of modlar) {
+    let plan;
+    try { plan = await secKumePlani(cx, x, mod); } catch (e) { hata = e.message || String(e); continue; }
+    if (!plan) continue;
+    try {
+      const r = await secYardimci(cx.o, cx.gozcu, 'ekle_grup', null, { grup: plan.grup });
+      cx.tum.mod[cx.b.ad] = mod;
+      const satirlar = r.filter(y => y.tablo === cx.b.ad).map(y => y.satir);
+      /* Temizlik sırası: önce alt satırlar, sonra üst kayıt. */
+      const temizle = r.slice().reverse().map(y => {
+        const pk = y.tablo === cx.b.ad ? cx.b.pk : secPkKolonlari(cx.tum.yt[y.tablo]);
+        return { tablo: y.tablo, kosul: pk && pk.length ? secPkKosul({ pk }, y.satir) : y.satir };
+      });
+      return { mod, satirlar, temizle, plan };
+    } catch (e) {
+      hata = e.message || String(e);
+      if (onbellek) break;
+    }
+  }
+  return { hata: hata || 'Uygun kayıt kümesi kurulamadı' };
+}
+
+const secPkKolonlari = bt => bt.kolonlar.filter(k => k.pk).map(k => k.ad);
+
+async function secKumeTemizle(cx, temizle) {
+  try { await secYardimci(cx.o, cx.gozcu, 'sil_grup', null, { grup: temizle }); return true; }
+  catch (e) { return false; }
+}
+
+/* Tablonun küme modu (ekleme testi için; ilk seferde bir kez denenir ve temizlenir). */
+async function secKumeModu(cx, x) {
+  if (cx.tum.mod[cx.b.ad]) return cx.tum.mod[cx.b.ad];
+  const k = await secKumeAc(cx, x);
+  if (k.temizle) await secKumeTemizle(cx, k.temizle);
+  return k.mod || 'tek';
+}
+
+/* ==========================================================================
    INSERT
    ========================================================================== */
 
-/* Kişi kaydı ekler; yeni kayıt yardımcıyla bağımsız bulunur, okunur ve silinir. */
+/* Kişi kaydı (ya da aynı tablodaki kümeyi tek istekte) ekler; yeni kayıtlar
+   yardımcıyla bağımsız bulunur, okunur ve hep birlikte silinir. */
 async function secEkleDene(cx, govde) {
   const { o, b } = cx;
   const anahtar = async () => (await secYardimci(o, cx.gozcu, 'anahtarlar', b.ad, { pk: b.pk })).map(k => JSON.stringify(k));
   const once = new Set(await anahtar());
   const cevap = await secYazIstek(o, cx.jeton, 'POST', encodeURIComponent(b.ad), govde);
   const yeni = (await anahtar()).filter(k => !once.has(k)).map(k => JSON.parse(k));
-  let satir = null, temiz = true;
-  for (const k of yeni) {
-    const r = await secYardimci(o, cx.gozcu, 'oku', b.ad, { kosul: k });
-    if (!satir) satir = r[0] || null;
-    try { await secYardimci(o, cx.gozcu, 'sil', b.ad, { kosul: k }); } catch (h) { temiz = false; }
-  }
-  return { olustu: yeni.length > 0, satir, cevap, temiz };
+  const satirlar = [];
+  for (const k of yeni) satirlar.push(...await secYardimci(o, cx.gozcu, 'oku', b.ad, { kosul: k }));
+  const temiz = !yeni.length || await secKumeTemizle(cx, yeni.map(k => ({ tablo: b.ad, kosul: k })));
+  return { olustu: yeni.length > 0, satir: satirlar[0] || null, satirlar, cevap, temiz };
 }
 
-function secEkleKarar(r, bek) {
+function secEkleKarar(r, bek, mod) {
   const k = secKarar(r.cevap, r.olustu, bek, '✅ Kayıt oluşturuldu', '❌ Kayıt oluşmadı');
+  if (mod === 'cocuk' && !r.olustu && k.sonuc === 'edilemedi' && secHataTur(r.cevap) === 'kural') {
+    k.gercek += ' · bu tablo alt satırı olmadan eklenemiyor; tablo adresi tek istekte iki tabloya yazamadığı için doğrudan denenemez';
+  }
   if (!r.temiz) k.gercek += ' · ⚠ test kaydı silinemedi';
   return Object.assign({ beklenen: bek ? '✅ Ekleyebilmeli' : '❌ Ekleyememeli' }, k);
 }
 
 async function secEkleTest(cx, h, ekle) {
   const { m, b, bt, rol, ben } = cx;
-  const taslak = secTaslak(cx, h.satir.x);
+  /* Paket: tek kayıt ya da aynı fişin bacakları (kardes) — tek istekte gönderilir. */
+  const mod = await secKumeModu(cx, h.satir.x);
+  let taslaklar = [secTaslak(cx, h.satir.x)];
+  if (mod.indexOf('kardes:') === 0) {
+    const plan = await secKumePlani(cx, h.satir.x, mod);
+    if (plan) taslaklar = plan.grup.map(g => g.satir);
+  }
+  const taslak = taslaklar[0];
+  const sec = (kolonlar, ek) => {
+    const l = taslaklar.map(t => { const o = {}; kolonlar.forEach(c => { o[c] = t[c]; }); return Object.assign(o, ek || {}); });
+    return l.length === 1 ? l[0] : l;
+  };
   const satir = secYazSatir(taslak, b);
   const kol = Object.keys(taslak);
   const bek = c => secYazBek(m, c, rol, 'ekle', satir, b, ben);
@@ -467,35 +693,36 @@ async function secEkleTest(cx, h, ekle) {
 
   if (!izinli.length) {
     if (!yasak.length) return ekle({ tur: 'Satır', beklenen: '—', gercek: (bek(kol[0]) || {}).neden || 'Kural anlaşılamadı', sonuc: 'edilemedi' });
-    return ekle(Object.assign({ tur: 'Satır' }, secEkleKarar(await secEkleDene(cx, taslak), false)));
+    return ekle(Object.assign({ tur: 'Satır' }, secEkleKarar(await secEkleDene(cx, sec(kol)), false, mod)));
   }
 
   /* Temel kayıt: zorunlu kolonlar + rolün ekleyebildiği kolonlar. */
-  const temel = {};
-  kol.filter(c => izinli.includes(c) || zorunlu.has(c)).forEach(c => { temel[c] = taslak[c]; });
-  const tb = secBirlesik(Object.keys(temel).map(bek));
+  const temelKol = kol.filter(c => izinli.includes(c) || zorunlu.has(c));
+  const tb = secBirlesik(temelKol.map(bek));
   if (tb.v === null) return ekle({ tur: 'Satır', beklenen: '—', gercek: tb.neden, sonuc: 'edilemedi' });
-  const r = await secEkleDene(cx, temel);
-  ekle(Object.assign({ tur: 'Satır' }, secEkleKarar(r, tb.v)));
+  const r = await secEkleDene(cx, sec(temelKol));
+  const tk = secEkleKarar(r, tb.v, mod);
+  if (taslaklar.length > 1) tk.gercek += ' · ' + taslaklar.length + ' bacak tek istekte';
+  ekle(Object.assign({ tur: 'Satır' }, tk));
   if (tb.v !== true) return;
 
   /* Kolon testleri: rolün ekleyemediği her kolon tek tek, izinli temel kayda eklenerek. */
-  for (const c of yasak.filter(c => !(c in temel))) {
+  for (const c of yasak.filter(c => !temelKol.includes(c))) {
     const kolon = { tur: 'Kolon', kolon: c, beklenen: '❌ Bu kolonu yazamamalı' };
     if (!r.olustu || !r.satir) { ekle(Object.assign(kolon, { gercek: 'Temel ekleme çalışmadığı için denenemedi', sonuc: 'edilemedi' })); continue; }
     const adaylar = secAdaylar(cx, c, r.satir[c]);
     if (!adaylar.length) { ekle(Object.assign(kolon, { gercek: 'Denenecek farklı bir değer bulunamadı', sonuc: 'edilemedi' })); continue; }
     let r2, deger;
     for (deger of adaylar) {
-      r2 = await secEkleDene(cx, Object.assign({}, temel, { [c]: deger }));
+      r2 = await secEkleDene(cx, sec(temelKol, { [c]: deger }));
       if (r2.olustu || !secTekrarDene(r2.cevap)) break;
     }
     const not = r2.temiz ? '' : ' · ⚠ test kaydı silinemedi';
     if (r2.olustu && r2.satir) {
-      const yazildi = secAyni(r2.satir[c], deger);
+      const yazildi = r2.satirlar.some(y => secAyni(y[c], deger));
       ekle(Object.assign(kolon, { gercek: (yazildi ? '✅ Kolon yazıldı' : '❌ Kolon değeri tutulmadı (kayıt oluştu)') + not, sonuc: yazildi ? 'acik' : 'gecti' }));
     } else {
-      const k = secEkleKarar(r2, false);
+      const k = secEkleKarar(r2, false, mod);
       ekle(Object.assign(kolon, { gercek: k.gercek, sonuc: k.sonuc }));
     }
   }
@@ -575,23 +802,32 @@ async function secDegistirTest(cx, h, ekle) {
 
 async function secSilTest(cx, h, ekle) {
   const { o, b, m, rol, ben } = cx;
-  let kopya;
-  try { kopya = await secYardimci(o, cx.gozcu, 'ekle', b.ad, { satir: secTaslak(cx, h.satir.x) }); }
-  catch (e) { return ekle({ tur: 'Satır', beklenen: '—', gercek: 'Silmek için sentetik kopya açılamadı: ' + (e.message || e), sonuc: 'edilemedi' }); }
-  const kosul = secPkKosul(b, kopya);
-  const bek = secSilBek(m, rol, secYazSatir(kopya, b), b, ben);
-  let not = '';
+  const kume = await secKumeAc(cx, h.satir.x);
+  if (kume.hata) return ekle({ tur: 'Satır', beklenen: '—', gercek: 'Silmek için sentetik kopya açılamadı: ' + kume.hata, sonuc: 'edilemedi' });
+  const ana = kume.satirlar[0];
+  const bek = secSilBek(m, rol, secYazSatir(ana, b), b, ben);
   try {
     if (bek.v === null) return ekle({ tur: 'Satır', beklenen: '—', gercek: bek.neden, sonuc: 'edilemedi' });
-    const cevap = await secYazIstek(o, cx.jeton, 'DELETE', encodeURIComponent(b.ad) + '?' + secPkFiltre(b, kopya));
-    const silindi = !(await secYardimci(o, cx.gozcu, 'oku', b.ad, { kosul })).length;
-    return ekle(Object.assign({ tur: 'Satır', beklenen: bek.v ? '✅ Silebilmeli' : '❌ Silememeli' },
-      secKarar(cevap, silindi, bek.v, '✅ Silindi', '❌ Silinmedi')));
+    /* Kardeş kümede bacakların hepsi tek istekte silinir (yoksa ertelenmiş kural reddeder). */
+    let filtre;
+    if (kume.satirlar.length > 1 && b.pk.length === 1) {
+      const c = b.pk[0];
+      filtre = encodeURIComponent(secKolonAdi(c)) + '=in.(' + kume.satirlar
+        .map(y => encodeURIComponent('"' + String(y[c]).replace(/"/g, '\\"') + '"')).join(',') + ')';
+    } else filtre = secPkFiltre(b, ana);
+    const cevap = await secYazIstek(o, cx.jeton, 'DELETE', encodeURIComponent(b.ad) + '?' + filtre);
+    let silindi = false;
+    for (const y of (kume.satirlar.length > 1 && b.pk.length === 1 ? kume.satirlar : [ana])) {
+      if (!(await secYardimci(o, cx.gozcu, 'oku', b.ad, { kosul: secPkKosul(b, y) })).length) silindi = true;
+    }
+    const k = secKarar(cevap, silindi, bek.v, '✅ Silindi', '❌ Silinmedi');
+    if (kume.mod !== 'tek') k.gercek += ' · ' + (kume.mod === 'cocuk' ? 'alt satırlarıyla birlikte açılan kopya' : kume.satirlar.length + ' bacaklı kopya küme');
+    return ekle(Object.assign({ tur: 'Satır', beklenen: bek.v ? '✅ Silebilmeli' : '❌ Silememeli' }, k));
   } finally {
-    /* Kopya kaldıysa sil. */
-    try { await secYardimci(o, cx.gozcu, 'sil', b.ad, { kosul }); }
-    catch (e) { not = '⚠ sentetik kopya silinemedi'; }
-    if (not) ekle({ tur: 'Satır', beklenen: 'Test verisi temizlenmeli', gercek: not, sonuc: 'edilemedi' });
+    /* Kopya kaldıysa (tümü tek işlemde) sil. */
+    if (!(await secKumeTemizle(cx, kume.temizle))) {
+      ekle({ tur: 'Satır', beklenen: 'Test verisi temizlenmeli', gercek: '⚠ sentetik kopya silinemedi', sonuc: 'edilemedi' });
+    }
   }
 }
 
@@ -614,7 +850,12 @@ async function secYazTablo(cx, temel, sonuclar, ilerle) {
     const hedef = secHedefAd(cx, h.ad, h.satir);
     for (const [islem, fn] of [['INSERT', secEkleTest], ['UPDATE', secDegistirTest], ['DELETE', secSilTest]]) {
       ilerle(islem, temel.kisi, b.ad);
-      const ekle = x => sonuclar.push(Object.assign({}, temel, { tablo: b.ad, islem, hedef, kolon: '' }, x));
+      const fonk = secFonksiyonIle(cx.m, cx.rol);
+      const ekle = x => {
+        const y = Object.assign({}, temel, { tablo: b.ad, islem, hedef, kolon: '' }, x);
+        if (fonk && /^❌/.test(y.beklenen || '')) y.beklenen += ' (doğrudan; bu rol fonksiyonla yazar)';
+        sonuclar.push(y);
+      };
       try { await fn(cx, h, ekle); }
       catch (e) { ekle({ tur: 'Satır', beklenen: '—', gercek: 'Test hatası: ' + (e.message || e), sonuc: 'edilemedi' }); }
     }
@@ -694,7 +935,8 @@ async function secYazmaCalistir(projeId) {
 
     const tipler = {};
     (k.yapi.tipler || []).forEach(t => { tipler[String(t.ad).toLowerCase()] = t.degerler; });
-    const ortak = { o, gozcu, esler, tipler, bypass: !!surum.bypass };
+    const ortak = { o, gozcu, esler, tipler, bypass: !!surum.bypass, tum: { yt, fkler, ornek: {}, mod: {} } };
+    Object.keys(ornek).forEach(t => { ortak.tum.ornek[t] = ornek[t]; });
     for (const os of oturum) {
       const temel = { kisi: os.kisi.etiket, rol: os.kisi.rol };
       if (!os.jeton) {
