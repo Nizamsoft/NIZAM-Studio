@@ -21,6 +21,13 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.296.0', tarih: '2026-10-04',
+    ozet: 'Güvenlik Testleri: daha az "test edilemedi"',
+    maddeler: [
+      'Şubeden bağımsız roller (ör. Admin) için artık gereksiz şube uyarısı çıkmıyor.',
+      'Kimliği birden fazla kolondan oluşan tablolar da test ediliyor.',
+      'Veri haritasını bir kez yeniden kopyalayıp test projesinde çalıştırman gerekiyor.',
+    ] },
   { surum: 'v0.295.0', tarih: '2026-10-04',
     ozet: 'Nizam Security: Güvenlik Testleri (okuma) eklendi',
     maddeler: [

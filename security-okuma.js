@@ -29,7 +29,7 @@
 
 'use strict';
 
-const SEC_HARITA_SURUM = '1';
+const SEC_HARITA_SURUM = '2';   // 2: birden fazla kolonlu kimlik (k = a|b)
 const SEC_HARITA_SINIR = 200;                       // tablo başına haritadaki en fazla satır
 const SEC_SUBE_KOLON = /^(sube_id|şube_id|branch_id)$/i;   // yalnız açık isimler
 
@@ -41,13 +41,14 @@ const SEC_SONUC_AD = { gecti: '🟢 GEÇTİ', acik: '🔴 GÜVENLİK AÇIĞI', e
    VERİ HARİTASI
    ========================================================================== */
 
-/* Model tablosunun tek kolonlu birincil anahtarı, sahip ve şube kolonu. */
+/* Model tablosunun birincil anahtar kolonları, sahip ve şube kolonu.
+   Birden fazla kolonlu anahtarda kimlik değerleri '|' ile birleştirilir. */
 function secOkumaTabloBilgi(yapiTablo, modelTablo) {
   const pk = yapiTablo.kolonlar.filter(k => k.pk);
   const sube = yapiTablo.kolonlar.find(k => SEC_SUBE_KOLON.test(k.ad));
   return {
     ad: yapiTablo.ad,
-    pk: pk.length === 1 ? pk[0].ad : null,
+    pk: pk.length ? pk.map(k => k.ad) : null,
     sahip: modelTablo.sahip_kolon || null,
     sube: sube ? sube.ad : null,
   };
@@ -62,9 +63,10 @@ function secOkumaTablolar(yapi, model) {
 /* Salt-okur harita SQL'i. Test projesinin SQL Editor'ünde çalışır. */
 function secHaritaSql(projeId, yapi, model, ortam) {
   const kol = c => (c ? `x.${secQi(c)}::text` : 'null');
+  const kimlik = pk => (pk ? (pk.length === 1 ? kol(pk[0]) : `concat_ws('|', ${pk.map(kol).join(', ')})`) : 'null');
   const parca = secOkumaTablolar(yapi, model).map(({ b }) =>
     `    json_build_object('ad', ${secQl(b.ad)}, 'satirlar', coalesce((select json_agg(json_build_object(`
-    + `'k', ${kol(b.pk)}, 's', ${kol(b.sahip)}, 'g', ${kol(b.sube)}))`
+    + `'k', ${kimlik(b.pk)}, 's', ${kol(b.sahip)}, 'g', ${kol(b.sube)}))`
     + ` from (select * from public.${secQi(b.ad)} limit ${SEC_HARITA_SINIR}) x), '[]'::json))`);
   return [
     '-- NIZAM Security · Veri haritası (YALNIZ OKUR)',
@@ -88,6 +90,7 @@ function secHaritaOku(metin, projeId) {
   const r = secJsonAl(metin, 'harita');
   if (r.hata) return r;
   const j = r.json;
+  if (j.nizam_harita && String(j.nizam_harita) !== SEC_HARITA_SURUM) return { hata: 'Harita SQL\'i güncellendi — "SQL\'i kopyala" ile yenisini al, test projesinde çalıştır.' };
   if (String(j.nizam_harita) !== SEC_HARITA_SURUM) return { hata: 'Bu, Nizam veri haritası SQL\'inin çıktısı değil.' };
   if (j.proje !== projeId) return { hata: 'Bu harita başka bir projeye ait.' };
   const s = x => (x === null || x === undefined ? null : String(x));
@@ -159,7 +162,7 @@ function secKisiSube(harita, bilgiler, uid) {
   bilgiler.forEach(({ b }) => {
     if (!b.sube) return;
     (harita.tablolar[b.ad] || []).forEach(x => {
-      if (x.g !== null && (x.s === uid || (b.pk && x.k === uid))) bul.add(x.g);
+      if (x.g !== null && (x.s === uid || (b.pk && b.pk.length === 1 && x.k === uid))) bul.add(x.g);
     });
   });
   return bul.size === 1 ? [...bul][0] : null;
@@ -191,22 +194,24 @@ const secKolonAdi = c => (/^[a-z_][a-z0-9_]*$/.test(c) ? c : '"' + c.replace(/"/
    select=* reddedilirse (kolon yetkisi) kolon kolon okunur. */
 async function secTabloOku(ortam, jeton, b, m) {
   const tablo = encodeURIComponent(b.ad);
+  const anahtar = x => (b.pk.every(c => x[c] !== undefined && x[c] !== null) ? b.pk.map(c => String(x[c])).join('|') : null);
+  const pkSec = b.pk.map(secKolonAdi).join(',');
   const tum = await secOkumaGet(ortam, jeton, tablo + '?select=*&limit=1000');
   const gorunen = new Map();
   if (tum.satirlar) {
-    tum.satirlar.forEach(x => { if (x[b.pk] !== undefined && x[b.pk] !== null) gorunen.set(String(x[b.pk]), x); });
+    tum.satirlar.forEach(x => { const a = anahtar(x); if (a !== null) gorunen.set(a, x); });
     return { gorunen, sayi: tum.satirlar.length };
   }
-  /* Kimlik kolonu okunamıyorsa satırlar eşleştirilemez. */
-  const pkOku = await secOkumaGet(ortam, jeton, tablo + '?select=' + encodeURIComponent(secKolonAdi(b.pk)) + '&limit=1000');
+  /* Kimlik kolonları okunamıyorsa satırlar eşleştirilemez. */
+  const pkOku = await secOkumaGet(ortam, jeton, tablo + '?select=' + encodeURIComponent(pkSec) + '&limit=1000');
   if (!pkOku.satirlar) return { hata: tum.hata, pkYok: /permission|denied|42501/i.test(pkOku.hata) };
-  pkOku.satirlar.forEach(x => { if (x[b.pk] !== null && x[b.pk] !== undefined) gorunen.set(String(x[b.pk]), { [b.pk]: x[b.pk] }); });
+  pkOku.satirlar.forEach(x => { const a = anahtar(x); if (a !== null) gorunen.set(a, Object.assign({}, x)); });
   for (const c of m.kolonlar) {
-    if (c.ad === b.pk) continue;
+    if (b.pk.includes(c.ad)) continue;
     const r = await secOkumaGet(ortam, jeton, tablo + '?select='
-      + encodeURIComponent(secKolonAdi(b.pk) + ',' + secKolonAdi(c.ad)) + '&limit=1000');
+      + encodeURIComponent(pkSec + ',' + secKolonAdi(c.ad)) + '&limit=1000');
     (r.satirlar || []).forEach(x => {
-      const g = gorunen.get(String(x[b.pk]));
+      const g = gorunen.get(anahtar(x));
       if (g && c.ad in x) g[c.ad] = x[c.ad];
     });
   }
@@ -302,7 +307,7 @@ async function secOkumaCalistir(projeId) {
 }
 
 async function secTabloOkuGuvenli(o, jeton, b, m) {
-  if (!b.pk) return { hata: 'Tabloda tek kolonlu birincil anahtar yok', pkYok: true };
+  if (!b.pk) return { hata: 'Tabloda birincil anahtar yok', pkYok: true };
   try { return await secTabloOku(o, jeton, b, m); }
   catch (h) { return { hata: h.message || String(h) }; }
 }
@@ -313,7 +318,7 @@ function secTabloDegerlendir(sonuclar, temel, okuma, m, b, rol, ben, esler, sati
   const edilemedi = (hedef, neden) => ekle({ hedef, tur: 'Satır', beklenen: '—', gercek: neden, sonuc: 'edilemedi' });
 
   if (!satirlar.length) return edilemedi('—', 'Haritada bu tabloda test verisi yok');
-  if (!b.pk) return edilemedi('—', 'Tabloda tek kolonlu birincil anahtar yok — kayıtlar eşleştirilemez');
+  if (!b.pk) return edilemedi('—', 'Tabloda birincil anahtar yok — kayıtlar eşleştirilemez');
   if (okuma.hata && okuma.pkYok) {
     /* Kimlik bile okunamıyorsa hiçbir satır dönmüyor demektir; satır görünmemeliyse bu geçer. */
     const hepsiYasak = satirlar.every(x => secSatirBeklenen(m, rol, x, b, ben).v === false);
@@ -343,14 +348,18 @@ function secTabloDegerlendir(sonuclar, temel, okuma, m, b, rol, ben, esler, sati
       }
     }
   }
-  if (b.sube) {
+  /* Şube testi yalnız bu rolün kuralında şube geçiyorsa (ör. "Kendi şubesinin
+     satırları"). "Tüm satırlar" gibi kurallarda kullanıcının şubesi aranmaz. */
+  const subeKurali = [m.satir[rol]].concat(m.kolonlar.map(c => c.satir[rol]))
+    .some(d => secKuralTur(d) === 'sube');
+  if (b.sube && subeKurali) {
     if (!ben.sube) edilemedi('Başka şubenin kaydı', 'Kullanıcının şubesi veriden bulunamadı');
     else {
       sec('Kendi şubesinin kaydı', s => s.g === ben.sube, false);
       sec('Başka şubenin kaydı', s => s.g !== null && s.g !== ben.sube, true);
     }
   }
-  if (!b.sahip && !b.sube) sec('Bir kayıt', () => true, true);
+  if (!b.sahip && !(b.sube && subeKurali)) sec('Bir kayıt', () => true, true);
 
   hedefler.forEach(h => secHedefTest(ekle, okuma, m, b, rol, ben, h));
 

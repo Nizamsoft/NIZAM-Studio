@@ -1,5 +1,14 @@
 # Değişiklik Günlüğü
 
+## v0.296.0
+- **Güvenlik Testleri — gereksiz 🟡 azaltıldı.** Şube hedefleri (kendi / başka şubenin
+  kaydı) yalnız rolün o tablodaki satır kuralında şube geçiyorsa üretiliyor
+  (`secKuralTur === 'sube'`); "tüm satırlar" gibi kurallarda kullanıcının şubesi
+  aranmıyor.
+- **Birden fazla kolonlu birincil anahtar** destekleniyor: harita `k` =
+  `concat_ws('|', …)`, okumada aynı birleştirme. Harita sürümü `2`; eski harita
+  yapıştırılınca "yenisini al" uyarısı.
+
 ## v0.295.0
 - **Nizam Security — 3. aşama: Güvenlik Testleri (yalnız OKUMA / SELECT).** Yeni
   `security-okuma.js`, rota `#/security/<id>/testler`, üçüncü sekme. Eski güvenlik
