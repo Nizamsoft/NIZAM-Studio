@@ -340,7 +340,8 @@ function secModelOku(metin, yapi, projeId) {
     for (const [rol, deger] of Object.entries(s)) {
       if (!rolVar.has(rol)) { hatalar.push(yer + ': tanımsız rol "' + rol + '".'); continue; }
       const d = String(deger || '').trim();
-      if (!d || d.length > 80) { hatalar.push(yer + ': "' + rol + '" satır erişimi boş ya da çok uzun.'); continue; }
+      if (!d) { hatalar.push(yer + ': "' + rol + '" satır erişimi boş.'); continue; }
+      if (d.length > 200) { hatalar.push(yer + ': "' + rol + '" satır erişimi çok uzun (' + d.length + ' karakter, en fazla 200).'); continue; }
       out[rol] = d;
     }
     return out;
@@ -447,7 +448,8 @@ function secPrompt(p, yapi) {
   s.push('- `izin`: her rol için `oku`, `ekle`, `degistir`, `sil` listesinin alt kümesi. Boş liste = hiçbir yetki yok.');
   s.push('- `sil` = o satırı silebilme yetkisi. Bir rol tabloda satır silebiliyorsa o tablonun bütün kolonlarında `sil` yaz.');
   s.push('- Tablodaki `satir`: her rolün varsayılan satır erişimi. Değerler: `tum` (tüm satırlar), `kendi` (kendi satırı), `yok` (hiçbiri)');
-  s.push('  ya da kısa bir açıklama (ör. "Kendi şubesinin satırları", "Tüm ürünler").');
+  s.push('  ya da kısa bir açıklama (ör. "Kendi şubesinin satırları", "Tüm ürünler"). Açıklama en fazla 60 karakter olsun;');
+  s.push('  hangi işlemi yapabildiği satır kuralına değil kolon izinlerine (`izin`) yazılır.');
   s.push('- Kolondaki `satir`: YALNIZ o kolon varsayılandan farklıysa yaz (ör. isim herkese açık, maaş yalnız kendi satırında). Gereksiz yere her kolona yazma.');
   s.push('- `sahip_kolon`: "kendi satırı" kuralı varsa satırı kullanıcıya bağlayan kolon; yoksa yazma.');
   s.push('- Gerçek yapıdaki her tabloyu ve her kolonu yaz; karar verilmeyen bir şey kalırsa bana sor.');

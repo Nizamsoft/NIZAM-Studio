@@ -21,6 +21,12 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.293.0', tarih: '2026-10-04',
+    ozet: 'Nizam Security: uzun satır kuralı artık reddedilmiyor',
+    maddeler: [
+      'Güvenlik modelindeki satır erişimi açıklaması 200 karaktere kadar kabul ediliyor; Claude\'a da kısa yazması söyleniyor.',
+    ] },
+
   { surum: 'v0.292.0', tarih: '2026-10-04',
     ozet: 'Nizam Security: Test Ortamı',
     maddeler: [

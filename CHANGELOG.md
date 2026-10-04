@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.293.0
+- **Satır kuralı sınırı 80 → 200 karakter** (`secModelOku`). Prompt sınırı
+  söylemiyordu; Claude doğal uzun açıklama yazınca model reddediliyordu. Prompta
+  "en fazla 60 karakter; işlem yetkisi `izin`e yazılır" eklendi. Boş ve uzun için
+  ayrı hata mesajı.
+
 ## v0.292.0
 - **Nizam Security — 2. aşama: Test Ortamı.** Yeni `security-test.js`, rota
   `#/security/<id>/test`, proje sayfasında Erişim Kuralları | Test Ortamı sekmeleri.
