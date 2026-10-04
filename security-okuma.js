@@ -323,9 +323,20 @@ async function secOkumaCalistir(projeId) {
       }
     }
     /* Dış saldırı: giriş yapmadan, yalnız uygulamanın herkese açık anahtarıyla. */
-    for (const { b } of bilgiler) {
+    /* Modelde Ziyaretçi rolü varsa onun kurallarıyla (satır + kolon), yoksa
+       "hiçbir şey görülmemeli" ile değerlendirilir. */
+    const ziyaretciRol = k.model.roller.includes(SEC_ZIYARETCI_ROL);
+    const anonJeton = /^eyJ/.test(o.test_anahtar || '') ? o.test_anahtar : null;
+    for (const { m, b } of bilgiler) {
       ilerle('SELECT', SEC_ZIYARETCI, b.ad);
-      sonuclar.push(await secZiyaretciTest(o, b, harita.tablolar[b.ad] || []));
+      if (ziyaretciRol) {
+        const bz = Object.assign({}, b, { sahip: null, sube: null });   // "kendi"/şube yok
+        secTabloDegerlendir(sonuclar, { kisi: SEC_ZIYARETCI, rol: SEC_ZIYARETCI_ROL },
+          await secTabloOkuGuvenli(o, anonJeton, bz, m), m, bz, SEC_ZIYARETCI_ROL,
+          { uid: null, sube: null }, [], harita.tablolar[b.ad] || []);
+      } else {
+        sonuclar.push(await secZiyaretciTest(o, b, harita.tablolar[b.ad] || []));
+      }
     }
     SEC_OKUMA.sonuc[projeId] = { liste: sonuclar, tarih: new Date().toISOString() };
     const acik = sonuclar.filter(x => x.sonuc === 'acik').length;

@@ -35,6 +35,9 @@ const SEC_SATIR_AD = { tum: 'Tüm satırlar', kendi: 'Kendi satırı', yok: 'Hi�
    Ör. {kolon:'tablo_adi', kosul:'esit_degil', deger:'kullanicilar'} */
 const SEC_KOSULLAR = ['esit', 'esit_degil', 'icinde', 'icinde_degil'];
 const SEC_KOSUL_AD = { esit: '=', esit_degil: '≠', icinde: 'şunlardan biri:', icinde_degil: 'şunlardan biri değil:' };
+/* Giriş yapmamış kişi için ayrılmış rol adı. Modelde yoksa ziyaretçi HİÇBİR
+   şey göremez (varsayılan kapalı). Test hesabı açılmaz; giriş yapmadan denenir. */
+const SEC_ZIYARETCI_ROL = 'Ziyaretçi';
 const secSartMi = d => !!(d && typeof d === 'object' && !Array.isArray(d) && d.kolon);
 
 /* ---------- Gerçek yapıyı okuyan SQL ----------
@@ -359,6 +362,9 @@ function secModelOku(metin, yapi, projeId) {
       }
       const d = String(deger || '').trim();
       if (!d) { hatalar.push(yer + ': "' + rol + '" satır erişimi boş.'); continue; }
+      if (rol === SEC_ZIYARETCI_ROL && (d === 'kendi' || /kendi|şube|sube|branch/i.test(d))) {
+        hatalar.push(yer + ': Ziyaretçi giriş yapmamış kişidir; "kendi" ya da "şube" kuralı olamaz (tum, yok ya da şart).'); continue;
+      }
       if (d.length > 200) { hatalar.push(yer + ': "' + rol + '" satır erişimi çok uzun (' + d.length + ' karakter, en fazla 200).'); continue; }
       out[rol] = d;
     }
@@ -474,8 +480,10 @@ function secPrompt(p, yapi) {
   s.push('   Örnek: "Personel diğer personelleri görebilsin mi?", "Maaş bilgisini görebilsin mi?", "Ürün adedini değiştirebilsin mi?"');
   s.push('4. Satır erişimini (hangi satırları görebilir) kolon izinlerinden AYRI sor.');
   s.push('   "Kendi satırı" için satırı kullanıcıya bağlayan kolonu yapıdan bul (ör. auth.users\'a giden ilişki); bulamazsan bana sor.');
-  s.push('5. Log, ayar gibi yardımcı tabloları tek soruda topluca geç.');
-  s.push('6. Bitince kısa bir özet göster, onayımı al, sonra JSON\'u ver.');
+  s.push('5. Bir kez sor: "Giriş yapmamış biri (ziyaretçi) herhangi bir şeyi görebilsin mi?" Varsayılan cevap: hiçbir şey.');
+  s.push('   Yalnız herkese açık bir şey varsa (ör. web sitesindeki ürün listesi) hangi tablo ve kolonlar olduğunu sor.');
+  s.push('6. Log, ayar gibi yardımcı tabloları tek soruda topluca geç.');
+  s.push('7. Bitince kısa bir özet göster, onayımı al, sonra JSON\'u ver.');
   s.push('');
   s.push('## Son çıktı');
   s.push('Son mesajında yalnız tek bir ```json bloğu ver. Biçim:');
@@ -484,6 +492,8 @@ function secPrompt(p, yapi) {
   s.push('```');
   s.push('- `surum`: her zaman 1. `proje`: aynen "' + p.id + '".');
   s.push('- `roller`: rol adları. Bütün izin ve satır kuralları bu adlarla yazılır.');
+  s.push('- `' + SEC_ZIYARETCI_ROL + '` ayrılmış rol adıdır = giriş yapmamış kişi. Ziyaretçi hiçbir şey göremiyorsa bu rolü HİÇ yazma (varsayılan: her şey kapalı).');
+  s.push('  Bir şey görebiliyorsa `roller`a "' + SEC_ZIYARETCI_ROL + '" ekle; yalnız açık olan kolonlara izin ver, satır kuralı `tum`, `yok` ya da şart olsun (`kendi`/şube olamaz).');
   s.push('- `izin`: her rol için `oku`, `ekle`, `degistir`, `sil` listesinin alt kümesi. Boş liste = hiçbir yetki yok.');
   s.push('- `sil` = o satırı silebilme yetkisi. Bir rol tabloda satır silebiliyorsa o tablonun bütün kolonlarında `sil` yaz.');
   s.push('- Tablodaki `satir`: her rolün varsayılan satır erişimi. Değerler: `tum` (tüm satırlar), `kendi` (kendi satırı), `yok` (hiçbiri)');

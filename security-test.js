@@ -150,7 +150,8 @@ function secRolKisitli(model, rol) {
 
 function secTestKisiPlani(model, kod) {
   const liste = [];
-  model.roller.forEach(rol => {
+  /* Ziyaretçi = giriş yapmamış kişi: test hesabı açılmaz. */
+  model.roller.filter(rol => rol !== SEC_ZIYARETCI_ROL).forEach(rol => {
     const harfler = secRolKisitli(model, rol) ? ['a', 'b'] : [''];
     harfler.forEach(h => liste.push({
       rol,
@@ -392,6 +393,7 @@ function secTestVeriPrompt(p, yapi, model, kisiler) {
   s.push("`(select id from auth.users where email = '" + (kisiler[0] ? kisiler[0].eposta : 'x@' + SEC_TEST_ALAN) + "')`");
   s.push('');
   s.push('## Ne lazım');
+  s.push('- Modeldeki "' + SEC_ZIYARETCI_ROL + '" rolü giriş yapmamış kişidir; onun için kullanıcı ya da kişiye bağlı kayıt yazma. Açık olması gereken tablolara satır yazman yeterli.');
   s.push('- Her test kullanıcısı uygulamada DOĞRU ROLDE olmalı. Rolün nerede tutulduğunu yapıdan, kurallardan ve fonksiyonlardan bul (ör. profiller.rol).');
   s.push('- Aynı rolden iki kişi varsa (A ve B) ayrımı destekle: A\'nın kendi kaydı, B\'nin kendi kaydı.');
   s.push('- Yapıda şube/bölüm/firma gibi bir ayrım varsa iki ayrı kayıt aç (Şube 1, Şube 2); A\'yı birine, B\'yi ötekine bağla.');

@@ -21,6 +21,12 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.299.0', tarih: '2026-10-04',
+    ozet: 'Nizam Security: giriş yapmamış kişinin erişimi de modelde',
+    maddeler: [
+      'Erişim kuralları görüşmesi artık "giriş yapmamış biri bir şey görebilsin mi?" diye de soruyor. Cevap hiçbir şeyse her şey kapalı kalıyor.',
+      'Herkese açık bir şey varsa (ör. ürün listesi) "Ziyaretçi" rolü olarak yazılıyor ve test bunu da deniyor.',
+    ] },
   { surum: 'v0.298.0', tarih: '2026-10-04',
     ozet: 'Güvenlik Testleri: giriş yapmamış ziyaretçi de deneniyor',
     maddeler: [

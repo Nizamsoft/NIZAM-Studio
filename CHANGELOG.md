@@ -1,5 +1,16 @@
 # Değişiklik Günlüğü
 
+## v0.299.0
+- **Ziyaretçi rolü (giriş yapmamış kişi).** Ayrılmış rol adı `SEC_ZIYARETCI_ROL =
+  'Ziyaretçi'`. Model promptu görüşmede bir kez "giriş yapmamış biri bir şey görebilsin
+  mi?" diye soruyor; hiçbir şey görmüyorsa rol yazılmıyor (varsayılan kapalı), açık bir
+  şey varsa rol yalnız açık kolonlarla ekleniyor. `secModelOku` Ziyaretçi için
+  `kendi`/şube kuralını reddediyor. Test Ortamı Ziyaretçi'ye hesap açmıyor
+  (`secTestKisiPlani`), veri promptu bunu söylüyor.
+- **Güvenlik Testleri:** modelde Ziyaretçi varsa giriş yapmadan yapılan okuma onun
+  kurallarıyla (satır + kolon, `secTabloDegerlendir`) değerlendiriliyor; yoksa önceki
+  gibi "hiçbir şey görülmemeli" (`secZiyaretciTest`).
+
 ## v0.298.0
 - **Güvenlik Testleri — dış erişim (giriş yapmamış ziyaretçi).** Test kullanıcılarından
   sonra her model tablosu yalnız herkese açık anahtarla (`apikey`; eski anon JWT ise
