@@ -11106,4 +11106,10 @@ a.lk.tl-kart { text-decoration: none; color: inherit; }
 .sec-o-bg { display: flex; flex-wrap: wrap; gap: 4px 18px; margin-top: 6px; overflow-wrap: anywhere; }
 .sec-o-bg b { color: var(--ink); font-weight: 600; }
 .sec-y-kart { grid-column: 1 / -1; }   /* security-yazma.js — 3. kart tam genişlik */
-.sec-y-il { margin: 10px 0 0; }
+.sec-ilerleme-kutu { margin: 12px 0 0; }
+.sec-ilerleme-ust { display: flex; align-items: baseline; gap: 10px; margin-bottom: 6px; font-size: 12.5px; color: var(--ink-dim); min-width: 0; }
+.sec-ilerleme-ust b { font: 700 14px var(--yazi-baslik); color: var(--ink-strong); }
+.sec-ilerleme-ust span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sec-ilerleme { height: 6px; border-radius: 99px; background: var(--surface-2); overflow: hidden; }
+.sec-ilerleme i { display: block; height: 100%; background: var(--ink-strong); transition: width .3s ease; }
+.sec-t-durum + .sec-ilerleme-kutu { margin: -6px 0 18px; }

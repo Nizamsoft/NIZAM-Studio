@@ -290,7 +290,13 @@ async function secOkumaCalistir(projeId) {
 
   const bilgiler = secOkumaTablolar(k.yapi, k.model);
   const sonuclar = [];
-  const ilerle = (metin, kisi, tablo) => { SEC_OKUMA.ilerleme[projeId] = { metin, kisi, tablo }; render(); };
+  /* Yüzde: hazırlık + girişler + (kişi + ziyaretçi) × tablo adımı. */
+  let adim = 0;
+  const toplam = 1 + kisiler.length * (1 + bilgiler.length) + bilgiler.length;
+  const ilerle = (metin, kisi, tablo) => {
+    SEC_OKUMA.ilerleme[projeId] = { metin, kisi, tablo, yuzde: Math.min(99, Math.floor(100 * adim++ / toplam)) };
+    render();
+  };
   SEC_OKUMA.calisiyor[projeId] = true;
   SEC_OKUMA.sonuc[projeId] = null;
   ilerle('Test hazırlanıyor…');
@@ -610,7 +616,7 @@ function secOkumaEkran(projeId) {
       <span class="sec-t-emoji">⏳</span>
       <span class="sec-t-durum-yz"><b>${esc(il.metin)}</b>
         <i>${il.kisi ? 'Test kullanıcısı: ' + esc(il.kisi) : ''}${il.tablo ? ' · Tablo: ' + esc(il.tablo) + ' · İşlem: SELECT' : ''}</i></span>
-    </div>` : '';
+    </div>${typeof secIlerlemeCubugu === 'function' ? secIlerlemeCubugu(il.yuzde) : ''}` : '';
 
   const kalkan = `
     <div class="sec-t-durum">
@@ -628,6 +634,8 @@ function secOkumaSonuclar(projeId) {
   if (!s && !y) return '';
   const islemi = x => x.islem || 'SELECT';
   const islemF = SEC_OKUMA.islem[projeId] || 'hepsi';
+  const bildir = typeof secHataRaporu === 'function'
+    ? [].concat(s ? s.liste : [], y ? y.liste : []).filter(x => x.sonuc !== 'gecti').length : 0;
   const liste = [].concat(s ? s.liste : [], y ? y.liste : []).filter(x => islemF === 'hepsi' || islemi(x) === islemF);
   const tarih = [s && s.tarih, y && y.tarih].filter(Boolean).sort().pop();
   const say = t => liste.filter(x => x.sonuc === t).length;
@@ -657,6 +665,10 @@ function secOkumaSonuclar(projeId) {
       <span>🔴 Açık <b>${say('acik')}</b></span>
       <span>🟡 Test edilemedi <b>${say('edilemedi')}</b></span>
     </div>
+    ${bildir ? `<div class="sec-t-dg sec-o-filtre">
+      <button class="sec-dug ana" type="button" data-eylem="sec-o-y-rapor" data-id="${esc(projeId)}">📋 Hataları bildir (${bildir})</button>
+      <span class="sec-t-ipucu">🔴 ve 🟡 sonuçlar projenin Claude sohbeti için kopyalanır</span>
+    </div>` : ''}
     ${y ? `<div class="sec-t-dg sec-o-filtre">
       ${fi('Tümü', 'hepsi')}${fi('Okuma', 'SELECT')}${fi('Ekleme', 'INSERT')}${fi('Değiştirme', 'UPDATE')}${fi('Silme', 'DELETE')}
     </div>` : ''}

@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü
 
+## v0.303.0
+- **Hataları bildir** (`secHataRaporu`, `security-yazma.js`): okuma + yazma sonuçlarından
+  🔴 / 🟡 (fazla kısıtlı) / 🟡 (test edilemedi) grupları, tablo tablo; aynı bulgu birden
+  fazla kişide çıktıysa tek satır. Mesaj Claude'a önce sebep + plan, onaysız değişiklik
+  yok, production'a dokunma der. Düğme sonuç özetinin altında (`sec-o-y-rapor`).
+- **İlerleme yüzdesi** (`secIlerlemeCubugu`): yazma testinde biten kişi × tablo adımı,
+  okuma testinde `ilerle` çağrısı sayısı. Nötr çubuk (`.sec-ilerleme`).
+
 ## v0.302.0
 - **Yazma testleri — deneme değerleri** (`security-yazma.js`).
   - `secIzinliDegerler`: enum tipi (`yapi.tipler`) ya da kolonu anan CHECK'teki sabitler;

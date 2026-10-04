@@ -635,7 +635,12 @@ async function secYazmaCalistir(projeId) {
   const yt = {};
   k.yapi.tablolar.forEach(t => { yt[t.ad] = t; });
   const sonuclar = [];
-  const ilerle = (islem, kisi, tablo) => { SEC_YAZMA.ilerleme[projeId] = { islem, kisi, tablo }; render(); };
+  /* Yüzde: biten (kişi × tablo) adımı / tümü. Hazırlık %0'da sayılır. */
+  const adim = { n: 0, toplam: Math.max(1, (kisiler.length + 1) * bilgiler.length) };
+  const ilerle = (islem, kisi, tablo) => {
+    SEC_YAZMA.ilerleme[projeId] = { islem, kisi, tablo, yuzde: Math.min(99, Math.floor(100 * adim.n / adim.toplam)) };
+    render();
+  };
   SEC_YAZMA.calisiyor[projeId] = true;
   SEC_YAZMA.sonuc[projeId] = null;
   ilerle('Hazırlanıyor');
@@ -695,11 +700,13 @@ async function secYazmaCalistir(projeId) {
       if (!os.jeton) {
         sonuclar.push(Object.assign({}, temel, { tablo: '—', islem: 'Giriş', hedef: 'Giriş', tur: 'Giriş', kolon: '',
           beklenen: 'Giriş yapabilmeli', gercek: os.hata, sonuc: 'edilemedi' }));
+        adim.n += bilgiler.length;
         continue;
       }
       for (const { m, b } of bilgiler) {
         await secYazTablo(Object.assign({}, ortak, { jeton: os.jeton, m, b, bt: yt[b.ad], fk: fkler[b.ad] || {}, rol: os.kisi.rol,
           ben: { uid: os.uid, sube: os.sube }, ornek: ornek[b.ad] }), temel, sonuclar, ilerle);
+        adim.n++;
       }
     }
 
@@ -712,6 +719,7 @@ async function secYazmaCalistir(projeId) {
       const bz = Object.assign({}, b, { sahip: null, sube: null });   // "kendi"/şube yok
       await secYazTablo(Object.assign({}, ortak, { jeton: anonJeton, m, b: bz, bt: yt[b.ad], fk: fkler[b.ad] || {}, rol: ziyaretciRol,
         ben: { uid: null, sube: null }, ornek: (ornek[b.ad] || []).map(s => secYazSatir(s.x, bz)) }), ziyaretci, sonuclar, ilerle);
+      adim.n++;
     }
 
     SEC_YAZMA.sonuc[projeId] = { liste: sonuclar, tarih: new Date().toISOString() };
@@ -750,7 +758,7 @@ function secYazmaKart(projeId, engel) {
         ${dug(calisiyor ? 'Yazma testi çalışıyor…' : 'Yazma testini başlat', 'sec-o-y-baslat', true, mesgul || !!engel)}
         <span class="sec-t-ipucu">Yardımcıyı bir kez TEST projesinin SQL Editor'ünde çalıştır</span>
       </div>
-      ${calisiyor && il ? `<p class="sec-t-ipucu sec-y-il">⏳ <b>${esc(il.islem)}</b>${il.kisi ? ' · ' + esc(il.kisi) : ''}${il.tablo ? ' · ' + esc(il.tablo) : ''}</p>` : ''}
+      ${calisiyor && il ? secIlerlemeCubugu(il.yuzde, il.islem, il.kisi, il.tablo) : ''}
     </div>`;
 }
 
@@ -768,10 +776,91 @@ async function secYazmaEylem(e, el) {
     toast(ok ? 'Yardımcı SQL\'i kopyalandı — TEST projesinin SQL Editor\'ünde çalıştır.' : 'Kopyalanamadı.', ok ? 'basari' : 'hata');
     return true;
   }
+  if (e === 'sec-o-y-rapor') {
+    const r = secHataRaporu(projeId);
+    if (!r.sayi) { toast('Bildirilecek 🔴 ya da 🟡 sonuç yok.', 'basari'); return true; }
+    const ok = await panoyaKopyala(r.metin);
+    toast(ok ? r.sayi + ' bulgu kopyalandı — projenin Claude sohbetine yapıştır.' : 'Kopyalanamadı.', ok ? 'basari' : 'hata');
+    return true;
+  }
   if (e === 'sec-o-y-baslat') {
     if (SEC_YAZMA.calisiyor[projeId] || SEC_OKUMA.calisiyor[projeId]) return true;
     await secYazmaCalistir(projeId);
     return true;
   }
   return false;
+}
+
+/* ==========================================================================
+   ORTAK: ilerleme çubuğu · hata raporu (okuma ekranı da kullanır)
+   ========================================================================== */
+
+function secIlerlemeCubugu(yuzde, ne, kisi, tablo) {
+  const y = Math.max(0, Math.min(100, Number(yuzde) || 0));
+  return `
+    <div class="sec-ilerleme-kutu">
+      <div class="sec-ilerleme-ust"><b>%${y}</b><span>${esc([kisi, tablo, ne].filter(Boolean).join(' · '))}</span></div>
+      <div class="sec-ilerleme" role="progressbar" aria-valuenow="${y}" aria-valuemin="0" aria-valuemax="100"><i style="width:${y}%"></i></div>
+    </div>`;
+}
+
+/* 🔴 ve 🟡 sonuçlar → projenin Claude sohbetine yapıştırılacak mesaj.
+   Aynı bulgu birden fazla kişide çıkmışsa tek satırda birleşir. */
+function secHataRaporu(projeId) {
+  const p = DB.proje(projeId);
+  const o = SEC_TEST.kayit[projeId] || {};
+  const s = SEC_OKUMA.sonuc[projeId], y = SEC_YAZMA.sonuc[projeId];
+  const liste = [].concat(s ? s.liste : [], y ? y.liste : []);
+  const kisitli = x => /erişim fazla kısıtlı/.test(x.gercek || '');
+  const gruplar = [
+    ['🔴 Güvenlik açıkları', 'Kurala göre YASAK ama veritabanı izin verdi.', liste.filter(x => x.sonuc === 'acik')],
+    ['🟡 Fazla kısıtlı', 'Kurala göre İZİNLİ ama veritabanı reddetti. Ya kural ya veritabanı yanlış.', liste.filter(x => x.sonuc === 'edilemedi' && kisitli(x))],
+    ['🟡 Test edilemedi', 'Test bu işlemi deneyemedi (kısıt, uygulama kuralı, eksik test verisi…).', liste.filter(x => x.sonuc === 'edilemedi' && !kisitli(x))],
+  ];
+  const satirlar = l => {
+    const bir = new Map();
+    l.forEach(x => {
+      const ad = x.tablo + (x.kolon && !/ kolon$/.test(x.kolon) ? '.' + x.kolon : '') + (/ kolon$/.test(x.kolon || '') ? ' (' + x.kolon + ')' : '');
+      const anahtar = [x.tablo, x.islem || 'SELECT', ad, x.hedef, x.beklenen, x.gercek].join('¦');
+      if (!bir.has(anahtar)) bir.set(anahtar, { x, ad, kisiler: [] });
+      const e = bir.get(anahtar);
+      const kim = x.kisi + (x.rol && x.rol !== x.kisi ? ' (' + x.rol + ')' : '');
+      if (!e.kisiler.includes(kim)) e.kisiler.push(kim);
+    });
+    const tablolar = new Map();
+    bir.forEach(e => {
+      if (!tablolar.has(e.x.tablo)) tablolar.set(e.x.tablo, []);
+      tablolar.get(e.x.tablo).push(`- ${e.x.islem || 'SELECT'} · \`${e.ad}\` · ${e.x.hedef} · ${e.kisiler.join(', ')}\n  Beklenen: ${e.x.beklenen} · Gerçek: ${e.x.gercek}`);
+    });
+    const out = [];
+    tablolar.forEach((l2, t) => { out.push('### ' + t, ...l2, ''); });
+    return out;
+  };
+  const m = [];
+  m.push('# NIZAM Security — Güvenlik testi bulguları');
+  m.push('');
+  m.push('Proje: ' + (p ? projeAdi(p) : projeId));
+  m.push('Tarih: ' + new Date().toLocaleString('tr-TR'));
+  m.push('');
+  m.push('Bu bulgular Nizam Studio\'nun TEST Supabase projesinde (' + (o.test_ref || '?') + ') yaptığı gerçek testlerden geldi.');
+  m.push('Test kullanıcıları kendi e-posta/şifreleriyle gerçek giriş yaptı; giriş yapmamış ziyaretçi yalnız herkese açık anahtarla denendi.');
+  m.push('"Beklenen" davranış Studio\'daki Erişim Kuralları modelinden geliyor. Karar, verinin gerçekten değişip değişmediğine göre verildi.');
+  m.push('');
+  m.push('## Ne yapmanı istiyorum');
+  m.push('1. Önce her grup için sebebi bul ve kısa bir düzeltme planı anlat (hangi RLS kuralı, yetki ya da tetikleyici).');
+  m.push('2. Onayımı almadan kod, SQL, migration ya da RLS değişikliği YAPMA.');
+  m.push('3. Production veritabanına dokunma.');
+  m.push('4. "Fazla kısıtlı" olanlarda kural mı veritabanı mı yanlış, bana sor.');
+  m.push('5. "Test edilemedi" olanlarda gerekiyorsa test verisi önerisi yap; bunlar açık değildir.');
+  m.push('');
+  m.push('Özet: ' + gruplar.map(g => g[0] + ' ' + g[2].length).join(' · '));
+  m.push('');
+  gruplar.forEach(([bas, ac, l]) => {
+    if (!l.length) return;
+    m.push('## ' + bas + ' (' + l.length + ')');
+    m.push(ac);
+    m.push('');
+    m.push(...satirlar(l));
+  });
+  return { metin: m.join('\n'), sayi: gruplar.reduce((n, g) => n + g[2].length, 0) };
 }

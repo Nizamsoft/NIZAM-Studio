@@ -21,6 +21,12 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.303.0', tarih: '2026-10-04',
+    ozet: 'Güvenlik Testleri: "Hataları bildir" düğmesi ve yükleme yüzdesi',
+    maddeler: [
+      '"Hataları bildir" düğmesi 🔴 ve 🟡 sonuçları projenin Claude sohbetine yapıştırılacak hazır bir mesaj olarak kopyalıyor. Claude önce sebebi ve planı anlatıyor, onaysız değişiklik yapmıyor.',
+      'Test çalışırken yüzde ve ince bir çubuk görünüyor.',
+    ] },
   { surum: 'v0.302.0', tarih: '2026-10-04',
     ozet: 'Yazma testleri: deneme kayıtları daha akıllı',
     maddeler: [
