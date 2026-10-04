@@ -11105,3 +11105,5 @@ a.lk.tl-kart { text-decoration: none; color: inherit; }
 .sec-o-hedef em { font-style: normal; color: var(--ink-dim); }
 .sec-o-bg { display: flex; flex-wrap: wrap; gap: 4px 18px; margin-top: 6px; overflow-wrap: anywhere; }
 .sec-o-bg b { color: var(--ink); font-weight: 600; }
+.sec-y-kart { grid-column: 1 / -1; }   /* security-yazma.js — 3. kart tam genişlik */
+.sec-y-il { margin: 10px 0 0; }

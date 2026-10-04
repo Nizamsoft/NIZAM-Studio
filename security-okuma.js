@@ -33,7 +33,7 @@ const SEC_HARITA_SURUM = '3';   // 2: çok kolonlu kimlik (k = a|b) · 3: şart 
 const SEC_HARITA_SINIR = 200;                       // tablo başına haritadaki en fazla satır
 const SEC_SUBE_KOLON = /^(sube_id|şube_id|branch_id)$/i;   // yalnız açık isimler
 
-const SEC_OKUMA = { harita: {}, sonuc: {}, ilerleme: {}, calisiyor: {}, filtre: {} };
+const SEC_OKUMA = { harita: {}, sonuc: {}, ilerleme: {}, calisiyor: {}, filtre: {}, islem: {} };
 
 const SEC_SONUC_AD = { gecti: '🟢 GEÇTİ', acik: '🔴 GÜVENLİK AÇIĞI', edilemedi: '🟡 TEST EDİLEMEDİ' };
 
@@ -576,6 +576,7 @@ function secOkumaEkran(projeId) {
   const engel = secUretimAyriMi(p, o);
   const harita = SEC_OKUMA.harita[projeId];
   const calisiyor = !!SEC_OKUMA.calisiyor[projeId];
+  const yaziyor = typeof SEC_YAZMA !== 'undefined' && !!SEC_YAZMA.calisiyor[projeId];   // security-yazma.js
   const dug = (yazi, eylem, ana = false, kapali = false) =>
     `<button class="sec-dug${ana ? ' ana' : ''}" type="button" data-eylem="${eylem}" data-id="${esc(projeId)}"
        ${kapali ? 'disabled' : ''}>${esc(yazi)}</button>`;
@@ -600,7 +601,7 @@ function secOkumaEkran(projeId) {
       <p class="sec-t-not">Her test kullanıcısı test projesine kendi e-posta ve şifresiyle giriş yapar,
         tabloları okur. Ardından giriş yapmamış bir ziyaretçi gibi, yalnız herkese açık anahtarla
         okumayı dener. Görmemesi gereken veriyi görürse güvenlik açığıdır.</p>
-      <div class="sec-t-dg">${dug(calisiyor ? 'Test çalışıyor…' : 'Testi Başlat', 'sec-o-baslat', true, !harita || calisiyor || !!engel)}</div>
+      <div class="sec-t-dg">${dug(calisiyor ? 'Test çalışıyor…' : 'Testi Başlat', 'sec-o-baslat', true, !harita || calisiyor || yaziyor || !!engel)}</div>
     </div>`;
 
   const il = SEC_OKUMA.ilerleme[projeId];
@@ -618,13 +619,17 @@ function secOkumaEkran(projeId) {
         <i>Production: ${esc(secKisalt(secUretimRef(p) || '?', 4, 4))} ≠ Test: ${esc(secKisalt(o.test_ref, 4, 4))}</i></span>
     </div>`;
 
-  return ust + kalkan + `<div class="sec-t-izgara">${haritaKart}${baslatKart}</div>` + ilerleme + secOkumaSonuclar(projeId);
+  return ust + kalkan + `<div class="sec-t-izgara">${haritaKart}${baslatKart}${typeof secYazmaKart === 'function' ? secYazmaKart(projeId, engel) : ''}</div>` + ilerleme + secOkumaSonuclar(projeId);
 }
 
 function secOkumaSonuclar(projeId) {
   const s = SEC_OKUMA.sonuc[projeId];
-  if (!s) return '';
-  const liste = s.liste;
+  const y = typeof SEC_YAZMA !== 'undefined' ? SEC_YAZMA.sonuc[projeId] : null;   // security-yazma.js
+  if (!s && !y) return '';
+  const islemi = x => x.islem || 'SELECT';
+  const islemF = SEC_OKUMA.islem[projeId] || 'hepsi';
+  const liste = [].concat(s ? s.liste : [], y ? y.liste : []).filter(x => islemF === 'hepsi' || islemi(x) === islemF);
+  const tarih = [s && s.tarih, y && y.tarih].filter(Boolean).sort().pop();
   const say = t => liste.filter(x => x.sonuc === t).length;
   const filtre = SEC_OKUMA.filtre[projeId] || 'hepsi';
   const sira = { acik: 0, edilemedi: 1, gecti: 2 };
@@ -632,24 +637,29 @@ function secOkumaSonuclar(projeId) {
     .slice().sort((a, b) => sira[a.sonuc] - sira[b.sonuc]);
   const f = (ad, deger) => `<button class="sec-dug${filtre === deger ? ' ana' : ''}" type="button"
       data-eylem="sec-o-filtre" data-id="${esc(projeId)}" data-f="${deger}">${ad}</button>`;
+  const fi = (ad, deger) => `<button class="sec-dug${islemF === deger ? ' ana' : ''}" type="button"
+      data-eylem="sec-o-islem" data-id="${esc(projeId)}" data-f="${deger}">${ad}</button>`;
 
   const kartlar = gorunen.map(x => `
     <div class="sec-o-sonuc ${x.sonuc}">
       <div class="sec-o-ust"><b>${esc(x.kisi)}</b><i>${esc(x.rol)}</i><span>${SEC_SONUC_AD[x.sonuc]}</span></div>
-      <div class="sec-o-hedef"><code>${esc(x.tablo + (x.kolon && x.tur === 'Kolon' && !/ kolon$/.test(x.kolon) ? '.' + x.kolon : ''))}</code>
+      <div class="sec-o-hedef"><code>${esc(x.tablo + (x.kolon && !/ kolon$/.test(x.kolon) ? '.' + x.kolon : ''))}</code>
         ${x.tur === 'Kolon' && / kolon$/.test(x.kolon) ? ' · ' + esc(x.kolon) : ''}
-        · SELECT · ${esc(x.hedef)} · <em>${esc(x.tur)} testi</em></div>
+        · ${esc(islemi(x))} · ${esc(x.hedef)} · <em>${esc(x.tur)} testi</em></div>
       <div class="sec-o-bg"><span>Beklenen: <b>${esc(x.beklenen)}</b></span><span>Gerçek: <b>${esc(x.gercek || '—')}</b></span></div>
     </div>`).join('');
 
   return `
-    <h3 class="sec-bas">Sonuç · ${esc(secTarih(s.tarih))}</h3>
+    <h3 class="sec-bas">Sonuç · ${esc(secTarih(tarih))}</h3>
     <div class="sec-o-ozet">
       <span>Toplam <b>${liste.length}</b></span>
       <span>🟢 Geçti <b>${say('gecti')}</b></span>
       <span>🔴 Açık <b>${say('acik')}</b></span>
       <span>🟡 Test edilemedi <b>${say('edilemedi')}</b></span>
     </div>
+    ${y ? `<div class="sec-t-dg sec-o-filtre">
+      ${fi('Tümü', 'hepsi')}${fi('Okuma', 'SELECT')}${fi('Ekleme', 'INSERT')}${fi('Değiştirme', 'UPDATE')}${fi('Silme', 'DELETE')}
+    </div>` : ''}
     <div class="sec-t-dg sec-o-filtre">
       ${f('Hepsi', 'hepsi')}${f('🟢 Geçti', 'gecti')}${f('🔴 Açık', 'acik')}${f('🟡 Edilemedi', 'edilemedi')}
     </div>
@@ -666,7 +676,9 @@ async function secOkumaEylem(e, el) {
   const k = SEC.kayit[projeId] || {};
   const o = SEC_TEST.kayit[projeId] || {};
 
+  if (e.indexOf('sec-o-y-') === 0) return secYazmaEylem(e, el);   // security-yazma.js
   if (e === 'sec-o-filtre') { SEC_OKUMA.filtre[projeId] = el.dataset.f; render(); return true; }
+  if (e === 'sec-o-islem') { SEC_OKUMA.islem[projeId] = el.dataset.f; render(); return true; }
 
   const engel = secUretimAyriMi(p, o);
   if (engel) { toast(engel, 'hata'); return true; }
@@ -697,7 +709,7 @@ async function secOkumaEylem(e, el) {
   }
 
   if (e === 'sec-o-baslat') {
-    if (SEC_OKUMA.calisiyor[projeId]) return true;
+    if (SEC_OKUMA.calisiyor[projeId] || (typeof SEC_YAZMA !== 'undefined' && SEC_YAZMA.calisiyor[projeId])) return true;
     await secOkumaCalistir(projeId);
     return true;
   }

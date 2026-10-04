@@ -1,5 +1,24 @@
 # Değişiklik Günlüğü
 
+## v0.300.0
+- **Güvenlik Testleri — yazma (INSERT / UPDATE / DELETE).** Yeni `security-yazma.js`.
+  Okumayla aynı kişiler: test kullanıcıları gerçek Auth girişi (`secOkumaGiris`),
+  ziyaretçi yalnız herkese açık anahtar. Beklenen: model izinleri `ekle` / `degistir` /
+  `sil` + satır kuralı (`secKapsar`; tum, kendi, şube, şart). Hedefler okumadaki gibi
+  (kendi / başka kullanıcı / kendi şube / başka şube / şarta uyan-uymayan).
+- **Yardımcı fonksiyon** `nizam_yazma_yardimci` (tablo değil): "Yardımcı SQL'i kopyala"
+  ile test projesine bir kez kurulur, `secKilitSql` ile başlar; her çağrıda test işaretini
+  ve çağıranın test hesabı e-postasını denetler, `anon`'a kapalı. İşler: `oku`,
+  `anahtarlar`, `ekle` (sentetik kopya), `sil` / `geri` (yalnız tek kayda uyan koşulla).
+- **Karar veriye göre:** INSERT → önce/sonra kimlik farkı; UPDATE → önce/sonra okuma,
+  değişen kolonlar geri yüklenir; DELETE → sentetik kopyada denenir, kopya kalırsa silinir.
+  23xxx kısıt hatası ve değişiklik yoksa 🟡. Kolon testleri: izinli temel kayıt + yasak
+  kolon (INSERT), satırı değiştirebilen rolün yasak kolonları tek tek (UPDATE).
+  Filtresiz PATCH/DELETE gönderilmez.
+- **Ekran:** Güvenlik Testleri'nde 3. kart; sonuç listesi okuma + yazma birlikte, işlem
+  süzgeci (Tümü / Okuma / Ekleme / Değiştirme / Silme). `security-okuma.js`'te yalnız
+  ekran bağlantısı değişti; okuma motoru aynı.
+
 ## v0.299.0
 - **Ziyaretçi rolü (giriş yapmamış kişi).** Ayrılmış rol adı `SEC_ZIYARETCI_ROL =
   'Ziyaretçi'`. Model promptu görüşmede bir kez "giriş yapmamış biri bir şey görebilsin

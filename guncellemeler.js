@@ -21,6 +21,13 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.300.0', tarih: '2026-10-04',
+    ozet: 'Nizam Security: yazma testleri (ekleme, değiştirme, silme)',
+    maddeler: [
+      'Güvenlik Testleri artık okumanın yanında kayıt eklemeyi, değiştirmeyi ve silmeyi de deniyor — 6 test kullanıcısı ve giriş yapmamış ziyaretçi için.',
+      'Sonuç verinin gerçekten değişip değişmediğine bakılarak veriliyor; denenen kayıt silinir, değişen değer geri yüklenir.',
+      'Sonuç listesinde Okuma / Ekleme / Değiştirme / Silme diye süzebiliyorsun.',
+    ] },
   { surum: 'v0.299.0', tarih: '2026-10-04',
     ozet: 'Nizam Security: giriş yapmamış kişinin erişimi de modelde',
     maddeler: [
