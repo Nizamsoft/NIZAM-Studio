@@ -21,6 +21,13 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.301.0', tarih: '2026-10-04',
+    ozet: 'Yazma testleri: çok daha az "test edilemedi"',
+    maddeler: [
+      'Deneme kaydı açılırken kimlik ve benzersiz alanlar artık doğru dolduruluyor; başka tabloya bağlı alanlar o tablodaki gerçek değerlerden seçiliyor.',
+      'Bir deneme veri hatası ya da uygulamanın kendi kuralı yüzünden başarısız olursa artık "geçti" değil "test edilemedi" sayılıyor.',
+      'Yardımcı SQL güncellendi: test projesinde bir kez yeniden çalıştır.',
+    ] },
   { surum: 'v0.300.0', tarih: '2026-10-04',
     ozet: 'Nizam Security: yazma testleri (ekleme, değiştirme, silme)',
     maddeler: [

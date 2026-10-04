@@ -1,5 +1,17 @@
 # Değişiklik Günlüğü
 
+## v0.301.0
+- **Yazma testleri — 🟡 azaltma ve yanlış 🟢/🔴 önleme** (`security-yazma.js`).
+  - `secYeniDeger`: yeni kimlik / benzersiz kolon tipe göre — uuid → yeni uuid, metin → ek,
+    sayı → en büyük + 1; fk kolonda bağlı tablonun kullanılmamış değeri. Önceden uuid
+    kolona metin eki ekleniyordu (22P02).
+  - Fk kolonların geçerli değerleri bağlı tablodan okunur (`cx.fk`); UPDATE adayları
+    oradan. İzinli UPDATE için önce düz yazı/sayı kolonu, değeri bulunan ilk kolon.
+  - `secHataTur` / `secKarar`: yalnız yetki reddi (42501, RLS, 401/403) ya da hatasız
+    "değişmedi" 🟢; 23xxx kısıt, P0001 uygulama kuralı ve veri hataları 🟡.
+  - Yardımcı sürüm `2`: `anahtarlar` sınırsız (5000 sınırı büyük tabloda yanlış 🔴
+    üretebiliyordu). Eski yardımcıyla test başlamaz, yeniden kurulması istenir.
+
 ## v0.300.0
 - **Güvenlik Testleri — yazma (INSERT / UPDATE / DELETE).** Yeni `security-yazma.js`.
   Okumayla aynı kişiler: test kullanıcıları gerçek Auth girişi (`secOkumaGiris`),

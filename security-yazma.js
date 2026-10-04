@@ -34,7 +34,7 @@
 'use strict';
 
 const SEC_YARDIMCI = 'nizam_yazma_yardimci';
-const SEC_YARDIMCI_SURUM = '1';
+const SEC_YARDIMCI_SURUM = '2';   // 2: anahtarlar sınırsız
 const SEC_YAZMA = { sonuc: {}, ilerleme: {}, calisiyor: {} };
 /* Değişmesi yetki yükseltmesi demek olan kolonlar (varsa önce bunlar denenir). */
 const SEC_GUVENLIK_KOLON = /^(role|rol|roller|layer|seviye|katman|yetki|branch|branch_id|sube|sube_id|şube_id|auth_id|user_id|kullanici_id|status|durum)$/i;
@@ -97,7 +97,7 @@ begin
   end if;
 
   if p_islem = 'anahtarlar' then
-    execute format('select coalesce(jsonb_agg(a.k), ''[]''::jsonb) from (select * from public.%I limit 5000) t'
+    execute format('select coalesce(jsonb_agg(a.k), ''[]''::jsonb) from public.%I t'
       || ' cross join lateral (select jsonb_object_agg(e, to_jsonb(t) -> e) k from jsonb_array_elements_text($1) e) a', p_tablo)
       into v_sonuc using coalesce(p_veri -> 'pk', '[]'::jsonb);
     return v_sonuc;
@@ -177,8 +177,31 @@ async function secYazIstek(o, jeton, yontem, yol, govde) {
 }
 
 const secAyni = (a, b) => JSON.stringify(a === undefined ? null : a) === JSON.stringify(b === undefined ? null : b);
-const secKisitHatasi = c => /^23/.test(c.kod);   // NOT NULL, UNIQUE, FOREIGN KEY, CHECK…
 const secHataKisa = c => (c.mesaj ? (c.kod ? c.kod + ': ' : '') + c.mesaj.slice(0, 140) : '');
+
+/* Hata türü: yalnız yetki reddi bir şey kanıtlar; ötekilerde yetki hiç denenmemiştir.
+   yok · red (yetki) · kisit (23xxx: NOT NULL, UNIQUE, FK, CHECK) · kural (P0001: uygulamanın kendi kuralı) · veri */
+function secHataTur(c) {
+  if (!c || (!c.kod && !c.mesaj)) return 'yok';
+  if (c.kod === '42501' || /row-level security|permission denied/i.test(c.mesaj) || c.durum === 401 || c.durum === 403) return 'red';
+  if (/^23/.test(c.kod)) return 'kisit';
+  if (c.kod === 'P0001') return 'kural';
+  return 'veri';
+}
+const SEC_HATA_AD = { kisit: 'kısıt hatası', kural: 'uygulama kuralı reddetti', veri: 'veri/istek hatası' };
+const secTekrarDene = c => ['kisit', 'veri'].includes(secHataTur(c));   // başka değerle yeniden denenebilir
+
+/* Ortak karar. Asıl ölçü: veri gerçekten değişti mi. */
+function secKarar(cevap, degisti, bek, evet, hayir) {
+  if (degisti) return { gercek: evet, sonuc: bek ? 'gecti' : 'acik' };
+  const tur = secHataTur(cevap), h = secHataKisa(cevap);
+  if (tur === 'yok' || tur === 'red') {
+    return bek
+      ? { gercek: hayir + ' — erişim fazla kısıtlı' + (h ? ' (' + h + ')' : ''), sonuc: 'edilemedi' }
+      : { gercek: hayir + (h ? ' (' + h + ')' : ''), sonuc: 'gecti' };
+  }
+  return { gercek: hayir + ' · ' + SEC_HATA_AD[tur] + ', yetki denenemedi (' + h + ')', sonuc: 'edilemedi' };
+}
 
 function secPkKosul(b, x) {
   const k = {};
@@ -207,6 +230,9 @@ function secYazSatir(x, b) {
 const secAtla = k => k.uretilmis === 's' || k.kimlik === 'a' || (k.pk && !!(k.varsayilan || k.kimlik));
 const secZorunlu = k => !secAtla(k) && !k.bos_olabilir && !k.varsayilan && !k.kimlik;
 const secRastgele = () => Math.random().toString(36).slice(2, 8);
+const secTip = k => String((k && k.tip) || '').toLowerCase();
+const secMetinTip = t => /char|text|citext/.test(t);
+const secSayiTip = t => /int|numeric|decimal|real|double|float|money/.test(t);
 
 function secBenzersizKolonlar(bt) {
   const set = new Set();
@@ -217,40 +243,55 @@ function secBenzersizKolonlar(bt) {
   return set;
 }
 
-function secYeniAnahtar(k, eski) {
-  const tip = String(k.tip || '').toLowerCase();
+/* Tabloda bu kolonda henüz geçmeyen bir değer (benzersiz kolon / yeni kimlik için).
+   Başka tabloya bağlı kolonda bağlı tablonun kullanılmamış değeri seçilir. */
+function secYeniDeger(cx, k, eski) {
+  const tip = secTip(k);
+  const kullanilan = new Set(cx.ornek.map(s => JSON.stringify(s.x[k.ad])));
+  const fk = cx.fk[k.ad];
+  if (fk) {
+    const bos = fk.find(v => !kullanilan.has(JSON.stringify(v)));
+    return bos !== undefined ? bos : eski;
+  }
   if (/uuid/.test(tip)) return crypto.randomUUID();
-  if (/char|text/.test(tip)) return 'nizam-test-' + secRastgele();
-  if (/int/.test(tip)) return 1000000000 + Math.floor(Math.random() * 900000000);
+  if (secMetinTip(tip)) return (eski === null || eski === undefined || k.pk ? 'nizam-test' : String(eski)) + '-' + secRastgele();
+  if (secSayiTip(tip)) {
+    const sayilar = cx.ornek.map(s => Number(s.x[k.ad])).filter(n => Number.isFinite(n));
+    return Math.floor(Math.max(0, ...sayilar)) + 1 + Math.floor(Math.random() * 1000);
+  }
   return eski;
 }
 
-/* Bir kaynak kayıttan yeni, sentetik bir kayıt: yeni kimlik, benzersiz metinlere ek. */
-function secTaslak(bt, x) {
-  const benzersiz = secBenzersizKolonlar(bt);
+/* Bir kaynak kayıttan yeni, sentetik bir kayıt: yeni kimlik, benzersiz kolonlara yeni değer. */
+function secTaslak(cx, x) {
+  const benzersiz = secBenzersizKolonlar(cx.bt);
   const t = {};
-  bt.kolonlar.forEach(k => {
+  cx.bt.kolonlar.forEach(k => {
     if (secAtla(k) || !(k.ad in x)) return;
     let v = x[k.ad];
-    if (k.pk) v = secYeniAnahtar(k, v);
-    else if (benzersiz.has(k.ad) && typeof v === 'string') v = v + '-nt' + secRastgele();
+    if (k.pk || (benzersiz.has(k.ad) && v !== null && v !== undefined)) v = secYeniDeger(cx, k, v);
     t[k.ad] = v;
   });
   return t;
 }
 
-/* Değiştirmek için aday değerler: önce tablodaki başka kayıtların değeri
-   (kurallara/kısıtlara uyan gerçekçi değer, ör. başka bir rol), sonra tipe göre üretilen. */
+/* Değiştirmek için aday değerler. Bağlı kolonda bağlı tablonun değerleri; benzersiz
+   kolonda önce üretilen (çakışmayan) değer; sonra tablodaki başka kayıtların değeri
+   (kurallara uyan gerçekçi değer, ör. başka bir rol); en son tipe göre üretilen. */
 function secAdaylar(cx, c, simdi) {
   const out = [];
   const ekle = v => { if (v !== null && v !== undefined && !secAyni(v, simdi) && !out.some(o => secAyni(o, v))) out.push(v); };
-  cx.ornek.forEach(s => ekle(s.x[c]));
   const k = cx.bt.kolonlar.find(x => x.ad === c) || {};
-  const tip = String(k.tip || '').toLowerCase();
-  if (/char|text/.test(tip)) ekle(simdi === null || simdi === undefined ? 'nizam-test' : String(simdi) + ' (nizam-test)');
-  else if (/int|numeric|decimal|real|double|float|money/.test(tip)) ekle((Number(simdi) || 0) + 1);
+  const tip = secTip(k);
+  const fk = cx.fk[c];
+  if (fk) { fk.forEach(ekle); return out.slice(0, 4); }
+  if (secBenzersizKolonlar(cx.bt).has(c)) ekle(secYeniDeger(cx, k, simdi));
+  cx.ornek.forEach(s => ekle(s.x[c]));
+  if (secMetinTip(tip)) ekle(simdi === null || simdi === undefined ? 'nizam-test' : String(simdi) + ' (nizam-test)');
+  else if (secSayiTip(tip)) ekle((Number(simdi) || 0) + 1);
   else if (/bool/.test(tip)) ekle(!simdi);
-  return out.slice(0, 3);
+  else if (/uuid/.test(tip)) ekle(crypto.randomUUID());
+  return out.slice(0, 4);
 }
 
 /* ==========================================================================
@@ -342,18 +383,14 @@ async function secEkleDene(cx, govde) {
 }
 
 function secEkleKarar(r, bek) {
-  const not = r.temiz ? '' : ' · ⚠ test kaydı silinemedi';
-  const beklenen = bek ? '✅ Ekleyebilmeli' : '❌ Ekleyememeli';
-  if (r.olustu) return { beklenen, gercek: '✅ Kayıt oluşturuldu' + not, sonuc: bek ? 'gecti' : 'acik' };
-  const hata = secHataKisa(r.cevap);
-  if (secKisitHatasi(r.cevap)) return { beklenen, gercek: '❌ Kayıt oluşmadı · kısıt hatası, yetki denenemedi (' + hata + ')', sonuc: 'edilemedi' };
-  if (bek) return { beklenen, gercek: '❌ Kayıt oluşmadı — erişim fazla kısıtlı' + (hata ? ' (' + hata + ')' : ''), sonuc: 'edilemedi' };
-  return { beklenen, gercek: '❌ Kayıt oluşmadı' + (hata ? ' (' + hata + ')' : ''), sonuc: 'gecti' };
+  const k = secKarar(r.cevap, r.olustu, bek, '✅ Kayıt oluşturuldu', '❌ Kayıt oluşmadı');
+  if (!r.temiz) k.gercek += ' · ⚠ test kaydı silinemedi';
+  return Object.assign({ beklenen: bek ? '✅ Ekleyebilmeli' : '❌ Ekleyememeli' }, k);
 }
 
 async function secEkleTest(cx, h, ekle) {
   const { m, b, bt, rol, ben } = cx;
-  const taslak = secTaslak(bt, h.satir.x);
+  const taslak = secTaslak(cx, h.satir.x);
   const satir = secYazSatir(taslak, b);
   const kol = Object.keys(taslak);
   const bek = c => secYazBek(m, c, rol, 'ekle', satir, b, ben);
@@ -379,9 +416,13 @@ async function secEkleTest(cx, h, ekle) {
   for (const c of yasak.filter(c => !(c in temel))) {
     const kolon = { tur: 'Kolon', kolon: c, beklenen: '❌ Bu kolonu yazamamalı' };
     if (!r.olustu || !r.satir) { ekle(Object.assign(kolon, { gercek: 'Temel ekleme çalışmadığı için denenemedi', sonuc: 'edilemedi' })); continue; }
-    const deger = secAdaylar(cx, c, r.satir[c])[0];
-    if (deger === undefined) { ekle(Object.assign(kolon, { gercek: 'Denenecek farklı bir değer bulunamadı', sonuc: 'edilemedi' })); continue; }
-    const r2 = await secEkleDene(cx, Object.assign({}, temel, { [c]: deger }));
+    const adaylar = secAdaylar(cx, c, r.satir[c]);
+    if (!adaylar.length) { ekle(Object.assign(kolon, { gercek: 'Denenecek farklı bir değer bulunamadı', sonuc: 'edilemedi' })); continue; }
+    let r2, deger;
+    for (deger of adaylar) {
+      r2 = await secEkleDene(cx, Object.assign({}, temel, { [c]: deger }));
+      if (r2.olustu || !secTekrarDene(r2.cevap)) break;
+    }
     const not = r2.temiz ? '' : ' · ⚠ test kaydı silinemedi';
     if (r2.olustu && r2.satir) {
       const yazildi = secAyni(r2.satir[c], deger);
@@ -413,7 +454,7 @@ async function secDegistirDene(cx, h, c, bek, ekle, tur) {
   for (const deger of adaylar) {
     cevap = await secYazIstek(o, cx.jeton, 'PATCH', filtre, { [c]: deger });
     sonra = await oku();
-    if (!sonra || !secAyni(sonra[c], once[c]) || !secKisitHatasi(cevap)) break;   // kısıt hatasında sıradaki değer
+    if (!sonra || !secAyni(sonra[c], once[c]) || !secTekrarDene(cevap)) break;   // kısıt/veri hatasında sıradaki değer
   }
 
   /* Eski değeri geri yükle (yalnız değişen ve yazılabilen kolonlar). */
@@ -431,12 +472,8 @@ async function secDegistirDene(cx, h, c, bek, ekle, tur) {
     }
   }
   if (!sonra) return ekle(Object.assign(kayit, { gercek: 'Kayıt istekten sonra bulunamadı', sonuc: bek ? 'edilemedi' : 'acik' }));
-
-  const hata = secHataKisa(cevap);
-  if (!secAyni(sonra[c], once[c])) return ekle(Object.assign(kayit, { gercek: '✅ Değişti' + not, sonuc: bek ? 'gecti' : 'acik' }));
-  if (secKisitHatasi(cevap)) return ekle(Object.assign(kayit, { gercek: '❌ Değişmedi · kısıt hatası, yetki denenemedi (' + hata + ')', sonuc: 'edilemedi' }));
-  if (bek) return ekle(Object.assign(kayit, { gercek: '❌ Değişmedi — erişim fazla kısıtlı' + (hata ? ' (' + hata + ')' : ''), sonuc: 'edilemedi' }));
-  return ekle(Object.assign(kayit, { gercek: '❌ Değişmedi' + (hata ? ' (' + hata + ')' : ''), sonuc: 'gecti' }));
+  const k = secKarar(cevap, !secAyni(sonra[c], once[c]), bek, '✅ Değişti', '❌ Değişmedi');
+  return ekle(Object.assign(kayit, k, { gercek: k.gercek + not }));
 }
 
 async function secDegistirTest(cx, h, ekle) {
@@ -446,8 +483,15 @@ async function secDegistirTest(cx, h, ekle) {
   const bek = c => secYazBek(m, c, rol, 'degistir', h.satir, b, ben);
   const izinli = kol.filter(c => bek(c).v === true);
   const yasak = kol.filter(c => bek(c).v === false);
-  const guvenlikOnce = l => l.find(c => SEC_GUVENLIK_KOLON.test(c)) || l[0];
-  const siradan = l => l.find(c => !SEC_GUVENLIK_KOLON.test(c)) || l[0];
+  /* İzinli deneme için önce düz yazı/sayı kolonu, bağlı (fk) ve yetki kolonları sona;
+     denenecek değeri olan ilk kolon seçilir. */
+  const puan = c => {
+    const t = secTip(bt.kolonlar.find(k => k.ad === c));
+    return (SEC_GUVENLIK_KOLON.test(c) ? 4 : 0) + (cx.fk[c] ? 2 : 0) + (secMetinTip(t) || secSayiTip(t) || /bool/.test(t) ? 0 : 1);
+  };
+  const degerli = l => l.find(c => secAdaylar(cx, c, h.satir.x[c]).length) || l[0];
+  const siradan = l => degerli(l.slice().sort((a, x) => puan(a) - puan(x)));
+  const guvenlikOnce = l => degerli(l.filter(c => SEC_GUVENLIK_KOLON.test(c)).concat(l.filter(c => !SEC_GUVENLIK_KOLON.test(c))));
 
   if (!izinli.length && !yasak.length) {
     return ekle({ tur: 'Satır', beklenen: '—', gercek: kol.length ? bek(kol[0]).neden : 'Değiştirilebilecek kolon yok', sonuc: 'edilemedi' });
@@ -465,21 +509,17 @@ async function secDegistirTest(cx, h, ekle) {
 async function secSilTest(cx, h, ekle) {
   const { o, b, m, rol, ben } = cx;
   let kopya;
-  try { kopya = await secYardimci(o, cx.gozcu, 'ekle', b.ad, { satir: secTaslak(cx.bt, h.satir.x) }); }
+  try { kopya = await secYardimci(o, cx.gozcu, 'ekle', b.ad, { satir: secTaslak(cx, h.satir.x) }); }
   catch (e) { return ekle({ tur: 'Satır', beklenen: '—', gercek: 'Silmek için sentetik kopya açılamadı: ' + (e.message || e), sonuc: 'edilemedi' }); }
   const kosul = secPkKosul(b, kopya);
   const bek = secSilBek(m, rol, secYazSatir(kopya, b), b, ben);
   let not = '';
   try {
     if (bek.v === null) return ekle({ tur: 'Satır', beklenen: '—', gercek: bek.neden, sonuc: 'edilemedi' });
-    const kayit = { tur: 'Satır', beklenen: bek.v ? '✅ Silebilmeli' : '❌ Silememeli' };
     const cevap = await secYazIstek(o, cx.jeton, 'DELETE', encodeURIComponent(b.ad) + '?' + secPkFiltre(b, kopya));
     const silindi = !(await secYardimci(o, cx.gozcu, 'oku', b.ad, { kosul })).length;
-    const hata = secHataKisa(cevap);
-    if (silindi) return ekle(Object.assign(kayit, { gercek: '✅ Silindi', sonuc: bek.v ? 'gecti' : 'acik' }));
-    if (secKisitHatasi(cevap)) return ekle(Object.assign(kayit, { gercek: '❌ Silinmedi · kısıt hatası, yetki denenemedi (' + hata + ')', sonuc: 'edilemedi' }));
-    if (bek.v) return ekle(Object.assign(kayit, { gercek: '❌ Silinmedi — erişim fazla kısıtlı' + (hata ? ' (' + hata + ')' : ''), sonuc: 'edilemedi' }));
-    return ekle(Object.assign(kayit, { gercek: '❌ Silinmedi' + (hata ? ' (' + hata + ')' : ''), sonuc: 'gecti' }));
+    return ekle(Object.assign({ tur: 'Satır', beklenen: bek.v ? '✅ Silebilmeli' : '❌ Silememeli' },
+      secKarar(cevap, silindi, bek.v, '✅ Silindi', '❌ Silinmedi')));
   } finally {
     /* Kopya kaldıysa sil. */
     try { await secYardimci(o, cx.gozcu, 'sil', b.ad, { kosul }); }
@@ -556,6 +596,25 @@ async function secYazmaCalistir(projeId) {
       ilerle('Test verisi okunuyor', '', b.ad);
       ornek[b.ad] = b.pk && yt[b.ad] ? (await secYardimci(o, gozcu, 'oku', b.ad, { kosul: {} })).map(x => secYazSatir(x, b)) : [];
     }
+    /* Başka tabloya bağlı kolonların geçerli değerleri (bağlı tablodan, yardımcıyla). */
+    const fkler = {}, hedefOku = {};
+    for (const { b } of bilgiler) {
+      fkler[b.ad] = {};
+      for (const f of ((yt[b.ad] || {}).iliskiler || [])) {
+        if (!f.kolon || !f.hedef_kolon || !yt[f.hedef_tablo]) continue;
+        if (!(f.hedef_tablo in hedefOku)) {
+          ilerle('Bağlı tablolar okunuyor', '', f.hedef_tablo);
+          try { hedefOku[f.hedef_tablo] = await secYardimci(o, gozcu, 'oku', f.hedef_tablo, { kosul: {} }); }
+          catch (h) { hedefOku[f.hedef_tablo] = []; }
+        }
+        const degerler = [];
+        hedefOku[f.hedef_tablo].forEach(r => {
+          const v = r[f.hedef_kolon];
+          if (v !== null && v !== undefined && !degerler.some(d => secAyni(d, v))) degerler.push(v);
+        });
+        if (degerler.length) fkler[b.ad][f.kolon] = degerler;
+      }
+    }
     const harita = { tablolar: {} };
     Object.keys(ornek).forEach(t => { harita.tablolar[t] = ornek[t]; });
     const esler = {};
@@ -570,7 +629,7 @@ async function secYazmaCalistir(projeId) {
         continue;
       }
       for (const { m, b } of bilgiler) {
-        await secYazTablo(Object.assign({}, ortak, { jeton: os.jeton, m, b, bt: yt[b.ad], rol: os.kisi.rol,
+        await secYazTablo(Object.assign({}, ortak, { jeton: os.jeton, m, b, bt: yt[b.ad], fk: fkler[b.ad] || {}, rol: os.kisi.rol,
           ben: { uid: os.uid, sube: os.sube }, ornek: ornek[b.ad] }), temel, sonuclar, ilerle);
       }
     }
@@ -582,7 +641,7 @@ async function secYazmaCalistir(projeId) {
     const ziyaretci = { kisi: SEC_ZIYARETCI, rol: ziyaretciRol || 'Dış erişim' };
     for (const { m, b } of bilgiler) {
       const bz = Object.assign({}, b, { sahip: null, sube: null });   // "kendi"/şube yok
-      await secYazTablo(Object.assign({}, ortak, { jeton: anonJeton, m, b: bz, bt: yt[b.ad], rol: ziyaretciRol,
+      await secYazTablo(Object.assign({}, ortak, { jeton: anonJeton, m, b: bz, bt: yt[b.ad], fk: fkler[b.ad] || {}, rol: ziyaretciRol,
         ben: { uid: null, sube: null }, ornek: (ornek[b.ad] || []).map(s => secYazSatir(s.x, bz)) }), ziyaretci, sonuclar, ilerle);
     }
 
