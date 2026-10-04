@@ -502,6 +502,7 @@ function securityEkran() {
   }
   const r = rota();
   if (r.id && r.durak === 'test') return secTestEkran(r.id);   // security-test.js
+  if (r.id && r.durak === 'testler') return secOkumaEkran(r.id);   // security-okuma.js
   return r.id ? secProjeEkran(r.id) : secListeEkran();
 }
 
@@ -598,6 +599,7 @@ function secSekmeler(projeId, aktif) {
   return `<nav class="sec-sekmeler">
     ${s('Erişim Kuralları', '#/security/' + esc(projeId), 'kurallar')}
     ${s('Test Ortamı', '#/security/' + esc(projeId) + '/test', 'test')}
+    ${s('Güvenlik Testleri', '#/security/' + esc(projeId) + '/testler', 'testler')}
   </nav>`;
 }
 
@@ -739,6 +741,7 @@ function secYapistirPenceresi({ baslik, aciklama, ust = '', yerTutucu, dogrula }
 async function securityEylem(e, el) {
   const projeId = el.dataset.id;
   if (e.indexOf('sec-t-') === 0) return secTestEylem(e, el);   // security-test.js
+  if (e.indexOf('sec-o-') === 0) return secOkumaEylem(e, el);  // security-okuma.js
 
   if (e === 'sec-yapi') {
     secYapistirPenceresi({

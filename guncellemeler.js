@@ -21,6 +21,13 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.295.0', tarih: '2026-10-04',
+    ozet: 'Nizam Security: Güvenlik Testleri (okuma) eklendi',
+    maddeler: [
+      'Projede yeni "Güvenlik Testleri" sekmesi: test kullanıcıları test projesine gerçekten giriş yapıp verileri okumayı dener.',
+      'Görmemesi gereken bir kaydı ya da kolonu (ör. maaş) görürse 🔴 güvenlik açığı olarak gösterilir.',
+      'Yalnız test projesinde çalışır; production\'a hiç istek gitmez. Sonuçlar şimdilik kaydedilmiyor.',
+    ] },
   { surum: 'v0.294.0', tarih: '2026-10-04',
     ozet: 'Nizam Security: test ortamı kurulumu düzeltildi',
     maddeler: [

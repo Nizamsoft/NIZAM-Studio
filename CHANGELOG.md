@@ -1,5 +1,26 @@
 # Değişiklik Günlüğü
 
+## v0.295.0
+- **Nizam Security — 3. aşama: Güvenlik Testleri (yalnız OKUMA / SELECT).** Yeni
+  `security-okuma.js`, rota `#/security/<id>/testler`, üçüncü sekme. Eski güvenlik
+  sistemine bağ yok; `security.js`'e yalnız sekme, rota ve eylem yönlendirmesi eklendi.
+- **Veri haritası** (`secHaritaSql`): test projesinde çalışan salt-okur SQL,
+  `secKilitSql` ile başlar; her model tablosundan yalnız kayıt kimliği (tek kolonlu
+  PK), sahip (`sahip_kolon`) ve şube (`sube_id` / `şube_id` / `branch_id` — başka ad
+  kabul edilmez) okunur, tablo başına en fazla 200 satır.
+- **Çalıştırıcı** (`secOkumaCalistir`): test ≠ production ≠ Studio denetimi; her
+  test kullanıcısı `/auth/v1/token?grant_type=password` ile gerçek giriş yapar,
+  biletin `iss`'i test projesi değilse test durur; tablolar `GET /rest/v1/<tablo>?select=*`
+  ile okunur (kolon yetkisi reddederse kolon kolon). İstekler yalnız
+  `https://<test_ref>.supabase.co`'ya gider.
+- **Değerlendirme dönen veriye göre**: satır testi (kendi / başka kullanıcının /
+  kendi şubesinin / başka şubenin kaydı + kalan kayıtlarda sızıntı taraması) ve
+  kolon testi (yalnız görülmesi gereken ve dönen satırda; yasak kolonlar tek tek,
+  izinliler toplu) ayrı. Sonuçlar: 🟢 geçti · 🔴 güvenlik açığı (görmemesi
+  gerekeni gördü) · 🟡 test edilemedi (veri yok, kural anlaşılmadı, şube kolonu yok,
+  erişim fazla kısıtlı).
+- Harita ve sonuçlar yalnız bellekte; yeni tablo/SQL yok.
+
 ## v0.294.0
 - **Test ortamı kurulumu: hesaplanan kolon hatası** ("cannot use column reference
   in DEFAULT expression"). `pg_attrdef` hesaplanan (generated stored) kolonların
