@@ -21,6 +21,12 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.305.0', tarih: '2026-10-04',
+    ozet: 'Yazma testleri: iki yanlış sonuç düzeltildi',
+    maddeler: [
+      'Veritabanının kendisi güncellediği alanlar (ör. "güncellendi" tarihi) artık yanlışlıkla güvenlik açığı sayılmıyor; yalnız gönderilen değer gerçekten yazıldıysa açık sayılıyor.',
+      'İki parçalı kimliği olan tablolarda (ör. hesap kısayolları) deneme kaydı artık çakışmıyor.',
+    ] },
   { surum: 'v0.304.0', tarih: '2026-10-04',
     ozet: 'Nizam Security: yazma testleri ve Erişim Kuralları birlikte daha akıllı',
     maddeler: [

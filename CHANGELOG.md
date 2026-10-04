@@ -1,5 +1,12 @@
 # Değişiklik Günlüğü
 
+## v0.305.0
+- **UPDATE ölçüsü** (`secDegistirDene`): "değer değişti mi" yerine "gönderilen değer yazıldı
+  mı". Tetikleyicinin kendisi güncellediği kolon (ör. `guncellendi = now()`) artık yanlış 🔴
+  vermiyor; sonuçta "veritabanı kendisi güncelliyor" yazar, geri yükleme uyarısı çıkmaz.
+- **Bileşik anahtar** (`secTaslak`): varsayılanı olan anahtar parçası da kopyaya girer ve
+  gerekirse değişir (önceden gönderilmiyordu → aynı varsayılan → `hesap_kisayollari_pkey`).
+
 ## v0.304.0
 - **CHECK okuma düzeltildi** (`security-yazma.js`): izinli değer yalnız `kolon = ANY (ARRAY[...])`
   listesinden (önceden `btrim(x) <> ''` içindeki `''` ve başka kolonların sabitleri de

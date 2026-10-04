@@ -415,6 +415,13 @@ function secTaslak(cx, x) {
   });
   const puan = c => (korunan.has(c) ? 8 : 0) + (cx.fk[c] ? 2 : 0) + (secIzinliDegerler(cx, kol[c]) ? 1 : 0);
   for (const grup of secAnahtarGruplari(cx.bt)) {
+    /* Bileşik anahtarın varsayılanlı parçası da kopyaya girer; yoksa veritabanı aynı
+       varsayılanla doldurur ve anahtar çakışır (ör. hesap_kisayollari (yer, hesap_id)). */
+    if (grup.length > 1) {
+      grup.forEach(c => {
+        if (!(c in t) && c in x && kol[c] && kol[c].uretilmis !== 's' && kol[c].kimlik !== 'a') t[c] = x[c];
+      });
+    }
     if (grup.some(c => !(c in t) || !kol[c])) continue;            // veritabanı dolduruyor
     if (grup.some(c => t[c] === null || t[c] === undefined)) continue; // boş değer çakışmaz
     const var_ = new Set(cx.ornek.map(s => JSON.stringify(grup.map(c => s.x[c]))));
@@ -744,12 +751,17 @@ async function secDegistirDene(cx, h, c, bek, ekle, tur) {
   const adaylar = secAdaylar(cx, c, once[c]);
   if (!adaylar.length) return ekle(Object.assign(kayit, { gercek: 'Denenecek farklı bir değer bulunamadı', sonuc: 'edilemedi' }));
 
-  let cevap, sonra;
+  /* Ölçü: GÖNDERDİĞİMİZ değer yazıldı mı. Kolonu bir tetikleyici kendisi güncelliyorsa
+     (ör. guncellendi = now()) değer değişse de bu kişinin yazması değildir. */
+  let cevap, sonra, gonderilen;
   for (const deger of adaylar) {
+    gonderilen = deger;
     cevap = await secYazIstek(o, cx.jeton, 'PATCH', filtre, { [c]: deger });
     sonra = await oku();
-    if (!sonra || !secAyni(sonra[c], once[c]) || !secTekrarDene(cevap)) break;   // kısıt/veri hatasında sıradaki değer
+    if (!sonra || secAyni(sonra[c], deger) || !secTekrarDene(cevap)) break;   // kısıt/veri hatasında sıradaki değer
   }
+  const yazildi = !!sonra && secAyni(sonra[c], gonderilen);
+  const kendisi = !!sonra && !yazildi && !secAyni(sonra[c], once[c]);
 
   /* Eski değeri geri yükle (yalnız değişen ve yazılabilen kolonlar). */
   let not = '';
@@ -761,12 +773,13 @@ async function secDegistirDene(cx, h, c, bek, ekle, tur) {
       try {
         await secYardimci(o, cx.gozcu, 'geri', b.ad, { kosul, satir: fark });
         const son = await oku();
-        not = son && secAyni(son[c], once[c]) ? ' · eski değer geri yüklendi' : ' · ⚠ eski değer geri yüklenemedi';
-      } catch (h2) { not = ' · ⚠ eski değer geri yüklenemedi'; }
+        if (yazildi) not = son && secAyni(son[c], once[c]) ? ' · eski değer geri yüklendi' : ' · ⚠ eski değer geri yüklenemedi';
+      } catch (h2) { if (yazildi) not = ' · ⚠ eski değer geri yüklenemedi'; }
     }
   }
   if (!sonra) return ekle(Object.assign(kayit, { gercek: 'Kayıt istekten sonra bulunamadı', sonuc: bek ? 'edilemedi' : 'acik' }));
-  const k = secKarar(cevap, !secAyni(sonra[c], once[c]), bek, '✅ Değişti', '❌ Değişmedi');
+  const k = secKarar(cevap, yazildi, bek, '✅ Değişti', '❌ Değişmedi');
+  if (kendisi) k.gercek += ' (gönderilen değer yazılmadı; bu kolonu veritabanı kendisi güncelliyor)';
   return ekle(Object.assign(kayit, k, { gercek: k.gercek + not }));
 }
 
