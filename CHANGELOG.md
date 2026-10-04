@@ -1,5 +1,18 @@
 # Değişiklik Günlüğü
 
+## v0.294.0
+- **Test ortamı kurulumu: hesaplanan kolon hatası** ("cannot use column reference
+  in DEFAULT expression"). `pg_attrdef` hesaplanan (generated stored) kolonların
+  ifadesini de taşıyor; kurulum bunu `set default` diye yazıyordu. Yapı SQL'i
+  `yapi-3`: kolonda `uretilmis` (attgenerated). Kurulum bu kolonları tablo
+  oluşturulurken atlayıp fonksiyonlardan sonra `add column … generated always as
+  (…) stored` ile ekliyor (ifade fonksiyon kullanabilir; kolon sırası sona kayar).
+- **Eklentiler:** yapı SQL'i `pg_extension` listesini alıyor; kurulum her birini
+  `create extension if not exists … with schema …` ile açmayı deniyor, açılamazsa
+  uyarı verip devam ediyor.
+- Test Ortamı sekmesi `yapi-3` istiyor; eski yapıda "Yenile" mesajı gösteriyor.
+  Yerel denemede (hesaplanan kolon + citext) production ile 0 fark.
+
 ## v0.293.0
 - **Satır kuralı sınırı 80 → 200 karakter** (`secModelOku`). Prompt sınırı
   söylemiyordu; Claude doğal uzun açıklama yazınca model reddediliyordu. Prompta

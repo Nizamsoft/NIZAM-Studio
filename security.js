@@ -22,9 +22,9 @@
 
 'use strict';
 
-const SEC_YAPI_SURUM  = 'yapi-2';
-/* Erişim Kuralları eski yapı çıktısıyla da çalışır; Test Ortamı yapi-2 ister. */
-const SEC_YAPI_KABUL  = ['yapi-1', 'yapi-2'];
+const SEC_YAPI_SURUM  = 'yapi-3';
+/* Erişim Kuralları eski yapı çıktısıyla da çalışır; Test Ortamı en yenisini (yapi-3) ister. */
+const SEC_YAPI_KABUL  = ['yapi-1', 'yapi-2', 'yapi-3'];
 const SEC_MODEL_SURUM = 1;
 const SEC_IZINLER = ['oku', 'ekle', 'degistir', 'sil'];
 const SEC_IZIN_AD = { oku: 'Oku', ekle: 'Ekle', degistir: 'Değiştir', sil: 'Sil' };
@@ -36,7 +36,7 @@ const SEC_SATIR_AD = { tum: 'Tüm satırlar', kendi: 'Kendi satırı', yok: 'Hi�
    Yalnız sistem kataloğunu okur (pg_class, pg_attribute, pg_constraint,
    pg_policy, pg_proc…). Hiçbir tablonun SATIRINA dokunmaz; müşteri verisi,
    şifre, token çıkmaz.
-   yapi-2: test ortamı bu yapıdan kurulabilsin diye varsayılan değerler,
+   yapi-2/3: test ortamı bu yapıdan kurulabilsin diye varsayılan değerler,
    kısıtlar, RLS kuralları (policy), yetkiler, fonksiyonlar, tetikleyiciler,
    enum tipleri ve görünümler de alınıyor — hepsi TANIM, hiçbiri veri değil. */
 const SEC_YAPI_SQL = `-- NIZAM Security · Veritabanı yapısı
@@ -57,6 +57,7 @@ select json_build_object(
                        where k.conrelid = c.oid and k.contype = 'p' and a.attnum = any(k.conkey)),
           'varsayilan', pg_get_expr(d.adbin, d.adrelid),
           'kimlik', nullif(a.attidentity::text, ''),
+          'uretilmis', nullif(a.attgenerated::text, ''),
           'yetkiler', (select json_agg(json_build_object('rol', r.rol, 'yetki', r.yetki))
                        from (select case when x.grantee = 0 then 'public' else pg_get_userbyid(x.grantee) end as rol,
                                     x.privilege_type as yetki
@@ -138,6 +139,9 @@ select json_build_object(
     from pg_proc p join pg_namespace n on n.oid = p.pronamespace
     where n.nspname = 'public' and p.prokind in ('f', 'p')
       and not exists (select 1 from pg_depend d where d.objid = p.oid and d.deptype = 'e')), '[]'::json),
+  'eklentiler', coalesce((select json_agg(json_build_object('ad', e.extname, 'sema', en.nspname) order by e.extname)
+    from pg_extension e join pg_namespace en on en.oid = e.extnamespace
+    where e.extname <> 'plpgsql'), '[]'::json),
   'auth_tetikleyiciler', coalesce((select json_agg(json_build_object('ad', tg.tgname, 'tanim', pg_get_triggerdef(tg.oid)))
     from pg_trigger tg join pg_class c on c.oid = tg.tgrelid
     join pg_namespace n on n.oid = c.relnamespace
@@ -240,7 +244,7 @@ function secYapiOku(metin) {
     return { hata: 'Bu, Nizam Security yapı SQL\'inin çıktısı değil. Buradaki SQL\'i kopyalayıp çalıştır.' };
   }
   if (!Array.isArray(j.tablolar)) return { hata: 'Tablo listesi bulunamadı.' };
-  const v2 = j.nizam_security === 'yapi-2';
+  const v2 = j.nizam_security !== 'yapi-1';   // yapi-2 ve yapi-3
   const dz = x => (Array.isArray(x) ? x : []);
   const yt = x => dz(x).map(y => ({ rol: String(y.rol || ''), yetki: String(y.yetki || '') }))
     .filter(y => y.rol && y.yetki);
@@ -259,6 +263,7 @@ function secYapiOku(metin) {
       if (v2) {
         o.varsayilan = k.varsayilan === null || k.varsayilan === undefined ? null : String(k.varsayilan);
         o.kimlik = k.kimlik === 'a' || k.kimlik === 'd' ? k.kimlik : null;
+        o.uretilmis = k.uretilmis === 's' ? 's' : null;   // hesaplanan kolon (generated … stored)
         o.yetkiler = yt(k.yetkiler);
       }
       return o;
@@ -283,7 +288,7 @@ function secYapiOku(metin) {
     }
     tablolar.push(tablo);
   }
-  const yapi = { nizam_security: v2 ? 'yapi-2' : 'yapi-1', tablolar };
+  const yapi = { nizam_security: j.nizam_security, tablolar };
   if (v2) {
     yapi.gorunumler = dz(j.gorunumler).map(g => ({
       ad: String(g.ad || ''), tanim: String(g.tanim || ''),
@@ -298,6 +303,8 @@ function secYapiOku(metin) {
       anon: !!f.anon, authenticated: !!f.authenticated,
     })).filter(f => f.ad && f.tanim);
     yapi.auth_tetikleyiciler = tanimli(j.auth_tetikleyiciler, ['ad', 'tanim']);
+    yapi.eklentiler = dz(j.eklentiler).map(x => ({ ad: String(x.ad || ''), sema: String(x.sema || 'extensions') }))
+      .filter(x => /^[a-z0-9_-]+$/i.test(x.ad));
   }
   return { yapi };
 }

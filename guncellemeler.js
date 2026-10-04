@@ -21,6 +21,14 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.294.0', tarih: '2026-10-04',
+    ozet: 'Nizam Security: test ortamı kurulumu düzeltildi',
+    maddeler: [
+      'Değeri kendiliğinden hesaplanan kolonlar (ör. toplam = adet × fiyat) test ortamında artık hata vermiyor.',
+      'Tabloların kullandığı Supabase eklentileri test projesinde de açılıyor.',
+      'Bir kez Erişim Kuralları → 1. adım → Yenile yapman gerekiyor.',
+    ] },
+
   { surum: 'v0.293.0', tarih: '2026-10-04',
     ozet: 'Nizam Security: uzun satır kuralı artık reddedilmiyor',
     maddeler: [
