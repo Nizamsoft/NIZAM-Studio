@@ -11013,3 +11013,67 @@ a.lk.tl-kart { text-decoration: none; color: inherit; }
   .sec-tablo col.sec-ck { width: 150px; }
   .sec-tablo col.sec-cs { width: 140px; }
 }
+
+/* ---------- Nizam Security · sekmeler + Test Ortamı (security-test.js) ---------- */
+.sec-sekmeler { display: flex; gap: 4px; margin: 0 0 18px; border-bottom: 1px solid var(--line-3); overflow-x: auto; }
+.sec-sekme {
+  padding: 9px 14px; font-size: 13.5px; font-weight: 600; color: var(--ink-dim);
+  text-decoration: none; white-space: nowrap;
+}
+.sec-sekme.aktif { color: var(--ink-strong); box-shadow: inset 0 -2px 0 var(--ink-strong); }
+
+.sec-t-durum {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 10px 12px;
+  padding: 14px 16px; margin-bottom: 16px; border: 1px solid var(--line-3); border-radius: 8px; background: #fff;
+}
+.sec-t-emoji { font-size: 22px; line-height: 1; }
+.sec-t-durum-yz b { display: block; font: 700 16px var(--yazi-baslik); color: var(--ink-strong); }
+.sec-t-durum-yz i { display: block; font-style: normal; font-size: 12.5px; color: var(--ink-dim); }
+.sec-t-kalkan {
+  margin-left: auto; padding: 4px 10px; border-radius: 99px; font-size: 12px;
+  color: var(--st-done-t); background: var(--done-soft);
+}
+.sec-t-kalkan.kotu { color: var(--red-ink); background: var(--red-soft); }
+
+.sec-t-izgara { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 22px; }
+.sec-t-kart { min-width: 0; padding: 16px; border: 1px solid var(--line-3); border-radius: 8px; background: #fff; }
+.sec-t-ku { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.sec-t-ku b { font-size: 14px; color: var(--ink-strong); }
+.sec-t-ku em { margin-left: auto; font-style: normal; font-size: 12px; color: var(--ink-dim); white-space: nowrap; }
+.sec-t-kart.bitti .sec-no { background: var(--ink-strong); color: #fff; }
+.sec-t-kart.bitti .sec-t-ku em { color: var(--st-done); }
+.sec-t-sat {
+  display: flex; justify-content: space-between; gap: 10px; padding: 7px 0;
+  border-top: 1px solid var(--surface-2); font-size: 13px; color: var(--ink-soft);
+}
+.sec-t-sat > span:last-child { text-align: right; min-width: 0; overflow-wrap: anywhere; }
+.sec-t-sat code { font: 12.5px ui-monospace, Menlo, monospace; color: var(--ink); }
+.sec-t-sat i { font-style: normal; }
+.sec-sifre { color: var(--ink-strong) !important; user-select: all; }
+.sec-t-not { margin: 0 0 4px; font-size: 13px; line-height: 1.55; color: var(--ink-soft); }
+.sec-t-uyari {
+  margin: 0 0 8px; padding: 10px 12px; border-radius: 8px; background: var(--yuva);
+  font-size: 12.5px; line-height: 1.55; color: var(--ink-soft);
+}
+.sec-t-uyari b { color: var(--ink-strong); }
+.sec-t-dg { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; }
+.sec-dug.ana { background: var(--ink-strong); border-color: var(--ink-strong); color: #fff; }
+.sec-t-ipucu { font-size: 12px; color: var(--ink-dim); }
+.sec-t-ipucu.alt { margin: 10px 0 24px; }
+.sec-yesil { color: var(--st-done); font-weight: 700; }
+.sec-kirmizi { color: var(--red-ink); font-weight: 700; }
+
+.sec-t-liste { border: 1px solid var(--line-3); border-radius: 8px; background: #fff; }
+.sec-t-li {
+  display: flex; align-items: baseline; gap: 10px; padding: 10px 16px;
+  border-top: 1px solid var(--surface-2); font-size: 13.5px; color: var(--ink);
+}
+.sec-t-li:first-child { border-top: 0; }
+.sec-t-li small { margin-left: auto; font-size: 12px; color: var(--ink-dim); text-align: right; overflow-wrap: anywhere; }
+
+@media (max-width: 900px) {
+  .sec-t-izgara { grid-template-columns: 1fr; }
+  .sec-t-kalkan { margin-left: 0; }
+  .sec-t-li { flex-wrap: wrap; }
+  .sec-t-li small { margin-left: 22px; text-align: left; width: 100%; }
+}

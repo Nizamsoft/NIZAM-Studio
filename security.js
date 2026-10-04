@@ -22,7 +22,9 @@
 
 'use strict';
 
-const SEC_YAPI_SURUM  = 'yapi-1';
+const SEC_YAPI_SURUM  = 'yapi-2';
+/* Erişim Kuralları eski yapı çıktısıyla da çalışır; Test Ortamı yapi-2 ister. */
+const SEC_YAPI_KABUL  = ['yapi-1', 'yapi-2'];
 const SEC_MODEL_SURUM = 1;
 const SEC_IZINLER = ['oku', 'ekle', 'degistir', 'sil'];
 const SEC_IZIN_AD = { oku: 'Oku', ekle: 'Ekle', degistir: 'Değiştir', sil: 'Sil' };
@@ -31,24 +33,38 @@ const SEC_IZIN_AD = { oku: 'Oku', ekle: 'Ekle', degistir: 'Değiştir', sil: 'Si
 const SEC_SATIR_AD = { tum: 'Tüm satırlar', kendi: 'Kendi satırı', yok: 'Hiçbiri' };
 
 /* ---------- Gerçek yapıyı okuyan SQL ----------
-   Yalnız sistem kataloğunu okur (pg_class, pg_attribute, pg_constraint).
-   Hiçbir tablonun SATIRINA dokunmaz; müşteri verisi, şifre, token çıkmaz. */
+   Yalnız sistem kataloğunu okur (pg_class, pg_attribute, pg_constraint,
+   pg_policy, pg_proc…). Hiçbir tablonun SATIRINA dokunmaz; müşteri verisi,
+   şifre, token çıkmaz.
+   yapi-2: test ortamı bu yapıdan kurulabilsin diye varsayılan değerler,
+   kısıtlar, RLS kuralları (policy), yetkiler, fonksiyonlar, tetikleyiciler,
+   enum tipleri ve görünümler de alınıyor — hepsi TANIM, hiçbiri veri değil. */
 const SEC_YAPI_SQL = `-- NIZAM Security · Veritabanı yapısı
--- Yalnız YAPIYI okur: tablo, kolon, tip, birincil anahtar, ilişki, RLS.
--- Hiçbir satır verisi okunmaz. Çıkan tek hücreyi kopyala, Nizam'a yapıştır.
+-- Yalnız YAPIYI okur: tablo, kolon, tip, anahtar, ilişki, RLS kuralları,
+-- yetkiler, fonksiyon ve tetikleyici tanımları. Hiçbir satır verisi okunmaz.
+-- Çıkan tek hücreyi kopyala, Nizam'a yapıştır.
 select json_build_object(
   'nizam_security', '${SEC_YAPI_SURUM}',
   'tablolar', coalesce((select json_agg(t order by t.ad) from (
     select c.relname as ad,
       c.relrowsecurity as rls,
+      c.relforcerowsecurity as rls_zorunlu,
       coalesce((select json_agg(json_build_object(
           'ad', a.attname,
           'tip', format_type(a.atttypid, a.atttypmod),
           'bos_olabilir', not a.attnotnull,
           'pk', exists(select 1 from pg_constraint k
-                       where k.conrelid = c.oid and k.contype = 'p' and a.attnum = any(k.conkey))
+                       where k.conrelid = c.oid and k.contype = 'p' and a.attnum = any(k.conkey)),
+          'varsayilan', pg_get_expr(d.adbin, d.adrelid),
+          'kimlik', nullif(a.attidentity::text, ''),
+          'yetkiler', (select json_agg(json_build_object('rol', r.rol, 'yetki', r.yetki))
+                       from (select case when x.grantee = 0 then 'public' else pg_get_userbyid(x.grantee) end as rol,
+                                    x.privilege_type as yetki
+                             from aclexplode(a.attacl) x) r
+                       where r.rol in ('anon', 'authenticated', 'public'))
         ) order by a.attnum)
         from pg_attribute a
+        left join pg_attrdef d on d.adrelid = a.attrelid and d.adnum = a.attnum
         where a.attrelid = c.oid and a.attnum > 0 and not a.attisdropped), '[]'::json) as kolonlar,
       coalesce((select json_agg(json_build_object(
           'kolon', (select string_agg(a.attname, ',') from pg_attribute a
@@ -60,11 +76,72 @@ select json_build_object(
         from pg_constraint f
         join pg_class cf on cf.oid = f.confrelid
         join pg_namespace fn on fn.oid = cf.relnamespace
-        where f.conrelid = c.oid and f.contype = 'f'), '[]'::json) as iliskiler
+        where f.conrelid = c.oid and f.contype = 'f'), '[]'::json) as iliskiler,
+      coalesce((select json_agg(json_build_object(
+          'ad', k.conname, 'tur', k.contype, 'tanim', pg_get_constraintdef(k.oid))
+          order by k.contype, k.conname)
+        from pg_constraint k
+        where k.conrelid = c.oid and k.contype in ('p', 'u', 'c', 'f', 'x')), '[]'::json) as kisitlar,
+      coalesce((select json_agg(json_build_object(
+          'ad', p.polname,
+          'islem', case p.polcmd when 'r' then 'SELECT' when 'a' then 'INSERT'
+                                 when 'w' then 'UPDATE' when 'd' then 'DELETE' else 'ALL' end,
+          'kisitlayici', not p.polpermissive,
+          'roller', (select json_agg(case when r = 0 then 'public' else pg_get_userbyid(r) end)
+                     from unnest(p.polroles) r),
+          'using', pg_get_expr(p.polqual, p.polrelid),
+          'check', pg_get_expr(p.polwithcheck, p.polrelid))
+          order by p.polname)
+        from pg_policy p where p.polrelid = c.oid), '[]'::json) as politikalar,
+      c.relacl is null as yetki_varsayilan,
+      (select json_agg(json_build_object('rol', r.rol, 'yetki', r.yetki))
+         from (select case when x.grantee = 0 then 'public' else pg_get_userbyid(x.grantee) end as rol,
+                      x.privilege_type as yetki
+               from aclexplode(c.relacl) x) r
+         where r.rol in ('anon', 'authenticated', 'public')) as yetkiler,
+      coalesce((select json_agg(json_build_object('ad', tg.tgname, 'tanim', pg_get_triggerdef(tg.oid))
+          order by tg.tgname)
+        from pg_trigger tg where tg.tgrelid = c.oid and not tg.tgisinternal), '[]'::json) as tetikleyiciler
     from pg_class c
     join pg_namespace n on n.oid = c.relnamespace
     where n.nspname = 'public' and c.relkind in ('r', 'p')
-  ) t), '[]'::json)
+  ) t), '[]'::json),
+  'gorunumler', coalesce((select json_agg(json_build_object(
+      'ad', c.relname,
+      'tanim', pg_get_viewdef(c.oid),
+      'secenekler', c.reloptions,
+      'yetki_varsayilan', c.relacl is null,
+      'yetkiler', (select json_agg(json_build_object('rol', r.rol, 'yetki', r.yetki))
+         from (select case when x.grantee = 0 then 'public' else pg_get_userbyid(x.grantee) end as rol,
+                      x.privilege_type as yetki
+               from aclexplode(c.relacl) x) r
+         where r.rol in ('anon', 'authenticated', 'public')))
+      order by c.oid)
+    from pg_class c join pg_namespace n on n.oid = c.relnamespace
+    where n.nspname = 'public' and c.relkind = 'v'), '[]'::json),
+  'tipler', coalesce((select json_agg(json_build_object(
+      'ad', ty.typname,
+      'degerler', (select json_agg(e.enumlabel order by e.enumsortorder) from pg_enum e where e.enumtypid = ty.oid)))
+    from pg_type ty join pg_namespace n on n.oid = ty.typnamespace
+    where n.nspname = 'public' and ty.typtype = 'e'), '[]'::json),
+  'diziler', coalesce((select json_agg(c.relname)
+    from pg_class c join pg_namespace n on n.oid = c.relnamespace
+    where n.nspname = 'public' and c.relkind = 'S'
+      and not exists (select 1 from pg_depend d where d.objid = c.oid and d.deptype = 'i')), '[]'::json),
+  'fonksiyonlar', coalesce((select json_agg(json_build_object(
+      'ad', p.proname,
+      'imza', pg_get_function_identity_arguments(p.oid),
+      'tanim', pg_get_functiondef(p.oid),
+      'anon', has_function_privilege('anon', p.oid, 'execute'),
+      'authenticated', has_function_privilege('authenticated', p.oid, 'execute'))
+      order by p.oid)
+    from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'public' and p.prokind in ('f', 'p')
+      and not exists (select 1 from pg_depend d where d.objid = p.oid and d.deptype = 'e')), '[]'::json),
+  'auth_tetikleyiciler', coalesce((select json_agg(json_build_object('ad', tg.tgname, 'tanim', pg_get_triggerdef(tg.oid)))
+    from pg_trigger tg join pg_class c on c.oid = tg.tgrelid
+    join pg_namespace n on n.oid = c.relnamespace
+    where n.nspname = 'auth' and c.relname = 'users' and not tg.tgisinternal), '[]'::json)
 ) as yapi;`;
 
 /* ---------- Ekran durumu ---------- */
@@ -151,30 +228,90 @@ function secJsonAl(metin, sarmalAnahtar) {
   return { json: j };
 }
 
-/* ---------- Yapı okuyucu ---------- */
+/* ---------- Yapı okuyucu ----------
+   yapi-1 (eski) yalnız tablo/kolon/ilişki/RLS taşır. yapi-2 ek olarak test
+   ortamını kurmak için gereken tanımları taşır; hepsi metin olarak saklanır. */
 function secYapiOku(metin) {
   if (secGizliVar(metin)) return { hata: 'Çıktıda gizli bir anahtar ya da şifre var gibi görünüyor — kabul edilmedi.' };
   const r = secJsonAl(metin, 'yapi');
   if (r.hata) return r;
   const j = r.json;
-  if (j.nizam_security !== SEC_YAPI_SURUM) {
+  if (!SEC_YAPI_KABUL.includes(j.nizam_security)) {
     return { hata: 'Bu, Nizam Security yapı SQL\'inin çıktısı değil. Buradaki SQL\'i kopyalayıp çalıştır.' };
   }
   if (!Array.isArray(j.tablolar)) return { hata: 'Tablo listesi bulunamadı.' };
+  const v2 = j.nizam_security === 'yapi-2';
+  const dz = x => (Array.isArray(x) ? x : []);
+  const yt = x => dz(x).map(y => ({ rol: String(y.rol || ''), yetki: String(y.yetki || '') }))
+    .filter(y => y.rol && y.yetki);
+  const tanimli = (x, alanlar) => dz(x).map(y => {
+    const o = {};
+    alanlar.forEach(a => { o[a] = y[a] === null || y[a] === undefined ? null : String(y[a]); });
+    return o;
+  }).filter(y => y.ad);
+
   const tablolar = [];
   for (const t of j.tablolar) {
     if (!t || typeof t.ad !== 'string' || !t.ad) return { hata: 'Adı olmayan bir tablo var.' };
-    const kolonlar = (Array.isArray(t.kolonlar) ? t.kolonlar : []).map(k => ({
-      ad: String(k.ad || ''), tip: String(k.tip || ''),
-      bos_olabilir: !!k.bos_olabilir, pk: !!k.pk,
-    })).filter(k => k.ad);
-    const iliskiler = (Array.isArray(t.iliskiler) ? t.iliskiler : []).map(f => ({
+    const kolonlar = dz(t.kolonlar).map(k => {
+      const o = { ad: String(k.ad || ''), tip: String(k.tip || ''),
+        bos_olabilir: !!k.bos_olabilir, pk: !!k.pk };
+      if (v2) {
+        o.varsayilan = k.varsayilan === null || k.varsayilan === undefined ? null : String(k.varsayilan);
+        o.kimlik = k.kimlik === 'a' || k.kimlik === 'd' ? k.kimlik : null;
+        o.yetkiler = yt(k.yetkiler);
+      }
+      return o;
+    }).filter(k => k.ad);
+    const iliskiler = dz(t.iliskiler).map(f => ({
       kolon: String(f.kolon || ''), hedef_tablo: String(f.hedef_tablo || ''),
       hedef_kolon: String(f.hedef_kolon || ''),
     }));
-    tablolar.push({ ad: t.ad, rls: !!t.rls, kolonlar, iliskiler });
+    const tablo = { ad: t.ad, rls: !!t.rls, kolonlar, iliskiler };
+    if (v2) {
+      tablo.rls_zorunlu = !!t.rls_zorunlu;
+      tablo.kisitlar = tanimli(t.kisitlar, ['ad', 'tur', 'tanim']);
+      tablo.politikalar = dz(t.politikalar).map(p => ({
+        ad: String(p.ad || ''), islem: String(p.islem || 'ALL'), kisitlayici: !!p.kisitlayici,
+        roller: dz(p.roller).map(String),
+        using: p.using === null || p.using === undefined ? null : String(p.using),
+        check: p.check === null || p.check === undefined ? null : String(p.check),
+      })).filter(p => p.ad);
+      tablo.yetki_varsayilan = !!t.yetki_varsayilan;
+      tablo.yetkiler = yt(t.yetkiler);
+      tablo.tetikleyiciler = tanimli(t.tetikleyiciler, ['ad', 'tanim']);
+    }
+    tablolar.push(tablo);
   }
-  return { yapi: { nizam_security: SEC_YAPI_SURUM, tablolar } };
+  const yapi = { nizam_security: v2 ? 'yapi-2' : 'yapi-1', tablolar };
+  if (v2) {
+    yapi.gorunumler = dz(j.gorunumler).map(g => ({
+      ad: String(g.ad || ''), tanim: String(g.tanim || ''),
+      secenekler: dz(g.secenekler).map(String),
+      yetki_varsayilan: !!g.yetki_varsayilan, yetkiler: yt(g.yetkiler),
+    })).filter(g => g.ad && g.tanim);
+    yapi.tipler = dz(j.tipler).map(x => ({ ad: String(x.ad || ''), degerler: dz(x.degerler).map(String) }))
+      .filter(x => x.ad);
+    yapi.diziler = dz(j.diziler).map(String).filter(Boolean);
+    yapi.fonksiyonlar = dz(j.fonksiyonlar).map(f => ({
+      ad: String(f.ad || ''), imza: String(f.imza || ''), tanim: String(f.tanim || ''),
+      anon: !!f.anon, authenticated: !!f.authenticated,
+    })).filter(f => f.ad && f.tanim);
+    yapi.auth_tetikleyiciler = tanimli(j.auth_tetikleyiciler, ['ad', 'tanim']);
+  }
+  return { yapi };
+}
+
+/* Claude'a giden modelleme promptunda yalnız tablo/kolon/ilişki/RLS yeter;
+   fonksiyon gövdeleri ve kurallar promptu gereksiz büyütür. */
+function secYapiOzet(yapi) {
+  return {
+    nizam_security: yapi.nizam_security,
+    tablolar: (yapi.tablolar || []).map(t => ({
+      ad: t.ad, rls: t.rls, iliskiler: t.iliskiler,
+      kolonlar: t.kolonlar.map(k => ({ ad: k.ad, tip: k.tip, bos_olabilir: k.bos_olabilir, pk: k.pk })),
+    })),
+  };
 }
 
 /* ---------- Model okuyucu ----------
@@ -317,7 +454,7 @@ function secPrompt(p, yapi) {
   s.push('');
   s.push('## Gerçek veritabanı yapısı (SQL Editor çıktısı)');
   s.push('```json');
-  s.push(JSON.stringify(yapi));
+  s.push(JSON.stringify(secYapiOzet(yapi)));
   s.push('```');
   s.push('');
   s.push('Hazırsan ilk sorularınla başla.');
@@ -354,8 +491,9 @@ function securityEkran() {
     return `<div class="card">${empty(ICON.gGuvenlik, 'Bu ekran yöneticiye ait',
       'Nizam Security\'yi yalnızca yönetici görebilir.')}</div>`;
   }
-  const id = rota().id;
-  return id ? secProjeEkran(id) : secListeEkran();
+  const r = rota();
+  if (r.id && r.durak === 'test') return secTestEkran(r.id);   // security-test.js
+  return r.id ? secProjeEkran(r.id) : secListeEkran();
 }
 
 /* ---------- Proje seç ---------- */
@@ -440,8 +578,18 @@ function secProjeEkran(projeId) {
       <h1>${esc(basHarfleriBuyuk(projeAdi(p)))}</h1>
       <p>Erişim Kuralları · olması istenen güvenlik davranışı</p>
     </div></div>
+    ${secSekmeler(projeId, 'kurallar')}
     ${adimlar}
     ${govde}`;
+}
+
+/* Proje sayfasının iki sekmesi: Erişim Kuralları | Test Ortamı. */
+function secSekmeler(projeId, aktif) {
+  const s = (ad, adres, k) => `<a class="sec-sekme${aktif === k ? ' aktif' : ''}" href="${adres}">${esc(ad)}</a>`;
+  return `<nav class="sec-sekmeler">
+    ${s('Erişim Kuralları', '#/security/' + esc(projeId), 'kurallar')}
+    ${s('Test Ortamı', '#/security/' + esc(projeId) + '/test', 'test')}
+  </nav>`;
 }
 
 function secSatirAd(d) {
@@ -581,6 +729,7 @@ function secYapistirPenceresi({ baslik, aciklama, ust = '', yerTutucu, dogrula }
 
 async function securityEylem(e, el) {
   const projeId = el.dataset.id;
+  if (e.indexOf('sec-t-') === 0) return secTestEylem(e, el);   // security-test.js
 
   if (e === 'sec-yapi') {
     secYapistirPenceresi({

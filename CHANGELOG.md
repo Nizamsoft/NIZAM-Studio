@@ -1,5 +1,34 @@
 # Değişiklik Günlüğü
 
+## v0.292.0
+- **Nizam Security — 2. aşama: Test Ortamı.** Yeni `security-test.js`, rota
+  `#/security/<id>/test`, proje sayfasında Erişim Kuralları | Test Ortamı sekmeleri.
+  Eski güvenlik sistemine bağ yok.
+- **Yapı SQL'i `yapi-2`.** Artık varsayılanlar, kimlik kolonları, kısıtlar
+  (`pg_get_constraintdef`), RLS kuralları (`pg_policy`), tablo/kolon/görünüm
+  yetkileri (anon/authenticated), fonksiyonlar (`pg_get_functiondef`, eklenti
+  fonksiyonları hariç), tetikleyiciler (+ `auth.users` tetikleyicileri), enum
+  tipleri, sayaçlar ve görünümler de okunuyor — hepsi tanım, satır verisi yok.
+  Erişim Kuralları `yapi-1` ile çalışmayı sürdürüyor; modelleme promptu
+  `secYapiOzet` ile kısaltılmış yapıyı alıyor.
+- **Kurulum SQL'i** (`secTestKurulumSql`): tek işlem; kilit → işaret tablosu
+  `nizam_test_ortami` → temizle → tipler/sayaçlar → tablolar → fonksiyonlar →
+  varsayılanlar → kısıtlar → görünümler → tetikleyiciler → RLS + policy → yetkiler.
+  Yerel denemede production yapısıyla birebir aynı çıktı.
+- **Production kilitleri:** bağlanırken test ref'i production ref'i
+  (`palet.supabaseUrl`) ve Studio'nun kendi ref'iyle karşılaştırılır, production
+  bilinmiyorsa bağlantı engellenir; yalnız publishable/anon anahtar (service_role,
+  sb_secret_, başka projenin JWT'si reddedilir); her SQL `secKilitSql` ile başlar
+  (tablo var + işaret yok → DUR; işaret başka projenin → DUR); tabloda
+  `test_ref <> uretim_ref` kısıtı.
+- **Test kullanıcıları** test projesinin `/auth/v1/signup` adresiyle açılır
+  (auth.users'a SQL yazılmaz, service_role yok). Kısıtlı role 2, tam yetkiliye 1
+  kişi; rastgele 22 karakterli şifre. E-posta doğrulaması açıksa ekran söyler.
+- **Sentetik veri:** `secTestVeriPrompt` → Claude SQL'i → `secTestVeriOku`
+  (yapı değiştiren komut, auth'a yazma, işlem komutu reddedilir) → kilitle sarılıp kopyalanır.
+- **Durum kontrolü:** salt-okur SQL → 🟢 hazır / 🟡 hazırlanıyor / 🔴 eksik ve eksik listesi.
+- Yeni tablo `security_test_ortamlari`: `sql/45-nizam-security-test.sql` çalıştırılmalı.
+
 ## v0.291.0
 - **Nizam Security — ilk aşama: Erişim Kuralları.** Eski güvenlik sisteminden
   (guvenlik-*.js, guvenlik_* tabloları) tamamen bağımsız yeni bölüm

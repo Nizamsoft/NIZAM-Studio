@@ -21,6 +21,14 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.292.0', tarih: '2026-10-04',
+    ozet: 'Nizam Security: Test Ortamı',
+    maddeler: [
+      'Proje sayfasına "Test Ortamı" sekmesi eklendi: gerçek veritabanının yapısı ve güvenlik kuralları ayrı bir Supabase test projesine kopyalanıyor, müşteri verisi taşınmıyor.',
+      'Test kullanıcıları (Yönetici, Personel A, Personel B…) tek tuşla açılıyor; sahte test verisini Claude yazıyor.',
+      'Test projesi production ile aynıysa Nizam işlemi durduruyor; SQL\'ler de production\'da kendini durduruyor.',
+    ] },
+
   { surum: 'v0.291.0', tarih: '2026-10-04',
     ozet: 'Nizam Security: Erişim Kuralları',
     maddeler: [
