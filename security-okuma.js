@@ -729,7 +729,7 @@ function secOkumaSonuclar(projeId) {
     ${kusursuz ? `<div class="sec-t-durum sec-kusursuz"><span class="sec-t-emoji">✅</span>
       <span class="sec-t-durum-yz"><b>Kusursuz — açık yok</b>
         <i>Okuma, yazma ve giriş yapmamış ziyaretçi testlerinin hepsi geçti; test veritabanı gerçek veritabanıyla
-          aynı yapıda. (RPC fonksiyonları, dosya kovaları ve kendi kendine kayıt bu taramanın kapsamında değil.)</i></span></div>` : ''}
+          aynı yapıda. Teslimden önce aşağıdaki "Teslim öncesi kontrol" listesini de tamamla.</i></span></div>` : ''}
     ${damga}
     ${bagHata ? `<div class="sec-t-durum"><span class="sec-t-emoji">🌐</span>
       <span class="sec-t-durum-yz"><b>${bagHata} test bağlantı hatası yüzünden denenemedi</b>
@@ -744,6 +744,7 @@ function secOkumaSonuclar(projeId) {
       <button class="sec-dug ana" type="button" data-eylem="sec-o-y-rapor" data-id="${esc(projeId)}">📋 Hataları bildir (${bildir})</button>
       <span class="sec-t-ipucu">🔴 ve 🟡 sonuçlar projenin Claude sohbeti için kopyalanır</span>
     </div>` : ''}
+    ${secTeslimHtml(projeId)}
     ${y ? `<div class="sec-t-dg sec-o-filtre">
       ${fi('Tümü', 'hepsi')}${fi('Okuma', 'SELECT')}${fi('Ekleme', 'INSERT')}${fi('Değiştirme', 'UPDATE')}${fi('Silme', 'DELETE')}
     </div>` : ''}
@@ -751,6 +752,99 @@ function secOkumaSonuclar(projeId) {
       ${f('Hepsi', 'hepsi')}${f('🟢 Geçti', 'gecti')}${f('🔴 Açık', 'acik')}${f('🟡 Edilemedi', 'edilemedi')}
     </div>
     <div class="sec-o-liste">${kartlar || '<p class="sec-t-not">Bu filtrede sonuç yok.</p>'}</div>`;
+}
+
+/* ==========================================================================
+   TESLİM ÖNCESİ KONTROL — taramanın kapsamadığı şeyler için kısa liste.
+   İşaretler yalnız bu tarayıcıda (localStorage) tutulur; kolaylık içindir.
+   ========================================================================== */
+
+function secTeslimIsaret(projeId, yeni) {
+  const anahtar = 'nizam-teslim:' + projeId;
+  try {
+    if (yeni) localStorage.setItem(anahtar, JSON.stringify(yeni));
+    return JSON.parse(localStorage.getItem(anahtar) || '{}') || {};
+  } catch (_) { return yeni || {}; }
+}
+
+/* Yetkili modda (security definer) çalışan ve siteden çağrılabilen fonksiyonlar.
+   Tetikleyici fonksiyonları siteden çağrılamaz, sayılmaz. */
+function secYetkiliFonksiyonlar(projeId) {
+  const k = SEC.kayit[projeId] || {};
+  const liste = (k.yapi && k.yapi.fonksiyonlar) || [];
+  return liste.filter(f => /security\s+definer/i.test(f.tanim || '') && !/returns\s+trigger/i.test(f.tanim || '')
+    && (f.anon || f.authenticated));
+}
+
+function secTeslimMaddeler(projeId) {
+  const fonk = secYetkiliFonksiyonlar(projeId);
+  const ad = f => f.ad + '(' + (f.imza || '') + ')' + (f.anon ? ' — giriş yapmadan da çağrılabilir' : '');
+  return [
+    { id: 'kurallar', baslik: 'Erişim Kuralları\'nı kendi gözümle okudum',
+      alt: 'Test, kurallar kadar doğrudur. Kural yanlışsa test de yanlışı doğru sanar. Her rol için "kim neyi görür, kim neyi değiştirir" bir kez oku.' },
+    { id: 'kayit', baslik: 'Yabancılar kendi kendine hesap açamıyor',
+      alt: 'Gerçek Supabase projesinde: Authentication → Sign In / Providers → "Allow new users to sign up" kapalı olmalı. Müşterinin kullanıcıları kendisi kayıt oluyorsa açık kalabilir; o zaman bana söyle, ayrıca bakalım.' },
+    { id: 'dosya', baslik: 'Dosyalar herkese açık değil',
+      alt: 'Gerçek Supabase projesinde: Storage. Hiç kova yoksa bu madde tamam. Varsa yanında "Public" yazmamalı (logo gibi herkesin görmesi gereken dosyalar hariç).' },
+    fonk.length
+      ? { id: 'fonksiyon', baslik: 'Kuralları atlayan ' + fonk.length + ' fonksiyon kontrol edildi',
+          alt: 'Bu fonksiyonlar çalışırken erişim kurallarına bakılmaz; içlerinde "çağıran kim" kontrolü olmalı. Aşağıdaki promptla Claude\'a kontrol ettir.',
+          liste: fonk.map(ad) }
+      : { id: 'fonksiyon', baslik: 'Kuralları atlayan fonksiyon yok', otomatik: true,
+          alt: 'Gerçek veritabanının yapısında böyle bir fonksiyon bulunmadı; bu madde kendiliğinden tamam.' },
+    { id: 'anahtar', baslik: 'Gizli anahtar sitenin kodunda yok',
+      alt: 'Supabase\'in "service_role" anahtarı bütün kuralları atlayan ana anahtardır; sitenin kodunda asla durmamalı. Aşağıdaki promptla Claude\'a kontrol ettir.' },
+  ];
+}
+
+function secTeslimHtml(projeId) {
+  const isaret = secTeslimIsaret(projeId);
+  const m = secTeslimMaddeler(projeId);
+  const tamam = x => x.otomatik || !!isaret[x.id];
+  const biten = m.filter(tamam).length;
+  const satir = x => {
+    const ic = `<span class="sec-teslim-kutu">${tamam(x) ? '✓' : ''}</span>
+      <span class="sec-teslim-yz"><b>${esc(x.baslik)}</b><i>${esc(x.alt)}</i>
+        ${x.liste ? `<span class="sec-teslim-fonk">${x.liste.map(f => `<code>${esc(f)}</code>`).join('')}</span>` : ''}</span>`;
+    return x.otomatik
+      ? `<div class="sec-teslim-li tamam">${ic}</div>`
+      : `<button class="sec-teslim-li${tamam(x) ? ' tamam' : ''}" type="button"
+          data-eylem="sec-o-teslim" data-id="${esc(projeId)}" data-m="${x.id}">${ic}</button>`;
+  };
+  return `
+    <h3 class="sec-bas">Teslim öncesi kontrol · ${biten}/${m.length}</h3>
+    <p class="sec-t-ipucu">Tarama tabloları test eder. Bu beş madde taramanın göremediği yerler; işaretlemek için maddeye dokun.</p>
+    <div class="sec-t-liste sec-teslim">${m.map(satir).join('')}</div>
+    <div class="sec-t-dg">
+      <button class="sec-dug" type="button" data-eylem="sec-o-teslim-prompt" data-id="${esc(projeId)}">📋 Kontrol promptu kopyala</button>
+      ${biten === m.length ? '<span class="sec-yesil">✅ Teslime hazır</span>' : ''}
+    </div>`;
+}
+
+function secTeslimPrompt(projeId) {
+  const p = DB.proje(projeId);
+  const fonk = secYetkiliFonksiyonlar(projeId);
+  const s = [];
+  s.push('# NIZAM Security — teslim öncesi kontrol · ' + projeAdi(p));
+  s.push('');
+  s.push('Bu projenin reposunda aşağıdaki kontrolleri yap. KOD DEĞİŞTİRME, yalnız rapor ver.');
+  s.push('Her madde için tek satır yaz: ✅ TAMAM ya da ❌ SORUN + kısa sebep + dosya/satır.');
+  s.push('');
+  s.push('1. Gizli anahtar: sitenin tarayıcıda çalışan kodunda Supabase "service_role" (ya da "sb_secret_") anahtarı var mı?');
+  s.push('   Ortam değişkenleri, yapılandırma dosyaları ve git geçmişine giren .env dosyaları dahil bak.');
+  s.push('2. Dosyalar: kod Supabase Storage kullanıyor mu? Kullanıyorsa hangi kovalar, herkese açık (public) olan var mı,');
+  s.push('   ve başkasının dosyasını indirmeyi/silmeyi engelleyen storage kuralları göç dosyalarında var mı?');
+  if (fonk.length) {
+    s.push('3. Aşağıdaki fonksiyonlar SECURITY DEFINER, yani erişim kurallarını (RLS) atlıyor. Her birinin tanımını oku ve söyle:');
+    s.push('   giriş yapmamış biri ya da yanlış roldeki bir kullanıcı bunu çağırarak görmemesi gereken veriyi görebilir veya değiştirebilir mi?');
+    s.push('   İçinde çağıranı kontrol ediyor mu (auth.uid(), rol kontrolü)? Yalnız true/false dönen yardımcılar genelde zararsızdır.');
+    fonk.forEach(f => s.push('   - ' + f.ad + '(' + (f.imza || '') + ')' + (f.anon ? '  [giriş yapmadan çağrılabilir]' : '')));
+  } else {
+    s.push('3. (Kuralları atlayan fonksiyon bulunmadı, bu madde atlandı.)');
+  }
+  s.push('');
+  s.push('SORUN varsa düzeltmeyi öner ama uygulama. Veritabanı düzeltmesi gerekiyorsa numaralı göç dosyası olarak öner.');
+  return s.join('\n');
 }
 
 /* ==========================================================================
@@ -766,6 +860,18 @@ async function secOkumaEylem(e, el) {
   if (e.indexOf('sec-o-y-') === 0) return secYazmaEylem(e, el);   // security-yazma.js
   if (e === 'sec-o-filtre') { SEC_OKUMA.filtre[projeId] = el.dataset.f; render(); return true; }
   if (e === 'sec-o-islem') { SEC_OKUMA.islem[projeId] = el.dataset.f; render(); return true; }
+  if (e === 'sec-o-teslim') {
+    const isaret = secTeslimIsaret(projeId);
+    isaret[el.dataset.m] = !isaret[el.dataset.m];
+    secTeslimIsaret(projeId, isaret);
+    render();
+    return true;
+  }
+  if (e === 'sec-o-teslim-prompt') {
+    const ok = await panoyaKopyala(secTeslimPrompt(projeId));
+    toast(ok ? 'Kontrol promptu kopyalandı — projenin Claude sohbetine yapıştır.' : 'Kopyalanamadı.', ok ? 'basari' : 'hata');
+    return true;
+  }
 
   const engel = secUretimAyriMi(p, o);
   if (engel) { toast(engel, 'hata'); return true; }

@@ -21,6 +21,13 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.317.0', tarih: '2026-10-05',
+    ozet: 'Nizam Security: teslim öncesi kontrol listesi',
+    maddeler: [
+      'Tarama sonucunun altında, taramanın göremediği 5 şey için işaretlenebilir bir liste var.',
+      'Kuralları atlayan veritabanı fonksiyonları Studio tarafından kendiliğinden bulunup listeleniyor.',
+      'Tek düğmeyle Claude\'a gizli anahtar, dosya ve fonksiyon kontrolü yaptıran prompt kopyalanıyor.',
+    ] },
   { surum: 'v0.316.0', tarih: '2026-10-05',
     ozet: 'Nizam Security: fark uyarısı ve Kusursuz rozeti',
     maddeler: [

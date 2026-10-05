@@ -1,5 +1,16 @@
 # Değişiklik Günlüğü
 
+## v0.317.0
+- **Teslim öncesi kontrol** (security-okuma.js, `secTeslimHtml`): tarama sonucunun altında
+  taramanın kapsamadığı 5 madde — Erişim Kuralları'nı okudum, kayıt kapalı, kovalar public
+  değil, kuralları atlayan fonksiyonlar, service_role kodda yok. İşaretler localStorage'da
+  (`nizam-teslim:<proje>`).
+- `secYetkiliFonksiyonlar`: gerçek yapıdaki SECURITY DEFINER + anon/authenticated çağırabilen
+  fonksiyonlar (tetikleyiciler hariç) otomatik listelenir; yoksa madde kendiliğinden tamam.
+- "Kontrol promptu kopyala" (`secTeslimPrompt`): Claude'a anahtar, storage ve fonksiyon
+  kontrolünü yalnız rapor olarak yaptırır.
+- Kusursuz rozetinin notu listeye yönlendiriyor.
+
 ## v0.316.0
 - **Taramadan önce fark sorusu.** "Taramayı başlat"ta hazırlıktan sonra gerçek↔TEST yapı
   farkı varsa `secFarkSorPenceresi` açılır: "Devam et, tara" / "Önce eşitle". Engellemiyor;
