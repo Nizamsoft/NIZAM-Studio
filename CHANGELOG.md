@@ -1,5 +1,16 @@
 # Değişiklik Günlüğü
 
+## v0.310.0
+- **Test Ortamı — Yapı karşılaştırması (gerçek ↔ TEST).** 5. kart: aynı `SEC_YAPI_SQL`
+  TEST projesinde çalıştırılıp yapıştırılır (Nizam işaret tablosu yoksa reddedilir —
+  yanlışlıkla gerçek veritabanının çıktısı). `secYapiKarsilastir`: RLS kuralları, RLS
+  durumu, tablo/kolon yetkileri, fonksiyonlar (tanım + anon/authenticated), tetikleyiciler,
+  giriş tetikleyicileri, tablo/kolon/kısıt, görünüm, tip, eklenti; boşluklar normalleştirilir,
+  `nizam_*` nesneler hariç. Sonuç: 🟢 "Yapılar aynı" ya da yalnız TEST'te / yalnız gerçekte /
+  iki tarafta farklı (tanımlar yan yana). Bellekte; karar kullanıcıda.
+- **Kurulum koruması:** son karşılaştırmada TEST'te gerçekte olmayan ya da farklı nesne
+  varsa "Kurulum SQL'ini kopyala" uyarır, devam için SİL yazılması istenir.
+
 ## v0.309.0
 - **Hataları bildir raporu:** "Ne yapmanı istiyorum"a iki madde. Düzeltme repoya numaralı
   göç dosyası olarak eklenir (önce TEST'te, sonra aynen production'da çalışır; ayrı

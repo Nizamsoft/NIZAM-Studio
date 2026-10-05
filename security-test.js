@@ -32,7 +32,7 @@
 const SEC_TEST_ALAN = 'test.nizamsoft.com';   // test hesaplarının e-posta alanı
 const SEC_TEST_KONTROL_SURUM = '1';
 
-const SEC_TEST = { kayit: {}, goster: {}, mesgul: {} };
+const SEC_TEST = { kayit: {}, goster: {}, mesgul: {}, yapiFark: {} };   // yapiFark: bellekte
 
 /* ==========================================================================
    VERİ — yalnız security_test_ortamlari tablosu
@@ -572,6 +572,94 @@ function secTestDurum(projeId, yapi, model, ortam) {
 }
 
 /* ==========================================================================
+   YAPI KARŞILAŞTIRMASI — gerçek veritabanı ↔ TEST
+   Aynı yapı SQL'i (SEC_YAPI_SQL) iki tarafta çalışır, çıktılar burada
+   nesne nesne eşleştirilir. Hangi tarafın doğru olduğuna Studio karar vermez.
+   Nizam'ın TEST'e koyduğu kendi parçaları (işaret tablosu, nizam_* fonksiyon
+   ve tetikleyicileri) karşılaştırmaya girmez.
+   ========================================================================== */
+
+const SEC_YAPI_TUR = {
+  kural: 'RLS kuralı', rls: 'RLS durumu', yetki: 'Tablo yetkisi', kyetki: 'Kolon yetkisi',
+  fonk: 'Fonksiyon', tetik: 'Tetikleyici', auth: 'Giriş tetikleyicisi', tablo: 'Tablo',
+  kolon: 'Kolon', kisit: 'Kısıt', gorunum: 'Görünüm', tip: 'Tip', eklenti: 'Eklenti',
+};
+const SEC_YAPI_SIRA = Object.keys(SEC_YAPI_TUR);   // güvenliği ilgilendirenler önce
+
+const secNizamMi = ad => /^nizam_/i.test(String(ad || ''));
+const secNorm = x => String(x === null || x === undefined ? '' : x).replace(/\s+/g, ' ').trim();
+const secYetkiMetni = l => (l || []).map(y => y.rol + ':' + y.yetki).sort().join(', ');
+
+/* Yapıyı "anahtar → {tur, ad, tanim}" haritasına çevirir. */
+function secYapiParcalar(yapi) {
+  const m = new Map();
+  const ekle = (tur, ad, tanim) => m.set(tur + ':' + ad, { tur, ad, tanim: secNorm(tanim) });
+  (yapi.tablolar || []).forEach(t => {
+    if (secNizamMi(t.ad)) return;
+    ekle('tablo', t.ad, 'var');
+    ekle('rls', t.ad, (t.rls ? 'açık' : 'kapalı') + (t.rls_zorunlu ? ' · zorunlu' : ''));
+    ekle('yetki', t.ad, t.yetki_varsayilan && !(t.yetkiler || []).length ? 'varsayılan' : secYetkiMetni(t.yetkiler));
+    (t.kolonlar || []).forEach(k => {
+      ekle('kolon', t.ad + '.' + k.ad, [k.tip, k.bos_olabilir ? 'boş olabilir' : 'boş olamaz',
+        k.varsayilan ? 'varsayılan ' + k.varsayilan : '', k.kimlik ? 'kimlik ' + k.kimlik : '',
+        k.uretilmis ? 'hesaplanan' : ''].filter(Boolean).join(' · '));
+      if ((k.yetkiler || []).length) ekle('kyetki', t.ad + '.' + k.ad, secYetkiMetni(k.yetkiler));
+    });
+    (t.kisitlar || []).forEach(k => ekle('kisit', t.ad + '.' + k.ad, k.tanim));
+    (t.politikalar || []).forEach(p => ekle('kural', t.ad + '.' + p.ad,
+      [p.islem, p.kisitlayici ? 'restrictive' : 'permissive', 'roller: ' + (p.roller || []).slice().sort().join(','),
+       'using: ' + (p.using || '—'), 'check: ' + (p.check || '—')].join(' · ')));
+    (t.tetikleyiciler || []).forEach(x => { if (!secNizamMi(x.ad)) ekle('tetik', t.ad + '.' + x.ad, x.tanim); });
+  });
+  (yapi.fonksiyonlar || []).forEach(f => {
+    if (secNizamMi(f.ad)) return;
+    ekle('fonk', f.ad + '(' + f.imza + ')', f.tanim + ' · anon:' + (f.anon ? 'evet' : 'hayır') + ' · authenticated:' + (f.authenticated ? 'evet' : 'hayır'));
+  });
+  (yapi.gorunumler || []).forEach(g => ekle('gorunum', g.ad, g.tanim + ' · ' + (g.secenekler || []).join(',') + ' · ' + secYetkiMetni(g.yetkiler)));
+  (yapi.tipler || []).forEach(x => ekle('tip', x.ad, (x.degerler || []).join(', ')));
+  (yapi.auth_tetikleyiciler || []).forEach(x => { if (!secNizamMi(x.ad)) ekle('auth', x.ad, x.tanim); });
+  (yapi.eklentiler || []).forEach(x => ekle('eklenti', x.ad, x.sema));
+  return m;
+}
+
+function secYapiKarsilastir(uretim, test) {
+  const u = secYapiParcalar(uretim), t = secYapiParcalar(test);
+  const sadeceTest = [], sadeceUretim = [], farkli = [];
+  t.forEach((v, k) => { if (!u.has(k)) sadeceTest.push(v); else if (u.get(k).tanim !== v.tanim) farkli.push({ tur: v.tur, ad: v.ad, uretim: u.get(k).tanim, test: v.tanim }); });
+  u.forEach((v, k) => { if (!t.has(k)) sadeceUretim.push(v); });
+  const sirala = l => l.sort((a, b) => SEC_YAPI_SIRA.indexOf(a.tur) - SEC_YAPI_SIRA.indexOf(b.tur) || a.ad.localeCompare(b.ad));
+  return { sadeceTest: sirala(sadeceTest), sadeceUretim: sirala(sadeceUretim), farkli: sirala(farkli) };
+}
+
+/* Fark ekranı (Test Ortamı sekmesinin altında). */
+function secYapiFarkHtml(projeId, uretimTarihi) {
+  const f = SEC_TEST.yapiFark[projeId];
+  if (!f) return '';
+  const r = f.sonuc;
+  const toplam = r.sadeceTest.length + r.sadeceUretim.length + r.farkli.length;
+  const tarih = `<p class="sec-t-ipucu">Gerçek veritabanı yapısı: ${esc(secTarih(uretimTarihi) || '?')} · TEST yapısı: ${esc(secTarih(f.tarih))}
+    · Gerçek tarafta göç uyguladıysan Erişim Kuralları → 1. adım → Yenile.</p>`;
+  if (!toplam) {
+    return `<h3 class="sec-bas">Yapı karşılaştırması</h3>
+      <div class="sec-t-durum"><span class="sec-t-emoji">🟢</span>
+        <span class="sec-t-durum-yz"><b>Yapılar aynı</b><i>TEST'teki test sonuçları gerçek veritabanı için de geçerli.</i></span></div>${tarih}`;
+  }
+  const satir = x => `<div class="sec-t-li"><span>${esc(SEC_YAPI_TUR[x.tur] || x.tur)}</span><span><code>${esc(x.ad)}</code></span></div>`;
+  const grup = (baslik, alt, liste, fn) => liste.length ? `
+    <div class="sec-y-grup"><b>${baslik} (${liste.length})</b><i>${alt}</i>
+      <div class="sec-t-liste">${liste.map(fn).join('')}</div></div>` : '';
+  const farkSatir = x => `<details class="sec-y-fark"><summary>${esc(SEC_YAPI_TUR[x.tur] || x.tur)} · <code>${esc(x.ad)}</code></summary>
+      <div><small>Gerçek veritabanı</small><pre>${esc(x.uretim)}</pre><small>TEST</small><pre>${esc(x.test)}</pre></div></details>`;
+  return `<h3 class="sec-bas">Yapı karşılaştırması</h3>
+    <div class="sec-t-durum"><span class="sec-t-emoji">🟡</span>
+      <span class="sec-t-durum-yz"><b>${toplam} fark var</b><i>TEST'teki test sonuçları gerçek veritabanı için geçerli olmayabilir. Hangi tarafın doğru olduğuna sen karar ver.</i></span></div>
+    ${grup('Yalnız TEST\'te', 'Düzeltme henüz gerçek veritabanına geçmemiş olabilir.', r.sadeceTest, satir)}
+    ${grup('Yalnız gerçek veritabanında', 'TEST eski kalmış olabilir.', r.sadeceUretim, satir)}
+    ${grup('İki tarafta farklı', 'Tanımları yan yana karşılaştır.', r.farkli, farkSatir)}
+    ${tarih}`;
+}
+
+/* ==========================================================================
    EKRAN
    ========================================================================== */
 
@@ -672,6 +760,17 @@ function secTestEkran(projeId) {
     + dug('SQL yapıştır → kopyala', 'sec-t-veri', '', false, !kisiTamam)
     + (o.veri_sql ? dug('Tekrar kopyala', 'sec-t-veri-kopya') : ''));
 
+  const yf = SEC_TEST.yapiFark[projeId];
+  const yfSay = yf ? yf.sonuc.sadeceTest.length + yf.sonuc.sadeceUretim.length + yf.sonuc.farkli.length : null;
+  const kart5 = kart(5, yfSay === 0, 'Yapı karşılaştırması',
+    yfSay === null ? 'Bekliyor' : yfSay ? '🟡 ' + yfSay + ' fark' : '✓ Aynı',
+    `<p class="sec-t-not">Erişim Kuralları'ndaki <b>aynı yapı SQL'ini</b> bu kez TEST projesinde çalıştır,
+       sonucu yapıştır. Studio gerçek veritabanının yapısıyla karşılaştırır (RLS kuralları, yetkiler,
+       fonksiyonlar, tetikleyiciler, tablolar). Yalnız okur.</p>`,
+    dug('Yapı SQL\'ini kopyala', 'sec-t-yapi-kopya', '', false, !bagli)
+    + dug('TEST yapısını yapıştır', 'sec-t-yapi', '', !yf, !bagli)
+    + `<span class="sec-t-ipucu">TEST projesinin SQL Editor'ünde çalıştır</span>`);
+
   const liste = durum.maddeler.map(m => `
     <div class="sec-t-li"><span class="${m.ok ? 'sec-yesil' : 'sec-kirmizi'}">${m.ok ? '✓' : '✕'}</span>
       <span>${esc(m.metin)}</span><small>${esc(m.ek)}</small></div>`).join('');
@@ -684,15 +783,15 @@ function secTestEkran(projeId) {
       ${bagli ? `<span class="sec-t-kalkan ${ayri ? '' : 'kotu'}">🛡️ ${ayri ? 'Production\'dan ayrı' : 'Production bilinmiyor'}:
         <b>${esc(secKisalt(uretimRef || '?', 4, 4))}</b> ≠ <b>${esc(secKisalt(o.test_ref, 4, 4))}</b></span>` : ''}
     </div>
-    <div class="sec-t-izgara">${kart1}${kart2}${kart3}${kart4}</div>
+    <div class="sec-t-izgara">${kart1}${kart2}${kart3}${kart4}${kart5}</div>
     <h3 class="sec-bas">Durum kontrolü</h3>
     <div class="sec-t-liste">${liste}</div>
     <div class="sec-t-dg">
       ${dug('Kontrol SQL\'ini kopyala', 'sec-t-kontrol-kopya', '', false, !bagli)}
       ${dug('Sonucu yapıştır', 'sec-t-kontrol', '', false, !bagli)}
     </div>
-    <p class="sec-t-ipucu alt">${o.kontrol_tarihi ? 'Son kontrol: ' + esc(secTarih(o.kontrol_tarihi)) + ' · ' : ''}Kontrol SQL'i yalnız okur.
-      Güvenlik testleri bir sonraki aşamada.</p>`;
+    <p class="sec-t-ipucu alt">${o.kontrol_tarihi ? 'Son kontrol: ' + esc(secTarih(o.kontrol_tarihi)) + ' · ' : ''}Kontrol SQL'i yalnız okur.</p>
+    ${secYapiFarkHtml(projeId, k.yapi_tarihi)}`;
 }
 
 /* ==========================================================================
@@ -794,10 +893,51 @@ async function secTestEylem(e, el) {
 
   if (e === 'sec-t-bagla') { secTestBaglaPenceresi(projeId); return true; }
 
+  if (e === 'sec-t-yapi-kopya') {
+    await kopyala(SEC_YAPI_SQL, 'Yapı SQL\'i kopyalandı — bu kez TEST projesinin SQL Editor\'ünde çalıştır.');
+    return true;
+  }
+
+  if (e === 'sec-t-yapi') {
+    secYapistirPenceresi({
+      baslik: 'TEST yapısı',
+      aciklama: 'Yapı SQL\'inin TEST projesindeki çıktısını yapıştır. Gerçek veritabanının yapısıyla karşılaştırılır; hiçbir yere yazılmaz.',
+      yerTutucu: '{"nizam_security":"yapi-3","tablolar":[…]}',
+      dogrula: async metin => {
+        const r = secYapiOku(metin);
+        if (r.hata) return r;
+        if (r.yapi.nizam_security !== SEC_YAPI_SURUM) return { hata: 'Eski yapı SQL\'inin çıktısı. "Yapı SQL\'ini kopyala" ile yenisini al.' };
+        /* TEST'te Nizam işaret tablosu olur; yoksa büyük ihtimalle gerçek veritabanının çıktısı yapıştırıldı. */
+        if (!r.yapi.tablolar.some(t => t.ad === 'nizam_test_ortami')) {
+          return { hata: 'Bu çıktıda Nizam test işareti yok — gerçek veritabanının çıktısı olabilir. SQL\'i TEST projesinde çalıştır.' };
+        }
+        SEC_TEST.yapiFark[projeId] = { sonuc: secYapiKarsilastir(k.yapi, r.yapi), tarih: new Date().toISOString() };
+        const f = SEC_TEST.yapiFark[projeId].sonuc;
+        const n = f.sadeceTest.length + f.sadeceUretim.length + f.farkli.length;
+        toast(n ? n + ' fark bulundu.' : 'Yapılar aynı.', n ? 'hata' : 'basari');
+        render();
+        return null;
+      },
+    });
+    return true;
+  }
+
   if (e === 'sec-t-kurulum') {
     if (!ayriMi() || !k.yapi) return true;
+    /* Koruma: TEST'te gerçek veritabanına geçmemiş değişiklik varsa kurulum onları siler. */
+    const yf = SEC_TEST.yapiFark[projeId];
+    const kayip = yf ? yf.sonuc.sadeceTest.length + yf.sonuc.farkli.length : 0;
+    if (kayip) {
+      const evet = await metinSor({ baslik: 'TEST\'te geçmemiş değişiklikler var',
+        aciklama: 'Son karşılaştırmaya göre TEST\'te gerçek veritabanında olmayan ya da farklı ' + kayip
+          + ' şey var (aşağıdaki Yapı karşılaştırması). Kurulum TEST\'i gerçek veritabanına göre baştan kurar ve bunları SİLER. '
+          + 'Önce bu düzeltmeleri gerçek veritabanına uygula. Yine de kurmak için SİL yaz.',
+        yerTutucu: 'SİL', buton: 'Yine de kur' });
+      if (!evet || evet.trim().toLocaleUpperCase('tr') !== 'SİL') return true;
+    }
     const ortam = Object.assign({}, o, { uretim_ref: secUretimRef(p) });
     if (await kopyala(secTestKurulumSql(k.yapi, projeId, ortam), 'Kurulum SQL\'i kopyalandı — TEST projesinin SQL Editor\'ünde çalıştır.')) {
+      SEC_TEST.yapiFark[projeId] = null;   // kurulumdan sonra karşılaştırma eskidi
       try { await SEC_TEST_VERI.kaydet(projeId, { kurulum_tarihi: new Date().toISOString() }); render(); } catch (h) {}
     }
     return true;

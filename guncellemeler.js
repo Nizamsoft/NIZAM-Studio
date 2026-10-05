@@ -21,6 +21,12 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.310.0', tarih: '2026-10-05',
+    ozet: 'Nizam Security: gerçek veritabanı ile test veritabanı karşılaştırılıyor',
+    maddeler: [
+      'Test Ortamı\'nda yeni "Yapı karşılaştırması": aynı yapı SQL\'ini test projesinde çalıştırıp yapıştırınca iki tarafın RLS kuralları, yetkileri ve fonksiyonları karşılaştırılıyor.',
+      'Test\'te gerçek veritabanına geçmemiş bir düzeltme varsa, test ortamını yeniden kurarken uyarı çıkıyor; yanlışlıkla silinmiyor.',
+    ] },
   { surum: 'v0.309.0', tarih: '2026-10-05',
     ozet: 'Güvenlik düzeltmeleri artık repoda dosya olarak saklanıyor',
     maddeler: [
