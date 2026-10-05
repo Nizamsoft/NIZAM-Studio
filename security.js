@@ -162,7 +162,24 @@ const SEC = {
   liste: null,        // [{proje_id, yapi_tarihi, model_tarihi}] — liste ekranı
   kayit: {},          // projeId → tam satır (null = kayıt yok)
   yukleniyor: {},
+  acik: {},           // projeId → { tabloAdı: true } — Kurallar'da açık tablolar
+  rol: {},            // projeId → seçili rol (açılan tablolarda)
+  ara: {},            // projeId → tablo arama metni
 };
+
+/* Kurallar'daki tablo araması: yeniden çizmeden satırları süzer. */
+document.addEventListener('input', e => {
+  const el = e.target.closest && e.target.closest('.sec-ara');
+  if (!el) return;
+  SEC.ara[el.dataset.id] = el.value;
+  secAraUygula(el.value);
+});
+function secAraUygula(metin) {
+  const q = String(metin || '').trim().toLocaleLowerCase('tr');
+  document.querySelectorAll('.sec-tb').forEach(x => {
+    x.hidden = !!q && x.dataset.ad.toLocaleLowerCase('tr').indexOf(q) < 0;
+  });
+}
 
 /* ==========================================================================
    VERİ — yalnız security_modelleri tablosu
@@ -666,6 +683,23 @@ function secProjeEkran(projeId) {
               ${kapali ? 'disabled' : ''}>${esc(dugme)}</button>
     </div>`;
 
+  /* Model hazırsa üç adım tek satıra iner; işlemler "Güncelle" menüsünde. */
+  const menu = (yazi, eylem) => `<button type="button" data-eylem="${eylem}" data-id="${esc(projeId)}">${esc(yazi)}</button>`;
+  const ozet = model ? `
+    <div class="sec-ozet">
+      <span class="sec-ozet-tik">✓</span>
+      <span class="sec-ozet-yz"><b>Erişim kuralları hazır</b>
+        <i>${yapi.tablolar.length} tablo · ${model.roller.length} rol · ${esc(secTarih(k.model_tarihi))}</i></span>
+      <details class="sec-menu">
+        <summary>Güncelle</summary>
+        <div class="sec-menu-ic">
+          ${menu('Veritabanı yapısını yenile', 'sec-yapi')}
+          ${menu('Claude promptunu kopyala', 'sec-prompt')}
+          ${menu('Yeni güvenlik JSON\'u yapıştır', 'sec-model')}
+        </div>
+      </details>
+    </div>` : '';
+
   const adimlar = `<div class="sec-adimlar">
     ${adim(1, !!yapi, 'Veritabanı yapısı',
         yapi ? yapi.tablolar.length + ' tablo · ' + secTarih(k.yapi_tarihi) : 'SQL Editor\'den al',
@@ -686,27 +720,27 @@ function secProjeEkran(projeId) {
     govde = `<div class="card">${empty(ICON.gGuvenlik, 'Güvenlik modeli bekleniyor',
       'Promptu Claude\'a ver, soruları cevapla, verdiği JSON\'u 3. adıma yapıştır.')}</div>`;
   } else {
-    govde = secKurallar(yapi, model);
+    govde = '';
   }
 
   return `
     <a class="tl-geri" href="#/security">${svg(ICON.chevron, 14)} Nizam Security</a>
     <div class="pj-tepe"><div class="pj-tepe-yz">
       <h1>${esc(basHarfleriBuyuk(projeAdi(p)))}</h1>
-      <p>Erişim Kuralları · olması istenen güvenlik davranışı</p>
+      <p>Kim neyi görebilir, neyi değiştirebilir</p>
     </div></div>
     ${secSekmeler(projeId, 'kurallar')}
-    ${adimlar}
-    ${govde}`;
+    ${model ? ozet : adimlar}
+    ${model ? secKurallar(yapi, model, projeId) : govde}`;
 }
 
 /* Proje sayfasının iki sekmesi: Erişim Kuralları | Test Ortamı. */
 function secSekmeler(projeId, aktif) {
   const s = (ad, adres, k) => `<a class="sec-sekme${aktif === k ? ' aktif' : ''}" href="${adres}">${esc(ad)}</a>`;
   return `<nav class="sec-sekmeler">
-    ${s('Erişim Kuralları', '#/security/' + esc(projeId), 'kurallar')}
+    ${s('Kurallar', '#/security/' + esc(projeId), 'kurallar')}
     ${s('Test Ortamı', '#/security/' + esc(projeId) + '/test', 'test')}
-    ${s('Güvenlik Testleri', '#/security/' + esc(projeId) + '/testler', 'testler')}
+    ${s('Testler', '#/security/' + esc(projeId) + '/testler', 'testler')}
   </nav>`;
 }
 
@@ -719,8 +753,9 @@ function secSatirAd(d) {
   return SEC_SATIR_AD[d] || d;
 }
 
-/* Gerçek yapı + istenen model → tablo kartları. Yapının sırası esas. */
-function secKurallar(yapi, model) {
+/* Gerçek yapı + istenen model → kapalı tablo listesi. Yapının sırası esas.
+   Dokunulan tablo açılır; içinde rol seçilir, kolonlar o rol için gösterilir. */
+function secKurallar(yapi, model, projeId) {
   const roller = model.roller;
   const mTablo = {};
   model.tablolar.forEach(t => { mTablo[t.ad] = t; });
@@ -734,75 +769,71 @@ function secKurallar(yapi, model) {
     t.kolonlar.forEach(c => { if (!gk.has(c.ad)) kayip.push(t.ad + '.' + c.ad); });
   });
 
-  const kartlar = yapi.tablolar.filter(t => mTablo[t.ad]).map(t => secTabloKarti(t, mTablo[t.ad], roller)).join('');
+  const tablolar = yapi.tablolar.filter(t => mTablo[t.ad]);
   const kararsiz = yapi.tablolar.filter(t => !mTablo[t.ad]).map(t => t.ad);
+  const acik = SEC.acik[projeId] || {};
+  const rol = roller.includes(SEC.rol[projeId]) ? SEC.rol[projeId] : roller[0];
+  const ara = SEC.ara[projeId] || '';
+  const q = ara.trim().toLocaleLowerCase('tr');
+
+  const satirlar = tablolar.map(t => {
+    const ac = !!acik[t.ad];
+    return `
+    <div class="sec-tb${ac ? ' acik' : ''}" data-ad="${esc(t.ad)}"${q && t.ad.toLocaleLowerCase('tr').indexOf(q) < 0 ? ' hidden' : ''}>
+      <button class="sec-tb-bas" type="button" data-eylem="sec-tablo" data-id="${esc(projeId)}" data-ad="${esc(t.ad)}" aria-expanded="${ac}">
+        <code>${esc(t.ad)}</code>
+        <span class="sec-tb-rls${t.rls ? '' : ' kapali'}">${t.rls ? 'RLS' : 'RLS kapalı'}</span>
+        <small>${t.kolonlar.length} kolon</small>
+        <span class="sec-tb-ok">${ac ? '⌄' : '›'}</span>
+      </button>
+      ${ac ? secTabloIc(t, mTablo[t.ad], roller, rol, projeId) : ''}
+    </div>`;
+  }).join('');
 
   return `
     ${kayip.length ? `<div class="sec-uyari">⚠️ Modelde var ama veritabanında artık yok:
       ${kayip.map(x => `<code>${esc(x)}</code>`).join(' ')} — Claude ile modeli güncelle.</div>` : ''}
-    <h3 class="sec-bas">Erişim kuralları</h3>
-    ${kartlar}
+    <h3 class="sec-bas sec-bas-say">Tablolar <span>${tablolar.length}</span></h3>
+    <input class="sec-ara" type="search" data-id="${esc(projeId)}" value="${esc(ara)}" placeholder="Tablo ara…" autocomplete="off">
+    <div class="sec-tb-liste">${satirlar}</div>
     ${kararsiz.length ? `<div class="sec-kararsiz"><b>Karar verilmemiş tablolar:</b>
-      ${kararsiz.map(x => `<code>${esc(x)}</code>`).join(' ')}</div>` : ''}
-    <div class="sec-not">
-      <span>RLS rozeti = veritabanının şu anki durumu</span>
-      <span>✓ / ✕ = olması istenen</span>
-      <span>↳ = kolon için farklı satır kuralı</span>
-      <span>Sil = ilgili satırı silebilme yetkisi</span>
-    </div>`;
+      ${kararsiz.map(x => `<code>${esc(x)}</code>`).join(' ')}</div>` : ''}`;
 }
 
-function secTabloKarti(t, m, roller) {
+/* Açık tablonun içi: rol seçici, satır kuralı, kolon × izin listesi. */
+function secTabloIc(t, m, roller, rol, projeId) {
   const mKolon = {};
   m.kolonlar.forEach(c => { mKolon[c.ad] = c; });
   const fk = {};
   t.iliskiler.forEach(f => { if (f.kolon && f.kolon.indexOf(',') < 0) fk[f.kolon] = f.hedef_tablo; });
-  const n = roller.length;
 
-  const kolonlar = '<colgroup><col class="sec-ck">'
-    + roller.map(() => '<col><col><col><col><col class="sec-cs">').join('') + '</colgroup>';
-  const ust = `<tr class="sec-g1"><th class="sec-k"></th>${roller.map(r =>
-    `<th colspan="5" class="sec-ay">${esc(r)}</th>`).join('')}</tr>`;
-  const ust2 = `<tr class="sec-g2"><th class="sec-k">Kolon</th>${roller.map(() =>
-    SEC_IZINLER.map((x, i) => `<th${i === 0 ? ' class="sec-ay"' : ''}>${SEC_IZIN_AD[x]}</th>`).join('')
-    + '<th class="sec-sa">Satır</th>').join('')}</tr>`;
-  const varsayilan = `<tr class="sec-var"><td class="sec-k">Varsayılan satır erişimi</td>${roller.map(r =>
-    `<td colspan="5" class="sec-ay sec-sa">${esc(secSatirAd(m.satir[r]))}</td>`).join('')}</tr>`;
+  const cipler = roller.map(r => `<button class="sec-cip${r === rol ? ' aktif' : ''}" type="button"
+      data-eylem="sec-rol" data-id="${esc(projeId)}" data-rol="${esc(r)}">${esc(r)}</button>`).join('');
+  const bilgi = [`Satırlar: <b>${esc(secSatirAd(m.satir[rol]))}</b>`]
+    .concat(m.sahip_kolon ? [`kendi satırı: <code>${esc(m.sahip_kolon)}</code>`] : [])
+    .concat(m.yazma && m.yazma[rol] ? ['tabloya doğrudan değil, sunucu fonksiyonuyla yazar'] : [])
+    .join(' · ');
 
   const satirlar = t.kolonlar.map(c => {
     const etiket = [c.tip, c.pk ? 'PK' : '', fk[c.ad] ? '→ ' + fk[c.ad] : ''].filter(Boolean).join(' · ');
-    const bas = `<td class="sec-k" title="${esc(c.ad + (etiket ? ' · ' + etiket : ''))}"><code>${esc(c.ad)}</code><small>${esc(etiket)}</small></td>`;
     const mc = mKolon[c.ad];
-    if (!mc) {
-      return `<tr>${bas}${roller.map(() =>
-        `<td colspan="5" class="sec-ay sec-yok">— karar verilmedi</td>`).join('')}</tr>`;
-    }
-    return `<tr>${bas}${roller.map(r => {
-      const izin = mc.izin[r];
-      const hucre = SEC_IZINLER.map((x, i) => {
-        const var_ = !!(izin && izin.includes(x));
-        return `<td class="${i === 0 ? 'sec-ay ' : ''}${var_ ? 'sec-e' : 'sec-h'}"
-                    title="${esc(r + ' · ' + SEC_IZIN_AD[x])}">${var_ ? '✓' : '✕'}</td>`;
-      }).join('');
-      const fark = mc.satir[r];
-      const sa = fark
-        ? `<td class="sec-sa fark" title="${esc(secSatirAd(fark))}">↳ ${esc(secSatirAd(fark))}</td>`
-        : `<td class="sec-sa" title="${esc(secSatirAd(m.satir[r]))}">${esc(secSatirAd(m.satir[r]))}</td>`;
-      return hucre + sa;
-    }).join('')}</tr>`;
+    const fark = mc && mc.satir[rol];
+    const ad = `<div class="sec-kl-ad"><code>${esc(c.ad)}</code><small>${esc(etiket)}</small>
+      ${fark ? `<small class="fark">↳ ${esc(secSatirAd(fark))}</small>` : ''}</div>`;
+    if (!mc) return `<div class="sec-kl">${ad}<span class="sec-kl-yok">karar verilmedi</span></div>`;
+    const izin = mc.izin[rol] || [];
+    return `<div class="sec-kl">${ad}${SEC_IZINLER.map(x => izin.includes(x)
+      ? `<span class="sec-e" title="${esc(rol + ' · ' + SEC_IZIN_AD[x])}">✓</span>`
+      : `<span class="sec-h" title="${esc(rol + ' · ' + SEC_IZIN_AD[x])}">✕</span>`).join('')}</div>`;
   }).join('');
 
   return `
-    <div class="sec-kart">
-      <div class="sec-ku">
-        <h2>${esc(t.ad)}</h2>
-        <span class="sec-rozet">${t.rls ? '🟢 RLS: Açık' : '🔴 RLS: Kapalı'}</span>
-        ${m.sahip_kolon ? `<span class="sec-sahip">kendi satırı: <code>${esc(m.sahip_kolon)}</code></span>` : ''}
-        ${m.yazma && Object.keys(m.yazma).length ? `<span class="sec-sahip" title="Bu roller tabloya doğrudan değil, sunucu fonksiyonuyla yazar">fonksiyonla yazar: ${esc(Object.keys(m.yazma).join(', '))}</span>` : ''}
-        <span class="sec-say">${t.kolonlar.length} kolon</span>
-      </div>
-      <div class="sec-kaydir" style="--sec-rol:${n}">
-        <table class="sec-tablo">${kolonlar}${ust}${ust2}${varsayilan}${satirlar}</table>
+    <div class="sec-tb-ic">
+      ${roller.length > 1 ? `<div class="sec-cipler kaydir">${cipler}</div>` : ''}
+      <p class="sec-tb-bilgi">${bilgi}</p>
+      <div class="sec-kl-liste">
+        <div class="sec-kl sec-kl-bas"><span>Kolon</span><span>Oku</span><span>Ekle</span><span>Değ.</span><span>Sil</span></div>
+        ${satirlar}
       </div>
     </div>`;
 }
@@ -854,6 +885,14 @@ async function securityEylem(e, el) {
   const projeId = el.dataset.id;
   if (e.indexOf('sec-t-') === 0) return secTestEylem(e, el);   // security-test.js
   if (e.indexOf('sec-o-') === 0) return secOkumaEylem(e, el);  // security-okuma.js
+
+  if (e === 'sec-tablo') {
+    const a = SEC.acik[projeId] = SEC.acik[projeId] || {};
+    if (a[el.dataset.ad]) delete a[el.dataset.ad]; else a[el.dataset.ad] = true;
+    render();
+    return true;
+  }
+  if (e === 'sec-rol') { SEC.rol[projeId] = el.dataset.rol; render(); return true; }
 
   if (e === 'sec-yapi') {
     secYapistirPenceresi({

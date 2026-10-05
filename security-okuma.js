@@ -567,7 +567,7 @@ function secOkumaEkran(projeId) {
     <a class="tl-geri" href="#/security">${svg(ICON.chevron, 14)} Nizam Security</a>
     <div class="pj-tepe"><div class="pj-tepe-yz">
       <h1>${esc(basHarfleriBuyuk(projeAdi(p)))}</h1>
-      <p>Güvenlik Testleri · test kullanıcılarıyla gerçek okuma, yazma ve ziyaretçi denemesi</p>
+      <p>Kurallar gerçekten çalışıyor mu, test kullanıcılarıyla dener</p>
     </div></div>
     ${secSekmeler(projeId, 'testler')}`;
 

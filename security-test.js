@@ -32,7 +32,7 @@
 const SEC_TEST_ALAN = 'test.nizamsoft.com';   // test hesaplarının e-posta alanı
 const SEC_TEST_KONTROL_SURUM = '1';
 
-const SEC_TEST = { kayit: {}, goster: {}, mesgul: {}, yapiFark: {}, testYapi: {} };   // bellekte
+const SEC_TEST = { kayit: {}, goster: {}, mesgul: {}, yapiFark: {}, testYapi: {}, ac: {} };   // bellekte
 
 /* ==========================================================================
    VERİ — yalnız security_test_ortamlari tablosu
@@ -838,7 +838,7 @@ function secTestEkran(projeId) {
     <a class="tl-geri" href="#/security">${svg(ICON.chevron, 14)} Nizam Security</a>
     <div class="pj-tepe"><div class="pj-tepe-yz">
       <h1>${esc(basHarfleriBuyuk(projeAdi(p)))}</h1>
-      <p>Test Ortamı · production'a dokunmadan, sentetik verilerle ayrı bir kopya</p>
+      <p>Gerçek veritabanının sahte verili, ayrı bir kopyası</p>
     </div></div>
     ${secSekmeler(projeId, 'test')}`;
 
@@ -864,12 +864,19 @@ function secTestEkran(projeId) {
     `<button class="sec-dug${ana ? ' ana' : ''}" type="button" data-eylem="${eylem}" data-id="${esc(projeId)}" ${ek}
        ${kapali ? 'disabled' : ''}>${esc(yazi)}</button>`;
   const sat = (sol, sag, cls = '') => `<div class="sec-t-sat"><span>${sol}</span><span class="${cls}">${sag}</span></div>`;
-  const kart = (no, bitti, baslik, rozet, govde, dugmeler) => `
-    <div class="sec-t-kart${bitti ? ' bitti' : ''}">
-      <div class="sec-t-ku"><span class="sec-no">${no}</span><b>${esc(baslik)}</b><em>${rozet}</em></div>
-      ${govde}
-      <div class="sec-t-dg">${dugmeler}</div>
+  /* Adım satırı: tek satır; dokununca içi açılır. Varsayılan açık olan: ilk bitmemiş adım. */
+  const kart = (no, bitti, baslik, rozet, govde, dugmeler) => {
+    const ac = acik === no;
+    return `
+    <div class="sec-ta${bitti ? ' bitti' : ''}${ac ? ' acik' : ''}">
+      <button class="sec-ta-bas" type="button" data-eylem="sec-t-ac" data-id="${esc(projeId)}" data-no="${no}" aria-expanded="${ac}">
+        <span class="sec-h-no">${no}</span>
+        <span class="sec-h-adim-yz"><b>${esc(baslik)}</b><i>${rozet}</i></span>
+        <span class="sec-h-adim-s">${bitti ? '<i class="tamam">✓</i>' : ''}<span class="sec-ta-ok">${ac ? '⌄' : '›'}</span></span>
+      </button>
+      ${ac ? `<div class="sec-ta-ic">${govde}<div class="sec-t-dg">${dugmeler}</div></div>` : ''}
     </div>`;
+  };
 
   const bagli = !!o.test_ref;
   const ayri = bagli && uretimRef && o.test_ref !== uretimRef;
@@ -882,8 +889,11 @@ function secTestEkran(projeId) {
   const olusan = kisiler.filter(x => x.kimlik).length;
   const kisiTamam = kisiler.length > 0 && olusan === kisiler.length;
   const veriVar = !!(kontrol && model.tablolar.some(t => kt[t.ad] && kt[t.ad].satir > 0));
+  const bitenler = [bagli, kuruldu, kisiTamam, veriVar];
+  const ilkEksik = bitenler.indexOf(false) + 1;   // 0 = hepsi bitti
+  const acik = SEC_TEST.ac[projeId] !== undefined ? SEC_TEST.ac[projeId] : ilkEksik;
 
-  const kart1 = kart(1, bagli, 'Test Supabase projesi', bagli ? '✓ Bağlandı' : 'Bağlanmadı',
+  const kart1 = kart(1, bagli, 'Test projesi', bagli ? esc(secKisalt(o.test_ref, 4, 4)) + '.supabase.co' : 'Bağlanmadı',
     bagli ? sat('Adres', `<code>${esc(secKisalt(o.test_ref, 4, 4))}.supabase.co</code>`)
           + sat('Anahtar', `<code>${esc(secKisalt(o.test_anahtar, 15, 2))}</code>`)
           + sat('Production ile aynı mı?', ayri ? 'Hayır ✓' : 'Kontrol edilemedi', ayri ? 'sec-yesil' : 'sec-kirmizi')
@@ -891,7 +901,7 @@ function secTestEkran(projeId) {
          publishable/anon anahtarını buraya gir. service_role anahtarı istenmez.</p>`,
     dug(bagli ? 'Değiştir' : 'Bağla', 'sec-t-bagla', '', !bagli));
 
-  const kart2 = kart(2, kuruldu, 'Yapı + güvenlik kuralları', kuruldu ? '✓ Kuruldu' : (o.kurulum_tarihi ? 'SQL kopyalandı' : 'Bekliyor'),
+  const kart2 = kart(2, kuruldu, 'Yapı + kurallar', kuruldu ? yapi.tablolar.length + ' tablo · ' + kuralSay + ' RLS kuralı' : (o.kurulum_tarihi ? 'SQL kopyalandı' : 'Bekliyor'),
     sat('Tablolar', yapi.tablolar.length)
     + sat('RLS kuralları (policy)', kuralSay)
     + sat('Kuralların kullandığı fonksiyonlar', (yapi.fonksiyonlar || []).length)
@@ -903,7 +913,7 @@ function secTestEkran(projeId) {
 
   const kisiSatir = kisiler.map(x => sat(esc(x.etiket) + (x.kimlik ? ' <i class="sec-yesil">✓</i>' : ''),
     `<code>${esc(x.eposta)}</code>${goster ? `<br><code class="sec-sifre">${esc(x.sifre)}</code>` : ''}`)).join('');
-  const kart3 = kart(3, kisiTamam, 'Test kullanıcıları', kisiler.length ? (kisiTamam ? '✓ ' : '') + olusan + ' / ' + kisiler.length : 'Bekliyor',
+  const kart3 = kart(3, kisiTamam, 'Test kullanıcıları', kisiler.length ? olusan + ' / ' + kisiler.length + ' hesap' : 'Bekliyor',
     `<div class="sec-t-uyari">📧 Test projesinde <b>Authentication → Sign In / Providers → Email</b>:
        <b>"Confirm email"</b> kapalı, <b>"Allow new users to sign up"</b> açık olmalı.
        Yoksa hesaplar açılamaz.</div>`
@@ -912,7 +922,7 @@ function secTestEkran(projeId) {
     + (kisiler.length ? dug(goster ? 'Şifreleri gizle' : 'Şifreleri göster', 'sec-t-sifre') : '')
     + (kisiler.length ? dug('Yeniden oluştur', 'sec-t-yeniden', '', false, mesgul) : ''));
 
-  const kart4 = kart(4, veriVar, 'Sentetik test verisi', veriVar ? '✓ Yüklendi' : (o.veri_sql ? 'SQL hazır' : 'Bekliyor'),
+  const kart4 = kart(4, veriVar, 'Sahte veri', veriVar ? 'Yüklendi' : (o.veri_sql ? 'SQL hazır' : 'Bekliyor'),
     sat('Claude, modele göre en az veriyi yazar', '')
     + sat('Örnek: A\'nın kaydı · B\'nin kaydı · Şube 1 / Şube 2', ''),
     dug('Prompt', 'sec-t-veri-prompt', '', true, !kisiTamam)
@@ -921,36 +931,43 @@ function secTestEkran(projeId) {
 
   const yf = secGuncelFark(projeId);
   const yfSay = secFarkSay(yf);
-  const kart5 = kart(5, yfSay === 0, 'Yapı karşılaştırması',
-    yfSay === null ? 'Bekliyor' : yfSay ? '🟡 ' + yfSay + ' fark' : '✓ Aynı',
-    `<p class="sec-t-not">Erişim Kuralları'ndaki <b>aynı yapı SQL'ini</b> bu kez TEST projesinde çalıştır,
+  const kart5 = `
+    <h3 class="sec-bas">Yapı karşılaştırması · ${yfSay === null ? 'yapılmadı' : yfSay ? yfSay + ' fark' : 'aynı'}</h3>
+    <p class="sec-t-not">Erişim Kuralları'ndaki <b>aynı yapı SQL'ini</b> bu kez TEST projesinde çalıştır,
        sonucu yapıştır. Studio gerçek veritabanının yapısıyla karşılaştırır (RLS kuralları, yetkiler,
-       fonksiyonlar, tetikleyiciler, tablolar). Yalnız okur.</p>`,
-    dug('Yapı SQL\'ini kopyala', 'sec-t-yapi-kopya', '', false, !bagli)
-    + dug('TEST yapısını yapıştır', 'sec-t-yapi', '', !yf, !bagli)
-    + `<span class="sec-t-ipucu">TEST projesinin SQL Editor'ünde çalıştır</span>`);
+       fonksiyonlar, tetikleyiciler, tablolar). Yalnız okur. Tarama bunu kendiliğinden yapar.</p>
+    <div class="sec-t-dg">
+      ${dug('Yapı SQL\'ini kopyala', 'sec-t-yapi-kopya', '', false, !bagli)}
+      ${dug('TEST yapısını yapıştır', 'sec-t-yapi', '', false, !bagli)}
+    </div>`;
 
   const liste = durum.maddeler.map(m => `
     <div class="sec-t-li"><span class="${m.ok ? 'sec-yesil' : 'sec-kirmizi'}">${m.ok ? '✓' : '✕'}</span>
       <span>${esc(m.metin)}</span><small>${esc(m.ek)}</small></div>`).join('');
   const emoji = { yesil: '🟢', sari: '🟡', kirmizi: '🔴' }[durum.renk];
 
+  const farkHtml = secYapiFarkHtml(projeId, k.yapi_tarihi);
   return ust + `
-    <div class="sec-t-durum">
-      <span class="sec-t-emoji">${emoji}</span>
-      <span class="sec-t-durum-yz"><b>${esc(durum.baslik)}</b><i>${esc(durum.alt)}</i></span>
-      ${bagli ? `<span class="sec-t-kalkan ${ayri ? '' : 'kotu'}">🛡️ ${ayri ? 'Production\'dan ayrı' : 'Production bilinmiyor'}:
-        <b>${esc(secKisalt(uretimRef || '?', 4, 4))}</b> ≠ <b>${esc(secKisalt(o.test_ref, 4, 4))}</b></span>` : ''}
+    <div class="sec-ozet">
+      <span class="sec-ozet-tik ${durum.renk}">${emoji}</span>
+      <span class="sec-ozet-yz"><b>${esc(durum.baslik)}</b>
+        <i>${bagli ? `🛡️ ${ayri ? '' : 'Production bilinmiyor · '}${esc(secKisalt(uretimRef || '?', 4, 4))} ≠ ${esc(secKisalt(o.test_ref, 4, 4))}` : esc(durum.alt)}</i></span>
     </div>
-    <div class="sec-t-izgara">${kart1}${kart2}${kart3}${kart4}${kart5}</div>
-    <h3 class="sec-bas">Durum kontrolü</h3>
-    <div class="sec-t-liste">${liste}</div>
-    <div class="sec-t-dg">
-      ${dug('Kontrol SQL\'ini kopyala', 'sec-t-kontrol-kopya', '', false, !bagli)}
-      ${dug('Sonucu yapıştır', 'sec-t-kontrol', '', false, !bagli)}
-    </div>
-    <p class="sec-t-ipucu alt">${o.kontrol_tarihi ? 'Son kontrol: ' + esc(secTarih(o.kontrol_tarihi)) + ' · ' : ''}Kontrol SQL'i yalnız okur.</p>
-    ${secYapiFarkHtml(projeId, k.yapi_tarihi)}`;
+    <h3 class="sec-bas">Kurulum</h3>
+    <div class="sec-ta-liste">${kart1}${kart2}${kart3}${kart4}</div>
+    ${yfSay ? farkHtml : ''}
+    <details class="sec-gelismis">
+      <summary>Elle kontrol (yedek) — durum ve yapı SQL'leri</summary>
+      <h3 class="sec-bas">Durum kontrolü</h3>
+      <div class="sec-t-liste">${liste}</div>
+      <div class="sec-t-dg">
+        ${dug('Kontrol SQL\'ini kopyala', 'sec-t-kontrol-kopya', '', false, !bagli)}
+        ${dug('Sonucu yapıştır', 'sec-t-kontrol', '', false, !bagli)}
+      </div>
+      <p class="sec-t-ipucu alt">${o.kontrol_tarihi ? 'Son kontrol: ' + esc(secTarih(o.kontrol_tarihi)) + ' · ' : ''}Kontrol SQL'i yalnız okur. Tarama bunu kendiliğinden yapar.</p>
+      ${kart5}
+      ${yfSay ? '' : farkHtml}
+    </details>`;
 }
 
 /* ==========================================================================
@@ -1050,6 +1067,11 @@ async function secTestEylem(e, el) {
     return true;
   };
 
+  if (e === 'sec-t-ac') {
+    SEC_TEST.ac[projeId] = el.getAttribute('aria-expanded') === 'true' ? 0 : Number(el.dataset.no);
+    render();
+    return true;
+  }
   if (e === 'sec-t-bagla') { secTestBaglaPenceresi(projeId); return true; }
 
   if (e === 'sec-t-fark-prompt') {

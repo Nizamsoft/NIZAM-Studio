@@ -21,6 +21,13 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.319.0', tarih: '2026-10-05',
+    ozet: 'Nizam Security sadeleşti',
+    maddeler: [
+      'Erişim kuralları artık kapalı bir tablo listesi; tabloya dokununca açılıyor, rol seçip kolonları görüyorsun.',
+      'Telefonda yana kayan büyük tablo kalktı.',
+      'Test Ortamı adımları tek satıra indi; az kullanılan elle kontroller "yedek" başlığının altına katlandı.',
+    ] },
   { surum: 'v0.318.0', tarih: '2026-10-05',
     ozet: 'Nizam Security: yeni görünüm',
     maddeler: [

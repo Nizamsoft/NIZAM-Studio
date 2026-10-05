@@ -1,5 +1,15 @@
 # Değişiklik Günlüğü
 
+## v0.319.0
+- **Nizam Security sadeleşti** (onaylı mockup). Sekmeler: Kurallar · Test Ortamı · Testler.
+- Kurallar: model hazırsa 3 adım kartı yerine tek özet satırı + "Güncelle" menüsü (yapı yenile,
+  prompt, JSON). Tablolar kapalı liste (`.sec-tb`, arama `sec-ara`, yeniden çizmeden süzer);
+  dokununca açılır (`SEC.acik`), içinde rol çipleri (`SEC.rol`) ve kolon × Oku/Ekle/Değ./Sil
+  listesi (`secTabloIc`) — telefonda yana kayan geniş tablo kalktı. Altındaki işaret açıklaması kaldırıldı.
+- Test Ortamı: 4 adım tek satır, dokununca açılır (`SEC_TEST.ac`, varsayılan ilk eksik adım).
+  Durum kontrolü ve elle yapı karşılaştırması "Elle kontrol (yedek)" altına katlandı; fark varsa
+  fark listesi dışarıda görünür.
+
 ## v0.318.0
 - **Güvenlik Testleri yeni görünüm** (onaylı mockup). `secPano`: durum kartı (Sistem güvenli /
   N açık var / Kontrol gerekiyor / Henüz taranmadı), 5 sayı kutusu (okuma, ekleme, değiştirme,
