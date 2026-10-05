@@ -34,6 +34,8 @@ const SEC_HARITA_SINIR = 200;                       // tablo başına haritadaki
 const SEC_SUBE_KOLON = /^(sube_id|şube_id|branch_id)$/i;   // yalnız açık isimler
 
 const SEC_OKUMA = { harita: {}, sonuc: {}, ilerleme: {}, calisiyor: {}, filtre: {}, islem: {} };
+/* Tam taramanın bölümleri ve süreleri (ilerleme ekranı için): { faz, bas: {}, bit: {} } */
+const SEC_TARAMA = {};
 
 const SEC_SONUC_AD = { gecti: '🟢 GEÇTİ', acik: '🔴 GÜVENLİK AÇIĞI', edilemedi: '🟡 TEST EDİLEMEDİ' };
 
@@ -565,7 +567,7 @@ function secOkumaEkran(projeId) {
     <a class="tl-geri" href="#/security">${svg(ICON.chevron, 14)} Nizam Security</a>
     <div class="pj-tepe"><div class="pj-tepe-yz">
       <h1>${esc(basHarfleriBuyuk(projeAdi(p)))}</h1>
-      <p>Güvenlik Testleri · test kullanıcılarıyla gerçek okuma (SELECT) denemesi</p>
+      <p>Güvenlik Testleri · test kullanıcılarıyla gerçek okuma, yazma ve ziyaretçi denemesi</p>
     </div></div>
     ${secSekmeler(projeId, 'testler')}`;
 
@@ -625,17 +627,167 @@ function secOkumaEkran(projeId) {
         <i>Production: ${esc(secKisalt(secUretimRef(p) || '?', 4, 4))} ≠ Test: ${esc(secKisalt(o.test_ref, 4, 4))}</i></span>
     </div>`;
 
-  /* Tek düğme: okuma (+ dış erişim) ardından yazma testleri. */
-  const tumu = calisiyor || yaziyor;
-  const tamKart = `
-    <div class="sec-t-durum sec-tam">
-      <span class="sec-t-emoji">🛡️</span>
-      <span class="sec-t-durum-yz"><b>Tam tarama</b>
-        <i>Hakemden durum, harita ve test veritabanının yapısı alınır; ardından okuma, yazma ve giriş
-           yapmamış ziyaretçi testleri çalışır, sonuç gerçek veritabanının yapısıyla damgalanır.</i></span>
-      ${dug(tumu ? 'Tarama sürüyor…' : 'Taramayı başlat', 'sec-o-tam', true, tumu || !!engel)}
+  /* Tarama sürerken yalnız ilerleme ekranı. */
+  if (calisiyor || yaziyor) return ust + secTaramaEkran(projeId);
+
+  const ayri = `
+    <details class="sec-gelismis">
+      <summary>Testleri ayrı ayrı çalıştır</summary>
+      <div class="sec-t-izgara">${haritaKart}${baslatKart}${typeof secYazmaKart === 'function' ? secYazmaKart(projeId, engel) : ''}</div>
+    </details>`;
+  return ust + (engel ? kalkan : '') + secPano(projeId, engel, kisiler.length) + ayri + ilerleme + secOkumaSonuclar(projeId);
+}
+
+/* ---------- Pano: durum kartı, sayılar, büyük düğme, adımlar ---------- */
+
+function secTumSonuclar(projeId) {
+  const s = SEC_OKUMA.sonuc[projeId];
+  const y = typeof SEC_YAZMA !== 'undefined' ? SEC_YAZMA.sonuc[projeId] : null;   // security-yazma.js
+  return { s, y, hepsi: [].concat(s ? s.liste : [], y ? y.liste : []) };
+}
+
+function secKusursuzMu(projeId) {
+  const { s, y, hepsi } = secTumSonuclar(projeId);
+  const yfSay = typeof secFarkSay === 'function' ? secFarkSay(secGuncelFark(projeId)) : null;
+  return !!(s && y) && hepsi.length > 0 && hepsi.every(x => x.sonuc === 'gecti') && yfSay === 0;
+}
+
+const SEC_TIK = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+
+function secPano(projeId, engel, kisiSay) {
+  const p = DB.proje(projeId);
+  const k = SEC.kayit[projeId] || {};
+  const o = SEC_TEST.kayit[projeId] || {};
+  const { s, y, hepsi } = secTumSonuclar(projeId);
+  const say = t => hepsi.filter(x => x.sonuc === t).length;
+  const acik = say('acik'), edil = say('edilemedi'), gecti = say('gecti');
+  const yfSay = typeof secFarkSay === 'function' ? secFarkSay(secGuncelFark(projeId)) : null;
+  const kusursuz = secKusursuzMu(projeId);
+  const tarih = [s && s.tarih, y && y.tarih].filter(Boolean).sort().pop();
+
+  /* Durum kartı */
+  const d = !hepsi.length ? { c: 'bos', b: 'Henüz taranmadı', a: 'Okuma, yazma ve ziyaretçi testleri tek düğmeyle çalışır.' }
+    : acik ? { c: 'acik', b: acik + ' açık var', a: `<b>${gecti} / ${hepsi.length}</b> test geçti` }
+    : kusursuz ? { c: 'guvenli', b: 'Sistem güvenli', a: `<b>${gecti} / ${hepsi.length}</b> test geçti` }
+    : { c: 'kontrol', b: 'Kontrol gerekiyor', a: edil ? `<b>${edil}</b> test edilemedi`
+        : yfSay ? `Test ile gerçek yapı arasında <b>${yfSay}</b> fark var` : 'Okuma ve yazma birlikte taranmadı' };
+  const durumIc = { bos: '🛡️', acik: '!', kontrol: '?', guvenli: SEC_TIK.replace(/14/g, '26') }[d.c];
+  const durum = `
+    <div class="sec-h-durum ${d.c}">
+      <span class="sec-h-rozet">${durumIc}</span>
+      <div class="sec-h-durum-yz"><b>${esc(d.b)}</b><span>${d.a}</span></div>
+      ${tarih ? `<div class="sec-h-son"><small>Son tarama</small><b>${esc(secTarih(tarih))}</b>
+        <button class="sec-dug" type="button" data-eylem="sec-o-git" data-id="${esc(projeId)}" data-hedef="sec-sonuc">Raporu gör</button></div>` : ''}
     </div>`;
-  return ust + kalkan + tamKart + `<div class="sec-t-izgara">${haritaKart}${baslatKart}${typeof secYazmaKart === 'function' ? secYazmaKart(projeId, engel) : ''}</div>` + ilerleme + secOkumaSonuclar(projeId);
+
+  /* Sayı kutuları: ziyaretçi ayrı, diğerleri işleme göre. */
+  const ziy = x => x.kisi === SEC_ZIYARETCI;
+  const gruplar = [
+    ['Okuma', x => !ziy(x) && (x.islem || 'SELECT') === 'SELECT'],
+    ['Ekleme', x => !ziy(x) && x.islem === 'INSERT'],
+    ['Değiştir', x => !ziy(x) && x.islem === 'UPDATE'],
+    ['Silme', x => !ziy(x) && x.islem === 'DELETE'],
+    ['Ziyaretçi', ziy],
+  ];
+  const kutular = `<div class="sec-h-kutular">${gruplar.map(([ad, f]) => {
+    const l = hepsi.filter(f);
+    const a = l.filter(x => x.sonuc === 'acik').length, e = l.filter(x => x.sonuc === 'edilemedi').length;
+    const isaret = !l.length ? '<i class="bos">—</i>' : a ? `<i class="acik">${a}</i>`
+      : e ? `<i class="edil">${e}</i>` : `<i class="tamam">${SEC_TIK}</i>`;
+    return `<div class="sec-h-kutu"><small>${ad}</small><b>${l.length || '—'}</b>${isaret}</div>`;
+  }).join('')}</div>`;
+
+  const dugme = `<button class="sec-h-basla" type="button" data-eylem="sec-o-tam" data-id="${esc(projeId)}" ${engel ? 'disabled' : ''}>
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M7 4.5v15l12-7.5z"/></svg>
+      ${hepsi.length ? 'Yeniden tara' : 'Taramayı başlat'}</button>
+    <p class="sec-h-kalkan">🛡️ Yalnız test projesinde çalışır · Production ${esc(secKisalt(secUretimRef(p) || '?', 4, 4))}
+      ≠ Test ${esc(secKisalt(o.test_ref, 4, 4))}</p>`;
+
+  /* Adımlar */
+  const teslimBiten = (() => { const m = secTeslimMaddeler(projeId), i = secTeslimIsaret(projeId);
+    return { n: m.filter(x => x.otomatik || i[x.id]).length, t: m.length }; })();
+  const taranan = hepsi.length > 0;
+  const adimlar = [
+    { b: 'Gerçek yapıyı öğren', a: 'Production · ' + (secTarih(k.yapi_tarihi) || 'alındı'), d: 'bitti', href: '#/security/' + projeId },
+    { b: 'Erişim kurallarını tanımla', a: k.model.roller.length + ' rol · ' + k.model.tablolar.length + ' tablo', d: 'bitti', href: '#/security/' + projeId },
+    { b: 'Test ortamını hazırla', a: kisiSay + ' test kullanıcısı · sahte veri', d: 'bitti', href: '#/security/' + projeId + '/test' },
+    { b: 'Taramayı başlat', a: taranan ? hepsi.length + ' test · ' + secTarih(tarih) : 'Okuma, yazma, ziyaretçi', d: taranan ? 'bitti' : 'simdi' },
+    { b: 'Düzelt ve doğrula', a: kusursuz ? 'Açık yok, yapılar aynı' : acik ? acik + ' açık · Hataları bildir' : 'Göç dosyaları, tekrar tarama',
+      d: kusursuz ? 'bitti' : taranan ? 'simdi' : '', hedef: taranan ? 'sec-sonuc' : '' },
+    { b: 'Teslim öncesi kontrol', a: teslimBiten.n + ' / ' + teslimBiten.t + ' madde',
+      d: teslimBiten.n === teslimBiten.t ? 'bitti' : kusursuz ? 'simdi' : '', hedef: taranan ? 'sec-teslim' : '' },
+  ];
+  const adim = (x, i) => {
+    const ic = `<span class="sec-h-no">${i + 1}</span><span class="sec-h-adim-yz"><b>${esc(x.b)}</b><i>${esc(x.a)}</i></span>
+      <span class="sec-h-adim-s">${x.d === 'bitti' ? `<i class="tamam">${SEC_TIK}</i>` : (x.href || x.hedef) ? '›' : ''}</span>`;
+    const c = `sec-h-adim ${x.d}`;
+    return x.href ? `<a class="${c}" href="${esc(x.href)}">${ic}</a>`
+      : x.hedef ? `<button class="${c}" type="button" data-eylem="sec-o-git" data-id="${esc(projeId)}" data-hedef="${x.hedef}">${ic}</button>`
+      : `<div class="${c}">${ic}</div>`;
+  };
+  return `
+    <div class="sec-h">
+      <div class="sec-h-sol">${durum}${kutular}${dugme}</div>
+      <div class="sec-h-sag"><h3 class="sec-bas">Adımlar</h3><div class="sec-h-adimlar">${adimlar.map(adim).join('')}</div></div>
+    </div>`;
+}
+
+/* ---------- Tarama sürerken: halka, bölümler, şu anda denenen ---------- */
+
+function secSure(ms) {
+  const sn = Math.max(0, Math.floor(ms / 1000));
+  return String(Math.floor(sn / 60)).padStart(2, '0') + ':' + String(sn % 60).padStart(2, '0');
+}
+
+function secTaramaEkran(projeId) {
+  const yaziyor = typeof SEC_YAZMA !== 'undefined' && !!SEC_YAZMA.calisiyor[projeId];
+  const tr = SEC_TARAMA[projeId];
+  const ilO = SEC_OKUMA.ilerleme[projeId] || {};
+  const ilY = (typeof SEC_YAZMA !== 'undefined' && SEC_YAZMA.ilerleme[projeId]) || {};
+  const faz = tr ? tr.faz : yaziyor ? 'yazma' : 'okuma';
+  const il = faz === 'yazma' ? ilY : ilO;
+  const fy = faz === 'hazirlik' ? 0 : Math.max(0, Math.min(100, Number(il.yuzde) || 0));
+  /* Genel yüzde: hazırlık %3, okuma %3–40, yazma %40–100 (yazma testleri daha çok). Tek test: kendi yüzdesi. */
+  const yuzde = !tr ? fy : faz === 'hazirlik' ? 2 : faz === 'okuma' ? 3 + Math.round(fy * .37) : 40 + Math.round(fy * .6);
+  const cevre = 2 * Math.PI * 92;
+  const fazlar = (tr ? [['hazirlik', 'Hazırlık']] : [])
+    .concat(tr || faz === 'okuma' ? [['okuma', 'Okuma testleri']] : [])
+    .concat(tr || faz === 'yazma' ? [['yazma', 'Yazma testleri']] : []);
+  const sira = fazlar.map(f => f[0]);
+  const satir = ([ad, yazi]) => {
+    const durum = sira.indexOf(ad) < sira.indexOf(faz) ? 'v' : ad === faz ? 's' : 'b';
+    const sure = tr && tr.bas[ad] ? secSure((tr.bit[ad] || Date.now()) - tr.bas[ad]) : '';
+    return `<div class="sec-p-sat ${durum}"><span class="sec-p-nokta">${durum === 'v' ? SEC_TIK.replace(/14/g, '11') : ''}</span>
+      <span>${esc(yazi)}</span><span class="sec-p-t">${durum === 'b' ? '' : sure}</span></div>`;
+  };
+  const islemAd = { SELECT: 'Okuma', INSERT: 'Ekleme', UPDATE: 'Değiştirme', DELETE: 'Silme' };
+  const ne = faz === 'yazma' ? il.islem : il.metin;
+  const fazAd = { hazirlik: 'Hazırlık', okuma: 'Okuma testleri', yazma: 'Yazma testleri' }[faz];
+  return `
+    <div class="sec-p">
+      <div class="sec-p-sol">
+        <div class="sec-p-halka">
+          <svg viewBox="0 0 210 210" width="210" height="210" aria-hidden="true">
+            <circle cx="105" cy="105" r="92" fill="none" stroke="var(--line-3)" stroke-width="12"/>
+            <circle cx="105" cy="105" r="92" fill="none" stroke="var(--ink-strong)" stroke-width="12" stroke-linecap="round"
+              stroke-dasharray="${cevre.toFixed(1)}" stroke-dashoffset="${(cevre * (1 - yuzde / 100)).toFixed(1)}" transform="rotate(-90 105 105)"/>
+          </svg>
+          <div class="sec-p-orta" role="progressbar" aria-valuenow="${yuzde}" aria-valuemin="0" aria-valuemax="100">
+            <b><span>%</span>${yuzde}</b><small>${esc(fazAd)}</small></div>
+        </div>
+      </div>
+      <div class="sec-p-sag">
+        <h3 class="sec-bas">Tarama sürüyor</h3>
+        <div class="sec-p-fazlar">${fazlar.map(satir).join('')}</div>
+        <div class="sec-p-simdi">
+          <small>Şu anda</small>
+          <p>${il.kisi ? esc(il.kisi) + ' → ' : ''}${il.tablo ? `<code>${esc(il.tablo)}</code>` : ''}${ne ? (il.kisi || il.tablo ? ' · ' : '') + esc(islemAd[ne] || ne) : ''}${!il.kisi && !il.tablo && !ne ? 'Hazırlanıyor…' : ''}</p>
+          <div class="sec-p-cubuk"><i style="width:${fy}%"></i></div>
+          <div class="sec-p-cs"><span>${esc(fazAd)}</span><span>%${fy}</span></div>
+        </div>
+        <p class="sec-t-ipucu">Sayfayı kapatma; tarama bu sekmede çalışıyor.</p>
+      </div>
+    </div>`;
 }
 
 /* Tarama öncesi fark uyarısı. Sonuç: 'devam' | 'dur'. */
@@ -690,18 +842,24 @@ function secOkumaSonuclar(projeId) {
   const sira = { acik: 0, edilemedi: 1, gecti: 2 };
   const gorunen = liste.filter(x => filtre === 'hepsi' || x.sonuc === filtre)
     .slice().sort((a, b) => sira[a.sonuc] - sira[b.sonuc]);
-  const f = (ad, deger) => `<button class="sec-dug${filtre === deger ? ' ana' : ''}" type="button"
-      data-eylem="sec-o-filtre" data-id="${esc(projeId)}" data-f="${deger}">${ad}</button>`;
-  const fi = (ad, deger) => `<button class="sec-dug${islemF === deger ? ' ana' : ''}" type="button"
+  const f = (ad, deger, n) => `<button class="sec-cip${filtre === deger ? ' aktif' : ''}" type="button"
+      data-eylem="sec-o-filtre" data-id="${esc(projeId)}" data-f="${deger}">${ad} <em class="${deger}">${n}</em></button>`;
+  const fi = (ad, deger) => `<button class="sec-cip kucuk${islemF === deger ? ' aktif' : ''}" type="button"
       data-eylem="sec-o-islem" data-id="${esc(projeId)}" data-f="${deger}">${ad}</button>`;
+  const islemAd = { SELECT: 'Okuma', INSERT: 'Ekleme', UPDATE: 'Değiştirme', DELETE: 'Silme' };
+  const hapAd = { gecti: 'Geçti', acik: 'Açık', edilemedi: 'Edilemedi' };
 
   const kartlar = gorunen.map(x => `
-    <div class="sec-o-sonuc ${x.sonuc}">
-      <div class="sec-o-ust"><b>${esc(x.kisi)}</b><i>${esc(x.rol)}</i><span>${SEC_SONUC_AD[x.sonuc]}</span></div>
-      <div class="sec-o-hedef"><code>${esc(x.tablo + (x.kolon && !/ kolon$/.test(x.kolon) ? '.' + x.kolon : ''))}</code>
-        ${x.tur === 'Kolon' && / kolon$/.test(x.kolon) ? ' · ' + esc(x.kolon) : ''}
-        · ${esc(islemi(x))} · ${esc(x.hedef)} · <em>${esc(x.tur)} testi</em></div>
-      <div class="sec-o-bg"><span>Beklenen: <b>${esc(x.beklenen)}</b></span><span>Gerçek: <b>${esc(x.gercek || '—')}</b></span></div>
+    <div class="sec-r ${x.sonuc}">
+      <div class="sec-r-ust"><span class="sec-r-hap">${hapAd[x.sonuc]}</span>
+        <span class="sec-r-islem">${esc(islemAd[islemi(x)] || islemi(x))}</span><span class="sec-r-tur">${esc(x.tur)} testi</span></div>
+      <div class="sec-r-hedef"><code>${esc(x.tablo + (x.kolon && !/ kolon$/.test(x.kolon) ? '.' + x.kolon : ''))}</code>
+        ${x.tur === 'Kolon' && / kolon$/.test(x.kolon) ? ' · ' + esc(x.kolon) : ''} · ${esc(x.hedef)}</div>
+      <div class="sec-r-alt">
+        <div><small>Kişi</small><b>${esc(x.kisi)}</b>${x.rol && x.rol !== x.kisi ? `<i>${esc(x.rol)}</i>` : ''}</div>
+        <div><small>Beklenen</small><b>${esc(x.beklenen)}</b></div>
+        <div class="sec-r-gercek"><small>Gerçek</small><b>${esc(x.gercek || '—')}</b></div>
+      </div>
     </div>`).join('');
 
   /* Damga: bu sonuç gerçek veritabanı için geçerli mi (TEST ↔ gerçek yapı). */
@@ -720,12 +878,11 @@ function secOkumaSonuclar(projeId) {
         <i>Test veritabanı ile gerçek veritabanının yapısı farklı. Farklar aşağıda, Yapı karşılaştırması'nda.</i></span></div>
       ${typeof secYapiFarkHtml === 'function' ? secYapiFarkHtml(projeId, uretimTarih) : ''}`;
   /* Kusursuz: okuma ve yazma birlikte çalıştı, hiç 🔴/🟡 yok, yapılar aynı. */
-  const hepsi = [].concat(s ? s.liste : [], y ? y.liste : []);
-  const kusursuz = !!(s && y) && hepsi.length > 0 && hepsi.every(x => x.sonuc === 'gecti') && yfSay === 0;
+  const kusursuz = secKusursuzMu(projeId);
   const bagHata = [].concat(s ? s.liste : [], y ? y.liste : [])
     .filter(x => String(x.gercek || '').indexOf(SEC_BAG_HATA) >= 0).length;
   return `
-    <h3 class="sec-bas">Sonuç · ${esc(secTarih(tarih))}</h3>
+    <h3 class="sec-bas" id="sec-sonuc">Tarama sonuçları · ${esc(secTarih(tarih))}</h3>
     ${kusursuz ? `<div class="sec-t-durum sec-kusursuz"><span class="sec-t-emoji">✅</span>
       <span class="sec-t-durum-yz"><b>Kusursuz — açık yok</b>
         <i>Okuma, yazma ve giriş yapmamış ziyaretçi testlerinin hepsi geçti; test veritabanı gerçek veritabanıyla
@@ -734,23 +891,18 @@ function secOkumaSonuclar(projeId) {
     ${bagHata ? `<div class="sec-t-durum"><span class="sec-t-emoji">🌐</span>
       <span class="sec-t-durum-yz"><b>${bagHata} test bağlantı hatası yüzünden denenemedi</b>
         <i>Bunlar güvenlik sonucu değil. İnternet bağlantını kontrol edip taramayı yeniden başlat.</i></span></div>` : ''}
-    <div class="sec-o-ozet">
-      <span>Toplam <b>${liste.length}</b></span>
-      <span>🟢 Geçti <b>${say('gecti')}</b></span>
-      <span>🔴 Açık <b>${say('acik')}</b></span>
-      <span>🟡 Test edilemedi <b>${say('edilemedi')}</b></span>
-    </div>
     ${bildir ? `<div class="sec-t-dg sec-o-filtre">
       <button class="sec-dug ana" type="button" data-eylem="sec-o-y-rapor" data-id="${esc(projeId)}">📋 Hataları bildir (${bildir})</button>
       <span class="sec-t-ipucu">🔴 ve 🟡 sonuçlar projenin Claude sohbeti için kopyalanır</span>
     </div>` : ''}
     ${secTeslimHtml(projeId)}
-    ${y ? `<div class="sec-t-dg sec-o-filtre">
-      ${fi('Tümü', 'hepsi')}${fi('Okuma', 'SELECT')}${fi('Ekleme', 'INSERT')}${fi('Değiştirme', 'UPDATE')}${fi('Silme', 'DELETE')}
-    </div>` : ''}
-    <div class="sec-t-dg sec-o-filtre">
-      ${f('Hepsi', 'hepsi')}${f('🟢 Geçti', 'gecti')}${f('🔴 Açık', 'acik')}${f('🟡 Edilemedi', 'edilemedi')}
+    <h3 class="sec-bas">Testler</h3>
+    <div class="sec-cipler">
+      ${f('Tümü', 'hepsi', liste.length)}${f('Geçti', 'gecti', say('gecti'))}${f('Açık', 'acik', say('acik'))}${f('Edilemedi', 'edilemedi', say('edilemedi'))}
     </div>
+    ${y ? `<div class="sec-cipler kaydir">
+      ${fi('Tüm işlemler', 'hepsi')}${fi('Okuma', 'SELECT')}${fi('Ekleme', 'INSERT')}${fi('Değiştirme', 'UPDATE')}${fi('Silme', 'DELETE')}
+    </div>` : ''}
     <div class="sec-o-liste">${kartlar || '<p class="sec-t-not">Bu filtrede sonuç yok.</p>'}</div>`;
 }
 
@@ -812,10 +964,10 @@ function secTeslimHtml(projeId) {
           data-eylem="sec-o-teslim" data-id="${esc(projeId)}" data-m="${x.id}">${ic}</button>`;
   };
   return `
-    <h3 class="sec-bas">Teslim öncesi kontrol · ${biten}/${m.length}</h3>
+    <h3 class="sec-bas" id="sec-teslim">Teslim öncesi kontrol · ${biten}/${m.length}</h3>
     <p class="sec-t-ipucu">Tarama tabloları test eder. Bu beş madde taramanın göremediği yerler; işaretlemek için maddeye dokun.</p>
     <div class="sec-t-liste sec-teslim">${m.map(satir).join('')}</div>
-    <div class="sec-t-dg">
+    <div class="sec-t-dg sec-teslim-dg">
       <button class="sec-dug" type="button" data-eylem="sec-o-teslim-prompt" data-id="${esc(projeId)}">📋 Kontrol promptu kopyala</button>
       ${biten === m.length ? '<span class="sec-yesil">✅ Teslime hazır</span>' : ''}
     </div>`;
@@ -860,6 +1012,11 @@ async function secOkumaEylem(e, el) {
   if (e.indexOf('sec-o-y-') === 0) return secYazmaEylem(e, el);   // security-yazma.js
   if (e === 'sec-o-filtre') { SEC_OKUMA.filtre[projeId] = el.dataset.f; render(); return true; }
   if (e === 'sec-o-islem') { SEC_OKUMA.islem[projeId] = el.dataset.f; render(); return true; }
+  if (e === 'sec-o-git') {
+    const hedef = document.getElementById(el.dataset.hedef);
+    if (hedef) hedef.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    return true;
+  }
   if (e === 'sec-o-teslim') {
     const isaret = secTeslimIsaret(projeId);
     isaret[el.dataset.m] = !isaret[el.dataset.m];
@@ -907,6 +1064,8 @@ async function secOkumaEylem(e, el) {
     SEC_OKUMA.calisiyor[projeId] = true;
     SEC_OKUMA.sonuc[projeId] = null;
     if (typeof SEC_YAZMA !== 'undefined') SEC_YAZMA.sonuc[projeId] = null;
+    const tr = SEC_TARAMA[projeId] = { faz: 'hazirlik', bas: { hazirlik: Date.now() }, bit: {} };
+    const faz = ad => { tr.bit[tr.faz] = Date.now(); tr.faz = ad; tr.bas[ad] = Date.now(); };
     let hazir = false;
     try {
       await secTaramaHazirlik(projeId, (metin, kisi, tablo) => {
@@ -920,12 +1079,22 @@ async function secOkumaEylem(e, el) {
       SEC_OKUMA.ilerleme[projeId] = null;
       render();
     }
-    if (!hazir) return true;
+    if (!hazir) { delete SEC_TARAMA[projeId]; return true; }
+    tr.bit.hazirlik = Date.now();
     /* Gerçek ↔ TEST farkı varsa sor: düzeltme deneniyorsa devam, değilse önce eşitle. */
     const fs = secFarkSay(secGuncelFark(projeId));
-    if (fs && (await secFarkSorPenceresi(projeId, fs)) !== 'devam') { render(); return true; }
-    await secOkumaCalistir(projeId);
-    if (SEC_OKUMA.sonuc[projeId] && typeof secYazmaCalistir === 'function') await secYazmaCalistir(projeId);   // okuma durduysa yazmaya geçme
+    if (fs && (await secFarkSorPenceresi(projeId, fs)) !== 'devam') { delete SEC_TARAMA[projeId]; render(); return true; }
+    try {
+      faz('okuma');
+      await secOkumaCalistir(projeId);
+      if (SEC_OKUMA.sonuc[projeId] && typeof secYazmaCalistir === 'function') {   // okuma durduysa yazmaya geçme
+        faz('yazma');
+        await secYazmaCalistir(projeId);
+      }
+    } finally {
+      delete SEC_TARAMA[projeId];
+      render();
+    }
     return true;
   }
 

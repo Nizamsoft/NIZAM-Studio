@@ -1,5 +1,15 @@
 # Değişiklik Günlüğü
 
+## v0.318.0
+- **Güvenlik Testleri yeni görünüm** (onaylı mockup). `secPano`: durum kartı (Sistem güvenli /
+  N açık var / Kontrol gerekiyor / Henüz taranmadı), 5 sayı kutusu (okuma, ekleme, değiştirme,
+  silme, ziyaretçi), büyük siyah "Taramayı başlat", 6 adımlı liste (1–3 ilgili sekmeye, 5–6
+  sonuç/teslim bölümüne kaydırır). Ayrı test kartları "Testleri ayrı ayrı çalıştır" altına katlandı.
+- `secTaramaEkran`: tarama sürerken yüzde halkası (hazırlık %3, okuma %3–40, yazma %40–100),
+  bölümler ve süreleri (`SEC_TARAMA`), "şu anda" kartı.
+- Sonuç kartları (`.sec-r`): durum hapı, işlem, tablo/hedef, Kişi · Beklenen · Gerçek; sayılı
+  filtre çipleri; masaüstünde ızgara.
+
 ## v0.317.0
 - **Teslim öncesi kontrol** (security-okuma.js, `secTeslimHtml`): tarama sonucunun altında
   taramanın kapsamadığı 5 madde — Erişim Kuralları'nı okudum, kayıt kapalı, kovalar public

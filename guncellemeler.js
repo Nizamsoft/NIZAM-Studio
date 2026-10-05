@@ -21,6 +21,13 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.318.0', tarih: '2026-10-05',
+    ozet: 'Nizam Security: yeni görünüm',
+    maddeler: [
+      'Güvenlik Testleri sayfasının üstünde durum kartı, sayı kutuları, büyük tarama düğmesi ve adım listesi var.',
+      'Tarama sürerken yüzde halkası ve hangi bölümde olduğu görünüyor.',
+      'Sonuç kartları daha okunaklı: kim, ne bekleniyordu, ne oldu.',
+    ] },
   { surum: 'v0.317.0', tarih: '2026-10-05',
     ozet: 'Nizam Security: teslim öncesi kontrol listesi',
     maddeler: [
