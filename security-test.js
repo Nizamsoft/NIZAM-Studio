@@ -390,6 +390,12 @@ end $nizam_eklenti$;`));
   });
   s.push('');
   s.push('commit;');
+  /* Hakem (yazma testi yardımcısı) kurulumla birlikte; projeden bağımsız. */
+  if (typeof secYardimciSql === 'function') {   // security-yazma.js
+    s.push('');
+    s.push('-- 11) Hakem: yazma testi yardımcısı (yalnız test veritabanında)');
+    s.push(secYardimciSql(projeId, ortam).split('\n').filter(x => !/^select 'NIZAM: Yazma testi/.test(x)).join('\n'));
+  }
   s.push(`select 'NIZAM: Test ortamı kuruldu — ${T.length} tablo, ${T.reduce((n, t) => n + (t.politikalar || []).length, 0)} kural, ${F.length} fonksiyon.' as sonuc;`);
   return s.join('\n');
 }
@@ -557,7 +563,7 @@ async function secTestKayitOl(ortam, kisi) {
   let r;
   try {
     r = await secTestIstek(ortam, 'signup', { email: kisi.eposta, password: kisi.sifre,
-      data: { nizam_test: true, rol: kisi.rol, ad: 'Test ' + kisi.etiket } });
+      data: { nizam_test: true, nizam_proje: ortam.proje_id, rol: kisi.rol, ad: 'Test ' + kisi.etiket } });
   } catch (h) { return { hata: 'Test projesine ulaşılamadı.' }; }
   const j = r.j || {};
   const mesaj = String(j.msg || j.error_description || j.message || j.error_code || j.error || '');

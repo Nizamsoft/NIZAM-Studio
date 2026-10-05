@@ -1,5 +1,18 @@
 # Değişiklik Günlüğü
 
+## v0.312.0
+- **Hakem kurulumla birlikte, projeden bağımsız.** Yazma yardımcısı (`nizam_yazma_yardimci`,
+  sürüm 4) artık test ortamı kurulum SQL'inin sonuna ekleniyor; ayrı "Yardımcı SQL" adımı
+  gerekmiyor ("Yardımcıyı yeniden kur" düğmesi yedek olarak duruyor). Proje sabit
+  değil: işaretteki yüklü projeye bakıyor. Çağıran: kurulum anındaki test e-postalarından
+  biri ya da `raw_user_meta_data.nizam_proje` = yüklü proje ve `@test.nizamsoft.com`
+  (test hesapları kayıtta `nizam_proje` ile açılıyor).
+- **Güvenlik düzeltmesi:** test hesap listesi boşken e-postasız bir oturum yardımcıyı
+  çağırabiliyordu (`'' = any(array[''])`). Artık e-posta boşsa reddediliyor.
+- **Tam tarama:** Güvenlik Testleri'nde tek düğme — okuma (+ dış erişim), ardından yazma.
+- Yerel Postgres 16: A listedeki/işaretli hesap ✓, başka alan adı ✗, B'ye devirden sonra
+  B hesabı ✓, A hesabı ✗, boş/e-postasız oturum ✗.
+
 ## v0.311.0
 - **Sabit test veritabanı.** Kurulum SQL'i artık işaretli test veritabanının public şemasını
   TAMAMEN temizliyor (`secTemizleSql`: görünüm, tablo, fonksiyon, dizi, tip/domain;

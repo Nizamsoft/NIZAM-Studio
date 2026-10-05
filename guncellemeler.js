@@ -21,6 +21,13 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.312.0', tarih: '2026-10-05',
+    ozet: 'Nizam Security: daha az adım, tek düğmeyle tam tarama',
+    maddeler: [
+      'Yazma testinin yardımcısı artık test ortamı kurulumuyla birlikte kuruluyor; ayrı bir SQL çalıştırmaya gerek yok.',
+      'Güvenlik Testleri\'nde "Taramayı başlat": okuma, yazma ve giriş yapmamış ziyaretçi testleri tek seferde.',
+      'Test ortamını bir kez yeniden kurman ve test verisini tekrar yüklemen gerekiyor.',
+    ] },
   { surum: 'v0.311.0', tarih: '2026-10-05',
     ozet: 'Nizam Security: tek bir sabit test veritabanı',
     maddeler: [

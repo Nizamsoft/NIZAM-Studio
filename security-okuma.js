@@ -625,7 +625,16 @@ function secOkumaEkran(projeId) {
         <i>Production: ${esc(secKisalt(secUretimRef(p) || '?', 4, 4))} ≠ Test: ${esc(secKisalt(o.test_ref, 4, 4))}</i></span>
     </div>`;
 
-  return ust + kalkan + `<div class="sec-t-izgara">${haritaKart}${baslatKart}${typeof secYazmaKart === 'function' ? secYazmaKart(projeId, engel) : ''}</div>` + ilerleme + secOkumaSonuclar(projeId);
+  /* Tek düğme: okuma (+ dış erişim) ardından yazma testleri. */
+  const tumu = calisiyor || yaziyor;
+  const tamKart = `
+    <div class="sec-t-durum sec-tam">
+      <span class="sec-t-emoji">🛡️</span>
+      <span class="sec-t-durum-yz"><b>Tam tarama</b>
+        <i>Okuma, yazma ve giriş yapmamış ziyaretçi testleri sırayla çalışır.${harita ? '' : ' Önce veri haritasını yapıştır.'}</i></span>
+      ${dug(tumu ? 'Tarama sürüyor…' : 'Taramayı başlat', 'sec-o-tam', true, !harita || tumu || !!engel)}
+    </div>`;
+  return ust + kalkan + tamKart + `<div class="sec-t-izgara">${haritaKart}${baslatKart}${typeof secYazmaKart === 'function' ? secYazmaKart(projeId, engel) : ''}</div>` + ilerleme + secOkumaSonuclar(projeId);
 }
 
 function secOkumaSonuclar(projeId) {
@@ -717,6 +726,13 @@ async function secOkumaEylem(e, el) {
         return null;
       },
     });
+    return true;
+  }
+
+  if (e === 'sec-o-tam') {
+    if (SEC_OKUMA.calisiyor[projeId] || (typeof SEC_YAZMA !== 'undefined' && SEC_YAZMA.calisiyor[projeId])) return true;
+    await secOkumaCalistir(projeId);
+    if (SEC_OKUMA.sonuc[projeId] && typeof secYazmaCalistir === 'function') await secYazmaCalistir(projeId);   // okuma durduysa yazmaya geçme
     return true;
   }
 

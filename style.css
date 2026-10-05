@@ -11126,3 +11126,6 @@ a.lk.tl-kart { text-decoration: none; color: inherit; }
   margin: 4px 0 0; padding: 8px 10px; border-radius: 8px; background: var(--yuva);
   font: 12px ui-monospace, Menlo, monospace; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 240px; overflow: auto;
 }
+.sec-tam { border-color: var(--line-2, #d6d6db); }
+.sec-tam .sec-dug { margin-left: auto; }
+@media (max-width: 900px) { .sec-tam .sec-dug { margin-left: 0; width: 100%; } }

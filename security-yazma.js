@@ -34,7 +34,7 @@
 'use strict';
 
 const SEC_YARDIMCI = 'nizam_yazma_yardimci';
-const SEC_YARDIMCI_SURUM = '3';   // 2: anahtarlar sınırsız · 3: ekle_grup / sil_grup (tek işlemde birden fazla kayıt)
+const SEC_YARDIMCI_SURUM = '4';   // 2: anahtarlar sınırsız · 3: ekle_grup / sil_grup · 4: projeden bağımsız — kurulum SQL'i içinde kurulur; çağıranın hesabı yüklü projeye ait olmalı
 const SEC_YAZMA = { sonuc: {}, ilerleme: {}, calisiyor: {} };
 /* Değişmesi yetki yükseltmesi demek olan kolonlar (varsa önce bunlar denenir). */
 const SEC_AD_KOLON = /^(ad|adi|isim|unvan|baslik|name|title|kod|kodu|no|numara)$|_(ad|adi|isim|unvan|baslik|kod|kodu|no)$/i;
@@ -49,7 +49,8 @@ function secYardimciSql(projeId, ortam) {
   return `-- NIZAM Security · Yazma testi yardımcısı
 -- YALNIZ TEST PROJESİNDE çalıştır: ${ortam.test_ref}.supabase.co
 -- Tek bir fonksiyon kurar (tablo yok). Yazma testlerinde sonucu bağımsız okur,
--- test kaydını siler ve eski değeri geri yükler. Yalnız Nizam test hesapları çağırabilir.
+-- test kaydını siler ve eski değeri geri yükler. Yalnız test veritabanında O AN YÜKLÜ
+-- projenin Nizam test hesapları çağırabilir (kurulum SQL'i bunu kendisi de kurar).
 -- Nizam test ortamı işareti yoksa (production gibi) kendini durdurur.
 begin;
 ${secKilitSql(projeId, false)}
@@ -71,17 +72,21 @@ declare
   v_t     text;
   v_r     jsonb;
 begin
-  -- 1) Yalnız bu projenin Nizam test ortamı
+  -- 1) Yalnız Nizam test ortamı (hangi proje yüklüyse)
   if to_regclass('public.nizam_test_ortami') is null then
     raise exception 'NIZAM: burası Nizam test ortamı değil';
   end if;
   execute 'select proje_id from public.nizam_test_ortami where anahtar = ''nizam''' into v_proje;
-  if v_proje is distinct from ${secQl(projeId)} then
-    raise exception 'NIZAM: bu test ortamı başka bir projeye ait';
+  if v_proje is null then
+    raise exception 'NIZAM: test ortamı işareti boş';
   end if;
-  -- 2) Yalnız Nizam test hesapları
-  if lower(coalesce(auth.jwt() ->> 'email', '')) <> all (array[${epostalar}]) then
-    raise exception 'NIZAM: yalnız Nizam test hesapları kullanabilir — yardımcı SQL''ini yeniden çalıştır';
+  -- 2) Yalnız yüklü projenin Nizam test hesapları: kayıtta işaretlenen proje ya da
+  --    kurulum anında bilinen test e-postaları (eski hesaplar için).
+  if coalesce(auth.jwt() ->> 'email', '') = '' or not (lower(auth.jwt() ->> 'email') = any (array[${epostalar}])
+          or exists (select 1 from auth.users u where u.id = auth.uid()
+                     and lower(u.email) like ${secQl('%@' + SEC_TEST_ALAN)}
+                     and u.raw_user_meta_data ->> 'nizam_proje' = v_proje)) then
+    raise exception 'NIZAM: yalnız yüklü projenin Nizam test hesapları kullanabilir — kurulum SQL''ini yeniden çalıştır';
   end if;
   if p_islem = 'surum' then
     return jsonb_build_object('nizam_yardimci', '${SEC_YARDIMCI_SURUM}', 'proje', v_proje,
@@ -1035,9 +1040,9 @@ function secYazmaKart(projeId, engel) {
         silmeyi dener. Sonucu test projesine bir kez kurulan küçük bir yardımcı bağımsız olarak okur:
         eklenen kayıt silinir, değişen değer geri yüklenir, silme sentetik bir kopyada denenir.</p>
       <div class="sec-t-dg">
-        ${dug('Yardımcı SQL\'i kopyala', 'sec-o-y-sql', false, !!engel)}
-        ${dug(calisiyor ? 'Yazma testi çalışıyor…' : 'Yazma testini başlat', 'sec-o-y-baslat', true, mesgul || !!engel)}
-        <span class="sec-t-ipucu">Yardımcıyı bir kez TEST projesinin SQL Editor'ünde çalıştır</span>
+        ${dug(calisiyor ? 'Yazma testi çalışıyor…' : 'Yazma testini başlat', 'sec-o-y-baslat', false, mesgul || !!engel)}
+        ${dug('Yardımcıyı yeniden kur', 'sec-o-y-sql', false, !!engel)}
+        <span class="sec-t-ipucu">Yardımcı, Test Ortamı'ndaki kurulum SQL'iyle birlikte kurulur</span>
       </div>
       ${calisiyor && il ? secIlerlemeCubugu(il.yuzde, il.islem, il.kisi, il.tablo) : ''}
     </div>`;
