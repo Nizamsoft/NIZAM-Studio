@@ -1,5 +1,18 @@
 # Değişiklik Günlüğü
 
+## v0.315.0
+- **Tam tarama kopyala-yapıştırsız.** `secTaramaHazirlik` (security-yazma.js), "Taramayı
+  başlat"ta okuma testinden önce hakemden: sürüm kontrolü (eskiyse "kurulum SQL'ini yeniden
+  çalıştır" der, tarama başlamaz) → TEST yapısı → gerçek yapıyla `secYapiKarsilastir`
+  (damga) → durum (model tabloları TEST'te var mı, veri var mı) → harita (`oku` + `secYazSatir`).
+  Harita kartı yedek olarak kaldı.
+- **Hakem sürüm 5:** yeni `yapi` işlemi, `SEC_YAPI_SQL`'in ifadesini aynen çalıştırıyor
+  (`secYapiIfadesi`). Yerel Postgres 16: hakem çıktısı ↔ elle SQL çıktısı 0 fark.
+- **Damga:** sonuçların üstünde 🟢 "Production ile aynı yapıda test edildi" / 🟡 "Bu sonuç
+  production için geçerli değil: N fark" (+ fark listesi) / ⚪ karşılaştırılmadı.
+- **Yapı karşılaştırması düzeltmesi:** anon/authenticated yetkisi olmayan tabloda
+  "varsayılan" (relacl boş) ile boş liste artık aynı sayılıyor (yanlış fark çıkıyordu).
+
 ## v0.314.0
 - **Güvenlik Testleri — zayıf bağlantı.** `secFetch` (security-test.js): istek yolda
   koparsa (fetch hata fırlatırsa, ör. Safari "Load failed") 1 sn ve 2 sn arayla 2 kez daha

@@ -34,7 +34,7 @@
 'use strict';
 
 const SEC_YARDIMCI = 'nizam_yazma_yardimci';
-const SEC_YARDIMCI_SURUM = '4';   // 2: anahtarlar sınırsız · 3: ekle_grup / sil_grup · 4: projeden bağımsız — kurulum SQL'i içinde kurulur; çağıranın hesabı yüklü projeye ait olmalı
+const SEC_YARDIMCI_SURUM = '5';   // 2: anahtarlar sınırsız · 3: ekle_grup / sil_grup · 5: 'yapi' (test veritabanının yapısı) · 4: projeden bağımsız — kurulum SQL'i içinde kurulur; çağıranın hesabı yüklü projeye ait olmalı
 const SEC_YAZMA = { sonuc: {}, ilerleme: {}, calisiyor: {} };
 /* Değişmesi yetki yükseltmesi demek olan kolonlar (varsa önce bunlar denenir). */
 const SEC_AD_KOLON = /^(ad|adi|isim|unvan|baslik|name|title|kod|kodu|no|numara)$|_(ad|adi|isim|unvan|baslik|kod|kodu|no)$/i;
@@ -43,6 +43,12 @@ const SEC_GUVENLIK_KOLON = /^(role|rol|roller|layer|seviye|katman|yetki|branch|b
 /* ==========================================================================
    YARDIMCI SQL — test projesine bir kez kurulur
    ========================================================================== */
+
+/* Erişim Kuralları'ndaki yapı SQL'inin (SEC_YAPI_SQL) ifadesi — hakem TEST'in yapısını
+   AYNI sorguyla okur; böylece gerçek ↔ TEST karşılaştırmasında biçim farkı çıkmaz. */
+function secYapiIfadesi() {
+  return SEC_YAPI_SQL.replace(/^--.*$/gm, '').trim().replace(/^select\s+/i, '').replace(/\s+as\s+yapi\s*;?\s*$/i, '');
+}
 
 function secYardimciSql(projeId, ortam) {
   const epostalar = (ortam.kullanicilar || []).map(k => secQl(String(k.eposta || '').toLowerCase())).join(', ') || "''";
@@ -91,6 +97,10 @@ begin
   if p_islem = 'surum' then
     return jsonb_build_object('nizam_yardimci', '${SEC_YARDIMCI_SURUM}', 'proje', v_proje,
       'bypass', (select r.rolsuper or r.rolbypassrls from pg_roles r where r.rolname = current_user));
+  end if;
+  -- Yapı: Erişim Kuralları'ndaki yapı SQL'inin aynısı (yalnız tanım, satır verisi yok).
+  if p_islem = 'yapi' then
+    return (${secYapiIfadesi()})::jsonb;
   end if;
   -- Grup: birden fazla kaydı TEK işlemde ekler/siler. Ertelenmiş (DEFERRABLE) kurallar
   -- (ör. fiş denk olmalı, irsaliye en az bir satır) işlem sonunda bir kez denetlenir.
@@ -907,6 +917,53 @@ async function secYazTablo(cx, temel, sonuclar, ilerle) {
       catch (e) { ekle({ tur: 'Satır', beklenen: '—', gercek: 'Test hatası: ' + (e.message || e), sonuc: 'edilemedi' }); }
     }
   }
+}
+
+/* Tam tarama öncesi hazırlık — kopyala-yapıştır yerine hakemden:
+   1) hakem güncel mi · 2) TEST'in yapısı → gerçek yapıyla karşılaştırma (damga)
+   3) durum: model tabloları TEST'te var mı, veri var mı · 4) harita (kim, hangi şube). */
+async function secTaramaHazirlik(projeId, ilerle) {
+  const k = SEC.kayit[projeId] || {};
+  const o = SEC_TEST.kayit[projeId] || {};
+  const kisiler = (o.kullanicilar || []).filter(x => x.eposta && x.sifre);
+  if (!kisiler.length) throw new Error('Test kullanıcısı yok — Test Ortamı → Kullanıcıları oluştur.');
+  let jeton = null;
+  for (const kisi of kisiler) {
+    ilerle('Hakeme bağlanılıyor', kisi.etiket);
+    const g = await secOkumaGiris(o, kisi);
+    if (g.dur) throw new Error(g.dur);
+    if (g.jeton) { jeton = g.jeton; break; }
+  }
+  if (!jeton) throw new Error('Hiçbir test kullanıcısı giriş yapamadı — Test Ortamı → kullanıcıları kontrol et.');
+  let surum = null;
+  try { surum = await secYardimci(o, jeton, 'surum'); } catch (h) { surum = null; }
+  if (!surum || surum.nizam_yardimci !== SEC_YARDIMCI_SURUM || surum.proje !== projeId) {
+    throw new Error('Hakem kurulu değil ya da eski — Test Ortamı → Kurulum SQL\'ini test projesinde yeniden çalıştır (sonra veri SQL\'ini de).');
+  }
+
+  ilerle('Test veritabanının yapısı okunuyor');
+  const yr = secYapiOku(JSON.stringify(await secYardimci(o, jeton, 'yapi')));
+  if (yr.hata) throw new Error('Test yapısı okunamadı: ' + yr.hata);
+  SEC_TEST.yapiFark[projeId] = { sonuc: secYapiKarsilastir(k.yapi, yr.yapi), tarih: new Date().toISOString() };
+
+  const bilgiler = secOkumaTablolar(k.yapi, k.model);
+  const testTablo = new Set(yr.yapi.tablolar.map(t => t.ad));
+  const eksik = bilgiler.map(x => x.b.ad).filter(ad => !testTablo.has(ad));
+  if (eksik.length) {
+    throw new Error('Test veritabanında ' + eksik.length + ' tablo yok (' + eksik.slice(0, 4).join(', ')
+      + (eksik.length > 4 ? '…' : '') + ') — Test Ortamı → Kurulum SQL\'ini çalıştır.');
+  }
+
+  const harita = { tablolar: {}, tarih: new Date().toISOString() };
+  for (const { b } of bilgiler) {
+    ilerle('Harita: kayıtlar okunuyor', '', b.ad);
+    harita.tablolar[b.ad] = (await secYardimci(o, jeton, 'oku', b.ad, { kosul: {} }))
+      .map(x => { const y = secYazSatir(x, b); return { k: y.k, s: y.s, g: y.g, v: y.v }; });
+  }
+  if (!Object.values(harita.tablolar).some(l => l.length)) {
+    throw new Error('Test veritabanında hiç veri yok — Test Ortamı → veri SQL\'ini test projesinde çalıştır.');
+  }
+  SEC_OKUMA.harita[projeId] = harita;
 }
 
 async function secYazmaCalistir(projeId) {

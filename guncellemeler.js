@@ -21,6 +21,13 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.315.0', tarih: '2026-10-05',
+    ozet: 'Nizam Security: tek düğmeyle, kopyala-yapıştırsız tarama',
+    maddeler: [
+      '"Taramayı başlat" artık haritayı, durum kontrolünü ve test veritabanının yapısını kendisi alıyor.',
+      'Sonucun üstünde damga: "Production ile aynı yapıda test edildi" ya da kaç fark olduğu.',
+      'Bir kez Test Ortamı\'nda kurulum SQL\'ini ve veri SQL\'ini yeniden çalıştırman gerekiyor.',
+    ] },
   { surum: 'v0.314.0', tarih: '2026-10-05',
     ozet: 'Güvenlik testleri zayıf internette daha dayanıklı',
     maddeler: [

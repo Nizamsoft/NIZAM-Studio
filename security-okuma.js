@@ -592,8 +592,8 @@ function secOkumaEkran(projeId) {
     <div class="sec-t-kart${harita ? ' bitti' : ''}">
       <div class="sec-t-ku"><span class="sec-no">1</span><b>Veri haritası</b>
         <em>${harita ? '✓ ' + Object.keys(harita.tablolar).length + ' tablo · ' + satirSay + ' kayıt' : 'Bekliyor'}</em></div>
-      <p class="sec-t-not">Test projesinde hangi kayıtların var olduğunu, kime ve hangi şubeye ait olduğunu
-        okur. Yalnız okur; hiçbir şey yazmaz. Sayfa yenilenince yeniden yapıştır.</p>
+      <p class="sec-t-not">Hangi kaydın kime ve hangi şubeye ait olduğu. <b>Tam taramada hakemden kendiliğinden
+        alınır;</b> yalnız "Testi Başlat" ile tek başına okuma testi yapacaksan elle yapıştır.</p>
       <div class="sec-t-dg">
         ${dug('SQL\'i kopyala', 'sec-o-harita-kopya', false, !!engel)}
         ${dug('Sonucu yapıştır', 'sec-o-harita', !harita, !!engel)}
@@ -631,8 +631,9 @@ function secOkumaEkran(projeId) {
     <div class="sec-t-durum sec-tam">
       <span class="sec-t-emoji">🛡️</span>
       <span class="sec-t-durum-yz"><b>Tam tarama</b>
-        <i>Okuma, yazma ve giriş yapmamış ziyaretçi testleri sırayla çalışır.${harita ? '' : ' Önce veri haritasını yapıştır.'}</i></span>
-      ${dug(tumu ? 'Tarama sürüyor…' : 'Taramayı başlat', 'sec-o-tam', true, !harita || tumu || !!engel)}
+        <i>Hakemden durum, harita ve test veritabanının yapısı alınır; ardından okuma, yazma ve giriş
+           yapmamış ziyaretçi testleri çalışır, sonuç gerçek veritabanının yapısıyla damgalanır.</i></span>
+      ${dug(tumu ? 'Tarama sürüyor…' : 'Taramayı başlat', 'sec-o-tam', true, tumu || !!engel)}
     </div>`;
   return ust + kalkan + tamKart + `<div class="sec-t-izgara">${haritaKart}${baslatKart}${typeof secYazmaKart === 'function' ? secYazmaKart(projeId, engel) : ''}</div>` + ilerleme + secOkumaSonuclar(projeId);
 }
@@ -666,10 +667,26 @@ function secOkumaSonuclar(projeId) {
       <div class="sec-o-bg"><span>Beklenen: <b>${esc(x.beklenen)}</b></span><span>Gerçek: <b>${esc(x.gercek || '—')}</b></span></div>
     </div>`).join('');
 
+  /* Damga: bu sonuç gerçek veritabanı için geçerli mi (TEST ↔ gerçek yapı). */
+  const yf = typeof SEC_TEST !== 'undefined' ? SEC_TEST.yapiFark[projeId] : null;
+  const yfSay = yf ? yf.sonuc.sadeceTest.length + yf.sonuc.sadeceUretim.length + yf.sonuc.farkli.length : null;
+  const uretimTarih = (SEC.kayit[projeId] || {}).yapi_tarihi;
+  const damga = yf === null || yf === undefined ? `<div class="sec-t-durum"><span class="sec-t-emoji">⚪</span>
+      <span class="sec-t-durum-yz"><b>Production ile karşılaştırılmadı</b>
+        <i>"Taramayı başlat" ile tara; test veritabanının yapısı gerçek veritabanıyla karşılaştırılır.</i></span></div>`
+    : yfSay === 0 ? `<div class="sec-t-durum"><span class="sec-t-emoji">🟢</span>
+      <span class="sec-t-durum-yz"><b>Production ile aynı yapıda test edildi</b>
+        <i>Bu sonuç gerçek veritabanı için de geçerli · gerçek yapı: ${esc(secTarih(uretimTarih) || '?')}
+          (göç uyguladıysan Erişim Kuralları → Yenile)</i></span></div>`
+    : `<div class="sec-t-durum"><span class="sec-t-emoji">🟡</span>
+      <span class="sec-t-durum-yz"><b>Bu sonuç production için geçerli değil: ${yfSay} fark var</b>
+        <i>Test veritabanı ile gerçek veritabanının yapısı farklı. Farklar aşağıda, Yapı karşılaştırması'nda.</i></span></div>
+      ${typeof secYapiFarkHtml === 'function' ? secYapiFarkHtml(projeId, uretimTarih) : ''}`;
   const bagHata = [].concat(s ? s.liste : [], y ? y.liste : [])
     .filter(x => String(x.gercek || '').indexOf(SEC_BAG_HATA) >= 0).length;
   return `
     <h3 class="sec-bas">Sonuç · ${esc(secTarih(tarih))}</h3>
+    ${damga}
     ${bagHata ? `<div class="sec-t-durum"><span class="sec-t-emoji">🌐</span>
       <span class="sec-t-durum-yz"><b>${bagHata} test bağlantı hatası yüzünden denenemedi</b>
         <i>Bunlar güvenlik sonucu değil. İnternet bağlantını kontrol edip taramayı yeniden başlat.</i></span></div>` : ''}
@@ -736,6 +753,24 @@ async function secOkumaEylem(e, el) {
 
   if (e === 'sec-o-tam') {
     if (SEC_OKUMA.calisiyor[projeId] || (typeof SEC_YAZMA !== 'undefined' && SEC_YAZMA.calisiyor[projeId])) return true;
+    /* Hazırlık: hakemden durum, yapı (damga) ve harita. Eksik varsa tarama başlamaz. */
+    SEC_OKUMA.calisiyor[projeId] = true;
+    SEC_OKUMA.sonuc[projeId] = null;
+    if (typeof SEC_YAZMA !== 'undefined') SEC_YAZMA.sonuc[projeId] = null;
+    let hazir = false;
+    try {
+      await secTaramaHazirlik(projeId, (metin, kisi, tablo) => {
+        SEC_OKUMA.ilerleme[projeId] = { metin, kisi, tablo, yuzde: 0 }; render();
+      });
+      hazir = true;
+    } catch (h) {
+      toast(h.message || String(h), 'hata');
+    } finally {
+      SEC_OKUMA.calisiyor[projeId] = false;
+      SEC_OKUMA.ilerleme[projeId] = null;
+      render();
+    }
+    if (!hazir) return true;
     await secOkumaCalistir(projeId);
     if (SEC_OKUMA.sonuc[projeId] && typeof secYazmaCalistir === 'function') await secYazmaCalistir(projeId);   // okuma durduysa yazmaya geçme
     return true;

@@ -698,7 +698,8 @@ function secYapiParcalar(yapi) {
     if (secNizamMi(t.ad)) return;
     ekle('tablo', t.ad, 'var');
     ekle('rls', t.ad, (t.rls ? 'açık' : 'kapalı') + (t.rls_zorunlu ? ' · zorunlu' : ''));
-    ekle('yetki', t.ad, t.yetki_varsayilan && !(t.yetkiler || []).length ? 'varsayılan' : secYetkiMetni(t.yetkiler));
+    /* Yetkisiz tablo: "varsayılan" (relacl boş) ile boş liste aynı anlam — anon/authenticated'ın yetkisi yok. */
+    ekle('yetki', t.ad, secYetkiMetni(t.yetkiler) || 'yok');
     (t.kolonlar || []).forEach(k => {
       ekle('kolon', t.ad + '.' + k.ad, [k.tip, k.bos_olabilir ? 'boş olabilir' : 'boş olamaz',
         k.varsayilan ? 'varsayılan ' + k.varsayilan : '', k.kimlik ? 'kimlik ' + k.kimlik : '',
