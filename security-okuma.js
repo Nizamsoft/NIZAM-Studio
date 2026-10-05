@@ -638,6 +638,43 @@ function secOkumaEkran(projeId) {
   return ust + kalkan + tamKart + `<div class="sec-t-izgara">${haritaKart}${baslatKart}${typeof secYazmaKart === 'function' ? secYazmaKart(projeId, engel) : ''}</div>` + ilerleme + secOkumaSonuclar(projeId);
 }
 
+/* Tarama öncesi fark uyarısı. Sonuç: 'devam' | 'dur'. */
+function secFarkSorPenceresi(projeId, sayi) {
+  return new Promise(coz => {
+    const f = secGuncelFark(projeId);
+    const ad = x => `<li>${esc(SEC_YAPI_TUR[x.tur] || x.tur)} · <code>${esc(x.ad)}</code></li>`;
+    const liste = [].concat(f.sonuc.sadeceTest.map(x => ({ x, n: 'yalnız TEST\'te' })),
+      f.sonuc.sadeceUretim.map(x => ({ x, n: 'yalnız gerçekte' })), f.sonuc.farkli.map(x => ({ x, n: 'farklı' })));
+    modalAc(`
+      ${modalBaslik(ICON.gGuvenlik, 'Test ile gerçek veritabanı aynı değil',
+        sayi + ' fark var. Bu tarama production için geçerli olmayacak.')}
+      <ul class="sec-yol">${liste.slice(0, 12).map(o => ad(o.x).replace('</li>', ' — <i>' + esc(o.n) + '</i></li>')).join('')}
+        ${liste.length > 12 ? `<li>… ve ${liste.length - 12} fark daha</li>` : ''}</ul>
+      <p class="sec-t-not"><b>Düzeltme deniyorsan</b> (göçü önce teste uyguladıysan) devam et: bu fark beklenen.<br>
+        <b>Değilse önce eşitle:</b> farklar için promptu projenin Claude sohbetine ver, göçleri gerçek
+        veritabanına uygula, sonra gerçek yapıyı yenile.</p>
+      <div class="sec-t-dg">
+        <button class="sec-dug" type="button" data-m="prompt">📋 Farklar için prompt kopyala</button>
+        <button class="sec-dug" type="button" data-m="yenile">Gerçek yapıyı yenile</button>
+      </div>
+      <div class="modal-alt">
+        <button class="btn btn-ghost" data-m="dur" type="button">Önce eşitle</button>
+        <button class="btn btn-primary" data-m="devam" type="button"><span>Devam et, tara</span></button>
+      </div>`, kutu => {
+      $('[data-m="prompt"]', kutu).addEventListener('click', async () => {
+        const ok = await panoyaKopyala(secFarkPrompt(projeId));
+        toast(ok ? 'Farklar kopyalandı — projenin Claude sohbetine yapıştır.' : 'Kopyalanamadı.', ok ? 'basari' : 'hata');
+      });
+      $('[data-m="yenile"]', kutu).addEventListener('click', () => {
+        modalKapat(); coz('dur');
+        securityEylem('sec-yapi', { dataset: { id: projeId } });
+      });
+      $('[data-m="dur"]', kutu).addEventListener('click', () => { modalKapat(); coz('dur'); });
+      $('[data-m="devam"]', kutu).addEventListener('click', () => { modalKapat(); coz('devam'); });
+    });
+  });
+}
+
 function secOkumaSonuclar(projeId) {
   const s = SEC_OKUMA.sonuc[projeId];
   const y = typeof SEC_YAZMA !== 'undefined' ? SEC_YAZMA.sonuc[projeId] : null;   // security-yazma.js
@@ -668,8 +705,8 @@ function secOkumaSonuclar(projeId) {
     </div>`).join('');
 
   /* Damga: bu sonuç gerçek veritabanı için geçerli mi (TEST ↔ gerçek yapı). */
-  const yf = typeof SEC_TEST !== 'undefined' ? SEC_TEST.yapiFark[projeId] : null;
-  const yfSay = yf ? yf.sonuc.sadeceTest.length + yf.sonuc.sadeceUretim.length + yf.sonuc.farkli.length : null;
+  const yf = typeof secGuncelFark === 'function' ? secGuncelFark(projeId) : null;
+  const yfSay = typeof secFarkSay === 'function' ? secFarkSay(yf) : null;
   const uretimTarih = (SEC.kayit[projeId] || {}).yapi_tarihi;
   const damga = yf === null || yf === undefined ? `<div class="sec-t-durum"><span class="sec-t-emoji">⚪</span>
       <span class="sec-t-durum-yz"><b>Production ile karşılaştırılmadı</b>
@@ -682,10 +719,17 @@ function secOkumaSonuclar(projeId) {
       <span class="sec-t-durum-yz"><b>Bu sonuç production için geçerli değil: ${yfSay} fark var</b>
         <i>Test veritabanı ile gerçek veritabanının yapısı farklı. Farklar aşağıda, Yapı karşılaştırması'nda.</i></span></div>
       ${typeof secYapiFarkHtml === 'function' ? secYapiFarkHtml(projeId, uretimTarih) : ''}`;
+  /* Kusursuz: okuma ve yazma birlikte çalıştı, hiç 🔴/🟡 yok, yapılar aynı. */
+  const hepsi = [].concat(s ? s.liste : [], y ? y.liste : []);
+  const kusursuz = !!(s && y) && hepsi.length > 0 && hepsi.every(x => x.sonuc === 'gecti') && yfSay === 0;
   const bagHata = [].concat(s ? s.liste : [], y ? y.liste : [])
     .filter(x => String(x.gercek || '').indexOf(SEC_BAG_HATA) >= 0).length;
   return `
     <h3 class="sec-bas">Sonuç · ${esc(secTarih(tarih))}</h3>
+    ${kusursuz ? `<div class="sec-t-durum sec-kusursuz"><span class="sec-t-emoji">✅</span>
+      <span class="sec-t-durum-yz"><b>Kusursuz — açık yok</b>
+        <i>Okuma, yazma ve giriş yapmamış ziyaretçi testlerinin hepsi geçti; test veritabanı gerçek veritabanıyla
+          aynı yapıda. (RPC fonksiyonları, dosya kovaları ve kendi kendine kayıt bu taramanın kapsamında değil.)</i></span></div>` : ''}
     ${damga}
     ${bagHata ? `<div class="sec-t-durum"><span class="sec-t-emoji">🌐</span>
       <span class="sec-t-durum-yz"><b>${bagHata} test bağlantı hatası yüzünden denenemedi</b>
@@ -771,6 +815,9 @@ async function secOkumaEylem(e, el) {
       render();
     }
     if (!hazir) return true;
+    /* Gerçek ↔ TEST farkı varsa sor: düzeltme deneniyorsa devam, değilse önce eşitle. */
+    const fs = secFarkSay(secGuncelFark(projeId));
+    if (fs && (await secFarkSorPenceresi(projeId, fs)) !== 'devam') { render(); return true; }
     await secOkumaCalistir(projeId);
     if (SEC_OKUMA.sonuc[projeId] && typeof secYazmaCalistir === 'function') await secYazmaCalistir(projeId);   // okuma durduysa yazmaya geçme
     return true;

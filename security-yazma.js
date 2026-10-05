@@ -944,7 +944,8 @@ async function secTaramaHazirlik(projeId, ilerle) {
   ilerle('Test veritabanının yapısı okunuyor');
   const yr = secYapiOku(JSON.stringify(await secYardimci(o, jeton, 'yapi')));
   if (yr.hata) throw new Error('Test yapısı okunamadı: ' + yr.hata);
-  SEC_TEST.yapiFark[projeId] = { sonuc: secYapiKarsilastir(k.yapi, yr.yapi), tarih: new Date().toISOString() };
+  SEC_TEST.testYapi[projeId] = { yapi: yr.yapi, tarih: new Date().toISOString() };
+  SEC_TEST.yapiFark[projeId] = { sonuc: secYapiKarsilastir(k.yapi, yr.yapi), tarih: SEC_TEST.testYapi[projeId].tarih };
 
   const bilgiler = secOkumaTablolar(k.yapi, k.model);
   const testTablo = new Set(yr.yapi.tablolar.map(t => t.ad));

@@ -32,7 +32,7 @@
 const SEC_TEST_ALAN = 'test.nizamsoft.com';   // test hesaplarının e-posta alanı
 const SEC_TEST_KONTROL_SURUM = '1';
 
-const SEC_TEST = { kayit: {}, goster: {}, mesgul: {}, yapiFark: {} };   // yapiFark: bellekte
+const SEC_TEST = { kayit: {}, goster: {}, mesgul: {}, yapiFark: {}, testYapi: {} };   // bellekte
 
 /* ==========================================================================
    VERİ — yalnız security_test_ortamlari tablosu
@@ -732,9 +732,61 @@ function secYapiKarsilastir(uretim, test) {
   return { sadeceTest: sirala(sadeceTest), sadeceUretim: sirala(sadeceUretim), farkli: sirala(farkli) };
 }
 
-/* Fark ekranı (Test Ortamı sekmesinin altında). */
+/* Güncel karşılaştırma: TEST'in son okunan yapısı her seferinde Erişim Kuralları'ndaki
+   GÜNCEL gerçek yapıyla karşılaştırılır. Gerçek yapı "Yenile" ile tazelenince damga
+   yeniden taramaya gerek kalmadan güncellenir (TEST değişmediği için sonuçlar geçerli). */
+const SEC_FARK_ONBELLEK = {};
+function secGuncelFark(projeId) {
+  const t = SEC_TEST.testYapi[projeId];
+  const k = SEC.kayit[projeId] || {};
+  if (!t || !k.yapi) return SEC_TEST.yapiFark[projeId] || null;
+  const anahtar = t.tarih + '|' + (k.yapi_tarihi || '');
+  const o = SEC_FARK_ONBELLEK[projeId];
+  if (o && o.anahtar === anahtar) return o.f;
+  const f = { sonuc: secYapiKarsilastir(k.yapi, t.yapi), tarih: t.tarih };
+  SEC_FARK_ONBELLEK[projeId] = { anahtar, f };
+  return f;
+}
+const secFarkSay = f => (f ? f.sonuc.sadeceTest.length + f.sonuc.sadeceUretim.length + f.sonuc.farkli.length : null);
+
+/* Farklar için projenin Claude sohbetine yapıştırılacak metin. */
+function secFarkPrompt(projeId) {
+  const f = secGuncelFark(projeId);
+  const p = DB.proje(projeId);
+  if (!f) return '';
+  const ad = x => (SEC_YAPI_TUR[x.tur] || x.tur) + ' · ' + x.ad;
+  const s = [];
+  s.push('# NIZAM Security — Test ve gerçek (production) veritabanı yapı farkları');
+  s.push('');
+  s.push('Proje: ' + projeAdi(p));
+  s.push('Nizam Studio, test veritabanının yapısını gerçek veritabanının yapısıyla karşılaştırdı (tablolar, kolonlar, RLS kuralları, yetkiler, fonksiyonlar, tetikleyiciler). Farklar:');
+  s.push('');
+  if (f.sonuc.sadeceTest.length) {
+    s.push('## Yalnız TEST\'te var (düzeltme production\'a henüz geçmemiş olabilir)');
+    f.sonuc.sadeceTest.forEach(x => s.push('- ' + ad(x)));
+    s.push('');
+  }
+  if (f.sonuc.sadeceUretim.length) {
+    s.push('## Yalnız production\'da var (TEST eski kalmış ya da production\'da elle değişiklik yapılmış olabilir)');
+    f.sonuc.sadeceUretim.forEach(x => s.push('- ' + ad(x)));
+    s.push('');
+  }
+  if (f.sonuc.farkli.length) {
+    s.push('## İki tarafta farklı');
+    f.sonuc.farkli.forEach(x => { s.push('- ' + ad(x)); s.push('  - production: ' + x.uretim.slice(0, 600)); s.push('  - TEST: ' + x.test.slice(0, 600)); });
+    s.push('');
+  }
+  s.push('## Ne yapmanı istiyorum');
+  s.push('1. Repodaki göç dosyalarına bak. Production\'a HENÜZ UYGULANMAMIŞ olanları sırasıyla listele ve her birinin hangi farkı kapattığını yaz.');
+  s.push('2. Yeni SQL yazma; repoda olan göç dosyalarını kullan.');
+  s.push('3. Hiçbir göç dosyasıyla açıklanamayan fark varsa (ör. production\'da elle yapılmış değişiklik) ayrıca söyle; ne yapılacağına ben karar vereceğim.');
+  s.push('4. Production\'a dokunma; uygulamayı ben yapacağım.');
+  return s.join('\n');
+}
+
+/* Fark ekranı (Test Ortamı ve sonuç ekranı). */
 function secYapiFarkHtml(projeId, uretimTarihi) {
-  const f = SEC_TEST.yapiFark[projeId];
+  const f = secGuncelFark(projeId);
   if (!f) return '';
   const r = f.sonuc;
   const toplam = r.sadeceTest.length + r.sadeceUretim.length + r.farkli.length;
@@ -757,6 +809,10 @@ function secYapiFarkHtml(projeId, uretimTarihi) {
     ${grup('Yalnız TEST\'te', 'Düzeltme henüz gerçek veritabanına geçmemiş olabilir.', r.sadeceTest, satir)}
     ${grup('Yalnız gerçek veritabanında', 'TEST eski kalmış olabilir.', r.sadeceUretim, satir)}
     ${grup('İki tarafta farklı', 'Tanımları yan yana karşılaştır.', r.farkli, farkSatir)}
+    <div class="sec-t-dg">
+      <button class="sec-dug ana" type="button" data-eylem="sec-t-fark-prompt" data-id="${esc(projeId)}">📋 Farklar için prompt kopyala</button>
+      <button class="sec-dug" type="button" data-eylem="sec-t-gercek-yenile" data-id="${esc(projeId)}">Gerçek yapıyı yenile (yapıştır)</button>
+    </div>
     ${tarih}`;
 }
 
@@ -863,8 +919,8 @@ function secTestEkran(projeId) {
     + dug('SQL yapıştır → kopyala', 'sec-t-veri', '', false, !kisiTamam)
     + (o.veri_sql ? dug('Tekrar kopyala', 'sec-t-veri-kopya') : ''));
 
-  const yf = SEC_TEST.yapiFark[projeId];
-  const yfSay = yf ? yf.sonuc.sadeceTest.length + yf.sonuc.sadeceUretim.length + yf.sonuc.farkli.length : null;
+  const yf = secGuncelFark(projeId);
+  const yfSay = secFarkSay(yf);
   const kart5 = kart(5, yfSay === 0, 'Yapı karşılaştırması',
     yfSay === null ? 'Bekliyor' : yfSay ? '🟡 ' + yfSay + ' fark' : '✓ Aynı',
     `<p class="sec-t-not">Erişim Kuralları'ndaki <b>aynı yapı SQL'ini</b> bu kez TEST projesinde çalıştır,
@@ -996,6 +1052,18 @@ async function secTestEylem(e, el) {
 
   if (e === 'sec-t-bagla') { secTestBaglaPenceresi(projeId); return true; }
 
+  if (e === 'sec-t-fark-prompt') {
+    const metin = secFarkPrompt(projeId);
+    if (!metin) { toast('Önce karşılaştırma yapılmalı.', 'hata'); return true; }
+    await kopyala(metin, 'Farklar kopyalandı — projenin Claude sohbetine yapıştır.');
+    return true;
+  }
+
+  if (e === 'sec-t-gercek-yenile') {
+    modalKapat();   // açık bir uyarı penceresi varsa
+    return securityEylem('sec-yapi', el);   // Erişim Kuralları 1. adımın penceresi
+  }
+
   if (e === 'sec-t-yapi-kopya') {
     await kopyala(SEC_YAPI_SQL, 'Yapı SQL\'i kopyalandı — bu kez TEST projesinin SQL Editor\'ünde çalıştır.');
     return true;
@@ -1014,7 +1082,8 @@ async function secTestEylem(e, el) {
         if (!r.yapi.tablolar.some(t => t.ad === 'nizam_test_ortami')) {
           return { hata: 'Bu çıktıda Nizam test işareti yok — gerçek veritabanının çıktısı olabilir. SQL\'i TEST projesinde çalıştır.' };
         }
-        SEC_TEST.yapiFark[projeId] = { sonuc: secYapiKarsilastir(k.yapi, r.yapi), tarih: new Date().toISOString() };
+        SEC_TEST.testYapi[projeId] = { yapi: r.yapi, tarih: new Date().toISOString() };
+        SEC_TEST.yapiFark[projeId] = { sonuc: secYapiKarsilastir(k.yapi, r.yapi), tarih: SEC_TEST.testYapi[projeId].tarih };
         const f = SEC_TEST.yapiFark[projeId].sonuc;
         const n = f.sadeceTest.length + f.sadeceUretim.length + f.farkli.length;
         toast(n ? n + ' fark bulundu.' : 'Yapılar aynı.', n ? 'hata' : 'basari');
@@ -1028,7 +1097,7 @@ async function secTestEylem(e, el) {
   if (e === 'sec-t-kurulum') {
     if (!ayriMi() || !k.yapi) return true;
     /* Koruma: TEST'te gerçek veritabanına geçmemiş değişiklik varsa kurulum onları siler. */
-    const yf = SEC_TEST.yapiFark[projeId];
+    const yf = secGuncelFark(projeId);
     const kayip = yf ? yf.sonuc.sadeceTest.length + yf.sonuc.farkli.length : 0;
     if (kayip) {
       const evet = await metinSor({ baslik: 'TEST\'te geçmemiş değişiklikler var',
@@ -1041,6 +1110,7 @@ async function secTestEylem(e, el) {
     const ortam = Object.assign({}, o, { uretim_ref: secUretimRef(p) });
     if (await kopyala(secTestKurulumSql(k.yapi, projeId, ortam), 'Kurulum SQL\'i kopyalandı — TEST projesinin SQL Editor\'ünde çalıştır.')) {
       SEC_TEST.yapiFark[projeId] = null;   // kurulumdan sonra karşılaştırma eskidi
+      SEC_TEST.testYapi[projeId] = null;
       try { await SEC_TEST_VERI.devret(o.test_ref, projeId); } catch (h) {}
       try { await SEC_TEST_VERI.kaydet(projeId, { kurulum_tarihi: new Date().toISOString() }); render(); } catch (h) {}
     }

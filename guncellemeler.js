@@ -21,6 +21,14 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.316.0', tarih: '2026-10-05',
+    ozet: 'Nizam Security: fark uyarısı ve Kusursuz rozeti',
+    maddeler: [
+      'Gerçek veritabanı ile test veritabanı farklıysa tarama başlamadan sorar: devam mı, önce eşitleme mi.',
+      'Farklar için hazır prompt: Claude hangi göç dosyalarının gerçek tarafa uygulanmadığını söyler.',
+      '"Gerçek yapıyı yenile" ile damga yeniden taramaya gerek kalmadan güncellenir.',
+      'Her şey geçti ve iki taraf aynıysa sonuçta "Kusursuz — açık yok" rozeti çıkar.',
+    ] },
   { surum: 'v0.315.0', tarih: '2026-10-05',
     ozet: 'Nizam Security: tek düğmeyle, kopyala-yapıştırsız tarama',
     maddeler: [

@@ -1,5 +1,17 @@
 # Değişiklik Günlüğü
 
+## v0.316.0
+- **Taramadan önce fark sorusu.** "Taramayı başlat"ta hazırlıktan sonra gerçek↔TEST yapı
+  farkı varsa `secFarkSorPenceresi` açılır: "Devam et, tara" / "Önce eşitle". Engellemiyor;
+  düzeltme doğrulaması için TEST'in önde olması normal.
+- **Farklar için prompt** (`secFarkPrompt`): Claude'a production'a henüz uygulanmamış göç
+  dosyalarını listeletir; yeni SQL yazdırmaz, açıklanamayan farkı bildirtir.
+- **"Gerçek yapıyı yenile"** kısayolu fark listesinde ve pencerede (`sec-yapi`).
+  `secGuncelFark` farkı canlı hesaplar: gerçek yapı yenilenince damga yeniden taramadan güncellenir.
+- **Kusursuz rozeti:** okuma+yazma+ziyaretçi hepsi geçti ve yapı farkı 0 ise
+  "✅ Kusursuz — açık yok" (kapsam notuyla).
+- Unutulmuş `_onizleme.html` silindi.
+
 ## v0.315.0
 - **Tam tarama kopyala-yapıştırsız.** `secTaramaHazirlik` (security-yazma.js), "Taramayı
   başlat"ta okuma testinden önce hakemden: sürüm kontrolü (eskiyse "kurulum SQL'ini yeniden

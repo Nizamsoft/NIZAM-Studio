@@ -11129,3 +11129,5 @@ a.lk.tl-kart { text-decoration: none; color: inherit; }
 .sec-tam { border-color: var(--line-2, #d6d6db); }
 .sec-tam .sec-dug { margin-left: auto; }
 @media (max-width: 900px) { .sec-tam .sec-dug { margin-left: 0; width: 100%; } }
+.sec-kusursuz { border-color: var(--st-done); background: var(--done-soft); }
+.sec-kusursuz .sec-t-durum-yz b { font-size: 18px; color: var(--st-done-t); }
