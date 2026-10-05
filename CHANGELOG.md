@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.309.0
+- **Hataları bildir raporu:** "Ne yapmanı istiyorum"a iki madde. Düzeltme repoya numaralı
+  göç dosyası olarak eklenir (önce TEST'te, sonra aynen production'da çalışır; ayrı
+  production SQL'i yazılmaz). İş sonunda "production'a uygulanacak göç dosyaları"
+  listesi verilir ve proje kimlik dosyasında güncellenir.
+
 ## v0.308.0
 - **Yazma testleri — programın kendi kuralları sarı sayılmıyor.** `secKarar`: işlem
   P0001 (yetki dışı mesaj, `secHataTur === 'kural'`) ile durduysa sonuç 🟢, kartta

@@ -1133,6 +1133,9 @@ function secHataRaporu(projeId) {
   m.push('3. Production veritabanına dokunma.');
   m.push('4. "Fazla kısıtlı" olanlarda kural mı veritabanı mı yanlış, bana sor.');
   m.push('5. "Test edilemedi" olanlarda gerekiyorsa test verisi önerisi yap; bunlar açık değildir.');
+  m.push('6. Onaydan sonra her düzeltmeyi repoya NUMARALI bir göç dosyası olarak ekle (ör. sql/152-ne-duzeltildi.sql). Düzeltme yalnız sohbette kalmasın.');
+  m.push('   Bu dosya önce TEST projesinde, sonra AYNEN production\'da çalıştırılacak; ayrı bir "production SQL\'i" yazma.');
+  m.push('7. İşin sonunda kısa bir liste ver: "Production\'a uygulanacak göç dosyaları: …" (dosya adları, sırasıyla). Proje kimlik dosyasında da bu listeyi güncelle.');
   m.push('');
   m.push('Özet: ' + gruplar.map(g => g[0] + ' ' + g[2].length).join(' · '));
   m.push('');

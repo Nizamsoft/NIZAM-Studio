@@ -21,6 +21,11 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.309.0', tarih: '2026-10-05',
+    ozet: 'Güvenlik düzeltmeleri artık repoda dosya olarak saklanıyor',
+    maddeler: [
+      '"Hataları bildir" raporu, Claude\'dan her düzeltmeyi repoya numaralı bir dosya olarak eklemesini ve production\'a uygulanacakların listesini vermesini istiyor.',
+    ] },
   { surum: 'v0.308.0', tarih: '2026-10-05',
     ozet: 'Güvenlik testleri: programın kendi kuralları artık sarı çıkmıyor',
     maddeler: [
