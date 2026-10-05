@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## v0.313.0
+- **Yazma testleri — temizlik hatası görünüyor.** `secKumeTemizle` hatayı yutmuyor;
+  sebep `cx.temizlikHata`'da tutuluyor ve "sentetik kopya silinemedi" / "test kaydı
+  silinemedi" kartlarına parantez içinde ekleniyor.
+
 ## v0.312.0
 - **Hakem kurulumla birlikte, projeden bağımsız.** Yazma yardımcısı (`nizam_yazma_yardimci`,
   sürüm 4) artık test ortamı kurulum SQL'inin sonuna ekleniyor; ayrı "Yardımcı SQL" adımı

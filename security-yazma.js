@@ -659,9 +659,11 @@ async function secKumeAc(cx, x) {
 
 const secPkKolonlari = bt => bt.kolonlar.filter(k => k.pk).map(k => k.ad);
 
+/* Hata yutulmaz: sebep cx.temizlikHata'da durur, kart onu gösterir. */
 async function secKumeTemizle(cx, temizle) {
+  cx.temizlikHata = '';
   try { await secYardimci(cx.o, cx.gozcu, 'sil_grup', null, { grup: temizle }); return true; }
-  catch (e) { return false; }
+  catch (e) { cx.temizlikHata = String((e && e.message) || e).slice(0, 200); return false; }
 }
 
 /* Tablonun küme modu (ekleme testi için; ilk seferde bir kez denenir ve temizlenir). */
@@ -687,7 +689,7 @@ async function secEkleDene(cx, govde) {
   const satirlar = [];
   for (const k of yeni) satirlar.push(...await secYardimci(o, cx.gozcu, 'oku', b.ad, { kosul: k }));
   const temiz = !yeni.length || await secKumeTemizle(cx, yeni.map(k => ({ tablo: b.ad, kosul: k })));
-  return { olustu: yeni.length > 0, satir: satirlar[0] || null, satirlar, cevap, temiz };
+  return { olustu: yeni.length > 0, satir: satirlar[0] || null, satirlar, cevap, temiz, temizHata: temiz ? '' : cx.temizlikHata };
 }
 
 function secEkleKarar(r, bek, mod) {
@@ -695,7 +697,7 @@ function secEkleKarar(r, bek, mod) {
   if (mod === 'cocuk' && !r.olustu && secHataTur(r.cevap) === 'kural') {
     k.gercek += ' · bu kayıt alt satırlarıyla birlikte açılır; tek başına eklenemez';
   }
-  if (!r.temiz) k.gercek += ' · ⚠ test kaydı silinemedi';
+  if (!r.temiz) k.gercek += ' · ⚠ test kaydı silinemedi' + (r.temizHata ? ' (' + r.temizHata + ')' : '');
   return Object.assign({ beklenen: bek ? '✅ Ekleyebilmeli' : '❌ Ekleyememeli' }, k);
 }
 
@@ -870,7 +872,8 @@ async function secSilTest(cx, h, ekle) {
   } finally {
     /* Kopya kaldıysa (tümü tek işlemde) sil. */
     if (!(await secKumeTemizle(cx, kume.temizle))) {
-      ekle({ tur: 'Satır', beklenen: 'Test verisi temizlenmeli', gercek: '⚠ sentetik kopya silinemedi', sonuc: 'edilemedi' });
+      ekle({ tur: 'Satır', beklenen: 'Test verisi temizlenmeli', sonuc: 'edilemedi',
+        gercek: '⚠ sentetik kopya silinemedi' + (cx.temizlikHata ? ' (' + cx.temizlikHata + ')' : '') });
     }
   }
 }

@@ -21,6 +21,11 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.313.0', tarih: '2026-10-05',
+    ozet: 'Yazma testleri: temizlik neden başarısız oldu, artık yazıyor',
+    maddeler: [
+      'Test bittikten sonra deneme kaydı silinemezse kart sebebini de gösteriyor.',
+    ] },
   { surum: 'v0.312.0', tarih: '2026-10-05',
     ozet: 'Nizam Security: daha az adım, tek düğmeyle tam tarama',
     maddeler: [
