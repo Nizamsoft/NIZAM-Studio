@@ -789,6 +789,13 @@ async function secDegistirDene(cx, h, c, bek, ekle, tur) {
     }
   }
   if (!sonra) return ekle(Object.assign(kayit, { gercek: 'Kayıt istekten sonra bulunamadı', sonuc: bek ? 'edilemedi' : 'acik' }));
+  /* Otomatik kolon (her projede, ada bakmadan): izinli kolonda gönderilen değer
+     yazılmadı ama kolon değişti → güncelleme gerçekleşti, değeri veritabanı kendisi
+     yazıyor (ör. guncellendi = now()). Bu "fazla kısıtlı" değildir. */
+  if (kendisi && bek) {
+    return ekle(Object.assign(kayit, { sonuc: 'gecti',
+      gercek: '✅ Kayıt güncellendi · otomatik kolon: değeri veritabanı kendisi yazıyor' + not }));
+  }
   const k = secKarar(cevap, yazildi, bek, '✅ Değişti', '❌ Değişmedi');
   if (kendisi) k.gercek += ' (gönderilen değer yazılmadı; bu kolonu veritabanı kendisi güncelliyor)';
   return ekle(Object.assign(kayit, k, { gercek: k.gercek + not }));

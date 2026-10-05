@@ -21,6 +21,11 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.307.0', tarih: '2026-10-05',
+    ozet: 'Yazma testleri: otomatik tarih kolonları artık sarı çıkmıyor',
+    maddeler: [
+      'Değerini veritabanının kendisi yazdığı kolonlar (ör. güncellenme tarihi) "fazla kısıtlı" sayılmıyor; her projede kendiliğinden tanınıyor.',
+    ] },
   { surum: 'v0.306.0', tarih: '2026-10-05',
     ozet: 'Yazma testleri: katman silme yanlış alarmı giderildi',
     maddeler: [

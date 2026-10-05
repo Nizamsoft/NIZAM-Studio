@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.307.0
+- **Yazma testleri — otomatik kolonlar.** `secDegistirDene`: izinli kolonda gönderilen
+  değer yazılmadı ama kolon değiştiyse (tetikleyici dolduruyor, ör. `guncellendi =
+  now()`) sonuç artık 🟢 "otomatik kolon" (önceden "fazla kısıtlı" 🟡). Kolon adına
+  bakılmaz; her projede çalışır. Yasak kolon tarafı değişmedi.
+
 ## v0.306.0
 - **Yazma testleri — sentetik kopya max/min sınırını değiştirmiyor.** `secUretilenler`
   sayı kolonunda önce mevcut en küçük ile en büyük değerin ARASINDA, kullanılmayan
