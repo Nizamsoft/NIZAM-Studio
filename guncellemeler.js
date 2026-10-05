@@ -21,6 +21,12 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.311.0', tarih: '2026-10-05',
+    ozet: 'Nizam Security: tek bir sabit test veritabanı',
+    maddeler: [
+      'Bütün projeler aynı test veritabanını sırayla kullanabiliyor; kurulum önceki projeyi ve onun test kullanıcılarını silip yeni projeyi kuruyor.',
+      'Test veritabanına geçen projenin önceki durum bilgisi Studio\'da sıfırlanıyor; adımlar yeniden yapılıyor.',
+    ] },
   { surum: 'v0.310.0', tarih: '2026-10-05',
     ozet: 'Nizam Security: gerçek veritabanı ile test veritabanı karşılaştırılıyor',
     maddeler: [

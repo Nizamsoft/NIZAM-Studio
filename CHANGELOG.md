@@ -1,5 +1,19 @@
 # Değişiklik Günlüğü
 
+## v0.311.0
+- **Sabit test veritabanı.** Kurulum SQL'i artık işaretli test veritabanının public şemasını
+  TAMAMEN temizliyor (`secTemizleSql`: görünüm, tablo, fonksiyon, dizi, tip/domain;
+  korunanlar: `nizam_test_ortami`, `nizam_*` fonksiyonları, eklenti nesneleri) ve başka
+  projeden devralmaya izin veriyor (`secKilitSql(…, devralabilir)`). İşaret başka projeninse
+  (`secDevirSql`) önceki projenin `@test.nizamsoft.com` hesapları silinir; işaretin
+  `proje_id`'si güncellenir. Veri, harita ve yardımcı SQL'leri hâlâ yalnız yüklü projede
+  çalışır. İşaretsiz (production) veritabanında kilit durdurur.
+- Studio: kurulum kopyalanınca aynı test veritabanını kullanan diğer projelerin
+  kullanıcı/kurulum/kontrol bilgisi sıfırlanır (`SEC_TEST_VERI.devret`).
+- Yerel Postgres 16 denemesi: A kur → B kur (A'nın tablo/fonksiyon/tip/test hesapları
+  silindi, gerçek e-posta ve pgcrypto korundu) · B yüklüyken A'nın veri SQL'i durdu ·
+  aynı projeyi yeniden kurmak hesapları korudu · işaretsiz veritabanında durdu.
+
 ## v0.310.0
 - **Test Ortamı — Yapı karşılaştırması (gerçek ↔ TEST).** 5. kart: aynı `SEC_YAPI_SQL`
   TEST projesinde çalıştırılıp yapıştırılır (Nizam işaret tablosu yoksa reddedilir —

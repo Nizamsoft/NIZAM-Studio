@@ -47,6 +47,21 @@ const SEC_TEST_VERI = {
     return data || null;
   },
 
+  /* Sabit test veritabanı başka projeye geçti: o projelerin kurulum/kullanıcı/kontrol
+     bilgisi artık geçersiz. */
+  async devret(testRef, projeId) {
+    yazmaKontrol();
+    const { error } = await AUTH.db.from('security_test_ortamlari')
+      .update({ kullanicilar: [], kontrol: null, kontrol_tarihi: null, kurulum_tarihi: null,
+        guncellendi: new Date().toISOString() })
+      .eq('test_ref', testRef).neq('proje_id', projeId);
+    if (error) throw new Error(secTestHata(error));
+    Object.keys(SEC_TEST.kayit).forEach(id => {
+      const x = SEC_TEST.kayit[id];
+      if (id !== projeId && x && x.test_ref === testRef) delete SEC_TEST.kayit[id];
+    });
+  },
+
   async kaydet(projeId, alanlar) {
     yazmaKontrol();
     const govde = Object.assign({ proje_id: projeId }, alanlar,
@@ -172,7 +187,7 @@ function secTestKisiPlani(model, kod) {
    bosOlabilir=true  (kurulum): veritabanı boşsa ya da bu projenin işareti
                      varsa devam; tablo var ama işaret yoksa DUR.
    bosOlabilir=false (veri):    yalnız bu projenin işareti varsa devam. */
-function secKilitSql(projeId, bosOlabilir) {
+function secKilitSql(projeId, bosOlabilir, devralabilir) {
   return `do $nizam_kilit$
 declare
   v_isaret boolean;
@@ -188,7 +203,9 @@ begin
   else
     execute 'select proje_id from public.nizam_test_ortami where anahtar = ''nizam''' into v_proje;
     if v_proje is distinct from ${secQl(projeId)} then
-      raise exception 'NIZAM: DURDURULDU. Bu test ortamı başka bir Nizam projesine ait. Hiçbir şey değiştirilmedi.';
+      ${devralabilir
+        ? `raise notice 'NIZAM: Test veritabanı % projesinden bu projeye devrediliyor.', v_proje;`
+        : `raise exception 'NIZAM: DURDURULDU. Bu test ortamı başka bir Nizam projesine ait. Hiçbir şey değiştirilmedi.';`}
     end if;
   end if;
 end
@@ -207,6 +224,63 @@ function secYetkiSql(nesne, yetkiVarsayilan, yetkiler, kolonlar) {
   return s;
 }
 
+/* Sabit test veritabanı: kurulum, işaretli (Nizam) test veritabanındaki public
+   şemanın TAMAMINI siler — hangi projeye ait olursa olsun. Korunanlar: işaret
+   tablosu, nizam_* fonksiyonları (yazma yardımcısı), eklentilere ait nesneler.
+   İşaretsiz veritabanında (production) kilit daha önce durdurur. */
+function secTemizleSql() {
+  const ext = `not exists (select 1 from pg_depend d where d.objid = %s and d.deptype = 'e')`;
+  return `do $nizam_temizle$
+declare r record;
+begin
+  for r in select c.relname, c.relkind from pg_class c join pg_namespace n on n.oid = c.relnamespace
+           where n.nspname = 'public' and c.relkind in ('v', 'm') and ${ext.replace('%s', 'c.oid')} loop
+    execute format(case when r.relkind = 'm' then 'drop materialized view if exists public.%I cascade'
+                        else 'drop view if exists public.%I cascade' end, r.relname);
+  end loop;
+  for r in select c.relname from pg_class c join pg_namespace n on n.oid = c.relnamespace
+           where n.nspname = 'public' and c.relkind in ('r', 'p') and c.relname <> 'nizam_test_ortami'
+             and ${ext.replace('%s', 'c.oid')} loop
+    execute format('drop table if exists public.%I cascade', r.relname);
+  end loop;
+  for r in select p.proname, p.prokind, pg_get_function_identity_arguments(p.oid) as a
+           from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+           where n.nspname = 'public' and p.proname !~ '^nizam_' and ${ext.replace('%s', 'p.oid')} loop
+    execute format('drop %s if exists public.%I(%s) cascade',
+      case r.prokind when 'p' then 'procedure' when 'a' then 'aggregate' else 'function' end, r.proname, r.a);
+  end loop;
+  for r in select c.relname from pg_class c join pg_namespace n on n.oid = c.relnamespace
+           where n.nspname = 'public' and c.relkind = 'S' and ${ext.replace('%s', 'c.oid')} loop
+    execute format('drop sequence if exists public.%I cascade', r.relname);
+  end loop;
+  for r in select t.typname, t.typtype from pg_type t join pg_namespace n on n.oid = t.typnamespace
+           where n.nspname = 'public' and t.typtype in ('e', 'd', 'c')
+             and (t.typtype <> 'c' or (select c.relkind from pg_class c where c.oid = t.typrelid) = 'c')
+             and ${ext.replace('%s', 't.oid')} loop
+    execute format(case when r.typtype = 'd' then 'drop domain if exists public.%I cascade'
+                        else 'drop type if exists public.%I cascade' end, r.typname);
+  end loop;
+end
+$nizam_temizle$;`;
+}
+
+/* Proje değiştiyse (işaret başka projenin) önceki projenin test hesapları silinir.
+   Yalnız Nizam test alanındaki e-postalar; işaret yoksa hiçbir şey yapmaz. */
+function secDevirSql(projeId) {
+  return `do $nizam_devir$
+declare v_eski text;
+begin
+  if to_regclass('public.nizam_test_ortami') is not null then
+    execute 'select proje_id from public.nizam_test_ortami where anahtar = ''nizam''' into v_eski;
+    if v_eski is distinct from ${secQl(projeId)} then
+      delete from auth.users where email like ${secQl('%@' + SEC_TEST_ALAN)};
+      raise notice 'NIZAM: Önceki projenin (%) test kullanıcıları silindi.', v_eski;
+    end if;
+  end if;
+end
+$nizam_devir$;`;
+}
+
 /* Kurulum SQL'i: gerçek yapının ve güvenlik kurallarının kopyası.
    Satır verisi YOK. Tek işlem (transaction): bir hata olursa hiçbir şey kalmaz. */
 function secTestKurulumSql(yapi, projeId, ortam) {
@@ -221,7 +295,10 @@ function secTestKurulumSql(yapi, projeId, ortam) {
   s.push('set local check_function_bodies = off;');
   s.push('set local search_path = public, extensions;');
   s.push('');
-  s.push(secKilitSql(projeId, true));
+  s.push(secKilitSql(projeId, true, true));
+  s.push('');
+  s.push('-- Sabit test veritabanı: başka projeden devralınıyorsa önceki test kullanıcıları silinir.');
+  s.push(secDevirSql(projeId));
   s.push('');
   s.push('-- İşaret: bu veritabanının bir Nizam test ortamı olduğunu söyler.');
   s.push(`create table if not exists public.nizam_test_ortami (
@@ -235,13 +312,10 @@ function secTestKurulumSql(yapi, projeId, ortam) {
   s.push('revoke all on table public.nizam_test_ortami from public, anon, authenticated;');
   s.push(`insert into public.nizam_test_ortami (anahtar, proje_id, uretim_ref, test_ref, kuruldu)
 values ('nizam', ${secQl(projeId)}, ${secQl(ortam.uretim_ref)}, ${secQl(ortam.test_ref)}, now())
-on conflict (anahtar) do update set uretim_ref = excluded.uretim_ref, test_ref = excluded.test_ref, kuruldu = now();`);
+on conflict (anahtar) do update set proje_id = excluded.proje_id, uretim_ref = excluded.uretim_ref, test_ref = excluded.test_ref, kuruldu = now();`);
   s.push('');
-  s.push('-- 1) Eski kopyayı temizle (yalnız Nizam test ortamında; kilit bunu sağlar)');
-  G.slice().reverse().forEach(g => s.push(`drop view if exists ${tab(g.ad)} cascade;`));
-  T.forEach(t => s.push(`drop table if exists ${tab(t.ad)} cascade;`));
-  F.forEach(f => s.push(`drop function if exists public.${secQi(f.ad)}(${f.imza}) cascade;`));
-  (yapi.tipler || []).forEach(x => s.push(`drop type if exists public.${secQi(x.ad)} cascade;`));
+  s.push('-- 1) Test veritabanını baştan temizle (önceki proje dahil; yalnız Nizam test ortamında, kilit bunu sağlar)');
+  s.push(secTemizleSql());
   s.push('');
   s.push('-- 2) Eklentiler, tipler ve sayaçlar');
   (yapi.eklentiler || []).forEach(x => s.push(`do $nizam_eklenti$ begin
@@ -738,7 +812,9 @@ function secTestEkran(projeId) {
     sat('Tablolar', yapi.tablolar.length)
     + sat('RLS kuralları (policy)', kuralSay)
     + sat('Kuralların kullandığı fonksiyonlar', (yapi.fonksiyonlar || []).length)
-    + ((yapi.gorunumler || []).length ? sat('Görünümler', yapi.gorunumler.length) : ''),
+    + ((yapi.gorunumler || []).length ? sat('Görünümler', yapi.gorunumler.length) : '')
+    + `<p class="sec-t-not">Sabit test veritabanı: kurulum içindeki her şeyi siler ve bu projeyi kurar.
+       Başka bir proje yüklüyse onun yapısı ve test kullanıcıları da silinir.</p>`,
     dug('SQL\'i kopyala', 'sec-t-kurulum', '', false, !bagli)
     + `<span class="sec-t-ipucu">TEST projesinin SQL Editor'ünde çalıştır</span>`);
 
@@ -938,6 +1014,7 @@ async function secTestEylem(e, el) {
     const ortam = Object.assign({}, o, { uretim_ref: secUretimRef(p) });
     if (await kopyala(secTestKurulumSql(k.yapi, projeId, ortam), 'Kurulum SQL\'i kopyalandı — TEST projesinin SQL Editor\'ünde çalıştır.')) {
       SEC_TEST.yapiFark[projeId] = null;   // kurulumdan sonra karşılaştırma eskidi
+      try { await SEC_TEST_VERI.devret(o.test_ref, projeId); } catch (h) {}
       try { await SEC_TEST_VERI.kaydet(projeId, { kurulum_tarihi: new Date().toISOString() }); render(); } catch (h) {}
     }
     return true;
