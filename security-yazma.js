@@ -237,6 +237,12 @@ function secKarar(cevap, degisti, bek, evet, hayir) {
       ? { gercek: hayir + ' — erişim fazla kısıtlı' + (h ? ' (' + h + ')' : ''), sonuc: 'edilemedi' }
       : { gercek: hayir + (h ? ' (' + h + ')' : ''), sonuc: 'gecti' };
   }
+  /* Programın kendi kuralı (P0001, yetki dışı mesaj) işlemi durdurdu: işlem gerçekleşmedi.
+     Güvenlik açısından sonuç doğru → 🟢, sebep kartta yazılı. Yalnız P0001; kısıt ve
+     veri hataları testin yanlış değerinden de çıkabilir, onlar 🟡 kalır. */
+  if (tur === 'kural') {
+    return { gercek: hayir + (bek ? ' · programın kuralı: ' + h : ' · programın kuralı engelledi (' + h + ')'), sonuc: 'gecti' };
+  }
   return { gercek: hayir + ' · ' + SEC_HATA_AD[tur] + ', yetki denenemedi (' + h + ')', sonuc: 'edilemedi' };
 }
 
@@ -681,8 +687,8 @@ async function secEkleDene(cx, govde) {
 
 function secEkleKarar(r, bek, mod) {
   const k = secKarar(r.cevap, r.olustu, bek, '✅ Kayıt oluşturuldu', '❌ Kayıt oluşmadı');
-  if (mod === 'cocuk' && !r.olustu && k.sonuc === 'edilemedi' && secHataTur(r.cevap) === 'kural') {
-    k.gercek += ' · bu tablo alt satırı olmadan eklenemiyor; tablo adresi tek istekte iki tabloya yazamadığı için doğrudan denenemez';
+  if (mod === 'cocuk' && !r.olustu && secHataTur(r.cevap) === 'kural') {
+    k.gercek += ' · bu kayıt alt satırlarıyla birlikte açılır; tek başına eklenemez';
   }
   if (!r.temiz) k.gercek += ' · ⚠ test kaydı silinemedi';
   return Object.assign({ beklenen: bek ? '✅ Ekleyebilmeli' : '❌ Ekleyememeli' }, k);

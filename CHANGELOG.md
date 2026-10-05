@@ -1,5 +1,12 @@
 # Değişiklik Günlüğü
 
+## v0.308.0
+- **Yazma testleri — programın kendi kuralları sarı sayılmıyor.** `secKarar`: işlem
+  P0001 (yetki dışı mesaj, `secHataTur === 'kural'`) ile durduysa sonuç 🟢, kartta
+  "programın kuralı engelledi (…)" / "programın kuralı: …". Alt satırlı kayıtlarda
+  "alt satırlarıyla birlikte açılır" notu. Kısıt (23xxx) ve veri hataları 🟡 kalır;
+  giriş, eksik veri, anlaşılmayan kural, temizlenemeyen kopya da 🟡. Her projede geçerli.
+
 ## v0.307.0
 - **Yazma testleri — otomatik kolonlar.** `secDegistirDene`: izinli kolonda gönderilen
   değer yazılmadı ama kolon değiştiyse (tetikleyici dolduruyor, ör. `guncellendi =

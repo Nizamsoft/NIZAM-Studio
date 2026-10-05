@@ -21,6 +21,12 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.308.0', tarih: '2026-10-05',
+    ozet: 'Güvenlik testleri: programın kendi kuralları artık sarı çıkmıyor',
+    maddeler: [
+      'Bir işlemi programın kendi kuralı durdurduysa (ör. "irsaliye en az bir satır içermeli") test bunu geçti sayıyor ve sebebini kartta yazıyor.',
+      'Sarı yalnız gerçekten bakılması gereken durumlarda çıkıyor: eksik veri, giriş sorunu, beklenmedik hata.',
+    ] },
   { surum: 'v0.307.0', tarih: '2026-10-05',
     ozet: 'Yazma testleri: otomatik tarih kolonları artık sarı çıkmıyor',
     maddeler: [
