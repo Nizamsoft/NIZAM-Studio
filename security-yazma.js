@@ -359,6 +359,17 @@ function secUretilenler(cx, k, simdi) {
     const n = Number(simdi);
     const out = [];
     const ekle = v => { if (v >= min && v <= max && !(Number.isFinite(n) && v === n) && !out.includes(v)) out.push(v); };
+    /* Önce mevcut en küçük ile en büyük değerin ARASINDA, kullanılmayan bir değer.
+       Yetki fonksiyonu tablodaki max/min'e bakabilir (ör. ns_ust_katman_mi:
+       seviye = max(seviye)); sentetik kopya o sınırı değiştirmemeli. */
+    const dizi = [...kullanilan].sort((a, b) => a - b);
+    for (let i = dizi.length - 1; i > 0 && out.length < 2; i--) {
+      const [a, b] = [dizi[i - 1], dizi[i]];
+      const v = tam ? Math.floor((a + b) / 2) : (a + b) / 2;
+      if (v > a && v < b) ekle(v);
+    }
+    if (out.length) return out;
+    if (dizi.length) cx.sinirNot = k.ad;      // arada boş yer yok: sınır değişebilir
     if (Number.isFinite(min) || Number.isFinite(max)) {
       /* Aralık içinde: önce tabloda geçmeyen, sonra mevcut değerin bir yanı. */
       const alt = Number.isFinite(min) ? min : (Number.isFinite(max) ? max - 1000 : 0);
@@ -815,6 +826,7 @@ async function secDegistirTest(cx, h, ekle) {
 
 async function secSilTest(cx, h, ekle) {
   const { o, b, m, rol, ben } = cx;
+  cx.sinirNot = null;
   const kume = await secKumeAc(cx, h.satir.x);
   if (kume.hata) return ekle({ tur: 'Satır', beklenen: '—', gercek: 'Silmek için sentetik kopya açılamadı: ' + kume.hata, sonuc: 'edilemedi' });
   const ana = kume.satirlar[0];
@@ -835,6 +847,7 @@ async function secSilTest(cx, h, ekle) {
     }
     const k = secKarar(cevap, silindi, bek.v, '✅ Silindi', '❌ Silinmedi');
     if (kume.mod !== 'tek') k.gercek += ' · ' + (kume.mod === 'cocuk' ? 'alt satırlarıyla birlikte açılan kopya' : kume.satirlar.length + ' bacaklı kopya küme');
+    if (cx.sinirNot) k.gercek += ' · not: kopya "' + cx.sinirNot + '" kolonunun en büyük/en küçük değerini değiştirmiş olabilir';
     return ekle(Object.assign({ tur: 'Satır', beklenen: bek.v ? '✅ Silebilmeli' : '❌ Silememeli' }, k));
   } finally {
     /* Kopya kaldıysa (tümü tek işlemde) sil. */

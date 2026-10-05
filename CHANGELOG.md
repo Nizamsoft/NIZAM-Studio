@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü
 
+## v0.306.0
+- **Yazma testleri — sentetik kopya max/min sınırını değiştirmiyor.** `secUretilenler`
+  sayı kolonunda önce mevcut en küçük ile en büyük değerin ARASINDA, kullanılmayan
+  değer seçiyor (ör. seviye 10, 0, -10 → 5 / -5). Sebep: `katmanlar` silme testinde
+  kopya en yüksek seviyeyi alıyor, `ns_ust_katman_mi` (seviye = max) Admin'i üst katman
+  saymıyor, RLS silmeyi reddediyordu ("fazla kısıtlı" yanlış alarmı). Arada boş yer
+  yoksa eski davranış; silme sonucuna "sınırı değiştirmiş olabilir" notu düşüyor.
+
 ## v0.305.0
 - **UPDATE ölçüsü** (`secDegistirDene`): "değer değişti mi" yerine "gönderilen değer yazıldı
   mı". Tetikleyicinin kendisi güncellediği kolon (ör. `guncellendi = now()`) artık yanlış 🔴

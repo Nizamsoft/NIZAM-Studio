@@ -21,6 +21,11 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.306.0', tarih: '2026-10-05',
+    ozet: 'Yazma testleri: katman silme yanlış alarmı giderildi',
+    maddeler: [
+      'Silme testi için açılan deneme kaydı artık en üst seviyeyi almıyor; Admin\'in yetkisi testte yanlışlıkla düşmüyor.',
+    ] },
   { surum: 'v0.305.0', tarih: '2026-10-04',
     ozet: 'Yazma testleri: iki yanlış sonuç düzeltildi',
     maddeler: [
