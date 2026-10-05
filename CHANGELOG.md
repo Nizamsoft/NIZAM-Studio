@@ -1,5 +1,15 @@
 # Değişiklik Günlüğü
 
+## v0.320.0
+- **Nizam Security kurulum sihirbazı** (onaylı mockup). Sekmeler kalktı; proje 9 adımlık tek
+  sırada açılır: `#/security/<id>/<1–9>` (`secSihirbaz`, `SEC_ADIMLAR`, `secAdimDurum`).
+  Adresi adımsızsa ilk eksik adım; eski `/test` → 3, `/testler` → 7. Şerit ve Geri/İleri,
+  projelerdeki kurulum kabuğunun (`dsr`/`dsm`/`dsa`) aynısı; telefonda "Tüm adımlar" listesi.
+  Şimdilik kilit yok.
+- `secTestEkran` → `secTestParcalar` (adım 3–6 parçaları + yedek kontroller), `secOkumaEkran` →
+  `secOkumaGovde` (adım 7). Hataları bildir 8. adıma, teslim listesi 9. adıma taşındı; panodaki
+  adım listesi kaldırıldı. Kurulum/veri adımı, tarama hazırlığı okuduysa da "tamam" sayılır.
+
 ## v0.319.0
 - **Nizam Security sadeleşti** (onaylı mockup). Sekmeler: Kurallar · Test Ortamı · Testler.
 - Kurallar: model hazırsa 3 adım kartı yerine tek özet satırı + "Güncelle" menüsü (yapı yenile,

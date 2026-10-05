@@ -11201,6 +11201,35 @@ a.lk.tl-kart { text-decoration: none; color: inherit; }
 .sec-ta-bas .sec-h-adim-s { display: flex; align-items: center; gap: 10px; }
 .sec-ta-ic .sec-t-sat { padding-left: 0; padding-right: 0; }
 @media (max-width: 420px) { .sec-ta-ic { padding-left: 14px; } }
+/* ---- Nizam Security sihirbazı: adım başlığı, durum, yapılacaklar ---- */
+.sec-sb { margin-top: 6px; }
+.sec-sb-bas { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 14px; }
+.sec-sb-ikon { flex: none; display: grid; place-items: center; width: 48px; height: 48px; border-radius: 12px; background: var(--surface-2); font-size: 22px; }
+.sec-sb-bas h2 { margin: 2px 0 4px; font: 700 22px var(--yazi-baslik); color: var(--ink-strong); }
+.sec-sb-bas p { margin: 0; font-size: 14px; line-height: 1.5; color: var(--ink-soft); max-width: 640px; }
+.sec-sb-durum { margin: 0 0 16px; padding: 10px 14px; border-radius: 8px; background: #f6f6f8; color: var(--ink-soft); font-size: 13.5px; font-weight: 600; }
+.sec-sb-durum.tamam { background: var(--done-soft); color: var(--st-done); }
+.sec-yap { list-style: none; margin: 0 0 18px; padding: 0; border: 1px solid var(--line-3); border-radius: 8px; background: #fff; }
+.sec-yap li { display: flex; gap: 12px; padding: 14px; border-top: 1px solid var(--line-3); }
+.sec-yap li:first-child { border-top: 0; }
+.sec-yap-no { flex: none; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--surface-2); font: 700 12px var(--yazi-baslik); color: var(--ink-soft); }
+.sec-yap li > div { min-width: 0; flex: 1; }
+.sec-yap b { display: block; font-size: 14px; font-weight: 600; color: var(--ink-strong); }
+.sec-yap small { display: block; margin-top: 2px; font-size: 12.5px; color: var(--ink-dim); }
+.sec-yap .sec-t-dg { margin: 10px 0 0; }
+.sec-sb-kart { padding: 14px; margin-bottom: 18px; border: 1px solid var(--line-3); border-radius: 8px; background: #fff; }
+.sec-sb-kart .sec-t-dg { margin-bottom: 0; }
+.sec-dsa .dsa-btn.ana { background: var(--ink-strong); border-color: var(--ink-strong); min-width: 0; }
+.sec-dsa .dsa-btn { border-radius: 8px; }
+.sec-dsa .dsa-btn { white-space: nowrap; width: auto; justify-self: start; }
+.sec-dsa .dsa-btn.ana { justify-self: end; }
+@media (max-width: 560px) {
+  .sec-dsa { grid-template-columns: auto 1fr; }
+  .sec-dsa .dsa-orta, .sec-dsa .sec-dsa-ad { display: none; }
+  .sec-dsa .dsa-btn.ana { justify-self: stretch; justify-content: center; }
+}
+.sec-h.tek { grid-template-columns: minmax(0, 1fr); max-width: 760px; }
+a.sec-dug { display: inline-flex; align-items: center; text-decoration: none; }
 /* ---- Güvenlik Testleri: pano · tarama ekranı · sonuç kartları ---- */
 .sec-h { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 20px; align-items: start; margin: 4px 0 18px; }
 .sec-h-sag .sec-bas { margin-top: 0; }

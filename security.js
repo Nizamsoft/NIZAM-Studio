@@ -162,7 +162,8 @@ const SEC = {
   liste: null,        // [{proje_id, yapi_tarihi, model_tarihi}] — liste ekranı
   kayit: {},          // projeId → tam satır (null = kayıt yok)
   yukleniyor: {},
-  acik: {},           // projeId → { tabloAdı: true } — Kurallar'da açık tablolar
+  acik: {},           // projeId → { tabloAdı: true } — 2. adımda açık tablolar
+  liste_ac: {},       // projeId → adım no: o adımdayken "Tüm adımlar" listesi açık
   rol: {},            // projeId → seçili rol (açılan tablolarda)
   ara: {},            // projeId → tablo arama metni
 };
@@ -625,9 +626,7 @@ function securityEkran() {
       'Nizam Security\'yi yalnızca yönetici görebilir.')}</div>`;
   }
   const r = rota();
-  if (r.id && r.durak === 'test') return secTestEkran(r.id);   // security-test.js
-  if (r.id && r.durak === 'testler') return secOkumaEkran(r.id);   // security-okuma.js
-  return r.id ? secProjeEkran(r.id) : secListeEkran();
+  return r.id ? secSihirbaz(r.id, r.durak) : secListeEkran();
 }
 
 /* ---------- Proje seç ---------- */
@@ -663,85 +662,190 @@ function secListeEkran() {
           'Nizam Security, veritabanı olan (Supabase\'li) projelerde çalışır.')}</div>`}`;
 }
 
-/* ---------- Proje → Erişim Kuralları ---------- */
-function secProjeEkran(projeId) {
+/* ---------- Proje → kurulum sihirbazı ----------
+   Dokuz adım tek sırada: #/security/<id>/<1–9>. Adres adımsızsa ilk eksik
+   adım açılır. Şimdilik kilit yok: her adıma geçilebilir. */
+const SEC_ADIMLAR = [
+  { ad: 'Gerçek yapı', ikon: '🗄️', aciklama: 'Studio, gerçek veritabanının tablolarını, kolonlarını ve kurallarını okur. Hiçbir müşteri verisi alınmaz.' },
+  { ad: 'Olması gereken güvenlik', ikon: '🤖', aciklama: 'Claude, gerçek yapına bakıp hangi rolün neyi görüp değiştirebileceğini yazar.' },
+  { ad: 'Test projesi', ikon: '🔌', aciklama: 'Testler gerçek veritabanında değil, ayrı bir test projesinde çalışır. Bir kez bağlanır, her proje kullanır.' },
+  { ad: 'Test kurulumu', ikon: '🏗️', aciklama: 'Gerçek yapının bir kopyası test projesine kurulur.' },
+  { ad: 'Test kullanıcıları', ikon: '👥', aciklama: 'Her rol için gerçekten giriş yapabilen test hesapları açılır.' },
+  { ad: 'Sahte veri', ikon: '🧪', aciklama: 'Test veritabanına, testlerin deneyeceği sahte kayıtlar eklenir. Gerçek müşteri verisi kullanılmaz.' },
+  { ad: 'Tarama', ikon: '🛡️', aciklama: 'Test kullanıcıları ve giriş yapmamış bir ziyaretçi; okumayı, eklemeyi, değiştirmeyi ve silmeyi dener.' },
+  { ad: 'Düzelt ve doğrula', ikon: '🔧', aciklama: 'Açıkları Claude\'a bildir, göç dosyalarını önce teste sonra gerçeğe uygula, yeniden tara.' },
+  { ad: 'Teslim öncesi kontrol', ikon: '✅', aciklama: 'Taramanın göremediği beş şeyi son kez kontrol et.' },
+];
+
+/* Her adım için: bitti mi, durum yazısı. */
+function secAdimDurum(projeId) {
+  const k = SEC.kayit[projeId] || {};
+  const o = SEC_TEST.kayit[projeId] || {};
+  const yapi = k.yapi && Array.isArray(k.yapi.tablolar) ? k.yapi : null;
+  const model = yapi && k.model && Array.isArray(k.model.tablolar) ? k.model : null;
+  const t = yapi && model ? secTestParcalar(projeId) : null;   // security-test.js
+  const kt = t && t.kartlar ? t.kartlar : [];
+  const { hepsi } = secTumSonuclar(projeId);                  // security-okuma.js
+  const acik = hepsi.filter(x => x.sonuc !== 'gecti').length;
+  const kusursuz = secKusursuzMu(projeId);
+  const tm = secTeslimMaddeler(projeId), ti = secTeslimIsaret(projeId);
+  const tBiten = tm.filter(x => x.otomatik || ti[x.id]).length;
+  return [
+    { bitti: !!yapi, yazi: yapi ? yapi.tablolar.length + ' tablo · ' + secTarih(k.yapi_tarihi) : '' },
+    { bitti: !!model, yazi: model ? (yapi.tablolar.length) + ' tablo · ' + model.roller.length + ' rol · ' + secTarih(k.model_tarihi) : '' },
+    { bitti: !!(kt[0] && kt[0].bitti), yazi: kt[0] ? kt[0].rozet : '' },
+    { bitti: !!(kt[1] && kt[1].bitti), yazi: kt[1] ? kt[1].rozet : '' },
+    { bitti: !!(kt[2] && kt[2].bitti), yazi: kt[2] ? kt[2].rozet : '' },
+    { bitti: !!(kt[3] && kt[3].bitti), yazi: kt[3] ? kt[3].rozet : '' },
+    { bitti: hepsi.length > 0, yazi: hepsi.length ? hepsi.length + ' test · ' + acik + ' sorun' : '' },
+    { bitti: kusursuz, yazi: kusursuz ? 'Açık yok, yapılar aynı' : hepsi.length ? acik + ' sorun' : '' },
+    { bitti: tBiten === tm.length, yazi: tBiten + ' / ' + tm.length + ' madde' },
+  ];
+}
+
+function secSihirbaz(projeId, durak) {
   const p = DB.proje(projeId);
   if (!p) return `<div class="card">${empty(ICON.uyari, 'Proje bulunamadı', '')}</div>`;
   if (SEC.kayit[projeId] === undefined) {
     secYukle('kayit-' + projeId, async () => { SEC.kayit[projeId] = await SEC_VERI.getir(projeId); });
     return iskeletler(3);
   }
-  const k = SEC.kayit[projeId] || {};
-  const yapi = k.yapi && Array.isArray(k.yapi.tablolar) ? k.yapi : null;
-  const model = yapi && k.model && Array.isArray(k.model.tablolar) ? k.model : null;
+  if (SEC_TEST.kayit[projeId] === undefined) {
+    secYukle('test-' + projeId, async () => { SEC_TEST.kayit[projeId] = await SEC_TEST_VERI.getir(projeId); });
+    return iskeletler(3);
+  }
+  const durumlar = secAdimDurum(projeId);
+  const toplam = SEC_ADIMLAR.length;
+  const eski = { test: 3, testler: 7 };   // eski sekme adresleri
+  let n = Number(durak) || eski[durak] || 0;
+  if (!(n >= 1 && n <= toplam)) {
+    const ilk = durumlar.findIndex(d => !d.bitti);
+    n = ilk < 0 ? 7 : ilk + 1;
+  }
+  const a = SEC_ADIMLAR[n - 1], d = durumlar[n - 1];
+  const adres = i => '#/security/' + esc(projeId) + '/' + i;
+  const ok = svg(ICON.chevron, 15);
+  const listeAcik = SEC.liste_ac[projeId] === n;   // başka adıma geçilince kendiliğinden kapanır
+  const biten = durumlar.filter(x => x.bitti).length;
 
-  const adim = (no, bitti, baslik, alt, dugme, eylem, kapali) => `
-    <div class="sec-adim${bitti ? ' bitti' : ''}">
-      <span class="sec-no">${no}</span>
-      <span class="sec-adim-yz"><b>${esc(baslik)}</b><i>${esc(alt)}</i></span>
-      <button class="sec-dug" type="button" data-eylem="${eylem}" data-id="${esc(projeId)}"
-              ${kapali ? 'disabled' : ''}>${esc(dugme)}</button>
+  /* Masaüstü: halka şeridi (projelerdeki kurulum şeridinin aynısı). */
+  const halkalar = SEC_ADIMLAR.map((x, i) => {
+    const hal = i === n - 1 ? 'su' + (durumlar[i].bitti ? ' tamam' : '') : durumlar[i].bitti ? 'bitti' : 'acik';
+    const bagli = i > 0 && durumlar[i - 1].bitti ? ' bagli' : '';
+    const ic = `<span class="dsr-yuv">${durumlar[i].bitti && i !== n - 1 ? svg(ICON.tik, 13) : `<b class="mono">${i + 1}</b>`}</span>
+      <span class="dsr-ad">${esc(x.ad)}</span>`;
+    return i === n - 1 ? `<span class="dsr-a ${hal}${bagli}">${ic}</span>`
+      : `<a class="dsr-a ${hal}${bagli}" href="${adres(i + 1)}">${ic}</a>`;
+  }).join('');
+  const noktalar = durumlar.map((x, i) => `<i class="${i === n - 1 ? (x.bitti ? 'su tamam' : 'su') : x.bitti ? 'bitti' : ''}"></i>`).join('');
+  const serit = `
+    <div class="dsr only-desktop">${halkalar}</div>
+    <div class="dsm ${d.bitti ? 'tamam' : ''}">
+      <span class="dsm-sol"><i>Güvenlik adımı</i><b class="mono">${n} / ${toplam}</b></span>
+      <span class="dsm-nk" style="--ilerleme:${Math.round(((n - 1) / (toplam - 1)) * 100)}%">${noktalar}</span>
+      <button class="dsm-liste" type="button" data-eylem="sec-adimlar" data-id="${esc(projeId)}" data-n="${n}"
+              aria-label="Tüm adımlar">${svg(ICON.panel, 17)}</button>
     </div>`;
 
-  /* Model hazırsa üç adım tek satıra iner; işlemler "Güncelle" menüsünde. */
-  const menu = (yazi, eylem) => `<button type="button" data-eylem="${eylem}" data-id="${esc(projeId)}">${esc(yazi)}</button>`;
-  const ozet = model ? `
-    <div class="sec-ozet">
-      <span class="sec-ozet-tik">✓</span>
-      <span class="sec-ozet-yz"><b>Erişim kuralları hazır</b>
-        <i>${yapi.tablolar.length} tablo · ${model.roller.length} rol · ${esc(secTarih(k.model_tarihi))}</i></span>
-      <details class="sec-menu">
-        <summary>Güncelle</summary>
-        <div class="sec-menu-ic">
-          ${menu('Veritabanı yapısını yenile', 'sec-yapi')}
-          ${menu('Claude promptunu kopyala', 'sec-prompt')}
-          ${menu('Yeni güvenlik JSON\'u yapıştır', 'sec-model')}
-        </div>
-      </details>
-    </div>` : '';
-
-  const adimlar = `<div class="sec-adimlar">
-    ${adim(1, !!yapi, 'Veritabanı yapısı',
-        yapi ? yapi.tablolar.length + ' tablo · ' + secTarih(k.yapi_tarihi) : 'SQL Editor\'den al',
-        yapi ? 'Yenile' : 'Başla', 'sec-yapi', false)}
-    ${adim(2, !!model, 'Claude ile görüşme',
-        yapi ? 'Promptu kopyala, Claude\'a yapıştır' : 'Önce yapıyı al',
-        'Prompt', 'sec-prompt', !yapi)}
-    ${adim(3, !!model, 'Güvenlik modeli',
-        model ? model.roller.length + ' rol · ' + secTarih(k.model_tarihi) : 'Claude\'un JSON\'unu yapıştır',
-        'JSON yapıştır', 'sec-model', !yapi)}
-  </div>`;
-
-  let govde;
-  if (!yapi) {
-    govde = `<div class="card">${empty(ICON.gGuvenlik, 'Önce veritabanı yapısı',
-      '1. adımdaki SQL\'i projenin Supabase SQL Editor\'ünde çalıştır, çıktıyı buraya yapıştır.')}</div>`;
-  } else if (!model) {
-    govde = `<div class="card">${empty(ICON.gGuvenlik, 'Güvenlik modeli bekleniyor',
-      'Promptu Claude\'a ver, soruları cevapla, verdiği JSON\'u 3. adıma yapıştır.')}</div>`;
-  } else {
-    govde = '';
-  }
-
-  return `
+  const tepe = `
     <a class="tl-geri" href="#/security">${svg(ICON.chevron, 14)} Nizam Security</a>
     <div class="pj-tepe"><div class="pj-tepe-yz">
       <h1>${esc(basHarfleriBuyuk(projeAdi(p)))}</h1>
-      <p>Kim neyi görebilir, neyi değiştirebilir</p>
+      <p>Güvenlik sihirbazı · ${biten} / ${toplam} adım tamam</p>
     </div></div>
-    ${secSekmeler(projeId, 'kurallar')}
-    ${model ? ozet : adimlar}
-    ${model ? secKurallar(yapi, model, projeId) : govde}`;
+    ${serit}`;
+
+  /* "Tüm adımlar" listesi (telefonda şeritteki düğme açar). */
+  if (listeAcik) {
+    const satirlar = SEC_ADIMLAR.map((x, i) => `
+      <a class="sec-h-adim ${durumlar[i].bitti ? 'bitti' : i === n - 1 ? 'simdi' : ''}" href="${adres(i + 1)}"
+         data-eylem="sec-adim-git" data-id="${esc(projeId)}" data-n="${i + 1}">
+        <span class="sec-h-no">${i + 1}</span>
+        <span class="sec-h-adim-yz"><b>${esc(x.ad)}</b><i>${esc(durumlar[i].yazi || (durumlar[i].bitti ? 'Tamam' : 'Bekliyor'))}</i></span>
+        <span class="sec-h-adim-s">${durumlar[i].bitti ? `<i class="tamam">${SEC_TIK}</i>` : '›'}</span>
+      </a>`).join('');
+    return tepe + `
+      <h3 class="sec-bas">Tüm adımlar</h3>
+      <div class="sec-h-adimlar">${satirlar}</div>
+      <p class="sec-t-ipucu alt">Şimdilik kilit yok: istediğin adıma geçebilirsin.</p>`;
+  }
+
+  const ic = secAdimIcerik(projeId, n);
+  const geri = n > 1 ? `<a class="dsa-btn geri" href="${adres(n - 1)}">${ok} Geri</a>`
+    : `<a class="dsa-btn geri" href="#/security">${ok} Projeler</a>`;
+  const ileri = n < toplam
+    ? `<a class="dsa-btn ana" href="${adres(n + 1)}">İleri<span class="sec-dsa-ad">: ${esc(SEC_ADIMLAR[n].ad)}</span> ${ok}</a>`
+    : `<a class="dsa-btn ana" href="#/security">Bitir ${ok}</a>`;
+  return tepe + `
+    <section class="sec-sb">
+      <div class="sec-sb-bas">
+        <span class="sec-sb-ikon">${a.ikon}</span>
+        <div><h2>${esc(a.ad)}</h2><p>${esc(a.aciklama)}</p></div>
+      </div>
+      <div class="sec-sb-durum ${d.bitti ? 'tamam' : ''}">${d.bitti ? '✓ Tamam' : '○ Bekliyor'}${d.yazi && d.yazi !== 'Bekliyor' ? ' · ' + esc(d.yazi) : ''}</div>
+      ${ic}
+    </section>
+    <div class="dsa sec-dsa">${geri}<span class="dsa-orta mono">${n} / ${toplam}</span>${ileri}</div>`;
 }
 
-/* Proje sayfasının iki sekmesi: Erişim Kuralları | Test Ortamı. */
-function secSekmeler(projeId, aktif) {
-  const s = (ad, adres, k) => `<a class="sec-sekme${aktif === k ? ' aktif' : ''}" href="${adres}">${esc(ad)}</a>`;
-  return `<nav class="sec-sekmeler">
-    ${s('Kurallar', '#/security/' + esc(projeId), 'kurallar')}
-    ${s('Test Ortamı', '#/security/' + esc(projeId) + '/test', 'test')}
-    ${s('Testler', '#/security/' + esc(projeId) + '/testler', 'testler')}
-  </nav>`;
+/* Numaralı yapılacaklar listesi: [[metin, alt, düğmeler], …] */
+function secYapilacak(maddeler) {
+  return `<ol class="sec-yap">${maddeler.map((m, i) => `
+    <li><span class="sec-yap-no">${i + 1}</span><div><b>${m[0]}</b>${m[1] ? `<small>${m[1]}</small>` : ''}
+      ${m[2] ? `<div class="sec-t-dg">${m[2]}</div>` : ''}</div></li>`).join('')}</ol>`;
+}
+
+function secAdimIcerik(projeId, n) {
+  const k = SEC.kayit[projeId] || {};
+  const yapi = k.yapi && Array.isArray(k.yapi.tablolar) ? k.yapi : null;
+  const model = yapi && k.model && Array.isArray(k.model.tablolar) ? k.model : null;
+  const dug = (yazi, eylem, ana = false, kapali = false) =>
+    `<button class="sec-dug${ana ? ' ana' : ''}" type="button" data-eylem="${eylem}" data-id="${esc(projeId)}"
+       ${kapali ? 'disabled' : ''}>${esc(yazi)}</button>`;
+
+  if (n === 1) {
+    return secYapilacak([
+      ['Yapı SQL\'ini kopyala, gerçek veritabanının SQL Editor\'ünde çalıştır, çıkan sonucu yapıştır',
+        'Açılan pencerede SQL\'i kopyalama düğmesi de var.', dug(yapi ? 'Yenile' : 'Başla', 'sec-yapi', !yapi)],
+    ]) + (yapi && yapi.nizam_security !== SEC_YAPI_SURUM
+      ? `<div class="sec-uyari">⚠️ Yapı SQL'i güncellendi; testler için "Yenile" ile yeniden al.</div>` : '');
+  }
+  if (n === 2) {
+    if (!yapi) return `<div class="card">${empty(ICON.gGuvenlik, 'Önce 1. adım', 'Claude, gerçek yapıya bakarak yazar.')}</div>`;
+    return secYapilacak([
+      ['Promptu kopyala, Claude\'a yapıştır', 'Claude birkaç soru sorabilir, cevapla.', dug('📋 Promptu kopyala', 'sec-prompt', !model)],
+      ['Claude\'un verdiği JSON\'u yapıştır', '', dug(model ? 'Yeni JSON yapıştır' : 'JSON yapıştır', 'sec-model')],
+    ]) + (model ? secKurallar(yapi, model, projeId) : '');
+  }
+  if (n >= 3 && n <= 6) {
+    const t = secTestParcalar(projeId);   // security-test.js
+    if (t.hata) return t.hata;
+    const kr = t.kartlar[n - 3];
+    return (n === 3 && t.kalkan ? `<p class="sec-t-ipucu">${t.kalkan}</p>` : '')
+      + `<div class="sec-sb-kart">${kr.govde}<div class="sec-t-dg">${kr.dugmeler}</div></div>`;
+  }
+  if (n === 7) return secOkumaGovde(projeId);   // security-okuma.js
+  if (n === 8) return secDuzeltIcerik(projeId);
+  return secTeslimHtml(projeId);                 // security-okuma.js
+}
+
+/* 8. adım: hataları bildir → göç → teste uygula, tara → gerçeğe uygula, yenile. */
+function secDuzeltIcerik(projeId) {
+  const { hepsi } = secTumSonuclar(projeId);
+  const sorun = hepsi.filter(x => x.sonuc !== 'gecti').length;
+  const t = secTestParcalar(projeId);
+  const dug = (yazi, eylem, ana = false, kapali = false) =>
+    `<button class="sec-dug${ana ? ' ana' : ''}" type="button" data-eylem="${eylem}" data-id="${esc(projeId)}"
+       ${kapali ? 'disabled' : ''}>${esc(yazi)}</button>`;
+  const yap = secYapilacak([
+    ['Sorunları Claude\'a bildir', hepsi.length ? (sorun ? sorun + ' 🔴/🟡 sonuç projenin Claude sohbeti için kopyalanır.' : 'Bildirilecek sorun yok 🎉') : 'Önce 7. adımda tara.',
+      dug('📋 Hataları bildir' + (sorun ? ' (' + sorun + ')' : ''), 'sec-o-y-rapor', !!sorun, !sorun)],
+    ['Claude\'un yazdığı göç dosyalarını önce test veritabanına uygula ve yeniden tara', '',
+      `<a class="sec-dug" href="#/security/${esc(projeId)}/7">Tarama adımına git</a>`],
+    ['Aynı göçleri gerçek veritabanına uygula, sonra gerçek yapıyı yenile', 'Damga 🟢 olur: test ile gerçek aynı yapıda.',
+      dug('Gerçek yapıyı yenile', 'sec-yapi')],
+  ]);
+  return yap + (t.hata ? '' : (t.yfSay ? t.farkHtml : '') + t.yedek);
 }
 
 function secSatirAd(d) {
@@ -893,6 +997,18 @@ async function securityEylem(e, el) {
     return true;
   }
   if (e === 'sec-rol') { SEC.rol[projeId] = el.dataset.rol; render(); return true; }
+  if (e === 'sec-adimlar') {
+    const n = Number(el.dataset.n);
+    SEC.liste_ac[projeId] = SEC.liste_ac[projeId] === n ? null : n;
+    render();
+    return true;
+  }
+  if (e === 'sec-adim-git') {
+    SEC.liste_ac[projeId] = false;
+    const hedef = '#/security/' + projeId + '/' + el.dataset.n;
+    if (location.hash === hedef) render(); else location.hash = hedef;
+    return true;
+  }
 
   if (e === 'sec-yapi') {
     secYapistirPenceresi({

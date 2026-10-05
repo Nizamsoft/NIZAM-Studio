@@ -21,6 +21,13 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.320.0', tarih: '2026-10-05',
+    ozet: 'Nizam Security artık adım adım kurulum sihirbazı',
+    maddeler: [
+      'Sekmeler kalktı; 9 adım tek sırada, altta Geri / İleri düğmeleri var.',
+      'Proje açılınca kaldığın (ilk eksik) adım geliyor; telefonda "Tüm adımlar" listesinden istediğine gidebilirsin.',
+      'Şimdilik kilit yok, tüm adımları gezebilirsin.',
+    ] },
   { surum: 'v0.319.0', tarih: '2026-10-05',
     ozet: 'Nizam Security sadeleşti',
     maddeler: [

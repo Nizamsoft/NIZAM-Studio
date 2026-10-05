@@ -24,7 +24,7 @@
    ESKİ GÜVENLİK SİSTEMİNDEN BAĞIMSIZ. security.js ve security-test.js'in
    verisini ve yardımcılarını kullanır, onların kodunu değiştirmez.
 
-   Rota: #/security/<projeId>/testler   index.html'de security-test.js'ten sonra.
+   Sihirbazın 7. adımı: #/security/<projeId>/7   index.html'de security-test.js'ten sonra.
    ========================================================================== */
 
 'use strict';
@@ -550,35 +550,21 @@ function secSartTest(ekle, okuma, m, b, rol, ben, satirlar) {
    EKRAN
    ========================================================================== */
 
-function secOkumaEkran(projeId) {
+/* Sihirbazın 7. adımı (Tarama). Kayıtlar yüklenmiş olmalı (secSihirbaz yükler). */
+function secOkumaGovde(projeId) {
   const p = DB.proje(projeId);
-  if (!p) return `<div class="card">${empty(ICON.uyari, 'Proje bulunamadı', '')}</div>`;
-  if (SEC.kayit[projeId] === undefined) {
-    secYukle('kayit-' + projeId, async () => { SEC.kayit[projeId] = await SEC_VERI.getir(projeId); });
-    return iskeletler(3);
-  }
-  if (SEC_TEST.kayit[projeId] === undefined) {
-    secYukle('test-' + projeId, async () => { SEC_TEST.kayit[projeId] = await SEC_TEST_VERI.getir(projeId); });
-    return iskeletler(3);
-  }
   const k = SEC.kayit[projeId] || {};
   const o = SEC_TEST.kayit[projeId] || {};
-  const ust = `
-    <a class="tl-geri" href="#/security">${svg(ICON.chevron, 14)} Nizam Security</a>
-    <div class="pj-tepe"><div class="pj-tepe-yz">
-      <h1>${esc(basHarfleriBuyuk(projeAdi(p)))}</h1>
-      <p>Kurallar gerçekten çalışıyor mu, test kullanıcılarıyla dener</p>
-    </div></div>
-    ${secSekmeler(projeId, 'testler')}`;
+  const ust = '';
 
   if (!k.yapi || !k.model) {
-    return ust + `<div class="card">${empty(ICON.gGuvenlik, 'Önce Erişim Kuralları',
-      'Testler, Erişim Kuralları modelinden üretilir.')}</div>`;
+    return `<div class="card">${empty(ICON.gGuvenlik, 'Önce 1. ve 2. adım',
+      'Testler, olması gereken güvenlik modelinden üretilir.')}</div>`;
   }
   const kisiler = (o.kullanicilar || []).filter(x => x.kimlik);
   if (!o.test_ref || !kisiler.length) {
-    return ust + `<div class="card">${empty(ICON.gGuvenlik, 'Önce Test Ortamı',
-      'Test projesini bağla, kurulumu yap, test kullanıcılarını ve sentetik veriyi oluştur.')}</div>`;
+    return `<div class="card">${empty(ICON.gGuvenlik, 'Önce test ortamı',
+      '3–6. adımlar: test projesini bağla, kurulumu yap, test kullanıcılarını ve sahte veriyi oluştur.')}</div>`;
   }
 
   const engel = secUretimAyriMi(p, o);
@@ -677,7 +663,7 @@ function secPano(projeId, engel, kisiSay) {
       <span class="sec-h-rozet">${durumIc}</span>
       <div class="sec-h-durum-yz"><b>${esc(d.b)}</b><span>${d.a}</span></div>
       ${tarih ? `<div class="sec-h-son"><small>Son tarama</small><b>${esc(secTarih(tarih))}</b>
-        <button class="sec-dug" type="button" data-eylem="sec-o-git" data-id="${esc(projeId)}" data-hedef="sec-sonuc">Raporu gör</button></div>` : ''}
+        <button class="sec-dug" type="button" data-eylem="sec-o-git" data-id="${esc(projeId)}" data-hedef="sec-sonuc">Sonuçlar</button></div>` : ''}
     </div>`;
 
   /* Sayı kutuları: ziyaretçi ayrı, diğerleri işleme göre. */
@@ -703,32 +689,9 @@ function secPano(projeId, engel, kisiSay) {
     <p class="sec-h-kalkan">🛡️ Yalnız test projesinde çalışır · Production ${esc(secKisalt(secUretimRef(p) || '?', 4, 4))}
       ≠ Test ${esc(secKisalt(o.test_ref, 4, 4))}</p>`;
 
-  /* Adımlar */
-  const teslimBiten = (() => { const m = secTeslimMaddeler(projeId), i = secTeslimIsaret(projeId);
-    return { n: m.filter(x => x.otomatik || i[x.id]).length, t: m.length }; })();
-  const taranan = hepsi.length > 0;
-  const adimlar = [
-    { b: 'Gerçek yapıyı öğren', a: 'Production · ' + (secTarih(k.yapi_tarihi) || 'alındı'), d: 'bitti', href: '#/security/' + projeId },
-    { b: 'Erişim kurallarını tanımla', a: k.model.roller.length + ' rol · ' + k.model.tablolar.length + ' tablo', d: 'bitti', href: '#/security/' + projeId },
-    { b: 'Test ortamını hazırla', a: kisiSay + ' test kullanıcısı · sahte veri', d: 'bitti', href: '#/security/' + projeId + '/test' },
-    { b: 'Taramayı başlat', a: taranan ? hepsi.length + ' test · ' + secTarih(tarih) : 'Okuma, yazma, ziyaretçi', d: taranan ? 'bitti' : 'simdi' },
-    { b: 'Düzelt ve doğrula', a: kusursuz ? 'Açık yok, yapılar aynı' : acik ? acik + ' açık · Hataları bildir' : 'Göç dosyaları, tekrar tarama',
-      d: kusursuz ? 'bitti' : taranan ? 'simdi' : '', hedef: taranan ? 'sec-sonuc' : '' },
-    { b: 'Teslim öncesi kontrol', a: teslimBiten.n + ' / ' + teslimBiten.t + ' madde',
-      d: teslimBiten.n === teslimBiten.t ? 'bitti' : kusursuz ? 'simdi' : '', hedef: taranan ? 'sec-teslim' : '' },
-  ];
-  const adim = (x, i) => {
-    const ic = `<span class="sec-h-no">${i + 1}</span><span class="sec-h-adim-yz"><b>${esc(x.b)}</b><i>${esc(x.a)}</i></span>
-      <span class="sec-h-adim-s">${x.d === 'bitti' ? `<i class="tamam">${SEC_TIK}</i>` : (x.href || x.hedef) ? '›' : ''}</span>`;
-    const c = `sec-h-adim ${x.d}`;
-    return x.href ? `<a class="${c}" href="${esc(x.href)}">${ic}</a>`
-      : x.hedef ? `<button class="${c}" type="button" data-eylem="sec-o-git" data-id="${esc(projeId)}" data-hedef="${x.hedef}">${ic}</button>`
-      : `<div class="${c}">${ic}</div>`;
-  };
   return `
-    <div class="sec-h">
+    <div class="sec-h tek">
       <div class="sec-h-sol">${durum}${kutular}${dugme}</div>
-      <div class="sec-h-sag"><h3 class="sec-bas">Adımlar</h3><div class="sec-h-adimlar">${adimlar.map(adim).join('')}</div></div>
     </div>`;
 }
 
@@ -892,10 +855,8 @@ function secOkumaSonuclar(projeId) {
       <span class="sec-t-durum-yz"><b>${bagHata} test bağlantı hatası yüzünden denenemedi</b>
         <i>Bunlar güvenlik sonucu değil. İnternet bağlantını kontrol edip taramayı yeniden başlat.</i></span></div>` : ''}
     ${bildir ? `<div class="sec-t-dg sec-o-filtre">
-      <button class="sec-dug ana" type="button" data-eylem="sec-o-y-rapor" data-id="${esc(projeId)}">📋 Hataları bildir (${bildir})</button>
-      <span class="sec-t-ipucu">🔴 ve 🟡 sonuçlar projenin Claude sohbeti için kopyalanır</span>
+      <a class="sec-dug ana" href="#/security/${esc(projeId)}/8">🔧 ${bildir} sorun · Düzelt ve doğrula ›</a>
     </div>` : ''}
-    ${secTeslimHtml(projeId)}
     <h3 class="sec-bas">Testler</h3>
     <div class="sec-cipler">
       ${f('Tümü', 'hepsi', liste.length)}${f('Geçti', 'gecti', say('gecti'))}${f('Açık', 'acik', say('acik'))}${f('Edilemedi', 'edilemedi', say('edilemedi'))}
