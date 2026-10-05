@@ -21,6 +21,12 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.314.0', tarih: '2026-10-05',
+    ozet: 'Güvenlik testleri zayıf internette daha dayanıklı',
+    maddeler: [
+      'Bağlantı bir an koparsa test isteği kendiliğinden yeniden deneniyor.',
+      'Yine de ulaşılamazsa sonuçların üstünde "bağlantı hatası" uyarısı çıkıyor; bunlar güvenlik sonucu sayılmıyor.',
+    ] },
   { surum: 'v0.313.0', tarih: '2026-10-05',
     ozet: 'Yazma testleri: temizlik neden başarısız oldu, artık yazıyor',
     maddeler: [

@@ -187,12 +187,12 @@ select 'NIZAM: Yazma testi yardımcısı kuruldu.' as sonuc;`;
    ========================================================================== */
 
 async function secYardimci(o, jeton, islem, tablo, veri) {
-  const r = await fetch(secOkumaTaban(o) + '/rest/v1/rpc/' + SEC_YARDIMCI, {
+  const r = await secFetch(secOkumaTaban(o) + '/rest/v1/rpc/' + SEC_YARDIMCI, {
     method: 'POST',
     headers: { apikey: o.test_anahtar, Authorization: 'Bearer ' + jeton,
       'Content-Type': 'application/json', Accept: 'application/json' },
     body: JSON.stringify({ p_islem: islem, p_tablo: tablo || null, p_veri: veri || {} }),
-  });
+  }, !/^ekle/.test(islem));   // ekleme tekrarlanmaz (çift kayıt)
   let j = null;
   try { j = await r.json(); } catch (h) {}
   if (r.ok) return j;
@@ -205,12 +205,12 @@ async function secYardimci(o, jeton, islem, tablo, veri) {
 /* Test edilen kişinin yazma isteği. jeton yoksa giriş yapmamış ziyaretçi. */
 async function secYazIstek(o, jeton, yontem, yol, govde) {
   if (yontem !== 'POST' && !/\?.+=(eq|in)\./.test(yol)) throw new Error('Filtresiz yazma isteği engellendi.');
-  const r = await fetch(secOkumaTaban(o) + '/rest/v1/' + yol, {
+  const r = await secFetch(secOkumaTaban(o) + '/rest/v1/' + yol, {
     method: yontem,
     headers: Object.assign({ apikey: o.test_anahtar, 'Content-Type': 'application/json',
       Accept: 'application/json', Prefer: 'return=minimal' }, jeton ? { Authorization: 'Bearer ' + jeton } : {}),
     body: govde === undefined ? undefined : JSON.stringify(govde),
-  });
+  }, yontem !== 'POST');   // ekleme tekrarlanmaz (çift kayıt)
   let j = null;
   try { j = await r.json(); } catch (h) {}
   return { ok: r.ok, durum: r.status, kod: String((j && j.code) || ''),

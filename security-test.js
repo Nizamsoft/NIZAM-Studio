@@ -547,8 +547,28 @@ function secTestVeriSar(sql, projeId, ortam) {
    TEST KULLANICILARI — test projesinin kendi Auth kayıt adresi
    ========================================================================== */
 
+/* Zayıf bağlantı: istek yolda koparsa (fetch hata fırlatır) 2 kez daha denenir.
+   HTTP cevabı gelen istek (403, 400…) tekrarlanmaz — o gerçek sonuçtur. Kayıt ekleyen
+   istekler (tekrarOlur=false) çift kayıt açmasın diye tekrarlanmaz. Sonunda hâlâ
+   ulaşılamıyorsa hata "🌐 Bağlantı hatası" ile başlar; sonuç ekranı bunu ayrıca bildirir. */
+const SEC_BAG_HATA = '🌐 Bağlantı hatası';
+async function secFetch(url, ayar, tekrarOlur = true) {
+  const deneme = tekrarOlur ? 3 : 1;
+  for (let i = 1; ; i++) {
+    try { return await fetch(url, ayar); }
+    catch (h) {
+      if (i >= deneme) {
+        throw new Error(SEC_BAG_HATA + ' — test projesine ulaşılamadı'
+          + (deneme > 1 ? ' (' + deneme + ' kez denendi)' : ' (çift kayıt olmasın diye tekrar denenmedi)')
+          + ': ' + ((h && h.message) || h));
+      }
+      await new Promise(r => setTimeout(r, i * 1000));
+    }
+  }
+}
+
 async function secTestIstek(ortam, yol, govde) {
-  const r = await fetch(ortam.test_url.replace(/\/+$/, '') + '/auth/v1/' + yol, {
+  const r = await secFetch(ortam.test_url.replace(/\/+$/, '') + '/auth/v1/' + yol, {
     method: 'POST',
     headers: { apikey: ortam.test_anahtar, 'Content-Type': 'application/json' },
     body: JSON.stringify(govde),

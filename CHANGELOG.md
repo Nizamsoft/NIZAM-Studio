@@ -1,5 +1,14 @@
 # Değişiklik Günlüğü
 
+## v0.314.0
+- **Güvenlik Testleri — zayıf bağlantı.** `secFetch` (security-test.js): istek yolda
+  koparsa (fetch hata fırlatırsa, ör. Safari "Load failed") 1 sn ve 2 sn arayla 2 kez daha
+  denenir. HTTP cevabı gelen istekler tekrarlanmaz. Kayıt ekleyen istekler (REST POST,
+  yardımcının `ekle*` işlemleri) çift kayıt olmasın diye tekrarlanmaz. Okuma, yazma,
+  yardımcı ve giriş istekleri bunu kullanıyor.
+- Sonunda ulaşılamazsa sonuç "🌐 Bağlantı hatası" ile başlıyor; sonuç ekranının üstünde
+  "N test bağlantı hatası yüzünden denenemedi — taramayı yeniden başlat" bandı çıkıyor.
+
 ## v0.313.0
 - **Yazma testleri — temizlik hatası görünüyor.** `secKumeTemizle` hatayı yutmuyor;
   sebep `cx.temizlikHata`'da tutuluyor ve "sentetik kopya silinemedi" / "test kaydı

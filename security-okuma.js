@@ -205,7 +205,7 @@ function secOkumaTaban(ortam) {
 }
 
 async function secOkumaGet(ortam, jeton, yol) {
-  const r = await fetch(secOkumaTaban(ortam) + '/rest/v1/' + yol, {
+  const r = await secFetch(secOkumaTaban(ortam) + '/rest/v1/' + yol, {
     method: 'GET',
     /* jeton yoksa: giriş yapmamış ziyaretçi — yalnız herkese açık anahtar gider. */
     headers: Object.assign({ apikey: ortam.test_anahtar, Accept: 'application/json' },
@@ -252,7 +252,7 @@ async function secOkumaGiris(ortam, kisi) {
   let g;
   try {
     g = await secTestIstek(ortam, 'token?grant_type=password', { email: kisi.eposta, password: kisi.sifre });
-  } catch (h) { return { hata: 'Test projesine ulaşılamadı' }; }
+  } catch (h) { return { hata: (h && h.message) || 'Test projesine ulaşılamadı' }; }
   const j = g.j || {};
   if (!g.ok || !j.access_token) return { hata: 'Giriş yapılamadı: ' + String(j.msg || j.error_description || j.error_code || g.durum) };
   const govde = secJwtGovde(j.access_token) || {};
@@ -666,8 +666,13 @@ function secOkumaSonuclar(projeId) {
       <div class="sec-o-bg"><span>Beklenen: <b>${esc(x.beklenen)}</b></span><span>Gerçek: <b>${esc(x.gercek || '—')}</b></span></div>
     </div>`).join('');
 
+  const bagHata = [].concat(s ? s.liste : [], y ? y.liste : [])
+    .filter(x => String(x.gercek || '').indexOf(SEC_BAG_HATA) >= 0).length;
   return `
     <h3 class="sec-bas">Sonuç · ${esc(secTarih(tarih))}</h3>
+    ${bagHata ? `<div class="sec-t-durum"><span class="sec-t-emoji">🌐</span>
+      <span class="sec-t-durum-yz"><b>${bagHata} test bağlantı hatası yüzünden denenemedi</b>
+        <i>Bunlar güvenlik sonucu değil. İnternet bağlantını kontrol edip taramayı yeniden başlat.</i></span></div>` : ''}
     <div class="sec-o-ozet">
       <span>Toplam <b>${liste.length}</b></span>
       <span>🟢 Geçti <b>${say('gecti')}</b></span>
