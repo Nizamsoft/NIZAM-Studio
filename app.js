@@ -1103,7 +1103,8 @@ const AYAR_GRUP = {
   guvenlik: {
     ad: 'Güvenlik', renk: 'yesil', ikon: 'gGuvenlik',
     aciklama: 'Projelerin satır güvenliğini dışarıdan dene.',
-    goster: () => AUTH.yonetici,
+    /* Eski güvenlik testi; yerini Nizam Security aldı. Ayarlar'da gizli, kodu duruyor. */
+    goster: () => false,
     ciz: () => `<div class="kt-liste">${ayarKarti({
       ad: 'Güvenlik Testi', adres: '#/guvenlik', renk: 'yesil', ikon: 'gGuvenlik',
       aciklama: 'Herhangi bir Supabase projesini ziyaretçi ve personel kimliğiyle dener.',

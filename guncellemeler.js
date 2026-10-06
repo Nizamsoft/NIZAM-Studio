@@ -21,6 +21,9 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.328.0', tarih: '2026-10-06',
+    ozet: 'Eski güvenlik testi Ayarlar\'dan kalktı',
+    maddeler: ['Ayarlar\'daki eski "Güvenlik Testi" kaldırıldı; güvenlik testleri artık Nizam Security\'de.'] },
   { surum: 'v0.327.0', tarih: '2026-10-06',
     ozet: 'Test kurulumu ve sahte veri: kopyala, çalıştır, onayla',
     maddeler: [

@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## v0.328.0
+- Ayarlar'daki eski "Güvenlik" başlığı (Güvenlik Testi, `#/guvenlik`) gizlendi (`goster: () => false`);
+  yerini Nizam Security aldı. Kod ve proje aşaması şimdilik yerinde.
+
 ## v0.327.0
 - **Test kurulumu sadeleşti:** şema/akış ve madde listesi kaldırıldı (`secTestSema` silindi);
   yalnız "📋 SQL'i kopyala" + "✅ Çalıştırdım". Kopyalamak artık tamam saymaz
