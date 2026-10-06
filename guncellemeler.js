@@ -21,6 +21,13 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.322.0', tarih: '2026-10-06',
+    ozet: 'Nizam Security: tek ana ekran, "Proje ayarlarını kur" düğmesi',
+    maddeler: [
+      'Adım listesi kalktı; taramadan önceki 6 iş "Proje ayarlarını kur" sayfasında, kaç tanesinin eksik olduğu yazıyor.',
+      'Ayarlar bitmeden tarama düğmesi kilitli.',
+      'Tarama sonrası tek düğme: sorun varsa "Düzelt", yoksa "Teslim kontrolü".',
+    ] },
   { surum: 'v0.321.0', tarih: '2026-10-06',
     ozet: 'Nizam Security yeni görünüm',
     maddeler: [

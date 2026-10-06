@@ -164,6 +164,7 @@ const SEC = {
   yukleniyor: {},
   acik: {},           // projeId → { tabloAdı: true } — 2. adımda açık tablolar
   liste_ac: {},       // projeId → adım no: o adımdayken "Tüm adımlar" listesi açık
+  ayar_ac: {},        // projeId → { adımNo: true/false } — Proje ayarları sayfasında açık bölümler
   rol: {},            // projeId → seçili rol (açılan tablolarda)
   ara: {},            // projeId → tablo arama metni
 };
@@ -715,40 +716,68 @@ function secSihirbaz(projeId, durak) {
     return iskeletler(3);
   }
   const durumlar = secAdimDurum(projeId);
-  const toplam = SEC_ADIMLAR.length;
-  const eski = { test: 3, testler: 7 };   // eski sekme adresleri
-  /* #/security/<id>/acik/<sıra> → tek bir test sonucunun ayrıntısı */
-  if (durak === 'acik') {
-    const sira = Number((location.hash || '').split('/')[4]);
-    return `<div class="secv">${secAcikDetay(projeId, sira)}</div>`;   // security-okuma.js
-  }
-  const n = Number(durak) || eski[durak] || 0;
-  if (!(n >= 1 && n <= toplam)) return `<div class="secv">${secAnaSayfa(projeId, durumlar)}</div>`;
-
-  const a = SEC_ADIMLAR[n - 1], d = durumlar[n - 1];
-  const adres = i => '#/security/' + esc(projeId) + '/' + i;
-  const ok = svg(ICON.chevron, 15);
-  const ic = secAdimIcerik(projeId, n);
-  const geri = n > 1 ? `<a class="dsa-btn geri" href="${adres(n - 1)}">${ok} Geri</a>`
-    : `<a class="dsa-btn geri" href="#/security/${esc(projeId)}">${ok} Özet</a>`;
-  const ileri = n < toplam
-    ? `<a class="dsa-btn ana" href="${adres(n + 1)}">İleri<span class="sec-dsa-ad">: ${esc(SEC_ADIMLAR[n].ad)}</span> ${ok}</a>`
-    : `<a class="dsa-btn ana" href="#/security/${esc(projeId)}">Bitir ${ok}</a>`;
-  return `
-    <div class="secv">
-      <div class="secv-ust">
-        <a class="secv-geri" href="#/security/${esc(projeId)}" aria-label="Özete dön">${ok}</a>
-        <div class="secv-ust-yz"><h1>${esc(a.ad)}</h1><p>${esc(a.aciklama)}</p></div>
-        <span class="secv-no mono">${n}/${toplam}</span>
-      </div>
-      <div class="secv-cubuk">${durumlar.map((x, i) => `<a href="${adres(i + 1)}" class="${i === n - 1 ? 'su' : x.bitti ? 'bitti' : ''}" aria-label="${esc(SEC_ADIMLAR[i].ad)}"></a>`).join('')}</div>
-      <div class="secv-durum ${d.bitti ? 'tamam' : ''}">${d.bitti ? '✓ Tamam' : '○ Bekliyor'}${d.yazi && d.yazi !== 'Bekliyor' ? ' · ' + esc(d.yazi) : ''}</div>
-      ${ic}
-      <div class="dsa sec-dsa">${geri}<span class="dsa-orta mono">${n} / ${toplam}</span>${ileri}</div>
-    </div>`;
+  /* Sayfalar: ana ekran · ayarlar (1–6) · duzelt (8) · teslim (9) · acik/<sıra>.
+     Eski adresler (sayılı adımlar, /test, /testler) karşılıklarına düşer. */
+  const eski = { test: 'ayarlar', testler: '', 7: '', 8: 'duzelt', 9: 'teslim' };
+  let sayfa = durak || '';
+  if (/^[1-6]$/.test(sayfa)) sayfa = 'ayarlar';
+  else if (sayfa in eski) sayfa = eski[sayfa];
+  let ic;
+  if (sayfa === 'acik') ic = secAcikDetay(projeId, Number((location.hash || '').split('/')[4]));   // security-okuma.js
+  else if (sayfa === 'ayarlar') ic = secAyarlarSayfa(projeId, durumlar);
+  else if (sayfa === 'duzelt') ic = secTekSayfa(projeId, 8, secDuzeltIcerik(projeId));
+  else if (sayfa === 'teslim') ic = secTekSayfa(projeId, 9, secTeslimHtml(projeId));
+  else ic = secAnaSayfa(projeId, durumlar);
+  return `<div class="secv">${ic}</div>`;
 }
 
-/* Projenin Security özeti: kahraman kart, durum, sayılar, tarama düğmesi, adım kartları. */
+/* Düzelt / Teslim gibi tek iş sayfası: geri düğmeli başlık + içerik. */
+function secTekSayfa(projeId, n, icerik) {
+  const a = SEC_ADIMLAR[n - 1];
+  const ok = svg(ICON.chevron, 15);
+  return `
+    <div class="secv-ust">
+      <a class="secv-geri" href="#/security/${esc(projeId)}" aria-label="Ana ekrana dön">${ok}</a>
+      <div class="secv-ust-yz"><h1>${esc(a.ad)}</h1><p>${esc(a.aciklama)}</p></div>
+    </div>
+    ${icerik}
+    <div class="dsa sec-dsa"><a class="dsa-btn geri" href="#/security/${esc(projeId)}">${ok} Ana ekran</a><span></span><span></span></div>`;
+}
+
+/* Taramadan önce bir kez yapılan 6 ayar, tek sayfada. Bitmemişler açık gelir. */
+function secAyarlarSayfa(projeId, durumlar) {
+  const ok = svg(ICON.chevron, 15);
+  const acik = SEC.ayar_ac[projeId] || {};
+  const biten = durumlar.slice(0, 6).filter(x => x.bitti).length;
+  const ilk = durumlar.slice(0, 6).findIndex(x => !x.bitti);
+  const bolum = (x, i) => {
+    const d = durumlar[i];
+    const ac = acik[i + 1] !== undefined ? acik[i + 1] : !d.bitti && i === ilk;
+    return `
+      <div class="secv-ayar ${d.bitti ? 'bitti' : i === ilk ? 'simdi' : ''}${ac ? ' acik' : ''}">
+        <button class="secv-adim" type="button" data-eylem="sec-ayar-ac" data-id="${esc(projeId)}" data-n="${i + 1}" data-ac="${ac}">
+          <span class="secv-adim-no">${i + 1}</span>
+          <span class="secv-adim-yz"><b>${esc(x.ad)}</b><i>${esc(d.yazi || x.kisa)}</i></span>
+          <span class="secv-adim-s">${d.bitti ? `<i class="secv-tik">${SEC_TIK}</i>` : ac ? '⌄' : '›'}</span>
+        </button>
+        ${ac ? `<div class="secv-ayar-ic"><p class="secv-ayar-acik">${esc(x.aciklama)}</p>${secAdimIcerik(projeId, i + 1)}</div>` : ''}
+      </div>`;
+  };
+  return `
+    <div class="secv-ust">
+      <a class="secv-geri" href="#/security/${esc(projeId)}" aria-label="Ana ekrana dön">${ok}</a>
+      <div class="secv-ust-yz"><h1>Proje ayarları</h1>
+        <p>Taramadan önce bir kez yapılır. <b>${biten} / 6 tamam</b>${biten < 6 ? ' · ' + (6 - biten) + ' eksik' : ''}</p></div>
+    </div>
+    <div class="secv-cubuk">${durumlar.slice(0, 6).map((x, i) => `<i class="${x.bitti ? 'bitti' : i === ilk ? 'su' : ''}"></i>`).join('')}</div>
+    <div class="secv-adimlar">${SEC_ADIMLAR.slice(0, 6).map(bolum).join('')}</div>
+    ${secOkumaGovde(projeId, true)}
+    <div class="dsa sec-dsa"><a class="dsa-btn geri" href="#/security/${esc(projeId)}">${ok} Ana ekran</a><span></span>
+      ${biten === 6 ? `<a class="dsa-btn ana" href="#/security/${esc(projeId)}">Taramaya geç ${ok}</a>` : '<span></span>'}</div>`;
+}
+
+/* Projenin Security ana ekranı: kahraman kart, durum, sayılar, tarama düğmesi,
+   "Proje ayarlarını kur", sıradaki iş ve sonuçlar. */
 const SEC_KALKAN = `<svg viewBox="0 0 120 140" width="104" height="122" aria-hidden="true">
   <defs><linearGradient id="seck-g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff6a5e"/><stop offset="1" stop-color="#c81f16"/></linearGradient></defs>
   <path d="M60 4 L112 22 V66 C112 100 90 124 60 136 C30 124 8 100 8 66 V22 Z" fill="url(#seck-g)"/>
@@ -759,29 +788,39 @@ const SEC_KALKAN = `<svg viewBox="0 0 120 140" width="104" height="122" aria-hid
 function secAnaSayfa(projeId, durumlar) {
   const p = DB.proje(projeId);
   const o = SEC_TEST.kayit[projeId] || {};
-  const kisiSay = (o.kullanicilar || []).filter(x => x.kimlik).length;
-  /* İlk tarama için gereken: yapı, kurallar, test projesi, kullanıcılar (kurulum/veri taramada denetlenir). */
-  const hazir = durumlar[0].bitti && durumlar[1].bitti && durumlar[2].bitti && durumlar[4].bitti;
-  const engel = hazir ? secUretimAyriMi(p, o) : 'Önce 1–6. adımları tamamla.';
-  const ilk = durumlar.findIndex(x => !x.bitti);
-  const kart = (x, i) => {
-    const hal = durumlar[i].bitti ? 'bitti' : i === ilk ? 'simdi' : '';
-    return `
-      <a class="secv-adim ${hal}" href="#/security/${esc(projeId)}/${i + 1}">
-        <span class="secv-adim-no">${i + 1}</span>
-        <span class="secv-adim-yz"><b>${esc(x.ad)}</b><i>${esc(durumlar[i].yazi || x.kisa)}</i></span>
-        <span class="secv-adim-s">${durumlar[i].bitti ? `<i class="secv-tik">${SEC_TIK}</i>` : '›'}</span>
-      </a>`;
-  };
-  return `
+  const hero = `
     <a class="tl-geri" href="#/security">${svg(ICON.chevron, 14)} Nizam Security</a>
     <div class="secv-hero">
       <div class="secv-hero-yz"><h1>${esc(basHarfleriBuyuk(projeAdi(p)))}</h1><p>Güvenli, sağlam ve kontrol altında.</p></div>
       <span class="secv-kalkan">${SEC_KALKAN}</span>
-    </div>
-    ${secPano(projeId, engel, kisiSay)}
-    <h3 class="sec-bas">Adımlar · ${durumlar.filter(x => x.bitti).length} / ${durumlar.length}</h3>
-    <div class="secv-adimlar">${SEC_ADIMLAR.map(kart).join('')}</div>`;
+    </div>`;
+  /* Tarama sürerken yalnız ilerleme. */
+  const calisiyor = !!SEC_OKUMA.calisiyor[projeId] || (typeof SEC_YAZMA !== 'undefined' && !!SEC_YAZMA.calisiyor[projeId]);
+  if (calisiyor) return hero + secTaramaEkran(projeId);   // security-okuma.js
+
+  const kisiSay = (o.kullanicilar || []).filter(x => x.kimlik).length;
+  const biten = durumlar.slice(0, 6).filter(x => x.bitti).length;
+  const hazir = biten === 6;
+  const engel = hazir ? secUretimAyriMi(p, o) : 'Önce proje ayarlarını tamamla (' + (6 - biten) + ' eksik).';
+  const kur = `
+    <a class="secv-kur${hazir ? ' tamam' : ''}" href="#/security/${esc(projeId)}/ayarlar">
+      <span class="secv-kur-ik">⚙️</span>
+      <span class="secv-adim-yz"><b>Proje ayarlarını kur</b>
+        <i>${hazir ? '6 / 6 tamam · değiştirmek için dokun' : biten + ' / 6 tamam · ' + (6 - biten) + ' eksik'}</i></span>
+      <span class="secv-adim-s">${hazir ? `<i class="secv-tik">${SEC_TIK}</i>` : '›'}</span>
+    </a>`;
+
+  /* Sıradaki iş: sorun varsa Düzelt, yoksa Teslim kontrolü. */
+  const { s, y, hepsi } = secTumSonuclar(projeId);
+  const sorun = hepsi.filter(x => x.sonuc !== 'gecti').length;
+  const yfSay = typeof secFarkSay === 'function' ? secFarkSay(secGuncelFark(projeId)) : null;
+  const tm = secTeslimMaddeler(projeId), ti = secTeslimIsaret(projeId);
+  const tBiten = tm.filter(x => x.otomatik || ti[x.id]).length;
+  const sonraki = !hepsi.length ? ''
+    : sorun || yfSay ? `<a class="secv-buyuk" href="#/security/${esc(projeId)}/duzelt">🔧 Düzelt${sorun ? ' · ' + sorun + ' sorun' : ' · ' + yfSay + ' yapı farkı'}</a>`
+    : s && y ? `<a class="secv-buyuk yesil" href="#/security/${esc(projeId)}/teslim">✅ Teslim kontrolü · ${tBiten} / ${tm.length}</a>` : '';
+
+  return hero + secPano(projeId, engel, kisiSay) + kur + sonraki + secOkumaSonuclar(projeId);
 }
 
 /* Numaralı yapılacaklar listesi: [[metin, alt, düğmeler], …] */
@@ -838,7 +877,7 @@ function secDuzeltIcerik(projeId) {
     ['Sorunları Claude\'a bildir', hepsi.length ? (sorun ? sorun + ' 🔴/🟡 sonuç projenin Claude sohbeti için kopyalanır.' : 'Bildirilecek sorun yok 🎉') : 'Önce 7. adımda tara.',
       dug('📋 Hataları bildir' + (sorun ? ' (' + sorun + ')' : ''), 'sec-o-y-rapor', !!sorun, !sorun)],
     ['Claude\'un yazdığı göç dosyalarını önce test veritabanına uygula ve yeniden tara', '',
-      `<a class="sec-dug" href="#/security/${esc(projeId)}/7">Tarama adımına git</a>`],
+      `<a class="sec-dug" href="#/security/${esc(projeId)}">Ana ekrana git, yeniden tara</a>`],
     ['Aynı göçleri gerçek veritabanına uygula, sonra gerçek yapıyı yenile', 'Damga 🟢 olur: test ile gerçek aynı yapıda.',
       dug('Gerçek yapıyı yenile', 'sec-yapi')],
   ]);
@@ -1034,6 +1073,12 @@ async function securityEylem(e, el) {
     return true;
   }
   if (e === 'sec-rol') { SEC.rol[projeId] = el.dataset.rol; render(); return true; }
+  if (e === 'sec-ayar-ac') {
+    const a = SEC.ayar_ac[projeId] = SEC.ayar_ac[projeId] || {};
+    a[el.dataset.n] = el.dataset.ac !== 'true';
+    render();
+    return true;
+  }
   if (e === 'sec-adimlar') {
     const n = Number(el.dataset.n);
     SEC.liste_ac[projeId] = SEC.liste_ac[projeId] === n ? null : n;

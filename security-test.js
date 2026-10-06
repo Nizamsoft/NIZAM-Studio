@@ -873,7 +873,8 @@ function secTestParcalar(projeId) {
          publishable/anon anahtarını buraya gir. service_role anahtarı istenmez.</p>`,
     dug(bagli ? 'Değiştir' : 'Bağla', 'sec-t-bagla', '', !bagli));
 
-  const kart2 = kart(2, kuruldu, 'Yapı + kurallar', kuruldu ? yapi.tablolar.length + ' tablo · ' + kuralSay + ' RLS kuralı' : (o.kurulum_tarihi ? 'SQL kopyalandı' : 'Bekliyor'),
+  /* SQL kopyalandıysa "tamam" sayılır; gerçekten kurulu mu, tarama başlarken denetlenir. */
+  const kart2 = kart(2, kuruldu || !!o.kurulum_tarihi, 'Yapı + kurallar', kuruldu ? yapi.tablolar.length + ' tablo · ' + kuralSay + ' RLS kuralı' : (o.kurulum_tarihi ? 'SQL kopyalandı' : 'Bekliyor'),
     ((yapi.gorunumler || []).length ? sat('Görünümler', yapi.gorunumler.length) : '')
     + `<p class="sec-t-not">Sabit test veritabanı: kurulum içindeki her şeyi siler ve bu projeyi kurar.
        Başka bir proje yüklüyse onun yapısı ve test kullanıcıları da silinir.</p>`,
@@ -893,7 +894,7 @@ function secTestParcalar(projeId) {
     + (kisiler.length ? dug(goster ? 'Şifreleri gizle' : 'Şifreleri göster', 'sec-t-sifre') : '')
     + (kisiler.length ? dug('Yeniden oluştur', 'sec-t-yeniden', '', false, mesgul) : ''));
 
-  const kart4 = kart(4, veriVar, 'Sahte veri', veriVar ? 'Yüklendi' : (o.veri_sql ? 'SQL hazır' : 'Bekliyor'),
+  const kart4 = kart(4, veriVar || !!o.veri_sql, 'Sahte veri', veriVar ? 'Yüklendi' : (o.veri_sql ? 'SQL hazır' : 'Bekliyor'),
     sat('Claude, modele göre en az veriyi yazar', '')
     + sat('Örnek: A\'nın kaydı · B\'nin kaydı · Şube 1 / Şube 2', ''),
     dug('Prompt', 'sec-t-veri-prompt', '', true, !kisiTamam)

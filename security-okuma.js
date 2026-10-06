@@ -551,18 +551,20 @@ function secSartTest(ekle, okuma, m, b, rol, ben, satirlar) {
    ========================================================================== */
 
 /* Sihirbazın 7. adımı (Tarama). Kayıtlar yüklenmiş olmalı (secSihirbaz yükler). */
-function secOkumaGovde(projeId) {
+function secOkumaGovde(projeId, sadeceAyri) {
   const p = DB.proje(projeId);
   const k = SEC.kayit[projeId] || {};
   const o = SEC_TEST.kayit[projeId] || {};
   const ust = '';
 
   if (!k.yapi || !k.model) {
+    if (sadeceAyri) return '';
     return `<div class="card">${empty(ICON.gGuvenlik, 'Önce 1. ve 2. adım',
       'Testler, olması gereken güvenlik modelinden üretilir.')}</div>`;
   }
   const kisiler = (o.kullanicilar || []).filter(x => x.kimlik);
   if (!o.test_ref || !kisiler.length) {
+    if (sadeceAyri) return '';
     return `<div class="card">${empty(ICON.gGuvenlik, 'Önce test ortamı',
       '3–6. adımlar: test projesini bağla, kurulumu yap, test kullanıcılarını ve sahte veriyi oluştur.')}</div>`;
   }
@@ -614,6 +616,10 @@ function secOkumaGovde(projeId) {
     </div>`;
 
   /* Tarama sürerken yalnız ilerleme ekranı. */
+  if (sadeceAyri && !(calisiyor || yaziyor)) {
+    return `<details class="sec-gelismis"><summary>Testleri ayrı ayrı çalıştır (ileri düzey)</summary>
+      <div class="sec-t-izgara">${haritaKart}${baslatKart}${typeof secYazmaKart === 'function' ? secYazmaKart(projeId, engel) : ''}</div></details>`;
+  }
   if (calisiyor || yaziyor) return ust + secTaramaEkran(projeId);
 
   const ayri = `
@@ -663,7 +669,7 @@ function secPano(projeId, engel, kisiSay) {
       <span class="sec-h-rozet">${durumIc}</span>
       <div class="sec-h-durum-yz"><b>${esc(d.b)}</b><span>${d.a}</span></div>
       ${tarih ? `<div class="sec-h-son"><small>Son tarama</small><b>${esc(secTarih(tarih))}</b>
-        <a class="sec-dug secv-rapor" href="#/security/${esc(projeId)}/7">Raporu gör</a></div>` : ''}
+        <button class="sec-dug secv-rapor" type="button" data-eylem="sec-o-git" data-id="${esc(projeId)}" data-hedef="sec-sonuc">Raporu gör</button></div>` : ''}
     </div>`;
 
   /* Sayı kutuları: ziyaretçi ayrı, diğerleri işleme göre. */
@@ -685,7 +691,8 @@ function secPano(projeId, engel, kisiSay) {
 
   const dugme = `<button class="sec-h-basla" type="button" data-eylem="sec-o-tam" data-id="${esc(projeId)}" ${engel ? 'disabled' : ''}>
       <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M7 4.5v15l12-7.5z"/></svg>
-      ${hepsi.length ? 'Yeniden tara' : 'Taramayı başlat'}</button>
+      ${hepsi.length ? 'Yeniden tara' : 'Taramayı başlat'}${engel ? ' 🔒' : ''}</button>
+    ${engel ? `<p class="sec-h-kilit">${esc(engel)}</p>` : ''}
     <p class="sec-h-kalkan">🛡️ Yalnız test projesinde çalışır · Production ${esc(secKisalt(secUretimRef(p) || '?', 4, 4))}
       ≠ Test ${esc(secKisalt(o.test_ref, 4, 4))}</p>`;
 
@@ -855,9 +862,6 @@ function secOkumaSonuclar(projeId) {
     ${bagHata ? `<div class="sec-t-durum"><span class="sec-t-emoji">🌐</span>
       <span class="sec-t-durum-yz"><b>${bagHata} test bağlantı hatası yüzünden denenemedi</b>
         <i>Bunlar güvenlik sonucu değil. İnternet bağlantını kontrol edip taramayı yeniden başlat.</i></span></div>` : ''}
-    ${bildir ? `<div class="sec-t-dg sec-o-filtre">
-      <a class="sec-dug ana" href="#/security/${esc(projeId)}/8">🔧 ${bildir} sorun · Düzelt ve doğrula ›</a>
-    </div>` : ''}
     <h3 class="sec-bas">Testler</h3>
     <div class="sec-cipler">
       ${f('Tümü', 'hepsi', liste.length)}${f('Geçti', 'gecti', say('gecti'))}${f('Açık', 'acik', say('acik'))}${f('Edilemedi', 'edilemedi', say('edilemedi'))}
@@ -971,7 +975,7 @@ function secTeslimPrompt(projeId) {
 function secAcikDetay(projeId, sira) {
   const { hepsi } = secTumSonuclar(projeId);
   const x = hepsi[sira];
-  const geri = `<a class="secv-geri" href="#/security/${esc(projeId)}/7" aria-label="Sonuçlara dön">${svg(ICON.chevron, 15)}</a>`;
+  const geri = `<a class="secv-geri" href="#/security/${esc(projeId)}" aria-label="Ana ekrana dön">${svg(ICON.chevron, 15)}</a>`;
   if (!x) {
     return `<div class="secv-ust">${geri}<div class="secv-ust-yz"><h1>Sonuç bulunamadı</h1>
       <p>Tarama yenilenmiş olabilir; sonuçlara dönüp tekrar seç.</p></div></div>`;

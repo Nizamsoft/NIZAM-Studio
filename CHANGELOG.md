@@ -1,5 +1,15 @@
 # Değişiklik Günlüğü
 
+## v0.322.0
+- **Security ana ekranı sadeleşti.** Adım listesi kalktı; yerine "Proje ayarlarını kur" düğmesi
+  (`#/security/<id>/ayarlar`, `secAyarlarSayfa`: 6 ayar tek sayfada, bitmemiş ilki açık,
+  "4 / 6 tamam · 2 eksik"). 6 ayar bitmeden "Taramayı başlat" kilitli.
+- Kurulum ve sahte veri, SQL kopyalandıysa / hazırlandıysa "tamam" sayılır; gerçekten kurulu mu
+  tarama hazırlığı denetler.
+- Sıradaki iş düğmesi: sorun ya da yapı farkı varsa "Düzelt" (`/duzelt`), yoksa "Teslim kontrolü"
+  (`/teslim`). Sonuçlar ana ekranda. Eski sayılı adresler karşılıklarına düşer.
+- "Testleri ayrı ayrı çalıştır" ayarlar sayfasının altına taşındı.
+
 ## v0.321.0
 - **Nizam Security yeni görsel dil** (kullanıcının verdiği tasarım; kırmızı vurgu, gölge,
   14px köşe — yalnız `.secv` içinde, CLAUDE.md'ye istisna olarak yazıldı).
