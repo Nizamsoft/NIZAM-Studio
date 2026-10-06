@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## v0.324.0
+- Proje ayarları sayfasının altındaki "Ana ekran" düğmesi kaldırıldı (üstteki geri oku ve
+  "Taramaya geç" aynı yere gidiyordu). Ayarlar bitince tam genişlikte "Taramaya geç" çıkar.
+
 ## v0.323.0
 - "Testleri ayrı ayrı çalıştır" ayarlar sayfasından kaldırıldı; tek yol "Taramayı başlat"
   (okuma + yazma + ziyaretçi birlikte). Eski tekil test kodu yerinde duruyor, ekranda açılmıyor.

@@ -21,6 +21,11 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.324.0', tarih: '2026-10-06',
+    ozet: 'Proje ayarlarında tek düğme',
+    maddeler: [
+      'Aynı işi yapan "Ana ekran" düğmesi kaldırıldı; ayarlar bitince yalnız "Taramaya geç" görünür.',
+    ] },
   { surum: 'v0.323.0', tarih: '2026-10-06',
     ozet: 'Nizam Security: tek tarama düğmesi',
     maddeler: [
