@@ -376,7 +376,8 @@ function klonKoparPrompt(p) {
   s.push('   anahtarlarını kapat ya da boş bırak. Uygulama açılmaya devam etsin ama hiçbir dış sisteme istek gitmesin.');
   s.push('4. **Edge Functions:** varsa kodları kalsın; içlerindeki asıl adres ve anahtarları da değiştir.');
   s.push('5. **Ad:** uygulamanın başlığına ve adına "(Klon)" ekle ki asılla karıştırılmasın.');
-  s.push('6. Proje kimlik dosyası varsa en üstüne "Bu depo bir TEST KLONU; asıl: ' + depoSlug(kaynak.repo) + '" notunu ekle.');
+  s.push('6. Proje kimlik dosyası ya da README varsa en üstüne yalnız "Bu depo bir TEST KLONU." notunu ekle;');
+  s.push('   asıl deponun adını, adresini ya da alan adını YAZMA (bağlantı kontrolü bunları iz sayar).');
   s.push('7. Commit mesajı: `[KLON] Asıl programla bağlantı koparıldı` — push et.');
   s.push('');
   s.push('## Klonda kalmaması gereken izler');

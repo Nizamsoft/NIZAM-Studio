@@ -21,6 +21,9 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.330.1', tarih: '2026-10-06',
+    ozet: 'Test Klonu: kontrol çakışması düzeltildi',
+    maddeler: ['Klon notu artık asıl deponun adını yazmıyor; bağlantı kontrolü boşuna uyarı vermiyor.'] },
   { surum: 'v0.330.0', tarih: '2026-10-06',
     ozet: 'Yeni: Test Klonu',
     maddeler: [

@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## v0.330.1
+- Düzeltme (Test Klonu): "Bağlantıyı kopar" promptu README/kimlik notuna asıl deponun adını
+  yazdırıyordu; bağlantı kontrolü de o adı iz sayıyordu. Not artık yalnız "Bu depo bir TEST KLONU."
+
 ## v0.330.0
 - **Yeni: Test Klonu** (`klon.js`). "Yeni Proje" → "Test Klonu": müşteri programının bağlantısız
   ikizi. Projeler'de ayrı **Klonlar** sekmesi (`PROJE_KOVASI.klon`, `klonMi`); klon aşama akışından
