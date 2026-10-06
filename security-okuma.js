@@ -616,10 +616,6 @@ function secOkumaGovde(projeId, sadeceAyri) {
     </div>`;
 
   /* Tarama sürerken yalnız ilerleme ekranı. */
-  if (sadeceAyri && !(calisiyor || yaziyor)) {
-    return `<details class="sec-gelismis"><summary>Testleri ayrı ayrı çalıştır (ileri düzey)</summary>
-      <div class="sec-t-izgara">${haritaKart}${baslatKart}${typeof secYazmaKart === 'function' ? secYazmaKart(projeId, engel) : ''}</div></details>`;
-  }
   if (calisiyor || yaziyor) return ust + secTaramaEkran(projeId);
 
   const ayri = `

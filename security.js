@@ -771,7 +771,6 @@ function secAyarlarSayfa(projeId, durumlar) {
     </div>
     <div class="secv-cubuk">${durumlar.slice(0, 6).map((x, i) => `<i class="${x.bitti ? 'bitti' : i === ilk ? 'su' : ''}"></i>`).join('')}</div>
     <div class="secv-adimlar">${SEC_ADIMLAR.slice(0, 6).map(bolum).join('')}</div>
-    ${secOkumaGovde(projeId, true)}
     <div class="dsa sec-dsa"><a class="dsa-btn geri" href="#/security/${esc(projeId)}">${ok} Ana ekran</a><span></span>
       ${biten === 6 ? `<a class="dsa-btn ana" href="#/security/${esc(projeId)}">Taramaya geç ${ok}</a>` : '<span></span>'}</div>`;
 }

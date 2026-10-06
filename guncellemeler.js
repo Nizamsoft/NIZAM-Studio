@@ -21,6 +21,11 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.323.0', tarih: '2026-10-06',
+    ozet: 'Nizam Security: tek tarama düğmesi',
+    maddeler: [
+      '"Testleri ayrı ayrı çalıştır" kaldırıldı; "Taramayı başlat" bütün testleri birlikte yapar.',
+    ] },
   { surum: 'v0.322.0', tarih: '2026-10-06',
     ozet: 'Nizam Security: tek ana ekran, "Proje ayarlarını kur" düğmesi',
     maddeler: [

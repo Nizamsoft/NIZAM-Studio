@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## v0.323.0
+- "Testleri ayrı ayrı çalıştır" ayarlar sayfasından kaldırıldı; tek yol "Taramayı başlat"
+  (okuma + yazma + ziyaretçi birlikte). Eski tekil test kodu yerinde duruyor, ekranda açılmıyor.
+
 ## v0.322.0
 - **Security ana ekranı sadeleşti.** Adım listesi kalktı; yerine "Proje ayarlarını kur" düğmesi
   (`#/security/<id>/ayarlar`, `secAyarlarSayfa`: 6 ayar tek sayfada, bitmemiş ilki açık,
