@@ -1,5 +1,16 @@
 # Değişiklik Günlüğü
 
+## v0.331.0
+- **Test Klonu — tarayıcı hafızası ayrımı.** Aynı GitHub hesabından yayınlanan klon ve asıl
+  (kullanici.github.io) tarayıcıda tek site sayılıyor; localStorage/IndexedDB/çerez/önbellek ortak
+  oluyordu (Yoga Tugi klonunda görüldü: klon asılın yerel verisini okuyup test Supabase'ine yazdı).
+  - "Bağlantıyı kopar" promptu: bütün hafıza adlarına klon ön eki, bağlantı ayarı anahtarının yeniden
+    adlandırılması + hafızadan gelen adres klonunki değilse yok sayılıp silinmesi, service worker
+    önbellek adı/kapsamı, özel Supabase `storageKey`.
+  - Kontrol promptu yeni madde + `hafiza_ayrik` alanı; false gelirse bulgu sayılır, klon temiz olmaz.
+  - GitHub adımında aynı hesap uyarısı ve öneri: klonları ayrı bir GitHub organizasyonunda aç
+    (`klonAyniAlan`, `klonAlanUyarisi`). Eşitleme promptu klon ön ekini korur.
+
 ## v0.330.1
 - Düzeltme (Test Klonu): "Bağlantıyı kopar" promptu README/kimlik notuna asıl deponun adını
   yazdırıyordu; bağlantı kontrolü de o adı iz sayıyordu. Not artık yalnız "Bu depo bir TEST KLONU."

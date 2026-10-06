@@ -21,6 +21,13 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.331.0', tarih: '2026-10-06',
+    ozet: 'Test Klonu: tarayıcı hafızası artık ayrı',
+    maddeler: [
+      'Klon promptu, klonun tarayıcı hafızasını asıldan ayırıyor; aynı tarayıcıda açılsalar da birbirine karışmıyor.',
+      'Bağlantı kontrolü hafıza ayrımını da denetliyor.',
+      'Klon asılla aynı GitHub hesabındaysa Studio uyarıyor ve ayrı bir organizasyon öneriyor.',
+    ] },
   { surum: 'v0.330.1', tarih: '2026-10-06',
     ozet: 'Test Klonu: kontrol çakışması düzeltildi',
     maddeler: ['Klon notu artık asıl deponun adını yazmıyor; bağlantı kontrolü boşuna uyarı vermiyor.'] },

@@ -189,7 +189,7 @@ function klonAdimIcerik(p, id) {
          <button class="sec-dug" type="button" data-eylem="klon-pano" data-id="${esc(p.id)}" data-metin="${esc(yeniAd)}">📋 ${esc(yeniAd)}</button>`],
       ['Yeni deponun adresini gir', depoSlug(p.repo) ? 'Kayıtlı: <code>' + esc(depoSlug(p.repo)) + '</code>' : '',
         klonDug(p, depoSlug(p.repo) ? 'Değiştir' : 'Adresi gir', 'klon-depo', !depoSlug(p.repo))],
-    ]);
+    ]) + klonAlanUyarisi(p, kaynak);
   }
 
   if (id === 'supabase') {
@@ -239,6 +239,22 @@ function klonAdimIcerik(p, id) {
     ]);
   }
   return '';
+}
+
+/* Aynı GitHub hesabı = aynı yayın alan adı (kullanici.github.io). Tarayıcı ikisini tek
+   site sayar; localStorage, IndexedDB, çerez ve önbellek ORTAK olur. */
+function klonAyniAlan(p, kaynak) {
+  const sahip = s => (depoSlug(s) || '').split('/')[0].toLowerCase();
+  return !!(depoSlug(p.repo) && kaynak && sahip(p.repo) && sahip(p.repo) === sahip(kaynak.repo));
+}
+function klonAlanUyarisi(p, kaynak) {
+  const sahip = (depoSlug(kaynak.repo) || '').split('/')[0];
+  if (depoSlug(p.repo) && !klonAyniAlan(p, kaynak)) return '';
+  return `<div class="sec-uyari">⚠️ <b>${depoSlug(p.repo) ? 'Klon ve asıl aynı GitHub hesabında' : 'Önerim: klonu ayrı bir GitHub hesabında aç'}.</b>
+    Aynı hesaptan yayınlanırlarsa (${esc(sahip || 'hesap')}.github.io) tarayıcı ikisini tek site sayar; hafıza ortak olur ve
+    klonun yazdığı veri asılın tarafından okunabilir. En temiz çözüm klonları ayrı bir GitHub organizasyonunda açmak
+    (ör. <code>${esc(sahip || 'firma')}-klon</code>): "GitHub'da kopyala" sayfasında <b>Owner</b> olarak onu seç.
+    ${depoSlug(p.repo) ? 'Ayrı hesap mümkün değilse 4. adımın promptu hafıza adlarını klona özel yapar; kontrol bunu da denetler.' : ''}</div>`;
 }
 
 /* ---------- Eşitleme (elle başlatılır) ---------- */
@@ -375,10 +391,21 @@ function klonKoparPrompt(p) {
   s.push('3. **Dış servisler:** e-posta/SMS gönderimi, ödeme, bildirim (push), webhook, analitik ve 3. parti API');
   s.push('   anahtarlarını kapat ya da boş bırak. Uygulama açılmaya devam etsin ama hiçbir dış sisteme istek gitmesin.');
   s.push('4. **Edge Functions:** varsa kodları kalsın; içlerindeki asıl adres ve anahtarları da değiştir.');
-  s.push('5. **Ad:** uygulamanın başlığına ve adına "(Klon)" ekle ki asılla karıştırılmasın.');
-  s.push('6. Proje kimlik dosyası ya da README varsa en üstüne yalnız "Bu depo bir TEST KLONU." notunu ekle;');
+  s.push('5. **Tarayıcı hafızası (ÇOK ÖNEMLİ):** klon ile asıl aynı alan adında yayınlanırsa tarayıcı ikisini tek site');
+  s.push('   sayar ve hafızayı ORTAK kullanır; klonun yazdığı veri asılda görünür ve asıl onu müşterinin gerçek');
+  s.push('   veritabanına gönderebilir. Bu yüzden:');
+  s.push('   - localStorage, sessionStorage, IndexedDB (veritabanı ve store adları) ve çerez adlarının HEPSİNE klona özel');
+  s.push('     bir ön ek ver (ör. `yt_` → `ytklon_`). Kodda dağınık sabit ad bırakma; tek bir ön ek sabiti kullan.');
+  s.push('   - Supabase/bağlantı ayarını hafızada tutan anahtar varsa ayrıca yeniden adlandır; ayrıca açılışta hafızadan');
+  s.push('     okunan adres klonun adresi değilse (ör. asılın adresi) onu YOK SAY ve sil, koddaki klon adresini kullan.');
+  s.push('   - Service worker varsa önbellek (cache) adlarını klona özel yap; kapsamı (scope) yalnız klonun yolu olsun.');
+  s.push('   - Supabase oturum anahtarı (`sb-…-auth-token`) adresten türediği için zaten ayrılır; özel `storageKey`');
+  s.push('     verilmişse onu da klona özel yap.');
+  s.push(`${klonAyniAlan(p, kaynak) ? '   - ⚠️ Bu klon asılla AYNI GitHub hesabında: yukarıdakiler zorunlu.' : '   - Klon ayrı bir hesapta olsa bile yukarıdakileri yap (ileride aynı alana taşınabilir).'}`);
+  s.push('6. **Ad:** uygulamanın başlığına ve adına "(Klon)" ekle ki asılla karıştırılmasın.');
+  s.push('7. Proje kimlik dosyası ya da README varsa en üstüne yalnız "Bu depo bir TEST KLONU." notunu ekle;');
   s.push('   asıl deponun adını, adresini ya da alan adını YAZMA (bağlantı kontrolü bunları iz sayar).');
-  s.push('7. Commit mesajı: `[KLON] Asıl programla bağlantı koparıldı` — push et.');
+  s.push('8. Commit mesajı: `[KLON] Asıl programla bağlantı koparıldı` — push et.');
   s.push('');
   s.push('## Klonda kalmaması gereken izler');
   klonIzler(p).forEach(x => s.push('- `' + x + '`'));
@@ -405,11 +432,15 @@ function klonKontrolPrompt(p) {
   klonIzler(p).forEach(x => s.push('   - `' + x + '`'));
   s.push('2. `service_role`, `sb_secret_` ya da başka bir gizli anahtar.');
   s.push('3. Gerçek bir dış servise giden ve kapatılmamış bağlantı: e-posta/SMS, ödeme, push, webhook, analitik.');
+  s.push('4. Tarayıcı hafızası: localStorage / sessionStorage / IndexedDB / çerez / service worker önbellek adlarından');
+  s.push('   klona özel ön eki OLMAYAN var mı? Hafızadan okunan Supabase adresi doğrulanmadan kullanılıyor mu?');
+  s.push('   Klon ile asıl aynı alan adında yayınlanıyorsa (aynı GitHub hesabı) bunların her biri bir bulgudur.');
   s.push('');
   s.push('Cevabını **yalnız** şu JSON olarak ver (başka metin yazma):');
   s.push('```json');
-  s.push('{ "nizam_klon_kontrol": "1", "temiz": true, "bulunanlar": [ { "dosya": "yol/dosya.js", "satir": 12, "ne": "kısa açıklama" } ] }');
+  s.push('{ "nizam_klon_kontrol": "1", "temiz": true, "hafiza_ayrik": true, "bulunanlar": [ { "dosya": "yol/dosya.js", "satir": 12, "ne": "kısa açıklama" } ] }');
   s.push('```');
+  s.push('`hafiza_ayrik`: bütün hafıza adları klona özel ve hafızadaki bağlantı ayarı doğrulanıyorsa true.');
   s.push('Hiç iz yoksa `"temiz": true` ve `"bulunanlar": []`.');
   return s.join('\n');
 }
@@ -425,7 +456,8 @@ function klonEsitlePrompt(p) {
   s.push('## Kesin kurallar');
   s.push('- Asıl depoya ASLA push yapma; yalnız oradan oku, buraya yaz.');
   s.push('- Klonun bağlantı ayarları her zaman klonda kalır: Supabase adresi ve anahtarı, kapatılmış dış servisler,');
-  s.push('  kaldırılmış alan adı ve "(Klon)" adı. Çakışmada klonun hâli kazanır; geri kalan her şey asıldaki gibi olur.');
+  s.push('  kaldırılmış alan adı, "(Klon)" adı ve klona özel tarayıcı hafızası adları (ön ek). Çakışmada klonun hâli');
+  s.push('  kazanır; geri kalan her şey asıldaki gibi olur. Asıldan gelen yeni hafıza anahtarlarına da klon ön ekini ver.');
   s.push('');
   s.push('## Yapılacaklar');
   s.push('1. Asıl depoyu ikinci uzak olarak ekle ve çek: `git remote add asil https://github.com/' + depoSlug(kaynak.repo) + '.git`');
@@ -531,6 +563,7 @@ async function klonEylem(e, el) {
         if (j.nizam_klon_kontrol === undefined || typeof j.temiz !== 'boolean') return { hata: 'Bu, bağlantı kontrolü JSON\'u değil.' };
         const bulunanlar = Array.isArray(j.bulunanlar) ? j.bulunanlar.filter(x => x && typeof x === 'object').slice(0, 50)
           .map(x => ({ dosya: String(x.dosya || ''), satir: x.satir ? String(x.satir) : '', ne: String(x.ne || '') })) : [];
+        if (j.hafiza_ayrik === false) bulunanlar.push({ dosya: 'tarayıcı hafızası', satir: '', ne: 'Hafıza adları klona özel değil — asılla ortak hafıza riski.' });
         const temiz = j.temiz && !bulunanlar.length;
         try {
           await klonPaletYaz(p, { kontrol: { temiz, tarih: new Date().toISOString(), bulunanlar } });
