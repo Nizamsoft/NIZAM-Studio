@@ -1,5 +1,15 @@
 # Değişiklik Günlüğü
 
+## v0.325.0
+- Ayarlar → Nizam Security artık ara sayfa açmadan doğrudan proje listesine gider (`AYAR_GRUP.adres`).
+- **Sabit test veritabanı listeden tek yerde:** listenin üstünde "⚙️ Test veritabanı" kartı
+  (`secSabitTestPenceresi`). Kaydedince bütün sunuculu projelerin `security_test_ortamlari`
+  satırına yazılır (`SEC_TEST_VERI.sabitYaz`); adres değiştiyse projelerin kullanıcı/kurulum
+  bilgisi sıfırlanır. Yeni tablo yok: en son güncellenen satır esas (`sabitGetir`); listede
+  olmayan yeni proje açıldığında bir kez kendine yazar.
+- Proje ayarlarından "Test projesi" adımı çıktı: 5 ayar. Test veritabanı yoksa tarama kilidi
+  ve ayarlar sayfası listeye yönlendirir.
+
 ## v0.324.0
 - Proje ayarları sayfasının altındaki "Ana ekran" düğmesi kaldırıldı (üstteki geri oku ve
   "Taramaya geç" aynı yere gidiyordu). Ayarlar bitince tam genişlikte "Taramaya geç" çıkar.

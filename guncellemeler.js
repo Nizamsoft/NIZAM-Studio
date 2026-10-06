@@ -21,6 +21,13 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.325.0', tarih: '2026-10-06',
+    ozet: 'Nizam Security: test veritabanı tek yerde',
+    maddeler: [
+      'Ayarlar\'da Nizam Security\'ye basınca doğrudan proje listesi açılıyor.',
+      'Test veritabanı listenin üstündeki ⚙️ karttan bir kez giriliyor; bütün projeler onu kullanıyor.',
+      'Proje ayarları 5 adıma indi.',
+    ] },
   { surum: 'v0.324.0', tarih: '2026-10-06',
     ozet: 'Proje ayarlarında tek düğme',
     maddeler: [

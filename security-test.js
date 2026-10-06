@@ -32,7 +32,7 @@
 const SEC_TEST_ALAN = 'test.nizamsoft.com';   // test hesaplarının e-posta alanı
 const SEC_TEST_KONTROL_SURUM = '1';
 
-const SEC_TEST = { kayit: {}, goster: {}, mesgul: {}, yapiFark: {}, testYapi: {} };   // bellekte
+const SEC_TEST = { kayit: {}, goster: {}, mesgul: {}, yapiFark: {}, testYapi: {}, sabit: undefined };   // sabit: ortak test veritabanı   // bellekte
 
 /* ==========================================================================
    VERİ — yalnız security_test_ortamlari tablosu
@@ -60,6 +60,39 @@ const SEC_TEST_VERI = {
       const x = SEC_TEST.kayit[id];
       if (id !== projeId && x && x.test_ref === testRef) delete SEC_TEST.kayit[id];
     });
+  },
+
+  /* Sabit test veritabanı: bütün projelerde aynı. Ayrı tablo yok; en son güncellenen
+     satırın test bilgisi esas alınır, Nizam Security listesinden hepsine yazılır. */
+  async sabitGetir() {
+    if (!AUTH.bagli) return null;
+    const { data, error } = await AUTH.db.from('security_test_ortamlari')
+      .select('test_url, test_anahtar, test_ref').not('test_ref', 'is', null)
+      .order('guncellendi', { ascending: false }).limit(1);
+    if (error) throw new Error(secTestHata(error));
+    return (data && data[0]) || null;
+  },
+
+  async sabitYaz(testUrl, testAnahtar, testRef, projeler) {
+    yazmaKontrol();
+    const { data: mevcut, error: h1 } = await AUTH.db.from('security_test_ortamlari').select('proje_id, test_ref');
+    if (h1) throw new Error(secTestHata(h1));
+    const eski = {};
+    (mevcut || []).forEach(x => { eski[x.proje_id] = x.test_ref; });
+    const simdi = new Date().toISOString();
+    const satirlar = projeler.map(p => {
+      const satir = { proje_id: p.id, test_url: testUrl, test_anahtar: testAnahtar, test_ref: testRef,
+        uretim_ref: secUretimRef(p), guncellendi: simdi };
+      /* Test veritabanı değiştiyse o projenin kurulum/kullanıcı bilgisi artık geçersiz. */
+      if (eski[p.id] !== testRef) Object.assign(satir, { kullanicilar: [], kontrol: null, kontrol_tarihi: null, kurulum_tarihi: null });
+      return satir;
+    });
+    if (satirlar.length) {
+      const { error } = await AUTH.db.from('security_test_ortamlari').upsert(satirlar, { onConflict: 'proje_id' });
+      if (error) throw new Error(secTestHata(error));
+    }
+    SEC_TEST.kayit = {};
+    SEC_TEST.sabit = { test_url: testUrl, test_anahtar: testAnahtar, test_ref: testRef };
   },
 
   async kaydet(projeId, alanlar) {
@@ -939,6 +972,46 @@ function secTestParcalar(projeId) {
 /* ==========================================================================
    EYLEMLER (data-eylem="sec-t-…")
    ========================================================================== */
+
+/* Nizam Security listesindeki ⚙️: sabit test veritabanını bir kez gir, bütün projelere yazılır. */
+function secSabitTestPenceresi() {
+  const o = SEC_TEST.sabit || {};
+  modalAc(`
+    ${modalBaslik(ICON.gGuvenlik, 'Sabit test veritabanı', 'Bütün projeler bunu kullanır. Production\'dan AYRI, boş bir Supabase projesi; service_role anahtarı istenmez.')}
+    <label class="field"><span>Proje adresi</span>
+      <input type="url" id="sec-s-url" placeholder="https://xxxx.supabase.co" value="${esc(o.test_url || '')}" autocomplete="off"></label>
+    <label class="field"><span>Publishable / anon anahtarı</span>
+      <input type="text" id="sec-s-anahtar" placeholder="sb_publishable_…" value="${esc(o.test_anahtar || '')}" autocomplete="off"></label>
+    <div class="sec-hata" id="sec-s-hata" hidden></div>
+    <div class="modal-alt">
+      <button class="btn btn-ghost" data-m="iptal" type="button">Vazgeç</button>
+      <button class="btn btn-primary" data-m="tamam" type="button"><span>Kaydet</span></button>
+    </div>`, kutu => {
+    const hata = $('#sec-s-hata', kutu);
+    const goster = m => { hata.hidden = false; hata.textContent = m; };
+    $('[data-m="iptal"]', kutu).addEventListener('click', () => modalKapat());
+    $('[data-m="tamam"]', kutu).addEventListener('click', async () => {
+      const url = $('#sec-s-url', kutu).value.trim().replace(/\/+$/, '');
+      const anahtar = $('#sec-s-anahtar', kutu).value.trim();
+      const testRef = secRef(url);
+      const studioRef = secRef((typeof SUPABASE !== 'undefined' && SUPABASE.url) || '');
+      if (!testRef) return goster('Adres https://<proje>.supabase.co biçiminde olmalı.');
+      if (studioRef && testRef === studioRef) return goster('⛔ Bu adres Nizam Studio\'nun kendi veritabanı. Test ortamı olamaz.');
+      const ah = secTestAnahtarHatasi(anahtar, testRef);
+      if (ah) return goster(ah);
+      const projeler = secProjeler();
+      const ayni = projeler.filter(p => secUretimRef(p) === testRef);
+      if (ayni.length) return goster('⛔ Bu adres şu projenin PRODUCTION veritabanı: ' + ayni.map(projeAdi).join(', ') + '. Test veritabanı olamaz.');
+      const degisti = o.test_ref && o.test_ref !== testRef;
+      try {
+        await SEC_TEST_VERI.sabitYaz('https://' + testRef + '.supabase.co', anahtar, testRef, projeler);
+        modalKapat();
+        toast(degisti ? 'Test veritabanı değişti — projelerin test kullanıcıları ve kurulumu sıfırlandı.' : 'Test veritabanı kaydedildi; bütün projeler kullanacak.', 'basari');
+        render();
+      } catch (h) { goster(h.message); }
+    });
+  });
+}
 
 function secTestBaglaPenceresi(projeId) {
   const o = SEC_TEST.kayit[projeId] || {};

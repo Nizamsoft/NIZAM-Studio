@@ -164,6 +164,7 @@ const SEC = {
   yukleniyor: {},
   acik: {},           // projeId → { tabloAdı: true } — 2. adımda açık tablolar
   liste_ac: {},       // projeId → adım no: o adımdayken "Tüm adımlar" listesi açık
+  sabitYazildi: {},   // projeId → sabit test veritabanı bu oturumda yazıldı mı
   ayar_ac: {},        // projeId → { adımNo: true/false } — Proje ayarları sayfasında açık bölümler
   rol: {},            // projeId → seçili rol (açılan tablolarda)
   ara: {},            // projeId → tablo arama metni
@@ -636,6 +637,18 @@ function secListeEkran() {
     secYukle('liste', async () => { SEC.liste = await SEC_VERI.listeGetir(); });
     return iskeletler(3);
   }
+  if (SEC_TEST.sabit === undefined) {
+    secYukle('sabit', async () => { SEC_TEST.sabit = await SEC_TEST_VERI.sabitGetir(); });   // security-test.js
+    return iskeletler(3);
+  }
+  const sb = SEC_TEST.sabit;
+  const sabitKart = `
+    <button class="sec-sabit${sb ? '' : ' yok'}" type="button" data-eylem="sec-sabit" data-id="">
+      <span class="sec-sabit-ik">⚙️</span>
+      <span class="sec-sabit-yz"><b>Test veritabanı</b>
+        <i>${sb ? esc(secKisalt(sb.test_ref, 4, 4)) + '.supabase.co · bütün projeler bunu kullanır' : 'Girilmedi — taramalar için bir kez gir'}</i></span>
+      <span class="sec-sabit-ok">${sb ? 'Değiştir' : 'Gir'} ›</span>
+    </button>`;
   const projeler = secProjeler();
   const durum = pid => {
     const k = SEC.liste.find(x => x.proje_id === pid);
@@ -658,6 +671,7 @@ function secListeEkran() {
       <h1>Nizam Security</h1>
       <p>Proje seç; gerçek veritabanı yapısından istenen erişim kurallarını oluştur.</p>
     </div></div>
+    ${sabitKart}
     ${projeler.length ? `<div class="lk-liste">${kartlar}</div>`
       : `<div class="card">${empty(ICON.gGuvenlik, 'Sunuculu proje yok',
           'Nizam Security, veritabanı olan (Supabase\'li) projelerde çalışır.')}</div>`}`;
@@ -715,6 +729,22 @@ function secSihirbaz(projeId, durak) {
     secYukle('test-' + projeId, async () => { SEC_TEST.kayit[projeId] = await SEC_TEST_VERI.getir(projeId); });
     return iskeletler(3);
   }
+  if (SEC_TEST.sabit === undefined) {
+    secYukle('sabit', async () => { SEC_TEST.sabit = await SEC_TEST_VERI.sabitGetir(); });   // security-test.js
+    return iskeletler(3);
+  }
+  /* Sabit test veritabanı bu projeye henüz yazılmadıysa (yeni proje) bir kez yaz. */
+  const sb = SEC_TEST.sabit, ot = SEC_TEST.kayit[projeId];
+  const uRef = secUretimRef(p);
+  if (sb && (!ot || ot.test_ref !== sb.test_ref) && uRef && uRef !== sb.test_ref && !SEC.sabitYazildi[projeId]) {
+    SEC.sabitYazildi[projeId] = true;
+    secYukle('sabit-' + projeId, async () => {
+      const alan = { test_url: sb.test_url, test_anahtar: sb.test_anahtar, test_ref: sb.test_ref, uretim_ref: uRef };
+      if (ot && ot.test_ref) Object.assign(alan, { kullanicilar: [], kontrol: null, kontrol_tarihi: null, kurulum_tarihi: null });
+      await SEC_TEST_VERI.kaydet(projeId, alan);
+    });
+    return iskeletler(3);
+  }
   const durumlar = secAdimDurum(projeId);
   /* Sayfalar: ana ekran · ayarlar (1–6) · duzelt (8) · teslim (9) · acik/<sıra>.
      Eski adresler (sayılı adımlar, /test, /testler) karşılıklarına düşer. */
@@ -745,18 +775,23 @@ function secTekSayfa(projeId, n, icerik) {
 }
 
 /* Taramadan önce bir kez yapılan 6 ayar, tek sayfada. Bitmemişler açık gelir. */
+/* Proje başına yapılan ayarlar (test veritabanı artık listede, bütün projeler için tek). */
+const SEC_AYAR_SIRA = [0, 1, 3, 4, 5];   // SEC_ADIMLAR içindeki sıraları: yapı, kurallar, kurulum, kullanıcılar, veri
+
 function secAyarlarSayfa(projeId, durumlar) {
   const ok = svg(ICON.chevron, 15);
   const acik = SEC.ayar_ac[projeId] || {};
-  const biten = durumlar.slice(0, 6).filter(x => x.bitti).length;
-  const ilk = durumlar.slice(0, 6).findIndex(x => !x.bitti);
-  const bolum = (x, i) => {
-    const d = durumlar[i];
+  const toplam = SEC_AYAR_SIRA.length;
+  const biten = SEC_AYAR_SIRA.filter(i => durumlar[i].bitti).length;
+  const ilk = SEC_AYAR_SIRA.find(i => !durumlar[i].bitti);
+  const testYok = !durumlar[2].bitti;
+  const bolum = (i, sira) => {
+    const x = SEC_ADIMLAR[i], d = durumlar[i];
     const ac = acik[i + 1] !== undefined ? acik[i + 1] : !d.bitti && i === ilk;
     return `
       <div class="secv-ayar ${d.bitti ? 'bitti' : i === ilk ? 'simdi' : ''}${ac ? ' acik' : ''}">
         <button class="secv-adim" type="button" data-eylem="sec-ayar-ac" data-id="${esc(projeId)}" data-n="${i + 1}" data-ac="${ac}">
-          <span class="secv-adim-no">${i + 1}</span>
+          <span class="secv-adim-no">${sira + 1}</span>
           <span class="secv-adim-yz"><b>${esc(x.ad)}</b><i>${esc(d.yazi || x.kisa)}</i></span>
           <span class="secv-adim-s">${d.bitti ? `<i class="secv-tik">${SEC_TIK}</i>` : ac ? '⌄' : '›'}</span>
         </button>
@@ -767,11 +802,12 @@ function secAyarlarSayfa(projeId, durumlar) {
     <div class="secv-ust">
       <a class="secv-geri" href="#/security/${esc(projeId)}" aria-label="Ana ekrana dön">${ok}</a>
       <div class="secv-ust-yz"><h1>Proje ayarları</h1>
-        <p>Taramadan önce bir kez yapılır. <b>${biten} / 6 tamam</b>${biten < 6 ? ' · ' + (6 - biten) + ' eksik' : ''}</p></div>
+        <p>Taramadan önce bir kez yapılır. <b>${biten} / ${toplam} tamam</b>${biten < toplam ? ' · ' + (toplam - biten) + ' eksik' : ''}</p></div>
     </div>
-    <div class="secv-cubuk">${durumlar.slice(0, 6).map((x, i) => `<i class="${x.bitti ? 'bitti' : i === ilk ? 'su' : ''}"></i>`).join('')}</div>
-    <div class="secv-adimlar">${SEC_ADIMLAR.slice(0, 6).map(bolum).join('')}</div>
-    ${biten === 6 ? `<a class="secv-buyuk" href="#/security/${esc(projeId)}">Taramaya geç ›</a>` : ''}`;
+    ${testYok ? `<div class="sec-uyari">⚠️ Test veritabanı girilmemiş. <a href="#/security">Nizam Security listesindeki ⚙️ Test veritabanı</a>'ndan bir kez gir; bütün projeler kullanır.</div>` : ''}
+    <div class="secv-cubuk">${SEC_AYAR_SIRA.map(i => `<i class="${durumlar[i].bitti ? 'bitti' : i === ilk ? 'su' : ''}"></i>`).join('')}</div>
+    <div class="secv-adimlar">${SEC_AYAR_SIRA.map(bolum).join('')}</div>
+    ${biten === toplam && !testYok ? `<a class="secv-buyuk" href="#/security/${esc(projeId)}">Taramaya geç ›</a>` : ''}`;
 }
 
 /* Projenin Security ana ekranı: kahraman kart, durum, sayılar, tarama düğmesi,
@@ -797,15 +833,18 @@ function secAnaSayfa(projeId, durumlar) {
   if (calisiyor) return hero + secTaramaEkran(projeId);   // security-okuma.js
 
   const kisiSay = (o.kullanicilar || []).filter(x => x.kimlik).length;
-  const biten = durumlar.slice(0, 6).filter(x => x.bitti).length;
-  const hazir = biten === 6;
-  const engel = hazir ? secUretimAyriMi(p, o) : 'Önce proje ayarlarını tamamla (' + (6 - biten) + ' eksik).';
+  const toplam = SEC_AYAR_SIRA.length;
+  const biten = SEC_AYAR_SIRA.filter(i => durumlar[i].bitti).length;
+  const testYok = !durumlar[2].bitti;
+  const hazir = biten === toplam && !testYok;
+  const engel = testYok ? 'Önce Nizam Security listesinden ⚙️ Test veritabanı\'nı gir.'
+    : hazir ? secUretimAyriMi(p, o) : 'Önce proje ayarlarını tamamla (' + (toplam - biten) + ' eksik).';
   const kur = `
-    <a class="secv-kur${hazir ? ' tamam' : ''}" href="#/security/${esc(projeId)}/ayarlar">
+    <a class="secv-kur${biten === toplam ? ' tamam' : ''}" href="#/security/${esc(projeId)}/ayarlar">
       <span class="secv-kur-ik">⚙️</span>
       <span class="secv-adim-yz"><b>Proje ayarlarını kur</b>
-        <i>${hazir ? '6 / 6 tamam · değiştirmek için dokun' : biten + ' / 6 tamam · ' + (6 - biten) + ' eksik'}</i></span>
-      <span class="secv-adim-s">${hazir ? `<i class="secv-tik">${SEC_TIK}</i>` : '›'}</span>
+        <i>${biten === toplam ? toplam + ' / ' + toplam + ' tamam · değiştirmek için dokun' : biten + ' / ' + toplam + ' tamam · ' + (toplam - biten) + ' eksik'}</i></span>
+      <span class="secv-adim-s">${biten === toplam ? `<i class="secv-tik">${SEC_TIK}</i>` : '›'}</span>
     </a>`;
 
   /* Sıradaki iş: sorun varsa Düzelt, yoksa Teslim kontrolü. */
@@ -1071,6 +1110,7 @@ async function securityEylem(e, el) {
     return true;
   }
   if (e === 'sec-rol') { SEC.rol[projeId] = el.dataset.rol; render(); return true; }
+  if (e === 'sec-sabit') { secSabitTestPenceresi(); return true; }   // security-test.js
   if (e === 'sec-ayar-ac') {
     const a = SEC.ayar_ac[projeId] = SEC.ayar_ac[projeId] || {};
     a[el.dataset.n] = el.dataset.ac !== 'true';

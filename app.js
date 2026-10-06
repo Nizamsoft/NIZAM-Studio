@@ -1116,6 +1116,7 @@ const AYAR_GRUP = {
 
   security: {
     ad: 'Nizam Security', renk: 'yesil', ikon: 'gGuvenlik',
+    adres: '#/security',   // ara sayfa yok: doğrudan proje listesi
     aciklama: 'Projelerin olması istenen erişim kuralları.',
     goster: () => AUTH.yonetici,
     ciz: () => `<div class="kt-liste">${ayarKarti({
@@ -1351,7 +1352,7 @@ function ayarListesi() {
         ${anahtarlar.map(k => {
           const g = AYAR_GRUP[k];
           return `
-            <a class="ay-grup" href="#/ayarlar/${k}" draggable="false">
+            <a class="ay-grup" href="${g.adres || '#/ayarlar/' + k}" draggable="false">
               <span class="ay-ikon ${g.renk}">${svg(ICON[g.ikon], 24)}</span>
               <span class="ay-grup-yz">
                 <b>${esc(g.ad)}</b>
