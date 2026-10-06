@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.326.0
+- Security ana ekranındaki "‹ Nizam Security" geri bağlantısı kaldırıldı (üst çubuktaki geri yeterli).
+
 ## v0.325.0
 - Ayarlar → Nizam Security artık ara sayfa açmadan doğrudan proje listesine gider (`AYAR_GRUP.adres`).
 - **Sabit test veritabanı listeden tek yerde:** listenin üstünde "⚙️ Test veritabanı" kartı

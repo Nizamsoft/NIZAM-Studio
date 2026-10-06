@@ -21,6 +21,9 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.326.0', tarih: '2026-10-06',
+    ozet: 'Nizam Security: fazladan geri düğmesi kalktı',
+    maddeler: ['Proje ekranının üstündeki ikinci geri düğmesi kaldırıldı.'] },
   { surum: 'v0.325.0', tarih: '2026-10-06',
     ozet: 'Nizam Security: test veritabanı tek yerde',
     maddeler: [

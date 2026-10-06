@@ -823,7 +823,6 @@ function secAnaSayfa(projeId, durumlar) {
   const p = DB.proje(projeId);
   const o = SEC_TEST.kayit[projeId] || {};
   const hero = `
-    <a class="tl-geri" href="#/security">${svg(ICON.chevron, 14)} Nizam Security</a>
     <div class="secv-hero">
       <div class="secv-hero-yz"><h1>${esc(basHarfleriBuyuk(projeAdi(p)))}</h1><p>Güvenli, sağlam ve kontrol altında.</p></div>
       <span class="secv-kalkan">${SEC_KALKAN}</span>
