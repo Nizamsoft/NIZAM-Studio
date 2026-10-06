@@ -7596,7 +7596,7 @@ function finalSayfasi(p, d) {
   const s       = DB.sayim(p.id);
   const hazir   = gelistirmeBitti(p);
   /* Faz 7: Final ayrıca yeni Security kilidine bağlı. Durum async gelir. */
-  const guvVar  = sunuculuMu(p);
+  const guvVar  = false;   // eski güvenlik kilidi kapalı — yerini Nizam Security aldı
   const fd      = guvVar ? guvenlikFinalDurumu(p.id) : null;
   if (guvVar && fd === null) guvenlikFinalYukle(p.id);
   const guvKilit = !!(fd && fd.kilitli);
@@ -7654,7 +7654,7 @@ function finalSayfasi(p, d) {
         </div>
       </div>`
     + notListesi
-    + guvenlikFinalKart(p, fd)
+
     + (verildi ? '' : `
       <button class="sayfa-dug bitir" type="button" data-eylem="final-onay"
               data-proje="${p.id}" ${finalHazir ? '' : 'disabled'}>
@@ -7896,31 +7896,12 @@ function projeDuraklari(p) {
           : 'Son onayı bekliyor.',
     },
     sunuculuMu(p) ? {
-      /* Bu durak "tamamlandı" işareti taşımıyor: elle onaylanan bir görev
-         değil, her çalıştırıldığında o anki hâli söyleyen bir ölçü aleti.
-         Listede duran şey son testin tarihi ve sonucu. */
-      /* İki koşul birden: son ölçüm temiz OLACAK ve kullanıcı "başarılı"
-         diyecek. Yalnız ölçüme bakmak yetmiyordu — test bittiği anda aşama
-         kendiliğinden kapanıyor, sonucu okumaya fırsat kalmıyordu. Açık
-         çıkan yeni bir ölçüm onayı kendiliğinden düşürüyor (bkz.
-         guvenlik-durak-test). */
+      /* Eski güvenlik kontrolü aşaması: yerini Nizam Security aldı (Ayarlar →
+         Nizam Security). Gizli ve sayılmaz; Final'i de kilitlemez. Kod yerinde. */
       ad: 'Güvenlik kontrolü',
-      /* Faz 7: yeni Security kaynak gerçekliktir. Durum önbellekte yüklüyse
-         ondan; yoksa listede ağır sorgu tetiklememek için nötr (bitmemiş).
-         Eski palet.guvenlikOlcum yeni karara DÖNÜŞTÜRÜLMEZ. */
-      bitti: (function () {
-        const fd = (typeof guvenlikFinalDurumu === 'function') ? guvenlikFinalDurumu(p.id) : null;
-        if (fd && !fd.hata && fd.var !== false && !fd.denetimYok) return !fd.kilitli;
-        return false;
-      })(),
-      ozet: (function () {
-        const fd = (typeof guvenlikFinalDurumu === 'function') ? guvenlikFinalDurumu(p.id) : null;
-        if (fd && fd.var !== false && !fd.denetimYok && !fd.hata) {
-          return 'Denetim #' + String(fd.son_denetim_no).padStart(3, '0') + ' · '
-            + (fd.kilitli ? (fd.acik_kritik + fd.acik_yuksek) + ' kritik/yüksek açık' : 'kritik/yüksek açık yok');
-        }
-        return 'Yeni Security denetimi henüz yapılmadı.';
-      })(),
+      bitti: true,
+      sayilmaz: true,
+      gizli: true,
     } : {
       /* Verisi tarayıcıda duran projede sunucu tarafı yok: saldırılacak bir
          kapı da yok. Gizlenmezse Final sonsuza kadar kilitli kalırdı. */
@@ -15426,7 +15407,7 @@ async function eylemCalistir(el) {
     if (!rolListesi(pl.roller).length || !pl.yetkiKodTamamlandi) return;
     if (!await onaySor({
       baslik: 'Yetkilendirme tamamlandı mı?',
-      mesaj: 'Kısıtlamalar koda işlendiğinde onayla — Güvenlik kontrolü açılacak.',
+      mesaj: 'Kısıtlamalar koda işlendiğinde onayla. Güvenliği Nizam Security ile test et.',
       buton: 'Eminim',
     })) return;
     return isYap(() => DB.paletKaydet(pr.id,
@@ -16028,10 +16009,6 @@ async function eylemCalistir(el) {
     }
     /* Faz 7: güvenlik kilidini sunucuda değil ama son savunma olarak burada
        da doğrula — kilitliyse final verilmez. */
-    if (sunuculuMu(pr)) {
-      const fd = guvenlikFinalDurumu(pr.id);
-      if (fd && fd.kilitli) { toast('Kritik/yüksek güvenlik bulgusu var — Final kilitli.', 'uyari'); return; }
-    }
     if (!await onaySor({
       baslik: 'Final verilsin mi?',
       mesaj: 'Uygulamayı denedin ve sorunsuz bulduğunda onayla. Bundan sonraki '

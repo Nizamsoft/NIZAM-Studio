@@ -21,6 +21,13 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.329.0', tarih: '2026-10-06',
+    ozet: 'Eski "Güvenlik kontrolü" aşaması kalktı',
+    maddeler: [
+      'Projelerdeki eski güvenlik aşaması gizlendi; güvenlik testleri Nizam Security\'de.',
+      'Final aşaması artık eski güvenlik ölçümü yüzünden kilitlenmiyor.',
+      'Yetkilendirme promptu Claude\'a artık guvenlik.json yazdırmıyor.',
+    ] },
   { surum: 'v0.328.0', tarih: '2026-10-06',
     ozet: 'Eski güvenlik testi Ayarlar\'dan kalktı',
     maddeler: ['Ayarlar\'daki eski "Güvenlik Testi" kaldırıldı; güvenlik testleri artık Nizam Security\'de.'] },

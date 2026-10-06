@@ -1,5 +1,12 @@
 # Değişiklik Günlüğü
 
+## v0.329.0
+- Projelerdeki eski **"Güvenlik kontrolü" aşaması gizlendi** (gizli + sayılmaz + bitti); yerini
+  Nizam Security aldı. Final artık eski güvenlik ölçümüne kilitlenmiyor (`finalSayfasi` guvVar
+  kapalı, `final-onay` kontrolü kaldırıldı, Final'deki eski güvenlik kartı çıktı).
+- Yetkilendirme promptundan `guvenlik.json` bölümü çıkarıldı; bitiş bloğu `{ "kuruldu": true }`
+  (okuyucu eski alanı zaten zorunlu tutmuyordu). Eski kod dosyaları yerinde, ekranda açılmıyor.
+
 ## v0.328.0
 - Ayarlar'daki eski "Güvenlik" başlığı (Güvenlik Testi, `#/guvenlik`) gizlendi (`goster: () => false`);
   yerini Nizam Security aldı. Kod ve proje aşaması şimdilik yerinde.
