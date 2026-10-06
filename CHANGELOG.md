@@ -1,5 +1,14 @@
 # Değişiklik Günlüğü
 
+## v0.327.0
+- **Test kurulumu sadeleşti:** şema/akış ve madde listesi kaldırıldı (`secTestSema` silindi);
+  yalnız "📋 SQL'i kopyala" + "✅ Çalıştırdım". Kopyalamak artık tamam saymaz
+  (`kurulum_tarihi` yalnız `sec-t-kurulum-tamam` ile yazılır).
+- **Sahte veri** aynı düzende: prompt → SQL yapıştır (kopyalanır) → "Çalıştırdım"
+  (`veri_tarihi` yalnız `sec-t-veri-tamam` ile). Tamam sayılması için test kullanıcıları da tam olmalı.
+- Düzeltme: test veritabanı değişince ve kullanıcılar yeniden açılınca `veri_sql`/`veri_tarihi`
+  sıfırlanır (eski veritabanının SQL'i "tamam" görünüyordu).
+
 ## v0.326.0
 - Security ana ekranındaki "‹ Nizam Security" geri bağlantısı kaldırıldı (üst çubuktaki geri yeterli).
 

@@ -21,6 +21,13 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.327.0', tarih: '2026-10-06',
+    ozet: 'Test kurulumu ve sahte veri: kopyala, çalıştır, onayla',
+    maddeler: [
+      'Test kurulumunda yalnız "SQL\'i kopyala" ve "Çalıştırdım" düğmeleri kaldı.',
+      'Adım artık kopyalayınca değil, "Çalıştırdım"a basınca tamam sayılıyor; sahte veri de öyle.',
+      'Test veritabanı değişince eski sahte veri yanlışlıkla "tamam" görünmüyor.',
+    ] },
   { surum: 'v0.326.0', tarih: '2026-10-06',
     ozet: 'Nizam Security: fazladan geri düğmesi kalktı',
     maddeler: ['Proje ekranının üstündeki ikinci geri düğmesi kaldırıldı.'] },

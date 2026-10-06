@@ -84,7 +84,7 @@ const SEC_TEST_VERI = {
       const satir = { proje_id: p.id, test_url: testUrl, test_anahtar: testAnahtar, test_ref: testRef,
         uretim_ref: secUretimRef(p), guncellendi: simdi };
       /* Test veritabanı değiştiyse o projenin kurulum/kullanıcı bilgisi artık geçersiz. */
-      if (eski[p.id] !== testRef) Object.assign(satir, { kullanicilar: [], kontrol: null, kontrol_tarihi: null, kurulum_tarihi: null });
+      if (eski[p.id] !== testRef) Object.assign(satir, { kullanicilar: [], kontrol: null, kontrol_tarihi: null, kurulum_tarihi: null, veri_sql: null, veri_tarihi: null });
       return satir;
     });
     if (satirlar.length) {
@@ -907,12 +907,12 @@ function secTestParcalar(projeId) {
     dug(bagli ? 'Değiştir' : 'Bağla', 'sec-t-bagla', '', !bagli));
 
   /* SQL kopyalandıysa "tamam" sayılır; gerçekten kurulu mu, tarama başlarken denetlenir. */
-  const kart2 = kart(2, kuruldu || !!o.kurulum_tarihi, 'Yapı + kurallar', kuruldu ? yapi.tablolar.length + ' tablo · ' + kuralSay + ' RLS kuralı' : (o.kurulum_tarihi ? 'SQL kopyalandı' : 'Bekliyor'),
-    ((yapi.gorunumler || []).length ? sat('Görünümler', yapi.gorunumler.length) : '')
-    + `<p class="sec-t-not">Sabit test veritabanı: kurulum içindeki her şeyi siler ve bu projeyi kurar.
-       Başka bir proje yüklüyse onun yapısı ve test kullanıcıları da silinir.</p>`,
-    dug('SQL\'i kopyala', 'sec-t-kurulum', '', false, !bagli)
-    + `<span class="sec-t-ipucu">TEST projesinin SQL Editor'ünde çalıştır</span>`);
+  /* "Çalıştırdım" ile onaylanır (kurulum_tarihi); tarama hazırlığı okuduysa da tamam. */
+  const kurulumTamam = kuruldu || !!o.kurulum_tarihi;
+  const kart2 = kart(2, kurulumTamam, 'Yapı + kurallar', kurulumTamam ? 'Kuruldu' : 'Bekliyor',
+    `<p class="sec-t-not">SQL'i kopyala, test veritabanının SQL Editor'ünde çalıştır, sonra "Çalıştırdım"a bas.</p>`,
+    dug('📋 SQL\'i kopyala', 'sec-t-kurulum', '', !kurulumTamam, !bagli)
+    + dug('✅ Çalıştırdım', 'sec-t-kurulum-tamam', '', false, !bagli || kurulumTamam));
 
   const kisiSatir = kisiler.length ? `<div class="secv-kisiler">${kisiler.map(x => `
     <div class="secv-kisi"><span class="secv-av">${esc((x.etiket || '?').charAt(0))}</span>
@@ -927,12 +927,14 @@ function secTestParcalar(projeId) {
     + (kisiler.length ? dug(goster ? 'Şifreleri gizle' : 'Şifreleri göster', 'sec-t-sifre') : '')
     + (kisiler.length ? dug('Yeniden oluştur', 'sec-t-yeniden', '', false, mesgul) : ''));
 
-  const kart4 = kart(4, veriVar || !!o.veri_sql, 'Sahte veri', veriVar ? 'Yüklendi' : (o.veri_sql ? 'SQL hazır' : 'Bekliyor'),
-    sat('Claude, modele göre en az veriyi yazar', '')
-    + sat('Örnek: A\'nın kaydı · B\'nin kaydı · Şube 1 / Şube 2', ''),
-    dug('Prompt', 'sec-t-veri-prompt', '', true, !kisiTamam)
-    + dug('SQL yapıştır → kopyala', 'sec-t-veri', '', false, !kisiTamam)
-    + (o.veri_sql ? dug('Tekrar kopyala', 'sec-t-veri-kopya') : ''));
+  const veriTamam = veriVar || (!!o.veri_tarihi && kisiTamam);
+  const kart4 = kart(4, veriTamam, 'Sahte veri', veriTamam ? 'Yüklendi' : (o.veri_sql ? 'SQL hazır · çalıştırınca onayla' : 'Bekliyor'),
+    `<p class="sec-t-not">${kisiTamam ? '1) Promptu Claude\'a ver. 2) Verdiği SQL\'i yapıştır; Studio kopyalar. 3) Test veritabanının SQL Editor\'ünde çalıştır, "Çalıştırdım"a bas.'
+      : 'Önce test kullanıcılarını oluştur.'}</p>`,
+    dug('📋 Promptu kopyala', 'sec-t-veri-prompt', '', !o.veri_sql && !veriTamam, !kisiTamam)
+    + dug(o.veri_sql ? 'SQL\'i yeniden yapıştır' : 'SQL yapıştır', 'sec-t-veri', '', false, !kisiTamam)
+    + (o.veri_sql ? dug('📋 Tekrar kopyala', 'sec-t-veri-kopya') : '')
+    + (o.veri_sql ? dug('✅ Çalıştırdım', 'sec-t-veri-tamam', '', !veriTamam, veriTamam) : ''));
 
   const yf = secGuncelFark(projeId);
   const yfSay = secFarkSay(yf);
@@ -1046,7 +1048,7 @@ function secTestBaglaPenceresi(projeId) {
       const alan = { test_url: 'https://' + testRef + '.supabase.co', test_anahtar: anahtar,
         test_ref: testRef, uretim_ref: uretimRef };
       if (!o.test_ref || degisti) {
-        Object.assign(alan, { kullanicilar: [], kontrol: null, kontrol_tarihi: null, kurulum_tarihi: null });
+        Object.assign(alan, { kullanicilar: [], kontrol: null, kontrol_tarihi: null, kurulum_tarihi: null, veri_sql: null, veri_tarihi: null });
       }
       try {
         await SEC_TEST_VERI.kaydet(projeId, alan);
@@ -1069,7 +1071,7 @@ async function secTestKisileriOlustur(projeId, yeniden) {
   let kisiler = o.kullanicilar || [];
   if (yeniden || !kisiler.length) {
     kisiler = secTestKisiPlani(k.model, secKod());
-    o = await SEC_TEST_VERI.kaydet(projeId, { kullanicilar: kisiler, kontrol: null, kontrol_tarihi: null });
+    o = await SEC_TEST_VERI.kaydet(projeId, { kullanicilar: kisiler, kontrol: null, kontrol_tarihi: null, veri_sql: null, veri_tarihi: null });
   }
   SEC_TEST.mesgul[projeId] = true; render();
   let dogrulama = false, hata = '';
@@ -1168,8 +1170,19 @@ async function secTestEylem(e, el) {
       SEC_TEST.yapiFark[projeId] = null;   // kurulumdan sonra karşılaştırma eskidi
       SEC_TEST.testYapi[projeId] = null;
       try { await SEC_TEST_VERI.devret(o.test_ref, projeId); } catch (h) {}
-      try { await SEC_TEST_VERI.kaydet(projeId, { kurulum_tarihi: new Date().toISOString() }); render(); } catch (h) {}
+      try { await SEC_TEST_VERI.kaydet(projeId, { kurulum_tarihi: null }); render(); } catch (h) {}
     }
+    return true;
+  }
+
+  /* Kullanıcı SQL'i test veritabanında çalıştırdığını onaylar. */
+  if (e === 'sec-t-kurulum-tamam' || e === 'sec-t-veri-tamam') {
+    const alan = e === 'sec-t-kurulum-tamam' ? 'kurulum_tarihi' : 'veri_tarihi';
+    try {
+      await SEC_TEST_VERI.kaydet(projeId, { [alan]: new Date().toISOString() });
+      toast('Tamam olarak işaretlendi. Gerçekten kurulu mu, tarama başlarken denetlenir.', 'basari');
+      render();
+    } catch (h) { toast(h.message, 'hata'); }
     return true;
   }
 
@@ -1203,7 +1216,7 @@ async function secTestEylem(e, el) {
         const r = secTestVeriOku(metin);
         if (r.hata) return r;
         try {
-          await SEC_TEST_VERI.kaydet(projeId, { veri_sql: r.sql, veri_tarihi: new Date().toISOString() });
+          await SEC_TEST_VERI.kaydet(projeId, { veri_sql: r.sql, veri_tarihi: null });
         } catch (h) { return { hata: h.message }; }
         await kopyala(secTestVeriSar(r.sql, projeId, o), 'Veri SQL\'i kopyalandı — TEST projesinin SQL Editor\'ünde çalıştır.');
         render();

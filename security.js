@@ -740,7 +740,7 @@ function secSihirbaz(projeId, durak) {
     SEC.sabitYazildi[projeId] = true;
     secYukle('sabit-' + projeId, async () => {
       const alan = { test_url: sb.test_url, test_anahtar: sb.test_anahtar, test_ref: sb.test_ref, uretim_ref: uRef };
-      if (ot && ot.test_ref) Object.assign(alan, { kullanicilar: [], kontrol: null, kontrol_tarihi: null, kurulum_tarihi: null });
+      if (ot && ot.test_ref) Object.assign(alan, { kullanicilar: [], kontrol: null, kontrol_tarihi: null, kurulum_tarihi: null, veri_sql: null, veri_tarihi: null });
       await SEC_TEST_VERI.kaydet(projeId, alan);
     });
     return iskeletler(3);
@@ -893,7 +893,7 @@ function secAdimIcerik(projeId, n) {
     if (t.hata) return t.hata;
     const kr = t.kartlar[n - 3];
     return (n === 3 && t.kalkan ? `<p class="sec-t-ipucu">${t.kalkan}</p>` : '')
-      + (n === 4 ? secTestSema(projeId) : '')
+
       + `<div class="sec-sb-kart">${kr.govde}<div class="sec-t-dg">${kr.dugmeler}</div></div>`;
   }
   if (n === 7) return secOkumaGovde(projeId);   // security-okuma.js
@@ -923,42 +923,6 @@ function secDuzeltIcerik(projeId) {
     + (t.hata ? '' : (t.yfSay ? t.farkHtml : '') + t.yedek);
 }
 
-/* 4. adım: gerçek → izole kopya → test ortamı akışı ve kurulum maddeleri. */
-const SEC_DB = r => `<svg viewBox="0 0 40 46" width="34" height="40" aria-hidden="true"><g fill="${r ? '#e5342a' : '#56565c'}">
-  <ellipse cx="20" cy="8" rx="16" ry="6"/><path d="M4 12c0 3.3 7.2 6 16 6s16-2.7 16-6v8c0 3.3-7.2 6-16 6S4 23.3 4 20z"/>
-  <path d="M4 24c0 3.3 7.2 6 16 6s16-2.7 16-6v8c0 3.3-7.2 6-16 6S4 35.3 4 32z"/></g></svg>`;
-function secTestSema(projeId) {
-  const p = DB.proje(projeId);
-  const k = SEC.kayit[projeId] || {};
-  const o = SEC_TEST.kayit[projeId] || {};
-  const d = secAdimDurum(projeId);
-  const yapi = k.yapi || { tablolar: [] };
-  const kural = yapi.tablolar.reduce((n, t) => n + (t.politikalar || []).length, 0);
-  const kisiSay = (o.kullanicilar || []).filter(x => x.kimlik).length;
-  const kutu = (ikon, ad, durum, ok, alt) => `
-    <div class="secv-db"><span class="secv-db-ik">${ikon}</span>
-      <div><b>${esc(ad)}</b><i class="${ok ? 'ok' : ''}">● ${esc(durum)}</i><small>${esc(alt)}</small></div></div>`;
-  const madde = (ad, alt, ok) => `<div class="secv-cl${ok ? ' ok' : ''}"><span>${ok ? SEC_TIK : ''}</span>
-    <div><b>${esc(ad)}</b><i>${esc(alt)}</i></div></div>`;
-  return `
-    <div class="secv-sema">
-      <div class="secv-akis">
-        ${kutu(SEC_DB(false), 'Production', d[0].bitti ? 'Okundu' : 'Bekliyor', d[0].bitti, (secKisalt(secUretimRef(p) || '?', 4, 4)) + '.supabase.co')}
-        <span class="secv-ok">↓</span>
-        ${kutu('📄', 'İzole kopya', d[3].bitti ? 'Kuruldu' : 'Bekliyor', d[3].bitti, 'Gerçek yapının kopyası, gerçek veri yok')}
-        <span class="secv-ok">↓</span>
-        ${kutu(SEC_DB(true), 'Test ortamı', d[2].bitti ? (d[3].bitti ? 'Hazır' : 'Bağlı') : 'Bağlanmadı', d[2].bitti && d[3].bitti,
-          o.test_ref ? secKisalt(o.test_ref, 4, 4) + '.supabase.co' : '—')}
-      </div>
-      <div class="secv-cl-liste">
-        ${madde('Şema', yapi.tablolar.length + ' tablo', d[3].bitti)}
-        ${madde('RLS kuralları', kural + ' kural', d[3].bitti)}
-        ${madde('Fonksiyonlar', (yapi.fonksiyonlar || []).length + ' fonksiyon', d[3].bitti)}
-        ${madde('Kullanıcılar', kisiSay + ' test kullanıcısı', d[4].bitti)}
-        ${madde('Sahte veri', d[5].bitti ? 'Hazır' : 'Bekliyor', d[5].bitti)}
-      </div>
-    </div>`;
-}
 
 function secSatirAd(d) {
   if (!d) return '—';
