@@ -666,15 +666,15 @@ function secListeEkran() {
    Dokuz adım tek sırada: #/security/<id>/<1–9>. Adres adımsızsa ilk eksik
    adım açılır. Şimdilik kilit yok: her adıma geçilebilir. */
 const SEC_ADIMLAR = [
-  { ad: 'Gerçek yapı', ikon: '🗄️', aciklama: 'Studio, gerçek veritabanının tablolarını, kolonlarını ve kurallarını okur. Hiçbir müşteri verisi alınmaz.' },
-  { ad: 'Olması gereken güvenlik', ikon: '🤖', aciklama: 'Claude, gerçek yapına bakıp hangi rolün neyi görüp değiştirebileceğini yazar.' },
-  { ad: 'Test projesi', ikon: '🔌', aciklama: 'Testler gerçek veritabanında değil, ayrı bir test projesinde çalışır. Bir kez bağlanır, her proje kullanır.' },
-  { ad: 'Test kurulumu', ikon: '🏗️', aciklama: 'Gerçek yapının bir kopyası test projesine kurulur.' },
-  { ad: 'Test kullanıcıları', ikon: '👥', aciklama: 'Her rol için gerçekten giriş yapabilen test hesapları açılır.' },
-  { ad: 'Sahte veri', ikon: '🧪', aciklama: 'Test veritabanına, testlerin deneyeceği sahte kayıtlar eklenir. Gerçek müşteri verisi kullanılmaz.' },
-  { ad: 'Tarama', ikon: '🛡️', aciklama: 'Test kullanıcıları ve giriş yapmamış bir ziyaretçi; okumayı, eklemeyi, değiştirmeyi ve silmeyi dener.' },
-  { ad: 'Düzelt ve doğrula', ikon: '🔧', aciklama: 'Açıkları Claude\'a bildir, göç dosyalarını önce teste sonra gerçeğe uygula, yeniden tara.' },
-  { ad: 'Teslim öncesi kontrol', ikon: '✅', aciklama: 'Taramanın göremediği beş şeyi son kez kontrol et.' },
+  { ad: 'Gerçek yapı', kisa: 'Production veritabanı analizi', ikon: '🗄️', aciklama: 'Studio, gerçek veritabanının tablolarını, kolonlarını ve kurallarını okur. Hiçbir müşteri verisi alınmaz.' },
+  { ad: 'Olması gereken güvenlik', kisa: 'Roller, tablolar ve yetkiler', ikon: '🤖', aciklama: 'Claude, gerçek yapına bakıp hangi rolün neyi görüp değiştirebileceğini yazar.' },
+  { ad: 'Test projesi', kisa: 'Ayrı test veritabanı', ikon: '🔌', aciklama: 'Testler gerçek veritabanında değil, ayrı bir test projesinde çalışır. Bir kez bağlanır, her proje kullanır.' },
+  { ad: 'Test kurulumu', kisa: 'İzole kopya', ikon: '🏗️', aciklama: 'Gerçek yapının bir kopyası test projesine kurulur.' },
+  { ad: 'Test kullanıcıları', kisa: 'Her rol için hesaplar', ikon: '👥', aciklama: 'Her rol için gerçekten giriş yapabilen test hesapları açılır.' },
+  { ad: 'Sahte veri', kisa: 'Deneme kayıtları', ikon: '🧪', aciklama: 'Test veritabanına, testlerin deneyeceği sahte kayıtlar eklenir. Gerçek müşteri verisi kullanılmaz.' },
+  { ad: 'Tarama', kisa: 'Okuma, yazma ve ziyaretçi testleri', ikon: '🛡️', aciklama: 'Test kullanıcıları ve giriş yapmamış bir ziyaretçi; okumayı, eklemeyi, değiştirmeyi ve silmeyi dener.' },
+  { ad: 'Düzelt ve doğrula', kisa: 'Göç dosyaları ve tekrar test', ikon: '🔧', aciklama: 'Açıkları Claude\'a bildir, göç dosyalarını önce teste sonra gerçeğe uygula, yeniden tara.' },
+  { ad: 'Teslim öncesi kontrol', kisa: 'Son güvenlik adımları', ikon: '✅', aciklama: 'Taramanın göremediği beş şeyi son kez kontrol et.' },
 ];
 
 /* Her adım için: bitti mi, durum yazısı. */
@@ -717,75 +717,71 @@ function secSihirbaz(projeId, durak) {
   const durumlar = secAdimDurum(projeId);
   const toplam = SEC_ADIMLAR.length;
   const eski = { test: 3, testler: 7 };   // eski sekme adresleri
-  let n = Number(durak) || eski[durak] || 0;
-  if (!(n >= 1 && n <= toplam)) {
-    const ilk = durumlar.findIndex(d => !d.bitti);
-    n = ilk < 0 ? 7 : ilk + 1;
+  /* #/security/<id>/acik/<sıra> → tek bir test sonucunun ayrıntısı */
+  if (durak === 'acik') {
+    const sira = Number((location.hash || '').split('/')[4]);
+    return `<div class="secv">${secAcikDetay(projeId, sira)}</div>`;   // security-okuma.js
   }
+  const n = Number(durak) || eski[durak] || 0;
+  if (!(n >= 1 && n <= toplam)) return `<div class="secv">${secAnaSayfa(projeId, durumlar)}</div>`;
+
   const a = SEC_ADIMLAR[n - 1], d = durumlar[n - 1];
   const adres = i => '#/security/' + esc(projeId) + '/' + i;
   const ok = svg(ICON.chevron, 15);
-  const listeAcik = SEC.liste_ac[projeId] === n;   // başka adıma geçilince kendiliğinden kapanır
-  const biten = durumlar.filter(x => x.bitti).length;
-
-  /* Masaüstü: halka şeridi (projelerdeki kurulum şeridinin aynısı). */
-  const halkalar = SEC_ADIMLAR.map((x, i) => {
-    const hal = i === n - 1 ? 'su' + (durumlar[i].bitti ? ' tamam' : '') : durumlar[i].bitti ? 'bitti' : 'acik';
-    const bagli = i > 0 && durumlar[i - 1].bitti ? ' bagli' : '';
-    const ic = `<span class="dsr-yuv">${durumlar[i].bitti && i !== n - 1 ? svg(ICON.tik, 13) : `<b class="mono">${i + 1}</b>`}</span>
-      <span class="dsr-ad">${esc(x.ad)}</span>`;
-    return i === n - 1 ? `<span class="dsr-a ${hal}${bagli}">${ic}</span>`
-      : `<a class="dsr-a ${hal}${bagli}" href="${adres(i + 1)}">${ic}</a>`;
-  }).join('');
-  const noktalar = durumlar.map((x, i) => `<i class="${i === n - 1 ? (x.bitti ? 'su tamam' : 'su') : x.bitti ? 'bitti' : ''}"></i>`).join('');
-  const serit = `
-    <div class="dsr only-desktop">${halkalar}</div>
-    <div class="dsm ${d.bitti ? 'tamam' : ''}">
-      <span class="dsm-sol"><i>Güvenlik adımı</i><b class="mono">${n} / ${toplam}</b></span>
-      <span class="dsm-nk" style="--ilerleme:${Math.round(((n - 1) / (toplam - 1)) * 100)}%">${noktalar}</span>
-      <button class="dsm-liste" type="button" data-eylem="sec-adimlar" data-id="${esc(projeId)}" data-n="${n}"
-              aria-label="Tüm adımlar">${svg(ICON.panel, 17)}</button>
-    </div>`;
-
-  const tepe = `
-    <a class="tl-geri" href="#/security">${svg(ICON.chevron, 14)} Nizam Security</a>
-    <div class="pj-tepe"><div class="pj-tepe-yz">
-      <h1>${esc(basHarfleriBuyuk(projeAdi(p)))}</h1>
-      <p>Güvenlik sihirbazı · ${biten} / ${toplam} adım tamam</p>
-    </div></div>
-    ${serit}`;
-
-  /* "Tüm adımlar" listesi (telefonda şeritteki düğme açar). */
-  if (listeAcik) {
-    const satirlar = SEC_ADIMLAR.map((x, i) => `
-      <a class="sec-h-adim ${durumlar[i].bitti ? 'bitti' : i === n - 1 ? 'simdi' : ''}" href="${adres(i + 1)}"
-         data-eylem="sec-adim-git" data-id="${esc(projeId)}" data-n="${i + 1}">
-        <span class="sec-h-no">${i + 1}</span>
-        <span class="sec-h-adim-yz"><b>${esc(x.ad)}</b><i>${esc(durumlar[i].yazi || (durumlar[i].bitti ? 'Tamam' : 'Bekliyor'))}</i></span>
-        <span class="sec-h-adim-s">${durumlar[i].bitti ? `<i class="tamam">${SEC_TIK}</i>` : '›'}</span>
-      </a>`).join('');
-    return tepe + `
-      <h3 class="sec-bas">Tüm adımlar</h3>
-      <div class="sec-h-adimlar">${satirlar}</div>
-      <p class="sec-t-ipucu alt">Şimdilik kilit yok: istediğin adıma geçebilirsin.</p>`;
-  }
-
   const ic = secAdimIcerik(projeId, n);
   const geri = n > 1 ? `<a class="dsa-btn geri" href="${adres(n - 1)}">${ok} Geri</a>`
-    : `<a class="dsa-btn geri" href="#/security">${ok} Projeler</a>`;
+    : `<a class="dsa-btn geri" href="#/security/${esc(projeId)}">${ok} Özet</a>`;
   const ileri = n < toplam
     ? `<a class="dsa-btn ana" href="${adres(n + 1)}">İleri<span class="sec-dsa-ad">: ${esc(SEC_ADIMLAR[n].ad)}</span> ${ok}</a>`
-    : `<a class="dsa-btn ana" href="#/security">Bitir ${ok}</a>`;
-  return tepe + `
-    <section class="sec-sb">
-      <div class="sec-sb-bas">
-        <span class="sec-sb-ikon">${a.ikon}</span>
-        <div><h2>${esc(a.ad)}</h2><p>${esc(a.aciklama)}</p></div>
+    : `<a class="dsa-btn ana" href="#/security/${esc(projeId)}">Bitir ${ok}</a>`;
+  return `
+    <div class="secv">
+      <div class="secv-ust">
+        <a class="secv-geri" href="#/security/${esc(projeId)}" aria-label="Özete dön">${ok}</a>
+        <div class="secv-ust-yz"><h1>${esc(a.ad)}</h1><p>${esc(a.aciklama)}</p></div>
+        <span class="secv-no mono">${n}/${toplam}</span>
       </div>
-      <div class="sec-sb-durum ${d.bitti ? 'tamam' : ''}">${d.bitti ? '✓ Tamam' : '○ Bekliyor'}${d.yazi && d.yazi !== 'Bekliyor' ? ' · ' + esc(d.yazi) : ''}</div>
+      <div class="secv-cubuk">${durumlar.map((x, i) => `<a href="${adres(i + 1)}" class="${i === n - 1 ? 'su' : x.bitti ? 'bitti' : ''}" aria-label="${esc(SEC_ADIMLAR[i].ad)}"></a>`).join('')}</div>
+      <div class="secv-durum ${d.bitti ? 'tamam' : ''}">${d.bitti ? '✓ Tamam' : '○ Bekliyor'}${d.yazi && d.yazi !== 'Bekliyor' ? ' · ' + esc(d.yazi) : ''}</div>
       ${ic}
-    </section>
-    <div class="dsa sec-dsa">${geri}<span class="dsa-orta mono">${n} / ${toplam}</span>${ileri}</div>`;
+      <div class="dsa sec-dsa">${geri}<span class="dsa-orta mono">${n} / ${toplam}</span>${ileri}</div>
+    </div>`;
+}
+
+/* Projenin Security özeti: kahraman kart, durum, sayılar, tarama düğmesi, adım kartları. */
+const SEC_KALKAN = `<svg viewBox="0 0 120 140" width="104" height="122" aria-hidden="true">
+  <defs><linearGradient id="seck-g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff6a5e"/><stop offset="1" stop-color="#c81f16"/></linearGradient></defs>
+  <path d="M60 4 L112 22 V66 C112 100 90 124 60 136 C30 124 8 100 8 66 V22 Z" fill="url(#seck-g)"/>
+  <path d="M60 18 L100 32 V66 C100 93 83 112 60 122 C37 112 20 93 20 66 V32 Z" fill="#fff"/>
+  <text x="60" y="88" text-anchor="middle" font-family="Space Grotesk, sans-serif" font-weight="700" font-size="52" fill="#c81f16">N</text>
+</svg>`;
+
+function secAnaSayfa(projeId, durumlar) {
+  const p = DB.proje(projeId);
+  const o = SEC_TEST.kayit[projeId] || {};
+  const kisiSay = (o.kullanicilar || []).filter(x => x.kimlik).length;
+  /* İlk tarama için gereken: yapı, kurallar, test projesi, kullanıcılar (kurulum/veri taramada denetlenir). */
+  const hazir = durumlar[0].bitti && durumlar[1].bitti && durumlar[2].bitti && durumlar[4].bitti;
+  const engel = hazir ? secUretimAyriMi(p, o) : 'Önce 1–6. adımları tamamla.';
+  const ilk = durumlar.findIndex(x => !x.bitti);
+  const kart = (x, i) => {
+    const hal = durumlar[i].bitti ? 'bitti' : i === ilk ? 'simdi' : '';
+    return `
+      <a class="secv-adim ${hal}" href="#/security/${esc(projeId)}/${i + 1}">
+        <span class="secv-adim-no">${i + 1}</span>
+        <span class="secv-adim-yz"><b>${esc(x.ad)}</b><i>${esc(durumlar[i].yazi || x.kisa)}</i></span>
+        <span class="secv-adim-s">${durumlar[i].bitti ? `<i class="secv-tik">${SEC_TIK}</i>` : '›'}</span>
+      </a>`;
+  };
+  return `
+    <a class="tl-geri" href="#/security">${svg(ICON.chevron, 14)} Nizam Security</a>
+    <div class="secv-hero">
+      <div class="secv-hero-yz"><h1>${esc(basHarfleriBuyuk(projeAdi(p)))}</h1><p>Güvenli, sağlam ve kontrol altında.</p></div>
+      <span class="secv-kalkan">${SEC_KALKAN}</span>
+    </div>
+    ${secPano(projeId, engel, kisiSay)}
+    <h3 class="sec-bas">Adımlar · ${durumlar.filter(x => x.bitti).length} / ${durumlar.length}</h3>
+    <div class="secv-adimlar">${SEC_ADIMLAR.map(kart).join('')}</div>`;
 }
 
 /* Numaralı yapılacaklar listesi: [[metin, alt, düğmeler], …] */
@@ -822,6 +818,7 @@ function secAdimIcerik(projeId, n) {
     if (t.hata) return t.hata;
     const kr = t.kartlar[n - 3];
     return (n === 3 && t.kalkan ? `<p class="sec-t-ipucu">${t.kalkan}</p>` : '')
+      + (n === 4 ? secTestSema(projeId) : '')
       + `<div class="sec-sb-kart">${kr.govde}<div class="sec-t-dg">${kr.dugmeler}</div></div>`;
   }
   if (n === 7) return secOkumaGovde(projeId);   // security-okuma.js
@@ -845,7 +842,47 @@ function secDuzeltIcerik(projeId) {
     ['Aynı göçleri gerçek veritabanına uygula, sonra gerçek yapıyı yenile', 'Damga 🟢 olur: test ile gerçek aynı yapıda.',
       dug('Gerçek yapıyı yenile', 'sec-yapi')],
   ]);
-  return yap + (t.hata ? '' : (t.yfSay ? t.farkHtml : '') + t.yedek);
+  const kusursuz = secKusursuzMu(projeId);
+  return yap + (kusursuz ? `<div class="secv-kusursuz"><span>${SEC_TIK}</span><div><b>Kusursuz — açık yok</b>
+      <i>Tüm testler geçti, iki yapı aynı.</i></div></div>` : '')
+    + (t.hata ? '' : (t.yfSay ? t.farkHtml : '') + t.yedek);
+}
+
+/* 4. adım: gerçek → izole kopya → test ortamı akışı ve kurulum maddeleri. */
+const SEC_DB = r => `<svg viewBox="0 0 40 46" width="34" height="40" aria-hidden="true"><g fill="${r ? '#e5342a' : '#56565c'}">
+  <ellipse cx="20" cy="8" rx="16" ry="6"/><path d="M4 12c0 3.3 7.2 6 16 6s16-2.7 16-6v8c0 3.3-7.2 6-16 6S4 23.3 4 20z"/>
+  <path d="M4 24c0 3.3 7.2 6 16 6s16-2.7 16-6v8c0 3.3-7.2 6-16 6S4 35.3 4 32z"/></g></svg>`;
+function secTestSema(projeId) {
+  const p = DB.proje(projeId);
+  const k = SEC.kayit[projeId] || {};
+  const o = SEC_TEST.kayit[projeId] || {};
+  const d = secAdimDurum(projeId);
+  const yapi = k.yapi || { tablolar: [] };
+  const kural = yapi.tablolar.reduce((n, t) => n + (t.politikalar || []).length, 0);
+  const kisiSay = (o.kullanicilar || []).filter(x => x.kimlik).length;
+  const kutu = (ikon, ad, durum, ok, alt) => `
+    <div class="secv-db"><span class="secv-db-ik">${ikon}</span>
+      <div><b>${esc(ad)}</b><i class="${ok ? 'ok' : ''}">● ${esc(durum)}</i><small>${esc(alt)}</small></div></div>`;
+  const madde = (ad, alt, ok) => `<div class="secv-cl${ok ? ' ok' : ''}"><span>${ok ? SEC_TIK : ''}</span>
+    <div><b>${esc(ad)}</b><i>${esc(alt)}</i></div></div>`;
+  return `
+    <div class="secv-sema">
+      <div class="secv-akis">
+        ${kutu(SEC_DB(false), 'Production', d[0].bitti ? 'Okundu' : 'Bekliyor', d[0].bitti, (secKisalt(secUretimRef(p) || '?', 4, 4)) + '.supabase.co')}
+        <span class="secv-ok">↓</span>
+        ${kutu('📄', 'İzole kopya', d[3].bitti ? 'Kuruldu' : 'Bekliyor', d[3].bitti, 'Gerçek yapının kopyası, gerçek veri yok')}
+        <span class="secv-ok">↓</span>
+        ${kutu(SEC_DB(true), 'Test ortamı', d[2].bitti ? (d[3].bitti ? 'Hazır' : 'Bağlı') : 'Bağlanmadı', d[2].bitti && d[3].bitti,
+          o.test_ref ? secKisalt(o.test_ref, 4, 4) + '.supabase.co' : '—')}
+      </div>
+      <div class="secv-cl-liste">
+        ${madde('Şema', yapi.tablolar.length + ' tablo', d[3].bitti)}
+        ${madde('RLS kuralları', kural + ' kural', d[3].bitti)}
+        ${madde('Fonksiyonlar', (yapi.fonksiyonlar || []).length + ' fonksiyon', d[3].bitti)}
+        ${madde('Kullanıcılar', kisiSay + ' test kullanıcısı', d[4].bitti)}
+        ${madde('Sahte veri', d[5].bitti ? 'Hazır' : 'Bekliyor', d[5].bitti)}
+      </div>
+    </div>`;
 }
 
 function secSatirAd(d) {

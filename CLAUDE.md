@@ -110,6 +110,10 @@ siyahı** (`#17171a`). İkon kutuları gri. İlerleme çubukları nötr.
 Sıcak ton (krem, altın, kağıt dokusu) kullanma — denendi, paletin dışında
 kalıyor.
 
+**İstisna — Nizam Security ekranları (`.secv`):** kullanıcı 2026-10-06'da
+bilerek seçti: bol kırmızı vurgu (ana düğme, aktif adım, kahraman kart, halka),
+yumuşak gölge ve 14px köşe. Yalnız Security ekranlarında; başka yere taşıma.
+
 Sebebi: kırmızı her kartın üstünde, alt çubukta ve her düğmede olunca
 hepsi birden "buraya bak" diyor, yani hiçbiri demiyor. Vurgu nadir
 olduğunda vurgudur.

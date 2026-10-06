@@ -21,6 +21,13 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.321.0', tarih: '2026-10-06',
+    ozet: 'Nizam Security yeni görünüm',
+    maddeler: [
+      'Proje açılınca özet sayfası geliyor: durum, sayılar, büyük tarama düğmesi ve adım kartları.',
+      'Bir test sonucuna dokununca ayrıntısı açılıyor: ne denendi, ne oldu, ne yapmalı.',
+      'Test ortamı adımında gerçek → kopya → test akışı şema olarak görünüyor.',
+    ] },
   { surum: 'v0.320.0', tarih: '2026-10-05',
     ozet: 'Nizam Security artık adım adım kurulum sihirbazı',
     maddeler: [

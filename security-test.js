@@ -874,17 +874,16 @@ function secTestParcalar(projeId) {
     dug(bagli ? 'Değiştir' : 'Bağla', 'sec-t-bagla', '', !bagli));
 
   const kart2 = kart(2, kuruldu, 'Yapı + kurallar', kuruldu ? yapi.tablolar.length + ' tablo · ' + kuralSay + ' RLS kuralı' : (o.kurulum_tarihi ? 'SQL kopyalandı' : 'Bekliyor'),
-    sat('Tablolar', yapi.tablolar.length)
-    + sat('RLS kuralları (policy)', kuralSay)
-    + sat('Kuralların kullandığı fonksiyonlar', (yapi.fonksiyonlar || []).length)
-    + ((yapi.gorunumler || []).length ? sat('Görünümler', yapi.gorunumler.length) : '')
+    ((yapi.gorunumler || []).length ? sat('Görünümler', yapi.gorunumler.length) : '')
     + `<p class="sec-t-not">Sabit test veritabanı: kurulum içindeki her şeyi siler ve bu projeyi kurar.
        Başka bir proje yüklüyse onun yapısı ve test kullanıcıları da silinir.</p>`,
     dug('SQL\'i kopyala', 'sec-t-kurulum', '', false, !bagli)
     + `<span class="sec-t-ipucu">TEST projesinin SQL Editor'ünde çalıştır</span>`);
 
-  const kisiSatir = kisiler.map(x => sat(esc(x.etiket) + (x.kimlik ? ' <i class="sec-yesil">✓</i>' : ''),
-    `<code>${esc(x.eposta)}</code>${goster ? `<br><code class="sec-sifre">${esc(x.sifre)}</code>` : ''}`)).join('');
+  const kisiSatir = kisiler.length ? `<div class="secv-kisiler">${kisiler.map(x => `
+    <div class="secv-kisi"><span class="secv-av">${esc((x.etiket || '?').charAt(0))}</span>
+      <div class="secv-kisi-yz"><b>${esc(x.etiket)}</b><i>${esc(x.eposta)}</i>${goster ? `<code class="sec-sifre">${esc(x.sifre)}</code>` : ''}</div>
+      <span class="secv-aktif${x.kimlik ? '' : ' yok'}">● ${x.kimlik ? 'Aktif' : 'Bekliyor'}</span></div>`).join('')}</div>` : '';
   const kart3 = kart(3, kisiTamam, 'Test kullanıcıları', kisiler.length ? olusan + ' / ' + kisiler.length + ' hesap' : 'Bekliyor',
     `<div class="sec-t-uyari">📧 Test projesinde <b>Authentication → Sign In / Providers → Email</b>:
        <b>"Confirm email"</b> kapalı, <b>"Allow new users to sign up"</b> açık olmalı.

@@ -1,5 +1,17 @@
 # Değişiklik Günlüğü
 
+## v0.321.0
+- **Nizam Security yeni görsel dil** (kullanıcının verdiği tasarım; kırmızı vurgu, gölge,
+  14px köşe — yalnız `.secv` içinde, CLAUDE.md'ye istisna olarak yazıldı).
+- Proje açılışı artık özet sayfası (`secAnaSayfa`): kırmızı kahraman kart + kalkan, durum,
+  sayılar, büyük "Taramayı başlat", 9 adım kartı. Adım sayfaları: geri düğmeli başlık,
+  ilerleme çubuğu, Geri/İleri.
+- Yeni: sonuç ayrıntısı sayfası `#/security/<id>/acik/<sıra>` (`secAcikDetay`: alanlar,
+  açıklama, çözüm önerisi, Claude'a raporla); sonuç kartları tıklanabilir.
+- 4. adımda Production → İzole kopya → Test ortamı akışı ve kurulum maddeleri (`secTestSema`).
+- Test kullanıcıları avatarlı liste + Aktif; teslim kontrolünde ilerleme noktaları;
+  8. adımda Kusursuz kartı; tarama halkası kırmızı.
+
 ## v0.320.0
 - **Nizam Security kurulum sihirbazı** (onaylı mockup). Sekmeler kalktı; proje 9 adımlık tek
   sırada açılır: `#/security/<id>/<1–9>` (`secSihirbaz`, `SEC_ADIMLAR`, `secAdimDurum`).

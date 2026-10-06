@@ -663,7 +663,7 @@ function secPano(projeId, engel, kisiSay) {
       <span class="sec-h-rozet">${durumIc}</span>
       <div class="sec-h-durum-yz"><b>${esc(d.b)}</b><span>${d.a}</span></div>
       ${tarih ? `<div class="sec-h-son"><small>Son tarama</small><b>${esc(secTarih(tarih))}</b>
-        <button class="sec-dug" type="button" data-eylem="sec-o-git" data-id="${esc(projeId)}" data-hedef="sec-sonuc">Sonuçlar</button></div>` : ''}
+        <a class="sec-dug secv-rapor" href="#/security/${esc(projeId)}/7">Raporu gör</a></div>` : ''}
     </div>`;
 
   /* Sayı kutuları: ziyaretçi ayrı, diğerleri işleme göre. */
@@ -732,7 +732,7 @@ function secTaramaEkran(projeId) {
         <div class="sec-p-halka">
           <svg viewBox="0 0 210 210" width="210" height="210" aria-hidden="true">
             <circle cx="105" cy="105" r="92" fill="none" stroke="var(--line-3)" stroke-width="12"/>
-            <circle cx="105" cy="105" r="92" fill="none" stroke="var(--ink-strong)" stroke-width="12" stroke-linecap="round"
+            <circle class="sec-p-dolu" cx="105" cy="105" r="92" fill="none" stroke="var(--ink-strong)" stroke-width="12" stroke-linecap="round"
               stroke-dasharray="${cevre.toFixed(1)}" stroke-dashoffset="${(cevre * (1 - yuzde / 100)).toFixed(1)}" transform="rotate(-90 105 105)"/>
           </svg>
           <div class="sec-p-orta" role="progressbar" aria-valuenow="${yuzde}" aria-valuemin="0" aria-valuemax="100">
@@ -812,8 +812,9 @@ function secOkumaSonuclar(projeId) {
   const islemAd = { SELECT: 'Okuma', INSERT: 'Ekleme', UPDATE: 'Değiştirme', DELETE: 'Silme' };
   const hapAd = { gecti: 'Geçti', acik: 'Açık', edilemedi: 'Edilemedi' };
 
+  const tumListe = [].concat(s ? s.liste : [], y ? y.liste : []);
   const kartlar = gorunen.map(x => `
-    <div class="sec-r ${x.sonuc}">
+    <a class="sec-r ${x.sonuc}" href="#/security/${esc(projeId)}/acik/${tumListe.indexOf(x)}">
       <div class="sec-r-ust"><span class="sec-r-hap">${hapAd[x.sonuc]}</span>
         <span class="sec-r-islem">${esc(islemAd[islemi(x)] || islemi(x))}</span><span class="sec-r-tur">${esc(x.tur)} testi</span></div>
       <div class="sec-r-hedef"><code>${esc(x.tablo + (x.kolon && !/ kolon$/.test(x.kolon) ? '.' + x.kolon : ''))}</code>
@@ -823,7 +824,7 @@ function secOkumaSonuclar(projeId) {
         <div><small>Beklenen</small><b>${esc(x.beklenen)}</b></div>
         <div class="sec-r-gercek"><small>Gerçek</small><b>${esc(x.gercek || '—')}</b></div>
       </div>
-    </div>`).join('');
+    </a>`).join('');
 
   /* Damga: bu sonuç gerçek veritabanı için geçerli mi (TEST ↔ gerçek yapı). */
   const yf = typeof secGuncelFark === 'function' ? secGuncelFark(projeId) : null;
@@ -925,8 +926,9 @@ function secTeslimHtml(projeId) {
           data-eylem="sec-o-teslim" data-id="${esc(projeId)}" data-m="${x.id}">${ic}</button>`;
   };
   return `
-    <h3 class="sec-bas" id="sec-teslim">Teslim öncesi kontrol · ${biten}/${m.length}</h3>
-    <p class="sec-t-ipucu">Tarama tabloları test eder. Bu beş madde taramanın göremediği yerler; işaretlemek için maddeye dokun.</p>
+    <p class="secv-ilerle" id="sec-teslim"><b>${biten} / ${m.length}</b> madde tamamlandı</p>
+    <div class="secv-noktalar">${m.map(x => `<i class="${tamam(x) ? 'ok' : ''}"></i>`).join('')}</div>
+    <p class="sec-t-ipucu">İşaretlemek için maddeye dokun.</p>
     <div class="sec-t-liste sec-teslim">${m.map(satir).join('')}</div>
     <div class="sec-t-dg sec-teslim-dg">
       <button class="sec-dug" type="button" data-eylem="sec-o-teslim-prompt" data-id="${esc(projeId)}">📋 Kontrol promptu kopyala</button>
@@ -958,6 +960,54 @@ function secTeslimPrompt(projeId) {
   s.push('');
   s.push('SORUN varsa düzeltmeyi öner ama uygulama. Veritabanı düzeltmesi gerekiyorsa numaralı göç dosyası olarak öner.');
   return s.join('\n');
+}
+
+/* ==========================================================================
+   TEK SONUÇ AYRINTISI — #/security/<id>/acik/<sıra>
+   Açıklama ve öneri sonuçtaki bilgilerden kalıpla üretilir; kesin çözümü
+   "Claude'a raporla" ile Claude yazar.
+   ========================================================================== */
+
+function secAcikDetay(projeId, sira) {
+  const { hepsi } = secTumSonuclar(projeId);
+  const x = hepsi[sira];
+  const geri = `<a class="secv-geri" href="#/security/${esc(projeId)}/7" aria-label="Sonuçlara dön">${svg(ICON.chevron, 15)}</a>`;
+  if (!x) {
+    return `<div class="secv-ust">${geri}<div class="secv-ust-yz"><h1>Sonuç bulunamadı</h1>
+      <p>Tarama yenilenmiş olabilir; sonuçlara dönüp tekrar seç.</p></div></div>`;
+  }
+  const islemAd = { SELECT: 'okuma', INSERT: 'ekleme', UPDATE: 'değiştirme', DELETE: 'silme' };
+  const islem = x.islem || 'SELECT';
+  const hedef = x.tablo + (x.kolon && !/ kolon$/.test(x.kolon) ? '.' + x.kolon : '');
+  const hap = { acik: 'Açık', edilemedi: 'Edilemedi', gecti: 'Geçti' }[x.sonuc];
+  const baslik = x.sonuc === 'acik' ? 'Yetkisiz ' + islemAd[islem] : x.sonuc === 'edilemedi' ? 'Test edilemedi' : 'Beklendiği gibi';
+  const satir = (ad, deger, cls = '') => `<div class="secv-alan"><span>${ad}</span><b class="${cls}">${esc(deger || '—')}</b></div>`;
+  const aciklama = x.sonuc === 'acik'
+    ? `${x.rol || x.kisi} rolündeki ${x.kisi === SEC_ZIYARETCI ? 'giriş yapmamış ziyaretçi' : 'kullanıcı'}, ${hedef} üzerinde ${islemAd[islem]} denedi.
+       Beklenen "${x.beklenen}" iken sonuç "${x.gercek}" oldu. Veritabanının kuralları bu işleme izin veriyor.`
+    : x.sonuc === 'edilemedi'
+      ? `Bu test sonuçlanamadı: ${x.gercek || 'neden bilinmiyor'}. Çoğu zaman test verisi ya da kurulum eksikliğinden olur.`
+      : `Sonuç Erişim Kuralları'nda beklenenle aynı: ${x.gercek}.`;
+  const oneri = x.sonuc === 'acik'
+    ? `${x.tablo} tablosunun ${islem} kuralını (RLS) ${x.rol || 'bu rol'} için Erişim Kuralları'ndaki gibi daralt. "Claude'a raporla" ile göç dosyasını Claude yazar.`
+    : x.sonuc === 'edilemedi' ? 'Sahte veriyi ve test kurulumunu kontrol et; gerekirse Claude\'a raporla.' : '';
+  return `
+    <div class="secv-ust">${geri}<div class="secv-ust-yz"><h1>Sonuç ayrıntısı</h1></div>
+      <span class="secv-hap ${x.sonuc}">${hap}</span></div>
+    <div class="secv-detay-bas ${x.sonuc}"><span class="secv-detay-ik">!</span>
+      <div><b>${esc(baslik)}</b><code>${esc(hedef)}</code></div></div>
+    <div class="secv-alanlar">
+      ${satir('Kullanıcı', x.kisi)}
+      ${satir('Rol', x.rol)}
+      ${satir('Hedef', x.hedef)}
+      ${satir('Test', (x.tur || '') + ' testi · ' + islemAd[islem])}
+      ${satir('Beklenen sonuç', x.beklenen)}
+      ${satir('Gerçek sonuç', x.gercek, x.sonuc === 'acik' ? 'kirmizi' : x.sonuc === 'gecti' ? 'yesil' : '')}
+    </div>
+    <div class="secv-aciklama ${x.sonuc}"><b>Açıklama</b><p>${esc(aciklama)}</p></div>
+    ${oneri ? `<div class="secv-oneri"><b>Çözüm önerisi</b><p>${esc(oneri)}</p></div>` : ''}
+    ${x.sonuc !== 'gecti' ? `<button class="secv-buyuk" type="button" data-eylem="sec-o-y-rapor" data-id="${esc(projeId)}">📋 Claude'a raporla</button>
+      <p class="sec-t-ipucu" style="text-align:center">Bütün 🔴 ve 🟡 sonuçlar tek rapor olarak kopyalanır.</p>` : ''}`;
 }
 
 /* ==========================================================================
