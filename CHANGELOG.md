@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## v0.332.0
+- **Test Klonu — 6. adım "Yayına al".** GitHub Pages ayar sayfasına doğrudan link (Deploy from a branch ·
+  main · root), klon adresini açan düğme ve "Açıldı" işareti (`palet.klon.yayinda`). Kontrol temiz
+  olmadan kapalı. Klon ancak bu adım da bitince hazır sayılır; hazır ekranında "🌐 Klonu aç" düğmesi.
+
 ## v0.331.1
 - **Test Klonu — aynı adres uyarısı sadeleşti.** Kırmızı "ayrı GitHub hesabında aç" önerisi kaldırıldı
   (kullanıcı ayrı hesap istemiyor). Yerine bilgi notu: klon asılla aynı adreste; 4. adımın promptu

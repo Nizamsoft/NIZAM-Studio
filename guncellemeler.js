@@ -21,6 +21,11 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.332.0', tarih: '2026-10-06',
+    ozet: 'Klonu yayına alma adımı',
+    maddeler: [
+      'Klon kurulumuna son adım geldi: "Yayına al". GitHub Pages ayarını açar, ne seçileceğini söyler ve klonun adresini açar.',
+    ] },
   { surum: 'v0.331.1', tarih: '2026-10-06',
     ozet: 'Klon uyarısı sadeleşti',
     maddeler: [

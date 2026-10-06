@@ -6,12 +6,12 @@
 
    Adres: #/projeler/<klonId> — klon projeler aşama akışından geçmez, bu ekran açılır.
    Kurulum: 1 GitHub (template'ten kopya) · 2 Supabase · 3 Yapı · 4 Bağlantıyı kopar ·
-   5 Bağlantı kontrolü. Sonra elle başlatılan eşitleme (asıl program değişince).
+   5 Bağlantı kontrolü · 6 Yayına al (GitHub Pages). Sonra elle başlatılan eşitleme (asıl program değişince).
 
    Yapı okuma ve kurulum Nizam Security'nin parçalarını kullanır (security*.js):
    SEC_YAPI_SQL, secKurulumGovde, secTemizleSql, secYapiKarsilastir.
    Durum projenin paletinde: palet.klon = { kaynak, olusturuldu, yapiKuruldu,
-   yapiKaynakTarihi, koparildi, kontrol: {temiz, tarih, bulunanlar}, kodEsitlendi }.
+   yapiKaynakTarihi, koparildi, kontrol: {temiz, tarih, bulunanlar}, kodEsitlendi, yayinda }.
    index.html'de security-*.js'ten sonra.
    ========================================================================== */
 
@@ -28,6 +28,8 @@ const KLON_ADIMLAR = [
     aciklama: 'Claude, klonun kodundaki Supabase adresini ve anahtarını yenileriyle değiştirir; alan adı, e-posta, ödeme gibi dış bağlantıları kapatır.' },
   { id: 'kontrol',  ad: 'Bağlantı kontrolü',      kisa: 'Asıldan iz kaldı mı?',
     aciklama: 'Claude klonun kodunu tarar: asıl programın adresi, anahtarı ya da alan adı bir yerde kalmış mı?' },
+  { id: 'yayin',    ad: 'Yayına al',              kisa: 'GitHub Pages ile aç',
+    aciklama: 'Klon, GitHub Pages ile internette açılır; adresini telefondan ya da bilgisayardan kullanırsın.' },
 ];
 
 function klonVeri(p) { return ((p && p.palet) || {}).klon || {}; }
@@ -43,6 +45,7 @@ function klonDurumlari(p) {
     { bitti: !!k.koparildi, yazi: k.koparildi ? 'Koparıldı · ' + secTarih(k.koparildi) : '' },
     { bitti: !!(k.kontrol && k.kontrol.temiz), yazi: k.kontrol ? (k.kontrol.temiz ? 'Temiz · ' + secTarih(k.kontrol.tarih)
       : (k.kontrol.bulunanlar || []).length + ' iz bulundu') : '' },
+    { bitti: !!k.yayinda, yazi: k.yayinda ? pagesAdresi(p) : '' },
   ];
 }
 
@@ -127,7 +130,8 @@ function klonEkrani(p) {
 
   const durum = hazir
     ? `<div class="secv-kusursuz"><span>${SEC_TIK}</span><div><b>Klon hazır — bağlantı temiz</b>
-        <i>İstediğin gibi dene; müşterinin sistemine hiçbir şey gitmez.</i></div></div>`
+        <i>İstediğin gibi dene; müşterinin sistemine hiçbir şey gitmez.</i></div></div>
+       <a class="secv-buyuk" target="_blank" rel="noopener" href="https://${esc(pagesAdresi(p))}/">🌐 Klonu aç</a>`
     : `<div class="secv-durum">○ Kurulum · <b>${biten} / ${durumlar.length}</b> tamam</div>`;
 
   const kurulum = `
@@ -144,7 +148,7 @@ function klonEkrani(p) {
     </a>` : '';
 
   return `<div class="secv">${hero}${durum}${hazir ? klonEsitleme(p) + araclar : ''}
-    ${hazir ? `<details class="sec-gelismis"><summary>Kurulum adımları (5 / 5 tamam)</summary>${kurulum}</details>` : kurulum}</div>`;
+    ${hazir ? `<details class="sec-gelismis"><summary>Kurulum adımları (${biten} / ${durumlar.length} tamam)</summary>${kurulum}</details>` : kurulum}</div>`;
 }
 
 function klonBolum(p, a, i, durumlar) {
@@ -236,6 +240,22 @@ function klonAdimIcerik(p, id) {
         klonDug(p, '📋 Promptu kopyala', 'klon-kontrol-prompt', !kn, !k.koparildi)],
       ['Claude\'un verdiği JSON\'u yapıştır', kn ? (kn.temiz ? '✅ Temiz · ' + esc(secTarih(kn.tarih)) : '') : '',
         klonDug(p, 'Sonucu yapıştır', 'klon-kontrol-sonuc', false, !k.koparildi)],
+    ]);
+  }
+
+  if (id === 'yayin') {
+    const slug = depoSlug(p.repo);
+    if (!slug) return not('Önce 1. adımda klonun GitHub deposunu gir.');
+    const adres = pagesAdresi(p);
+    const temiz = !!(k.kontrol && k.kontrol.temiz);
+    return (temiz ? '' : not('Önce 5. adımdaki kontrol "temiz" çıksın; asıla bağlı bir klonu yayına alma.')) + secYapilacak([
+      ['GitHub Pages ayarını aç',
+        'Açılan sayfada <b>Source</b>: <i>Deploy from a branch</i> · <b>Branch</b>: <i>main</i> ve <i>/ (root)</i> seç, <b>Save</b> de.',
+        `<a class="sec-dug ana" target="_blank" rel="noopener" href="https://github.com/${esc(slug)}/settings/pages">Pages ayarını aç</a>`],
+      ['Klonu aç', 'Adres: <code>' + esc(adres) + '</code> · İlk yayın 1–2 dakika sürer; "404" görürsen biraz bekleyip yenile.',
+        `<a class="sec-dug" target="_blank" rel="noopener" href="https://${esc(adres)}/">🌐 Klonu aç</a>`],
+      ['Açıldıysa işaretle', k.yayinda ? '✅ Yayında · ' + esc(secTarih(k.yayinda)) : '',
+        klonDug(p, k.yayinda ? 'Açıldı ✓' : 'Açıldı ✅', 'klon-yayin-tamam', !k.yayinda, !temiz)],
     ]);
   }
   return '';
@@ -546,6 +566,10 @@ async function klonEylem(e, el) {
     await isYap(() => klonPaletYaz(p, { koparildi: new Date().toISOString(), kontrol: null }), 'Tamam. Şimdi bağlantı kontrolünü yap.');
     return true;
   }
+  if (e === 'klon-yayin-tamam') {
+    await isYap(() => klonPaletYaz(p, { yayinda: new Date().toISOString() }), 'Klon yayında 🎉');
+    return true;
+  }
   if (e === 'klon-kontrol-prompt') { await kopyala(klonKontrolPrompt(p), 'Kontrol promptu kopyalandı.'); return true; }
   if (e === 'klon-kontrol-sonuc') {
     secYapistirPenceresi({
@@ -564,7 +588,7 @@ async function klonEylem(e, el) {
         try {
           await klonPaletYaz(p, { kontrol: { temiz, tarih: new Date().toISOString(), bulunanlar } });
         } catch (h) { return { hata: h.message }; }
-        toast(temiz ? 'Temiz ✓ Klon hazır.' : bulunanlar.length + ' iz bulundu — 4. adımı tekrarla.', temiz ? 'basari' : 'uyari');
+        toast(temiz ? 'Temiz ✓ Şimdi yayına al.' : bulunanlar.length + ' iz bulundu — 4. adımı tekrarla.', temiz ? 'basari' : 'uyari');
         render();
         return null;
       },
