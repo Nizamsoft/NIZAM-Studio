@@ -1,5 +1,19 @@
 # Değişiklik Günlüğü
 
+## v0.330.0
+- **Yeni: Test Klonu** (`klon.js`). "Yeni Proje" → "Test Klonu": müşteri programının bağlantısız
+  ikizi. Projeler'de ayrı **Klonlar** sekmesi (`PROJE_KOVASI.klon`, `klonMi`); klon aşama akışından
+  geçmez, `#/projeler/<id>` klon ekranını açar.
+- Kurulum 5 adım: GitHub (Kopya Proje'deki template/generate yolu), Supabase (asıl / Studio /
+  Nizam test / başka proje adresiyse durdurur), yapı (asılın gerçek yapısından `klonKurulumSql`;
+  kendi kilidi `nizam_klon` işaretiyle — tablolu ve işaretsiz veritabanında durur; yerel
+  Postgres'te ilk kurulum, yeniden kurulum ve asıl-benzeri DB'de durma denendi), bağlantıyı kopar
+  (Claude Code promptu), bağlantı kontrolü (Claude JSON'u: temiz / bulunan izler).
+- Elle eşitleme: asıl yapıyı yenile → fark listesi (`secYapiKarsilastir`) → kodu eşitle promptu →
+  yapıyı yeniden kur → bağlantı kontrolü. Klonun yapısı ve erişim kuralları Nizam Security
+  kaydına yazılır; klon doğrudan Security'de taranabilir.
+- `secKurulumGovde`: test ortamı kurulumunun gövdesi ortak fonksiyona alındı (çıktı birebir aynı, denendi).
+
 ## v0.329.0
 - Projelerdeki eski **"Güvenlik kontrolü" aşaması gizlendi** (gizli + sayılmaz + bitti); yerini
   Nizam Security aldı. Final artık eski güvenlik ölçümüne kilitlenmiyor (`finalSayfasi` guvVar

@@ -82,6 +82,11 @@ function projeBittiMi(p) {
 /* Proje deneme (test) projesi mi — oluştururken seçilir, palet.projeTuru'da
    durur. Eski kayıtlarda 'test', yeni kayıtlarda 'deneme' yazıyor; ikisi de
    deneme sayılır. Gerçek müşteri işi 'gercek' (ya da boş). */
+/* Test Klonu mu — müşteri programının bağlantısız ikizi (bkz. klon.js). */
+function klonMi(p) {
+  return !!((p && p.palet) || {}).klon;
+}
+
 function denemeMi(p) {
   const t = ((p && p.palet) || {}).projeTuru;
   return t === 'test' || t === 'deneme';
@@ -92,9 +97,11 @@ function denemeMi(p) {
    olduğu için bu kelimelerle çakışmaz. */
 const PROJE_KOVASI = {
   normal:   { ad: 'Projeler', ikon: 'katman',       sinif: 'k-normal',
-              sec: p => !cekirdekMi(p) && !denemeMi(p) },
+              sec: p => !cekirdekMi(p) && !klonMi(p) && !denemeMi(p) },
   deneme:   { ad: 'Deneme',   ikon: 'gOptimizasyon', sinif: 'k-deneme',
-              sec: p => !cekirdekMi(p) && denemeMi(p) },
+              sec: p => !cekirdekMi(p) && !klonMi(p) && denemeMi(p) },
+  klon:     { ad: 'Klonlar',  ikon: 'kopya',         sinif: 'k-klon',
+              sec: p => !cekirdekMi(p) && klonMi(p) },
   template: { ad: 'Template', ikon: 'izgaraDort',    sinif: 'k-template',
               sec: p => cekirdekMi(p) },
 };
@@ -641,6 +648,7 @@ const VIEWS = {
         'Silinmiş veya arşive alınmış olabilir.', 'Projelere dön', 'projelere')}</div>`;
     }
 
+    if (klonMi(proje)) return klonEkrani(proje);   // klon.js
     return projeYolu(proje);
   },
 
@@ -1700,6 +1708,7 @@ function durakSerit(p, anahtar) {
 function projeAdresi(projeId) {
   const p = DB.proje(projeId);
   if (!p) return '#/projeler/' + projeId;
+  if (klonMi(p)) return '#/projeler/' + projeId;   // klon aşama akışından geçmez
   const liste = durakAkisi(p);
   const su = liste.find(d => !d.bitti) || liste[liste.length - 1];
   return '#/projeler/' + projeId + (su ? '/' + su.anahtar : '');
@@ -8106,7 +8115,8 @@ function pjKarti(p) {
         <svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.7"></circle><circle cx="12" cy="12" r="1.7"></circle><circle cx="12" cy="19" r="1.7"></circle></svg>
       </button>` : ''}
       <b class="pj-ad">${esc(basHarfleriBuyuk(projeAdi(p)))}</b>
-      ${p.sektor ? `<i class="pj-aciklama">${esc(p.sektor)}</i>` : '<i class="pj-aciklama bos"></i>'}
+      ${klonMi(p) ? `<i class="pj-aciklama">🧬 Klon · ${esc(DB.proje(((p.palet || {}).klon || {}).kaynak) ? projeAdi(DB.proje(p.palet.klon.kaynak)) : 'asıl silinmiş')}</i>`
+        : p.sektor ? `<i class="pj-aciklama">${esc(p.sektor)}</i>` : '<i class="pj-aciklama bos"></i>'}
       <span class="pj-halka">${pzHalka(yuzde, 58, 5)}<u>${yuzde}%</u></span>
       <span class="pj-ok">${svg(ICON.chevron, 16)}</span>
       <span class="pj-ayak">${baslangic
@@ -8137,7 +8147,7 @@ function pjSirala(liste) {
 
 function projelerEkrani(kova) {
   const aktif = DB.projeler.filter(p => !p.arsiv);
-  const sayi  = { normal: 0, deneme: 0, template: 0 };
+  const sayi  = { normal: 0, deneme: 0, klon: 0, template: 0 };
   aktif.forEach(p => { for (const k in PROJE_KOVASI) if (PROJE_KOVASI[k].sec(p)) sayi[k]++; });
 
   const template = kova === 'template';
@@ -8158,9 +8168,11 @@ function projelerEkrani(kova) {
           ? 'Yeniden kullanacağın hazır şablonlar burada toplanır.'
           : kova === 'deneme'
             ? 'Denemelik projeler burada durur — gerçek müşteri işlerinden ayrı.'
-            : 'Yeni Proje sihirbazı firma, renk, platform, veritabanı ve modülleri sorar.',
-        AUTH.yonetici ? (kova === 'template' ? 'Template oluştur' : 'Yeni Proje') : null,
-        kova === 'template' ? 'template-olustur-ac' : 'sihirbaz')}</div>`;
+            : kova === 'klon'
+              ? 'Müşteri programlarının bağlantısız test ikizleri burada durur.'
+              : 'Yeni Proje sihirbazı firma, renk, platform, veritabanı ve modülleri sorar.',
+        AUTH.yonetici ? (kova === 'template' ? 'Template oluştur' : kova === 'klon' ? 'Test Klonu' : 'Yeni Proje') : null,
+        kova === 'template' ? 'template-olustur-ac' : kova === 'klon' ? 'klon-yeni' : 'sihirbaz')}</div>`;
 
   return `
     <div class="pj-tepe">
@@ -8169,13 +8181,14 @@ function projelerEkrani(kova) {
         <p>Tüm projeleri görüntüle, ilerlemeleri takip et.</p>
       </div>
       ${AUTH.yonetici ? `<button class="pj-yeni" type="button"
-        data-eylem="${template ? 'template-olustur-ac' : 'sihirbaz'}">
-        ${svg(ICON.arti, 16)}<span>${template ? 'Template' : 'Yeni Proje'}</span></button>` : ''}
+        data-eylem="${template ? 'template-olustur-ac' : kova === 'klon' ? 'klon-yeni' : 'sihirbaz'}">
+        ${svg(ICON.arti, 16)}<span>${template ? 'Template' : kova === 'klon' ? 'Test Klonu' : 'Yeni Proje'}</span></button>` : ''}
     </div>
 
     <div class="pj-sekmeler">
       ${sekme('normal', 'Projeler')}
       ${sekme('deneme', 'Deneme')}
+      ${sekme('klon', 'Klonlar')}
       ${sekme('template', 'Template')}
     </div>
 
@@ -9099,7 +9112,7 @@ function render() {
   /* Ayrı bir "proje ekranı" yok: projeye girmek, kalınan aşamayı açmak
      demek. Eski adres (#/projeler/<id>) hâlâ çalışıyor, oradan aşamaya
      yönleniyor. Veri henüz gelmediyse yönlendirme beklenir. */
-  if (detay && !sayfa && !YUKLENIYOR) {
+  if (detay && !sayfa && !YUKLENIYOR && !klonMi(DB.proje(id))) {
     const hedef = DB.proje(id) ? projeAdresi(id) : '#/projeler';
     if (hedef !== location.hash) {
       location.replace(hedef);
@@ -11049,6 +11062,9 @@ function baslangicTuruSec(tur, sektorId) {
       <div class="satir sec-satir" data-bt="template" role="button" tabindex="0">
         <span class="sec-yazi"><b>Bir Template'ten Başla</b><i>Temizlenmiş, hazır bir tabandan hızlıca kur</i></span>
       </div>
+      <div class="satir sec-satir" data-bt="klon" role="button" tabindex="0">
+        <span class="sec-yazi"><b>Test Klonu</b><i>Müşterinin programının bağlantısız ikizi — ayrı depo, ayrı veritabanı</i></span>
+      </div>
     </div>
     <div class="modal-alt">
       <button class="btn btn-ghost" data-bt="kapat" type="button">Vazgeç</button>
@@ -11059,6 +11075,7 @@ function baslangicTuruSec(tur, sektorId) {
       if (!t || t.dataset.bt === 'kapat') return;
       modalKapat();
       if (t.dataset.bt === 'kopya')    return kopyaKaynagiSec(tur);
+      if (t.dataset.bt === 'klon')     return klonKaynakSec();   // klon.js
       if (t.dataset.bt === 'template') return cekirdekKaynakSec(tur, sektorId);
       sihirbaziBaslat(tur, sektorId);
     });
@@ -11116,7 +11133,7 @@ function cekirdekKaynakSec(tur, sektorId) {
    sihirbazından geçmiyor çünkü zaten dolu geliyor. */
 function kopyaKaynagiSec(tur) {
   modalHepsiniKapat();
-  const liste = DB.projeler.filter(p => !p.arsiv && !cekirdekMi(p));
+  const liste = DB.projeler.filter(p => !p.arsiv && !cekirdekMi(p) && !klonMi(p));
   if (!liste.length) { toast('Kopyalanacak proje yok.', 'uyari'); return; }
 
   modalAc(`
@@ -15034,6 +15051,7 @@ async function eylemCalistir(el) {
   if (e && e.indexOf('guv-') === 0) { if (await guvenlikEkranEylem(e, el)) return; }
   /* Nizam Security (security.js). */
   if (e && e.indexOf('sec-') === 0) { if (await securityEylem(e, el)) return; }
+  if (e && e.indexOf('klon-') === 0) { if (await klonEylem(e, el)) return; }   // klon.js
 
   if (e === 'sihirbaz')  return sihirbaziAc();
   if (e === 'tazele')    return veriTazele();

@@ -316,40 +316,12 @@ $nizam_devir$;`;
 
 /* Kurulum SQL'i: gerçek yapının ve güvenlik kurallarının kopyası.
    Satır verisi YOK. Tek işlem (transaction): bir hata olursa hiçbir şey kalmaz. */
-function secTestKurulumSql(yapi, projeId, ortam) {
+/* Yapının kopyasını kuran ortak gövde (eklentiler → yetkiler). Test ortamı
+   kurulumu ve Test Klonu (klon.js) aynı gövdeyi kullanır. Satır dizisi döner. */
+function secKurulumGovde(yapi) {
   const T = yapi.tablolar, G = yapi.gorunumler || [], F = yapi.fonksiyonlar || [];
   const tab = t => 'public.' + secQi(t);
   const s = [];
-  s.push('-- NIZAM Security · Test ortamı kurulumu');
-  s.push('-- YALNIZ TEST PROJESİNDE çalıştır: ' + ortam.test_ref + '.supabase.co');
-  s.push('-- Production (' + ortam.uretim_ref + ') değil. Kilit, production\'da kendini durdurur.');
-  s.push('-- Satır verisi içermez; tablolar, kurallar, yetkiler, fonksiyonlar ve tetikleyiciler kurulur.');
-  s.push('begin;');
-  s.push('set local check_function_bodies = off;');
-  s.push('set local search_path = public, extensions;');
-  s.push('');
-  s.push(secKilitSql(projeId, true, true));
-  s.push('');
-  s.push('-- Sabit test veritabanı: başka projeden devralınıyorsa önceki test kullanıcıları silinir.');
-  s.push(secDevirSql(projeId));
-  s.push('');
-  s.push('-- İşaret: bu veritabanının bir Nizam test ortamı olduğunu söyler.');
-  s.push(`create table if not exists public.nizam_test_ortami (
-  anahtar text primary key default 'nizam',
-  proje_id text not null,
-  uretim_ref text,
-  test_ref text,
-  kuruldu timestamptz
-);`);
-  s.push('alter table public.nizam_test_ortami enable row level security;');
-  s.push('revoke all on table public.nizam_test_ortami from public, anon, authenticated;');
-  s.push(`insert into public.nizam_test_ortami (anahtar, proje_id, uretim_ref, test_ref, kuruldu)
-values ('nizam', ${secQl(projeId)}, ${secQl(ortam.uretim_ref)}, ${secQl(ortam.test_ref)}, now())
-on conflict (anahtar) do update set proje_id = excluded.proje_id, uretim_ref = excluded.uretim_ref, test_ref = excluded.test_ref, kuruldu = now();`);
-  s.push('');
-  s.push('-- 1) Test veritabanını baştan temizle (önceki proje dahil; yalnız Nizam test ortamında, kilit bunu sağlar)');
-  s.push(secTemizleSql());
-  s.push('');
   s.push('-- 2) Eklentiler, tipler ve sayaçlar');
   (yapi.eklentiler || []).forEach(x => s.push(`do $nizam_eklenti$ begin
   create extension if not exists ${secQi(x.ad)} with schema ${secQi(x.sema)};
@@ -422,6 +394,44 @@ end $nizam_eklenti$;`));
     if (f.authenticated) s.push(`grant execute on function ${ad} to authenticated;`);
   });
   s.push('');
+  return s;
+}
+
+function secTestKurulumSql(yapi, projeId, ortam) {
+  const T = yapi.tablolar, G = yapi.gorunumler || [], F = yapi.fonksiyonlar || [];
+  const tab = t => 'public.' + secQi(t);
+  const s = [];
+  s.push('-- NIZAM Security · Test ortamı kurulumu');
+  s.push('-- YALNIZ TEST PROJESİNDE çalıştır: ' + ortam.test_ref + '.supabase.co');
+  s.push('-- Production (' + ortam.uretim_ref + ') değil. Kilit, production\'da kendini durdurur.');
+  s.push('-- Satır verisi içermez; tablolar, kurallar, yetkiler, fonksiyonlar ve tetikleyiciler kurulur.');
+  s.push('begin;');
+  s.push('set local check_function_bodies = off;');
+  s.push('set local search_path = public, extensions;');
+  s.push('');
+  s.push(secKilitSql(projeId, true, true));
+  s.push('');
+  s.push('-- Sabit test veritabanı: başka projeden devralınıyorsa önceki test kullanıcıları silinir.');
+  s.push(secDevirSql(projeId));
+  s.push('');
+  s.push('-- İşaret: bu veritabanının bir Nizam test ortamı olduğunu söyler.');
+  s.push(`create table if not exists public.nizam_test_ortami (
+  anahtar text primary key default 'nizam',
+  proje_id text not null,
+  uretim_ref text,
+  test_ref text,
+  kuruldu timestamptz
+);`);
+  s.push('alter table public.nizam_test_ortami enable row level security;');
+  s.push('revoke all on table public.nizam_test_ortami from public, anon, authenticated;');
+  s.push(`insert into public.nizam_test_ortami (anahtar, proje_id, uretim_ref, test_ref, kuruldu)
+values ('nizam', ${secQl(projeId)}, ${secQl(ortam.uretim_ref)}, ${secQl(ortam.test_ref)}, now())
+on conflict (anahtar) do update set proje_id = excluded.proje_id, uretim_ref = excluded.uretim_ref, test_ref = excluded.test_ref, kuruldu = now();`);
+  s.push('');
+  s.push('-- 1) Test veritabanını baştan temizle (önceki proje dahil; yalnız Nizam test ortamında, kilit bunu sağlar)');
+  s.push(secTemizleSql());
+  s.push('');
+  secKurulumGovde(yapi).forEach(x => s.push(x));
   s.push('commit;');
   /* Hakem (yazma testi yardımcısı) kurulumla birlikte; projeden bağımsız. */
   if (typeof secYardimciSql === 'function') {   // security-yazma.js

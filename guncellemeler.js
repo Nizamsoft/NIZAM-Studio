@@ -21,6 +21,13 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.330.0', tarih: '2026-10-06',
+    ozet: 'Yeni: Test Klonu',
+    maddeler: [
+      'Yeni Proje → "Test Klonu": müşterinin programının ayrı depo ve ayrı veritabanıyla bağlantısız ikizi.',
+      'Klonlar, Projeler\'de kendi sekmesinde duruyor; kurulum 5 adım, veri boş başlıyor.',
+      'Asıl program değişince "Asıl programla eşitle" bölümü farkları gösterip adım adım güncelletiyor.',
+    ] },
   { surum: 'v0.329.0', tarih: '2026-10-06',
     ozet: 'Eski "Güvenlik kontrolü" aşaması kalktı',
     maddeler: [
