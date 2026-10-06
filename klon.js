@@ -248,13 +248,9 @@ function klonAyniAlan(p, kaynak) {
   return !!(depoSlug(p.repo) && kaynak && sahip(p.repo) && sahip(p.repo) === sahip(kaynak.repo));
 }
 function klonAlanUyarisi(p, kaynak) {
-  const sahip = (depoSlug(kaynak.repo) || '').split('/')[0];
   if (depoSlug(p.repo) && !klonAyniAlan(p, kaynak)) return '';
-  return `<div class="sec-uyari">⚠️ <b>${depoSlug(p.repo) ? 'Klon ve asıl aynı GitHub hesabında' : 'Önerim: klonu ayrı bir GitHub hesabında aç'}.</b>
-    Aynı hesaptan yayınlanırlarsa (${esc(sahip || 'hesap')}.github.io) tarayıcı ikisini tek site sayar; hafıza ortak olur ve
-    klonun yazdığı veri asılın tarafından okunabilir. En temiz çözüm klonları ayrı bir GitHub organizasyonunda açmak
-    (ör. <code>${esc(sahip || 'firma')}-klon</code>): "GitHub'da kopyala" sayfasında <b>Owner</b> olarak onu seç.
-    ${depoSlug(p.repo) ? 'Ayrı hesap mümkün değilse 4. adımın promptu hafıza adlarını klona özel yapar; kontrol bunu da denetler.' : ''}</div>`;
+  return `<p class="sec-t-ipucu">ℹ️ Klon asılla aynı adreste yayınlanıyor. Hafızalarının karışmaması için
+    <b>4. adımdaki promptu</b> mutlaka uygula, <b>5. adımdaki kontrol</b> "hafıza ayrık" demeden klonu kullanma.</p>`;
 }
 
 /* ---------- Eşitleme (elle başlatılır) ---------- */

@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## v0.331.1
+- **Test Klonu — aynı adres uyarısı sadeleşti.** Kırmızı "ayrı GitHub hesabında aç" önerisi kaldırıldı
+  (kullanıcı ayrı hesap istemiyor). Yerine bilgi notu: klon asılla aynı adreste; 4. adımın promptu
+  uygulanmalı, 5. adımın kontrolü "hafıza ayrık" demeden klon kullanılmamalı.
+
 ## v0.331.0
 - **Test Klonu — tarayıcı hafızası ayrımı.** Aynı GitHub hesabından yayınlanan klon ve asıl
   (kullanici.github.io) tarayıcıda tek site sayılıyor; localStorage/IndexedDB/çerez/önbellek ortak

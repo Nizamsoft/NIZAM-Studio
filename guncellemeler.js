@@ -21,6 +21,11 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.331.1', tarih: '2026-10-06',
+    ozet: 'Klon uyarısı sadeleşti',
+    maddeler: [
+      'Klonda "ayrı GitHub hesabı aç" önerisi kaldırıldı; yerine 4. ve 5. adımı hatırlatan kısa bir not geldi.',
+    ] },
   { surum: 'v0.331.0', tarih: '2026-10-06',
     ozet: 'Test Klonu: tarayıcı hafızası artık ayrı',
     maddeler: [
