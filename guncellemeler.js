@@ -21,6 +21,11 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.332.1', tarih: '2026-10-07',
+    ozet: 'Sabit test veritabanı kaydı düzeldi',
+    maddeler: [
+      'Nizam Security\'de sabit test veritabanını kaydederken çıkan "Veri işlemi başarısız" hatası giderildi.',
+    ] },
   { surum: 'v0.332.0', tarih: '2026-10-06',
     ozet: 'Klonu yayına alma adımı',
     maddeler: [

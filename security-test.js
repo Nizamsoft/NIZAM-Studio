@@ -87,8 +87,12 @@ const SEC_TEST_VERI = {
       if (eski[p.id] !== testRef) Object.assign(satir, { kullanicilar: [], kontrol: null, kontrol_tarihi: null, kurulum_tarihi: null, veri_sql: null, veri_tarihi: null });
       return satir;
     });
-    if (satirlar.length) {
-      const { error } = await AUTH.db.from('security_test_ortamlari').upsert(satirlar, { onConflict: 'proje_id' });
+    /* Tek pakette farklı alanlı satırlar gidince Supabase eksik alanları boş (null) yazar;
+       "kullanicilar" boş olamadığı için hepsi reddedilir. Sıfırlanan ve korunan satırlar ayrı gider. */
+    const gruplar = [satirlar.filter(x => 'kullanicilar' in x), satirlar.filter(x => !('kullanicilar' in x))];
+    for (const grup of gruplar) {
+      if (!grup.length) continue;
+      const { error } = await AUTH.db.from('security_test_ortamlari').upsert(grup, { onConflict: 'proje_id' });
       if (error) throw new Error(secTestHata(error));
     }
     SEC_TEST.kayit = {};

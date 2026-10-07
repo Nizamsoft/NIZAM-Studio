@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.332.1
+- **Nizam Security — sabit test veritabanı kaydedilemiyordu ("Veri işlemi başarısız").** `sabitYaz`
+  sıfırlanan (yeni/DB'si değişen) ve korunan projeleri tek upsert'te gönderiyordu; farklı alanlı
+  satırlarda PostgREST eksik kolonları null yazıyor, `kullanicilar not null` ihlali bütün paketi
+  reddediyordu (ör. yeni klon eklenince). İki grup ayrı upsert ediliyor.
+
 ## v0.332.0
 - **Test Klonu — 6. adım "Yayına al".** GitHub Pages ayar sayfasına doğrudan link (Deploy from a branch ·
   main · root), klon adresini açan düğme ve "Açıldı" işareti (`palet.klon.yayinda`). Kontrol temiz
