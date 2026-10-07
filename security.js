@@ -725,6 +725,7 @@ function secSihirbaz(projeId, durak) {
     secYukle('kayit-' + projeId, async () => { SEC.kayit[projeId] = await SEC_VERI.getir(projeId); });
     return iskeletler(3);
   }
+  if (typeof klonMi === 'function' && klonMi(p) && klonEskiKopyaTasi(p)) return iskeletler(3);   // klon.js
   if (SEC_TEST.kayit[projeId] === undefined) {
     secYukle('test-' + projeId, async () => { SEC_TEST.kayit[projeId] = await SEC_TEST_VERI.getir(projeId); });
     return iskeletler(3);

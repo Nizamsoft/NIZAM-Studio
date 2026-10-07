@@ -11,11 +11,12 @@
    Yapı okuma ve kurulum Nizam Security'nin parçalarını kullanır (security*.js):
    SEC_YAPI_SQL, secKurulumGovde, secTemizleSql, secYapiKarsilastir.
    Durum projenin paletinde: palet.klon = { kaynak, olusturuldu, yapiKuruldu,
-   yapiKaynakTarihi, koparildi, kontrol: {temiz, tarih, bulunanlar}, kodEsitlendi, yayinda }.
+   yapiKaynakTarihi, koparildi, kontrol: {temiz, tarih, bulunanlar}, kodEsitlendi, yayinda,
+   kurulanYapi }.
    index.html'de security-*.js'ten sonra.
    ========================================================================== */
 
-const KLON = { ac: {} };   // projeId → { adımNo: true/false } — açık kurulum bölümleri
+const KLON = { ac: {}, tasindi: {} };   // projeId → { adımNo: true/false } — açık kurulum bölümleri
 
 const KLON_ADIMLAR = [
   { id: 'depo',     ad: 'GitHub deposu',          kisa: 'Asıl kodun kopyası',
@@ -101,6 +102,21 @@ async function klonOlustur(kaynakId) {
   }
 }
 
+/* Eski sürüm asılın yapısını klonun Security kaydına kopyalıyordu: bir kez klonun kendi
+   kaydına taşı ve Security'deki kopyayı sil (Gerçek yapı klonun veritabanından okunsun).
+   Taşıma başladıysa true döner (çağıran iskelet gösterir). Security ekranından da çağrılır. */
+function klonEskiKopyaTasi(p) {
+  const k = klonVeri(p);
+  const eskiKopya = SEC.kayit[p.id] && SEC.kayit[p.id].yapi;
+  if (!k.yapiKuruldu || k.kurulanYapi || !eskiKopya || KLON.tasindi[p.id]) return false;
+  KLON.tasindi[p.id] = true;
+  secYukle('klon-tasi-' + p.id, async () => {
+    await klonPaletYaz(p, { kurulanYapi: eskiKopya });
+    SEC.kayit[p.id] = await SEC_VERI.kaydet(p.id, { yapi: null, yapi_tarihi: null });
+  });
+  return true;
+}
+
 /* ---------- Ekran ---------- */
 
 function klonEkrani(p) {
@@ -115,6 +131,7 @@ function klonEkrani(p) {
     secYukle('kayit-' + p.id, async () => { SEC.kayit[p.id] = await SEC_VERI.getir(p.id); });
     return iskeletler(3);
   }
+  if (klonEskiKopyaTasi(p)) return iskeletler(3);
   const durumlar = klonDurumlari(p);
   const biten = durumlar.filter(x => x.bitti).length;
   const hazir = biten === durumlar.length;
@@ -280,7 +297,9 @@ function klonEsitleme(p) {
   if (!kaynak) return '';
   const k = klonVeri(p);
   const ks = SEC.kayit[kaynak.id] || {}, cs = SEC.kayit[p.id] || {};
-  const ky = ks.yapi, cy = cs.yapi;
+  /* Klonun yapısı: Security'de klonun veritabanından daha yeni okunduysa o, yoksa kurulan. */
+  const okunanYeni = cs.yapi && (!k.yapiKuruldu || String(cs.yapi_tarihi || '') > String(k.yapiKuruldu));
+  const ky = ks.yapi, cy = okunanYeni ? cs.yapi : (k.kurulanYapi || cs.yapi);
   let fark = null;
   if (ky && cy) {
     const f = secYapiKarsilastir(ky, cy);   // security-test.js — "üretim" = asıl, "test" = klon
@@ -549,12 +568,10 @@ async function klonEylem(e, el) {
   if (e === 'klon-yapi-tamam') {
     const ks = SEC.kayit[kaynak.id] || {};
     try {
-      /* Klonun yapısı artık asılınkiyle aynı: Nizam Security kaydına da yaz (eşitleme
-         karşılaştırması ve klonu Security'de taramak için). Erişim kuralları da taşınır. */
-      const alan = { yapi: ks.yapi, yapi_tarihi: new Date().toISOString() };
-      if (ks.model && !(SEC.kayit[p.id] || {}).model) Object.assign(alan, { model: ks.model, model_tarihi: ks.model_tarihi });
-      SEC.kayit[p.id] = await SEC_VERI.kaydet(p.id, alan);
-      await klonPaletYaz(p, { yapiKuruldu: new Date().toISOString(), yapiKaynakTarihi: ks.yapi_tarihi || null });
+      /* Kurulan yapı klonun kendi kaydında tutulur (eşitleme karşılaştırması). Nizam Security
+         kaydına YAZILMAZ: oradaki "Gerçek yapı" klonun kendi veritabanından okunmalı. */
+      await klonPaletYaz(p, { yapiKuruldu: new Date().toISOString(), yapiKaynakTarihi: ks.yapi_tarihi || null,
+        kurulanYapi: ks.yapi || null });
       toast('Klonun yapısı kuruldu olarak işaretlendi.', 'basari');
       render();
     } catch (h) { toast(h.message || String(h), 'hata'); }

@@ -21,6 +21,11 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.332.3', tarih: '2026-10-07',
+    ozet: 'Klonun güvenlik taraması temiz başlıyor',
+    maddeler: [
+      'Klonda Nizam Security\'nin "Gerçek yapı" adımı artık asıldan kopyalanmış gelmiyor; klonun kendi veritabanından okunuyor.',
+    ] },
   { surum: 'v0.332.2', tarih: '2026-10-07',
     ozet: 'Yanlış test veritabanı uyarısı kalktı',
     maddeler: [

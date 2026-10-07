@@ -1,5 +1,12 @@
 # Değişiklik Günlüğü
 
+## v0.332.3
+- **Test Klonu — Nizam Security'de "Gerçek yapı" baştan yeşil geliyordu.** Klonun yapı kurulumu
+  asılın yapısını klonun `security_modelleri` kaydına yazıyordu. Artık `palet.klon.kurulanYapi`'de
+  tutuluyor; eşitleme onu (ya da Security'de klondan daha yeni okunmuş yapıyı) karşılaştırır.
+  Eski klonlar için bir kezlik taşıma (`klonEskiKopyaTasi`): kopya yapı palete alınır, Security
+  kaydındaki yapı silinir. Klon ekranı ve Security sihirbazı tetikler.
+
 ## v0.332.2
 - **Nizam Security — yanlış "Test veritabanı girilmemiş" uyarısı.** `testYok` test kartının
   durumuna bakıyordu; o kart yalnız yapı + kurallar (1–2. adım) bitince hesaplandığı için veritabanı
