@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## v0.332.2
+- **Nizam Security — yanlış "Test veritabanı girilmemiş" uyarısı.** `testYok` test kartının
+  durumuna bakıyordu; o kart yalnız yapı + kurallar (1–2. adım) bitince hesaplandığı için veritabanı
+  girilmiş olsa da uyarı ve kilit çıkıyordu. Artık doğrudan `test_ref`'e bakıyor (ana ekran + ayarlar).
+
 ## v0.332.1
 - **Nizam Security — sabit test veritabanı kaydedilemiyordu ("Veri işlemi başarısız").** `sabitYaz`
   sıfırlanan (yeni/DB'si değişen) ve korunan projeleri tek upsert'te gönderiyordu; farklı alanlı

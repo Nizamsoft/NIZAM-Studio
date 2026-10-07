@@ -21,6 +21,11 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.332.2', tarih: '2026-10-07',
+    ozet: 'Yanlış test veritabanı uyarısı kalktı',
+    maddeler: [
+      'Test veritabanı girildiği hâlde çıkan "Test veritabanı girilmemiş" uyarısı düzeltildi.',
+    ] },
   { surum: 'v0.332.1', tarih: '2026-10-07',
     ozet: 'Sabit test veritabanı kaydı düzeldi',
     maddeler: [

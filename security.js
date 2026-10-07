@@ -784,7 +784,7 @@ function secAyarlarSayfa(projeId, durumlar) {
   const toplam = SEC_AYAR_SIRA.length;
   const biten = SEC_AYAR_SIRA.filter(i => durumlar[i].bitti).length;
   const ilk = SEC_AYAR_SIRA.find(i => !durumlar[i].bitti);
-  const testYok = !durumlar[2].bitti;
+  const testYok = !(SEC_TEST.kayit[projeId] || {}).test_ref;   // yalnız veritabanı girilmiş mi
   const bolum = (i, sira) => {
     const x = SEC_ADIMLAR[i], d = durumlar[i];
     const ac = acik[i + 1] !== undefined ? acik[i + 1] : !d.bitti && i === ilk;
@@ -834,7 +834,7 @@ function secAnaSayfa(projeId, durumlar) {
   const kisiSay = (o.kullanicilar || []).filter(x => x.kimlik).length;
   const toplam = SEC_AYAR_SIRA.length;
   const biten = SEC_AYAR_SIRA.filter(i => durumlar[i].bitti).length;
-  const testYok = !durumlar[2].bitti;
+  const testYok = !o.test_ref;   // yalnız veritabanı girilmiş mi (diğer adımlar 'biten'de)
   const hazir = biten === toplam && !testYok;
   const engel = testYok ? 'Önce Nizam Security listesinden ⚙️ Test veritabanı\'nı gir.'
     : hazir ? secUretimAyriMi(p, o) : 'Önce proje ayarlarını tamamla (' + (toplam - biten) + ' eksik).';
