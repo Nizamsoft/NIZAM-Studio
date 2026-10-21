@@ -1,5 +1,17 @@
 # Değişiklik Günlüğü
 
+## v0.335.0
+- **Uygulama simgesindeki sayı = okunmamış mesaj + okunmamış görev bildirimi + (yöneticide) yeni hata.**
+  - `sql/48-bildirim-okundu.sql`: `bildirim_okundu` (kişi + okunan görev hareketi / hata kimliği,
+    RLS: yalnız kendi satırı) ve `rozet_sayisi(uuid)` (yalnız service_role; zil kuralıyla aynı:
+    son 30 gün, kendi hareketi hariç, verildi/aktarıldı yalnız alana, arşiv/çekirdek hariç).
+  - Zil okundu bilgisi artık buluta da yazılıyor (`BILDIRIM.okunduYaz`); yerel kayıtla birleşik
+    okunuyor, eski yerel kayıtlar ilk yazımda buluta taşınıyor.
+  - Hata ayrıntısı açılınca o hata okunmuş sayılıyor; görev bildiriminden açılan görevin zil
+    kayıtları okunuyor.
+  - `bildirim-gonder` ve `hata-al` her bildirimle alıcının `rozet` sayısını gönderiyor; `sw.js`
+    0'da simgeyi temizliyor. `zilNoktasi` aynı toplamı uygulama açıkken yazıyor.
+
 ## v0.334.0
 - **Görev ve hata bildirimleri + konu tercihleri.**
   - `sql/47-bildirim-konulari.sql`: `bildirim_tercih` (kişi başına kapatılan konular, RLS: yalnız

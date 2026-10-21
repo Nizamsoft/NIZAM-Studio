@@ -277,7 +277,7 @@ async function yoneticilereHaber(
   if (!acik.length) return;
 
   const { data: aboneler } = await db.from('push_abonelik')
-    .select('endpoint, p256dh, auth').in('kullanici', acik);
+    .select('endpoint, p256dh, auth, kullanici').in('kullanici', acik);
   if (!aboneler || !aboneler.length) return;
 
   const { data: vapid } = await db.from('push_anahtar').select('ozel, genel').eq('id', 1).maybeSingle();
@@ -286,7 +286,7 @@ async function yoneticilereHaber(
   const tek = yeniler.length === 1 ? yeniler[0] : null;
   const ilk = yeniler[0];
   const metin = String(ilk.mesaj || '');
-  const icerik = JSON.stringify(tek
+  const icerik = (tek
     ? {
         tip: 'hata', id: tek.id,
         baslik: 'Hata · ' + (tek.proje_ad || 'Proje'),
@@ -298,11 +298,18 @@ async function yoneticilereHaber(
         baslik: yeniler.length + ' yeni hata bildirimi',
         metin: (ilk.proje_ad ? ilk.proje_ad + ': ' : '') + (metin.length > 200 ? metin.slice(0, 200) + '…' : metin),
         adres: '#/hatalar', etiket: 'hata',
-      });
+      }) as Record<string, unknown>;
+
+  /* Her yöneticinin simgesindeki sayı ayrı (sql/48 yoksa sayı gitmez). */
+  const metinler = new Map<string, string>();
+  for (const k of acik) {
+    const { data: rozet, error: rHata } = await db.rpc('rozet_sayisi', { p_kisi: k });
+    metinler.set(k, JSON.stringify(!rHata && typeof rozet === 'number' ? { ...icerik, rozet } : icerik));
+  }
 
   await Promise.all(aboneler.map(async (a) => {
     try {
-      const d = await pushGonder(a, icerik, vapid as { ozel: JsonWebKey; genel: string });
+      const d = await pushGonder(a, metinler.get(a.kullanici as string)!, vapid as { ozel: JsonWebKey; genel: string });
       if (d === 404 || d === 410) await db.from('push_abonelik').delete().eq('endpoint', a.endpoint);
     } catch { /* tek cihazın hatası ötekileri durdurmasın */ }
   }));

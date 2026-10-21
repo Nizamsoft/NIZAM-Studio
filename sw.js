@@ -21,7 +21,7 @@
    Bir resim yeniden yüklenince eski kopya önbellekte kalırdı; uygulama
    `postMessage({ tip: 'unut', yol })` gönderiyor, o kayıt siliniyor. */
 
-const CACHE = 'nizam-studio-v0.334.0';
+const CACHE = 'nizam-studio-v0.335.0';
 
 /* Resimler AYRI ve SÜRÜMSÜZ bir önbellekte duruyor.
 
@@ -163,9 +163,10 @@ self.addEventListener('push', e => {
   };
 
   const isler = [self.registration.showNotification(baslik, secenek)];
-  /* Uygulama simgesindeki okunmamış sayısı. */
-  if (v.rozet && self.navigator && self.navigator.setAppBadge) {
-    isler.push(self.navigator.setAppBadge(v.rozet).catch(() => {}));
+  /* Uygulama simgesindeki sayı: okunmamış mesaj + görev + hata (sql/48). */
+  if (typeof v.rozet === 'number' && self.navigator && self.navigator.setAppBadge) {
+    isler.push((v.rozet > 0 ? self.navigator.setAppBadge(v.rozet)
+                            : self.navigator.clearAppBadge()).catch(() => {}));
   }
   e.waitUntil(Promise.all(isler));
 });

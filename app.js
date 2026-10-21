@@ -757,6 +757,8 @@ const VIEWS = {
         'Hata bildirimlerini yalnızca yönetici görebilir.')}</div>`;
     }
     const id = rota().id;
+    /* Ayrıntısına bakılan hata okunmuş sayılır; simgedeki sayı düşer. */
+    if (id && !BILDIRIM.okunan.has(id)) { BILDIRIM.okunduYaz([id]); setTimeout(zilNoktasi, 0); }
     return id ? hataBildirimDetay(id) : hataBildirimListesi();
   },
 
@@ -8220,15 +8222,21 @@ function projelerEkrani(kova) {
    açmadan çalışsın diye. Başka cihazda tekrar okunmamış görünür. */
 const BILDIRIM_OKUNDU = 'ns-bildirim-okundu';
 
+/* Okunanlar: bu cihazdaki eski kayıt + buluttaki ortak kayıt (sql/48). */
 function bildirimOkunanlar() {
-  try { return new Set(JSON.parse(localStorage.getItem(BILDIRIM_OKUNDU) || '[]')); }
-  catch (_) { return new Set(); }
+  let yerel;
+  try { yerel = new Set(JSON.parse(localStorage.getItem(BILDIRIM_OKUNDU) || '[]')); }
+  catch (_) { yerel = new Set(); }
+  BILDIRIM.okunan.forEach(id => yerel.add(id));
+  return yerel;
 }
 
 /* Son 300 kayıt yetiyor; liste zaten bu kadar geriye bakmıyor. */
 function bildirimOkunanYaz(kume) {
   try { localStorage.setItem(BILDIRIM_OKUNDU, JSON.stringify(Array.from(kume).slice(-300))); }
   catch (_) {}
+  /* Buluta da yaz: öbür cihazda ve simgedeki sayıda da okunmuş sayılsın. */
+  BILDIRIM.okunduYaz(Array.from(kume));
 }
 
 const BILDIRIM_BASLIK = {
@@ -9460,8 +9468,14 @@ function zilNoktasi() {
 
   const sohbetN = $('#btn-sohbet .zil-nokta');
   if (sohbetN) sohbetN.classList.toggle('hidden', !DB.okunmamis());
-  /* Uygulama simgesindeki sayı da okunmamış mesaj sayısını göstersin. */
-  BILDIRIM.rozet(DB.okunmamis());
+  /* Uygulama simgesindeki sayı: okunmamış mesaj + görev bildirimi + hata. */
+  BILDIRIM.rozet(DB.okunmamis() + bildirimOkunmamis() + hataOkunmamis());
+}
+
+/* Yöneticide: henüz bakılmamış yeni hata bildirimleri. */
+function hataOkunmamis() {
+  if (!AUTH.yonetici) return 0;
+  return (DB.hatalar || []).filter(h => h.durum === 'yeni' && !BILDIRIM.okunan.has(h.id)).length;
 }
 
 function sayaclariYaz() {
@@ -10693,6 +10707,11 @@ function bildirimAdresiAc(adres) {
   if (!m) { if (adres && adres !== location.hash) gitVeCiz(adres); return; }
   try { history.replaceState(null, '', '#/gorevler'); } catch (e) { location.hash = '#/gorevler'; }
   render();
+  /* O görevin zildeki bildirimleri okunmuş sayılır. */
+  const okunan = bildirimOkunanlar();
+  bildirimListesi().filter(b => b.gorev === m[1]).forEach(b => okunan.add(b.id));
+  bildirimOkunanYaz(okunan);
+  zilNoktasi();
   if (DB.gorev(m[1])) gorevKartiAc(m[1]);
 }
 
@@ -17853,8 +17872,9 @@ async function uygulamayiAc() {
     if (rota().key === 'ekip') DB.tazele('kisiler').then(render, render);
   });
 
-  /* Bildirim izni daha önce verildiyse cihaz kaydını tazele. */
-  BILDIRIM.tazele();
+  /* Bildirim izni daha önce verildiyse cihaz kaydını tazele; okundu
+     bilgisi gelince zil ve simgedeki sayı yeniden hesaplanır. */
+  BILDIRIM.tazele().then(zilNoktasi, () => {});
   /* Studio bir görev bildirimine dokunularak açıldıysa görev kartını aç. */
   bildirimAdresiAc(location.hash);
 

@@ -21,6 +21,12 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.335.0', tarih: '2026-10-21',
+    ozet: 'Simgedeki sayı her şeyi sayıyor',
+    maddeler: [
+      'Uygulama simgesindeki kırmızı sayı artık okunmamış mesajlarla birlikte okunmamış görev bildirimlerini ve yeni hata bildirimlerini de gösteriyor.',
+      'Zile ya da hataya bakınca sayı düşüyor; telefonda okuduğun bildirim bilgisayarda da okunmuş görünüyor.',
+    ] },
   { surum: 'v0.334.0', tarih: '2026-10-21',
     ozet: 'Görev ve hata bildirimleri',
     maddeler: [

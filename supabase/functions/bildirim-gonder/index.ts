@@ -233,6 +233,16 @@ Deno.serve(async (istek) => {
     return ulasan;
   };
 
+  /* Uygulama simgesindeki sayı (sql/48). Fonksiyon yoksa okunmamış mesaj
+     sayısına düşer. */
+  const rozetAl = async (kisi: string) => {
+    const { data, error } = await db.rpc('rozet_sayisi', { p_kisi: kisi });
+    if (!error && typeof data === 'number') return data;
+    const { count } = await db.from('messages').select('id', { count: 'exact', head: true })
+      .eq('alici', kisi).is('okundu', null);
+    return count || 0;
+  };
+
   const adOku = async (id: string) => {
     const { data } = await db.from('profiles').select('ad').eq('id', id).maybeSingle();
     return (data && data.ad) || '';
@@ -281,15 +291,11 @@ Deno.serve(async (istek) => {
     if (!mesaj) return yanit({ gonderildi: 0 });
 
     const ad = (await adOku(ben)) || 'Yeni mesaj';
-    const gonderildi = await kisilereGonder([mesaj.alici], 'mesaj', async (kisi) => {
-      const { count } = await db.from('messages').select('id', { count: 'exact', head: true })
-        .eq('alici', kisi).is('okundu', null);
-      return {
-        tip: 'mesaj', id: mesaj.id, kisi: ben, baslik: ad,
-        metin: kisalt(String(mesaj.metin || '')),
-        adres: '#/sohbet/' + ben, etiket: 'mesaj-' + ben, rozet: count || 0,
-      };
-    });
+    const gonderildi = await kisilereGonder([mesaj.alici], 'mesaj', async (kisi) => ({
+      tip: 'mesaj', id: mesaj.id, kisi: ben, baslik: ad,
+      metin: kisalt(String(mesaj.metin || '')),
+      adres: '#/sohbet/' + ben, etiket: 'mesaj-' + ben, rozet: await rozetAl(kisi),
+    }));
     return yanit({ gonderildi });
   }
 
@@ -315,11 +321,11 @@ Deno.serve(async (istek) => {
       ? [g.atanan] : [g.atanan, g.olusturan];
     const ad = (await adOku(ben)) || 'Biri';
     const gonderildi = await kisilereGonder(
-      alicilar.filter(k => k && k !== ben) as string[], 'gorev', () => ({
+      alicilar.filter(k => k && k !== ben) as string[], 'gorev', async (kisi) => ({
         tip: 'gorev', id: g.id,
         baslik: ad + ' ' + GOREV_BASLIK[h.tip],
         metin: kisalt((g.no ? 'NS-' + g.no + ' · ' : '') + String(g.baslik || ''), 200),
-        adres: '#/gorevler/' + g.id, etiket: 'gorev-' + g.id,
+        adres: '#/gorevler/' + g.id, etiket: 'gorev-' + g.id, rozet: await rozetAl(kisi),
       }));
     return yanit({ gonderildi });
   }

@@ -2089,6 +2089,8 @@ const BILDIRIM = {
   ],
   kapali: [],
   tercihYuklendi: false,
+  /* Zilde ve hatalarda okunanlar — bütün cihazlarda ortak (sql/48). */
+  okunan: new Set(),
   cihazKayitli: false,
 
   konular() {
@@ -2104,6 +2106,29 @@ const BILDIRIM = {
         .select('kapali').eq('kullanici', AUTH.user.id).maybeSingle();
       if (!error) { this.kapali = (data && data.kapali) || []; this.tercihYuklendi = true; }
     } catch (e) { /* tablo yoksa hepsi açık sayılır */ }
+    await this.okunanOku();
+  },
+
+  async okunanOku() {
+    if (!AUTH.bagli || !AUTH.user) return;
+    try {
+      const sinir = new Date(Date.now() - 45 * 24 * 3600 * 1000).toISOString();
+      const { data, error } = await AUTH.db.from('bildirim_okundu')
+        .select('kayit').eq('kullanici', AUTH.user.id).gt('olusturuldu', sinir).limit(2000);
+      if (!error && data) data.forEach(r => this.okunan.add(r.kayit));
+    } catch (e) { /* tablo yoksa yalnız bu cihazdaki bilgi kullanılır */ }
+  },
+
+  /* Okundu say: buluta yaz ki öbür cihazda ve simgedeki sayıda da düşsün. */
+  okunduYaz(idler) {
+    const yeni = (idler || []).filter(id => id && !this.okunan.has(id));
+    if (!yeni.length) return;
+    yeni.forEach(id => this.okunan.add(id));
+    if (!AUTH.bagli || !AUTH.user) return;
+    AUTH.db.from('bildirim_okundu')
+      .upsert(yeni.map(kayit => ({ kullanici: AUTH.user.id, kayit })),
+              { onConflict: 'kullanici,kayit', ignoreDuplicates: true })
+      .then(() => {}, () => {});
   },
 
   async konuDegistir(anahtar, acik) {
