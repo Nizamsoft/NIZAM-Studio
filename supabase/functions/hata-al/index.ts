@@ -40,6 +40,115 @@ const EN_BUYUK = 64_000;           // gövde sınırı (bayt)
 const SAATLIK_SINIR = 300;         // saatte en fazla bu kadar yeni bildirim
 const UUID = /^[a-f0-9]{8}-[a-f0-9]{4}-[1-8][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i;
 
+/* Telefon bildirimi (Web Push) — bildirim-gonder fonksiyonuyla aynı kod.
+   Editörden tek dosya kurulduğu için paylaşılamıyor, kopyası burada.
+   Anahtar ve cihaz kayıtları sql/46-bildirimler.sql tablolarında. */
+const ILETISIM = Deno.env.get('PUSH_ILETISIM') || 'mailto:nizamsoft@icloud.com';
+
+// --- WEB PUSH BAŞLANGIÇ ---------------------------------------------------
+
+const kodla = new TextEncoder();
+
+function b64u(veri: ArrayBuffer | Uint8Array): string {
+  const b = veri instanceof Uint8Array ? veri : new Uint8Array(veri);
+  let s = '';
+  for (let i = 0; i < b.length; i++) s += String.fromCharCode(b[i]);
+  return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+function b64uCoz(s: string): Uint8Array {
+  const t = s.replace(/-/g, '+').replace(/_/g, '/');
+  const ham = atob(t + '==='.slice((t.length + 3) % 4));
+  const b = new Uint8Array(ham.length);
+  for (let i = 0; i < ham.length; i++) b[i] = ham.charCodeAt(i);
+  return b;
+}
+
+function birlestir(...parcalar: Uint8Array[]): Uint8Array {
+  const n = parcalar.reduce((t, p) => t + p.length, 0);
+  const s = new Uint8Array(n);
+  let i = 0;
+  for (const p of parcalar) { s.set(p, i); i += p.length; }
+  return s;
+}
+
+async function hmac(anahtar: Uint8Array, veri: Uint8Array): Promise<Uint8Array> {
+  const k = await crypto.subtle.importKey('raw', anahtar, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  return new Uint8Array(await crypto.subtle.sign('HMAC', k, veri));
+}
+
+/* Yeni VAPID anahtar çifti: özel kısım JWK, genel kısım tarayıcının
+   istediği ham 65 baytlık biçimde. */
+async function vapidUret(): Promise<{ ozel: JsonWebKey; genel: string }> {
+  const cift = await crypto.subtle.generateKey({ name: 'ECDSA', namedCurve: 'P-256' }, true, ['sign', 'verify']);
+  const ozel = await crypto.subtle.exportKey('jwk', cift.privateKey);
+  const genel = b64u(await crypto.subtle.exportKey('raw', cift.publicKey));
+  return { ozel, genel };
+}
+
+/* Bildirim servisine "bu istek bizden" diyen imzalı kimlik (RFC 8292). */
+async function vapidBasligi(adres: string, ozel: JsonWebKey, genel: string): Promise<string> {
+  const aud = new URL(adres).origin;
+  const bas = b64u(kodla.encode(JSON.stringify({ typ: 'JWT', alg: 'ES256' })));
+  const govde = b64u(kodla.encode(JSON.stringify({
+    aud, exp: Math.floor(Date.now() / 1000) + 12 * 3600, sub: ILETISIM,
+  })));
+  const k = await crypto.subtle.importKey('jwk', ozel, { name: 'ECDSA', namedCurve: 'P-256' }, false, ['sign']);
+  const imza = await crypto.subtle.sign({ name: 'ECDSA', hash: 'SHA-256' }, k, kodla.encode(bas + '.' + govde));
+  return `vapid t=${bas}.${govde}.${b64u(imza)}, k=${genel}`;
+}
+
+/* İçeriği yalnız alıcının cihazı açabilsin diye şifreleme (RFC 8291,
+   aes128gcm). Bildirim servisi (Apple/Google) mesajı okuyamaz. */
+async function sifrele(metin: string, p256dh: string, auth: string): Promise<Uint8Array> {
+  const uaGenel = b64uCoz(p256dh);
+  const gizli = b64uCoz(auth);
+
+  const gecici = await crypto.subtle.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, true, ['deriveBits']);
+  const asGenel = new Uint8Array(await crypto.subtle.exportKey('raw', gecici.publicKey));
+  const uaAnahtar = await crypto.subtle.importKey('raw', uaGenel, { name: 'ECDH', namedCurve: 'P-256' }, false, []);
+  const ortak = new Uint8Array(await crypto.subtle.deriveBits({ name: 'ECDH', public: uaAnahtar }, gecici.privateKey, 256));
+
+  const prkAnahtar = await hmac(gizli, ortak);
+  const anahtarBilgi = birlestir(kodla.encode('WebPush: info\0'), uaGenel, asGenel, new Uint8Array([1]));
+  const ikm = await hmac(prkAnahtar, anahtarBilgi);
+
+  const tuz = crypto.getRandomValues(new Uint8Array(16));
+  const prk = await hmac(tuz, ikm);
+  const cek = (await hmac(prk, birlestir(kodla.encode('Content-Encoding: aes128gcm\0'), new Uint8Array([1])))).slice(0, 16);
+  const nonce = (await hmac(prk, birlestir(kodla.encode('Content-Encoding: nonce\0'), new Uint8Array([1])))).slice(0, 12);
+
+  const aes = await crypto.subtle.importKey('raw', cek, { name: 'AES-GCM' }, false, ['encrypt']);
+  const acik = birlestir(kodla.encode(metin), new Uint8Array([2]));
+  const kapali = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv: nonce }, aes, acik));
+
+  const rs = new Uint8Array([0, 0, 0x10, 0]); // kayıt boyu 4096
+  return birlestir(tuz, rs, new Uint8Array([asGenel.length]), asGenel, kapali);
+}
+
+async function pushGonder(
+  abone: { endpoint: string; p256dh: string; auth: string },
+  icerik: string,
+  vapid: { ozel: JsonWebKey; genel: string },
+): Promise<number> {
+  const govde = await sifrele(icerik, abone.p256dh, abone.auth);
+  const cevap = await fetch(abone.endpoint, {
+    method: 'POST',
+    headers: {
+      Authorization: await vapidBasligi(abone.endpoint, vapid.ozel, vapid.genel),
+      'Content-Encoding': 'aes128gcm',
+      'Content-Type': 'application/octet-stream',
+      TTL: '86400',
+      Urgency: 'high',
+    },
+    body: govde,
+  });
+  try { await cevap.body?.cancel(); } catch { /* boş */ }
+  return cevap.status;
+}
+
+// --- WEB PUSH BİTİŞ -------------------------------------------------------
+
 const yazi = (v: unknown, sinir: number) =>
   (typeof v === 'string' ? v : '').trim().slice(0, sinir);
 
@@ -138,5 +247,63 @@ Deno.serve(async (istek) => {
     return hata('Bildirim kaydedilemedi.', 500);
   }
 
+  // 7) Yöneticilere telefon bildirimi -----------------------------------
+  //    Bildirim gitmese de kayıt tamam; hata burada yutuluyor.
+  try { await yoneticilereHaber(db, yeniler); }
+  catch (h) { console.error('telefon bildirimi gitmedi', (h as Error).message); }
+
   return yanit({ tamam: true, yeni: yeniler.length }, 201);
 });
+
+/* Hata bildirimi telefona: aktif yöneticilerden "Hata bildirimleri"ni
+   kapatmamış olanların cihazlarına. Birden çok hata aynı anda geldiyse
+   tek özet bildirim gider. Tablolar yoksa (SQL çalıştırılmadıysa) sessizce
+   geçer. */
+async function yoneticilereHaber(
+  db: ReturnType<typeof createClient>,
+  yeniler: { id: string; proje_ad: string; mesaj: string }[],
+) {
+  const { data: yoneticiler } = await db.from('profiles')
+    .select('id').eq('rol', 'yonetici').eq('aktif', true);
+  const idler = (yoneticiler ?? []).map(y => y.id as string);
+  if (!idler.length) return;
+
+  const { data: tercihler } = await db.from('bildirim_tercih')
+    .select('kullanici, kapali').in('kullanici', idler);
+  const kapatan = new Set((tercihler ?? [])
+    .filter(t => Array.isArray(t.kapali) && t.kapali.includes('hata'))
+    .map(t => t.kullanici as string));
+  const acik = idler.filter(k => !kapatan.has(k));
+  if (!acik.length) return;
+
+  const { data: aboneler } = await db.from('push_abonelik')
+    .select('endpoint, p256dh, auth').in('kullanici', acik);
+  if (!aboneler || !aboneler.length) return;
+
+  const { data: vapid } = await db.from('push_anahtar').select('ozel, genel').eq('id', 1).maybeSingle();
+  if (!vapid) return;   // anahtar, ilk "Bildirimleri aç"ta bildirim-gonder tarafından üretilir
+
+  const tek = yeniler.length === 1 ? yeniler[0] : null;
+  const ilk = yeniler[0];
+  const metin = String(ilk.mesaj || '');
+  const icerik = JSON.stringify(tek
+    ? {
+        tip: 'hata', id: tek.id,
+        baslik: 'Hata · ' + (tek.proje_ad || 'Proje'),
+        metin: metin.length > 300 ? metin.slice(0, 300) + '…' : metin,
+        adres: '#/hatalar/' + tek.id, etiket: 'hata-' + tek.id,
+      }
+    : {
+        tip: 'hata',
+        baslik: yeniler.length + ' yeni hata bildirimi',
+        metin: (ilk.proje_ad ? ilk.proje_ad + ': ' : '') + (metin.length > 200 ? metin.slice(0, 200) + '…' : metin),
+        adres: '#/hatalar', etiket: 'hata',
+      });
+
+  await Promise.all(aboneler.map(async (a) => {
+    try {
+      const d = await pushGonder(a, icerik, vapid as { ozel: JsonWebKey; genel: string });
+      if (d === 404 || d === 410) await db.from('push_abonelik').delete().eq('endpoint', a.endpoint);
+    } catch { /* tek cihazın hatası ötekileri durdurmasın */ }
+  }));
+}

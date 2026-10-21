@@ -8218,6 +8218,36 @@ a.asr:active{ transform:scale(.99); }
 .mbk-ac:active { transform: scale(.97); }
 .mbk-ac[disabled] { opacity: .6; pointer-events: none; }
 
+/* Ayarlar › Bildirimler: konu anahtarları. Açık anahtar mürekkep siyahı
+   (kırmızı yalnız logo, ekle düğmesi ve tehlikede). */
+.mbk-ik.acik { background: #17171a; }
+.mbk-ik.acik svg { stroke: #fff; }
+.bt-baslik {
+  margin: 22px 0 8px; font-family: var(--yazi-etiket); font-size: 12px; font-weight: 600;
+  letter-spacing: .06em; text-transform: uppercase; color: var(--ink-dim);
+}
+.bt-liste { border: 1px solid var(--line-2); border-radius: 8px; background: var(--surface); }
+.bt-konu {
+  display: flex; align-items: center; gap: 14px; width: 100%; padding: 14px;
+  border: 0; border-bottom: 1px solid var(--line-3); background: none; text-align: left; cursor: pointer;
+}
+.bt-konu:last-child { border-bottom: 0; }
+.bt-konu-yz { flex: 1; min-width: 0; }
+.bt-konu-yz b { display: block; font-size: 14.5px; font-weight: 700; color: var(--ink-strong); }
+.bt-konu-yz i { display: block; margin-top: 2px; font-style: normal; font-size: 12.5px; line-height: 1.4; color: var(--ink-dim); }
+.bt-kol {
+  position: relative; flex-shrink: 0; width: 44px; height: 26px; border-radius: 999px;
+  background: var(--surface-3); transition: background .18s;
+}
+.bt-kol u {
+  position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 999px;
+  background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.18); transition: transform .18s;
+}
+.bt-kol.acik { background: #17171a; }
+.bt-kol.acik u { transform: translateX(18px); }
+.bt-not { margin: 10px 2px 0; font-size: 12.5px; line-height: 1.5; color: var(--ink-dim); }
+@media (prefers-reduced-motion: reduce) { .bt-kol, .bt-kol u { transition: none; } }
+
 /* Sohbet ekranındayken üst çubuktaki simge işaretli durur. */
 .zil.active { background: var(--red-soft); color: var(--red); }
 .zil.active svg { stroke: var(--red); }

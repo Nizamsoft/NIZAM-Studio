@@ -1,10 +1,13 @@
 // ==========================================================================
 // NIZAM | Studio — Mesaj bildirimi (Web Push)
 //
-// Studio kapalıyken gelen mesaj telefona bildirim olarak düşsün diye.
-// Gönderen mesajı kaydedince uygulaması bu fonksiyonu çağırır; fonksiyon
-// mesajın gerçekten ondan olduğunu doğrular ve alıcının cihazlarına
-// bildirimi yollar.
+// Studio kapalıyken telefona bildirim düşsün diye. Üç konu var:
+//   • mesaj — yeni mesaj alıcıya
+//   • gorev — görev verildi / onaya gönderildi / onaylandı / geri gönderildi
+//   • hata  — müşteri programından gelen hata (o kısım hata-al fonksiyonunda)
+// Uygulama kaydı yaptıktan sonra bu fonksiyonu çağırır; fonksiyon kaydın
+// gerçekten çağırandan geldiğini doğrular, alıcıları bulur, kişinin
+// Ayarlar'da kapattığı konulara hiç göndermez.
 //
 // Ek paket yok: şifreleme ve imza tarayıcı standardı WebCrypto ile burada
 // yapılıyor (RFC 8291 + RFC 8292). Bildirim anahtarı (VAPID) ilk çağrıda
@@ -12,7 +15,7 @@
 // değer girmek gerekmiyor.
 //
 // Kurulum (TEK SEFER):
-//   1) Supabase → SQL Editor → sql/46-bildirimler.sql → Run
+//   1) Supabase → SQL Editor → sql/46-bildirimler.sql ve sql/47-bildirim-konulari.sql → Run
 //   2) Supabase → Edge Functions → Deploy a new function → via editor
 //      Ad: bildirim-gonder · bu dosyayı yapıştır · Deploy
 //      ("Enforce JWT verification" AÇIK kalsın.)
@@ -143,6 +146,25 @@ async function pushGonder(
 
 const UUID = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
 
+/* Görev hareketlerinin bildirimdeki karşılığı — Studio'daki zil listesiyle aynı. */
+const GOREV_BASLIK: Record<string, string> = {
+  olusturuldu: 'yeni bir görev verdi',
+  atandi:      'görevi sana aktardı',
+  bitirdi:     'görevi onaya gönderdi',
+  onaylandi:   'görevi onayladı',
+  geri:        'görevi geri gönderdi',
+  baslandi:    'görevi yeniden açtı',
+};
+
+const ON_DAKIKA = () => new Date(Date.now() - 10 * 60 * 1000).toISOString();
+const kisalt = (m: string, n = 400) => (m.length > n ? m.slice(0, n) + '…' : m);
+
+type Vapid = { ozel: JsonWebKey; genel: string };
+type Icerik = {
+  tip: string; baslik: string; metin: string;
+  adres?: string; etiket?: string; kisi?: string; rozet?: number; id?: string;
+};
+
 Deno.serve(async (istek) => {
   if (istek.method === 'OPTIONS') return new Response('ok', { headers: CORS });
   if (istek.method !== 'POST') return hata('Yalnızca POST.', 405);
@@ -165,68 +187,142 @@ Deno.serve(async (istek) => {
   try { v = await istek.json(); } catch { return hata('İstek okunamadı.'); }
 
   // 2) Anahtar: yoksa üret, varsa oku ------------------------------------
-  const anahtarAl = async () => {
+  const anahtarAl = async (): Promise<Vapid> => {
     const { data } = await db.from('push_anahtar').select('ozel, genel').eq('id', 1).maybeSingle();
-    if (data) return data as { ozel: JsonWebKey; genel: string };
+    if (data) return data as Vapid;
     const yeni = await vapidUret();
     /* Aynı anda iki istek gelirse ikisi de üretmeye kalkar; tabloya ilk
        yazan kazanır, öbürü kazananı okur. */
     await db.from('push_anahtar').insert({ id: 1, ozel: yeni.ozel, genel: yeni.genel });
     const { data: son } = await db.from('push_anahtar').select('ozel, genel').eq('id', 1).single();
-    return son as { ozel: JsonWebKey; genel: string };
+    return son as Vapid;
   };
 
+  /* Kişilere gönder: konuyu kapatmış olanları ayıkla, cihazlarına yolla,
+     geçersiz cihazları sil. Kaç cihaza ulaştığını döndürür. */
+  const kisilereGonder = async (kisiler: string[], konu: string, icerik: (kisi: string) => Promise<Icerik> | Icerik) => {
+    const hedef = [...new Set(kisiler.filter(Boolean))];
+    if (!hedef.length) return 0;
+
+    const { data: tercihler } = await db.from('bildirim_tercih')
+      .select('kullanici, kapali').in('kullanici', hedef);
+    const kapatan = new Set((tercihler ?? [])
+      .filter(t => Array.isArray(t.kapali) && t.kapali.includes(konu))
+      .map(t => t.kullanici as string));
+    const acik = hedef.filter(k => !kapatan.has(k));
+    if (!acik.length) return 0;
+
+    const { data: aboneler } = await db.from('push_abonelik')
+      .select('endpoint, p256dh, auth, kullanici').in('kullanici', acik);
+    if (!aboneler || !aboneler.length) return 0;
+
+    const vapid = await anahtarAl();
+    const metinler = new Map<string, string>();
+    for (const k of acik) metinler.set(k, JSON.stringify(await icerik(k)));
+
+    let ulasan = 0;
+    await Promise.all(aboneler.map(async (a) => {
+      try {
+        const durum = await pushGonder(a, metinler.get(a.kullanici as string)!, vapid);
+        if (durum >= 200 && durum < 300) ulasan++;
+        else if (durum === 404 || durum === 410) {
+          await db.from('push_abonelik').delete().eq('endpoint', a.endpoint);
+        }
+      } catch { /* tek cihazın hatası ötekileri durdurmasın */ }
+    }));
+    return ulasan;
+  };
+
+  const adOku = async (id: string) => {
+    const { data } = await db.from('profiles').select('ad').eq('id', id).maybeSingle();
+    return (data && data.ad) || '';
+  };
+
+  // 3) İşlemler ----------------------------------------------------------
   if (v.islem === 'anahtar') {
     const a = await anahtarAl();
     return yanit({ anahtar: a.genel });
   }
 
-  if (v.islem !== 'gonder') return hata('Bilinmeyen işlem.');
+  /* Ayarlar'daki "Deneme bildirimi gönder": kendi cihazlarına. Konu
+     tercihlerine bakılmaz — zinciri uçtan uca denemek için. */
+  if (v.islem === 'deneme') {
+    const { data: aboneler } = await db.from('push_abonelik')
+      .select('endpoint, p256dh, auth').eq('kullanici', ben);
+    if (!aboneler || !aboneler.length) return yanit({ gonderildi: 0, cihaz: 0 });
+    const vapid = await anahtarAl();
+    const icerik = JSON.stringify({
+      tip: 'deneme', baslik: 'NIZAM Studio', etiket: 'deneme', adres: '#/ayarlar/bildirimler',
+      metin: 'Deneme bildirimi — her şey yolunda 👍',
+    });
+    let gonderildi = 0;
+    await Promise.all(aboneler.map(async (a) => {
+      try {
+        const d = await pushGonder(a, icerik, vapid);
+        if (d >= 200 && d < 300) gonderildi++;
+        else if (d === 404 || d === 410) await db.from('push_abonelik').delete().eq('endpoint', a.endpoint);
+      } catch { /* geç */ }
+    }));
+    return yanit({ gonderildi, cihaz: aboneler.length });
+  }
 
-  // 3) Mesaj gerçekten bu kişiden mi, yeni mi? ---------------------------
-  const id = typeof v.mesaj === 'string' ? v.mesaj : '';
-  if (!UUID.test(id)) return hata('Mesaj kimliği geçersiz.');
+  if (v.islem === 'gonder' || v.islem === 'mesaj') {
+    const id = typeof v.mesaj === 'string' ? v.mesaj : '';
+    if (!UUID.test(id)) return hata('Mesaj kimliği geçersiz.');
 
-  /* Tek seferlik: "bildirildi" boşsa doldurup satırı alıyoruz. İkinci
-     çağrı satır bulamaz, aynı bildirim iki kez gitmez. */
-  const { data: mesaj } = await db.from('messages')
-    .update({ bildirildi: new Date().toISOString() })
-    .eq('id', id).eq('gonderen', ben).is('bildirildi', null)
-    .gt('olusturuldu', new Date(Date.now() - 10 * 60 * 1000).toISOString())
-    .select('id, gonderen, alici, metin')
-    .maybeSingle();
-  if (!mesaj) return yanit({ gonderildi: 0 });
+    /* Tek seferlik: "bildirildi" boşsa doldurup satırı alıyoruz. İkinci
+       çağrı satır bulamaz, aynı bildirim iki kez gitmez. */
+    const { data: mesaj } = await db.from('messages')
+      .update({ bildirildi: new Date().toISOString() })
+      .eq('id', id).eq('gonderen', ben).is('bildirildi', null)
+      .gt('olusturuldu', ON_DAKIKA())
+      .select('id, gonderen, alici, metin')
+      .maybeSingle();
+    if (!mesaj) return yanit({ gonderildi: 0 });
 
-  const [{ data: profil }, { count }, { data: aboneler }] = await Promise.all([
-    db.from('profiles').select('ad').eq('id', ben).maybeSingle(),
-    db.from('messages').select('id', { count: 'exact', head: true })
-      .eq('alici', mesaj.alici).is('okundu', null),
-    db.from('push_abonelik').select('endpoint, p256dh, auth').eq('kullanici', mesaj.alici),
-  ]);
-  if (!aboneler || !aboneler.length) return yanit({ gonderildi: 0 });
+    const ad = (await adOku(ben)) || 'Yeni mesaj';
+    const gonderildi = await kisilereGonder([mesaj.alici], 'mesaj', async (kisi) => {
+      const { count } = await db.from('messages').select('id', { count: 'exact', head: true })
+        .eq('alici', kisi).is('okundu', null);
+      return {
+        tip: 'mesaj', id: mesaj.id, kisi: ben, baslik: ad,
+        metin: kisalt(String(mesaj.metin || '')),
+        adres: '#/sohbet/' + ben, etiket: 'mesaj-' + ben, rozet: count || 0,
+      };
+    });
+    return yanit({ gonderildi });
+  }
 
-  const metin = String(mesaj.metin || '');
-  const icerik = JSON.stringify({
-    tip: 'mesaj',
-    id: mesaj.id,
-    kisi: ben,
-    baslik: (profil && profil.ad) || 'Yeni mesaj',
-    metin: metin.length > 400 ? metin.slice(0, 400) + '…' : metin,
-    rozet: count || 0,
-  });
+  if (v.islem === 'gorev') {
+    const id = typeof v.hareket === 'string' ? v.hareket : '';
+    if (!UUID.test(id)) return hata('Hareket kimliği geçersiz.');
 
-  // 4) Gönder; artık geçersiz olan cihazları sil -------------------------
-  const vapid = await anahtarAl();
-  let gonderildi = 0;
-  await Promise.all(aboneler.map(async (a) => {
-    try {
-      const durum = await pushGonder(a, icerik, vapid);
-      if (durum >= 200 && durum < 300) gonderildi++;
-      else if (durum === 404 || durum === 410) {
-        await db.from('push_abonelik').delete().eq('endpoint', a.endpoint);
-      }
-    } catch { /* tek cihazın hatası ötekileri durdurmasın */ }
-  }));
+    const { data: h } = await db.from('task_events')
+      .update({ bildirildi: new Date().toISOString() })
+      .eq('id', id).eq('kim', ben).is('bildirildi', null)
+      .gt('olusturuldu', ON_DAKIKA())
+      .select('id, gorev_id, tip')
+      .maybeSingle();
+    if (!h || !GOREV_BASLIK[h.tip]) return yanit({ gonderildi: 0 });
 
-  return yanit({ gonderildi });
+    const { data: g } = await db.from('tasks')
+      .select('id, no, baslik, atanan, olusturan').eq('id', h.gorev_id).maybeSingle();
+    if (!g) return yanit({ gonderildi: 0 });
+
+    /* Görev verildi haberi yalnız görevi alana; ötekiler alana ve verene.
+       Hareketi yapan kendine bildirim almaz. */
+    const alicilar = (h.tip === 'olusturuldu' || h.tip === 'atandi')
+      ? [g.atanan] : [g.atanan, g.olusturan];
+    const ad = (await adOku(ben)) || 'Biri';
+    const gonderildi = await kisilereGonder(
+      alicilar.filter(k => k && k !== ben) as string[], 'gorev', () => ({
+        tip: 'gorev', id: g.id,
+        baslik: ad + ' ' + GOREV_BASLIK[h.tip],
+        metin: kisalt((g.no ? 'NS-' + g.no + ' · ' : '') + String(g.baslik || ''), 200),
+        adres: '#/gorevler/' + g.id, etiket: 'gorev-' + g.id,
+      }));
+    return yanit({ gonderildi });
+  }
+
+  return hata('Bilinmeyen işlem.');
 });

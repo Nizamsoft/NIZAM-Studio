@@ -21,7 +21,7 @@
    Bir resim yeniden yüklenince eski kopya önbellekte kalırdı; uygulama
    `postMessage({ tip: 'unut', yol })` gönderiyor, o kayıt siliniyor. */
 
-const CACHE = 'nizam-studio-v0.333.0';
+const CACHE = 'nizam-studio-v0.334.0';
 
 /* Resimler AYRI ve SÜRÜMSÜZ bir önbellekte duruyor.
 
@@ -138,7 +138,7 @@ self.addEventListener('fetch', e => {
   );
 });
 
-/* ---- Mesaj bildirimi (Web Push) ----
+/* ---- Telefon bildirimi (Web Push): mesaj, görev, hata ----
    Studio kapalıyken sunucu (bildirim-gonder) şifreli bir mesaj yollar;
    telefon bu dosyayı uyandırır, biz de bildirimi gösteririz. iPhone her
    gelen mesajda bildirim gösterilmesini şart koşuyor — göstermezsek izni
@@ -154,10 +154,12 @@ self.addEventListener('push', e => {
     badge: 'icon-192.png',
     /* Aynı kişiden gelenler tek bildirimde toplanır, yenisi eskisinin
        yerine geçer ve yine ses/titreşim verir — WhatsApp gibi. */
-    tag: v.kisi ? 'mesaj-' + v.kisi : 'mesaj',
+    tag: v.etiket || (v.kisi ? 'mesaj-' + v.kisi : 'mesaj'),
     renotify: true,
     timestamp: Date.now(),
-    data: { adres: v.kisi ? './#/sohbet/' + v.kisi : './#/sohbet' },
+    /* Dokununca açılacak ekran: mesajda yazışma, görevde görev kartı,
+       hatada hata ayrıntısı. */
+    data: { adres: './' + (v.adres || (v.kisi ? '#/sohbet/' + v.kisi : '#/sohbet')) },
   };
 
   const isler = [self.registration.showNotification(baslik, secenek)];

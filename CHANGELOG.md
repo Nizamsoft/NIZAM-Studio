@@ -1,5 +1,21 @@
 # Değişiklik Günlüğü
 
+## v0.334.0
+- **Görev ve hata bildirimleri + konu tercihleri.**
+  - `sql/47-bildirim-konulari.sql`: `bildirim_tercih` (kişi başına kapatılan konular, RLS: yalnız
+    kendi satırı) ve `task_events.bildirildi`.
+  - `bildirim-gonder`: `gorev` işlemi (alıcılar zil listesiyle aynı kural: verildi/aktarıldı →
+    alana; ötekiler → alana ve verene; yapan hariç), `deneme` işlemi (kendi cihazlarına), bütün
+    gönderimlerde `bildirim_tercih` süzmesi. Eski `gonder` (mesaj) aynen çalışır.
+  - `hata-al`: yeni hata kaydından sonra aktif yöneticilere push (çoklu gelişte tek özet). Push
+    kodu editörden tek dosya kurulduğu için kopya. Push hatası kaydı bozmaz.
+  - `DB.hareketEkle` hareket kimliğini alıp `BILDIRIM.gorev` çağırır; yeni görevdeki ikinci
+    (`atandi`) hareket bildirim üretmez.
+  - `sw.js`: içerikteki `adres`/`etiket` kullanılır. `#/gorevler/<id>` görev kartını açar
+    (`bildirimAdresiAc`).
+  - Ayarlar › Bildirimler (`bildirimAyarlari`): cihaz durumu, Deneme gönder, Bu cihazda kapat,
+    konu anahtarları (`.bt-*`, açık = mürekkep siyahı).
+
 ## v0.333.0
 - **Mesaj bildirimleri (Web Push).** Studio kapalıyken gelen mesaj telefona bildirim olarak düşer.
   - `sql/46-bildirimler.sql`: `push_abonelik` (cihaz adresleri, RLS: yalnız kendi satırı; ekleme

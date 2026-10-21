@@ -1101,6 +1101,13 @@ const AYAR_GRUP = {
     },
   },
 
+  bildirimler: {
+    ad: 'Bildirimler', renk: 'mavi', ikon: 'zil',
+    aciklama: 'Telefon bildirimlerini aç, konuları seç.',
+    goster: () => AUTH.bagli,
+    ciz: () => bildirimAyarlari(),
+  },
+
   kutuphane: {
     ad: 'Kütüphane', renk: 'mavi', ikon: 'folder',
     aciklama: 'Projelerinde kullanabileceğin tüm kaynaklar.',
@@ -10618,16 +10625,18 @@ function bildirimSonraMi() {
   } catch (e) { return false; }
 }
 
-function bildirimKarti() {
+/* zorla: Ayarlar sayfası — "Sonra" yok, izin verilmiş ama cihaz kayıtlı
+   değilse de "Bildirimleri aç" görünür. */
+function bildirimKarti(zorla = false) {
   if (!AUTH.bagli) return '';
   const destek = BILDIRIM.destek();
   if (destek === 'yok') return '';
   const izin = BILDIRIM.izin();
-  if (destek === 'hazir' && izin === 'acik') return '';
-  if (bildirimSonraMi()) return '';
+  if (destek === 'hazir' && izin === 'acik' && (!zorla || BILDIRIM.cihazKayitli)) return '';
+  if (!zorla && bildirimSonraMi()) return '';
 
   const zil = `<span class="mbk-ik">${svg(ICON.zil, 20)}</span>`;
-  const sonra = `<button class="mbk-sonra" type="button" data-eylem="bildirim-sonra">Sonra</button>`;
+  const sonra = zorla ? '' : `<button class="mbk-sonra" type="button" data-eylem="bildirim-sonra">Sonra</button>`;
 
   if (destek === 'kurulum') {
     return `
@@ -10675,6 +10684,65 @@ function bildirimKarti() {
         <button class="mbk-ac" type="button" data-eylem="bildirim-ac">${svg(ICON.zil, 15)}<span>Bildirimleri aç</span></button>
       </div>
     </div>`;
+}
+
+/* Bildirime dokunulunca gelen adres. Görev için ayrı ekran yok, görev
+   bir kart olarak açılıyor: #/gorevler/<id> → Görevler ekranı + kart. */
+function bildirimAdresiAc(adres) {
+  const m = /^#\/gorevler\/([0-9a-f-]{36})$/i.exec(adres || '');
+  if (!m) { if (adres && adres !== location.hash) gitVeCiz(adres); return; }
+  try { history.replaceState(null, '', '#/gorevler'); } catch (e) { location.hash = '#/gorevler'; }
+  render();
+  if (DB.gorev(m[1])) gorevKartiAc(m[1]);
+}
+
+/* Ayarlar › Bildirimler: bu cihazın durumu + konu bazında aç/kapat. */
+let BILDIRIM_AYAR_TAZE = false;
+function bildirimAyarlari() {
+  /* Sayfa ilk açılışta cihaz ve tercih durumunu bir kez sunucudan tazeler. */
+  if (!BILDIRIM_AYAR_TAZE) {
+    BILDIRIM_AYAR_TAZE = true;
+    BILDIRIM.tazele().then(() => { if (rota().id === 'bildirimler') render(); });
+  }
+
+  const destek = BILDIRIM.destek();
+  let cihaz;
+  if (destek === 'yok') {
+    cihaz = `<div class="mbk"><div class="mbk-ust"><span class="mbk-ik">${svg(ICON.zil, 20)}</span>
+      <span class="mbk-yz"><b>Bu cihaz desteklemiyor</b>
+        <i>Bu tarayıcı telefon bildirimi gösteremiyor.</i></span></div></div>`;
+  } else if (destek === 'hazir' && BILDIRIM.izin() === 'acik' && BILDIRIM.cihazKayitli) {
+    cihaz = `
+      <div class="mbk">
+        <div class="mbk-ust"><span class="mbk-ik acik">${svg(ICON.zil, 20)}</span>
+          <span class="mbk-yz"><b>Bu cihazda bildirimler açık</b>
+            <i>Studio kapalıyken de seçtiğin konular telefonuna düşer.</i></span>
+        </div>
+        <div class="mbk-alt">
+          <button class="mbk-sonra" type="button" data-eylem="bildirim-kapat">Bu cihazda kapat</button>
+          <button class="mbk-ac" type="button" data-eylem="bildirim-deneme">${svg(ICON.zil, 15)}<span>Deneme gönder</span></button>
+        </div>
+      </div>`;
+  } else {
+    cihaz = bildirimKarti(true);
+  }
+
+  const konular = BILDIRIM.konular().map(k => {
+    const acik = BILDIRIM.konuAcik(k.anahtar);
+    return `
+      <button class="bt-konu" type="button" data-eylem="bildirim-konu" data-konu="${k.anahtar}"
+              role="switch" aria-checked="${acik}">
+        <span class="bt-konu-yz"><b>${esc(k.ad)}</b><i>${esc(k.aciklama)}</i></span>
+        <span class="bt-kol ${acik ? 'acik' : ''}"><u></u></span>
+      </button>`;
+  }).join('');
+
+  return `
+    ${cihaz}
+    <h3 class="bt-baslik">Konular</h3>
+    <div class="bt-liste">${konular}</div>
+    <p class="bt-not">Seçimin bütün cihazlarında geçerli. Kapattığın konuda telefona bildirim gelmez;
+      Studio'nun içindeki zil ve sohbet yine gösterir.</p>`;
 }
 
 async function bildirimAcTikla(el) {
@@ -15324,6 +15392,29 @@ async function eylemCalistir(el) {
 
   if (e === 'mesaj-yolla') return mesajYolla(id);
   if (e === 'bildirim-ac') return bildirimAcTikla(el);
+  if (e === 'bildirim-konu') {
+    const konu = el.dataset.konu;
+    const acik = !BILDIRIM.konuAcik(konu);
+    el.setAttribute('aria-checked', String(acik));
+    const kol = $('.bt-kol', el);
+    if (kol) kol.classList.toggle('acik', acik);
+    BILDIRIM.konuDegistir(konu, acik).catch(h => { toast(h.message, 'uyari'); render(); });
+    return;
+  }
+  if (e === 'bildirim-deneme') {
+    el.disabled = true;
+    BILDIRIM.deneme().then(r => {
+      if (r.gonderildi) toast('Deneme gönderildi, birkaç saniye içinde gelir 🔔', 'basari');
+      else if (r.cihaz) toast('Cihaz kayıtlı ama bildirim gitmedi. Bildirimleri kapatıp yeniden aç.', 'uyari');
+      else toast('Bu hesaba kayıtlı cihaz yok. Önce "Bildirimleri aç"a bas.', 'uyari');
+    }, h => toast(h.message, 'uyari')).then(() => { el.disabled = false; });
+    return;
+  }
+  if (e === 'bildirim-kapat') {
+    el.disabled = true;
+    BILDIRIM.kapat().then(() => { toast('Bu cihazda bildirimler kapandı.'); render(); });
+    return;
+  }
   if (e === 'bildirim-sonra') {
     try { localStorage.setItem(BILDIRIM_SONRA_ANAHTAR, String(Date.now())); } catch (h) {}
     render();
@@ -17764,6 +17855,8 @@ async function uygulamayiAc() {
 
   /* Bildirim izni daha önce verildiyse cihaz kaydını tazele. */
   BILDIRIM.tazele();
+  /* Studio bir görev bildirimine dokunularak açıldıysa görev kartını aç. */
+  bildirimAdresiAc(location.hash);
 
   /* Son görülme damgası: açılışta bir kez, sonra beş dakikada bir. */
   DB.goruldu(true);
@@ -18171,8 +18264,8 @@ if ('serviceWorker' in navigator) {
   /* Bildirime dokunulunca service worker hangi yazışmanın açılacağını söylüyor. */
   navigator.serviceWorker.addEventListener('message', e => {
     const v = e.data || {};
-    if (v.tip === 'git' && typeof v.adres === 'string' && v.adres.indexOf('#/sohbet') === 0) {
-      gitVeCiz(v.adres);
+    if (v.tip === 'git' && typeof v.adres === 'string' && /^#\/[a-z]/.test(v.adres)) {
+      bildirimAdresiAc(v.adres);
     }
   });
 }

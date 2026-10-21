@@ -21,6 +21,13 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.334.0', tarih: '2026-10-21',
+    ozet: 'Görev ve hata bildirimleri',
+    maddeler: [
+      'Görev verilince, onaya gönderilince, onaylanınca ya da geri gönderilince telefona bildirim geliyor; dokununca görev kartı açılıyor.',
+      'Müşteri programından hata bildirimi gelince yöneticilerin telefonuna bildirim düşüyor.',
+      'Ayarlar › Bildirimler: Mesajlar, Görevler ve Hata bildirimleri ayrı ayrı açılıp kapanıyor; deneme bildirimi gönderilebiliyor.',
+    ] },
   { surum: 'v0.333.0', tarih: '2026-10-21',
     ozet: 'Mesaj bildirimleri',
     maddeler: [

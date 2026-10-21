@@ -859,7 +859,8 @@ const DB = {
     }
 
     await this.hareketEkle(data.id, 'olusturuldu');
-    if (atanan) await this.hareketEkle(data.id, 'atandi', DB.kisiAdi(atanan));
+    /* Yeni görevde "verdi" bildirimi yeter; "aktardı" ikinci kez çalmasın. */
+    if (atanan) await this.hareketEkle(data.id, 'atandi', DB.kisiAdi(atanan), false);
 
     await this.tazele('gorevler', 'gorevStandart', 'hareketler');
     return data.id;
@@ -945,11 +946,13 @@ const DB = {
     await this.tazele('gorevler', 'hareketler');
   },
 
-  async hareketEkle(gorevId, tip, notu = '') {
-    const { error } = await AUTH.db.from('task_events').insert({
+  async hareketEkle(gorevId, tip, notu = '', bildir = true) {
+    const { data, error } = await AUTH.db.from('task_events').insert({
       gorev_id: gorevId, tip, notu, kim: AUTH.user ? AUTH.user.id : null,
-    });
+    }).select('id').single();
     if (error) throw new Error(veriHatasi(error));
+    /* Karşı tarafın telefonuna bildirim (Studio kapalı olabilir). */
+    if (bildir && data && typeof BILDIRIM !== 'undefined') BILDIRIM.gorev(data.id);
   },
 
   /* Bir görevin standart bağlarını topluca yaz */
@@ -2015,6 +2018,7 @@ const BILDIRIM = {
       });
     }
     await this._kaydet(abone);
+    this.cihazKayitli = true;
     return true;
   },
 
@@ -2025,6 +2029,7 @@ const BILDIRIM = {
       if (!abone) return;
       const adres = abone.endpoint;
       await abone.unsubscribe();
+      this.cihazKayitli = false;
       if (AUTH.db && AUTH.user) await AUTH.db.from('push_abonelik').delete().eq('endpoint', adres);
     } catch (e) { /* zaten kapalıysa sorun yok */ }
   },
@@ -2047,7 +2052,9 @@ const BILDIRIM = {
 
   /* Açılışta sessizce: izin daha önce verildiyse aboneliği tazele. */
   async tazele() {
-    if (!(await this.kayitliMi()) || !AUTH.bagli || !AUTH.user) return;
+    this.cihazKayitli = await this.kayitliMi();
+    if (AUTH.bagli && AUTH.user) await this.tercihOku();
+    if (!this.cihazKayitli || !AUTH.bagli || !AUTH.user) return;
     try {
       const kayit = await this._kayit();
       await this._kaydet(await kayit.pushManager.getSubscription());
@@ -2059,6 +2066,62 @@ const BILDIRIM = {
   gonder(mesajId) {
     if (!AUTH.bagli || !mesajId) return;
     this._cagir({ islem: 'gonder', mesaj: mesajId }).catch(() => {});
+  },
+
+  /* Görev hareketi kaydedildikten sonra ilgili kişilere bildirim. */
+  gorev(hareketId) {
+    if (!AUTH.bagli || !hareketId) return;
+    this._cagir({ islem: 'gorev', hareket: hareketId }).catch(() => {});
+  },
+
+  /* Ayarlar'daki deneme: sunucu üzerinden kendi cihazlarına. */
+  async deneme() {
+    const r = await this._cagir({ islem: 'deneme' });
+    return r || {};
+  },
+
+  /* ---- Konu tercihleri (Ayarlar › Bildirimler) ----
+     Kişi başına kapatılan konular. Satır yoksa hepsi açık. */
+  KONULAR: [
+    { anahtar: 'mesaj', ad: 'Mesajlar',          aciklama: 'Biri sana mesaj yazınca.' },
+    { anahtar: 'gorev', ad: 'Görevler',          aciklama: 'Görev verilince, onaya gönderilince, onaylanınca ya da geri gönderilince.' },
+    { anahtar: 'hata',  ad: 'Hata bildirimleri', aciklama: 'Müşteri programından hata bildirimi gelince.', yonetici: true },
+  ],
+  kapali: [],
+  tercihYuklendi: false,
+  cihazKayitli: false,
+
+  konular() {
+    return this.KONULAR.filter(k => !k.yonetici || (typeof AUTH !== 'undefined' && AUTH.yonetici));
+  },
+
+  konuAcik(anahtar) { return this.kapali.indexOf(anahtar) === -1; },
+
+  async tercihOku() {
+    if (!AUTH.bagli || !AUTH.user) return;
+    try {
+      const { data, error } = await AUTH.db.from('bildirim_tercih')
+        .select('kapali').eq('kullanici', AUTH.user.id).maybeSingle();
+      if (!error) { this.kapali = (data && data.kapali) || []; this.tercihYuklendi = true; }
+    } catch (e) { /* tablo yoksa hepsi açık sayılır */ }
+  },
+
+  async konuDegistir(anahtar, acik) {
+    if (!AUTH.bagli || !AUTH.user) throw new Error('Önce giriş yap.');
+    const once = this.kapali.slice();
+    const yeni = this.kapali.filter(k => k !== anahtar);
+    if (!acik) yeni.push(anahtar);
+    this.kapali = yeni;
+    const { error } = await AUTH.db.from('bildirim_tercih').upsert({
+      kullanici: AUTH.user.id, kapali: yeni, guncellendi: new Date().toISOString(),
+    }, { onConflict: 'kullanici' });
+    if (error) {
+      this.kapali = once;
+      if (/does not exist|schema cache/i.test(error.message || '')) {
+        throw new Error('Tercih tablosu kurulmamış — sql/47-bildirim-konulari.sql dosyasını çalıştır.');
+      }
+      throw new Error(veriHatasi(error));
+    }
   },
 
   /* Uygulama simgesindeki sayı (iPhone 16.4+, Android). */
