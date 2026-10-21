@@ -90,6 +90,8 @@ const AUTH = {
   /* ---------- Çıkış ---------- */
 
   async signOut() {
+    /* Çıkan kişinin mesajları bu telefona bildirim olarak düşmesin. */
+    if (!this.demo && typeof BILDIRIM !== 'undefined') await BILDIRIM.kapat();
     this.user = null;
     this.profile = null;
     if (this.demo) { demoOturumKapat(); return; }

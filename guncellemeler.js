@@ -21,6 +21,13 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.333.0', tarih: '2026-10-21',
+    ozet: 'Mesaj bildirimleri',
+    maddeler: [
+      'Studio kapalıyken gelen mesaj artık telefona bildirim olarak düşüyor; bildirimde gönderen ve mesajın kendisi görünüyor.',
+      'Bildirime dokununca Studio doğrudan o yazışmayla açılıyor; uygulama simgesinde okunmamış mesaj sayısı çıkıyor.',
+      'Açmak için Sohbet ekranındaki "Bildirimleri aç" düğmesine bas. iPhone\'da önce Studio\'yu ana ekrana ekle.',
+    ] },
   { surum: 'v0.332.3', tarih: '2026-10-07',
     ozet: 'Klonun güvenlik taraması temiz başlıyor',
     maddeler: [

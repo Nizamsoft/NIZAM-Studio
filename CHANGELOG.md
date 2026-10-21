@@ -1,5 +1,21 @@
 # Değişiklik Günlüğü
 
+## v0.333.0
+- **Mesaj bildirimleri (Web Push).** Studio kapalıyken gelen mesaj telefona bildirim olarak düşer.
+  - `sql/46-bildirimler.sql`: `push_abonelik` (cihaz adresleri, RLS: yalnız kendi satırı; ekleme
+    `push_abone_ol` RPC'siyle — aynı telefonda hesap değişince cihaz yeni hesaba geçer),
+    `push_anahtar` (VAPID anahtarı, kuralsız RLS → yalnız sunucu), `messages.bildirildi`.
+  - `supabase/functions/bildirim-gonder`: paketsiz Web Push (WebCrypto; RFC 8291 aes128gcm +
+    RFC 8292 VAPID). VAPID anahtarı ilk çağrıda üretilip tabloda saklanır, gizli değer girmek
+    gerekmez. `gonder`: mesaj gönderenin mi, 10 dk'dan yeni mi, daha önce bildirildi mi
+    (atomik `bildirildi` güncellemesi) denetlenir; 404/410 dönen cihaz silinir.
+  - `sw.js`: `push` (kişi başına `tag`, `renotify`, uygulama rozeti) ve `notificationclick`
+    (açık pencereye `postMessage` ile `#/sohbet/<kişi>`, yoksa yeni pencere).
+  - `data.js` `BILDIRIM`: izin/abonelik, açılışta abonelik tazeleme, mesaj sonrası bildirim çağrısı,
+    rozet, yazışma açılınca o kişinin bildirimlerini kapatma. Çıkışta cihaz aboneliği silinir.
+  - Sohbet ekranına bildirim kartı (`.mbk`): izin isteme + bildirim önizlemesi, iPhone'da ana
+    ekrana ekleme adımları, engellenmiş izin için yol tarifi; "Sonra" 7 gün gizler.
+
 ## v0.332.3
 - **Test Klonu — Nizam Security'de "Gerçek yapı" baştan yeşil geliyordu.** Klonun yapı kurulumu
   asılın yapısını klonun `security_modelleri` kaydına yazıyordu. Artık `palet.klon.kurulanYapi`'de

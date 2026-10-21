@@ -8160,6 +8160,64 @@ a.asr:active{ transform:scale(.99); }
 }
 .sh2-sag { flex-shrink: 0; }
 
+/* ---- Bildirim kartı (Sohbet ekranının üstü) ----
+   Beyaz kart, ince çizgi, gri ikon kutusu, siyah ana düğme. İçinde
+   bildirimin telefonda nasıl görüneceğinin küçük bir önizlemesi var. */
+.mbk {
+  margin: 0 0 14px; padding: 14px; border: 1px solid var(--line-2);
+  border-radius: 8px; background: var(--surface);
+}
+.mbk-ust { display: flex; align-items: flex-start; gap: 12px; }
+.mbk-ik {
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  width: 40px; height: 40px; border-radius: 8px; background: var(--surface-2);
+}
+.mbk-ik svg { stroke: var(--ink-strong); }
+.mbk-yz { flex: 1; min-width: 0; }
+.mbk-yz b {
+  display: block; font-family: var(--yazi-baslik); font-size: 15px; font-weight: 700;
+  color: var(--ink-strong);
+}
+.mbk-yz i { display: block; margin-top: 3px; font-style: normal; font-size: 13px; line-height: 1.45; color: var(--ink-soft); }
+
+/* Önizleme: telefonun kilit ekranındaki bildirim balonu. */
+.mbk-onizle {
+  max-width: 460px;
+  display: flex; align-items: flex-start; gap: 10px; margin-top: 12px; padding: 10px 12px;
+  border-radius: 14px; background: var(--surface-2);
+}
+.mbk-onizle img { width: 34px; height: 34px; border-radius: 8px; flex-shrink: 0; }
+.mbk-on-yz { flex: 1; min-width: 0; font-size: 13px; line-height: 1.35; color: var(--ink); }
+.mbk-on-ust { display: flex; justify-content: space-between; gap: 8px; }
+.mbk-on-ust em {
+  font-style: normal; font-size: 11.5px; letter-spacing: .06em; color: var(--ink-dim);
+}
+.mbk-on-ust i { font-style: normal; font-size: 11.5px; color: var(--ink-dim); }
+.mbk-on-yz b { display: block; margin-top: 1px; font-weight: 700; color: var(--ink-strong); }
+.mbk-on-metin { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.mbk-adim { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.mbk-adim li { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--ink); }
+.mbk-adim u {
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  width: 22px; height: 22px; border-radius: 999px; background: var(--surface-2);
+  text-decoration: none; font-size: 12px; font-weight: 700; color: var(--ink-strong);
+}
+
+.mbk-alt { display: flex; justify-content: flex-end; align-items: center; gap: 8px; margin-top: 12px; }
+.mbk-sonra {
+  height: 38px; padding: 0 14px; border: 0; border-radius: 8px; background: none;
+  font-size: 13.5px; font-weight: 600; color: var(--ink-soft); cursor: pointer;
+}
+.mbk-ac {
+  display: inline-flex; align-items: center; gap: 7px; height: 38px; padding: 0 16px;
+  border: 0; border-radius: 8px; background: #17171a; color: #fff;
+  font-size: 13.5px; font-weight: 600; cursor: pointer;
+}
+.mbk-ac svg { stroke: #fff; }
+.mbk-ac:active { transform: scale(.97); }
+.mbk-ac[disabled] { opacity: .6; pointer-events: none; }
+
 /* Sohbet ekranındayken üst çubuktaki simge işaretli durur. */
 .zil.active { background: var(--red-soft); color: var(--red); }
 .zil.active svg { stroke: var(--red); }

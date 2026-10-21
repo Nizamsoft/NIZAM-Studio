@@ -1417,6 +1417,8 @@ const DB = {
     /* Canlı kanalı beklemeden ekrana koyuyoruz: kendi mesajın anında
        görünsün. Kanal aynı satırı getirirse kimliğinden anlaşılıyor. */
     if (!this.mesajlar.some(m => m.id === data.id)) this.mesajlar.push(data);
+    /* Karşı taraf Studio'yu kapatmış olabilir: telefonuna bildirim. */
+    if (typeof BILDIRIM !== 'undefined') BILDIRIM.gonder(data.id);
     return data;
   },
 
@@ -1935,3 +1937,145 @@ function veriHatasi(err) {
 
   return 'Veri işlemi başarısız oldu. Tekrar dene.';
 }
+
+/* ==========================================================================
+   Mesaj bildirimleri (Web Push)
+   Studio kapalıyken gelen mesaj telefona bildirim olarak düşer. Sunucu
+   tarafı: supabase/functions/bildirim-gonder + sql/46-bildirimler.sql.
+   iPhone'da yalnız "Ana Ekrana Ekle" ile kurulmuş Studio'da çalışır.
+   ========================================================================== */
+const BILDIRIM = {
+  /* Bu cihazda olur mu? 'yok' | 'kurulum' (iPhone, ana ekranda değil) | 'hazir' */
+  destek() {
+    const ios = /iphone|ipad|ipod/i.test(navigator.userAgent) ||
+      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    const kurulu = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) ||
+      window.navigator.standalone === true;
+    if (ios && !kurulu) return 'kurulum';
+    if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) return 'yok';
+    return 'hazir';
+  },
+
+  /* 'acik' | 'kapali' | 'engelli' */
+  izin() {
+    if (!('Notification' in window)) return 'kapali';
+    if (Notification.permission === 'granted') return 'acik';
+    if (Notification.permission === 'denied') return 'engelli';
+    return 'kapali';
+  },
+
+  _b64(s) {
+    const t = s.replace(/-/g, '+').replace(/_/g, '/');
+    const ham = atob(t + '==='.slice((t.length + 3) % 4));
+    return Uint8Array.from(ham, c => c.charCodeAt(0));
+  },
+
+  async _cagir(govde) {
+    const { data, error } = await AUTH.db.functions.invoke('bildirim-gonder', { body: govde });
+    if (error) {
+      let m = '';
+      try { m = (await error.context.json()).hata; } catch (_) {}
+      if (!m && /Failed to send|fetch|404/i.test(error.message || '')) {
+        m = 'bildirim-gonder fonksiyonu bulunamadı — Supabase → Edge Functions\'dan kur.';
+      }
+      throw new Error(m || 'Bildirim sunucusuna ulaşılamadı.');
+    }
+    return data || {};
+  },
+
+  /* Aboneliği Supabase'e yazar. Telefon adresi zamanla yenileyebiliyor;
+     her açılışta tekrar yazmak ucuz ve adresi taze tutuyor. */
+  async _kaydet(abone) {
+    const j = abone.toJSON();
+    const { error } = await AUTH.db.rpc('push_abone_ol', {
+      p_endpoint: j.endpoint, p_p256dh: j.keys.p256dh, p_auth: j.keys.auth,
+      p_cihaz: (navigator.userAgent.match(/iPhone|iPad|Android|Mac|Windows/) || [''])[0],
+    });
+    if (error) {
+      if (/does not exist|schema cache/i.test(error.message || '')) {
+        throw new Error('Bildirim tabloları kurulmamış — sql/46-bildirimler.sql dosyasını çalıştır.');
+      }
+      throw new Error(veriHatasi(error));
+    }
+  },
+
+  /* Düğmeye basınca: izin iste, cihazı kaydet. Dokunuşun içinden çağrılmalı
+     (iPhone başka türlü izin penceresini açmıyor). */
+  async ac() {
+    if (!AUTH.bagli || !AUTH.user) throw new Error('Önce giriş yap.');
+    const izin = await Notification.requestPermission();
+    if (izin !== 'granted') throw new Error('Bildirim izni verilmedi.');
+    const kayit = await navigator.serviceWorker.ready;
+    let abone = await kayit.pushManager.getSubscription();
+    if (!abone) {
+      const { anahtar } = await this._cagir({ islem: 'anahtar' });
+      if (!anahtar) throw new Error('Bildirim anahtarı alınamadı.');
+      abone = await kayit.pushManager.subscribe({
+        userVisibleOnly: true, applicationServerKey: this._b64(anahtar),
+      });
+    }
+    await this._kaydet(abone);
+    return true;
+  },
+
+  async kapat() {
+    try {
+      const kayit = await this._kayit();
+      const abone = kayit && kayit.pushManager && await kayit.pushManager.getSubscription();
+      if (!abone) return;
+      const adres = abone.endpoint;
+      await abone.unsubscribe();
+      if (AUTH.db && AUTH.user) await AUTH.db.from('push_abonelik').delete().eq('endpoint', adres);
+    } catch (e) { /* zaten kapalıysa sorun yok */ }
+  },
+
+  /* Service worker kaydı. `ready` kayıt yoksa hiç dönmüyor; çıkış gibi
+     yerlerde takılmasın diye getRegistration kullanılıyor. */
+  async _kayit() {
+    try { return (await navigator.serviceWorker.getRegistration()) || null; }
+    catch (e) { return null; }
+  },
+
+  /* Bu cihaz şu an kayıtlı mı? (izin verilmiş + abonelik var) */
+  async kayitliMi() {
+    if (this.destek() !== 'hazir' || this.izin() !== 'acik') return false;
+    try {
+      const kayit = await this._kayit();
+      return !!(kayit && await kayit.pushManager.getSubscription());
+    } catch (e) { return false; }
+  },
+
+  /* Açılışta sessizce: izin daha önce verildiyse aboneliği tazele. */
+  async tazele() {
+    if (!(await this.kayitliMi()) || !AUTH.bagli || !AUTH.user) return;
+    try {
+      const kayit = await this._kayit();
+      await this._kaydet(await kayit.pushManager.getSubscription());
+    } catch (e) { /* bir dahaki açılışta yine denenir */ }
+  },
+
+  /* Mesaj kaydedildikten sonra karşı tarafa bildirim. Beklenmez: mesaj
+     zaten gitti, bildirim gitmese de yazışma bozulmaz. */
+  gonder(mesajId) {
+    if (!AUTH.bagli || !mesajId) return;
+    this._cagir({ islem: 'gonder', mesaj: mesajId }).catch(() => {});
+  },
+
+  /* Uygulama simgesindeki sayı (iPhone 16.4+, Android). */
+  rozet(sayi) {
+    try {
+      if (sayi > 0 && navigator.setAppBadge) navigator.setAppBadge(sayi);
+      else if (navigator.clearAppBadge) navigator.clearAppBadge();
+    } catch (e) { /* desteklenmiyorsa geç */ }
+  },
+
+  /* Yazışma açılınca o kişiden gelen bildirimleri bildirim merkezinden kaldır. */
+  async temizle(kisiId) {
+    try {
+      const kayit = await this._kayit();
+      if (!kayit) return;
+      const liste = await kayit.getNotifications({ tag: 'mesaj-' + kisiId });
+      liste.forEach(n => n.close());
+    } catch (e) { /* desteklenmiyorsa geç */ }
+  },
+};

@@ -21,7 +21,7 @@
    Bir resim yeniden yüklenince eski kopya önbellekte kalırdı; uygulama
    `postMessage({ tip: 'unut', yol })` gönderiyor, o kayıt siliniyor. */
 
-const CACHE = 'nizam-studio-v0.332.3';
+const CACHE = 'nizam-studio-v0.333.0';
 
 /* Resimler AYRI ve SÜRÜMSÜZ bir önbellekte duruyor.
 
@@ -135,5 +135,54 @@ self.addEventListener('fetch', e => {
         return res;
       })
       .catch(() => caches.match(req).then(r => r || caches.match('./index.html')))
+  );
+});
+
+/* ---- Mesaj bildirimi (Web Push) ----
+   Studio kapalıyken sunucu (bildirim-gonder) şifreli bir mesaj yollar;
+   telefon bu dosyayı uyandırır, biz de bildirimi gösteririz. iPhone her
+   gelen mesajda bildirim gösterilmesini şart koşuyor — göstermezsek izni
+   geri alıyor. Bu yüzden içerik okunamasa bile sade bir bildirim çıkıyor. */
+self.addEventListener('push', e => {
+  let v = {};
+  try { v = e.data ? e.data.json() : {}; } catch (h) { v = {}; }
+
+  const baslik = v.baslik || 'NIZAM Studio';
+  const secenek = {
+    body: v.metin || 'Yeni mesajın var.',
+    icon: 'icon-192.png',
+    badge: 'icon-192.png',
+    /* Aynı kişiden gelenler tek bildirimde toplanır, yenisi eskisinin
+       yerine geçer ve yine ses/titreşim verir — WhatsApp gibi. */
+    tag: v.kisi ? 'mesaj-' + v.kisi : 'mesaj',
+    renotify: true,
+    timestamp: Date.now(),
+    data: { adres: v.kisi ? './#/sohbet/' + v.kisi : './#/sohbet' },
+  };
+
+  const isler = [self.registration.showNotification(baslik, secenek)];
+  /* Uygulama simgesindeki okunmamış sayısı. */
+  if (v.rozet && self.navigator && self.navigator.setAppBadge) {
+    isler.push(self.navigator.setAppBadge(v.rozet).catch(() => {}));
+  }
+  e.waitUntil(Promise.all(isler));
+});
+
+/* Bildirime dokununca: Studio açıksa öne getir ve o yazışmaya geç,
+   kapalıysa doğrudan yazışmayla aç. */
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  const adres = new URL((e.notification.data && e.notification.data.adres) || './', self.registration.scope).href;
+  e.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(liste => {
+      const acik = liste.find(c => c.url.indexOf(self.registration.scope) === 0);
+      if (acik) {
+        /* Sayfayı yeniden yüklemeden geçsin diye adresi uygulamaya
+           söylüyoruz; o kendi içinde yazışmayı açıyor. */
+        acik.postMessage({ tip: 'git', adres: new URL(adres).hash });
+        return acik.focus().catch(() => {});
+      }
+      return self.clients.openWindow(adres);
+    })
   );
 });

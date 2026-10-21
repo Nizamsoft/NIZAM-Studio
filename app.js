@@ -9234,7 +9234,10 @@ function render() {
   if (yazisma) {
     const govde = $('#yz-govde');
     if (govde) govde.scrollTop = govde.scrollHeight;
-    if (id !== 'studio') DB.okunduIsaretle(id).then(d => { if (d) zilNoktasi(); });
+    if (id !== 'studio') {
+      DB.okunduIsaretle(id).then(d => { if (d) zilNoktasi(); });
+      BILDIRIM.temizle(id);
+    }
   }
   /* Arama kutusundaki yazı ekran yeniden çizilince de geçerli kalsın. */
   pjAramaUygula();
@@ -9450,6 +9453,8 @@ function zilNoktasi() {
 
   const sohbetN = $('#btn-sohbet .zil-nokta');
   if (sohbetN) sohbetN.classList.toggle('hidden', !DB.okunmamis());
+  /* Uygulama simgesindeki sayı da okunmamış mesaj sayısını göstersin. */
+  BILDIRIM.rozet(DB.okunmamis());
 }
 
 function sayaclariYaz() {
@@ -10599,6 +10604,97 @@ function sohbetAramaUygula() {
   liste.classList.toggle('bos', gorunen === 0);
 }
 
+/* ---------- Bildirim kartı (Sohbet ekranının üstü) ----------
+   Studio kapalıyken mesaj telefona düşsün diye izin isteyen kart.
+   Durumlar: iPhone'da ana ekranda değilse kurulum adımları, izin
+   engellenmişse nereden açılacağı, izin yoksa küçük bir bildirim
+   önizlemesi ve "Bildirimleri aç". İzin verildiyse kart hiç çıkmaz. */
+const BILDIRIM_SONRA_ANAHTAR = 'ns-bildirim-sonra';
+
+function bildirimSonraMi() {
+  try {
+    const t = Number(localStorage.getItem(BILDIRIM_SONRA_ANAHTAR) || 0);
+    return t && Date.now() - t < 7 * 24 * 3600 * 1000;
+  } catch (e) { return false; }
+}
+
+function bildirimKarti() {
+  if (!AUTH.bagli) return '';
+  const destek = BILDIRIM.destek();
+  if (destek === 'yok') return '';
+  const izin = BILDIRIM.izin();
+  if (destek === 'hazir' && izin === 'acik') return '';
+  if (bildirimSonraMi()) return '';
+
+  const zil = `<span class="mbk-ik">${svg(ICON.zil, 20)}</span>`;
+  const sonra = `<button class="mbk-sonra" type="button" data-eylem="bildirim-sonra">Sonra</button>`;
+
+  if (destek === 'kurulum') {
+    return `
+      <div class="mbk">
+        <div class="mbk-ust">${zil}
+          <span class="mbk-yz"><b>Mesajları kaçırma</b>
+            <i>iPhone'da bildirim için Studio'yu önce ana ekrana ekle.</i></span>
+        </div>
+        <ol class="mbk-adim">
+          <li><u>1</u><span>Safari'de alttaki <b>Paylaş</b> simgesine dokun</span></li>
+          <li><u>2</u><span><b>Ana Ekrana Ekle</b>'yi seç</span></li>
+          <li><u>3</u><span>Studio'yu ana ekrandaki simgeden aç</span></li>
+        </ol>
+        <div class="mbk-alt">${sonra}</div>
+      </div>`;
+  }
+
+  if (izin === 'engelli') {
+    return `
+      <div class="mbk">
+        <div class="mbk-ust">${zil}
+          <span class="mbk-yz"><b>Bildirimler kapalı</b>
+            <i>Açmak için: Ayarlar › Bildirimler › NIZAM Studio › İzin Ver.</i></span>
+        </div>
+        <div class="mbk-alt">${sonra}</div>
+      </div>`;
+  }
+
+  return `
+    <div class="mbk">
+      <div class="mbk-ust">${zil}
+        <span class="mbk-yz"><b>Mesajları kaçırma</b>
+          <i>Studio kapalıyken de yeni mesajlar telefonuna bildirim olarak gelsin.</i></span>
+      </div>
+      <div class="mbk-onizle" aria-hidden="true">
+        <img src="icon-192.png" alt="">
+        <span class="mbk-on-yz">
+          <span class="mbk-on-ust"><em>NIZAM STUDIO</em><i>şimdi</i></span>
+          <b>Nizam</b>
+          <span class="mbk-on-metin">Müşteri onayı geldi, yarın teslim ediyoruz 👍</span>
+        </span>
+      </div>
+      <div class="mbk-alt">
+        ${sonra}
+        <button class="mbk-ac" type="button" data-eylem="bildirim-ac">${svg(ICON.zil, 15)}<span>Bildirimleri aç</span></button>
+      </div>
+    </div>`;
+}
+
+async function bildirimAcTikla(el) {
+  if (el) { el.disabled = true; const s = $('span', el); if (s) s.textContent = 'Açılıyor…'; }
+  try {
+    await BILDIRIM.ac();
+    toast('Bildirimler açıldı 🔔', 'basari');
+    /* Nasıl görüneceğini hemen göstersin. */
+    try {
+      const kayit = await BILDIRIM._kayit();
+      if (kayit) kayit.showNotification('Bildirimler açık', {
+        body: 'Yeni mesajlar artık buraya düşecek.', icon: 'icon-192.png', tag: 'bildirim-deneme',
+      });
+    } catch (e) { /* önemli değil */ }
+  } catch (h) {
+    toast(h.message || 'Bildirimler açılamadı.', 'uyari');
+  }
+  render();
+}
+
 function sohbetEkrani() {
   /* Sıra: son yazışılan en üstte; hiç yazışılmamışlarda çevrimiçi olan önde. */
   const kisiler = (DB.kisiler || [])
@@ -10648,6 +10744,8 @@ function sohbetEkrani() {
           value="${esc(SOHBET_ARAMA)}">
       </label>
     </div>
+
+    ${bildirimKarti()}
 
     <div class="sh2-liste">${satirlar}
       <div class="pj-bos-arama">Aramana uyan kişi yok.</div>
@@ -15225,6 +15323,12 @@ async function eylemCalistir(el) {
   if (e === 'sohbet-yakinda') { toast('Bu kısım yakında gelecek.'); return; }
 
   if (e === 'mesaj-yolla') return mesajYolla(id);
+  if (e === 'bildirim-ac') return bildirimAcTikla(el);
+  if (e === 'bildirim-sonra') {
+    try { localStorage.setItem(BILDIRIM_SONRA_ANAHTAR, String(Date.now())); } catch (h) {}
+    render();
+    return;
+  }
 
   if (e === 'ekip-suz') {
     EKIP_SUZ = el.dataset.deger;
@@ -17658,6 +17762,9 @@ async function uygulamayiAc() {
     if (rota().key === 'ekip') DB.tazele('kisiler').then(render, render);
   });
 
+  /* Bildirim izni daha önce verildiyse cihaz kaydını tazele. */
+  BILDIRIM.tazele();
+
   /* Son görülme damgası: açılışta bir kez, sonra beş dakikada bir. */
   DB.goruldu(true);
   clearInterval(GORULDU_SAAT);
@@ -18060,5 +18167,12 @@ document.addEventListener('DOMContentLoaded', () => {
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+  /* Bildirime dokunulunca service worker hangi yazışmanın açılacağını söylüyor. */
+  navigator.serviceWorker.addEventListener('message', e => {
+    const v = e.data || {};
+    if (v.tip === 'git' && typeof v.adres === 'string' && v.adres.indexOf('#/sohbet') === 0) {
+      gitVeCiz(v.adres);
+    }
   });
 }
