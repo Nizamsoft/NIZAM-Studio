@@ -11814,3 +11814,9 @@ a.secv-buyuk { text-align: center; text-decoration: none; margin: 0 0 18px; }
 .yd-dg { display: flex; gap: 10px; margin-top: 16px; }
 .yd-dg .btn { flex: 1; height: 44px; justify-content: center; }
 .yd-dg .yd-dugme-ic { flex: 1; margin-top: 0; }
+
+/* ---- GitHub repo seçimi · Değiştir (v0.338.0) ---- */
+.yd-bag.yd-degis { border-color: transparent; background: transparent; color: var(--ink-dim); font-weight: 500; padding: 7px 6px; }
+.yd-repo-liste { max-height: 52vh; overflow-y: auto; margin-top: 6px; }
+.yd-repo-say { font-size: 12px; color: var(--ink-soft); margin: 6px 0 2px; }
+.yd-satir > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

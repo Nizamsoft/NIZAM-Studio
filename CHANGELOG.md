@@ -1,5 +1,17 @@
 # Değişiklik Günlüğü
 
+## v0.338.0
+- **GitHub repoları da seçilebiliyor; bağlantı değiştirilebiliyor; "Direct connection" adresi reddediliyor.**
+  - `sql/51-yedek-github-secimi.sql`: `yedek_ayarlari.haric text[]` + `GITHUB` satırı (acik · haric).
+    Hariç listesi tutulur ki yeni repolar kendiliğinden yedeğe girsin.
+  - `yedek` fonksiyonu: `rapor` repo adlarını (`ayrinti.repolar`) saklıyor; `liste` haric'i veriyor;
+    `ayar-kaydet` haric alıyor; `baglan` `@db.<ref>.supabase.co` (Direct connection · IPv6) adresini
+    "Session pooler kullan" diye reddediyor.
+  - Arayüz: Ayarlar'da GitHub satırı (tümden aç/kapa + "Seç ›" repo listesi, arama); bağlı satırlarda
+    "Değiştir"; Durum'daki psql hataları kısa (`yedekHataKisa`), tamamı title'da.
+  - nizam-yedek: `liste.py` GITHUB ayarını `github-ayar.json`'a yazıyor; `yedekle.sh` hariç repoları
+    atlıyor, tüm repo adlarını `repolar.txt`'e yazıyor; `bildir.py` rapora ekliyor.
+
 ## v0.337.0
 - **Son Yedekleme › Ayarlar: hangi veritabanı yedeklensin, Studio'dan seçiliyor ve bağlanıyor.**
   - `sql/50-yedek-ayarlari.sql`: `yedek_ayarlari` (kod · ad · proje_id · acik; RLS yalnız yönetici okur,

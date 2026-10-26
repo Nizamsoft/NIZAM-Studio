@@ -202,7 +202,11 @@ Deno.serve(async (istek) => {
     const satir = {
       tur, durum,
       ozet: metin(govde.ozet, 400),
-      ayrinti: { kalemler, drive: metin((govde.ayrinti as any)?.drive, 20) },
+      ayrinti: {
+        kalemler, drive: metin((govde.ayrinti as any)?.drive, 20),
+        repolar: (Array.isArray((govde.ayrinti as any)?.repolar) ? (govde.ayrinti as any).repolar : [])
+          .map((x: unknown) => metin(x, 100)).filter((x: string) => /^[A-Za-z0-9._-]{1,100}$/.test(x)).slice(0, 500),
+      },
     };
     const { error } = await db.from('yedek_raporlari').insert(satir);
     if (error) { console.error('yedek raporu yazılamadı', error.message); return hata('Kaydedilemedi.', 500); }
@@ -218,9 +222,11 @@ Deno.serve(async (istek) => {
   if (govde.islem === 'liste') {
     const anahtar = Deno.env.get('YEDEK_ANAHTARI') ?? '';
     if (!anahtar || (istek.headers.get('x-yedek-anahtari') ?? '') !== anahtar) return hata('Yetkisiz.', 401);
-    const { data, error } = await db.from('yedek_ayarlari').select('kod, ad, proje_id, acik').order('kod');
+    const { data, error } = await db.from('yedek_ayarlari').select('*').order('kod');
     if (error) return hata('Liste okunamadı.', 500);
-    return yanit({ liste: (data ?? []).map(r => ({ kod: r.kod, ad: r.ad, studio_proje: r.proje_id || '', acik: !!r.acik })) });
+    return yanit({ liste: (data ?? []).map(r => ({
+      kod: r.kod, ad: r.ad, studio_proje: r.proje_id || '', acik: !!r.acik, haric: Array.isArray(r.haric) ? r.haric : [],
+    })) });
   }
 
   // ---- Bundan sonrası Studio'dan, yalnız yönetici ------------------------
@@ -255,6 +261,9 @@ Deno.serve(async (istek) => {
     const satir: Record<string, unknown> = { kod, acik: !!govde.acik, guncellendi: new Date().toISOString() };
     if (govde.ad) satir.ad = metin(govde.ad, 120);
     if (govde.proje_id) satir.proje_id = metin(govde.proje_id, 36);
+    if (Array.isArray(govde.haric)) {
+      satir.haric = (govde.haric as unknown[]).map(x => metin(x, 100)).filter(x => /^[A-Za-z0-9._-]{1,100}$/.test(x)).slice(0, 500);
+    }
     const { error } = await db.from('yedek_ayarlari').upsert(satir, { onConflict: 'kod' });
     if (error) return hata('Kaydedilemedi.', 500);
     return yanit({ tamam: true });
@@ -266,6 +275,8 @@ Deno.serve(async (istek) => {
     if (!/^[A-Z0-9_]{2,40}$/.test(kod)) return hata('Geçersiz kod.');
     const adres = String(govde.adres || '').trim();
     if (/\[YOUR-PASSWORD\]/i.test(adres)) return hata('Adresteki [YOUR-PASSWORD] yerine veritabanı şifresini yaz.');
+    if (/@db\.[a-z0-9]+\.supabase\.co(:|\/)/i.test(adres))
+      return hata('Bu "Direct connection" adresi; yedek sunucusu buna ulaşamaz. Supabase › Connect › Method: "Session pooler" adresini yapıştır (…pooler.supabase.com ile biter).');
     if (adres.length > 600 || !/^postgres(ql)?:\/\/[^\s:@\/]+:[^\s@]+@[^\s:\/]+:\d{2,5}\/[A-Za-z0-9_]+(\?\S*)?$/.test(adres))
       return hata('Adres beklenen biçimde değil: postgresql://kullanıcı:şifre@sunucu:5432/postgres');
 

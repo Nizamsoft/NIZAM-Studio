@@ -21,6 +21,13 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.338.0', tarih: '2026-10-26',
+    ozet: 'GitHub repolarını da sen seçiyorsun',
+    maddeler: [
+      'Son Yedekleme › Ayarlar'da GitHub repolarını tek tek açıp kapatabiliyorsun; yeni açtığın repolar kendiliğinden yedeğe giriyor.',
+      'Bağlı bir programın adresini "Değiştir" ile güncelleyebiliyorsun.',
+      'Yedekleme hatası artık kısa ve anlaşılır yazıyor; yanlış türde adres girilirse en baştan uyarıyor.',
+    ] },
   { surum: 'v0.337.0', tarih: '2026-10-26',
     ozet: 'Hangi programın yedekleneceğini sen seçiyorsun',
     maddeler: [
