@@ -21,6 +21,12 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.337.0', tarih: '2026-10-26',
+    ozet: 'Hangi programın yedekleneceğini sen seçiyorsun',
+    maddeler: [
+      'Son Yedekleme penceresinde yeni "Ayarlar" sekmesi: her programın yedeğini tek dokunuşla açıp kapatabiliyorsun.',
+      'Henüz bağlanmamış bir programı "Bağlan" ile Supabase adresini yapıştırarak ekleyebiliyorsun; adres şifrelenip saklanıyor, bir daha gösterilmiyor.',
+    ] },
   { surum: 'v0.336.0', tarih: '2026-10-26',
     ozet: 'Panelde "Son Yedekleme" kutusu',
     maddeler: [

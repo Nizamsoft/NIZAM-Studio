@@ -12,6 +12,14 @@
 //              GH_YEDEK_TOKEN: yalnız nizam-yedek reposunda "Actions: Read and
 //              write" izinli ince ayarlı GitHub anahtarı.
 //
+//   3) LİSTE  · nizam-yedek gece başında hangi veritabanlarını yedekleyeceğini
+//              buradan okur (yedek_ayarlari · acik). YEDEK_ANAHTARI ile.
+//   4) AYARLAR· Studio'nun Son Yedekleme › Ayarlar sekmesi (yalnız yönetici):
+//              ayarlar · ayar-kaydet · baglan. "baglan" bağlantı adresini
+//              GitHub'ın açık anahtarıyla şifreleyip DB_<KOD> gizli ayarına
+//              yazar; adres hiçbir yerde saklanmaz, geri okunmaz.
+//              GH_YEDEK_TOKEN'da "Secrets: Read and write" izni de gerekir.
+//
 // Kurulum (TEK SEFER):
 //   1) Supabase → Edge Functions → Deploy a new function → via editor
 //      Ad: yedek · bu dosyayı yapıştır · Deploy
@@ -23,6 +31,7 @@
 // ==========================================================================
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import sodium from 'https://esm.sh/libsodium-wrappers@0.7.13';
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -151,6 +160,19 @@ async function pushGonder(
 
 const metin = (x: unknown, n: number) => String(x ?? '').slice(0, n);
 
+/* GitHub API · GH_YEDEK_TOKEN ile. */
+function gh(yontem: string, yol: string, govde?: unknown) {
+  return fetch('https://api.github.com' + yol, {
+    method: yontem,
+    headers: {
+      Authorization: `Bearer ${Deno.env.get('GH_YEDEK_TOKEN') ?? ''}`, Accept: 'application/vnd.github+json',
+      'X-GitHub-Api-Version': '2022-11-28', 'User-Agent': 'nizam-studio',
+      ...(govde ? { 'Content-Type': 'application/json' } : {}),
+    },
+    body: govde ? JSON.stringify(govde) : undefined,
+  });
+}
+
 Deno.serve(async (istek) => {
   if (istek.method === 'OPTIONS') return new Response('ok', { headers: CORS });
   if (istek.method !== 'POST') return hata('Yalnızca POST.', 405);
@@ -192,17 +214,80 @@ Deno.serve(async (istek) => {
     return yanit({ tamam: true }, 201);
   }
 
+  // ---- LİSTE · nizam-yedek gece başında okur ----------------------------
+  if (govde.islem === 'liste') {
+    const anahtar = Deno.env.get('YEDEK_ANAHTARI') ?? '';
+    if (!anahtar || (istek.headers.get('x-yedek-anahtari') ?? '') !== anahtar) return hata('Yetkisiz.', 401);
+    const { data, error } = await db.from('yedek_ayarlari').select('kod, ad, proje_id, acik').order('kod');
+    if (error) return hata('Liste okunamadı.', 500);
+    return yanit({ liste: (data ?? []).map(r => ({ kod: r.kod, ad: r.ad, studio_proje: r.proje_id || '', acik: !!r.acik })) });
+  }
+
+  // ---- Bundan sonrası Studio'dan, yalnız yönetici ------------------------
+  const yetki = istek.headers.get('Authorization') ?? '';
+  if (!yetki) return hata('Oturum yok.', 401);
+  const kullaniciDb = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!, {
+    global: { headers: { Authorization: yetki } },
+  });
+  const { data: oturum, error: oHata } = await kullaniciDb.auth.getUser();
+  if (oHata || !oturum?.user) return hata('Oturum geçersiz.', 401);
+  const { data: profil } = await db.from('profiles').select('rol, aktif').eq('id', oturum.user.id).maybeSingle();
+  if (!profil || !profil.aktif || profil.rol !== 'yonetici') return hata('Bu işlem için yönetici olman gerekiyor.', 403);
+
+  // ---- AYARLAR · liste + hangi kodun bağlantısı GitHub'da var -------------
+  if (govde.islem === 'ayarlar') {
+    const { data: ayarlar, error } = await db.from('yedek_ayarlari').select('*').order('kod');
+    if (error) return hata('Ayarlar okunamadı (sql/50 çalıştırıldı mı?).', 500);
+    let bagli: string[] = [];
+    let ghHata = '';
+    const r = await gh('GET', `/repos/${GITHUB_REPO}/actions/secrets?per_page=100`);
+    if (r.status === 200) {
+      bagli = ((await r.json()).secrets || []).map((s: { name: string }) => s.name)
+        .filter((n: string) => n.startsWith('DB_')).map((n: string) => n.slice(3));
+    } else ghHata = 'GitHub gizli ayarları okunamadı (' + r.status + '). GitHub anahtarına "Secrets: Read and write" izni verilmeli.';
+    return yanit({ ayarlar: ayarlar ?? [], bagli, ghHata });
+  }
+
+  // ---- AYAR KAYDET · aç/kapa (listede yoksa ekler) ------------------------
+  if (govde.islem === 'ayar-kaydet') {
+    const kod = String(govde.kod || '').toUpperCase();
+    if (!/^[A-Z0-9_]{2,40}$/.test(kod)) return hata('Geçersiz kod.');
+    const satir: Record<string, unknown> = { kod, acik: !!govde.acik, guncellendi: new Date().toISOString() };
+    if (govde.ad) satir.ad = metin(govde.ad, 120);
+    if (govde.proje_id) satir.proje_id = metin(govde.proje_id, 36);
+    const { error } = await db.from('yedek_ayarlari').upsert(satir, { onConflict: 'kod' });
+    if (error) return hata('Kaydedilemedi.', 500);
+    return yanit({ tamam: true });
+  }
+
+  // ---- BAĞLAN · adres şifrelenip GitHub'a, açık olarak listeye ------------
+  if (govde.islem === 'baglan') {
+    const kod = String(govde.kod || '').toUpperCase();
+    if (!/^[A-Z0-9_]{2,40}$/.test(kod)) return hata('Geçersiz kod.');
+    const adres = String(govde.adres || '').trim();
+    if (/\[YOUR-PASSWORD\]/i.test(adres)) return hata('Adresteki [YOUR-PASSWORD] yerine veritabanı şifresini yaz.');
+    if (adres.length > 600 || !/^postgres(ql)?:\/\/[^\s:@\/]+:[^\s@]+@[^\s:\/]+:\d{2,5}\/[A-Za-z0-9_]+(\?\S*)?$/.test(adres))
+      return hata('Adres beklenen biçimde değil: postgresql://kullanıcı:şifre@sunucu:5432/postgres');
+
+    const k = await gh('GET', `/repos/${GITHUB_REPO}/actions/secrets/public-key`);
+    if (k.status !== 200) return hata('GitHub anahtarı alınamadı (' + k.status + '). GitHub anahtarına "Secrets: Read and write" izni verilmeli.', 502);
+    const { key, key_id } = await k.json();
+    await sodium.ready;
+    const sifreli = sodium.to_base64(
+      sodium.crypto_box_seal(sodium.from_string(adres), sodium.from_base64(key, sodium.base64_variants.ORIGINAL)),
+      sodium.base64_variants.ORIGINAL);
+    const p = await gh('PUT', `/repos/${GITHUB_REPO}/actions/secrets/DB_${kod}`, { encrypted_value: sifreli, key_id });
+    if (p.status !== 201 && p.status !== 204) return hata('GitHub gizli ayarı yazılamadı (' + p.status + ').', 502);
+
+    const satir: Record<string, unknown> = { kod, acik: true, guncellendi: new Date().toISOString() };
+    if (govde.ad) satir.ad = metin(govde.ad, 120);
+    if (govde.proje_id) satir.proje_id = metin(govde.proje_id, 36);
+    await db.from('yedek_ayarlari').upsert(satir, { onConflict: 'kod' });
+    return yanit({ tamam: true });
+  }
+
   // ---- 2) BAŞLAT · Studio'dan, yalnız yönetici --------------------------
   if (govde.islem === 'baslat') {
-    const yetki = istek.headers.get('Authorization') ?? '';
-    if (!yetki) return hata('Oturum yok.', 401);
-    const kullaniciDb = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!, {
-      global: { headers: { Authorization: yetki } },
-    });
-    const { data: oturum, error: oHata } = await kullaniciDb.auth.getUser();
-    if (oHata || !oturum?.user) return hata('Oturum geçersiz.', 401);
-    const { data: profil } = await db.from('profiles').select('rol, aktif').eq('id', oturum.user.id).maybeSingle();
-    if (!profil || !profil.aktif || profil.rol !== 'yonetici') return hata('Bu işlem için yönetici olman gerekiyor.', 403);
 
     /* Son 10 dakikada başlatıldıysa ikinci kez başlatma. */
     const onDk = new Date(Date.now() - 600_000).toISOString();
@@ -210,16 +295,8 @@ Deno.serve(async (istek) => {
       .eq('tur', 'elle').gte('olusturuldu', onDk).limit(1);
     if (son && son.length) return hata('Yedek az önce başlatıldı; birkaç dakika içinde biter.', 409);
 
-    const token = Deno.env.get('GH_YEDEK_TOKEN') ?? '';
-    if (!token) return hata('GitHub anahtarı (GH_YEDEK_TOKEN) kurulmamış.', 500);
-    const r = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/actions/workflows/${GITHUB_IS}/dispatches`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json',
-        'X-GitHub-Api-Version': '2022-11-28', 'User-Agent': 'nizam-studio',
-      },
-      body: JSON.stringify({ ref: 'main' }),
-    });
+    if (!Deno.env.get('GH_YEDEK_TOKEN')) return hata('GitHub anahtarı (GH_YEDEK_TOKEN) kurulmamış.', 500);
+    const r = await gh('POST', `/repos/${GITHUB_REPO}/actions/workflows/${GITHUB_IS}/dispatches`, { ref: 'main' });
     if (r.status !== 204) {
       const t = await r.text();
       console.error('GitHub başlatma', r.status, t.slice(0, 300));

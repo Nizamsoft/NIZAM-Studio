@@ -153,6 +153,21 @@ const DB = {
 
   cevrimicimi(kisiId) { return !!this.varlik[kisiId]; },
 
+  /* ---------- Yedek ayarları (v0.337.0) ----------
+     Hangi programın veritabanı yedeklensin. Hepsi sunucudaki `yedek`
+     fonksiyonundan geçiyor: bağlantı adresi tarayıcıdan doğrudan GitHub'a
+     şifreli gidiyor, Studio'nun tablosunda saklanmıyor. */
+  async yedekIslem(govde) {
+    const { data, error } = await AUTH.db.functions.invoke('yedek', { body: govde });
+    if (error) {
+      let mesaj = 'İşlem yapılamadı.';
+      try { const g = await error.context.json(); if (g && g.hata) mesaj = g.hata; } catch (_) { }
+      throw new Error(mesaj);
+    }
+    if (data && data.hata) throw new Error(data.hata);
+    return data || {};
+  },
+
   /* ---------- Gece yedeğini şimdi başlat (v0.336.0) ----------
      Sunucudaki `yedek` fonksiyonu yöneticiyi doğrular, GitHub'da yedeği
      başlatır. Sonuç birkaç dakika sonra yedek_raporlari'na düşer. */

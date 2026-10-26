@@ -1,5 +1,19 @@
 # Değişiklik Günlüğü
 
+## v0.337.0
+- **Son Yedekleme › Ayarlar: hangi veritabanı yedeklensin, Studio'dan seçiliyor ve bağlanıyor.**
+  - `sql/50-yedek-ayarlari.sql`: `yedek_ayarlari` (kod · ad · proje_id · acik; RLS yalnız yönetici okur,
+    yalnız service_role yazar). projeler.json'daki dört kayıt tohumlanır.
+  - `yedek` fonksiyonu: `liste` (nizam-yedek, YEDEK_ANAHTARI), `ayarlar` (liste + GitHub'daki DB_* gizli
+    ayar adları), `ayar-kaydet` (aç/kapa), `baglan` (adres biçim denetimi → GitHub açık anahtarıyla
+    libsodium sealed box → `PUT actions/secrets/DB_<KOD>`; adres hiçbir yerde saklanmaz).
+    GH_YEDEK_TOKEN'a "Secrets: Read and write" izni gerekir.
+  - Arayüz: Durum | Ayarlar sekmeleri; Studio projeleri (şablon, deneme, arşiv hariç) + NIZAM Studio;
+    bağlı olan anahtarla açılıp kapanır, olmayanın yanında "Bağlan".
+  - Durum penceresi `kapali` satırını gri gösteriyor.
+  - nizam-yedek: `betikler/liste.py` listeyi Studio'dan alır (ulaşılamazsa projeler.json);
+    kapalı olanlar raporda `kapali`.
+
 ## v0.336.0
 - **Gece yedeği artık hata bildirimi değil; Panel'de "Son Yedekleme" kutusu.**
   - `sql/49-yedek-raporlari.sql`: `yedek_raporlari` (tur gece|deneme|elle · durum tamam|sorunlu|basladi ·

@@ -16139,6 +16139,11 @@ async function eylemCalistir(el) {
   /* Son Yedekleme kutusu (v0.336.0). */
   if (e === 'yedek-detay') return yedekDetayAc();
   if (e === 'yedek-baslat') return yedekBaslatTikla(el);
+  if (e === 'yedek-ayar') return yedekAyarAc();
+  if (e === 'yedek-ac-kapa') return yedekAcKapa(el);
+  if (e === 'yedek-baglan') return yedekBaglanAc(el.dataset.id);
+  if (e === 'yedek-bagla') return yedekBagla(el);
+  if (e === 'yedek-vazgec') return modalKapat();
 
   /* Standart ekleme/düzenleme artık elle form değil: fikir → prompt → Claude
      → JSON yapıştır (std-prompt + standart-ice-aktar). */
@@ -17763,7 +17768,7 @@ function yedekKalemleri(r) {
 }
 function yedekAltYazi(r) {
   const k = yedekKalemleri(r);
-  const vt = k.filter(x => x.kod !== 'GITHUB').length;
+  const vt = k.filter(x => x.kod !== 'GITHUB' && x.durum === 'tamam').length;
   const gh = k.find(x => x.kod === 'GITHUB');
   const ghAdet = gh && /(\d+)\s*repo/.exec(gh.ayrinti || '');
   const drive = r && r.ayrinti && r.ayrinti.drive;
@@ -17794,19 +17799,20 @@ function panelYedek() {
   </div>`;
 }
 
-const YEDEK_DURUM_YAZI = { tamam: 'alındı', hata: 'alınamadı', kurulmadi: 'bağlı değil' };
+const YEDEK_DURUM_YAZI = { tamam: 'alındı', hata: 'alınamadı', kurulmadi: 'bağlı değil', kapali: 'kapalı' };
 
 function yedekDetayAc() {
+  modalHepsiniKapat();
   const r = sonYedekRaporu();
   const d = sonDenemeRaporu();
   const suruyor = yedekSuruyor();
   const kalem = yedekKalemleri(r);
   const satir = (durum, ad, sag, kirmizi) => `<div class="yd-satir">
-      <span class="yd-n ${durum === 'hata' ? 'k' : durum === 'kurulmadi' ? 'g' : ''}">${durum === 'hata' ? '!' : durum === 'kurulmadi' ? '–' : svg(ICON.tik, 11)}</span>
+      <span class="yd-n ${durum === 'hata' ? 'k' : (durum === 'kurulmadi' || durum === 'kapali') ? 'g' : ''}">${durum === 'hata' ? '!' : (durum === 'kurulmadi' || durum === 'kapali') ? '–' : svg(ICON.tik, 11)}</span>
       <b>${esc(ad)}</b><span class="${kirmizi ? 'kir' : ''}">${esc(sag)}</span></div>`;
   /* "48.120 satır · 6,1 MB" → sağda yalnız boyut; hatada sebebin kendisi. */
   const sag = k => k.durum === 'tamam' ? ((/·\s*([^·]+)$/.exec(k.ayrinti || '') || [])[1] || 'alındı').replace(/\s*\(.*\)\s*$/, '').trim()
-    : (k.ayrinti || YEDEK_DURUM_YAZI[k.durum] || k.durum);
+    : (k.durum === 'hata' ? (k.ayrinti || 'alınamadı') : (YEDEK_DURUM_YAZI[k.durum] || k.ayrinti || k.durum));
   const vt = kalem.filter(k => k.kod !== 'GITHUB');
   const gh = kalem.find(k => k.kod === 'GITHUB');
   const drive = r && r.ayrinti && r.ayrinti.drive;
@@ -17816,6 +17822,7 @@ function yedekDetayAc() {
     : pzZaman(r.olusturuldu) + (r.durum === 'sorunlu' ? ' · sorun var' : ' · sonraki: 03:00');
   modalAc(`
     ${modalBaslik(ICON.kaydet, 'Son Yedekleme', altBaslik)}
+    ${yedekSekmeleri('durum')}
     ${r ? `<div class="yd-baslik2">Veritabanları</div>
       ${vt.map(k => satir(k.durum, k.ad, sag(k), k.durum === 'hata')).join('') || '<div class="yd-bos">Veritabanı satırı yok.</div>'}
       <div class="yd-baslik2">Diğer</div>
@@ -17829,6 +17836,127 @@ function yedekDetayAc() {
       ${suruyor ? svg(ICON.saat, 15) + ' Yedek alınıyor…' : '▶ Şimdi yedek al'}</button>
     <div class="yd-not">${suruyor ? 'Birkaç dakika sürer; bitince kutu kendiliğinden güncellenir.' : 'Gece yedeğini hemen başlatır · birkaç dakika sürer'}</div>
   `, null, 'yd-modal');
+}
+
+/* ---------- Son Yedekleme › Ayarlar (v0.337.0) ----------
+   Studio'daki her proje (şablon, deneme ve arşiv hariç) + NIZAM Studio'nun
+   kendisi. Bağlantısı GitHub'da olan açılıp kapatılır; olmayanın yanında
+   "Bağlan" çıkar. Liste ve bağlantı durumu her açılışta sunucudan okunur. */
+function yedekSekmeleri(secili) {
+  return `<div class="yd-sekme">
+    <button type="button" class="${secili === 'durum' ? 'sec' : ''}" data-eylem="yedek-detay">Durum</button>
+    <button type="button" class="${secili === 'ayar' ? 'sec' : ''}" data-eylem="yedek-ayar">Ayarlar</button>
+  </div>`;
+}
+
+/* Projenin adından gizli ayar kodu: harf ve rakam, büyük harf. */
+function yedekKodUret(ad, kullanilan) {
+  const harf = { 'ç': 'C', 'ğ': 'G', 'ı': 'I', 'i': 'I', 'ö': 'O', 'ş': 'S', 'ü': 'U' };
+  let k = String(ad || '').toLocaleLowerCase('tr').split('').map(c => harf[c] || c).join('')
+    .toUpperCase().replace(/[^A-Z0-9]+/g, '').slice(0, 20) || 'PROJE';
+  let n = k, i = 2;
+  while (kullanilan.has(n)) n = k.slice(0, 18) + i++;
+  return n;
+}
+
+let YEDEK_AYAR = null;   // son okunan liste · { satirlar:[{kod, ad, proje_id, acik, bagli, kayitli}], ghHata }
+
+async function yedekAyarAc() {
+  modalHepsiniKapat();
+  modalAc(`
+    ${modalBaslik(ICON.kaydet, 'Son Yedekleme', 'Hangi programların her gece yedekleneceğini seç')}
+    ${yedekSekmeleri('ayar')}
+    <div class="yd-ayar-govde"><div class="yd-bos">Yükleniyor…</div></div>
+  `, null, 'yd-modal');
+  try {
+    const c = await DB.yedekIslem({ islem: 'ayarlar' });
+    const ayarlar = c.ayarlar || [];
+    const bagli = new Set(c.bagli || []);
+    const kullanilan = new Set(ayarlar.map(a => a.kod));
+    const satirlar = ayarlar.map(a => ({ kod: a.kod, ad: a.ad || a.kod, proje_id: a.proje_id || '', acik: !!a.acik, bagli: bagli.has(a.kod), kayitli: true }));
+    /* Henüz listede olmayan Studio projeleri. */
+    (DB.projeler || []).filter(p => !cekirdekMi(p) && !denemeMi(p) && !p.arsiv)
+      .filter(p => !ayarlar.some(a => a.proje_id === p.id))
+      .forEach(p => {
+        const kod = yedekKodUret(p.firma || p.ad || '', kullanilan);
+        kullanilan.add(kod);
+        satirlar.push({ kod, ad: p.firma || p.ad || kod, proje_id: p.id, acik: false, bagli: bagli.has(kod), kayitli: false });
+      });
+    YEDEK_AYAR = { satirlar, ghHata: c.ghHata || '' };
+  } catch (h) {
+    YEDEK_AYAR = { satirlar: [], ghHata: h.message || 'Ayarlar okunamadı.' };
+  }
+  yedekAyarCiz();
+}
+
+function yedekAyarCiz() {
+  const kap = $('.yd-ayar-govde');
+  if (!kap || !YEDEK_AYAR) return;
+  const s = YEDEK_AYAR.satirlar.slice().sort((a, b) => (b.bagli - a.bagli) || a.ad.localeCompare(b.ad, 'tr'));
+  const satir = r => `<div class="yd-ay-sat">
+      <span class="yd-ay-o"><b>${esc(r.ad)}</b>
+        <i class="${r.bagli ? 'ok' : 'yok'}">${r.bagli ? (r.acik ? 'Bağlı · her gece yedekleniyor' : 'Bağlı · kapalı (yedeklenmiyor)') : 'Bağlantı yok'}</i></span>
+      ${r.bagli ? '' : `<button type="button" class="yd-bag" data-eylem="yedek-baglan" data-id="${esc(r.kod)}">Bağlan</button>`}
+      <button type="button" class="yd-anah ${r.acik && r.bagli ? 'acik' : ''}" ${r.bagli ? '' : 'disabled'}
+        data-eylem="yedek-ac-kapa" data-id="${esc(r.kod)}" aria-label="${esc(r.ad)} yedeği"></button>
+    </div>`;
+  kap.innerHTML = `
+    ${YEDEK_AYAR.ghHata ? `<div class="yd-uyari">${esc(YEDEK_AYAR.ghHata)}</div>` : ''}
+    <div class="yd-baslik2">Veritabanları</div>
+    ${s.map(satir).join('') || '<div class="yd-bos">Liste boş.</div>'}
+    <div class="yd-baslik2">Diğer</div>
+    <div class="yd-ay-sat"><span class="yd-ay-o"><b>GitHub repoları</b><i class="ok">Hesaptaki bütün repolar · her zaman açık</i></span>
+      <button type="button" class="yd-anah acik" disabled aria-label="GitHub repoları"></button></div>
+    <div class="yd-not" style="text-align:left">Değişiklik bu geceki yedekten itibaren geçerli. Hemen denemek için Durum › “Şimdi yedek al”.</div>`;
+}
+
+async function yedekAcKapa(el) {
+  const r = YEDEK_AYAR && YEDEK_AYAR.satirlar.find(x => x.kod === el.dataset.id);
+  if (!r || !r.bagli || el.disabled) return;
+  const yeni = !r.acik;
+  el.disabled = true;
+  try {
+    await DB.yedekIslem({ islem: 'ayar-kaydet', kod: r.kod, acik: yeni, ad: r.ad, proje_id: r.proje_id || undefined });
+    r.acik = yeni; r.kayitli = true;
+    toast(r.ad + (yeni ? ' her gece yedeklenecek.' : ' artık yedeklenmeyecek.'), 'basari');
+  } catch (h) { toast(h.message, 'hata'); }
+  yedekAyarCiz();
+}
+
+function yedekBaglanAc(kod) {
+  const r = YEDEK_AYAR && YEDEK_AYAR.satirlar.find(x => x.kod === kod);
+  if (!r) return;
+  modalAc(`
+    ${modalBaslik(ICON.kaydet, r.ad + ' · Bağlan', 'Veritabanının bağlantı adresini yapıştır')}
+    <div class="yd-nereden"><span><b>Nereden?</b> Supabase › projen › <b>Connect</b> › <b>Session pooler</b> › URI</span>
+      <span>Adresin içindeki <b>[YOUR-PASSWORD]</b> yerine veritabanı şifresini yaz.</span></div>
+    <label class="field" style="margin-top:14px"><span>Bağlantı adresi</span>
+      <input type="password" class="yd-adres" autocomplete="off" spellcheck="false" placeholder="postgresql://postgres.xxxx:şifre@aws-0-….pooler.supabase.com:5432/postgres"></label>
+    <div class="yd-kilit">🔒 Adres şifrelenip doğrudan GitHub'a gider. Studio saklamaz, bir daha göstermez.</div>
+    <div class="yd-dg"><button type="button" class="btn btn-ghost" data-eylem="yedek-vazgec">Vazgeç</button>
+      <button type="button" class="yd-dugme yd-dugme-ic" data-eylem="yedek-bagla" data-id="${esc(r.kod)}">Bağla ve aç</button></div>
+    <div class="yd-not">Adresin biçimi kontrol edilir; yanlışsa kaydedilmez. Gerçekten çalıştığını ilk yedek gösterir.</div>
+  `, kutu => { const g = $('.yd-adres', kutu); if (g) g.focus(); }, 'yd-modal');
+}
+
+async function yedekBagla(el) {
+  const r = YEDEK_AYAR && YEDEK_AYAR.satirlar.find(x => x.kod === el.dataset.id);
+  const kutu = el.closest('.modal-kutu');
+  const adres = (($('.yd-adres', kutu) || {}).value || '').trim();
+  if (!r) return;
+  if (!adres) return toast('Bağlantı adresini yapıştır.', 'hata');
+  el.disabled = true; el.textContent = 'Bağlanıyor…';
+  try {
+    await DB.yedekIslem({ islem: 'baglan', kod: r.kod, adres, ad: r.ad, proje_id: r.proje_id || undefined });
+    r.bagli = true; r.acik = true; r.kayitli = true;
+    $('.yd-adres', kutu).value = '';
+    modalKapat();
+    toast(r.ad + ' bağlandı; bu geceden itibaren yedeklenecek.', 'basari');
+    yedekAyarCiz();
+  } catch (h) {
+    toast(h.message, 'hata');
+    el.disabled = false; el.textContent = 'Bağla ve aç';
+  }
 }
 
 async function yedekBaslatTikla(el) {
