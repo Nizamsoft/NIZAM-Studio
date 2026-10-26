@@ -11829,3 +11829,39 @@ a.secv-buyuk { text-align: center; text-decoration: none; margin: 0 0 18px; }
 .yd-cubuk > i { display: block; height: 100%; background: #4a4a50; border-radius: 99px; }
 .yd-dolu.dolu .yd-dolu-y, .yd-dolu.dolu .yd-dolu-y b { color: #b4231b; }
 .yd-dolu.dolu .yd-cubuk > i { background: #e5342a; }
+
+/* ---- Sürüm Takibi (v0.340.0) ---- */
+.sv-kart { background: var(--surface); border: 1px solid var(--line-2); border-radius: 16px; padding: 6px 16px; }
+.sv-kart + .sv-kart { margin-top: 12px; }
+.sv-ana { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.sv-ana-ad { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.sv-ana-ad b { font-size: 14px; }
+.sv-ana-ad i { font-style: normal; font-size: 12px; color: var(--ink-dim); }
+.sv-no { font-size: 13px; color: var(--ink-soft); }
+.sv-ana .sv-no { font-size: 18px; font-weight: 700; color: var(--ink); }
+.sv-satir { display: flex; align-items: center; gap: 10px; width: 100%; padding: 12px 0; border: 0; border-top: 1px solid var(--line);
+  background: transparent; font: inherit; color: inherit; text-align: left; cursor: pointer; flex-wrap: wrap; }
+.sv-ana + .sv-satir { border-top: 0; }
+.sv-satir > b { flex: 1; min-width: 140px; font-size: 13.5px; font-weight: 600; }
+.sv-ok { color: var(--ink-dim); display: inline-flex; }
+.sv-rz { font-size: 11.5px; font-weight: 600; padding: 3px 9px; border-radius: 99px; background: #f6f6f8; color: var(--ink-soft); white-space: nowrap; }
+.sv-rz.bek { background: #fbf3e4; color: #8a5f10; }
+.sv-rz.yuk { background: #eaf0fb; color: #2f62c4; }
+.sv-rz.ok { background: #eaf4ef; color: #2f7d5c; }
+.sv-bos { font-size: 13px; color: var(--ink-dim); padding: 14px 16px; border: 1px dashed var(--line-2); border-radius: 16px; }
+.sv-ikili { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 4px; }
+.sv-sy { border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; min-width: 0; }
+.sv-sy i { display: block; font-style: normal; font-size: 11.5px; color: var(--ink-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sv-sy b { display: block; font-size: 22px; font-weight: 700; color: var(--ink); margin-top: 2px; }
+.sv-sy u { text-decoration: none; font-size: 11.5px; color: var(--ink-soft); }
+.sv-durum { display: flex; align-items: center; gap: 7px; margin: 14px 0 4px; font-size: 13px; font-weight: 600; color: #b8801a; }
+.sv-durum > i { width: 8px; height: 8px; border-radius: 99px; background: #b8801a; flex-shrink: 0; }
+.sv-durum.ok { color: #2f7d5c; } .sv-durum.ok > i { background: #2f7d5c; }
+.sv-not { display: flex; gap: 10px; padding: 8px 0; border-top: 1px solid var(--line); font-size: 12.5px; line-height: 1.45; }
+.yd-baslik2 + .sv-not { border-top: 0; }
+.sv-not b { font-size: 12px; color: var(--ink-soft); min-width: 46px; font-weight: 600; }
+.sv-not span { flex: 1; } .sv-not em { font-style: normal; color: var(--ink-dim); font-size: 11.5px; white-space: nowrap; }
+.sv-modal .sayfa-dug { width: 100%; justify-content: center; margin-top: 14px; }
+.sv-yenile { border: 0; background: none; padding: 0; font: inherit; color: var(--ink-soft); text-decoration: underline; cursor: pointer; }
+.sv-pill { background: #fbf3e4; color: #8a5f10; }
+

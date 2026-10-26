@@ -21,6 +21,13 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.340.0', tarih: '2026-10-26',
+    ozet: 'Panel’de Sürüm Takibi: ana program ve firmalar',
+    maddeler: [
+      'Panel’de ana programın ve ondan kopyalanan firma programlarının sürümleri yan yana; güncel olan "Güncel" yazar.',
+      'Ana programda yapılıp firmaya taşınmamış güncellemeler "↓ bekliyor", firmada yapılıp ana programa alınmamışlar "↑ alınacak" diye görünür.',
+      'Firmaya dokununca neyin beklediği listelenir; "Eşitle" ve "Ana programa al" Claude için hazır talimatı kopyalar.',
+    ] },
   { surum: 'v0.339.0', tarih: '2026-10-26',
     ozet: 'Google Drive doluluğu Son Yedekleme kutusunda',
     maddeler: [

@@ -1,5 +1,18 @@
 # Değişiklik Günlüğü
 
+## v0.340.0
+- **Panel › Sürüm Takibi.** Ana program(lar) ve firma programları; sürümler yayındaki siteden okunur
+  (`surumler.json` + `3-cekirdek/1-altyapi/surum.js`), Studio veritabanına bir şey yazılmaz.
+  - `SURUM_ANALAR` (app.js): takip edilen ana programların site adresleri. Firmalar ana programın
+    `surumler.json` → `firmalar`'ından (kod, ad, site, repo, alinan, ana_surum).
+  - ↓ bekliyor = ana notlarından firmanın `ana_surum`'undan yenileri · ↑ alınacak = firmanın `tur: genel`
+    notlarından `alinan`'dan yenileri; firmanın notları yoksa yayındaki sürüm `alinan`'dan ilerideyse sayı farkı.
+  - Detay penceresi (`surumDetayAc`): iki sürüm kutusu, bekleyen / alınacak / firmaya özel listeleri,
+    `surum:esitle:<kod>` ve `surum:al:<kod>` promptları (`surumPrompt`) kopyala-ve-aç ile.
+  - Proje kartında rozet: kartın yayın adresi takip edilen bir firmaysa "↻ N güncelleme".
+  - Programlarda: `surumler.json` + CLAUDE.md "Sürüm takibi" kuralı (genel / firmaya özel) — ana program
+    (GULLUOGLUKUBBANKLON-GkMuhasebe) ve Merkez Efendi'de yayında; Güllüoğlu'nda hazır, gönderilmedi.
+
 ## v0.339.0
 - **Son Yedekleme kutusunda Google Drive doluluğu.**
   - nizam-yedek `drive-yukle.sh` her gece `rclone about` ile ölçer; `bildir.py` `ayrinti.drive_kullanilan/drive_toplam`

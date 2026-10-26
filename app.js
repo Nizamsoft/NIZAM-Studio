@@ -613,6 +613,7 @@ const VIEWS = {
       ${panelHatalar()}
       ${panelSayilar(p)}
       ${panelProjeler(p)}
+      ${panelSurum()}
       <div class="pz-ikili ${AUTH.yonetici ? 'uclu' : ''}">
         ${panelEkip()}
         ${panelYedek()}
@@ -8061,6 +8062,7 @@ function projeKarti(p, i = 0) {
             <span class="proje-meta">${PLATFORM_ADI[p.platform] || p.platform}</span>
           </span>
           ${denemeMi(p) ? '<span class="pill dev">Deneme</span>' : ''}
+          ${AUTH.yonetici ? svKartRozeti(p) : ''}
           <span class="pill ${durumSinif(p.durum)}">${DURUM_ADI[p.durum] || p.durum}</span>
         </div>
         <div class="proje-orta">
@@ -16137,6 +16139,9 @@ async function eylemCalistir(el) {
   if (e === 'yedek-oku') return yedekSec();
 
   /* Son Yedekleme kutusu (v0.336.0). */
+  /* Sürüm Takibi (v0.340.0). */
+  if (e === 'surum-detay') return surumDetayAc(el.dataset.id);
+  if (e === 'surum-yenile') return surumTakipYukle(true);
   if (e === 'yedek-detay') return yedekDetayAc();
   if (e === 'yedek-baslat') return yedekBaslatTikla(el);
   if (e === 'yedek-ayar') return yedekAyarAc();
@@ -17747,6 +17752,230 @@ function panelAktivite() {
   </div>`;
 }
 
+/* ---------- Sürüm Takibi (v0.340.0) ----------
+   Ana programlar ve onlardan kopyalanan firma programları. Sürümler
+   programların YAYINDAKİ sitesinden okunur (surumler.json + surum.js);
+   Studio'ya elle bir şey yazılmaz. Kurallar programların CLAUDE.md'sinde:
+   her değişiklik "genel" ya da "firmaya özel" diye notlara yazılır.
+     ↓ bekliyor   · ana programda olup firmaya henüz taşınmamış güncellemeler
+     ↑ alınacak   · firmada yapılmış, ana programa henüz alınmamış genel güncellemeler
+   Firmanın kendi surumler.json'u yoksa ana programın firmalar listesindeki
+   bilgiyle (ana_surum, alinan) ve yayındaki sürüm numarasıyla yetinilir. */
+const SURUM_ANALAR = [
+  'https://nizamsoft.github.io/GULLUOGLUKUBBANKLON-GkMuhasebe/',
+];
+const SURUM = { durum: 'bos', analar: [], zaman: 0, hata: '' };
+
+function svTarih(s) {
+  const m = /^(\d{4})-(\d\d)-(\d\d)/.exec(String(s || ''));
+  return m ? Number(m[3]) + ' ' + AY_KISA[Number(m[2]) - 1] : '';
+}
+function svSite(u) { u = String(u || '').trim(); return u && !u.endsWith('/') ? u + '/' : u; }
+
+/* "2026.1463.2" gibi numaralar parça parça karşılaştırılır. */
+function svKiyas(a, b) {
+  const x = String(a || '').split('.').map(Number), y = String(b || '').split('.').map(Number);
+  for (let i = 0; i < Math.max(x.length, y.length); i++) {
+    const d = (x[i] || 0) - (y[i] || 0);
+    if (d) return d;
+  }
+  return 0;
+}
+/* Ekranda kısa: 2026.1463 → 1463 · 2026.1463.2 → 1463.2 */
+function svKisa(s) { return String(s || '–').replace(/^20\d\d\./, ''); }
+
+async function svGetir(adres, json) {
+  try {
+    const c = await fetch(adres + (adres.includes('?') ? '&' : '?') + 't=' + Date.now(), { cache: 'no-store' });
+    if (!c.ok) return null;
+    return json ? await c.json() : await c.text();
+  } catch (h) { return null; }
+}
+async function svCanli(site) {
+  const t = await svGetir(site + '3-cekirdek/1-altyapi/surum.js', false);
+  const m = t && /NS\.surum\s*=\s*["']([^"']+)["']/.exec(t);
+  return m ? m[1] : null;
+}
+
+async function surumTakipYukle(zorla) {
+  if (!AUTH.yonetici) return;
+  if (SURUM.durum === 'yukleniyor') return;
+  if (!zorla && SURUM.durum === 'tamam' && Date.now() - SURUM.zaman < 10 * 60000) return;
+  SURUM.durum = 'yukleniyor';
+  const analar = [];
+  for (const site0 of SURUM_ANALAR) {
+    const site = svSite(site0);
+    const [js, canli] = await Promise.all([svGetir(site + 'surumler.json', true), svCanli(site)]);
+    if (!js) { analar.push({ site, hata: 'Ana programın sürüm dosyası okunamadı.' }); continue; }
+    const notlar = Array.isArray(js.notlar) ? js.notlar : [];
+    const ana = { site, ad: js.ad || 'Ana program', repo: js.repo || '', canli: canli || (notlar[0] || {}).surum || '', notlar, firmalar: [] };
+    ana.firmalar = await Promise.all((js.firmalar || []).map(async f => {
+      const fsite = svSite(f.site);
+      const [fjs, fcanli] = fsite ? await Promise.all([svGetir(fsite + 'surumler.json', true), svCanli(fsite)]) : [null, null];
+      const fnot = fjs && Array.isArray(fjs.notlar) ? fjs.notlar : [];
+      const anaSurum = (fjs && fjs.ana_surum) || f.ana_surum || '';
+      const asagi = anaSurum ? notlar.filter(n => svKiyas(n.surum, anaSurum) > 0) : [];
+      let yukari = [], yukariSayi = 0;
+      if (fjs) {
+        yukari = fnot.filter(n => n.tur === 'genel' && (!f.alinan || svKiyas(n.surum, f.alinan) > 0));
+        yukariSayi = yukari.length;
+      } else if (fcanli && f.alinan && svKiyas(fcanli, f.alinan) > 0) {
+        /* Firmanın notları yok: yayındaki sürüm, ana programa alınandan ileride. */
+        const a = String(fcanli).split('.'), b = String(f.alinan).split('.');
+        yukariSayi = a[0] === b[0] && a.length === 2 && b.length === 2 ? Number(a[1]) - Number(b[1]) : 1;
+      }
+      return {
+        kod: f.kod, ad: (fjs && fjs.ad) || f.ad || f.kod, site: fsite, repo: f.repo || '',
+        canli: fcanli, anaSurum, alinan: f.alinan || '', notVar: !!fjs,
+        asagi, yukari, yukariSayi, ozel: fnot.filter(n => n.tur === 'ozel'),
+      };
+    }));
+    analar.push(ana);
+  }
+  SURUM.analar = analar; SURUM.durum = 'tamam'; SURUM.zaman = Date.now();
+  render();
+  if ($('.sv-modal')) { const k = $('.sv-modal').dataset.kod; if (k) surumDetayAc(k); }
+}
+
+function svFirmaBul(kod) {
+  for (const a of SURUM.analar) {
+    const f = (a.firmalar || []).find(x => x.kod === kod);
+    if (f) return { ana: a, f };
+  }
+  return null;
+}
+
+function svRozet(f) {
+  if (!f.anaSurum) return '<span class="sv-rz">sürüm bilgisi yok</span>';
+  const p = [];
+  if (f.asagi.length) p.push(`<span class="sv-rz bek">↓ ${f.asagi.length} bekliyor</span>`);
+  if (f.yukariSayi) p.push(`<span class="sv-rz yuk">↑ ${f.yukariSayi} ana programa alınacak</span>`);
+  return p.join('') || '<span class="sv-rz ok">Güncel</span>';
+}
+
+function panelSurum() {
+  if (!AUTH.yonetici) return '';
+  if (SURUM.durum === 'bos') { setTimeout(() => surumTakipYukle(), 0); }
+  const govde = SURUM.durum !== 'tamam'
+    ? '<div class="sv-bos">Sürümler okunuyor…</div>'
+    : SURUM.analar.map(a => a.hata
+      ? `<div class="sv-bos">${esc(a.hata)}</div>`
+      : `<div class="sv-kart">
+          <div class="sv-ana"><span class="sv-ana-ad"><b>${esc(a.ad)}</b><i>Ana program</i></span>
+            <span class="sv-no mono">${esc(svKisa(a.canli))}</span></div>
+          ${a.firmalar.map(f => `<button type="button" class="sv-satir" data-eylem="surum-detay" data-id="${esc(f.kod)}">
+            <b>${esc(f.ad)}</b><span class="sv-no mono">${esc(svKisa(f.anaSurum))}</span>${svRozet(f)}
+            <span class="sv-ok">${svg(ICON.chevron, 12)}</span></button>`).join('')
+            || '<div class="sv-bos">Bu ana programdan kopyalanmış firma yok.</div>'}
+        </div>`).join('');
+  return `<div class="pz-bolum">
+    <span class="pz-bas"><b>Sürüm Takibi</b><u></u></span>
+    ${govde}
+  </div>`;
+}
+
+function svNotlar(baslik, liste, onEk) {
+  if (!liste.length) return '';
+  return `<div class="yd-baslik2">${esc(baslik)}</div>` + liste.map(n => `<div class="sv-not">
+      <b class="mono">${esc(onEk ? onEk(n) : svKisa(n.surum))}</b><span>${esc(n.ozet || '')}</span>
+      <em>${esc(svTarih(n.tarih))}</em></div>`).join('');
+}
+
+function surumDetayAc(kod) {
+  const b = svFirmaBul(kod);
+  if (!b) return;
+  const { ana, f } = b;
+  const guncel = f.anaSurum && !f.asagi.length && !f.yukariSayi;
+  const durum = !f.anaSurum ? 'Sürüm bilgisi yok'
+    : guncel ? 'Güncel'
+    : [f.asagi.length ? f.asagi.length + ' güncelleme bekliyor' : '', f.yukariSayi ? f.yukariSayi + ' güncelleme ana programa alınacak' : ''].filter(Boolean).join(' · ');
+  const ozelSay = f.ozel.length;
+  const yukariListe = f.yukari.length ? svNotlar('Bu firmada yapılan, ana programa alınacak', f.yukari)
+    : f.yukariSayi ? `<div class="yd-baslik2">Bu firmada yapılan, ana programa alınacak</div>
+        <div class="sv-not"><b class="mono">${esc(svKisa(f.alinan))} → ${esc(svKisa(f.canli))}</b>
+        <span>${f.yukariSayi} yeni sürüm. Ayrıntısı firmanın sürüm notlarında yok; Claude farka bakarak ayırır.</span><em></em></div>` : '';
+  modalHepsiniKapat();
+  modalAc(`
+    ${modalBaslik(ICON.dal || ICON.kaydet, f.ad, 'Sürüm takibi · ' + (f.canli ? 'yayında ' + f.canli : 'yayındaki sürüm okunamadı'))}
+    <div class="sv-ikili">
+      <div class="sv-sy"><i>Ana program</i><b class="mono">${esc(svKisa(ana.canli))}</b></div>
+      <div class="sv-sy"><i>${esc(f.ad)}</i><b class="mono">${esc(svKisa(f.anaSurum))}</b>
+        ${ozelSay ? `<u>+ firmaya özel ${ozelSay}</u>` : ''}</div>
+    </div>
+    <div class="sv-durum ${guncel ? 'ok' : ''}"><i></i>${esc(durum)}</div>
+    ${svNotlar('Ana programda yapılanlar (bu firmaya taşınacak)', f.asagi)}
+    ${yukariListe}
+    ${guncel || !f.notVar ? svNotlar('Bu firmaya özel', f.ozel, n => 'Ö-' + (f.ozel.length - f.ozel.indexOf(n))) : ''}
+    ${!f.notVar ? '<div class="yd-not" style="text-align:left;margin-top:12px">Bu firmanın sürüm notları dosyası (surumler.json) henüz yok; bilgiler ana programın listesinden.</div>' : ''}
+    ${f.asagi.length ? promptBaglantisi({ tur: 'surum:esitle:' + f.kod, yazi: '↻ Eşitle · prompt\'u kopyala', slug: f.repo }) +
+      '<div class="yd-not">Claude ana programdaki farkı taşır, firmaya özel olanlara dokunmaz</div>' : ''}
+    ${f.yukariSayi ? promptBaglantisi({ tur: 'surum:al:' + f.kod, yazi: '↑ Ana programa al · prompt\'u kopyala', slug: ana.repo, ikincil: !!f.asagi.length }) +
+      '<div class="yd-not">Yalnız genel olanlar alınır; sonra diğer firmalarda "bekliyor" görünür</div>' : ''}
+    <div class="yd-not" style="margin-top:14px">Sürümler yayındaki siteden okunur · <span class="mono">${esc(String(f.site || '').replace(/^https?:\/\//, '').replace(/\/$/, ''))}</span>
+      · <button type="button" class="sv-yenile" data-eylem="surum-yenile">Yenile</button></div>
+  `, kutu => { kutu.classList.add('sv-modal'); kutu.dataset.kod = f.kod; }, 'yd-modal');
+}
+
+/* Kopyalanan promptlar. Claude Code'da firmanın (eşitle) ya da ana
+   programın (al) deposu açılır; öbür depo da Claude'a adıyla söylenir. */
+function surumPrompt(anahtar) {
+  const [tur, kod] = anahtar.split(':');
+  const b = svFirmaBul(kod);
+  if (!b) return '';
+  const { ana, f } = b;
+  const liste = l => l.map(n => '- ' + n.surum + ' · ' + (n.ozet || '')).join('\n');
+  if (tur === 'esitle') {
+    return [
+      `[Eşitleme] ${f.ad} programını ana programla eşitle.`,
+      '',
+      `Ana program: ${ana.repo} · yayındaki sürüm ${ana.canli}`,
+      `Firma: ${f.repo} · ana programdan aldığı son sürüm ${f.anaSurum}`,
+      '',
+      'Taşınacak ana program güncellemeleri:',
+      liste(f.asagi.slice().reverse()),
+      '',
+      'Yöntem:',
+      `1. Ana program deposunu yanına klonla. Sürüm numaraları commit mesajlarında yazar; ${f.anaSurum} ile ${ana.canli} arasındaki farkı üç yönlü (git diff | git apply --3way) firmaya uygula.`,
+      '2. Firmaya özel olanlara dokunma: marka, renkler, görseller, surum.js NS.* ayarları, firmaya özel göçler. Yeni gelen satırlar firmanın renginde olsun.',
+      f.ozel.length ? 'Bu firmaya özel olanlar:\n' + liste(f.ozel) : '',
+      '3. Yeni veritabanı göçü varsa firmanın veritabanına uygulamadan önce yedek al; firmaya özel göç numaralarıyla çakışmasın.',
+      `4. surumler.json: ana_surum = "${ana.canli}", notlar'ın en üstüne tur "esitleme" satırı. NS.surum ve damgalar yeni sürüme.`,
+      '5. Bütün ekranları dene, sonra gönder. Firmanın CLAUDE.md\'sindeki "Sürüm takibi" kuralına uy.',
+    ].filter(x => x !== '').join('\n');
+  }
+  if (tur === 'al') {
+    return [
+      `[Ana programa alma] ${f.ad} programında yapılan genel güncellemeleri ana programa al.`,
+      '',
+      `Ana program: ${ana.repo} · sürüm ${ana.canli}`,
+      `Firma: ${f.repo} · ana programa alınan son sürüm ${f.alinan || '?'} · yayındaki sürüm ${f.canli || '?'}`,
+      f.yukari.length ? '\nAlınacak genel güncellemeler (firmanın notlarından):\n' + liste(f.yukari.slice().reverse()) : `\nFirmanın sürüm notları yok: ${f.alinan} sonrası commit'lere bak, genel olanları ayır.`,
+      '',
+      'Yöntem:',
+      '1. Firma deposunu salt-okur klonla (ona yazma). Farkı ana programa üç yönlü uygula.',
+      '2. Yalnız GENEL olanlar: firmaya özel izler alınmaz (firma adı, kişiler, firma tarihleri, tedarikçiler, veri düzeltme göçleri). Firmaya göre değişen bir şey gerekiyorsa surum.js\'te NS.* ayarı yap, ana programda boş kalsın. Renkler ana programın nötr paletine.',
+      '3. Veritabanı göçleri ana programın sıradaki numaralarıyla; OKUBENI\'ye "firmada N" notu. Ana programın test veritabanına uygula (önce yedek).',
+      `4. Ana programın surumler.json'u: notlar'ın en üstüne "${f.ad}'dan: …" satırı; firmalar → ${f.kod} → alinan = "${f.canli || ''}".`,
+      '5. Bütün ekranları dene, sonra gönder. Ana programın CLAUDE.md\'sindeki "Sürüm takibi" kuralına uy. Bundan sonra diğer firmalarda bu güncellemeler "bekliyor" görünür.',
+    ].join('\n');
+  }
+  return '';
+}
+
+/* Proje kartındaki rozet: kartın yayın adresi takip edilen bir firmaysa. */
+function svKartRozeti(p) {
+  if (SURUM.durum !== 'tamam') return '';
+  const host = s => String(s || '').replace(/^https?:\/\//, '').replace(/\/.*$/, '').toLowerCase();
+  const h = host((p.palet || {}).alanAdi);
+  if (!h) return '';
+  for (const a of SURUM.analar) for (const f of a.firmalar || []) {
+    if (host(f.site) !== h) continue;
+    if (f.asagi.length) return `<span class="pill sv-pill">↻ ${f.asagi.length} güncelleme</span>`;
+    if (f.yukariSayi) return `<span class="pill sv-pill">↑ ${f.yukariSayi}</span>`;
+  }
+  return '';
+}
+
 /* ---------- Son Yedekleme (v0.336.0) ----------
    Gece yedeğinin son sonucu. Yalnız yönetici görür (hata bildirimleri
    gibi). Kutuya basınca ayrıntı penceresi açılır; "Şimdi yedek al" gece
@@ -18465,6 +18694,9 @@ document.addEventListener('DOMContentLoaded', () => {
                          gunsonu: (x.ad || 'POS') + ' — gün sonu' }[kategori] || (x.ad || 'Yapı');
           return PROMPT.sablonOgren(proje.id, konu, '');
         })
+      /* Sürüm takibi: `surum:esitle:ME` · `surum:al:GK` (projesiz). */
+      : pano.indexOf('surum:') === 0
+      ? (() => surumPrompt(pano.slice(6)))
       : PANO_PROMPT[pano];
     /* Projesiz prompt da var (standart ekleme) — o zaman data-proje boş. */
     if (!uret || (el.dataset.proje && !pr)) return;
