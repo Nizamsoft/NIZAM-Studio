@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü
 
+## v0.343.0
+- **Projeler kartı görsel ızgara (kullanıcı: "göze hoş gelsin, karışık olmasın").** `pjKart3`: üst yarı işletme
+  görseli (G0) ya da proje renginde zemin, logo görselin altına oturur; firma adı, ürün adı (`modulAdi`), tek satır
+  durum (`pjDurumSatiri`), dip: son hareket + görev/hata. Bölümler: `<ana> programları` (ana + firmalar, iç içe kutu
+  yok) · Diğer programlar · Yapımda. Süzgeçte "Bitti" kalktı. Ana program Studio'da yoksa `pjAnaKarti`.
+- **Logo hatası:** `renkStil` kısa yazımı (`background:`) yüklenen logonun cover ayarını eziyordu → `pjLogo` artık
+  `background-image` ile; `.pj2-logo` cover/center `!important`.
+
 ## v0.342.0
 - **Projeler ekranı yeniden (kullanıcı: "karman çorman").** Sekmeler yerine gruplar: Yayındaki programlar
   (`pjYayinda` · palet.yayinda ya da alanAdi) · Yapımda · Tamamlananlar; Denemeler+klonlar ve Şablonlar kapalı

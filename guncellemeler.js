@@ -21,6 +21,13 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.343.0', tarih: '2026-10-27',
+    ozet: 'Projeler görsel kartlarla, logolar görünüyor',
+    maddeler: [
+      'Projeler artık görsel kartlarla: üstte projenin görseli ya da renginde zemin, üstünde logo; altta ad, ürün ve tek satır durum.',
+      'Bölümler sadeleşti: Muhasebe programları · Diğer programlar · Yapımda.',
+      'Projeler ekranında ve proje sayfasında logolar görünmüyordu, düzeldi.',
+    ] },
   { surum: 'v0.342.0', tarih: '2026-10-27',
     ozet: 'Projeler yenilendi · Proje Ana Sayfası · talep silme',
     maddeler: [

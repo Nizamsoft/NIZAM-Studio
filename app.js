@@ -8193,66 +8193,78 @@ function pjSonHareket(p) {
   return Date.now() - new Date(t) < 7 * 864e5 ? bildirimZaman(t) : pjTarih(t);
 }
 
+/* Logo: renk zemini background-image ile (kısa yazım değil) — kısa yazım
+   (background:) yüklenen logonun "cover" ayarını eziyordu, logo kendi
+   boyunda açılıp kutuda beyaz bir köşe kalıyordu (v0.343.0). */
+function pjRenk(p) { return PROJE_RENK[p.renk] || PROJE_RENK.metal; }
 function pjLogo(p, sinif = '') {
   const adres = DB.logoAdres[p.id];
-  return `<span class="pj2-logo ${sinif} ${adres ? 'yukleniyor' : ''}" style="${renkStil(p.renk)}" ${adres ? `data-logo="${esc(adres)}"` : ''}>
+  const r = pjRenk(p);
+  return `<span class="pj2-logo ${sinif} ${adres ? 'yukleniyor' : ''}" style="background-image:linear-gradient(140deg, ${r[0]}, ${r[1]})" ${adres ? `data-logo="${esc(adres)}"` : ''}>
       <b class="logo-harf">${esc(basHarf(p.firma))}</b>${adres ? '<span class="donen"></span>' : ''}</span>`;
 }
 
-function pjKart2(p, sinif = '') {
+/* ---------- Projeler kartı (v0.343.0 · onaylanan taslak
+   studio-projeler-taslak2.png) ----------
+   Üst yarı görsel (işletme görseli, yoksa projenin renginde zemin), logo
+   görselin altına oturur. Altta yalnız: firma adı, ürün adı, tek satır
+   durum, en altta son hareket ve varsa görev / hata sayısı. */
+function pjDurumSatiri(p, yer) {
+  if (yer && yer.tur === 'ana') return { s: 'm', y: `Sürüm ${svKisa(yer.ana.canli)} · ${yer.ana.firmalar.length} firma` };
+  if (yer && yer.tur === 'firma') {
+    const d = svDurum(yer.f);
+    return d.sinif === 'ok' ? { s: 'y', y: 'Yayında · güncel' } : { s: 'b', y: d.yazi };
+  }
+  if (pjYayinda(p)) return { s: 'y', y: 'Yayında' };
+  if (projeBittiMi(p)) return { s: 'm', y: 'Tamamlandı' };
+  const su = durakAkisi(p).find(d => !d.bitti);
+  return { s: 'm', y: (su ? su.ad + ' · ' : '') + '%' + projeAsamaYuzde(p), ray: projeAsamaYuzde(p) };
+}
+
+function pjKart3(p) {
   const yer = pjSurumYeri(p);
-  const yayinda = pjYayinda(p);
+  const d = pjDurumSatiri(p, yer);
+  const gor = gorselAdresi(p, 'G0');
+  const r = pjRenk(p);
   const gorev = pjAcikGorevler(p.id).length;
   const hata = pjYeniHata(p.id);
-  const rozet = [];
-  if (yer && yer.tur === 'firma') { const d = svDurum(yer.f); rozet.push(`<span class="pj2-r ${d.sinif === 'ok' ? 'y' : 'b'}">${d.ikon} ${esc(d.sinif === 'ok' ? 'Güncel' : d.yazi)}</span>`); }
-  if (yer && yer.tur === 'ana') rozet.push(`<span class="pj2-r">sürüm ${esc(svKisa(yer.ana.canli))}</span><span class="pj2-r">${yer.ana.firmalar.length} firma</span>`);
-  if (gorev) rozet.push(`<span class="pj2-r m">${gorev} görev</span>`);
-  if (hata) rozet.push(`<span class="pj2-r k">${hata} hata bildirimi</span>`);
-  const alt = yer && yer.tur === 'ana' ? 'Firmalar buradan kopyalanır'
-    : [yayinda ? pjAdresYazi(p) : '', !yayinda ? (p.sektor || PLATFORM_ADI[p.platform] || '') : ''].filter(Boolean).join(' · ')
-      || p.sektor || '';
-  const yuzde = !yayinda ? projeAsamaYuzde(p) : null;
+  const alt = modulAdi(p) || p.sektor || '';
   return `
-    <div class="pj2 ${sinif}" data-eylem="proje-ac" data-id="${p.id}" role="button" tabindex="0"
-         data-ara="${esc((projeAdi(p) + ' ' + (p.sektor || '') + ' ' + (p.firma || '') + ' ' + pjAdres(p)).toLocaleLowerCase('tr'))}">
-      ${pjLogo(p)}
-      <span class="pj2-yz">
-        <b>${esc(basHarfleriBuyuk(projeAdi(p)))}${denemeMi(p) ? ' <span class="pill dev">Deneme</span>' : ''}</b>
+    <div class="pj3" data-eylem="proje-ac" data-id="${p.id}" role="button" tabindex="0"
+         data-ara="${esc((projeAdi(p) + ' ' + (p.sektor || '') + ' ' + pjAdres(p)).toLocaleLowerCase('tr'))}">
+      <div class="pj3-ust" style="background-image:linear-gradient(140deg, ${r[0]}, ${r[1]})">
+        ${gor ? `<img src="${esc(gor)}" alt="" loading="lazy" decoding="async">` : ''}
+        ${yer && yer.tur === 'ana' ? '<span class="pj3-et">Ana program</span>' : ''}
+        ${denemeMi(p) ? '<span class="pj3-et">Deneme</span>' : ''}
+        ${pjLogo(p, 'pj3-logo')}
+      </div>
+      <div class="pj3-gov">
+        <b>${esc(basHarfleriBuyuk(p.firma || projeAdi(p)))}</b>
         ${alt ? `<small>${esc(alt)}</small>` : ''}
-        ${rozet.length ? `<span class="pj2-rozet">${rozet.join('')}</span>` : ''}
-      </span>
-      <span class="pj2-sag">${yuzde != null ? `<b>%${yuzde}</b>` : ''}<i>${esc(pjSonHareket(p))}</i></span>
-      ${AUTH.yonetici ? `<button class="pj2-menu" data-eylem="proje-menu" data-id="${p.id}" type="button" aria-label="Proje seçenekleri">
+        <span class="pj3-dur ${d.s}"><i></i>${esc(d.y)}</span>
+        ${d.ray != null ? `<span class="pj3-ray"><i style="width:${d.ray}%"></i></span>` : ''}
+        <span class="pj3-dip ${hata || gorev ? '' : 'sayisiz'}"><span>${esc(pjSonHareket(p))}</span>
+          <span class="${hata ? 'kir' : ''}">${hata ? '⚠️ ' + hata + ' hata' : gorev ? gorev + ' görev' : ''}</span></span>
+      </div>
+      ${AUTH.yonetici ? `<button class="pj3-menu" data-eylem="proje-menu" data-id="${p.id}" type="button" aria-label="Proje seçenekleri">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.7"></circle><circle cx="12" cy="12" r="1.7"></circle><circle cx="12" cy="19" r="1.7"></circle></svg></button>` : ''}
     </div>`;
 }
 
-/* Yayındakiler: muhasebe aileleri (ana + firmaları) bir blokta, kalanlar tek tek. */
-function pjYayinBlogu(liste) {
-  const kalan = new Set(liste.map(p => p.id));
-  let html = '';
-  if (SURUM.durum === 'tamam') {
-    SURUM.analar.forEach(a => {
-      if (a.hata) return;
-      const anaP = liste.find(p => pjHost(a.site) === pjAdres(p));
-      const firmalar = (a.firmalar || []).map(f => liste.find(p => pjAdres(p) && pjHost(f.site) === pjAdres(p))).filter(Boolean);
-      if (!anaP && !firmalar.length) return;
-      if (anaP) kalan.delete(anaP.id);
-      firmalar.forEach(p => kalan.delete(p.id));
-      const bas = anaP ? pjKart2(anaP, 'aile-ana')
-        : `<div class="pj2 aile-ana sahte"><span class="pj2-logo" style="background:#4a4a50"><b class="logo-harf">${esc(basHarf(a.ad))}</b></span>
-            <span class="pj2-yz"><b>${esc(a.ad)} · ana program</b><small>Firmalar buradan kopyalanır</small>
-            <span class="pj2-rozet"><span class="pj2-r">sürüm ${esc(svKisa(a.canli))}</span><span class="pj2-r">${a.firmalar.length} firma</span></span></span></div>`;
-      html += `<div class="pj2-aile">${bas}${firmalar.map(p => pjKart2(p, 'aile-alt')).join('')}</div>`;
-    });
-  }
-  return html + liste.filter(p => kalan.has(p.id)).map(p => pjKart2(p)).join('');
+/* Ana program Studio'da proje olarak yoksa yerine bilgi kartı. */
+function pjAnaKarti(a) {
+  return `<div class="pj3 sahte">
+      <div class="pj3-ust" style="background-image:linear-gradient(140deg, #5a5f6e, #2a2a2f)"><span class="pj3-et">Ana program</span>
+        <span class="pj2-logo pj3-logo" style="background-image:linear-gradient(140deg, #5a5f6e, #2a2a2f)"><b class="logo-harf">${esc(basHarf(a.ad))}</b></span></div>
+      <div class="pj3-gov"><b>Ana program</b><small>${esc(a.ad)}</small>
+        <span class="pj3-dur m"><i></i>Sürüm ${esc(svKisa(a.canli))} · ${a.firmalar.length} firma</span>
+        <span class="pj3-dip sayisiz"><span>${a.notlar[0] ? esc(svTarih(a.notlar[0].tarih)) : ''}</span><span></span></span></div>
+    </div>`;
 }
 
-function pjGrup(baslik, not, icerik) {
-  if (!icerik) return '';
-  return `<section class="pj2-grup"><div class="pj2-bas">${baslik}${not ? `<i>${esc(not)}</i>` : ''}<u></u></div>${icerik}</section>`;
+function pjBolum(baslik, kartlar, ek = '') {
+  if (!kartlar) return '';
+  return `<section class="pj2-grup"><h2 class="pj3-bas">${baslik}</h2><div class="pj3-izg">${kartlar}</div>${ek}</section>`;
 }
 
 function pjKapali(anahtar, baslik, liste, kartci) {
@@ -8261,39 +8273,48 @@ function pjKapali(anahtar, baslik, liste, kartci) {
   return `<section class="pj2-grup pj2-kapali ${acik ? 'acik' : ''}">
     <button type="button" class="pj2-ac" data-eylem="pj-bolum" data-id="${anahtar}">
       <span>${baslik} (${liste.length})</span><u>${acik ? 'gizle' : 'göster ›'}</u></button>
-    ${acik ? `<div class="pj2-kapali-ic">${liste.map(kartci).join('')}</div>` : ''}
+    ${acik ? `<div class="${anahtar === 'template' ? 'tp-liste' : 'pj3-izg'}">${liste.map(kartci).join('')}</div>` : ''}
   </section>`;
 }
 
 function projelerEkrani(kova) {
   if (AUTH.yonetici && SURUM.durum === 'bos') setTimeout(() => surumTakipYukle(), 0);
-  /* Eski sekme adresleri (#/projeler/deneme · klon · template) o bölümü açar. */
   if (kova === 'deneme' || kova === 'klon') PJ_ACIK.deneme = true;
   if (kova === 'template') PJ_ACIK.template = true;
+  if (PJ_SUZGEC === 'bitti') PJ_SUZGEC = 'hepsi';
 
   const aktif = DB.projeler.filter(p => !p.arsiv);
   const normal = pjSirala(aktif.filter(p => PROJE_KOVASI.normal.sec(p)));
   const denemeKlon = pjSirala(aktif.filter(p => PROJE_KOVASI.deneme.sec(p) || PROJE_KOVASI.klon.sec(p)));
   const sablon = aktif.filter(p => PROJE_KOVASI.template.sec(p));
-  const uyar = p => PJ_SUZGEC === 'hepsi' ? true
-    : PJ_SUZGEC === 'yayinda' ? pjYayinda(p)
-    : PJ_SUZGEC === 'yapimda' ? !pjYayinda(p) && !projeBittiMi(p)
-    : projeBittiMi(p);
-  const gorunen = normal.filter(uyar);
-  const yayin = gorunen.filter(pjYayinda);
-  const yapim = gorunen.filter(p => !pjYayinda(p) && !projeBittiMi(p));
-  const biten = gorunen.filter(p => !pjYayinda(p) && projeBittiMi(p));
   const yayinSay = normal.filter(pjYayinda).length;
+  const goster = p => PJ_SUZGEC === 'hepsi' || (PJ_SUZGEC === 'yayinda' ? pjYayinda(p) : !pjYayinda(p));
+
+  /* Aileler: ana program + ondan kopyalanan firmalar (Sürüm Takibi'nden). */
+  const ailede = new Set();
+  let aileler = '';
+  if (SURUM.durum === 'tamam' && PJ_SUZGEC !== 'yapimda') {
+    SURUM.analar.forEach(a => {
+      if (a.hata) return;
+      const anaP = normal.find(p => pjAdres(p) && pjHost(a.site) === pjAdres(p));
+      const firmalar = (a.firmalar || []).map(f => normal.find(p => pjAdres(p) && pjHost(f.site) === pjAdres(p))).filter(Boolean);
+      if (!anaP && !firmalar.length) return;
+      [anaP, ...firmalar].filter(Boolean).forEach(p => ailede.add(p.id));
+      const ad = String(a.ad || 'Ana program').replace(/\s*Modülü$/i, '');
+      aileler += pjBolum(esc(ad) + ' programları', (anaP ? pjKart3(anaP) : pjAnaKarti(a)) + firmalar.map(pjKart3).join(''));
+    });
+  }
+  const diger = normal.filter(p => !ailede.has(p.id) && pjYayinda(p) && goster(p));
+  const yapim = normal.filter(p => !ailede.has(p.id) && !pjYayinda(p) && goster(p));
 
   const cip = (k, ad) => `<button type="button" class="pj2-cip ${PJ_SUZGEC === k ? 'sec' : ''}" data-eylem="pj-suzgec" data-id="${k}">${ad}</button>`;
-  const govde = gorunen.length || PJ_SUZGEC === 'hepsi'
-    ? pjGrup('🟢 Yayındaki programlar', 'müşterinin kullandıkları', pjYayinBlogu(yayin))
-      + pjGrup('🛠️ Yapımda', '', yapim.map(p => pjKart2(p)).join(''))
-      + pjGrup('✔️ Tamamlananlar', 'yayına alınmamış', biten.map(p => pjKart2(p)).join(''))
-    : `<div class="sv-bos">Bu süzgece uyan proje yok.</div>`;
-  const bos = !normal.length ? `<div class="card">${empty(ICON.katman, 'Henüz proje yok',
-    'Yeni Proje sihirbazı firma, renk, platform, veritabanı ve modülleri sorar.',
-    AUTH.yonetici ? 'Yeni Proje' : null, 'sihirbaz')}</div>` : '';
+  const govde = !normal.length
+    ? `<div class="card">${empty(ICON.katman, 'Henüz proje yok',
+        'Yeni Proje sihirbazı firma, renk, platform, veritabanı ve modülleri sorar.',
+        AUTH.yonetici ? 'Yeni Proje' : null, 'sihirbaz')}</div>`
+    : (aileler
+      + pjBolum(aileler ? 'Diğer programlar' : 'Yayındaki programlar', diger.map(pjKart3).join(''))
+      + pjBolum('Yapımda', yapim.map(pjKart3).join(''))) || '<div class="sv-bos">Bu süzgece uyan proje yok.</div>';
 
   return `
     <div class="pj-tepe">
@@ -8308,11 +8329,11 @@ function projelerEkrani(kova) {
         <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.4"></circle><path d="M15.8 15.8L20.5 20.5"></path></svg>
         <input id="pj-ara" type="search" autocomplete="off" placeholder="Proje veya firma ara…" value="${esc(PROJE_ARAMA)}">
       </label>
-      <div class="pj2-cipler">${cip('hepsi', 'Hepsi')}${cip('yayinda', '🟢 Yayında')}${cip('yapimda', '🛠️ Yapımda')}${cip('bitti', 'Bitti')}</div>
+      <div class="pj2-cipler">${cip('hepsi', 'Hepsi')}${cip('yayinda', 'Yayında')}${cip('yapimda', 'Yapımda')}</div>
     </div>
     <div class="pj2-kok">
-      ${bos || govde}
-      ${pjKapali('deneme', '🧪 Denemeler ve klonlar', denemeKlon, p => pjKart2(p))}
+      ${govde}
+      ${pjKapali('deneme', '🧪 Denemeler ve klonlar', denemeKlon, pjKart3)}
       ${pjKapali('template', '📐 Şablonlar', sablon, templateKarti)}
       <div class="pj-bos-arama">Aramana uyan proje yok.</div>
     </div>
@@ -8326,14 +8347,13 @@ function pjAramaUygula() {
   const kok = $('.pj2-kok');
   if (!kok) return;
   let gorunen = 0;
-  $$('.pj2[data-ara], .tp[data-ara]', kok).forEach(k => {
+  $$('.pj3[data-ara], .tp[data-ara]', kok).forEach(k => {
     const uyar = !PROJE_ARAMA || (k.dataset.ara || '').indexOf(PROJE_ARAMA) >= 0;
     k.classList.toggle('gizli', !uyar);
     if (uyar) gorunen++;
   });
-  $$('.pj2-aile', kok).forEach(a => a.classList.toggle('gizli', !$$('.pj2[data-ara]:not(.gizli)', a).length));
-  $$('.pj2-grup:not(.pj2-kapali)', kok).forEach(g => g.classList.toggle('gizli', !$$('.pj2[data-ara]:not(.gizli)', g).length));
-  $$('.pj2-kapali', kok).forEach(g => g.classList.toggle('gizli', !!PROJE_ARAMA && !$$('[data-ara]:not(.gizli)', g).length));
+  $$('.pj2-grup', kok).forEach(g => g.classList.toggle('gizli',
+    !!PROJE_ARAMA && !$$('[data-ara]:not(.gizli)', g).length));
   kok.classList.toggle('bos', gorunen === 0 && !!PROJE_ARAMA);
 }
 

@@ -11963,3 +11963,46 @@ button.pa-surum { cursor: pointer; }
 .pa-asama small { display: block; font-size: 12.5px; color: var(--ink-soft); }
 .pa-ray { display: block; height: 6px; background: #f2f2f4; border-radius: 99px; overflow: hidden; margin: 9px 0; }
 .pa-ray i { display: block; height: 100%; background: #4a4a50; border-radius: 99px; }
+
+/* ---- Projeler kartı (v0.343.0) · görsel ızgara ---- */
+.pj2-logo { background-size: cover !important; background-position: 50% 50% !important; background-repeat: no-repeat; }
+.pj3-bas { margin: 22px 0 10px; font: 700 13px var(--yazi-etiket); letter-spacing: .05em; text-transform: uppercase; color: var(--ink-strong); }
+.pj3-izg { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
+.pj3 { position: relative; display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--line-2);
+  border-radius: 16px; overflow: hidden; cursor: pointer; color: inherit; transition: transform .15s ease; }
+.pj3:active { transform: scale(.985); }
+.pj3.gizli { display: none; }
+.pj3.sahte { cursor: default; }
+.pj3-ust { position: relative; height: 92px; background-size: cover; flex-shrink: 0; }
+.pj3-ust > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.pj3-et { position: absolute; top: 10px; left: 10px; font-size: 10.5px; font-weight: 700; padding: 3px 8px; border-radius: 99px;
+  background: rgba(255, 255, 255, .92); color: var(--ink-strong); }
+.pj3-logo { position: absolute; left: 14px; bottom: -22px; width: 48px; height: 48px; border-radius: 13px; border: 3px solid var(--surface);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, .12); font-size: 15px; }
+.pj3-gov { display: flex; flex-direction: column; flex: 1; padding: 30px 14px 12px; min-width: 0; }
+.pj3-gov > b { font-size: 15px; font-weight: 700; color: var(--ink-strong); line-height: 1.25; }
+.pj3-gov > small { font-size: 12px; color: var(--ink-dim); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pj3-dur { display: flex; align-items: baseline; gap: 7px; margin-top: 10px; font-size: 12.5px; font-weight: 600; color: var(--ink-soft); line-height: 1.35; }
+.pj3-dur > i { width: 8px; height: 8px; border-radius: 99px; background: #9a9aa2; flex-shrink: 0; transform: translateY(-1px); }
+.pj3-dur.y { color: #2f7d5c; } .pj3-dur.y > i { background: #2f7d5c; }
+.pj3-dur.b { color: #8a5f10; } .pj3-dur.b > i { background: #b8801a; }
+.pj3-ray { display: block; height: 5px; border-radius: 99px; background: #f2f2f4; margin-top: 9px; overflow: hidden; }
+.pj3-ray > i { display: block; height: 100%; background: #4a4a50; border-radius: 99px; }
+.pj3-dip { display: flex; justify-content: space-between; gap: 8px; margin-top: auto; padding-top: 10px; font-size: 11.5px; color: var(--ink-dim); }
+.pj3-dur + .pj3-dip, .pj3-ray + .pj3-dip { margin-top: 12px; border-top: 1px solid var(--line); }
+.pj3-dip .kir { color: #b4231b; font-weight: 600; }
+.pj3-menu { position: absolute; top: 8px; right: 8px; width: 30px; height: 30px; border: 0; border-radius: 99px;
+  background: rgba(255, 255, 255, .9); color: var(--ink-soft); display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.pj3-menu svg { width: 15px; height: 15px; fill: currentColor; }
+.pj2-kapali .pj3-izg, .pj2-kapali .tp-liste { margin-top: 2px; }
+@media (min-width: 900px) { .pj2-kok, .pj2-arac, .pj2-alt-dug { max-width: 980px; } }
+@media (max-width: 560px) {
+  .pj3-izg { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .pj3-ust { height: 70px; }
+  .pj3-logo { width: 40px; height: 40px; left: 10px; bottom: -18px; font-size: 13px; border-radius: 11px; }
+  .pj3-gov { padding: 24px 10px 10px; }
+  .pj3-gov > b { font-size: 13.5px; }
+  .pj3-gov > small { display: none; }
+  .pj3-dip > span:first-child { display: none; }
+  .pj3-dip.sayisiz { display: none; }
+}
