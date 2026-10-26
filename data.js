@@ -51,6 +51,7 @@ const DB = {
     sectors: 'sektorler', packages: 'paketler',
     talepler: 'talepler',
     hata_bildirimleri: 'hatalar',
+    yedek_raporlari: 'yedekler',
   },
 
   canliBasla(tazele) {
@@ -151,6 +152,20 @@ const DB = {
   },
 
   cevrimicimi(kisiId) { return !!this.varlik[kisiId]; },
+
+  /* ---------- Gece yedeğini şimdi başlat (v0.336.0) ----------
+     Sunucudaki `yedek` fonksiyonu yöneticiyi doğrular, GitHub'da yedeği
+     başlatır. Sonuç birkaç dakika sonra yedek_raporlari'na düşer. */
+  async yedekBaslat() {
+    const { data, error } = await AUTH.db.functions.invoke('yedek', { body: { islem: 'baslat' } });
+    if (error) {
+      let mesaj = 'Yedek başlatılamadı.';
+      try { const g = await error.context.json(); if (g && g.hata) mesaj = g.hata; } catch (_) { }
+      throw new Error(mesaj);
+    }
+    if (data && data.hata) throw new Error(data.hata);
+    return true;
+  },
 
   /* ---------- Yedekleme ----------
      Tek kaynak: aşağıdaki liste. Yeni tablo eklenince buraya bir satır eklenir. */
@@ -275,10 +290,15 @@ const DB = {
     hatalar:      db => db.from('hata_bildirimleri').select('*')
                           .order('gonderildi', { ascending: false })
                           .limit(200),
+    /* Gece yedeğinin sonuçları (sql/49 · v0.336.0). Yalnız yönetici okur;
+       son otuz rapor yetiyor. */
+    yedekler:     db => db.from('yedek_raporlari').select('*')
+                          .order('olusturuldu', { ascending: false })
+                          .limit(30),
   },
 
   /* Tablosu henüz kurulmamış olabilecekler — hata verme, boş bırak. */
-  ISTEGE_BAGLI: ['sektorler', 'mesajlar', 'paketler', 'talepler', 'hatalar'],
+  ISTEGE_BAGLI: ['sektorler', 'mesajlar', 'paketler', 'talepler', 'hatalar', 'yedekler'],
 
   yerlestir(ad, sonuc) {
     if (sonuc.error) {
@@ -298,6 +318,12 @@ const DB = {
     if (ad === 'hareketler') {
       /* Sondan çektik, ekranda eskiden yeniye gösteriliyor. */
       this.hareketler = veri.slice().reverse();
+      return;
+    }
+    if (ad === 'hatalar') {
+      /* Yedek sisteminin eski mesajları hata değil (v0.336.0 · artık
+         "Son Yedekleme" kutusunda). */
+      this.hatalar = veri.filter(h => h.surum !== 'nizam-yedek');
       return;
     }
     if (ad === 'kisiler') {

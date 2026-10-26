@@ -613,8 +613,9 @@ const VIEWS = {
       ${panelHatalar()}
       ${panelSayilar(p)}
       ${panelProjeler(p)}
-      <div class="pz-ikili">
+      <div class="pz-ikili ${AUTH.yonetici ? 'uclu' : ''}">
         ${panelEkip()}
+        ${panelYedek()}
         ${panelAktivite()}
       </div>
     `;
@@ -16135,6 +16136,10 @@ async function eylemCalistir(el) {
 
   if (e === 'yedek-oku') return yedekSec();
 
+  /* Son Yedekleme kutusu (v0.336.0). */
+  if (e === 'yedek-detay') return yedekDetayAc();
+  if (e === 'yedek-baslat') return yedekBaslatTikla(el);
+
   /* Standart ekleme/düzenleme artık elle form değil: fikir → prompt → Claude
      → JSON yapıştır (std-prompt + standart-ice-aktar). */
 
@@ -17732,6 +17737,115 @@ function panelAktivite() {
     <span class="pz-bas"><b>Son Aktiviteler</b><u></u></span>
     <div class="ak2-liste">${hepsi.map(aktiviteSatiri).join('')}</div>
   </div>`;
+}
+
+/* ---------- Son Yedekleme (v0.336.0) ----------
+   Gece yedeğinin son sonucu. Yalnız yönetici görür (hata bildirimleri
+   gibi). Kutuya basınca ayrıntı penceresi açılır; "Şimdi yedek al" gece
+   yedeğini GitHub'da hemen başlatır. Rapor yoksa (sql/49 kurulmamış ya da
+   henüz gece gelmemiş) kutu sessizce "Henüz rapor yok" der. */
+function sonYedekRaporu() {
+  return (DB.yedekler || []).find(r => r.tur === 'gece') || null;
+}
+function sonDenemeRaporu() {
+  return (DB.yedekler || []).find(r => r.tur === 'deneme') || null;
+}
+/* Elle başlatıldı ve henüz yeni gece raporu gelmedi mi? */
+function yedekSuruyor() {
+  const elle = (DB.yedekler || []).find(r => r.tur === 'elle');
+  if (!elle) return false;
+  const son = sonYedekRaporu();
+  if (son && (son.olusturuldu || '') > (elle.olusturuldu || '')) return false;
+  return Date.now() - new Date(elle.olusturuldu).getTime() < 90 * 60000;   // 90 dk sonra vazgeç
+}
+function yedekKalemleri(r) {
+  return ((r && r.ayrinti && r.ayrinti.kalemler) || []);
+}
+function yedekAltYazi(r) {
+  const k = yedekKalemleri(r);
+  const vt = k.filter(x => x.kod !== 'GITHUB').length;
+  const gh = k.find(x => x.kod === 'GITHUB');
+  const ghAdet = gh && /(\d+)\s*repo/.exec(gh.ayrinti || '');
+  const drive = r && r.ayrinti && r.ayrinti.drive;
+  return [vt ? vt + ' veritabanı' : '', ghAdet ? ghAdet[1] + ' repo' : '', drive === 'tamam' ? 'Google Drive' : '']
+    .filter(Boolean).join(' · ') || 'Ayrıntı için dokun';
+}
+function panelYedek() {
+  if (!AUTH.yonetici) return '';
+  const r = sonYedekRaporu();
+  const suruyor = yedekSuruyor();
+  const sorun = r && r.durum === 'sorunlu';
+  const kalem = yedekKalemleri(r);
+  const sorunlu = kalem.filter(x => x.durum === 'hata').length + (r && r.ayrinti && r.ayrinti.drive === 'hata' ? 1 : 0);
+  const zaman = r ? pzZaman(r.olusturuldu).replace('Bugün · ', 'Bugün ') .replace('Dün · ', 'Dün ') : 'Henüz rapor yok';
+  const durumYazi = suruyor ? 'Yedek alınıyor…'
+    : !r ? 'Gece yedeği gelince burada görünür'
+    : sorun ? (sorunlu ? sorunlu + ' yedek alınamadı' : 'Sorun var')
+    : 'Hepsi alındı';
+  return `<div class="pz-bolum">
+    <span class="pz-bas"><b>Son Yedekleme</b><u></u></span>
+    <button type="button" class="yd-kutu ${sorun ? 'sorun' : ''} ${suruyor ? 'suruyor' : ''}" data-eylem="yedek-detay">
+      <span class="yd-ust">
+        <span class="yd-ikon">${svg(ICON.kaydet, 16)}</span>
+        <span class="yd-orta"><b class="yd-zaman">${esc(zaman)}</b><i class="yd-alt">${esc(r ? yedekAltYazi(r) : 'Her gece 03:00')}</i></span>
+      </span>
+      <span class="yd-durum"><i></i>${esc(durumYazi)}<span class="yd-ok">Detay ${svg(ICON.chevron, 12)}</span></span>
+    </button>
+  </div>`;
+}
+
+const YEDEK_DURUM_YAZI = { tamam: 'alındı', hata: 'alınamadı', kurulmadi: 'bağlı değil' };
+
+function yedekDetayAc() {
+  const r = sonYedekRaporu();
+  const d = sonDenemeRaporu();
+  const suruyor = yedekSuruyor();
+  const kalem = yedekKalemleri(r);
+  const satir = (durum, ad, sag, kirmizi) => `<div class="yd-satir">
+      <span class="yd-n ${durum === 'hata' ? 'k' : durum === 'kurulmadi' ? 'g' : ''}">${durum === 'hata' ? '!' : durum === 'kurulmadi' ? '–' : svg(ICON.tik, 11)}</span>
+      <b>${esc(ad)}</b><span class="${kirmizi ? 'kir' : ''}">${esc(sag)}</span></div>`;
+  /* "48.120 satır · 6,1 MB" → sağda yalnız boyut; hatada sebebin kendisi. */
+  const sag = k => k.durum === 'tamam' ? ((/·\s*([^·]+)$/.exec(k.ayrinti || '') || [])[1] || 'alındı').replace(/\s*\(.*\)\s*$/, '').trim()
+    : (k.ayrinti || YEDEK_DURUM_YAZI[k.durum] || k.durum);
+  const vt = kalem.filter(k => k.kod !== 'GITHUB');
+  const gh = kalem.find(k => k.kod === 'GITHUB');
+  const drive = r && r.ayrinti && r.ayrinti.drive;
+  const denemeKalem = yedekKalemleri(d);
+  const denemeSaglam = denemeKalem.filter(k => k.durum === 'saglam').length;
+  const altBaslik = !r ? 'Henüz rapor gelmedi · gece yedeği her gün 03:00'
+    : pzZaman(r.olusturuldu) + (r.durum === 'sorunlu' ? ' · sorun var' : ' · sonraki: 03:00');
+  modalAc(`
+    ${modalBaslik(ICON.kaydet, 'Son Yedekleme', altBaslik)}
+    ${r ? `<div class="yd-baslik2">Veritabanları</div>
+      ${vt.map(k => satir(k.durum, k.ad, sag(k), k.durum === 'hata')).join('') || '<div class="yd-bos">Veritabanı satırı yok.</div>'}
+      <div class="yd-baslik2">Diğer</div>
+      ${gh ? satir(gh.durum, 'GitHub repoları', sag(gh), gh.durum === 'hata') : ''}
+      ${satir(drive === 'hata' ? 'hata' : drive === 'tamam' ? 'tamam' : 'kurulmadi', 'Google Drive',
+        drive === 'tamam' ? 'yüklendi' : drive === 'hata' ? 'yüklenemedi' : 'bağlı değil', drive === 'hata')}
+      ${d ? satir(d.durum === 'sorunlu' ? 'hata' : 'tamam', 'Aylık geri yükleme denemesi',
+        tarihYaz(d.olusturuldu) + ' · ' + denemeSaglam + '/' + denemeKalem.length + ' sağlam', d.durum === 'sorunlu') : ''}`
+      : '<div class="yd-bos">Gece yedeği sonucunu gönderince burada proje proje görünecek.</div>'}
+    <button type="button" class="yd-dugme" data-eylem="yedek-baslat" ${suruyor ? 'disabled' : ''}>
+      ${suruyor ? svg(ICON.saat, 15) + ' Yedek alınıyor…' : '▶ Şimdi yedek al'}</button>
+    <div class="yd-not">${suruyor ? 'Birkaç dakika sürer; bitince kutu kendiliğinden güncellenir.' : 'Gece yedeğini hemen başlatır · birkaç dakika sürer'}</div>
+  `, null, 'yd-modal');
+}
+
+async function yedekBaslatTikla(el) {
+  if (el.disabled) return;
+  el.disabled = true;
+  el.innerHTML = svg(ICON.saat, 15) + ' Başlatılıyor…';
+  try {
+    await DB.yedekBaslat();
+    toast('Yedek başlatıldı. Birkaç dakika içinde biter.', 'basari');
+    await DB.tazele('yedekler');
+    modalKapat();
+    render();
+  } catch (h) {
+    toast(h.message || 'Yedek başlatılamadı.', 'hata');
+    el.disabled = false;
+    el.innerHTML = '▶ Şimdi yedek al';
+  }
 }
 
 /* Biri girip çıkınca yalnız bu blok yeniden çiziliyor. */

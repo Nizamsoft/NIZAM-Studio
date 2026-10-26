@@ -21,6 +21,13 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.336.0', tarih: '2026-10-26',
+    ozet: 'Panelde "Son Yedekleme" kutusu',
+    maddeler: [
+      'Gece yedeğinin sonucu artık hata bildirimlerine düşmüyor; Panel’de Ekip ile Son Aktiviteler arasındaki kutuda görünüyor.',
+      'Kutuya basınca her programın yedeği tek tek görünüyor; "Şimdi yedek al" ile yedeği istediğin an başlatabiliyorsun.',
+      'Yedekte sorun olursa telefona yine bildirim geliyor.',
+    ] },
   { surum: 'v0.335.0', tarih: '2026-10-21',
     ozet: 'Simgedeki sayı her şeyi sayıyor',
     maddeler: [

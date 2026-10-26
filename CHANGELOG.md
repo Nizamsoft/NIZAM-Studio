@@ -1,5 +1,18 @@
 # Değişiklik Günlüğü
 
+## v0.336.0
+- **Gece yedeği artık hata bildirimi değil; Panel'de "Son Yedekleme" kutusu.**
+  - `sql/49-yedek-raporlari.sql`: `yedek_raporlari` (tur gece|deneme|elle · durum tamam|sorunlu|basladi ·
+    ayrinti jsonb; RLS: yalnız yönetici okur, yalnız service_role yazar; canlı yayın). Eski
+    `surum='nizam-yedek'` hata satırları `yoksayildi` yapılır.
+  - `supabase/functions/yedek`: `rapor` (nizam-yedek'ten, `x-yedek-anahtari` = `YEDEK_ANAHTARI`;
+    sorunluysa yöneticilere Web Push, hata tercihine uyar) ve `baslat` (yönetici oturumu doğrulanır,
+    `GH_YEDEK_TOKEN` ile `Nizamsoft/nizam-yedek` → `gece-yedegi.yml` workflow_dispatch; 10 dk içinde
+    ikinci başlatma reddedilir).
+  - Panel: `panelYedek()` Ekip ile Son Aktiviteler arasında (yalnız yönetici; ≥1180px üç sütun),
+    `yedekDetayAc()` proje proje durum, GitHub, Drive, son aylık deneme ve "Şimdi yedek al".
+  - `DB.hatalar` `surum='nizam-yedek'` satırlarını göstermiyor; `DB.yedekler` + `DB.yedekBaslat()`.
+
 ## v0.335.0
 - **Uygulama simgesindeki sayı = okunmamış mesaj + okunmamış görev bildirimi + (yöneticide) yeni hata.**
   - `sql/48-bildirim-okundu.sql`: `bildirim_okundu` (kişi + okunan görev hareketi / hata kimliği,
