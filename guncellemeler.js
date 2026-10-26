@@ -21,6 +21,15 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.342.0', tarih: '2026-10-27',
+    ozet: 'Projeler yenilendi · Proje Ana Sayfası · talep silme',
+    maddeler: [
+      'Projeler artık duruma göre gruplu: yayındaki programlar en üstte, yapımdakiler altta; denemeler, klonlar ve şablonlar en altta kapalı bölümde.',
+      'Muhasebe programları aile olarak bir arada: ana program ve ondan kopyalanan firmalar.',
+      'Kartlarda adres, sürüm durumu, açık görev, yeni hata bildirimi ve son hareket görünüyor; üstte arama ve Yayında / Yapımda / Bitti süzgeci var.',
+      'Projeye basınca Proje Ana Sayfası açılıyor: Siteyi aç, Claude’da aç, Görev ver; sürüm, açık görevler, son değişiklikler ve aşamalar.',
+      'Talepler silinebiliyor; talebin içindeki geri düğmesi artık düzgün geri gidiyor.',
+    ] },
   { surum: 'v0.341.0', tarih: '2026-10-27',
     ozet: 'Muhasebe Programları kutusu sadeleşti',
     maddeler: [

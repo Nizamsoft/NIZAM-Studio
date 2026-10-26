@@ -1133,6 +1133,15 @@ const DB = {
     await this.tazele('talepler');
   },
 
+  /* Talebi kalıcı siler (v0.342.0). Yalnız yönetici (sql/35 "talep silme"). */
+  async talepSil(id) {
+    yazmaKontrol();
+    const { data, error } = await AUTH.db.from('talepler').delete().eq('id', id).select('id');
+    if (error) throw new Error(veriHatasi(error));
+    if (!data || !data.length) throw new Error('Talep silinemedi.');
+    await this.tazele('talepler');
+  },
+
   /* Hata bildiriminin durumu: yeni · inceleniyor · cozuldu · yoksayildi.
      Yalnız yönetici değiştirebilir. */
   async hataDurum(id, durum) {

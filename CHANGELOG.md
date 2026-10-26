@@ -1,5 +1,20 @@
 # Değişiklik Günlüğü
 
+## v0.342.0
+- **Projeler ekranı yeniden (kullanıcı: "karman çorman").** Sekmeler yerine gruplar: Yayındaki programlar
+  (`pjYayinda` · palet.yayinda ya da alanAdi) · Yapımda · Tamamlananlar; Denemeler+klonlar ve Şablonlar kapalı
+  bölüm (`PJ_ACIK`). Süzgeç `PJ_SUZGEC` (hepsi/yayinda/yapimda/bitti), arama `pjAramaUygula` (boş bölüm gizlenir).
+  Muhasebe ailesi `pjYayinBlogu`: SURUM'daki ana program + firmalar, adres eşleşmesiyle (`pjHost` alan adı + yol).
+  Kart `pjKart2`: adres, sürüm durumu (`svDurum`), açık görev, yeni hata bildirimi, son hareket; yüzde yalnız yapımda.
+  Eski `#/projeler/<kova>` adresleri ilgili bölümü açar.
+- **Proje Ana Sayfası** (`projeAnaSayfa`): `#/projeler/<id>` artık kalınan aşamaya yönlenmiyor. Hızlı düğmeler
+  (Siteyi aç · Claude'da aç · Görev ver), sürüm kutusu (dokununca sürüm detayı), yeni hata bildirimi, açık görevler,
+  son değişiklikler, aşamalar (kaldığın yer · çubuk).
+- **Talepler:** `talep-sil` (onaySor + `DB.talepSil`); detaydaki "‹ Talepler" ve "‹ Hata Bildirimleri" artık
+  `listeye-don`: bir önceki sayfa listeyse `history.back()`, değilse `location.replace` (üstteki geri oku tekrar
+  detaya dönüyordu). `ONCEKI_ADRES` hashchange'den.
+- `svKartRozeti` de `pjHost` kullanıyor (github.io altındaki farklı depolar aynı sanılıyordu).
+
 ## v0.341.0
 - **Sürüm takibi sadeleşti (kullanıcı: "ne olduğu belli değil, karışık").** Bölüm adı "Muhasebe Programları".
   - `svDurum(f)`: firma satırı ikon + tek cümle (Güncel / N değişiklik ana programa alınmadı / N güncelleme bekliyor).
