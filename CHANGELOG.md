@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü
 
+## v0.341.0
+- **Sürüm takibi sadeleşti (kullanıcı: "ne olduğu belli değil, karışık").** Bölüm adı "Muhasebe Programları".
+  - `svDurum(f)`: firma satırı ikon + tek cümle (Güncel / N değişiklik ana programa alınmadı / N güncelleme bekliyor).
+  - `surumDetayAc`: üstte "Yapılacak" kutusu (iki iş varsa numaralı: önce ana programa al, sonra bu firmaya getir) ya da
+    yeşil "Her şey güncel"; altta `svDegisiklikler` · firmanın notları + ana programda bekleyenler, etiketli (Herkese /
+    Sadece bu firma / Ana programdan geldi / Ana programda · gelmedi). Firma nesnesine `notlar` eklendi.
+  - Eski iki sürüm kutusu, ↑↓ rozetleri ve `svRozet`/`svNotlar` kalktı.
+
 ## v0.340.0
 - **Panel › Sürüm Takibi.** Ana program(lar) ve firma programları; sürümler yayındaki siteden okunur
   (`surumler.json` + `3-cekirdek/1-altyapi/surum.js`), Studio veritabanına bir şey yazılmaz.

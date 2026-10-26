@@ -21,6 +21,13 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.341.0', tarih: '2026-10-27',
+    ozet: 'Muhasebe Programları kutusu sadeleşti',
+    maddeler: [
+      'Panel’de her program durumunu tek cümleyle söylüyor: "Güncel", "3 yeni değişiklik ana programa alınmadı" ya da "Ana programdan 2 güncelleme bekliyor".',
+      'Firmaya dokununca en üstte ne yapman gerektiği ve tek bir düğme var; güncelse "Her şey güncel" yazar.',
+      'Son değişikliklerin her birinde "Herkese", "Sadece bu firma" ya da "Ana programdan geldi" etiketi var.',
+    ] },
   { surum: 'v0.340.0', tarih: '2026-10-26',
     ozet: 'Panel’de Sürüm Takibi: ana program ve firmalar',
     maddeler: [

@@ -17827,7 +17827,7 @@ async function surumTakipYukle(zorla) {
       return {
         kod: f.kod, ad: (fjs && fjs.ad) || f.ad || f.kod, site: fsite, repo: f.repo || '',
         canli: fcanli, anaSurum, alinan: f.alinan || '', notVar: !!fjs,
-        asagi, yukari, yukariSayi, ozel: fnot.filter(n => n.tur === 'ozel'),
+        asagi, yukari, yukariSayi, ozel: fnot.filter(n => n.tur === 'ozel'), notlar: fnot,
       };
     }));
     analar.push(ana);
@@ -17845,75 +17845,80 @@ function svFirmaBul(kod) {
   return null;
 }
 
-function svRozet(f) {
-  if (!f.anaSurum) return '<span class="sv-rz">sürüm bilgisi yok</span>';
-  const p = [];
-  if (f.asagi.length) p.push(`<span class="sv-rz bek">↓ ${f.asagi.length} bekliyor</span>`);
-  if (f.yukariSayi) p.push(`<span class="sv-rz yuk">↑ ${f.yukariSayi} ana programa alınacak</span>`);
-  return p.join('') || '<span class="sv-rz ok">Güncel</span>';
+/* Firmanın durumu tek cümle (v0.341.0 · kullanıcı: "ne olduğu belli değil,
+   karışık"). Sayı ve ok yerine düz cümle; ikon durumu söyler. */
+function svDurum(f) {
+  if (!f.anaSurum) return { ikon: '⚪', sinif: '', yazi: 'Sürüm bilgisi okunamadı' };
+  const bek = f.asagi.length, al = f.yukariSayi;
+  if (!bek && !al) return { ikon: '✅', sinif: 'ok', yazi: 'Güncel · ana programla aynı' };
+  if (bek && al) return { ikon: '🟡', sinif: 'bek', yazi: `${al} değişikliği ana programa alınmadı · ${bek} güncelleme bekliyor` };
+  if (al) return { ikon: '🟡', sinif: 'bek', yazi: `${al} yeni değişiklik ana programa alınmadı` };
+  return { ikon: '🔄', sinif: 'bek', yazi: `Ana programdan ${bek} güncelleme bekliyor` };
 }
 
 function panelSurum() {
   if (!AUTH.yonetici) return '';
   if (SURUM.durum === 'bos') { setTimeout(() => surumTakipYukle(), 0); }
   const govde = SURUM.durum !== 'tamam'
-    ? '<div class="sv-bos">Sürümler okunuyor…</div>'
+    ? '<div class="sv-bos">Programların sürümleri okunuyor…</div>'
     : SURUM.analar.map(a => a.hata
       ? `<div class="sv-bos">${esc(a.hata)}</div>`
       : `<div class="sv-kart">
-          <div class="sv-ana"><span class="sv-ana-ad"><b>${esc(a.ad)}</b><i>Ana program</i></span>
-            <span class="sv-no mono">${esc(svKisa(a.canli))}</span></div>
-          ${a.firmalar.map(f => `<button type="button" class="sv-satir" data-eylem="surum-detay" data-id="${esc(f.kod)}">
-            <b>${esc(f.ad)}</b><span class="sv-no mono">${esc(svKisa(f.anaSurum))}</span>${svRozet(f)}
-            <span class="sv-ok">${svg(ICON.chevron, 12)}</span></button>`).join('')
-            || '<div class="sv-bos">Bu ana programdan kopyalanmış firma yok.</div>'}
+          <div class="sv-sat"><span class="sv-ik ana">📦</span>
+            <span class="sv-yz"><b>Ana program</b><i>${a.notlar[0] ? 'Son güncelleme ' + esc(svTarih(a.notlar[0].tarih)) + ' · ' : ''}sürüm ${esc(svKisa(a.canli))}</i></span></div>
+          ${a.firmalar.map(f => { const d = svDurum(f); return `<button type="button" class="sv-sat sv-dok" data-eylem="surum-detay" data-id="${esc(f.kod)}">
+            <span class="sv-ik ${d.sinif}">${d.ikon}</span>
+            <span class="sv-yz"><b>${esc(f.ad)}</b><i class="${d.sinif}">${esc(d.yazi)}</i></span>
+            <span class="sv-ok">${svg(ICON.chevron, 13)}</span></button>`; }).join('')
+            || '<div class="sv-bos" style="border:0">Bu ana programdan kopyalanmış firma yok.</div>'}
         </div>`).join('');
   return `<div class="pz-bolum">
-    <span class="pz-bas"><b>Sürüm Takibi</b><u></u></span>
+    <span class="pz-bas"><b>Muhasebe Programları</b><u></u></span>
     ${govde}
   </div>`;
 }
 
-function svNotlar(baslik, liste, onEk) {
-  if (!liste.length) return '';
-  return `<div class="yd-baslik2">${esc(baslik)}</div>` + liste.map(n => `<div class="sv-not">
-      <b class="mono">${esc(onEk ? onEk(n) : svKisa(n.surum))}</b><span>${esc(n.ozet || '')}</span>
-      <em>${esc(svTarih(n.tarih))}</em></div>`).join('');
+/* Detayın "son değişiklikler" listesi: firmanın notları + ana programda
+   bekleyenler, tarih sırasıyla; her biri etiketli. */
+const SV_ETIKET = {
+  genel: ['h', 'Herkese'], ozel: ['o', 'Sadece bu firma'], esitleme: ['t', 'Ana programdan geldi'],
+  bekleyen: ['b', 'Ana programda · gelmedi'],
+};
+function svDegisiklikler(f) {
+  const firma = (f.notlar || []).map(n => ({ ...n, etiket: SV_ETIKET[n.tur] ? n.tur : 'genel' }));
+  const bekleyen = f.asagi.map(n => ({ ...n, etiket: 'bekleyen' }));
+  return bekleyen.concat(firma).sort((a, b) => String(b.tarih || '').localeCompare(String(a.tarih || ''))).slice(0, 10);
 }
 
 function surumDetayAc(kod) {
   const b = svFirmaBul(kod);
   if (!b) return;
   const { ana, f } = b;
-  const guncel = f.anaSurum && !f.asagi.length && !f.yukariSayi;
-  const durum = !f.anaSurum ? 'Sürüm bilgisi yok'
-    : guncel ? 'Güncel'
-    : [f.asagi.length ? f.asagi.length + ' güncelleme bekliyor' : '', f.yukariSayi ? f.yukariSayi + ' güncelleme ana programa alınacak' : ''].filter(Boolean).join(' · ');
-  const ozelSay = f.ozel.length;
-  const yukariListe = f.yukari.length ? svNotlar('Bu firmada yapılan, ana programa alınacak', f.yukari)
-    : f.yukariSayi ? `<div class="yd-baslik2">Bu firmada yapılan, ana programa alınacak</div>
-        <div class="sv-not"><b class="mono">${esc(svKisa(f.alinan))} → ${esc(svKisa(f.canli))}</b>
-        <span>${f.yukariSayi} yeni sürüm. Ayrıntısı firmanın sürüm notlarında yok; Claude farka bakarak ayırır.</span><em></em></div>` : '';
+  const bek = f.asagi.length, al = f.yukariSayi;
+  const adimlar = [];
+  if (al) adimlar.push(`<p>Bu firmada <b>${al} değişiklik</b> yapıldı; bunlar diğer firmalara da lazım. Ana programa alınınca diğer firmalara da gelir.</p>
+      ${promptBaglantisi({ tur: 'surum:al:' + f.kod, yazi: 'Ana programa al · talimatı kopyala', slug: ana.repo })}`);
+  if (bek) adimlar.push(`<p>Ana programda <b>${bek} güncelleme</b> var, bu firmaya henüz gelmedi.</p>
+      ${promptBaglantisi({ tur: 'surum:esitle:' + f.kod, yazi: 'Bu firmaya getir · talimatı kopyala', slug: f.repo, ikincil: !!al })}`);
+  const kutu = !f.anaSurum
+    ? `<div class="sv-yap"><h4>⚪ Sürüm bilgisi okunamadı</h4><p>Firmanın sitesindeki sürüm dosyası okunamadı. Biraz sonra Yenile'ye bas.</p></div>`
+    : !adimlar.length
+    ? `<div class="sv-yap ok"><h4>✅ Her şey güncel</h4><p>Ana programdaki her şey bu firmada var; bu firmada ana programa alınmamış bir değişiklik yok.</p></div>`
+    : `<div class="sv-yap"><h4>🟡 Yapılacak</h4>${adimlar.length > 1
+        ? adimlar.map((a, i) => `<div class="sv-adim"><span class="sv-adim-no">${i + 1}</span><div>${a}</div></div>`).join('')
+        : adimlar[0]}</div>`;
+  const liste = svDegisiklikler(f);
   modalHepsiniKapat();
   modalAc(`
-    ${modalBaslik(ICON.dal || ICON.kaydet, f.ad, 'Sürüm takibi · ' + (f.canli ? 'yayında ' + f.canli : 'yayındaki sürüm okunamadı'))}
-    <div class="sv-ikili">
-      <div class="sv-sy"><i>Ana program</i><b class="mono">${esc(svKisa(ana.canli))}</b></div>
-      <div class="sv-sy"><i>${esc(f.ad)}</i><b class="mono">${esc(svKisa(f.anaSurum))}</b>
-        ${ozelSay ? `<u>+ firmaya özel ${ozelSay}</u>` : ''}</div>
-    </div>
-    <div class="sv-durum ${guncel ? 'ok' : ''}"><i></i>${esc(durum)}</div>
-    ${svNotlar('Ana programda yapılanlar (bu firmaya taşınacak)', f.asagi)}
-    ${yukariListe}
-    ${guncel || !f.notVar ? svNotlar('Bu firmaya özel', f.ozel, n => 'Ö-' + (f.ozel.length - f.ozel.indexOf(n))) : ''}
-    ${!f.notVar ? '<div class="yd-not" style="text-align:left;margin-top:12px">Bu firmanın sürüm notları dosyası (surumler.json) henüz yok; bilgiler ana programın listesinden.</div>' : ''}
-    ${f.asagi.length ? promptBaglantisi({ tur: 'surum:esitle:' + f.kod, yazi: '↻ Eşitle · prompt\'u kopyala', slug: f.repo }) +
-      '<div class="yd-not">Claude ana programdaki farkı taşır, firmaya özel olanlara dokunmaz</div>' : ''}
-    ${f.yukariSayi ? promptBaglantisi({ tur: 'surum:al:' + f.kod, yazi: '↑ Ana programa al · prompt\'u kopyala', slug: ana.repo, ikincil: !!f.asagi.length }) +
-      '<div class="yd-not">Yalnız genel olanlar alınır; sonra diğer firmalarda "bekliyor" görünür</div>' : ''}
-    <div class="yd-not" style="margin-top:14px">Sürümler yayındaki siteden okunur · <span class="mono">${esc(String(f.site || '').replace(/^https?:\/\//, '').replace(/\/$/, ''))}</span>
-      · <button type="button" class="sv-yenile" data-eylem="surum-yenile">Yenile</button></div>
-  `, kutu => { kutu.classList.add('sv-modal'); kutu.dataset.kod = f.kod; }, 'yd-modal');
+    ${modalBaslik(ICON.dal || ICON.kaydet, f.ad, (f.canli ? 'Yayında ' + f.canli : 'Yayındaki sürüm okunamadı') + ' · ana program ' + svKisa(ana.canli))}
+    ${kutu}
+    ${liste.length ? `<div class="yd-baslik2">Son değişiklikler</div>` + liste.map(n => {
+      const [s, ad] = SV_ETIKET[n.etiket];
+      return `<div class="sv-ds"><span class="sv-cip ${s}">${ad}</span><span class="sv-ds-yz">${esc(n.ozet || '')}</span><em>${esc(svTarih(n.tarih))}</em></div>`;
+    }).join('') : ''}
+    ${!f.notVar && al ? `<div class="yd-not" style="text-align:left;margin-top:10px">Bu firmanın değişiklik notları okunamadı; ${al} yeni sürüm olduğu yayındaki numaradan anlaşıldı.</div>` : ''}
+    <div class="yd-not" style="margin-top:14px">Yayındaki siteden okunur · <button type="button" class="sv-yenile" data-eylem="surum-yenile">Yenile</button></div>
+  `, kutu2 => { kutu2.classList.add('sv-modal'); kutu2.dataset.kod = f.kod; }, 'yd-modal');
 }
 
 /* Kopyalanan promptlar. Claude Code'da firmanın (eşitle) ya da ana
