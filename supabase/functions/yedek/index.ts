@@ -199,6 +199,7 @@ Deno.serve(async (istek) => {
       .slice(0, 80).map((k: any) => ({
         kod: metin(k?.kod, 40), ad: metin(k?.ad, 120), durum: metin(k?.durum, 20), ayrinti: metin(k?.ayrinti, 400),
       }));
+    const sayi = (x: unknown) => (typeof x === 'number' && Number.isFinite(x) && x >= 0) ? Math.round(x) : null;
     const satir = {
       tur, durum,
       ozet: metin(govde.ozet, 400),
@@ -206,6 +207,8 @@ Deno.serve(async (istek) => {
         kalemler, drive: metin((govde.ayrinti as any)?.drive, 20),
         repolar: (Array.isArray((govde.ayrinti as any)?.repolar) ? (govde.ayrinti as any).repolar : [])
           .map((x: unknown) => metin(x, 100)).filter((x: string) => /^[A-Za-z0-9._-]{1,100}$/.test(x)).slice(0, 500),
+        drive_kullanilan: sayi((govde.ayrinti as any)?.drive_kullanilan),
+        drive_toplam: sayi((govde.ayrinti as any)?.drive_toplam),
       },
     };
     const { error } = await db.from('yedek_raporlari').insert(satir);

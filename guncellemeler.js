@@ -21,6 +21,12 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.339.0', tarih: '2026-10-26',
+    ozet: 'Google Drive doluluğu Son Yedekleme kutusunda',
+    maddeler: [
+      'Son Yedekleme kutusunda Google Drive’ın ne kadar dolu olduğu çubukla görünüyor.',
+      'Drive %80’i geçince kutu kırmızı olur ve telefona uyarı gelir.',
+    ] },
   { surum: 'v0.338.0', tarih: '2026-10-26',
     ozet: 'GitHub repolarını da sen seçiyorsun',
     maddeler: [

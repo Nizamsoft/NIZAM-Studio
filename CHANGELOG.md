@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü
 
+## v0.339.0
+- **Son Yedekleme kutusunda Google Drive doluluğu.**
+  - nizam-yedek `drive-yukle.sh` her gece `rclone about` ile ölçer; `bildir.py` `ayrinti.drive_kullanilan/drive_toplam`
+    (bayt) gönderir, %80 ve üstünde rapor `sorunlu` → yöneticilere telefon bildirimi.
+  - `yedek` fonksiyonu `rapor` iki sayıyı saklıyor (yeniden yüklenmeli).
+  - Arayüz: `yedekDrive()`; kutuda çubuk + "x / y GB", %80'de kırmızı ve "Drive dolmak üzere"; detayda Drive satırı boyutlu.
+  - nizam-yedek: GitHub yedekleri Drive'da 3 gün · 4 hafta · 6 ay saklanıyor (veritabanları 7 gün · 5 hafta · 13 ay).
+
 ## v0.338.0
 - **GitHub repoları da seçilebiliyor; bağlantı değiştirilebiliyor; "Direct connection" adresi reddediliyor.**
   - `sql/51-yedek-github-secimi.sql`: `yedek_ayarlari.haric text[]` + `GITHUB` satırı (acik · haric).

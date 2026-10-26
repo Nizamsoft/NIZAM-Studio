@@ -17778,6 +17778,15 @@ function yedekAltYazi(r) {
   return [vt ? vt + ' veritabanı' : '', ghAdet ? ghAdet[1] + ' repo' : '', drive === 'tamam' ? 'Google Drive' : '']
     .filter(Boolean).join(' · ') || 'Ayrıntı için dokun';
 }
+/* Google Drive doluluğu (v0.339.0) · nizam-yedek her gece ölçer. */
+function yedekDrive(r) {
+  const a = (r && r.ayrinti) || {};
+  const k = Number(a.drive_kullanilan), t = Number(a.drive_toplam);
+  if (!(t > 0) || !(k >= 0)) return null;
+  const gb = n => (n / 1073741824).toLocaleString('tr-TR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  const yuzde = Math.min(100, Math.round(100 * k / t));
+  return { yuzde, dolu: yuzde >= 80, yazi: gb(k) + ' / ' + gb(t).replace(/,0$/, '') + ' GB' };
+}
 function panelYedek() {
   if (!AUTH.yonetici) return '';
   const r = sonYedekRaporu();
@@ -17788,7 +17797,7 @@ function panelYedek() {
   const zaman = r ? pzZaman(r.olusturuldu).replace('Bugün · ', 'Bugün ') .replace('Dün · ', 'Dün ') : 'Henüz rapor yok';
   const durumYazi = suruyor ? 'Yedek alınıyor…'
     : !r ? 'Gece yedeği gelince burada görünür'
-    : sorun ? (sorunlu ? sorunlu + ' yedek alınamadı' : 'Sorun var')
+    : sorun ? (sorunlu ? sorunlu + ' yedek alınamadı' : (yedekDrive(r) || {}).dolu ? 'Drive dolmak üzere' : 'Sorun var')
     : 'Hepsi alındı';
   return `<div class="pz-bolum">
     <span class="pz-bas"><b>Son Yedekleme</b><u></u></span>
@@ -17797,6 +17806,9 @@ function panelYedek() {
         <span class="yd-ikon">${svg(ICON.kaydet, 16)}</span>
         <span class="yd-orta"><b class="yd-zaman">${esc(zaman)}</b><i class="yd-alt">${esc(r ? yedekAltYazi(r) : 'Her gece 03:00')}</i></span>
       </span>
+      ${(() => { const dr = yedekDrive(r); return dr ? `<span class="yd-dolu ${dr.dolu ? 'dolu' : ''}">
+        <span class="yd-dolu-y">Google Drive${dr.dolu ? ' %' + dr.yuzde + ' dolu' : ''}<b>${esc(dr.yazi)}</b></span>
+        <span class="yd-cubuk"><i style="width:${dr.yuzde}%"></i></span></span>` : ''; })()}
       <span class="yd-durum"><i></i>${esc(durumYazi)}<span class="yd-ok">Detay ${svg(ICON.chevron, 12)}</span></span>
     </button>
   </div>`;
@@ -17831,7 +17843,8 @@ function yedekDetayAc() {
       <div class="yd-baslik2">Diğer</div>
       ${gh ? satir(gh.durum, 'GitHub repoları', sag(gh), gh.durum === 'hata', gh.durum === 'hata' ? gh.ayrinti : '') : ''}
       ${satir(drive === 'hata' ? 'hata' : drive === 'tamam' ? 'tamam' : 'kurulmadi', 'Google Drive',
-        drive === 'tamam' ? 'yüklendi' : drive === 'hata' ? 'yüklenemedi' : 'bağlı değil', drive === 'hata')}
+        (drive === 'tamam' ? 'yüklendi' : drive === 'hata' ? 'yüklenemedi' : 'bağlı değil') +
+        (yedekDrive(r) ? ' · ' + yedekDrive(r).yazi : ''), drive === 'hata' || !!(yedekDrive(r) || {}).dolu)}
       ${d ? satir(d.durum === 'sorunlu' ? 'hata' : 'tamam', 'Aylık geri yükleme denemesi',
         tarihYaz(d.olusturuldu) + ' · ' + denemeSaglam + '/' + denemeKalem.length + ' sağlam', d.durum === 'sorunlu') : ''}`
       : '<div class="yd-bos">Gece yedeği sonucunu gönderince burada proje proje görünecek.</div>'}
