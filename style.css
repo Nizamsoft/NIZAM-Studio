@@ -12065,3 +12065,103 @@ button.pd-sat { cursor: pointer; }
   .pd-ser > span > u { display: none; }
   .pd-ser > span > i { font-size: 13px; }
 }
+
+/* ---------- v0.347.0 · Görev penceresi, sohbetten görev, sade panel ----------
+   Onaylanan taslak: yapilanlar-gorseller/studio-gorev-sohbet-panel-taslak.png */
+
+/* Görev detayı: eylemler en üstte, bilgiler iki sütun, ekler/geçmiş katlanır. */
+.gd-eylem {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+  margin: 0 0 14px; padding: 10px; border-radius: 12px;
+  background: var(--yuva); border: 1px solid var(--line-3);
+}
+.gd-eylem .sayfa-dug, .gd-eylem .sayfa-dug.bitir {
+  flex: 1 1 160px; width: auto; height: 44px; margin: 0;
+}
+.gd-eylem .ipucu { flex: 1 1 100%; margin: 0; font-size: 12px; text-align: center; }
+.gd-izgara { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; margin-bottom: 6px; }
+.gd-izgara .gd-dg { min-width: 0; max-width: 100%; }
+.gd-izgara .gd-dg b { overflow-wrap: anywhere; }
+.gd-izgara .gd-s {
+  flex-direction: column; align-items: flex-start; gap: 4px;
+  padding: 9px 11px; border: 1px solid var(--line-3); border-radius: 10px;
+}
+.gd-izgara .gd-s:last-child { border-bottom: 1px solid var(--line-3); }
+.gd-izgara .gd-et { min-width: 0; font-size: 11.5px; }
+.gd-izgara .gd-dg { font-size: 13.5px; gap: 6px; }
+.gd-kat { margin-top: 10px; border: 1px solid var(--line-2); border-radius: 12px; }
+.gd-kat > summary {
+  display: flex; align-items: center; gap: 8px; padding: 12px 13px; cursor: pointer;
+  list-style: none; font-size: 13.5px; font-weight: 600; color: var(--ink-soft);
+}
+.gd-kat > summary::-webkit-details-marker { display: none; }
+.gd-kat > summary::after { content: '›'; margin-left: auto; font-size: 17px; color: var(--ink-dim); transition: transform .15s; }
+.gd-kat[open] > summary::after { transform: rotate(90deg); }
+.gd-kat > summary svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.9; }
+.gd-kat > summary .dolgu { display: none; }
+.gd-kat > .gek-liste, .gd-kat > .gd-gecmis { padding: 0 13px 12px; }
+
+/* Görevler listesinin üstü: arama + proje seçimi. */
+.gv-ara { display: flex; gap: 8px; margin: 0 0 12px; }
+.gv-ara-k, .gv-ara-p {
+  display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 12px;
+  border: 1px solid var(--line-2); border-radius: 10px; background: var(--surface); color: var(--ink-dim);
+}
+.gv-ara-k { flex: 1; min-width: 0; }
+.gv-ara-k svg, .gv-ara-p svg { flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 1.9; }
+.gv-ara-k .dolgu, .gv-ara-p .dolgu { display: none; }
+.gv-ara input, .gv-ara select {
+  flex: 1; min-width: 0; border: 0; background: none; outline: none;
+  font-family: inherit; font-size: 13.5px; color: var(--ink-strong);
+}
+.gv-ara-p { position: relative; max-width: 42%; }
+.gv-ara-p select { appearance: none; -webkit-appearance: none; padding-right: 14px; cursor: pointer; }
+.gv-ara-p svg { position: absolute; right: 10px; pointer-events: none; transform: rotate(90deg); }
+.gv-liste .gv[hidden], .gv-yok[hidden] { display: none; }
+.gv-yok { margin: 6px 0; padding: 22px; text-align: center; font-size: 13px; color: var(--ink-dim); }
+
+/* Sohbet: yazma çubuğundaki "Görev" düğmesi ve mesaj menüsü. */
+.yz-ek.yz-gorev { width: auto; gap: 5px; padding: 0 13px 0 10px; font-family: inherit; font-size: 13px; font-weight: 600; }
+.yz-ek.yz-gorev svg { width: 17px; height: 17px; }
+.yz-balon { cursor: pointer; }
+.yz-menu {
+  position: fixed; z-index: 9000; min-width: 170px; padding: 4px;
+  background: var(--surface); border: 1px solid var(--line-2); border-radius: 12px;
+  box-shadow: 0 12px 30px -12px rgba(23, 23, 26, .28);
+}
+.yz-menu button {
+  display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 12px;
+  border: 0; border-radius: 8px; background: none; cursor: pointer; text-align: left;
+  font-family: inherit; font-size: 14px; color: var(--ink-strong);
+}
+.yz-menu button:hover { background: var(--yuva); }
+.yz-menu svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.9; color: var(--ink-soft); }
+.yz-menu .dolgu { display: none; }
+
+/* Panel: tek satırlık selam ve yalnız sorun varken görünen uyarı şeridi. */
+.ph2 {
+  display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap;
+  gap: 4px 16px; margin: 4px 0 16px;
+}
+.ph2 h1 {
+  margin: 0; font-family: var(--yazi-baslik); font-size: 22px; font-weight: 700; color: var(--ink-strong);
+}
+.ph2 i { font-style: normal; font-size: 13px; color: var(--ink-dim); white-space: nowrap; }
+.pu {
+  display: flex; flex-direction: column; margin: 0 0 16px;
+  border: 1px solid #f1dfb8; border-radius: 12px; background: #fdf8ee; overflow: hidden;
+}
+.pu-sat { display: flex; align-items: flex-start; gap: 10px; padding: 11px 13px; }
+.pu-sat + .pu-sat { border-top: 1px solid #f1dfb8; }
+.pu-ik { flex-shrink: 0; font-size: 16px; line-height: 20px; }
+.pu-yz { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+.pu-yz b { font-size: 13.5px; font-weight: 600; color: #8a5f10; }
+.pu-adlar { display: flex; flex-wrap: wrap; gap: 6px; }
+.pu-adlar button {
+  padding: 3px 10px; border: 1px solid #ead3a3; border-radius: 999px; background: var(--surface);
+  cursor: pointer; font-family: inherit; font-size: 12px; font-weight: 600; color: var(--ink-soft);
+}
+.pu-adlar button:hover { border-color: #8a5f10; color: #8a5f10; }
+@media (min-width: 901px) {
+  .ph2 h1 { font-size: 26px; }
+}
