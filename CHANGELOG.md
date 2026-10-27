@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## v0.344.0
+- **Panel › Aktif Projeler** `pjKart3` kartlarıyla yatay kayan şerit (`.pz3-serit`). Yönetici "Seç" ile
+  belirler (`pzProjeSecAc` · `palet.panelde`, `DB.paletKaydet`); seçim yoksa en son dokunulan 6. Eskiden yalnız
+  bitmemiş projeler çıkıyordu (Merkez Efendi, Güllüoğlu düşüyordu). Kırmızı "Tüm Projeleri Görüntüle" kalktı.
+
 ## v0.343.0
 - **Projeler kartı görsel ızgara (kullanıcı: "göze hoş gelsin, karışık olmasın").** `pjKart3`: üst yarı işletme
   görseli (G0) ya da proje renginde zemin, logo görselin altına oturur; firma adı, ürün adı (`modulAdi`), tek satır

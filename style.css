@@ -12006,3 +12006,23 @@ button.pa-surum { cursor: pointer; }
   .pj3-dip > span:first-child { display: none; }
   .pj3-dip.sayisiz { display: none; }
 }
+
+/* ---- Panel › Projeler şeridi (v0.344.0) ---- */
+.pz3-serit { display: grid; grid-auto-flow: column; grid-auto-columns: 230px; gap: 12px; overflow-x: auto; padding: 2px 2px 8px;
+  scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scrollbar-width: thin; }
+.pz3-serit > .pj3, .pz3-serit > .pz3-hepsi { scroll-snap-align: start; }
+.pz3-hepsi { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; border: 1px dashed var(--line-2);
+  border-radius: 16px; color: var(--ink-soft); text-decoration: none; font-size: 13px; }
+.pz3-hepsi b { font: 700 22px var(--yazi-baslik); color: var(--ink-strong); }
+@media (max-width: 560px) { .pz3-serit { grid-auto-columns: 168px; gap: 10px; scrollbar-width: none; } .pz3-serit::-webkit-scrollbar { display: none; } }
+.pz3-sec { margin-left: auto; margin-right: 10px; border: 1px solid var(--line-2); background: var(--surface); border-radius: 99px;
+  height: 28px; padding: 0 12px; font: 600 12.5px inherit; color: var(--ink-soft); cursor: pointer; }
+.pz-bas .pz3-sec + .pz-tum { margin-left: 0; }
+.pz3-not { font-size: 12px; color: var(--ink-dim); margin-top: 4px; }
+.pz3-liste { max-height: 56vh; overflow-y: auto; margin-top: 4px; }
+.pz3-sat { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); }
+.pz3-sat:first-child { border-top: 0; }
+.pz3-sat-yz { flex: 1; min-width: 0; }
+.pz3-sat-yz b { display: block; font-size: 14px; }
+.pz3-sat-yz i { display: block; font-style: normal; font-size: 12px; color: var(--ink-dim); }
+.pj2-logo.kucuk { width: 36px; height: 36px; border-radius: 10px; font-size: 12px; }

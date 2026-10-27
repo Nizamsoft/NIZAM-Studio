@@ -21,6 +21,13 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.344.0', tarih: '2026-10-27',
+    ozet: 'Panel’deki Aktif Projeler’i sen seçiyorsun',
+    maddeler: [
+      'Panel’deki Aktif Projeler yeni kartlarla ve yana kaydırılarak görünüyor.',
+      '"Seç" düğmesinden hangi projelerin görüneceğini açıp kapatabiliyorsun; seçim her cihazda aynı.',
+      'Hiç seçim yapmadıysan en son dokunulan projeler görünür. Aşamaları bitmiş ama yayında olan programlar artık kaybolmuyor.',
+    ] },
   { surum: 'v0.343.0', tarih: '2026-10-27',
     ozet: 'Projeler görsel kartlarla, logolar görünüyor',
     maddeler: [

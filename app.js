@@ -15463,6 +15463,8 @@ async function eylemCalistir(el) {
   if (e === 'tazele')    return veriTazele();
   if (e === 'projelere') { location.hash = '#/projeler'; return; }
   if (e === 'proje-ac')  { location.hash = '#/projeler/' + id; return; }
+  if (e === 'pz-proje-sec') return pzProjeSecAc();
+  if (e === 'pz-proje-ac-kapa') return pzProjeAcKapa(el);
   if (e === 'pj-suzgec') { PJ_SUZGEC = id || 'hepsi'; render(); return; }
   if (e === 'pj-bolum')  { PJ_ACIK[id] = !PJ_ACIK[id]; render(); return; }
 
@@ -17872,31 +17874,68 @@ function pzProjeKarti(p, i = 0) {
     </div>`;
 }
 
+/* Panel › Aktif Projeler (v0.344.0): Projeler ekranının görsel kartları yan
+   yana kayan şeritte. Hangilerinin görüneceğini yönetici "Seç"ten belirler
+   (palet.panelde · Studio'da saklanır, her cihazda aynı). Hiç seçim yoksa
+   boş kalmasın diye en son dokunulan 6 proje. Sayı sınırı yok; sığmayan
+   yana kaydırılır. Eskiden yalnız "bitmemiş" projeler çıkıyordu; aşamaları
+   biten ama yayında olan programlar görünmüyordu. */
+function pzProjeListesi(projeler) {
+  return pjSirala((projeler || DB.projeler).filter(p => PROJE_KOVASI.normal.sec(p) && !p.arsiv));
+}
 function panelProjeler(projeler) {
-  if (!projeler.filter(p => !projeBittiMi(p)).length) {
+  const liste = pzProjeListesi(projeler);
+  if (!liste.length) {
     return `<div class="pz-bolum">
       <span class="pz-bas"><b>Aktif Projeler</b><u></u></span>
-      <div class="card">${empty(ICON.folder, 'Devam eden proje yok',
+      <div class="card">${empty(ICON.folder, 'Henüz proje yok',
         AUTH.yonetici ? 'Yeni Proje sihirbazı firma, platform ve modülleri sorar; gerisini kendisi kurar.'
                       : 'Sana bir proje atandığında burada görünecek.',
         AUTH.yonetici ? 'Yeni Proje' : null, 'sihirbaz')}</div>
     </div>`;
   }
-  /* Panelde yalnız devam edenler: biten proje "aktif" değil. */
-  const sirali = projeler.filter(p => !projeBittiMi(p)).sort((a, b) =>
-    (pzSonDokunus(b.id) || '').localeCompare(pzSonDokunus(a.id) || ''));
+  if (AUTH.yonetici && SURUM.durum === 'bos') setTimeout(() => surumTakipYukle(), 0);
+  const secili = liste.filter(p => (p.palet || {}).panelde);
+  const goster = secili.length ? secili : liste.slice(0, 6);
   return `<div class="pz-bolum">
     <span class="pz-bas">
       <b>Aktif Projeler</b><u></u>
+      ${AUTH.yonetici ? `<button type="button" class="pz3-sec" data-eylem="pz-proje-sec">Seç</button>` : ''}
       <a class="pz-tum" href="#/projeler">Tüm Projeler ${svg(ICON.chevron, 13)}</a>
     </span>
-    <div class="pk2-sarma">
-      <div class="pk2-serit"><div class="pk2-sira">${sirali.slice(0, 6).map((p, i) => pzProjeKarti(p, i)).join('')}</div></div>
-      <button class="pk2-kaydir only-desktop" data-eylem="serit-kaydir" type="button"
-        aria-label="Sonraki projeler">${svg(ICON.chevron, 16)}</button>
-    </div>
-    <a class="pk2-dug" href="#/projeler">Tüm Projeleri Görüntüle ${svg(ICON.chevron, 15)}</a>
+    <div class="pz3-serit">${goster.map(pjKart3).join('')}</div>
+    ${!secili.length && AUTH.yonetici ? '<div class="pz3-not">Burada hangi projelerin görüneceğini "Seç"ten belirleyebilirsin.</div>' : ''}
   </div>`;
+}
+
+function pzProjeSecAc() {
+  modalAc(`
+    ${modalBaslik(ICON.folder, 'Aktif Projeler', 'Panel’de görünecek projeleri seç')}
+    <div class="pz3-liste"></div>
+    <div class="yd-not" style="text-align:left">Seçim Studio’da saklanır; her cihazda aynı görünür. Sığmayanlar yana kaydırılır.</div>
+  `, () => pzProjeSecCiz(), 'yd-modal');
+}
+function pzProjeSecCiz() {
+  const kap = $('.pz3-liste');
+  if (!kap) return;
+  kap.innerHTML = pzProjeListesi().map(p => {
+    const acik = !!(p.palet || {}).panelde;
+    return `<div class="pz3-sat">${pjLogo(p, 'kucuk')}
+      <span class="pz3-sat-yz"><b>${esc(basHarfleriBuyuk(p.firma || projeAdi(p)))}</b><i>${esc(modulAdi(p) || p.sektor || '')}</i></span>
+      <button type="button" class="yd-anah ${acik ? 'acik' : ''}" data-eylem="pz-proje-ac-kapa" data-id="${p.id}" aria-label="${esc(p.firma || '')}"></button></div>`;
+  }).join('') || '<div class="yd-bos">Proje yok.</div>';
+  logolariGoster();
+}
+async function pzProjeAcKapa(el) {
+  const p = DB.proje(el.dataset.id);
+  if (!p || el.disabled) return;
+  el.disabled = true;
+  el.classList.toggle('acik');
+  try {
+    await DB.paletKaydet(p.id, Object.assign({}, p.palet || {}, { panelde: !(p.palet || {}).panelde }));
+  } catch (h) { toast(h.message, 'hata'); }
+  pzProjeSecCiz();
+  render();
 }
 
 /* ---------- Ekip ----------
