@@ -1,5 +1,16 @@
 # Değişiklik Günlüğü
 
+## v0.347.0
+- **Görev penceresi** (ekip isteği; taslak `studio-gorev-sohbet-panel-taslak.png`). `gorevKartiHtml`: aşama düğmeleri
+  ve "Görevi düzenle" en üstte `.gd-eylem`; Proje/Bitiş/Veren/Alan iki sütun (`.gd-izgara`); Ekler ve Geçmiş
+  `<details class="gd-kat">`. Proje sayfasındaki `gorev-ekle` artık `gorevVerAc('', null, { proje })`; eski
+  `yeniGorev*`, `YENI`, eski ağaç `gorevSatiri`, `durumRozeti`, `avatar`, `filtreDugmesi`, `GOREV_FILTRE` silindi.
+- **Görevler araması**: 3'ten çok görev varsa `gorevAramaCubugu` (yazı + proje), `gorevAramaUygula`.
+- **Sohbet**: ataç yerine "➕ Görev" (`sohbet-gorev`). Balona dokununca `mesajMenuAc`: Kopyala, Göreve çevir
+  (ilk satır başlık, tamamı metin).
+- **Panel**: `panelHero` → tek satır `panelSelam`; `panelSurum` ve `panelYedek` kalktı. Yeni `panelUyari`
+  (denetim bekleyen / yedeği sorunlu projeler, Drive doluluğu); sorun yoksa görünmez.
+
 ## v0.346.0
 - **Proje durumu: Yayın · Yedekleme · Güvenlik** (ekip isteği; taslak `studio-durum-taslak.png`). `pdYayin`,
   `pdYedek`, `pdGuvenlik` → `{ s: y|b|k|g, kisa, yazi }`. Proje sayfasında `pdKutu` (Durum kutusu, görevlerin üstünde),

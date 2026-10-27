@@ -21,6 +21,15 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.347.0', tarih: '2026-10-28',
+    ozet: 'Görev penceresi, sohbetten görev ve sade Panel',
+    maddeler: [
+      'Görev penceresinde ana düğme artık en üstte; ekler ve geçmiş açılır kapanır.',
+      'Görevler listesinde arama ve proje seçimi.',
+      'Sohbette "Görev" düğmesi: konuştuğun kişiye tek dokunuşla görev ver.',
+      'Mesaja dokununca Kopyala ve Göreve çevir çıkar.',
+      'Panel sadeleşti: eski sürüm ve yedek kutuları kalktı, yalnız sorun varsa uyarı şeridi çıkar.',
+    ] },
   { surum: 'v0.346.0', tarih: '2026-10-27',
     ozet: 'Her projede Yayın, Yedekleme ve Güvenlik durumu',
     maddeler: [
