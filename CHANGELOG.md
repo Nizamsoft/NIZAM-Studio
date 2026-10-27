@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## v0.345.0
+- **Firma bilgileri › Kapak görseli** (`fmKapakAlani` · G0 yuvası, `proje-gorsel` → `isletmeGorseliSec`). Eskiden
+  büyük fotoğraf yalnız eski proje kartındaki "i" düğmesinden yükleniyordu; o kart kalkınca yüklenecek yer kalmamıştı.
+  Tamamlanmış aşamada da dokunulabilir.
+
 ## v0.344.0
 - **Panel › Aktif Projeler** `pjKart3` kartlarıyla yatay kayan şerit (`.pz3-serit`). Yönetici "Seç" ile
   belirler (`pzProjeSecAc` · `palet.panelde`, `DB.paletKaydet`); seçim yoksa en son dokunulan 6. Eskiden yalnız

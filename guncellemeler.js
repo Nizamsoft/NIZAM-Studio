@@ -21,6 +21,12 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.345.0', tarih: '2026-10-27',
+    ozet: 'Firma bilgileri’nde Kapak görseli',
+    maddeler: [
+      'Firma bilgileri’nde Logo’nun altına "Kapak görseli" geldi: projenin büyük fotoğrafı buradan yüklenir ya da değiştirilir.',
+      'Kapak görseli Projeler’deki ve Panel’deki kartın üst yarısında görünür; aşama tamamlanmış olsa da değiştirilebilir.',
+    ] },
   { surum: 'v0.344.0', tarih: '2026-10-27',
     ozet: 'Panel’deki Aktif Projeler’i sen seçiyorsun',
     maddeler: [

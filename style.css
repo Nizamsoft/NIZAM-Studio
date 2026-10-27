@@ -12026,3 +12026,10 @@ button.pa-surum { cursor: pointer; }
 .pz3-sat-yz b { display: block; font-size: 14px; }
 .pz3-sat-yz i { display: block; font-style: normal; font-size: 12px; color: var(--ink-dim); }
 .pj2-logo.kucuk { width: 36px; height: 36px; border-radius: 10px; font-size: 12px; }
+
+/* ---- Firma bilgileri · Kapak görseli (v0.345.0) ---- */
+.fm-kk { flex: 0 0 auto; display: flex; align-items: center; justify-content: center; width: 64px; height: 38px; border-radius: 9px;
+  background: var(--surface) center / cover no-repeat; border: 1px solid var(--line-2); color: var(--ink-dim); }
+.fm-kk.bos { background: var(--surface-2); border-style: dashed; }
+.fm-kk svg { fill: none; stroke: currentColor; stroke-width: 1.7; }
+.fm-kk .dolgu { display: none; }

@@ -2187,6 +2187,7 @@ function firmaSayfasi(p, d) {
       + fmOkuma('E-posta', ICON.mail, p.eposta)
       + fmOkuma('Sektör', ICON.dukkan, p.sektor)
       + fmLogoAlani(p, logo, true)
+      + fmKapakAlani(p)
       + `</div></div>`;
   }
 
@@ -2201,11 +2202,29 @@ function firmaSayfasi(p, d) {
                deger: p.eposta, ipucu: 'Örn. bilgi@firma.com', maxlength: 120 })
     + fmSecim('Sektör', sektorler)
     + fmLogoAlani(p, logo)
+    + fmKapakAlani(p)
     + `</div></div>`;
 }
 
 /* Logo alanı: isteğe bağlı ama her zaman görünür — aşama tamamlandıktan
    sonra da duruyor. */
+/* Kapak görseli (G0 · "büyük fotoğraf") · v0.345.0. Projeler kartının üst
+   yarısında ve Panel'de görünür. Aşama tamamlanmış olsa da dokununca
+   değişir: yalnız görsel, başka bir şeyi bozmaz. */
+function fmKapakAlani(p) {
+  const kapak = gorselAdresi(p, 'G0');
+  const yukleniyor = GORSEL_YUKLENIYOR[p.id];
+  return `
+    <div class="fm">
+      <button class="fm-lsatir fm-kapak ${kapak ? 'dolu' : ''}" type="button" data-eylem="proje-gorsel" data-id="${p.id}">
+        <span class="fm-kk ${kapak ? '' : 'bos'}" ${kapak ? `style="background-image:url('${esc(kapak)}')"` : ''}>${kapak ? '' : svg(ICON.resim, 16)}</span>
+        <span class="fm-lyz"><b>Kapak görseli</b>
+          <i class="${kapak ? '' : 'bos'}">${yukleniyor ? 'Yükleniyor…' : kapak ? 'Değiştirmek için dokun' : 'Büyük fotoğraf · seçmek için dokun'}</i></span>
+        ${kapak ? `<span class="fm-tik">${svg(ICON.tik, 14)}</span>` : ''}
+      </button>
+    </div>`;
+}
+
 function fmLogoAlani(p, logo, salt) {
   /* İki hâlde de aynı satır: solda küçük kare önizleme, ortada "Logo" ve
      altında adı, sağda yeşil tik. Tamamlanmış aşamada satır biraz daha iri
