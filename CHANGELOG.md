@@ -1,5 +1,14 @@
 # Değişiklik Günlüğü
 
+## v0.346.0
+- **Proje durumu: Yayın · Yedekleme · Güvenlik** (ekip isteği; taslak `studio-durum-taslak.png`). `pdYayin`,
+  `pdYedek`, `pdGuvenlik` → `{ s: y|b|k|g, kisa, yazi }`. Proje sayfasında `pdKutu` (Durum kutusu, görevlerin üstünde),
+  Projeler kartında `pdSerit` (üç işaret; telefonda yalnız simge). Yalnız yönetici; deneme/klon kartlarında yok.
+  - Yayın: programın `surumler.json` son notunun tarihi + canlı sürüm.
+  - Yedek: son gece raporundaki satır; proje eşleşmesi `yedek_ayarlari.proje_id`, yoksa ad (`yedekKodUret`).
+  - Güvenlik: `GUV_FINAL` (son denetim, kilit). Notta `sql` alanı (programların CLAUDE.md kuralı) denetim
+    tarihinden yeniyse "Yeni SQL yazıldı (…) · denetim yapılmalı".
+
 ## v0.345.0
 - **Firma bilgileri › Kapak görseli** (`fmKapakAlani` · G0 yuvası, `proje-gorsel` → `isletmeGorseliSec`). Eskiden
   büyük fotoğraf yalnız eski proje kartındaki "i" düğmesinden yükleniyordu; o kart kalkınca yüklenecek yer kalmamıştı.

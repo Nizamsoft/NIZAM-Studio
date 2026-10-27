@@ -8212,6 +8212,129 @@ function pjSonHareket(p) {
   return Date.now() - new Date(t) < 7 * 864e5 ? bildirimZaman(t) : pjTarih(t);
 }
 
+/* ---------- Proje durumu: Yayın · Yedekleme · Güvenlik (v0.346.0) ----------
+   Ekip isteği: her projede bu üç bilgi görünsün. Onaylanan taslak
+   yapilanlar-gorseller/studio-durum-taslak.png. Her biri { s, kisa, yazi }:
+   s = y (sorun yok) · b (bakılmalı) · k (sorun) · g (bilgi yok).
+   Yayın   → programın surumler.json notları (son not ne zaman yazıldı).
+   Yedek   → son gece yedeği raporunda bu projenin satırı.
+   Güvenlik→ Security'deki son denetim; denetimden sonra yazılmış bir notta
+             "sql" alanı varsa "denetim yapılmalı" (programların CLAUDE.md
+             kuralı: yeni SQL yazınca nota "sql": "440" gibi eklenir). */
+function pdGunFark(t) {
+  const m = /^(\d{4})-(\d\d)-(\d\d)/.exec(String(t || ''));
+  if (!m) return null;
+  const d = String(t).length > 10 ? new Date(t) : new Date(+m[1], +m[2] - 1, +m[3]);
+  const g = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const b = new Date(); const b0 = new Date(b.getFullYear(), b.getMonth(), b.getDate());
+  return Math.round((b0 - g) / 864e5);
+}
+function pdGunKisa(t) {
+  const f = pdGunFark(t);
+  return f === null ? '' : f <= 0 ? 'Bugün' : f === 1 ? 'Dün' : f < 7 ? f + ' gün' : svTarih(t) || tarihYaz(t);
+}
+function pdGunUzun(t) {
+  const f = pdGunFark(t);
+  return f === null ? '' : f <= 0 ? 'bugün' : f === 1 ? 'dün' : f < 7 ? f + ' gün önce' : svTarih(t) || tarihYaz(t);
+}
+function pdNotlar(p) {
+  const yer = pjSurumYeri(p);
+  return yer ? ((yer.tur === 'firma' ? yer.f.notlar : yer.ana.notlar) || []) : [];
+}
+
+function pdYayin(p) {
+  const yer = pjSurumYeri(p);
+  if (!pjYayinda(p)) return { s: 'g', kisa: 'Yok', yazi: 'Henüz yayında değil' };
+  const son = pdNotlar(p)[0];
+  const surum = yer ? (yer.tur === 'firma' ? yer.f.canli : yer.ana.canli) : '';
+  const sy = surum ? 'Sürüm ' + svKisa(surum) : '';
+  if (son && son.tarih) return { s: 'y', kisa: pdGunKisa(son.tarih), yazi: (sy ? sy + ' · ' : '') + pdGunUzun(son.tarih) + ' yayınlandı' };
+  return { s: 'y', kisa: 'Yayında', yazi: sy ? sy + ' · yayında' : 'Yayında' };
+}
+
+/* Yedek satırı hangi projenin: önce Yedekleme ayarlarındaki eşleşme
+   (yedek_ayarlari.proje_id), yoksa ad eşleşmesi ("Güllüoğlu Kubban — …"). */
+let YEDEK_ESLEME = null;
+function yedekEslemeYukle() {
+  if (YEDEK_ESLEME !== null || !AUTH.yonetici || !AUTH.db) return;
+  YEDEK_ESLEME = {};
+  Promise.resolve(AUTH.db.from('yedek_ayarlari').select('kod, proje_id')).then(({ data }) => {
+    (data || []).forEach(r => { if (r.proje_id) YEDEK_ESLEME[r.proje_id] = r.kod; });
+    if ((data || []).some(r => r.proje_id)) render();
+  }, () => {});
+}
+function pdYedekSatiri(p) {
+  const r = sonYedekRaporu();
+  if (!r) return null;
+  const k = yedekKalemleri(r).filter(x => x.kod !== 'GITHUB');
+  const kod = YEDEK_ESLEME && YEDEK_ESLEME[p.id];
+  const x = kod && k.find(y => y.kod === kod);
+  if (x) return x;
+  const bos = new Set();
+  const ad = yedekKodUret(p.firma || projeAdi(p), bos);
+  return k.find(y => yedekKodUret(String(y.ad || '').split(/\s[—-]\s/)[0], bos) === ad) || null;
+}
+function pdYedek(p) {
+  if (!sunuculuMu(p)) return { s: 'g', kisa: '–', yazi: 'Veritabanı yok · yedek gerekmiyor' };
+  const r = sonYedekRaporu();
+  if (!r) return { s: 'g', kisa: '–', yazi: 'Gece yedeği raporu henüz yok' };
+  const x = pdYedekSatiri(p);
+  const yayinda = pjYayinda(p);
+  if (!x) return { s: yayinda ? 'k' : 'g', kisa: 'Yok', yazi: 'Gece yedeğine bağlı değil' };
+  if (x.durum === 'hata') return { s: 'k', kisa: 'Hata', yazi: 'Son yedek alınamadı · ' + yedekHataKisa(x.ayrinti) };
+  if (x.durum === 'kapali') return { s: 'g', kisa: 'Kapalı', yazi: 'Yedekleme kapalı' };
+  if (x.durum !== 'tamam') return { s: yayinda ? 'k' : 'g', kisa: 'Yok', yazi: 'Yedek bağlantısı eklenmemiş' };
+  const boy = ((/·\s*([^·]+)$/.exec(x.ayrinti || '') || [])[1] || '').replace(/\s*\(.*\)\s*$/, '').trim();
+  const zaman = pzZaman(r.olusturuldu).replace(' · ', ' ');
+  const eski = (pdGunFark(r.olusturuldu) || 0) >= 2;
+  return { s: eski ? 'b' : 'y', kisa: pdGunKisa(r.olusturuldu), yazi: zaman + ' yedeklendi' + (boy ? ' · ' + boy : '') };
+}
+
+function pdGuvenlik(p) {
+  if (!sunuculuMu(p)) return { s: 'g', kisa: '–', yazi: 'Veritabanı yok' };
+  if (typeof guvenlikFinalYukle === 'function') guvenlikFinalYukle(p.id);
+  const g = typeof GUV_FINAL === 'object' ? GUV_FINAL[p.id] : null;
+  if (!g || g === 'yukleniyor') return { s: 'g', kisa: '…', yazi: 'Okunuyor…' };
+  if (g.hata) return { s: 'g', kisa: '?', yazi: 'Güvenlik bilgisi okunamadı' };
+  const sqlNot = pdNotlar(p).find(n => n && n.sql);
+  const sqlYazi = sqlNot ? 'Yeni SQL yazıldı (' + String(sqlNot.sql) + ')' : '';
+  if (!g.var || g.denetimYok) {
+    return sqlNot ? { s: 'b', kisa: 'Denetle', yazi: sqlYazi + ' · hiç denetlenmedi' }
+      : { s: 'g', kisa: 'Hiç', yazi: 'Henüz denetlenmedi' };
+  }
+  if (g.kilitli) return { s: 'k', kisa: 'Sorun', yazi: (g.acik_kritik + g.acik_yuksek) + ' önemli güvenlik sorunu açık' };
+  const dt = String(g.son_denetim_tarih || '');
+  const dGun = dt ? (() => { const d = new Date(dt); const z = n => String(n).padStart(2, '0'); return d.getFullYear() + '-' + z(d.getMonth() + 1) + '-' + z(d.getDate()); })() : '';
+  if (sqlNot && sqlNot.tarih && (!dGun || String(sqlNot.tarih) > dGun))
+    return { s: 'b', kisa: 'Denetle', yazi: sqlYazi + ' · denetim yapılmalı' };
+  return { s: 'y', kisa: 'Temiz', yazi: 'Son denetim ' + (pdGunUzun(dt) || '') + ' · sorun yok' };
+}
+
+/* Proje sayfasındaki Durum kutusu. */
+function pdKutu(p) {
+  if (!AUTH.yonetici) return '';
+  yedekEslemeYukle();
+  const yer = pjSurumYeri(p);
+  const satir = (ik, ad, d, attr) => `<${attr ? 'button type="button"' : 'div'} class="pd-sat ${d.s}" ${attr || ''}>
+      <span class="pd-ik">${ik}</span><span class="pd-yz"><b>${ad}</b><i>${esc(d.yazi)}</i></span>
+      ${attr ? `<span class="pd-ok">${svg(ICON.chevron, 13)}</span>` : ''}</${attr ? 'button' : 'div'}>`;
+  const guvAttr = sunuculuMu(p) ? `data-eylem="pd-guvenlik" data-id="${p.id}"` : '';
+  return `<div class="yd-baslik2">Durum</div>
+    <div class="pd-kutu">
+      ${satir('🚀', 'Yayın', pdYayin(p), yer && yer.tur === 'firma' ? `data-eylem="surum-detay" data-id="${esc(yer.f.kod)}"` : '')}
+      ${satir('💾', 'Yedekleme', pdYedek(p), sunuculuMu(p) ? 'data-eylem="yedek-detay"' : '')}
+      ${satir('🛡️', 'Güvenlik', pdGuvenlik(p), guvAttr)}
+    </div>`;
+}
+
+/* Projeler kartındaki üç küçük işaret. */
+function pdSerit(p) {
+  if (!AUTH.yonetici) return '';
+  yedekEslemeYukle();
+  const c = (ik, d) => `<span class="${d.s}" title="${esc(d.yazi)}"><i>${ik}</i><u>${esc(d.kisa)}</u></span>`;
+  return `<span class="pd-ser">${c('🚀', pdYayin(p))}${c('💾', pdYedek(p))}${c('🛡️', pdGuvenlik(p))}</span>`;
+}
+
 /* Logo: renk zemini background-image ile (kısa yazım değil) — kısa yazım
    (background:) yüklenen logonun "cover" ayarını eziyordu, logo kendi
    boyunda açılıp kutuda beyaz bir köşe kalıyordu (v0.343.0). */
@@ -8248,6 +8371,7 @@ function pjKart3(p) {
   const gorev = pjAcikGorevler(p.id).length;
   const hata = pjYeniHata(p.id);
   const alt = modulAdi(p) || p.sektor || '';
+  const ser = denemeMi(p) || PROJE_KOVASI.klon.sec(p) ? '' : pdSerit(p);
   return `
     <div class="pj3" data-eylem="proje-ac" data-id="${p.id}" role="button" tabindex="0"
          data-ara="${esc((projeAdi(p) + ' ' + (p.sektor || '') + ' ' + pjAdres(p)).toLocaleLowerCase('tr'))}">
@@ -8262,7 +8386,8 @@ function pjKart3(p) {
         ${alt ? `<small>${esc(alt)}</small>` : ''}
         <span class="pj3-dur ${d.s}"><i></i>${esc(d.y)}</span>
         ${d.ray != null ? `<span class="pj3-ray"><i style="width:${d.ray}%"></i></span>` : ''}
-        <span class="pj3-dip ${hata || gorev ? '' : 'sayisiz'}"><span>${esc(pjSonHareket(p))}</span>
+        ${ser}
+        <span class="pj3-dip ${hata || gorev ? '' : 'sayisiz'} ${ser && !hata && !gorev ? 'pd-gizle' : ''}"><span>${ser ? '' : esc(pjSonHareket(p))}</span>
           <span class="${hata ? 'kir' : ''}">${hata ? '⚠️ ' + hata + ' hata' : gorev ? gorev + ' görev' : ''}</span></span>
       </div>
       ${AUTH.yonetici ? `<button class="pj3-menu" data-eylem="proje-menu" data-id="${p.id}" type="button" aria-label="Proje seçenekleri">
@@ -8426,6 +8551,7 @@ function projeAnaSayfa(p) {
       ${hiz.length ? `<div class="pa-hizlar" style="grid-template-columns:repeat(${hiz.length},1fr)">${hiz.join('')}</div>` : ''}
       ${surumKutu}
       ${hata ? `<a class="pa-hata" href="#/hatalar">⚠️ ${hata} yeni hata bildirimi ›</a>` : ''}
+      ${pdKutu(p)}
 
       <div class="yd-baslik2">Açık görevler</div>
       ${gorevler.length ? gorevler.slice(0, 6).map(g => `
@@ -16406,6 +16532,7 @@ async function eylemCalistir(el) {
   if (e === 'surum-detay') return surumDetayAc(el.dataset.id);
   if (e === 'surum-yenile') return surumTakipYukle(true);
   if (e === 'yedek-detay') return yedekDetayAc();
+  if (e === 'pd-guvenlik') { location.hash = '#/guvenlik/' + el.dataset.id; return; }
   if (e === 'yedek-baslat') return yedekBaslatTikla(el);
   if (e === 'yedek-ayar') return yedekAyarAc();
   if (e === 'yedek-ac-kapa') return yedekAcKapa(el);

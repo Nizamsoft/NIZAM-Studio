@@ -12033,3 +12033,35 @@ button.pa-surum { cursor: pointer; }
 .fm-kk.bos { background: var(--surface-2); border-style: dashed; }
 .fm-kk svg { fill: none; stroke: currentColor; stroke-width: 1.7; }
 .fm-kk .dolgu { display: none; }
+
+/* ---- Proje durumu: Yayın · Yedekleme · Güvenlik (v0.346.0) ---- */
+.pd-kutu { border: 1px solid var(--line-2); border-radius: 12px; overflow: hidden; background: var(--surface); margin-bottom: 4px; }
+.pd-sat { display: flex; align-items: center; gap: 12px; width: 100%; padding: 11px 14px; border: 0; border-top: 1px solid var(--line);
+  background: transparent; font: inherit; color: inherit; text-align: left; }
+.pd-sat:first-child { border-top: 0; }
+button.pd-sat { cursor: pointer; }
+.pd-ik { width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; background: #f2f2f4; }
+.pd-yz { flex: 1; min-width: 0; }
+.pd-yz b { display: block; font-size: 13.5px; color: var(--ink-strong); }
+.pd-yz i { display: block; font-style: normal; font-size: 12.5px; margin-top: 2px; color: var(--ink-soft); overflow-wrap: anywhere; }
+.pd-ok { color: var(--ink-dim); display: flex; }
+.pd-ok svg { fill: none; stroke: currentColor; stroke-width: 2; }
+.pd-sat.y .pd-ik { background: #e8f4ee; } .pd-sat.y .pd-yz i { color: #2f7d5c; }
+.pd-sat.b .pd-ik { background: #fbf1de; } .pd-sat.b .pd-yz i { color: #8a5f10; }
+.pd-sat.k .pd-ik { background: #fdf1f0; } .pd-sat.k .pd-yz i { color: #b4231b; }
+
+.pd-ser { display: flex; gap: 5px; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); }
+.pd-ser > span { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: center; gap: 3px; padding: 5px 2px; border-radius: 8px;
+  background: #f2f2f4; color: var(--ink-soft); font-size: 11px; font-weight: 600; white-space: nowrap; }
+.pd-ser > span > i { font-style: normal; font-size: 11px; }
+.pd-ser > span > u { text-decoration: none; overflow: hidden; text-overflow: ellipsis; }
+.pd-ser > .y { background: #e8f4ee; color: #2f7d5c; }
+.pd-ser > .b { background: #fbf1de; color: #8a5f10; }
+.pd-ser > .k { background: #fdf1f0; color: #b4231b; }
+.pd-ser + .pj3-dip { margin-top: 8px; padding-top: 0; border-top: 0; }
+.pj3-dip.pd-gizle { display: none; }
+@media (max-width: 560px) {
+  .pd-ser { gap: 4px; }
+  .pd-ser > span > u { display: none; }
+  .pd-ser > span > i { font-size: 13px; }
+}

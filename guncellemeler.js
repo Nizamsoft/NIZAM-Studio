@@ -21,6 +21,13 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.346.0', tarih: '2026-10-27',
+    ozet: 'Her projede Yayın, Yedekleme ve Güvenlik durumu',
+    maddeler: [
+      'Proje sayfasında yeni "Durum" kutusu: son yayın, son yedek ve son güvenlik denetimi tek bakışta.',
+      'Projeler kartlarında üç küçük işaret: yeşil sorun yok, sarı bakılmalı, kırmızı sorun.',
+      'Denetimden sonra yeni SQL yazıldıysa "denetim yapılmalı" uyarısı çıkar.',
+    ] },
   { surum: 'v0.345.0', tarih: '2026-10-27',
     ozet: 'Firma bilgileri’nde Kapak görseli',
     maddeler: [
