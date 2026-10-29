@@ -12529,3 +12529,14 @@ button.pd-sat { cursor: pointer; }
 .shz-daha span { font-weight: 500; color: #9a9aa2; font-size: 12px; }
 .shz-daha:hover { background: #f6f6f8; }
 .shz-daha:active { transform: translateY(1px); }
+
+/* ---- Panel zemini: büyük ince petek (v0.355.0 · kullanıcı B1'i seçti) ----
+   Eski fotoğraf katmanı (#zemin-sus) yeniden kullanılıyor: içi boş, yalnız
+   desen. Şimdilik yalnız Panel'de; beğenilirse bütün sayfalara yayılır. */
+#main.susulu #zemin-sus {
+  display: block;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='84' height='72' viewBox='0 0 56 48'%3E%3Cpath d='M0 24L14 0h28l14 24-14 24H14z' fill='none' stroke='%2317171a' stroke-opacity='.07' stroke-width='.8'/%3E%3C/svg%3E") 0 0 / 84px 72px,
+    linear-gradient(180deg, #f9f9fb, #f1f1f4);
+}
+#main.susulu #zemin-sus > * { display: none; }

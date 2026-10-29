@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## v0.355.0
+- Panel zemini (kullanıcı B1'i seçti): `#main.susulu #zemin-sus` yeniden kullanıldı; içi gizli, zemin SVG altıgen
+  (84×72, %7 mürekkep çizgi) + `#f9f9fb → #f1f1f4` degrade. Yalnız Panel'de.
+
 ## v0.354.0
 - Görevler kartı: çizilmiş N yerine `logo.png` filigranı (`.p3-n`, %16, düz; STUDIO yazısı kart dışında).
 - Son Hareketler `.shz-kart` içinde (3D kart). Avatar fotoğraflı (`shAvatar(ad, sinif, kisi)`); iş kaydındaki ad
