@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü
 
+## v0.353.0
+- **Görevler kartı** (onaylı 1+3 karışımı): grafit degrade + 135° ince çizgi, `.p3-n` (logodaki N, %9),
+  sol üstte kırmızı ışık (`.p3-ana::before`). Bekleyen yoksa ikon cam beyaz; uyarıda `p3-kenar-grafit`.
+- **Son Hareketler** (onaylı taslak A): gün başlıklı zaman çizelgesi (`.shz-*`), baş harf avatarı (`shAvatar`,
+  addan sabit gri ton), program çipi (Studio = kırmızı N). 3 sütunlu tablo kalktı.
+- **Kişi seçici**: `.shz-sec` düğmesi → oklu `.shz-pop` (arama, Herkes, kişi başına iş sayısı ve son iş);
+  seçim `SH_KISI`. Eylemler `sh-kisi-ac`, `sh-kisi-sec`. Sınıf adı `sh2` eski bir ekranda kullanıldığı için `shz`.
+
 ## v0.352.0
 - Panel kartları: `.p3-uyari` ikonunda yayılan halka (`p3-halka`), kartta kenar parlaması (`p3-kenar`,
   koyu kartta `p3-kenar-koyu`); basılı/açıkken ve `prefers-reduced-motion`'da durur.

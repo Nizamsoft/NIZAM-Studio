@@ -15538,6 +15538,8 @@ async function eylemCalistir(el) {
   if (e === 'pz-proje-sec') return pzProjeSecAc();
   if (e === 'p3-ac')     return p3Ac(el);
   if (e === 'sh-ac')     return shAc(id);
+  if (e === 'sh-kisi-ac')  return shKisiAc(el);
+  if (e === 'sh-kisi-sec') return shKisiSec(id);
   if (e === 'p3-git')    { p3Kapat(); location.hash = el.dataset.hedef; return; }
   if (e === 'p3-onayla') { p3Kapat(); return gorevDurum(id, 'onaylandi'); }
   if (e === 'pz-proje-ac-kapa') return pzProjeAcKapa(el);
@@ -17822,6 +17824,7 @@ function panelKartlar(projeler) {
 
   const ana = `
     <button type="button" class="p3-kart p3-ana ${v.kontrol.length ? 'p3-uyari' : ''}" data-eylem="p3-ac" data-id="onay" aria-expanded="false">
+      <svg class="p3-n" viewBox="0 0 100 100" aria-hidden="true"><path d="M10 95V5h18l44 62V5h18v90H72L28 33v62z"></path></svg>
       <span class="p3-ik"><svg viewBox="0 0 24 24">${P3_IKON.onay}</svg></span>
       <b class="p3-sayi">${v.kontrol.length}</b>
       <span class="p3-bas">Görevler · ${yon ? 'onayını bekliyor' : 'onayda bekleyen'}</span>
@@ -18169,24 +18172,123 @@ function shSatirlar() {
   return satirlar.sort((x, y) => (y.zaman || '').localeCompare(x.zaman || ''));
 }
 
+/* Seçili kişi (null = Herkes). Sayfa yenilenene kadar kalır. */
+let SH_KISI = null;
+
+function shBasHarf(ad) {
+  const p = String(ad || '?').trim().split(/\s+/);
+  return ((p[0] || '?')[0] + (p.length > 1 ? p[p.length - 1][0] : '')).toLocaleUpperCase('tr');
+}
+/* Avatar tonu addan: aynı kişi her yerde aynı griyle. */
+function shTon(ad) {
+  let h = 0; for (const c of String(ad || '')) h = (h * 31 + c.charCodeAt(0)) | 0;
+  return 'shz-t' + (Math.abs(h) % 3);
+}
+function shAvatar(ad, sinif = '') {
+  return `<span class="shz-av ${shTon(ad)} ${sinif}">${esc(shBasHarf(ad))}</span>`;
+}
+function shGun(iso) {
+  if (!iso) return '';
+  const d = new Date(iso), b = new Date();
+  const g = x => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const fark = Math.round((g(b) - g(d)) / 864e5);
+  if (fark === 0) return 'Bugün';
+  if (fark === 1) return 'Dün';
+  const a = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+  return d.getDate() + ' ' + a[d.getMonth()];
+}
+function shSaat(iso) {
+  if (!iso) return '';
+  const d = new Date(iso), p = n => String(n).padStart(2, '0');
+  return p(d.getHours()) + ':' + p(d.getMinutes());
+}
+/* Kişiler: kayıtlardaki adlardan, iş sayısı ve son işiyle. */
+function shKisiler(hepsi) {
+  const m = new Map();
+  hepsi.forEach(r => {
+    const k = m.get(r.kullanici) || { ad: r.kullanici, sayi: 0, son: '' };
+    k.sayi++; if ((r.zaman || '') > k.son) k.son = r.zaman || '';
+    m.set(r.kullanici, k);
+  });
+  return [...m.values()].sort((x, y) => y.son.localeCompare(x.son));
+}
+
+/* Son Hareketler (v0.353.0 · onaylı taslak A): gün gün zaman çizelgesi.
+   Sağ üstte kişi seçici. */
 function panelAktivite() {
   if (!AUTH.yonetici) return '';
-  SH_SATIRLAR = shSatirlar().slice(0, 15);
-  const bas = `<span class="pz-bas"><b>Son Hareketler</b><u></u></span>`;
-  if (!SH_SATIRLAR.length) return `<div class="pz-bolum">${bas}
+  const hepsi = shSatirlar();
+  const kisiler = shKisiler(hepsi);
+  if (SH_KISI && !kisiler.some(k => k.ad === SH_KISI)) SH_KISI = null;
+  SH_SATIRLAR = (SH_KISI ? hepsi.filter(r => r.kullanici === SH_KISI) : hepsi).slice(0, 15);
+
+  const yigin = kisiler.slice(0, 3).map(k => shAvatar(k.ad, 'kucuk')).join('');
+  const secici = kisiler.length ? `
+    <button type="button" class="shz-sec" data-eylem="sh-kisi-ac" aria-haspopup="listbox">
+      <span class="shz-yigin">${SH_KISI ? shAvatar(SH_KISI, 'kucuk') : yigin}</span>
+      <span class="shz-sec-ad">${esc(SH_KISI || 'Herkes')}</span>
+      <svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"></path></svg>
+    </button>` : '';
+  const bas = `<span class="pz-bas shz-bas"><b>Son Hareketler</b><u></u>${secici}</span>`;
+  if (!SH_SATIRLAR.length) return `<div class="pz-bolum shz">${bas}
     <div class="sh-bos">Henüz kayıt yok. Claude bir işi bitirip gönderdiğinde burada görünecek.</div></div>`;
-  return `<div class="pz-bolum sh">${bas}
-    <div class="sh-tablo" role="table">
-      <div class="sh-sat sh-baslik" role="row"><span>Kullanıcı</span><span>Program</span><span>Yapılan iş</span></div>
-      ${SH_SATIRLAR.map((r, i) => `
-        <div class="sh-sat" role="row" data-eylem="sh-ac" data-id="${i}" tabindex="0">
-          <span class="sh-kim"><b>${esc(r.kullanici)}</b><i>${esc(pzZamanKisa(r.zaman))}</i></span>
-          <span class="sh-prog">${esc(r.program)}</span>
-          <span class="sh-is">${esc(r.is)}</span>
-        </div>`).join('')}
-    </div>
-  </div>`;
+
+  let gun = '', h = '';
+  SH_SATIRLAR.forEach((r, i) => {
+    const g = shGun(r.zaman);
+    if (g !== gun) { gun = g; h += `<div class="shz-gun">${esc(g)}</div>`; }
+    const studio = r.program === 'Studio';
+    h += `<div class="shz-sat" data-eylem="sh-ac" data-id="${i}" role="button" tabindex="0">
+      ${shAvatar(r.kullanici)}
+      <span class="shz-yz">
+        <span class="shz-ust"><b>${esc(r.kullanici)}</b><i>${esc(shSaat(r.zaman))}</i></span>
+        <span class="shz-is">${esc(r.is)}</span>
+        <span class="shz-cip ${studio ? 'st' : ''}"><u>${esc(studio ? 'N' : basHarf(r.program))}</u>${esc(r.program)}</span>
+      </span>
+    </div>`;
+  });
+  return `<div class="pz-bolum shz">${bas}<div class="shz-liste">${h}</div></div>`;
 }
+
+/* Kişi seçici penceresi: arama, Herkes, kişiler (iş sayısı, son iş). */
+function shKisiKapat() { $$('.shz-pop').forEach(x => x.remove()); }
+function shKisiAc(el) {
+  if ($('.shz-pop')) { shKisiKapat(); return; }
+  const kisiler = shKisiler(shSatirlar());
+  const toplam = kisiler.reduce((t, k) => t + k.sayi, 0);
+  const sat = (ad, alt, sayi, avatar) => {
+    const on = (ad === null && !SH_KISI) || ad === SH_KISI;
+    return `<button type="button" class="shz-o ${on ? 'on' : ''}" data-eylem="sh-kisi-sec" data-id="${esc(ad || '')}" data-ara="${esc((ad || 'herkes').toLocaleLowerCase('tr'))}">
+      ${avatar}<span class="shz-o-yz"><b>${esc(ad || 'Herkes')}</b><i>${esc(alt)}</i></span>
+      <span class="shz-say">${sayi}</span>${on ? svg(ICON.tik, 16) : ''}</button>`;
+  };
+  const pop = document.createElement('div');
+  pop.className = 'shz-pop';
+  pop.innerHTML = `<label class="shz-ara"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"></circle><path d="M16 16l4 4"></path></svg><input type="search" placeholder="Kişi ara" autocomplete="off"></label>
+    ${sat(null, 'Bütün ekip', toplam, '<span class="shz-av shz-her">👥</span>')}
+    <div class="shz-cz"></div>
+    ${kisiler.map(k => sat(k.ad, 'Son iş: ' + shGun(k.son).toLocaleLowerCase('tr') + ' ' + shSaat(k.son), k.sayi, shAvatar(k.ad))).join('')}`;
+  const kap = el.closest('.shz');
+  kap.appendChild(pop);
+  pop.style.top = (el.offsetTop + el.offsetHeight + 12) + 'px';
+  pop.style.setProperty('--ok', (el.offsetLeft + el.offsetWidth / 2 - pop.offsetLeft) + 'px');
+  const giris = $('input', pop);
+  giris.addEventListener('input', () => {
+    const q = giris.value.trim().toLocaleLowerCase('tr');
+    $$('.shz-o', pop).forEach(o => { o.style.display = !q || o.dataset.ara.includes(q) ? '' : 'none'; });
+  });
+  requestAnimationFrame(() => pop.classList.add('gor'));
+}
+function shKisiSec(ad) {
+  SH_KISI = ad || null;
+  shKisiKapat();
+  render();
+}
+document.addEventListener('click', e => {
+  if (!$('.shz-pop')) return;
+  if (e.target.closest('.shz-pop') || e.target.closest('.shz-sec')) return;
+  shKisiKapat();
+}, true);
 
 function shAc(i) {
   const r = SH_SATIRLAR[Number(i)];

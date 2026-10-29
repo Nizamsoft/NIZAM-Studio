@@ -21,6 +21,13 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.353.0', tarih: '2026-10-29',
+    ozet: 'Yeni Görevler kartı ve Son Hareketler',
+    maddeler: [
+      'Görevler kartı artık desenli grafit: ince çizgiler, logodaki N ve hafif kırmızı ışık.',
+      'Son Hareketler gün gün akış oldu; kim, ne yaptı, hangi programda tek bakışta.',
+      'Sağ üstteki seçiciyle tek bir kişinin işlerine bakabilirsin.',
+    ] },
   { surum: 'v0.352.0', tarih: '2026-10-29',
     ozet: 'Bakılması gereken kartlar parlıyor',
     maddeler: [
