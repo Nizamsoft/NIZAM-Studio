@@ -13035,3 +13035,28 @@ html.pa-akis .vt-ik.kot::after, html.pa-akis .p3-uyari, html.pa-akis .pa2-dk.uy,
 .gm-bt.a { background: #26262a; color: #fff; box-shadow: 0 5px 0 #000, 0 10px 18px rgba(0, 0, 0, .2); }
 .gm-bt.a:active { transform: translateY(4px); box-shadow: 0 1px 0 #000; }
 .gm-bt:disabled { opacity: .6; }
+
+/* ---- Görev taslağı: kenara al düğmesi ve sağ kenardaki ok (v0.365.0) ---- */
+.gm-x.gm-kenar { margin-left: auto; }
+.gm-x.gm-kenar + .gm-x { margin-left: 0; }
+.gm-kenar svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.gm-bas { gap: 8px; }
+.gm-bas > span:nth-child(2) { margin-right: 4px; }
+.modal-kutu.gm-modal { touch-action: pan-y; will-change: transform; }
+.modal-kutu.gm-modal.gm-geri { animation: gm-geri .38s cubic-bezier(.32, .72, 0, 1) both; }
+@keyframes gm-geri { from { transform: translate3d(110%, 0, 0); opacity: .3; } to { transform: none; opacity: 1; } }
+#gm-taslak {
+  position: fixed; right: 0; top: 46%; z-index: 590; width: 34px; height: 58px; padding: 0; border: 0; cursor: pointer;
+  border-radius: 14px 0 0 14px; display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(155deg, #f2564c, #c9241b);
+  box-shadow: -4px 6px 18px rgba(229, 52, 42, .35), inset 0 1px 0 rgba(255, 255, 255, .3);
+  animation: gm-dug-gir .3s cubic-bezier(.32, .72, 0, 1) both; -webkit-tap-highlight-color: transparent;
+}
+#gm-taslak:active { width: 40px; }
+#gm-taslak svg { width: 20px; height: 20px; fill: none; stroke: #fff; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+#gm-taslak em { position: absolute; top: 6px; left: 6px; width: 8px; height: 8px; border-radius: 4px; background: #fff; }
+@keyframes gm-dug-gir { from { transform: translateX(100%); } to { transform: none; } }
+
+/* Vitrin: dar kartlarda rozet logonun üstüne binmesin. */
+.vt-pos.kar .vt-rz, .vt-pos.yakin .vt-rz { right: 32px; font-size: 8px; padding: 3px 5px; letter-spacing: .06em; }
+.vt-pos.kar .vt-canli { right: 32px; }

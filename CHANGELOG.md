@@ -1,5 +1,12 @@
 # Değişiklik Günlüğü
 
+## v0.365.0
+- Görev taslağı: `GM_TASLAK` (proje, başlık, metin, bitiş, kişi, dosyalar, düzenlenen görev). Pencere ⇥ (`data-gvr=kenar`)
+  ya da sağa kaydırma (>90px, yatay hareket) ile kenara alınır; body'de `#gm-taslak` kırmızı ok düğmesi. Basınca
+  `gmTaslakAc` → `gorevVerAc({ taslak })`, `.gm-geri` sağdan giriş. Taslak varken + yeni pencere yerine taslağı açar.
+  Gönderince / Vazgeç / ✕ ile silinir.
+- Vitrin: dar kartlarda `.vt-rz` ve `.vt-canli` daha içeride ve küçük (logoya biniyordu).
+
 ## v0.364.0
 - **Görevler ekranı** (onaylı taslak): `gorevlerEkrani` — `GV_SEKME` (ben/ekip, `.pjs` kayan geçiş, yalnız yönetici;
   geliştirici yalnız Görevlerim), `GV_SUZ` (açık/kontrol/bitti), `gvGrup` (Gecikenler, Bugün, Bu hafta, Daha sonra,

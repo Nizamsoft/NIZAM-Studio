@@ -14028,7 +14028,34 @@ function gvSekmeSec(k) {
 /* Aynı pencere iki iş görüyor: yeni görev vermek ve var olanı düzenlemek.
    `duzenle` doluysa alanlar o görevle doluyor ve Gönder yerine Kaydet
    çıkıyor — yanlış yazılan tarihi düzeltmek için ayrı bir ekran gereksizdi. */
+/* ---------- Görev taslağı: kenara al, sonra devam et (v0.365.0) ----------
+   Pencere sağa kaydırılınca ya da ⇥ ile kenara alınınca yazılanlar bellekte
+   tutulur, sağ kenarda kırmızı oklu bir düğme kalır. Düğme ekran
+   değişince silinmesin diye #view'ün dışında, body'de duruyor. */
+let GM_TASLAK = null;
+function gmDugmeGoster() {
+  if (!GM_TASLAK || $('#gm-taslak')) return;
+  const b = document.createElement('button');
+  b.id = 'gm-taslak'; b.type = 'button';
+  b.setAttribute('aria-label', 'Yarım kalan görevi aç');
+  b.title = GM_TASLAK.baslik ? 'Taslak: ' + GM_TASLAK.baslik : 'Yarım kalan görev';
+  b.innerHTML = '<svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg><em></em>';
+  b.addEventListener('click', gmTaslakAc);
+  document.body.appendChild(b);
+}
+function gmDugmeKaldir() { const b = $('#gm-taslak'); if (b) b.remove(); }
+function gmTaslakAc() {
+  const t = GM_TASLAK; if (!t) return;
+  gorevVerAc('', null, { taslak: t });
+}
+
 function gorevVerAc(secili = '', duzenle = null, on = {}) {
+  /* Kenara alınmış bir taslak varsa yeni pencere yerine o açılır:
+     yazılanlar kaybolmasın (v0.365.0). */
+  if (!on.taslak && GM_TASLAK) return gmTaslakAc();
+  const tas = on.taslak || null;
+  if (tas) { secili = tas.kisi; duzenle = tas.duzenle; on = Object.assign({}, tas.on, { taslak: tas }); }
+  gmDugmeKaldir();
   modalHepsiniKapat();
   const ben = AUTH.user ? AUTH.user.id : '';
   const kisiler = (DB.kisilerHepsi || DB.kisiler || []).filter(k => k.aktif !== false);
@@ -14038,9 +14065,9 @@ function gorevVerAc(secili = '', duzenle = null, on = {}) {
   /* v0.364.0 · onaylı taslak: ortada açılan pencere, numaralı adımlar —
      1 Proje (arama kutulu seçici, Projesiz ve Nizam Studio da var),
      2 Başlık, 3 Görev, 4 Bitiş tarihi (hızlı düğmeler), 5 Kime. */
-  const ilkKisi = (kisiler.find(k => k.id === (duzenle ? duzenle.atanan : secili))
+  const ilkKisi = (kisiler.find(k => k.id === (tas ? tas.kisi : duzenle ? duzenle.atanan : secili))
     || kisiler.find(k => k.id === ben) || kisiler[0]).id;
-  const ilkSecim = duzenle
+  const ilkSecim = tas ? tas.secim : duzenle
     ? (duzenle.proje_id ? duzenle.proje_id : (duzenle.konu === 'studio' ? ':studio' : ':genel'))
     : (on.proje || '');
 
@@ -14077,6 +14104,8 @@ function gorevVerAc(secili = '', duzenle = null, on = {}) {
     <div class="gm-bas">
       <span class="gm-bas-ik">${duzenle ? svg(ICON.kalem, 20) : '+'}</span>
       <span><b>${duzenle ? 'Görevi düzenle' : 'Yeni görev'}</b><i>${duzenle ? 'Değiştir, kaydet' : '5 adımda hazır'}</i></span>
+      <button type="button" class="gm-x gm-kenar" data-gvr="kenar" aria-label="Kenara al" title="Kenara al — Studio'ya bakıp sonra devam et">
+        <svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6M19 5v14"/></svg></button>
       <button type="button" class="gm-x" data-gvr="iptal" aria-label="Kapat">✕</button>
     </div>
     <div class="gm-govde">
@@ -14087,11 +14116,11 @@ function gorevVerAc(secili = '', duzenle = null, on = {}) {
           <div class="gm-ac-liste">${gmSecenek(':genel')}${gmSecenek(':studio')}<div class="gm-cz"></div>${grupla}</div>
         </div></div>`)}
       ${adim(2, 'Başlık', `<input class="gm-inp" type="text" id="gvr-baslik" maxlength="90" autocomplete="off"
-          value="${esc(duzenle ? duzenle.baslik || '' : on.baslik || '')}" placeholder="Görev tek cümlede ne?">`)}
-      ${adim(3, 'Görev', `<textarea class="gm-inp gm-ta" id="gvr-metin" rows="4" placeholder="Ne yapılacak? Birkaç cümle yeter…">${esc(duzenle ? duzenle.aciklama || '' : on.metin || '')}</textarea>`)}
+          value="${esc(tas ? tas.baslik : duzenle ? duzenle.baslik || '' : on.baslik || '')}" placeholder="Görev tek cümlede ne?">`)}
+      ${adim(3, 'Görev', `<textarea class="gm-inp gm-ta" id="gvr-metin" rows="4" placeholder="Ne yapılacak? Birkaç cümle yeter…">${esc(tas ? tas.metin : duzenle ? duzenle.aciklama || '' : on.metin || '')}</textarea>`)}
       ${adim(4, 'Bitiş tarihi', `<div class="gm-ch">
           ${hizli.map(([ad, t]) => `<button type="button" data-gm-t="${t}">${ad}</button>`).join('')}
-          <label class="gm-tarih"><span>📅 <b id="gm-t-yazi">Tarih seç</b></span><input type="date" id="gvr-bitis" value="${esc(duzenle ? duzenle.bitis || '' : '')}"></label>
+          <label class="gm-tarih"><span>📅 <b id="gm-t-yazi">Tarih seç</b></span><input type="date" id="gvr-bitis" value="${esc(tas ? tas.bitis || '' : duzenle ? duzenle.bitis || '' : '')}"></label>
         </div>`)}
       ${adim(5, 'Kime', `<div class="gm-kisiler">${kisiler.map(k => `
           <button type="button" class="gm-k ${k.id === ilkKisi ? 'on' : ''}" data-gvr-kisi="${k.id}">
@@ -14104,7 +14133,10 @@ function gorevVerAc(secili = '', duzenle = null, on = {}) {
       <button class="gm-bt a" data-gvr="gonder" type="button">${duzenle ? 'Kaydet' : 'Görevi oluştur'}</button>
     </div>`, kutu => {
     let kisi = ilkKisi, secim = ilkSecim;
-    const dosyalar = [], onizleme = new Map();
+    const dosyalar = tas ? tas.dosyalar.slice() : [], onizleme = new Map();
+    const resimMi0 = d => /^image\//.test((d && d.type) || '');
+    dosyalar.forEach(d => { if (resimMi0(d)) onizleme.set(d, URL.createObjectURL(d)); });
+    if (tas) kutu.classList.add('gm-geri');
     const resimMi = d => /^image\//.test((d && d.type) || '');
     const tarihGoster = () => {
       const v = $('#gvr-bitis', kutu).value;
@@ -14170,7 +14202,41 @@ function gorevVerAc(secili = '', duzenle = null, on = {}) {
       kisi = b.dataset.gvrKisi;
       $$('[data-gvr-kisi]', kutu).forEach(x => x.classList.toggle('on', x === b));
     }));
-    $$('[data-gvr="iptal"]', kutu).forEach(b => b.addEventListener('click', modalKapat));
+    $$('[data-gvr="iptal"]', kutu).forEach(b => b.addEventListener('click', () => { GM_TASLAK = null; modalKapat(); }));
+
+    /* Kenara al: düğmeyle ya da pencereyi sağa kaydırarak. */
+    const kenaraAl = () => {
+      GM_TASLAK = { secim, kisi, duzenle, on: { proje: on.proje },
+        baslik: $('#gvr-baslik', kutu).value, metin: $('#gvr-metin', kutu).value,
+        bitis: $('#gvr-bitis', kutu).value, dosyalar: dosyalar.slice() };
+      kutu.style.transition = 'transform .28s cubic-bezier(.32,.72,0,1), opacity .28s';
+      kutu.style.transform = 'translate3d(110%,0,0)'; kutu.style.opacity = '0';
+      const perde = kutu.parentElement; if (perde) perde.style.transition = 'opacity .28s', perde.style.opacity = '0';
+      setTimeout(() => { modalKapat(); gmDugmeGoster(); }, 260);
+    };
+    $('[data-gvr="kenar"]', kutu).addEventListener('click', kenaraAl);
+    let x0 = null, y0 = 0, dx = 0, yatay = null;
+    kutu.addEventListener('touchstart', e => {
+      if (e.target.closest('input, textarea, .gm-kisiler, .gm-ac-liste')) { x0 = null; return; }
+      x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; dx = 0; yatay = null;
+    }, { passive: true });
+    kutu.addEventListener('touchmove', e => {
+      if (x0 === null) return;
+      const ddx = e.touches[0].clientX - x0, ddy = e.touches[0].clientY - y0;
+      if (yatay === null && (Math.abs(ddx) > 8 || Math.abs(ddy) > 8)) yatay = Math.abs(ddx) > Math.abs(ddy) * 1.3;
+      if (!yatay) return;
+      dx = Math.max(0, ddx);
+      kutu.style.transition = 'none';
+      kutu.style.transform = `translate3d(${dx}px,0,0) rotate(${dx / 60}deg)`;
+      kutu.style.opacity = String(Math.max(.4, 1 - dx / 500));
+    }, { passive: true });
+    kutu.addEventListener('touchend', () => {
+      if (x0 === null || !yatay) { x0 = null; return; }
+      x0 = null;
+      if (dx > 90) return kenaraAl();
+      kutu.style.transition = 'transform .25s cubic-bezier(.32,.72,0,1), opacity .25s';
+      kutu.style.transform = ''; kutu.style.opacity = '';
+    });
     $('[data-gvr="gonder"]', kutu).addEventListener('click', async () => {
       const baslik = $('#gvr-baslik', kutu).value.trim();
       const metin  = $('#gvr-metin', kutu).value.trim();
@@ -14189,11 +14255,13 @@ function gorevVerAc(secili = '', duzenle = null, on = {}) {
           try { await DB.gorevEkYukle(id, d); }
           catch (h) { toast(d.name + ' yüklenemedi: ' + h.message, 'uyari'); }
         }
-        modalKapat(); sayaclariYaz(); render();
+        GM_TASLAK = null; modalKapat(); sayaclariYaz(); render();
         toast(duzenle ? 'Görev güncellendi.' : (kisi === ben ? 'Görev oluşturuldu.' : DB.kisiAdi(kisi) + ' kişisine görev verildi.'), 'basari');
       } catch (h) { toast(h.message, 'hata'); dugme.disabled = false; }
     });
-    if (!ilkSecim) setTimeout(() => cb.click(), 120);
+    if (dosyalar.length) ekleriCiz();
+    if (tas) {}
+    else if (!ilkSecim) setTimeout(() => cb.click(), 120);
     else setTimeout(() => $('#gvr-baslik', kutu).focus(), 60);
   }, 'gm-modal');
 }

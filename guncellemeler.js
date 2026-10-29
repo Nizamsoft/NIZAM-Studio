@@ -21,6 +21,13 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.365.0', tarih: '2026-10-29',
+    ozet: 'Görev yazarken kenara al',
+    maddeler: [
+      'Yeni görev penceresini sağa kaydır ya da ⇥ düğmesine bas: pencere kenara çekilir, Studio\'da gezebilirsin.',
+      'Sağ kenardaki kırmızı ok düğmesine basınca pencere yazdıklarınla geri açılır.',
+      'Vitrin\'deki "Yakında" rozeti artık logonun üstüne binmiyor.',
+    ] },
   { surum: 'v0.364.0', tarih: '2026-10-29',
     ozet: 'Yeni Görevler sayfası ve görev penceresi',
     maddeler: [
