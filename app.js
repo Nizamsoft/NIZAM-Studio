@@ -8747,7 +8747,7 @@ function projeAnaSayfa(p) {
 
   const ETIKET = { genel: ['', 'Herkese'], ozel: ['', 'Sadece bu firma'], esitleme: ['g', 'Ana programdan geldi'] };
   return `
-    <div class="pa2">
+    <div class="pa2 ${PA_GECISTE ? 'gir' : ''}">
       <div class="pa2-hero" style="background-image:${vtZemin(p, '75% 20%')}">
         ${gor ? `<img class="vt-gor" src="${esc(gor)}" alt="" loading="lazy" decoding="async">` : ''}
         ${pjLogo(p, 'pa2-lo')}
@@ -9686,6 +9686,46 @@ function connRow(k, v, ok) {
    Sekmelerde tek çizim var; burada da tek olsun. */
 let CIZILEN_ADRES = null;
 
+/* ---------- Vitrin ⇄ Proje sayfası geçişi (v0.363.0) ----------
+   App Store kartı gibi: basılan afiş büyüyüp proje sayfasının afişine
+   dönüşür, logo ve ad kendi yerine akar, alttaki kartlar sırayla yükselir.
+   Tarayıcının sayfa geçişi (startViewTransition) yalnız adlandırılmış üç
+   parça için kullanılıyor: kökün görüntüsü alınmıyor (CSS'te :root
+   view-transition-name: none), yani tam ekran görüntü maliyeti yok.
+   Desteklemeyen tarayıcıda ve "hareketi azalt"ta düz geçiş. */
+let PA_GECISTE = false;
+let VT_KAYDIRMA = 0;
+function vtGecisVar() {
+  return typeof document.startViewTransition === 'function'
+    && !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+}
+function paAdlandir(kart, ac) {
+  if (!kart) return;
+  const ad = kart.querySelector('.vt-pos-alt b, .vt-hero-yz h2');
+  const lo = kart.querySelector('.pj2-logo');
+  kart.style.viewTransitionName = ac ? 'pa-hero' : '';
+  if (ad) ad.style.viewTransitionName = ac ? 'pa-ad' : '';
+  if (lo) lo.style.viewTransitionName = ac ? 'pa-logo' : '';
+}
+function paIleriAk(id, kart) {
+  VT_KAYDIRMA = $('#view') ? $('#view').scrollTop : 0;
+  paAdlandir(kart, true);
+  PA_GECISTE = true;
+  const t = document.startViewTransition(() => gitVeCiz('#/projeler/' + id));
+  t.finished.finally(() => { PA_GECISTE = false; $$('.pa2.gir').forEach(x => x.classList.remove('gir')); });
+}
+function paGeriAk() {
+  const id = (/#\/projeler\/([^/]+)/.exec(ONCEKI_ADRES || '') || [])[1] || '';
+  PA_GECISTE = true;
+  const t = document.startViewTransition(() => {
+    renderCiz();
+    const v = $('#view'); if (v) v.scrollTop = VT_KAYDIRMA;
+    const kart = id ? $(`.vt-pos[data-id="${CSS.escape(id)}"]`) : null;
+    paAdlandir(kart, true);
+  });
+  t.finished.finally(() => { PA_GECISTE = false; $$('.vt-pos').forEach(k => paAdlandir(k, false)); });
+}
+
 function gitVeCiz(hash) {
   if (location.hash === hash) { render(); return; }
   CIZILEN_ADRES = hash;
@@ -9694,6 +9734,15 @@ function gitVeCiz(hash) {
 }
 
 function render() {
+  /* Proje sayfasından vitrine geri dönüş: afiş küçülerek yerine oturur. */
+  if (!PA_GECISTE && $('.pa2-hero') && vtGecisVar()) {
+    const r = rota();
+    if (r.key === 'projeler' && !r.id && PJ_SEKME === 'vitrin') return paGeriAk();
+  }
+  return renderCiz();
+}
+
+function renderCiz() {
   /* Kaydırma yeri: akış içindeki bir seçim sonrası liste başa dönmesin. */
   const kaydiran = $('.dk-govde, .kunye-kaydir, .ozet-kaydir, .palet-kaydir');
   const kaydirmaYeri = kaydiran ? kaydiran.scrollTop : null;
@@ -9823,7 +9872,7 @@ function render() {
 
   view.classList.remove('swap');
 
-  if (gecis) {
+  if (gecis && !PA_GECISTE) {
     void view.offsetWidth;
     view.classList.add('swap');
     sayaclariCanlandir(view);
@@ -15754,7 +15803,11 @@ async function eylemCalistir(el) {
   if (e === 'sihirbaz')  return sihirbaziAc();
   if (e === 'tazele')    return veriTazele();
   if (e === 'projelere') { location.hash = '#/projeler'; return; }
-  if (e === 'proje-ac')  { location.hash = '#/projeler/' + id; return; }
+  if (e === 'proje-ac')  {
+    const kart = el.closest('.vt-pos, .vt-sl');
+    if (kart && vtGecisVar()) return paIleriAk(id, kart);
+    location.hash = '#/projeler/' + id; return;
+  }
   if (e === 'pz-proje-sec') return pzProjeSecAc();
   if (e === 'p3-ac')     return p3Ac(el);
   if (e === 'pj-sekme')  return pjSekmeSec(id);

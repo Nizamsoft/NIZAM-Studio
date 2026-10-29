@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.363.0
+- Vitrin ⇄ Proje sayfası geçişi: `paIleriAk` / `paGeriAk` (`document.startViewTransition`), adlandırılmış parçalar
+  `pa-hero`, `pa-logo`, `pa-ad`; `:root { view-transition-name: none }` ile tam ekran görüntü alınmıyor.
+  Giriş sırasında `.pa2.gir` kartları sırayla yükselir, `.view.swap` atlanır. `render` → `renderCiz` ayrıldı;
+  geri dönüşte vitrin kaydırma yeri (`VT_KAYDIRMA`) korunur. Desteklenmeyen tarayıcıda / hareketi azalt'ta düz geçiş.
+
 ## v0.362.0
 - **Proje Ana Sayfası** (onaylı taslak): `projeAnaSayfa` yeni `.pa2` düzeni — `pa2-hero` afiş (görsel/`vtZemin`, logo,
   Canlı, grup · ana/kardeş etiketi, `vtIkonlar`), `pa2-hiz` kabarık düğmeler, `pa2-surum` şeridi (güncel yeşil,

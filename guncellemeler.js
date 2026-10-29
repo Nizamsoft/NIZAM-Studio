@@ -21,6 +21,12 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.363.0', tarih: '2026-10-29',
+    ozet: 'Vitrinden projeye akıcı geçiş',
+    maddeler: [
+      'Vitrinde bir afişe basınca afiş büyüyerek proje sayfasına dönüşüyor, alttaki kartlar sırayla yükseliyor.',
+      'Geri basınca afiş küçülüp vitrindeki yerine oturuyor.',
+    ] },
   { surum: 'v0.362.0', tarih: '2026-10-29',
     ozet: 'Yeni proje sayfası',
     maddeler: [

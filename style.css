@@ -12885,3 +12885,23 @@ button.pa2-st { cursor: pointer; }
 .pa2-asama-alt b { color: #26262a; }
 @media (min-width: 901px) { .pa2-hero { height: 320px; } .pa2-hero-yz h1 { font-size: 30px; } }
 .pa2-st p, .pa2-hero-yz p { margin: 0; } .pa2-st .pa2-c { margin-bottom: 4px; }
+
+/* ---- Vitrin ⇄ Proje sayfası geçişi (v0.363.0) ---- */
+:root { view-transition-name: none; }
+.pa2-hero { view-transition-name: pa-hero; }
+.pa2-lo.pj2-logo { view-transition-name: pa-logo; }
+.pa2-hero-yz h1 { view-transition-name: pa-ad; }
+::view-transition-group(pa-hero), ::view-transition-group(pa-logo), ::view-transition-group(pa-ad) {
+  animation-duration: .5s; animation-timing-function: cubic-bezier(.2, .85, .2, 1);
+}
+::view-transition-old(pa-hero), ::view-transition-new(pa-hero) {
+  width: 100%; height: 100%; object-fit: cover; overflow: hidden;
+}
+::view-transition-group(pa-hero) { border-radius: 18px; overflow: hidden; }
+.pa2.gir > :not(.pa2-hero) { animation: pa2-yuksel .45s cubic-bezier(.2, .8, .2, 1) both; }
+.pa2.gir > :nth-child(2) { animation-delay: .16s; }
+.pa2.gir > :nth-child(3) { animation-delay: .20s; }
+.pa2.gir > :nth-child(4) { animation-delay: .24s; }
+.pa2.gir > :nth-child(5) { animation-delay: .28s; }
+.pa2.gir > :nth-child(n+6) { animation-delay: .32s; }
+@keyframes pa2-yuksel { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: none; } }
