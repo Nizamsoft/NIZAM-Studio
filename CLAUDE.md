@@ -94,7 +94,7 @@ Editoryal düzen: serif başlık, ince çizgi, gölgesiz kart.
 
 | Rol | Renk |
 |---|---|
-| Zemin | `#ffffff` — krem/kağıt değil, düz beyaz |
+| Zemin | Çok açık gri `#f9f9fb → #f1f1f4` + ince petek deseni (kullanıcı 2026-10-29 seçti; `#zemin-sus`). Krem/kağıt değil |
 | Kart | `#ffffff` (zeminden çizgiyle ayrılır) |
 | Gri yüzey (ikon kutusu, yuva) | `#f2f2f4` · `#f6f6f8` |
 | Çizgi | `#ededf0` → `#d6d6db` |

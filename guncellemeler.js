@@ -21,6 +21,9 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.358.0', tarih: '2026-10-29',
+    ozet: 'Petek zemin her sayfada',
+    maddeler: ['Panel\'deki ince petek desenli zemin artık bütün sayfalarda.'] },
   { surum: 'v0.357.0', tarih: '2026-10-29',
     ozet: 'Son Hareketler satırları kartlı',
     maddeler: [

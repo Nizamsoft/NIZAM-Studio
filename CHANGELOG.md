@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## v0.358.0
+- Petek zemin bütün sayfalarda: `#main #zemin-sus` her rotada görünür (`z-index: -1`, Panel'de 0). CLAUDE.md
+  tasarım tablosunda Zemin satırı güncellendi.
+
 ## v0.357.0
 - Son Hareketler satırları (R1): her `.shz-sat` çerçeveli küçük kart, sağdan sönen 10px nokta (`::after` degrade),
   zaman çizgisi kapalı. `:hover`/`:active` renk değişimi ve dokunma vurgusu kaldırıldı (mobil kaydırma).

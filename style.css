@@ -12570,3 +12570,15 @@ button.pd-sat { cursor: pointer; }
 .shz-kart .shz-sat:hover, .shz-kart .shz-sat:active {
   background: radial-gradient(circle, rgba(23, 23, 26, .09) 1px, transparent 1.3px) 0 0 / 10px 10px, #fff;
 }
+
+/* ---- Petek zemin bütün sayfalarda (v0.358.0 · kullanıcı istedi) ----
+   Panel'deki desen her sayfaya yayıldı. z-index -1: sayfa içeriği kendi
+   katmanında kalsın, alttaki sabit düğmeler alt menünün üstüne çıkabilsin. */
+#main #zemin-sus {
+  display: block; position: absolute; inset: 0; z-index: -1; pointer-events: none; overflow: hidden;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='84' height='72' viewBox='0 0 56 48'%3E%3Cpath d='M0 24L14 0h28l14 24-14 24H14z' fill='none' stroke='%2317171a' stroke-opacity='.07' stroke-width='.8'/%3E%3C/svg%3E") 0 0 / 84px 72px,
+    linear-gradient(180deg, #f9f9fb, #f1f1f4);
+}
+#main #zemin-sus > * { display: none; }
+#main.susulu #zemin-sus { z-index: 0; }
