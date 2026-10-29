@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## v0.357.0
+- Son Hareketler satırları (R1): her `.shz-sat` çerçeveli küçük kart, sağdan sönen 10px nokta (`::after` degrade),
+  zaman çizgisi kapalı. `:hover`/`:active` renk değişimi ve dokunma vurgusu kaldırıldı (mobil kaydırma).
+
 ## v0.356.0
 - Küçük panel kartları (K2): 12px nokta ızgarası + `::after` beyaz degrade ile sağ üstten sönme; içerik `z-index: 1`.
 

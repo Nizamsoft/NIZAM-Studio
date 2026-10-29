@@ -12552,3 +12552,21 @@ button.pd-sat { cursor: pointer; }
   background: linear-gradient(200deg, rgba(255, 255, 255, 0) 0%, #fff 55%);
 }
 .p3-kart:not(.p3-ana) > * { position: relative; z-index: 1; }
+
+/* ---- Son Hareketler: her satır kendi küçük kartında (v0.357.0 · R1) ----
+   Sağ köşede sönen nokta deseni. Dokununca/üstüne gelince renk değişmez:
+   telefonda kaydırırken parmak değince satır kararıyordu. */
+.shz-kart .shz-sat {
+  margin: 0 0 10px; padding: 12px;
+  border: 1px solid #ededf0; border-radius: 12px; isolation: isolate;
+  background: radial-gradient(circle, rgba(23, 23, 26, .09) 1px, transparent 1.3px) 0 0 / 10px 10px, #fff;
+  -webkit-tap-highlight-color: transparent;
+}
+.shz-kart .shz-sat::after {
+  content: ''; position: absolute; inset: 0; border-radius: inherit; z-index: -1; pointer-events: none;
+  background: linear-gradient(240deg, rgba(255, 255, 255, 0) 0%, #fff 38%);
+}
+.shz-kart .shz-sat::before { display: none; }
+.shz-kart .shz-sat:hover, .shz-kart .shz-sat:active {
+  background: radial-gradient(circle, rgba(23, 23, 26, .09) 1px, transparent 1.3px) 0 0 / 10px 10px, #fff;
+}

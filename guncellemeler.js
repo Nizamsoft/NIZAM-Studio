@@ -21,6 +21,12 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.357.0', tarih: '2026-10-29',
+    ozet: 'Son Hareketler satırları kartlı',
+    maddeler: [
+      'Son Hareketler\'de her iş kendi küçük kartında, köşesinde hafif nokta deseniyle.',
+      'Kaydırırken satıra parmak değince artık renk değişmiyor.',
+    ] },
   { surum: 'v0.356.0', tarih: '2026-10-29',
     ozet: 'Panel kartlarına hafif desen',
     maddeler: ['Küçük Panel kartlarının sağ üst köşesinde, aşağı doğru sönen ince bir nokta deseni var.'] },
