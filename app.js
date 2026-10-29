@@ -13973,7 +13973,7 @@ function gvGrup(g) {
   if (gun <= 7) return 'Bu hafta';
   return s ? 'Daha sonra' : 'Tarihsiz';
 }
-function gvTarih(g) {
+function gv2Tarih(g) {
   if (!g.bitis) return { y: '', k: false };
   const s = gorevSure(g.bitis);
   if (s && s.sinif === 'gecti') return { y: s.yazi, k: true };
@@ -13983,7 +13983,7 @@ function gvTarih(g) {
 function gvKart(g, ekip) {
   const d = gvDurum(g);
   const p = g.proje_id ? DB.proje(g.proje_id) : null;
-  const t = gvTarih(g);
+  const t = gv2Tarih(g);
   const kisi = DB.kisi(g.atanan);
   const etiket = p ? `<span class="gv2-pc"><u>${esc(basHarf(p.firma || projeAdi(p)))}</u>${esc(basHarfleriBuyuk(p.firma || projeAdi(p)))}</span>`
     : `<span class="gv2-pc"><u>${g.konu === 'studio' ? 'N' : '—'}</u>${g.konu === 'studio' ? 'Nizam Studio' : 'Genel'}</span>`;

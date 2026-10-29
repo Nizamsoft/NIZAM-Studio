@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.368.1
+- v0.364.0'daki yeni `gvTarih(g)` eski `gvTarih(iso)`'yu eziyordu (görev penceresi, prompt, liste satırında "[object Object]"). Yenisi `gv2Tarih`.
+
 ## v0.368.0
 - Yazışma üst çubuğunda görüntülü arama yerine `.yz-gv` (açık görev sayısı rozeti) → `gvKisiGoster`: Görevler
   Ekip sekmesi + `GV_KISI` (geliştiricide Görevlerim + veren o kişi). `GV_DON` eski filtreleri saklar,
