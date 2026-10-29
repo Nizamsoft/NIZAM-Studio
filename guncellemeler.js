@@ -21,6 +21,9 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.368.0', tarih: '2026-10-29',
+    ozet: 'Sohbetten kişinin görevlerine bak',
+    maddeler: ['Yazışmanın üstünde görüntülü arama yerine görev düğmesi: o kişinin açık görevleri süzülmüş açılır, geri okla sohbete dönersin.'] },
   { surum: 'v0.367.0', tarih: '2026-10-29',
     ozet: 'Sohbet yeni tarzda',
     maddeler: [

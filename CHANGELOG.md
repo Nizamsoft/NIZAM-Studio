@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## v0.368.0
+- Yazışma üst çubuğunda görüntülü arama yerine `.yz-gv` (açık görev sayısı rozeti) → `gvKisiGoster`: Görevler
+  Ekip sekmesi + `GV_KISI` (geliştiricide Görevlerim + veren o kişi). `GV_DON` eski filtreleri saklar,
+  `renderCiz` başında Görevler dışına çıkınca geri yükler; geri ok geçmişle aynı yazışmaya döner.
+
 ## v0.367.0
 - Sohbet (onaylı taslak, görev kısmı hariç): listede `.so-cv` çevrimiçi sırası, `.so-gb` başlıklar, `.sh2-liste .sh2`
   kabarık noktalı kartlar. Yazışma: petek zemin, üst çubuk deseni, kabarık arama düğmeleri, benim balonum grafit

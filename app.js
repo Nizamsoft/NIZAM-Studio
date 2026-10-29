@@ -9710,6 +9710,7 @@ function render() {
 
 function renderCiz() {
   /* Kaydırma yeri: akış içindeki bir seçim sonrası liste başa dönmesin. */
+  gvDonusKontrol(rota().key);
   const kaydiran = $('.dk-govde, .kunye-kaydir, .ozet-kaydir, .palet-kaydir');
   const kaydirmaYeri = kaydiran ? kaydiran.scrollTop : null;
 
@@ -11660,7 +11661,14 @@ function yazismaEkrani(kisiId) {
           <i class="${acik ? 'acik' : ''}">${acik ? '<u></u>' : ''}${alt}</i>
         </span>
         ${ikon('Sesli ara', '<path d="M6.5 3.5h3l1.5 4-2 1.5a12 12 0 0 0 6 6l1.5-2 4 1.5v3a2 2 0 0 1-2.2 2C11.8 22.2 1.8 12.2 1.3 5.7A2 2 0 0 1 3.3 3.5z"></path>')}
-        ${ikon('Görüntülü ara', '<rect x="2.5" y="6" width="13" height="12" rx="3"></rect><path d="M15.5 11l6-3.5v9l-6-3.5z"></path>')}
+        ${marka ? '' : (() => {
+          /* v0.368.0: görüntülü arama yerine bu kişinin açık görevleri. */
+          const ben = AUTH.user ? AUTH.user.id : '';
+          const n = (DB.gorevler || []).filter(g => g.durum !== 'onaylandi' && DB.gorevGecerli(g)
+            && (AUTH.yonetici ? g.atanan === kisiId : g.atanan === ben && g.olusturan === kisiId)).length;
+          return `<button class="yz-ik yz-gv" type="button" data-eylem="sohbet-gorevler" data-id="${esc(kisiId)}" aria-label="Görevleri">
+            <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3.5"></rect><path d="M8.5 12.2l2.4 2.4 4.6-4.8"></path></svg>${n ? `<em>${n > 99 ? '99+' : n}</em>` : ''}</button>`;
+        })()}
         ${ikon('Seçenekler', '<circle cx="12" cy="5" r="1.4"></circle><circle cx="12" cy="12" r="1.4"></circle><circle cx="12" cy="19" r="1.4"></circle>')}
       </div>
 
@@ -13947,7 +13955,7 @@ let GV_SUZ = 'acik';
 /* Filtre (v0.366.0): durum + personel (yalnız Ekip) + firma. */
 let GV_KISI = null, GV_PROJE = null;
 function gvFiltreSay() {
-  return (GV_SUZ !== 'acik' ? 1 : 0) + (GV_SEKME === 'ekip' && GV_KISI ? 1 : 0) + (GV_PROJE ? 1 : 0);
+  return (GV_SUZ !== 'acik' ? 1 : 0) + (GV_KISI ? 1 : 0) + (GV_PROJE ? 1 : 0);
 }
 
 function gvDurum(g) {
@@ -14000,7 +14008,7 @@ function gorevlerEkrani() {
     kontrol: g => g.durum === 'bitirdi',
     bitti:   g => g.durum === 'onaylandi',
   }[GV_SUZ] || (() => true);
-  const kisiUy = g => GV_SEKME !== 'ekip' || !GV_KISI || g.atanan === GV_KISI;
+  const kisiUy = g => !GV_KISI || (GV_SEKME === 'ekip' ? g.atanan === GV_KISI : g.olusturan === GV_KISI);
   const projeUy = g => !GV_PROJE || (GV_PROJE === ':genel' ? !g.proje_id && g.konu !== 'studio'
     : GV_PROJE === ':studio' ? !g.proje_id && g.konu === 'studio' : g.proje_id === GV_PROJE);
   let liste = kaynak.filter(g => suz(g) && kisiUy(g) && projeUy(g));
@@ -14032,7 +14040,7 @@ function gorevlerEkrani() {
       <button class="pjs-yeni" type="button" data-eylem="gorev-ver" aria-label="Yeni görev">${svg(ICON.arti, 18)}</button>
     </div>
     ${fs ? `<div class="gv2-etiket">${[GV_SUZ !== 'acik' ? { kontrol: 'Kontrolde', bitti: 'Bitenler', hepsi: 'Hepsi' }[GV_SUZ] : '',
-      GV_SEKME === 'ekip' && GV_KISI ? DB.kisiAdi(GV_KISI) : '',
+      GV_KISI ? (GV_SEKME === 'ekip' ? '' : 'Veren: ') + DB.kisiAdi(GV_KISI) : '',
       GV_PROJE ? (GV_PROJE === ':genel' ? 'Projesiz' : GV_PROJE === ':studio' ? 'Nizam Studio' : basHarfleriBuyuk((DB.proje(GV_PROJE) || {}).firma || '')) : '']
       .filter(Boolean).map(x => `<span>${esc(x)}</span>`).join('')}<button type="button" data-eylem="gv-temizle">Temizle</button></div>` : ''}
     <div class="gv2-liste">${govde}</div>
@@ -14085,6 +14093,22 @@ document.addEventListener('click', e => {
   if (e.target.closest('.gv2-fp') || e.target.closest('.gv2-fd')) return;
   gvFiltreKapat();
 }, true);
+
+/* Sohbetten "bu kişinin görevleri" (v0.368.0): Görevler ekranı o kişiye
+   süzülmüş açılır; Görevler'den çıkınca eski filtreler geri gelir. Geri
+   oku tarayıcı geçmişiyle aynı yazışmaya döner. */
+let GV_DON = null;
+function gvKisiGoster(kisiId) {
+  if (!GV_DON) GV_DON = { sekme: GV_SEKME, suz: GV_SUZ, kisi: GV_KISI, proje: GV_PROJE };
+  GV_SEKME = AUTH.yonetici ? 'ekip' : 'ben';
+  GV_SUZ = 'acik'; GV_KISI = kisiId; GV_PROJE = null;
+  location.hash = '#/gorevler';
+}
+function gvDonusKontrol(key) {
+  if (!GV_DON || key === 'gorevler') return;
+  GV_SEKME = GV_DON.sekme; GV_SUZ = GV_DON.suz; GV_KISI = GV_DON.kisi; GV_PROJE = GV_DON.proje;
+  GV_DON = null;
+}
 
 function gvSekmeSec(k) {
   if (k === GV_SEKME) return;
@@ -16291,6 +16315,7 @@ async function eylemCalistir(el) {
   if (e === 'gv-sekme')  return gvSekmeSec(id);
   if (e === 'gv-suz')    { GV_SUZ = id; return render(); }
   if (e === 'gv-filtre') return gvFiltreAc(el);
+  if (e === 'sohbet-gorevler') return gvKisiGoster(id);
   if (e === 'gv-temizle') { GV_SUZ = 'acik'; GV_KISI = null; GV_PROJE = null; return render(); }
   if (e === 'gorev-ac')   return gorevKartiAc(el.dataset.id);
   if (e === 'gorev-ver')  return gorevVerAc();

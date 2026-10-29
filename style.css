@@ -13162,3 +13162,5 @@ html.pa-akis .vt-ik.kot::after, html.pa-akis .p3-uyari, html.pa-akis .pa2-dk.uy,
 /* Yazışmada taslak oku mesajların üstüne binmesin: üst çubuğun altına. */
 #app.yazisma ~ #gm-taslak, body:has(#app.yazisma) #gm-taslak { top: calc(84px + env(safe-area-inset-top, 0px)); height: 48px; }
 .yz-kim i, .yz-kim i.acik { background: none !important; padding: 0 !important; box-shadow: none !important; }
+.yz-ik.yz-gv { position: relative; }
+.yz-ik.yz-gv em { position: absolute; top: -6px; right: -6px; min-width: 18px; height: 18px; padding: 0 4px; box-sizing: border-box; border-radius: 9px; border: 2px solid #fff; background: var(--red); color: #fff; font-style: normal; font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
