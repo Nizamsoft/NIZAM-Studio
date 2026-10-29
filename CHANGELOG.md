@@ -1,5 +1,14 @@
 # Değişiklik Günlüğü
 
+## v0.351.0
+- **Son Hareketler** (yalnız yönetici): 3 sütun Kullanıcı · Program · Yapılan iş (`panelAktivite`, `shSatirlar`,
+  `.sh-*`). Kaynaklar: Claude iş kayıtları (`DB.isKayitlari`) + Studio görev hareketleri. Satır → `shAc` penceresi
+  (kim, program, zaman, ayrıntı, GitHub commit bağlantısı, görev). Eski `aktiviteSatiri` / `AKTIVITE_IKON` silindi.
+- **İş kaydı kapısı**: `sql/52-is-kayitlari.sql` (tablo, RLS: okuma/silme yönetici, ekleme yok, realtime) ve
+  `supabase/functions/is-kaydi` (RAPOR_ANAHTARI ile, saatlik 200 sınır).
+- **Kural**: `IS-KAYDI-KURALI.md` — claude.ai hesap tercihlerine yapıştırılır; Claude oturum başında adı sorar,
+  bir şey değişip gönderilince tek satır kayıt yollar. CLAUDE.md'ye 7. adım olarak eklendi.
+
 ## v0.350.0
 - **Panel kartları yeni sıra** (kullanıcı onaylı): 1 Görevler (onay + açık görev çipleri; pencere onay listesi +
   durum sayıları + yaklaşan bitişler), 2 Hatalar, 3 Gerekli güncellemeler (`p3Surum`: Sürüm Takibi'nde `asagi`

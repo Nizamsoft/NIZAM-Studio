@@ -21,6 +21,13 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.351.0', tarih: '2026-10-29',
+    ozet: 'Son Hareketler: ekip ne yaptı?',
+    maddeler: [
+      'Panel\'deki Son Hareketler artık üç sütun: Kullanıcı, Program, Yapılan iş.',
+      'Claude\'la yapılan işler de buraya düşüyor; satıra basınca ayrıntısı açılıyor.',
+      'Bu liste yalnız yöneticiye görünür.',
+    ] },
   { surum: 'v0.350.0', tarih: '2026-10-29',
     ozet: 'Panel kartları yeniden sıralandı',
     maddeler: [

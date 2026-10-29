@@ -12331,3 +12331,35 @@ button.pd-sat { cursor: pointer; }
 }
 .p3-cipler b { color: #fff; font-weight: 700; }
 .p3-ana .p3-incele { top: 14px; bottom: auto; }
+
+/* ---- Son Hareketler: 3 sütunlu tablo (v0.351.0) ---- */
+.sh-tablo { border: 1px solid #ededf0; border-radius: 12px; overflow: hidden; background: #fff; }
+.sh-sat {
+  display: grid; grid-template-columns: minmax(0, 30%) minmax(0, 26%) minmax(0, 1fr);
+  gap: 10px; align-items: center; padding: 11px 14px;
+  border-top: 1px solid #ededf0; cursor: pointer; font-size: 13px;
+}
+.sh-sat:hover { background: #f6f6f8; }
+.sh-sat:active { background: #f2f2f4; }
+.sh-baslik {
+  border-top: 0; cursor: default; background: #f6f6f8; padding: 9px 14px;
+  font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #56565c;
+}
+.sh-baslik:hover { background: #f6f6f8; }
+.sh-sat > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.sh-kim b { display: block; font-weight: 600; color: #26262a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sh-kim i { display: block; font-style: normal; font-size: 10.5px; color: #9a9aa2; margin-top: 2px; white-space: nowrap; }
+.sh-prog { color: #56565c; white-space: nowrap; }
+.sh-is {
+  color: #26262a; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  line-height: 1.35;
+}
+.sh-bos { padding: 14px; border: 1px dashed #d6d6db; border-radius: 12px; font-size: 13px; color: #9a9aa2; }
+.sh-detay { display: flex; flex-direction: column; gap: 2px; }
+.sh-d-sat { display: flex; justify-content: space-between; gap: 12px; padding: 9px 0; border-bottom: 1px solid #ededf0; font-size: 13px; }
+.sh-d-sat span { color: #9a9aa2; }
+.sh-d-sat b { font-weight: 600; color: #26262a; text-align: right; }
+.sh-d-bas { margin-top: 14px; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #56565c; }
+.sh-d-metin { white-space: pre-wrap; font-size: 13px; line-height: 1.5; color: #26262a; padding: 8px 0; }
+.sh-d-link { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-top: 10px; }
+.sh-d-link a { font-size: 13px; font-weight: 600; color: #17171a; }

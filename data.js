@@ -22,6 +22,8 @@ const DB = {
   talepler: [],
   /* Müşteri programlarından gelen hata bildirimleri — yalnız yöneticiye. */
   hatalar: [],
+  /* Claude'la yapılan işlerin kaydı (sql/52) — yalnız yöneticiye. */
+  isKayitlari: [],
   /* Logolar private kovada; adres her oturumda yeniden üretilir. */
   logoAdres: {},
   /* Görsel yuvalarının imzalı adresleri: gorselAdres[projeId + '/' + no] */
@@ -51,6 +53,7 @@ const DB = {
     sectors: 'sektorler', packages: 'paketler',
     talepler: 'talepler',
     hata_bildirimleri: 'hatalar',
+    is_kayitlari: 'isKayitlari',
     yedek_raporlari: 'yedekler',
   },
 
@@ -305,6 +308,10 @@ const DB = {
     hatalar:      db => db.from('hata_bildirimleri').select('*')
                           .order('gonderildi', { ascending: false })
                           .limit(200),
+    /* Claude iş kayıtları (sql/52 · v0.351.0); son yüz yetiyor. */
+    isKayitlari:  db => db.from('is_kayitlari').select('*')
+                          .order('yapildi', { ascending: false })
+                          .limit(100),
     /* Gece yedeğinin sonuçları (sql/49 · v0.336.0). Yalnız yönetici okur;
        son otuz rapor yetiyor. */
     yedekler:     db => db.from('yedek_raporlari').select('*')
@@ -313,7 +320,7 @@ const DB = {
   },
 
   /* Tablosu henüz kurulmamış olabilecekler — hata verme, boş bırak. */
-  ISTEGE_BAGLI: ['sektorler', 'mesajlar', 'paketler', 'talepler', 'hatalar', 'yedekler'],
+  ISTEGE_BAGLI: ['sektorler', 'mesajlar', 'paketler', 'talepler', 'hatalar', 'yedekler', 'isKayitlari'],
 
   yerlestir(ad, sonuc) {
     if (sonuc.error) {
@@ -382,6 +389,7 @@ const DB = {
       this.gorevler = []; this.hareketler = []; this.kisiler = []; this.kisilerHepsi = [];
       this.mesajlar = [];
       this.sektorler = []; this.paketler = []; this.talepler = []; this.hatalar = [];
+      this.isKayitlari = [];
       this.standartlar = []; this.gorevStandart = [];
       this.yuklendi = true;
       return;

@@ -613,9 +613,7 @@ const VIEWS = {
     return `
       ${panelSelam()}
       ${panelKartlar(p)}
-      <div class="pz-ikili">
-        ${panelAktivite()}
-      </div>
+      ${panelAktivite()}
     `;
   },
 
@@ -15539,6 +15537,7 @@ async function eylemCalistir(el) {
   if (e === 'proje-ac')  { location.hash = '#/projeler/' + id; return; }
   if (e === 'pz-proje-sec') return pzProjeSecAc();
   if (e === 'p3-ac')     return p3Ac(el);
+  if (e === 'sh-ac')     return shAc(id);
   if (e === 'p3-git')    { p3Kapat(); location.hash = el.dataset.hedef; return; }
   if (e === 'p3-onayla') { p3Kapat(); return gorevDurum(id, 'onaylandi'); }
   if (e === 'pz-proje-ac-kapa') return pzProjeAcKapa(el);
@@ -18137,49 +18136,78 @@ function panelEkip() {
   </div>`;
 }
 
-/* ---------- Son Aktiviteler ----------
-   Görev hareketlerinin son beşi. Hepsi gerçek kayıt: kim, ne yaptı, hangi
-   göreve, saat kaçta. Hiç hareket yoksa bölüm hiç çıkmıyor — boş kutu
-   göstermektense yer kaplamasın. */
-const AKTIVITE_IKON = {
-  olusturuldu: 'folder', atandi: 'kisi', baslandi: 'kalem',
-  kontrole: 'saat', revize: 'uyari', onaylandi: 'tik', geri: 'geriAl',
-  bitirdi: 'check',
-};
+/* ---------- Son Hareketler (v0.351.0) ----------
+   Ekibin ne yaptığını görmek için 3 sütun: Kullanıcı · Program · Yapılan iş.
+   İki kaynak birleşiyor:
+     · Claude iş kayıtları (DB.isKayitlari · sql/52): Claude bir işi bitirip
+       gönderince "is-kaydi" fonksiyonuna tek satır yollar (kural claude.ai
+       hesap tercihlerinde · IS-KAYDI-KURALI.md).
+     · Studio'daki görev hareketleri (oluşturdu, onayladı…).
+   Satıra basınca ayrıntı penceresi açılır. */
+let SH_SATIRLAR = [];
 
-function aktiviteSatiri(h) {
-  const gorev = (DB.gorevler || []).find(g => g.id === h.gorev_id);
-  const ikon  = ICON[AKTIVITE_IKON[h.tip]] || ICON.check;
-  const alt   = h.notu || (gorev && gorev.baslik) || '';
-  const t     = new Date(h.olusturuldu || Date.now());
-  const p     = n => String(n).padStart(2, '0');
-  return `
-    <div class="ak2 ${h.tip === 'revize' ? 'uyari' : ''}">
-      <span class="ak2-ikon">${svg(ikon, 15)}</span>
-      <span class="ak2-orta">
-        <b>${esc(DB.kisiAdi(h.kim) || 'Biri')}</b>
-        <span>${esc(HAREKET_ADI[h.tip] || h.tip)}</span>
-        ${alt ? `<i>${esc(alt)}</i>` : ''}
-      </span>
-      <span class="ak2-saat">${p(t.getHours())}:${p(t.getMinutes())}</span>
-    </div>`;
+function shSatirlar() {
+  const satirlar = [];
+  (DB.isKayitlari || []).forEach(k => satirlar.push({
+    zaman: k.yapildi || k.olusturuldu || '', kullanici: k.kullanici || 'Bilinmiyor',
+    program: k.program || '—', is: k.is_ozet || '', detay: k.detay || '',
+    repo: k.repo || '', commit: k.commit_no || '', oturum: k.oturum || '', kaynak: 'Claude',
+  }));
+  const gecerli = new Set((DB.gorevler || []).filter(g => DB.gorevGecerli(g)).map(g => g.id));
+  (DB.hareketler || []).filter(h => h.gorev_id && gecerli.has(h.gorev_id)).forEach(h => {
+    const g = (DB.gorevler || []).find(x => x.id === h.gorev_id);
+    const p = g && g.proje_id ? DB.proje(g.proje_id) : null;
+    satirlar.push({
+      zaman: h.olusturuldu || '', kullanici: DB.kisiAdi(h.kim) || 'Biri',
+      program: 'Studio', is: (t => t.charAt(0).toLocaleUpperCase('tr') + t.slice(1))(HAREKET_ADI[h.tip] || h.tip || '')
+        + (g ? ' · ' + g.baslik : ''),
+      detay: [g ? gorevNo(g) + ' · ' + g.baslik : '', p ? 'Proje: ' + basHarfleriBuyuk(p.firma || projeAdi(p)) : '',
+        h.notu || ''].filter(Boolean).join('\n'),
+      gorev: g ? g.id : '', kaynak: 'Studio',
+    });
+  });
+  return satirlar.sort((x, y) => (y.zaman || '').localeCompare(x.zaman || ''));
 }
 
 function panelAktivite() {
-  /* Yalnız hâlâ duran görevlerin hareketleri. Silinmiş görevlerden ve eski
-     deneme kayıtlarından kalan öksüz satırlar listeyi kirletiyordu: görev
-     yok olunca satırda yalnız "biri görevi oluşturdu" kalıyordu. */
-  const gecerli = new Set((DB.gorevler || [])
-    .filter(g => DB.gorevGecerli(g)).map(g => g.id));
-  const hepsi = (DB.hareketler || [])
-    .filter(h => h.gorev_id && gecerli.has(h.gorev_id))
-    .sort((a, b) => (b.olusturuldu || '').localeCompare(a.olusturuldu || ''))
-    .slice(0, 5);
-  if (!hepsi.length) return '';
-  return `<div class="pz-bolum">
-    <span class="pz-bas"><b>Son Aktiviteler</b><u></u></span>
-    <div class="ak2-liste">${hepsi.map(aktiviteSatiri).join('')}</div>
+  if (!AUTH.yonetici) return '';
+  SH_SATIRLAR = shSatirlar().slice(0, 15);
+  const bas = `<span class="pz-bas"><b>Son Hareketler</b><u></u></span>`;
+  if (!SH_SATIRLAR.length) return `<div class="pz-bolum">${bas}
+    <div class="sh-bos">Henüz kayıt yok. Claude bir işi bitirip gönderdiğinde burada görünecek.</div></div>`;
+  return `<div class="pz-bolum sh">${bas}
+    <div class="sh-tablo" role="table">
+      <div class="sh-sat sh-baslik" role="row"><span>Kullanıcı</span><span>Program</span><span>Yapılan iş</span></div>
+      ${SH_SATIRLAR.map((r, i) => `
+        <div class="sh-sat" role="row" data-eylem="sh-ac" data-id="${i}" tabindex="0">
+          <span class="sh-kim"><b>${esc(r.kullanici)}</b><i>${esc(pzZamanKisa(r.zaman))}</i></span>
+          <span class="sh-prog">${esc(r.program)}</span>
+          <span class="sh-is">${esc(r.is)}</span>
+        </div>`).join('')}
+    </div>
   </div>`;
+}
+
+function shAc(i) {
+  const r = SH_SATIRLAR[Number(i)];
+  if (!r) return;
+  const zaman = r.zaman ? tarihYaz(r.zaman) : '';
+  const bilgi = (k, v) => v ? `<div class="sh-d-sat"><span>${k}</span><b>${v}</b></div>` : '';
+  const commitAdres = r.repo && r.commit ? `https://github.com/${esc(r.repo)}/commit/${esc(r.commit)}` : '';
+  modalAc(`
+    ${modalBaslik(r.kaynak === 'Claude' ? ICON.kalem : ICON.check, r.is || 'İş', r.kullanici + ' · ' + r.program)}
+    <div class="sh-detay">
+      ${bilgi('Kim', esc(r.kullanici))}
+      ${bilgi('Program', esc(r.program))}
+      ${bilgi('Ne zaman', esc(zaman))}
+      ${bilgi('Nereden', r.kaynak === 'Claude' ? 'Claude oturumu' : 'Studio')}
+      ${r.detay ? `<div class="sh-d-bas">Ayrıntı</div><div class="sh-d-metin">${esc(r.detay)}</div>` : ''}
+      <div class="sh-d-link">
+        ${commitAdres ? `<a href="${commitAdres}" target="_blank" rel="noopener">GitHub'da değişikliği gör ›</a>` : ''}
+        ${r.oturum && /^https:\/\/claude\.ai\//.test(r.oturum) ? `<a href="${esc(r.oturum)}" target="_blank" rel="noopener">Claude oturumunu aç ›</a>` : ''}
+        ${r.gorev ? `<button type="button" class="p3-dug" data-eylem="gorev-ac" data-id="${esc(r.gorev)}">Görevi aç</button>` : ''}
+      </div>
+    </div>`);
 }
 
 /* ---------- Sürüm Takibi (v0.340.0) ----------
