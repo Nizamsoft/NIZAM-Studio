@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.369.0
+- Görev ayrıntısı (onaylı taslak): `gorevKartiAc` sağdan kayan `.gd2-modal` panel (`panelKayar` ortak yardımcı;
+  aynı görev yeniden çizilince `.sessiz` ile kaymaz). `gorevKartiHtml`: çizgili başlık + 5 adımlı aşama çubuğu,
+  `.gd2-iz` dört bilgi kartı (proje logosu, kişi fotoğrafı), `.gd2-mt` metin kartları, açılır Ekler/Geçmiş,
+  "Görevi sil" içerikte. Eylem düğmeleri `.gd2-alt` altta sabit (ana kırmızı, ikinciller yan yana).
+
 ## v0.368.1
 - v0.364.0'daki yeni `gvTarih(g)` eski `gvTarih(iso)`'yu eziyordu (görev penceresi, prompt, liste satırında "[object Object]"). Yenisi `gv2Tarih`.
 

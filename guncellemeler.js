@@ -21,6 +21,13 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.369.0', tarih: '2026-10-29',
+    ozet: 'Görev penceresi yeni tarzda',
+    maddeler: [
+      'Görev penceresi sağdan kayan panel oldu; üstte görevin aşamasını gösteren çubuk var.',
+      'Proje, bitiş, veren ve alan dört küçük kartta.',
+      'Planı onayla, Onaya gönder gibi düğmeler artık en altta sabit.',
+    ] },
   { surum: 'v0.368.1', tarih: '2026-10-29',
     ozet: 'Bitiş tarihi düzeltmesi',
     maddeler: ['Görev penceresinde bitiş tarihi yerine "[object Object]" yazıyordu; düzeldi.'] },

@@ -14374,11 +14374,32 @@ function gorevVerAc(secili = '', duzenle = null, on = {}) {
   perde.classList.add('gm-perde');
 }
 
+/* Sağdan kayan panel davranışı (v0.369.0): giriş animasyonu bitince kalkar,
+   kapanış kayarak olur. Görev ve Yeni görev panelleri ortak kullanır. */
+function panelKayar(kutu) {
+  kutu.addEventListener('animationend', () => { kutu.style.animation = 'none'; }, { once: true });
+  kutu._kapanis = bitti => {
+    kutu.style.animation = 'none'; void kutu.offsetWidth;
+    kutu.style.transition = 'transform .3s cubic-bezier(.32,.72,0,1)';
+    kutu.style.transform = 'translate3d(105%,0,0)';
+    const pr = kutu.parentElement; if (pr) { pr.style.transition = 'opacity .3s'; pr.style.opacity = '0'; }
+    setTimeout(bitti, 290);
+  };
+}
+
 function gorevKartiAc(id) {
+  /* Aynı görev yeniden çiziliyorsa (bir eylemden sonra) panel kaymasın. */
+  const zaten = !!$('.gd2-modal');
   modalHepsiniKapat();
   const g = DB.gorev(id);
   if (!g) { toast('Görev bulunamadı.'); return; }
-  modalAc(gorevKartiHtml(g), kutu => gorevKartiBagla(kutu, g.id), 'genis');
+  const perde = modalAc(gorevKartiHtml(g), kutu => {
+    if (zaten) kutu.classList.add('sessiz');
+    panelKayar(kutu);
+    gorevKartiBagla(kutu, g.id);
+  }, 'gm-modal gd2-modal');
+  perde.classList.add('gm-perde');
+  if (zaten) perde.classList.add('sessiz');
 }
 
 function gorevKartiHtml(g) {
@@ -14443,67 +14464,88 @@ function gorevKartiHtml(g) {
       <button class="sayfa-dug ikincil" type="button" data-gk="duzenle">
         ${svg(ICON.kalem, 15)} Görevi düzenle</button>` : '';
 
+  /* v0.369.0 · onaylı taslak: çizgili başlık + aşama çubuğu, dört bilgi
+     kartı, metin kartları; eylem düğmeleri altta sabit. */
+  const sira = ['verildi', 'plan', 'yapiliyor', 'kontrol', 'bitti'];
+  const simdi = { plansiz: 1, planda: 1, basladi: 2, bitirdi: 3, onaylandi: 4 }[asama] ?? 0;
+  const yol = ['Verildi', 'Plan', 'Yapılıyor', 'Kontrol', 'Bitti'].map((ad, i) =>
+    `<div class="${i < simdi ? 'b' : i === simdi ? 'on' : ''}"><u></u><i>${ad}</i></div>`).join('');
+  const kisiKart = (etiket, kimId, alt) => {
+    const k = DB.kisi ? DB.kisi(kimId) : null;
+    const ad = DB.kisiAdi ? DB.kisiAdi(kimId) : '';
+    return `<div class="gd2-k"><small>${etiket}</small>
+      <b>${shAvatar(ad || '?', 'kucuk gd2-av', k)}<span>${esc(ad || 'Bilinmiyor')}</span></b>${alt ? `<i>${esc(alt)}</i>` : ''}</div>`;
+  };
+  const prLogo = pr ? (() => { const r = pjRenk(pr); return `<span class="gm-lo gd2-lo" style="background:linear-gradient(140deg,${r[0]},${r[1]})">${esc(basHarf(pr.firma || projeAdi(pr)))}</span>`; })()
+    : g.konu === 'studio' ? `<span class="gm-lo gd2-lo" style="background:#fff url(logo.png) center/60% auto no-repeat;border:1px solid #ededf0"></span>`
+    : `<span class="gm-lo gd2-lo bos">—</span>`;
+  /* Ana düğme kırmızı ve tam genişlik; ikincil düğmeler yan yana. İpucu
+     yazıları altta küçük. */
+  const tmp = document.createElement('div');
+  tmp.innerHTML = dugme + duzenleDug;
+  const anaD = [...tmp.querySelectorAll('.sayfa-dug.bitir')].map(x => x.outerHTML).join('');
+  const ikD = [...tmp.querySelectorAll('.sayfa-dug.ikincil')].map(x => x.outerHTML).join('');
+  const ipucu = [...tmp.querySelectorAll('.ipucu')].map(x => x.outerHTML).join('');
+  const altVar = anaD || ikD || ipucu;
+
   return `
-    ${modalBaslik(ICON.check, g.baslik, '')}
-    <span class="gv-durum ${durum.sinif} buyuk">${esc(durum.ad)}</span>
-
-    ${dugme || duzenleDug ? `<div class="gd-eylem">${dugme}${duzenleDug}</div>` : ''}
-
-    <div class="gd-liste gd-izgara">
-      <div class="gd-s">
-        <span class="gd-et">${svg(ICON.folder, 14)} Proje</span>
-        <span class="gd-dg"><b>${esc(gorevKonuAdi(g))}</b></span>
-      </div>
-      <div class="gd-s">
-        <span class="gd-et">${svg(ICON.takvim, 14)} Bitiş tarihi</span>
-        <span class="gd-dg"><b>${g.bitis ? esc(gvTarih(g.bitis)) : 'yok'}</b>
-          ${sure ? `<em class="gv-sure ${sure.sinif}">${svg(ICON.saat, 13)}${esc(sure.yazi)}</em>` : ''}</span>
-      </div>
-      ${kisiSatiri('Veren', g.olusturan, pzZaman ? pzZaman(g.olusturuldu) : '')}
-      ${kisiSatiri('Alan', g.atanan, '')}
+    <div class="gm-bas gd2-bas">
+      <div class="gd2-s"><span class="gd2-no">${esc(gorevNo(g))}</span>
+        <span class="gv-durum ${durum.sinif}">${esc(durum.ad)}</span>
+        <button type="button" class="gm-x" data-gk="kapat" aria-label="Kapat">✕</button></div>
+      <h2>${esc(g.baslik || 'Görev')}</h2>
+      <div class="gd2-yol">${yol}</div>
     </div>
+    <div class="gm-govde gd2-govde">
+      <div class="gd2-iz">
+        <div class="gd2-k"><small>Proje</small><b>${prLogo}<span>${esc(gorevKonuAdi(g))}</span></b></div>
+        <div class="gd2-k"><small>Bitiş</small><b><span>${g.bitis ? esc(gvTarih(g.bitis)) : 'Yok'}</span></b>
+          ${sure ? `<i class="gd2-sure ${sure.sinif}">◷ ${esc(sure.yazi)}</i>` : ''}</div>
+        ${kisiKart('Veren', g.olusturan, pzZaman ? pzZaman(g.olusturuldu) : '')}
+        ${kisiKart('Alan', g.atanan, '')}
+      </div>
 
-    ${g.aciklama ? `<span class="label">Görev</span>
-      <div class="gd-metin">${esc(g.aciklama)}</div>` : ''}
+      ${g.aciklama ? `<div class="gd2-bb">Görev</div><div class="gd2-mt">${esc(g.aciklama)}</div>` : ''}
 
-    ${String(g.plan || '').trim() ? `
-      <span class="label">Nasıl yapılacak${g.plan_onay ? ' · onaylandı' : ''}</span>
-      <div class="gd-metin">${esc(g.plan)}</div>` : ''}
+      ${String(g.plan || '').trim() ? `
+        <div class="gd2-bb">Nasıl yapılacak <em class="${g.plan_onay ? 'ok' : ''}">${g.plan_onay ? 'Onaylandı' : 'Onay bekliyor'}</em></div>
+        <div class="gd2-mt plan">${esc(g.plan)}</div>` : ''}
 
-    ${(g.ekler || []).length ? `<details class="gd-kat">
-      <summary>${svg(ICON.dosya, 15)} Ekler (${g.ekler.length})</summary>
-      <div class="gek-liste">
-        ${g.ekler.map(x => {
-          const resim = /^image\//.test(x.tur || '');
-          return `
-          <button class="gek" type="button" data-gk="ek" data-deger="${esc(x.yol)}">
-            <span class="gek-ik${resim ? ' gek-on' : ''}">${resim
-              ? `<img data-gek-yol="${esc(x.yol)}" alt="">` : svg(ICON.dosya, 16)}</span>
-            <span class="gek-yz"><b>${esc(x.ad)}</b></span>
-            <span class="gek-in">${svg(ICON.ice, 15)}</span>
-          </button>`; }).join('')}
-      </div></details>` : ''}
+      ${(g.ekler || []).length ? `<details class="gd2-ac">
+        <summary>${svg(ICON.dosya, 15)} Ekler <b>${g.ekler.length}</b><span>›</span></summary>
+        <div class="gek-liste">
+          ${g.ekler.map(x => {
+            const resim = /^image\//.test(x.tur || '');
+            return `
+            <button class="gek" type="button" data-gk="ek" data-deger="${esc(x.yol)}">
+              <span class="gek-ik${resim ? ' gek-on' : ''}">${resim
+                ? `<img data-gek-yol="${esc(x.yol)}" alt="">` : svg(ICON.dosya, 16)}</span>
+              <span class="gek-yz"><b>${esc(x.ad)}</b></span>
+              <span class="gek-in">${svg(ICON.ice, 15)}</span>
+            </button>`; }).join('')}
+        </div></details>` : ''}
 
-    ${hareket.length ? `<details class="gd-kat">
-      <summary>${svg(ICON.saat, 15)} Geçmiş (${hareket.length})</summary>
-      <div class="gd-gecmis">
-        ${hareket.map(h => `
-          <div class="gd-h">
-            <span class="gd-h-nokta"></span>
-            <span class="gd-h-yz">
-              <b>${esc(GOREV_HAREKET[h.tip] || HAREKET_ADI[h.tip] || h.tip)}</b>
-              <i>${esc(DB.kisiAdi(h.kim) || '')}${h.notu ? ' — ' + esc(h.notu) : ''}</i>
-            </span>
-            <span class="gd-h-zaman">${esc(pzZaman ? pzZaman(h.olusturuldu) : '')}</span>
-          </div>`).join('')}
-      </div></details>` : ''}
+      ${hareket.length ? `<details class="gd2-ac">
+        <summary>${svg(ICON.saat, 15)} Geçmiş <b>${hareket.length}</b><span>›</span></summary>
+        <div class="gd-gecmis">
+          ${hareket.map(h => `
+            <div class="gd-h">
+              <span class="gd-h-nokta"></span>
+              <span class="gd-h-yz">
+                <b>${esc(GOREV_HAREKET[h.tip] || HAREKET_ADI[h.tip] || h.tip)}</b>
+                <i>${esc(DB.kisiAdi(h.kim) || '')}${h.notu ? ' — ' + esc(h.notu) : ''}</i>
+              </span>
+              <span class="gd-h-zaman">${esc(pzZaman ? pzZaman(h.olusturuldu) : '')}</span>
+            </div>`).join('')}
+        </div></details>` : ''}
 
-    ${veren || AUTH.yonetici ? `
-      <button class="fn-btn sil" type="button" data-gk="sil" style="margin-top:12px">
-        ${svg(ICON.cop, 13)} Görevi sil</button>` : ''}
-    <div class="modal-alt">
-      <button class="btn btn-ghost" data-gk="kapat" type="button">Kapat</button>
-    </div>`;
+      ${veren || AUTH.yonetici ? `<button class="gd2-sil" type="button" data-gk="sil">${svg(ICON.cop, 14)} Görevi sil</button>` : ''}
+    </div>
+    ${altVar ? `<div class="gm-alt gd2-alt">
+      ${anaD}
+      ${ikD ? `<div class="gd2-ik">${ikD}</div>` : ''}
+      ${ipucu}
+    </div>` : ''}`;
 }
 
 function gorevKartiBagla(kutu, id) {
