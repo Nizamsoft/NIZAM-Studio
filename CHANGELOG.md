@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.361.0
+- `#topbar` (D3): solda 135° ince çizgi + kırmızı radial ışık, sağa doğru beyaza söner (masaüstünde daha dar).
+
 ## v0.360.1
 - `vtIkonlar`: durum `y` → `.vt-ik.tam` (yeşil #3f9a72→#2a6f52), `k/b` → kırmızı, `g` (bilgi yok) gri. Hata yoksa yeşil.
 

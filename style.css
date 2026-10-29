@@ -12762,3 +12762,22 @@ button.pd-sat { cursor: pointer; }
 .vt-pos.kar .vt-ik svg { width: 12px; height: 12px; }
 @media (prefers-reduced-motion: reduce) { .vt-ik.kot::after { animation: none; } }
 .vt-ik.tam { background: linear-gradient(155deg, #3f9a72, #2a6f52); border-color: rgba(255, 255, 255, .3); }
+
+/* ---- Üst çubuk: solda çapraz çizgi + hafif kırmızı ışık (v0.361.0 · D3) ----
+   Desen yalnız logonun arkasında, sağa doğru beyaza dönerek söner. */
+#topbar {
+  background:
+    radial-gradient(ellipse 45% 120% at 0% 50%, rgba(229, 52, 42, .10), transparent 70%),
+    linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, #fff 42%),
+    repeating-linear-gradient(135deg, rgba(23, 23, 26, .07) 0 1px, transparent 1px 8px),
+    #fff;
+}
+@media (min-width: 901px) {
+  #topbar {
+    background:
+      radial-gradient(ellipse 22% 140% at 0% 50%, rgba(229, 52, 42, .08), transparent 70%),
+      linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, #fff 22%),
+      repeating-linear-gradient(135deg, rgba(23, 23, 26, .07) 0 1px, transparent 1px 8px),
+      #fff;
+  }
+}

@@ -21,6 +21,9 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.361.0', tarih: '2026-10-29',
+    ozet: 'Üst çubuğa hafif desen',
+    maddeler: ['Üst çubukta logonun arkasında ince çizgiler ve hafif kırmızı bir ışık var.'] },
   { surum: 'v0.360.1', tarih: '2026-10-29',
     ozet: 'Vitrin ikonları: yeşil = sorun yok',
     maddeler: ['Vitrindeki hata, yedek ve güvenlik ikonları sorun yoksa yeşil; bilgi yoksa gri kalıyor.'] },
