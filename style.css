@@ -12540,3 +12540,15 @@ button.pd-sat { cursor: pointer; }
     linear-gradient(180deg, #f9f9fb, #f1f1f4);
 }
 #main.susulu #zemin-sus > * { display: none; }
+
+/* ---- Küçük panel kartları: köşeden sönen nokta deseni (v0.356.0 · K2) ---- */
+.p3-kart:not(.p3-ana) {
+  isolation: isolate;
+  background: radial-gradient(circle, rgba(23, 23, 26, .10) 1px, transparent 1.3px) 0 0 / 12px 12px,
+              linear-gradient(160deg, #fff 0%, #f4f4f6 100%);
+}
+.p3-kart:not(.p3-ana)::after {
+  content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  background: linear-gradient(200deg, rgba(255, 255, 255, 0) 0%, #fff 55%);
+}
+.p3-kart:not(.p3-ana) > * { position: relative; z-index: 1; }

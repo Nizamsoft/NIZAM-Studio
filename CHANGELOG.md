@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.356.0
+- Küçük panel kartları (K2): 12px nokta ızgarası + `::after` beyaz degrade ile sağ üstten sönme; içerik `z-index: 1`.
+
 ## v0.355.0
 - Panel zemini (kullanıcı B1'i seçti): `#main.susulu #zemin-sus` yeniden kullanıldı; içi gizli, zemin SVG altıgen
   (84×72, %7 mürekkep çizgi) + `#f9f9fb → #f1f1f4` degrade. Yalnız Panel'de.

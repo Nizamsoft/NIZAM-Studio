@@ -21,6 +21,9 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.356.0', tarih: '2026-10-29',
+    ozet: 'Panel kartlarına hafif desen',
+    maddeler: ['Küçük Panel kartlarının sağ üst köşesinde, aşağı doğru sönen ince bir nokta deseni var.'] },
   { surum: 'v0.355.0', tarih: '2026-10-29',
     ozet: 'Panel\'e petek desenli zemin',
     maddeler: ['Panel\'in arka planı artık düz beyaz değil: çok açık gri üstünde ince bir petek deseni.'] },
