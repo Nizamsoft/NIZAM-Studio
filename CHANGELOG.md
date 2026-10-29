@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.360.1
+- `vtIkonlar`: durum `y` → `.vt-ik.tam` (yeşil #3f9a72→#2a6f52), `k/b` → kırmızı, `g` (bilgi yok) gri. Hata yoksa yeşil.
+
 ## v0.360.0
 - Vitrin zemini T4 (petek + `#ececef → #dedee3`); geçiş düğmesi, başlıklar ve gölgeler açık zemine göre.
 - Afiş durum ikonları `vtIkonlar` (hata `pjYeniHata`, yedek `pdYedek`, güvenlik `pdGuvenlik`; k/b → `.vt-ik.kot`

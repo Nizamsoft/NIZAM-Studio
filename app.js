@@ -8455,11 +8455,13 @@ function vtIkonlar(p) {
   yedekEslemeYukle();
   const hata = pjYeniHata(p.id);
   const y = pdYedek(p), g = pdGuvenlik(p);
-  const ik = (k, kot, baslik) => `<span class="vt-ik ${kot ? 'kot' : ''}" title="${esc(baslik)}"><svg viewBox="0 0 24 24">${VT_IKON[k]}</svg></span>`;
+  /* kot = sorun (kırmızı, parlar) · tam = sorun yok (yeşil) · ikisi de değilse bilgi yok (gri). */
+  const sinif = d => /^[kb]$/.test(d.s) ? 'kot' : d.s === 'y' ? 'tam' : '';
+  const ik = (k, cls, baslik) => `<span class="vt-ik ${cls}" title="${esc(baslik)}"><svg viewBox="0 0 24 24">${VT_IKON[k]}</svg></span>`;
   return `<span class="vt-ikr">
-    ${ik('hata', hata > 0, hata ? hata + ' yeni hata bildirimi' : 'Yeni hata yok')}
-    ${ik('yedek', /^[kb]$/.test(y.s), 'Yedek: ' + y.yazi)}
-    ${ik('guv', /^[kb]$/.test(g.s), 'Güvenlik: ' + g.yazi)}
+    ${ik('hata', hata > 0 ? 'kot' : 'tam', hata ? hata + ' yeni hata bildirimi' : 'Yeni hata yok')}
+    ${ik('yedek', sinif(y), 'Yedek: ' + y.yazi)}
+    ${ik('guv', sinif(g), 'Güvenlik: ' + g.yazi)}
   </span>`;
 }
 
