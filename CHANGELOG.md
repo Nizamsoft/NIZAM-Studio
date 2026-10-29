@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.367.0
+- Sohbet (onaylı taslak, görev kısmı hariç): listede `.so-cv` çevrimiçi sırası, `.so-gb` başlıklar, `.sh2-liste .sh2`
+  kabarık noktalı kartlar. Yazışma: petek zemin, üst çubuk deseni, kabarık arama düğmeleri, benim balonum grafit
+  (`#3a3a40 → #1d1d21`), gün etiketi, kırmızı kabarık gönder. "Çevrimiçi" arkasındaki pembe kutu kalktı. Yazışmada
+  taslak oku üst çubuğun altına. Sohbetteki Görev düğmesine dokunulmadı.
+
 ## v0.366.0
 - Görev paneli: `.gm-perde` + `.gm-modal` sağdan tam boy panel (`gm-panel` girişi), çıkış `kutu._kapanis` ile kayarak
   (`modalKapat` artık pencerenin kendi kapanışını çağırabiliyor; Esc / perde / Vazgeç hepsi kayarak). Giriş

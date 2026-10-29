@@ -21,6 +21,13 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.367.0', tarih: '2026-10-29',
+    ozet: 'Sohbet yeni tarzda',
+    maddeler: [
+      'Sohbet listesinde üstte "Şu an çevrimiçi" sırası; yazışmalar kabarık kartlarda.',
+      'Yazışmada senin mesajların grafit, karşı tarafınkiler beyaz; zemin petek desenli.',
+      'Üst kısım ve gönder düğmesi uygulamanın yeni diline uydu.',
+    ] },
   { surum: 'v0.366.0', tarih: '2026-10-29',
     ozet: 'Görev paneli ve filtre',
     maddeler: [

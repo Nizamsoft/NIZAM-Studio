@@ -11442,7 +11442,15 @@ function sohbetEkrani() {
     </div>
 
     ${bildirimKarti()}
-
+    ${(() => {
+      /* Şu an çevrimiçi olanlar (v0.367.0): basınca yazışma açılır. */
+      const acik = kisiler.filter(k => DB.cevrimicimi(k.id));
+      return acik.length ? `<div class="so-gb">Şu an çevrimiçi</div><div class="so-cv">${acik.map(k => `
+        <button type="button" class="so-cv-k" data-eylem="sohbet-ac" data-id="${esc(k.id)}">
+          <span class="sh2-foto ${k.foto ? 'resimli' : ''}" ${k.foto ? `style="background-image:url('${esc(k.foto)}')"` : ''}><b>${esc(basHarf(k.ad || '?'))}</b><u class="acik"></u></span>
+          <i>${esc((k.ad || '').split(' ')[0])}</i></button>`).join('')}</div>` : '';
+    })()}
+    <div class="so-gb">Yazışmalar</div>
     <div class="sh2-liste">${satirlar}
       <div class="pj-bos-arama">Aramana uyan kişi yok.</div>
     </div>`;
