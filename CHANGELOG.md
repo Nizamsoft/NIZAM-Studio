@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.362.0
+- **Proje Ana Sayfası** (onaylı taslak): `projeAnaSayfa` yeni `.pa2` düzeni — `pa2-hero` afiş (görsel/`vtZemin`, logo,
+  Canlı, grup · ana/kardeş etiketi, `vtIkonlar`), `pa2-hiz` kabarık düğmeler, `pa2-surum` şeridi (güncel yeşil,
+  bekleyen kırmızı), `pa2-hata`, `pa2-durum` üç kart (`pdYayin/pdYedek/pdGuvenlik`, sorun → `.uy` parlama),
+  `pa2-kart` içinde görevler ve son değişiklikler (`pa2-st`, etiket çipleri), aşama çubuğu. `VT_IKON.yayin` eklendi.
+
 ## v0.361.0
 - `#topbar` (D3): solda 135° ince çizgi + kırmızı radial ışık, sağa doğru beyaza söner (masaüstünde daha dar).
 

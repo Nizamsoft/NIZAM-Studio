@@ -8446,6 +8446,7 @@ function vtAnaMi(p) {
 /* Afişteki üç durum ikonu: hata · yedek · güvenlik. Sorun varsa kırmızı
    ve parlayan, yoksa sade (v0.360.0). Yalnız yönetici. */
 const VT_IKON = {
+  yayin: '<path d="M5 19l4-1 9-9a2.1 2.1 0 0 0-3-3l-9 9z"/><path d="M14 5l5 5"/>',
   hata: '<path d="M7.5 11a4.5 4.5 0 0 1 9 0v3.5a4.5 4.5 0 0 1-9 0z"/><path d="M12 10.5V19M7.5 12.5H4.5M16.5 12.5h3M9.5 7.3L8 5.5M14.5 7.3L16 5.5"/>',
   yedek: '<ellipse cx="12" cy="6" rx="7" ry="2.8"/><path d="M5 6v12c0 1.5 3.1 2.8 7 2.8s7-1.3 7-2.8V6M5 12c0 1.5 3.1 2.8 7 2.8s7-1.3 7-2.8"/>',
   guv: '<path d="M12 2.8l7.2 2.7v5.6c0 4.6-3 8.4-7.2 10-4.2-1.6-7.2-5.4-7.2-10V5.5z"/><path d="M9 12l2 2 4-4"/>',
@@ -8701,37 +8702,90 @@ function projeAnaSayfa(p) {
   }
   const notlar = yer ? (yer.tur === 'firma' ? (yer.f.notlar || []) : yer.ana.notlar).slice(0, 4) : [];
 
-  const DURUM_YAZI = { kontrolde: 'Kontrolde', gelistiriliyor: 'Geliştiriliyor' };
+  /* v0.362.0 · onaylı taslak: afiş, kabarık hızlı düğmeler, sürüm şeridi,
+     üç durum kartı, kart içinde görevler ve değişiklikler. */
+  const gor = gorselAdresi(p, 'G0');
+  const grupAd = (VITRIN_GRUPLAR.find(g => g.id === vtGrup(p)) || {}).ad || '';
+  const ust = [grupAd.replace(/ Projeleri?$/, ''), yer && yer.tur === 'ana' ? 'Ana program'
+    : yer && yer.tur === 'firma' ? 'Kardeş proje' : ''].filter(Boolean).join(' · ');
+  const altYazi = [modulAdi(p), yayinda && host ? pjAdresYazi(p)
+    : projeBittiMi(p) ? 'Tamamlandı' : yayinda ? '' : 'Yapımda · %' + yuzde].filter(Boolean).join(' · ');
+  const hizlar = [
+    host ? `<a class="pa2-hz" href="https://${esc(pjAdresYazi(p))}/" target="_blank" rel="noopener"><i>🌐</i>Siteyi aç</a>` : '',
+    slug ? `<a class="pa2-hz" href="${esc(claudeAdresi(slug))}" target="_blank" rel="noopener"><i>✦</i>Claude'da aç</a>` : '',
+    AUTH.yonetici ? `<button type="button" class="pa2-hz kir" data-eylem="gorev-ekle" data-proje="${p.id}"><i>＋</i>Görev ver</button>` : '',
+  ].filter(Boolean);
+  const tik = '<svg viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg>';
+
+  let surum = '';
+  if (yer && yer.tur === 'firma') {
+    const d = svDurum(yer.f), ok = d.sinif === 'ok';
+    surum = `<button type="button" class="pa2-surum ${ok ? '' : 'bek'}" data-eylem="surum-detay" data-id="${esc(yer.f.kod)}">
+      <span class="vt-ik ${ok ? 'tam' : 'kot'}">${ok ? tik : svg(ICON.uyari, 15)}</span>
+      <span class="pa2-surum-yz"><b>${ok ? 'Sürüm güncel' : 'Güncelleme var'}</b><i>${esc(ok ? 'Ana programla aynı · ' + svKisa(yer.ana.canli) : d.yazi)}</i></span>
+      <span class="pa2-ok">${svg(ICON.chevron, 14)}</span></button>`;
+  } else if (yer && yer.tur === 'ana') {
+    surum = `<div class="pa2-surum"><span class="vt-ik tam">${tik}</span>
+      <span class="pa2-surum-yz"><b>Ana program · sürüm ${esc(svKisa(yer.ana.canli))}</b><i>${yer.ana.firmalar.length} firma bundan kopyalandı</i></span></div>`;
+  }
+
+  let durum = '';
+  if (AUTH.yonetici) {
+    yedekEslemeYukle();
+    const kart = (k, ad, d, attr) => {
+      const c = /^[kb]$/.test(d.s) ? 'kot' : d.s === 'y' ? 'tam' : '';
+      return `<${attr ? 'button type="button"' : 'div'} class="pa2-dk ${c === 'kot' ? 'uy' : ''}" ${attr || ''}>
+        <span class="vt-ik ${c}"><svg viewBox="0 0 24 24">${VT_IKON[k]}</svg></span>
+        <b>${ad}</b><i>${esc(d.yazi)}</i></${attr ? 'button' : 'div'}>`;
+    };
+    durum = `<div class="pa2-bas">Durum</div><div class="pa2-durum">
+      ${kart('yayin', 'Yayın', pdYayin(p), yer && yer.tur === 'firma' ? `data-eylem="surum-detay" data-id="${esc(yer.f.kod)}"` : '')}
+      ${kart('yedek', 'Yedek', pdYedek(p), sunuculuMu(p) ? 'data-eylem="yedek-detay"' : '')}
+      ${kart('guv', 'Güvenlik', pdGuvenlik(p), sunuculuMu(p) ? `data-eylem="pd-guvenlik" data-id="${p.id}"` : '')}
+    </div>`;
+  }
+
+  const ETIKET = { genel: ['', 'Herkese'], ozel: ['', 'Sadece bu firma'], esitleme: ['g', 'Ana programdan geldi'] };
   return `
-    <div class="pa">
-      <div class="pa-ust">
-        ${pjLogo(p, 'buyuk')}
-        <span class="pa-ad"><b>${esc(basHarfleriBuyuk(projeAdi(p)))}</b><small class="${yayinda ? 'ok' : ''}">${durumYazi}</small></span>
-        ${AUTH.yonetici ? `<button class="pj2-menu" data-eylem="proje-menu" data-id="${p.id}" type="button" aria-label="Proje seçenekleri">
+    <div class="pa2">
+      <div class="pa2-hero" style="background-image:${vtZemin(p, '75% 20%')}">
+        ${gor ? `<img class="vt-gor" src="${esc(gor)}" alt="" loading="lazy" decoding="async">` : ''}
+        ${pjLogo(p, 'pa2-lo')}
+        ${yayinda ? '<span class="pa2-canli">Canlı</span>' : ''}
+        ${AUTH.yonetici ? `<button class="vt-menu pa2-menu" data-eylem="proje-menu" data-id="${p.id}" type="button" aria-label="Proje seçenekleri">
           <svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.7"></circle><circle cx="12" cy="12" r="1.7"></circle><circle cx="12" cy="19" r="1.7"></circle></svg></button>` : ''}
+        <div class="pa2-hero-yz">
+          ${ust ? `<small>${esc(ust)}</small>` : ''}
+          <h1>${esc(basHarfleriBuyuk(p.firma || projeAdi(p)))}</h1>
+          ${altYazi ? `<p>${esc(altYazi)}</p>` : ''}
+          ${vtIkonlar(p)}
+        </div>
       </div>
-      ${hiz.length ? `<div class="pa-hizlar" style="grid-template-columns:repeat(${hiz.length},1fr)">${hiz.join('')}</div>` : ''}
-      ${surumKutu}
-      ${hata ? `<a class="pa-hata" href="#/hatalar">⚠️ ${hata} yeni hata bildirimi ›</a>` : ''}
-      ${pdKutu(p)}
+      ${hizlar.length ? `<div class="pa2-hiz" style="grid-template-columns:repeat(${hizlar.length},1fr)">${hizlar.join('')}</div>` : ''}
+      ${surum}
+      ${hata ? `<a class="pa2-hata" href="#/hatalar"><span class="vt-ik kot">${svg(ICON.uyari, 15)}</span>${hata} yeni hata bildirimi<span class="pa2-ok">${svg(ICON.chevron, 14)}</span></a>` : ''}
+      ${durum}
 
-      <div class="yd-baslik2">Açık görevler</div>
-      ${gorevler.length ? gorevler.slice(0, 6).map(g => `
-        <button type="button" class="pa-sat" data-eylem="gorev-ac" data-id="${g.id}">
-          <span class="pa-nok ${g.durum === 'kontrolde' ? 'm' : ''}"></span>
-          <span class="pa-sat-yz">${esc(g.baslik || 'Görev')}</span>
-          <em>${esc(DURUM_YAZI[g.durum] || DB.kisiAdi(g.atanan) || '')}</em></button>`).join('')
-        + (gorevler.length > 6 ? `<div class="yd-not" style="text-align:left">+${gorevler.length - 6} görev daha</div>` : '')
-        : '<div class="pa-bos">Açık görev yok 🎉</div>'}
+      <div class="pa2-bas">Açık görevler</div>
+      <div class="pa2-kart">
+        ${gorevler.length ? gorevler.slice(0, 6).map(g => `
+          <button type="button" class="pa2-st" data-eylem="gorev-ac" data-id="${g.id}">
+            <span class="pa2-c ${g.durum === 'bitirdi' ? 'm' : ''}">${g.durum === 'bitirdi' ? 'Kontrolde' : esc(DB.kisiAdi(g.atanan) || 'Görev')}</span>
+            <p>${esc(g.baslik || 'Görev')}</p><em>${esc(gorevNo(g))}${g.bitis ? ' · ' + esc(svTarih(g.bitis)) : ''}</em></button>`).join('')
+          + (gorevler.length > 6 ? `<div class="pa2-not">+${gorevler.length - 6} görev daha</div>` : '')
+          : `<div class="pa2-bos"><span class="vt-ik tam">${tik}</span>Açık görev yok 🎉</div>`}
+      </div>
 
-      ${notlar.length ? `<div class="yd-baslik2">Son değişiklikler</div>` + notlar.map(n => `
-        <div class="pa-sat duz"><span class="pa-sat-yz">${esc(n.ozet || '')}</span><em>${esc(svTarih(n.tarih))}</em></div>`).join('') : ''}
+      ${notlar.length ? `<div class="pa2-bas">Son değişiklikler</div><div class="pa2-kart">` + notlar.map(n => {
+        const e = ETIKET[n.tur] || null;
+        return `<div class="pa2-st">${e ? `<span class="pa2-c ${e[0]}">${e[1]}</span>` : ''}
+          <p>${esc(n.ozet || '')}</p><em>${esc([svTarih(n.tarih), n.surum].filter(Boolean).join(' · '))}</em></div>`;
+      }).join('') + `</div>` : ''}
 
-      <div class="yd-baslik2">Aşamalar</div>
-      <a class="pa-asama" href="${esc(projeAdresi(p.id))}">
-        <small><b>${su ? 'Kaldığın yer: ' + esc(su.ad) : 'Bitti'}</b> · ${biten} / ${sayilan.length} aşama tamamlandı</small>
-        <span class="pa-ray"><i style="width:${yuzde}%"></i></span>
-        <small>${su ? 'Devam et ›' : 'Aşamaları aç ›'}</small>
+      <div class="pa2-bas">Aşamalar</div>
+      <a class="pa2-kart pa2-asama" href="${esc(projeAdresi(p.id))}">
+        <span class="pa2-ray"><i style="width:${yuzde}%"></i></span>
+        <span class="pa2-asama-alt"><b>${su ? 'Kaldığın yer: ' + esc(su.ad) : biten + ' / ' + sayilan.length + ' aşama bitti'}</b><span>${su ? 'Devam et ›' : 'Tümü ›'}</span></span>
       </a>
     </div>`;
 }

@@ -21,6 +21,14 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.362.0', tarih: '2026-10-29',
+    ozet: 'Yeni proje sayfası',
+    maddeler: [
+      'Proje sayfasının üstünde vitrindeki gibi büyük bir afiş var: logo, Canlı ışığı, hata/yedek/güvenlik ikonları.',
+      'Siteyi aç, Claude\'da aç ve Görev ver düğmeleri kabarık kartlarda.',
+      'Yayın, Yedek ve Güvenlik yan yana üç kart; sorun varsa kırmızı parlıyor.',
+      'Açık görevler ve son değişiklikler kart içinde, satır satır.',
+    ] },
   { surum: 'v0.361.0', tarih: '2026-10-29',
     ozet: 'Üst çubuğa hafif desen',
     maddeler: ['Üst çubukta logonun arkasında ince çizgiler ve hafif kırmızı bir ışık var.'] },
