@@ -654,48 +654,7 @@ const VIEWS = {
   gorevler: () => {
     if (YUKLENIYOR) return iskeletler(4);
     if (DB.hata)    return hataKutusu(DB.hata);
-
-    const ben   = AUTH.user ? AUTH.user.id : '';
-    const hepsi = DB.gorevleri();
-    const kova  = GOREV_KOVASI[GOREV_KOVA] ? GOREV_KOVA : 'bana';
-
-    const sayilar = {
-      bana:   hepsi.filter(g => g.atanan === ben && g.durum !== 'onaylandi').length,
-      benim:  hepsi.filter(g => g.olusturan === ben && g.atanan !== ben && g.durum !== 'onaylandi').length,
-      biten:  hepsi.filter(g => g.durum === 'onaylandi'
-                 && (g.atanan === ben || g.olusturan === ben)).length,
-    };
-    const liste = gorevSirala(hepsi.filter(GOREV_KOVASI[kova].sec(ben)));
-
-    return `
-      <div class="pj-tepe">
-        <div class="pj-tepe-yz">
-          <h1>Görevler</h1>
-          <p>Ekipteki görevleri yönet, yeni görev ver ve ilerlemeyi takip et.</p>
-        </div>
-        <div class="gv-tepe-dug">
-          <button class="pj-yeni ikincil" type="button" data-eylem="gorev-sirala">
-            ${svg(ICON.sirala, 16)}<span>Görevleri sırala</span></button>
-          <button class="pj-yeni" type="button" data-eylem="gorev-ver">
-            ${svg(ICON.arti, 16)}<span>Görev ver</span></button>
-        </div>
-      </div>
-
-      <div class="gv-sekme">
-        ${Object.keys(GOREV_KOVASI).map(k => `
-          <button class="gv-s ${k === kova ? 'on' : ''}" type="button"
-                  data-eylem="gorev-kova" data-deger="${k}">
-            ${esc(GOREV_KOVASI[k].ad)}<em>${sayilar[GOREV_KOVASI[k].sayac]}</em></button>`).join('')}
-      </div>
-
-      ${liste.length > 3 ? gorevAramaCubugu(liste) : ''}
-
-      ${liste.length
-        ? `<div class="gv-liste">${liste.map(gorevSatiri).join('')}</div>
-           <p class="gv-yok" hidden>Aramaya uyan görev yok.</p>`
-        : `<div class="card">${empty(ICON.check, GOREV_KOVASI[kova].bosBaslik,
-            GOREV_KOVASI[kova].bosAlt)}</div>`}
-    `;
+    return gorevlerEkrani();
   },
 
   standartlar: () => {
@@ -13963,6 +13922,103 @@ function onaySor({ baslik, mesaj, buton = 'Sil' }) {
 }
 
 /* ==========================================================================
+   Görevler ekranı (v0.364.0 · onaylı taslak)
+   Üstte Görevlerim / Ekip Görevleri geçişi (Vitrin'deki gibi) ve kırmızı +.
+   Altında süzgeç: Açık · Kontrolde · Bitenler. Görevler bitiş tarihine
+   göre gruplu kabarık kartlar. Geliştirici yalnız Görevlerim'i görür.
+   ========================================================================== */
+let GV_SEKME = (() => { try { return localStorage.getItem('ns.gvSekme') || 'ben'; } catch (h) { return 'ben'; } })();
+let GV_SUZ = 'acik';
+
+function gvDurum(g) {
+  if (g.durum === 'onaylandi') return { ad: 'Tamamlandı', renk: '#2f7d5c' };
+  if (g.durum === 'bitirdi')   return { ad: 'Kontrolde', renk: '#2f62c4' };
+  return gorevAsama(g) === 'plansiz' ? { ad: 'Yapılacak', renk: '#83838b' } : { ad: 'Geliştiriliyor', renk: '#b8801a' };
+}
+function gvGrup(g) {
+  if (!g.bitis) return 'Tarihsiz';
+  const s = gorevSure(g.bitis);
+  const bugun = new Date(); bugun.setHours(0, 0, 0, 0);
+  const gun = Math.round((new Date(g.bitis + 'T00:00:00') - bugun) / 864e5);
+  if (gun < 0) return 'Gecikenler';
+  if (gun === 0) return 'Bugün';
+  if (gun <= 7) return 'Bu hafta';
+  return s ? 'Daha sonra' : 'Tarihsiz';
+}
+function gvTarih(g) {
+  if (!g.bitis) return { y: '', k: false };
+  const s = gorevSure(g.bitis);
+  if (s && s.sinif === 'gecti') return { y: s.yazi, k: true };
+  if (s && s.yazi === 'Yarın') return { y: 'Yarın', k: false };
+  return { y: svTarih(g.bitis), k: false };
+}
+function gvKart(g, ekip) {
+  const d = gvDurum(g);
+  const p = g.proje_id ? DB.proje(g.proje_id) : null;
+  const t = gvTarih(g);
+  const kisi = DB.kisi(g.atanan);
+  const etiket = p ? `<span class="gv2-pc"><u>${esc(basHarf(p.firma || projeAdi(p)))}</u>${esc(basHarfleriBuyuk(p.firma || projeAdi(p)))}</span>`
+    : `<span class="gv2-pc"><u>${g.konu === 'studio' ? 'N' : '—'}</u>${g.konu === 'studio' ? 'Nizam Studio' : 'Genel'}</span>`;
+  return `<div class="gv2-k" style="--c:${d.renk}" data-eylem="gorev-ac" data-id="${g.id}" role="button" tabindex="0">
+    <div class="gv2-s1"><span class="gv2-no">${esc(gorevNo(g))}</span><span class="gv2-dr">${d.ad}</span></div>
+    <b>${esc(g.baslik || 'Görev')}</b>
+    <div class="gv2-s2">${etiket}${ekip && kisi ? shAvatar(kisi.ad_soyad || kisi.ad || '', 'kucuk gv2-av', kisi) : ''}
+      ${t.y ? `<span class="gv2-tar ${t.k ? 'k' : ''}">${esc(t.y)}</span>` : ''}</div>
+  </div>`;
+}
+
+function gorevlerEkrani() {
+  const ben = AUTH.user ? AUTH.user.id : '';
+  const yon = AUTH.yonetici;
+  if (!yon) GV_SEKME = 'ben';
+  const hepsi = DB.gorevleri();
+  const benim = hepsi.filter(g => g.atanan === ben);
+  const acikSay = l => l.filter(g => g.durum !== 'onaylandi').length;
+  const kaynak = GV_SEKME === 'ekip' ? hepsi : benim;
+  const suz = {
+    acik:    g => g.durum !== 'onaylandi' && g.durum !== 'bitirdi',
+    kontrol: g => g.durum === 'bitirdi',
+    bitti:   g => g.durum === 'onaylandi',
+  }[GV_SUZ] || (() => true);
+  let liste = kaynak.filter(suz);
+  let govde = '';
+  if (!liste.length) {
+    govde = `<div class="gv2-bos"><span class="vt-ik tam"><svg viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg></span>
+      <b>${GV_SUZ === 'bitti' ? 'Biten görev yok' : GV_SUZ === 'kontrol' ? 'Kontrolde görev yok' : GV_SEKME === 'ekip' ? 'Ekipte açık görev yok' : 'Sana verilmiş açık görev yok'}</b>
+      <i>${GV_SUZ === 'acik' ? 'Yeni görev için sağ üstteki + düğmesine bas.' : ''}</i></div>`;
+  } else if (GV_SUZ === 'bitti') {
+    liste = liste.sort((x, y) => (y.guncellendi || '').localeCompare(x.guncellendi || '')).slice(0, 60);
+    govde = liste.map(g => gvKart(g, GV_SEKME === 'ekip')).join('');
+  } else {
+    const sira = ['Gecikenler', 'Bugün', 'Bu hafta', 'Daha sonra', 'Tarihsiz'];
+    const gr = {};
+    gorevSirala(liste).forEach(g => { const k = gvGrup(g); (gr[k] = gr[k] || []).push(g); });
+    govde = sira.filter(k => gr[k]).map(k => `<div class="gv2-gb ${k === 'Gecikenler' ? 'k' : ''}">${k}</div>`
+      + gr[k].map(g => gvKart(g, GV_SEKME === 'ekip')).join('')).join('');
+  }
+  const cip = (k, ad) => `<button type="button" class="${GV_SUZ === k ? 'on' : ''}" data-eylem="gv-suz" data-id="${k}">${ad}</button>`;
+  return `<div class="gv2">
+    <div class="pjs-sat">
+      ${yon ? `<div class="pjs ${GV_SEKME === 'ekip' ? 'atolye' : ''}" role="tablist">
+        <i class="pjs-hap" aria-hidden="true"></i>
+        <button type="button" data-eylem="gv-sekme" data-id="ben">Görevlerim <u class="gv2-say">${acikSay(benim)}</u></button>
+        <button type="button" data-eylem="gv-sekme" data-id="ekip">Ekip Görevleri <u class="gv2-say">${acikSay(hepsi)}</u></button>
+      </div>` : `<h1 class="gv2-h">Görevlerim</h1>`}
+      <button class="pjs-yeni" type="button" data-eylem="gorev-ver" aria-label="Yeni görev">${svg(ICON.arti, 18)}</button>
+    </div>
+    <div class="gv2-suz">${cip('acik', 'Açık')}${cip('kontrol', 'Kontrolde')}${cip('bitti', 'Bitenler')}</div>
+    <div class="gv2-liste">${govde}</div>
+  </div>`;
+}
+function gvSekmeSec(k) {
+  if (k === GV_SEKME) return;
+  GV_SEKME = k === 'ekip' ? 'ekip' : 'ben';
+  try { localStorage.setItem('ns.gvSekme', GV_SEKME); } catch (h) {}
+  const d = $('.gv2 .pjs'); if (d) d.classList.toggle('atolye', GV_SEKME === 'ekip');
+  setTimeout(render, 170);
+}
+
+/* ==========================================================================
    GÖREV KARTI
    ========================================================================== */
 
@@ -13977,110 +14033,125 @@ function gorevVerAc(secili = '', duzenle = null, on = {}) {
   const ben = AUTH.user ? AUTH.user.id : '';
   const kisiler = (DB.kisilerHepsi || DB.kisiler || []).filter(k => k.aktif !== false);
   const projeler = DB.projeler.filter(p => !p.arsiv && !cekirdekMi(p));
+  if (!kisiler.length) { toast('Önce Ekip ekranından üye ekle.', 'uyari'); return; }
 
-  if (!kisiler.length) {
-    toast('Önce Ekip ekranından üye ekle.', 'uyari');
-    return;
+  /* v0.364.0 · onaylı taslak: ortada açılan pencere, numaralı adımlar —
+     1 Proje (arama kutulu seçici, Projesiz ve Nizam Studio da var),
+     2 Başlık, 3 Görev, 4 Bitiş tarihi (hızlı düğmeler), 5 Kime. */
+  const ilkKisi = (kisiler.find(k => k.id === (duzenle ? duzenle.atanan : secili))
+    || kisiler.find(k => k.id === ben) || kisiler[0]).id;
+  const ilkSecim = duzenle
+    ? (duzenle.proje_id ? duzenle.proje_id : (duzenle.konu === 'studio' ? ':studio' : ':genel'))
+    : (on.proje || '');
+
+  const iso = d => { const z = n => String(n).padStart(2, '0'); return d.getFullYear() + '-' + z(d.getMonth() + 1) + '-' + z(d.getDate()); };
+  const gunSonra = n => { const d = new Date(); d.setDate(d.getDate() + n); return iso(d); };
+  const haftaSonu = () => { const d = new Date(); d.setDate(d.getDate() + ((7 - d.getDay()) % 7 || 7) - 2); return iso(d); };
+  const hizli = [['Bugün', gunSonra(0)], ['Yarın', gunSonra(1)], ['Bu hafta', haftaSonu()]];
+
+  const secLogo = id => {
+    if (id === ':genel') return `<span class="gm-lo bos">—</span>`;
+    if (id === ':studio') return `<span class="gm-lo" style="background:#fff url(logo.png) center/60% auto no-repeat;border:1px solid #ededf0"></span>`;
+    const p = DB.proje(id); const r = p ? pjRenk(p) : ['#ddd', '#aaa'];
+    return `<span class="gm-lo" style="background:linear-gradient(140deg,${r[0]},${r[1]})">${esc(basHarf(p ? p.firma || projeAdi(p) : '?'))}</span>`;
+  };
+  const secYazi = id => id === ':genel' ? ['Projesiz', 'Genel iş, bir projeye bağlı değil']
+    : id === ':studio' ? ['Nizam Studio', 'Studio\'nun kendisi']
+    : (p => p ? [basHarfleriBuyuk(p.firma || projeAdi(p)), modulAdi(p) || p.sektor || ''] : ['Proje seç…', ''])(DB.proje(id));
+  const secHtml = id => id ? `${secLogo(id)}<span class="gm-cb-yz"><b>${esc(secYazi(id)[0])}</b><i>${esc(secYazi(id)[1])}</i></span>`
+    : `<span class="gm-cb-yz"><b class="gm-ph">Proje seç…</b></span>`;
+
+  const grupla = VITRIN_GRUPLAR.map(gp => {
+    const l = projeler.filter(p => !denemeMi(p) && !klonMi(p) && vtGrup(p) === gp.id);
+    return l.length ? `<div class="gm-gb">${esc(gp.ad.replace(/ Projeleri?$/, '').toLocaleUpperCase('tr'))}</div>` + l.map(p => gmSecenek(p.id)).join('') : '';
+  }).join('') + (() => { const l = projeler.filter(p => denemeMi(p) || klonMi(p));
+    return l.length ? `<div class="gm-gb">ATÖLYE</div>` + l.map(p => gmSecenek(p.id)).join('') : ''; })();
+  function gmSecenek(id) {
+    const [ad, alt] = secYazi(id);
+    return `<button type="button" class="gm-o" data-gm-p="${id}" data-ara="${esc((ad + ' ' + alt).toLocaleLowerCase('tr'))}">
+      ${secLogo(id)}<span class="gm-cb-yz"><b>${esc(ad)}</b><i>${esc(alt)}</i></span><span class="gm-tik">✓</span></button>`;
   }
 
-  /* Ekip kartının menüsünden ya da düzenlemeden gelindiyse o üye seçili. */
-  const ilk = kisiler.find(k => k.id === (duzenle ? duzenle.atanan : secili)) || kisiler[0];
-  const ilkKonu = duzenle
-    ? (duzenle.proje_id ? 'proje' : (duzenle.konu === 'studio' ? 'studio' : 'genel'))
-    : (on.proje ? 'proje' : 'genel');
-  /* Proje sayfasından ya da sohbetten gelince proje / yazı hazır dolar. */
-  const seciliProje = duzenle ? duzenle.proje_id : on.proje;
-
+  const adim = (n, ad, ic) => `<div class="gm-alan"><div class="gm-et"><em>${n}</em>${ad}</div>${ic}</div>`;
   modalAc(`
-    ${modalBaslik(ICON.check,
-      duzenle ? 'Görevi düzenle' : 'Görev ver',
-      duzenle ? 'Yanlış yazdığın alanı düzelt, kaydet.'
-              : 'Ekipten birine iş ver, bitiş tarihini yaz.')}
-
-    <span class="gf-et" style="margin-bottom:8px">Kime</span>
-    <div class="gvr-kisiler">
-      ${kisiler.map(k => `
-        <button class="gvr-k ${k.id === ilk.id ? 'on' : ''}" type="button" data-gvr-kisi="${k.id}">
-          <span class="gv-foto ${k.foto ? 'resimli' : ''}"
-                ${k.foto ? `style="background-image:url('${esc(k.foto)}')"` : ''}>
-            <b>${esc(basHarf(k.ad || k.ad_soyad || '?'))}</b></span>
-          <i>${esc(k.ad || k.ad_soyad || 'İsimsiz')}${k.id === ben ? ' (sen)' : ''}</i>
-        </button>`).join('')}
+    <div class="gm-bas">
+      <span class="gm-bas-ik">${duzenle ? svg(ICON.kalem, 20) : '+'}</span>
+      <span><b>${duzenle ? 'Görevi düzenle' : 'Yeni görev'}</b><i>${duzenle ? 'Değiştir, kaydet' : '5 adımda hazır'}</i></span>
+      <button type="button" class="gm-x" data-gvr="iptal" aria-label="Kapat">✕</button>
     </div>
-
-    <span class="gf-et" style="margin:16px 0 8px">Konu</span>
-    <div class="gvr-konu">
-      ${[['genel', 'Genel', ''], ['studio', 'Nizam Studio', ''],
-         ['proje', 'Bir proje hakkında', ' genis']].map(([a, ad, ek]) => `
-        <button class="gvr-t${ek}${ilkKonu === a ? ' on' : ''}" type="button"
-                data-gvr-konu="${a}">${ad}</button>`).join('')}
+    <div class="gm-govde">
+      ${adim(1, 'Proje', `<div class="gm-cb-sar">
+        <button type="button" class="gm-cb" data-gvr="proje">${secHtml(ilkSecim)}<span class="gm-ok">⌄</span></button>
+        <div class="gm-ac" hidden>
+          <label class="gm-ara">🔍<input type="search" placeholder="Proje ara" autocomplete="off"></label>
+          <div class="gm-ac-liste">${gmSecenek(':genel')}${gmSecenek(':studio')}<div class="gm-cz"></div>${grupla}</div>
+        </div></div>`)}
+      ${adim(2, 'Başlık', `<input class="gm-inp" type="text" id="gvr-baslik" maxlength="90" autocomplete="off"
+          value="${esc(duzenle ? duzenle.baslik || '' : on.baslik || '')}" placeholder="Görev tek cümlede ne?">`)}
+      ${adim(3, 'Görev', `<textarea class="gm-inp gm-ta" id="gvr-metin" rows="4" placeholder="Ne yapılacak? Birkaç cümle yeter…">${esc(duzenle ? duzenle.aciklama || '' : on.metin || '')}</textarea>`)}
+      ${adim(4, 'Bitiş tarihi', `<div class="gm-ch">
+          ${hizli.map(([ad, t]) => `<button type="button" data-gm-t="${t}">${ad}</button>`).join('')}
+          <label class="gm-tarih"><span>📅 <b id="gm-t-yazi">Tarih seç</b></span><input type="date" id="gvr-bitis" value="${esc(duzenle ? duzenle.bitis || '' : '')}"></label>
+        </div>`)}
+      ${adim(5, 'Kime', `<div class="gm-kisiler">${kisiler.map(k => `
+          <button type="button" class="gm-k ${k.id === ilkKisi ? 'on' : ''}" data-gvr-kisi="${k.id}">
+            ${shAvatar(k.ad_soyad || k.ad || '?', '', k)}<i>${k.id === ben ? 'Sen' : esc((k.ad || k.ad_soyad || 'İsimsiz').split(' ')[0])}</i></button>`).join('')}</div>`)}
+      <div class="gm-ekler"><div class="gek-liste" id="gvr-ekler"></div>
+        <button class="gm-ek" type="button" data-gvr="dosya">＋ Dosya ekle <em>isteğe bağlı</em></button></div>
     </div>
-    <label class="gf gvr-proje" ${ilkKonu === 'proje' ? '' : 'hidden'}>
-      <span class="gf-kutu">${svg(ICON.folder, 17)}
-        <select id="gvr-proje">
-          ${projeler.map(p => `<option value="${p.id}"
-            ${seciliProje === p.id ? 'selected' : ''}>${esc(projeAdi(p))}</option>`).join('')}
-        </select>
-        ${svg(ICON.chevron, 15)}</span>
-    </label>
-
-    <label class="gf">
-      <span class="gf-et">Başlık</span>
-      <span class="gf-kutu">${svg(ICON.etiket, 17)}
-        <input type="text" id="gvr-baslik" maxlength="90" autocomplete="off"
-               value="${esc(duzenle ? duzenle.baslik || '' : on.baslik || '')}"
-               placeholder="Örn. Güvenlik kontrolü sayfası tasarımı"></span>
-    </label>
-
-    <label class="gf">
-      <span class="gf-et">Görev</span>
-      <textarea class="anl-kutu kisa" id="gvr-metin" rows="4"
-        placeholder="Ne yapılacak? Konuşur gibi yaz.">${esc(duzenle ? duzenle.aciklama || '' : on.metin || '')}</textarea>
-    </label>
-
-    <label class="gf">
-      <span class="gf-et">Bitiş tarihi</span>
-      <span class="gf-kutu">${svg(ICON.takvim, 17)}
-        <input type="date" id="gvr-bitis" value="${esc(duzenle ? duzenle.bitis || '' : '')}"></span>
-    </label>
-
-    <div class="gf">
-      <span class="gf-et">${duzenle ? 'Yeni ek' : 'Ekler'} <em>isteğe bağlı</em></span>
-      <div class="gek-liste" id="gvr-ekler"></div>
-      <button class="gek-ekle" type="button" data-gvr="dosya">
-        ${svg(ICON.folder, 15)} Dosya ekle</button>
-    </div>
-
-    <div class="modal-alt">
-      <button class="btn btn-ghost" data-gvr="iptal" type="button">Vazgeç</button>
-      <button class="btn btn-primary" data-gvr="gonder" type="button">
-        <span>${duzenle ? 'Kaydet' : 'Gönder'}</span></button>
+    <div class="gm-alt">
+      <button class="gm-bt g" data-gvr="iptal" type="button">Vazgeç</button>
+      <button class="gm-bt a" data-gvr="gonder" type="button">${duzenle ? 'Kaydet' : 'Görevi oluştur'}</button>
     </div>`, kutu => {
-    let kisi = ilk.id, konu = ilkKonu;
-    /* Dosyalar görev kaydı açıldıktan SONRA yükleniyor (yolu görev
-       kimliğinden türüyor); o yüzden burada yalnız bekletiliyor. */
-    const dosyalar = [];
-    /* Resimlerin küçük önizlemesi: adres dosya seçilince üretiliyor,
-       satır silinince geri veriliyor. */
-    const onizleme = new Map();
+    let kisi = ilkKisi, secim = ilkSecim;
+    const dosyalar = [], onizleme = new Map();
     const resimMi = d => /^image\//.test((d && d.type) || '');
+    const tarihGoster = () => {
+      const v = $('#gvr-bitis', kutu).value;
+      let bulundu = false;
+      $$('[data-gm-t]', kutu).forEach(b => { const on = !bulundu && b.dataset.gmT === v; if (on) bulundu = true; b.classList.toggle('on', on); });
+      const hizliMi = hizli.some(h => h[1] === v);
+      $('.gm-tarih', kutu).classList.toggle('on', !!v && !hizliMi);
+      $('#gm-t-yazi', kutu).textContent = v && !hizliMi ? svTarih(v) : 'Tarih seç';
+    };
+    $$('[data-gm-t]', kutu).forEach(b => b.addEventListener('click', () => {
+      const alan = $('#gvr-bitis', kutu);
+      alan.value = alan.value === b.dataset.gmT ? '' : b.dataset.gmT; tarihGoster();
+    }));
+    $('#gvr-bitis', kutu).addEventListener('change', tarihGoster);
+    tarihGoster();
+
+    /* Proje seçici */
+    const ac = $('.gm-ac', kutu), cb = $('.gm-cb', kutu);
+    const isaretle = () => $$('[data-gm-p]', kutu).forEach(o => o.classList.toggle('on', o.dataset.gmP === secim));
+    isaretle();
+    cb.addEventListener('click', () => {
+      ac.hidden = !ac.hidden; cb.classList.toggle('gm-acik', !ac.hidden);
+      if (!ac.hidden) setTimeout(() => $('input', ac).focus(), 30);
+    });
+    $('input', ac).addEventListener('input', e => {
+      const q = e.target.value.trim().toLocaleLowerCase('tr');
+      $$('[data-gm-p]', ac).forEach(o => { o.hidden = !!q && !o.dataset.ara.includes(q); });
+      $$('.gm-gb, .gm-cz', ac).forEach(x => { x.hidden = !!q; });
+    });
+    $$('[data-gm-p]', kutu).forEach(o => o.addEventListener('click', () => {
+      secim = o.dataset.gmP; cb.innerHTML = secHtml(secim) + '<span class="gm-ok">⌄</span>';
+      ac.hidden = true; cb.classList.remove('gm-acik'); isaretle();
+      setTimeout(() => { const bs = $('#gvr-baslik', kutu); if (!bs.value) bs.focus(); }, 30);
+    }));
 
     const ekleriCiz = () => {
       $('#gvr-ekler', kutu).innerHTML = dosyalar.map((d, i) => `
-        <div class="gek">
-          <span class="gek-ik${resimMi(d) ? ' gek-on' : ''}">${resimMi(d)
+        <div class="gek"><span class="gek-ik${resimMi(d) ? ' gek-on' : ''}">${resimMi(d)
             ? `<img src="${onizleme.get(d)}" alt="">` : svg(ICON.dosya, 16)}</span>
           <span class="gek-yz"><b>${esc(d.name)}</b></span>
-          <button class="gek-sil" type="button" data-gvr-sil="${i}"
-                  aria-label="Kaldır">${svg(ICON.kapat, 14)}</button>
-        </div>`).join('');
+          <button class="gek-sil" type="button" data-gvr-sil="${i}" aria-label="Kaldır">${svg(ICON.kapat, 14)}</button></div>`).join('');
       $$('[data-gvr-sil]', kutu).forEach(b => b.addEventListener('click', () => {
         const [cikan] = dosyalar.splice(Number(b.dataset.gvrSil), 1);
         if (onizleme.has(cikan)) { URL.revokeObjectURL(onizleme.get(cikan)); onizleme.delete(cikan); }
         ekleriCiz();
       }));
     };
-
     $('[data-gvr="dosya"]', kutu).addEventListener('click', () => {
       const alan = document.createElement('input');
       alan.type = 'file'; alan.multiple = true; alan.style.display = 'none';
@@ -14095,47 +14166,36 @@ function gorevVerAc(secili = '', duzenle = null, on = {}) {
       });
       alan.click();
     });
-
     $$('[data-gvr-kisi]', kutu).forEach(b => b.addEventListener('click', () => {
       kisi = b.dataset.gvrKisi;
       $$('[data-gvr-kisi]', kutu).forEach(x => x.classList.toggle('on', x === b));
     }));
-    $$('[data-gvr-konu]', kutu).forEach(b => b.addEventListener('click', () => {
-      konu = b.dataset.gvrKonu;
-      $$('[data-gvr-konu]', kutu).forEach(x => x.classList.toggle('on', x === b));
-      $('.gvr-proje', kutu).hidden = konu !== 'proje';
-    }));
-
-    $('[data-gvr="iptal"]', kutu).addEventListener('click', modalKapat);
+    $$('[data-gvr="iptal"]', kutu).forEach(b => b.addEventListener('click', modalKapat));
     $('[data-gvr="gonder"]', kutu).addEventListener('click', async () => {
       const baslik = $('#gvr-baslik', kutu).value.trim();
       const metin  = $('#gvr-metin', kutu).value.trim();
       const bitis  = $('#gvr-bitis', kutu).value || null;
-      const proje  = konu === 'proje' ? $('#gvr-proje', kutu).value : null;
-
-      if (!baslik) { toast('Başlığı yaz — görev tek cümlede ne?'); return; }
-      if (konu === 'proje' && !proje) { toast('Proje seç ya da «Genel» de.'); return; }
-
+      if (!secim) { toast('Önce proje seç ya da «Projesiz» de.'); cb.click(); return; }
+      if (!baslik) { toast('Başlığı yaz — görev tek cümlede ne?'); $('#gvr-baslik', kutu).focus(); return; }
+      const proje = secim.charAt(0) === ':' ? null : secim;
+      const konu = proje ? 'proje' : secim === ':studio' ? 'studio' : 'genel';
       const dugme = $('[data-gvr="gonder"]', kutu);
       dugme.disabled = true;
       try {
         const id = duzenle
-          ? (await DB.gorevGuncelle(duzenle.id, { proje_id: proje, baslik, aciklama: metin,
-                                                  atanan: kisi, bitis, konu }), duzenle.id)
-          : await DB.gorevOlustur({ proje_id: proje, baslik, aciklama: metin,
-                                    atanan: kisi, bitis, konu,
-                                    sira: gorevSonrakiSira(kisi) });
+          ? (await DB.gorevGuncelle(duzenle.id, { proje_id: proje, baslik, aciklama: metin, atanan: kisi, bitis, konu }), duzenle.id)
+          : await DB.gorevOlustur({ proje_id: proje, baslik, aciklama: metin, atanan: kisi, bitis, konu, sira: gorevSonrakiSira(kisi) });
         for (const d of dosyalar) {
           try { await DB.gorevEkYukle(id, d); }
           catch (h) { toast(d.name + ' yüklenemedi: ' + h.message, 'uyari'); }
         }
         modalKapat(); sayaclariYaz(); render();
-        toast(duzenle ? 'Görev güncellendi.'
-                      : DB.kisiAdi(kisi) + ' kişisine görev verildi.', 'basari');
+        toast(duzenle ? 'Görev güncellendi.' : (kisi === ben ? 'Görev oluşturuldu.' : DB.kisiAdi(kisi) + ' kişisine görev verildi.'), 'basari');
       } catch (h) { toast(h.message, 'hata'); dugme.disabled = false; }
     });
-    setTimeout(() => $('#gvr-baslik', kutu).focus(), 60);
-  });
+    if (!ilkSecim) setTimeout(() => cb.click(), 120);
+    else setTimeout(() => $('#gvr-baslik', kutu).focus(), 60);
+  }, 'gm-modal');
 }
 
 function gorevKartiAc(id) {
@@ -16076,6 +16136,8 @@ async function eylemCalistir(el) {
   }
 
   if (e === 'gorev-kova') { GOREV_KOVA = el.dataset.deger; return render(); }
+  if (e === 'gv-sekme')  return gvSekmeSec(id);
+  if (e === 'gv-suz')    { GV_SUZ = id; return render(); }
   if (e === 'gorev-ac')   return gorevKartiAc(el.dataset.id);
   if (e === 'gorev-ver')  return gorevVerAc();
   if (e === 'gorev-sirala') return gorevSiralaAc();

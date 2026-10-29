@@ -21,6 +21,14 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.364.0', tarih: '2026-10-29',
+    ozet: 'Yeni Görevler sayfası ve görev penceresi',
+    maddeler: [
+      'Görevler sayfası ikiye ayrıldı: Görevlerim ve Ekip Görevleri. Sağda kırmızı + ile yeni görev.',
+      'Görevler Açık, Kontrolde, Bitenler diye süzülüyor; bitiş tarihine göre gruplu kartlarda.',
+      'Yeni görev penceresi 5 adım: proje (ya da projesiz), başlık, görev, bitiş tarihi, kime.',
+      'Bitiş tarihi için Bugün, Yarın, Bu hafta düğmeleri.',
+    ] },
   { surum: 'v0.363.1', tarih: '2026-10-29',
     ozet: 'Vitrin geçişi daha yumuşak',
     maddeler: ['Vitrinden projeye geçiş iPhone\'un kendi açılış hissiyle, daha yumuşak ve takılmadan kayıyor.'] },

@@ -1,5 +1,14 @@
 # Değişiklik Günlüğü
 
+## v0.364.0
+- **Görevler ekranı** (onaylı taslak): `gorevlerEkrani` — `GV_SEKME` (ben/ekip, `.pjs` kayan geçiş, yalnız yönetici;
+  geliştirici yalnız Görevlerim), `GV_SUZ` (açık/kontrol/bitti), `gvGrup` (Gecikenler, Bugün, Bu hafta, Daha sonra,
+  Tarihsiz), `gvKart` kabarık kartlar. Eski sekmeler (Bana verilenler / Benim verdiklerim / Tamamlananlar), arama
+  çubuğu ve "Görevleri sırala" düğmesi bu ekrandan kalktı (`gorev-sirala` eylemi duruyor).
+- **Yeni görev penceresi** `gorevVerAc` (`.gm-modal`): 1 Proje (arama kutulu seçici; Projesiz, Nizam Studio,
+  vitrin gruplarına göre projeler, atölye), 2 Başlık, 3 Görev, 4 Bitiş (Bugün/Yarın/Bu hafta + takvim), 5 Kime
+  (varsayılan sen). Ekler isteğe bağlı. Düzenleme aynı pencerede.
+
 ## v0.363.1
 - Geçiş eğrisi `cubic-bezier(.32,.72,0,1)` .6s; parça çapraz solması .3s. Yükselen kartlar `translate3d`, daha kısa gecikme.
 - Geçiş süresince `html.pa-akis`: alt menünün `backdrop-filter`'ı kapalı (afiş altından geçerken her karede yeniden
