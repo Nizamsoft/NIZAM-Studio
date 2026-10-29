@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## v0.349.1
+- Alt çubuk PWA'da alta yapışıyordu: bölüm 16'daki `html.uygulama #tabbar { margin-bottom: 0 }` daha güçlü
+  seçiciydi. Hap bloğuna aynı seçiciyle `max(12px, safe-area - 6px)` eklendi.
+
 ## v0.349.0
 - **Alt çubuk yüzen hap** (mobil, ≤900px): `#tabbar` kenarlardan 14px ayrık, `border-radius: 999px`,
   `rgba(255,255,255,.72)` + `backdrop-filter: blur(22px) saturate(180%)`. Aktif sekme gri hap

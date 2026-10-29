@@ -21,6 +21,11 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.349.1', tarih: '2026-10-29',
+    ozet: 'Alt menü telefonda da yüzüyor',
+    maddeler: [
+      'Telefona kurulu uygulamada alt menü ekranın dibine yapışıyordu; artık alttan boşluklu duruyor.',
+    ] },
   { surum: 'v0.349.0', tarih: '2026-10-29',
     ozet: 'Yüzen alt menü',
     maddeler: [

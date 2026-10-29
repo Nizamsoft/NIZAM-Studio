@@ -12295,6 +12295,10 @@ button.pd-sat { cursor: pointer; }
     -webkit-backdrop-filter: blur(22px) saturate(180%);
     box-shadow: 0 0 0 1px rgba(23, 23, 26, .08), 0 12px 30px -10px rgba(23, 23, 26, .28);
   }
+  /* Telefona kurulu uygulamada bölüm 16'daki `html.uygulama #tabbar
+     { margin-bottom: 0 }` daha güçlü seçici; onu aynı güçte eziyoruz,
+     yoksa hap alta yapışıyor. */
+  html.uygulama #tabbar { margin-bottom: max(12px, calc(env(safe-area-inset-bottom, 0px) - 6px)); }
   .tab { border-radius: 999px; padding: 8px 0 7px; gap: 4px; transition: background .2s ease; }
   .tab::before, .tab.active::after { display: none; }
   .tab.active { background: rgba(23, 23, 26, .07); }
