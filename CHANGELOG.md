@@ -1,5 +1,14 @@
 # Değişiklik Günlüğü
 
+## v0.366.0
+- Görev paneli: `.gm-perde` + `.gm-modal` sağdan tam boy panel (`gm-panel` girişi), çıkış `kutu._kapanis` ile kayarak
+  (`modalKapat` artık pencerenin kendi kapanışını çağırabiliyor; Esc / perde / Vazgeç hepsi kayarak). Giriş
+  animasyonu bitince `animation: none` (dolgu sürükleme ve çıkış kaydırmasını eziyordu). İlk açılışta proje seçici
+  otomatik açılmıyor, odak başlıkta; `.gm-ac` artık mutlak konumlu, alanları itmiyor.
+- Görevler filtresi: `.gv2-fd` (seçili filtre sayısı rozeti) → `gvFiltreAc` oklu pencere: Durum, Personel (yalnız
+  Ekip), Firma (Projesiz / Nizam Studio / projeler). `GV_KISI`, `GV_PROJE`; seçili filtreler başlık altında çip.
+  Açık/Kontrolde/Bitenler çipleri sayfadan kalktı. Dar ekranda sekme sayıları gizli.
+
 ## v0.365.0
 - Görev taslağı: `GM_TASLAK` (proje, başlık, metin, bitiş, kişi, dosyalar, düzenlenen görev). Pencere ⇥ (`data-gvr=kenar`)
   ya da sağa kaydırma (>90px, yatay hareket) ile kenara alınır; body'de `#gm-taslak` kırmızı ok düğmesi. Basınca

@@ -13060,3 +13060,49 @@ html.pa-akis .vt-ik.kot::after, html.pa-akis .p3-uyari, html.pa-akis .pa2-dk.uy,
 /* Vitrin: dar kartlarda rozet logonun üstüne binmesin. */
 .vt-pos.kar .vt-rz, .vt-pos.yakin .vt-rz { right: 32px; font-size: 8px; padding: 3px 5px; letter-spacing: .06em; }
 .vt-pos.kar .vt-canli { right: 32px; }
+
+/* ---- Görev paneli: sağdan kayan tam boy panel (v0.366.0) ---- */
+.modal-perde.gm-perde { justify-content: flex-end; align-items: stretch; padding: 0; background: rgba(23, 23, 26, .38); }
+.modal-kutu.gm-modal {
+  display: flex; flex-direction: column; width: min(460px, 92vw); max-width: none; height: 100%; max-height: none;
+  border-radius: 22px 0 0 22px; overflow: hidden; animation: gm-panel .4s cubic-bezier(.32, .72, 0, 1) both;
+  box-shadow: -20px 0 50px rgba(0, 0, 0, .3);
+}
+@keyframes gm-panel { from { transform: translate3d(105%, 0, 0); } to { transform: none; } }
+.modal-kutu.gm-modal.gm-geri { animation: gm-panel .4s cubic-bezier(.32, .72, 0, 1) both; }
+.gm-modal .gm-bas { position: relative; padding-top: calc(16px + env(safe-area-inset-top, 0px)); }
+.gm-modal .gm-govde { flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.gm-modal .gm-alt { position: relative; padding-bottom: calc(18px + env(safe-area-inset-bottom, 0px)); }
+/* Proje listesi alanları itmesin, üstlerine açılsın. */
+.gm-cb-sar { position: relative; z-index: 6; }
+.gm-ac { position: absolute; left: 0; right: 0; top: calc(100% + 8px); margin-top: 0; z-index: 6; box-shadow: 0 22px 44px rgba(23, 23, 26, .22); }
+
+/* ---- Görevler filtresi (v0.366.0) ---- */
+.gv2 { position: relative; }
+.gv2-fd {
+  all: unset; box-sizing: border-box; cursor: pointer; position: relative; flex-shrink: 0;
+  width: 46px; height: 46px; border-radius: 14px; display: flex; align-items: center; justify-content: center;
+  background: #fff; border: 1px solid #e3e3e8; box-shadow: 0 4px 0 #d6d6db;
+}
+.gv2-fd:active { transform: translateY(3px); box-shadow: 0 1px 0 #d6d6db; }
+.gv2-fd svg { width: 20px; height: 20px; fill: none; stroke: #26262a; stroke-width: 2; stroke-linecap: round; }
+.gv2-fd em { position: absolute; top: -5px; right: -5px; min-width: 18px; height: 18px; padding: 0 4px; box-sizing: border-box; border-radius: 9px; border: 2px solid #fff; background: var(--red); color: #fff; font-style: normal; font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+.gv2-etiket { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: -4px 0 4px; }
+.gv2-etiket span { font-size: 12px; font-weight: 600; padding: 5px 10px; border-radius: 999px; background: #26262a; color: #fff; }
+.gv2-etiket button { all: unset; cursor: pointer; font-size: 12px; color: #9a9aa2; padding: 5px 4px; }
+.gv2-fp {
+  position: absolute; left: 0; right: 0; z-index: 30; max-width: 440px; padding: 14px;
+  background: #fff; border: 1px solid #e3e3e8; border-radius: 18px; box-shadow: 0 24px 50px rgba(0, 0, 0, .22);
+  opacity: 0; transform: translateY(-6px); transition: opacity .16s ease, transform .16s ease;
+}
+.gv2-fp.gor { opacity: 1; transform: none; }
+.gv2-fp::before { content: ''; position: absolute; top: -8px; left: 16px; width: 14px; height: 14px; background: #fff; border-left: 1px solid #e3e3e8; border-top: 1px solid #e3e3e8; transform: rotate(45deg); }
+.gv2-fp h4 { margin: 4px 0 8px; font-size: 10.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #56565c; }
+.gv2-fp .gm-ch, .gv2-fp .gm-kisiler { margin-bottom: 12px; }
+.gv2-fl { max-height: 210px; overflow-y: auto; margin: 0 -4px 12px; border: 1px solid #ededf0; border-radius: 12px; padding: 4px; }
+.gv2-fp-alt { display: flex; gap: 10px; }
+.gv2 .pjs button { white-space: nowrap; }
+@media (max-width: 420px) {
+  .gv2 .pjs button { font-size: 13px; gap: 4px; }
+  .gv2 .gv2-say { display: none; }
+}

@@ -13751,6 +13751,13 @@ function modalAc(html, bagla, ekSinif = '') {
 function modalKapat() {
   const hepsi = $$('.modal-perde');
   const son = hepsi[hepsi.length - 1];
+  /* Kendi çıkış animasyonu olan pencere (görev paneli) önce kayarak çıkar. */
+  const kutu = son && son.querySelector('.modal-kutu');
+  if (kutu && kutu._kapanis && !kutu._kapaniyor) {
+    kutu._kapaniyor = true;
+    kutu._kapanis(() => { son.remove(); if ($$('.modal-perde').length === 0) document.removeEventListener('keydown', kacTusu); });
+    return;
+  }
   if (son) son.remove();
   if (hepsi.length <= 1) document.removeEventListener('keydown', kacTusu);
 }
@@ -13929,6 +13936,11 @@ function onaySor({ baslik, mesaj, buton = 'Sil' }) {
    ========================================================================== */
 let GV_SEKME = (() => { try { return localStorage.getItem('ns.gvSekme') || 'ben'; } catch (h) { return 'ben'; } })();
 let GV_SUZ = 'acik';
+/* Filtre (v0.366.0): durum + personel (yalnız Ekip) + firma. */
+let GV_KISI = null, GV_PROJE = null;
+function gvFiltreSay() {
+  return (GV_SUZ !== 'acik' ? 1 : 0) + (GV_SEKME === 'ekip' && GV_KISI ? 1 : 0) + (GV_PROJE ? 1 : 0);
+}
 
 function gvDurum(g) {
   if (g.durum === 'onaylandi') return { ad: 'Tamamlandı', renk: '#2f7d5c' };
@@ -13980,12 +13992,15 @@ function gorevlerEkrani() {
     kontrol: g => g.durum === 'bitirdi',
     bitti:   g => g.durum === 'onaylandi',
   }[GV_SUZ] || (() => true);
-  let liste = kaynak.filter(suz);
+  const kisiUy = g => GV_SEKME !== 'ekip' || !GV_KISI || g.atanan === GV_KISI;
+  const projeUy = g => !GV_PROJE || (GV_PROJE === ':genel' ? !g.proje_id && g.konu !== 'studio'
+    : GV_PROJE === ':studio' ? !g.proje_id && g.konu === 'studio' : g.proje_id === GV_PROJE);
+  let liste = kaynak.filter(g => suz(g) && kisiUy(g) && projeUy(g));
   let govde = '';
   if (!liste.length) {
     govde = `<div class="gv2-bos"><span class="vt-ik tam"><svg viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg></span>
-      <b>${GV_SUZ === 'bitti' ? 'Biten görev yok' : GV_SUZ === 'kontrol' ? 'Kontrolde görev yok' : GV_SEKME === 'ekip' ? 'Ekipte açık görev yok' : 'Sana verilmiş açık görev yok'}</b>
-      <i>${GV_SUZ === 'acik' ? 'Yeni görev için sağ üstteki + düğmesine bas.' : ''}</i></div>`;
+      <b>${gvFiltreSay() && (GV_KISI || GV_PROJE) ? 'Bu filtreye uyan görev yok' : GV_SUZ === 'bitti' ? 'Biten görev yok' : GV_SUZ === 'kontrol' ? 'Kontrolde görev yok' : GV_SEKME === 'ekip' ? 'Ekipte açık görev yok' : 'Sana verilmiş açık görev yok'}</b>
+      <i>${gvFiltreSay() ? 'Filtreyi soldaki düğmeden değiştirebilirsin.' : 'Yeni görev için sağ üstteki + düğmesine bas.'}</i></div>`;
   } else if (GV_SUZ === 'bitti') {
     liste = liste.sort((x, y) => (y.guncellendi || '').localeCompare(x.guncellendi || '')).slice(0, 60);
     govde = liste.map(g => gvKart(g, GV_SEKME === 'ekip')).join('');
@@ -13996,9 +14011,11 @@ function gorevlerEkrani() {
     govde = sira.filter(k => gr[k]).map(k => `<div class="gv2-gb ${k === 'Gecikenler' ? 'k' : ''}">${k}</div>`
       + gr[k].map(g => gvKart(g, GV_SEKME === 'ekip')).join('')).join('');
   }
-  const cip = (k, ad) => `<button type="button" class="${GV_SUZ === k ? 'on' : ''}" data-eylem="gv-suz" data-id="${k}">${ad}</button>`;
+  const fs = gvFiltreSay();
   return `<div class="gv2">
     <div class="pjs-sat">
+      <button type="button" class="gv2-fd ${fs ? 'on' : ''}" data-eylem="gv-filtre" aria-label="Filtre">
+        <svg viewBox="0 0 24 24"><path d="M4 6h16M7 12h10M10 18h4"/></svg>${fs ? `<em>${fs}</em>` : ''}</button>
       ${yon ? `<div class="pjs ${GV_SEKME === 'ekip' ? 'atolye' : ''}" role="tablist">
         <i class="pjs-hap" aria-hidden="true"></i>
         <button type="button" data-eylem="gv-sekme" data-id="ben">Görevlerim <u class="gv2-say">${acikSay(benim)}</u></button>
@@ -14006,10 +14023,61 @@ function gorevlerEkrani() {
       </div>` : `<h1 class="gv2-h">Görevlerim</h1>`}
       <button class="pjs-yeni" type="button" data-eylem="gorev-ver" aria-label="Yeni görev">${svg(ICON.arti, 18)}</button>
     </div>
-    <div class="gv2-suz">${cip('acik', 'Açık')}${cip('kontrol', 'Kontrolde')}${cip('bitti', 'Bitenler')}</div>
+    ${fs ? `<div class="gv2-etiket">${[GV_SUZ !== 'acik' ? { kontrol: 'Kontrolde', bitti: 'Bitenler', hepsi: 'Hepsi' }[GV_SUZ] : '',
+      GV_SEKME === 'ekip' && GV_KISI ? DB.kisiAdi(GV_KISI) : '',
+      GV_PROJE ? (GV_PROJE === ':genel' ? 'Projesiz' : GV_PROJE === ':studio' ? 'Nizam Studio' : basHarfleriBuyuk((DB.proje(GV_PROJE) || {}).firma || '')) : '']
+      .filter(Boolean).map(x => `<span>${esc(x)}</span>`).join('')}<button type="button" data-eylem="gv-temizle">Temizle</button></div>` : ''}
     <div class="gv2-liste">${govde}</div>
   </div>`;
 }
+function gvFiltreKapat() { $$('.gv2-fp').forEach(x => x.remove()); }
+function gvFiltreAc(el) {
+  if ($('.gv2-fp')) return gvFiltreKapat();
+  const kap = el.closest('.gv2'); if (!kap) return;
+  let durum = GV_SUZ, kisi = GV_KISI, proje = GV_PROJE;
+  const ekip = GV_SEKME === 'ekip';
+  const kisiler = (DB.kisilerHepsi || DB.kisiler || []).filter(k => k.aktif !== false);
+  const projeler = DB.projeler.filter(p => !p.arsiv && !cekirdekMi(p));
+  const ben = AUTH.user ? AUTH.user.id : '';
+  const pop = document.createElement('div');
+  pop.className = 'gv2-fp';
+  const ciz = () => {
+    const pAd = proje === ':genel' ? 'Projesiz' : proje === ':studio' ? 'Nizam Studio'
+      : proje ? basHarfleriBuyuk((DB.proje(proje) || {}).firma || '') : 'Bütün firmalar';
+    pop.innerHTML = `
+      <h4>Durum</h4><div class="gm-ch">${[['acik', 'Açık'], ['kontrol', 'Kontrolde'], ['bitti', 'Bitti'], ['hepsi', 'Hepsi']]
+        .map(([k, a]) => `<button type="button" class="${durum === k ? 'on' : ''}" data-f-d="${k}">${a}</button>`).join('')}</div>
+      ${ekip ? `<h4>Personel</h4><div class="gm-kisiler">
+        <button type="button" class="gm-k ${!kisi ? 'on' : ''}" data-f-k=""><span class="shz-av shz-her">👥</span><i>Herkes</i></button>
+        ${kisiler.map(k => `<button type="button" class="gm-k ${kisi === k.id ? 'on' : ''}" data-f-k="${k.id}">
+          ${shAvatar(k.ad_soyad || k.ad || '?', '', k)}<i>${k.id === ben ? 'Sen' : esc((k.ad || k.ad_soyad || '').split(' ')[0])}</i></button>`).join('')}</div>` : ''}
+      <h4>Firma</h4>
+      <div class="gv2-fl">
+        <button type="button" class="gm-o ${!proje ? 'on' : ''}" data-f-p=""><span class="gm-lo bos">∗</span><span class="gm-cb-yz"><b>Bütün firmalar</b></span><span class="gm-tik">✓</span></button>
+        <button type="button" class="gm-o ${proje === ':genel' ? 'on' : ''}" data-f-p=":genel"><span class="gm-lo bos">—</span><span class="gm-cb-yz"><b>Projesiz</b></span><span class="gm-tik">✓</span></button>
+        <button type="button" class="gm-o ${proje === ':studio' ? 'on' : ''}" data-f-p=":studio"><span class="gm-lo" style="background:#fff url(logo.png) center/60% auto no-repeat;border:1px solid #ededf0"></span><span class="gm-cb-yz"><b>Nizam Studio</b></span><span class="gm-tik">✓</span></button>
+        ${projeler.map(p => { const r = pjRenk(p); return `<button type="button" class="gm-o ${proje === p.id ? 'on' : ''}" data-f-p="${p.id}">
+          <span class="gm-lo" style="background:linear-gradient(140deg,${r[0]},${r[1]})">${esc(basHarf(p.firma || projeAdi(p)))}</span>
+          <span class="gm-cb-yz"><b>${esc(basHarfleriBuyuk(p.firma || projeAdi(p)))}</b><i>${esc(modulAdi(p) || '')}</i></span><span class="gm-tik">✓</span></button>`; }).join('')}
+      </div>
+      <div class="gv2-fp-alt"><button type="button" class="gm-bt g" data-f-t>Temizle</button><button type="button" class="gm-bt a" data-f-u>Uygula</button></div>`;
+    $$('[data-f-d]', pop).forEach(b => b.onclick = () => { durum = b.dataset.fD; ciz(); });
+    $$('[data-f-k]', pop).forEach(b => b.onclick = () => { kisi = b.dataset.fK || null; ciz(); });
+    $$('[data-f-p]', pop).forEach(b => b.onclick = () => { proje = b.dataset.fP || null; ciz(); });
+    $('[data-f-t]', pop).onclick = () => { GV_SUZ = 'acik'; GV_KISI = null; GV_PROJE = null; gvFiltreKapat(); render(); };
+    $('[data-f-u]', pop).onclick = () => { GV_SUZ = durum; GV_KISI = kisi; GV_PROJE = proje; gvFiltreKapat(); render(); };
+  };
+  ciz();
+  kap.appendChild(pop);
+  pop.style.top = (el.offsetTop + el.offsetHeight + 12) + 'px';
+  requestAnimationFrame(() => pop.classList.add('gor'));
+}
+document.addEventListener('click', e => {
+  if (!$('.gv2-fp')) return;
+  if (e.target.closest('.gv2-fp') || e.target.closest('.gv2-fd')) return;
+  gvFiltreKapat();
+}, true);
+
 function gvSekmeSec(k) {
   if (k === GV_SEKME) return;
   GV_SEKME = k === 'ekip' ? 'ekip' : 'ben';
@@ -14100,7 +14168,7 @@ function gorevVerAc(secili = '', duzenle = null, on = {}) {
   }
 
   const adim = (n, ad, ic) => `<div class="gm-alan"><div class="gm-et"><em>${n}</em>${ad}</div>${ic}</div>`;
-  modalAc(`
+  const perde = modalAc(`
     <div class="gm-bas">
       <span class="gm-bas-ik">${duzenle ? svg(ICON.kalem, 20) : '+'}</span>
       <span><b>${duzenle ? 'Görevi düzenle' : 'Yeni görev'}</b><i>${duzenle ? 'Değiştir, kaydet' : '5 adımda hazır'}</i></span>
@@ -14136,7 +14204,18 @@ function gorevVerAc(secili = '', duzenle = null, on = {}) {
     const dosyalar = tas ? tas.dosyalar.slice() : [], onizleme = new Map();
     const resimMi0 = d => /^image\//.test((d && d.type) || '');
     dosyalar.forEach(d => { if (resimMi0(d)) onizleme.set(d, URL.createObjectURL(d)); });
-    if (tas) kutu.classList.add('gm-geri');
+    /* Panel: sağdan kayarak girer, kayarak çıkar (v0.366.0). */
+    /* Giriş animasyonu bitince kalkmalı: "both" dolgusu elle verilen
+       kaydırmayı (sürükleme, çıkış) eziyordu. */
+    kutu.addEventListener('animationend', () => { kutu.style.animation = 'none'; }, { once: true });
+    kutu._kapanis = bitti => {
+      kutu.style.animation = 'none';
+      void kutu.offsetWidth;
+      kutu.style.transition = 'transform .3s cubic-bezier(.32,.72,0,1)';
+      kutu.style.transform = 'translate3d(105%,0,0)';
+      const pr = kutu.parentElement; if (pr) { pr.style.transition = 'opacity .3s'; pr.style.opacity = '0'; }
+      setTimeout(bitti, 290);
+    };
     const resimMi = d => /^image\//.test((d && d.type) || '');
     const tarihGoster = () => {
       const v = $('#gvr-bitis', kutu).value;
@@ -14209,10 +14288,8 @@ function gorevVerAc(secili = '', duzenle = null, on = {}) {
       GM_TASLAK = { secim, kisi, duzenle, on: { proje: on.proje },
         baslik: $('#gvr-baslik', kutu).value, metin: $('#gvr-metin', kutu).value,
         bitis: $('#gvr-bitis', kutu).value, dosyalar: dosyalar.slice() };
-      kutu.style.transition = 'transform .28s cubic-bezier(.32,.72,0,1), opacity .28s';
-      kutu.style.transform = 'translate3d(110%,0,0)'; kutu.style.opacity = '0';
-      const perde = kutu.parentElement; if (perde) perde.style.transition = 'opacity .28s', perde.style.opacity = '0';
-      setTimeout(() => { modalKapat(); gmDugmeGoster(); }, 260);
+      kutu._kapanis(() => { const pr = kutu.parentElement; if (pr) pr.remove(); gmDugmeGoster(); });
+      kutu._kapaniyor = true;
     };
     $('[data-gvr="kenar"]', kutu).addEventListener('click', kenaraAl);
     let x0 = null, y0 = 0, dx = 0, yatay = null;
@@ -14227,7 +14304,7 @@ function gorevVerAc(secili = '', duzenle = null, on = {}) {
       if (!yatay) return;
       dx = Math.max(0, ddx);
       kutu.style.transition = 'none';
-      kutu.style.transform = `translate3d(${dx}px,0,0) rotate(${dx / 60}deg)`;
+      kutu.style.transform = `translate3d(${dx}px,0,0)`;
       kutu.style.opacity = String(Math.max(.4, 1 - dx / 500));
     }, { passive: true });
     kutu.addEventListener('touchend', () => {
@@ -14260,10 +14337,9 @@ function gorevVerAc(secili = '', duzenle = null, on = {}) {
       } catch (h) { toast(h.message, 'hata'); dugme.disabled = false; }
     });
     if (dosyalar.length) ekleriCiz();
-    if (tas) {}
-    else if (!ilkSecim) setTimeout(() => cb.click(), 120);
-    else setTimeout(() => $('#gvr-baslik', kutu).focus(), 60);
+    if (!tas) setTimeout(() => $('#gvr-baslik', kutu).focus(), 420);
   }, 'gm-modal');
+  perde.classList.add('gm-perde');
 }
 
 function gorevKartiAc(id) {
@@ -16206,6 +16282,8 @@ async function eylemCalistir(el) {
   if (e === 'gorev-kova') { GOREV_KOVA = el.dataset.deger; return render(); }
   if (e === 'gv-sekme')  return gvSekmeSec(id);
   if (e === 'gv-suz')    { GV_SUZ = id; return render(); }
+  if (e === 'gv-filtre') return gvFiltreAc(el);
+  if (e === 'gv-temizle') { GV_SUZ = 'acik'; GV_KISI = null; GV_PROJE = null; return render(); }
   if (e === 'gorev-ac')   return gorevKartiAc(el.dataset.id);
   if (e === 'gorev-ver')  return gorevVerAc();
   if (e === 'gorev-sirala') return gorevSiralaAc();

@@ -21,6 +21,13 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.366.0', tarih: '2026-10-29',
+    ozet: 'Görev paneli ve filtre',
+    maddeler: [
+      'Yeni görev artık sağdan kayarak açılan bir panel; kapanırken de kayarak çıkıyor.',
+      'Panel açılınca proje listesi kendiliğinden açılmıyor; açıldığında alanların üstüne geliyor.',
+      'Görevler\'de solda filtre düğmesi: durum, personel ve firmaya göre süz.',
+    ] },
   { surum: 'v0.365.0', tarih: '2026-10-29',
     ozet: 'Görev yazarken kenara al',
     maddeler: [
