@@ -12730,3 +12730,34 @@ button.pd-sat { cursor: pointer; }
   .vt.gecis, .atl.gecis { animation: none; }
   .vt-sl { transition: opacity .3s; transform: none; }
 }
+
+/* ---- Vitrin açık zemin (v0.360.0 · kullanıcı T4'ü seçti) + durum ikonları ---- */
+#main.vitrinde #zemin-sus {
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='84' height='72' viewBox='0 0 56 48'%3E%3Cpath d='M0 24L14 0h28l14 24-14 24H14z' fill='none' stroke='%2317171a' stroke-opacity='.07' stroke-width='.8'/%3E%3C/svg%3E") 0 0 / 84px 72px,
+    linear-gradient(180deg, #ececef, #dedee3);
+}
+.vt { color: #26262a; }
+.vt .pjs { background: #dcdde1; border-color: #cfd0d5; }
+.vt .pjs-hap { background: #26262a; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .15), 0 4px 10px rgba(0, 0, 0, .25); }
+.vt .pjs button { color: #6a6a72; }
+.vt .pjs:not(.atolye) button:first-of-type { color: #fff; }
+.vt-gb b { color: #17171a; }
+.vt-gb small { color: #9a9aa2; }
+.vt-bos { color: #6a6a72; }
+.vt-hero { box-shadow: 0 6px 0 #c9c9cf, 0 14px 26px rgba(23, 23, 26, .16); }
+.vt-pos { box-shadow: 0 5px 0 #c9c9cf, 0 10px 18px rgba(23, 23, 26, .14); text-decoration: none; color: #fff; }
+.vt-pos.ana { box-shadow: 0 0 0 2px #fff inset, 0 6px 0 #c2c2c8, 0 12px 22px rgba(23, 23, 26, .18); }
+.vt-nk button { background: #c4c5cb; }
+.vt-ikr { display: flex; gap: 6px; margin-top: 8px; }
+.vt-ik {
+  position: relative; width: 26px; height: 26px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(255, 255, 255, .16); border: 1px solid rgba(255, 255, 255, .22);
+}
+.vt-ik svg { width: 14px; height: 14px; fill: none; stroke: #fff; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+.vt-ik.kot { background: linear-gradient(155deg, #f2564c, #c9241b); border-color: rgba(255, 255, 255, .35); }
+.vt-ik.kot::after { content: ''; position: absolute; inset: 0; border-radius: inherit; animation: p3-halka 2.4s ease-out infinite; }
+.vt-pos.kar .vt-ik { width: 22px; height: 22px; border-radius: 7px; }
+.vt-pos.kar .vt-ik svg { width: 12px; height: 12px; }
+@media (prefers-reduced-motion: reduce) { .vt-ik.kot::after { animation: none; } }

@@ -114,9 +114,9 @@ kalıyor.
 bilerek seçti: bol kırmızı vurgu (ana düğme, aktif adım, kahraman kart, halka),
 yumuşak gölge ve 14px köşe. Yalnız Security ekranlarında; başka yere taşıma.
 
-**İstisna — Projeler › Vitrin (`.vt`, `#main.vitrinde`):** kullanıcı 2026-10-29'da
-bilerek seçti: koyu sahne (#121214–#1b1b1f), Netflix usulü afişler, gölge ve
-kırmızı "ANA/ÖNE ÇIKAN" rozetleri. Yalnız Vitrin sekmesinde.
+**İstisna — Projeler › Vitrin (`.vt`):** kullanıcı 2026-10-29'da bilerek seçti:
+Netflix usulü afişler, kabarık gölge, kırmızı "ANA/ÖNE ÇIKAN" rozetleri ve sorun
+varken parlayan kırmızı durum ikonları. Zemin koyu değil: biraz koyu gri petek (T4).
 
 **İstisna — Panel kartları (`.p3`):** kullanıcı 2026-10-29'da bilerek seçti:
 3D, basılabilir kartlar (kalın alt kenar + gölge, basınca iner) ve karta

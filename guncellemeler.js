@@ -21,6 +21,13 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.360.0', tarih: '2026-10-29',
+    ozet: 'Vitrin açık zeminde, durum ikonlarıyla',
+    maddeler: [
+      'Vitrin\'in zemini artık koyu değil: açık gri petek.',
+      'Her afişte üç ikon: hata, yedek, güvenlik. Sorun varsa kırmızı ve parlıyor.',
+      'Ana muhasebe programı vitrinde görünüyor; Kübban ve Merkez Efendi yanında kardeş olarak.',
+    ] },
   { surum: 'v0.359.0', tarih: '2026-10-29',
     ozet: 'Projeler: Vitrin',
     maddeler: [

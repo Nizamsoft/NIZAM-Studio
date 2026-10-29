@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü
 
+## v0.360.0
+- Vitrin zemini T4 (petek + `#ececef → #dedee3`); geçiş düğmesi, başlıklar ve gölgeler açık zemine göre.
+- Afiş durum ikonları `vtIkonlar` (hata `pjYeniHata`, yedek `pdYedek`, güvenlik `pdGuvenlik`; k/b → `.vt-ik.kot`
+  kırmızı + `p3-halka`). Yalnız yönetici.
+- Ana program: `vtSurumAnalari` Sürüm Takibi'ndeki anayı bütün kovalarda arar (klon/deneme dahil) ve vitrine
+  ekler; bulunamazsa `vtSanalAna` (siteye giden afiş). Kardeşlerden biri artık yanlışlıkla "ana" seçilmiyor.
+- CLAUDE.md vitrin istisnası güncellendi (koyu sahne kalktı).
+
 ## v0.359.0
 - **Projeler › Vitrin** (onaylı taslak, 1. adım): `PJ_SEKME` (vitrin/atölye, localStorage `ns.pjSekme`), `.pjs` kayan
   hap geçişi (`pjSekmeSec`, `PJ_GECIS` → `.vt.gecis` ışık yanma / `.atl.gecis` aşağıdan açılma).

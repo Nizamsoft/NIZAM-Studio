@@ -8443,6 +8443,26 @@ function vtAnaMi(p) {
   return !!(yer && yer.tur === 'ana');
 }
 
+/* Afişteki üç durum ikonu: hata · yedek · güvenlik. Sorun varsa kırmızı
+   ve parlayan, yoksa sade (v0.360.0). Yalnız yönetici. */
+const VT_IKON = {
+  hata: '<path d="M7.5 11a4.5 4.5 0 0 1 9 0v3.5a4.5 4.5 0 0 1-9 0z"/><path d="M12 10.5V19M7.5 12.5H4.5M16.5 12.5h3M9.5 7.3L8 5.5M14.5 7.3L16 5.5"/>',
+  yedek: '<ellipse cx="12" cy="6" rx="7" ry="2.8"/><path d="M5 6v12c0 1.5 3.1 2.8 7 2.8s7-1.3 7-2.8V6M5 12c0 1.5 3.1 2.8 7 2.8s7-1.3 7-2.8"/>',
+  guv: '<path d="M12 2.8l7.2 2.7v5.6c0 4.6-3 8.4-7.2 10-4.2-1.6-7.2-5.4-7.2-10V5.5z"/><path d="M9 12l2 2 4-4"/>',
+};
+function vtIkonlar(p) {
+  if (!AUTH.yonetici) return '';
+  yedekEslemeYukle();
+  const hata = pjYeniHata(p.id);
+  const y = pdYedek(p), g = pdGuvenlik(p);
+  const ik = (k, kot, baslik) => `<span class="vt-ik ${kot ? 'kot' : ''}" title="${esc(baslik)}"><svg viewBox="0 0 24 24">${VT_IKON[k]}</svg></span>`;
+  return `<span class="vt-ikr">
+    ${ik('hata', hata > 0, hata ? hata + ' yeni hata bildirimi' : 'Yeni hata yok')}
+    ${ik('yedek', /^[kb]$/.test(y.s), 'Yedek: ' + y.yazi)}
+    ${ik('guv', /^[kb]$/.test(g.s), 'Güvenlik: ' + g.yazi)}
+  </span>`;
+}
+
 function vtZemin(p, isik) {
   const r = pjRenk(p);
   return `radial-gradient(circle at ${isik || '70% 25%'}, rgba(255,255,255,.22), transparent 58%), linear-gradient(160deg, ${r[0]}, ${r[1]})`;
@@ -8464,7 +8484,7 @@ function vtAfis(p, tur) {
     ${gor ? `<img class="vt-gor" src="${esc(gor)}" alt="" loading="lazy" decoding="async">` : ''}
     ${pjLogo(p, 'vt-lo')}
     ${tur === 'ana' ? '<span class="vt-rz">ANA</span>' : yakin ? '<span class="vt-rz yakin">YAKINDA</span>' : '<span class="vt-canli">Canlı</span>'}
-    <span class="vt-pos-alt"><b>${esc(basHarfleriBuyuk(p.firma || projeAdi(p)))}</b><i>${esc(vtAltYazi(p))}</i></span>
+    <span class="vt-pos-alt"><b>${esc(basHarfleriBuyuk(p.firma || projeAdi(p)))}</b><i>${esc(vtAltYazi(p))}</i>${tur === 'yakin' ? '' : vtIkonlar(p)}</span>
     ${AUTH.yonetici ? `<button class="vt-menu" data-eylem="proje-menu" data-id="${p.id}" type="button" aria-label="Proje seçenekleri">
       <svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.7"></circle><circle cx="12" cy="12" r="1.7"></circle><circle cx="12" cy="19" r="1.7"></circle></svg></button>` : ''}
   </div>`;
@@ -8517,18 +8537,44 @@ function vtSayacKur() {
 }
 vtSayacKur();
 
+/* Sürüm Takibi'ndeki ana programlar (v0.360.0). Ana program Studio'da
+   normal proje değilse (klon/deneme kovasında ya da hiç yok) vitrinden
+   düşüyordu; kardeşlerden biri "ana" sanılıyordu. Artık her kovada aranıyor,
+   bulunamazsa sürüm bilgisiyle sanal bir ana afiş çiziliyor. */
+function vtSurumAnalari() {
+  if (SURUM.durum !== 'tamam') return [];
+  return (SURUM.analar || []).filter(a => !a.hata).map(a => ({
+    a, p: DB.projeler.find(p => !p.arsiv && pjAdres(p) && pjHost(a.site) === pjAdres(p)) || null,
+  }));
+}
+function vtSanalAna(a) {
+  const ad = String(a.ad || 'Ana program');
+  return `<a class="vt-pos ana" href="${esc(a.site)}" target="_blank" rel="noopener"
+      style="background-image:radial-gradient(circle at 70% 25%, rgba(229,52,42,.45), transparent 58%), linear-gradient(160deg, #4a4a50, #1d1d21)">
+    <span class="pj2-logo vt-lo" style="background-image:linear-gradient(140deg,#5a5f6e,#2a2a2f)"><b class="logo-harf">${esc(basHarf(ad))}</b></span>
+    <span class="vt-rz">ANA</span>
+    <span class="vt-pos-alt"><b>${esc(ad)}</b><i>Ana program · sürüm ${esc(svKisa(a.canli))} · ${a.firmalar.length} firma</i></span>
+  </a>`;
+}
+
 function vitrinEkrani(normal) {
-  const yayinda = normal.filter(pjYayinda);
-  const yapim = normal.filter(p => !pjYayinda(p));
+  const analar = vtSurumAnalari();
+  const anaIdler = new Set(analar.filter(x => x.p).map(x => x.p.id));
+  /* Ana program başka kovada olsa da vitrinde. */
+  const tum = normal.concat(analar.filter(x => x.p && !normal.includes(x.p)).map(x => x.p));
+  const yayinda = tum.filter(p => pjYayinda(p) || anaIdler.has(p.id));
+  const yapim = normal.filter(p => !pjYayinda(p) && !anaIdler.has(p.id));
+  const sanal = analar.filter(x => !x.p).map(x => x.a);
   const gruplar = VITRIN_GRUPLAR.map(g => {
     const uyeler = yayinda.filter(p => vtGrup(p) === g.id);
-    if (!uyeler.length) return '';
+    const sanalBurada = g.id === 'muhasebe' ? sanal : [];
+    if (!uyeler.length && !sanalBurada.length) return '';
     let ana = uyeler.filter(vtAnaMi);
-    if (!ana.length) ana = [uyeler[0]];
+    if (!ana.length && !sanalBurada.length) ana = [uyeler[0]];
     const kardes = uyeler.filter(p => !ana.includes(p));
     return `<section class="vt-grup">
-      <div class="vt-gb"><b>${esc(g.ad)}<small>${uyeler.length}</small></b></div>
-      <div class="vt-sira raf">${ana.map(p => vtAfis(p, 'ana')).join('')}${kardes.map(p => vtAfis(p, 'kar')).join('')}</div>
+      <div class="vt-gb"><b>${esc(g.ad)}<small>${uyeler.length + sanalBurada.length}</small></b></div>
+      <div class="vt-sira raf">${sanalBurada.map(vtSanalAna).join('')}${ana.map(p => vtAfis(p, 'ana')).join('')}${kardes.map(p => vtAfis(p, 'kar')).join('')}</div>
     </section>`;
   }).join('');
   const heroListe = VITRIN_GRUPLAR.map(g => {
@@ -8540,7 +8586,7 @@ function vitrinEkrani(normal) {
       <div class="vt-gb"><b>Yakında vitrinde<small>${yapim.length}</small></b></div>
       <div class="vt-sira raf">${yapim.map(p => vtAfis(p, 'yakin')).join('')}</div>
     </section>` : '';
-  if (!yayinda.length && !yapim.length) {
+  if (!yayinda.length && !yapim.length && !sanal.length) {
     return `<div class="vt-bos">Vitrin boş. İlk proje yayına alınınca burada sergilenecek.</div>`;
   }
   return `${vtHero(heroListe)}${gruplar}${yakin}`;
