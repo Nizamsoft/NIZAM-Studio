@@ -607,16 +607,13 @@ const VIEWS = {
          kartlar  · 3D basılabilir kartlar (v0.348.0): onay bekleyen,
                     açık görev, talepler, güvenlik+yedek, hatalar. Karta
                     basınca altında oklu bir pencere açılıp ayrıntıyı gösterir,
-         projeler · aktif projeler,
-         ekip + son hareketler.
+         son hareketler. (v0.350.0: Aktif Projeler ve Ekip panelden kalktı.)
        "Muhasebe Programları" ve "Son Yedekleme" kutuları kalktı: aynı
        bilgi artık her projenin Durum kutusunda (pdKutu). */
     return `
       ${panelSelam()}
       ${panelKartlar(p)}
-      ${panelProjeler(p)}
       <div class="pz-ikili">
-        ${panelEkip()}
         ${panelAktivite()}
       </div>
     `;
@@ -17776,6 +17773,30 @@ function p3Veri(projeler) {
   return { acik, kontrol, yapilacak, gelisen, yakin, guv, yed, drive };
 }
 
+/* Kart ikonları (v0.350.0): ikili ton — ince çizgi + yarı saydam dolgu. */
+const P3_IKON = {
+  onay: '<path class="f" d="M12 2.8l2.2 1.6 2.7-.2.9 2.6 2.2 1.6-.8 2.6.8 2.6-2.2 1.6-.9 2.6-2.7-.2L12 21.2l-2.2-1.6-2.7.2-.9-2.6-2.2-1.6.8-2.6-.8-2.6 2.2-1.6.9-2.6 2.7.2z"/><path d="M12 2.8l2.2 1.6 2.7-.2.9 2.6 2.2 1.6-.8 2.6.8 2.6-2.2 1.6-.9 2.6-2.7-.2L12 21.2l-2.2-1.6-2.7.2-.9-2.6-2.2-1.6.8-2.6-.8-2.6 2.2-1.6.9-2.6 2.7.2z"/><path d="M8.6 12.2l2.3 2.3 4.6-4.8" stroke-width="2"/>',
+  hata: '<path class="f" d="M7.5 11a4.5 4.5 0 0 1 9 0v3.5a4.5 4.5 0 0 1-9 0z"/><path d="M7.5 11a4.5 4.5 0 0 1 9 0v3.5a4.5 4.5 0 0 1-9 0z"/><path d="M9.5 7.3L8 5.5M14.5 7.3L16 5.5M12 10.5V19M7.5 12.5H4.5M16.5 12.5h3M7.8 16.5l-2.6 1.6M16.2 16.5l2.6 1.6M7.8 9l-2.4-1.2M16.2 9l2.4-1.2"/>',
+  surum: '<circle class="f" cx="12" cy="12" r="8"/><path d="M19.5 12a7.5 7.5 0 0 1-13.4 4.6"/><path d="M4.5 12a7.5 7.5 0 0 1 13.4-4.6"/><path d="M18.4 3.6v4.2h-4.2M5.6 20.4v-4.2h4.2"/><path d="M12 9v4.2l2.4 1.4" stroke-width="1.9"/>',
+  talep: '<rect class="f" x="5" y="4" width="14" height="17" rx="2.5"/><rect x="5" y="4" width="14" height="17" rx="2.5"/><path d="M9 4V3h6v1.5a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1z"/><circle cx="12" cy="11" r="2"/><path d="M8.6 16.6a3.6 3.6 0 0 1 6.8 0"/>',
+  guv: '<path class="f" d="M12 2.8l7.2 2.7v5.6c0 4.6-3 8.4-7.2 10-4.2-1.6-7.2-5.4-7.2-10V5.5z"/><path d="M12 2.8l7.2 2.7v5.6c0 4.6-3 8.4-7.2 10-4.2-1.6-7.2-5.4-7.2-10V5.5z"/><rect x="9" y="10.8" width="6" height="4.7" rx="1.1"/><path d="M10.2 10.8V9.6a1.8 1.8 0 0 1 3.6 0v1.2"/>',
+};
+
+/* Ana programla eşitlenmesi gereken firma programları (Sürüm Takibi). */
+function p3Surum() {
+  if (!AUTH.yonetici) return { liste: [], durum: 'yok' };
+  if (SURUM.durum === 'bos') setTimeout(() => surumTakipYukle(), 0);
+  const liste = [];
+  (SURUM.analar || []).forEach(a => (a.firmalar || []).forEach(f => {
+    if (f.asagi.length || f.yukariSayi) liste.push({ ana: a, f });
+  }));
+  const okunamadi = (SURUM.analar || []).some(a => a.hata);
+  return { liste, durum: SURUM.durum, okunamadi };
+}
+
+/* Sıra (v0.350.0 · kullanıcı): 1 Görevler + onay (tam genişlik),
+   2 Hatalar, 3 Gerekli güncellemeler, 4 Talepler, 5 Güvenlik ve yedek.
+   Geliştiricide yalnız ilki. Kırmızı ikon = bakılması gereken bir şey var. */
 function panelKartlar(projeler) {
   const v = p3Veri(projeler);
   const yon = AUTH.yonetici;
@@ -17783,34 +17804,44 @@ function panelKartlar(projeler) {
   const yeniTalep = talepler.filter(t => t.durum === 'yeni').length;
   const haftaOnce = Date.now() - 7 * 864e5;
   const buHafta = talepler.filter(t => new Date(t.gonderildi).getTime() >= haftaOnce).length;
-  const hatalar = DB.hatalar || [];
-  const yeniHata = hatalar.filter(h => h.durum === 'yeni').length;
+  const yeniHata = (DB.hatalar || []).filter(h => h.durum === 'yeni').length;
   const sorun = v.guv.length + v.yed.length + (v.drive ? 1 : 0);
+  const sv = p3Surum();
   const aylar = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz',
                  'Ağustos','Eylül','Ekim','Kasım','Aralık'];
   const ilk = v.yakin[0];
   const ilkYazi = ilk ? (() => { const t = new Date(ilk.bitis + 'T00:00:00');
-    return 'En yakın: ' + t.getDate() + ' ' + aylar[t.getMonth()]; })()
-    : v.acik.length ? 'Bitiş tarihi yok' : 'Görev yok';
+    return t.getDate() + ' ' + aylar[t.getMonth()]; })() : '';
 
-  const kart = (k, ik, sayi, bas, alt, sinif = '') => `
-    <button type="button" class="p3-kart ${sinif}" data-eylem="p3-ac" data-id="${k}" aria-expanded="false">
-      <span class="p3-ik">${svg(ik, 18)}</span>
+  const kart = (k, sayi, bas, alt, uyari) => `
+    <button type="button" class="p3-kart ${uyari ? 'p3-uyari' : ''}" data-eylem="p3-ac" data-id="${k}" aria-expanded="false">
+      <span class="p3-ik"><svg viewBox="0 0 24 24">${P3_IKON[k]}</svg></span>
       <b class="p3-sayi">${sayi}</b>
       <span class="p3-bas">${esc(bas)}</span>
       <i class="p3-alt">${esc(alt)}</i>
-      ${k === 'onay' ? '<span class="p3-incele">İncele ›</span>' : ''}
     </button>`;
 
-  return `<div class="p3 ${yon ? '' : 'p3-tek'}">
-    ${kart('onay', ICON.tik, v.kontrol.length, yon ? 'Onayını bekliyor' : 'Onayda bekleyen',
-      'Kontrolde olan görev', 'p3-ana')}
-    ${kart('gorev', ICON.check, v.acik.length, 'Açık görev', ilkYazi)}
-    ${yon ? kart('talep', ICON.mail, yeniTalep, 'Talepler', 'Bu hafta ' + buHafta) : ''}
-    ${yon ? kart('guv', ICON.gGuvenlik, sorun, 'Güvenlik ve yedek',
-      sorun ? 'Bakılması gereken' : 'Her şey yolunda', sorun ? 'p3-uyari' : '') : ''}
-    ${yon ? kart('hata', ICON.uyari, yeniHata, 'Hatalar',
-      yeniHata ? 'Yeni bildirim' : 'Yeni bildirim yok', yeniHata ? 'p3-uyari' : '') : ''}
+  const ana = `
+    <button type="button" class="p3-kart p3-ana" data-eylem="p3-ac" data-id="onay" aria-expanded="false">
+      <span class="p3-ik"><svg viewBox="0 0 24 24">${P3_IKON.onay}</svg></span>
+      <b class="p3-sayi">${v.kontrol.length}</b>
+      <span class="p3-bas">Görevler · ${yon ? 'onayını bekliyor' : 'onayda bekleyen'}</span>
+      <span class="p3-cipler">
+        <span><b>${v.acik.length}</b> açık görev</span>
+        ${ilkYazi ? `<span>En yakın bitiş <b>${esc(ilkYazi)}</b></span>` : ''}
+      </span>
+      <span class="p3-incele">İncele ›</span>
+    </button>`;
+
+  if (!yon) return `<div class="p3 p3-tek">${ana}</div>`;
+  return `<div class="p3">
+    ${ana}
+    ${kart('hata', yeniHata, 'Hatalar', yeniHata ? 'Yeni bildirim' : 'Yeni bildirim yok', yeniHata)}
+    ${kart('surum', sv.durum === 'tamam' ? sv.liste.length : '…', 'Gerekli güncellemeler',
+      sv.durum !== 'tamam' ? 'Okunuyor…' : sv.liste.length ? 'Ana programla eşitlenecek'
+        : sv.okunamadi ? 'Sürüm bilgisi okunamadı' : 'Hepsi güncel', sv.liste.length)}
+    ${kart('talep', yeniTalep, 'Talepler', 'Bu hafta ' + buHafta, yeniTalep)}
+    ${kart('guv', sorun, 'Güvenlik ve yedek', sorun ? 'Bakılması gereken' : 'Her şey yolunda', sorun)}
   </div>`;
 }
 
@@ -17836,23 +17867,31 @@ function p3Icerik(k) {
 
   if (k === 'onay') {
     const l = v.kontrol.slice(0, 6);
+    const say = (n, ad, renk) => `<div style="--c:${renk}"><b>${n}</b><i>${ad}</i></div>`;
+    const y = v.yakin.slice(0, 5);
     return bas((yon ? 'Onayını bekleyen · ' : 'Onayda bekleyen · ') + v.kontrol.length, tum('#/gorevler', 'Görevler'))
       + (l.length ? l.map(g => p3Sat(no(g), g.baslik || 'Görev',
           gorevAlt(g) + (g.guncellendi ? ' · ' + pzZamanKisa(g.guncellendi) : ''),
           yon ? `<button type="button" class="p3-dug" data-eylem="p3-onayla" data-id="${g.id}">Onayla</button>`
               : `<span class="p3-hap">Kontrolde</span>`, gorevAc(g))).join('')
-        : bos('Onay bekleyen görev yok 🎉'));
-  }
-  if (k === 'gorev') {
-    const say = (n, ad, renk) => `<div style="--c:${renk}"><b>${n}</b><i>${ad}</i></div>`;
-    const l = v.yakin.slice(0, 5);
-    return bas('Açık görevler · ' + v.acik.length, tum('#/gorevler', 'Görevler'))
+        : bos('Onay bekleyen görev yok 🎉'))
+      + bas('Açık görevler · ' + v.acik.length)
       + `<div class="p3-durum">${say(v.yapilacak, 'Yapılacak', '#83838b')}${say(v.gelisen, 'Geliştiriliyor', '#b8801a')}${say(v.kontrol.length, 'Kontrolde', '#2f62c4')}</div>`
       + bas('Yaklaşan bitişler')
-      + (l.length ? l.map(g => { const s = gorevSure(g.bitis);
+      + (y.length ? y.map(g => { const s = gorevSure(g.bitis);
           return p3Sat(no(g), g.baslik || 'Görev', gorevAlt(g),
             s ? `<span class="p3-hap ${s.sinif}">${esc(s.yazi)}</span>` : '', gorevAc(g)); }).join('')
         : bos('Bitiş tarihi girilmiş açık görev yok.'));
+  }
+  if (k === 'surum') {
+    const sv = p3Surum();
+    if (sv.durum !== 'tamam') return bas('Gerekli güncellemeler') + bos('Programların sürümleri okunuyor…');
+    return bas('Gerekli güncellemeler · ' + sv.liste.length)
+      + (sv.liste.length ? sv.liste.map(({ f }) => p3Sat(
+          `<span class="p3-harf">${esc(basHarf(f.ad))}</span>`, f.ad, svDurum(f).yazi,
+          `<button type="button" class="p3-dug" data-eylem="surum-detay" data-id="${esc(f.kod)}">Bak</button>`,
+          `data-eylem="surum-detay" data-id="${esc(f.kod)}" role="button" tabindex="0"`)).join('')
+        : bos(sv.okunamadi ? 'Ana programın sürüm dosyası okunamadı.' : 'Bütün firma programları ana programla aynı ✅'));
   }
   if (k === 'talep') {
     const l = (DB.talepler || []).slice(0, 5);

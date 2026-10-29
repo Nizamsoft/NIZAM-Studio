@@ -21,6 +21,15 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.350.0', tarih: '2026-10-29',
+    ozet: 'Panel kartları yeniden sıralandı',
+    maddeler: [
+      'En üstteki kart artık hem onay bekleyen hem açık görevleri gösteriyor.',
+      'Yeni kart: Gerekli güncellemeler — ana programla eşitlenmesi gereken firma programları.',
+      'Sıra: Görevler, Hatalar, Gerekli güncellemeler, Talepler, Güvenlik ve yedek.',
+      'Kartlarda yeni, daha şık ikonlar.',
+      'Aktif Projeler ve Ekip bölümleri Panel\'den kalktı.',
+    ] },
   { surum: 'v0.349.1', tarih: '2026-10-29',
     ozet: 'Alt menü telefonda da yüzüyor',
     maddeler: [

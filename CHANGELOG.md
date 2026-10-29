@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü
 
+## v0.350.0
+- **Panel kartları yeni sıra** (kullanıcı onaylı): 1 Görevler (onay + açık görev çipleri; pencere onay listesi +
+  durum sayıları + yaklaşan bitişler), 2 Hatalar, 3 Gerekli güncellemeler (`p3Surum`: Sürüm Takibi'nde `asagi`
+  ya da `yukariSayi` olan firmalar; "Bak" → `surum-detay`), 4 Talepler, 5 Güvenlik ve yedek. Açık görev kartı
+  kalktı; geliştiricide yalnız ilk kart.
+- İkonlar `P3_IKON` (ikili ton SVG), kutu 44px; kırmızı = bakılması gereken (`.p3-uyari`).
+- Panelden `panelProjeler` ve `panelEkip` çıkarıldı (fonksiyonlar duruyor).
+
 ## v0.349.1
 - Alt çubuk PWA'da alta yapışıyordu: bölüm 16'daki `html.uygulama #tabbar { margin-bottom: 0 }` daha güçlü
   seçiciydi. Hap bloğuna aynı seçiciyle `max(12px, safe-area - 6px)` eklendi.

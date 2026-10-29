@@ -12306,3 +12306,28 @@ button.pd-sat { cursor: pointer; }
   .tab.active svg { stroke: #17171a; }
   .tab.active .dolgu > * { fill: #17171a; fill-opacity: .14; }
 }
+
+/* ---- Panel kartları: yeni ikonlar ve görev çipleri (v0.350.0) ---- */
+.p3-ik {
+  width: 44px; height: 44px; border-radius: 13px;
+  background: linear-gradient(155deg, #3a3a40 0%, #17171a 70%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .18), inset 0 -2px 0 rgba(0, 0, 0, .35),
+              0 4px 10px rgba(23, 23, 26, .25);
+}
+.p3-uyari .p3-ik, .p3-ana .p3-ik {
+  background: linear-gradient(155deg, #f2564c 0%, #c9241b 75%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .35), inset 0 -2px 0 rgba(0, 0, 0, .2),
+              0 4px 12px rgba(229, 52, 42, .35);
+}
+.p3-ik svg {
+  width: 24px; height: 24px; fill: none; stroke: #fff; stroke-width: 1.7;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+.p3-ik svg .f { fill: rgba(255, 255, 255, .22); stroke: none; }
+.p3-cipler { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.p3-cipler span {
+  font-size: 11.5px; color: #d0d0d6; padding: 5px 9px; border-radius: 999px;
+  background: rgba(255, 255, 255, .08); border: 1px solid rgba(255, 255, 255, .12);
+}
+.p3-cipler b { color: #fff; font-weight: 700; }
+.p3-ana .p3-incele { top: 14px; bottom: auto; }
