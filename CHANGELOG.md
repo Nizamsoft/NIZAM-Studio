@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## v0.363.1
+- Geçiş eğrisi `cubic-bezier(.32,.72,0,1)` .6s; parça çapraz solması .3s. Yükselen kartlar `translate3d`, daha kısa gecikme.
+- Geçiş süresince `html.pa-akis`: alt menünün `backdrop-filter`'ı kapalı (afiş altından geçerken her karede yeniden
+  bulanıklaştırma yapıyordu), parlama animasyonları duraklatılır. Afiş görseli `loading=lazy` değil, öncelikli.
+
 ## v0.363.0
 - Vitrin ⇄ Proje sayfası geçişi: `paIleriAk` / `paGeriAk` (`document.startViewTransition`), adlandırılmış parçalar
   `pa-hero`, `pa-logo`, `pa-ad`; `:root { view-transition-name: none }` ile tam ekran görüntü alınmıyor.

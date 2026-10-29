@@ -8749,7 +8749,7 @@ function projeAnaSayfa(p) {
   return `
     <div class="pa2 ${PA_GECISTE ? 'gir' : ''}">
       <div class="pa2-hero" style="background-image:${vtZemin(p, '75% 20%')}">
-        ${gor ? `<img class="vt-gor" src="${esc(gor)}" alt="" loading="lazy" decoding="async">` : ''}
+        ${gor ? `<img class="vt-gor" src="${esc(gor)}" alt="" fetchpriority="high">` : ''}
         ${pjLogo(p, 'pa2-lo')}
         ${yayinda ? '<span class="pa2-canli">Canlı</span>' : ''}
         ${AUTH.yonetici ? `<button class="vt-menu pa2-menu" data-eylem="proje-menu" data-id="${p.id}" type="button" aria-label="Proje seçenekleri">
@@ -9699,6 +9699,11 @@ function vtGecisVar() {
   return typeof document.startViewTransition === 'function'
     && !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
 }
+/* Geçiş süresince ekran kartını yoran her şey durur: alt menünün buzlu
+   camı (altından geçen afişi her karede yeniden bulanıklaştırıyordu) ve
+   sürekli dönen parlama animasyonları. */
+function paAkisAc() { document.documentElement.classList.add('pa-akis'); }
+function paAkisKapat() { setTimeout(() => document.documentElement.classList.remove('pa-akis'), 60); }
 function paAdlandir(kart, ac) {
   if (!kart) return;
   const ad = kart.querySelector('.vt-pos-alt b, .vt-hero-yz h2');
@@ -9711,19 +9716,21 @@ function paIleriAk(id, kart) {
   VT_KAYDIRMA = $('#view') ? $('#view').scrollTop : 0;
   paAdlandir(kart, true);
   PA_GECISTE = true;
+  paAkisAc();
   const t = document.startViewTransition(() => gitVeCiz('#/projeler/' + id));
-  t.finished.finally(() => { PA_GECISTE = false; $$('.pa2.gir').forEach(x => x.classList.remove('gir')); });
+  t.finished.finally(() => { PA_GECISTE = false; paAkisKapat(); $$('.pa2.gir').forEach(x => x.classList.remove('gir')); });
 }
 function paGeriAk() {
   const id = (/#\/projeler\/([^/]+)/.exec(ONCEKI_ADRES || '') || [])[1] || '';
   PA_GECISTE = true;
+  paAkisAc();
   const t = document.startViewTransition(() => {
     renderCiz();
     const v = $('#view'); if (v) v.scrollTop = VT_KAYDIRMA;
     const kart = id ? $(`.vt-pos[data-id="${CSS.escape(id)}"]`) : null;
     paAdlandir(kart, true);
   });
-  t.finished.finally(() => { PA_GECISTE = false; $$('.vt-pos').forEach(k => paAdlandir(k, false)); });
+  t.finished.finally(() => { PA_GECISTE = false; paAkisKapat(); $$('.vt-pos').forEach(k => paAdlandir(k, false)); });
 }
 
 function gitVeCiz(hash) {

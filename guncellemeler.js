@@ -21,6 +21,9 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.363.1', tarih: '2026-10-29',
+    ozet: 'Vitrin geçişi daha yumuşak',
+    maddeler: ['Vitrinden projeye geçiş iPhone\'un kendi açılış hissiyle, daha yumuşak ve takılmadan kayıyor.'] },
   { surum: 'v0.363.0', tarih: '2026-10-29',
     ozet: 'Vitrinden projeye akıcı geçiş',
     maddeler: [
