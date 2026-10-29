@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## v0.352.0
+- Panel kartları: `.p3-uyari` ikonunda yayılan halka (`p3-halka`), kartta kenar parlaması (`p3-kenar`,
+  koyu kartta `p3-kenar-koyu`); basılı/açıkken ve `prefers-reduced-motion`'da durur.
+- Görevler kartı yalnız `kontrol.length > 0` iken `.p3-uyari` (kırmızı); değilse koyu gri ikon.
+
 ## v0.351.0
 - **Son Hareketler** (yalnız yönetici): 3 sütun Kullanıcı · Program · Yapılan iş (`panelAktivite`, `shSatirlar`,
   `.sh-*`). Kaynaklar: Claude iş kayıtları (`DB.isKayitlari`) + Studio görev hareketleri. Satır → `shAc` penceresi

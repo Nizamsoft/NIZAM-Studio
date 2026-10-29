@@ -21,6 +21,12 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.352.0', tarih: '2026-10-29',
+    ozet: 'Bakılması gereken kartlar parlıyor',
+    maddeler: [
+      'Kırmızı kartların ikonundan yumuşak bir ışık yayılıyor, kenarı hafifçe parlıyor.',
+      'Görevler kartı yalnız onay bekleyen görev varken kırmızı.',
+    ] },
   { surum: 'v0.351.0', tarih: '2026-10-29',
     ozet: 'Son Hareketler: ekip ne yaptı?',
     maddeler: [

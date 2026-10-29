@@ -17821,7 +17821,7 @@ function panelKartlar(projeler) {
     </button>`;
 
   const ana = `
-    <button type="button" class="p3-kart p3-ana" data-eylem="p3-ac" data-id="onay" aria-expanded="false">
+    <button type="button" class="p3-kart p3-ana ${v.kontrol.length ? 'p3-uyari' : ''}" data-eylem="p3-ac" data-id="onay" aria-expanded="false">
       <span class="p3-ik"><svg viewBox="0 0 24 24">${P3_IKON.onay}</svg></span>
       <b class="p3-sayi">${v.kontrol.length}</b>
       <span class="p3-bas">Görevler · ${yon ? 'onayını bekliyor' : 'onayda bekleyen'}</span>
