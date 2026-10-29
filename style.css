@@ -12582,3 +12582,151 @@ button.pd-sat { cursor: pointer; }
 }
 #main #zemin-sus > * { display: none; }
 #main.susulu #zemin-sus { z-index: 0; }
+
+/* ==========================================================================
+   Projeler › Vitrin ve Atölye geçişi (v0.359.0 · onaylı taslak)
+   Vitrin koyu bir sahne: CLAUDE.md'deki "koyu vitrin" istisnası.
+   ========================================================================== */
+#main.vitrinde #zemin-sus {
+  background:
+    radial-gradient(ellipse 70% 40% at 50% -6%, rgba(229, 52, 42, .20), transparent 70%),
+    radial-gradient(ellipse 60% 50% at 100% 40%, rgba(255, 255, 255, .05), transparent 70%),
+    linear-gradient(180deg, #1b1b1f 0%, #121214 100%);
+}
+.pjs-sat { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+.pjs {
+  flex: 1; position: relative; display: flex; padding: 4px; border-radius: 14px;
+  background: #dcdde1; border: 1px solid #cfd0d5;
+}
+.pjs button {
+  all: unset; box-sizing: border-box; cursor: pointer; flex: 1; position: relative; z-index: 1;
+  display: flex; align-items: center; justify-content: center; gap: 7px; padding: 10px 0;
+  font-size: 14px; font-weight: 700; color: #6a6a72; transition: color .35s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.pjs-hap {
+  position: absolute; top: 4px; bottom: 4px; left: 4px; width: calc(50% - 4px); border-radius: 11px;
+  background: #26262a; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .15), 0 4px 10px rgba(0, 0, 0, .25);
+  transition: transform .45s cubic-bezier(.2, .9, .25, 1.15), background .35s ease, box-shadow .35s ease;
+}
+.pjs.atolye .pjs-hap { transform: translateX(100%); }
+.pjs:not(.atolye) button:first-of-type, .pjs.atolye button:last-of-type { color: #fff; }
+.pjs-yeni {
+  all: unset; box-sizing: border-box; cursor: pointer; flex-shrink: 0;
+  width: 46px; height: 46px; border-radius: 14px; display: flex; align-items: center; justify-content: center;
+  background: var(--red); color: #fff; box-shadow: 0 6px 16px -6px rgba(229, 52, 42, .7);
+}
+.pjs-yeni svg { fill: none; stroke: #fff; stroke-width: 2.4; stroke-linecap: round; }
+.pjs-yeni:active { transform: scale(.94); }
+
+/* Vitrinde geçiş düğmesi koyu sahneye göre. */
+.vt .pjs { background: rgba(255, 255, 255, .07); border-color: rgba(255, 255, 255, .10); }
+.vt .pjs-hap { background: linear-gradient(180deg, #fff, #e9e9ed); box-shadow: 0 6px 18px rgba(229, 52, 42, .28), 0 0 0 1px rgba(255, 255, 255, .6); }
+.vt .pjs button { color: #9a9aa2; }
+.vt .pjs:not(.atolye) button:first-of-type { color: #17171a; }
+.vt .pjs.atolye .pjs-hap { background: #26262a; }
+
+/* Geçiş: vitrinde ışıklar yanar, atölyede kağıt aşağıdan açılır. */
+.vt.gecis { animation: vt-isik .8s ease both; }
+@keyframes vt-isik { 0% { filter: brightness(.15); opacity: .4; } 60% { filter: brightness(1.12); } 100% { filter: none; opacity: 1; } }
+.atl.gecis { animation: atl-ac .5s cubic-bezier(.2, .8, .2, 1) both; }
+@keyframes atl-ac { from { opacity: 0; transform: translateY(26px); } to { opacity: 1; transform: none; } }
+
+.vt { color: #fff; }
+.vt-bos { padding: 40px 10px; text-align: center; color: #9a9aa2; font-size: 14px; }
+
+/* Öne çıkan afiş */
+.vt-hero {
+  position: relative; height: 250px; border-radius: 18px; overflow: hidden;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, .5); background: #2a2a2f;
+}
+.vt-sl {
+  position: absolute; inset: 0; background-size: cover; opacity: 0; pointer-events: none;
+  transform: scale(1.05); transition: opacity .9s ease, transform 6.5s ease-out;
+}
+.vt-sl.on { opacity: 1; transform: none; pointer-events: auto; }
+.vt-sl::before {
+  content: ''; position: absolute; inset: 0; z-index: 1;
+  background: repeating-linear-gradient(135deg, rgba(255, 255, 255, .035) 0 1px, transparent 1px 11px);
+}
+.vt-sl .vt-gor { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.vt-hero-logo { position: absolute; right: 22px; top: 22px; z-index: 1; }
+.vt-hero-yz {
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; padding: 70px 18px 18px;
+  background: linear-gradient(0deg, rgba(18, 18, 20, .95) 30%, transparent);
+}
+.vt-et { display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: .12em; padding: 4px 8px; border-radius: 999px; background: rgba(229, 52, 42, .92); }
+.vt-hero-yz h2 { margin: 10px 0 4px; font-size: 24px; font-weight: 700; letter-spacing: -.01em; color: #fff; }
+.vt-hero-yz p { font-size: 12.5px; color: #c4c4cb; }
+.vt-dg { display: flex; gap: 8px; margin-top: 12px; }
+.vt-dg a, .vt-dg button {
+  all: unset; box-sizing: border-box; cursor: pointer; font-size: 12.5px; font-weight: 700;
+  padding: 9px 14px; border-radius: 10px;
+}
+.vt-dg .vt-dg1 { background: #fff; color: #17171a; text-decoration: none; }
+.vt-dg .vt-dg2 { background: rgba(255, 255, 255, .12); color: #fff; border: 1px solid rgba(255, 255, 255, .2); }
+.vt-nk { display: flex; justify-content: center; gap: 6px; margin-top: 12px; }
+.vt-nk button { all: unset; cursor: pointer; width: 6px; height: 6px; border-radius: 3px; background: #3a3a40; transition: width .3s ease, background .3s ease; }
+.vt-nk button.on { width: 18px; background: var(--red); }
+
+/* Gruplar ve afişler */
+.vt-grup { margin-top: 24px; }
+.vt-gb { margin-bottom: 10px; }
+.vt-gb b { font-size: 16px; font-weight: 700; color: #fff; }
+.vt-gb small { margin-left: 6px; font-size: 12px; font-weight: 600; color: #8a8a92; }
+.vt .vt-sira {
+  display: flex !important; align-items: flex-end; gap: 10px;
+  overflow-x: auto; scroll-snap-type: x proximity; -webkit-overflow-scrolling: touch;
+  margin: 0 calc(-1 * var(--yan, 16px)); padding: 6px var(--yan, 16px) 18px;
+  scroll-padding-inline: var(--yan, 16px);
+}
+.vt-pos {
+  position: relative; flex: 0 0 auto; border-radius: 14px; overflow: hidden; cursor: pointer;
+  background-size: cover; scroll-snap-align: start;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, .45); transition: transform .2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.vt-pos:active { transform: scale(.97); }
+.vt-pos.ana { width: 170px; height: 240px; box-shadow: 0 0 0 2px rgba(255, 255, 255, .85) inset, 0 14px 28px rgba(0, 0, 0, .5); }
+.vt-pos.kar, .vt-pos.yakin { width: 128px; height: 180px; }
+.vt-pos.yakin { filter: grayscale(.55) brightness(.85); }
+.vt-pos .vt-gor { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.vt-pos::after {
+  content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 60%; pointer-events: none;
+  background: linear-gradient(0deg, rgba(0, 0, 0, .85), transparent);
+}
+.vt-lo.pj2-logo {
+  position: absolute; left: 12px; top: 12px; z-index: 2; width: 34px; height: 34px; border-radius: 10px;
+  font-size: 13px; box-shadow: 0 4px 10px rgba(0, 0, 0, .35), 0 0 0 2px rgba(255, 255, 255, .9);
+}
+.vt-pos.kar .vt-lo.pj2-logo, .vt-pos.yakin .vt-lo.pj2-logo { width: 28px; height: 28px; font-size: 11px; border-radius: 8px; }
+.vt-hero-logo .vt-lo.pj2-logo.vt-lo-b { position: static; width: 96px; height: 96px; border-radius: 24px; font-size: 34px; opacity: .9; }
+.vt-rz, .vt-canli { position: absolute; top: 14px; right: 40px; z-index: 2; }
+.vt-rz { font-size: 9px; font-weight: 700; letter-spacing: .1em; padding: 4px 7px; border-radius: 999px; background: var(--red); color: #fff; }
+.vt-rz.yakin { background: rgba(255, 255, 255, .22); }
+.vt-canli { display: flex; align-items: center; gap: 4px; font-size: 9.5px; font-weight: 700; color: #d6f5e3; }
+.vt-canli::before { content: ''; width: 6px; height: 6px; border-radius: 3px; background: #3ccf7d; box-shadow: 0 0 8px #3ccf7d; }
+.vt-pos-alt { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; padding: 12px; }
+.vt-pos-alt b { display: block; font-size: 13.5px; font-weight: 700; line-height: 1.2; color: #fff; }
+.vt-pos.kar .vt-pos-alt b, .vt-pos.yakin .vt-pos-alt b { font-size: 12px; }
+.vt-pos-alt i { display: block; margin-top: 3px; font-style: normal; font-size: 10.5px; color: #c4c4cb; line-height: 1.3; }
+.vt-menu {
+  all: unset; box-sizing: border-box; cursor: pointer; position: absolute; top: 8px; right: 6px; z-index: 3;
+  width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center;
+}
+.vt-menu svg { width: 16px; height: 16px; fill: #fff; opacity: .85; }
+
+@media (min-width: 901px) {
+  .pjs-sat { max-width: 520px; }
+  .vt-hero { height: 340px; }
+  .vt-hero-yz { padding: 90px 28px 26px; }
+  .vt-hero-yz > * { max-width: 640px; }
+  .vt-hero-yz h2 { font-size: 34px; }
+  .vt-pos.ana { width: 220px; height: 310px; }
+  .vt-pos.kar, .vt-pos.yakin { width: 165px; height: 232px; }
+  .vt .vt-sira { margin: 0; padding: 6px 0 18px; scroll-padding-inline: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .vt.gecis, .atl.gecis { animation: none; }
+  .vt-sl { transition: opacity .3s; transform: none; }
+}

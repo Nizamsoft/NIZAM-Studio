@@ -21,6 +21,15 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.359.0', tarih: '2026-10-29',
+    ozet: 'Projeler: Vitrin',
+    maddeler: [
+      'Projeler sayfasının üstünde Vitrin / Atölye geçişi var.',
+      'Vitrin koyu bir sahne: üstte dönen "Öne çıkan" afiş, altta gruplar (Muhasebe, Danışmanlık, Şahsi).',
+      'Her grubun başında ana proje büyük afişle, kardeşleri yanında daha küçük.',
+      'Projenin menüsünden vitrin grubunu ve "ana proje" olup olmadığını seçebilirsin.',
+      'Yapımdaki projeler en altta "Yakında vitrinde" sırasında.',
+    ] },
   { surum: 'v0.358.0', tarih: '2026-10-29',
     ozet: 'Petek zemin her sayfada',
     maddeler: ['Panel\'deki ince petek desenli zemin artık bütün sayfalarda.'] },

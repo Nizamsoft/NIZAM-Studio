@@ -1,5 +1,16 @@
 # Değişiklik Günlüğü
 
+## v0.359.0
+- **Projeler › Vitrin** (onaylı taslak, 1. adım): `PJ_SEKME` (vitrin/atölye, localStorage `ns.pjSekme`), `.pjs` kayan
+  hap geçişi (`pjSekmeSec`, `PJ_GECIS` → `.vt.gecis` ışık yanma / `.atl.gecis` aşağıdan açılma).
+- Vitrin: `#main.vitrinde` koyu sahne; `vtHero` (ana projeler arasında 6 sn'de dönen afiş, `vt-hero` noktaları),
+  `VITRIN_GRUPLAR` sıraları (ana `vt-pos.ana`, kardeş 3/4 `vt-pos.kar`), yapımdakiler "Yakında vitrinde".
+  Görsel yoksa proje renginde zemin + logo.
+- Grup/ana: `palet.vitrin = { grup, ana }`, proje menüsünde "Vitrin grubu" ve "Ana proje yap". Seçilmemişse tahmin
+  (`vtGrup`: sürüm ailesi/muhasebe, green village/pilates → danışmanlık, bütçe/şahsi → şahsi).
+- Atölye şimdilik eski kartlarla (denemeler, klonlar, şablonlar); 2. adımda yeni tasarım. Eski arama/süzgeç ve
+  `pjAnaKarti` kalktı. CLAUDE.md: koyu vitrin istisnası.
+
 ## v0.358.0
 - Petek zemin bütün sayfalarda: `#main #zemin-sus` her rotada görünür (`z-index: -1`, Panel'de 0). CLAUDE.md
   tasarım tablosunda Zemin satırı güncellendi.

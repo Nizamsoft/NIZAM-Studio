@@ -8393,17 +8393,6 @@ function pjKart3(p) {
     </div>`;
 }
 
-/* Ana program Studio'da proje olarak yoksa yerine bilgi kartı. */
-function pjAnaKarti(a) {
-  return `<div class="pj3 sahte">
-      <div class="pj3-ust" style="background-image:linear-gradient(140deg, #5a5f6e, #2a2a2f)"><span class="pj3-et">Ana program</span>
-        <span class="pj2-logo pj3-logo" style="background-image:linear-gradient(140deg, #5a5f6e, #2a2a2f)"><b class="logo-harf">${esc(basHarf(a.ad))}</b></span></div>
-      <div class="pj3-gov"><b>Ana program</b><small>${esc(a.ad)}</small>
-        <span class="pj3-dur m"><i></i>Sürüm ${esc(svKisa(a.canli))} · ${a.firmalar.length} firma</span>
-        <span class="pj3-dip sayisiz"><span>${a.notlar[0] ? esc(svTarih(a.notlar[0].tarih)) : ''}</span><span></span></span></div>
-    </div>`;
-}
-
 function pjBolum(baslik, kartlar, ek = '') {
   if (!kartlar) return '';
   return `<section class="pj2-grup"><h2 class="pj3-bas">${baslik}</h2><div class="pj3-izg">${kartlar}</div>${ek}</section>`;
@@ -8419,69 +8408,196 @@ function pjKapali(anahtar, baslik, liste, kartci) {
   </section>`;
 }
 
+/* ==========================================================================
+   Projeler › Vitrin (v0.359.0 · onaylı taslak)
+   Yayındaki projeler mağaza vitrini gibi: koyu sahne, üstte dönen "Öne
+   çıkan" afiş, altta Netflix usulü gruplar. Her grubun başında ANA proje,
+   yanında kardeşleri 3/4 boyda. Grup ve "ana" seçimi projenin menüsünden
+   (palet.vitrin = { grup, ana }); seçilmemişse tahmin edilir. Yapımdakiler
+   en altta "Yakında" sırasında.
+   ========================================================================== */
+let PJ_SEKME = (() => { try { return localStorage.getItem('ns.pjSekme') || 'vitrin'; } catch (h) { return 'vitrin'; } })();
+let VT_HERO = 0;
+
+const VITRIN_GRUPLAR = [
+  { id: 'muhasebe',    ad: 'Muhasebe Projeleri' },
+  { id: 'danismanlik', ad: 'Danışmanlık Projeleri' },
+  { id: 'sahsi',       ad: 'Şahsi Projeler' },
+  { id: 'diger',       ad: 'Diğer Projeler' },
+];
+
+function vtAyar(p) { return ((p.palet || {}).vitrin) || {}; }
+function vtGrup(p) {
+  const v = vtAyar(p);
+  if (v.grup && VITRIN_GRUPLAR.some(g => g.id === v.grup)) return v.grup;
+  const ad = (projeAdi(p) + ' ' + (p.ad || '') + ' ' + (modulAdi(p) || '')).toLocaleLowerCase('tr');
+  if (pjSurumYeri(p) || /muhasebe/.test(ad)) return 'muhasebe';
+  if (/green village|pilates|danışman/.test(ad)) return 'danismanlik';
+  if (/bütçe|butce|şahsi|sahsi/.test(ad)) return 'sahsi';
+  return 'diger';
+}
+function vtAnaMi(p) {
+  const v = vtAyar(p);
+  if (typeof v.ana === 'boolean') return v.ana;
+  const yer = pjSurumYeri(p);
+  return !!(yer && yer.tur === 'ana');
+}
+
+function vtZemin(p, isik) {
+  const r = pjRenk(p);
+  return `radial-gradient(circle at ${isik || '70% 25%'}, rgba(255,255,255,.22), transparent 58%), linear-gradient(160deg, ${r[0]}, ${r[1]})`;
+}
+function vtAltYazi(p) {
+  const yer = pjSurumYeri(p);
+  if (yer && yer.tur === 'ana') return 'Ana program · sürüm ' + svKisa(yer.ana.canli);
+  if (yer && yer.tur === 'firma') { const d = svDurum(yer.f); return d.sinif === 'ok' ? 'Güncel' : d.yazi; }
+  if (!pjYayinda(p)) return 'Yapımda · %' + projeAsamaYuzde(p);
+  return modulAdi(p) || p.sektor || 'Yayında';
+}
+
+/* Afiş kartı: ana büyük, kardeş 3/4. */
+function vtAfis(p, tur) {
+  const gor = gorselAdresi(p, 'G0');
+  const yakin = tur === 'yakin';
+  return `<div class="vt-pos ${tur}" data-eylem="proje-ac" data-id="${p.id}" role="button" tabindex="0"
+      style="background-image:${vtZemin(p)}">
+    ${gor ? `<img class="vt-gor" src="${esc(gor)}" alt="" loading="lazy" decoding="async">` : ''}
+    ${pjLogo(p, 'vt-lo')}
+    ${tur === 'ana' ? '<span class="vt-rz">ANA</span>' : yakin ? '<span class="vt-rz yakin">YAKINDA</span>' : '<span class="vt-canli">Canlı</span>'}
+    <span class="vt-pos-alt"><b>${esc(basHarfleriBuyuk(p.firma || projeAdi(p)))}</b><i>${esc(vtAltYazi(p))}</i></span>
+    ${AUTH.yonetici ? `<button class="vt-menu" data-eylem="proje-menu" data-id="${p.id}" type="button" aria-label="Proje seçenekleri">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.7"></circle><circle cx="12" cy="12" r="1.7"></circle><circle cx="12" cy="19" r="1.7"></circle></svg></button>` : ''}
+  </div>`;
+}
+
+function vtHero(liste) {
+  if (!liste.length) return '';
+  if (VT_HERO >= liste.length) VT_HERO = 0;
+  const slaytlar = liste.map((p, i) => {
+    const gor = gorselAdresi(p, 'G0');
+    const yer = pjSurumYeri(p);
+    const kardes = yer && yer.tur === 'ana' ? yer.ana.firmalar.length : 0;
+    const alt = [yer && yer.tur === 'ana' ? 'Ana program' : (modulAdi(p) || p.sektor || ''),
+      kardes ? kardes + ' firmada yayında' : '', yer && yer.tur === 'ana' ? 'sürüm ' + svKisa(yer.ana.canli) : pjAdresYazi(p)]
+      .filter(Boolean).join(' · ');
+    const host = pjAdresYazi(p);
+    return `<div class="vt-sl ${i === VT_HERO ? 'on' : ''}" style="background-image:${vtZemin(p, '75% 20%')}">
+      ${gor ? `<img class="vt-gor" src="${esc(gor)}" alt="" loading="lazy" decoding="async">` : `<span class="vt-hero-logo">${pjLogo(p, 'vt-lo vt-lo-b')}</span>`}
+      <div class="vt-hero-yz">
+        <span class="vt-et">ÖNE ÇIKAN</span>
+        <h2>${esc(basHarfleriBuyuk(p.firma || projeAdi(p)))}</h2>
+        <p>${esc(alt)}</p>
+        <div class="vt-dg">
+          ${host ? `<a class="vt-dg1" href="https://${esc(host)}/" target="_blank" rel="noopener">▶ Siteyi aç</a>` : ''}
+          <button type="button" class="vt-dg2" data-eylem="proje-ac" data-id="${p.id}">Proje sayfası</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  const nok = liste.length > 1 ? `<div class="vt-nk">${liste.map((p, i) =>
+    `<button type="button" class="${i === VT_HERO ? 'on' : ''}" data-eylem="vt-hero" data-id="${i}" aria-label="${i + 1}. afiş"></button>`).join('')}</div>` : '';
+  return `<div class="vt-hero">${slaytlar}</div>${nok}`;
+}
+
+/* Afiş kendi kendine döner (6 sn). Elle seçilince sayaç baştan başlar. */
+function vtHeroGit(i) {
+  const sl = $$('.vt-sl');
+  if (!sl.length) return;
+  VT_HERO = ((Number(i) % sl.length) + sl.length) % sl.length;
+  sl.forEach((x, k) => x.classList.toggle('on', k === VT_HERO));
+  $$('.vt-nk button').forEach((x, k) => x.classList.toggle('on', k === VT_HERO));
+}
+let VT_SAYAC = null;
+function vtSayacKur() {
+  clearInterval(VT_SAYAC);
+  VT_SAYAC = setInterval(() => {
+    if (document.hidden || !$('.vt-sl')) return;
+    vtHeroGit(VT_HERO + 1);
+  }, 6000);
+}
+vtSayacKur();
+
+function vitrinEkrani(normal) {
+  const yayinda = normal.filter(pjYayinda);
+  const yapim = normal.filter(p => !pjYayinda(p));
+  const gruplar = VITRIN_GRUPLAR.map(g => {
+    const uyeler = yayinda.filter(p => vtGrup(p) === g.id);
+    if (!uyeler.length) return '';
+    let ana = uyeler.filter(vtAnaMi);
+    if (!ana.length) ana = [uyeler[0]];
+    const kardes = uyeler.filter(p => !ana.includes(p));
+    return `<section class="vt-grup">
+      <div class="vt-gb"><b>${esc(g.ad)}<small>${uyeler.length}</small></b></div>
+      <div class="vt-sira raf">${ana.map(p => vtAfis(p, 'ana')).join('')}${kardes.map(p => vtAfis(p, 'kar')).join('')}</div>
+    </section>`;
+  }).join('');
+  const heroListe = VITRIN_GRUPLAR.map(g => {
+    const u = yayinda.filter(p => vtGrup(p) === g.id);
+    const a = u.filter(vtAnaMi);
+    return a.length ? a : u.slice(0, 1);
+  }).flat();
+  const yakin = yapim.length ? `<section class="vt-grup">
+      <div class="vt-gb"><b>Yakında vitrinde<small>${yapim.length}</small></b></div>
+      <div class="vt-sira raf">${yapim.map(p => vtAfis(p, 'yakin')).join('')}</div>
+    </section>` : '';
+  if (!yayinda.length && !yapim.length) {
+    return `<div class="vt-bos">Vitrin boş. İlk proje yayına alınınca burada sergilenecek.</div>`;
+  }
+  return `${vtHero(heroListe)}${gruplar}${yakin}`;
+}
+
+/* Üstteki Vitrin / Atölye geçişi. */
+function pjSekmeDugmesi() {
+  return `<div class="pjs ${PJ_SEKME === 'atolye' ? 'atolye' : ''}" role="tablist">
+    <i class="pjs-hap" aria-hidden="true"></i>
+    <button type="button" role="tab" aria-selected="${PJ_SEKME === 'vitrin'}" data-eylem="pj-sekme" data-id="vitrin"><span>✦</span> Vitrin</button>
+    <button type="button" role="tab" aria-selected="${PJ_SEKME === 'atolye'}" data-eylem="pj-sekme" data-id="atolye"><span>⚒</span> Atölye</button>
+  </div>`;
+}
+function pjSekmeSec(k) {
+  if (k === PJ_SEKME) return;
+  PJ_SEKME = k === 'atolye' ? 'atolye' : 'vitrin';
+  try { localStorage.setItem('ns.pjSekme', PJ_SEKME); } catch (h) {}
+  const d = $('.pjs');
+  if (d) d.classList.toggle('atolye', PJ_SEKME === 'atolye');
+  /* Hap kaysın, sonra sahne değişsin. */
+  setTimeout(() => { PJ_GECIS = true; render(); }, 170);
+}
+let PJ_GECIS = false;
+
 function projelerEkrani(kova) {
   if (AUTH.yonetici && SURUM.durum === 'bos') setTimeout(() => surumTakipYukle(), 0);
-  if (kova === 'deneme' || kova === 'klon') PJ_ACIK.deneme = true;
-  if (kova === 'template') PJ_ACIK.template = true;
+  if (kova === 'deneme' || kova === 'klon') { PJ_ACIK.deneme = true; PJ_SEKME = 'atolye'; }
+  if (kova === 'template') { PJ_ACIK.template = true; PJ_SEKME = 'atolye'; }
   if (PJ_SUZGEC === 'bitti') PJ_SUZGEC = 'hepsi';
 
   const aktif = DB.projeler.filter(p => !p.arsiv);
   const normal = pjSirala(aktif.filter(p => PROJE_KOVASI.normal.sec(p)));
   const denemeKlon = pjSirala(aktif.filter(p => PROJE_KOVASI.deneme.sec(p) || PROJE_KOVASI.klon.sec(p)));
   const sablon = aktif.filter(p => PROJE_KOVASI.template.sec(p));
-  const yayinSay = normal.filter(pjYayinda).length;
-  const goster = p => PJ_SUZGEC === 'hepsi' || (PJ_SUZGEC === 'yayinda' ? pjYayinda(p) : !pjYayinda(p));
 
-  /* Aileler: ana program + ondan kopyalanan firmalar (Sürüm Takibi'nden). */
-  const ailede = new Set();
-  let aileler = '';
-  if (SURUM.durum === 'tamam' && PJ_SUZGEC !== 'yapimda') {
-    SURUM.analar.forEach(a => {
-      if (a.hata) return;
-      const anaP = normal.find(p => pjAdres(p) && pjHost(a.site) === pjAdres(p));
-      const firmalar = (a.firmalar || []).map(f => normal.find(p => pjAdres(p) && pjHost(f.site) === pjAdres(p))).filter(Boolean);
-      if (!anaP && !firmalar.length) return;
-      [anaP, ...firmalar].filter(Boolean).forEach(p => ailede.add(p.id));
-      const ad = String(a.ad || 'Ana program').replace(/\s*Modülü$/i, '');
-      aileler += pjBolum(esc(ad) + ' programları', (anaP ? pjKart3(anaP) : pjAnaKarti(a)) + firmalar.map(pjKart3).join(''));
-    });
+  const gecis = PJ_GECIS ? 'gecis' : '';
+  PJ_GECIS = false;
+  const yeniDug = AUTH.yonetici ? `<button class="pjs-yeni" type="button" data-eylem="sihirbaz" aria-label="Yeni Proje">${svg(ICON.arti, 18)}</button>` : '';
+  if (PJ_SEKME === 'vitrin') {
+    return `<div class="vt ${gecis}">
+      <div class="pjs-sat">${pjSekmeDugmesi()}${yeniDug}</div>
+      ${!normal.length ? `<div class="vt-bos">Henüz proje yok.</div>` : vitrinEkrani(normal)}
+    </div>`;
   }
-  const diger = normal.filter(p => !ailede.has(p.id) && pjYayinda(p) && goster(p));
-  const yapim = normal.filter(p => !ailede.has(p.id) && !pjYayinda(p) && goster(p));
-
-  const cip = (k, ad) => `<button type="button" class="pj2-cip ${PJ_SUZGEC === k ? 'sec' : ''}" data-eylem="pj-suzgec" data-id="${k}">${ad}</button>`;
-  const govde = !normal.length
-    ? `<div class="card">${empty(ICON.katman, 'Henüz proje yok',
-        'Yeni Proje sihirbazı firma, renk, platform, veritabanı ve modülleri sorar.',
-        AUTH.yonetici ? 'Yeni Proje' : null, 'sihirbaz')}</div>`
-    : (aileler
-      + pjBolum(aileler ? 'Diğer programlar' : 'Yayındaki programlar', diger.map(pjKart3).join(''))
-      + pjBolum('Yapımda', yapim.map(pjKart3).join(''))) || '<div class="sv-bos">Bu süzgece uyan proje yok.</div>';
-
-  return `
-    <div class="pj-tepe">
-      <div class="pj-tepe-yz">
-        <h1>Projeler</h1>
-        <p>${normal.length} proje · ${yayinSay} yayında</p>
-      </div>
-      ${AUTH.yonetici ? `<button class="pj-yeni" type="button" data-eylem="sihirbaz">${svg(ICON.arti, 16)}<span>Yeni Proje</span></button>` : ''}
-    </div>
-    <div class="pj2-arac">
-      <label class="pj-ara">
-        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.4"></circle><path d="M15.8 15.8L20.5 20.5"></path></svg>
-        <input id="pj-ara" type="search" autocomplete="off" placeholder="Proje veya firma ara…" value="${esc(PROJE_ARAMA)}">
-      </label>
-      <div class="pj2-cipler">${cip('hepsi', 'Hepsi')}${cip('yayinda', 'Yayında')}${cip('yapimda', 'Yapımda')}</div>
-    </div>
+  /* Atölye (2. adımda yeni tasarımına geçecek): şimdilik denemeler, klonlar
+     ve şablonlar eski kartlarıyla, açık hâlde. */
+  return `<div class="atl ${gecis}">
+    <div class="pjs-sat">${pjSekmeDugmesi()}${yeniDug}</div>
     <div class="pj2-kok">
-      ${govde}
-      ${pjKapali('deneme', '🧪 Denemeler ve klonlar', denemeKlon, pjKart3)}
-      ${pjKapali('template', '📐 Şablonlar', sablon, templateKarti)}
-      <div class="pj-bos-arama">Aramana uyan proje yok.</div>
+      ${denemeKlon.length || sablon.length ? '' : '<div class="sv-bos">Atölyede şu an iş yok.</div>'}
+      ${denemeKlon.length ? pjBolum('🧪 Denemeler ve klonlar', denemeKlon.map(pjKart3).join('')) : ''}
+      ${sablon.length ? `<section class="pj2-grup"><h2 class="pj3-bas">📐 Şablonlar</h2><div class="tp-liste">${sablon.map(templateKarti).join('')}</div></section>` : ''}
     </div>
     ${AUTH.yonetici ? `<div class="pj2-alt-dug">
       <button type="button" class="btn btn-ghost" data-eylem="klon-yeni">${svg(ICON.kopya, 15)} Test Klonu</button>
-      <button type="button" class="btn btn-ghost" data-eylem="template-olustur-ac">${svg(ICON.izgaraDort, 15)} Template</button></div>` : ''}`;
+      <button type="button" class="btn btn-ghost" data-eylem="template-olustur-ac">${svg(ICON.izgaraDort, 15)} Template</button></div>` : ''}
+  </div>`;
 }
 
 /* Arama: ekran yeniden çizilmeden kartlar gizlenir; boş kalan bölüm de gizlenir. */
@@ -9543,6 +9659,8 @@ function render() {
   /* Zemin fotoğrafı yalnızca Panel'de. Sayfa değişince koyuluk sıfırlanır,
      yoksa panele döndüğünde fotoğraf kararmış geliyor. */
   $('#main').classList.toggle('susulu', key === 'panel' && !detay);
+  /* Projeler › Vitrin koyu sahne (v0.359.0). */
+  $('#main').classList.toggle('vitrinde', key === 'projeler' && !detay && !kova && PJ_SEKME === 'vitrin');
   /* Yazışma tam ekran: kendi başlığı ve alttaki yazma çubuğu var,
      uygulamanın üst çubuğu ve sekmeleri gizleniyor. */
   const yazisma = key === 'sohbet' && !!id;
@@ -15537,6 +15655,8 @@ async function eylemCalistir(el) {
   if (e === 'proje-ac')  { location.hash = '#/projeler/' + id; return; }
   if (e === 'pz-proje-sec') return pzProjeSecAc();
   if (e === 'p3-ac')     return p3Ac(el);
+  if (e === 'pj-sekme')  return pjSekmeSec(id);
+  if (e === 'vt-hero')   { vtHeroGit(id); vtSayacKur(); return; }
   if (e === 'sh-ac')     return shAc(id);
   if (e === 'sh-kisi-ac')  return shKisiAc(el);
   if (e === 'sh-kisi-sec') return shKisiSec(id);
@@ -16653,7 +16773,14 @@ async function eylemCalistir(el) {
        düzenleniyor, arşiv de kullanılmıyordu. */
     const bitti = !!(proje.palet || {}).finalVerildi;
     const deneme = denemeMi(proje);
+    const vtGrupAd = (VITRIN_GRUPLAR.find(g => g.id === vtGrup(proje)) || {}).ad || '';
+    const vitrinde = AUTH.yonetici && PROJE_KOVASI.normal.sec(proje);
     const sec = await secenekSor(projeAdi(proje), [
+      ...(vitrinde ? [
+        { anahtar: 'vt-grup', ad: 'Vitrin grubu', ikon: ICON.katman || ICON.folder, alt: 'Şu an: ' + vtGrupAd },
+        { anahtar: 'vt-ana', ad: vtAnaMi(proje) ? 'Ana proje olmaktan çıkar' : 'Ana proje yap', ikon: ICON.bayrak,
+          alt: vtAnaMi(proje) ? 'Grubunda kardeş olarak durur' : 'Grubunun başında büyük afişle durur' },
+      ] : []),
       ...(AUTH.yonetici && !cekirdekMi(proje) ? [deneme
         ? { anahtar: 'gercege', ad: 'Gerçek projeye taşı', ikon: ICON.folder,
             alt: 'Proje «Projeler» bölümüne geçer' }
@@ -16668,6 +16795,21 @@ async function eylemCalistir(el) {
         alt: 'Her şeyi siler, geri gelmez', tehlike: true },
     ]);
     if (!sec) return;
+
+    if (sec === 'vt-grup') {
+      const g = await secenekSor('Vitrin grubu', VITRIN_GRUPLAR.map(x => ({
+        anahtar: x.id, ad: x.ad, ikon: ICON.folder, alt: x.id === vtGrup(proje) ? 'Şu anki grup' : '' })));
+      if (!g) return;
+      return isYap(() => DB.paletKaydet(proje.id, Object.assign({}, proje.palet || {},
+        { vitrin: Object.assign({}, vtAyar(proje), { grup: g }) })),
+        projeAdi(proje) + ' «' + (VITRIN_GRUPLAR.find(x => x.id === g) || {}).ad + '» grubuna alındı.');
+    }
+    if (sec === 'vt-ana') {
+      const ana = !vtAnaMi(proje);
+      return isYap(() => DB.paletKaydet(proje.id, Object.assign({}, proje.palet || {},
+        { vitrin: Object.assign({}, vtAyar(proje), { grup: vtGrup(proje), ana }) })),
+        projeAdi(proje) + (ana ? ' artık ana proje.' : ' artık kardeş proje.'));
+    }
 
     if (sec === 'gercege' || sec === 'denemeye') {
       const yeni = sec === 'gercege' ? 'gercek' : 'deneme';
