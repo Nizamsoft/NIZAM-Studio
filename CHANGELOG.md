@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.354.0
+- Görevler kartı: çizilmiş N yerine `logo.png` filigranı (`.p3-n`, %16, düz; STUDIO yazısı kart dışında).
+- Son Hareketler `.shz-kart` içinde (3D kart). Avatar fotoğraflı (`shAvatar(ad, sinif, kisi)`); iş kaydındaki ad
+  Studio kişisiyle `shKisiBul` ile eşlenir (tam ad, yoksa tek eşleşen ilk ad); yoksa baş harf.
+- 30 kayıt (`SH_LIMIT`), altta "Daha fazla göster" (`sh-daha`, +30). Kişi değişince 30'a döner.
+
 ## v0.353.0
 - **Görevler kartı** (onaylı 1+3 karışımı): grafit degrade + 135° ince çizgi, `.p3-n` (logodaki N, %9),
   sol üstte kırmızı ışık (`.p3-ana::before`). Bekleyen yoksa ikon cam beyaz; uyarıda `p3-kenar-grafit`.

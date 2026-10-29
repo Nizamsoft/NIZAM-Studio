@@ -21,6 +21,13 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.354.0', tarih: '2026-10-29',
+    ozet: 'Son Hareketler kartta, fotoğraflı',
+    maddeler: [
+      'Görevler kartında artık logonun kendisi soluk duruyor.',
+      'Son Hareketler güzel bir kartın içinde; kişilerin fotoğrafı görünüyor.',
+      'İlk 30 kayıt görünüyor, en altta "Daha fazla göster" var.',
+    ] },
   { surum: 'v0.353.0', tarih: '2026-10-29',
     ozet: 'Yeni Görevler kartı ve Son Hareketler',
     maddeler: [
