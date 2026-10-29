@@ -1,5 +1,15 @@
 # Değişiklik Günlüğü
 
+## v0.348.0
+- **Panel kartları** (kullanıcı onaylı taslak: B + oklu pencere). `panelUyari`, `panelHatalar`, `panelSayilar`,
+  `enYakinGorevBitis` kalktı; yerine `panelKartlar` (`.p3`): Onayını bekliyor (tam genişlik, koyu), Açık görev,
+  Talepler, Güvenlik ve yedek, Hatalar. Geliştiricide yalnız ilk ikisi (`.p3-tek`).
+- Karta basınca `p3Ac`: kart iner (`.acik`), altında oklu `.p3-pop` açılır; içerik `p3Icerik(k)`. Pencere DOM'a
+  eklenir, render'da kapanır; dışarı basınca / Esc ile kapanır. Yeni eylemler `p3-ac`, `p3-onayla`
+  (`gorevDurum(id, 'onaylandi')`), `p3-git`.
+- Ortak veri `p3Veri`: açık görevler devam eden projelerden; Yapılacak = plansız, Kontrolde = `bitirdi`.
+- CLAUDE.md: panel kartlarında gölge/3D istisnası.
+
 ## v0.347.0
 - **Görev penceresi** (ekip isteği; taslak `studio-gorev-sohbet-panel-taslak.png`). `gorevKartiHtml`: aşama düğmeleri
   ve "Görevi düzenle" en üstte `.gd-eylem`; Proje/Bitiş/Veren/Alan iki sütun (`.gd-izgara`); Ekler ve Geçmiş

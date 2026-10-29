@@ -21,6 +21,14 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.348.0', tarih: '2026-10-29',
+    ozet: 'Yeni Panel: basılabilir kartlar',
+    maddeler: [
+      'Panel kartları yeni: kabarık duruyor, basınca içeri gömülüyor.',
+      'Karta basınca altında küçük bir pencere açılıp ayrıntıyı gösteriyor.',
+      'Onay bekleyen görevleri doğrudan Panel\'den onaylayabilirsin.',
+      'Güvenlik ve yedek uyarıları tek kartta toplandı.',
+    ] },
   { surum: 'v0.347.0', tarih: '2026-10-28',
     ozet: 'Görev penceresi, sohbetten görev ve sade Panel',
     maddeler: [

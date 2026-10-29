@@ -114,6 +114,11 @@ kalıyor.
 bilerek seçti: bol kırmızı vurgu (ana düğme, aktif adım, kahraman kart, halka),
 yumuşak gölge ve 14px köşe. Yalnız Security ekranlarında; başka yere taşıma.
 
+**İstisna — Panel kartları (`.p3`):** kullanıcı 2026-10-29'da bilerek seçti:
+3D, basılabilir kartlar (kalın alt kenar + gölge, basınca iner) ve karta
+basınca açılan oklu pencere. Kırmızı yalnız ikon kutusunda (onay kartı,
+sorun varken uyarı kartları). Yalnız Panel'in üst kartlarında.
+
 Sebebi: kırmızı her kartın üstünde, alt çubukta ve her düğmede olunca
 hepsi birden "buraya bak" diyor, yani hiçbiri demiyor. Vurgu nadir
 olduğunda vurgudur.

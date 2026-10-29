@@ -604,18 +604,16 @@ const VIEWS = {
     /* Yukarıdan aşağı (v0.347.0 · onaylanan taslak
        yapilanlar-gorseller/studio-gorev-sohbet-panel-taslak.png):
          selam    · tek satır, ad ve tarih,
-         uyarı    · yalnız sorun varsa (güvenlik denetimi, yedek),
-         hatalar  · müşteri programlarından gelen bildirimler,
-         sayılar  · talep / devam eden proje ve açık görev,
+         kartlar  · 3D basılabilir kartlar (v0.348.0): onay bekleyen,
+                    açık görev, talepler, güvenlik+yedek, hatalar. Karta
+                    basınca altında oklu bir pencere açılıp ayrıntıyı gösterir,
          projeler · aktif projeler,
          ekip + son hareketler.
        "Muhasebe Programları" ve "Son Yedekleme" kutuları kalktı: aynı
        bilgi artık her projenin Durum kutusunda (pdKutu). */
     return `
       ${panelSelam()}
-      ${panelUyari(p)}
-      ${panelHatalar()}
-      ${panelSayilar(p)}
+      ${panelKartlar(p)}
       ${panelProjeler(p)}
       <div class="pz-ikili">
         ${panelEkip()}
@@ -15543,6 +15541,9 @@ async function eylemCalistir(el) {
   if (e === 'projelere') { location.hash = '#/projeler'; return; }
   if (e === 'proje-ac')  { location.hash = '#/projeler/' + id; return; }
   if (e === 'pz-proje-sec') return pzProjeSecAc();
+  if (e === 'p3-ac')     return p3Ac(el);
+  if (e === 'p3-git')    { p3Kapat(); location.hash = el.dataset.hedef; return; }
+  if (e === 'p3-onayla') { p3Kapat(); return gorevDurum(id, 'onaylandi'); }
   if (e === 'pz-proje-ac-kapa') return pzProjeAcKapa(el);
   if (e === 'pj-suzgec') { PJ_SUZGEC = id || 'hepsi'; render(); return; }
   if (e === 'pj-bolum')  { PJ_ACIK[id] = !PJ_ACIK[id]; render(); return; }
@@ -17745,29 +17746,191 @@ function panelSelam() {
     </section>`;
 }
 
-/* Uyarı şeridi: yalnız bakılması gereken bir şey varsa görünür. Her proje
-   adı o projeye götürür; ayrıntı orada, Durum kutusunda. */
-function panelUyari(liste) {
-  if (!AUTH.yonetici) return '';
-  if (SURUM.durum === 'bos') setTimeout(() => surumTakipYukle(), 0);
-  yedekEslemeYukle();
-  const pj = liste.filter(p => !p.arsiv && !PROJE_KOVASI.klon.sec(p) && sunuculuMu(p));
-  const guv = pj.filter(p => /^[kb]$/.test(pdGuvenlik(p).s));
-  const yed = pj.filter(p => /^[kb]$/.test(pdYedek(p).s));
-  const dr = yedekDrive(sonYedekRaporu());
-  const drive = dr && dr.dolu;
-  if (!guv.length && !yed.length && !drive) return '';
-  const adlar = l => l.map(p => `<button type="button" data-eylem="proje-ac" data-id="${p.id}">${esc(projeAdi(p))}</button>`).join('');
-  const sat = (ik, yazi, l) => l.length ? `<div class="pu-sat"><span class="pu-ik">${ik}</span>
-      <span class="pu-yz"><b>${yazi}</b><span class="pu-adlar">${adlar(l)}</span></span></div>` : '';
-  return `<section class="pu">
-    ${sat('🛡️', guv.length + ' projede güvenlik denetimi bekliyor', guv)}
-    ${sat('💾', yed.length + ' projenin yedeğinde sorun var', yed)}
-    ${drive ? `<div class="pu-sat"><span class="pu-ik">☁️</span>
-      <span class="pu-yz"><b>Google Drive %${dr.yuzde} dolu</b><span class="pu-adlar">
-        <button type="button" data-eylem="yedek-detay">Yedek detayı</button></span></span></div>` : ''}
-  </section>`;
+/* ---------- Panel kartları (v0.348.0) ----------
+   3D, basılabilir kartlar. Karta basınca kart içeri gömülür ve altında
+   oku ona bakan bir pencere açılır; ayrıntı orada (onaylanacak görevler,
+   yaklaşan bitişler, son talepler…). Pencere render'a bağlı değil: DOM'a
+   eklenir, yeniden çizimde kapanır. Panelde gölge bilerek serbest
+   (CLAUDE.md istisnası). */
+function p3Veri(projeler) {
+  const devam = projeler.filter(p => !projeBittiMi(p));
+  const ids = new Set(devam.map(p => p.id));
+  const acik = (DB.gorevler || []).filter(g =>
+    g.durum !== 'onaylandi' && (!g.proje_id || ids.has(g.proje_id)));
+  const kontrol = acik.filter(g => g.durum === 'bitirdi')
+    .sort((a, b) => (b.guncellendi || '').localeCompare(a.guncellendi || ''));
+  const yapilacak = acik.filter(g => g.durum !== 'bitirdi' && !String(g.plan || '').trim()).length;
+  const gelisen = acik.length - kontrol.length - yapilacak;
+  const yakin = acik.filter(g => g.bitis && g.durum !== 'bitirdi')
+    .sort((a, b) => a.bitis.localeCompare(b.bitis));
+  let guv = [], yed = [], drive = null;
+  if (AUTH.yonetici) {
+    if (SURUM.durum === 'bos') setTimeout(() => surumTakipYukle(), 0);
+    yedekEslemeYukle();
+    const pj = projeler.filter(p => !p.arsiv && !PROJE_KOVASI.klon.sec(p) && sunuculuMu(p));
+    guv = pj.filter(p => /^[kb]$/.test(pdGuvenlik(p).s));
+    yed = pj.filter(p => /^[kb]$/.test(pdYedek(p).s));
+    const dr = yedekDrive(sonYedekRaporu());
+    if (dr && dr.dolu) drive = dr;
+  }
+  return { acik, kontrol, yapilacak, gelisen, yakin, guv, yed, drive };
 }
+
+function panelKartlar(projeler) {
+  const v = p3Veri(projeler);
+  const yon = AUTH.yonetici;
+  const talepler = DB.talepler || [];
+  const yeniTalep = talepler.filter(t => t.durum === 'yeni').length;
+  const haftaOnce = Date.now() - 7 * 864e5;
+  const buHafta = talepler.filter(t => new Date(t.gonderildi).getTime() >= haftaOnce).length;
+  const hatalar = DB.hatalar || [];
+  const yeniHata = hatalar.filter(h => h.durum === 'yeni').length;
+  const sorun = v.guv.length + v.yed.length + (v.drive ? 1 : 0);
+  const aylar = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz',
+                 'Ağustos','Eylül','Ekim','Kasım','Aralık'];
+  const ilk = v.yakin[0];
+  const ilkYazi = ilk ? (() => { const t = new Date(ilk.bitis + 'T00:00:00');
+    return 'En yakın: ' + t.getDate() + ' ' + aylar[t.getMonth()]; })()
+    : v.acik.length ? 'Bitiş tarihi yok' : 'Görev yok';
+
+  const kart = (k, ik, sayi, bas, alt, sinif = '') => `
+    <button type="button" class="p3-kart ${sinif}" data-eylem="p3-ac" data-id="${k}" aria-expanded="false">
+      <span class="p3-ik">${svg(ik, 18)}</span>
+      <b class="p3-sayi">${sayi}</b>
+      <span class="p3-bas">${esc(bas)}</span>
+      <i class="p3-alt">${esc(alt)}</i>
+      ${k === 'onay' ? '<span class="p3-incele">İncele ›</span>' : ''}
+    </button>`;
+
+  return `<div class="p3 ${yon ? '' : 'p3-tek'}">
+    ${kart('onay', ICON.tik, v.kontrol.length, yon ? 'Onayını bekliyor' : 'Onayda bekleyen',
+      'Kontrolde olan görev', 'p3-ana')}
+    ${kart('gorev', ICON.check, v.acik.length, 'Açık görev', ilkYazi)}
+    ${yon ? kart('talep', ICON.mail, yeniTalep, 'Talepler', 'Bu hafta ' + buHafta) : ''}
+    ${yon ? kart('guv', ICON.gGuvenlik, sorun, 'Güvenlik ve yedek',
+      sorun ? 'Bakılması gereken' : 'Her şey yolunda', sorun ? 'p3-uyari' : '') : ''}
+    ${yon ? kart('hata', ICON.uyari, yeniHata, 'Hatalar',
+      yeniHata ? 'Yeni bildirim' : 'Yeni bildirim yok', yeniHata ? 'p3-uyari' : '') : ''}
+  </div>`;
+}
+
+/* Penceredeki tek satır: sol işaret, başlık + alt yazı, sağda düğme/hap. */
+function p3Sat(sol, bas, alt, sag, eylem) {
+  return `<div class="p3-sat" ${eylem || ''}>
+    <span class="p3-sol">${sol}</span>
+    <span class="p3-yz"><b>${esc(bas)}</b>${alt ? `<i>${esc(alt)}</i>` : ''}</span>
+    ${sag || ''}
+  </div>`;
+}
+
+function p3Icerik(k) {
+  const v = p3Veri(DB.projeler.filter(x => !cekirdekMi(x) && !denemeMi(x)));
+  const yon = AUTH.yonetici;
+  const bas = (y, link) => `<div class="p3-pb"><b>${esc(y)}</b>${link || ''}</div>`;
+  const tum = (adres, y) => `<a class="p3-tum" href="${adres}">${y} ›</a>`;
+  const bos = y => `<div class="p3-bos">${esc(y)}</div>`;
+  const gorevAlt = g => [g.proje_id ? basHarfleriBuyuk((DB.proje(g.proje_id) || {}).firma || '') : 'Genel',
+    DB.kisiAdi(g.atanan)].filter(Boolean).join(' · ');
+  const gorevAc = g => `data-eylem="gorev-ac" data-id="${g.id}" role="button" tabindex="0"`;
+  const no = g => `<span class="p3-no">${esc(gorevNo(g))}</span>`;
+
+  if (k === 'onay') {
+    const l = v.kontrol.slice(0, 6);
+    return bas((yon ? 'Onayını bekleyen · ' : 'Onayda bekleyen · ') + v.kontrol.length, tum('#/gorevler', 'Görevler'))
+      + (l.length ? l.map(g => p3Sat(no(g), g.baslik || 'Görev',
+          gorevAlt(g) + (g.guncellendi ? ' · ' + pzZamanKisa(g.guncellendi) : ''),
+          yon ? `<button type="button" class="p3-dug" data-eylem="p3-onayla" data-id="${g.id}">Onayla</button>`
+              : `<span class="p3-hap">Kontrolde</span>`, gorevAc(g))).join('')
+        : bos('Onay bekleyen görev yok 🎉'));
+  }
+  if (k === 'gorev') {
+    const say = (n, ad, renk) => `<div style="--c:${renk}"><b>${n}</b><i>${ad}</i></div>`;
+    const l = v.yakin.slice(0, 5);
+    return bas('Açık görevler · ' + v.acik.length, tum('#/gorevler', 'Görevler'))
+      + `<div class="p3-durum">${say(v.yapilacak, 'Yapılacak', '#83838b')}${say(v.gelisen, 'Geliştiriliyor', '#b8801a')}${say(v.kontrol.length, 'Kontrolde', '#2f62c4')}</div>`
+      + bas('Yaklaşan bitişler')
+      + (l.length ? l.map(g => { const s = gorevSure(g.bitis);
+          return p3Sat(no(g), g.baslik || 'Görev', gorevAlt(g),
+            s ? `<span class="p3-hap ${s.sinif}">${esc(s.yazi)}</span>` : '', gorevAc(g)); }).join('')
+        : bos('Bitiş tarihi girilmiş açık görev yok.'));
+  }
+  if (k === 'talep') {
+    const l = (DB.talepler || []).slice(0, 5);
+    return bas('Son talepler', tum('#/talepler', 'Tümü'))
+      + (l.length ? l.map(t => p3Sat(`<span class="p3-harf">${esc(basHarf(t.firma || t.yetkili || '?'))}</span>`,
+          t.firma || t.yetkili || 'İsimsiz talep', tarihYaz(t.gonderildi), talepEtiketi(t),
+          `data-eylem="p3-git" data-hedef="#/talepler/${esc(t.id)}" role="button" tabindex="0"`)).join('')
+        : bos('Henüz talep yok.'));
+  }
+  if (k === 'hata') {
+    const l = (DB.hatalar || []).slice(0, 5);
+    return bas('Son bildirimler', tum('#/hatalar', 'Tümü'))
+      + (l.length ? l.map(h => p3Sat(`<span class="p3-harf">${esc(basHarf(hataProjeAdi(h)))}</span>`,
+          hataProjeAdi(h), String(h.mesaj || '').replace(/\n+/g, ' ').slice(0, 70) || tarihYaz(h.gonderildi),
+          hataEtiketi(h), `data-eylem="p3-git" data-hedef="#/hatalar/${esc(h.id)}" role="button" tabindex="0"`)).join('')
+        : bos('Müşteri programlarından bildirim gelmedi.'));
+  }
+  if (k === 'guv') {
+    const harf = p => `<span class="p3-harf">${esc(basHarf(p.firma || projeAdi(p)))}</span>`;
+    let h = '';
+    h += bas('Güvenlik denetimi · ' + v.guv.length);
+    h += v.guv.length ? v.guv.map(p => p3Sat(harf(p), basHarfleriBuyuk(p.firma || projeAdi(p)),
+        [modulAdi(p), pdGuvenlik(p).yazi].filter(Boolean).join(' · '),
+        `<button type="button" class="p3-dug" data-eylem="pd-guvenlik" data-id="${p.id}">Başlat</button>`,
+        `data-eylem="proje-ac" data-id="${p.id}" role="button" tabindex="0"`)).join('')
+      : bos('Denetim bekleyen proje yok.');
+    h += bas('Yedek · ' + (v.yed.length + (v.drive ? 1 : 0)));
+    h += v.yed.map(p => p3Sat(harf(p), basHarfleriBuyuk(p.firma || projeAdi(p)), pdYedek(p).yazi,
+        `<button type="button" class="p3-dug" data-eylem="proje-ac" data-id="${p.id}">Bak</button>`,
+        `data-eylem="proje-ac" data-id="${p.id}" role="button" tabindex="0"`)).join('');
+    if (v.drive) h += p3Sat('<span class="p3-harf">☁️</span>', 'Google Drive %' + v.drive.yuzde + ' dolu', 'Yer açmak gerekebilir',
+        `<button type="button" class="p3-dug" data-eylem="yedek-detay">Detay</button>`);
+    if (!v.yed.length && !v.drive) h += bos('Yedeklerde sorun yok.');
+    return h;
+  }
+  return '';
+}
+
+/* Karta basınca: aynı karta yeniden basılırsa kapanır, başka karta
+   basılırsa pencere oraya taşınır. */
+function p3Kapat() {
+  $$('.p3-pop').forEach(x => x.remove());
+  $$('.p3-kart.acik').forEach(x => { x.classList.remove('acik'); x.setAttribute('aria-expanded', 'false'); });
+  const k = $('.p3'); if (k) k.classList.remove('odak');
+}
+function p3Ac(el) {
+  const kap = el.closest('.p3');
+  if (!kap) return;
+  const acikti = el.classList.contains('acik');
+  p3Kapat();
+  if (acikti) return;
+  el.classList.add('acik');
+  el.setAttribute('aria-expanded', 'true');
+  kap.classList.add('odak');
+  const pop = document.createElement('div');
+  pop.className = 'p3-pop';
+  pop.innerHTML = p3Icerik(el.dataset.id);
+  kap.appendChild(pop);
+  /* Pencere kartın altına, ok kartın ortasına. Masaüstünde pencere dar
+     (460px); kartın altına ortalanıp kenardan taşmayacak kadar kaydırılır. */
+  const ok = el.offsetLeft + el.offsetWidth / 2;
+  const w = pop.offsetWidth;
+  const sol = Math.max(0, Math.min(kap.offsetWidth - w, ok - w / 2));
+  pop.style.left = sol + 'px';
+  pop.style.top = (el.offsetTop + el.offsetHeight + 14) + 'px';
+  pop.style.setProperty('--ok', Math.max(22, Math.min(w - 22, ok - sol)) + 'px');
+  requestAnimationFrame(() => {
+    pop.classList.add('gor');
+    pop.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  });
+}
+/* Pencerenin dışına basınca kapanır. */
+document.addEventListener('click', e => {
+  if (!$('.p3-pop')) return;
+  if (e.target.closest('.p3-pop') || e.target.closest('.p3-kart')) return;
+  p3Kapat();
+}, true);
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && $('.p3-pop')) p3Kapat(); });
 
 /* Proje kartında yer dar: bugünkü saat tek başına yeter, "Bugün ·"
    öneki satırı ikiye kırıyordu. */
@@ -17793,145 +17956,6 @@ function pzHalka(yuzde, boy, kalin) {
             stroke-dasharray="${dolu.toFixed(1)} ${(cevre - dolu).toFixed(1)}"
             transform="rotate(-90 ${o} ${o})"></circle>
   </svg>`;
-}
-
-/* ---------- İki sayı kartı ----------
-   Solda halka: devam eden projelerin ortalama ilerlemesi.
-   Sağda en yakın bitiş: açık görevlerin `bitis` tarihlerinden en yakını,
-   altında kaç gün kaldığı. Eskiden projenin `teslim` alanına bakıyordu;
-   görev sistemi kurulunca tarih görevin kendisinde durmaya başladı.
-   Geçmiş tarihli görev varsa en önce o çıkıyor — asıl acil olan o. */
-function enYakinGorevBitis(gorevler) {
-  const bugun = new Date(); bugun.setHours(0, 0, 0, 0);
-  return gorevler
-    .filter(g => g.bitis)
-    .map(g => ({ g, t: new Date(g.bitis + 'T00:00:00') }))
-    .filter(x => !isNaN(x.t))
-    .sort((x, y) => x.t - y.t)[0] || null;
-}
-
-/* Panel'de, istatistik kartlarının ÜSTünde ince yatay bir şerit: müşteri
-   programlarından gelen hata bildirimleri. Yalnız yönetici; hiç bildirim
-   yoksa görünmez (paneli boş yere doldurmasın). Mevcut tl-kart stiliyle —
-   alçak, yatay, ek CSS gerekmez. Kırmızı yalnız "N yeni" rozetinde. */
-function panelHatalar() {
-  if (!AUTH.yonetici) return '';
-  const hepsi = DB.hatalar || [];
-  if (!hepsi.length) return '';
-  const yeni = hepsi.filter(h => h.durum === 'yeni').length;
-  const son  = hepsi[0];                       // liste gonderildi desc sıralı
-  /* Talepler/Açık Görev kartlarıyla birebir aynı ps kart düzeni, tam genişlik.
-     Beyaz üstünde kırmızı yazı okunsun diye bildirim simgesi beyaz üçgen. */
-  const uyariDolu = '<svg viewBox="0 0 24 24" style="width:19px;height:19px">'
-    + '<path fill="#fff" stroke="none" d="M12 3.2l9.2 16a1 1 0 0 1-.87 1.5H3.67a1 1 0 0 1-.87-1.5z"></path>'
-    + '<path d="M12 9.6v4.2" stroke="#2a2a2f" stroke-width="1.9" stroke-linecap="round"></path>'
-    + '<circle cx="12" cy="16.6" r="1.1" fill="#2a2a2f" stroke="none"></circle></svg>';
-  return `<a class="ps ps-hata" href="#/hatalar">
-    <span class="ps-ok" aria-hidden="true">${svg(ICON.chevron, 14)}</span>
-    <span class="ps-ikon">${uyariDolu}</span>
-    <b class="ps-bas">Hata Bildirimleri</b>
-    <i class="ps-aciklama">Müşteri programlarından gelen</i>
-    <b class="ps-sayi">${yeni}</b>
-    <span class="ps-bitis">
-      ${svg(ICON.saat, 14)}
-      <span><i>Son bildirim</i><b>${esc(hataProjeAdi(son))}</b></span>
-    </span>
-  </a>`;
-}
-
-function panelSayilar(projeler) {
-  /* Şeritteki "Aktif Projeler" ile aynı ölçü: biten proje sayılmıyor. */
-  const devam = projeler.filter(p => !projeBittiMi(p));
-
-  /* Açık görev YALNIZ devam eden projelerden sayılıyor. Eskiden bütün
-     görevler sayılıyordu: arşivlenmiş projenin, şablonun ve bitmiş projenin
-     görevleri de panele "açık iş" gibi yansıyordu. */
-  const devamIds = devam.map(p => p.id);
-  /* Açık = henüz onaylanmamış. Genel görevlerin projesi yok, onlar da
-     sayılıyor. (Eskiden 'tamamlandi' aranıyordu; yeni görev sisteminde
-     öyle bir durum yok, yüzden hepsi açık görünüyordu.) */
-  const acikGorevler = (DB.gorevler || []).filter(g =>
-    g.durum !== 'onaylandi' && (!g.proje_id || devamIds.includes(g.proje_id)));
-  const acik = acikGorevler.length;
-  const yuzdeler = devam.map(p => projeAsamaYuzde(p));
-  const ortalama = yuzdeler.length
-    ? Math.round(yuzdeler.reduce((t, x) => t + x, 0) / yuzdeler.length) : 0;
-
-  const aylar = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz',
-                 'Ağustos','Eylül','Ekim','Kasım','Aralık'];
-  /* En yakın bitiş. Açık görev yoksa tarih de yok — uydurma tarih yazmıyoruz.
-     Tarihi girilmiş görev yoksa da satır "Tarih yok" diyor. */
-  const yakin = acik ? enYakinGorevBitis(acikGorevler) : null;
-  const sure  = yakin ? gorevSure(yakin.g.bitis) : null;
-  const tarihYazi = !acik ? 'Görev yok'
-    : yakin ? `${yakin.t.getDate()} ${aylar[yakin.t.getMonth()]} ${yakin.t.getFullYear()}`
-            : 'Tarih yok';
-
-  const klasorDolu = '<svg viewBox="0 0 24 24" style="width:19px;height:19px">'
-    + '<path fill="#fff" stroke="none" d="M3 7.5A2.5 2.5 0 0 1 5.5 5h3.2l2 2h8.8A2.5 2.5 0 0 1 22 9.5v8A2.5 2.5 0 0 1 19.5 20h-15A2.5 2.5 0 0 1 2 17.5z"></path></svg>';
-  const onayDolu = '<svg viewBox="0 0 24 24" style="width:19px;height:19px">'
-    + '<rect x="3.5" y="3.5" width="17" height="17" rx="4.5" fill="none" stroke="#fff" stroke-width="1.8"></rect>'
-    + '<path d="M8 12.3l2.7 2.7L16.3 9.2" fill="none" stroke="#fff" stroke-width="2.2"'
-    + ' stroke-linecap="round" stroke-linejoin="round"></path></svg>';
-
-  /* Sağ alttaki soluk çizim: üst üste binmiş üç kart ve bir onay. */
-  const gorevCizimi = '<svg viewBox="0 0 120 120" aria-hidden="true">'
-    + '<rect x="46" y="10" width="62" height="62" rx="16" fill="currentColor" opacity=".30"></rect>'
-    + '<rect x="30" y="30" width="68" height="68" rx="18" fill="currentColor" opacity=".45"></rect>'
-    + '<rect x="40" y="46" width="72" height="72" rx="20" fill="currentColor" opacity=".70"></rect>'
-    + '<path d="M60 84l10 10 20-22" fill="none" stroke="#fff" stroke-width="7"'
-    + ' stroke-linecap="round" stroke-linejoin="round" opacity=".7"></path></svg>';
-
-  /* Yöneticide ilk kart Talepler: siteden gelen, henüz bakılmamış iş.
-     Geliştirici talepleri göremiyor; onda eski proje kartı duruyor. */
-  const zarfDolu = '<svg viewBox="0 0 24 24" style="width:19px;height:19px">'
-    + '<rect x="3" y="5.5" width="18" height="13" rx="2.8" fill="#fff" stroke="none"></rect>'
-    + '<path d="M4.2 7.4l7.8 5.6 7.8-5.6" fill="none" stroke="#e5342a" stroke-width="1.8"'
-    + ' stroke-linecap="round" stroke-linejoin="round"></path></svg>';
-  const talepler = DB.talepler || [];
-  const yeniTalep = talepler.filter(t => t.durum === 'yeni').length;
-  const haftaOnce = Date.now() - 7 * 864e5;
-  const buHafta = talepler.filter(t => new Date(t.gonderildi).getTime() >= haftaOnce).length;
-
-  const ilkKart = AUTH.yonetici ? `
-    <a class="ps ps-proje ps-talep" href="#/talepler">
-      <span class="ps-ok" aria-hidden="true">${svg(ICON.chevron, 14)}</span>
-      <span class="ps-ikon">${zarfDolu}</span>
-      <b class="ps-bas">Talepler</b>
-      <i class="ps-aciklama">Bakılmayı bekleyen yeni talep</i>
-      <b class="ps-sayi">${yeniTalep}</b>
-      <span class="ps-bitis">
-        ${svg(ICON.takvim, 14)}
-        <span><i>Bu hafta gelen</i><b>${buHafta} talep</b></span>
-      </span>
-    </a>` : null;
-
-  return `<div class="ps-izgara">
-    ${ilkKart || `<a class="ps ps-proje" href="#/projeler">
-      <span class="ps-ok" aria-hidden="true">${svg(ICON.chevron, 14)}</span>
-      <span class="ps-ikon">${klasorDolu}</span>
-      <b class="ps-bas">Devam Eden Proje</b>
-      <i class="ps-aciklama">Aktif olarak ilerleyen proje</i>
-      <b class="ps-sayi">${devam.length}</b>
-      <span class="ps-halka">
-        ${pzHalka(ortalama, 80, 8)}
-        <span class="ps-halka-ic"><b>%${ortalama}</b><i>tamamlandı</i></span>
-      </span>
-    </a>`}
-    <a class="ps ps-gorev" href="#/gorevler">
-      <span class="ps-cizim" aria-hidden="true">${gorevCizimi}</span>
-      <span class="ps-ok" aria-hidden="true">${svg(ICON.chevron, 14)}</span>
-      <span class="ps-ikon">${onayDolu}</span>
-      <b class="ps-bas">Açık Görev</b>
-      <i class="ps-aciklama">Tamamlanmayı bekleyen</i>
-      <b class="ps-sayi">${acik}</b>
-      <span class="ps-bitis">
-        ${svg(ICON.takvim, 14)}
-        <span><i>En yakın bitiş</i><b>${esc(tarihYazi)}</b>${sure
-          ? `<em class="ps-kalan ${sure.sinif}">${esc(sure.yazi)}</em>` : ''}</span>
-      </span>
-    </a>
-  </div>`;
 }
 
 /* ---------- Aktif projeler ----------
