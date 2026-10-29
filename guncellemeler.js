@@ -21,6 +21,12 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.349.0', tarih: '2026-10-29',
+    ozet: 'Yüzen alt menü',
+    maddeler: [
+      'Telefonda alt menü artık ekranın üstünde yüzen, arkası hafif saydam bir hap.',
+      'Seçili sayfa gri bir kabarcıkla gösteriliyor.',
+    ] },
   { surum: 'v0.348.0', tarih: '2026-10-29',
     ozet: 'Yeni Panel: basılabilir kartlar',
     maddeler: [

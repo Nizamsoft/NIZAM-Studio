@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.349.0
+- **Alt çubuk yüzen hap** (mobil, ≤900px): `#tabbar` kenarlardan 14px ayrık, `border-radius: 999px`,
+  `rgba(255,255,255,.72)` + `backdrop-filter: blur(22px) saturate(180%)`. Aktif sekme gri hap
+  (`rgba(23,23,26,.07)`), simge/yazı mürekkep; kırmızı nokta ve cam kabarcık (`::before/::after`) kapalı.
+  style.css sonunda; bölüm 15-16'yı (düz beyaz, ekrana yapışık bant) geçersiz kılıyor.
+
 ## v0.348.0
 - **Panel kartları** (kullanıcı onaylı taslak: B + oklu pencere). `panelUyari`, `panelHatalar`, `panelSayilar`,
   `enYakinGorevBitis` kalktı; yerine `panelKartlar` (`.p3`): Onayını bekliyor (tam genişlik, koyu), Açık görev,

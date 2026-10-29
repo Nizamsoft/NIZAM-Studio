@@ -12280,3 +12280,25 @@ button.pd-sat { cursor: pointer; }
   .p3-pop { left: auto; width: min(460px, 100%); }
 }
 .p3-tek .p3-kart { grid-column: 1 / -1; grid-row: auto; }
+
+/* ---- Alt çubuk: yüzen, hafif saydam hap (v0.349.0) ----
+   Kullanıcı 2026-10-29 onayladı. Kenarlardan ayrık, beyazı yoğun cam
+   (eski tam saydam camda yazılar karışıyordu; .72 beyaz okunuyor).
+   Seçili sekme gri hapın içinde, siyah. Bölüm 15-16 bunu ezmesin diye en sonda. */
+@media (max-width: 900px) {
+  #tabbar {
+    left: 14px; right: 14px;
+    margin: 0 0 max(12px, calc(env(safe-area-inset-bottom, 0px) - 6px));
+    padding: 6px; border-radius: 999px;
+    background: rgba(255, 255, 255, .72);
+    backdrop-filter: blur(22px) saturate(180%);
+    -webkit-backdrop-filter: blur(22px) saturate(180%);
+    box-shadow: 0 0 0 1px rgba(23, 23, 26, .08), 0 12px 30px -10px rgba(23, 23, 26, .28);
+  }
+  .tab { border-radius: 999px; padding: 8px 0 7px; gap: 4px; transition: background .2s ease; }
+  .tab::before, .tab.active::after { display: none; }
+  .tab.active { background: rgba(23, 23, 26, .07); }
+  .tab.active, .tab.active span { color: #17171a; }
+  .tab.active svg { stroke: #17171a; }
+  .tab.active .dolgu > * { fill: #17171a; fill-opacity: .14; }
+}
