@@ -8315,6 +8315,271 @@ function pdGuvenlik(p) {
   return { s: 'y', kisa: 'Temiz', yazi: 'Son denetim ' + (pdGunUzun(dt) || '') + ' · sorun yok' };
 }
 
+/* ---------- Geçmiş: Güncelleme · Etkileşim (v0.348.0) ----------
+   Onaylanan taslak: yapilanlar-gorseller/studio-gecmis-taslak.png.
+   Güncelleme geçmişi → programın surumler.json notları (zaten okunuyor).
+   Etkileşim geçmişi  → müşterinin programından, yalnız okuyan tek bir
+   fonksiyonla (ns_studio_ozet · ana 456 · ME-08 · GK-28). Fonksiyonun
+   istediği anahtar Studio'da yalnız yöneticinin okuduğu tabloda durur
+   (sql/52 · etkilesim_kapilari). Programda hiçbir şey değiştirilemez. */
+const ETK = {};                      /* proje_id → { durum, gun, veri, hata } */
+const PA_SEKME = {};                 /* proje_id → 'guncelleme' | 'etkilesim' */
+const PA_DAHA = {};                  /* proje_id → güncelleme listesinin hepsi açık mı */
+const ETK_SUZ = {};                  /* proje_id → { hata, kisi, acik:{gün:bool}, tam:{gün:bool} } */
+const ETK_GUNLER = [7, 14, 30];
+
+function etkSuz(pid) { return ETK_SUZ[pid] || (ETK_SUZ[pid] = { hata: false, kisi: '', acik: {}, tam: {} }); }
+
+function etkYukle(p, gun, zorla) {
+  if (!AUTH.yonetici || !AUTH.db || !sunuculuMu(p)) return;
+  const e = ETK[p.id];
+  gun = gun || (e && e.gun) || 7;
+  /* Aynı gün sayısı için bir kez okunur; hata da kalıcıdır (her çizimde
+     yeniden denemek sonsuz döngü olurdu) · "Tekrar dene" zorla okur. */
+  if (e && !zorla && e.gun === gun) return;
+  if (e && e.durum === 'yukleniyor' && e.gun === gun) return;
+  ETK[p.id] = { durum: 'yukleniyor', gun, veri: e && e.veri };
+  (async () => {
+    try {
+      const { data: k, error } = await AUTH.db.from('etkilesim_kapilari').select('*').eq('proje_id', p.id).maybeSingle();
+      if (error) {
+        ETK[p.id] = { durum: /etkilesim_kapilari|schema cache|does not exist/i.test(error.message || '') ? 'kurulmadi' : 'hata', gun, hata: error.message };
+        return render();
+      }
+      if (!k) { ETK[p.id] = { durum: 'bagsiz', gun }; return render(); }
+      const r = await fetch(k.adres + '/rest/v1/rpc/ns_studio_ozet', {
+        method: 'POST',
+        headers: { apikey: k.anon, Authorization: 'Bearer ' + k.anon, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ p_anahtar: k.anahtar, p_gun: gun })
+      });
+      const j = await r.json().catch(() => null);
+      if (!r.ok) {
+        const m = (j && j.message) || ('HTTP ' + r.status);
+        ETK[p.id] = { durum: r.status === 404 ? 'kapisiz' : 'hata', gun, hata: m };
+        return render();
+      }
+      ETK[p.id] = { durum: 'tamam', gun, veri: j || {}, zaman: Date.now() };
+    } catch (h) {
+      ETK[p.id] = { durum: 'hata', gun, hata: String((h && h.message) || h) };
+    }
+    render();
+  })();
+}
+
+/* İşlemler ve hatalar tek akışta, yeniden eskiye. */
+function etkOlaylar(v) {
+  const l = [];
+  (v.islemler || []).forEach(x => l.push({ h: false, zaman: x.zaman, kim: x.kim || '', yazi: [x.baslik, x.ozet].filter(Boolean).join(' · ')
+    + (x.toplam ? ' · ' + Number(x.toplam).toLocaleString('tr-TR', { maximumFractionDigits: 2 }) + ' ₺' : '')
+    + (x.geri_alindi ? ' · geri alındı' : ''), x }));
+  (v.hatalar || []).forEach(x => l.push({ h: true, zaman: x.zaman, kim: x.kim || '', yazi: (x.tur === 'istek' ? 'Sunucu reddetti · ' : 'Ekran hatası · ')
+    + String(x.mesaj || '') + (x.sayfa ? ' · ' + String(x.sayfa).replace(/^#\/?/, '') : ''), x }));
+  return l.sort((a, b) => String(b.zaman).localeCompare(String(a.zaman)));
+}
+function etkGunKodu(z) { const d = new Date(z); const n = x => String(x).padStart(2, '0'); return d.getFullYear() + '-' + n(d.getMonth() + 1) + '-' + n(d.getDate()); }
+function etkSaat(z) { const d = new Date(z); const n = x => String(x).padStart(2, '0'); return n(d.getHours()) + ':' + n(d.getMinutes()); }
+function etkGunAdi(kod) {
+  const f = pdGunFark(kod);
+  if (f === 0) return 'Bugün';
+  if (f === 1) return 'Dün';
+  const [y, a, g] = kod.split('-').map(Number);
+  return new Date(y, a - 1, g).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', weekday: 'long' });
+}
+function etkKisaAd(ad) { const p = String(ad || '').trim().split(/\s+/); return p.length > 1 ? p[0] + ' ' + p[p.length - 1][0] + '.' : (p[0] || '—'); }
+
+/* Durum kutusundaki satır ve karttaki işaret: hep son 7 gün. */
+function pdEtkilesim(p) {
+  if (!sunuculuMu(p)) return { s: 'g', kisa: '–', yazi: 'Veritabanı yok' };
+  etkYukle(p);
+  const e = ETK[p.id];
+  if (!e || (e.durum === 'yukleniyor' && !e.veri)) return { s: 'g', kisa: '…', yazi: 'Okunuyor…' };
+  if (e.durum === 'bagsiz') return { s: 'g', kisa: 'Bağla', yazi: 'Programa bağlı değil · bağlamak için dokun' };
+  if (e.durum === 'kurulmadi') return { s: 'g', kisa: '–', yazi: 'Studio\'da sql/52 çalıştırılmamış' };
+  if (e.durum === 'kapisiz') return { s: 'g', kisa: '–', yazi: 'Programda Studio kapısı yok (ana 456 · ME-08 · GK-28)' };
+  if (e.durum === 'hata') return { s: 'g', kisa: '?', yazi: 'Okunamadı · ' + (e.hata || '') };
+  const sinir = Date.now() - 7 * 864e5;
+  const l = etkOlaylar(e.veri || {}).filter(x => new Date(x.zaman).getTime() >= sinir);
+  const n = l.filter(x => !x.h).length, h = l.filter(x => x.h).length;
+  return h ? { s: 'k', kisa: h + ' hata', yazi: 'Son 7 gün ' + n + ' işlem · ' + h + ' hata' }
+    : { s: 'y', kisa: n + ' işlem', yazi: 'Son 7 gün ' + n + ' işlem · hata yok' };
+}
+
+/* Proje sayfasındaki iki sekmeli Geçmiş bölümü. */
+function paGecmis(p) {
+  const etkVar = AUTH.yonetici && sunuculuMu(p);
+  const sek = etkVar ? (PA_SEKME[p.id] || 'guncelleme') : 'guncelleme';
+  const dug = (k, ad) => `<button type="button" class="pg-sek-d ${sek === k ? 'a' : ''}" data-eylem="pa-sekme" data-id="${p.id}" data-sekme="${k}">${ad}</button>`;
+  return `<div class="yd-baslik2" id="pa-gecmis">Geçmiş</div>
+    ${etkVar ? `<div class="pg-sek">${dug('guncelleme', 'Güncelleme geçmişi')}${dug('etkilesim', 'Etkileşim geçmişi')}</div>` : ''}
+    <div class="pg-govde">${sek === 'etkilesim' ? paEtkilesim(p) : paGuncelleme(p)}</div>`;
+}
+
+const PG_TUR = { genel: ['e', 'Genel'], ozel: ['o', 'Özel'], esitleme: ['', 'Eşitleme'] };
+function paGuncelleme(p) {
+  const yer = pjSurumYeri(p);
+  if (!yer) return `<div class="pa-bos">${SURUM.durum === 'tamam' || !AUTH.yonetici ? 'Bu proje sürüm takibinde değil.' : 'Sürüm notları okunuyor…'}</div>`;
+  const notlar = pdNotlar(p);
+  if (!notlar.length) return '<div class="pa-bos">Sürüm notu yok.</div>';
+  const hepsi = !!PA_DAHA[p.id];
+  const liste = hepsi ? notlar : notlar.slice(0, 12);
+  let ay = '', h = '';
+  liste.forEach(n => {
+    const t = String(n.tarih || '');
+    const a = /^\d{4}-\d\d/.test(t) ? new Date(+t.slice(0, 4), +t.slice(5, 7) - 1, 1).toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' }) : '';
+    if (a !== ay) { ay = a; h += `<div class="pg-ay">${esc(a.toLocaleUpperCase('tr'))}</div>`; }
+    const tr = PG_TUR[n.tur];
+    h += `<div class="pg-not">${tr ? `<span class="pg-cip ${tr[0]}">${tr[1]}</span>` : ''}
+      <span class="pg-not-yz">${esc(n.ozet || '')}${n.sql ? ` <span class="pg-cip s">SQL ${esc(String(n.sql))}</span>` : ''}</span>
+      <em>${esc(svTarih(n.tarih))}${n.surum ? ' · ' + esc(svKisa(n.surum)) : ''}</em></div>`;
+  });
+  if (!hepsi && notlar.length > liste.length) {
+    h += `<button type="button" class="pg-daha" data-eylem="pa-daha" data-id="${p.id}">Daha eski ${notlar.length - liste.length} güncelleme ›</button>`;
+  }
+  return h;
+}
+
+function paEtkilesim(p) {
+  etkYukle(p);
+  const e = ETK[p.id] || { durum: 'yukleniyor' };
+  if (e.durum === 'bagsiz') return paEtkBagla(p);
+  if (e.durum === 'kurulmadi') return `<div class="pa-bos">Studio'nun veritabanında <b>sql/52-etkilesim-kapilari.sql</b> çalıştırılınca bağlanabilir.</div>`;
+  if (e.durum === 'kapisiz') return `<div class="pa-bos">Programın veritabanında Studio kapısı yok. Ana programda göç <b>456</b>, Merkez Efendi'de <b>ME-08</b>, Güllüoğlu'nda <b>GK-28</b>.</div>`;
+  if (e.durum === 'hata') return `<div class="pa-bos">Okunamadı: ${esc(e.hata || '')}<br><button type="button" class="pg-daha" data-eylem="etk-yenile" data-id="${p.id}">Tekrar dene</button></div>`;
+  if (!e.veri) return '<div class="pa-bos">Okunuyor…</div>';
+  const s = etkSuz(p.id);
+  const tum = etkOlaylar(e.veri);
+  const kisiler = [...new Set(tum.map(x => x.kim).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'tr'));
+  const l = tum.filter(x => (!s.hata || x.h) && (!s.kisi || x.kim === s.kisi));
+  const gunler = {};
+  l.forEach(x => { const k = etkGunKodu(x.zaman); (gunler[k] = gunler[k] || []).push(x); });
+  const kodlar = Object.keys(gunler).sort().reverse();
+  const cip = (ad, a, attr) => `<button type="button" class="pg-suz-d ${a ? 'a' : ''}" ${attr}>${ad}</button>`;
+  let h = `<div class="pg-suz">
+      ${cip('Tümü', !s.hata, `data-eylem="etk-suz" data-id="${p.id}" data-k="tum"`)}
+      ${cip('Yalnız hatalar', s.hata, `data-eylem="etk-suz" data-id="${p.id}" data-k="hata"`)}
+      <select class="pg-sec" data-etk-kisi="${p.id}" aria-label="Kişi"><option value="">Herkes</option>${kisiler.map(k => `<option ${k === s.kisi ? 'selected' : ''}>${esc(k)}</option>`).join('')}</select>
+      <select class="pg-sec" data-etk-gun="${p.id}" aria-label="Gün">${ETK_GUNLER.map(g => `<option value="${g}" ${g === e.gun ? 'selected' : ''}>${g} gün</option>`).join('')}</select>
+    </div>`;
+  if (e.durum === 'yukleniyor') h += '<div class="yd-not" style="text-align:left">Yenileniyor…</div>';
+  if (!kodlar.length) h += `<div class="pa-bos">${s.hata ? 'Bu aralıkta hata yok 🎉' : 'Bu aralıkta işlem yok.'}</div>`;
+  kodlar.forEach((k, i) => {
+    const g = gunler[k];
+    const nH = g.filter(x => x.h).length, nI = g.length - nH;
+    const acik = s.acik[k] !== undefined ? s.acik[k] : i === 0;
+    const tam = !!s.tam[k];
+    const gor = tam ? g : g.slice(0, 8);
+    h += `<div class="pg-gun">
+      <button type="button" class="pg-gun-b" data-eylem="etk-gun-ac" data-id="${p.id}" data-gun="${k}" data-ilk="${i === 0 ? 1 : 0}">
+        <b>${esc(etkGunAdi(k))}</b><span>${nI} işlem${nH ? ` · <u>${nH} hata</u>` : ''}</span><i>${acik ? '⌃' : '⌄'}</i></button>
+      ${acik ? gor.map(x => `<div class="pg-olay ${x.h ? 'h' : ''}"><em>${etkSaat(x.zaman)}</em><span class="pg-kim">${esc(etkKisaAd(x.kim))}</span><span class="pg-yz">${esc(x.yazi)}</span></div>`).join('')
+        + (!tam && g.length > gor.length ? `<button type="button" class="pg-olay pg-olay-daha" data-eylem="etk-tam" data-id="${p.id}" data-gun="${k}">+${g.length - gor.length} kayıt ›</button>` : '') : ''}
+    </div>`;
+  });
+  h += `<div class="pg-dug">
+      <button type="button" class="btn btn-ghost" data-eylem="etk-indir" data-id="${p.id}">⬇️ .txt indir</button>
+      <button type="button" class="btn btn-primary" data-eylem="etk-claude" data-id="${p.id}">✨ Claude'a ver</button></div>
+    <div class="yd-not">Müşterinin programından okunur · yalnız okuma · ayrıntı alanları gizli</div>`;
+  return h;
+}
+
+/* Bağlı değilse: adres ve herkese açık anahtar sitenin yapılandırmasından
+   okunur; yönetici yalnız Studio anahtarını yapıştırır. */
+const ETK_BUL = {};
+function paEtkBagla(p) {
+  const host = pjAdresYazi(p);   /* büyük-küçük harf korunur: GitHub Pages yolu harfe duyarlı */
+  if (host && !ETK_BUL[p.id]) {
+    ETK_BUL[p.id] = { durum: 'okunuyor' };
+    fetch('https://' + host + '/3-cekirdek/1-altyapi/yapilandirma.js?x=' + Date.now(), { cache: 'no-store' })
+      .then(r => r.ok ? r.text() : '').then(t => {
+        const a = /supabaseAdres\s*:\s*["']([^"']+)["']/.exec(t || ''), k = /supabaseAnahtar\s*:\s*["']([^"']+)["']/.exec(t || '');
+        ETK_BUL[p.id] = { durum: 'tamam', adres: a ? a[1] : '', anon: k ? k[1] : '' };
+        render();
+      }, () => { ETK_BUL[p.id] = { durum: 'tamam' }; render(); });
+  }
+  const b = ETK_BUL[p.id] || {};
+  return `<div class="pg-bag">
+    <p>Bu programın etkileşim geçmişi henüz Studio'ya bağlı değil. Programda Studio kapısı açıldıktan sonra anahtarı buraya yapıştır.</p>
+    <label>Studio anahtarı<input type="password" class="pg-gir" data-etk-anahtar autocomplete="off" placeholder="Programa verilen okuma anahtarı"></label>
+    <label>Supabase adresi<input class="pg-gir" data-etk-adres value="${esc(b.adres || '')}" placeholder="https://xxxx.supabase.co"></label>
+    <label>Herkese açık anahtar<input class="pg-gir" data-etk-anon value="${esc(b.anon || '')}" placeholder="sitenin yayınlanabilir anahtarı"></label>
+    <button type="button" class="btn btn-primary" data-eylem="etk-bagla" data-id="${p.id}">Bağla</button>
+  </div>`;
+}
+
+async function etkBagla(el) {
+  const p = DB.proje(el.dataset.id);
+  if (!p) return;
+  const kok = el.closest('.pg-bag');
+  const anahtar = ($('[data-etk-anahtar]', kok).value || '').trim();
+  const adres = ($('[data-etk-adres]', kok).value || '').trim().replace(/\/+$/, '');
+  const anon = ($('[data-etk-anon]', kok).value || '').trim();
+  if (anahtar.length < 32) return toast('Studio anahtarı eksik.', 'hata');
+  if (!/^https:\/\/[a-z0-9-]+\.supabase\.co$/.test(adres)) return toast('Supabase adresi https://xxxx.supabase.co biçiminde olmalı.', 'hata');
+  if (anon.length < 20) return toast('Herkese açık anahtar eksik.', 'hata');
+  el.disabled = true;
+  /* Önce dene: anahtar doğru değilse kaydetme. */
+  try {
+    const r = await fetch(adres + '/rest/v1/rpc/ns_studio_ozet', { method: 'POST',
+      headers: { apikey: anon, Authorization: 'Bearer ' + anon, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_anahtar: anahtar, p_gun: 1 }) });
+    if (!r.ok) { const j = await r.json().catch(() => null); throw new Error((j && j.message) || 'HTTP ' + r.status); }
+    const { error } = await AUTH.db.from('etkilesim_kapilari').upsert({ proje_id: p.id, adres, anon, anahtar, guncellendi: new Date().toISOString() });
+    if (error) throw error;
+    toast('Bağlandı 🎉', 'basari');
+    etkYukle(p, 7, true);
+  } catch (h) {
+    el.disabled = false;
+    toast('Bağlanamadı: ' + (h.message || h), 'hata');
+  }
+}
+
+function etkMetin(p) {
+  const e = ETK[p.id];
+  const v = (e && e.veri) || {};
+  const s = etkSuz(p.id);
+  const l = etkOlaylar(v).filter(x => (!s.hata || x.h) && (!s.kisi || x.kim === s.kisi));
+  const satir = [];
+  satir.push(projeAdi(p) + ' · etkileşim ve hata kaydı');
+  satir.push('Site: ' + (pjAdresYazi(p) || '?') + ' · depo: ' + (p.repo || '?'));
+  satir.push('Aralık: son ' + (e ? e.gun : 7) + ' gün' + (s.hata ? ' · yalnız hatalar' : '') + (s.kisi ? ' · ' + s.kisi : '') + ' · Studio\'dan ' + new Date().toLocaleString('tr-TR'));
+  let gun = '';
+  l.forEach(x => {
+    const k = etkGunKodu(x.zaman);
+    if (k !== gun) { gun = k; satir.push('', '=== ' + etkGunAdi(k) + ' (' + k + ') ==='); }
+    satir.push(etkSaat(x.zaman) + ' · ' + (x.kim || '—') + ' · ' + (x.h ? 'HATA · ' : '') + x.yazi);
+    if (x.h) {
+      if (x.x.surum) satir.push('    sürüm ' + x.x.surum);
+      if (x.x.ayrinti) satir.push('    ' + String(x.x.ayrinti).split('\n').join('\n    '));
+      if (x.x.cihaz) satir.push('    cihaz: ' + x.x.cihaz);
+    } else if (x.x.ekran) satir.push('    ekran ' + x.x.ekran + ' · ' + (x.x.satir || 0) + ' satır');
+  });
+  if (!l.length) satir.push('', '(kayıt yok)');
+  return satir.join('\n');
+}
+
+async function etkClaude(p) {
+  const hataVar = etkOlaylar((ETK[p.id] && ETK[p.id].veri) || {}).some(x => x.h);
+  const m = [
+    `[Destek] ${projeAdi(p)} programı · etkileşim ve hata kaydı`,
+    '',
+    `Depo: ${p.repo || '?'} · site: ${pjAdresYazi(p) || '?'}`,
+    hataVar ? 'Aşağıdaki kayıtta kırmızı (HATA) satırlar var. Her birinin sebebini bul, programda düzelt.'
+      : 'Aşağıdaki kayıtta hata yok. Kullanıcının bildirdiği sorunu bu işlem geçmişine bakarak incele.',
+    'Firmanın CLAUDE.md kurallarına uy. Gerçek veritabanına yazmadan önce yedek al ve onay iste; göndermeden önce dene.',
+    '',
+    etkMetin(p)
+  ].join('\n');
+  try { await navigator.clipboard.writeText(m); toast('Kopyalandı · Claude Code\'a yapıştır ✨', 'basari'); }
+  catch (h) { dosyaIndir('claude-destek-' + bugunTarih() + '.txt', m); toast('Panoya yazılamadı, dosya olarak indi.', 'bilgi'); }
+}
+
+document.addEventListener('change', e => {
+  const k = e.target.closest && e.target.closest('[data-etk-kisi]');
+  if (k) { etkSuz(k.dataset.etkKisi).kisi = k.value; return render(); }
+  const g = e.target.closest && e.target.closest('[data-etk-gun]');
+  if (g) { const p = DB.proje(g.dataset.etkGun); if (p) etkYukle(p, Number(g.value), true); return render(); }
+});
+
 /* Proje sayfasındaki Durum kutusu. */
 function pdKutu(p) {
   if (!AUTH.yonetici) return '';
@@ -8329,6 +8594,7 @@ function pdKutu(p) {
       ${satir('🚀', 'Yayın', pdYayin(p), yer && yer.tur === 'firma' ? `data-eylem="surum-detay" data-id="${esc(yer.f.kod)}"` : '')}
       ${satir('💾', 'Yedekleme', pdYedek(p), sunuculuMu(p) ? 'data-eylem="yedek-detay"' : '')}
       ${satir('🛡️', 'Güvenlik', pdGuvenlik(p), guvAttr)}
+      ${sunuculuMu(p) ? satir('📋', 'Etkileşim', pdEtkilesim(p), `data-eylem="pa-sekme" data-id="${p.id}" data-sekme="etkilesim" data-kaydir="1"`) : ''}
     </div>`;
 }
 
@@ -8337,7 +8603,7 @@ function pdSerit(p) {
   if (!AUTH.yonetici) return '';
   yedekEslemeYukle();
   const c = (ik, d) => `<span class="${d.s}" title="${esc(d.yazi)}"><i>${ik}</i><u>${esc(d.kisa)}</u></span>`;
-  return `<span class="pd-ser">${c('🚀', pdYayin(p))}${c('💾', pdYedek(p))}${c('🛡️', pdGuvenlik(p))}</span>`;
+  return `<span class="pd-ser">${c('🚀', pdYayin(p))}${c('💾', pdYedek(p))}${c('🛡️', pdGuvenlik(p))}${sunuculuMu(p) ? c('📋', pdEtkilesim(p)) : ''}</span>`;
 }
 
 /* Logo: renk zemini background-image ile (kısa yazım değil) — kısa yazım
@@ -8567,7 +8833,7 @@ function projeAnaSayfa(p) {
         + (gorevler.length > 6 ? `<div class="yd-not" style="text-align:left">+${gorevler.length - 6} görev daha</div>` : '')
         : '<div class="pa-bos">Açık görev yok 🎉</div>'}
 
-      ${notlar.length ? `<div class="yd-baslik2">Son değişiklikler</div>` + notlar.map(n => `
+      ${AUTH.yonetici ? paGecmis(p) : notlar.length ? `<div class="yd-baslik2">Son değişiklikler</div>` + notlar.map(n => `
         <div class="pa-sat duz"><span class="pa-sat-yz">${esc(n.ozet || '')}</span><em>${esc(svTarih(n.tarih))}</em></div>`).join('') : ''}
 
       <div class="yd-baslik2">Aşamalar</div>
@@ -16460,6 +16726,21 @@ async function eylemCalistir(el) {
   /* Son Yedekleme kutusu (v0.336.0). */
   /* Sürüm Takibi (v0.340.0). */
   if (e === 'surum-detay') return surumDetayAc(el.dataset.id);
+  /* Geçmiş: Güncelleme · Etkileşim (v0.348.0). */
+  if (e === 'pa-sekme') {
+    PA_SEKME[el.dataset.id] = el.dataset.sekme; render();
+    if (el.dataset.kaydir) setTimeout(() => { const h = $('#pa-gecmis'); if (h) h.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 50);
+    return;
+  }
+  if (e === 'pa-daha') { PA_DAHA[el.dataset.id] = true; return render(); }
+  if (e === 'etk-suz') { etkSuz(el.dataset.id).hata = el.dataset.k === 'hata'; return render(); }
+  if (e === 'etk-gun-ac') { const s = etkSuz(el.dataset.id); const k = el.dataset.gun; const ilk = el.dataset.ilk === '1';
+    s.acik[k] = !(s.acik[k] !== undefined ? s.acik[k] : ilk); return render(); }
+  if (e === 'etk-tam') { etkSuz(el.dataset.id).tam[el.dataset.gun] = true; return render(); }
+  if (e === 'etk-yenile') { const p = DB.proje(el.dataset.id); if (p) etkYukle(p, null, true); return render(); }
+  if (e === 'etk-bagla') return etkBagla(el);
+  if (e === 'etk-indir') { const p = DB.proje(el.dataset.id); if (p) { dosyaIndir('etkilesim-' + (pjAdres(p) || 'proje').split('.')[0] + '-' + bugunTarih() + '.txt', etkMetin(p)); toast('İndirildi.', 'basari'); } return; }
+  if (e === 'etk-claude') { const p = DB.proje(el.dataset.id); if (p) etkClaude(p); return; }
   if (e === 'surum-yenile') return surumTakipYukle(true);
   if (e === 'yedek-detay') return yedekDetayAc();
   if (e === 'pd-guvenlik') { location.hash = '#/guvenlik/' + el.dataset.id; return; }

@@ -12165,3 +12165,43 @@ button.pd-sat { cursor: pointer; }
 @media (min-width: 901px) {
   .ph2 h1 { font-size: 26px; }
 }
+
+/* ---------- v0.348.0 · Geçmiş: Güncelleme · Etkileşim ----------
+   Onaylanan taslak: yapilanlar-gorseller/studio-gecmis-taslak.png */
+.pg-sek { display: flex; border-bottom: 1px solid var(--line); margin-bottom: 6px; }
+.pg-sek-d { flex: 1; padding: 10px 0; border: 0; background: none; font: inherit; font-weight: 600; font-size: 13px; color: var(--ink-dim); border-bottom: 2px solid transparent; margin-bottom: -1px; cursor: pointer; }
+.pg-sek-d.a { color: #17171a; border-bottom-color: #17171a; }
+.pg-ay { font-size: 11px; font-weight: 600; letter-spacing: .06em; color: var(--ink-dim); margin: 14px 0 4px; }
+.pg-not { display: flex; gap: 8px; align-items: flex-start; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.pg-not-yz { flex: 1; min-width: 0; font-size: 13px; color: var(--ink-strong); overflow-wrap: anywhere; }
+.pg-not em { font-style: normal; font-size: 12px; color: var(--ink-dim); white-space: nowrap; }
+.pg-cip { display: inline-block; font-size: 11px; padding: 2px 7px; border-radius: 99px; background: #f2f2f4; color: #4a4a50; white-space: nowrap; }
+.pg-cip.e { background: #e7effb; color: #2f62c4; }
+.pg-cip.o { background: #f2f2f4; color: #4a4a50; border: 1px solid var(--line-2); }
+.pg-cip.s { background: #fbf1de; color: #8a5f10; }
+.pg-daha { display: block; width: 100%; margin-top: 6px; padding: 10px; border: 0; background: none; font: inherit; font-size: 12.5px; color: var(--ink-soft); cursor: pointer; }
+.pg-suz { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 10px; }
+.pg-suz-d { font: inherit; font-size: 12px; padding: 5px 11px; border: 1px solid var(--line-2); border-radius: 99px; background: var(--surface); color: var(--ink-soft); cursor: pointer; }
+.pg-suz-d.a { background: #17171a; border-color: #17171a; color: #fff; }
+.pg-sec { font: inherit; font-size: 12px; padding: 4px 8px; border: 1px solid var(--line-2); border-radius: 99px; background: var(--surface); color: var(--ink-soft); max-width: 46%; }
+.pg-gun { border: 1px solid var(--line-2); border-radius: 8px; margin-bottom: 8px; overflow: hidden; background: var(--surface); }
+.pg-gun-b { display: flex; align-items: center; gap: 8px; width: 100%; padding: 10px 12px; border: 0; background: none; font: inherit; text-align: left; cursor: pointer; }
+.pg-gun-b b { font-size: 13px; color: var(--ink-strong); }
+.pg-gun-b span { margin-left: auto; font-size: 12px; color: var(--ink-soft); }
+.pg-gun-b u { text-decoration: none; color: #b4231b; font-weight: 600; }
+.pg-gun-b i { font-style: normal; color: var(--ink-dim); width: 12px; text-align: center; }
+.pg-olay { display: flex; gap: 8px; width: 100%; padding: 7px 12px; border: 0; border-top: 1px solid var(--line); background: none; font: inherit; font-size: 12.5px; text-align: left; color: var(--ink-strong); }
+.pg-olay em { font-style: normal; color: var(--ink-dim); width: 38px; flex-shrink: 0; }
+.pg-kim { color: var(--ink-soft); width: 74px; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pg-yz { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.pg-olay.h { background: #fdf1f0; } .pg-olay.h .pg-yz { color: #b4231b; }
+.pg-olay-daha { justify-content: center; color: var(--ink-soft); cursor: pointer; }
+.pg-dug { display: flex; gap: 8px; margin-top: 10px; }
+.pg-dug .btn { flex: 1; justify-content: center; height: 42px; }
+.pg-dug .btn-primary { background: #17171a; border-color: #17171a; }
+.pg-bag { border: 1px solid var(--line-2); border-radius: 8px; padding: 12px; display: grid; gap: 10px; background: var(--surface); }
+.pg-bag p { margin: 0; font-size: 13px; color: var(--ink-soft); }
+.pg-bag label { display: grid; gap: 4px; font-size: 12px; color: var(--ink-soft); }
+.pg-gir { font: inherit; font-size: 13px; padding: 9px 10px; border: 1px solid var(--line-2); border-radius: 8px; background: var(--surface); color: var(--ink-strong); }
+.pg-bag .btn-primary { background: #17171a; border-color: #17171a; justify-content: center; height: 42px; }
+@media (max-width: 560px) { .pg-kim { width: 60px; } }

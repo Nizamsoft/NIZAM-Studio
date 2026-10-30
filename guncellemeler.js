@@ -21,6 +21,14 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.348.0', tarih: '2026-10-30',
+    ozet: 'Projede Güncelleme ve Etkileşim geçmişi',
+    maddeler: [
+      'Proje sayfasında iki sekme: programa yapılan güncellemeler ve müşterinin programda yaptıkları.',
+      'Etkileşim geçmişinde hatalar kırmızı; günlere, kişiye ve yalnız hatalara göre süzülür.',
+      '"Claude’a ver" seçilen kaydı hazır bir talimatla kopyalar.',
+      'Durum kutusunda ve proje kartında son 7 günün işlem ve hata sayısı.',
+    ] },
   { surum: 'v0.347.0', tarih: '2026-10-28',
     ozet: 'Görev penceresi, sohbetten görev ve sade Panel',
     maddeler: [

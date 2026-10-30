@@ -1,5 +1,15 @@
 # Değişiklik Günlüğü
 
+## v0.348.0
+- **Geçmiş: Güncelleme · Etkileşim** (kullanıcı isteği; taslak `studio-gecmis-taslak.png`). Proje sayfasında "Son değişiklikler"
+  yerine yöneticiye iki sekmeli `paGecmis`: `paGuncelleme` (surumler.json notları, ay ay, Genel/Özel/Eşitleme ve SQL çipi,
+  `pa-daha`) ve `paEtkilesim` (müşteri programından `ns_studio_ozet` · ana 456 / ME-08 / GK-28; günlere bölünmüş işlem ve
+  hata akışı, Tümü/Yalnız hatalar, kişi ve 7/14/30 gün süzgeci, `.txt indir`, `Claude'a ver`).
+- Durum kutusuna **📋 Etkileşim** satırı (`pdEtkilesim`, son 7 gün), proje kartına 📋 işareti.
+- `sql/52-etkilesim-kapilari.sql`: proje → programın adresi, herkese açık anahtarı ve Studio okuma anahtarı; yalnız yönetici.
+  Bağlı değilse `paEtkBagla` adres/anahtarı sitenin yapilandirma.js'inden okur, yönetici yalnız Studio anahtarını yapıştırır;
+  anahtar denenmeden kaydedilmez.
+
 ## v0.347.0
 - **Görev penceresi** (ekip isteği; taslak `studio-gorev-sohbet-panel-taslak.png`). `gorevKartiHtml`: aşama düğmeleri
   ve "Görevi düzenle" en üstte `.gd-eylem`; Proje/Bitiş/Veren/Alan iki sütun (`.gd-izgara`); Ekler ve Geçmiş
