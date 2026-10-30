@@ -1,14 +1,171 @@
 # Değişiklik Günlüğü
 
-## v0.348.0
+## v0.370.0 (birleştirme: v0.348.0 Geçmiş bölümü + v0.349–0.369)
 - **Geçmiş: Güncelleme · Etkileşim** (kullanıcı isteği; taslak `studio-gecmis-taslak.png`). Proje sayfasında "Son değişiklikler"
   yerine yöneticiye iki sekmeli `paGecmis`: `paGuncelleme` (surumler.json notları, ay ay, Genel/Özel/Eşitleme ve SQL çipi,
   `pa-daha`) ve `paEtkilesim` (müşteri programından `ns_studio_ozet` · ana 456 / ME-08 / GK-28; günlere bölünmüş işlem ve
   hata akışı, Tümü/Yalnız hatalar, kişi ve 7/14/30 gün süzgeci, `.txt indir`, `Claude'a ver`).
 - Durum kutusuna **📋 Etkileşim** satırı (`pdEtkilesim`, son 7 gün), proje kartına 📋 işareti.
-- `sql/52-etkilesim-kapilari.sql`: proje → programın adresi, herkese açık anahtarı ve Studio okuma anahtarı; yalnız yönetici.
+- `sql/53-etkilesim-kapilari.sql`: proje → programın adresi, herkese açık anahtarı ve Studio okuma anahtarı; yalnız yönetici.
   Bağlı değilse `paEtkBagla` adres/anahtarı sitenin yapilandirma.js'inden okur, yönetici yalnız Studio anahtarını yapıştırır;
   anahtar denenmeden kaydedilmez.
+## v0.369.0
+- Görev ayrıntısı (onaylı taslak): `gorevKartiAc` sağdan kayan `.gd2-modal` panel (`panelKayar` ortak yardımcı;
+  aynı görev yeniden çizilince `.sessiz` ile kaymaz). `gorevKartiHtml`: çizgili başlık + 5 adımlı aşama çubuğu,
+  `.gd2-iz` dört bilgi kartı (proje logosu, kişi fotoğrafı), `.gd2-mt` metin kartları, açılır Ekler/Geçmiş,
+  "Görevi sil" içerikte. Eylem düğmeleri `.gd2-alt` altta sabit (ana kırmızı, ikinciller yan yana).
+
+## v0.368.1
+- v0.364.0'daki yeni `gvTarih(g)` eski `gvTarih(iso)`'yu eziyordu (görev penceresi, prompt, liste satırında "[object Object]"). Yenisi `gv2Tarih`.
+
+## v0.368.0
+- Yazışma üst çubuğunda görüntülü arama yerine `.yz-gv` (açık görev sayısı rozeti) → `gvKisiGoster`: Görevler
+  Ekip sekmesi + `GV_KISI` (geliştiricide Görevlerim + veren o kişi). `GV_DON` eski filtreleri saklar,
+  `renderCiz` başında Görevler dışına çıkınca geri yükler; geri ok geçmişle aynı yazışmaya döner.
+
+## v0.367.0
+- Sohbet (onaylı taslak, görev kısmı hariç): listede `.so-cv` çevrimiçi sırası, `.so-gb` başlıklar, `.sh2-liste .sh2`
+  kabarık noktalı kartlar. Yazışma: petek zemin, üst çubuk deseni, kabarık arama düğmeleri, benim balonum grafit
+  (`#3a3a40 → #1d1d21`), gün etiketi, kırmızı kabarık gönder. "Çevrimiçi" arkasındaki pembe kutu kalktı. Yazışmada
+  taslak oku üst çubuğun altına. Sohbetteki Görev düğmesine dokunulmadı.
+
+## v0.366.0
+- Görev paneli: `.gm-perde` + `.gm-modal` sağdan tam boy panel (`gm-panel` girişi), çıkış `kutu._kapanis` ile kayarak
+  (`modalKapat` artık pencerenin kendi kapanışını çağırabiliyor; Esc / perde / Vazgeç hepsi kayarak). Giriş
+  animasyonu bitince `animation: none` (dolgu sürükleme ve çıkış kaydırmasını eziyordu). İlk açılışta proje seçici
+  otomatik açılmıyor, odak başlıkta; `.gm-ac` artık mutlak konumlu, alanları itmiyor.
+- Görevler filtresi: `.gv2-fd` (seçili filtre sayısı rozeti) → `gvFiltreAc` oklu pencere: Durum, Personel (yalnız
+  Ekip), Firma (Projesiz / Nizam Studio / projeler). `GV_KISI`, `GV_PROJE`; seçili filtreler başlık altında çip.
+  Açık/Kontrolde/Bitenler çipleri sayfadan kalktı. Dar ekranda sekme sayıları gizli.
+
+## v0.365.0
+- Görev taslağı: `GM_TASLAK` (proje, başlık, metin, bitiş, kişi, dosyalar, düzenlenen görev). Pencere ⇥ (`data-gvr=kenar`)
+  ya da sağa kaydırma (>90px, yatay hareket) ile kenara alınır; body'de `#gm-taslak` kırmızı ok düğmesi. Basınca
+  `gmTaslakAc` → `gorevVerAc({ taslak })`, `.gm-geri` sağdan giriş. Taslak varken + yeni pencere yerine taslağı açar.
+  Gönderince / Vazgeç / ✕ ile silinir.
+- Vitrin: dar kartlarda `.vt-rz` ve `.vt-canli` daha içeride ve küçük (logoya biniyordu).
+
+## v0.364.0
+- **Görevler ekranı** (onaylı taslak): `gorevlerEkrani` — `GV_SEKME` (ben/ekip, `.pjs` kayan geçiş, yalnız yönetici;
+  geliştirici yalnız Görevlerim), `GV_SUZ` (açık/kontrol/bitti), `gvGrup` (Gecikenler, Bugün, Bu hafta, Daha sonra,
+  Tarihsiz), `gvKart` kabarık kartlar. Eski sekmeler (Bana verilenler / Benim verdiklerim / Tamamlananlar), arama
+  çubuğu ve "Görevleri sırala" düğmesi bu ekrandan kalktı (`gorev-sirala` eylemi duruyor).
+- **Yeni görev penceresi** `gorevVerAc` (`.gm-modal`): 1 Proje (arama kutulu seçici; Projesiz, Nizam Studio,
+  vitrin gruplarına göre projeler, atölye), 2 Başlık, 3 Görev, 4 Bitiş (Bugün/Yarın/Bu hafta + takvim), 5 Kime
+  (varsayılan sen). Ekler isteğe bağlı. Düzenleme aynı pencerede.
+
+## v0.363.1
+- Geçiş eğrisi `cubic-bezier(.32,.72,0,1)` .6s; parça çapraz solması .3s. Yükselen kartlar `translate3d`, daha kısa gecikme.
+- Geçiş süresince `html.pa-akis`: alt menünün `backdrop-filter`'ı kapalı (afiş altından geçerken her karede yeniden
+  bulanıklaştırma yapıyordu), parlama animasyonları duraklatılır. Afiş görseli `loading=lazy` değil, öncelikli.
+
+## v0.363.0
+- Vitrin ⇄ Proje sayfası geçişi: `paIleriAk` / `paGeriAk` (`document.startViewTransition`), adlandırılmış parçalar
+  `pa-hero`, `pa-logo`, `pa-ad`; `:root { view-transition-name: none }` ile tam ekran görüntü alınmıyor.
+  Giriş sırasında `.pa2.gir` kartları sırayla yükselir, `.view.swap` atlanır. `render` → `renderCiz` ayrıldı;
+  geri dönüşte vitrin kaydırma yeri (`VT_KAYDIRMA`) korunur. Desteklenmeyen tarayıcıda / hareketi azalt'ta düz geçiş.
+
+## v0.362.0
+- **Proje Ana Sayfası** (onaylı taslak): `projeAnaSayfa` yeni `.pa2` düzeni — `pa2-hero` afiş (görsel/`vtZemin`, logo,
+  Canlı, grup · ana/kardeş etiketi, `vtIkonlar`), `pa2-hiz` kabarık düğmeler, `pa2-surum` şeridi (güncel yeşil,
+  bekleyen kırmızı), `pa2-hata`, `pa2-durum` üç kart (`pdYayin/pdYedek/pdGuvenlik`, sorun → `.uy` parlama),
+  `pa2-kart` içinde görevler ve son değişiklikler (`pa2-st`, etiket çipleri), aşama çubuğu. `VT_IKON.yayin` eklendi.
+
+## v0.361.0
+- `#topbar` (D3): solda 135° ince çizgi + kırmızı radial ışık, sağa doğru beyaza söner (masaüstünde daha dar).
+
+## v0.360.1
+- `vtIkonlar`: durum `y` → `.vt-ik.tam` (yeşil #3f9a72→#2a6f52), `k/b` → kırmızı, `g` (bilgi yok) gri. Hata yoksa yeşil.
+
+## v0.360.0
+- Vitrin zemini T4 (petek + `#ececef → #dedee3`); geçiş düğmesi, başlıklar ve gölgeler açık zemine göre.
+- Afiş durum ikonları `vtIkonlar` (hata `pjYeniHata`, yedek `pdYedek`, güvenlik `pdGuvenlik`; k/b → `.vt-ik.kot`
+  kırmızı + `p3-halka`). Yalnız yönetici.
+- Ana program: `vtSurumAnalari` Sürüm Takibi'ndeki anayı bütün kovalarda arar (klon/deneme dahil) ve vitrine
+  ekler; bulunamazsa `vtSanalAna` (siteye giden afiş). Kardeşlerden biri artık yanlışlıkla "ana" seçilmiyor.
+- CLAUDE.md vitrin istisnası güncellendi (koyu sahne kalktı).
+
+## v0.359.0
+- **Projeler › Vitrin** (onaylı taslak, 1. adım): `PJ_SEKME` (vitrin/atölye, localStorage `ns.pjSekme`), `.pjs` kayan
+  hap geçişi (`pjSekmeSec`, `PJ_GECIS` → `.vt.gecis` ışık yanma / `.atl.gecis` aşağıdan açılma).
+- Vitrin: `#main.vitrinde` koyu sahne; `vtHero` (ana projeler arasında 6 sn'de dönen afiş, `vt-hero` noktaları),
+  `VITRIN_GRUPLAR` sıraları (ana `vt-pos.ana`, kardeş 3/4 `vt-pos.kar`), yapımdakiler "Yakında vitrinde".
+  Görsel yoksa proje renginde zemin + logo.
+- Grup/ana: `palet.vitrin = { grup, ana }`, proje menüsünde "Vitrin grubu" ve "Ana proje yap". Seçilmemişse tahmin
+  (`vtGrup`: sürüm ailesi/muhasebe, green village/pilates → danışmanlık, bütçe/şahsi → şahsi).
+- Atölye şimdilik eski kartlarla (denemeler, klonlar, şablonlar); 2. adımda yeni tasarım. Eski arama/süzgeç ve
+  `pjAnaKarti` kalktı. CLAUDE.md: koyu vitrin istisnası.
+
+## v0.358.0
+- Petek zemin bütün sayfalarda: `#main #zemin-sus` her rotada görünür (`z-index: -1`, Panel'de 0). CLAUDE.md
+  tasarım tablosunda Zemin satırı güncellendi.
+
+## v0.357.0
+- Son Hareketler satırları (R1): her `.shz-sat` çerçeveli küçük kart, sağdan sönen 10px nokta (`::after` degrade),
+  zaman çizgisi kapalı. `:hover`/`:active` renk değişimi ve dokunma vurgusu kaldırıldı (mobil kaydırma).
+
+## v0.356.0
+- Küçük panel kartları (K2): 12px nokta ızgarası + `::after` beyaz degrade ile sağ üstten sönme; içerik `z-index: 1`.
+
+## v0.355.0
+- Panel zemini (kullanıcı B1'i seçti): `#main.susulu #zemin-sus` yeniden kullanıldı; içi gizli, zemin SVG altıgen
+  (84×72, %7 mürekkep çizgi) + `#f9f9fb → #f1f1f4` degrade. Yalnız Panel'de.
+
+## v0.354.0
+- Görevler kartı: çizilmiş N yerine `logo.png` filigranı (`.p3-n`, %16, düz; STUDIO yazısı kart dışında).
+- Son Hareketler `.shz-kart` içinde (3D kart). Avatar fotoğraflı (`shAvatar(ad, sinif, kisi)`); iş kaydındaki ad
+  Studio kişisiyle `shKisiBul` ile eşlenir (tam ad, yoksa tek eşleşen ilk ad); yoksa baş harf.
+- 30 kayıt (`SH_LIMIT`), altta "Daha fazla göster" (`sh-daha`, +30). Kişi değişince 30'a döner.
+
+## v0.353.0
+- **Görevler kartı** (onaylı 1+3 karışımı): grafit degrade + 135° ince çizgi, `.p3-n` (logodaki N, %9),
+  sol üstte kırmızı ışık (`.p3-ana::before`). Bekleyen yoksa ikon cam beyaz; uyarıda `p3-kenar-grafit`.
+- **Son Hareketler** (onaylı taslak A): gün başlıklı zaman çizelgesi (`.shz-*`), baş harf avatarı (`shAvatar`,
+  addan sabit gri ton), program çipi (Studio = kırmızı N). 3 sütunlu tablo kalktı.
+- **Kişi seçici**: `.shz-sec` düğmesi → oklu `.shz-pop` (arama, Herkes, kişi başına iş sayısı ve son iş);
+  seçim `SH_KISI`. Eylemler `sh-kisi-ac`, `sh-kisi-sec`. Sınıf adı `sh2` eski bir ekranda kullanıldığı için `shz`.
+
+## v0.352.0
+- Panel kartları: `.p3-uyari` ikonunda yayılan halka (`p3-halka`), kartta kenar parlaması (`p3-kenar`,
+  koyu kartta `p3-kenar-koyu`); basılı/açıkken ve `prefers-reduced-motion`'da durur.
+- Görevler kartı yalnız `kontrol.length > 0` iken `.p3-uyari` (kırmızı); değilse koyu gri ikon.
+
+## v0.351.0
+- **Son Hareketler** (yalnız yönetici): 3 sütun Kullanıcı · Program · Yapılan iş (`panelAktivite`, `shSatirlar`,
+  `.sh-*`). Kaynaklar: Claude iş kayıtları (`DB.isKayitlari`) + Studio görev hareketleri. Satır → `shAc` penceresi
+  (kim, program, zaman, ayrıntı, GitHub commit bağlantısı, görev). Eski `aktiviteSatiri` / `AKTIVITE_IKON` silindi.
+- **İş kaydı kapısı**: `sql/52-is-kayitlari.sql` (tablo, RLS: okuma/silme yönetici, ekleme yok, realtime) ve
+  `supabase/functions/is-kaydi` (RAPOR_ANAHTARI ile, saatlik 200 sınır).
+- **Kural**: `IS-KAYDI-KURALI.md` — claude.ai hesap tercihlerine yapıştırılır; Claude oturum başında adı sorar,
+  bir şey değişip gönderilince tek satır kayıt yollar. CLAUDE.md'ye 7. adım olarak eklendi.
+
+## v0.350.0
+- **Panel kartları yeni sıra** (kullanıcı onaylı): 1 Görevler (onay + açık görev çipleri; pencere onay listesi +
+  durum sayıları + yaklaşan bitişler), 2 Hatalar, 3 Gerekli güncellemeler (`p3Surum`: Sürüm Takibi'nde `asagi`
+  ya da `yukariSayi` olan firmalar; "Bak" → `surum-detay`), 4 Talepler, 5 Güvenlik ve yedek. Açık görev kartı
+  kalktı; geliştiricide yalnız ilk kart.
+- İkonlar `P3_IKON` (ikili ton SVG), kutu 44px; kırmızı = bakılması gereken (`.p3-uyari`).
+- Panelden `panelProjeler` ve `panelEkip` çıkarıldı (fonksiyonlar duruyor).
+
+## v0.349.1
+- Alt çubuk PWA'da alta yapışıyordu: bölüm 16'daki `html.uygulama #tabbar { margin-bottom: 0 }` daha güçlü
+  seçiciydi. Hap bloğuna aynı seçiciyle `max(12px, safe-area - 6px)` eklendi.
+
+## v0.349.0
+- **Alt çubuk yüzen hap** (mobil, ≤900px): `#tabbar` kenarlardan 14px ayrık, `border-radius: 999px`,
+  `rgba(255,255,255,.72)` + `backdrop-filter: blur(22px) saturate(180%)`. Aktif sekme gri hap
+  (`rgba(23,23,26,.07)`), simge/yazı mürekkep; kırmızı nokta ve cam kabarcık (`::before/::after`) kapalı.
+  style.css sonunda; bölüm 15-16'yı (düz beyaz, ekrana yapışık bant) geçersiz kılıyor.
+
+## v0.348.0
+- **Panel kartları** (kullanıcı onaylı taslak: B + oklu pencere). `panelUyari`, `panelHatalar`, `panelSayilar`,
+  `enYakinGorevBitis` kalktı; yerine `panelKartlar` (`.p3`): Onayını bekliyor (tam genişlik, koyu), Açık görev,
+  Talepler, Güvenlik ve yedek, Hatalar. Geliştiricide yalnız ilk ikisi (`.p3-tek`).
+- Karta basınca `p3Ac`: kart iner (`.acik`), altında oklu `.p3-pop` açılır; içerik `p3Icerik(k)`. Pencere DOM'a
+  eklenir, render'da kapanır; dışarı basınca / Esc ile kapanır. Yeni eylemler `p3-ac`, `p3-onayla`
+  (`gorevDurum(id, 'onaylandi')`), `p3-git`.
+- Ortak veri `p3Veri`: açık görevler devam eden projelerden; Yapılacak = plansız, Kontrolde = `bitirdi`.
+- CLAUDE.md: panel kartlarında gölge/3D istisnası.
 
 ## v0.347.0
 - **Görev penceresi** (ekip isteği; taslak `studio-gorev-sohbet-panel-taslak.png`). `gorevKartiHtml`: aşama düğmeleri

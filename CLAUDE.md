@@ -94,7 +94,7 @@ Editoryal düzen: serif başlık, ince çizgi, gölgesiz kart.
 
 | Rol | Renk |
 |---|---|
-| Zemin | `#ffffff` — krem/kağıt değil, düz beyaz |
+| Zemin | Çok açık gri `#f9f9fb → #f1f1f4` + ince petek deseni (kullanıcı 2026-10-29 seçti; `#zemin-sus`). Krem/kağıt değil |
 | Kart | `#ffffff` (zeminden çizgiyle ayrılır) |
 | Gri yüzey (ikon kutusu, yuva) | `#f2f2f4` · `#f6f6f8` |
 | Çizgi | `#ededf0` → `#d6d6db` |
@@ -113,6 +113,15 @@ kalıyor.
 **İstisna — Nizam Security ekranları (`.secv`):** kullanıcı 2026-10-06'da
 bilerek seçti: bol kırmızı vurgu (ana düğme, aktif adım, kahraman kart, halka),
 yumuşak gölge ve 14px köşe. Yalnız Security ekranlarında; başka yere taşıma.
+
+**İstisna — Projeler › Vitrin (`.vt`):** kullanıcı 2026-10-29'da bilerek seçti:
+Netflix usulü afişler, kabarık gölge, kırmızı "ANA/ÖNE ÇIKAN" rozetleri ve sorun
+varken parlayan kırmızı durum ikonları. Zemin koyu değil: biraz koyu gri petek (T4).
+
+**İstisna — Panel kartları (`.p3`):** kullanıcı 2026-10-29'da bilerek seçti:
+3D, basılabilir kartlar (kalın alt kenar + gölge, basınca iner) ve karta
+basınca açılan oklu pencere. Kırmızı yalnız ikon kutusunda (onay kartı,
+sorun varken uyarı kartları). Yalnız Panel'in üst kartlarında.
 
 Sebebi: kırmızı her kartın üstünde, alt çubukta ve her düğmede olunca
 hepsi birden "buraya bak" diyor, yani hiçbiri demiyor. Vurgu nadir
@@ -153,6 +162,7 @@ hâle gelir; panelde tam bu oldu. Sığmıyorsa kaydırmayı aç, kırpma.
 4. `index.html` içindeki `?v=` numaralarını güncelle
 5. `sw.js` içindeki `CACHE` adını güncelle
 6. commit → push (`main`)
+7. İş kaydı gönder — Panel › Son Hareketler'e düşer (kural ve komut: `IS-KAYDI-KURALI.md`)
 
 ## İstenmeyenler
 - Aşırı teknik görünüm · GitHub kopyası · Jira karmaşıklığı

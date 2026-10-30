@@ -604,23 +604,16 @@ const VIEWS = {
     /* Yukarıdan aşağı (v0.347.0 · onaylanan taslak
        yapilanlar-gorseller/studio-gorev-sohbet-panel-taslak.png):
          selam    · tek satır, ad ve tarih,
-         uyarı    · yalnız sorun varsa (güvenlik denetimi, yedek),
-         hatalar  · müşteri programlarından gelen bildirimler,
-         sayılar  · talep / devam eden proje ve açık görev,
-         projeler · aktif projeler,
-         ekip + son hareketler.
+         kartlar  · 3D basılabilir kartlar (v0.348.0): onay bekleyen,
+                    açık görev, talepler, güvenlik+yedek, hatalar. Karta
+                    basınca altında oklu bir pencere açılıp ayrıntıyı gösterir,
+         son hareketler. (v0.350.0: Aktif Projeler ve Ekip panelden kalktı.)
        "Muhasebe Programları" ve "Son Yedekleme" kutuları kalktı: aynı
        bilgi artık her projenin Durum kutusunda (pdKutu). */
     return `
       ${panelSelam()}
-      ${panelUyari(p)}
-      ${panelHatalar()}
-      ${panelSayilar(p)}
-      ${panelProjeler(p)}
-      <div class="pz-ikili">
-        ${panelEkip()}
-        ${panelAktivite()}
-      </div>
+      ${panelKartlar(p)}
+      ${panelAktivite()}
     `;
   },
 
@@ -661,48 +654,7 @@ const VIEWS = {
   gorevler: () => {
     if (YUKLENIYOR) return iskeletler(4);
     if (DB.hata)    return hataKutusu(DB.hata);
-
-    const ben   = AUTH.user ? AUTH.user.id : '';
-    const hepsi = DB.gorevleri();
-    const kova  = GOREV_KOVASI[GOREV_KOVA] ? GOREV_KOVA : 'bana';
-
-    const sayilar = {
-      bana:   hepsi.filter(g => g.atanan === ben && g.durum !== 'onaylandi').length,
-      benim:  hepsi.filter(g => g.olusturan === ben && g.atanan !== ben && g.durum !== 'onaylandi').length,
-      biten:  hepsi.filter(g => g.durum === 'onaylandi'
-                 && (g.atanan === ben || g.olusturan === ben)).length,
-    };
-    const liste = gorevSirala(hepsi.filter(GOREV_KOVASI[kova].sec(ben)));
-
-    return `
-      <div class="pj-tepe">
-        <div class="pj-tepe-yz">
-          <h1>Görevler</h1>
-          <p>Ekipteki görevleri yönet, yeni görev ver ve ilerlemeyi takip et.</p>
-        </div>
-        <div class="gv-tepe-dug">
-          <button class="pj-yeni ikincil" type="button" data-eylem="gorev-sirala">
-            ${svg(ICON.sirala, 16)}<span>Görevleri sırala</span></button>
-          <button class="pj-yeni" type="button" data-eylem="gorev-ver">
-            ${svg(ICON.arti, 16)}<span>Görev ver</span></button>
-        </div>
-      </div>
-
-      <div class="gv-sekme">
-        ${Object.keys(GOREV_KOVASI).map(k => `
-          <button class="gv-s ${k === kova ? 'on' : ''}" type="button"
-                  data-eylem="gorev-kova" data-deger="${k}">
-            ${esc(GOREV_KOVASI[k].ad)}<em>${sayilar[GOREV_KOVASI[k].sayac]}</em></button>`).join('')}
-      </div>
-
-      ${liste.length > 3 ? gorevAramaCubugu(liste) : ''}
-
-      ${liste.length
-        ? `<div class="gv-liste">${liste.map(gorevSatiri).join('')}</div>
-           <p class="gv-yok" hidden>Aramaya uyan görev yok.</p>`
-        : `<div class="card">${empty(ICON.check, GOREV_KOVASI[kova].bosBaslik,
-            GOREV_KOVASI[kova].bosAlt)}</div>`}
-    `;
+    return gorevlerEkrani();
   },
 
   standartlar: () => {
@@ -8321,7 +8273,7 @@ function pdGuvenlik(p) {
    Etkileşim geçmişi  → müşterinin programından, yalnız okuyan tek bir
    fonksiyonla (ns_studio_ozet · ana 456 · ME-08 · GK-28). Fonksiyonun
    istediği anahtar Studio'da yalnız yöneticinin okuduğu tabloda durur
-   (sql/52 · etkilesim_kapilari). Programda hiçbir şey değiştirilemez. */
+   (sql/53 · etkilesim_kapilari). Programda hiçbir şey değiştirilemez. */
 const ETK = {};                      /* proje_id → { durum, gun, veri, hata } */
 const PA_SEKME = {};                 /* proje_id → 'guncelleme' | 'etkilesim' */
 const PA_DAHA = {};                  /* proje_id → güncelleme listesinin hepsi açık mı */
@@ -8394,7 +8346,7 @@ function pdEtkilesim(p) {
   const e = ETK[p.id];
   if (!e || (e.durum === 'yukleniyor' && !e.veri)) return { s: 'g', kisa: '…', yazi: 'Okunuyor…' };
   if (e.durum === 'bagsiz') return { s: 'g', kisa: 'Bağla', yazi: 'Programa bağlı değil · bağlamak için dokun' };
-  if (e.durum === 'kurulmadi') return { s: 'g', kisa: '–', yazi: 'Studio\'da sql/52 çalıştırılmamış' };
+  if (e.durum === 'kurulmadi') return { s: 'g', kisa: '–', yazi: 'Studio\'da sql/53 çalıştırılmamış' };
   if (e.durum === 'kapisiz') return { s: 'g', kisa: '–', yazi: 'Programda Studio kapısı yok (ana 456 · ME-08 · GK-28)' };
   if (e.durum === 'hata') return { s: 'g', kisa: '?', yazi: 'Okunamadı · ' + (e.hata || '') };
   const sinir = Date.now() - 7 * 864e5;
@@ -8409,7 +8361,7 @@ function paGecmis(p) {
   const etkVar = AUTH.yonetici && sunuculuMu(p);
   const sek = etkVar ? (PA_SEKME[p.id] || 'guncelleme') : 'guncelleme';
   const dug = (k, ad) => `<button type="button" class="pg-sek-d ${sek === k ? 'a' : ''}" data-eylem="pa-sekme" data-id="${p.id}" data-sekme="${k}">${ad}</button>`;
-  return `<div class="yd-baslik2" id="pa-gecmis">Geçmiş</div>
+  return `<div class="pa2-bas" id="pa-gecmis">Geçmiş</div>
     ${etkVar ? `<div class="pg-sek">${dug('guncelleme', 'Güncelleme geçmişi')}${dug('etkilesim', 'Etkileşim geçmişi')}</div>` : ''}
     <div class="pg-govde">${sek === 'etkilesim' ? paEtkilesim(p) : paGuncelleme(p)}</div>`;
 }
@@ -8442,7 +8394,7 @@ function paEtkilesim(p) {
   etkYukle(p);
   const e = ETK[p.id] || { durum: 'yukleniyor' };
   if (e.durum === 'bagsiz') return paEtkBagla(p);
-  if (e.durum === 'kurulmadi') return `<div class="pa-bos">Studio'nun veritabanında <b>sql/52-etkilesim-kapilari.sql</b> çalıştırılınca bağlanabilir.</div>`;
+  if (e.durum === 'kurulmadi') return `<div class="pa-bos">Studio'nun veritabanında <b>sql/53-etkilesim-kapilari.sql</b> çalıştırılınca bağlanabilir.</div>`;
   if (e.durum === 'kapisiz') return `<div class="pa-bos">Programın veritabanında Studio kapısı yok. Ana programda göç <b>456</b>, Merkez Efendi'de <b>ME-08</b>, Güllüoğlu'nda <b>GK-28</b>.</div>`;
   if (e.durum === 'hata') return `<div class="pa-bos">Okunamadı: ${esc(e.hata || '')}<br><button type="button" class="pg-daha" data-eylem="etk-yenile" data-id="${p.id}">Tekrar dene</button></div>`;
   if (!e.veri) return '<div class="pa-bos">Okunuyor…</div>';
@@ -8666,17 +8618,6 @@ function pjKart3(p) {
     </div>`;
 }
 
-/* Ana program Studio'da proje olarak yoksa yerine bilgi kartı. */
-function pjAnaKarti(a) {
-  return `<div class="pj3 sahte">
-      <div class="pj3-ust" style="background-image:linear-gradient(140deg, #5a5f6e, #2a2a2f)"><span class="pj3-et">Ana program</span>
-        <span class="pj2-logo pj3-logo" style="background-image:linear-gradient(140deg, #5a5f6e, #2a2a2f)"><b class="logo-harf">${esc(basHarf(a.ad))}</b></span></div>
-      <div class="pj3-gov"><b>Ana program</b><small>${esc(a.ad)}</small>
-        <span class="pj3-dur m"><i></i>Sürüm ${esc(svKisa(a.canli))} · ${a.firmalar.length} firma</span>
-        <span class="pj3-dip sayisiz"><span>${a.notlar[0] ? esc(svTarih(a.notlar[0].tarih)) : ''}</span><span></span></span></div>
-    </div>`;
-}
-
 function pjBolum(baslik, kartlar, ek = '') {
   if (!kartlar) return '';
   return `<section class="pj2-grup"><h2 class="pj3-bas">${baslik}</h2><div class="pj3-izg">${kartlar}</div>${ek}</section>`;
@@ -8692,69 +8633,247 @@ function pjKapali(anahtar, baslik, liste, kartci) {
   </section>`;
 }
 
+/* ==========================================================================
+   Projeler › Vitrin (v0.359.0 · onaylı taslak)
+   Yayındaki projeler mağaza vitrini gibi: koyu sahne, üstte dönen "Öne
+   çıkan" afiş, altta Netflix usulü gruplar. Her grubun başında ANA proje,
+   yanında kardeşleri 3/4 boyda. Grup ve "ana" seçimi projenin menüsünden
+   (palet.vitrin = { grup, ana }); seçilmemişse tahmin edilir. Yapımdakiler
+   en altta "Yakında" sırasında.
+   ========================================================================== */
+let PJ_SEKME = (() => { try { return localStorage.getItem('ns.pjSekme') || 'vitrin'; } catch (h) { return 'vitrin'; } })();
+let VT_HERO = 0;
+
+const VITRIN_GRUPLAR = [
+  { id: 'muhasebe',    ad: 'Muhasebe Projeleri' },
+  { id: 'danismanlik', ad: 'Danışmanlık Projeleri' },
+  { id: 'sahsi',       ad: 'Şahsi Projeler' },
+  { id: 'diger',       ad: 'Diğer Projeler' },
+];
+
+function vtAyar(p) { return ((p.palet || {}).vitrin) || {}; }
+function vtGrup(p) {
+  const v = vtAyar(p);
+  if (v.grup && VITRIN_GRUPLAR.some(g => g.id === v.grup)) return v.grup;
+  const ad = (projeAdi(p) + ' ' + (p.ad || '') + ' ' + (modulAdi(p) || '')).toLocaleLowerCase('tr');
+  if (pjSurumYeri(p) || /muhasebe/.test(ad)) return 'muhasebe';
+  if (/green village|pilates|danışman/.test(ad)) return 'danismanlik';
+  if (/bütçe|butce|şahsi|sahsi/.test(ad)) return 'sahsi';
+  return 'diger';
+}
+function vtAnaMi(p) {
+  const v = vtAyar(p);
+  if (typeof v.ana === 'boolean') return v.ana;
+  const yer = pjSurumYeri(p);
+  return !!(yer && yer.tur === 'ana');
+}
+
+/* Afişteki üç durum ikonu: hata · yedek · güvenlik. Sorun varsa kırmızı
+   ve parlayan, yoksa sade (v0.360.0). Yalnız yönetici. */
+const VT_IKON = {
+  yayin: '<path d="M5 19l4-1 9-9a2.1 2.1 0 0 0-3-3l-9 9z"/><path d="M14 5l5 5"/>',
+  hata: '<path d="M7.5 11a4.5 4.5 0 0 1 9 0v3.5a4.5 4.5 0 0 1-9 0z"/><path d="M12 10.5V19M7.5 12.5H4.5M16.5 12.5h3M9.5 7.3L8 5.5M14.5 7.3L16 5.5"/>',
+  yedek: '<ellipse cx="12" cy="6" rx="7" ry="2.8"/><path d="M5 6v12c0 1.5 3.1 2.8 7 2.8s7-1.3 7-2.8V6M5 12c0 1.5 3.1 2.8 7 2.8s7-1.3 7-2.8"/>',
+  guv: '<path d="M12 2.8l7.2 2.7v5.6c0 4.6-3 8.4-7.2 10-4.2-1.6-7.2-5.4-7.2-10V5.5z"/><path d="M9 12l2 2 4-4"/>',
+  etk: '<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4.5V3h6v1.5M8.5 10h7M8.5 13.5h7M8.5 17h4"/>',
+};
+function vtIkonlar(p) {
+  if (!AUTH.yonetici) return '';
+  yedekEslemeYukle();
+  const hata = pjYeniHata(p.id);
+  const y = pdYedek(p), g = pdGuvenlik(p);
+  /* kot = sorun (kırmızı, parlar) · tam = sorun yok (yeşil) · ikisi de değilse bilgi yok (gri). */
+  const sinif = d => /^[kb]$/.test(d.s) ? 'kot' : d.s === 'y' ? 'tam' : '';
+  const ik = (k, cls, baslik) => `<span class="vt-ik ${cls}" title="${esc(baslik)}"><svg viewBox="0 0 24 24">${VT_IKON[k]}</svg></span>`;
+  return `<span class="vt-ikr">
+    ${ik('hata', hata > 0 ? 'kot' : 'tam', hata ? hata + ' yeni hata bildirimi' : 'Yeni hata yok')}
+    ${ik('yedek', sinif(y), 'Yedek: ' + y.yazi)}
+    ${ik('guv', sinif(g), 'Güvenlik: ' + g.yazi)}
+    ${sunuculuMu(p) ? (e => ik('etk', sinif(e), 'Etkileşim: ' + e.yazi))(pdEtkilesim(p)) : ''}
+  </span>`;
+}
+
+function vtZemin(p, isik) {
+  const r = pjRenk(p);
+  return `radial-gradient(circle at ${isik || '70% 25%'}, rgba(255,255,255,.22), transparent 58%), linear-gradient(160deg, ${r[0]}, ${r[1]})`;
+}
+function vtAltYazi(p) {
+  const yer = pjSurumYeri(p);
+  if (yer && yer.tur === 'ana') return 'Ana program · sürüm ' + svKisa(yer.ana.canli);
+  if (yer && yer.tur === 'firma') { const d = svDurum(yer.f); return d.sinif === 'ok' ? 'Güncel' : d.yazi; }
+  if (!pjYayinda(p)) return 'Yapımda · %' + projeAsamaYuzde(p);
+  return modulAdi(p) || p.sektor || 'Yayında';
+}
+
+/* Afiş kartı: ana büyük, kardeş 3/4. */
+function vtAfis(p, tur) {
+  const gor = gorselAdresi(p, 'G0');
+  const yakin = tur === 'yakin';
+  return `<div class="vt-pos ${tur}" data-eylem="proje-ac" data-id="${p.id}" role="button" tabindex="0"
+      style="background-image:${vtZemin(p)}">
+    ${gor ? `<img class="vt-gor" src="${esc(gor)}" alt="" loading="lazy" decoding="async">` : ''}
+    ${pjLogo(p, 'vt-lo')}
+    ${tur === 'ana' ? '<span class="vt-rz">ANA</span>' : yakin ? '<span class="vt-rz yakin">YAKINDA</span>' : '<span class="vt-canli">Canlı</span>'}
+    <span class="vt-pos-alt"><b>${esc(basHarfleriBuyuk(p.firma || projeAdi(p)))}</b><i>${esc(vtAltYazi(p))}</i>${tur === 'yakin' ? '' : vtIkonlar(p)}</span>
+    ${AUTH.yonetici ? `<button class="vt-menu" data-eylem="proje-menu" data-id="${p.id}" type="button" aria-label="Proje seçenekleri">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.7"></circle><circle cx="12" cy="12" r="1.7"></circle><circle cx="12" cy="19" r="1.7"></circle></svg></button>` : ''}
+  </div>`;
+}
+
+function vtHero(liste) {
+  if (!liste.length) return '';
+  if (VT_HERO >= liste.length) VT_HERO = 0;
+  const slaytlar = liste.map((p, i) => {
+    const gor = gorselAdresi(p, 'G0');
+    const yer = pjSurumYeri(p);
+    const kardes = yer && yer.tur === 'ana' ? yer.ana.firmalar.length : 0;
+    const alt = [yer && yer.tur === 'ana' ? 'Ana program' : (modulAdi(p) || p.sektor || ''),
+      kardes ? kardes + ' firmada yayında' : '', yer && yer.tur === 'ana' ? 'sürüm ' + svKisa(yer.ana.canli) : pjAdresYazi(p)]
+      .filter(Boolean).join(' · ');
+    const host = pjAdresYazi(p);
+    return `<div class="vt-sl ${i === VT_HERO ? 'on' : ''}" style="background-image:${vtZemin(p, '75% 20%')}">
+      ${gor ? `<img class="vt-gor" src="${esc(gor)}" alt="" loading="lazy" decoding="async">` : `<span class="vt-hero-logo">${pjLogo(p, 'vt-lo vt-lo-b')}</span>`}
+      <div class="vt-hero-yz">
+        <span class="vt-et">ÖNE ÇIKAN</span>
+        <h2>${esc(basHarfleriBuyuk(p.firma || projeAdi(p)))}</h2>
+        <p>${esc(alt)}</p>
+        <div class="vt-dg">
+          ${host ? `<a class="vt-dg1" href="https://${esc(host)}/" target="_blank" rel="noopener">▶ Siteyi aç</a>` : ''}
+          <button type="button" class="vt-dg2" data-eylem="proje-ac" data-id="${p.id}">Proje sayfası</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  const nok = liste.length > 1 ? `<div class="vt-nk">${liste.map((p, i) =>
+    `<button type="button" class="${i === VT_HERO ? 'on' : ''}" data-eylem="vt-hero" data-id="${i}" aria-label="${i + 1}. afiş"></button>`).join('')}</div>` : '';
+  return `<div class="vt-hero">${slaytlar}</div>${nok}`;
+}
+
+/* Afiş kendi kendine döner (6 sn). Elle seçilince sayaç baştan başlar. */
+function vtHeroGit(i) {
+  const sl = $$('.vt-sl');
+  if (!sl.length) return;
+  VT_HERO = ((Number(i) % sl.length) + sl.length) % sl.length;
+  sl.forEach((x, k) => x.classList.toggle('on', k === VT_HERO));
+  $$('.vt-nk button').forEach((x, k) => x.classList.toggle('on', k === VT_HERO));
+}
+let VT_SAYAC = null;
+function vtSayacKur() {
+  clearInterval(VT_SAYAC);
+  VT_SAYAC = setInterval(() => {
+    if (document.hidden || !$('.vt-sl')) return;
+    vtHeroGit(VT_HERO + 1);
+  }, 6000);
+}
+vtSayacKur();
+
+/* Sürüm Takibi'ndeki ana programlar (v0.360.0). Ana program Studio'da
+   normal proje değilse (klon/deneme kovasında ya da hiç yok) vitrinden
+   düşüyordu; kardeşlerden biri "ana" sanılıyordu. Artık her kovada aranıyor,
+   bulunamazsa sürüm bilgisiyle sanal bir ana afiş çiziliyor. */
+function vtSurumAnalari() {
+  if (SURUM.durum !== 'tamam') return [];
+  return (SURUM.analar || []).filter(a => !a.hata).map(a => ({
+    a, p: DB.projeler.find(p => !p.arsiv && pjAdres(p) && pjHost(a.site) === pjAdres(p)) || null,
+  }));
+}
+function vtSanalAna(a) {
+  const ad = String(a.ad || 'Ana program');
+  return `<a class="vt-pos ana" href="${esc(a.site)}" target="_blank" rel="noopener"
+      style="background-image:radial-gradient(circle at 70% 25%, rgba(229,52,42,.45), transparent 58%), linear-gradient(160deg, #4a4a50, #1d1d21)">
+    <span class="pj2-logo vt-lo" style="background-image:linear-gradient(140deg,#5a5f6e,#2a2a2f)"><b class="logo-harf">${esc(basHarf(ad))}</b></span>
+    <span class="vt-rz">ANA</span>
+    <span class="vt-pos-alt"><b>${esc(ad)}</b><i>Ana program · sürüm ${esc(svKisa(a.canli))} · ${a.firmalar.length} firma</i></span>
+  </a>`;
+}
+
+function vitrinEkrani(normal) {
+  const analar = vtSurumAnalari();
+  const anaIdler = new Set(analar.filter(x => x.p).map(x => x.p.id));
+  /* Ana program başka kovada olsa da vitrinde. */
+  const tum = normal.concat(analar.filter(x => x.p && !normal.includes(x.p)).map(x => x.p));
+  const yayinda = tum.filter(p => pjYayinda(p) || anaIdler.has(p.id));
+  const yapim = normal.filter(p => !pjYayinda(p) && !anaIdler.has(p.id));
+  const sanal = analar.filter(x => !x.p).map(x => x.a);
+  const gruplar = VITRIN_GRUPLAR.map(g => {
+    const uyeler = yayinda.filter(p => vtGrup(p) === g.id);
+    const sanalBurada = g.id === 'muhasebe' ? sanal : [];
+    if (!uyeler.length && !sanalBurada.length) return '';
+    let ana = uyeler.filter(vtAnaMi);
+    if (!ana.length && !sanalBurada.length) ana = [uyeler[0]];
+    const kardes = uyeler.filter(p => !ana.includes(p));
+    return `<section class="vt-grup">
+      <div class="vt-gb"><b>${esc(g.ad)}<small>${uyeler.length + sanalBurada.length}</small></b></div>
+      <div class="vt-sira raf">${sanalBurada.map(vtSanalAna).join('')}${ana.map(p => vtAfis(p, 'ana')).join('')}${kardes.map(p => vtAfis(p, 'kar')).join('')}</div>
+    </section>`;
+  }).join('');
+  const heroListe = VITRIN_GRUPLAR.map(g => {
+    const u = yayinda.filter(p => vtGrup(p) === g.id);
+    const a = u.filter(vtAnaMi);
+    return a.length ? a : u.slice(0, 1);
+  }).flat();
+  const yakin = yapim.length ? `<section class="vt-grup">
+      <div class="vt-gb"><b>Yakında vitrinde<small>${yapim.length}</small></b></div>
+      <div class="vt-sira raf">${yapim.map(p => vtAfis(p, 'yakin')).join('')}</div>
+    </section>` : '';
+  if (!yayinda.length && !yapim.length && !sanal.length) {
+    return `<div class="vt-bos">Vitrin boş. İlk proje yayına alınınca burada sergilenecek.</div>`;
+  }
+  return `${vtHero(heroListe)}${gruplar}${yakin}`;
+}
+
+/* Üstteki Vitrin / Atölye geçişi. */
+function pjSekmeDugmesi() {
+  return `<div class="pjs ${PJ_SEKME === 'atolye' ? 'atolye' : ''}" role="tablist">
+    <i class="pjs-hap" aria-hidden="true"></i>
+    <button type="button" role="tab" aria-selected="${PJ_SEKME === 'vitrin'}" data-eylem="pj-sekme" data-id="vitrin"><span>✦</span> Vitrin</button>
+    <button type="button" role="tab" aria-selected="${PJ_SEKME === 'atolye'}" data-eylem="pj-sekme" data-id="atolye"><span>⚒</span> Atölye</button>
+  </div>`;
+}
+function pjSekmeSec(k) {
+  if (k === PJ_SEKME) return;
+  PJ_SEKME = k === 'atolye' ? 'atolye' : 'vitrin';
+  try { localStorage.setItem('ns.pjSekme', PJ_SEKME); } catch (h) {}
+  const d = $('.pjs');
+  if (d) d.classList.toggle('atolye', PJ_SEKME === 'atolye');
+  /* Hap kaysın, sonra sahne değişsin. */
+  setTimeout(() => { PJ_GECIS = true; render(); }, 170);
+}
+let PJ_GECIS = false;
+
 function projelerEkrani(kova) {
   if (AUTH.yonetici && SURUM.durum === 'bos') setTimeout(() => surumTakipYukle(), 0);
-  if (kova === 'deneme' || kova === 'klon') PJ_ACIK.deneme = true;
-  if (kova === 'template') PJ_ACIK.template = true;
+  if (kova === 'deneme' || kova === 'klon') { PJ_ACIK.deneme = true; PJ_SEKME = 'atolye'; }
+  if (kova === 'template') { PJ_ACIK.template = true; PJ_SEKME = 'atolye'; }
   if (PJ_SUZGEC === 'bitti') PJ_SUZGEC = 'hepsi';
 
   const aktif = DB.projeler.filter(p => !p.arsiv);
   const normal = pjSirala(aktif.filter(p => PROJE_KOVASI.normal.sec(p)));
   const denemeKlon = pjSirala(aktif.filter(p => PROJE_KOVASI.deneme.sec(p) || PROJE_KOVASI.klon.sec(p)));
   const sablon = aktif.filter(p => PROJE_KOVASI.template.sec(p));
-  const yayinSay = normal.filter(pjYayinda).length;
-  const goster = p => PJ_SUZGEC === 'hepsi' || (PJ_SUZGEC === 'yayinda' ? pjYayinda(p) : !pjYayinda(p));
 
-  /* Aileler: ana program + ondan kopyalanan firmalar (Sürüm Takibi'nden). */
-  const ailede = new Set();
-  let aileler = '';
-  if (SURUM.durum === 'tamam' && PJ_SUZGEC !== 'yapimda') {
-    SURUM.analar.forEach(a => {
-      if (a.hata) return;
-      const anaP = normal.find(p => pjAdres(p) && pjHost(a.site) === pjAdres(p));
-      const firmalar = (a.firmalar || []).map(f => normal.find(p => pjAdres(p) && pjHost(f.site) === pjAdres(p))).filter(Boolean);
-      if (!anaP && !firmalar.length) return;
-      [anaP, ...firmalar].filter(Boolean).forEach(p => ailede.add(p.id));
-      const ad = String(a.ad || 'Ana program').replace(/\s*Modülü$/i, '');
-      aileler += pjBolum(esc(ad) + ' programları', (anaP ? pjKart3(anaP) : pjAnaKarti(a)) + firmalar.map(pjKart3).join(''));
-    });
+  const gecis = PJ_GECIS ? 'gecis' : '';
+  PJ_GECIS = false;
+  const yeniDug = AUTH.yonetici ? `<button class="pjs-yeni" type="button" data-eylem="sihirbaz" aria-label="Yeni Proje">${svg(ICON.arti, 18)}</button>` : '';
+  if (PJ_SEKME === 'vitrin') {
+    return `<div class="vt ${gecis}">
+      <div class="pjs-sat">${pjSekmeDugmesi()}${yeniDug}</div>
+      ${!normal.length ? `<div class="vt-bos">Henüz proje yok.</div>` : vitrinEkrani(normal)}
+    </div>`;
   }
-  const diger = normal.filter(p => !ailede.has(p.id) && pjYayinda(p) && goster(p));
-  const yapim = normal.filter(p => !ailede.has(p.id) && !pjYayinda(p) && goster(p));
-
-  const cip = (k, ad) => `<button type="button" class="pj2-cip ${PJ_SUZGEC === k ? 'sec' : ''}" data-eylem="pj-suzgec" data-id="${k}">${ad}</button>`;
-  const govde = !normal.length
-    ? `<div class="card">${empty(ICON.katman, 'Henüz proje yok',
-        'Yeni Proje sihirbazı firma, renk, platform, veritabanı ve modülleri sorar.',
-        AUTH.yonetici ? 'Yeni Proje' : null, 'sihirbaz')}</div>`
-    : (aileler
-      + pjBolum(aileler ? 'Diğer programlar' : 'Yayındaki programlar', diger.map(pjKart3).join(''))
-      + pjBolum('Yapımda', yapim.map(pjKart3).join(''))) || '<div class="sv-bos">Bu süzgece uyan proje yok.</div>';
-
-  return `
-    <div class="pj-tepe">
-      <div class="pj-tepe-yz">
-        <h1>Projeler</h1>
-        <p>${normal.length} proje · ${yayinSay} yayında</p>
-      </div>
-      ${AUTH.yonetici ? `<button class="pj-yeni" type="button" data-eylem="sihirbaz">${svg(ICON.arti, 16)}<span>Yeni Proje</span></button>` : ''}
-    </div>
-    <div class="pj2-arac">
-      <label class="pj-ara">
-        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.4"></circle><path d="M15.8 15.8L20.5 20.5"></path></svg>
-        <input id="pj-ara" type="search" autocomplete="off" placeholder="Proje veya firma ara…" value="${esc(PROJE_ARAMA)}">
-      </label>
-      <div class="pj2-cipler">${cip('hepsi', 'Hepsi')}${cip('yayinda', 'Yayında')}${cip('yapimda', 'Yapımda')}</div>
-    </div>
+  /* Atölye (2. adımda yeni tasarımına geçecek): şimdilik denemeler, klonlar
+     ve şablonlar eski kartlarıyla, açık hâlde. */
+  return `<div class="atl ${gecis}">
+    <div class="pjs-sat">${pjSekmeDugmesi()}${yeniDug}</div>
     <div class="pj2-kok">
-      ${govde}
-      ${pjKapali('deneme', '🧪 Denemeler ve klonlar', denemeKlon, pjKart3)}
-      ${pjKapali('template', '📐 Şablonlar', sablon, templateKarti)}
-      <div class="pj-bos-arama">Aramana uyan proje yok.</div>
+      ${denemeKlon.length || sablon.length ? '' : '<div class="sv-bos">Atölyede şu an iş yok.</div>'}
+      ${denemeKlon.length ? pjBolum('🧪 Denemeler ve klonlar', denemeKlon.map(pjKart3).join('')) : ''}
+      ${sablon.length ? `<section class="pj2-grup"><h2 class="pj3-bas">📐 Şablonlar</h2><div class="tp-liste">${sablon.map(templateKarti).join('')}</div></section>` : ''}
     </div>
     ${AUTH.yonetici ? `<div class="pj2-alt-dug">
       <button type="button" class="btn btn-ghost" data-eylem="klon-yeni">${svg(ICON.kopya, 15)} Test Klonu</button>
-      <button type="button" class="btn btn-ghost" data-eylem="template-olustur-ac">${svg(ICON.izgaraDort, 15)} Template</button></div>` : ''}`;
+      <button type="button" class="btn btn-ghost" data-eylem="template-olustur-ac">${svg(ICON.izgaraDort, 15)} Template</button></div>` : ''}
+  </div>`;
 }
 
 /* Arama: ekran yeniden çizilmeden kartlar gizlenir; boş kalan bölüm de gizlenir. */
@@ -8810,37 +8929,91 @@ function projeAnaSayfa(p) {
   }
   const notlar = yer ? (yer.tur === 'firma' ? (yer.f.notlar || []) : yer.ana.notlar).slice(0, 4) : [];
 
-  const DURUM_YAZI = { kontrolde: 'Kontrolde', gelistiriliyor: 'Geliştiriliyor' };
+  /* v0.362.0 · onaylı taslak: afiş, kabarık hızlı düğmeler, sürüm şeridi,
+     üç durum kartı, kart içinde görevler ve değişiklikler. */
+  const gor = gorselAdresi(p, 'G0');
+  const grupAd = (VITRIN_GRUPLAR.find(g => g.id === vtGrup(p)) || {}).ad || '';
+  const ust = [grupAd.replace(/ Projeleri?$/, ''), yer && yer.tur === 'ana' ? 'Ana program'
+    : yer && yer.tur === 'firma' ? 'Kardeş proje' : ''].filter(Boolean).join(' · ');
+  const altYazi = [modulAdi(p), yayinda && host ? pjAdresYazi(p)
+    : projeBittiMi(p) ? 'Tamamlandı' : yayinda ? '' : 'Yapımda · %' + yuzde].filter(Boolean).join(' · ');
+  const hizlar = [
+    host ? `<a class="pa2-hz" href="https://${esc(pjAdresYazi(p))}/" target="_blank" rel="noopener"><i>🌐</i>Siteyi aç</a>` : '',
+    slug ? `<a class="pa2-hz" href="${esc(claudeAdresi(slug))}" target="_blank" rel="noopener"><i>✦</i>Claude'da aç</a>` : '',
+    AUTH.yonetici ? `<button type="button" class="pa2-hz kir" data-eylem="gorev-ekle" data-proje="${p.id}"><i>＋</i>Görev ver</button>` : '',
+  ].filter(Boolean);
+  const tik = '<svg viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg>';
+
+  let surum = '';
+  if (yer && yer.tur === 'firma') {
+    const d = svDurum(yer.f), ok = d.sinif === 'ok';
+    surum = `<button type="button" class="pa2-surum ${ok ? '' : 'bek'}" data-eylem="surum-detay" data-id="${esc(yer.f.kod)}">
+      <span class="vt-ik ${ok ? 'tam' : 'kot'}">${ok ? tik : svg(ICON.uyari, 15)}</span>
+      <span class="pa2-surum-yz"><b>${ok ? 'Sürüm güncel' : 'Güncelleme var'}</b><i>${esc(ok ? 'Ana programla aynı · ' + svKisa(yer.ana.canli) : d.yazi)}</i></span>
+      <span class="pa2-ok">${svg(ICON.chevron, 14)}</span></button>`;
+  } else if (yer && yer.tur === 'ana') {
+    surum = `<div class="pa2-surum"><span class="vt-ik tam">${tik}</span>
+      <span class="pa2-surum-yz"><b>Ana program · sürüm ${esc(svKisa(yer.ana.canli))}</b><i>${yer.ana.firmalar.length} firma bundan kopyalandı</i></span></div>`;
+  }
+
+  let durum = '';
+  if (AUTH.yonetici) {
+    yedekEslemeYukle();
+    const kart = (k, ad, d, attr) => {
+      const c = /^[kb]$/.test(d.s) ? 'kot' : d.s === 'y' ? 'tam' : '';
+      return `<${attr ? 'button type="button"' : 'div'} class="pa2-dk ${c === 'kot' ? 'uy' : ''}" ${attr || ''}>
+        <span class="vt-ik ${c}"><svg viewBox="0 0 24 24">${VT_IKON[k]}</svg></span>
+        <b>${ad}</b><i>${esc(d.yazi)}</i></${attr ? 'button' : 'div'}>`;
+    };
+    durum = `<div class="pa2-bas">Durum</div><div class="pa2-durum ${sunuculuMu(p) ? 'd4' : ''}">
+      ${kart('yayin', 'Yayın', pdYayin(p), yer && yer.tur === 'firma' ? `data-eylem="surum-detay" data-id="${esc(yer.f.kod)}"` : '')}
+      ${kart('yedek', 'Yedek', pdYedek(p), sunuculuMu(p) ? 'data-eylem="yedek-detay"' : '')}
+      ${kart('guv', 'Güvenlik', pdGuvenlik(p), sunuculuMu(p) ? `data-eylem="pd-guvenlik" data-id="${p.id}"` : '')}
+      ${sunuculuMu(p) ? kart('etk', 'Etkileşim', pdEtkilesim(p), `data-eylem="pa-sekme" data-id="${p.id}" data-sekme="etkilesim" data-kaydir="1"`) : ''}
+    </div>`;
+  }
+
+  const ETIKET = { genel: ['', 'Herkese'], ozel: ['', 'Sadece bu firma'], esitleme: ['g', 'Ana programdan geldi'] };
   return `
-    <div class="pa">
-      <div class="pa-ust">
-        ${pjLogo(p, 'buyuk')}
-        <span class="pa-ad"><b>${esc(basHarfleriBuyuk(projeAdi(p)))}</b><small class="${yayinda ? 'ok' : ''}">${durumYazi}</small></span>
-        ${AUTH.yonetici ? `<button class="pj2-menu" data-eylem="proje-menu" data-id="${p.id}" type="button" aria-label="Proje seçenekleri">
+    <div class="pa2 ${PA_GECISTE ? 'gir' : ''}">
+      <div class="pa2-hero" style="background-image:${vtZemin(p, '75% 20%')}">
+        ${gor ? `<img class="vt-gor" src="${esc(gor)}" alt="" fetchpriority="high">` : ''}
+        ${pjLogo(p, 'pa2-lo')}
+        ${yayinda ? '<span class="pa2-canli">Canlı</span>' : ''}
+        ${AUTH.yonetici ? `<button class="vt-menu pa2-menu" data-eylem="proje-menu" data-id="${p.id}" type="button" aria-label="Proje seçenekleri">
           <svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.7"></circle><circle cx="12" cy="12" r="1.7"></circle><circle cx="12" cy="19" r="1.7"></circle></svg></button>` : ''}
+        <div class="pa2-hero-yz">
+          ${ust ? `<small>${esc(ust)}</small>` : ''}
+          <h1>${esc(basHarfleriBuyuk(p.firma || projeAdi(p)))}</h1>
+          ${altYazi ? `<p>${esc(altYazi)}</p>` : ''}
+          ${vtIkonlar(p)}
+        </div>
       </div>
-      ${hiz.length ? `<div class="pa-hizlar" style="grid-template-columns:repeat(${hiz.length},1fr)">${hiz.join('')}</div>` : ''}
-      ${surumKutu}
-      ${hata ? `<a class="pa-hata" href="#/hatalar">⚠️ ${hata} yeni hata bildirimi ›</a>` : ''}
-      ${pdKutu(p)}
+      ${hizlar.length ? `<div class="pa2-hiz" style="grid-template-columns:repeat(${hizlar.length},1fr)">${hizlar.join('')}</div>` : ''}
+      ${surum}
+      ${hata ? `<a class="pa2-hata" href="#/hatalar"><span class="vt-ik kot">${svg(ICON.uyari, 15)}</span>${hata} yeni hata bildirimi<span class="pa2-ok">${svg(ICON.chevron, 14)}</span></a>` : ''}
+      ${durum}
 
-      <div class="yd-baslik2">Açık görevler</div>
-      ${gorevler.length ? gorevler.slice(0, 6).map(g => `
-        <button type="button" class="pa-sat" data-eylem="gorev-ac" data-id="${g.id}">
-          <span class="pa-nok ${g.durum === 'kontrolde' ? 'm' : ''}"></span>
-          <span class="pa-sat-yz">${esc(g.baslik || 'Görev')}</span>
-          <em>${esc(DURUM_YAZI[g.durum] || DB.kisiAdi(g.atanan) || '')}</em></button>`).join('')
-        + (gorevler.length > 6 ? `<div class="yd-not" style="text-align:left">+${gorevler.length - 6} görev daha</div>` : '')
-        : '<div class="pa-bos">Açık görev yok 🎉</div>'}
+      <div class="pa2-bas">Açık görevler</div>
+      <div class="pa2-kart">
+        ${gorevler.length ? gorevler.slice(0, 6).map(g => `
+          <button type="button" class="pa2-st" data-eylem="gorev-ac" data-id="${g.id}">
+            <span class="pa2-c ${g.durum === 'bitirdi' ? 'm' : ''}">${g.durum === 'bitirdi' ? 'Kontrolde' : esc(DB.kisiAdi(g.atanan) || 'Görev')}</span>
+            <p>${esc(g.baslik || 'Görev')}</p><em>${esc(gorevNo(g))}${g.bitis ? ' · ' + esc(svTarih(g.bitis)) : ''}</em></button>`).join('')
+          + (gorevler.length > 6 ? `<div class="pa2-not">+${gorevler.length - 6} görev daha</div>` : '')
+          : `<div class="pa2-bos"><span class="vt-ik tam">${tik}</span>Açık görev yok 🎉</div>`}
+      </div>
 
-      ${AUTH.yonetici ? paGecmis(p) : notlar.length ? `<div class="yd-baslik2">Son değişiklikler</div>` + notlar.map(n => `
-        <div class="pa-sat duz"><span class="pa-sat-yz">${esc(n.ozet || '')}</span><em>${esc(svTarih(n.tarih))}</em></div>`).join('') : ''}
+      ${AUTH.yonetici ? paGecmis(p) : notlar.length ? `<div class="pa2-bas">Son değişiklikler</div><div class="pa2-kart">` + notlar.map(n => {
+        const e = ETIKET[n.tur] || null;
+        return `<div class="pa2-st">${e ? `<span class="pa2-c ${e[0]}">${e[1]}</span>` : ''}
+          <p>${esc(n.ozet || '')}</p><em>${esc([svTarih(n.tarih), n.surum].filter(Boolean).join(' · '))}</em></div>`;
+      }).join('') + `</div>` : ''}
 
-      <div class="yd-baslik2">Aşamalar</div>
-      <a class="pa-asama" href="${esc(projeAdresi(p.id))}">
-        <small><b>${su ? 'Kaldığın yer: ' + esc(su.ad) : 'Bitti'}</b> · ${biten} / ${sayilan.length} aşama tamamlandı</small>
-        <span class="pa-ray"><i style="width:${yuzde}%"></i></span>
-        <small>${su ? 'Devam et ›' : 'Aşamaları aç ›'}</small>
+      <div class="pa2-bas">Aşamalar</div>
+      <a class="pa2-kart pa2-asama" href="${esc(projeAdresi(p.id))}">
+        <span class="pa2-ray"><i style="width:${yuzde}%"></i></span>
+        <span class="pa2-asama-alt"><b>${su ? 'Kaldığın yer: ' + esc(su.ad) : biten + ' / ' + sayilan.length + ' aşama bitti'}</b><span>${su ? 'Devam et ›' : 'Tümü ›'}</span></span>
       </a>
     </div>`;
 }
@@ -9741,6 +9914,53 @@ function connRow(k, v, ok) {
    Sekmelerde tek çizim var; burada da tek olsun. */
 let CIZILEN_ADRES = null;
 
+/* ---------- Vitrin ⇄ Proje sayfası geçişi (v0.363.0) ----------
+   App Store kartı gibi: basılan afiş büyüyüp proje sayfasının afişine
+   dönüşür, logo ve ad kendi yerine akar, alttaki kartlar sırayla yükselir.
+   Tarayıcının sayfa geçişi (startViewTransition) yalnız adlandırılmış üç
+   parça için kullanılıyor: kökün görüntüsü alınmıyor (CSS'te :root
+   view-transition-name: none), yani tam ekran görüntü maliyeti yok.
+   Desteklemeyen tarayıcıda ve "hareketi azalt"ta düz geçiş. */
+let PA_GECISTE = false;
+let VT_KAYDIRMA = 0;
+function vtGecisVar() {
+  return typeof document.startViewTransition === 'function'
+    && !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+}
+/* Geçiş süresince ekran kartını yoran her şey durur: alt menünün buzlu
+   camı (altından geçen afişi her karede yeniden bulanıklaştırıyordu) ve
+   sürekli dönen parlama animasyonları. */
+function paAkisAc() { document.documentElement.classList.add('pa-akis'); }
+function paAkisKapat() { setTimeout(() => document.documentElement.classList.remove('pa-akis'), 60); }
+function paAdlandir(kart, ac) {
+  if (!kart) return;
+  const ad = kart.querySelector('.vt-pos-alt b, .vt-hero-yz h2');
+  const lo = kart.querySelector('.pj2-logo');
+  kart.style.viewTransitionName = ac ? 'pa-hero' : '';
+  if (ad) ad.style.viewTransitionName = ac ? 'pa-ad' : '';
+  if (lo) lo.style.viewTransitionName = ac ? 'pa-logo' : '';
+}
+function paIleriAk(id, kart) {
+  VT_KAYDIRMA = $('#view') ? $('#view').scrollTop : 0;
+  paAdlandir(kart, true);
+  PA_GECISTE = true;
+  paAkisAc();
+  const t = document.startViewTransition(() => gitVeCiz('#/projeler/' + id));
+  t.finished.finally(() => { PA_GECISTE = false; paAkisKapat(); $$('.pa2.gir').forEach(x => x.classList.remove('gir')); });
+}
+function paGeriAk() {
+  const id = (/#\/projeler\/([^/]+)/.exec(ONCEKI_ADRES || '') || [])[1] || '';
+  PA_GECISTE = true;
+  paAkisAc();
+  const t = document.startViewTransition(() => {
+    renderCiz();
+    const v = $('#view'); if (v) v.scrollTop = VT_KAYDIRMA;
+    const kart = id ? $(`.vt-pos[data-id="${CSS.escape(id)}"]`) : null;
+    paAdlandir(kart, true);
+  });
+  t.finished.finally(() => { PA_GECISTE = false; paAkisKapat(); $$('.vt-pos').forEach(k => paAdlandir(k, false)); });
+}
+
 function gitVeCiz(hash) {
   if (location.hash === hash) { render(); return; }
   CIZILEN_ADRES = hash;
@@ -9749,7 +9969,17 @@ function gitVeCiz(hash) {
 }
 
 function render() {
+  /* Proje sayfasından vitrine geri dönüş: afiş küçülerek yerine oturur. */
+  if (!PA_GECISTE && $('.pa2-hero') && vtGecisVar()) {
+    const r = rota();
+    if (r.key === 'projeler' && !r.id && PJ_SEKME === 'vitrin') return paGeriAk();
+  }
+  return renderCiz();
+}
+
+function renderCiz() {
   /* Kaydırma yeri: akış içindeki bir seçim sonrası liste başa dönmesin. */
+  gvDonusKontrol(rota().key);
   const kaydiran = $('.dk-govde, .kunye-kaydir, .ozet-kaydir, .palet-kaydir');
   const kaydirmaYeri = kaydiran ? kaydiran.scrollTop : null;
 
@@ -9816,6 +10046,8 @@ function render() {
   /* Zemin fotoğrafı yalnızca Panel'de. Sayfa değişince koyuluk sıfırlanır,
      yoksa panele döndüğünde fotoğraf kararmış geliyor. */
   $('#main').classList.toggle('susulu', key === 'panel' && !detay);
+  /* Projeler › Vitrin koyu sahne (v0.359.0). */
+  $('#main').classList.toggle('vitrinde', key === 'projeler' && !detay && !kova && PJ_SEKME === 'vitrin');
   /* Yazışma tam ekran: kendi başlığı ve alttaki yazma çubuğu var,
      uygulamanın üst çubuğu ve sekmeleri gizleniyor. */
   const yazisma = key === 'sohbet' && !!id;
@@ -9876,7 +10108,7 @@ function render() {
 
   view.classList.remove('swap');
 
-  if (gecis) {
+  if (gecis && !PA_GECISTE) {
     void view.offsetWidth;
     view.classList.add('swap');
     sayaclariCanlandir(view);
@@ -11480,7 +11712,15 @@ function sohbetEkrani() {
     </div>
 
     ${bildirimKarti()}
-
+    ${(() => {
+      /* Şu an çevrimiçi olanlar (v0.367.0): basınca yazışma açılır. */
+      const acik = kisiler.filter(k => DB.cevrimicimi(k.id));
+      return acik.length ? `<div class="so-gb">Şu an çevrimiçi</div><div class="so-cv">${acik.map(k => `
+        <button type="button" class="so-cv-k" data-eylem="sohbet-ac" data-id="${esc(k.id)}">
+          <span class="sh2-foto ${k.foto ? 'resimli' : ''}" ${k.foto ? `style="background-image:url('${esc(k.foto)}')"` : ''}><b>${esc(basHarf(k.ad || '?'))}</b><u class="acik"></u></span>
+          <i>${esc((k.ad || '').split(' ')[0])}</i></button>`).join('')}</div>` : '';
+    })()}
+    <div class="so-gb">Yazışmalar</div>
     <div class="sh2-liste">${satirlar}
       <div class="pj-bos-arama">Aramana uyan kişi yok.</div>
     </div>`;
@@ -11690,7 +11930,14 @@ function yazismaEkrani(kisiId) {
           <i class="${acik ? 'acik' : ''}">${acik ? '<u></u>' : ''}${alt}</i>
         </span>
         ${ikon('Sesli ara', '<path d="M6.5 3.5h3l1.5 4-2 1.5a12 12 0 0 0 6 6l1.5-2 4 1.5v3a2 2 0 0 1-2.2 2C11.8 22.2 1.8 12.2 1.3 5.7A2 2 0 0 1 3.3 3.5z"></path>')}
-        ${ikon('Görüntülü ara', '<rect x="2.5" y="6" width="13" height="12" rx="3"></rect><path d="M15.5 11l6-3.5v9l-6-3.5z"></path>')}
+        ${marka ? '' : (() => {
+          /* v0.368.0: görüntülü arama yerine bu kişinin açık görevleri. */
+          const ben = AUTH.user ? AUTH.user.id : '';
+          const n = (DB.gorevler || []).filter(g => g.durum !== 'onaylandi' && DB.gorevGecerli(g)
+            && (AUTH.yonetici ? g.atanan === kisiId : g.atanan === ben && g.olusturan === kisiId)).length;
+          return `<button class="yz-ik yz-gv" type="button" data-eylem="sohbet-gorevler" data-id="${esc(kisiId)}" aria-label="Görevleri">
+            <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3.5"></rect><path d="M8.5 12.2l2.4 2.4 4.6-4.8"></path></svg>${n ? `<em>${n > 99 ? '99+' : n}</em>` : ''}</button>`;
+        })()}
         ${ikon('Seçenekler', '<circle cx="12" cy="5" r="1.4"></circle><circle cx="12" cy="12" r="1.4"></circle><circle cx="12" cy="19" r="1.4"></circle>')}
       </div>
 
@@ -13789,6 +14036,13 @@ function modalAc(html, bagla, ekSinif = '') {
 function modalKapat() {
   const hepsi = $$('.modal-perde');
   const son = hepsi[hepsi.length - 1];
+  /* Kendi çıkış animasyonu olan pencere (görev paneli) önce kayarak çıkar. */
+  const kutu = son && son.querySelector('.modal-kutu');
+  if (kutu && kutu._kapanis && !kutu._kapaniyor) {
+    kutu._kapaniyor = true;
+    kutu._kapanis(() => { son.remove(); if ($$('.modal-perde').length === 0) document.removeEventListener('keydown', kacTusu); });
+    return;
+  }
   if (son) son.remove();
   if (hepsi.length <= 1) document.removeEventListener('keydown', kacTusu);
 }
@@ -13960,6 +14214,180 @@ function onaySor({ baslik, mesaj, buton = 'Sil' }) {
 }
 
 /* ==========================================================================
+   Görevler ekranı (v0.364.0 · onaylı taslak)
+   Üstte Görevlerim / Ekip Görevleri geçişi (Vitrin'deki gibi) ve kırmızı +.
+   Altında süzgeç: Açık · Kontrolde · Bitenler. Görevler bitiş tarihine
+   göre gruplu kabarık kartlar. Geliştirici yalnız Görevlerim'i görür.
+   ========================================================================== */
+let GV_SEKME = (() => { try { return localStorage.getItem('ns.gvSekme') || 'ben'; } catch (h) { return 'ben'; } })();
+let GV_SUZ = 'acik';
+/* Filtre (v0.366.0): durum + personel (yalnız Ekip) + firma. */
+let GV_KISI = null, GV_PROJE = null;
+function gvFiltreSay() {
+  return (GV_SUZ !== 'acik' ? 1 : 0) + (GV_KISI ? 1 : 0) + (GV_PROJE ? 1 : 0);
+}
+
+function gvDurum(g) {
+  if (g.durum === 'onaylandi') return { ad: 'Tamamlandı', renk: '#2f7d5c' };
+  if (g.durum === 'bitirdi')   return { ad: 'Kontrolde', renk: '#2f62c4' };
+  return gorevAsama(g) === 'plansiz' ? { ad: 'Yapılacak', renk: '#83838b' } : { ad: 'Geliştiriliyor', renk: '#b8801a' };
+}
+function gvGrup(g) {
+  if (!g.bitis) return 'Tarihsiz';
+  const s = gorevSure(g.bitis);
+  const bugun = new Date(); bugun.setHours(0, 0, 0, 0);
+  const gun = Math.round((new Date(g.bitis + 'T00:00:00') - bugun) / 864e5);
+  if (gun < 0) return 'Gecikenler';
+  if (gun === 0) return 'Bugün';
+  if (gun <= 7) return 'Bu hafta';
+  return s ? 'Daha sonra' : 'Tarihsiz';
+}
+function gv2Tarih(g) {
+  if (!g.bitis) return { y: '', k: false };
+  const s = gorevSure(g.bitis);
+  if (s && s.sinif === 'gecti') return { y: s.yazi, k: true };
+  if (s && s.yazi === 'Yarın') return { y: 'Yarın', k: false };
+  return { y: svTarih(g.bitis), k: false };
+}
+function gvKart(g, ekip) {
+  const d = gvDurum(g);
+  const p = g.proje_id ? DB.proje(g.proje_id) : null;
+  const t = gv2Tarih(g);
+  const kisi = DB.kisi(g.atanan);
+  const etiket = p ? `<span class="gv2-pc"><u>${esc(basHarf(p.firma || projeAdi(p)))}</u>${esc(basHarfleriBuyuk(p.firma || projeAdi(p)))}</span>`
+    : `<span class="gv2-pc"><u>${g.konu === 'studio' ? 'N' : '—'}</u>${g.konu === 'studio' ? 'Nizam Studio' : 'Genel'}</span>`;
+  return `<div class="gv2-k" style="--c:${d.renk}" data-eylem="gorev-ac" data-id="${g.id}" role="button" tabindex="0">
+    <div class="gv2-s1"><span class="gv2-no">${esc(gorevNo(g))}</span><span class="gv2-dr">${d.ad}</span></div>
+    <b>${esc(g.baslik || 'Görev')}</b>
+    <div class="gv2-s2">${etiket}${ekip && kisi ? shAvatar(kisi.ad_soyad || kisi.ad || '', 'kucuk gv2-av', kisi) : ''}
+      ${t.y ? `<span class="gv2-tar ${t.k ? 'k' : ''}">${esc(t.y)}</span>` : ''}</div>
+  </div>`;
+}
+
+function gorevlerEkrani() {
+  const ben = AUTH.user ? AUTH.user.id : '';
+  const yon = AUTH.yonetici;
+  if (!yon) GV_SEKME = 'ben';
+  const hepsi = DB.gorevleri();
+  const benim = hepsi.filter(g => g.atanan === ben);
+  const acikSay = l => l.filter(g => g.durum !== 'onaylandi').length;
+  const kaynak = GV_SEKME === 'ekip' ? hepsi : benim;
+  const suz = {
+    acik:    g => g.durum !== 'onaylandi' && g.durum !== 'bitirdi',
+    kontrol: g => g.durum === 'bitirdi',
+    bitti:   g => g.durum === 'onaylandi',
+  }[GV_SUZ] || (() => true);
+  const kisiUy = g => !GV_KISI || (GV_SEKME === 'ekip' ? g.atanan === GV_KISI : g.olusturan === GV_KISI);
+  const projeUy = g => !GV_PROJE || (GV_PROJE === ':genel' ? !g.proje_id && g.konu !== 'studio'
+    : GV_PROJE === ':studio' ? !g.proje_id && g.konu === 'studio' : g.proje_id === GV_PROJE);
+  let liste = kaynak.filter(g => suz(g) && kisiUy(g) && projeUy(g));
+  let govde = '';
+  if (!liste.length) {
+    govde = `<div class="gv2-bos"><span class="vt-ik tam"><svg viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg></span>
+      <b>${gvFiltreSay() && (GV_KISI || GV_PROJE) ? 'Bu filtreye uyan görev yok' : GV_SUZ === 'bitti' ? 'Biten görev yok' : GV_SUZ === 'kontrol' ? 'Kontrolde görev yok' : GV_SEKME === 'ekip' ? 'Ekipte açık görev yok' : 'Sana verilmiş açık görev yok'}</b>
+      <i>${gvFiltreSay() ? 'Filtreyi soldaki düğmeden değiştirebilirsin.' : 'Yeni görev için sağ üstteki + düğmesine bas.'}</i></div>`;
+  } else if (GV_SUZ === 'bitti') {
+    liste = liste.sort((x, y) => (y.guncellendi || '').localeCompare(x.guncellendi || '')).slice(0, 60);
+    govde = liste.map(g => gvKart(g, GV_SEKME === 'ekip')).join('');
+  } else {
+    const sira = ['Gecikenler', 'Bugün', 'Bu hafta', 'Daha sonra', 'Tarihsiz'];
+    const gr = {};
+    gorevSirala(liste).forEach(g => { const k = gvGrup(g); (gr[k] = gr[k] || []).push(g); });
+    govde = sira.filter(k => gr[k]).map(k => `<div class="gv2-gb ${k === 'Gecikenler' ? 'k' : ''}">${k}</div>`
+      + gr[k].map(g => gvKart(g, GV_SEKME === 'ekip')).join('')).join('');
+  }
+  const fs = gvFiltreSay();
+  return `<div class="gv2">
+    <div class="pjs-sat">
+      <button type="button" class="gv2-fd ${fs ? 'on' : ''}" data-eylem="gv-filtre" aria-label="Filtre">
+        <svg viewBox="0 0 24 24"><path d="M4 6h16M7 12h10M10 18h4"/></svg>${fs ? `<em>${fs}</em>` : ''}</button>
+      ${yon ? `<div class="pjs ${GV_SEKME === 'ekip' ? 'atolye' : ''}" role="tablist">
+        <i class="pjs-hap" aria-hidden="true"></i>
+        <button type="button" data-eylem="gv-sekme" data-id="ben">Görevlerim <u class="gv2-say">${acikSay(benim)}</u></button>
+        <button type="button" data-eylem="gv-sekme" data-id="ekip">Ekip Görevleri <u class="gv2-say">${acikSay(hepsi)}</u></button>
+      </div>` : `<h1 class="gv2-h">Görevlerim</h1>`}
+      <button class="pjs-yeni" type="button" data-eylem="gorev-ver" aria-label="Yeni görev">${svg(ICON.arti, 18)}</button>
+    </div>
+    ${fs ? `<div class="gv2-etiket">${[GV_SUZ !== 'acik' ? { kontrol: 'Kontrolde', bitti: 'Bitenler', hepsi: 'Hepsi' }[GV_SUZ] : '',
+      GV_KISI ? (GV_SEKME === 'ekip' ? '' : 'Veren: ') + DB.kisiAdi(GV_KISI) : '',
+      GV_PROJE ? (GV_PROJE === ':genel' ? 'Projesiz' : GV_PROJE === ':studio' ? 'Nizam Studio' : basHarfleriBuyuk((DB.proje(GV_PROJE) || {}).firma || '')) : '']
+      .filter(Boolean).map(x => `<span>${esc(x)}</span>`).join('')}<button type="button" data-eylem="gv-temizle">Temizle</button></div>` : ''}
+    <div class="gv2-liste">${govde}</div>
+  </div>`;
+}
+function gvFiltreKapat() { $$('.gv2-fp').forEach(x => x.remove()); }
+function gvFiltreAc(el) {
+  if ($('.gv2-fp')) return gvFiltreKapat();
+  const kap = el.closest('.gv2'); if (!kap) return;
+  let durum = GV_SUZ, kisi = GV_KISI, proje = GV_PROJE;
+  const ekip = GV_SEKME === 'ekip';
+  const kisiler = (DB.kisilerHepsi || DB.kisiler || []).filter(k => k.aktif !== false);
+  const projeler = DB.projeler.filter(p => !p.arsiv && !cekirdekMi(p));
+  const ben = AUTH.user ? AUTH.user.id : '';
+  const pop = document.createElement('div');
+  pop.className = 'gv2-fp';
+  const ciz = () => {
+    const pAd = proje === ':genel' ? 'Projesiz' : proje === ':studio' ? 'Nizam Studio'
+      : proje ? basHarfleriBuyuk((DB.proje(proje) || {}).firma || '') : 'Bütün firmalar';
+    pop.innerHTML = `
+      <h4>Durum</h4><div class="gm-ch">${[['acik', 'Açık'], ['kontrol', 'Kontrolde'], ['bitti', 'Bitti'], ['hepsi', 'Hepsi']]
+        .map(([k, a]) => `<button type="button" class="${durum === k ? 'on' : ''}" data-f-d="${k}">${a}</button>`).join('')}</div>
+      ${ekip ? `<h4>Personel</h4><div class="gm-kisiler">
+        <button type="button" class="gm-k ${!kisi ? 'on' : ''}" data-f-k=""><span class="shz-av shz-her">👥</span><i>Herkes</i></button>
+        ${kisiler.map(k => `<button type="button" class="gm-k ${kisi === k.id ? 'on' : ''}" data-f-k="${k.id}">
+          ${shAvatar(k.ad_soyad || k.ad || '?', '', k)}<i>${k.id === ben ? 'Sen' : esc((k.ad || k.ad_soyad || '').split(' ')[0])}</i></button>`).join('')}</div>` : ''}
+      <h4>Firma</h4>
+      <div class="gv2-fl">
+        <button type="button" class="gm-o ${!proje ? 'on' : ''}" data-f-p=""><span class="gm-lo bos">∗</span><span class="gm-cb-yz"><b>Bütün firmalar</b></span><span class="gm-tik">✓</span></button>
+        <button type="button" class="gm-o ${proje === ':genel' ? 'on' : ''}" data-f-p=":genel"><span class="gm-lo bos">—</span><span class="gm-cb-yz"><b>Projesiz</b></span><span class="gm-tik">✓</span></button>
+        <button type="button" class="gm-o ${proje === ':studio' ? 'on' : ''}" data-f-p=":studio"><span class="gm-lo" style="background:#fff url(logo.png) center/60% auto no-repeat;border:1px solid #ededf0"></span><span class="gm-cb-yz"><b>Nizam Studio</b></span><span class="gm-tik">✓</span></button>
+        ${projeler.map(p => { const r = pjRenk(p); return `<button type="button" class="gm-o ${proje === p.id ? 'on' : ''}" data-f-p="${p.id}">
+          <span class="gm-lo" style="background:linear-gradient(140deg,${r[0]},${r[1]})">${esc(basHarf(p.firma || projeAdi(p)))}</span>
+          <span class="gm-cb-yz"><b>${esc(basHarfleriBuyuk(p.firma || projeAdi(p)))}</b><i>${esc(modulAdi(p) || '')}</i></span><span class="gm-tik">✓</span></button>`; }).join('')}
+      </div>
+      <div class="gv2-fp-alt"><button type="button" class="gm-bt g" data-f-t>Temizle</button><button type="button" class="gm-bt a" data-f-u>Uygula</button></div>`;
+    $$('[data-f-d]', pop).forEach(b => b.onclick = () => { durum = b.dataset.fD; ciz(); });
+    $$('[data-f-k]', pop).forEach(b => b.onclick = () => { kisi = b.dataset.fK || null; ciz(); });
+    $$('[data-f-p]', pop).forEach(b => b.onclick = () => { proje = b.dataset.fP || null; ciz(); });
+    $('[data-f-t]', pop).onclick = () => { GV_SUZ = 'acik'; GV_KISI = null; GV_PROJE = null; gvFiltreKapat(); render(); };
+    $('[data-f-u]', pop).onclick = () => { GV_SUZ = durum; GV_KISI = kisi; GV_PROJE = proje; gvFiltreKapat(); render(); };
+  };
+  ciz();
+  kap.appendChild(pop);
+  pop.style.top = (el.offsetTop + el.offsetHeight + 12) + 'px';
+  requestAnimationFrame(() => pop.classList.add('gor'));
+}
+document.addEventListener('click', e => {
+  if (!$('.gv2-fp')) return;
+  if (e.target.closest('.gv2-fp') || e.target.closest('.gv2-fd')) return;
+  gvFiltreKapat();
+}, true);
+
+/* Sohbetten "bu kişinin görevleri" (v0.368.0): Görevler ekranı o kişiye
+   süzülmüş açılır; Görevler'den çıkınca eski filtreler geri gelir. Geri
+   oku tarayıcı geçmişiyle aynı yazışmaya döner. */
+let GV_DON = null;
+function gvKisiGoster(kisiId) {
+  if (!GV_DON) GV_DON = { sekme: GV_SEKME, suz: GV_SUZ, kisi: GV_KISI, proje: GV_PROJE };
+  GV_SEKME = AUTH.yonetici ? 'ekip' : 'ben';
+  GV_SUZ = 'acik'; GV_KISI = kisiId; GV_PROJE = null;
+  location.hash = '#/gorevler';
+}
+function gvDonusKontrol(key) {
+  if (!GV_DON || key === 'gorevler') return;
+  GV_SEKME = GV_DON.sekme; GV_SUZ = GV_DON.suz; GV_KISI = GV_DON.kisi; GV_PROJE = GV_DON.proje;
+  GV_DON = null;
+}
+
+function gvSekmeSec(k) {
+  if (k === GV_SEKME) return;
+  GV_SEKME = k === 'ekip' ? 'ekip' : 'ben';
+  try { localStorage.setItem('ns.gvSekme', GV_SEKME); } catch (h) {}
+  const d = $('.gv2 .pjs'); if (d) d.classList.toggle('atolye', GV_SEKME === 'ekip');
+  setTimeout(render, 170);
+}
+
+/* ==========================================================================
    GÖREV KARTI
    ========================================================================== */
 
@@ -13969,115 +14397,173 @@ function onaySor({ baslik, mesaj, buton = 'Sil' }) {
 /* Aynı pencere iki iş görüyor: yeni görev vermek ve var olanı düzenlemek.
    `duzenle` doluysa alanlar o görevle doluyor ve Gönder yerine Kaydet
    çıkıyor — yanlış yazılan tarihi düzeltmek için ayrı bir ekran gereksizdi. */
+/* ---------- Görev taslağı: kenara al, sonra devam et (v0.365.0) ----------
+   Pencere sağa kaydırılınca ya da ⇥ ile kenara alınınca yazılanlar bellekte
+   tutulur, sağ kenarda kırmızı oklu bir düğme kalır. Düğme ekran
+   değişince silinmesin diye #view'ün dışında, body'de duruyor. */
+let GM_TASLAK = null;
+function gmDugmeGoster() {
+  if (!GM_TASLAK || $('#gm-taslak')) return;
+  const b = document.createElement('button');
+  b.id = 'gm-taslak'; b.type = 'button';
+  b.setAttribute('aria-label', 'Yarım kalan görevi aç');
+  b.title = GM_TASLAK.baslik ? 'Taslak: ' + GM_TASLAK.baslik : 'Yarım kalan görev';
+  b.innerHTML = '<svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg><em></em>';
+  b.addEventListener('click', gmTaslakAc);
+  document.body.appendChild(b);
+}
+function gmDugmeKaldir() { const b = $('#gm-taslak'); if (b) b.remove(); }
+function gmTaslakAc() {
+  const t = GM_TASLAK; if (!t) return;
+  gorevVerAc('', null, { taslak: t });
+}
+
 function gorevVerAc(secili = '', duzenle = null, on = {}) {
+  /* Kenara alınmış bir taslak varsa yeni pencere yerine o açılır:
+     yazılanlar kaybolmasın (v0.365.0). */
+  if (!on.taslak && GM_TASLAK) return gmTaslakAc();
+  const tas = on.taslak || null;
+  if (tas) { secili = tas.kisi; duzenle = tas.duzenle; on = Object.assign({}, tas.on, { taslak: tas }); }
+  gmDugmeKaldir();
   modalHepsiniKapat();
   const ben = AUTH.user ? AUTH.user.id : '';
   const kisiler = (DB.kisilerHepsi || DB.kisiler || []).filter(k => k.aktif !== false);
   const projeler = DB.projeler.filter(p => !p.arsiv && !cekirdekMi(p));
+  if (!kisiler.length) { toast('Önce Ekip ekranından üye ekle.', 'uyari'); return; }
 
-  if (!kisiler.length) {
-    toast('Önce Ekip ekranından üye ekle.', 'uyari');
-    return;
+  /* v0.364.0 · onaylı taslak: ortada açılan pencere, numaralı adımlar —
+     1 Proje (arama kutulu seçici, Projesiz ve Nizam Studio da var),
+     2 Başlık, 3 Görev, 4 Bitiş tarihi (hızlı düğmeler), 5 Kime. */
+  const ilkKisi = (kisiler.find(k => k.id === (tas ? tas.kisi : duzenle ? duzenle.atanan : secili))
+    || kisiler.find(k => k.id === ben) || kisiler[0]).id;
+  const ilkSecim = tas ? tas.secim : duzenle
+    ? (duzenle.proje_id ? duzenle.proje_id : (duzenle.konu === 'studio' ? ':studio' : ':genel'))
+    : (on.proje || '');
+
+  const iso = d => { const z = n => String(n).padStart(2, '0'); return d.getFullYear() + '-' + z(d.getMonth() + 1) + '-' + z(d.getDate()); };
+  const gunSonra = n => { const d = new Date(); d.setDate(d.getDate() + n); return iso(d); };
+  const haftaSonu = () => { const d = new Date(); d.setDate(d.getDate() + ((7 - d.getDay()) % 7 || 7) - 2); return iso(d); };
+  const hizli = [['Bugün', gunSonra(0)], ['Yarın', gunSonra(1)], ['Bu hafta', haftaSonu()]];
+
+  const secLogo = id => {
+    if (id === ':genel') return `<span class="gm-lo bos">—</span>`;
+    if (id === ':studio') return `<span class="gm-lo" style="background:#fff url(logo.png) center/60% auto no-repeat;border:1px solid #ededf0"></span>`;
+    const p = DB.proje(id); const r = p ? pjRenk(p) : ['#ddd', '#aaa'];
+    return `<span class="gm-lo" style="background:linear-gradient(140deg,${r[0]},${r[1]})">${esc(basHarf(p ? p.firma || projeAdi(p) : '?'))}</span>`;
+  };
+  const secYazi = id => id === ':genel' ? ['Projesiz', 'Genel iş, bir projeye bağlı değil']
+    : id === ':studio' ? ['Nizam Studio', 'Studio\'nun kendisi']
+    : (p => p ? [basHarfleriBuyuk(p.firma || projeAdi(p)), modulAdi(p) || p.sektor || ''] : ['Proje seç…', ''])(DB.proje(id));
+  const secHtml = id => id ? `${secLogo(id)}<span class="gm-cb-yz"><b>${esc(secYazi(id)[0])}</b><i>${esc(secYazi(id)[1])}</i></span>`
+    : `<span class="gm-cb-yz"><b class="gm-ph">Proje seç…</b></span>`;
+
+  const grupla = VITRIN_GRUPLAR.map(gp => {
+    const l = projeler.filter(p => !denemeMi(p) && !klonMi(p) && vtGrup(p) === gp.id);
+    return l.length ? `<div class="gm-gb">${esc(gp.ad.replace(/ Projeleri?$/, '').toLocaleUpperCase('tr'))}</div>` + l.map(p => gmSecenek(p.id)).join('') : '';
+  }).join('') + (() => { const l = projeler.filter(p => denemeMi(p) || klonMi(p));
+    return l.length ? `<div class="gm-gb">ATÖLYE</div>` + l.map(p => gmSecenek(p.id)).join('') : ''; })();
+  function gmSecenek(id) {
+    const [ad, alt] = secYazi(id);
+    return `<button type="button" class="gm-o" data-gm-p="${id}" data-ara="${esc((ad + ' ' + alt).toLocaleLowerCase('tr'))}">
+      ${secLogo(id)}<span class="gm-cb-yz"><b>${esc(ad)}</b><i>${esc(alt)}</i></span><span class="gm-tik">✓</span></button>`;
   }
 
-  /* Ekip kartının menüsünden ya da düzenlemeden gelindiyse o üye seçili. */
-  const ilk = kisiler.find(k => k.id === (duzenle ? duzenle.atanan : secili)) || kisiler[0];
-  const ilkKonu = duzenle
-    ? (duzenle.proje_id ? 'proje' : (duzenle.konu === 'studio' ? 'studio' : 'genel'))
-    : (on.proje ? 'proje' : 'genel');
-  /* Proje sayfasından ya da sohbetten gelince proje / yazı hazır dolar. */
-  const seciliProje = duzenle ? duzenle.proje_id : on.proje;
-
-  modalAc(`
-    ${modalBaslik(ICON.check,
-      duzenle ? 'Görevi düzenle' : 'Görev ver',
-      duzenle ? 'Yanlış yazdığın alanı düzelt, kaydet.'
-              : 'Ekipten birine iş ver, bitiş tarihini yaz.')}
-
-    <span class="gf-et" style="margin-bottom:8px">Kime</span>
-    <div class="gvr-kisiler">
-      ${kisiler.map(k => `
-        <button class="gvr-k ${k.id === ilk.id ? 'on' : ''}" type="button" data-gvr-kisi="${k.id}">
-          <span class="gv-foto ${k.foto ? 'resimli' : ''}"
-                ${k.foto ? `style="background-image:url('${esc(k.foto)}')"` : ''}>
-            <b>${esc(basHarf(k.ad || k.ad_soyad || '?'))}</b></span>
-          <i>${esc(k.ad || k.ad_soyad || 'İsimsiz')}${k.id === ben ? ' (sen)' : ''}</i>
-        </button>`).join('')}
+  const adim = (n, ad, ic) => `<div class="gm-alan"><div class="gm-et"><em>${n}</em>${ad}</div>${ic}</div>`;
+  const perde = modalAc(`
+    <div class="gm-bas">
+      <span class="gm-bas-ik">${duzenle ? svg(ICON.kalem, 20) : '+'}</span>
+      <span><b>${duzenle ? 'Görevi düzenle' : 'Yeni görev'}</b><i>${duzenle ? 'Değiştir, kaydet' : '5 adımda hazır'}</i></span>
+      <button type="button" class="gm-x gm-kenar" data-gvr="kenar" aria-label="Kenara al" title="Kenara al — Studio'ya bakıp sonra devam et">
+        <svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6M19 5v14"/></svg></button>
+      <button type="button" class="gm-x" data-gvr="iptal" aria-label="Kapat">✕</button>
     </div>
-
-    <span class="gf-et" style="margin:16px 0 8px">Konu</span>
-    <div class="gvr-konu">
-      ${[['genel', 'Genel', ''], ['studio', 'Nizam Studio', ''],
-         ['proje', 'Bir proje hakkında', ' genis']].map(([a, ad, ek]) => `
-        <button class="gvr-t${ek}${ilkKonu === a ? ' on' : ''}" type="button"
-                data-gvr-konu="${a}">${ad}</button>`).join('')}
+    <div class="gm-govde">
+      ${adim(1, 'Proje', `<div class="gm-cb-sar">
+        <button type="button" class="gm-cb" data-gvr="proje">${secHtml(ilkSecim)}<span class="gm-ok">⌄</span></button>
+        <div class="gm-ac" hidden>
+          <label class="gm-ara">🔍<input type="search" placeholder="Proje ara" autocomplete="off"></label>
+          <div class="gm-ac-liste">${gmSecenek(':genel')}${gmSecenek(':studio')}<div class="gm-cz"></div>${grupla}</div>
+        </div></div>`)}
+      ${adim(2, 'Başlık', `<input class="gm-inp" type="text" id="gvr-baslik" maxlength="90" autocomplete="off"
+          value="${esc(tas ? tas.baslik : duzenle ? duzenle.baslik || '' : on.baslik || '')}" placeholder="Görev tek cümlede ne?">`)}
+      ${adim(3, 'Görev', `<textarea class="gm-inp gm-ta" id="gvr-metin" rows="4" placeholder="Ne yapılacak? Birkaç cümle yeter…">${esc(tas ? tas.metin : duzenle ? duzenle.aciklama || '' : on.metin || '')}</textarea>`)}
+      ${adim(4, 'Bitiş tarihi', `<div class="gm-ch">
+          ${hizli.map(([ad, t]) => `<button type="button" data-gm-t="${t}">${ad}</button>`).join('')}
+          <label class="gm-tarih"><span>📅 <b id="gm-t-yazi">Tarih seç</b></span><input type="date" id="gvr-bitis" value="${esc(tas ? tas.bitis || '' : duzenle ? duzenle.bitis || '' : '')}"></label>
+        </div>`)}
+      ${adim(5, 'Kime', `<div class="gm-kisiler">${kisiler.map(k => `
+          <button type="button" class="gm-k ${k.id === ilkKisi ? 'on' : ''}" data-gvr-kisi="${k.id}">
+            ${shAvatar(k.ad_soyad || k.ad || '?', '', k)}<i>${k.id === ben ? 'Sen' : esc((k.ad || k.ad_soyad || 'İsimsiz').split(' ')[0])}</i></button>`).join('')}</div>`)}
+      <div class="gm-ekler"><div class="gek-liste" id="gvr-ekler"></div>
+        <button class="gm-ek" type="button" data-gvr="dosya">＋ Dosya ekle <em>isteğe bağlı</em></button></div>
     </div>
-    <label class="gf gvr-proje" ${ilkKonu === 'proje' ? '' : 'hidden'}>
-      <span class="gf-kutu">${svg(ICON.folder, 17)}
-        <select id="gvr-proje">
-          ${projeler.map(p => `<option value="${p.id}"
-            ${seciliProje === p.id ? 'selected' : ''}>${esc(projeAdi(p))}</option>`).join('')}
-        </select>
-        ${svg(ICON.chevron, 15)}</span>
-    </label>
-
-    <label class="gf">
-      <span class="gf-et">Başlık</span>
-      <span class="gf-kutu">${svg(ICON.etiket, 17)}
-        <input type="text" id="gvr-baslik" maxlength="90" autocomplete="off"
-               value="${esc(duzenle ? duzenle.baslik || '' : on.baslik || '')}"
-               placeholder="Örn. Güvenlik kontrolü sayfası tasarımı"></span>
-    </label>
-
-    <label class="gf">
-      <span class="gf-et">Görev</span>
-      <textarea class="anl-kutu kisa" id="gvr-metin" rows="4"
-        placeholder="Ne yapılacak? Konuşur gibi yaz.">${esc(duzenle ? duzenle.aciklama || '' : on.metin || '')}</textarea>
-    </label>
-
-    <label class="gf">
-      <span class="gf-et">Bitiş tarihi</span>
-      <span class="gf-kutu">${svg(ICON.takvim, 17)}
-        <input type="date" id="gvr-bitis" value="${esc(duzenle ? duzenle.bitis || '' : '')}"></span>
-    </label>
-
-    <div class="gf">
-      <span class="gf-et">${duzenle ? 'Yeni ek' : 'Ekler'} <em>isteğe bağlı</em></span>
-      <div class="gek-liste" id="gvr-ekler"></div>
-      <button class="gek-ekle" type="button" data-gvr="dosya">
-        ${svg(ICON.folder, 15)} Dosya ekle</button>
-    </div>
-
-    <div class="modal-alt">
-      <button class="btn btn-ghost" data-gvr="iptal" type="button">Vazgeç</button>
-      <button class="btn btn-primary" data-gvr="gonder" type="button">
-        <span>${duzenle ? 'Kaydet' : 'Gönder'}</span></button>
+    <div class="gm-alt">
+      <button class="gm-bt g" data-gvr="iptal" type="button">Vazgeç</button>
+      <button class="gm-bt a" data-gvr="gonder" type="button">${duzenle ? 'Kaydet' : 'Görevi oluştur'}</button>
     </div>`, kutu => {
-    let kisi = ilk.id, konu = ilkKonu;
-    /* Dosyalar görev kaydı açıldıktan SONRA yükleniyor (yolu görev
-       kimliğinden türüyor); o yüzden burada yalnız bekletiliyor. */
-    const dosyalar = [];
-    /* Resimlerin küçük önizlemesi: adres dosya seçilince üretiliyor,
-       satır silinince geri veriliyor. */
-    const onizleme = new Map();
+    let kisi = ilkKisi, secim = ilkSecim;
+    const dosyalar = tas ? tas.dosyalar.slice() : [], onizleme = new Map();
+    const resimMi0 = d => /^image\//.test((d && d.type) || '');
+    dosyalar.forEach(d => { if (resimMi0(d)) onizleme.set(d, URL.createObjectURL(d)); });
+    /* Panel: sağdan kayarak girer, kayarak çıkar (v0.366.0). */
+    /* Giriş animasyonu bitince kalkmalı: "both" dolgusu elle verilen
+       kaydırmayı (sürükleme, çıkış) eziyordu. */
+    kutu.addEventListener('animationend', () => { kutu.style.animation = 'none'; }, { once: true });
+    kutu._kapanis = bitti => {
+      kutu.style.animation = 'none';
+      void kutu.offsetWidth;
+      kutu.style.transition = 'transform .3s cubic-bezier(.32,.72,0,1)';
+      kutu.style.transform = 'translate3d(105%,0,0)';
+      const pr = kutu.parentElement; if (pr) { pr.style.transition = 'opacity .3s'; pr.style.opacity = '0'; }
+      setTimeout(bitti, 290);
+    };
     const resimMi = d => /^image\//.test((d && d.type) || '');
+    const tarihGoster = () => {
+      const v = $('#gvr-bitis', kutu).value;
+      let bulundu = false;
+      $$('[data-gm-t]', kutu).forEach(b => { const on = !bulundu && b.dataset.gmT === v; if (on) bulundu = true; b.classList.toggle('on', on); });
+      const hizliMi = hizli.some(h => h[1] === v);
+      $('.gm-tarih', kutu).classList.toggle('on', !!v && !hizliMi);
+      $('#gm-t-yazi', kutu).textContent = v && !hizliMi ? svTarih(v) : 'Tarih seç';
+    };
+    $$('[data-gm-t]', kutu).forEach(b => b.addEventListener('click', () => {
+      const alan = $('#gvr-bitis', kutu);
+      alan.value = alan.value === b.dataset.gmT ? '' : b.dataset.gmT; tarihGoster();
+    }));
+    $('#gvr-bitis', kutu).addEventListener('change', tarihGoster);
+    tarihGoster();
+
+    /* Proje seçici */
+    const ac = $('.gm-ac', kutu), cb = $('.gm-cb', kutu);
+    const isaretle = () => $$('[data-gm-p]', kutu).forEach(o => o.classList.toggle('on', o.dataset.gmP === secim));
+    isaretle();
+    cb.addEventListener('click', () => {
+      ac.hidden = !ac.hidden; cb.classList.toggle('gm-acik', !ac.hidden);
+      if (!ac.hidden) setTimeout(() => $('input', ac).focus(), 30);
+    });
+    $('input', ac).addEventListener('input', e => {
+      const q = e.target.value.trim().toLocaleLowerCase('tr');
+      $$('[data-gm-p]', ac).forEach(o => { o.hidden = !!q && !o.dataset.ara.includes(q); });
+      $$('.gm-gb, .gm-cz', ac).forEach(x => { x.hidden = !!q; });
+    });
+    $$('[data-gm-p]', kutu).forEach(o => o.addEventListener('click', () => {
+      secim = o.dataset.gmP; cb.innerHTML = secHtml(secim) + '<span class="gm-ok">⌄</span>';
+      ac.hidden = true; cb.classList.remove('gm-acik'); isaretle();
+      setTimeout(() => { const bs = $('#gvr-baslik', kutu); if (!bs.value) bs.focus(); }, 30);
+    }));
 
     const ekleriCiz = () => {
       $('#gvr-ekler', kutu).innerHTML = dosyalar.map((d, i) => `
-        <div class="gek">
-          <span class="gek-ik${resimMi(d) ? ' gek-on' : ''}">${resimMi(d)
+        <div class="gek"><span class="gek-ik${resimMi(d) ? ' gek-on' : ''}">${resimMi(d)
             ? `<img src="${onizleme.get(d)}" alt="">` : svg(ICON.dosya, 16)}</span>
           <span class="gek-yz"><b>${esc(d.name)}</b></span>
-          <button class="gek-sil" type="button" data-gvr-sil="${i}"
-                  aria-label="Kaldır">${svg(ICON.kapat, 14)}</button>
-        </div>`).join('');
+          <button class="gek-sil" type="button" data-gvr-sil="${i}" aria-label="Kaldır">${svg(ICON.kapat, 14)}</button></div>`).join('');
       $$('[data-gvr-sil]', kutu).forEach(b => b.addEventListener('click', () => {
         const [cikan] = dosyalar.splice(Number(b.dataset.gvrSil), 1);
         if (onizleme.has(cikan)) { URL.revokeObjectURL(onizleme.get(cikan)); onizleme.delete(cikan); }
         ekleriCiz();
       }));
     };
-
     $('[data-gvr="dosya"]', kutu).addEventListener('click', () => {
       const alan = document.createElement('input');
       alan.type = 'file'; alan.multiple = true; alan.style.display = 'none';
@@ -14092,54 +14578,97 @@ function gorevVerAc(secili = '', duzenle = null, on = {}) {
       });
       alan.click();
     });
-
     $$('[data-gvr-kisi]', kutu).forEach(b => b.addEventListener('click', () => {
       kisi = b.dataset.gvrKisi;
       $$('[data-gvr-kisi]', kutu).forEach(x => x.classList.toggle('on', x === b));
     }));
-    $$('[data-gvr-konu]', kutu).forEach(b => b.addEventListener('click', () => {
-      konu = b.dataset.gvrKonu;
-      $$('[data-gvr-konu]', kutu).forEach(x => x.classList.toggle('on', x === b));
-      $('.gvr-proje', kutu).hidden = konu !== 'proje';
-    }));
+    $$('[data-gvr="iptal"]', kutu).forEach(b => b.addEventListener('click', () => { GM_TASLAK = null; modalKapat(); }));
 
-    $('[data-gvr="iptal"]', kutu).addEventListener('click', modalKapat);
+    /* Kenara al: düğmeyle ya da pencereyi sağa kaydırarak. */
+    const kenaraAl = () => {
+      GM_TASLAK = { secim, kisi, duzenle, on: { proje: on.proje },
+        baslik: $('#gvr-baslik', kutu).value, metin: $('#gvr-metin', kutu).value,
+        bitis: $('#gvr-bitis', kutu).value, dosyalar: dosyalar.slice() };
+      kutu._kapanis(() => { const pr = kutu.parentElement; if (pr) pr.remove(); gmDugmeGoster(); });
+      kutu._kapaniyor = true;
+    };
+    $('[data-gvr="kenar"]', kutu).addEventListener('click', kenaraAl);
+    let x0 = null, y0 = 0, dx = 0, yatay = null;
+    kutu.addEventListener('touchstart', e => {
+      if (e.target.closest('input, textarea, .gm-kisiler, .gm-ac-liste')) { x0 = null; return; }
+      x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; dx = 0; yatay = null;
+    }, { passive: true });
+    kutu.addEventListener('touchmove', e => {
+      if (x0 === null) return;
+      const ddx = e.touches[0].clientX - x0, ddy = e.touches[0].clientY - y0;
+      if (yatay === null && (Math.abs(ddx) > 8 || Math.abs(ddy) > 8)) yatay = Math.abs(ddx) > Math.abs(ddy) * 1.3;
+      if (!yatay) return;
+      dx = Math.max(0, ddx);
+      kutu.style.transition = 'none';
+      kutu.style.transform = `translate3d(${dx}px,0,0)`;
+      kutu.style.opacity = String(Math.max(.4, 1 - dx / 500));
+    }, { passive: true });
+    kutu.addEventListener('touchend', () => {
+      if (x0 === null || !yatay) { x0 = null; return; }
+      x0 = null;
+      if (dx > 90) return kenaraAl();
+      kutu.style.transition = 'transform .25s cubic-bezier(.32,.72,0,1), opacity .25s';
+      kutu.style.transform = ''; kutu.style.opacity = '';
+    });
     $('[data-gvr="gonder"]', kutu).addEventListener('click', async () => {
       const baslik = $('#gvr-baslik', kutu).value.trim();
       const metin  = $('#gvr-metin', kutu).value.trim();
       const bitis  = $('#gvr-bitis', kutu).value || null;
-      const proje  = konu === 'proje' ? $('#gvr-proje', kutu).value : null;
-
-      if (!baslik) { toast('Başlığı yaz — görev tek cümlede ne?'); return; }
-      if (konu === 'proje' && !proje) { toast('Proje seç ya da «Genel» de.'); return; }
-
+      if (!secim) { toast('Önce proje seç ya da «Projesiz» de.'); cb.click(); return; }
+      if (!baslik) { toast('Başlığı yaz — görev tek cümlede ne?'); $('#gvr-baslik', kutu).focus(); return; }
+      const proje = secim.charAt(0) === ':' ? null : secim;
+      const konu = proje ? 'proje' : secim === ':studio' ? 'studio' : 'genel';
       const dugme = $('[data-gvr="gonder"]', kutu);
       dugme.disabled = true;
       try {
         const id = duzenle
-          ? (await DB.gorevGuncelle(duzenle.id, { proje_id: proje, baslik, aciklama: metin,
-                                                  atanan: kisi, bitis, konu }), duzenle.id)
-          : await DB.gorevOlustur({ proje_id: proje, baslik, aciklama: metin,
-                                    atanan: kisi, bitis, konu,
-                                    sira: gorevSonrakiSira(kisi) });
+          ? (await DB.gorevGuncelle(duzenle.id, { proje_id: proje, baslik, aciklama: metin, atanan: kisi, bitis, konu }), duzenle.id)
+          : await DB.gorevOlustur({ proje_id: proje, baslik, aciklama: metin, atanan: kisi, bitis, konu, sira: gorevSonrakiSira(kisi) });
         for (const d of dosyalar) {
           try { await DB.gorevEkYukle(id, d); }
           catch (h) { toast(d.name + ' yüklenemedi: ' + h.message, 'uyari'); }
         }
-        modalKapat(); sayaclariYaz(); render();
-        toast(duzenle ? 'Görev güncellendi.'
-                      : DB.kisiAdi(kisi) + ' kişisine görev verildi.', 'basari');
+        GM_TASLAK = null; modalKapat(); sayaclariYaz(); render();
+        toast(duzenle ? 'Görev güncellendi.' : (kisi === ben ? 'Görev oluşturuldu.' : DB.kisiAdi(kisi) + ' kişisine görev verildi.'), 'basari');
       } catch (h) { toast(h.message, 'hata'); dugme.disabled = false; }
     });
-    setTimeout(() => $('#gvr-baslik', kutu).focus(), 60);
-  });
+    if (dosyalar.length) ekleriCiz();
+    if (!tas) setTimeout(() => $('#gvr-baslik', kutu).focus(), 420);
+  }, 'gm-modal');
+  perde.classList.add('gm-perde');
+}
+
+/* Sağdan kayan panel davranışı (v0.369.0): giriş animasyonu bitince kalkar,
+   kapanış kayarak olur. Görev ve Yeni görev panelleri ortak kullanır. */
+function panelKayar(kutu) {
+  kutu.addEventListener('animationend', () => { kutu.style.animation = 'none'; }, { once: true });
+  kutu._kapanis = bitti => {
+    kutu.style.animation = 'none'; void kutu.offsetWidth;
+    kutu.style.transition = 'transform .3s cubic-bezier(.32,.72,0,1)';
+    kutu.style.transform = 'translate3d(105%,0,0)';
+    const pr = kutu.parentElement; if (pr) { pr.style.transition = 'opacity .3s'; pr.style.opacity = '0'; }
+    setTimeout(bitti, 290);
+  };
 }
 
 function gorevKartiAc(id) {
+  /* Aynı görev yeniden çiziliyorsa (bir eylemden sonra) panel kaymasın. */
+  const zaten = !!$('.gd2-modal');
   modalHepsiniKapat();
   const g = DB.gorev(id);
   if (!g) { toast('Görev bulunamadı.'); return; }
-  modalAc(gorevKartiHtml(g), kutu => gorevKartiBagla(kutu, g.id), 'genis');
+  const perde = modalAc(gorevKartiHtml(g), kutu => {
+    if (zaten) kutu.classList.add('sessiz');
+    panelKayar(kutu);
+    gorevKartiBagla(kutu, g.id);
+  }, 'gm-modal gd2-modal');
+  perde.classList.add('gm-perde');
+  if (zaten) perde.classList.add('sessiz');
 }
 
 function gorevKartiHtml(g) {
@@ -14204,67 +14733,88 @@ function gorevKartiHtml(g) {
       <button class="sayfa-dug ikincil" type="button" data-gk="duzenle">
         ${svg(ICON.kalem, 15)} Görevi düzenle</button>` : '';
 
+  /* v0.369.0 · onaylı taslak: çizgili başlık + aşama çubuğu, dört bilgi
+     kartı, metin kartları; eylem düğmeleri altta sabit. */
+  const sira = ['verildi', 'plan', 'yapiliyor', 'kontrol', 'bitti'];
+  const simdi = { plansiz: 1, planda: 1, basladi: 2, bitirdi: 3, onaylandi: 4 }[asama] ?? 0;
+  const yol = ['Verildi', 'Plan', 'Yapılıyor', 'Kontrol', 'Bitti'].map((ad, i) =>
+    `<div class="${i < simdi ? 'b' : i === simdi ? 'on' : ''}"><u></u><i>${ad}</i></div>`).join('');
+  const kisiKart = (etiket, kimId, alt) => {
+    const k = DB.kisi ? DB.kisi(kimId) : null;
+    const ad = DB.kisiAdi ? DB.kisiAdi(kimId) : '';
+    return `<div class="gd2-k"><small>${etiket}</small>
+      <b>${shAvatar(ad || '?', 'kucuk gd2-av', k)}<span>${esc(ad || 'Bilinmiyor')}</span></b>${alt ? `<i>${esc(alt)}</i>` : ''}</div>`;
+  };
+  const prLogo = pr ? (() => { const r = pjRenk(pr); return `<span class="gm-lo gd2-lo" style="background:linear-gradient(140deg,${r[0]},${r[1]})">${esc(basHarf(pr.firma || projeAdi(pr)))}</span>`; })()
+    : g.konu === 'studio' ? `<span class="gm-lo gd2-lo" style="background:#fff url(logo.png) center/60% auto no-repeat;border:1px solid #ededf0"></span>`
+    : `<span class="gm-lo gd2-lo bos">—</span>`;
+  /* Ana düğme kırmızı ve tam genişlik; ikincil düğmeler yan yana. İpucu
+     yazıları altta küçük. */
+  const tmp = document.createElement('div');
+  tmp.innerHTML = dugme + duzenleDug;
+  const anaD = [...tmp.querySelectorAll('.sayfa-dug.bitir')].map(x => x.outerHTML).join('');
+  const ikD = [...tmp.querySelectorAll('.sayfa-dug.ikincil')].map(x => x.outerHTML).join('');
+  const ipucu = [...tmp.querySelectorAll('.ipucu')].map(x => x.outerHTML).join('');
+  const altVar = anaD || ikD || ipucu;
+
   return `
-    ${modalBaslik(ICON.check, g.baslik, '')}
-    <span class="gv-durum ${durum.sinif} buyuk">${esc(durum.ad)}</span>
-
-    ${dugme || duzenleDug ? `<div class="gd-eylem">${dugme}${duzenleDug}</div>` : ''}
-
-    <div class="gd-liste gd-izgara">
-      <div class="gd-s">
-        <span class="gd-et">${svg(ICON.folder, 14)} Proje</span>
-        <span class="gd-dg"><b>${esc(gorevKonuAdi(g))}</b></span>
-      </div>
-      <div class="gd-s">
-        <span class="gd-et">${svg(ICON.takvim, 14)} Bitiş tarihi</span>
-        <span class="gd-dg"><b>${g.bitis ? esc(gvTarih(g.bitis)) : 'yok'}</b>
-          ${sure ? `<em class="gv-sure ${sure.sinif}">${svg(ICON.saat, 13)}${esc(sure.yazi)}</em>` : ''}</span>
-      </div>
-      ${kisiSatiri('Veren', g.olusturan, pzZaman ? pzZaman(g.olusturuldu) : '')}
-      ${kisiSatiri('Alan', g.atanan, '')}
+    <div class="gm-bas gd2-bas">
+      <div class="gd2-s"><span class="gd2-no">${esc(gorevNo(g))}</span>
+        <span class="gv-durum ${durum.sinif}">${esc(durum.ad)}</span>
+        <button type="button" class="gm-x" data-gk="kapat" aria-label="Kapat">✕</button></div>
+      <h2>${esc(g.baslik || 'Görev')}</h2>
+      <div class="gd2-yol">${yol}</div>
     </div>
+    <div class="gm-govde gd2-govde">
+      <div class="gd2-iz">
+        <div class="gd2-k"><small>Proje</small><b>${prLogo}<span>${esc(gorevKonuAdi(g))}</span></b></div>
+        <div class="gd2-k"><small>Bitiş</small><b><span>${g.bitis ? esc(gvTarih(g.bitis)) : 'Yok'}</span></b>
+          ${sure ? `<i class="gd2-sure ${sure.sinif}">◷ ${esc(sure.yazi)}</i>` : ''}</div>
+        ${kisiKart('Veren', g.olusturan, pzZaman ? pzZaman(g.olusturuldu) : '')}
+        ${kisiKart('Alan', g.atanan, '')}
+      </div>
 
-    ${g.aciklama ? `<span class="label">Görev</span>
-      <div class="gd-metin">${esc(g.aciklama)}</div>` : ''}
+      ${g.aciklama ? `<div class="gd2-bb">Görev</div><div class="gd2-mt">${esc(g.aciklama)}</div>` : ''}
 
-    ${String(g.plan || '').trim() ? `
-      <span class="label">Nasıl yapılacak${g.plan_onay ? ' · onaylandı' : ''}</span>
-      <div class="gd-metin">${esc(g.plan)}</div>` : ''}
+      ${String(g.plan || '').trim() ? `
+        <div class="gd2-bb">Nasıl yapılacak <em class="${g.plan_onay ? 'ok' : ''}">${g.plan_onay ? 'Onaylandı' : 'Onay bekliyor'}</em></div>
+        <div class="gd2-mt plan">${esc(g.plan)}</div>` : ''}
 
-    ${(g.ekler || []).length ? `<details class="gd-kat">
-      <summary>${svg(ICON.dosya, 15)} Ekler (${g.ekler.length})</summary>
-      <div class="gek-liste">
-        ${g.ekler.map(x => {
-          const resim = /^image\//.test(x.tur || '');
-          return `
-          <button class="gek" type="button" data-gk="ek" data-deger="${esc(x.yol)}">
-            <span class="gek-ik${resim ? ' gek-on' : ''}">${resim
-              ? `<img data-gek-yol="${esc(x.yol)}" alt="">` : svg(ICON.dosya, 16)}</span>
-            <span class="gek-yz"><b>${esc(x.ad)}</b></span>
-            <span class="gek-in">${svg(ICON.ice, 15)}</span>
-          </button>`; }).join('')}
-      </div></details>` : ''}
+      ${(g.ekler || []).length ? `<details class="gd2-ac">
+        <summary>${svg(ICON.dosya, 15)} Ekler <b>${g.ekler.length}</b><span>›</span></summary>
+        <div class="gek-liste">
+          ${g.ekler.map(x => {
+            const resim = /^image\//.test(x.tur || '');
+            return `
+            <button class="gek" type="button" data-gk="ek" data-deger="${esc(x.yol)}">
+              <span class="gek-ik${resim ? ' gek-on' : ''}">${resim
+                ? `<img data-gek-yol="${esc(x.yol)}" alt="">` : svg(ICON.dosya, 16)}</span>
+              <span class="gek-yz"><b>${esc(x.ad)}</b></span>
+              <span class="gek-in">${svg(ICON.ice, 15)}</span>
+            </button>`; }).join('')}
+        </div></details>` : ''}
 
-    ${hareket.length ? `<details class="gd-kat">
-      <summary>${svg(ICON.saat, 15)} Geçmiş (${hareket.length})</summary>
-      <div class="gd-gecmis">
-        ${hareket.map(h => `
-          <div class="gd-h">
-            <span class="gd-h-nokta"></span>
-            <span class="gd-h-yz">
-              <b>${esc(GOREV_HAREKET[h.tip] || HAREKET_ADI[h.tip] || h.tip)}</b>
-              <i>${esc(DB.kisiAdi(h.kim) || '')}${h.notu ? ' — ' + esc(h.notu) : ''}</i>
-            </span>
-            <span class="gd-h-zaman">${esc(pzZaman ? pzZaman(h.olusturuldu) : '')}</span>
-          </div>`).join('')}
-      </div></details>` : ''}
+      ${hareket.length ? `<details class="gd2-ac">
+        <summary>${svg(ICON.saat, 15)} Geçmiş <b>${hareket.length}</b><span>›</span></summary>
+        <div class="gd-gecmis">
+          ${hareket.map(h => `
+            <div class="gd-h">
+              <span class="gd-h-nokta"></span>
+              <span class="gd-h-yz">
+                <b>${esc(GOREV_HAREKET[h.tip] || HAREKET_ADI[h.tip] || h.tip)}</b>
+                <i>${esc(DB.kisiAdi(h.kim) || '')}${h.notu ? ' — ' + esc(h.notu) : ''}</i>
+              </span>
+              <span class="gd-h-zaman">${esc(pzZaman ? pzZaman(h.olusturuldu) : '')}</span>
+            </div>`).join('')}
+        </div></details>` : ''}
 
-    ${veren || AUTH.yonetici ? `
-      <button class="fn-btn sil" type="button" data-gk="sil" style="margin-top:12px">
-        ${svg(ICON.cop, 13)} Görevi sil</button>` : ''}
-    <div class="modal-alt">
-      <button class="btn btn-ghost" data-gk="kapat" type="button">Kapat</button>
-    </div>`;
+      ${veren || AUTH.yonetici ? `<button class="gd2-sil" type="button" data-gk="sil">${svg(ICON.cop, 14)} Görevi sil</button>` : ''}
+    </div>
+    ${altVar ? `<div class="gm-alt gd2-alt">
+      ${anaD}
+      ${ikD ? `<div class="gd2-ik">${ikD}</div>` : ''}
+      ${ipucu}
+    </div>` : ''}`;
 }
 
 function gorevKartiBagla(kutu, id) {
@@ -15807,8 +16357,21 @@ async function eylemCalistir(el) {
   if (e === 'sihirbaz')  return sihirbaziAc();
   if (e === 'tazele')    return veriTazele();
   if (e === 'projelere') { location.hash = '#/projeler'; return; }
-  if (e === 'proje-ac')  { location.hash = '#/projeler/' + id; return; }
+  if (e === 'proje-ac')  {
+    const kart = el.closest('.vt-pos, .vt-sl');
+    if (kart && vtGecisVar()) return paIleriAk(id, kart);
+    location.hash = '#/projeler/' + id; return;
+  }
   if (e === 'pz-proje-sec') return pzProjeSecAc();
+  if (e === 'p3-ac')     return p3Ac(el);
+  if (e === 'pj-sekme')  return pjSekmeSec(id);
+  if (e === 'vt-hero')   { vtHeroGit(id); vtSayacKur(); return; }
+  if (e === 'sh-ac')     return shAc(id);
+  if (e === 'sh-kisi-ac')  return shKisiAc(el);
+  if (e === 'sh-kisi-sec') return shKisiSec(id);
+  if (e === 'sh-daha')     { SH_LIMIT += 30; render(); return; }
+  if (e === 'p3-git')    { p3Kapat(); location.hash = el.dataset.hedef; return; }
+  if (e === 'p3-onayla') { p3Kapat(); return gorevDurum(id, 'onaylandi'); }
   if (e === 'pz-proje-ac-kapa') return pzProjeAcKapa(el);
   if (e === 'pj-suzgec') { PJ_SUZGEC = id || 'hepsi'; render(); return; }
   if (e === 'pj-bolum')  { PJ_ACIK[id] = !PJ_ACIK[id]; render(); return; }
@@ -16060,6 +16623,11 @@ async function eylemCalistir(el) {
   }
 
   if (e === 'gorev-kova') { GOREV_KOVA = el.dataset.deger; return render(); }
+  if (e === 'gv-sekme')  return gvSekmeSec(id);
+  if (e === 'gv-suz')    { GV_SUZ = id; return render(); }
+  if (e === 'gv-filtre') return gvFiltreAc(el);
+  if (e === 'sohbet-gorevler') return gvKisiGoster(id);
+  if (e === 'gv-temizle') { GV_SUZ = 'acik'; GV_KISI = null; GV_PROJE = null; return render(); }
   if (e === 'gorev-ac')   return gorevKartiAc(el.dataset.id);
   if (e === 'gorev-ver')  return gorevVerAc();
   if (e === 'gorev-sirala') return gorevSiralaAc();
@@ -16934,7 +17502,14 @@ async function eylemCalistir(el) {
        düzenleniyor, arşiv de kullanılmıyordu. */
     const bitti = !!(proje.palet || {}).finalVerildi;
     const deneme = denemeMi(proje);
+    const vtGrupAd = (VITRIN_GRUPLAR.find(g => g.id === vtGrup(proje)) || {}).ad || '';
+    const vitrinde = AUTH.yonetici && PROJE_KOVASI.normal.sec(proje);
     const sec = await secenekSor(projeAdi(proje), [
+      ...(vitrinde ? [
+        { anahtar: 'vt-grup', ad: 'Vitrin grubu', ikon: ICON.katman || ICON.folder, alt: 'Şu an: ' + vtGrupAd },
+        { anahtar: 'vt-ana', ad: vtAnaMi(proje) ? 'Ana proje olmaktan çıkar' : 'Ana proje yap', ikon: ICON.bayrak,
+          alt: vtAnaMi(proje) ? 'Grubunda kardeş olarak durur' : 'Grubunun başında büyük afişle durur' },
+      ] : []),
       ...(AUTH.yonetici && !cekirdekMi(proje) ? [deneme
         ? { anahtar: 'gercege', ad: 'Gerçek projeye taşı', ikon: ICON.folder,
             alt: 'Proje «Projeler» bölümüne geçer' }
@@ -16949,6 +17524,21 @@ async function eylemCalistir(el) {
         alt: 'Her şeyi siler, geri gelmez', tehlike: true },
     ]);
     if (!sec) return;
+
+    if (sec === 'vt-grup') {
+      const g = await secenekSor('Vitrin grubu', VITRIN_GRUPLAR.map(x => ({
+        anahtar: x.id, ad: x.ad, ikon: ICON.folder, alt: x.id === vtGrup(proje) ? 'Şu anki grup' : '' })));
+      if (!g) return;
+      return isYap(() => DB.paletKaydet(proje.id, Object.assign({}, proje.palet || {},
+        { vitrin: Object.assign({}, vtAyar(proje), { grup: g }) })),
+        projeAdi(proje) + ' «' + (VITRIN_GRUPLAR.find(x => x.id === g) || {}).ad + '» grubuna alındı.');
+    }
+    if (sec === 'vt-ana') {
+      const ana = !vtAnaMi(proje);
+      return isYap(() => DB.paletKaydet(proje.id, Object.assign({}, proje.palet || {},
+        { vitrin: Object.assign({}, vtAyar(proje), { grup: vtGrup(proje), ana }) })),
+        projeAdi(proje) + (ana ? ' artık ana proje.' : ' artık kardeş proje.'));
+    }
 
     if (sec === 'gercege' || sec === 'denemeye') {
       const yeni = sec === 'gercege' ? 'gercek' : 'deneme';
@@ -18026,29 +18616,234 @@ function panelSelam() {
     </section>`;
 }
 
-/* Uyarı şeridi: yalnız bakılması gereken bir şey varsa görünür. Her proje
-   adı o projeye götürür; ayrıntı orada, Durum kutusunda. */
-function panelUyari(liste) {
-  if (!AUTH.yonetici) return '';
-  if (SURUM.durum === 'bos') setTimeout(() => surumTakipYukle(), 0);
-  yedekEslemeYukle();
-  const pj = liste.filter(p => !p.arsiv && !PROJE_KOVASI.klon.sec(p) && sunuculuMu(p));
-  const guv = pj.filter(p => /^[kb]$/.test(pdGuvenlik(p).s));
-  const yed = pj.filter(p => /^[kb]$/.test(pdYedek(p).s));
-  const dr = yedekDrive(sonYedekRaporu());
-  const drive = dr && dr.dolu;
-  if (!guv.length && !yed.length && !drive) return '';
-  const adlar = l => l.map(p => `<button type="button" data-eylem="proje-ac" data-id="${p.id}">${esc(projeAdi(p))}</button>`).join('');
-  const sat = (ik, yazi, l) => l.length ? `<div class="pu-sat"><span class="pu-ik">${ik}</span>
-      <span class="pu-yz"><b>${yazi}</b><span class="pu-adlar">${adlar(l)}</span></span></div>` : '';
-  return `<section class="pu">
-    ${sat('🛡️', guv.length + ' projede güvenlik denetimi bekliyor', guv)}
-    ${sat('💾', yed.length + ' projenin yedeğinde sorun var', yed)}
-    ${drive ? `<div class="pu-sat"><span class="pu-ik">☁️</span>
-      <span class="pu-yz"><b>Google Drive %${dr.yuzde} dolu</b><span class="pu-adlar">
-        <button type="button" data-eylem="yedek-detay">Yedek detayı</button></span></span></div>` : ''}
-  </section>`;
+/* ---------- Panel kartları (v0.348.0) ----------
+   3D, basılabilir kartlar. Karta basınca kart içeri gömülür ve altında
+   oku ona bakan bir pencere açılır; ayrıntı orada (onaylanacak görevler,
+   yaklaşan bitişler, son talepler…). Pencere render'a bağlı değil: DOM'a
+   eklenir, yeniden çizimde kapanır. Panelde gölge bilerek serbest
+   (CLAUDE.md istisnası). */
+function p3Veri(projeler) {
+  const devam = projeler.filter(p => !projeBittiMi(p));
+  const ids = new Set(devam.map(p => p.id));
+  const acik = (DB.gorevler || []).filter(g =>
+    g.durum !== 'onaylandi' && (!g.proje_id || ids.has(g.proje_id)));
+  const kontrol = acik.filter(g => g.durum === 'bitirdi')
+    .sort((a, b) => (b.guncellendi || '').localeCompare(a.guncellendi || ''));
+  const yapilacak = acik.filter(g => g.durum !== 'bitirdi' && !String(g.plan || '').trim()).length;
+  const gelisen = acik.length - kontrol.length - yapilacak;
+  const yakin = acik.filter(g => g.bitis && g.durum !== 'bitirdi')
+    .sort((a, b) => a.bitis.localeCompare(b.bitis));
+  let guv = [], yed = [], drive = null;
+  if (AUTH.yonetici) {
+    if (SURUM.durum === 'bos') setTimeout(() => surumTakipYukle(), 0);
+    yedekEslemeYukle();
+    const pj = projeler.filter(p => !p.arsiv && !PROJE_KOVASI.klon.sec(p) && sunuculuMu(p));
+    guv = pj.filter(p => /^[kb]$/.test(pdGuvenlik(p).s));
+    yed = pj.filter(p => /^[kb]$/.test(pdYedek(p).s));
+    const dr = yedekDrive(sonYedekRaporu());
+    if (dr && dr.dolu) drive = dr;
+  }
+  return { acik, kontrol, yapilacak, gelisen, yakin, guv, yed, drive };
 }
+
+/* Kart ikonları (v0.350.0): ikili ton — ince çizgi + yarı saydam dolgu. */
+const P3_IKON = {
+  onay: '<path class="f" d="M12 2.8l2.2 1.6 2.7-.2.9 2.6 2.2 1.6-.8 2.6.8 2.6-2.2 1.6-.9 2.6-2.7-.2L12 21.2l-2.2-1.6-2.7.2-.9-2.6-2.2-1.6.8-2.6-.8-2.6 2.2-1.6.9-2.6 2.7.2z"/><path d="M12 2.8l2.2 1.6 2.7-.2.9 2.6 2.2 1.6-.8 2.6.8 2.6-2.2 1.6-.9 2.6-2.7-.2L12 21.2l-2.2-1.6-2.7.2-.9-2.6-2.2-1.6.8-2.6-.8-2.6 2.2-1.6.9-2.6 2.7.2z"/><path d="M8.6 12.2l2.3 2.3 4.6-4.8" stroke-width="2"/>',
+  hata: '<path class="f" d="M7.5 11a4.5 4.5 0 0 1 9 0v3.5a4.5 4.5 0 0 1-9 0z"/><path d="M7.5 11a4.5 4.5 0 0 1 9 0v3.5a4.5 4.5 0 0 1-9 0z"/><path d="M9.5 7.3L8 5.5M14.5 7.3L16 5.5M12 10.5V19M7.5 12.5H4.5M16.5 12.5h3M7.8 16.5l-2.6 1.6M16.2 16.5l2.6 1.6M7.8 9l-2.4-1.2M16.2 9l2.4-1.2"/>',
+  surum: '<circle class="f" cx="12" cy="12" r="8"/><path d="M19.5 12a7.5 7.5 0 0 1-13.4 4.6"/><path d="M4.5 12a7.5 7.5 0 0 1 13.4-4.6"/><path d="M18.4 3.6v4.2h-4.2M5.6 20.4v-4.2h4.2"/><path d="M12 9v4.2l2.4 1.4" stroke-width="1.9"/>',
+  talep: '<rect class="f" x="5" y="4" width="14" height="17" rx="2.5"/><rect x="5" y="4" width="14" height="17" rx="2.5"/><path d="M9 4V3h6v1.5a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1z"/><circle cx="12" cy="11" r="2"/><path d="M8.6 16.6a3.6 3.6 0 0 1 6.8 0"/>',
+  guv: '<path class="f" d="M12 2.8l7.2 2.7v5.6c0 4.6-3 8.4-7.2 10-4.2-1.6-7.2-5.4-7.2-10V5.5z"/><path d="M12 2.8l7.2 2.7v5.6c0 4.6-3 8.4-7.2 10-4.2-1.6-7.2-5.4-7.2-10V5.5z"/><rect x="9" y="10.8" width="6" height="4.7" rx="1.1"/><path d="M10.2 10.8V9.6a1.8 1.8 0 0 1 3.6 0v1.2"/>',
+};
+
+/* Ana programla eşitlenmesi gereken firma programları (Sürüm Takibi). */
+function p3Surum() {
+  if (!AUTH.yonetici) return { liste: [], durum: 'yok' };
+  if (SURUM.durum === 'bos') setTimeout(() => surumTakipYukle(), 0);
+  const liste = [];
+  (SURUM.analar || []).forEach(a => (a.firmalar || []).forEach(f => {
+    if (f.asagi.length || f.yukariSayi) liste.push({ ana: a, f });
+  }));
+  const okunamadi = (SURUM.analar || []).some(a => a.hata);
+  return { liste, durum: SURUM.durum, okunamadi };
+}
+
+/* Sıra (v0.350.0 · kullanıcı): 1 Görevler + onay (tam genişlik),
+   2 Hatalar, 3 Gerekli güncellemeler, 4 Talepler, 5 Güvenlik ve yedek.
+   Geliştiricide yalnız ilki. Kırmızı ikon = bakılması gereken bir şey var. */
+function panelKartlar(projeler) {
+  const v = p3Veri(projeler);
+  const yon = AUTH.yonetici;
+  const talepler = DB.talepler || [];
+  const yeniTalep = talepler.filter(t => t.durum === 'yeni').length;
+  const haftaOnce = Date.now() - 7 * 864e5;
+  const buHafta = talepler.filter(t => new Date(t.gonderildi).getTime() >= haftaOnce).length;
+  const yeniHata = (DB.hatalar || []).filter(h => h.durum === 'yeni').length;
+  const sorun = v.guv.length + v.yed.length + (v.drive ? 1 : 0);
+  const sv = p3Surum();
+  const aylar = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz',
+                 'Ağustos','Eylül','Ekim','Kasım','Aralık'];
+  const ilk = v.yakin[0];
+  const ilkYazi = ilk ? (() => { const t = new Date(ilk.bitis + 'T00:00:00');
+    return t.getDate() + ' ' + aylar[t.getMonth()]; })() : '';
+
+  const kart = (k, sayi, bas, alt, uyari) => `
+    <button type="button" class="p3-kart ${uyari ? 'p3-uyari' : ''}" data-eylem="p3-ac" data-id="${k}" aria-expanded="false">
+      <span class="p3-ik"><svg viewBox="0 0 24 24">${P3_IKON[k]}</svg></span>
+      <b class="p3-sayi">${sayi}</b>
+      <span class="p3-bas">${esc(bas)}</span>
+      <i class="p3-alt">${esc(alt)}</i>
+    </button>`;
+
+  const ana = `
+    <button type="button" class="p3-kart p3-ana ${v.kontrol.length ? 'p3-uyari' : ''}" data-eylem="p3-ac" data-id="onay" aria-expanded="false">
+      <span class="p3-n" aria-hidden="true"></span>
+      <span class="p3-ik"><svg viewBox="0 0 24 24">${P3_IKON.onay}</svg></span>
+      <b class="p3-sayi">${v.kontrol.length}</b>
+      <span class="p3-bas">Görevler · ${yon ? 'onayını bekliyor' : 'onayda bekleyen'}</span>
+      <span class="p3-cipler">
+        <span><b>${v.acik.length}</b> açık görev</span>
+        ${ilkYazi ? `<span>En yakın bitiş <b>${esc(ilkYazi)}</b></span>` : ''}
+      </span>
+      <span class="p3-incele">İncele ›</span>
+    </button>`;
+
+  if (!yon) return `<div class="p3 p3-tek">${ana}</div>`;
+  return `<div class="p3">
+    ${ana}
+    ${kart('hata', yeniHata, 'Hatalar', yeniHata ? 'Yeni bildirim' : 'Yeni bildirim yok', yeniHata)}
+    ${kart('surum', sv.durum === 'tamam' ? sv.liste.length : '…', 'Gerekli güncellemeler',
+      sv.durum !== 'tamam' ? 'Okunuyor…' : sv.liste.length ? 'Ana programla eşitlenecek'
+        : sv.okunamadi ? 'Sürüm bilgisi okunamadı' : 'Hepsi güncel', sv.liste.length)}
+    ${kart('talep', yeniTalep, 'Talepler', 'Bu hafta ' + buHafta, yeniTalep)}
+    ${kart('guv', sorun, 'Güvenlik ve yedek', sorun ? 'Bakılması gereken' : 'Her şey yolunda', sorun)}
+  </div>`;
+}
+
+/* Penceredeki tek satır: sol işaret, başlık + alt yazı, sağda düğme/hap. */
+function p3Sat(sol, bas, alt, sag, eylem) {
+  return `<div class="p3-sat" ${eylem || ''}>
+    <span class="p3-sol">${sol}</span>
+    <span class="p3-yz"><b>${esc(bas)}</b>${alt ? `<i>${esc(alt)}</i>` : ''}</span>
+    ${sag || ''}
+  </div>`;
+}
+
+function p3Icerik(k) {
+  const v = p3Veri(DB.projeler.filter(x => !cekirdekMi(x) && !denemeMi(x)));
+  const yon = AUTH.yonetici;
+  const bas = (y, link) => `<div class="p3-pb"><b>${esc(y)}</b>${link || ''}</div>`;
+  const tum = (adres, y) => `<a class="p3-tum" href="${adres}">${y} ›</a>`;
+  const bos = y => `<div class="p3-bos">${esc(y)}</div>`;
+  const gorevAlt = g => [g.proje_id ? basHarfleriBuyuk((DB.proje(g.proje_id) || {}).firma || '') : 'Genel',
+    DB.kisiAdi(g.atanan)].filter(Boolean).join(' · ');
+  const gorevAc = g => `data-eylem="gorev-ac" data-id="${g.id}" role="button" tabindex="0"`;
+  const no = g => `<span class="p3-no">${esc(gorevNo(g))}</span>`;
+
+  if (k === 'onay') {
+    const l = v.kontrol.slice(0, 6);
+    const say = (n, ad, renk) => `<div style="--c:${renk}"><b>${n}</b><i>${ad}</i></div>`;
+    const y = v.yakin.slice(0, 5);
+    return bas((yon ? 'Onayını bekleyen · ' : 'Onayda bekleyen · ') + v.kontrol.length, tum('#/gorevler', 'Görevler'))
+      + (l.length ? l.map(g => p3Sat(no(g), g.baslik || 'Görev',
+          gorevAlt(g) + (g.guncellendi ? ' · ' + pzZamanKisa(g.guncellendi) : ''),
+          yon ? `<button type="button" class="p3-dug" data-eylem="p3-onayla" data-id="${g.id}">Onayla</button>`
+              : `<span class="p3-hap">Kontrolde</span>`, gorevAc(g))).join('')
+        : bos('Onay bekleyen görev yok 🎉'))
+      + bas('Açık görevler · ' + v.acik.length)
+      + `<div class="p3-durum">${say(v.yapilacak, 'Yapılacak', '#83838b')}${say(v.gelisen, 'Geliştiriliyor', '#b8801a')}${say(v.kontrol.length, 'Kontrolde', '#2f62c4')}</div>`
+      + bas('Yaklaşan bitişler')
+      + (y.length ? y.map(g => { const s = gorevSure(g.bitis);
+          return p3Sat(no(g), g.baslik || 'Görev', gorevAlt(g),
+            s ? `<span class="p3-hap ${s.sinif}">${esc(s.yazi)}</span>` : '', gorevAc(g)); }).join('')
+        : bos('Bitiş tarihi girilmiş açık görev yok.'));
+  }
+  if (k === 'surum') {
+    const sv = p3Surum();
+    if (sv.durum !== 'tamam') return bas('Gerekli güncellemeler') + bos('Programların sürümleri okunuyor…');
+    return bas('Gerekli güncellemeler · ' + sv.liste.length)
+      + (sv.liste.length ? sv.liste.map(({ f }) => p3Sat(
+          `<span class="p3-harf">${esc(basHarf(f.ad))}</span>`, f.ad, svDurum(f).yazi,
+          `<button type="button" class="p3-dug" data-eylem="surum-detay" data-id="${esc(f.kod)}">Bak</button>`,
+          `data-eylem="surum-detay" data-id="${esc(f.kod)}" role="button" tabindex="0"`)).join('')
+        : bos(sv.okunamadi ? 'Ana programın sürüm dosyası okunamadı.' : 'Bütün firma programları ana programla aynı ✅'));
+  }
+  if (k === 'talep') {
+    const l = (DB.talepler || []).slice(0, 5);
+    return bas('Son talepler', tum('#/talepler', 'Tümü'))
+      + (l.length ? l.map(t => p3Sat(`<span class="p3-harf">${esc(basHarf(t.firma || t.yetkili || '?'))}</span>`,
+          t.firma || t.yetkili || 'İsimsiz talep', tarihYaz(t.gonderildi), talepEtiketi(t),
+          `data-eylem="p3-git" data-hedef="#/talepler/${esc(t.id)}" role="button" tabindex="0"`)).join('')
+        : bos('Henüz talep yok.'));
+  }
+  if (k === 'hata') {
+    const l = (DB.hatalar || []).slice(0, 5);
+    return bas('Son bildirimler', tum('#/hatalar', 'Tümü'))
+      + (l.length ? l.map(h => p3Sat(`<span class="p3-harf">${esc(basHarf(hataProjeAdi(h)))}</span>`,
+          hataProjeAdi(h), String(h.mesaj || '').replace(/\n+/g, ' ').slice(0, 70) || tarihYaz(h.gonderildi),
+          hataEtiketi(h), `data-eylem="p3-git" data-hedef="#/hatalar/${esc(h.id)}" role="button" tabindex="0"`)).join('')
+        : bos('Müşteri programlarından bildirim gelmedi.'));
+  }
+  if (k === 'guv') {
+    const harf = p => `<span class="p3-harf">${esc(basHarf(p.firma || projeAdi(p)))}</span>`;
+    let h = '';
+    h += bas('Güvenlik denetimi · ' + v.guv.length);
+    h += v.guv.length ? v.guv.map(p => p3Sat(harf(p), basHarfleriBuyuk(p.firma || projeAdi(p)),
+        [modulAdi(p), pdGuvenlik(p).yazi].filter(Boolean).join(' · '),
+        `<button type="button" class="p3-dug" data-eylem="pd-guvenlik" data-id="${p.id}">Başlat</button>`,
+        `data-eylem="proje-ac" data-id="${p.id}" role="button" tabindex="0"`)).join('')
+      : bos('Denetim bekleyen proje yok.');
+    h += bas('Yedek · ' + (v.yed.length + (v.drive ? 1 : 0)));
+    h += v.yed.map(p => p3Sat(harf(p), basHarfleriBuyuk(p.firma || projeAdi(p)), pdYedek(p).yazi,
+        `<button type="button" class="p3-dug" data-eylem="proje-ac" data-id="${p.id}">Bak</button>`,
+        `data-eylem="proje-ac" data-id="${p.id}" role="button" tabindex="0"`)).join('');
+    if (v.drive) h += p3Sat('<span class="p3-harf">☁️</span>', 'Google Drive %' + v.drive.yuzde + ' dolu', 'Yer açmak gerekebilir',
+        `<button type="button" class="p3-dug" data-eylem="yedek-detay">Detay</button>`);
+    if (!v.yed.length && !v.drive) h += bos('Yedeklerde sorun yok.');
+    return h;
+  }
+  return '';
+}
+
+/* Karta basınca: aynı karta yeniden basılırsa kapanır, başka karta
+   basılırsa pencere oraya taşınır. */
+function p3Kapat() {
+  $$('.p3-pop').forEach(x => x.remove());
+  $$('.p3-kart.acik').forEach(x => { x.classList.remove('acik'); x.setAttribute('aria-expanded', 'false'); });
+  const k = $('.p3'); if (k) k.classList.remove('odak');
+}
+function p3Ac(el) {
+  const kap = el.closest('.p3');
+  if (!kap) return;
+  const acikti = el.classList.contains('acik');
+  p3Kapat();
+  if (acikti) return;
+  el.classList.add('acik');
+  el.setAttribute('aria-expanded', 'true');
+  kap.classList.add('odak');
+  const pop = document.createElement('div');
+  pop.className = 'p3-pop';
+  pop.innerHTML = p3Icerik(el.dataset.id);
+  kap.appendChild(pop);
+  /* Pencere kartın altına, ok kartın ortasına. Masaüstünde pencere dar
+     (460px); kartın altına ortalanıp kenardan taşmayacak kadar kaydırılır. */
+  const ok = el.offsetLeft + el.offsetWidth / 2;
+  const w = pop.offsetWidth;
+  const sol = Math.max(0, Math.min(kap.offsetWidth - w, ok - w / 2));
+  pop.style.left = sol + 'px';
+  pop.style.top = (el.offsetTop + el.offsetHeight + 14) + 'px';
+  pop.style.setProperty('--ok', Math.max(22, Math.min(w - 22, ok - sol)) + 'px');
+  requestAnimationFrame(() => {
+    pop.classList.add('gor');
+    pop.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  });
+}
+/* Pencerenin dışına basınca kapanır. */
+document.addEventListener('click', e => {
+  if (!$('.p3-pop')) return;
+  if (e.target.closest('.p3-pop') || e.target.closest('.p3-kart')) return;
+  p3Kapat();
+}, true);
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && $('.p3-pop')) p3Kapat(); });
 
 /* Proje kartında yer dar: bugünkü saat tek başına yeter, "Bugün ·"
    öneki satırı ikiye kırıyordu. */
@@ -18074,145 +18869,6 @@ function pzHalka(yuzde, boy, kalin) {
             stroke-dasharray="${dolu.toFixed(1)} ${(cevre - dolu).toFixed(1)}"
             transform="rotate(-90 ${o} ${o})"></circle>
   </svg>`;
-}
-
-/* ---------- İki sayı kartı ----------
-   Solda halka: devam eden projelerin ortalama ilerlemesi.
-   Sağda en yakın bitiş: açık görevlerin `bitis` tarihlerinden en yakını,
-   altında kaç gün kaldığı. Eskiden projenin `teslim` alanına bakıyordu;
-   görev sistemi kurulunca tarih görevin kendisinde durmaya başladı.
-   Geçmiş tarihli görev varsa en önce o çıkıyor — asıl acil olan o. */
-function enYakinGorevBitis(gorevler) {
-  const bugun = new Date(); bugun.setHours(0, 0, 0, 0);
-  return gorevler
-    .filter(g => g.bitis)
-    .map(g => ({ g, t: new Date(g.bitis + 'T00:00:00') }))
-    .filter(x => !isNaN(x.t))
-    .sort((x, y) => x.t - y.t)[0] || null;
-}
-
-/* Panel'de, istatistik kartlarının ÜSTünde ince yatay bir şerit: müşteri
-   programlarından gelen hata bildirimleri. Yalnız yönetici; hiç bildirim
-   yoksa görünmez (paneli boş yere doldurmasın). Mevcut tl-kart stiliyle —
-   alçak, yatay, ek CSS gerekmez. Kırmızı yalnız "N yeni" rozetinde. */
-function panelHatalar() {
-  if (!AUTH.yonetici) return '';
-  const hepsi = DB.hatalar || [];
-  if (!hepsi.length) return '';
-  const yeni = hepsi.filter(h => h.durum === 'yeni').length;
-  const son  = hepsi[0];                       // liste gonderildi desc sıralı
-  /* Talepler/Açık Görev kartlarıyla birebir aynı ps kart düzeni, tam genişlik.
-     Beyaz üstünde kırmızı yazı okunsun diye bildirim simgesi beyaz üçgen. */
-  const uyariDolu = '<svg viewBox="0 0 24 24" style="width:19px;height:19px">'
-    + '<path fill="#fff" stroke="none" d="M12 3.2l9.2 16a1 1 0 0 1-.87 1.5H3.67a1 1 0 0 1-.87-1.5z"></path>'
-    + '<path d="M12 9.6v4.2" stroke="#2a2a2f" stroke-width="1.9" stroke-linecap="round"></path>'
-    + '<circle cx="12" cy="16.6" r="1.1" fill="#2a2a2f" stroke="none"></circle></svg>';
-  return `<a class="ps ps-hata" href="#/hatalar">
-    <span class="ps-ok" aria-hidden="true">${svg(ICON.chevron, 14)}</span>
-    <span class="ps-ikon">${uyariDolu}</span>
-    <b class="ps-bas">Hata Bildirimleri</b>
-    <i class="ps-aciklama">Müşteri programlarından gelen</i>
-    <b class="ps-sayi">${yeni}</b>
-    <span class="ps-bitis">
-      ${svg(ICON.saat, 14)}
-      <span><i>Son bildirim</i><b>${esc(hataProjeAdi(son))}</b></span>
-    </span>
-  </a>`;
-}
-
-function panelSayilar(projeler) {
-  /* Şeritteki "Aktif Projeler" ile aynı ölçü: biten proje sayılmıyor. */
-  const devam = projeler.filter(p => !projeBittiMi(p));
-
-  /* Açık görev YALNIZ devam eden projelerden sayılıyor. Eskiden bütün
-     görevler sayılıyordu: arşivlenmiş projenin, şablonun ve bitmiş projenin
-     görevleri de panele "açık iş" gibi yansıyordu. */
-  const devamIds = devam.map(p => p.id);
-  /* Açık = henüz onaylanmamış. Genel görevlerin projesi yok, onlar da
-     sayılıyor. (Eskiden 'tamamlandi' aranıyordu; yeni görev sisteminde
-     öyle bir durum yok, yüzden hepsi açık görünüyordu.) */
-  const acikGorevler = (DB.gorevler || []).filter(g =>
-    g.durum !== 'onaylandi' && (!g.proje_id || devamIds.includes(g.proje_id)));
-  const acik = acikGorevler.length;
-  const yuzdeler = devam.map(p => projeAsamaYuzde(p));
-  const ortalama = yuzdeler.length
-    ? Math.round(yuzdeler.reduce((t, x) => t + x, 0) / yuzdeler.length) : 0;
-
-  const aylar = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz',
-                 'Ağustos','Eylül','Ekim','Kasım','Aralık'];
-  /* En yakın bitiş. Açık görev yoksa tarih de yok — uydurma tarih yazmıyoruz.
-     Tarihi girilmiş görev yoksa da satır "Tarih yok" diyor. */
-  const yakin = acik ? enYakinGorevBitis(acikGorevler) : null;
-  const sure  = yakin ? gorevSure(yakin.g.bitis) : null;
-  const tarihYazi = !acik ? 'Görev yok'
-    : yakin ? `${yakin.t.getDate()} ${aylar[yakin.t.getMonth()]} ${yakin.t.getFullYear()}`
-            : 'Tarih yok';
-
-  const klasorDolu = '<svg viewBox="0 0 24 24" style="width:19px;height:19px">'
-    + '<path fill="#fff" stroke="none" d="M3 7.5A2.5 2.5 0 0 1 5.5 5h3.2l2 2h8.8A2.5 2.5 0 0 1 22 9.5v8A2.5 2.5 0 0 1 19.5 20h-15A2.5 2.5 0 0 1 2 17.5z"></path></svg>';
-  const onayDolu = '<svg viewBox="0 0 24 24" style="width:19px;height:19px">'
-    + '<rect x="3.5" y="3.5" width="17" height="17" rx="4.5" fill="none" stroke="#fff" stroke-width="1.8"></rect>'
-    + '<path d="M8 12.3l2.7 2.7L16.3 9.2" fill="none" stroke="#fff" stroke-width="2.2"'
-    + ' stroke-linecap="round" stroke-linejoin="round"></path></svg>';
-
-  /* Sağ alttaki soluk çizim: üst üste binmiş üç kart ve bir onay. */
-  const gorevCizimi = '<svg viewBox="0 0 120 120" aria-hidden="true">'
-    + '<rect x="46" y="10" width="62" height="62" rx="16" fill="currentColor" opacity=".30"></rect>'
-    + '<rect x="30" y="30" width="68" height="68" rx="18" fill="currentColor" opacity=".45"></rect>'
-    + '<rect x="40" y="46" width="72" height="72" rx="20" fill="currentColor" opacity=".70"></rect>'
-    + '<path d="M60 84l10 10 20-22" fill="none" stroke="#fff" stroke-width="7"'
-    + ' stroke-linecap="round" stroke-linejoin="round" opacity=".7"></path></svg>';
-
-  /* Yöneticide ilk kart Talepler: siteden gelen, henüz bakılmamış iş.
-     Geliştirici talepleri göremiyor; onda eski proje kartı duruyor. */
-  const zarfDolu = '<svg viewBox="0 0 24 24" style="width:19px;height:19px">'
-    + '<rect x="3" y="5.5" width="18" height="13" rx="2.8" fill="#fff" stroke="none"></rect>'
-    + '<path d="M4.2 7.4l7.8 5.6 7.8-5.6" fill="none" stroke="#e5342a" stroke-width="1.8"'
-    + ' stroke-linecap="round" stroke-linejoin="round"></path></svg>';
-  const talepler = DB.talepler || [];
-  const yeniTalep = talepler.filter(t => t.durum === 'yeni').length;
-  const haftaOnce = Date.now() - 7 * 864e5;
-  const buHafta = talepler.filter(t => new Date(t.gonderildi).getTime() >= haftaOnce).length;
-
-  const ilkKart = AUTH.yonetici ? `
-    <a class="ps ps-proje ps-talep" href="#/talepler">
-      <span class="ps-ok" aria-hidden="true">${svg(ICON.chevron, 14)}</span>
-      <span class="ps-ikon">${zarfDolu}</span>
-      <b class="ps-bas">Talepler</b>
-      <i class="ps-aciklama">Bakılmayı bekleyen yeni talep</i>
-      <b class="ps-sayi">${yeniTalep}</b>
-      <span class="ps-bitis">
-        ${svg(ICON.takvim, 14)}
-        <span><i>Bu hafta gelen</i><b>${buHafta} talep</b></span>
-      </span>
-    </a>` : null;
-
-  return `<div class="ps-izgara">
-    ${ilkKart || `<a class="ps ps-proje" href="#/projeler">
-      <span class="ps-ok" aria-hidden="true">${svg(ICON.chevron, 14)}</span>
-      <span class="ps-ikon">${klasorDolu}</span>
-      <b class="ps-bas">Devam Eden Proje</b>
-      <i class="ps-aciklama">Aktif olarak ilerleyen proje</i>
-      <b class="ps-sayi">${devam.length}</b>
-      <span class="ps-halka">
-        ${pzHalka(ortalama, 80, 8)}
-        <span class="ps-halka-ic"><b>%${ortalama}</b><i>tamamlandı</i></span>
-      </span>
-    </a>`}
-    <a class="ps ps-gorev" href="#/gorevler">
-      <span class="ps-cizim" aria-hidden="true">${gorevCizimi}</span>
-      <span class="ps-ok" aria-hidden="true">${svg(ICON.chevron, 14)}</span>
-      <span class="ps-ikon">${onayDolu}</span>
-      <b class="ps-bas">Açık Görev</b>
-      <i class="ps-aciklama">Tamamlanmayı bekleyen</i>
-      <b class="ps-sayi">${acik}</b>
-      <span class="ps-bitis">
-        ${svg(ICON.takvim, 14)}
-        <span><i>En yakın bitiş</i><b>${esc(tarihYazi)}</b>${sure
-          ? `<em class="ps-kalan ${sure.sinif}">${esc(sure.yazi)}</em>` : ''}</span>
-      </span>
-    </a>
-  </div>`;
 }
 
 /* ---------- Aktif projeler ----------
@@ -18355,49 +19011,205 @@ function panelEkip() {
   </div>`;
 }
 
-/* ---------- Son Aktiviteler ----------
-   Görev hareketlerinin son beşi. Hepsi gerçek kayıt: kim, ne yaptı, hangi
-   göreve, saat kaçta. Hiç hareket yoksa bölüm hiç çıkmıyor — boş kutu
-   göstermektense yer kaplamasın. */
-const AKTIVITE_IKON = {
-  olusturuldu: 'folder', atandi: 'kisi', baslandi: 'kalem',
-  kontrole: 'saat', revize: 'uyari', onaylandi: 'tik', geri: 'geriAl',
-  bitirdi: 'check',
-};
+/* ---------- Son Hareketler (v0.351.0) ----------
+   Ekibin ne yaptığını görmek için 3 sütun: Kullanıcı · Program · Yapılan iş.
+   İki kaynak birleşiyor:
+     · Claude iş kayıtları (DB.isKayitlari · sql/52): Claude bir işi bitirip
+       gönderince "is-kaydi" fonksiyonuna tek satır yollar (kural claude.ai
+       hesap tercihlerinde · IS-KAYDI-KURALI.md).
+     · Studio'daki görev hareketleri (oluşturdu, onayladı…).
+   Satıra basınca ayrıntı penceresi açılır. */
+let SH_SATIRLAR = [];
 
-function aktiviteSatiri(h) {
-  const gorev = (DB.gorevler || []).find(g => g.id === h.gorev_id);
-  const ikon  = ICON[AKTIVITE_IKON[h.tip]] || ICON.check;
-  const alt   = h.notu || (gorev && gorev.baslik) || '';
-  const t     = new Date(h.olusturuldu || Date.now());
-  const p     = n => String(n).padStart(2, '0');
-  return `
-    <div class="ak2 ${h.tip === 'revize' ? 'uyari' : ''}">
-      <span class="ak2-ikon">${svg(ikon, 15)}</span>
-      <span class="ak2-orta">
-        <b>${esc(DB.kisiAdi(h.kim) || 'Biri')}</b>
-        <span>${esc(HAREKET_ADI[h.tip] || h.tip)}</span>
-        ${alt ? `<i>${esc(alt)}</i>` : ''}
-      </span>
-      <span class="ak2-saat">${p(t.getHours())}:${p(t.getMinutes())}</span>
-    </div>`;
+/* İş kaydındaki serbest adı Studio'daki kişiyle eşle (fotoğrafı için):
+   önce tam ad, olmazsa tek eşleşen ilk ad. */
+function shKisiBul(ad) {
+  const n = x => String(x || '').trim().toLocaleLowerCase('tr');
+  const a = n(ad);
+  if (!a) return null;
+  const hepsi = DB.kisiler || [];
+  const tam = hepsi.find(k => n(k.ad_soyad) === a || n(k.ad) === a);
+  if (tam) return tam;
+  const ilk = a.split(/\s+/)[0];
+  const aday = hepsi.filter(k => n(k.ad_soyad || k.ad).split(/\s+/)[0] === ilk);
+  return aday.length === 1 ? aday[0] : null;
 }
 
+function shSatirlar() {
+  const satirlar = [];
+  (DB.isKayitlari || []).forEach(k => satirlar.push({
+    kisi: shKisiBul(k.kullanici),
+    zaman: k.yapildi || k.olusturuldu || '', kullanici: k.kullanici || 'Bilinmiyor',
+    program: k.program || '—', is: k.is_ozet || '', detay: k.detay || '',
+    repo: k.repo || '', commit: k.commit_no || '', oturum: k.oturum || '', kaynak: 'Claude',
+  }));
+  const gecerli = new Set((DB.gorevler || []).filter(g => DB.gorevGecerli(g)).map(g => g.id));
+  (DB.hareketler || []).filter(h => h.gorev_id && gecerli.has(h.gorev_id)).forEach(h => {
+    const g = (DB.gorevler || []).find(x => x.id === h.gorev_id);
+    const p = g && g.proje_id ? DB.proje(g.proje_id) : null;
+    satirlar.push({
+      kisi: DB.kisi(h.kim),
+      zaman: h.olusturuldu || '', kullanici: DB.kisiAdi(h.kim) || 'Biri',
+      program: 'Studio', is: (t => t.charAt(0).toLocaleUpperCase('tr') + t.slice(1))(HAREKET_ADI[h.tip] || h.tip || '')
+        + (g ? ' · ' + g.baslik : ''),
+      detay: [g ? gorevNo(g) + ' · ' + g.baslik : '', p ? 'Proje: ' + basHarfleriBuyuk(p.firma || projeAdi(p)) : '',
+        h.notu || ''].filter(Boolean).join('\n'),
+      gorev: g ? g.id : '', kaynak: 'Studio',
+    });
+  });
+  return satirlar.sort((x, y) => (y.zaman || '').localeCompare(x.zaman || ''));
+}
+
+/* Seçili kişi (null = Herkes). Sayfa yenilenene kadar kalır. */
+let SH_KISI = null;
+/* Kaç kayıt görünsün; "Daha fazla göster" 30 ekler. */
+let SH_LIMIT = 30;
+
+function shBasHarf(ad) {
+  const p = String(ad || '?').trim().split(/\s+/);
+  return ((p[0] || '?')[0] + (p.length > 1 ? p[p.length - 1][0] : '')).toLocaleUpperCase('tr');
+}
+/* Avatar tonu addan: aynı kişi her yerde aynı griyle. */
+function shTon(ad) {
+  let h = 0; for (const c of String(ad || '')) h = (h * 31 + c.charCodeAt(0)) | 0;
+  return 'shz-t' + (Math.abs(h) % 3);
+}
+/* Fotoğraf varsa fotoğraf, yoksa baş harfler. */
+function shAvatar(ad, sinif = '', kisi) {
+  const foto = kisi && kisi.foto;
+  if (foto) return `<span class="shz-av resimli ${sinif}"><img src="${esc(foto)}" alt="" loading="lazy"></span>`;
+  return `<span class="shz-av ${shTon(ad)} ${sinif}">${esc(shBasHarf(ad))}</span>`;
+}
+function shGun(iso) {
+  if (!iso) return '';
+  const d = new Date(iso), b = new Date();
+  const g = x => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const fark = Math.round((g(b) - g(d)) / 864e5);
+  if (fark === 0) return 'Bugün';
+  if (fark === 1) return 'Dün';
+  const a = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+  return d.getDate() + ' ' + a[d.getMonth()];
+}
+function shSaat(iso) {
+  if (!iso) return '';
+  const d = new Date(iso), p = n => String(n).padStart(2, '0');
+  return p(d.getHours()) + ':' + p(d.getMinutes());
+}
+/* Kişiler: kayıtlardaki adlardan, iş sayısı ve son işiyle. */
+function shKisiler(hepsi) {
+  const m = new Map();
+  hepsi.forEach(r => {
+    const k = m.get(r.kullanici) || { ad: r.kullanici, sayi: 0, son: '', kisi: r.kisi };
+    if (!k.kisi && r.kisi) k.kisi = r.kisi;
+    k.sayi++; if ((r.zaman || '') > k.son) k.son = r.zaman || '';
+    m.set(r.kullanici, k);
+  });
+  return [...m.values()].sort((x, y) => y.son.localeCompare(x.son));
+}
+
+/* Son Hareketler (v0.353.0 · onaylı taslak A): gün gün zaman çizelgesi.
+   Sağ üstte kişi seçici. */
 function panelAktivite() {
-  /* Yalnız hâlâ duran görevlerin hareketleri. Silinmiş görevlerden ve eski
-     deneme kayıtlarından kalan öksüz satırlar listeyi kirletiyordu: görev
-     yok olunca satırda yalnız "biri görevi oluşturdu" kalıyordu. */
-  const gecerli = new Set((DB.gorevler || [])
-    .filter(g => DB.gorevGecerli(g)).map(g => g.id));
-  const hepsi = (DB.hareketler || [])
-    .filter(h => h.gorev_id && gecerli.has(h.gorev_id))
-    .sort((a, b) => (b.olusturuldu || '').localeCompare(a.olusturuldu || ''))
-    .slice(0, 5);
-  if (!hepsi.length) return '';
-  return `<div class="pz-bolum">
-    <span class="pz-bas"><b>Son Aktiviteler</b><u></u></span>
-    <div class="ak2-liste">${hepsi.map(aktiviteSatiri).join('')}</div>
-  </div>`;
+  if (!AUTH.yonetici) return '';
+  const hepsi = shSatirlar();
+  const kisiler = shKisiler(hepsi);
+  if (SH_KISI && !kisiler.some(k => k.ad === SH_KISI)) SH_KISI = null;
+  const secili = SH_KISI ? hepsi.filter(r => r.kullanici === SH_KISI) : hepsi;
+  SH_SATIRLAR = secili.slice(0, SH_LIMIT);
+  const kalan = secili.length - SH_SATIRLAR.length;
+
+  const yigin = kisiler.slice(0, 3).map(k => shAvatar(k.ad, 'kucuk', k.kisi)).join('');
+  const secKisi = SH_KISI ? (kisiler.find(k => k.ad === SH_KISI) || {}).kisi : null;
+  const secici = kisiler.length ? `
+    <button type="button" class="shz-sec" data-eylem="sh-kisi-ac" aria-haspopup="listbox">
+      <span class="shz-yigin">${SH_KISI ? shAvatar(SH_KISI, 'kucuk', secKisi) : yigin}</span>
+      <span class="shz-sec-ad">${esc(SH_KISI || 'Herkes')}</span>
+      <svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"></path></svg>
+    </button>` : '';
+  const bas = `<span class="pz-bas shz-bas"><b>Son Hareketler</b><u></u>${secici}</span>`;
+  if (!SH_SATIRLAR.length) return `<div class="pz-bolum shz shz-kart">${bas}
+    <div class="sh-bos">Henüz kayıt yok. Claude bir işi bitirip gönderdiğinde burada görünecek.</div></div>`;
+
+  let gun = '', h = '';
+  SH_SATIRLAR.forEach((r, i) => {
+    const g = shGun(r.zaman);
+    if (g !== gun) { gun = g; h += `<div class="shz-gun">${esc(g)}</div>`; }
+    const studio = r.program === 'Studio';
+    h += `<div class="shz-sat" data-eylem="sh-ac" data-id="${i}" role="button" tabindex="0">
+      ${shAvatar(r.kullanici, '', r.kisi)}
+      <span class="shz-yz">
+        <span class="shz-ust"><b>${esc(r.kullanici)}</b><i>${esc(shSaat(r.zaman))}</i></span>
+        <span class="shz-is">${esc(r.is)}</span>
+        <span class="shz-cip ${studio ? 'st' : ''}"><u>${esc(studio ? 'N' : basHarf(r.program))}</u>${esc(r.program)}</span>
+      </span>
+    </div>`;
+  });
+  const daha = kalan > 0 ? `<button type="button" class="shz-daha" data-eylem="sh-daha">
+    Daha fazla göster <span>${kalan > 30 ? 30 : kalan} kayıt daha</span></button>` : '';
+  return `<div class="pz-bolum shz shz-kart">${bas}<div class="shz-liste">${h}</div>${daha}</div>`;
+}
+
+/* Kişi seçici penceresi: arama, Herkes, kişiler (iş sayısı, son iş). */
+function shKisiKapat() { $$('.shz-pop').forEach(x => x.remove()); }
+function shKisiAc(el) {
+  if ($('.shz-pop')) { shKisiKapat(); return; }
+  const kisiler = shKisiler(shSatirlar());
+  const toplam = kisiler.reduce((t, k) => t + k.sayi, 0);
+  const sat = (ad, alt, sayi, avatar) => {
+    const on = (ad === null && !SH_KISI) || ad === SH_KISI;
+    return `<button type="button" class="shz-o ${on ? 'on' : ''}" data-eylem="sh-kisi-sec" data-id="${esc(ad || '')}" data-ara="${esc((ad || 'herkes').toLocaleLowerCase('tr'))}">
+      ${avatar}<span class="shz-o-yz"><b>${esc(ad || 'Herkes')}</b><i>${esc(alt)}</i></span>
+      <span class="shz-say">${sayi}</span>${on ? svg(ICON.tik, 16) : ''}</button>`;
+  };
+  const pop = document.createElement('div');
+  pop.className = 'shz-pop';
+  pop.innerHTML = `<label class="shz-ara"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"></circle><path d="M16 16l4 4"></path></svg><input type="search" placeholder="Kişi ara" autocomplete="off"></label>
+    ${sat(null, 'Bütün ekip', toplam, '<span class="shz-av shz-her">👥</span>')}
+    <div class="shz-cz"></div>
+    ${kisiler.map(k => sat(k.ad, 'Son iş: ' + shGun(k.son).toLocaleLowerCase('tr') + ' ' + shSaat(k.son), k.sayi, shAvatar(k.ad, '', k.kisi))).join('')}`;
+  const kap = el.closest('.shz');
+  kap.appendChild(pop);
+  pop.style.top = (el.offsetTop + el.offsetHeight + 12) + 'px';
+  pop.style.setProperty('--ok', (el.offsetLeft + el.offsetWidth / 2 - pop.offsetLeft) + 'px');
+  const giris = $('input', pop);
+  giris.addEventListener('input', () => {
+    const q = giris.value.trim().toLocaleLowerCase('tr');
+    $$('.shz-o', pop).forEach(o => { o.style.display = !q || o.dataset.ara.includes(q) ? '' : 'none'; });
+  });
+  requestAnimationFrame(() => pop.classList.add('gor'));
+}
+function shKisiSec(ad) {
+  SH_KISI = ad || null;
+  SH_LIMIT = 30;
+  shKisiKapat();
+  render();
+}
+document.addEventListener('click', e => {
+  if (!$('.shz-pop')) return;
+  if (e.target.closest('.shz-pop') || e.target.closest('.shz-sec')) return;
+  shKisiKapat();
+}, true);
+
+function shAc(i) {
+  const r = SH_SATIRLAR[Number(i)];
+  if (!r) return;
+  const zaman = r.zaman ? tarihYaz(r.zaman) : '';
+  const bilgi = (k, v) => v ? `<div class="sh-d-sat"><span>${k}</span><b>${v}</b></div>` : '';
+  const commitAdres = r.repo && r.commit ? `https://github.com/${esc(r.repo)}/commit/${esc(r.commit)}` : '';
+  modalAc(`
+    ${modalBaslik(r.kaynak === 'Claude' ? ICON.kalem : ICON.check, r.is || 'İş', r.kullanici + ' · ' + r.program)}
+    <div class="sh-detay">
+      ${bilgi('Kim', esc(r.kullanici))}
+      ${bilgi('Program', esc(r.program))}
+      ${bilgi('Ne zaman', esc(zaman))}
+      ${bilgi('Nereden', r.kaynak === 'Claude' ? 'Claude oturumu' : 'Studio')}
+      ${r.detay ? `<div class="sh-d-bas">Ayrıntı</div><div class="sh-d-metin">${esc(r.detay)}</div>` : ''}
+      <div class="sh-d-link">
+        ${commitAdres ? `<a href="${commitAdres}" target="_blank" rel="noopener">GitHub'da değişikliği gör ›</a>` : ''}
+        ${r.oturum && /^https:\/\/claude\.ai\//.test(r.oturum) ? `<a href="${esc(r.oturum)}" target="_blank" rel="noopener">Claude oturumunu aç ›</a>` : ''}
+        ${r.gorev ? `<button type="button" class="p3-dug" data-eylem="gorev-ac" data-id="${esc(r.gorev)}">Görevi aç</button>` : ''}
+      </div>
+    </div>`);
 }
 
 /* ---------- Sürüm Takibi (v0.340.0) ----------

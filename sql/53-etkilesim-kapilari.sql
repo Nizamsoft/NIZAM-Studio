@@ -1,5 +1,5 @@
 -- ==========================================================================
--- NIZAM | Studio — 52 · Etkileşim kapıları (v0.348.0)
+-- NIZAM | Studio — 53 · Etkileşim kapıları (v0.370.0)
 --
 -- Proje sayfasındaki "Etkileşim geçmişi" müşterinin programından okunur:
 -- programın veritabanında yalnız okuyan tek bir fonksiyon var
