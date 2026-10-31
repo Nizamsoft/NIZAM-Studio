@@ -13346,3 +13346,50 @@ html.pa-akis .vt-ik.kot::after, html.pa-akis .p3-uyari, html.pa-akis .pa2-dk.uy,
 .shf-pc u.st { background: var(--red); }
 .shf-pc u.tm { background: #4a4a50; }
 .shf-alt { display: flex; gap: 10px; margin-top: 16px; }
+
+/* ==========================================================================
+   Akıcılık ve dokunma hissi (v0.372.0)
+   ========================================================================== */
+/* Sayfa geçişi: alt menüde sağa/sola geçişte o yönden kayarak gelir. */
+@keyframes gecSag { from { opacity: 0; transform: translate3d(28px, 0, 0); } to { opacity: 1; transform: none; } }
+@keyframes gecSol { from { opacity: 0; transform: translate3d(-28px, 0, 0); } to { opacity: 1; transform: none; } }
+@keyframes gecYukari { from { opacity: 0; transform: translate3d(0, 10px, 0); } to { opacity: 1; transform: none; } }
+.view.swap { animation: gecYukari .26s cubic-bezier(.32, .72, 0, 1) both; }
+.view.swap.yon-sag { animation-name: gecSag; }
+.view.swap.yon-sol { animation-name: gecSol; }
+#app.sohbette .view.swap, #main.susulu .view.swap.yon-sag, #main.susulu .view.swap.yon-sol { animation-duration: .26s; }
+
+/* Kartlar sırayla, hafifçe yükselir (yalnız ekran ilk açılırken). */
+@keyframes kartGir { from { opacity: 0; transform: translate3d(0, 12px, 0); } to { opacity: 1; transform: none; } }
+.view.giris :is(.p3-kart, .gv2-k, .shz-sat, .vt-grup, .pa2 > *, .sh2-liste .sh2, .gd2-k) {
+  animation: kartGir .42s cubic-bezier(.32, .72, 0, 1) both;
+}
+.view.giris :is(.p3-kart, .gv2-k, .shz-sat, .vt-grup, .pa2 > *, .sh2-liste .sh2):nth-child(2) { animation-delay: .04s; }
+.view.giris :is(.p3-kart, .gv2-k, .shz-sat, .vt-grup, .pa2 > *, .sh2-liste .sh2):nth-child(3) { animation-delay: .08s; }
+.view.giris :is(.p3-kart, .gv2-k, .shz-sat, .vt-grup, .pa2 > *, .sh2-liste .sh2):nth-child(4) { animation-delay: .12s; }
+.view.giris :is(.p3-kart, .gv2-k, .shz-sat, .vt-grup, .pa2 > *, .sh2-liste .sh2):nth-child(5) { animation-delay: .16s; }
+.view.giris :is(.p3-kart, .gv2-k, .shz-sat, .vt-grup, .pa2 > *, .sh2-liste .sh2):nth-child(n+6) { animation-delay: .2s; }
+/* Panel kartlarının kendi parlama animasyonu giriş bitince devam eder. */
+.view.giris .p3-uyari { animation: kartGir .42s cubic-bezier(.32, .72, 0, 1) both; }
+
+/* Basma hissi: her yerde aynı, hafif gömülme. */
+.basili { transform: scale(.975); transition: transform .12s ease; }
+:is([data-eylem], .btn, a.lk, button.sc) { transition: transform .18s cubic-bezier(.32, .72, 0, 1); -webkit-tap-highlight-color: transparent; }
+
+/* İskelet: yüklenirken gri kartlar hafifçe parlar. */
+.card.iskelet { position: relative; overflow: hidden; }
+.card.iskelet::after {
+  content: ''; position: absolute; inset: 0; transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .7), transparent);
+  animation: iskeletParla 1.2s ease-in-out infinite;
+}
+@keyframes iskeletParla { to { transform: translateX(100%); } }
+
+/* Hareketi azalt: bütün geçişler sadeleşir. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}
+/* Panel'in eski fotoğraf zemini kalktı; geçiş artık Panel'de de çalışır. */
+#main.susulu .view.swap { animation: gecYukari .26s cubic-bezier(.32, .72, 0, 1) both; }
+#main.susulu .view.swap.yon-sag { animation-name: gecSag; }
+#main.susulu .view.swap.yon-sol { animation-name: gecSol; }

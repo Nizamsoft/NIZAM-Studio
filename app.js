@@ -60,9 +60,23 @@ const DEFAULT_ROUTE = 'panel';
 /* Her kelimenin baş harfi büyük — "güllüoğlu kübban" kartta "Güllüoğlu
    Kübban" görünsün. Kelimenin geri kalanına dokunulmuyor: "QR Menu" gibi
    bilerek büyük yazılmış kısaltmalar bozulmasın. Türkçe kuralı: i → İ. */
+/* Aynı adlar yüzlerce kez çevriliyordu; sonuç akılda tutulur (v0.372.0). */
+const BHB_ONB = new Map();
+const IHB_ONB = new Map();
+function ilkHarfBuyuk(t) {
+  let r = IHB_ONB.get(t);
+  if (r === undefined) { r = t.charAt(0).toLocaleUpperCase('tr') + t.slice(1); IHB_ONB.set(t, r); }
+  return r;
+}
 function basHarfleriBuyuk(metin) {
-  return String(metin || '').replace(/(^|[\s\-\/(])([\p{L}])/gu,
-    (_, once, harf) => once + harf.toLocaleUpperCase('tr'));
+  const m = String(metin || '');
+  let r = BHB_ONB.get(m);
+  if (r === undefined) {
+    r = m.replace(/(^|[\s\-\/(])([\p{L}])/gu, (_, once, harf) => once + harf.toLocaleUpperCase('tr'));
+    if (BHB_ONB.size > 2000) BHB_ONB.clear();
+    BHB_ONB.set(m, r);
+  }
+  return r;
 }
 
 function projeAsamaYuzde(p) {
@@ -645,7 +659,7 @@ const VIEWS = {
         'Silinmiş veya arşive alınmış olabilir.', 'Projelere dön', 'projelere')}</div>`;
     }
 
-    if (klonMi(proje)) return klonEkrani(proje);   // klon.js
+    if (klonMi(proje)) return typeof klonEkrani === 'function' ? klonEkrani(proje) : ekBekle('klon');   // klon.js
     return projeAnaSayfa(proje);
   },
 
@@ -936,7 +950,7 @@ const VIEWS = {
 
   /* ---------- Nizam Security (yeni, eskisinden bağımsız) ---------- */
 
-  security: () => securityEkran(),
+  security: () => typeof securityEkran === 'function' ? securityEkran() : ekBekle('security'),
 
   guncellemeler: () => guncellemelerEkran(),
   // (gövde aşağıda guncellemelerEkran fonksiyonunda)
@@ -9914,6 +9928,35 @@ function connRow(k, v, ok) {
    Sekmelerde tek çizim var; burada da tek olsun. */
 let CIZILEN_ADRES = null;
 
+/* ---------- Sonradan yüklenen dosyalar (v0.372.0) ----------
+   Security ve Klon ekranlarının kodu (~320 KB) yalnız o ekrana girilince
+   yükleniyor; açılışta okunmuyor. Klon, Security'nin yardımcılarını
+   kullandığı için önce onları yükler. */
+const EK_GRUP = {
+  security: ['security.js', 'security-test.js', 'security-okuma.js', 'security-yazma.js'],
+  klon: ['security.js', 'security-test.js', 'security-okuma.js', 'security-yazma.js', 'klon.js'],
+};
+const EK_YUKLU = {};
+function ekDosya(ad) {
+  if (EK_YUKLU[ad]) return EK_YUKLU[ad];
+  EK_YUKLU[ad] = new Promise((tamam, hata) => {
+    const sc = document.createElement('script');
+    sc.src = ad + '?v=' + String(APP.version || '').replace(/^v/, '');
+    sc.onload = tamam;
+    sc.onerror = () => { delete EK_YUKLU[ad]; hata(new Error(ad + ' yüklenemedi. İnternet bağlantını kontrol et.')); };
+    document.head.appendChild(sc);
+  });
+  return EK_YUKLU[ad];
+}
+async function ekYukle(grup) {
+  for (const ad of EK_GRUP[grup] || []) await ekDosya(ad);
+}
+/* Ekran çizilirken kod yoksa: önce iskelet, yüklenince yeniden çiz. */
+function ekBekle(grup) {
+  ekYukle(grup).then(() => render(), h => toast(h.message, 'hata'));
+  return iskeletler(4);
+}
+
 /* ---------- Vitrin ⇄ Proje sayfası geçişi (v0.363.0) ----------
    App Store kartı gibi: basılan afiş büyüyüp proje sayfasının afişine
    dönüşür, logo ve ad kendi yerine akar, alttaki kartlar sırayla yükselir.
@@ -9922,6 +9965,7 @@ let CIZILEN_ADRES = null;
    view-transition-name: none), yani tam ekran görüntü maliyeti yok.
    Desteklemeyen tarayıcıda ve "hareketi azalt"ta düz geçiş. */
 let PA_GECISTE = false;
+let SON_SEKME = '';
 let VT_KAYDIRMA = 0;
 function vtGecisVar() {
   return typeof document.startViewTransition === 'function'
@@ -10106,11 +10150,21 @@ function renderCiz() {
   if (yarim !== null && $('#yz-metin')) $('#yz-metin').value = yarim;
   if (yatay.length) $$('.raf', view).forEach((r, i) => { r.scrollLeft = yatay[i] || 0; });
 
-  view.classList.remove('swap');
+  /* Aynı ekran yeniden çizilince geçiş yarıda kesilmesin: 'swap' yalnız
+     yeni ekrana geçerken sıfırlanır (v0.372.0). */
+  if (gecis) view.classList.remove('swap');
 
   if (gecis && !PA_GECISTE) {
+    /* Alt menüde sağdaki sekmeye geçince sağdan, soldakine geçince soldan
+       gelir; başka geçişlerde hafifçe aşağıdan (v0.372.0). */
+    const sira = $$('#tabbar .tab').map(t => t.dataset.route);
+    const a = sira.indexOf(SON_SEKME), b = sira.indexOf(key);
+    view.classList.remove('yon-sag', 'yon-sol', 'giris', 'swap');
+    if (a >= 0 && b >= 0 && a !== b && !detay) view.classList.add(b > a ? 'yon-sag' : 'yon-sol');
+    SON_SEKME = detay ? SON_SEKME : key;
     void view.offsetWidth;
-    view.classList.add('swap');
+    view.classList.add('swap', 'giris');
+    clearTimeout(view._girisZ); view._girisZ = setTimeout(() => view.classList.remove('giris'), 900);
     sayaclariCanlandir(view);
   }
 
@@ -12235,7 +12289,7 @@ function baslangicTuruSec(tur, sektorId) {
       if (!t || t.dataset.bt === 'kapat') return;
       modalKapat();
       if (t.dataset.bt === 'kopya')    return kopyaKaynagiSec(tur);
-      if (t.dataset.bt === 'klon')     return klonKaynakSec();   // klon.js
+      if (t.dataset.bt === 'klon')     return ekYukle('klon').then(() => klonKaynakSec(), h => toast(h.message, 'hata'));   // klon.js
       if (t.dataset.bt === 'template') return cekirdekKaynakSec(tur, sektorId);
       sihirbaziBaslat(tur, sektorId);
     });
@@ -14649,8 +14703,9 @@ function gorevVerAc(secili = '', duzenle = null, on = {}) {
 
 /* Sağdan kayan panel davranışı (v0.369.0): giriş animasyonu bitince kalkar,
    kapanış kayarak olur. Görev ve Yeni görev panelleri ortak kullanır. */
-function panelKayar(kutu) {
+function panelKayar(kutu, cekKapat = true) {
   kutu.addEventListener('animationend', () => { kutu.style.animation = 'none'; }, { once: true });
+  if (cekKapat) cekerekKapat(kutu, 'sag');
   kutu._kapanis = bitti => {
     kutu.style.animation = 'none'; void kutu.offsetWidth;
     kutu.style.transition = 'transform .3s cubic-bezier(.32,.72,0,1)';
@@ -16355,8 +16410,14 @@ async function eylemCalistir(el) {
   /* NIZAM Security yeni ekran eylemleri (guvenlik-ekran.js). */
   if (e && e.indexOf('guv-') === 0) { if (await guvenlikEkranEylem(e, el)) return; }
   /* Nizam Security (security.js). */
-  if (e && e.indexOf('sec-') === 0) { if (await securityEylem(e, el)) return; }
-  if (e && e.indexOf('klon-') === 0) { if (await klonEylem(e, el)) return; }   // klon.js
+  if (e && e.indexOf('sec-') === 0) {
+    if (typeof securityEylem !== 'function') { try { await ekYukle('security'); } catch (h) { toast(h.message, 'hata'); return; } }
+    if (await securityEylem(e, el)) return;
+  }
+  if (e && e.indexOf('klon-') === 0) {   // klon.js
+    if (typeof klonEylem !== 'function') { try { await ekYukle('klon'); } catch (h) { toast(h.message, 'hata'); return; } }
+    if (await klonEylem(e, el)) return;
+  }
 
   if (e === 'sihirbaz')  return sihirbaziAc();
   if (e === 'tazele')    return veriTazele();
@@ -19073,7 +19134,22 @@ const SH_KAYNAK = {
   hata:       { ad: 'Hatalar', uzun: 'Hatalar', alt: 'Program hataları', ik: '!', sinif: 'shk-ht' },
 };
 
+/* Önbellek (v0.372.0): veri değişmedikçe liste yeniden toplanmaz. */
+let SH_ONB = { imza: '', satirlar: [] };
+function shImza() {
+  const etk = (DB.projeler || []).map(p => { const e = ETK[p.id]; return e ? p.id + e.durum + (e.zaman || 0) : ''; }).join();
+  const son = l => (l && l.length) ? l.length + '|' + (l[0].id || l[0].olusturuldu || l[0].yapildi || '') : '0';
+  return [son(DB.isKayitlari), son(DB.hareketler), son(DB.gorevler), (DB.projeler || []).length,
+          SURUM.durum, SURUM.zaman, etk].join('#');
+}
 function shSatirlar() {
+  const imza = shImza();
+  if (imza === SH_ONB.imza) return SH_ONB.satirlar;
+  const satirlar = shTopla();
+  SH_ONB = { imza, satirlar };
+  return satirlar;
+}
+function shTopla() {
   const satirlar = [];
   (DB.isKayitlari || []).forEach(k => satirlar.push({
     kisi: shKisiBul(k.kullanici), tur: 'claude', pkey: shProjeBul(k.program),
@@ -19081,15 +19157,17 @@ function shSatirlar() {
     program: k.program || '—', is: k.is_ozet || '', detay: k.detay || '',
     repo: k.repo || '', commit: k.commit_no || '', oturum: k.oturum || '', kaynak: 'Claude',
   }));
-  const gecerli = new Set((DB.gorevler || []).filter(g => DB.gorevGecerli(g)).map(g => g.id));
-  (DB.hareketler || []).filter(h => h.gorev_id && gecerli.has(h.gorev_id)).forEach(h => {
-    const g = (DB.gorevler || []).find(x => x.id === h.gorev_id);
+  /* Görevler bir kez haritaya alınır: her hareket için listeyi baştan
+     taramak 400 harekette 100 ms'yi buluyordu (v0.372.0). */
+  const gorevHarita = new Map((DB.gorevler || []).filter(g => DB.gorevGecerli(g)).map(g => [g.id, g]));
+  (DB.hareketler || []).filter(h => h.gorev_id && gorevHarita.has(h.gorev_id)).forEach(h => {
+    const g = gorevHarita.get(h.gorev_id);
     const p = g && g.proje_id ? DB.proje(g.proje_id) : null;
     satirlar.push({
       kisi: DB.kisi(h.kim), tur: 'studio', pkey: p ? p.id : ':studio',
       zaman: h.olusturuldu || '', kullanici: DB.kisiAdi(h.kim) || 'Biri',
       program: p ? basHarfleriBuyuk(p.firma || projeAdi(p)) : 'Studio',
-      is: (t => t.charAt(0).toLocaleUpperCase('tr') + t.slice(1))(HAREKET_ADI[h.tip] || h.tip || '')
+      is: ilkHarfBuyuk(HAREKET_ADI[h.tip] || h.tip || '')
         + (g ? ' · ' + g.baslik : ''),
       detay: [g ? gorevNo(g) + ' · ' + g.baslik : '', p ? 'Proje: ' + basHarfleriBuyuk(p.firma || projeAdi(p)) : '',
         h.notu || ''].filter(Boolean).join('\n'),
@@ -19131,7 +19209,9 @@ function shSatirlar() {
       program: ad, is: o.yazi || '', detay: o.yazi || '', kaynak: o.h ? 'Program hatası' : 'Program',
     }));
   });
-  return satirlar.sort((x, y) => (y.zaman || '').localeCompare(x.zaman || ''));
+  /* Tarihler ISO biçiminde: düz karşılaştırma yeter, dil kurallı
+     karşılaştırma (localeCompare) burada çok pahalıydı. */
+  return satirlar.sort((x, y) => { const a = x.zaman || '', b = y.zaman || ''; return a < b ? 1 : a > b ? -1 : 0; });
 }
 
 /* Seçili kişi (null = Herkes). Sayfa yenilenene kadar kalır. */
@@ -19178,7 +19258,7 @@ function shKisiler(hepsi) {
     k.sayi++; if ((r.zaman || '') > k.son) k.son = r.zaman || '';
     m.set(r.kullanici, k);
   });
-  return [...m.values()].sort((x, y) => y.son.localeCompare(x.son));
+  return [...m.values()].sort((x, y) => x.son < y.son ? 1 : x.son > y.son ? -1 : 0);
 }
 
 /* Son Hareketler (v0.353.0 · onaylı taslak A): gün gün zaman çizelgesi.
@@ -19303,6 +19383,7 @@ function shFiltreAc() {
       $('[data-f="goster"]', kutu).onclick = () => { Object.assign(SH_F, f); SH_LIMIT = 30; modalKapat(); render(); };
     };
     ciz();
+    cekerekKapat(kutu, 'asagi');
   }, 'shf-modal');
   perde.classList.add('shf-perde');
 }
@@ -20448,5 +20529,72 @@ if ('serviceWorker' in navigator) {
     if (v.tip === 'git' && typeof v.adres === 'string' && /^#\/[a-z]/.test(v.adres)) {
       bildirimAdresiAc(v.adres);
     }
+  });
+}
+
+
+/* ==========================================================================
+   Dokunma hissi ve çekerek kapatma (v0.372.0)
+   ========================================================================== */
+/* Basılan şey hafifçe gömülür. Parmak 90 ms içinde kayarsa (sayfa
+   kaydırılıyorsa) gömülmez: kaydırırken kartlar titremesin. Kendi basma
+   hareketi olanlar (3D kartlar, kabarık düğmeler) hariç. */
+(() => {
+  const SEC = '[data-eylem], .btn, a.lk, a.tab, a.nav-item, button.sc';
+  const HARIC = '.p3-kart, .gv2-k, .pa2-hz, .gm-bt, .shf-c, .vt-pos, .pjs-yeni, .gv2-fd, .shf-dug, .yz-gonder, .sayfa-dug, input, textarea, select, .tab, .nav-item';
+  let el = null, z = null, x0 = 0, y0 = 0;
+  const birak = () => { clearTimeout(z); if (el) el.classList.remove('basili'); el = null; };
+  document.addEventListener('touchstart', e => {
+    birak();
+    const h = e.target.closest(SEC);
+    if (!h || h.closest(HARIC) || h.disabled) return;
+    x0 = e.touches[0].clientX; y0 = e.touches[0].clientY;
+    el = h; z = setTimeout(() => el && el.classList.add('basili'), 90);
+  }, { passive: true });
+  document.addEventListener('touchmove', e => {
+    if (!el) return;
+    if (Math.abs(e.touches[0].clientX - x0) > 8 || Math.abs(e.touches[0].clientY - y0) > 8) birak();
+  }, { passive: true });
+  ['touchend', 'touchcancel'].forEach(t => document.addEventListener(t, () => setTimeout(birak, 120), { passive: true }));
+})();
+
+/* Panel ya da alttan açılan pencere parmakla çekilerek kapanır.
+   yon: 'sag' (yandan panel) · 'asagi' (alttan sayfa). Yazı alanlarında,
+   kaydırılabilen listenin ortasında ya da yatay kayan şeritte başlamaz. */
+function cekerekKapat(kutu, yon) {
+  let x0 = null, y0 = 0, d = 0, kilit = null;
+  const asagi = yon === 'asagi';
+  kutu.addEventListener('touchstart', e => {
+    if (e.target.closest('input, textarea, select, .gm-kisiler, .gm-ac-liste, .shf-hizli, .gv2-fl')) { x0 = null; return; }
+    if (asagi && kutu.scrollTop > 0) { x0 = null; return; }
+    x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; d = 0; kilit = null;
+  }, { passive: true });
+  kutu.addEventListener('touchmove', e => {
+    if (x0 === null) return;
+    const dx = e.touches[0].clientX - x0, dy = e.touches[0].clientY - y0;
+    if (kilit === null && (Math.abs(dx) > 8 || Math.abs(dy) > 8))
+      kilit = asagi ? (dy > 0 && Math.abs(dy) > Math.abs(dx) * 1.3) : (dx > 0 && Math.abs(dx) > Math.abs(dy) * 1.3);
+    if (!kilit) return;
+    d = Math.max(0, asagi ? dy : dx);
+    kutu.style.animation = 'none';
+    kutu.style.transition = 'none';
+    kutu.style.transform = asagi ? `translate3d(0,${d}px,0)` : `translate3d(${d}px,0,0)`;
+  }, { passive: true });
+  kutu.addEventListener('touchend', () => {
+    if (x0 === null || !kilit) { x0 = null; return; }
+    x0 = null;
+    if (d > 90) {
+      if (kutu._cek) return kutu._cek();
+      if (!kutu._kapanis) {
+        kutu.style.transition = 'transform .28s cubic-bezier(.32,.72,0,1)';
+        kutu.style.transform = asagi ? 'translate3d(0,100%,0)' : 'translate3d(105%,0,0)';
+        const pr = kutu.parentElement; if (pr) { pr.style.transition = 'opacity .28s'; pr.style.opacity = '0'; }
+        setTimeout(() => { if (pr) pr.remove(); }, 270);
+        return;
+      }
+      return modalKapat();
+    }
+    kutu.style.transition = 'transform .28s cubic-bezier(.32,.72,0,1)';
+    kutu.style.transform = '';
   });
 }

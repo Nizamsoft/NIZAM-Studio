@@ -1,5 +1,16 @@
 # Değişiklik Günlüğü
 
+## v0.372.0 (optimizasyon · 1. tur)
+- Sonradan yükleme: `security*.js` ve `klon.js` index.html'den çıktı; `ekYukle(grup)` / `ekBekle` ile ekrana ya da
+  `sec-`/`klon-` eylemine girince yüklenir (açılışta okunan betik ~%50 az, 4x yavaş işlemcide 8,0 → 3,7 sn).
+- Panel ilk çizim ~290 → ~80 ms (4x yavaş): `shSatirlar` imzalı önbellek (`SH_ONB`), görev haritası, ISO tarihler
+  için düz karşılaştırma (localeCompare yerine), `basHarfleriBuyuk` / `ilkHarfBuyuk` sonuç önbelleği.
+- Geçişler: alt menü sırasına göre yönlü (`yon-sag`/`yon-sol`), diğerleri yukarı; `.giris` ile kartlar sırayla
+  yükselir. Aynı ekranın yeniden çizimi geçişi yarıda kesmiyor (`swap` yalnız yeni ekranda sıfırlanır). Panel'de
+  geçiş açıldı.
+- Dokunma: `.basili` (90 ms gecikmeli, kaydırmada iptal), kendi basma hareketi olanlar hariç. `cekerekKapat`:
+  görev ayrıntısı sağa, filtre sayfası aşağı çekilince kapanır. İskelet parlaması; hareketi azalt'ta sadeleşme.
+
 ## v0.371.0
 - **Son Hareketler beş kaynak** (onaylı taslak): `SH_KAYNAK` claude · studio · guncelleme (Sürüm Takibi notları,
   saat yok) · program / hata (bağlı programların `ETK` etkileşim verisi, `shEtkTazele` arkada 5 dk'da bir okur).

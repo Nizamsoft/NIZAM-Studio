@@ -21,6 +21,15 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.372.0', tarih: '2026-10-31',
+    ozet: 'Daha hızlı ve akıcı Studio',
+    maddeler: [
+      'Açılış hafifledi: Security ve Klon ekranlarının kodu yalnız o ekrana girince yükleniyor.',
+      'Panel ilk açılışta yaklaşık 4 kat daha hızlı çiziliyor.',
+      'Alt menüde sağa ya da sola geçince sayfa o yönden kayarak geliyor; kartlar sırayla, yumuşakça beliriyor.',
+      'Basılan her şey aynı şekilde hafifçe gömülüyor; kaydırırken titremiyor.',
+      'Görev paneli sağa, filtre penceresi aşağı çekilerek kapanıyor.',
+    ] },
   { surum: 'v0.371.0', tarih: '2026-10-31',
     ozet: 'Son Hareketler: her şey tek akışta, filtreli',
     maddeler: [
