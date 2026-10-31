@@ -21,6 +21,9 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.372.2', tarih: '2026-10-31',
+    ozet: 'Panel kartları sakin yükleniyor',
+    maddeler: ['Panel açılırken dört kutu arka arkaya zıplıyordu; artık bir kez, sakince yükleniyor.'] },
   { surum: 'v0.372.1', tarih: '2026-10-31',
     ozet: 'Son Hareketler sadeleşti',
     maddeler: ['Son Hareketler\'den kullanılmayan Claude bölümü kaldırıldı.'] },

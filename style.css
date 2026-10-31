@@ -13361,16 +13361,14 @@ html.pa-akis .vt-ik.kot::after, html.pa-akis .p3-uyari, html.pa-akis .pa2-dk.uy,
 
 /* Kartlar sırayla, hafifçe yükselir (yalnız ekran ilk açılırken). */
 @keyframes kartGir { from { opacity: 0; transform: translate3d(0, 12px, 0); } to { opacity: 1; transform: none; } }
-.view.giris :is(.p3-kart, .gv2-k, .shz-sat, .vt-grup, .pa2 > *, .sh2-liste .sh2, .gd2-k) {
+.view.giris :is(.gv2-k, .shz-sat, .vt-grup, .pa2 > *, .sh2-liste .sh2, .gd2-k) {
   animation: kartGir .42s cubic-bezier(.32, .72, 0, 1) both;
 }
-.view.giris :is(.p3-kart, .gv2-k, .shz-sat, .vt-grup, .pa2 > *, .sh2-liste .sh2):nth-child(2) { animation-delay: .04s; }
-.view.giris :is(.p3-kart, .gv2-k, .shz-sat, .vt-grup, .pa2 > *, .sh2-liste .sh2):nth-child(3) { animation-delay: .08s; }
-.view.giris :is(.p3-kart, .gv2-k, .shz-sat, .vt-grup, .pa2 > *, .sh2-liste .sh2):nth-child(4) { animation-delay: .12s; }
-.view.giris :is(.p3-kart, .gv2-k, .shz-sat, .vt-grup, .pa2 > *, .sh2-liste .sh2):nth-child(5) { animation-delay: .16s; }
-.view.giris :is(.p3-kart, .gv2-k, .shz-sat, .vt-grup, .pa2 > *, .sh2-liste .sh2):nth-child(n+6) { animation-delay: .2s; }
-/* Panel kartlarının kendi parlama animasyonu giriş bitince devam eder. */
-.view.giris .p3-uyari { animation: kartGir .42s cubic-bezier(.32, .72, 0, 1) both; }
+.view.giris :is(.gv2-k, .shz-sat, .vt-grup, .pa2 > *, .sh2-liste .sh2):nth-child(2) { animation-delay: .04s; }
+.view.giris :is(.gv2-k, .shz-sat, .vt-grup, .pa2 > *, .sh2-liste .sh2):nth-child(3) { animation-delay: .08s; }
+.view.giris :is(.gv2-k, .shz-sat, .vt-grup, .pa2 > *, .sh2-liste .sh2):nth-child(4) { animation-delay: .12s; }
+.view.giris :is(.gv2-k, .shz-sat, .vt-grup, .pa2 > *, .sh2-liste .sh2):nth-child(5) { animation-delay: .16s; }
+.view.giris :is(.gv2-k, .shz-sat, .vt-grup, .pa2 > *, .sh2-liste .sh2):nth-child(n+6) { animation-delay: .2s; }
 
 /* Basma hissi: her yerde aynı, hafif gömülme. */
 .basili { transform: scale(.975); transition: transform .12s ease; }
@@ -13393,3 +13391,7 @@ html.pa-akis .vt-ik.kot::after, html.pa-akis .p3-uyari, html.pa-akis .pa2-dk.uy,
 #main.susulu .view.swap { animation: gecYukari .26s cubic-bezier(.32, .72, 0, 1) both; }
 #main.susulu .view.swap.yon-sag { animation-name: gecSag; }
 #main.susulu .view.swap.yon-sol { animation-name: gecSol; }
+
+/* Panel'in 3D kartları belirme animasyonuna girmez (kendi parlamaları var);
+   alt yazı bir/iki satır arasında değişince kutu boyu oynamasın. (v0.372.2) */
+.p3-kart:not(.p3-ana) .p3-alt { min-height: 2.6em; }

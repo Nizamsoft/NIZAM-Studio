@@ -10153,6 +10153,9 @@ function renderCiz() {
   /* Aynı ekran yeniden çizilince geçiş yarıda kesilmesin: 'swap' yalnız
      yeni ekrana geçerken sıfırlanır (v0.372.0). */
   if (gecis) view.classList.remove('swap');
+  /* Ekran açıldıktan sonra arkadan veri gelip yeniden çizilirse kartlar
+     yeniden belirme animasyonuna girmesin; Panel'de 4 kutu "zıplıyordu" (v0.372.2). */
+  else view.classList.remove('giris');
 
   if (gecis && !PA_GECISTE) {
     /* Alt menüde sağdaki sekmeye geçince sağdan, soldakine geçince soldan

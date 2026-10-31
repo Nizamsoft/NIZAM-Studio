@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.372.2
+- Panel 4 kutu titremesi: ekran açıldıktan sonraki yeniden çizimde `.giris` kalkar (arkadan gelen sürüm/etkileşim verisi animasyonu baştan başlatıyordu); `.p3-kart` belirme animasyonundan çıkarıldı; `.p3-alt` sabit en az yükseklik.
+
 ## v0.372.1
 - Son Hareketler: `SH_KAYNAK.claude` kaldırıldı (hızlı çip, filtre kartı ve iş kaydı satırları görünmez).
 
