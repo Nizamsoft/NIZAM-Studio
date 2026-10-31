@@ -1,6 +1,6 @@
 # Değişiklik Günlüğü
 
-## v0.369.2
+## v0.370.1
 - `gvDurum` görev penceresiyle aynı aşama adları (Plan bekleniyor / Plan onayı bekliyor / Geliştiriliyor / Kontrolde /
   Tamamlandı). `p3Veri.planda` + `onay` (plan onayı + kontrolde); Panel onay kartı ve penceresi iki bölümlü,
   `p3-plan-onay` eylemi (`plan_onay: true`). Filtre "Kontrolde" plan onayı bekleyenleri de kapsar. Panel penceresinde

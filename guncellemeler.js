@@ -21,7 +21,7 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
-  { surum: 'v0.369.2', tarih: '2026-10-31',
+  { surum: 'v0.370.1', tarih: '2026-10-31',
     ozet: 'Plan onayı bekleyen görevler doğru görünüyor',
     maddeler: [
       'Görev listesinde plan onayı bekleyen görev artık "Plan onayı bekliyor" yazıyor.',
