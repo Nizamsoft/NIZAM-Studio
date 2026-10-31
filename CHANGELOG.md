@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.373.0
+- Vitrin ⇄ Proje sayfası: `startViewTransition` (afiş/sayfa görüntüsü alıp ölçekliyordu, zayıf telefonda takılıyordu)
+  yerine Web Animations ile "yakınlaşarak açılma": kart scale 1.06 + söner, view .97'ye çekilir (200 ms) → sayfa
+  çizilir → alttan 26px yükselir (360 ms); geri tersi. Yalnız transform/opacity; çizim animasyon aralarında.
+  `.pa2.gir` kademeli giriş ve view-transition adları kaldırıldı.
+
 ## v0.372.2
 - Panel 4 kutu titremesi: ekran açıldıktan sonraki yeniden çizimde `.giris` kalkar (arkadan gelen sürüm/etkileşim verisi animasyonu baştan başlatıyordu); `.p3-kart` belirme animasyonundan çıkarıldı; `.p3-alt` sabit en az yükseklik.
 

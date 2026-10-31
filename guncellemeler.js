@@ -21,6 +21,9 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.373.0', tarih: '2026-10-31',
+    ozet: 'Projeye geçiş her telefonda akıcı',
+    maddeler: ['Vitrinden projeye geçiş yenilendi: afiş yakınlaşıp sönüyor, proje sayfası alttan yükseliyor. Eski telefonlarda da takılmıyor.'] },
   { surum: 'v0.372.2', tarih: '2026-10-31',
     ozet: 'Panel kartları sakin yükleniyor',
     maddeler: ['Panel açılırken dört kutu arka arkaya zıplıyordu; artık bir kez, sakince yükleniyor.'] },

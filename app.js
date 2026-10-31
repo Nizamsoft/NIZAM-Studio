@@ -8989,7 +8989,7 @@ function projeAnaSayfa(p) {
 
   const ETIKET = { genel: ['', 'Herkese'], ozel: ['', 'Sadece bu firma'], esitleme: ['g', 'Ana programdan geldi'] };
   return `
-    <div class="pa2 ${PA_GECISTE ? 'gir' : ''}">
+    <div class="pa2">
       <div class="pa2-hero" style="background-image:${vtZemin(p, '75% 20%')}">
         ${gor ? `<img class="vt-gor" src="${esc(gor)}" alt="" fetchpriority="high">` : ''}
         ${pjLogo(p, 'pa2-lo')}
@@ -9957,52 +9957,58 @@ function ekBekle(grup) {
   return iskeletler(4);
 }
 
-/* ---------- Vitrin ⇄ Proje sayfası geçişi (v0.363.0) ----------
-   App Store kartı gibi: basılan afiş büyüyüp proje sayfasının afişine
-   dönüşür, logo ve ad kendi yerine akar, alttaki kartlar sırayla yükselir.
-   Tarayıcının sayfa geçişi (startViewTransition) yalnız adlandırılmış üç
-   parça için kullanılıyor: kökün görüntüsü alınmıyor (CSS'te :root
-   view-transition-name: none), yani tam ekran görüntü maliyeti yok.
-   Desteklemeyen tarayıcıda ve "hareketi azalt"ta düz geçiş. */
+/* ---------- Vitrin ⇄ Proje sayfası geçişi (v0.373.0) ----------
+   "Yakınlaşarak açılma": basılan afiş hafifçe büyüyüp söner, vitrin
+   geri çekilir; proje sayfası alttan hafifçe yükselerek belirir. Geri
+   dönüşte tersi. Yalnız transform + opacity (telefonun ekran kartı yapar),
+   fotoğraf/ekran görüntüsü alınmaz. Yeni sayfa animasyon aralarında
+   çizilir; animasyon sırasında iş yapılmaz. Eski startViewTransition
+   yöntemi zayıf telefonlarda takılıyordu. */
 let PA_GECISTE = false;
 let SON_SEKME = '';
 let VT_KAYDIRMA = 0;
 function vtGecisVar() {
-  return typeof document.startViewTransition === 'function'
+  return typeof Element.prototype.animate === 'function'
     && !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
 }
-/* Geçiş süresince ekran kartını yoran her şey durur: alt menünün buzlu
-   camı (altından geçen afişi her karede yeniden bulanıklaştırıyordu) ve
-   sürekli dönen parlama animasyonları. */
+/* Geçiş süresince ekran kartını yoran her şey durur (buzlu cam, parlamalar). */
 function paAkisAc() { document.documentElement.classList.add('pa-akis'); }
 function paAkisKapat() { setTimeout(() => document.documentElement.classList.remove('pa-akis'), 60); }
-function paAdlandir(kart, ac) {
-  if (!kart) return;
-  const ad = kart.querySelector('.vt-pos-alt b, .vt-hero-yz h2');
-  const lo = kart.querySelector('.pj2-logo');
-  kart.style.viewTransitionName = ac ? 'pa-hero' : '';
-  if (ad) ad.style.viewTransitionName = ac ? 'pa-ad' : '';
-  if (lo) lo.style.viewTransitionName = ac ? 'pa-logo' : '';
-}
-function paIleriAk(id, kart) {
-  VT_KAYDIRMA = $('#view') ? $('#view').scrollTop : 0;
-  paAdlandir(kart, true);
+const PA_EGRI = 'cubic-bezier(.32,.72,0,1)';
+function paBitir(an) { return new Promise(r => { an.onfinish = r; an.oncancel = r; }); }
+async function paIleriAk(id, kart) {
+  const v = $('#view');
+  VT_KAYDIRMA = v ? v.scrollTop : 0;
   PA_GECISTE = true;
   paAkisAc();
-  const t = document.startViewTransition(() => gitVeCiz('#/projeler/' + id));
-  t.finished.finally(() => { PA_GECISTE = false; paAkisKapat(); $$('.pa2.gir').forEach(x => x.classList.remove('gir')); });
+  try {
+    const anlar = [
+      kart.animate([{ transform: 'scale(1)', opacity: 1 }, { transform: 'scale(1.06)', opacity: 0 }],
+        { duration: 200, easing: 'ease-in', fill: 'forwards' }),
+      v.animate([{ opacity: 1, transform: 'scale(1)' }, { opacity: 0, transform: 'scale(.97)' }],
+        { duration: 200, easing: 'ease-in', fill: 'forwards' }),
+    ];
+    await Promise.all(anlar.map(paBitir));
+    gitVeCiz('#/projeler/' + id);
+    anlar.forEach(a => a.cancel());
+    await paBitir(v.animate([{ opacity: 0, transform: 'translate3d(0,26px,0)' }, { opacity: 1, transform: 'none' }],
+      { duration: 360, easing: PA_EGRI }));
+  } finally { PA_GECISTE = false; paAkisKapat(); }
 }
-function paGeriAk() {
-  const id = (/#\/projeler\/([^/]+)/.exec(ONCEKI_ADRES || '') || [])[1] || '';
+async function paGeriAk() {
+  const v = $('#view');
   PA_GECISTE = true;
   paAkisAc();
-  const t = document.startViewTransition(() => {
+  try {
+    const cik = v.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translate3d(0,30px,0)' }],
+      { duration: 190, easing: 'ease-in', fill: 'forwards' });
+    await paBitir(cik);
     renderCiz();
-    const v = $('#view'); if (v) v.scrollTop = VT_KAYDIRMA;
-    const kart = id ? $(`.vt-pos[data-id="${CSS.escape(id)}"]`) : null;
-    paAdlandir(kart, true);
-  });
-  t.finished.finally(() => { PA_GECISTE = false; paAkisKapat(); $$('.vt-pos').forEach(k => paAdlandir(k, false)); });
+    v.scrollTop = VT_KAYDIRMA;
+    cik.cancel();
+    await paBitir(v.animate([{ opacity: 0, transform: 'scale(.97)' }, { opacity: 1, transform: 'scale(1)' }],
+      { duration: 320, easing: PA_EGRI }));
+  } finally { PA_GECISTE = false; paAkisKapat(); }
 }
 
 function gitVeCiz(hash) {

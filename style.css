@@ -13395,3 +13395,7 @@ html.pa-akis .vt-ik.kot::after, html.pa-akis .p3-uyari, html.pa-akis .pa2-dk.uy,
 /* Panel'in 3D kartları belirme animasyonuna girmez (kendi parlamaları var);
    alt yazı bir/iki satır arasında değişince kutu boyu oynamasın. (v0.372.2) */
 .p3-kart:not(.p3-ana) .p3-alt { min-height: 2.6em; }
+
+/* v0.373.0: sayfa geçişi artık startViewTransition kullanmıyor; adlandırma kapalı. */
+.pa2-hero, .pa2-lo.pj2-logo, .pa2-hero-yz h1 { view-transition-name: none; }
+#view { will-change: auto; }
