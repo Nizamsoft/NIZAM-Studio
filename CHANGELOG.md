@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü
 
+## v0.378.0
+- Yeni proje artık sağdan kayan çekmece (`#yp-cekmece`, modal değil): iki büyük seçenek (Hazır programdan + program
+  listesi "Seç", Sıfırdan), "Diğer seçenekler" açılır (içe aktar, test kopyası, birebir kopya), dipte sabit
+  "Deneme olarak aç" anahtarı. Esc, perde ve telefonda sağa çekme kapatır.
+- Atölye rafları (`ATL_RAF`: sablon · klon · deneme), aynı anda biri. Program kartı: tek cümle özet
+  (N firma güncelleme bekliyor / hepsi güncel), firma satırında renkli nokta + düz yazı, uyarlananda ilerleme
+  çubuğu. Masaüstünde iki sütun. `sablonProgramlari` firma sayısı Atölye'yle aynı (uyarlanmakta olanlar dahil).
+
 ## v0.377.0
 - Aşama yolları yeniden: `projeDuraklari` artık iki yol döndürüyor, her adım kendi `anahtar`ını (DURAKLAR sayfası)
   taşıyor; indeks eşleşmesi ve gizli "slot" duraklar kalktı. Uyarlama (sablonMu): firma · baglantilar(Kurulum) ·

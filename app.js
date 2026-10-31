@@ -8865,11 +8865,13 @@ function pjSekmeSec(k) {
   setTimeout(() => { PJ_GECIS = true; render(); }, 170);
 }
 let PJ_GECIS = false;
+/* Atölye'de açık raf: sablon · klon · deneme (v0.378.0). */
+let ATL_RAF = 'sablon';
 
 function projelerEkrani(kova) {
   if (AUTH.yonetici && SURUM.durum === 'bos') setTimeout(() => surumTakipYukle(), 0);
-  if (kova === 'deneme' || kova === 'klon') { PJ_ACIK.deneme = true; PJ_SEKME = 'atolye'; }
-  if (kova === 'template') { PJ_ACIK.template = true; PJ_SEKME = 'atolye'; }
+  if (kova === 'deneme' || kova === 'klon') { PJ_ACIK.deneme = true; PJ_SEKME = 'atolye'; ATL_RAF = kova; }
+  if (kova === 'template') { PJ_ACIK.template = true; PJ_SEKME = 'atolye'; ATL_RAF = 'sablon'; }
   if (PJ_SUZGEC === 'bitti') PJ_SUZGEC = 'hepsi';
 
   const aktif = DB.projeler.filter(p => !p.arsiv);
@@ -8886,95 +8888,105 @@ function projelerEkrani(kova) {
       ${!normal.length ? `<div class="vt-bos">Henüz proje yok.</div>` : vitrinEkrani(normal)}
     </div>`;
   }
-  /* Atölye (v0.377.0): üç raf — şablon programlar (altında onlardan
-     uyarlanan firmalar ve sürüm durumları), test kopyaları, denemeler. */
+  /* Atölye (v0.378.0): üç raf, aynı anda biri görünür — Şablonlar (altında
+     onlardan uyarlanan firmalar), Test kopyaları, Denemeler. */
   const klonlar = denemeKlon.filter(p => klonMi(p));
   const denemeler = denemeKlon.filter(p => !klonMi(p));
   const programlar = sablonProgramlari();
+  const hazirlanan = sablon.filter(p => !(p.palet || {}).cekirdekTemizlendi);
   const yon = AUTH.yonetici;
+  const raf = (k, ad, n) => `<button type="button" class="at-raf ${ATL_RAF === k ? 'on' : ''}"
+    data-eylem="atl-raf" data-id="${k}">${ad}${n ? `<em>${n}</em>` : ''}</button>`;
+  const ekle = (eylem, ad) => yon ? `<button type="button" class="at-ekle" data-eylem="${eylem}">
+    ${svg(ICON.arti, 14)} ${ad}</button>` : '';
+
+  let govde = '';
+  if (ATL_RAF === 'klon') {
+    govde = (klonlar.length ? `<div class="at-izg">${klonlar.map(pjKart3).join('')}</div>`
+      : '<div class="at-bos">Henüz test kopyası yok.</div>') + ekle('klon-yeni', 'Test kopyası aç');
+  } else if (ATL_RAF === 'deneme') {
+    govde = denemeler.length ? `<div class="at-izg">${denemeler.map(pjKart3).join('')}</div>`
+      : '<div class="at-bos">Deneme projesi yok · Yeni proje panelinde "Deneme olarak aç" ile açılır.</div>';
+  } else {
+    govde = `<div class="at-izg">${programlar.map(atProgramKarti).join('')}
+        ${hazirlanan.map(p => `
+          <button type="button" class="at-kart at-hazir" data-eylem="template-ayar" data-proje="${p.id}">
+            <span class="at-pik gri">${svg(ICON.izgaraDort, 22)}</span>
+            <span class="at-pyz"><b>${esc(p.firma || 'Template')}</b><i>Şablon hazırlanıyor · kurulumu bitir</i></span>
+            <span class="at-ok">${svg(ICON.chevron, 15)}</span></button>`).join('')}
+      </div>
+      ${SURUM.durum !== 'tamam' && yon ? '<div class="at-bos">Programlar sürüm takibinden okunuyor…</div>' : ''}
+      ${!programlar.length && !hazirlanan.length && SURUM.durum === 'tamam' ? '<div class="at-bos">Henüz şablon program yok.</div>' : ''}
+      ${ekle('template-olustur-ac', 'Şablon program ekle')}`;
+  }
+
   return `<div class="atl ${gecis}">
     <div class="pjs-sat">${pjSekmeDugmesi()}${yeniDug}</div>
-    <div class="pj2-kok at">
-      <div class="at-bas"><span>Şablon programlar</span><i>${programlar.length || ''}</i></div>
-      ${programlar.map(atProgramKarti).join('')}
-      ${SURUM.durum !== 'tamam' && yon ? '<div class="at-not">Ana programlar sürüm takibinden okunuyor…</div>' : ''}
-      ${yon ? `<button type="button" class="at-kart kesik" data-eylem="template-olustur-ac">
-        <span class="at-ik">${svg(ICON.arti, 18)}</span>
-        <span class="at-yz"><b>Şablon program ekle</b><i>Hazır bir programı şablon olarak tanıt</i></span></button>` : ''}
-      ${sablon.filter(p => !(p.palet || {}).cekirdekTemizlendi).map(p => `
-        <button type="button" class="at-kart" data-eylem="template-ayar" data-proje="${p.id}">
-          <span class="at-ik">${svg(ICON.izgaraDort, 18)}</span>
-          <span class="at-yz"><b>${esc(p.firma || 'Template')}</b><i>Şablon hazırlanıyor · kurulumu bitir</i></span>
-          <span class="at-ok">${svg(ICON.chevron, 15)}</span></button>`).join('')}
-
-      <div class="at-bas"><span>Test kopyaları</span><i>${klonlar.length || ''}</i></div>
-      ${klonlar.length ? klonlar.map(pjKart3).join('') : '<div class="at-not">Henüz test kopyası yok.</div>'}
-      ${yon ? `<button type="button" class="at-kart kesik" data-eylem="klon-yeni">
-        <span class="at-ik">${svg(ICON.kopya, 18)}</span>
-        <span class="at-yz"><b>Test kopyası aç</b><i>Bir firmanın programının bağlantısız ikizi</i></span></button>` : ''}
-
-      <div class="at-bas"><span>Denemeler</span><i>${denemeler.length || ''}</i></div>
-      ${denemeler.length ? denemeler.map(pjKart3).join('') : '<div class="at-not">Deneme projesi yok · "+" ekranında "Deneme olarak aç" ile açılır.</div>'}
+    <div class="at">
+      <div class="at-raflar">${raf('sablon', 'Şablonlar', programlar.length + hazirlanan.length)}${
+        raf('klon', 'Test kopyaları', klonlar.length)}${raf('deneme', 'Denemeler', denemeler.length)}</div>
+      ${govde}
     </div>
   </div>`;
 }
 
-/* Atölye'de bir şablon programın kartı: başlık, ondan uyarlanan firmalar
-   (sürüm durumuyla) ve "Yeni firmaya uyarla". Firma satırına basınca
+/* Atölye'de bir şablon programın kartı: başlık, tek cümlelik özet, ondan
+   uyarlanan firmalar ve "Yeni firmaya uyarla". Firma satırına basınca
    sürüm takibindeki ayrıntı açılır; eşitlemeyi kullanıcı kendisi yapar. */
 function atProgramKarti(x, i) {
   const satirlar = [];
   const gorulenSite = new Set();
   let geride = 0, bilgi = false;
+  const surumSatiri = (ad, f) => {
+    const bek = (f.asagi || []).length;
+    if (f.anaSurum) bilgi = true;
+    if (bek) geride++;
+    const d = svDurum(f);
+    return { ad, eylem: 'surum-detay', id: f.kod,
+      nokta: !f.anaSurum ? '' : bek ? 'k' : d.sinif === 'ok' ? 'y' : 's',
+      yazi: !f.anaSurum ? 'Sürüm bilgisi yok' : bek ? bek + ' güncelleme bekliyor'
+        : d.sinif === 'ok' ? 'Güncel' : 'Ana programa alınmamış değişiklik var' };
+  };
   if (x.ana) {
     (x.ana.firmalar || []).forEach(f => {
-      const d = svDurum(f);
-      if (f.anaSurum) bilgi = true;
-      const bek = (f.asagi || []).length;
-      if (bek) geride++;
       gorulenSite.add(pjHost(f.site));
-      satirlar.push({ ad: f.ad, eylem: 'surum-detay', id: f.kod,
-        rozet: !f.anaSurum ? ['', 'bilgi yok'] : bek ? ['kir', bek + ' geride']
-          : d.sinif === 'ok' ? ['yesil', 'güncel'] : ['sari', 'ileride'] });
+      satirlar.push(surumSatiri(f.ad, f));
     });
   }
   sablonKopyalari(x.proje.id).forEach(p => {
     const h = pjAdres(p);
     if (h && gorulenSite.has(h)) return;
     const yer = pjSurumYeri(p);
-    if (yer && yer.tur === 'firma') {
-      const bek = (yer.f.asagi || []).length;
-      if (bek) geride++;
-      bilgi = true;
-      satirlar.push({ ad: projeAdi(p), eylem: 'surum-detay', id: yer.f.kod,
-        rozet: bek ? ['kir', bek + ' geride'] : ['yesil', 'güncel'] });
-      return;
-    }
-    const liste = durakAkisi(p);
-    const sayilan = liste.filter(d => !d.sayilmaz);
+    if (yer && yer.tur === 'firma') return satirlar.push(surumSatiri(projeAdi(p), yer.f));
+    const sayilan = durakAkisi(p).filter(d => !d.sayilmaz);
     const biten = sayilan.filter(d => d.bitti).length;
+    const teslim = !!(p.palet || {}).finalVerildi;
     satirlar.push({ ad: projeAdi(p) || 'Yeni firma', eylem: 'proje-ac', id: p.id,
-      rozet: (p.palet || {}).finalVerildi ? ['', 'teslim edildi']
-        : ['mavi', 'uyarlanıyor ' + biten + '/' + sayilan.length] });
+      nokta: teslim ? '' : 'm', yazi: teslim ? 'Teslim edildi' : `Uyarlanıyor · ${biten}/${sayilan.length}`,
+      ray: teslim ? null : Math.round(biten / Math.max(1, sayilan.length) * 100) });
   });
 
-  const ust = geride ? `<span class="at-rz kir">${geride} firma geride</span>`
-    : bilgi ? '<span class="at-rz yesil">hepsi güncel</span>' : '';
+  const ozet = geride
+    ? `<div class="at-ozet kir">${svg(ICON.uyari, 14)} ${geride} firma güncelleme bekliyor</div>`
+    : bilgi ? `<div class="at-ozet yesil">${svg(ICON.tik, 14)} Bütün firmalar güncel</div>` : '';
   const baslikEylem = x.tur === 'template'
     ? `data-eylem="template-ayar" data-proje="${x.proje.id}"`
     : `data-eylem="proje-ac" data-id="${x.proje.id}"`;
-  return `<div class="at-kart buyuk">
-    <button type="button" class="at-sat" ${baslikEylem}>
-      <span class="at-ik b ${i === 0 ? 'siyah' : ''}">${svg(x.tur === 'ana' ? ICON.katman : ICON.izgaraDort, 22)}</span>
-      <span class="at-yz"><b>${esc(x.ad)}</b><i>${esc([x.tur === 'ana' ? 'Ana program' : 'Template',
-        x.surum ? 'sürüm ' + x.surum : ''].filter(Boolean).join(' · '))}</i></span>
-      ${ust}</button>
-    ${satirlar.length ? `<div class="at-firmalar">${satirlar.map(r => `
+  return `<div class="at-kart">
+    <button type="button" class="at-pust" ${baslikEylem}>
+      <span class="at-pik ${i === 0 ? '' : 'gri'}">${svg(x.tur === 'ana' ? ICON.katman : ICON.izgaraDort, 24)}</span>
+      <span class="at-pyz"><b>${esc(x.ad)}</b><i>${esc([x.surum ? 'Sürüm ' + x.surum : (x.tur === 'template' ? 'Template' : 'Ana program'),
+        satirlar.length + ' firma'].join(' · '))}</i></span></button>
+    ${ozet}
+    ${satirlar.length ? satirlar.map(r => `
       <button type="button" class="at-firma" data-eylem="${r.eylem}" data-id="${esc(r.id)}">
-        <span class="at-av">${esc(basHarf(r.ad))}</span><b>${esc(r.ad)}</b>
-        <span class="at-rz ${r.rozet[0]}">${esc(r.rozet[1])}</span></button>`).join('')}</div>`
-      : '<div class="at-not ic">Bu programdan henüz firma uyarlanmadı.</div>'}
-    ${AUTH.yonetici ? `<button type="button" class="at-dug" data-eylem="uyarla-baslat" data-id="${x.proje.id}">
+        <span class="at-av">${esc(basHarf(r.ad))}</span>
+        <span class="at-fyz"><b>${esc(r.ad)}</b>
+          <i>${r.nokta ? `<u class="at-n ${r.nokta}"></u>` : '<u class="at-n"></u>'}${esc(r.yazi)}</i>
+          ${r.ray != null ? `<span class="at-ray"><s style="width:${r.ray}%"></s></span>` : ''}</span>
+        <span class="at-ok">${svg(ICON.chevron, 15)}</span></button>`).join('')
+      : '<div class="at-bos ic">Bu programdan henüz firma uyarlanmadı.</div>'}
+    ${AUTH.yonetici ? `<button type="button" class="at-uyarla" data-eylem="uyarla-baslat" data-id="${x.proje.id}">
       ${svg(ICON.arti, 15)} Yeni firmaya uyarla</button>` : ''}
   </div>`;
 }
@@ -12473,8 +12485,12 @@ function sablonProgramlari() {
     const yer = pjSurumYeri(p);
     if (yer && yer.tur === 'ana') {
       gorulen.add(p.id);
+      /* Firma sayısı Atölye'deki listeyle aynı: sürüm takibindekiler +
+         Studio'da henüz uyarlanmakta olan kopyalar. */
+      const siteler = new Set((yer.ana.firmalar || []).map(f => pjHost(f.site)));
+      const yeni = sablonKopyalari(p.id).filter(k => !siteler.has(pjAdres(k))).length;
       liste.push({ tur: 'ana', proje: p, ad: projeAdi(p), ana: yer.ana,
-        surum: svKisa(yer.ana.canli), firmaSayisi: (yer.ana.firmalar || []).length });
+        surum: svKisa(yer.ana.canli), firmaSayisi: (yer.ana.firmalar || []).length + yeni });
     }
   });
   hazirTemplateler('').forEach(p => {
@@ -12520,86 +12536,137 @@ function uyarlaBaslat(kaynakId, tur) {
   return sablonSec(kaynakId, tur);
 }
 
-/* "+" ekranı (v0.377.0): tek kapı. En üstte şablon programlar (en sık iş:
-   bir programı yeni firmaya uyarlamak), altında sıfırdan proje, en altta
-   seyrek işler. "Deneme" ayrı bir başlangıç değil, bir anahtar. */
+/* "Yeni proje" paneli (v0.378.0): sağdan kayan çekmece. Yalnız iki büyük
+   seçenek — hazır programdan (en sık iş) ve sıfırdan; seyrek işler
+   "Diğer seçenekler"in altında. "Deneme" ayrı bir başlangıç değil, anahtar. */
 let YP_DENEME = false;
+let YP_DIGER = false;
 
 function ypIcerik() {
-  const tur = YP_DENEME ? 'deneme' : 'gercek';
   const programlar = sablonProgramlari();
-  const yukleniyor = SURUM.durum === 'yukleniyor' || SURUM.durum === 'bos';
-  const kart = (x, i) => `
-    <div class="yp-kart k3">
-      <div class="yp-sat">
-        <span class="yp-ik b ${i === 0 ? 'siyah' : ''}">${svg(x.tur === 'ana' ? ICON.katman : ICON.izgaraDort, 22)}</span>
-        <span class="yp-yz"><b>${esc(x.ad)}</b><i>${esc([
-          x.surum ? 'Sürüm ' + x.surum : (x.tur === 'template' ? 'Template' : ''),
-          x.firmaSayisi ? x.firmaSayisi + ' firmada kullanılıyor' : 'Henüz firma yok',
-        ].filter(Boolean).join(' · '))}</i></span>
-      </div>
-      <button type="button" class="yp-dug ${i === 0 ? '' : 'hafif'}" data-yp="uyarla" data-id="${x.proje.id}">
-        Yeni firmaya uyarla ${svg(ICON.chevron, 14)}</button>
+  const yukleniyor = AUTH.yonetici && SURUM.durum !== 'tamam';
+  const prog = (x, i) => `
+    <div class="yp-prog">
+      <span class="yp-pav">${svg(x.tur === 'ana' ? ICON.katman : ICON.izgaraDort, 17)}</span>
+      <span class="yp-pyz"><b>${esc(x.ad)}</b><i>${esc(x.firmaSayisi
+        ? x.firmaSayisi + ' firmada kullanılıyor' : 'Henüz firma yok')}</i></span>
+      <button type="button" class="yp-sec ${i === 0 ? 'ana' : ''}" data-yp="uyarla" data-id="${x.proje.id}">Seç</button>
     </div>`;
-  const satir = (yp, ikon, b, i) => `
-    <button type="button" class="yp-kart yp-sat yp-tik" data-yp="${yp}">
-      <span class="yp-ik">${svg(ikon, 19)}</span>
-      <span class="yp-yz"><b>${b}</b><i>${i}</i></span>
-      <span class="yp-ok">${svg(ICON.chevron, 15)}</span></button>`;
+  const diger = (yp, ikon, b, i) => `
+    <button type="button" class="yp-dsat" data-yp="${yp}">
+      <span class="yp-pav">${svg(ikon, 16)}</span>
+      <span class="yp-pyz"><b>${b}</b><i>${i}</i></span>
+      <span class="yp-ok">${svg(ICON.chevron, 14)}</span></button>`;
 
   return `
-    <div class="yp-bas"><b>Ne başlatıyorsun?</b><i>Bir şablon programı uyarla ya da sıfırdan kur</i></div>
-    <div class="yp-bolum"><span>Şablondan uyarla</span><i>${programlar.length ? 'en sık kullanılan' : ''}</i></div>
-    ${programlar.map(kart).join('')}
-    ${yukleniyor ? '<div class="yp-not">Ana programlar sürüm takibinden okunuyor…</div>' : ''}
-    <button type="button" class="yp-kart yp-sat yp-tik kesik" data-yp="sablon-ekle">
-      <span class="yp-ik">${svg(ICON.arti, 19)}</span>
-      <span class="yp-yz"><b>Şablon program ekle</b><i>Hazır bir programı şablon olarak tanıt</i></span></button>
-    <div class="yp-bolum"><span>Sıfırdan</span></div>
-    ${satir('sifirdan', ICON.kalem, 'Sıfırdan yeni proje', 'Müşteriye özel, 8 adımda baştan kurulur')}
-    <div class="yp-bolum"><span>Diğer</span></div>
-    ${satir('aktar', ICON.ice, 'Var olan programı ekle', 'Zaten yapılmış bir programı Studio\'ya al')}
-    ${satir('klon', ICON.kopya, 'Test kopyası', 'Bir firmanın programının bağlantısız ikizi')}
-    ${satir('kopya', ICON.kopya, 'Birebir kopya', 'Bir projenin aynısıyla başla')}
-    <label class="yp-deneme"><input type="checkbox" data-yp-deneme ${YP_DENEME ? 'checked' : ''}>
-      <span><b>Deneme olarak aç</b><i>Atölye › Denemeler'de durur · sonra projenin menüsünden değiştirilebilir</i></span></label>
-    <div class="modal-alt"><button class="btn btn-ghost" data-yp="kapat" type="button">Vazgeç</button></div>
-    <input type="hidden" data-yp-tur value="${tur}">`;
+    <div class="yp-ust">
+      <b>Yeni proje</b>
+      <button type="button" class="yp-x" data-yp="kapat" aria-label="Kapat">${svg(ICON.kapat, 16)}</button>
+    </div>
+    <div class="yp-soru">Neyle başlıyoruz?</div>
+    <div class="yp-govde">
+      <div class="yp-buyuk ana">
+        <div class="yp-bk">
+          <span class="yp-bik">${svg(ICON.katman, 24)}</span>
+          <span class="yp-byz"><b>Hazır programdan</b><i>Elimizdeki bir programı yeni bir firmaya uyarla</i></span>
+        </div>
+        ${programlar.map(prog).join('')}
+        ${yukleniyor ? '<div class="yp-not">Programlar sürüm takibinden okunuyor…</div>' : ''}
+        ${!programlar.length && !yukleniyor ? '<div class="yp-not">Henüz şablon program yok.</div>' : ''}
+        <button type="button" class="yp-ekle" data-yp="sablon-ekle">${svg(ICON.arti, 14)} Şablon program ekle</button>
+      </div>
+      <button type="button" class="yp-buyuk yp-tikla" data-yp="sifirdan">
+        <span class="yp-bk">
+          <span class="yp-bik gri">${svg(ICON.kalem, 22)}</span>
+          <span class="yp-byz"><b>Sıfırdan</b><i>Müşteriye özel yepyeni bir program</i></span>
+          <span class="yp-ok">${svg(ICON.chevron, 16)}</span>
+        </span>
+      </button>
+      <button type="button" class="yp-diger-ac ${YP_DIGER ? 'acik' : ''}" data-yp="diger">
+        Diğer seçenekler ${svg(ICON.chevron, 13)}</button>
+      ${YP_DIGER ? `<div class="yp-diger">
+        ${diger('aktar', ICON.ice, 'İçe aktar', 'Zaten yapılmış bir programı Studio\'ya al')}
+        ${diger('klon', ICON.kopya, 'Test kopyası', 'Bir firmanın programının bağlantısız ikizi')}
+        ${diger('kopya', ICON.kopya, 'Birebir kopya', 'Bir projenin aynısıyla başla')}
+      </div>` : '<div class="yp-diger-alt">İçe aktar · Test kopyası · Birebir kopya</div>'}
+    </div>
+    <label class="yp-alt">
+      <span class="yp-pyz"><b>Deneme olarak aç</b><i>Gerçek projelere karışmaz, Atölye › Denemeler'de durur</i></span>
+      <input type="checkbox" class="yp-anahtar" data-yp-deneme ${YP_DENEME ? 'checked' : ''}>
+    </label>`;
 }
+
+function ypTazele() {
+  const k = $('#yp-panel');
+  if (k) k.innerHTML = ypIcerik();
+}
+
+function ypKapat() {
+  const c = $('#yp-cekmece');
+  if (!c) return;
+  document.removeEventListener('keydown', ypEsc);
+  c.classList.remove('acik');
+  setTimeout(() => c.remove(), 260);
+}
+function ypEsc(e) { if (e.key === 'Escape') ypKapat(); }
 
 function sihirbaziAc() {
   modalHepsiniKapat();
-  YP_DENEME = false;
+  ypKapat();
+  YP_DENEME = false; YP_DIGER = false;
   if (AUTH.yonetici && SURUM.durum !== 'tamam') {
     surumTakipYukle();
-    /* Sürüm takibi birkaç siteyi okuyor; bitince pencere tazelenir. */
+    /* Sürüm takibi birkaç siteyi okuyor; bitince panel tazelenir. */
     const bekle = () => {
-      const k = $('#yp-kok');
-      if (!k) return;
-      if (SURUM.durum === 'tamam') { k.innerHTML = ypIcerik(); return; }
+      if (!$('#yp-cekmece')) return;
+      if (SURUM.durum === 'tamam') return ypTazele();
       setTimeout(bekle, 600);
     };
     setTimeout(bekle, 600);
   }
-  modalAc(`<div id="yp-kok" class="yp">${ypIcerik()}</div>`, kutu => {
-    kutu.addEventListener('change', ev => {
-      if (ev.target.matches('[data-yp-deneme]')) YP_DENEME = ev.target.checked;
-    });
-    kutu.addEventListener('click', ev => {
-      const t = ev.target.closest('[data-yp]');
-      if (!t) return;
-      const e = t.dataset.yp;
-      const tur = YP_DENEME ? 'deneme' : 'gercek';
-      modalKapat();
-      if (e === 'kapat') return;
-      if (e === 'uyarla')      return uyarlaBaslat(t.dataset.id, tur);
-      if (e === 'sablon-ekle') return templateSihirbaziAc();
-      if (e === 'sifirdan')    return sihirbaziBaslat(tur, '');
-      if (e === 'aktar')       return projeAktarAc();
-      if (e === 'kopya')       return kopyaKaynagiSec(tur);
-      if (e === 'klon') return ekYukle('klon').then(() => klonKaynakSec(), h => toast(h.message, 'hata'));
-    });
-  }, 'genis yp-modal');
+  const c = document.createElement('div');
+  c.id = 'yp-cekmece';
+  c.className = 'yp-cekmece';
+  c.innerHTML = `<span class="yp-perde" data-yp="kapat"></span>
+    <div class="yp-panel" id="yp-panel" role="dialog" aria-modal="true" aria-label="Yeni proje">${ypIcerik()}</div>`;
+  document.body.appendChild(c);
+  requestAnimationFrame(() => requestAnimationFrame(() => c.classList.add('acik')));
+  document.addEventListener('keydown', ypEsc);
+
+  c.addEventListener('change', ev => {
+    if (ev.target.matches('[data-yp-deneme]')) YP_DENEME = ev.target.checked;
+  });
+  c.addEventListener('click', ev => {
+    const t = ev.target.closest('[data-yp]');
+    if (!t) return;
+    const e = t.dataset.yp;
+    if (e === 'diger') { YP_DIGER = !YP_DIGER; return ypTazele(); }
+    const tur = YP_DENEME ? 'deneme' : 'gercek';
+    ypKapat();
+    if (e === 'kapat') return;
+    if (e === 'uyarla')      return uyarlaBaslat(t.dataset.id, tur);
+    if (e === 'sablon-ekle') return templateSihirbaziAc();
+    if (e === 'sifirdan')    return sihirbaziBaslat(tur, '');
+    if (e === 'aktar')       return projeAktarAc();
+    if (e === 'kopya')       return kopyaKaynagiSec(tur);
+    if (e === 'klon') return ekYukle('klon').then(() => klonKaynakSec(), h => toast(h.message, 'hata'));
+  });
+
+  /* Telefonda paneli sağa çekince kapanır. */
+  const panel = $('#yp-panel', c);
+  let x0 = null, dx = 0;
+  panel.addEventListener('touchstart', e => { x0 = e.touches[0].clientX; dx = 0; panel.style.transition = 'none'; }, { passive: true });
+  panel.addEventListener('touchmove', e => {
+    if (x0 === null) return;
+    dx = Math.max(0, e.touches[0].clientX - x0);
+    panel.style.transform = dx ? `translateX(${dx}px)` : '';
+  }, { passive: true });
+  panel.addEventListener('touchend', () => {
+    panel.style.transition = '';
+    panel.style.transform = '';
+    if (x0 !== null && dx > 90) ypKapat();
+    x0 = null;
+  });
 }
 
 /* Mevcut programı içe aktarma penceresi: iki adım — promptu kopyala, Claude'un
@@ -16800,6 +16867,7 @@ async function eylemCalistir(el) {
 
   if (e === 'sihirbaz')  return sihirbaziAc();
   if (e === 'uyarla-baslat') return uyarlaBaslat(id, 'gercek');
+  if (e === 'atl-raf') { ATL_RAF = id; return render(); }
   if (e === 'tazele')    return veriTazele();
   if (e === 'projelere') { location.hash = '#/projeler'; return; }
   if (e === 'proje-ac')  {

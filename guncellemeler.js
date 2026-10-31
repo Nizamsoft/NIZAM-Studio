@@ -21,6 +21,12 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.378.0', tarih: '2026-10-31',
+    ozet: 'Yeni proje paneli ve Atölye sadeleşti',
+    maddeler: [
+      'Yeni proje artık sağdan açılan bir panel: "Hazır programdan" ya da "Sıfırdan", diğerleri altta saklı.',
+      'Atölye\'de Şablonlar, Test kopyaları ve Denemeler ayrı sekmelerde; her firmanın durumu tek cümleyle yazıyor.',
+    ] },
   { surum: 'v0.377.0', tarih: '2026-10-31',
     ozet: 'Proje başlatma, aşamalar ve Atölye yenilendi',
     maddeler: [
