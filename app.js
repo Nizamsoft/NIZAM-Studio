@@ -81,7 +81,7 @@ function basHarfleriBuyuk(metin) {
 
 function projeAsamaYuzde(p) {
   if (!p) return 0;
-  const sayilan = projeDuraklari(p).filter(d => !d.gizli && !d.sayilmaz);
+  const sayilan = projeDuraklari(p).filter(d => !d.sayilmaz);
   if (!sayilan.length) return 0;
   return Math.round(sayilan.filter(d => d.bitti).length / sayilan.length * 100);
 }
@@ -1412,15 +1412,11 @@ function logolariGoster() {
   });
 }
 
-/* Proje içindeki durak dizisi. Adres, ad ve içeriği tek yerde tanımlı.
-   Sıra önemli: projeDuraklari() dizisi bununla indeks indeks eşleşiyor.
-
-   8 durak: program eskiden "Kurulum ve yapı"nın içindeydi (paket adı+roller+
-   veri katmanı), ayrı durağa taşındı. Bağlantılar, eski "Nizam kurulum
-   paketi"ni (sabit iskelet onayı) içine aldı. Beta, eski "Geliştirme"yi
-   (görev/kontrol sistemi) içine aldı — kontroller artık beta aşamasında. */
-/* Proje bir şablon kopyasıysa ("Muhasebe şablonu" vb.) DURAKLAR.yapi ve
-   DURAKLAR.beta yerlerini "Temel tanımlar" ve "Değişim"e bırakıyor. */
+/* Proje içindeki sayfalar (duraklar). Adres, ad ve içerik burada; hangi
+   projede hangi sırayla görüneceğini projeDuraklari() söylüyor (v0.377.0:
+   iki yol — şablondan uyarlama ve sıfırdan proje). Buradaki `ad` ve
+   `aciklama` sayfanın kendi adı; yolda adımın adı farklı olabilir
+   (ör. "baglantilar" uyarlamada "Kurulum"), o zaman yolun adı geçerli. */
 /* ---------- Paket ----------
    Paket, projenin hangi yol haritasından geçeceğini söyler. Henüz projeye
    yazmıyoruz: eski `palet.sablon` işaretinden türetiyoruz, böylece kurulmuş
@@ -1491,12 +1487,6 @@ function paketTanimBloku(p) {
   return t ? ['## Bu paket nedir', '', t, ''] : [];
 }
 
-/* DURAKLAR'daki statik durak nesnesinin (ad/aciklama) şablon durumuna göre
-   değişen bir kopyası — sayfa başlığı (adimBasligi) bunu okuyor. */
-function sablonD(d, ad, aciklama) {
-  return Object.assign({}, d, { ad, aciklama });
-}
-
 const DURAKLAR = {
   /* Aşamalar konuşulan yere göre bölündü: 1'i müşteriyle konuşarak
      dolduruyorsun (marka, iletişim, sektör, logo), 2'yi klavye başında
@@ -1511,50 +1501,38 @@ const DURAKLAR = {
   baglantilar: { no: 3, ad: 'Bağlantılar ve temel',  ciz: baglantilarSayfasi,
                  renk: '#b8926b', ikon: 'dal', resim: 'baglantilar',
                  aciklama: 'Gerekli bağlantıları ayarlayın.' },
-  /* Yapı tasarımdan önce: ChatGPT ekranları çizerken hangi modüllerin ve
-     sayfaların olduğunu bilmeli. Bilmezse altı genel ekran çiziyor; künye
-     elindeyken gerçek modülleri, gerçek alanları ve o işe ait simgeleri
-     çiziyor. Bağımlılık bu yönde. */
-  /* Muhasebe şablonu kopyasında bu iki durağın yerini tek bir "Değişim"
-     durağı alıyor — "yapi" slotu (bkz. projeDuraklari) o kopyalarda gizli,
-     her şey "beta" slotunda toplanıyor. Sıra ve numaralar aynı kalıyor,
-     yalnız şablon kopyasında bir durak daha az görünüyor. Bkz. sablonD(),
-     sablonDegisimSayfasi(). */
+  /* Şablondan uyarlamada Yapı planlama ve Beta ayrı adım değil: ikisi de
+     "Uyarlama" adımının içinde (bkz. projeDuraklari). Eski bağlantılarla
+     gelinirse kısa bir not çıkıyor. */
   yapi:        { no: 4, ad: 'Yapı planlama',
                  ciz: (p, d) => sablonMu(p)
-                   ? sayfaHero(p, sablonD(d, 'Değişim', '')) + `<div class="card">${empty(ICON.check,
-                       'Bu aşama Değişim\'e taşındı', 'Temel tanımlar artık "Değişim" durağının içinde.')}</div>`
+                   ? sayfaHero(p, d) + `<div class="card">${empty(ICON.check,
+                       'Bu adım Uyarlama\'nın içinde', 'Yapı şablon programdan hazır geliyor; firma tanımları Uyarlama\'da koda işleniyor.')}</div>`
                    : yapiSayfasi(p, d),
                  renk: '#8fae4a', ikon: 'gAltyapi', resim: 'yapi',
-                 aciklama: p => sablonMu(p) ? 'Bu aşama Değişim\'e taşındı.'
-                   : 'Modüller, sayfalar ve proje yapısı.' },
+                 aciklama: 'Modüller, sayfalar ve proje yapısı.' },
   /* Kurulum ile Beta bilerek ayrı iki durak: ilki "kodu yazdır" (plan +
      beş aşama, sırayla ilerleyen kapalı bir liste), ikincisi "deneyip
      eksikleri anlat" (bitiş tarihi olmayan bir döngü). Tek durakta
      dururken adım şeridi yediyi bitirdiğin anda bambaşka bir ekrana
      dönüşüyordu — nerede olduğun kaybolmuştu. */
   kurulum:     { no: 5, ad: 'Kurulum',
-                 ciz: (p, d) => sablonMu(p) ? sablonDegisimSayfasi(p,
-                     sablonD(d, 'Değişim', 'Temel tanımlar, veri/format ve giriş kurulumu burada.'))
+                 ciz: (p, d) => sablonMu(p) ? sablonDegisimSayfasi(p, d)
                    : betaKurulumOzeti(p, d, kurulumSihirbazListesi(p)),
                  renk: '#5b8def', ikon: 'gAltyapi', resim: 'beta',
-                 aciklama: p => sablonMu(p) ? 'Temel tanımlar, veri/format ve giriş kurulumu burada.'
-                   : 'Plan depoya yazılır, kod aşama aşama kurulur.' },
+                 aciklama: 'Plan depoya yazılır, kod aşama aşama kurulur.' },
   beta:        { no: 6, ad: 'Beta ve geliştirme',
                  ciz: (p, d) => sablonMu(p)
-                   ? sayfaHero(p, sablonD(d, 'Değişim', '')) + `<div class="card">${empty(ICON.check,
-                       'Bu aşama Değişim\'e taşındı', 'Bu akış "Değişim" durağının içinde.')}</div>`
+                   ? sayfaHero(p, d) + `<div class="card">${empty(ICON.check,
+                       'Bu adım Uyarlama\'nın içinde', 'Deneme ve düzeltme "Test ve düzeltme" adımında.')}</div>`
                    : betaGelistirmeEkrani(p, d),
                  renk: '#c9753c', ikon: 'gOptimizasyon', resim: 'beta',
-                 aciklama: p => sablonMu(p) ? 'Bu aşama Değişim\'e taşındı.'
-                   : 'Uygulamayı dene, eksikleri Claude\'a yazdır.' },
-  /* Yalnız şablon kopyalarında anlamlı: normal projede bu döngü zaten Beta
-     ve geliştirme'nin içinde. Slot her projede var (sıra bozulmasın diye,
-     bkz. projeDuraklari), normal projede otomatik geçilmiş sayılıyor. */
+                 aciklama: 'Uygulamayı dene, eksikleri Claude\'a yazdır.' },
+  /* Uyarlamada "Test ve düzeltme" adımı; sıfırdan projede bu döngü Beta'nın
+     içinde (Beta'nın altı). */
   deneme:      { no: 7, ad: 'Test ve Güncelle',       ciz: denemeSayfasi,
                  renk: '#5a9b8f', ikon: 'gOptimizasyon', resim: 'deneme',
-                 aciklama: p => sablonMu(p) ? 'Uygulamayı dene, eksikleri Claude\'a yazdır.'
-                   : 'Bu proje için geçerli değil.' },
+                 aciklama: 'Uygulamayı dene, eksikleri Claude\'a yazdır.' },
   tasarim:     { no: 8, ad: 'Profesyonel tasarım',   ciz: tasarimSayfasi,
                  renk: '#5f86c4', ikon: 'gTasarim', resim: 'tasarim',
                  aciklama: 'Arayüz ve kullanıcı deneyimi.' },
@@ -1587,6 +1565,37 @@ function yakindaSayfasi(p, d) {
         şimdilik sadece akışta yerini gösteriyor.</span></div>`;
 }
 
+/* Firma tanımları (uyarlama, 3. adım): dört tanımın durumu ve sihirbazı
+   açan düğme. Tanımlar "öğrenen liste": bir firmada anlatılan seçenek aynı
+   şablonu kullanan bütün firmalarda hazır çıkıyor. */
+function tanimlarSayfasi(p, d) {
+  const liste = sablonTanimlarListesi();
+  const biten = liste.filter(k => sablonTanimlarAdimBittiMi(k, p)).length;
+  const t = sablonTanimlarOku(p);
+  const ozet = k => k === 'temel'
+    ? (t.temel.metin.trim() ? 'Not yazıldı.' : 'İsteğe bağlı: şube, kullanıcı, hesap planı…')
+    : (() => {
+        const x = t[k] || { secili: [], ekstra: [] };
+        const n = x.secili.length + x.ekstra.filter(b => (b.cevap || '').trim()).length;
+        return n ? n + ' seçili' : 'En az bir seçenek işaretle.';
+      })();
+  const satirlar = liste.map(k => {
+    const ok = sablonTanimlarAdimBittiMi(k, p) && (k !== 'temel' || t.temel.metin.trim());
+    return `<div class="yk-sat ${ok ? 'bitti' : ''}">
+      <span class="yk-ik">${ok ? svg(ICON.tik, 15) : svg(ICON.etiket, 15)}</span>
+      <span class="yk-yz"><b>${esc(sablonTanimlarEtiket(k))}</b><i>${esc(ozet(k))}</i></span></div>`;
+  }).join('');
+  return `<div class="fb-govde">`
+    + adimBasligi(p, d, biten + '/' + liste.length)
+    + `<div class="card yk-kart">${satirlar}</div>`
+    + (AUTH.yonetici ? `<div class="kur-dug"><button class="sayfa-dug" type="button"
+        data-eylem="sablon-sihirbazi-ac" data-proje="${p.id}">
+        ${svg(ICON.kalem, 15)} ${biten ? 'Tanımlara devam et' : 'Tanımları doldur'}</button></div>` : '')
+    + `<p class="yk-not">🧠 Öğrenen liste: bir firmada anlatılan banka, POS ya da fatura
+        tanımı, aynı şablonu kullanan bütün firmalarda hazır çıkar.</p>`
+    + `</div>`;
+}
+
 function durakSayfasi(projeId, anahtar) {
   if (YUKLENIYOR) return iskeletler(4);
   if (DB.hata)    return hataKutusu(DB.hata);
@@ -1596,7 +1605,7 @@ function durakSayfasi(projeId, anahtar) {
     return `<div class="card">${empty(ICON.uyari, 'Proje bulunamadı',
       'Silinmiş veya arşive alınmış olabilir.', 'Projelere dön', 'projelere')}</div>`;
   }
-  const ic = DURAKLAR[anahtar].ciz(p, DURAKLAR[anahtar]);
+  const ic = DURAKLAR[anahtar].ciz(p, durakTanimi(p, anahtar)) + durakEkKartlari(p, anahtar);
   return `
     <div class="dsh">
       <div class="dsh-ana">
@@ -1616,22 +1625,47 @@ function durakSayfasi(projeId, anahtar) {
    Geri / Devam Et. Durakların kendi içerikleri hiç değişmedi — bu kabuk
    onları sarıyor, yerlerini almıyor. */
 
-/* Görünür duraklar; anahtarı, sırası ve kilit durumu üstünde.
-   Kilit kuralı tek yerde: bitmemiş ilk duraktan
-   sonrası kapalı, Güvenlik kontrolü hariç (o bir görev değil, ölçü aleti). */
+/* Yoldaki adımlar; sırası ve kilit durumu üstünde. Kilit kuralı tek yerde:
+   bitmemiş ilk adımdan sonraki bitmemiş adımlar kapalı. Bitmiş bir adım
+   hiç kilitlenmez (v0.377.0: sıra değişince eski projelerde biten adımlar
+   kapanmasın diye). */
 function durakAkisi(p) {
-  const tum   = Object.keys(DURAKLAR);
-  const liste = projeDuraklari(p)
-    .map((d, i) => Object.assign({}, d, { anahtar: tum[i] }))
-    .filter(d => !d.gizli);
+  const liste = projeDuraklari(p);
   const simdi = liste.findIndex(d => !d.bitti);
   /* İçe aktarılan proje zaten yapılmış/yayında: aşamalar sırayla kilitlenmez,
      hepsi açık gelir ki kullanıcı istediği durağa gidebilsin. */
   const serbest = (p.palet || {}).kaynak === 'ice-aktarma';
-  return liste.map((d, i) => Object.assign(d, {
+  return liste.map((d, i) => Object.assign({}, d, {
     sira: i,
-    kilitli: !serbest && d.anahtar !== 'guvenlik' && simdi !== -1 && i > simdi,
+    kilitli: !serbest && !d.bitti && simdi !== -1 && i > simdi,
   }));
+}
+
+/* Bir sayfanın yoldaki yeri: kendisi bir adımsa o, bir adımın içinden
+   açılan sayfaysa (altlar) o adım. Yolda hiç yoksa -1. */
+function durakYeri(liste, anahtar) {
+  return liste.findIndex(d => d.anahtar === anahtar || (d.altlar || []).indexOf(anahtar) > -1);
+}
+
+/* Sayfaya giden tanım: yoldaki adım adı ve açıklaması sayfanın kendi
+   adının önüne geçer (ör. "baglantilar" uyarlamada "Kurulum"). */
+function durakTanimi(p, anahtar) {
+  const def = DURAKLAR[anahtar] || {};
+  const d = durakAkisi(p).find(x => x.anahtar === anahtar);
+  return d ? Object.assign({}, def, { ad: d.ad, aciklama: d.aciklama || def.aciklama, no: d.sira + 1 }) : def;
+}
+
+/* Adımın altındaki bağlantı kartları (ör. Tanışma › Program temeli,
+   Teslim › Yetkilendirme, Güvenlik taraması, alan adı). */
+function durakEkKartlari(p, anahtar) {
+  const d = projeDuraklari(p).find(x => x.anahtar === anahtar);
+  const ekler = (d && d.ekler) || [];
+  if (!ekler.length) return '';
+  return `<div class="yk-ekler">${ekler.map(e => `
+    <a class="card yk-sat link ${e.bitti ? 'bitti' : ''}" href="${esc(e.adres)}">
+      <span class="yk-ik">${e.bitti ? svg(ICON.tik, 15) : svg(ICON[e.ikon] || ICON.bayrak, 15)}</span>
+      <span class="yk-yz"><b>${esc(e.ad)}</b><i>${esc(e.ozet || '')}</i></span>
+      <span class="yk-ok">${svg(ICON.chevron, 14)}</span></a>`).join('')}</div>`;
 }
 
 /* Adım şeridi. Geniş ekranda numaralı halkalar ve adları; dar ekranda tek
@@ -1639,8 +1673,10 @@ function durakAkisi(p) {
    yana dizmek telefonda okunmuyordu, o yüzden orada liste ayrı sayfada. */
 function durakSerit(p, anahtar) {
   const liste = durakAkisi(p);
-  const su    = liste.findIndex(d => d.anahtar === anahtar);
-  const simdi = liste[su] || {};
+  const su    = durakYeri(liste, anahtar);
+  /* Adımın içinden açılan bir sayfadaysan (ör. Program temeli) adımın
+     halkası bağlantı olarak kalır: basınca adımın kendisine dönülür. */
+  const altta = su > -1 && liste[su].anahtar !== anahtar;
 
   /* Bulunduğun aşama tamamlandıysa şerit yeşile dönüyor: "buradaki iş
      bitti" bilgisini sayfanın en tepesinde de vermek gerekiyor. */
@@ -1658,7 +1694,7 @@ function durakSerit(p, anahtar) {
         : d.kilitli         ? svg(ICON.kilit, 12)
         : `<b class="mono">${i + 1}</b>`}</span>
       <span class="dsr-ad">${esc(d.ad)}</span>`;
-    return (d.kilitli || i === su)
+    return (d.kilitli || (i === su && !altta))
       ? `<span class="dsr-a ${hal}${bagli}">${ic}</span>`
       : `<a class="dsr-a ${hal}${bagli}" href="#/projeler/${p.id}/${d.anahtar}">${ic}</a>`;
   }).join('');
@@ -1783,8 +1819,9 @@ function durakOzetPaneli(p) {
    kilit kuralı tek yerden (durakAkisi) geliyor, burada ikinci bir mantık yok. */
 function durakAyak(p, anahtar) {
   const liste   = durakAkisi(p);
-  const i       = liste.findIndex(d => d.anahtar === anahtar);
-  const onceki  = i > 0 ? liste[i - 1] : null;
+  const i       = durakYeri(liste, anahtar);
+  /* Adımın içinden açılan sayfada "Geri" adımın kendisine döner. */
+  const onceki  = i > -1 && liste[i].anahtar !== anahtar ? liste[i] : i > 0 ? liste[i - 1] : null;
   const sonraki = (i >= 0 && i < liste.length - 1) ? liste[i + 1] : null;
   const ok      = svg(ICON.chevron, 15);
 
@@ -1828,12 +1865,11 @@ function durakAsamaSayfasi(p, anahtar) {
   const liste = durakAkisi(p);
 
   const satirlar = liste.map((d, i) => {
-    const su  = d.anahtar === anahtar;
+    const su  = d.anahtar === anahtar || (d.altlar || []).indexOf(anahtar) > -1;
     /* "Şimdiki" ve "bitti" birlikte olabilir: üstünde durduğun aşama zaten
        tamamlanmışsa satır kırmızı değil yeşil görünüyor. */
     const hal = (su ? 'su ' : '') + (d.bitti ? 'bitti' : d.kilitli ? 'kilitli' : '');
-    const def = DURAKLAR[d.anahtar] || {};
-    const acik = typeof def.aciklama === 'function' ? def.aciklama(p) : def.aciklama;
+    const acik = d.aciklama;
     const ic  = `
       <span class="dsl-no">${i + 1}</span>
       <span class="dsl-yz">
@@ -1844,7 +1880,7 @@ function durakAsamaSayfasi(p, anahtar) {
         d.bitti ? svg(ICON.tik, 22)
         : su    ? svg(ICON.nokta, 22)
         : ''}</span>`;
-    return (d.kilitli || su)
+    return (d.kilitli || d.anahtar === anahtar)
       ? `<span class="dsl ${hal}">${ic}</span>`
       : `<a class="dsl ${hal}" href="#/projeler/${p.id}/${d.anahtar}">${ic}</a>`;
   }).join('');
@@ -6510,12 +6546,12 @@ function sablonDegisimSayfasi(p, d) {
           ? `<div class="kur-deger duz">${svg(ICON.tik, 13)} Bu aşama tamamlandı</div>`
           : `<label class="kur-onay" data-eylem="sablon-degisim-onay" data-proje="${p.id}"
                     role="button" tabindex="0">
-              <span class="kur-kutu">${svg(ICON.tik, 12)}</span> Değişim yapıldı, kontrol ettim</label>`);
+              <span class="kur-kutu">${svg(ICON.tik, 12)}</span> Uyarlama yapıldı, kontrol ettim</label>`);
 
   return `<div class="fb-govde">`
     + adimBasligi(p, d, biten + '/3')
-    + shBaslikServis('claude', 'Değişim',
-        'Firmaya özel her şey burada üç adımda toplanıp koda işleniyor.')
+    + shBaslikServis('claude', 'Uyarlama',
+        'Firmaya özel her şey burada üç adımda koda işleniyor.')
     + `<div class="dg-stepper">`
     + sablonDegisimAdim(1, hal(0), 'Giriş ve Kullanıcı ekle',
         girisGerekli ? `<span class="dg-rozet bilgi">şablonda hazır</span>` : '',
@@ -7650,8 +7686,8 @@ function finalSayfasi(p, d) {
             <i>${hazir || verildi
               ? (s.gorev > 0 ? 'Bütün görevler bitti. ' : 'Geliştirmeye ihtiyaç yoktu. ')
                 + 'Uygulamayı son bir kez dene — sorunsuzsa final ver.'
-              : 'Final, <b>' + (sablonMu(p) ? 'Değişim' : 'Beta ve geliştirme')
-                + '</b> durağı tamamlandığında verilebilir.'}</i></span>
+              : 'Final, <b>' + (sablonMu(p) ? 'Uyarlama' : 'Beta')
+                + '</b> adımı tamamlandığında verilebilir.'}</i></span>
         </div>
       </div>`
     + `<div class="btk">
@@ -7763,181 +7799,165 @@ function gelistirmeBitti(p) {
   return sablonMu(p) ? sablonDegisimBittiMi(p) : !!pl.betaTamamlandi;
 }
 
-/* Projenin beş durağı. Durum veriden okunur, elle girilmez. */
+/* ---------- Aşama yolları (v0.377.0) ----------
+   İki yol var, ikisi de sıralı ve her adımın bitişi net:
+   · Şablondan uyarlama (paketli proje, ör. muhasebe programı): 6 adım.
+   · Sıfırdan proje: 8 adım; Görünüm Kurulum'la Beta arasında — tasarım
+     promptları ChatGPT'ye uygulamanın ekran görüntüsünü veriyor, o yüzden
+     kod kurulmadan olmaz; ama Beta'dan önce gelince deneme yeni görünüm
+     üstünde yapılıyor, tasarım sonradan her şeyi bozmuyor.
+   Eskiden tek bir 12'lik dizi vardı; şablon kopyasında yarısı gizlenip
+   yerine başka duraklar konuyordu. Artık her adım hangi sayfayı
+   (`anahtar`, DURAKLAR'daki) gösterdiğini kendi söylüyor. `altlar`: o
+   adımın içinden açılan eski sayfalar (ör. Program temeli Tanışma'nın
+   içinde) — şerit onlarda da doğru adımı gösteriyor, eski bağlantılar
+   kırılmıyor. `ekler`: adım sayfasının altında çıkan bağlantı kartları.
+   Veri değişmedi: hepsi aynı palet işaretlerinden hesaplanıyor, eski
+   projelerin ilerlemesi kendiliğinden yeni yola oturuyor. */
+function baglantilarBittiMi(p) {
+  const pl0 = p.palet || {};
+  return !!p.repo && claudeBaglandiMi(p)
+    && !!pl0.alanAdi && !!pl0.yayinda
+    && (!sunuculuMu(p) || (!!String(pl0.supabaseUrl || '').trim()
+                            && !!String(pl0.supabaseAnon || '').trim()))
+    /* Template'in SQL'i (link ya da metin) varsa yükleme de burada
+       bitmiş olmalı — bkz. baglantiAdimListesi. Müşterinin kendi alan adı
+       (Namecheap) artık Teslim'de; test adresi burada yeter. */
+    && (!pl0.sablonSqlMetinVar || !!pl0.sqlYuklendi);
+}
+
+function baglantilarOzeti(p) {
+  const pl0 = p.palet || {};
+  return !p.repo
+    ? 'Depo, sohbet, Supabase ve test yayını burada kurulacak.'
+    : !pl0.yayinda
+      ? (pl0.alanAdi ? 'Depo, sohbet ve adres hazır. Sıra yayında.' : 'Depo hazır. Sıra adres ve yayında.')
+      : 'Hazır · test adresi yayında.';
+}
+
+/* Teslim'in altındaki kartlar: yetki, güvenlik taraması, müşterinin alan adı. */
+function teslimEkleri(p, yetkiDahil) {
+  const pl0 = p.palet || {};
+  const ekler = [];
+  if (yetkiDahil) ekler.push({
+    ad: 'Yetkilendirme', ikon: 'gGuvenlik', bitti: !!pl0.yetkiTamamlandi,
+    ozet: pl0.yetkiTamamlandi ? 'Kurallar kodda.' : 'Her rol ne yapabilecek — promptu Claude\'a ver.',
+    adres: '#/projeler/' + p.id + '/yetki',
+  });
+  if (sunuculuMu(p)) ekler.push({
+    ad: 'Güvenlik taraması', ikon: 'gGuvenlik', bitti: null,
+    ozet: 'Nizam Security ile kuralların gerçekten tuttuğunu ölç.',
+    adres: '#/guvenlik/' + p.id,
+  });
+  ekler.push({
+    ad: 'Müşterinin alan adı', ikon: 'dil',
+    bitti: pl0.alanTuru === 'namecheap' ? !!pl0.namecheapBaglandi : null,
+    ozet: pl0.alanTuru === 'namecheap'
+      ? (pl0.namecheapBaglandi ? 'Bağlandı.' : 'DNS kayıtlarını gir, bağlandı diye işaretle.')
+      : 'Test adresi kullanılıyor · istersen kendi alan adını bağla.',
+    adres: '#/projeler/' + p.id + '/baglantilar',
+  });
+  return ekler;
+}
+
 function projeDuraklari(p) {
   const s        = DB.sayim(p.id);
   const moduller = DB.modulleri(p.id);
   const gercek   = moduller.filter(m => m.ad !== GENEL_MODUL).length;
   const pl0 = p.palet || {};
-  /* Hangi yol haritası çizilecek — projenin paketi söylüyor. */
-  const paketli = sablonMu(p);
+  const tamam = 'Tamamlandı.';
+  let yol;
 
-  return [
-    {
-      /* Yalnız firma adı zorunlu: iletişim, sektör ve logo isteğe bağlı —
-         ad girildiyse aşama tamamlanmış sayılır, sonraki durağa geçilir. */
-      ad: 'Firma bilgileri',
-      bitti: !!p.firma,
-      ozet: [p.sektor, p.telefon, p.eposta].filter(Boolean).join(' · ')
-        || 'Firma kim, kime ulaşacağız, hangi işi yapıyor?',
-    },
-    {
-      ad: 'Program temeli',
-      bitti: yerDolu(p),
-      ozet: pl0.modulAdi
-        ? [pl0.modulAdi, pl0.veriKatmani].filter(Boolean).join(' · ')
-        : 'Bu paketin adı, katmanları, verisi nerede duracak?',
-    },
-    {
-      /* Eski "Nizam kurulum paketi" durağı buraya katlandı. Supabase
-         seçiliyse gerçek bağlantı (adres+anon key) de burada — karar
-         Program temeli'nde, bağlantı burada. Sabit iskelet onayı (eski
-         "Kuruldu" kutusu) kalktı: Studio depoya bakamadığı için elle
-         onaylatmak gereksiz bir sürtünmeydi, sihirbazı bitirmek yetiyor. */
-      ad: 'Bağlantılar ve temel',
-      bitti: !!p.repo && claudeBaglandiMi(p)
-             && !!pl0.alanAdi && !!pl0.yayinda
-             && (!sunuculuMu(p) || (!!String(pl0.supabaseUrl || '').trim()
-                                     && !!String(pl0.supabaseAnon || '').trim()))
-             && (pl0.alanTuru !== 'namecheap' || !!pl0.namecheapBaglandi)
-             /* Template'in SQL'i (link ya da metin) varsa yükleme de burada
-                bitmiş olmalı — bkz. baglantiAdimListesi. */
-             && (!pl0.sablonSqlMetinVar || !!pl0.sqlYuklendi),
-      ozet: !p.repo
-        ? 'Depo, sohbet, adres ve yayın burada kurulacak.'
-        : !pl0.yayinda
-          ? (pl0.alanAdi ? 'Depo, sohbet ve adres hazır. Sıra yayında.' : 'Depo hazır. Sıra adres ve yayında.')
-          : 'Bağlantılar hazır.',
-    },
-    paketli ? {
-      /* Eskiden ayrı bir "Temel tanımlar" durağıydı — artık "Değişim"in
-         içine katlandı (bkz. sablonDegisimSayfasi). Slot sırayı bozmasın
-         diye duruyor, tamamen gizli — bkz. "Test ve Güncelle" örneği. */
-      ad: 'Değişim',
-      bitti: true,
-      sayilmaz: true,
-      gizli: true,
-      ozet: 'Değişim durağına taşındı.',
-    } : {
-      /* Sıra kilitli olduğu için bu durağa gelindiğinde Bağlantılar zaten
-         bitmiş oluyor — burada tekrar depo/sohbet kontrolü gerekmiyor. */
-      ad: 'Yapı planlama',
-      bitti: gercek > 0 && s.sayfa > 0,
-      ozet: gercek && s.sayfa
-        ? `${gercek} modül · ${s.sayfa} sayfa`
-        : 'Hangi modüller ve sayfalar olacak?',
-    },
-    paketli ? {
-      ad: 'Değişim',
-      bitti: sablonDegisimBittiMi(p),
-      ozet: (() => {
-        if (sablonDegisimBittiMi(p)) return 'Tamamlandı.';
-        if (!sablonTanimlarBittiMi(p)) {
-          const liste = sablonTanimlarListesi();
-          const biten = liste.filter(k => sablonTanimlarAdimBittiMi(k, p)).length;
-          return `Temel tanımlar: ${biten}/${liste.length} adım`;
-        }
-        if (!pl0.sablonDegisimTamamlandi) return 'Toplanan tanımlar hazır — veri/format promptunu ver.';
-        return 'Veri ve format hazır — sıra giriş ve kullanıcı eklemede.';
-      })(),
-    } : {
-      /* Plan + (varsa) veritabanı + beş kod aşaması. Hepsi bitmeden Beta
-         açılmıyor — denenecek bir uygulama yok. */
-      ad: 'Kurulum',
-      bitti: kurulumSihirbazListesi(p).every(k => kurulumSihirbazAdimBittiMi(k, p)),
-      ozet: (() => {
-        const liste = kurulumSihirbazListesi(p);
-        const biten = liste.filter(k => kurulumSihirbazAdimBittiMi(k, p)).length;
-        return biten < liste.length
-          ? `${biten}/${liste.length} adım` : 'Kurulum tamamlandı.';
-      })(),
-    },
-    paketli ? {
-      /* Şablon kopyasında bu döngü "Değişim" durağının içinde — slot sırayı
-         bozmasın diye duruyor, tamamen gizli. */
-      ad: 'Beta ve geliştirme',
-      bitti: true,
-      sayilmaz: true,
-      gizli: true,
-      ozet: 'Değişim durağına taşındı.',
-    } : {
-      /* "Bitti" kullanıcının elle "Beta ve geliştirme bitti" demesine bağlı:
-         denemenin kendiliğinden biteceği bir an yok. */
-      ad: 'Beta ve geliştirme',
-      bitti: gelistirmeBitti(p),
-      ozet: gelistirmeBitti(p)
-        ? 'Tamamlandı.' : 'Yayında — dene, eksik gördüğünü anlat.',
-    },
-    paketli ? {
-      /* Yalnız şablon kopyalarında görünür: normal projede bu döngü zaten
-         Beta ve geliştirme'nin içinde, ayrı bir durak gerekmiyor. */
-      ad: 'Test ve Güncelle',
-      bitti: !!pl0.denemeTamamlandi,
-      ozet: pl0.denemeTamamlandi
-        ? 'Tamamlandı.'
-        : 'Uygulamayı dene, eksik ya da hatalı gördüğünü Claude\'a yazdır.',
-    } : {
-      /* Normal projede bu durağın hiç karşılığı yok — sayaçtan (sayilmaz)
-         hariç tutmak yetmiyordu, satır yine de listede görünüp "kilitli"
-         ya da "bitti" gibi durmaya devam ediyordu. `gizli` ile projeYolu
-         bu satırı tamamen listeden çıkarıyor. */
-      ad: 'Test ve Güncelle',
-      bitti: true,
-      sayilmaz: true,
-      gizli: true,
-      ozet: 'Bu proje şablon kopyası değil — bu aşama geçerli değil.',
-    },
-    {
-      ad: 'Profesyonel tasarım',
-      bitti: !!pl0.tasarimTamamlandi,
-      ozet: pl0.tasarimTamamlandi
-        ? 'Tamamlandı.'
-        : pl0.secilenYon
-          ? 'Yön seçildi — uygulanınca tamamlandı diye işaretle.'
-          : 'Yönleri ChatGPT\'ye ver ya da müşterinin kendi görselini yükle, seçsin.',
-    },
-    {
-      ad: 'Yetkilendirme',
-      bitti: !!pl0.yetkiTamamlandi,
-      ozet: pl0.yetkiTamamlandi
-        ? 'Tamamlandı.'
-        : !pl0.yetkiKodTamamlandi
-          ? 'Her katman ne yapabilecek — promptu Claude\'a ver.'
-          : 'Son onayı bekliyor.',
-    },
-    sunuculuMu(p) ? {
-      /* Eski güvenlik kontrolü aşaması: yerini Nizam Security aldı (Ayarlar →
-         Nizam Security). Gizli ve sayılmaz; Final'i de kilitlemez. Kod yerinde. */
-      ad: 'Güvenlik kontrolü',
-      bitti: true,
-      sayilmaz: true,
-      gizli: true,
-    } : {
-      /* Verisi tarayıcıda duran projede sunucu tarafı yok: saldırılacak bir
-         kapı da yok. Gizlenmezse Final sonsuza kadar kilitli kalırdı. */
-      ad: 'Güvenlik kontrolü',
-      bitti: true,
-      sayilmaz: true,
-      gizli: true,
-      ozet: 'Bu projenin verisi tarayıcıda duruyor — sunucu tarafı yok.',
-    },
-    {
-      ad: 'Final',
-      bitti: !!(p.palet && p.palet.finalVerildi),
-      ozet: (p.palet && p.palet.finalVerildi)
-        ? 'Final sürüm verildi.'
-        : 'Bütün görevler bitince final sürümü teslim et.',
-    },
-  ].concat(pl0.finalVerildi ? [{
-    /* Final verilmeden önce hiç görünmez — henüz sırası gelmemiş bir durak
-       değil, finalden sonra doğan ayrı bir aşama. Bilerek hiç bitmiyor:
-       proje yaşadıkça yeni istek gelir. `sayilmaz` "Adımlar" yüzdesine hiç
-       girmesin diye — final verilince proje zaten %100 tamamlanmış sayılır. */
-    ad: 'Geliştirme',
-    bitti: false,
-    sayilmaz: true,
-    ozet: 'Finalden sonra gelen istekler burada yürür.',
-  }] : []);
+  if (sablonMu(p)) {
+    const paket = projePaketi(p);
+    const paketAd = (paket && paket.ad) || 'şablon program';
+    const tl = sablonTanimlarListesi();
+    const tBiten = tl.filter(k => sablonTanimlarAdimBittiMi(k, p)).length;
+    yol = [
+      { anahtar: 'firma', ad: 'Firma', altlar: ['program', 'tasarim'],
+        aciklama: 'Firmanın adı, logosu ve iletişim bilgileri.',
+        bitti: !!p.firma,
+        ozet: [p.sektor, p.telefon, p.eposta].filter(Boolean).join(' · ') || 'Firma kim, kime ulaşacağız?' },
+      { anahtar: 'baglantilar', ad: 'Kurulum',
+        aciklama: paketAd + ' kopyalanır: depo, Supabase, SQL ve test yayını.',
+        bitti: baglantilarBittiMi(p), ozet: baglantilarOzeti(p) },
+      { anahtar: 'tanimlar', ad: 'Firma tanımları',
+        aciklama: 'Gün sonu, bankalar, fatura ve kart — firmaya özel tanımlar.',
+        bitti: sablonTanimlarBittiMi(p),
+        ozet: sablonTanimlarBittiMi(p) ? tamam : `${tBiten}/${tl.length} tanım` },
+      { anahtar: 'kurulum', ad: 'Uyarlama', altlar: ['yapi', 'beta'],
+        aciklama: 'Giriş, kullanıcılar ve tanımlar koda işlenir.',
+        bitti: sablonDegisimBittiMi(p),
+        ozet: sablonDegisimBittiMi(p) ? tamam
+          : !pl0.sablonDegisimTamamlandi ? 'Tanımları koda işleyen promptu ver.'
+          : 'Sıra giriş ve kullanıcı eklemede.' },
+      { anahtar: 'deneme', ad: 'Test ve düzeltme',
+        aciklama: 'Test adresinde dene, eksikleri Claude\'a yazdır.',
+        bitti: !!pl0.denemeTamamlandi,
+        ozet: pl0.denemeTamamlandi ? tamam : 'Uygulamayı dene, eksik gördüğünü yazdır.' },
+      { anahtar: 'final', ad: 'Teslim', altlar: ['yetki', 'guvenlik'],
+        aciklama: 'Yetki ve güvenlik kontrolü, alan adı, final sürüm.',
+        bitti: !!pl0.finalVerildi,
+        ozet: pl0.finalVerildi ? 'Final sürüm verildi.' : 'Kontrolleri yap, final sürümü teslim et.',
+        ekler: teslimEkleri(p, true) },
+    ];
+  } else {
+    yol = [
+      { anahtar: 'firma', ad: 'Tanışma', altlar: ['program'],
+        aciklama: 'Firma ve programın temeli: amacı, rolleri, verinin yeri.',
+        bitti: !!p.firma && yerDolu(p),
+        ozet: !p.firma ? 'Firma kim, program ne iş yapacak?'
+          : !yerDolu(p) ? 'Firma hazır · sıra Program temeli\'nde.'
+          : [p.firma, pl0.modulAdi].filter(Boolean).join(' · '),
+        ekler: [{ ad: 'Program temeli', ikon: 'katman', bitti: yerDolu(p),
+          ozet: pl0.modulAdi ? [pl0.modulAdi, pl0.veriKatmani].filter(Boolean).join(' · ')
+            : 'Programın adı, rolleri, veri nerede duracak?',
+          adres: '#/projeler/' + p.id + '/program' }] },
+      { anahtar: 'baglantilar', ad: 'Altyapı ve test yayını',
+        aciklama: 'Depo, Claude sohbeti, Supabase ve test adresinde yayın.',
+        bitti: baglantilarBittiMi(p), ozet: baglantilarOzeti(p) },
+      { anahtar: 'yapi', ad: 'Plan',
+        aciklama: 'Modüller ve sayfalar.',
+        bitti: gercek > 0 && s.sayfa > 0,
+        ozet: gercek && s.sayfa ? `${gercek} modül · ${s.sayfa} sayfa` : 'Hangi modüller ve sayfalar olacak?' },
+      { anahtar: 'kurulum', ad: 'Kurulum',
+        aciklama: 'Plan depoya yazılır, kod aşama aşama kurulur.',
+        bitti: kurulumSihirbazListesi(p).every(k => kurulumSihirbazAdimBittiMi(k, p)),
+        ozet: (() => {
+          const liste = kurulumSihirbazListesi(p);
+          const biten = liste.filter(k => kurulumSihirbazAdimBittiMi(k, p)).length;
+          return biten < liste.length ? `${biten}/${liste.length} adım` : 'Kurulum tamamlandı.';
+        })() },
+      { anahtar: 'tasarim', ad: 'Görünüm',
+        aciklama: 'Kurulan uygulamanın ekranıyla tasarım yönü seçilir, Beta\'dan önce uygulanır.',
+        bitti: !!pl0.tasarimTamamlandi,
+        ozet: pl0.tasarimTamamlandi ? 'Yön seçildi.'
+          : 'Yönleri ChatGPT\'ye ver ya da müşterinin görselini yükle, seçsin.' },
+      { anahtar: 'beta', ad: 'Beta', altlar: ['deneme'],
+        aciklama: 'Test adresinde dene, eksikleri görev olarak yazdır.',
+        bitti: gelistirmeBitti(p),
+        ozet: gelistirmeBitti(p) ? tamam : 'Yayında — dene, eksik gördüğünü anlat.' },
+      { anahtar: 'yetki', ad: 'Yetki ve güvenlik', altlar: ['guvenlik'],
+        aciklama: 'Her rol ne yapabilir; kurallar yazılır ve ölçülür.',
+        bitti: !!pl0.yetkiTamamlandi,
+        ozet: pl0.yetkiTamamlandi ? tamam
+          : !pl0.yetkiKodTamamlandi ? 'Her rol ne yapabilecek — promptu Claude\'a ver.' : 'Son onayı bekliyor.',
+        ekler: teslimEkleri(p, false).filter(e => e.ad === 'Güvenlik taraması') },
+      { anahtar: 'final', ad: 'Teslim',
+        aciklama: 'Müşterinin alan adı ve final sürüm.',
+        bitti: !!pl0.finalVerildi,
+        ozet: pl0.finalVerildi ? 'Final sürüm verildi.' : 'Bütün görevler bitince final sürümü teslim et.',
+        ekler: teslimEkleri(p, false).filter(e => e.ad !== 'Güvenlik taraması') },
+    ];
+  }
+
+  /* Final verilmeden önce hiç görünmez — finalden sonra doğan, hiç bitmeyen
+     bakım dönemi. `sayilmaz`: yüzdeye girmez. */
+  if (pl0.finalVerildi) {
+    yol.push({ anahtar: 'guncelleme', ad: 'Geliştirme', sayilmaz: true, bitti: false,
+      aciklama: 'Yayın sonrası yeni istekler.', ozet: 'Finalden sonra gelen istekler burada yürür.' });
+  }
+  return yol;
 }
 
 /* Her durağın simgesi. Hepsi aynı simgeyle dururken kartlar birbirinden
@@ -7946,15 +7966,11 @@ function projeDuraklari(p) {
 function durakKilitli(projeId, anahtar) {
   const p = DB.proje(projeId);
   if (!p) return false;
-  /* Güvenlik kontrolü hiç kilitlenmez: bir görev değil, ölçü aleti.
-     Kurulumun her anında "şu an açık var mı" diye bakabilmek gerekir —
-     sırasını beklemek ölçümü geciktirmekten başka işe yaramaz. */
+  /* Güvenlik kontrolü hiç kilitlenmez: bir görev değil, ölçü aleti. */
   if (anahtar === 'guvenlik') return false;
-  const sira = Object.keys(DURAKLAR).indexOf(anahtar);
-  if (sira < 1) return false;
-  const duraklar = projeDuraklari(p);
-  const simdi = duraklar.findIndex(d => !d.bitti);
-  return simdi !== -1 && sira > simdi;
+  const liste = durakAkisi(p);
+  const i = durakYeri(liste, anahtar);
+  return i > -1 && liste[i].kilitli;
 }
 
 /* İki satır arasındaki dirsek: üst satırın sonundan alt satırın başına.
@@ -8632,11 +8648,6 @@ function pjKart3(p) {
     </div>`;
 }
 
-function pjBolum(baslik, kartlar, ek = '') {
-  if (!kartlar) return '';
-  return `<section class="pj2-grup"><h2 class="pj3-bas">${baslik}</h2><div class="pj3-izg">${kartlar}</div>${ek}</section>`;
-}
-
 function pjKapali(anahtar, baslik, liste, kartci) {
   if (!liste.length) return '';
   const acik = PJ_ACIK[anahtar] || !!PROJE_ARAMA;
@@ -8875,18 +8886,96 @@ function projelerEkrani(kova) {
       ${!normal.length ? `<div class="vt-bos">Henüz proje yok.</div>` : vitrinEkrani(normal)}
     </div>`;
   }
-  /* Atölye (2. adımda yeni tasarımına geçecek): şimdilik denemeler, klonlar
-     ve şablonlar eski kartlarıyla, açık hâlde. */
+  /* Atölye (v0.377.0): üç raf — şablon programlar (altında onlardan
+     uyarlanan firmalar ve sürüm durumları), test kopyaları, denemeler. */
+  const klonlar = denemeKlon.filter(p => klonMi(p));
+  const denemeler = denemeKlon.filter(p => !klonMi(p));
+  const programlar = sablonProgramlari();
+  const yon = AUTH.yonetici;
   return `<div class="atl ${gecis}">
     <div class="pjs-sat">${pjSekmeDugmesi()}${yeniDug}</div>
-    <div class="pj2-kok">
-      ${denemeKlon.length || sablon.length ? '' : '<div class="sv-bos">Atölyede şu an iş yok.</div>'}
-      ${denemeKlon.length ? pjBolum('🧪 Denemeler ve klonlar', denemeKlon.map(pjKart3).join('')) : ''}
-      ${sablon.length ? `<section class="pj2-grup"><h2 class="pj3-bas">📐 Şablonlar</h2><div class="tp-liste">${sablon.map(templateKarti).join('')}</div></section>` : ''}
+    <div class="pj2-kok at">
+      <div class="at-bas"><span>Şablon programlar</span><i>${programlar.length || ''}</i></div>
+      ${programlar.map(atProgramKarti).join('')}
+      ${SURUM.durum !== 'tamam' && yon ? '<div class="at-not">Ana programlar sürüm takibinden okunuyor…</div>' : ''}
+      ${yon ? `<button type="button" class="at-kart kesik" data-eylem="template-olustur-ac">
+        <span class="at-ik">${svg(ICON.arti, 18)}</span>
+        <span class="at-yz"><b>Şablon program ekle</b><i>Hazır bir programı şablon olarak tanıt</i></span></button>` : ''}
+      ${sablon.filter(p => !(p.palet || {}).cekirdekTemizlendi).map(p => `
+        <button type="button" class="at-kart" data-eylem="template-ayar" data-proje="${p.id}">
+          <span class="at-ik">${svg(ICON.izgaraDort, 18)}</span>
+          <span class="at-yz"><b>${esc(p.firma || 'Template')}</b><i>Şablon hazırlanıyor · kurulumu bitir</i></span>
+          <span class="at-ok">${svg(ICON.chevron, 15)}</span></button>`).join('')}
+
+      <div class="at-bas"><span>Test kopyaları</span><i>${klonlar.length || ''}</i></div>
+      ${klonlar.length ? klonlar.map(pjKart3).join('') : '<div class="at-not">Henüz test kopyası yok.</div>'}
+      ${yon ? `<button type="button" class="at-kart kesik" data-eylem="klon-yeni">
+        <span class="at-ik">${svg(ICON.kopya, 18)}</span>
+        <span class="at-yz"><b>Test kopyası aç</b><i>Bir firmanın programının bağlantısız ikizi</i></span></button>` : ''}
+
+      <div class="at-bas"><span>Denemeler</span><i>${denemeler.length || ''}</i></div>
+      ${denemeler.length ? denemeler.map(pjKart3).join('') : '<div class="at-not">Deneme projesi yok · "+" ekranında "Deneme olarak aç" ile açılır.</div>'}
     </div>
-    ${AUTH.yonetici ? `<div class="pj2-alt-dug">
-      <button type="button" class="btn btn-ghost" data-eylem="klon-yeni">${svg(ICON.kopya, 15)} Test Klonu</button>
-      <button type="button" class="btn btn-ghost" data-eylem="template-olustur-ac">${svg(ICON.izgaraDort, 15)} Template</button></div>` : ''}
+  </div>`;
+}
+
+/* Atölye'de bir şablon programın kartı: başlık, ondan uyarlanan firmalar
+   (sürüm durumuyla) ve "Yeni firmaya uyarla". Firma satırına basınca
+   sürüm takibindeki ayrıntı açılır; eşitlemeyi kullanıcı kendisi yapar. */
+function atProgramKarti(x, i) {
+  const satirlar = [];
+  const gorulenSite = new Set();
+  let geride = 0, bilgi = false;
+  if (x.ana) {
+    (x.ana.firmalar || []).forEach(f => {
+      const d = svDurum(f);
+      if (f.anaSurum) bilgi = true;
+      const bek = (f.asagi || []).length;
+      if (bek) geride++;
+      gorulenSite.add(pjHost(f.site));
+      satirlar.push({ ad: f.ad, eylem: 'surum-detay', id: f.kod,
+        rozet: !f.anaSurum ? ['', 'bilgi yok'] : bek ? ['kir', bek + ' geride']
+          : d.sinif === 'ok' ? ['yesil', 'güncel'] : ['sari', 'ileride'] });
+    });
+  }
+  sablonKopyalari(x.proje.id).forEach(p => {
+    const h = pjAdres(p);
+    if (h && gorulenSite.has(h)) return;
+    const yer = pjSurumYeri(p);
+    if (yer && yer.tur === 'firma') {
+      const bek = (yer.f.asagi || []).length;
+      if (bek) geride++;
+      bilgi = true;
+      satirlar.push({ ad: projeAdi(p), eylem: 'surum-detay', id: yer.f.kod,
+        rozet: bek ? ['kir', bek + ' geride'] : ['yesil', 'güncel'] });
+      return;
+    }
+    const liste = durakAkisi(p);
+    const sayilan = liste.filter(d => !d.sayilmaz);
+    const biten = sayilan.filter(d => d.bitti).length;
+    satirlar.push({ ad: projeAdi(p) || 'Yeni firma', eylem: 'proje-ac', id: p.id,
+      rozet: (p.palet || {}).finalVerildi ? ['', 'teslim edildi']
+        : ['mavi', 'uyarlanıyor ' + biten + '/' + sayilan.length] });
+  });
+
+  const ust = geride ? `<span class="at-rz kir">${geride} firma geride</span>`
+    : bilgi ? '<span class="at-rz yesil">hepsi güncel</span>' : '';
+  const baslikEylem = x.tur === 'template'
+    ? `data-eylem="template-ayar" data-proje="${x.proje.id}"`
+    : `data-eylem="proje-ac" data-id="${x.proje.id}"`;
+  return `<div class="at-kart buyuk">
+    <button type="button" class="at-sat" ${baslikEylem}>
+      <span class="at-ik b ${i === 0 ? 'siyah' : ''}">${svg(x.tur === 'ana' ? ICON.katman : ICON.izgaraDort, 22)}</span>
+      <span class="at-yz"><b>${esc(x.ad)}</b><i>${esc([x.tur === 'ana' ? 'Ana program' : 'Template',
+        x.surum ? 'sürüm ' + x.surum : ''].filter(Boolean).join(' · '))}</i></span>
+      ${ust}</button>
+    ${satirlar.length ? `<div class="at-firmalar">${satirlar.map(r => `
+      <button type="button" class="at-firma" data-eylem="${r.eylem}" data-id="${esc(r.id)}">
+        <span class="at-av">${esc(basHarf(r.ad))}</span><b>${esc(r.ad)}</b>
+        <span class="at-rz ${r.rozet[0]}">${esc(r.rozet[1])}</span></button>`).join('')}</div>`
+      : '<div class="at-not ic">Bu programdan henüz firma uyarlanmadı.</div>'}
+    ${AUTH.yonetici ? `<button type="button" class="at-dug" data-eylem="uyarla-baslat" data-id="${x.proje.id}">
+      ${svg(ICON.arti, 15)} Yeni firmaya uyarla</button>` : ''}
   </div>`;
 }
 
@@ -10143,7 +10232,8 @@ function renderCiz() {
   /* Üstte iki satır: firma adı sabit, altında bulunduğun sayfanın adı. */
   const baslik = $('#page-title');
   if (sayfa) {
-    baslik.textContent = DURAKLAR[sayfa].ad;
+    const p = DB.proje(id);
+    baslik.textContent = p ? durakTanimi(p, sayfa).ad : DURAKLAR[sayfa].ad;
   } else if (kova) {
     baslik.textContent = PROJE_KOVASI[kova].ad;
   } else if (detay) {
@@ -12369,42 +12459,147 @@ const SIHIRBAZ = {
    bu üçünün ilk sorusu. Sonunda proje bu bilgilerle kuruluyor, Firma
    bilgileri durağı ekstra bir şey yapmadan tamamlanmış oluyor. */
 
-/* "+" ile önce ne kuracağını soruyoruz: gerçek proje mi, test güncelleme
-   mi. İkisi de şu an birebir aynı akıştan geçiyor — tek fark, projenin
-   üstüne yapıştırılan etiket. Test'i gerçeğin yerine geçirme mekanizması
-   henüz yok, o ayrı bir iş; burada sadece işaretleniyor. */
+/* ---------- Şablon programlar (v0.377.0) ----------
+   Yeni firmaya uyarlanabilen programlar iki yerden geliyor:
+   · Ana programlar — sürüm takibindeki (SURUM_ANALAR) programların
+     Studio'daki projesi. Firmaları ve sürümleri sürüm takibinden okunuyor.
+   · Template'ler — temizlenmiş, hazır çekirdek projeler.
+   Sayı artabilir: hepsi aynı kartla, aynı "Yeni firmaya uyarla" yoluyla. */
+function sablonProgramlari() {
+  const liste = [];
+  const gorulen = new Set();
+  (DB.projeler || []).forEach(p => {
+    if (p.arsiv || klonMi(p) || cekirdekMi(p)) return;
+    const yer = pjSurumYeri(p);
+    if (yer && yer.tur === 'ana') {
+      gorulen.add(p.id);
+      liste.push({ tur: 'ana', proje: p, ad: projeAdi(p), ana: yer.ana,
+        surum: svKisa(yer.ana.canli), firmaSayisi: (yer.ana.firmalar || []).length });
+    }
+  });
+  hazirTemplateler('').forEach(p => {
+    if (gorulen.has(p.id)) return;
+    liste.push({ tur: 'template', proje: p, ad: p.firma || 'Template', ana: null,
+      surum: '', firmaSayisi: sablonKopyalari(p.id).length });
+  });
+  return liste;
+}
+
+/* Bir programdan kopyalanıp Studio'da yürüyen firmalar. */
+function sablonKopyalari(kaynakId) {
+  return (DB.projeler || []).filter(p => !p.arsiv && !klonMi(p)
+    && (p.palet || {}).kopyaKaynagi === kaynakId);
+}
+
+/* Uyarlamada kopyanın paketi (yol haritası). Template kendi paketini
+   biliyor; ana program için bir kez sorulup bu cihazda hatırlanıyor. */
+const UYARLA_PAKET_ANAHTAR = 'ns.uyarlaPaket';
+function uyarlaPaketHatirla(kaynakId, paket) {
+  try {
+    const m = JSON.parse(localStorage.getItem(UYARLA_PAKET_ANAHTAR) || '{}') || {};
+    if (paket) m[kaynakId] = paket; else delete m[kaynakId];
+    localStorage.setItem(UYARLA_PAKET_ANAHTAR, JSON.stringify(m));
+  } catch (e) {}
+}
+function uyarlaPaketi(kaynakId) {
+  try { return (JSON.parse(localStorage.getItem(UYARLA_PAKET_ANAHTAR) || '{}') || {})[kaynakId] || ''; }
+  catch (e) { return ''; }
+}
+
+function uyarlaBaslat(kaynakId, tur) {
+  const kaynak = DB.proje(kaynakId);
+  if (!kaynak) return;
+  if (cekirdekMi(kaynak)) return templateOnaySor(kaynakId, tur, templatePaketAnahtari(kaynak));
+  const paketler = (DB.paketler || []).filter(k => paketinAkisi(k) !== 'ozel');
+  const hatir = uyarlaPaketi(kaynakId);
+  if (hatir && paketler.some(k => k.anahtar === hatir)) return templateOnaySor(kaynakId, tur, hatir);
+  if (paketler.length === 1) {
+    uyarlaPaketHatirla(kaynakId, paketler[0].anahtar);
+    return templateOnaySor(kaynakId, tur, paketler[0].anahtar);
+  }
+  return sablonSec(kaynakId, tur);
+}
+
+/* "+" ekranı (v0.377.0): tek kapı. En üstte şablon programlar (en sık iş:
+   bir programı yeni firmaya uyarlamak), altında sıfırdan proje, en altta
+   seyrek işler. "Deneme" ayrı bir başlangıç değil, bir anahtar. */
+let YP_DENEME = false;
+
+function ypIcerik() {
+  const tur = YP_DENEME ? 'deneme' : 'gercek';
+  const programlar = sablonProgramlari();
+  const yukleniyor = SURUM.durum === 'yukleniyor' || SURUM.durum === 'bos';
+  const kart = (x, i) => `
+    <div class="yp-kart k3">
+      <div class="yp-sat">
+        <span class="yp-ik b ${i === 0 ? 'siyah' : ''}">${svg(x.tur === 'ana' ? ICON.katman : ICON.izgaraDort, 22)}</span>
+        <span class="yp-yz"><b>${esc(x.ad)}</b><i>${esc([
+          x.surum ? 'Sürüm ' + x.surum : (x.tur === 'template' ? 'Template' : ''),
+          x.firmaSayisi ? x.firmaSayisi + ' firmada kullanılıyor' : 'Henüz firma yok',
+        ].filter(Boolean).join(' · '))}</i></span>
+      </div>
+      <button type="button" class="yp-dug ${i === 0 ? '' : 'hafif'}" data-yp="uyarla" data-id="${x.proje.id}">
+        Yeni firmaya uyarla ${svg(ICON.chevron, 14)}</button>
+    </div>`;
+  const satir = (yp, ikon, b, i) => `
+    <button type="button" class="yp-kart yp-sat yp-tik" data-yp="${yp}">
+      <span class="yp-ik">${svg(ikon, 19)}</span>
+      <span class="yp-yz"><b>${b}</b><i>${i}</i></span>
+      <span class="yp-ok">${svg(ICON.chevron, 15)}</span></button>`;
+
+  return `
+    <div class="yp-bas"><b>Ne başlatıyorsun?</b><i>Bir şablon programı uyarla ya da sıfırdan kur</i></div>
+    <div class="yp-bolum"><span>Şablondan uyarla</span><i>${programlar.length ? 'en sık kullanılan' : ''}</i></div>
+    ${programlar.map(kart).join('')}
+    ${yukleniyor ? '<div class="yp-not">Ana programlar sürüm takibinden okunuyor…</div>' : ''}
+    <button type="button" class="yp-kart yp-sat yp-tik kesik" data-yp="sablon-ekle">
+      <span class="yp-ik">${svg(ICON.arti, 19)}</span>
+      <span class="yp-yz"><b>Şablon program ekle</b><i>Hazır bir programı şablon olarak tanıt</i></span></button>
+    <div class="yp-bolum"><span>Sıfırdan</span></div>
+    ${satir('sifirdan', ICON.kalem, 'Sıfırdan yeni proje', 'Müşteriye özel, 8 adımda baştan kurulur')}
+    <div class="yp-bolum"><span>Diğer</span></div>
+    ${satir('aktar', ICON.ice, 'Var olan programı ekle', 'Zaten yapılmış bir programı Studio\'ya al')}
+    ${satir('klon', ICON.kopya, 'Test kopyası', 'Bir firmanın programının bağlantısız ikizi')}
+    ${satir('kopya', ICON.kopya, 'Birebir kopya', 'Bir projenin aynısıyla başla')}
+    <label class="yp-deneme"><input type="checkbox" data-yp-deneme ${YP_DENEME ? 'checked' : ''}>
+      <span><b>Deneme olarak aç</b><i>Atölye › Denemeler'de durur · sonra projenin menüsünden değiştirilebilir</i></span></label>
+    <div class="modal-alt"><button class="btn btn-ghost" data-yp="kapat" type="button">Vazgeç</button></div>
+    <input type="hidden" data-yp-tur value="${tur}">`;
+}
+
 function sihirbaziAc() {
   modalHepsiniKapat();
-  modalAc(`
-    ${modalBaslik(ICON.katman, 'Proje ekle', 'Sıfırdan mı kuracaksın, yoksa var olan bir programı mı ekleyeceksin?')}
-    <div class="secim">
-      <div class="satir sec-satir" data-sb0="yeni" role="button" tabindex="0">
-        <span class="sec-yazi"><b>Yeni proje oluştur</b>
-          <i>Gerçek müşteri işi — sihirbazla firma, platform, veritabanı sor</i></span>
-      </div>
-      <div class="satir sec-satir" data-sb0="deneme" role="button" tabindex="0">
-        <span class="sec-yazi"><b>Deneme projesi oluştur</b>
-          <i>Denemelik; Projeler'de ayrı "Deneme" bölümünde durur</i></span>
-      </div>
-      <div class="satir sec-satir" data-sb0="aktar" role="button" tabindex="0">
-        <span class="sec-yazi"><b>Mevcut projeyi Studio'ya ekle</b>
-          <i>Zaten yapılmış bir programı prompt + JSON ile içe aktar</i></span>
-      </div>
-    </div>
-    <div class="modal-alt">
-      <button class="btn btn-ghost" data-sb0="kapat" type="button">Vazgeç</button>
-    </div>`, kutu => {
-    kutu.addEventListener('click', ev => {
-      const t = ev.target.closest('[data-sb0]');
-      if (!t) return;
-      const e = t.dataset.sb0;
-      if (e === 'kapat') return modalKapat();
-      modalKapat();
-      if (e === 'yeni')   return sektorSecAc('gercek');
-      if (e === 'deneme') return sektorSecAc('deneme');
-      if (e === 'aktar')  return projeAktarAc();
+  YP_DENEME = false;
+  if (AUTH.yonetici && SURUM.durum !== 'tamam') {
+    surumTakipYukle();
+    /* Sürüm takibi birkaç siteyi okuyor; bitince pencere tazelenir. */
+    const bekle = () => {
+      const k = $('#yp-kok');
+      if (!k) return;
+      if (SURUM.durum === 'tamam') { k.innerHTML = ypIcerik(); return; }
+      setTimeout(bekle, 600);
+    };
+    setTimeout(bekle, 600);
+  }
+  modalAc(`<div id="yp-kok" class="yp">${ypIcerik()}</div>`, kutu => {
+    kutu.addEventListener('change', ev => {
+      if (ev.target.matches('[data-yp-deneme]')) YP_DENEME = ev.target.checked;
     });
-  });
+    kutu.addEventListener('click', ev => {
+      const t = ev.target.closest('[data-yp]');
+      if (!t) return;
+      const e = t.dataset.yp;
+      const tur = YP_DENEME ? 'deneme' : 'gercek';
+      modalKapat();
+      if (e === 'kapat') return;
+      if (e === 'uyarla')      return uyarlaBaslat(t.dataset.id, tur);
+      if (e === 'sablon-ekle') return templateSihirbaziAc();
+      if (e === 'sifirdan')    return sihirbaziBaslat(tur, '');
+      if (e === 'aktar')       return projeAktarAc();
+      if (e === 'kopya')       return kopyaKaynagiSec(tur);
+      if (e === 'klon') return ekYukle('klon').then(() => klonKaynakSec(), h => toast(h.message, 'hata'));
+    });
+  }, 'genis yp-modal');
 }
 
 /* Mevcut programı içe aktarma penceresi: iki adım — promptu kopyala, Claude'un
@@ -12499,122 +12694,11 @@ function projeAktarCozumle(metin) {
   return { ok: true, veri: v };
 }
 
-/* İkinci soru: müşteri ne iş yapıyor. Sektör burada soruluyor çünkü bir
-   sonraki adımda hazır template'ler buna göre süzülüyor — ayrıca sıfırdan
-   gidilirse sihirbazın Firma bilgileri adımı da dolu başlıyor. */
-function sektorSecAc(tur) {
-  modalHepsiniKapat();
-  const liste = DB.sektorler || [];
-
-  modalAc(`
-    ${modalBaslik(ICON.dukkan, 'Müşteri ne iş yapıyor?',
-      'Sektöre göre hazır template\'ler süzülecek.')}
-    <div class="secim">
-      ${liste.map(x => `
-        <div class="satir sec-satir" data-sks="${esc(x.id)}" role="button" tabindex="0">
-          <span class="sec-yazi"><b>${esc(x.ad)}</b></span>
-        </div>`).join('')}
-      <div class="satir sec-satir" data-sks="" role="button" tabindex="0">
-        <span class="sec-yazi"><b>Sektör seçmeden devam et</b>
-          <i>Sonradan Firma bilgileri adımından da yazabilirsin</i></span>
-      </div>
-    </div>
-    <div class="modal-alt">
-      <button class="btn btn-ghost" data-sks-kapat type="button">Vazgeç</button>
-    </div>`, kutu => {
-    $('[data-sks-kapat]', kutu).addEventListener('click', modalKapat);
-    kutu.addEventListener('click', ev => {
-      const t = ev.target.closest('[data-sks]');
-      if (!t) return;
-      modalKapat();
-      baslangicTuruSec(tur, t.dataset.sks || '');
-    });
-  });
-}
-
-/* Üçüncü soru: sıfırdan mı kuruluyor, yoksa bitmiş bir projenin birebir
-   kopyası mı? Kopya şimdilik yalnız ham veriyi taşıyor — firma bilgileri,
-   depo, Supabase gibi kişiye özel alanların değiştirilmesi ayrı bir iş,
-   henüz burada değil (bkz. `DB.projeKopyala` yorumu). */
-function baslangicTuruSec(tur, sektorId) {
-  modalHepsiniKapat();
-  modalAc(`
-    ${modalBaslik(ICON.katman, 'Nasıl başlayalım?',
-      'Sıfırdan mı kuracağız, var olan bir projeyi mi kopyalayacağız, yoksa bir template\'ten mi başlayacağız?')}
-    <div class="secim">
-      <div class="satir sec-satir" data-bt="sifirdan" role="button" tabindex="0">
-        <span class="sec-yazi"><b>Sıfırdan Proje</b><i>Firma bilgileriyle baştan kur</i></span>
-      </div>
-      <div class="satir sec-satir" data-bt="kopya" role="button" tabindex="0">
-        <span class="sec-yazi"><b>Kopya Proje</b><i>Bitmiş bir projenin birebir aynısıyla başla</i></span>
-      </div>
-      <div class="satir sec-satir" data-bt="template" role="button" tabindex="0">
-        <span class="sec-yazi"><b>Bir Template'ten Başla</b><i>Temizlenmiş, hazır bir tabandan hızlıca kur</i></span>
-      </div>
-      <div class="satir sec-satir" data-bt="klon" role="button" tabindex="0">
-        <span class="sec-yazi"><b>Test Klonu</b><i>Müşterinin programının bağlantısız ikizi — ayrı depo, ayrı veritabanı</i></span>
-      </div>
-    </div>
-    <div class="modal-alt">
-      <button class="btn btn-ghost" data-bt="kapat" type="button">Vazgeç</button>
-    </div>`, kutu => {
-    $('[data-bt="kapat"]', kutu).addEventListener('click', modalKapat);
-    kutu.addEventListener('click', ev => {
-      const t = ev.target.closest('[data-bt]');
-      if (!t || t.dataset.bt === 'kapat') return;
-      modalKapat();
-      if (t.dataset.bt === 'kopya')    return kopyaKaynagiSec(tur);
-      if (t.dataset.bt === 'klon')     return ekYukle('klon').then(() => klonKaynakSec(), h => toast(h.message, 'hata'));   // klon.js
-      if (t.dataset.bt === 'template') return cekirdekKaynakSec(tur, sektorId);
-      sihirbaziBaslat(tur, sektorId);
-    });
-  });
-}
-
-
-
 /* Kurulmaya hazır template'ler — istenirse tek bir sektörünkiler. */
 function hazirTemplateler(sektorId) {
   return (DB.projeler || []).filter(p =>
     !p.arsiv && cekirdekMi(p) && (p.palet || {}).cekirdekTemizlendi
     && (!sektorId || templateSektorIdleri(p).includes(sektorId)));
-}
-
-/* Template'ten başlatma. Seçilen sektörün template'leri listeleniyor;
-   hangi yol haritasının geleceği template'in paketinden okunuyor. */
-function cekirdekKaynakSec(tur, sektorId) {
-  modalHepsiniKapat();
-  const liste = hazirTemplateler(sektorId);
-  if (!liste.length) {
-    toast('Bu sektörde hazır template yok.', 'uyari');
-    return;
-  }
-
-  modalAc(`
-    ${modalBaslik(ICON.katman, 'Hangi template?',
-      'Yeni proje bu template\'in birebir kopyasıyla kurulacak.')}
-    <div class="secim">
-      ${liste.map(p => {
-        const paket = templatePaketi(p);
-        return `
-        <div class="satir sec-satir" data-tp="${esc(p.id)}" role="button" tabindex="0">
-          <span class="sec-yazi"><b>${esc(projeAdi(p))}</b>
-            <i>${esc(paket ? paket.ad : templatePaketAnahtari(p))}</i></span>
-        </div>`;
-      }).join('')}
-    </div>
-    <div class="modal-alt">
-      <button class="btn btn-ghost" data-bt="kapat" type="button">Vazgeç</button>
-    </div>`, kutu => {
-    $('[data-bt="kapat"]', kutu).addEventListener('click', modalKapat);
-    kutu.addEventListener('click', ev => {
-      const t = ev.target.closest('[data-tp]');
-      if (!t) return;
-      modalKapat();
-      const p = DB.proje(t.dataset.tp);
-      templateOnaySor(t.dataset.tp, tur, templatePaketAnahtari(p));
-    });
-  }, 'genis');
 }
 
 /* Kopya kaynağı seçimi — arşivlenmemiş tüm projeler listelenir. Seçilince
@@ -12678,6 +12762,9 @@ function sablonSec(kaynakId, tur) {
       const t = ev.target.closest('[data-ss]');
       if (!t || t.dataset.ss === 'kapat') return;
       modalKapat();
+      /* Seçilen paket bu kaynak için hatırlanır: aynı programı bir sonraki
+         firmaya uyarlarken bu soru bir daha gelmez. */
+      if (t.dataset.ss !== 'hayir') uyarlaPaketHatirla(kaynakId, t.dataset.ss);
       templateOnaySor(kaynakId, tur, t.dataset.ss === 'hayir' ? null : t.dataset.ss);
     });
   });
@@ -12688,10 +12775,25 @@ function sablonSec(kaynakId, tur) {
    değiliz) — o yüzden doğrudan soruyoruz. Kapalıysa Settings sayfasını
    açıyoruz, pencere açık kalıyor; işaretleyip döndüğünde "Açık, devam et"
    diyor. Kaynağın hiç deposu yoksa soru anlamsız, direkt kopyalıyoruz. */
+/* GitHub'daki "Template repository" ayarı bir kez yapılır; cevap bu cihazda
+   depo başına hatırlanıyor, her uyarlamada yeniden sorulmuyor (v0.377.0). */
+const TP_ACIK_ANAHTAR = 'ns.tpAcik';
+function tpAcikMi(slug) {
+  try { return !!(JSON.parse(localStorage.getItem(TP_ACIK_ANAHTAR) || '{}') || {})[slug]; }
+  catch (e) { return false; }
+}
+function tpAcikYaz(slug) {
+  try {
+    const m = JSON.parse(localStorage.getItem(TP_ACIK_ANAHTAR) || '{}') || {};
+    m[slug] = 1;
+    localStorage.setItem(TP_ACIK_ANAHTAR, JSON.stringify(m));
+  } catch (e) {}
+}
+
 function templateOnaySor(kaynakId, tur, sablon) {
   const kaynak = DB.proje(kaynakId);
   const slug = kaynak ? depoSlug(kaynak.repo) : '';
-  if (!slug) return templateSonrakiAdim(kaynakId, tur, sablon);
+  if (!slug || tpAcikMi(slug)) return templateSonrakiAdim(kaynakId, tur, sablon);
 
   modalHepsiniKapat();
   modalAc(`
@@ -12719,6 +12821,7 @@ function templateOnaySor(kaynakId, tur, sablon) {
         return;
       }
       modalKapat();
+      tpAcikYaz(slug);
       templateSonrakiAdim(kaynakId, tur, sablon);
     });
   });
@@ -12751,6 +12854,7 @@ function templateDonusOnaySor(kaynakId, tur, sablon) {
       const t = ev.target.closest('[data-tp2]');
       if (!t || t.dataset.tp2 !== 'evet') return modalKapat();
       modalKapat();
+      tpAcikYaz(depoSlug(kaynak.repo));
       templateSonrakiAdim(kaynakId, tur, sablon);
     });
   });
@@ -16695,6 +16799,7 @@ async function eylemCalistir(el) {
   }
 
   if (e === 'sihirbaz')  return sihirbaziAc();
+  if (e === 'uyarla-baslat') return uyarlaBaslat(id, 'gercek');
   if (e === 'tazele')    return veriTazele();
   if (e === 'projelere') { location.hash = '#/projeler'; return; }
   if (e === 'proje-ac')  {
@@ -17341,12 +17446,12 @@ async function eylemCalistir(el) {
         Object.assign({}, pl, { sablonDegisimTamamlandi: false })), 'İşaret kaldırıldı.');
     }
     if (!await onaySor({
-      baslik: 'Değişim tamamlandı mı?',
+      baslik: 'Uyarlama tamamlandı mı?',
       mesaj: 'Claude kodu güncelledikten sonra kontrol ettiysen onayla.',
       buton: 'Eminim',
     })) return;
     return isYap(() => DB.paletKaydet(pr.id,
-      Object.assign({}, pl, { sablonDegisimTamamlandi: true })), 'Değişim tamamlandı.');
+      Object.assign({}, pl, { sablonDegisimTamamlandi: true })), 'Uyarlama tamamlandı.');
   }
 
   if (e === 'sablon-katman-sql-kopyala') {

@@ -58,11 +58,13 @@ Yapılacak → Geliştiriliyor → Kontrolde → Tamamlandı
 
 ## İlerleme yüzdesi
 **Asla elle girilmez.** Projenin yüzdesi **adımlara** göre hesaplanır:
-bitmiş aşama / sayılan aşama (`projeAsamaYuzde`). Firma bilgileri, Program
-temeli, Bağlantılar, Kurulum ve yapı, Beta, Profesyonel tasarım,
-Yetkilendirme, Güvenlik, Final… Gizli ve `sayilmaz` adımlar hesaba girmez.
-Görev sayısına göre hesaplama bırakıldı: sıfır görevi olan proje %0,
-tek görevi biten proje %100 görünüyordu.
+bitmiş adım / sayılan adım (`projeAsamaYuzde`). İki yol var (`projeDuraklari`, v0.377.0):
+- **Şablondan uyarlama** (paketli proje, ör. muhasebe programı) — 6 adım:
+  Firma · Kurulum · Firma tanımları · Uyarlama · Test ve düzeltme · Teslim
+- **Sıfırdan proje** — 8 adım: Tanışma · Altyapı ve test yayını · Plan ·
+  Kurulum · Görünüm · Beta · Yetki ve güvenlik · Teslim
+Finalden sonra gelen Geliştirme sayılmaz. Görev sayısına göre hesaplama
+bırakıldı: sıfır görevi olan proje %0, tek görevi biten proje %100 görünüyordu.
 
 ## Roller (2 tane)
 - **Yönetici** — her şeyi görür, onaylar

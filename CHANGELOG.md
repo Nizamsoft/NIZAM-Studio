@@ -1,5 +1,19 @@
 # Değişiklik Günlüğü
 
+## v0.377.0
+- Aşama yolları yeniden: `projeDuraklari` artık iki yol döndürüyor, her adım kendi `anahtar`ını (DURAKLAR sayfası)
+  taşıyor; indeks eşleşmesi ve gizli "slot" duraklar kalktı. Uyarlama (sablonMu): firma · baglantilar(Kurulum) ·
+  tanimlar(yeni sayfa) · kurulum(Uyarlama = sablonDegisimSayfasi) · deneme · final(Teslim). Sıfırdan: firma(Tanışma,
+  program dahil) · baglantilar · yapi(Plan) · kurulum · tasarim(Görünüm, Beta'dan önce) · beta · yetki · final.
+- `altlar`: adımın içinden açılan eski sayfalar (program, guvenlik, yapi, beta…) şeritte doğru adımı gösterir,
+  eski bağlantılar çalışır. `ekler`: adım altı kartlar (Program temeli, Yetkilendirme, Güvenlik taraması, alan adı).
+- `durakAkisi` kilidi: bitmiş adım kilitlenmez. `durakTanimi` sayfa başlığına yolun adını verir. Tanışma artık
+  firma adı + Program temeli ile biter. Namecheap alan adı Bağlantılar'ın bitişinden çıktı, Teslim'de kart.
+- "+" ekranı tek kapı (`sihirbaziAc`): `sablonProgramlari()` = sürüm takibindeki ana programlar + hazır template'ler;
+  "Yeni firmaya uyarla" (`uyarlaBaslat`), sıfırdan, içe aktar, test kopyası, birebir kopya, "Deneme olarak aç".
+  Sektör ve "nasıl başlayalım" pencereleri kalktı. Paket seçimi ve GitHub "Template repository" cevabı hatırlanır.
+- Atölye: şablon programlar (altında firmalar, sürüm rozeti; firma → `surum-detay`), test kopyaları, denemeler.
+
 ## v0.376.0
 - Mesajlara fotoğraf: yazma kutusunda fotoğraf düğmesi, mesaj başına en çok 10 (`MESAJ_FOTO_EN_COK`); gönderim
   öncesi önizleme şeridi (`YZ_SECILI`, yeniden çizimde kaybolmaz). Her foto `gorseliKucult(1280, .72)` → WebP.

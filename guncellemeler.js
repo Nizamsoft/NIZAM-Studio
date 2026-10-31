@@ -21,6 +21,14 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.377.0', tarih: '2026-10-31',
+    ozet: 'Proje başlatma, aşamalar ve Atölye yenilendi',
+    maddeler: [
+      '"+" ekranı tek kapı: en üstte şablon programlar ("Yeni firmaya uyarla"), altında sıfırdan proje ve diğerleri.',
+      'Şablondan uyarlanan projelerin 6, sıfırdan projelerin 8 net adımı var; gizli ve tekrar eden aşamalar kalktı.',
+      'Atölye\'de her şablon programın altında ondan uyarlanan firmalar ve kaç sürüm geride oldukları görünüyor.',
+      'Mevcut projelerin ilerlemesi korunarak yeni adımlara taşındı.',
+    ] },
   { surum: 'v0.376.0', tarih: '2026-10-31',
     ozet: 'Mesajlarda fotoğraf gönderme',
     maddeler: [
