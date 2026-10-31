@@ -13399,3 +13399,25 @@ html.pa-akis .vt-ik.kot::after, html.pa-akis .p3-uyari, html.pa-akis .pa2-dk.uy,
 /* v0.373.0: sayfa geçişi artık startViewTransition kullanmıyor; adlandırma kapalı. */
 .pa2-hero, .pa2-lo.pj2-logo, .pa2-hero-yz h1 { view-transition-name: none; }
 #view { will-change: auto; }
+
+/* ---- Yandan kayma geçişi (v0.374.0) ---- */
+.pa-hayalet {
+  position: absolute; z-index: 0; overflow: hidden !important; pointer-events: none;
+  box-sizing: border-box; will-change: transform;
+}
+.pa-hayalet.ustte { z-index: 3; box-shadow: -10px 0 30px rgba(23, 23, 26, .14); }
+.pa-hayalet:not(.ustte) ~ .view, .view.pa-kayan { position: relative; z-index: 2; }
+.view.pa-kayan { box-shadow: -10px 0 30px rgba(23, 23, 26, .14); }
+.pa-karart { position: fixed; inset: 0; z-index: 5; background: rgba(23, 23, 26, .16); pointer-events: none; opacity: 0; }
+.pa-karart-alt { position: fixed; }
+/* Kayan sayfanın kendi zemini olsun: alttaki ekran içinden görünmesin. */
+.view.pa-kayan, .pa-hayalet.ustte, .pa-hayalet {
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='84' height='72' viewBox='0 0 56 48'%3E%3Cpath d='M0 24L14 0h28l14 24-14 24H14z' fill='none' stroke='%2317171a' stroke-opacity='.07' stroke-width='.8'/%3E%3C/svg%3E") 0 0 / 84px 72px,
+    linear-gradient(180deg, #f9f9fb, #f1f1f4);
+}
+#main.vitrinde .pa-hayalet:not(.ustte), #main.vitrinde .view {
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='84' height='72' viewBox='0 0 56 48'%3E%3Cpath d='M0 24L14 0h28l14 24-14 24H14z' fill='none' stroke='%2317171a' stroke-opacity='.07' stroke-width='.8'/%3E%3C/svg%3E") 0 0 / 84px 72px,
+    linear-gradient(180deg, #ececef, #dedee3);
+}

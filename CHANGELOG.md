@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## v0.374.0
+- Vitrin ⇄ Proje: yandan kayma (iOS push). `paHayalet` eski ekranın düğümlerini kopyalamadan bir katmana taşır;
+  ileri: yeni #view sağdan (420 ms), hayalet -%28 + karartma; geri: hayalet üstte sağa, vitrin -%28'den gelir.
+  `PA_CEK`: proje sayfasında sol 28px kenardan sağa çekince geri (bırakılan yerden devam eder).
+
 ## v0.373.0
 - Vitrin ⇄ Proje sayfası: `startViewTransition` (afiş/sayfa görüntüsü alıp ölçekliyordu, zayıf telefonda takılıyordu)
   yerine Web Animations ile "yakınlaşarak açılma": kart scale 1.06 + söner, view .97'ye çekilir (200 ms) → sayfa

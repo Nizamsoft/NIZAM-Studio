@@ -9976,40 +9976,103 @@ function paAkisAc() { document.documentElement.classList.add('pa-akis'); }
 function paAkisKapat() { setTimeout(() => document.documentElement.classList.remove('pa-akis'), 60); }
 const PA_EGRI = 'cubic-bezier(.32,.72,0,1)';
 function paBitir(an) { return new Promise(r => { an.onfinish = r; an.oncancel = r; }); }
+
+/* v0.374.0 · Yandan kayma (iPhone'un "ileri" geçişi): eski ekranın içeriği
+   bir "hayalet" katmana taşınır (kopyalanmaz, yalnız yer değiştirir), yeni
+   ekran #view'e çizilir. İleri: yeni sayfa sağdan gelir, eski hafifçe sola
+   çekilip kararır. Geri: tersi. Yalnız transform + opacity. */
+function paHayalet(v) {
+  const h = document.createElement('div');
+  h.className = 'view pa-hayalet';
+  h.style.top = v.offsetTop + 'px';
+  h.style.left = v.offsetLeft + 'px';
+  h.style.width = v.offsetWidth + 'px';
+  h.style.height = v.offsetHeight + 'px';
+  const ust = v.scrollTop;
+  while (v.firstChild) h.appendChild(v.firstChild);
+  const k = document.createElement('div');
+  k.className = 'pa-karart';
+  v.parentElement.insertBefore(h, v);
+  h.scrollTop = ust;
+  h.appendChild(k);
+  return { h, k };
+}
 async function paIleriAk(id, kart) {
   const v = $('#view');
-  VT_KAYDIRMA = v ? v.scrollTop : 0;
+  VT_KAYDIRMA = v.scrollTop;
   PA_GECISTE = true;
   paAkisAc();
+  const { h, k } = paHayalet(v);
   try {
-    const anlar = [
-      kart.animate([{ transform: 'scale(1)', opacity: 1 }, { transform: 'scale(1.06)', opacity: 0 }],
-        { duration: 200, easing: 'ease-in', fill: 'forwards' }),
-      v.animate([{ opacity: 1, transform: 'scale(1)' }, { opacity: 0, transform: 'scale(.97)' }],
-        { duration: 200, easing: 'ease-in', fill: 'forwards' }),
-    ];
-    await Promise.all(anlar.map(paBitir));
     gitVeCiz('#/projeler/' + id);
-    anlar.forEach(a => a.cancel());
-    await paBitir(v.animate([{ opacity: 0, transform: 'translate3d(0,26px,0)' }, { opacity: 1, transform: 'none' }],
-      { duration: 360, easing: PA_EGRI }));
-  } finally { PA_GECISTE = false; paAkisKapat(); }
+    v.scrollTop = 0;
+    v.classList.add('pa-kayan');
+    const sure = { duration: 420, easing: PA_EGRI };
+    await Promise.all([
+      paBitir(v.animate([{ transform: 'translate3d(100%,0,0)' }, { transform: 'translate3d(0,0,0)' }], sure)),
+      paBitir(h.animate([{ transform: 'translate3d(0,0,0)' }, { transform: 'translate3d(-28%,0,0)' }], sure)),
+      paBitir(k.animate([{ opacity: 0 }, { opacity: 1 }], sure)),
+    ]);
+  } finally { h.remove(); v.classList.remove('pa-kayan'); PA_GECISTE = false; paAkisKapat(); }
 }
 async function paGeriAk() {
   const v = $('#view');
+  /* Parmakla çekilirken bırakıldıysa kaldığı yerden devam eder. */
+  const bas = PA_CEK.dx || 0;
+  PA_CEK.dx = 0;
+  v.style.transform = '';
   PA_GECISTE = true;
   paAkisAc();
+  const { h, k } = paHayalet(v);
+  h.classList.add('ustte');
+  k.remove();
+  const kar = document.createElement('div');
+  kar.className = 'pa-karart pa-karart-alt';
   try {
-    const cik = v.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translate3d(0,30px,0)' }],
-      { duration: 190, easing: 'ease-in', fill: 'forwards' });
-    await paBitir(cik);
     renderCiz();
     v.scrollTop = VT_KAYDIRMA;
-    cik.cancel();
-    await paBitir(v.animate([{ opacity: 0, transform: 'scale(.97)' }, { opacity: 1, transform: 'scale(1)' }],
-      { duration: 320, easing: PA_EGRI }));
-  } finally { PA_GECISTE = false; paAkisKapat(); }
+    v.appendChild(kar);
+    const W = v.offsetWidth || 1;
+    const oran = Math.min(.9, bas / W);
+    const sure = { duration: Math.round(380 * (1 - oran) + 120), easing: PA_EGRI };
+    await Promise.all([
+      paBitir(h.animate([{ transform: `translate3d(${bas}px,0,0)` }, { transform: 'translate3d(100%,0,0)' }], sure)),
+      paBitir(v.animate([{ transform: `translate3d(${-28 * (1 - oran)}%,0,0)` }, { transform: 'translate3d(0,0,0)' }], sure)),
+      paBitir(kar.animate([{ opacity: 1 - oran }, { opacity: 0 }], sure)),
+    ]);
+  } finally { h.remove(); kar.remove(); PA_GECISTE = false; paAkisKapat(); }
 }
+
+/* Proje sayfasında ekranın sol kenarından sağa çekince geri döner. */
+const PA_CEK = { x0: null, y0: 0, dx: 0, kilit: null };
+document.addEventListener('touchstart', e => {
+  const v = $('#view');
+  if (!v || !$('.pa2', v) || PA_GECISTE || e.touches[0].clientX > 28) { PA_CEK.x0 = null; return; }
+  PA_CEK.x0 = e.touches[0].clientX; PA_CEK.y0 = e.touches[0].clientY; PA_CEK.dx = 0; PA_CEK.kilit = null;
+}, { passive: true });
+document.addEventListener('touchmove', e => {
+  if (PA_CEK.x0 === null) return;
+  const dx = e.touches[0].clientX - PA_CEK.x0, dy = e.touches[0].clientY - PA_CEK.y0;
+  if (PA_CEK.kilit === null && (Math.abs(dx) > 8 || Math.abs(dy) > 8)) PA_CEK.kilit = dx > 0 && Math.abs(dx) > Math.abs(dy);
+  if (!PA_CEK.kilit) return;
+  PA_CEK.dx = Math.max(0, dx);
+  const v = $('#view');
+  v.style.transition = 'none';
+  v.style.transform = `translate3d(${PA_CEK.dx}px,0,0)`;
+}, { passive: true });
+document.addEventListener('touchend', () => {
+  if (PA_CEK.x0 === null) return;
+  PA_CEK.x0 = null;
+  const v = $('#view');
+  if (PA_CEK.kilit && PA_CEK.dx > Math.min(110, v.offsetWidth * .3)) {
+    if (history.length > 1) history.back(); else { location.hash = '#/projeler'; }
+    return;
+  }
+  v.style.transition = 'transform .25s cubic-bezier(.32,.72,0,1)';
+  v.style.transform = '';
+  PA_CEK.dx = 0;
+  setTimeout(() => { v.style.transition = ''; }, 260);
+});
 
 function gitVeCiz(hash) {
   if (location.hash === hash) { render(); return; }

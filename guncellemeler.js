@@ -21,6 +21,12 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.374.0', tarih: '2026-10-31',
+    ozet: 'Projeye yandan kayarak geçiş',
+    maddeler: [
+      'Vitrinden projeye geçince proje sayfası sağdan kayarak geliyor, vitrin hafifçe sola çekiliyor.',
+      'Proje sayfasında ekranın sol kenarından sağa çekerek vitrine dönebilirsin.',
+    ] },
   { surum: 'v0.373.0', tarih: '2026-10-31',
     ozet: 'Projeye geçiş her telefonda akıcı',
     maddeler: ['Vitrinden projeye geçiş yenilendi: afiş yakınlaşıp sönüyor, proje sayfası alttan yükseliyor. Eski telefonlarda da takılmıyor.'] },
