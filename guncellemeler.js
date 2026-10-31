@@ -21,6 +21,12 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.375.0', tarih: '2026-10-31',
+    ozet: 'Claude işleri Son Hareketler\'e geri geldi',
+    maddeler: [
+      'Son Hareketler\'de Claude bölümü yeniden açıldı: Claude\'la yapılan her iş, kim yaptıysa onun adıyla düşecek.',
+      'Satıra basınca ne yapıldığı, ne üretildiği, GitHub bağlantısı ve sohbetin kendisi görünüyor.',
+    ] },
   { surum: 'v0.374.0', tarih: '2026-10-31',
     ozet: 'Projeye yandan kayarak geçiş',
     maddeler: [

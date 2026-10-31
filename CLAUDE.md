@@ -162,7 +162,7 @@ hâle gelir; panelde tam bu oldu. Sığmıyorsa kaydırmayı aç, kırpma.
 4. `index.html` içindeki `?v=` numaralarını güncelle
 5. `sw.js` içindeki `CACHE` adını güncelle
 6. commit → push (`main`)
-7. İş kaydı gönder — Panel › Son Hareketler'e düşer (kural ve komut: `IS-KAYDI-KURALI.md`)
+7. İş kaydı gönder — Panel › Son Hareketler › Claude'a düşer (kural ve komut: `IS-KAYDI-KURALI.md`; kapı `sql/54`)
 
 ## İstenmeyenler
 - Aşırı teknik görünüm · GitHub kopyası · Jira karmaşıklığı

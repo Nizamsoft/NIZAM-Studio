@@ -19199,7 +19199,7 @@ function shProjeBul(ad) {
 
 /* Son Hareketler kaynakları (v0.371.0 · onaylı taslak). */
 const SH_KAYNAK = {
-  /* claude: kullanılmıyor, kaldırıldı (v0.372.1 · kullanıcı isteği). */
+  claude:     { ad: 'Claude', uzun: 'Claude işleri', alt: 'Kim ne yaptı', ik: '✦', sinif: 'shk-cl' },
   studio:     { ad: 'Studio', uzun: 'Studio görevleri', alt: 'Plan, onay…', ik: '✓', sinif: 'shk-st' },
   guncelleme: { ad: 'Güncellemeler', uzun: 'Güncellemeler', alt: 'Sürüm notları', ik: '↻', sinif: 'shk-gn' },
   program:    { ad: 'Program', uzun: 'Program işlemleri', alt: 'Müşteri tarafı', ik: '▤', sinif: 'shk-pr' },
@@ -19227,7 +19227,7 @@ function shTopla() {
     kisi: shKisiBul(k.kullanici), tur: 'claude', pkey: shProjeBul(k.program),
     zaman: k.yapildi || k.olusturuldu || '', kullanici: k.kullanici || 'Bilinmiyor',
     program: k.program || '—', is: k.is_ozet || '', detay: k.detay || '',
-    repo: k.repo || '', commit: k.commit_no || '', oturum: k.oturum || '', kaynak: 'Claude',
+    repo: k.repo || '', commit: k.commit_no || '', oturum: k.oturum || '', uretilen: k.uretilen || '', kaynak: 'Claude',
   }));
   /* Görevler bir kez haritaya alınır: her hareket için listeyi baştan
      taramak 400 harekette 100 ms'yi buluyordu (v0.372.0). */
@@ -19514,10 +19514,11 @@ function shAc(i) {
       ${bilgi('Program', esc(r.program))}
       ${bilgi('Ne zaman', esc(r.saatYok ? zaman.replace(/ \d\d:\d\d$/, '') : zaman))}
       ${bilgi('Nereden', r.kaynak === 'Claude' ? 'Claude oturumu' : esc(r.kaynak || 'Studio'))}
-      ${r.detay ? `<div class="sh-d-bas">Ayrıntı</div><div class="sh-d-metin">${esc(r.detay)}</div>` : ''}
+      ${r.detay ? `<div class="sh-d-bas">${r.tur === 'claude' ? 'Ne yapıldı' : 'Ayrıntı'}</div><div class="sh-d-metin">${esc(r.detay)}</div>` : ''}
+      ${r.uretilen ? `<div class="sh-d-bas">Ne üretildi</div><div class="sh-d-metin">${esc(r.uretilen)}</div>` : ''}
       <div class="sh-d-link">
         ${commitAdres ? `<a href="${commitAdres}" target="_blank" rel="noopener">GitHub'da değişikliği gör ›</a>` : ''}
-        ${r.oturum && /^https:\/\/claude\.ai\//.test(r.oturum) ? `<a href="${esc(r.oturum)}" target="_blank" rel="noopener">Claude oturumunu aç ›</a>` : ''}
+        ${r.oturum && /^https:\/\/claude\.ai\//.test(r.oturum) ? `<a href="${esc(r.oturum)}" target="_blank" rel="noopener">Sohbeti aç ›</a>` : ''}
         ${r.gorev ? `<button type="button" class="p3-dug" data-eylem="gorev-ac" data-id="${esc(r.gorev)}">Görevi aç</button>` : ''}
       </div>
     </div>`);

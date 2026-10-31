@@ -1,27 +1,28 @@
 # İş kaydı kuralı — claude.ai hesap tercihlerine yapıştırılır
 
-Bu metin **claude.ai → Ayarlar → Profil → "Claude hangi tercihleri dikkate
-almalı?"** kutusuna (mevcut tercihlerin altına) yapıştırılır. Böylece hesapta
-hangi depoda çalışılırsa çalışılsın geçerli olur. Kayıtlar Studio'da
-Panel › Son Hareketler'de görünür.
+Bu metin **claude.ai → Ayarlar → Profil → tercihler** kutusuna, mevcut
+yazıların altına yapıştırılır. Hesaptaki her Claude Code sohbetinde (hangi
+depoda çalışılırsa çalışılsın) geçerli olur. Kayıtlar Studio'da
+Panel › Son Hareketler › Claude'da görünür.
 
 Ön koşullar (tek sefer):
-1. Supabase'de `sql/52-is-kayitlari.sql` çalıştırılmış olmalı.
-2. `supabase/functions/is-kaydi` fonksiyonu kurulmuş olmalı (dosyanın başında adımlar).
-3. Claude Code ortamlarının ağ ayarında `whkjkaxsojkdwcehgiwj.supabase.co`
-   "Allowed domains" listesine eklenmiş olmalı.
+1. Studio'nun Supabase'inde `sql/54-is-kaydi-kapisi.sql` çalıştırılır.
+2. Aynı dosyanın sonundaki ANAHTAR sorgusu çalıştırılır; çıkan anahtar
+   aşağıdaki metinde `<ANAHTAR>` yerine yazılır.
+3. Claude Code ortamlarının ağ ayarında (Network access → Allowed domains)
+   `whkjkaxsojkdwcehgiwj.supabase.co` eklenir. Her ortamda bir kez.
 
-Yapıştırmadan önce `<ERISIM_KODU>` yerine `config.js` içindeki
-`RAPOR.anahtar` değerini yaz (hata bildirimlerinin kullandığı kodun aynısı).
+Not: Kayıt yalnız Claude Code sohbetlerinden gönderilebilir (komut
+çalıştırabildikleri için). claude.ai'daki düz sohbetler gönderemez.
 
 Aşağıdaki çizginin altını kopyala:
 
 ---
 
 İŞ KAYDI (NIZAM Studio): Bu hesabı birden çok kişi kullanıyor.
-1. Oturumun ilk mesajında kullanıcı adını yazmadıysa, bir dosyayı değiştirmeden önce bir kez "Adın ne?" diye sor. Cevabı bütün oturum boyunca kullan.
-2. Bir iş bitip değişiklik GitHub'a gönderildiğinde (push), aynı turda Studio'ya tek satır iş kaydı gönder. Hiçbir dosya değişmediyse (yalnız soru, plan, inceleme) kayıt gönderme.
-3. Gönderme komutu:
-curl -sS -m 15 -X POST https://whkjkaxsojkdwcehgiwj.supabase.co/functions/v1/is-kaydi -H "Content-Type: application/json" -H "x-rapor-anahtari: <ERISIM_KODU>" -d '<JSON>'
-JSON alanları: "kullanici" (adı soyadı), "program" (depodaki CLAUDE.md/NIZAM.md'deki firma ya da ürün adı; NIZAM-Studio deposu için "Studio"), "is" (geçmiş zamanlı tek cümle, en çok 80 karakter, teknik terim yok, kullanıcının adı yok; örnek: "Alt menüyü yüzen, hafif saydam bir hap yaptı"), "detay" (2-5 kısa madde, sade Türkçe: ne değişti, neden), "repo" (sahip/depo), "commit" (son commit'in kısa kimliği), "oturum" (biliniyorsa Claude oturum adresi).
-4. Gönderim başarısız olursa kullanıcıya bir kez kısaca söyle (çoğu zaman sebep: ortamın ağ ayarında whkjkaxsojkdwcehgiwj.supabase.co izinli değil), işi durdurma.
+1. Sohbetin ilk mesajında kişi adını söylemediyse, bir dosyayı değiştirmeden önce bir kez "Adın ne?" diye sor ve bütün sohbet boyunca o adı kullan.
+2. Bir İŞ bittiğinde Studio'ya tek satır iş kaydı gönder. İş: kod GitHub'a gönderildi (push); ya da SQL, belge (Word/PDF), görsel gibi bir dosya hazırlandı; ya da bir hata bulunup çözüldü. Yalnız soru-cevap, fikir alışverişi, plan veya inceleme için gönderme. Her mesaj için değil, iş başına bir kayıt.
+3. Gönderme komutu (bash):
+curl -sS -m 15 -X POST "https://whkjkaxsojkdwcehgiwj.supabase.co/rest/v1/rpc/is_kaydi_yaz" -H "apikey: sb_publishable_6qCgu1aJCmK9inF5xmaopg_PayG8KDP" -H "Content-Type: application/json" -d '{"p_anahtar":"<ANAHTAR>","p_kullanici":"…","p_program":"…","p_is":"…","p_detay":"…","p_uretilen":"…","p_repo":"…","p_commit":"…","p_oturum":"…"}'
+Alanlar: p_kullanici = kişinin adı soyadı · p_program = depodaki CLAUDE.md/NIZAM.md'de yazan firma ya da ürün adı (NIZAM-Studio için "Studio"; depo yoksa işin ilgili olduğu firma) · p_is = geçmiş zamanlı tek cümle, en çok 80 karakter, teknik terim yok, kişinin adı yok (örnek: "Kübban'da yapılacaklar listesindeki izin hatasını düzeltti") · p_detay = 2-5 kısa madde, sade Türkçe; müşteri kişisel bilgisi, şifre, anahtar YAZMA · p_uretilen = üretilen dosyalar (örnek: "GK-32 SQL dosyası, Kurulum.docx"), yoksa boş · p_repo = sahip/depo, yoksa boş · p_commit = son commit'in kısa kimliği, yoksa boş · p_oturum = biliniyorsa bu sohbetin claude.ai adresi.
+4. Gönderim başarısız olursa kişiye bir kez kısaca söyle (çoğu zaman sebep: ortamın ağ ayarında whkjkaxsojkdwcehgiwj.supabase.co izinli değil) ve işi durdurma.

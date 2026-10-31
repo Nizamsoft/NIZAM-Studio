@@ -1,5 +1,12 @@
 # Değişiklik Günlüğü
 
+## v0.375.0
+- `sql/54-is-kaydi-kapisi.sql`: Edge Function yerine `is_kaydi_yaz(anahtar, …)` RPC (security definer, yalnız
+  yazar, SHA-256 özetli anahtar `is_kaydi_anahtari`, saatte 200, alan kırpma), `is_kayitlari.uretilen` sütunu;
+  52 olmadan da tek başına kurar. Yerel PostgreSQL'de denendi (yanlış anahtar red, anon okuyamaz, yönetici okur).
+- `SH_KAYNAK.claude` geri açıldı; ayrıntıda "Ne yapıldı / Ne üretildi / Sohbeti aç".
+- `IS-KAYDI-KURALI.md`: iş başına kayıt (push, dosya üretimi, hata çözümü), yeni curl biçimi.
+
 ## v0.374.0
 - Vitrin ⇄ Proje: yandan kayma (iOS push). `paHayalet` eski ekranın düğümlerini kopyalamadan bir katmana taşır;
   ileri: yeni #view sağdan (420 ms), hayalet -%28 + karartma; geri: hayalet üstte sağa, vitrin -%28'den gelir.
