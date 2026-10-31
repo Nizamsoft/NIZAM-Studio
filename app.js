@@ -14228,9 +14228,13 @@ function gvFiltreSay() {
 }
 
 function gvDurum(g) {
-  if (g.durum === 'onaylandi') return { ad: 'Tamamlandı', renk: '#2f7d5c' };
-  if (g.durum === 'bitirdi')   return { ad: 'Kontrolde', renk: '#2f62c4' };
-  return gorevAsama(g) === 'plansiz' ? { ad: 'Yapılacak', renk: '#83838b' } : { ad: 'Geliştiriliyor', renk: '#b8801a' };
+  /* Görev penceresiyle aynı dil (v0.369.2): aşamaya göre. */
+  return ({
+    onaylandi: { ad: 'Tamamlandı', renk: '#2f7d5c' },
+    bitirdi:   { ad: 'Kontrolde', renk: '#2f62c4' },
+    planda:    { ad: 'Plan onayı bekliyor', renk: '#2f62c4' },
+    basladi:   { ad: 'Geliştiriliyor', renk: '#b8801a' },
+  })[gorevAsama(g)] || { ad: 'Plan bekleniyor', renk: '#83838b' };
 }
 function gvGrup(g) {
   if (!g.bitis) return 'Tarihsiz';
@@ -14274,7 +14278,7 @@ function gorevlerEkrani() {
   const kaynak = GV_SEKME === 'ekip' ? hepsi : benim;
   const suz = {
     acik:    g => g.durum !== 'onaylandi' && g.durum !== 'bitirdi',
-    kontrol: g => g.durum === 'bitirdi',
+    kontrol: g => g.durum === 'bitirdi' || gorevAsama(g) === 'planda',
     bitti:   g => g.durum === 'onaylandi',
   }[GV_SUZ] || (() => true);
   const kisiUy = g => !GV_KISI || (GV_SEKME === 'ekip' ? g.atanan === GV_KISI : g.olusturan === GV_KISI);
@@ -16372,6 +16376,12 @@ async function eylemCalistir(el) {
   if (e === 'sh-daha')     { SH_LIMIT += 30; render(); return; }
   if (e === 'p3-git')    { p3Kapat(); location.hash = el.dataset.hedef; return; }
   if (e === 'p3-onayla') { p3Kapat(); return gorevDurum(id, 'onaylandi'); }
+  if (e === 'p3-plan-onay') {
+    p3Kapat();
+    try { await DB.gorevGuncelle(id, { plan_onay: true }); sayaclariYaz(); render(); toast('Plan onaylandı, iş başlayabilir.', 'basari'); }
+    catch (h) { toast(h.message, 'hata'); }
+    return;
+  }
   if (e === 'pz-proje-ac-kapa') return pzProjeAcKapa(el);
   if (e === 'pj-suzgec') { PJ_SUZGEC = id || 'hepsi'; render(); return; }
   if (e === 'pj-bolum')  { PJ_ACIK[id] = !PJ_ACIK[id]; render(); return; }
@@ -18629,7 +18639,11 @@ function p3Veri(projeler) {
     g.durum !== 'onaylandi' && (!g.proje_id || ids.has(g.proje_id)));
   const kontrol = acik.filter(g => g.durum === 'bitirdi')
     .sort((a, b) => (b.guncellendi || '').localeCompare(a.guncellendi || ''));
-  const yapilacak = acik.filter(g => g.durum !== 'bitirdi' && !String(g.plan || '').trim()).length;
+  /* Plan onayı bekleyenler de "onayını bekliyor" sayılır (v0.369.2). */
+  const planda = acik.filter(g => gorevAsama(g) === 'planda')
+    .sort((a, b) => (b.guncellendi || '').localeCompare(a.guncellendi || ''));
+  const onay = planda.length + kontrol.length;
+  const yapilacak = acik.filter(g => g.durum !== 'bitirdi' && gorevAsama(g) !== 'basladi').length;
   const gelisen = acik.length - kontrol.length - yapilacak;
   const yakin = acik.filter(g => g.bitis && g.durum !== 'bitirdi')
     .sort((a, b) => a.bitis.localeCompare(b.bitis));
@@ -18643,7 +18657,7 @@ function p3Veri(projeler) {
     const dr = yedekDrive(sonYedekRaporu());
     if (dr && dr.dolu) drive = dr;
   }
-  return { acik, kontrol, yapilacak, gelisen, yakin, guv, yed, drive };
+  return { acik, kontrol, planda, onay, yapilacak, gelisen, yakin, guv, yed, drive };
 }
 
 /* Kart ikonları (v0.350.0): ikili ton — ince çizgi + yarı saydam dolgu. */
@@ -18695,10 +18709,10 @@ function panelKartlar(projeler) {
     </button>`;
 
   const ana = `
-    <button type="button" class="p3-kart p3-ana ${v.kontrol.length ? 'p3-uyari' : ''}" data-eylem="p3-ac" data-id="onay" aria-expanded="false">
+    <button type="button" class="p3-kart p3-ana ${v.onay ? 'p3-uyari' : ''}" data-eylem="p3-ac" data-id="onay" aria-expanded="false">
       <span class="p3-n" aria-hidden="true"></span>
       <span class="p3-ik"><svg viewBox="0 0 24 24">${P3_IKON.onay}</svg></span>
-      <b class="p3-sayi">${v.kontrol.length}</b>
+      <b class="p3-sayi">${v.onay}</b>
       <span class="p3-bas">Görevler · ${yon ? 'onayını bekliyor' : 'onayda bekleyen'}</span>
       <span class="p3-cipler">
         <span><b>${v.acik.length}</b> açık görev</span>
@@ -18734,21 +18748,22 @@ function p3Icerik(k) {
   const bas = (y, link) => `<div class="p3-pb"><b>${esc(y)}</b>${link || ''}</div>`;
   const tum = (adres, y) => `<a class="p3-tum" href="${adres}">${y} ›</a>`;
   const bos = y => `<div class="p3-bos">${esc(y)}</div>`;
-  const gorevAlt = g => [g.proje_id ? basHarfleriBuyuk((DB.proje(g.proje_id) || {}).firma || '') : 'Genel',
+  const gorevAlt = g => [g.proje_id ? basHarfleriBuyuk((DB.proje(g.proje_id) || {}).firma || '') : g.konu === 'studio' ? 'Nizam Studio' : 'Genel',
     DB.kisiAdi(g.atanan)].filter(Boolean).join(' · ');
   const gorevAc = g => `data-eylem="gorev-ac" data-id="${g.id}" role="button" tabindex="0"`;
   const no = g => `<span class="p3-no">${esc(gorevNo(g))}</span>`;
 
   if (k === 'onay') {
-    const l = v.kontrol.slice(0, 6);
     const say = (n, ad, renk) => `<div style="--c:${renk}"><b>${n}</b><i>${ad}</i></div>`;
     const y = v.yakin.slice(0, 5);
-    return bas((yon ? 'Onayını bekleyen · ' : 'Onayda bekleyen · ') + v.kontrol.length, tum('#/gorevler', 'Görevler'))
-      + (l.length ? l.map(g => p3Sat(no(g), g.baslik || 'Görev',
-          gorevAlt(g) + (g.guncellendi ? ' · ' + pzZamanKisa(g.guncellendi) : ''),
-          yon ? `<button type="button" class="p3-dug" data-eylem="p3-onayla" data-id="${g.id}">Onayla</button>`
-              : `<span class="p3-hap">Kontrolde</span>`, gorevAc(g))).join('')
-        : bos('Onay bekleyen görev yok 🎉'))
+    const satir = (g, eylem, dug) => p3Sat(no(g), g.baslik || 'Görev',
+      gorevAlt(g) + (g.guncellendi ? ' · ' + pzZamanKisa(g.guncellendi) : ''),
+      yon ? `<button type="button" class="p3-dug" data-eylem="${eylem}" data-id="${g.id}">${dug}</button>`
+          : `<span class="p3-hap">Bekliyor</span>`, gorevAc(g));
+    return bas((yon ? 'Onayını bekleyen · ' : 'Onayda bekleyen · ') + v.onay, tum('#/gorevler', 'Görevler'))
+      + (!v.onay ? bos('Onay bekleyen görev yok 🎉')
+        : (v.planda.length ? `<div class="p3-alt-bas">Plan onayı · ${v.planda.length}</div>` + v.planda.slice(0, 6).map(g => satir(g, 'p3-plan-onay', 'Planı onayla')).join('') : '')
+        + (v.kontrol.length ? `<div class="p3-alt-bas">Kontrolde · ${v.kontrol.length}</div>` + v.kontrol.slice(0, 6).map(g => satir(g, 'p3-onayla', 'Onayla')).join('') : ''))
       + bas('Açık görevler · ' + v.acik.length)
       + `<div class="p3-durum">${say(v.yapilacak, 'Yapılacak', '#83838b')}${say(v.gelisen, 'Geliştiriliyor', '#b8801a')}${say(v.kontrol.length, 'Kontrolde', '#2f62c4')}</div>`
       + bas('Yaklaşan bitişler')

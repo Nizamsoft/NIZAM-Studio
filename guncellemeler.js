@@ -21,6 +21,13 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.369.2', tarih: '2026-10-31',
+    ozet: 'Plan onayı bekleyen görevler doğru görünüyor',
+    maddeler: [
+      'Görev listesinde plan onayı bekleyen görev artık "Plan onayı bekliyor" yazıyor.',
+      'Panel\'deki onay kartı plan onayı bekleyenleri de sayıyor; "Planı onayla" düğmesi orada.',
+      'Görevler filtresinde "Kontrolde" seçilince plan onayı bekleyenler de listeleniyor.',
+    ] },
   { surum: 'v0.370.0', tarih: '2026-10-30',
     ozet: 'Projede Güncelleme ve Etkileşim geçmişi',
     maddeler: [
