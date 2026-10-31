@@ -21,6 +21,9 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.372.1', tarih: '2026-10-31',
+    ozet: 'Son Hareketler sadeleşti',
+    maddeler: ['Son Hareketler\'den kullanılmayan Claude bölümü kaldırıldı.'] },
   { surum: 'v0.372.0', tarih: '2026-10-31',
     ozet: 'Daha hızlı ve akıcı Studio',
     maddeler: [

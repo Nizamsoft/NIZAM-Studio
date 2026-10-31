@@ -19127,7 +19127,7 @@ function shProjeBul(ad) {
 
 /* Son Hareketler kaynakları (v0.371.0 · onaylı taslak). */
 const SH_KAYNAK = {
-  claude:     { ad: 'Claude', uzun: 'Claude işleri', alt: 'Kim ne yaptı', ik: '✦', sinif: 'shk-cl' },
+  /* claude: kullanılmıyor, kaldırıldı (v0.372.1 · kullanıcı isteği). */
   studio:     { ad: 'Studio', uzun: 'Studio görevleri', alt: 'Plan, onay…', ik: '✓', sinif: 'shk-st' },
   guncelleme: { ad: 'Güncellemeler', uzun: 'Güncellemeler', alt: 'Sürüm notları', ik: '↻', sinif: 'shk-gn' },
   program:    { ad: 'Program', uzun: 'Program işlemleri', alt: 'Müşteri tarafı', ik: '▤', sinif: 'shk-pr' },
@@ -19151,7 +19151,7 @@ function shSatirlar() {
 }
 function shTopla() {
   const satirlar = [];
-  (DB.isKayitlari || []).forEach(k => satirlar.push({
+  if (SH_KAYNAK.claude) (DB.isKayitlari || []).forEach(k => satirlar.push({
     kisi: shKisiBul(k.kullanici), tur: 'claude', pkey: shProjeBul(k.program),
     zaman: k.yapildi || k.olusturuldu || '', kullanici: k.kullanici || 'Bilinmiyor',
     program: k.program || '—', is: k.is_ozet || '', detay: k.detay || '',

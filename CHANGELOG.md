@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.372.1
+- Son Hareketler: `SH_KAYNAK.claude` kaldırıldı (hızlı çip, filtre kartı ve iş kaydı satırları görünmez).
+
 ## v0.372.0 (optimizasyon · 1. tur)
 - Sonradan yükleme: `security*.js` ve `klon.js` index.html'den çıktı; `ekYukle(grup)` / `ekBekle` ile ekrana ya da
   `sec-`/`klon-` eylemine girince yüklenir (açılışta okunan betik ~%50 az, 4x yavaş işlemcide 8,0 → 3,7 sn).
