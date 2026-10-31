@@ -16374,6 +16374,8 @@ async function eylemCalistir(el) {
   if (e === 'sh-kisi-ac')  return shKisiAc(el);
   if (e === 'sh-kisi-sec') return shKisiSec(id);
   if (e === 'sh-daha')     { SH_LIMIT += 30; render(); return; }
+  if (e === 'sh-hizli')    return shHizli(id);
+  if (e === 'sh-filtre')   return shFiltreAc();
   if (e === 'p3-git')    { p3Kapat(); location.hash = el.dataset.hedef; return; }
   if (e === 'p3-onayla') { p3Kapat(); return gorevDurum(id, 'onaylandi'); }
   if (e === 'p3-plan-onay') {
@@ -19050,10 +19052,31 @@ function shKisiBul(ad) {
   return aday.length === 1 ? aday[0] : null;
 }
 
+/* Projeyi addan bul (iş kaydındaki serbest "program" adı, sürüm notları). */
+function shProjeBul(ad) {
+  const n = String(ad || '').trim().toLocaleLowerCase('tr');
+  if (!n) return null;
+  if (n === 'studio' || n === 'nizam studio') return ':studio';
+  const p = (DB.projeler || []).find(x => !x.arsiv && [x.firma, projeAdi(x)].some(y => {
+    const m = String(y || '').toLocaleLowerCase('tr');
+    return m && (m === n || m.includes(n) || n.includes(m));
+  }));
+  return p ? p.id : null;
+}
+
+/* Son Hareketler kaynakları (v0.371.0 · onaylı taslak). */
+const SH_KAYNAK = {
+  claude:     { ad: 'Claude', uzun: 'Claude işleri', alt: 'Kim ne yaptı', ik: '✦', sinif: 'shk-cl' },
+  studio:     { ad: 'Studio', uzun: 'Studio görevleri', alt: 'Plan, onay…', ik: '✓', sinif: 'shk-st' },
+  guncelleme: { ad: 'Güncellemeler', uzun: 'Güncellemeler', alt: 'Sürüm notları', ik: '↻', sinif: 'shk-gn' },
+  program:    { ad: 'Program', uzun: 'Program işlemleri', alt: 'Müşteri tarafı', ik: '▤', sinif: 'shk-pr' },
+  hata:       { ad: 'Hatalar', uzun: 'Hatalar', alt: 'Program hataları', ik: '!', sinif: 'shk-ht' },
+};
+
 function shSatirlar() {
   const satirlar = [];
   (DB.isKayitlari || []).forEach(k => satirlar.push({
-    kisi: shKisiBul(k.kullanici),
+    kisi: shKisiBul(k.kullanici), tur: 'claude', pkey: shProjeBul(k.program),
     zaman: k.yapildi || k.olusturuldu || '', kullanici: k.kullanici || 'Bilinmiyor',
     program: k.program || '—', is: k.is_ozet || '', detay: k.detay || '',
     repo: k.repo || '', commit: k.commit_no || '', oturum: k.oturum || '', kaynak: 'Claude',
@@ -19063,14 +19086,50 @@ function shSatirlar() {
     const g = (DB.gorevler || []).find(x => x.id === h.gorev_id);
     const p = g && g.proje_id ? DB.proje(g.proje_id) : null;
     satirlar.push({
-      kisi: DB.kisi(h.kim),
+      kisi: DB.kisi(h.kim), tur: 'studio', pkey: p ? p.id : ':studio',
       zaman: h.olusturuldu || '', kullanici: DB.kisiAdi(h.kim) || 'Biri',
-      program: 'Studio', is: (t => t.charAt(0).toLocaleUpperCase('tr') + t.slice(1))(HAREKET_ADI[h.tip] || h.tip || '')
+      program: p ? basHarfleriBuyuk(p.firma || projeAdi(p)) : 'Studio',
+      is: (t => t.charAt(0).toLocaleUpperCase('tr') + t.slice(1))(HAREKET_ADI[h.tip] || h.tip || '')
         + (g ? ' · ' + g.baslik : ''),
       detay: [g ? gorevNo(g) + ' · ' + g.baslik : '', p ? 'Proje: ' + basHarfleriBuyuk(p.firma || projeAdi(p)) : '',
         h.notu || ''].filter(Boolean).join('\n'),
       gorev: g ? g.id : '', kaynak: 'Studio',
     });
+  });
+  /* Güncellemeler: programların sürüm notları (Sürüm Takibi). Notlarda saat
+     yok; gün ortası yazılır, saat gösterilmez. */
+  if (SURUM.durum === 'tamam') {
+    const notEkle = (n, ad, pkey) => {
+      if (!/^\d{4}-\d\d-\d\d/.test(String(n.tarih || ''))) return;
+      const tr = { genel: 'Genel', ozel: 'Firmaya özel', esitleme: 'Ana programdan' }[n.tur] || '';
+      satirlar.push({
+        tur: 'guncelleme', pkey, saatYok: true,
+        zaman: String(n.tarih).slice(0, 10) + 'T00:00:01', kullanici: 'Sürüm ' + svKisa(n.surum || ''),
+        program: ad, is: n.ozet || '', etiket: [tr, n.sql].filter(Boolean).join(' · '),
+        detay: [n.ozet || '', n.sql ? 'Yeni SQL: ' + n.sql : ''].filter(Boolean).join('\n'), kaynak: 'Güncelleme',
+      });
+    };
+    (SURUM.analar || []).forEach(a => {
+      if (a.hata) return;
+      const anaP = (DB.projeler || []).find(p => pjAdres(p) && pjHost(a.site) === pjAdres(p));
+      (a.notlar || []).slice(0, 40).forEach(n => notEkle(n, String(a.ad || 'Ana program').replace(/\s*Modülü$/i, ''), anaP ? anaP.id : null));
+      (a.firmalar || []).forEach(f => {
+        const fp = (DB.projeler || []).find(p => pjAdres(p) && pjHost(f.site) === pjAdres(p));
+        (f.notlar || []).filter(n => n.tur !== 'esitleme' || true).slice(0, 40)
+          .forEach(n => notEkle(n, fp ? basHarfleriBuyuk(fp.firma || projeAdi(fp)) : (f.ad || f.kod), fp ? fp.id : null));
+      });
+    });
+  }
+  /* Program işlemleri ve hataları: bağlı programların Etkileşim geçmişi. */
+  (DB.projeler || []).forEach(p => {
+    const e = ETK[p.id];
+    if (!e || e.durum !== 'tamam' || !e.veri) return;
+    const ad = basHarfleriBuyuk(p.firma || projeAdi(p));
+    etkOlaylar(e.veri).forEach(o => satirlar.push({
+      tur: o.h ? 'hata' : 'program', pkey: p.id, kisi: null,
+      zaman: o.zaman || '', kullanici: o.kim || (o.h ? 'Program' : 'Sistem'),
+      program: ad, is: o.yazi || '', detay: o.yazi || '', kaynak: o.h ? 'Program hatası' : 'Program',
+    }));
   });
   return satirlar.sort((x, y) => (y.zaman || '').localeCompare(x.zaman || ''));
 }
@@ -19124,44 +19183,128 @@ function shKisiler(hepsi) {
 
 /* Son Hareketler (v0.353.0 · onaylı taslak A): gün gün zaman çizelgesi.
    Sağ üstte kişi seçici. */
+/* Filtre durumu (v0.371.0). kaynak: açık kaynaklar; kisi/proje null = hepsi. */
+const SH_F = { kaynak: new Set(Object.keys(SH_KAYNAK)), kisi: null, proje: null, gun: 7 };
+let SH_ETK_ZAMAN = 0;
+
+/* Bağlı programların etkileşim geçmişini arkada okur (5 dakikada bir). */
+function shEtkTazele() {
+  if (!AUTH.yonetici) return;
+  const zorla = Date.now() - SH_ETK_ZAMAN > 5 * 60000;
+  if (zorla) SH_ETK_ZAMAN = Date.now();
+  (DB.projeler || []).filter(p => !p.arsiv && PROJE_KOVASI.normal.sec(p) && sunuculuMu(p)).forEach(p => {
+    const e = ETK[p.id];
+    if (e && (e.durum === 'bagsiz' || e.durum === 'kurulmadi')) return;
+    const gun = Math.max(SH_F.gun, (e && e.gun) || 0);
+    if (!e || e.gun < SH_F.gun || (zorla && e.durum === 'tamam')) etkYukle(p, gun, zorla && !!e);
+  });
+}
+
+function shSuz(hepsi, f, kaynakSay) {
+  const sinir = (() => { const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - (f.gun - 1)); return d.toISOString(); })();
+  return hepsi.filter(r => (r.zaman || '') >= sinir
+    && (!f.kisi || r.kullanici === f.kisi)
+    && (!f.proje || r.pkey === f.proje)
+    && (kaynakSay || f.kaynak.has(r.tur)));
+}
+function shFiltreSay() {
+  return (SH_F.kaynak.size < Object.keys(SH_KAYNAK).length ? 1 : 0) + (SH_F.kisi ? 1 : 0)
+    + (SH_F.proje ? 1 : 0) + (SH_F.gun !== 7 ? 1 : 0);
+}
+
 function panelAktivite() {
   if (!AUTH.yonetici) return '';
+  setTimeout(shEtkTazele, 0);
   const hepsi = shSatirlar();
-  const kisiler = shKisiler(hepsi);
-  if (SH_KISI && !kisiler.some(k => k.ad === SH_KISI)) SH_KISI = null;
-  const secili = SH_KISI ? hepsi.filter(r => r.kullanici === SH_KISI) : hepsi;
+  const tabani = shSuz(hepsi, SH_F, true);
+  const secili = tabani.filter(r => SH_F.kaynak.has(r.tur));
   SH_SATIRLAR = secili.slice(0, SH_LIMIT);
   const kalan = secili.length - SH_SATIRLAR.length;
-
-  const yigin = kisiler.slice(0, 3).map(k => shAvatar(k.ad, 'kucuk', k.kisi)).join('');
-  const secKisi = SH_KISI ? (kisiler.find(k => k.ad === SH_KISI) || {}).kisi : null;
-  const secici = kisiler.length ? `
-    <button type="button" class="shz-sec" data-eylem="sh-kisi-ac" aria-haspopup="listbox">
-      <span class="shz-yigin">${SH_KISI ? shAvatar(SH_KISI, 'kucuk', secKisi) : yigin}</span>
-      <span class="shz-sec-ad">${esc(SH_KISI || 'Herkes')}</span>
-      <svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"></path></svg>
-    </button>` : '';
-  const bas = `<span class="pz-bas shz-bas"><b>Son Hareketler</b><u></u>${secici}</span>`;
+  const tumAcik = SH_F.kaynak.size === Object.keys(SH_KAYNAK).length;
+  const tek = SH_F.kaynak.size === 1 ? [...SH_F.kaynak][0] : null;
+  const say = k => tabani.filter(r => r.tur === k).length;
+  const fs = shFiltreSay();
+  const cip = (k, ad, ik, sinif, n, on) => `<button type="button" class="shf-c ${on ? 'on' : ''}" data-eylem="sh-hizli" data-id="${k}">
+    <i class="${sinif}">${ik}</i>${esc(ad)}<u>${n}</u></button>`;
+  const bas = `<span class="pz-bas shz-bas"><b>Son Hareketler</b><u></u>
+    <button type="button" class="shf-dug" data-eylem="sh-filtre">${svg(ICON.sirala || ICON.chevron, 14)} Filtre${fs ? `<em>${fs}</em>` : ''}</button></span>
+    <div class="shf-hizli">${cip('tumu', 'Tümü', '∗', 'shk-st', tabani.length, tumAcik)}${Object.keys(SH_KAYNAK).map(k =>
+      cip(k, SH_KAYNAK[k].ad, SH_KAYNAK[k].ik, SH_KAYNAK[k].sinif, say(k), tek === k)).join('')}</div>`;
   if (!SH_SATIRLAR.length) return `<div class="pz-bolum shz shz-kart">${bas}
-    <div class="sh-bos">Henüz kayıt yok. Claude bir işi bitirip gönderdiğinde burada görünecek.</div></div>`;
+    <div class="sh-bos">${hepsi.length ? 'Bu filtreye uyan kayıt yok.' : 'Henüz kayıt yok.'}</div></div>`;
 
   let gun = '', h = '';
   SH_SATIRLAR.forEach((r, i) => {
     const g = shGun(r.zaman);
     if (g !== gun) { gun = g; h += `<div class="shz-gun">${esc(g)}</div>`; }
-    const studio = r.program === 'Studio';
-    h += `<div class="shz-sat" data-eylem="sh-ac" data-id="${i}" role="button" tabindex="0">
-      ${shAvatar(r.kullanici, '', r.kisi)}
+    const K = SH_KAYNAK[r.tur] || SH_KAYNAK.studio;
+    const pr = r.pkey && r.pkey !== ':studio' ? DB.proje(r.pkey) : null;
+    const prRenk = pr ? pjRenk(pr) : null;
+    const etiket = r.pkey === ':studio' || r.program === 'Studio'
+      ? `<span class="shz-cip st"><u>N</u>Studio</span>`
+      : `<span class="shz-cip"><u ${prRenk ? `style="background:linear-gradient(140deg,${prRenk[0]},${prRenk[1]})"` : ''}>${esc(basHarf(r.program))}</u>${esc(r.program)}</span>`;
+    const av = r.tur === 'guncelleme' ? `<span class="shz-av shz-logo"></span>` : shAvatar(r.kullanici, '', r.kisi);
+    h += `<div class="shz-sat ${r.tur === 'hata' ? 'shz-hata' : ''}" data-eylem="sh-ac" data-id="${i}" role="button" tabindex="0">
+      <span class="shz-avk">${av}<i class="${K.sinif}">${K.ik}</i></span>
       <span class="shz-yz">
-        <span class="shz-ust"><b>${esc(r.kullanici)}</b><i>${esc(shSaat(r.zaman))}</i></span>
+        <span class="shz-ust"><b>${esc(r.kullanici)}</b><i>${r.saatYok ? '' : esc(shSaat(r.zaman))}</i></span>
         <span class="shz-is">${esc(r.is)}</span>
-        <span class="shz-cip ${studio ? 'st' : ''}"><u>${esc(studio ? 'N' : basHarf(r.program))}</u>${esc(r.program)}</span>
+        <span class="shz-cipler">${etiket}<span class="shz-tur">${esc(r.etiket || K.ad.replace(/ler$|lar$/, '') )}</span></span>
       </span>
     </div>`;
   });
   const daha = kalan > 0 ? `<button type="button" class="shz-daha" data-eylem="sh-daha">
     Daha fazla göster <span>${kalan > 30 ? 30 : kalan} kayıt daha</span></button>` : '';
   return `<div class="pz-bolum shz shz-kart">${bas}<div class="shz-liste">${h}</div>${daha}</div>`;
+}
+
+function shHizli(k) {
+  SH_F.kaynak = k === 'tumu' ? new Set(Object.keys(SH_KAYNAK)) : new Set([k]);
+  SH_LIMIT = 30; render();
+}
+
+/* Filtre penceresi: alttan açılır. Seçimler "Göster"e basınca uygulanır. */
+function shFiltreAc() {
+  const f = { kaynak: new Set(SH_F.kaynak), kisi: SH_F.kisi, proje: SH_F.proje, gun: SH_F.gun };
+  const hepsi = shSatirlar();
+  const kisiler = shKisiler(hepsi.filter(r => r.tur !== 'guncelleme'));
+  const pkeyler = [...new Set(hepsi.map(r => r.pkey).filter(Boolean))];
+  const pAd = k => k === ':studio' ? 'Studio' : basHarfleriBuyuk((DB.proje(k) || {}).firma || projeAdi(DB.proje(k) || {}) || '');
+  const pLo = k => { if (k === ':studio') return `<u class="st">N</u>`; const p = DB.proje(k); const r = p ? pjRenk(p) : ['#888', '#555'];
+    return `<u style="background:linear-gradient(140deg,${r[0]},${r[1]})">${esc(basHarf(pAd(k)))}</u>`; };
+  const perde = modalAc('<div class="shf-p"></div>', kutu => {
+    const ciz = () => {
+      const n = shSuz(hepsi, f, false).length;
+      $('.shf-p', kutu).innerHTML = `
+        <div class="shf-tut"></div>
+        <div class="shf-bas"><b>Filtre</b><button type="button" data-f="temizle">Temizle</button></div>
+        <h4>Ne görünsün</h4>
+        <div class="shf-kz">${Object.keys(SH_KAYNAK).map(k => `<button type="button" class="${f.kaynak.has(k) ? 'on' : ''}" data-fk="${k}">
+          <i class="${SH_KAYNAK[k].sinif}">${SH_KAYNAK[k].ik}</i><span><b>${SH_KAYNAK[k].uzun}</b><small>${SH_KAYNAK[k].alt}</small></span><em>✓</em></button>`).join('')}</div>
+        <h4>Kişi</h4>
+        <div class="gm-kisiler">
+          <button type="button" class="gm-k ${!f.kisi ? 'on' : ''}" data-fp-k=""><span class="shz-av shz-her">👥</span><i>Herkes</i></button>
+          ${kisiler.map(k => `<button type="button" class="gm-k ${f.kisi === k.ad ? 'on' : ''}" data-fp-k="${esc(k.ad)}">${shAvatar(k.ad, '', k.kisi)}<i>${esc(k.ad.split(' ')[0])}</i></button>`).join('')}
+        </div>
+        <h4>Proje</h4>
+        <div class="shf-pc"><button type="button" class="${!f.proje ? 'on' : ''}" data-fp-p=""><u class="tm">∗</u>Hepsi</button>
+          ${pkeyler.map(k => `<button type="button" class="${f.proje === k ? 'on' : ''}" data-fp-p="${esc(k)}">${pLo(k)}${esc(pAd(k))}</button>`).join('')}</div>
+        <h4>Zaman</h4>
+        <div class="gm-ch">${[[1, 'Bugün'], [7, '7 gün'], [30, '30 gün']].map(([g, a]) =>
+          `<button type="button" class="${f.gun === g ? 'on' : ''}" data-fg="${g}">${a}</button>`).join('')}</div>
+        <div class="shf-alt"><button type="button" class="gm-bt g" data-f="iptal">Vazgeç</button>
+          <button type="button" class="gm-bt a" data-f="goster">Göster · ${n}</button></div>`;
+      $$('[data-fk]', kutu).forEach(b => b.onclick = () => { const k = b.dataset.fk; f.kaynak.has(k) ? f.kaynak.delete(k) : f.kaynak.add(k); if (!f.kaynak.size) f.kaynak.add(k); ciz(); });
+      $$('[data-fp-k]', kutu).forEach(b => b.onclick = () => { f.kisi = b.dataset.fpK || null; ciz(); });
+      $$('[data-fp-p]', kutu).forEach(b => b.onclick = () => { f.proje = b.dataset.fpP || null; ciz(); });
+      $$('[data-fg]', kutu).forEach(b => b.onclick = () => { f.gun = Number(b.dataset.fg); ciz(); });
+      $('[data-f="temizle"]', kutu).onclick = () => { f.kaynak = new Set(Object.keys(SH_KAYNAK)); f.kisi = null; f.proje = null; f.gun = 7; ciz(); };
+      $('[data-f="iptal"]', kutu).onclick = () => modalKapat();
+      $('[data-f="goster"]', kutu).onclick = () => { Object.assign(SH_F, f); SH_LIMIT = 30; modalKapat(); render(); };
+    };
+    ciz();
+  }, 'shf-modal');
+  perde.classList.add('shf-perde');
 }
 
 /* Kişi seçici penceresi: arama, Herkes, kişiler (iş sayısı, son iş). */
@@ -19216,8 +19359,8 @@ function shAc(i) {
     <div class="sh-detay">
       ${bilgi('Kim', esc(r.kullanici))}
       ${bilgi('Program', esc(r.program))}
-      ${bilgi('Ne zaman', esc(zaman))}
-      ${bilgi('Nereden', r.kaynak === 'Claude' ? 'Claude oturumu' : 'Studio')}
+      ${bilgi('Ne zaman', esc(r.saatYok ? zaman.replace(/ \d\d:\d\d$/, '') : zaman))}
+      ${bilgi('Nereden', r.kaynak === 'Claude' ? 'Claude oturumu' : esc(r.kaynak || 'Studio'))}
       ${r.detay ? `<div class="sh-d-bas">Ayrıntı</div><div class="sh-d-metin">${esc(r.detay)}</div>` : ''}
       <div class="sh-d-link">
         ${commitAdres ? `<a href="${commitAdres}" target="_blank" rel="noopener">GitHub'da değişikliği gör ›</a>` : ''}

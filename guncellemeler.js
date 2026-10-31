@@ -21,6 +21,13 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.371.0', tarih: '2026-10-31',
+    ozet: 'Son Hareketler: her şey tek akışta, filtreli',
+    maddeler: [
+      'Panel\'deki Son Hareketler artık programların güncellemelerini, müşteri işlemlerini ve hatalarını da gösteriyor.',
+      'Üstteki düğmelerle tek dokunuşta süz: Claude, Studio, Güncellemeler, Program, Hatalar.',
+      'Filtre penceresinden kişi, proje ve zaman da seçebilirsin.',
+    ] },
   { surum: 'v0.370.1', tarih: '2026-10-31',
     ozet: 'Plan onayı bekleyen görevler doğru görünüyor',
     maddeler: [

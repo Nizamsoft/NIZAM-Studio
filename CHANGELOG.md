@@ -1,5 +1,12 @@
 # Değişiklik Günlüğü
 
+## v0.371.0
+- **Son Hareketler beş kaynak** (onaylı taslak): `SH_KAYNAK` claude · studio · guncelleme (Sürüm Takibi notları,
+  saat yok) · program / hata (bağlı programların `ETK` etkileşim verisi, `shEtkTazele` arkada 5 dk'da bir okur).
+  Satırlarda kaynak rozeti (`.shz-avk > i`), proje çipi (`shProjeBul`, `pkey`), hata satırı kırmızımsı.
+- Hızlı süzgeç çipleri (`sh-hizli`) + alttan açılan filtre (`shFiltreAc`, `.shf-modal`): kaynaklar, kişi, proje,
+  zaman (1/7/30 gün), canlı sayılı "Göster". Eski kişi seçici düğmesi başlıktan kalktı.
+
 ## v0.370.1
 - `gvDurum` görev penceresiyle aynı aşama adları (Plan bekleniyor / Plan onayı bekliyor / Geliştiriliyor / Kontrolde /
   Tamamlandı). `p3Veri.planda` + `onay` (plan onayı + kontrolde); Panel onay kartı ve penceresi iki bölümlü,

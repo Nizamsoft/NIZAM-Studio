@@ -13271,3 +13271,78 @@ html.pa-akis .vt-ik.kot::after, html.pa-akis .p3-uyari, html.pa-akis .pa2-dk.uy,
 /* Durumda dört kart: 2×2 (v0.370.0 · Etkileşim eklendi). */
 .pa2-durum.d4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .p3-alt-bas { margin: 10px 0 2px; font-size: 10.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #2f62c4; }
+
+/* ==========================================================================
+   Son Hareketler: beş kaynak + filtre (v0.371.0 · onaylı taslak)
+   ========================================================================== */
+.shk-cl { background: linear-gradient(155deg, #c96a3e, #9c4a24); }
+.shk-st { background: linear-gradient(155deg, #3a3a40, #17171a); }
+.shk-gn { background: linear-gradient(155deg, #5b7fc4, #2f56a3); }
+.shk-pr { background: linear-gradient(155deg, #4f9a7a, #2a6f52); }
+.shk-ht { background: linear-gradient(155deg, #f2564c, #c9241b); }
+.shf-dug {
+  all: unset; box-sizing: border-box; cursor: pointer; margin-left: auto; position: relative;
+  display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 11px;
+  border: 1px solid #e3e3e8; background: #fff; box-shadow: 0 3px 0 #e3e3e8;
+  font-size: 12.5px; font-weight: 700; color: #26262a; letter-spacing: 0; text-transform: none;
+}
+.shf-dug:active { transform: translateY(2px); box-shadow: 0 1px 0 #e3e3e8; }
+.shf-dug svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.shf-dug em { font-style: normal; min-width: 17px; height: 17px; padding: 0 4px; box-sizing: border-box; border-radius: 9px; background: var(--red); color: #fff; font-size: 10px; display: flex; align-items: center; justify-content: center; }
+.shf-hizli { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin: 2px -16px 4px; padding: 0 16px 6px; }
+.shf-hizli::-webkit-scrollbar { display: none; }
+.shf-c {
+  all: unset; box-sizing: border-box; cursor: pointer; flex-shrink: 0; display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 10px 6px 7px; border-radius: 12px; border: 1px solid #e3e3e8; background: #fff; box-shadow: 0 3px 0 #ececf0;
+  font-size: 12.5px; font-weight: 700; color: #56565c; -webkit-tap-highlight-color: transparent;
+}
+.shf-c i { width: 20px; height: 20px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-style: normal; font-size: 11px; color: #fff; }
+.shf-c u { text-decoration: none; font-size: 10.5px; color: #9a9aa2; }
+.shf-c.on { background: #26262a; border-color: #26262a; color: #fff; box-shadow: 0 3px 0 #000; }
+.shf-c.on u { color: #b9b9c0; }
+.shz-avk { position: relative; flex-shrink: 0; align-self: flex-start; }
+.shz-avk > i { position: absolute; right: -4px; bottom: -4px; width: 17px; height: 17px; border-radius: 6px; border: 2px solid #fff; display: flex; align-items: center; justify-content: center; font-style: normal; font-size: 9px; font-weight: 700; color: #fff; }
+.shz-logo { background: #fff url('logo.png') center / 58% auto no-repeat; border: 1px solid #e3e3e8; box-sizing: border-box; }
+.shz-cipler { display: flex; flex-wrap: wrap; gap: 6px; }
+.shz-tur { font-size: 11px; font-weight: 600; color: #56565c; padding: 3px 8px; border-radius: 999px; background: #fff; border: 1px solid #ededf0; }
+.shz-kart .shz-sat.shz-hata { background: #fff7f6; border-color: #f3cfcb; }
+.shz-kart .shz-sat.shz-hata::after { display: none; }
+.shz-kart .shz-sat.shz-hata .shz-is { color: var(--red-ink); }
+.shz-kart .shz-sat.shz-hata:hover, .shz-kart .shz-sat.shz-hata:active { background: #fff7f6; }
+
+/* Filtre penceresi: alttan açılan sayfa */
+.modal-perde.shf-perde { align-items: flex-end; padding: 0; }
+.modal-kutu.shf-modal {
+  width: 100%; max-width: 520px; max-height: 88vh; padding: 0; border: 0; border-radius: 22px 22px 0 0; overflow-y: auto;
+  animation: shf-gir .34s cubic-bezier(.32, .72, 0, 1) both; box-shadow: 0 -20px 40px rgba(0, 0, 0, .25);
+}
+@keyframes shf-gir { from { transform: translate3d(0, 100%, 0); } to { transform: none; } }
+@media (min-width: 901px) { .modal-perde.shf-perde { align-items: center; } .modal-kutu.shf-modal { border-radius: 22px; } }
+.shf-p { padding: 10px 16px calc(18px + env(safe-area-inset-bottom, 0px)); }
+.shf-tut { width: 38px; height: 5px; border-radius: 3px; background: #d6d6db; margin: 0 auto 12px; }
+.shf-bas { display: flex; align-items: center; }
+.shf-bas b { font-size: 17px; color: #17171a; }
+.shf-bas button { all: unset; cursor: pointer; margin-left: auto; font-size: 13px; font-weight: 600; color: #9a9aa2; }
+.shf-p h4 { margin: 14px 0 8px; font-size: 10.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #56565c; }
+.shf-kz { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.shf-kz button {
+  all: unset; box-sizing: border-box; cursor: pointer; display: flex; align-items: center; gap: 9px; padding: 10px;
+  border-radius: 12px; border: 1px solid #e3e3e8; background: #fff; box-shadow: 0 3px 0 #ececf0; opacity: .55;
+}
+.shf-kz button.on { opacity: 1; border: 1.5px solid #26262a; box-shadow: 0 0 0 3px rgba(23, 23, 26, .06), 0 3px 0 #ececf0; }
+.shf-kz i { flex-shrink: 0; width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-style: normal; font-size: 13px; color: #fff; }
+.shf-kz span { flex: 1; min-width: 0; }
+.shf-kz b { display: block; font-size: 13px; color: #26262a; }
+.shf-kz small { display: block; font-size: 10.5px; color: #9a9aa2; }
+.shf-kz em { font-style: normal; font-weight: 900; color: #26262a; visibility: hidden; }
+.shf-kz button.on em { visibility: visible; }
+.shf-pc { display: flex; flex-wrap: wrap; gap: 6px; }
+.shf-pc button {
+  all: unset; box-sizing: border-box; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 10px 6px 6px; border-radius: 10px; border: 1px solid #e3e3e8; background: #fff; font-size: 12.5px; font-weight: 600; color: #56565c;
+}
+.shf-pc button.on { background: #26262a; color: #fff; border-color: #26262a; }
+.shf-pc u { width: 20px; height: 20px; border-radius: 6px; color: #fff; font-size: 9px; font-weight: 700; text-decoration: none; display: flex; align-items: center; justify-content: center; }
+.shf-pc u.st { background: var(--red); }
+.shf-pc u.tm { background: #4a4a50; }
+.shf-alt { display: flex; gap: 10px; margin-top: 16px; }
