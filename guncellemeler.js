@@ -21,6 +21,11 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.375.1', tarih: '2026-10-31',
+    ozet: 'Deneme güncellemesi',
+    maddeler: [
+      'Küçük bir deneme sürümü; uygulamada görünen bir değişiklik yok.',
+    ] },
   { surum: 'v0.375.0', tarih: '2026-10-31',
     ozet: 'Claude işleri Son Hareketler\'e geri geldi',
     maddeler: [

@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.375.1
+- Deneme sürümü: yalnız sürüm numarası, önbellek adı ve güncelleme notu; kod değişikliği yok.
+
 ## v0.375.0
 - `sql/54-is-kaydi-kapisi.sql`: Edge Function yerine `is_kaydi_yaz(anahtar, …)` RPC (security definer, yalnız
   yazar, SHA-256 özetli anahtar `is_kaydi_anahtari`, saatte 200, alan kırpma), `is_kayitlari.uretilen` sütunu;
