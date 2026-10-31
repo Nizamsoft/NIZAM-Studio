@@ -13421,3 +13421,80 @@ html.pa-akis .vt-ik.kot::after, html.pa-akis .p3-uyari, html.pa-akis .pa2-dk.uy,
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='84' height='72' viewBox='0 0 56 48'%3E%3Cpath d='M0 24L14 0h28l14 24-14 24H14z' fill='none' stroke='%2317171a' stroke-opacity='.07' stroke-width='.8'/%3E%3C/svg%3E") 0 0 / 84px 72px,
     linear-gradient(180deg, #ececef, #dedee3);
 }
+
+/* ==========================================================================
+   Mesaj fotoğrafları (v0.376.0) — balonda ızgara, seçim çubuğu, büyük görünüm
+   ========================================================================== */
+.yz-kutu .yz-fotoek { margin-left: 2px; }
+.yz-balon.fotolu { padding: 4px 4px 6px; }
+.yz-balon.fotolu p { padding: 5px 9px 0; }
+.yz-balon.fotolu .yz-saat { padding: 0 8px; }
+.yz-fotolar {
+  display: grid; gap: 3px; width: min(250px, 62vw);
+  border-radius: 12px; overflow: hidden;
+}
+.yz-fotolar.s1 { grid-template-columns: 1fr; }
+.yz-fotolar.s2, .yz-fotolar.s3, .yz-fotolar.s4 { grid-template-columns: 1fr 1fr; }
+.yz-fotolar.s3 .yz-fk:first-child { grid-column: 1 / -1; }
+.yz-fk {
+  position: relative; display: block; padding: 0; border: 0; cursor: zoom-in;
+  aspect-ratio: 1 / 1; background: #ededf0; overflow: hidden;
+}
+.yz-fotolar.s1 .yz-fk { aspect-ratio: 4 / 3; }
+.yz-fotolar.s3 .yz-fk:first-child { aspect-ratio: 2 / 1; }
+.yz-fk img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.yz-fk img:not([src]) { visibility: hidden; }
+.yz-fk b {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  background: rgba(23, 23, 26, .55); color: #fff; font-size: 20px; font-weight: 700;
+}
+.yz-foto-bitti {
+  display: flex; align-items: center; gap: 7px; padding: 8px 10px;
+  font-size: 13px; font-style: italic; color: var(--ink-dim);
+}
+.yz-sat.benim .yz-foto-bitti { color: rgba(255, 255, 255, .62); }
+
+/* Göndermeden önce seçilen fotoğraflar */
+.yz-secili {
+  display: flex; align-items: center; gap: 8px; flex-shrink: 0;
+  padding: 10px 12px 2px; overflow-x: auto;
+  background: var(--surface); border-top: 1px solid var(--line-3);
+}
+.yz-secili i { flex-shrink: 0; font-style: normal; font-size: 11.5px; color: var(--ink-dim); white-space: nowrap; }
+.yz-sf { position: relative; flex-shrink: 0; width: 58px; height: 58px; border-radius: 8px; overflow: hidden; border: 1px solid #e3e3e8; }
+.yz-sf img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.yz-sf button {
+  position: absolute; top: 3px; right: 3px; display: flex; align-items: center; justify-content: center;
+  width: 20px; height: 20px; padding: 0; border: 0; border-radius: 999px;
+  background: rgba(23, 23, 26, .72); color: #fff; cursor: pointer;
+}
+.yz-sf svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; }
+.yz-secili + .yz-alt { border-top: 0; }
+
+/* Büyük görünüm */
+.yz-buyuk {
+  position: fixed; inset: 0; z-index: 9500;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(14, 14, 16, .94);
+  padding: calc(56px + env(safe-area-inset-top)) 12px calc(20px + env(safe-area-inset-bottom));
+}
+.yz-buyuk img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 6px; user-select: none; }
+.yz-bu-ust {
+  position: absolute; top: 0; left: 0; right: 0; display: flex; align-items: center; gap: 8px;
+  padding: calc(10px + env(safe-area-inset-top)) 12px 10px;
+}
+.yz-bu-ust i { flex: 1; font-style: normal; font-size: 13px; font-weight: 600; color: rgba(255, 255, 255, .75); }
+.yz-bu-ust button, .yz-bu-ok {
+  display: flex; align-items: center; justify-content: center;
+  width: 40px; height: 40px; padding: 0; border: 0; border-radius: 999px;
+  background: rgba(255, 255, 255, .12); color: #fff; cursor: pointer;
+}
+.yz-bu-ust svg, .yz-bu-ok svg {
+  width: 20px; height: 20px; fill: none; stroke: currentColor;
+  stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+}
+.yz-bu-ok { position: absolute; top: 50%; transform: translateY(-50%); }
+.yz-bu-ok.sol { left: 10px; }
+.yz-bu-ok.sag { right: 10px; }
+.yz-buyuk.tek .yz-bu-ok { display: none; }
+@media (hover: none) { .yz-bu-ok { display: none; } }

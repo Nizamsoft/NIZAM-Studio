@@ -1,5 +1,16 @@
 # Değişiklik Günlüğü
 
+## v0.376.0
+- Mesajlara fotoğraf: yazma kutusunda fotoğraf düğmesi, mesaj başına en çok 10 (`MESAJ_FOTO_EN_COK`); gönderim
+  öncesi önizleme şeridi (`YZ_SECILI`, yeniden çizimde kaybolmaz). Her foto `gorseliKucult(1280, .72)` → WebP.
+- `sql/55-mesaj-fotolari.sql`: `messages.fotolar jsonb`, `mesaj_kilit` fotolar'ı da kilitler, kapalı
+  `mesaj-fotolari` kovası (3 MB, yalnız resim); yol `<gonderen>/<alici>/…`, okuma/silme iki taraf, yükleme gönderen.
+- 3 gün ömür (`MESAJ_FOTO_OMUR`): süresi dolan balonda "Fotoğrafın süresi doldu"; `DB.mesajFotoTemizle()`
+  mesajlar yüklenince dosyaları siler, silinenler `ns.fotoTemiz`'de. Ayrı zamanlayıcı yok.
+- Balonda 1–4'lü ızgara (+N), imzalı adresler `createSignedUrls` ile toplu ve önbellekli; büyük görünümde
+  kaydırma/ok, Esc, telefona kaydet (paylaşım menüsü, olmazsa indirme). Yalnız fotolu mesajın metni
+  `📷 Fotoğraf` (bildirim ve sohbet listesi için), balonda gösterilmez.
+
 ## v0.375.1
 - Deneme sürümü: yalnız sürüm numarası, önbellek adı ve güncelleme notu; kod değişikliği yok.
 

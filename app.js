@@ -10251,6 +10251,7 @@ function renderCiz() {
   if (yazisma) {
     const govde = $('#yz-govde');
     if (govde) govde.scrollTop = govde.scrollHeight;
+    if (govde) fotoAdresleriDoldur().then(() => { if (gecis) govde.scrollTop = govde.scrollHeight; });
     if (id !== 'studio') {
       DB.okunduIsaretle(id).then(d => { if (d) zilNoktasi(); });
       BILDIRIM.temizle(id);
@@ -11880,14 +11881,202 @@ function mesajGunu(iso) {
 const CIFT_TIK = '<svg viewBox="0 0 24 24" class="yz-tik"><path d="M1.5 12.5l3.5 3.5 7-7.5"></path>'
   + '<path d="M8 12.5l3.5 3.5 10-10.5"></path></svg>';
 
+/* ---------- Mesaj fotoğrafları (v0.376.0) ----------
+   Fotoğraflar kapalı kovada; adresleri çizimden sonra arkadan alınıp
+   <img>'lere yazılıyor (fotoAdresleriDoldur). 3 gün dolunca yerinde
+   "süresi doldu" yazısı kalıyor. */
+function mesajFotoVar(m) {
+  return Array.isArray(m.fotolar) && m.fotolar.length > 0;
+}
+
+function mesajFotolari(m) {
+  if (!mesajFotoVar(m)) return '';
+  if (DB.fotoSuresiDoldu(m)) {
+    return `<div class="yz-foto-bitti"><span>📷</span>${m.fotolar.length > 1
+      ? m.fotolar.length + ' fotoğrafın' : 'Fotoğrafın'} süresi doldu</div>`;
+  }
+  const n = m.fotolar.length;
+  const gorunen = m.fotolar.slice(0, 4);
+  return `<div class="yz-fotolar s${Math.min(n, 4)}">${gorunen.map((y, i) => {
+    const adres = DB.fotoAdresi(y);
+    const fazla = i === 3 && n > 4 ? `<b>+${n - 4}</b>` : '';
+    return `<button type="button" class="yz-fk" data-eylem="mesaj-foto-ac"
+      data-id="${esc(m.id)}" data-sira="${i}" aria-label="Fotoğrafı aç">
+      <img data-yol="${esc(y)}" ${adres ? `src="${esc(adres)}"` : ''} alt="" loading="lazy" draggable="false">${fazla}</button>`;
+  }).join('')}</div>`;
+}
+
+/* Ekrandaki fotoğrafların adreslerini alıp yerine koyar. */
+async function fotoAdresleriDoldur() {
+  const imgler = $$('img[data-yol]').filter(i => !i.getAttribute('src'));
+  if (!imgler.length) return;
+  const yollar = [...new Set(imgler.map(i => i.dataset.yol))];
+  try { await DB.fotoAdresleriGetir(yollar); } catch (e) { return; }
+  $$('img[data-yol]').forEach(i => {
+    if (i.getAttribute('src')) return;
+    const a = DB.fotoAdresi(i.dataset.yol);
+    if (a) i.src = a;
+  });
+}
+
+/* Göndermeden önce seçilen fotoğraflar. Ekran yeniden çizilse de
+   kaybolmasın diye burada tutuluyor. */
+let YZ_SECILI = { kisi: null, dosyalar: [], onizle: [] };
+
+function yzSeciliTemizle() {
+  YZ_SECILI.onizle.forEach(u => { try { URL.revokeObjectURL(u); } catch (e) {} });
+  YZ_SECILI = { kisi: null, dosyalar: [], onizle: [] };
+}
+
+function yzSeciliCubugu(kisiId) {
+  if (YZ_SECILI.kisi !== kisiId || !YZ_SECILI.dosyalar.length) return '';
+  return `<div class="yz-secili" id="yz-secili">${YZ_SECILI.onizle.map((u, i) => `
+    <span class="yz-sf"><img src="${esc(u)}" alt="">
+      <button type="button" data-eylem="mesaj-foto-cikar" data-sira="${i}" aria-label="Çıkar">
+        <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"></path></svg></button></span>`).join('')}
+    <i>${YZ_SECILI.dosyalar.length}/${MESAJ_FOTO_EN_COK} · 3 gün sonra silinir</i></div>`;
+}
+
+function yzSeciliTazele(kisiId) {
+  const eski = $('#yz-secili');
+  const yeni = yzSeciliCubugu(kisiId);
+  if (eski) { if (yeni) eski.outerHTML = yeni; else eski.remove(); return; }
+  const alt = $('.yz-alt');
+  if (yeni && alt) alt.insertAdjacentHTML('beforebegin', yeni);
+}
+
+function mesajFotoSec(kisiId) {
+  const alan = document.createElement('input');
+  alan.type = 'file';
+  alan.accept = 'image/*';
+  alan.multiple = true;
+  alan.style.display = 'none';
+  document.body.appendChild(alan);
+  alan.addEventListener('change', () => {
+    const secilen = [...(alan.files || [])].filter(f => /^image\//.test(f.type) || !f.type);
+    alan.remove();
+    if (!secilen.length) return;
+    if (YZ_SECILI.kisi !== kisiId) yzSeciliTemizle();
+    YZ_SECILI.kisi = kisiId;
+    const yer = MESAJ_FOTO_EN_COK - YZ_SECILI.dosyalar.length;
+    if (secilen.length > yer) toast('Bir mesajda en çok ' + MESAJ_FOTO_EN_COK + ' fotoğraf gönderilebilir.');
+    secilen.slice(0, Math.max(0, yer)).forEach(f => {
+      YZ_SECILI.dosyalar.push(f);
+      YZ_SECILI.onizle.push(URL.createObjectURL(f));
+    });
+    yzSeciliTazele(kisiId);
+  });
+  alan.click();
+}
+
+function mesajFotoCikar(sira) {
+  const i = Number(sira);
+  if (!(i >= 0)) return;
+  try { URL.revokeObjectURL(YZ_SECILI.onizle[i]); } catch (e) {}
+  YZ_SECILI.dosyalar.splice(i, 1);
+  YZ_SECILI.onizle.splice(i, 1);
+  yzSeciliTazele(YZ_SECILI.kisi);
+}
+
+/* Büyük görünüm: oklarla ya da kaydırarak gezilir, 💾 ile indirilir. */
+let YZ_GOSTER = null;
+
+async function mesajFotoAc(id, sira) {
+  const m = (DB.mesajlar || []).find(x => x.id === id);
+  if (!m || !mesajFotoVar(m) || DB.fotoSuresiDoldu(m)) return;
+  YZ_GOSTER = { yollar: m.fotolar.slice(), sira: Number(sira) || 0 };
+  let kat = $('#yz-buyuk');
+  if (!kat) {
+    document.body.insertAdjacentHTML('beforeend', `
+      <div class="yz-buyuk" id="yz-buyuk" role="dialog" aria-label="Fotoğraf">
+        <div class="yz-bu-ust">
+          <i id="yz-bu-sira"></i>
+          <button type="button" data-eylem="mesaj-foto-indir" aria-label="Telefona kaydet">
+            <svg viewBox="0 0 24 24"><path d="M12 4v11M7 10.5l5 5 5-5M5 20h14"></path></svg></button>
+          <button type="button" data-eylem="mesaj-foto-kapat" aria-label="Kapat">
+            <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+        </div>
+        <img id="yz-bu-img" alt="" draggable="false">
+        <button type="button" class="yz-bu-ok sol" data-eylem="mesaj-foto-onceki" aria-label="Önceki">
+          <svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"></path></svg></button>
+        <button type="button" class="yz-bu-ok sag" data-eylem="mesaj-foto-sonraki" aria-label="Sonraki">
+          <svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"></path></svg></button>
+      </div>`);
+    kat = $('#yz-buyuk');
+    let x0 = null;
+    kat.addEventListener('touchstart', e => { x0 = e.touches[0].clientX; }, { passive: true });
+    kat.addEventListener('touchend', e => {
+      if (x0 === null) return;
+      const d = e.changedTouches[0].clientX - x0;
+      x0 = null;
+      if (Math.abs(d) > 50) mesajFotoKaydir(d < 0 ? 1 : -1);
+    });
+  }
+  await mesajFotoGoster();
+}
+
+async function mesajFotoGoster() {
+  const g = YZ_GOSTER;
+  const kat = $('#yz-buyuk');
+  if (!g || !kat) return;
+  const yol = g.yollar[g.sira];
+  const img = $('#yz-bu-img');
+  img.removeAttribute('src');
+  $('#yz-bu-sira').textContent = g.yollar.length > 1 ? (g.sira + 1) + ' / ' + g.yollar.length : '';
+  kat.classList.toggle('tek', g.yollar.length < 2);
+  if (!DB.fotoAdresi(yol)) { try { await DB.fotoAdresleriGetir(g.yollar); } catch (e) {} }
+  const a = DB.fotoAdresi(yol);
+  if (a && YZ_GOSTER === g && g.yollar[g.sira] === yol) img.src = a;
+  else if (!a) toast('Fotoğraf açılamadı.', 'hata');
+}
+
+function mesajFotoKaydir(yon) {
+  const g = YZ_GOSTER;
+  if (!g || g.yollar.length < 2) return;
+  g.sira = (g.sira + yon + g.yollar.length) % g.yollar.length;
+  mesajFotoGoster();
+}
+
+function mesajFotoKapat() {
+  YZ_GOSTER = null;
+  const kat = $('#yz-buyuk');
+  if (kat) kat.remove();
+}
+
+/* Telefonda paylaşım menüsü açılır ("Resmi Kaydet"); olmazsa dosya iner. */
+async function mesajFotoIndir() {
+  const g = YZ_GOSTER;
+  if (!g) return;
+  const yol = g.yollar[g.sira];
+  const a = DB.fotoAdresi(yol);
+  if (!a) return;
+  const ad = 'nizam-' + (yol.split('/').pop() || 'foto.webp');
+  try {
+    const blob = await (await fetch(a)).blob();
+    const dosya = new File([blob], ad, { type: blob.type || 'image/webp' });
+    if (navigator.canShare && navigator.canShare({ files: [dosya] })) {
+      await navigator.share({ files: [dosya] });
+      return;
+    }
+    const u = URL.createObjectURL(blob);
+    const l = Object.assign(document.createElement('a'), { href: u, download: ad });
+    document.body.appendChild(l); l.click(); l.remove();
+    setTimeout(() => URL.revokeObjectURL(u), 4000);
+  } catch (h) {
+    if (h && h.name === 'AbortError') return;
+    toast('Fotoğraf indirilemedi.', 'hata');
+  }
+}
+
 function mesajBalonu(m, benimMi, foto, harf, kisiId) {
   return `
     <div class="yz-sat ${benimMi ? 'benim' : ''}">
       ${benimMi ? '' : `<span class="yz-av ${foto ? 'resimli' : ''}"
         ${foto ? `style="background-image:url('${esc(foto)}')"` : ''}><b>${esc(harf)}</b></span>`}
-      <div class="yz-balon" data-eylem="mesaj-menu" data-id="${esc(m.id || '')}"
+      <div class="yz-balon ${mesajFotoVar(m) ? 'fotolu' : ''}" data-eylem="mesaj-menu" data-id="${esc(m.id || '')}"
            data-kisi="${esc(kisiId || '')}" role="button" tabindex="0">
-        <p>${esc(m.metin)}</p>
+        ${mesajFotolari(m)}
+        ${mesajFotoVar(m) && m.metin === MESAJ_FOTO_METIN ? '' : `<p>${esc(m.metin)}</p>`}
         <span class="yz-saat">${mesajSaat(m.olusturuldu)}${benimMi
           ? `<em class="${m.okundu ? 'okundu' : ''}">${CIFT_TIK}</em>` : ''}</span>
       </div>
@@ -11924,16 +12113,24 @@ async function mesajYolla(kisiId) {
   const kutu = $('#yz-metin');
   if (!kutu) return;
   const metin = kutu.value.trim();
-  if (!metin) return;
+  const dosyalar = YZ_SECILI.kisi === kisiId ? YZ_SECILI.dosyalar.slice() : [];
+  if (!metin && !dosyalar.length) return;
+  if (mesajYolla.suruyor) return;
 
   kutu.value = '';
   kutu.focus();
+  /* Fotoğraflar yüklenirken biraz sürebilir; çift basış ikinci kez göndermesin. */
+  mesajYolla.suruyor = true;
+  if (dosyalar.length) toast(dosyalar.length > 1 ? dosyalar.length + ' fotoğraf gönderiliyor…' : 'Fotoğraf gönderiliyor…');
   try {
-    await DB.mesajGonder(kisiId, metin);
+    await DB.mesajGonder(kisiId, metin, dosyalar);
+    if (dosyalar.length) { yzSeciliTemizle(); yzSeciliTazele(kisiId); }
     yazismayiTazele(kisiId);
   } catch (h) {
-    kutu.value = metin;
+    if (!kutu.value) kutu.value = metin;
     toast(h.message, 'hata');
+  } finally {
+    mesajYolla.suruyor = false;
   }
 }
 
@@ -12023,6 +12220,7 @@ function yazismayiTazele(kisiId) {
   if (!govde) return;
   govde.innerHTML = yazismaGovdesi(kisiId);
   govde.scrollTop = govde.scrollHeight;
+  fotoAdresleriDoldur().then(() => { govde.scrollTop = govde.scrollHeight; });
 }
 
 function yazismaEkrani(kisiId) {
@@ -12072,6 +12270,7 @@ function yazismaEkrani(kisiId) {
              <b>Duyuru yok</b><i>Studio duyuruları burada görünecek.</i></div>`
         : yazismaGovdesi(kisiId)}</div>
 
+      ${marka ? '' : yzSeciliCubugu(kisiId)}
       <div class="yz-alt ${marka ? 'kapali' : ''}">
         <button class="yz-ek yz-gorev" type="button" data-eylem="sohbet-gorev"
                 data-id="${esc(kisiId)}" aria-label="Görev ver">
@@ -12079,6 +12278,10 @@ function yazismaEkrani(kisiId) {
         </button>
         <label class="yz-kutu">
           <input type="text" id="yz-metin" placeholder="Mesaj yaz…" autocomplete="off">
+          <button class="yz-emoji yz-fotoek" type="button" data-eylem="mesaj-foto-sec"
+                  data-id="${esc(kisiId)}" aria-label="Fotoğraf ekle">
+            <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"></rect><circle cx="9" cy="10" r="1.6"></circle><path d="M21 15.5l-5-5L6 19"></path></svg>
+          </button>
           <button class="yz-emoji" type="button" data-eylem="sohbet-yakinda" aria-label="Emoji">
             <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="M9 10v.01M15 10v.01M8.5 14.5a4.5 4.5 0 0 0 7 0"></path></svg>
           </button>
@@ -16710,6 +16913,13 @@ async function eylemCalistir(el) {
   if (e === 'sohbet-yakinda') { toast('Bu kısım yakında gelecek.'); return; }
 
   if (e === 'mesaj-yolla') return mesajYolla(id);
+  if (e === 'mesaj-foto-sec')     return mesajFotoSec(id);
+  if (e === 'mesaj-foto-cikar')   return mesajFotoCikar(el.dataset.sira);
+  if (e === 'mesaj-foto-ac')      return mesajFotoAc(id, el.dataset.sira);
+  if (e === 'mesaj-foto-kapat')   return mesajFotoKapat();
+  if (e === 'mesaj-foto-onceki')  return mesajFotoKaydir(-1);
+  if (e === 'mesaj-foto-sonraki') return mesajFotoKaydir(1);
+  if (e === 'mesaj-foto-indir')   return mesajFotoIndir();
   if (e === 'mesaj-menu')    return mesajMenuAc(el);
   if (e === 'mesaj-kopyala') return mesajKopyala(el.dataset.kisi, id);
   if (e === 'mesaj-gorev')   return mesajGoreveCevir(el.dataset.kisi, id);
@@ -20535,6 +20745,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
   /* Profil sekmesi menüde değil, hesap panelini açıyor. */
   document.addEventListener('click', e => {
+  });
+
+  /* Büyük fotoğraf açıkken klavye: Esc kapatır, oklar gezdirir. */
+  document.addEventListener('keydown', e => {
+    if (!YZ_GOSTER) return;
+    if (e.key === 'Escape') mesajFotoKapat();
+    else if (e.key === 'ArrowLeft') mesajFotoKaydir(-1);
+    else if (e.key === 'ArrowRight') mesajFotoKaydir(1);
   });
 
   /* Yazma kutusunda Enter gönderiyor. */

@@ -6,6 +6,11 @@
 
 'use strict';
 
+/* Mesaj fotoğrafları (v0.376.0): bir mesajda en çok 10 fotoğraf, 3 gün sonra silinir. */
+const MESAJ_FOTO_EN_COK = 10;
+const MESAJ_FOTO_OMUR = 3 * 24 * 60 * 60 * 1000;
+const MESAJ_FOTO_METIN = '📷 Fotoğraf';
+
 const DB = {
 
   projeler: [],
@@ -335,6 +340,7 @@ const DB = {
     if (ad === 'mesajlar') {
       /* Sondan çektik; ekranda eskiden yeniye diziliyor. */
       this.mesajlar = veri.slice().reverse();
+      this.mesajFotoTemizle();
       return;
     }
     if (ad === 'hareketler') {
@@ -1465,15 +1471,48 @@ const DB = {
       m.alici === ben && !m.okundu && (!kisiId || m.gonderen === kisiId)).length;
   },
 
-  async mesajGonder(alici, metin) {
+  /* Fotoğraflı mesaj (v0.376.0): her fotoğraf gönderilmeden önce ~1280
+     piksele küçültülüp WebP'ye çevriliyor (~200 KB). Dosyalar
+     "mesaj-fotolari" kovasında 3 gün kalıyor, sonra mesajFotoTemizle()
+     siliyor. Yalnız fotoğraf varsa metin MESAJ_FOTO_METIN oluyor: bildirim
+     ve sohbet listesi bu yazıyı gösteriyor, balon göstermiyor. */
+  async mesajGonder(alici, metin, dosyalar) {
     yazmaKontrol();
     const temiz = String(metin || '').trim();
-    if (!temiz) return null;
+    const liste = (dosyalar || []).slice(0, MESAJ_FOTO_EN_COK);
+    if (!temiz && !liste.length) return null;
 
-    const { data, error } = await AUTH.db.from('messages')
-      .insert({ gonderen: AUTH.user.id, alici, metin: temiz })
-      .select().single();
-    if (error) throw new Error(veriHatasi(error));
+    const yollar = [];
+    if (liste.length) {
+      const kova = AUTH.db.storage.from('mesaj-fotolari');
+      const zaman = Date.now();
+      try {
+        for (let i = 0; i < liste.length; i++) {
+          const f = await this.gorseliKucult(liste[i], 1280, 0.72);
+          const uzanti = /webp/.test(f.type) ? 'webp' : (/png/.test(f.type) ? 'png' : 'jpg');
+          const yol = AUTH.user.id + '/' + alici + '/' + zaman + '-' + i + '.' + uzanti;
+          const y = await kova.upload(yol, f, { upsert: false, contentType: f.type || 'image/jpeg' });
+          if (y.error) throw new Error(depoHatasi(y.error, 'mesaj-fotolari'));
+          yollar.push(yol);
+        }
+      } catch (h) {
+        if (yollar.length) { try { await kova.remove(yollar); } catch (e) {} }
+        throw h;
+      }
+    }
+
+    const satir = { gonderen: AUTH.user.id, alici, metin: temiz || MESAJ_FOTO_METIN };
+    if (yollar.length) satir.fotolar = yollar;
+    const { data, error } = await AUTH.db.from('messages').insert(satir).select().single();
+    if (error) {
+      if (yollar.length) {
+        try { await AUTH.db.storage.from('mesaj-fotolari').remove(yollar); } catch (e) {}
+      }
+      if (/fotolar/i.test(error.message || '')) {
+        throw new Error('Fotoğraf gönderme henüz kurulmamış: Supabase\'de sql/55-mesaj-fotolari.sql çalıştırılmalı.');
+      }
+      throw new Error(veriHatasi(error));
+    }
 
     /* Canlı kanalı beklemeden ekrana koyuyoruz: kendi mesajın anında
        görünsün. Kanal aynı satırı getirirse kimliğinden anlaşılıyor. */
@@ -1481,6 +1520,57 @@ const DB = {
     /* Karşı taraf Studio'yu kapatmış olabilir: telefonuna bildirim. */
     if (typeof BILDIRIM !== 'undefined') BILDIRIM.gonder(data.id);
     return data;
+  },
+
+  /* 3 günü dolan fotoğraf görünmez; dosyası da silinir. */
+  fotoSuresiDoldu(m) {
+    return Date.now() - new Date(m.olusturuldu).getTime() > MESAJ_FOTO_OMUR;
+  },
+
+  /* Kapalı kovadaki fotoğraflar için geçici (1 saatlik) adres. Bir kez
+     alınan adres saklanıyor; ekran her çizildiğinde yeniden istenmiyor.
+     Yeni adres geldiyse true döner (ekran yeniden çizilsin diye). */
+  _fotoAdres: {},
+  fotoAdresi(yol) {
+    const a = this._fotoAdres[yol];
+    return a && a.son > Date.now() ? a.url : '';
+  },
+  async fotoAdresleriGetir(yollar) {
+    const eksik = (yollar || []).filter(y => !this.fotoAdresi(y));
+    if (!eksik.length || !AUTH.db) return false;
+    const { data, error } = await AUTH.db.storage.from('mesaj-fotolari')
+      .createSignedUrls(eksik, 3600);
+    if (error || !data) return false;
+    const son = Date.now() + 50 * 60 * 1000;
+    let yeni = false;
+    data.forEach(d => {
+      if (d && d.signedUrl && d.path) { this._fotoAdres[d.path] = { url: d.signedUrl, son }; yeni = true; }
+    });
+    return yeni;
+  },
+
+  /* Süresi dolmuş fotoğrafların dosyalarını siler. Ayrı bir zamanlayıcı
+     yok: yazışmanın iki tarafından biri Studio'yu açınca temizleniyor.
+     Silinenler bu cihazda not ediliyor, aynı dosya tekrar istenmiyor. */
+  async mesajFotoTemizle() {
+    if (!AUTH.bagli || !AUTH.user || !AUTH.db) return;
+    let silinen = {};
+    try { silinen = JSON.parse(localStorage.getItem('ns.fotoTemiz') || '{}') || {}; } catch (e) {}
+    const eski = (this.mesajlar || []).filter(m =>
+      Array.isArray(m.fotolar) && m.fotolar.length && !silinen[m.id] && this.fotoSuresiDoldu(m));
+    if (!eski.length) return;
+    const yollar = [].concat(...eski.map(m => m.fotolar));
+    try {
+      for (let i = 0; i < yollar.length; i += 100) {
+        const { error } = await AUTH.db.storage.from('mesaj-fotolari').remove(yollar.slice(i, i + 100));
+        if (error) return;
+      }
+      eski.forEach(m => { silinen[m.id] = 1; });
+      /* Liste şişmesin: yalnız eldeki mesajların kaydı kalsın. */
+      const elde = new Set((this.mesajlar || []).map(m => m.id));
+      Object.keys(silinen).forEach(k => { if (!elde.has(k)) delete silinen[k]; });
+      localStorage.setItem('ns.fotoTemiz', JSON.stringify(silinen));
+    } catch (e) { /* ağ yoksa bir dahaki açılışta */ }
   },
 
   /* Yazışmayı açınca o kişinin mesajları okunmuş sayılır. */
@@ -1973,7 +2063,10 @@ function sektorHatasi(e) {
 function depoHatasi(e, kova = 'avatarlar') {
   const m = (e && e.message) || '';
   const sql = kova === 'logolar' ? 'sql/11-marka.sql'
-    : kova === 'gorseller' ? 'sql/14-gorsel.sql' : 'sql/09-foto.sql';
+    : kova === 'gorseller' ? 'sql/14-gorsel.sql'
+    : kova === 'mesaj-fotolari' ? 'sql/55-mesaj-fotolari.sql' : 'sql/09-foto.sql';
+  if (kova === 'mesaj-fotolari' && /bucket not found/i.test(m))
+    return 'Fotoğraf gönderme henüz kurulmamış: Supabase\'de ' + sql + ' çalıştırılmalı.';
   if (/bucket not found/i.test(m))                 return kova + ' kovası yok — Supabase → Storage\'den oluştur.';
   if (/policy|row-level|not authorized/i.test(m))  return 'Yükleme izni yok — ' + sql + ' dosyasını çalıştır.';
   if (/payload too large|exceeded/i.test(m))       return 'Dosya çok büyük.';

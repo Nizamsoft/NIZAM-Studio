@@ -21,6 +21,12 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.376.0', tarih: '2026-10-31',
+    ozet: 'Mesajlarda fotoğraf gönderme',
+    maddeler: [
+      'Mesaj yazarken fotoğraf düğmesiyle bir seferde 10 fotoğrafa kadar gönderebilirsin.',
+      'Fotoğraflar gönderilirken küçültülüyor, 3 gün sonra kendiliğinden siliniyor; lazım olanı büyütüp telefona kaydedebilirsin.',
+    ] },
   { surum: 'v0.375.1', tarih: '2026-10-31',
     ozet: 'Deneme güncellemesi',
     maddeler: [
