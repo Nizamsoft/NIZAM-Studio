@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## v0.378.1
+- Template ayarlarına kilit anahtarı (`data-ta="kilit"`): temizlenen template kendiliğinden `palet.kilitli` oluyordu
+  ama açacak yer yoktu (Kilitli projeler ekranı template'leri göstermiyor). Silme uyarısının metni de düzeltildi.
+
 ## v0.378.0
 - Yeni proje artık sağdan kayan çekmece (`#yp-cekmece`, modal değil): iki büyük seçenek (Hazır programdan + program
   listesi "Seç", Sıfırdan), "Diğer seçenekler" açılır (içe aktar, test kopyası, birebir kopya), dipte sabit

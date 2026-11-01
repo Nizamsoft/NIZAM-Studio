@@ -21,6 +21,11 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.378.1', tarih: '2026-11-01',
+    ozet: 'Template kilidi açılabiliyor',
+    maddeler: [
+      'Template ayarlarında kilit anahtarı var: kilitli template\'i silmeden önce buradan açabilirsin.',
+    ] },
   { surum: 'v0.378.0', tarih: '2026-10-31',
     ozet: 'Yeni proje paneli ve Atölye sadeleşti',
     maddeler: [

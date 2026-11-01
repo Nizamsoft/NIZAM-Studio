@@ -13686,3 +13686,9 @@ html.pa-akis .vt-ik.kot::after, html.pa-akis .p3-uyari, html.pa-akis .pa2-dk.uy,
 }
 .at-bos { margin: 4px 2px 10px; font-size: 13px; color: #9a9aa2; }
 .at-bos.ic { margin: 0; padding: 12px 18px; border-top: 1px solid #ededf0; }
+
+/* Template ayarları › kilit anahtarı (v0.378.1) */
+.tp-is.tp-kilit { height: auto; min-height: 56px; padding: 10px 14px; margin-top: 10px; }
+.tp-kilit .tp-is-yz { display: flex; flex-direction: column; gap: 2px; }
+.tp-kilit .tp-is-yz i { font-style: normal; font-size: 12px; font-weight: 500; color: var(--ink-dim, #9a9aa2); }
+.tp-kilit .yp-anahtar { flex: 0 0 auto; pointer-events: none; }

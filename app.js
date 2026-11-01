@@ -11374,6 +11374,12 @@ function templateAyarlari(projeId) {
       </button>` : ''}
     </div>
 
+    <button class="tp-is tp-kilit" type="button" data-ta="kilit">
+      <span class="tp-is-ik">${svg(ICON.kilit, 19)}</span>
+      <span class="tp-is-yz"><b></b><i></i></span>
+      <input type="checkbox" class="yp-anahtar" tabindex="-1" aria-hidden="true">
+    </button>
+
     <button class="pd-kaldir" type="button" data-ta="sil">
       ${svg(ICON.cop, 17)}<span>Template'i sil</span></button>
 
@@ -11445,6 +11451,27 @@ function templateAyarlari(projeId) {
     const yayinDug = $('[data-ta="yayin"]', kutu);
     if (yayinDug) yayinDug.addEventListener('click', () => {
       window.open(/^https?:/.test(yayinAdres) ? yayinAdres : 'https://' + yayinAdres, '_blank');
+    });
+
+    /* Kilit (v0.378.1): temizlenen template kendiliğinden kilitleniyordu
+       ama kilidi açacak bir yer yoktu. Anahtar burada, pencere kapanmadan
+       açılıp kapanıyor. */
+    const kilitDug = $('[data-ta="kilit"]', kutu);
+    const kilitCiz = () => {
+      const k = !!((DB.proje(p.id) || p).palet || {}).kilitli;
+      $('b', kilitDug).textContent = k ? 'Kilitli' : 'Kilit açık';
+      $('i', kilitDug).textContent = k ? 'Silinemez · açmak için dokun' : 'Silinebilir · kilitlemek için dokun';
+      $('input', kilitDug).checked = k;
+    };
+    kilitCiz();
+    kilitDug.addEventListener('click', async () => {
+      const guncel = DB.proje(p.id) || p;
+      const pl = guncel.palet || {};
+      try {
+        await DB.paletKaydet(p.id, Object.assign({}, pl, { kilitli: !pl.kilitli }));
+        toast(pl.kilitli ? 'Kilit açıldı.' : 'Template kilitlendi.', 'basari');
+      } catch (h) { toast(h.message, 'hata'); }
+      kilitCiz();
     });
 
     $('[data-ta="sil"]', kutu).addEventListener('click', () => {
@@ -18854,7 +18881,7 @@ async function eylemCalistir(el) {
     const pr = DB.proje(el.dataset.proje);
     if (!pr) return;
     if ((pr.palet || {}).kilitli) {
-      toast('Bu template kilitli — önce yanındaki kilit simgesinden aç.', 'uyari');
+      toast('Bu template kilitli — önce Template ayarlarındaki kilit anahtarını kapat.', 'uyari');
       return;
     }
     const ok = await onaySor({
