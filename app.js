@@ -8876,17 +8876,58 @@ function projelerEkrani(kova) {
   </div>`;
 }
 
-/* Atölye'de bir ana programın kartı (v0.379.0): sade; dokununca alttan
-   ayrıntı penceresi açılır (anaProgramAc). */
-function atAnaKarti(x) {
-  const rozet = x.hata ? '<span class="at-rz kir">okunamadı</span>'
-    : x.bekleyen ? `<span class="at-rz kir">${x.bekleyen} bekliyor</span>`
-    : x.ana && x.firmaSayisi ? '<span class="at-rz yesil">güncel</span>' : '';
-  return `<button type="button" class="at-kart at-ana" data-eylem="ana-ac" data-id="${esc(x.site)}">
-    <span class="at-pik at-harf">${esc(basHarf(x.ad))}</span>
-    <span class="at-pyz"><b>${esc(x.ad)}</b><i>${esc(['Ana program', x.surum ? 'sürüm ' + x.surum : '',
-      x.firmaSayisi + ' firma'].filter(Boolean).join(' · '))}</i></span>
-    ${rozet}</button>`;
+/* Atölye'de bir ana programın afişi (v0.380.0 · Vitrin'deki gibi): görsel,
+   ANA PROGRAM rozeti, firmaların simgeleri ve durum. Görsel, ana programın
+   Studio projesinin işletme görseli (G0); projesi yoksa görsel eklerken
+   kendiliğinden bağlanır. Dokununca alttan ayrıntı açılır (anaProgramAc). */
+function anaGorseli(x) { return x.proje ? gorselAdresi(x.proje, 'G0') : ''; }
+
+function anaFirmaSimgesi(r) {
+  const logo = r.proje && DB.logoAdres && DB.logoAdres[r.proje.id];
+  return logo ? `<span class="af-av resimli" style="background-image:url('${esc(logo)}')"></span>`
+    : `<span class="af-av">${esc(basHarf(r.ad))}</span>`;
+}
+
+function atAnaKarti(x, i) {
+  const gor = anaGorseli(x);
+  const durum = x.hata ? '<span class="af-durum kir">Sürüm dosyası okunamadı</span>'
+    : x.bekleyen ? `<span class="af-durum kir parla"><u></u>${x.bekleyen} güncelleme bekliyor</span>`
+    : x.ana && x.firmaSayisi ? `<span class="af-durum yesil">${svg(ICON.tik, 12)} Güncel</span>` : '';
+  const simgeler = x.satirlar.slice(0, 5).map(anaFirmaSimgesi).join('')
+    + (x.satirlar.length > 5 ? `<span class="af-av">+${x.satirlar.length - 5}</span>` : '');
+  return `<div class="at-afis ${i === 0 ? 'buyuk' : ''} ${gor ? 'gorselli' : ''}" data-eylem="ana-ac" data-id="${esc(x.site)}"
+      role="button" tabindex="0" ${gor ? `style="background-image:url('${esc(gor)}')"` : ''}>
+    <span class="af-rz">ANA PROGRAM</span>
+    ${AUTH.yonetici ? `<button type="button" class="af-gor" data-eylem="ana-gorsel" data-id="${esc(x.site)}"
+      aria-label="${gor ? 'Görseli değiştir' : 'Görsel ekle'}">${svg(ICON.resim, 16)}</button>` : ''}
+    <span class="af-alt">
+      <b>${esc(x.ad)}</b>
+      <i>${esc([x.surum ? 'Sürüm ' + x.surum : 'Ana program',
+        x.firmaSayisi ? x.firmaSayisi + ' firma kullanıyor' : 'Henüz firma yok'].join(' · '))}</i>
+      <span class="af-sat"><span class="af-yigin">${simgeler}</span>${durum}</span>
+    </span>
+  </div>`;
+}
+
+/* Görsel ekle/değiştir: projesi yoksa önce Studio'ya bağlanır. */
+async function anaGorselSec(site) {
+  const x = sablonProgramlari().find(k => k.site === svSite(site));
+  if (!x) return;
+  let pid = x.proje && x.proje.id;
+  if (!pid) {
+    try { pid = await anaStudioyaBagla(x); } catch (h) { return toast(h.message, 'hata'); }
+  }
+  if (pid) gorselSecVeYukle(pid, 'G0', 'Ana program görseli');
+}
+
+/* Alttan pencere açıkken veri değişirse (görsel yüklendi, bağlandı) içerik
+   yerinde tazelenir. */
+function anaPencereTazele() {
+  const ic = $('#alt-pencere .ap-ic');
+  const site = ic && ic.dataset.site;
+  if (!site) return;
+  const x = sablonProgramlari().find(k => k.site === site);
+  if (x) ic.innerHTML = anaProgramIcerik(x);
 }
 
 /* Arama: ekran yeniden çizilmeden kartlar gizlenir; boş kalan bölüm de gizlenir. */
@@ -10259,6 +10300,7 @@ function renderCiz() {
   }
   /* Arama kutusundaki yazı ekran yeniden çizilince de geçerli kalsın. */
   pjAramaUygula();
+  anaPencereTazele();
   ekipAramaUygula();
   sohbetAramaUygula();
   gorevAramaUygula();
@@ -12241,10 +12283,12 @@ function anaProgramIcerik(x) {
       <span class="ap-fyz"><b>${esc(r.ad)}</b><i><u class="at-n ${r.nokta}"></u>${esc(r.yazi)}</i>
         ${r.ray != null ? `<span class="at-ray"><s style="width:${r.ray}%"></s></span>` : ''}</span>
       <span class="at-ok">${svg(ICON.chevron, 15)}</span></button>`).join('');
+  const gor = anaGorseli(x);
   return `
-    <div class="ap-bas">
-      <span class="ap-ik">${esc(basHarf(x.ad))}</span>
-      <span class="ap-yz"><b>${esc(x.ad)}</b><i>Ana program · ${esc(pjHost(x.site))}</i></span>
+    <div class="ap-kapak ${gor ? 'gorselli' : ''}" ${gor ? `style="background-image:url('${esc(gor)}')"` : ''}>
+      ${gor ? '' : `<span class="ap-ik">${esc(basHarf(x.ad))}</span>`}
+      <span class="ap-kyz"><b>${esc(x.ad)}</b><i>Ana program · ${esc(pjHost(x.site))}</i></span>
+      ${yon ? `<button type="button" class="ap-kdeg" data-ap-eylem="gorsel">${svg(ICON.resim, 14)} ${gor ? 'Görseli değiştir' : 'Görsel ekle'}</button>` : ''}
     </div>
     ${x.hata ? `<div class="at-ozet kir" style="margin:0 20px 14px">${svg(ICON.uyari, 14)} Sürüm dosyası okunamadı · adresi kontrol et</div>` : `
     <div class="ap-say">
@@ -12271,6 +12315,7 @@ function anaProgramAc(site) {
   const x = bul();
   if (!x) return;
   altPencereAc(anaProgramIcerik(x), ic => {
+    ic.dataset.site = x.site;
     ic.addEventListener('click', async ev => {
       const t = ev.target.closest('[data-ap-eylem]');
       if (!t) return;
@@ -12279,11 +12324,11 @@ function anaProgramAc(site) {
       if (e === 'surum-detay') { altPencereKapat(); return surumDetayAc(t.dataset.id); }
       if (e === 'proje-ac')    { altPencereKapat(); location.hash = '#/projeler/' + t.dataset.id; return; }
       if (e === 'uyarla')      { altPencereKapat(); return uyarlaAna(g.site, 'gercek'); }
+      if (e === 'gorsel')      return anaGorselSec(g.site);
       if (e === 'bagla') {
         t.disabled = true;
         try { await anaStudioyaBagla(g); } catch (h) { toast(h.message, 'hata'); }
-        const y = bul();
-        if (y && $('#alt-pencere .ap-ic')) $('#alt-pencere .ap-ic').innerHTML = anaProgramIcerik(y);
+        anaPencereTazele();
         return;
       }
       if (e === 'cikar') {
@@ -16301,6 +16346,7 @@ async function eylemCalistir(el) {
   if (e === 'uyarla-baslat') return uyarlaBaslat(id, 'gercek');
   if (e === 'atl-raf') { ATL_RAF = id; return render(); }
   if (e === 'ana-ac')   return anaProgramAc(id);
+  if (e === 'ana-gorsel') return anaGorselSec(id);
   if (e === 'ana-ekle') return anaEkleAc();
   if (e === 'tazele')    return veriTazele();
   if (e === 'projelere') { location.hash = '#/projeler'; return; }

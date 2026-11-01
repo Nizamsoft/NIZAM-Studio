@@ -1,5 +1,12 @@
 # Değişiklik Günlüğü
 
+## v0.380.0
+- Atölye › Şablonlar: ana programlar Vitrin tarzı afiş (`atAnaKarti` → `.at-afis`): görsel, ANA PROGRAM rozeti,
+  firma simgeleri (logo varsa logo), durum (parlayan kırmızı bekleyen / yeşil güncel). İlki büyük.
+- Görsel = ana programın Studio projesinin G0'ı (`anaGorselSec` → `gorselSecVeYukle`); proje yoksa önce
+  `anaStudioyaBagla`. Alttan pencerede görselli kapak + "Görseli değiştir"; `anaPencereTazele` render sonrası
+  açık pencereyi yerinde yeniler.
+
 ## v0.379.0
 - Ana program = şablon program. `sql/56-ana-programlar.sql`: `ana_programlar` (site, ad, proje_id; okuma herkes,
   yazma yönetici; Muhasebe Modülü adresi tohum). `SURUM_ANALAR` sabiti kalktı: `surumAnaSiteleri()` tablodan,

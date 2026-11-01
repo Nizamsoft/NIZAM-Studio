@@ -13794,3 +13794,79 @@ button.ap-bagla { cursor: pointer; }
 }
 .at-rz.kir { background: #fdf1f0; color: #b4231b; }
 .at-rz.yesil { background: #e8f3ee; color: #2f7d5c; }
+
+/* ==========================================================================
+   Ana program afişi (v0.380.0) — Vitrin'deki gibi; Atölye › Şablonlar
+   (kullanıcı 2026-11-01 seçti: görsel, kırmızı ANA PROGRAM rozeti, parlayan
+   uyarı). Görsel yoksa grafit zemin.
+   ========================================================================== */
+.at-afis {
+  position: relative; display: block; height: 190px; border-radius: 18px; overflow: hidden; cursor: pointer;
+  background-color: #2a2a2f; background-size: cover; background-position: center top;
+  background-image: radial-gradient(circle at 75% 20%, rgba(229, 52, 42, .35), transparent 58%), linear-gradient(160deg, #4a4a50, #1d1d21);
+  box-shadow: 0 18px 34px -18px rgba(0, 0, 0, .55); transition: transform .15s ease;
+}
+.at-afis.buyuk { height: 290px; }
+.at-afis:active { transform: scale(.985); }
+.at-afis::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(180deg, rgba(0, 0, 0, .05) 28%, rgba(10, 10, 12, .92) 94%);
+}
+.at-afis > * { position: absolute; z-index: 2; }
+.af-rz {
+  top: 14px; left: 14px; padding: 5px 11px; border-radius: 999px; background: #e5342a; color: #fff;
+  font-family: var(--yazi-baslik); font-size: 10.5px; font-weight: 700; letter-spacing: .12em;
+}
+.af-gor {
+  top: 12px; right: 12px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;
+  border: 0; border-radius: 999px; background: rgba(255, 255, 255, .9); color: #26262a; cursor: pointer;
+}
+.af-gor svg { width: 16px; height: 16px; }
+.af-alt { left: 16px; right: 16px; bottom: 16px; display: flex; flex-direction: column; gap: 4px; color: #fff; }
+.af-alt > b { font-family: var(--yazi-baslik); font-size: 22px; font-weight: 700; line-height: 1.1; text-shadow: 0 1px 8px rgba(0, 0, 0, .4); }
+.at-afis.buyuk .af-alt > b { font-size: 27px; }
+.af-alt > i { font-style: normal; font-size: 13px; color: rgba(255, 255, 255, .78); }
+.af-sat { display: flex; align-items: center; gap: 10px; margin-top: 8px; min-height: 30px; }
+.af-yigin { display: flex; }
+.af-av {
+  display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; margin-left: -8px;
+  border-radius: 999px; border: 2px solid #1a1a1d; background: #4a4a50; background-size: cover; background-position: center;
+  color: #fff; font-family: var(--yazi-baslik); font-size: 10px; font-weight: 700;
+}
+.af-av:first-child { margin-left: 0; }
+.af-av.resimli { background-color: #fff; }
+.af-durum {
+  margin-left: auto; display: flex; align-items: center; gap: 6px; padding: 6px 11px; border-radius: 999px;
+  font-size: 12px; font-weight: 700; white-space: nowrap; color: #fff;
+}
+.af-durum svg { width: 12px; height: 12px; }
+.af-durum.kir { background: rgba(229, 52, 42, .95); }
+.af-durum.kir.parla { box-shadow: 0 0 18px rgba(229, 52, 42, .6); }
+.af-durum.kir u { width: 7px; height: 7px; border-radius: 50%; background: #fff; }
+.af-durum.yesil { background: rgba(47, 125, 92, .95); }
+@media (min-width: 1000px) { .at-afis.buyuk { height: 320px; } .at-afis { height: 320px; } }
+
+/* Alttan pencerenin kapağı */
+.ap-kapak {
+  position: relative; display: flex; align-items: flex-end; gap: 14px; min-height: 74px;
+  margin: -12px 0 14px; padding: 18px 20px 16px; background-size: cover; background-position: center top;
+}
+.ap-kapak.gorselli { min-height: 180px; margin-top: -27px; border-radius: 22px 22px 0 0; }
+.ap-kapak.gorselli::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0) 30%, rgba(10, 10, 12, .88));
+}
+.ap-kapak > * { position: relative; z-index: 2; }
+.ap-kyz { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.ap-kyz b { font-family: var(--yazi-baslik); font-size: 19px; font-weight: 700; color: #26262a; }
+.ap-kyz i { font-style: normal; font-size: 12.5px; color: #56565c; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ap-kapak.gorselli .ap-kyz b { color: #fff; font-size: 22px; }
+.ap-kapak.gorselli .ap-kyz i { color: rgba(255, 255, 255, .78); }
+.ap-kdeg {
+  flex-shrink: 0; display: flex; align-items: center; gap: 6px; padding: 8px 12px; border-radius: 999px; cursor: pointer;
+  border: 1px solid #d6d6db; background: #fff; color: #26262a; font: inherit; font-size: 12px; font-weight: 700; white-space: nowrap;
+}
+.ap-kapak.gorselli .ap-kdeg { border-color: transparent; background: rgba(255, 255, 255, .92); }
+.ap-kdeg svg { width: 14px; height: 14px; }
+.ap-kagit { overflow: hidden; }
+.ap-kagit .ap-tut { position: relative; z-index: 3; }

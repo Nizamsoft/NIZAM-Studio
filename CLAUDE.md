@@ -126,6 +126,10 @@ yumuşak gölge ve 14px köşe. Yalnız Security ekranlarında; başka yere taş
 Netflix usulü afişler, kabarık gölge, kırmızı "ANA/ÖNE ÇIKAN" rozetleri ve sorun
 varken parlayan kırmızı durum ikonları. Zemin koyu değil: biraz koyu gri petek (T4).
 
+**İstisna — Atölye › Şablonlar afişleri (`.at-afis`):** kullanıcı 2026-11-01'de
+seçti: Vitrin'deki gibi görselli afiş, kırmızı "ANA PROGRAM" rozeti, güncelleme
+bekleyince parlayan kırmızı durum. Görsel ana programın Studio projesinin G0'ı.
+
 **İstisna — Panel kartları (`.p3`):** kullanıcı 2026-10-29'da bilerek seçti:
 3D, basılabilir kartlar (kalın alt kenar + gölge, basınca iner) ve karta
 basınca açılan oklu pencere. Kırmızı yalnız ikon kutusunda (onay kartı,

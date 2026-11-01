@@ -21,6 +21,12 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.380.0', tarih: '2026-11-01',
+    ozet: 'Ana programlar afiş oldu, görsel eklenebiliyor',
+    maddeler: [
+      'Atölye › Şablonlar\'daki ana programlar Vitrin\'deki gibi görselli afişlerle görünüyor.',
+      'Afişin köşesindeki görsel düğmesiyle ya da alttan açılan pencereden ana programa görsel ekleyebilirsin.',
+    ] },
   { surum: 'v0.379.0', tarih: '2026-11-01',
     ozet: 'Ana programlar Atölye\'de',
     maddeler: [
