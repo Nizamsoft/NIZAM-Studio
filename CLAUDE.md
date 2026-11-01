@@ -66,6 +66,12 @@ bitmiş adım / sayılan adım (`projeAsamaYuzde`). İki yol var (`projeDuraklar
 Finalden sonra gelen Geliştirme sayılmaz. Görev sayısına göre hesaplama
 bırakıldı: sıfır görevi olan proje %0, tek görevi biten proje %100 görünüyordu.
 
+## Ana programlar (şablon programlar)
+Yeni firmalara uyarlanan programlar (ör. Muhasebe Modülü). Liste Supabase'de
+`ana_programlar` tablosunda (`sql/56`); Atölye › Şablonlar › "Ana program ekle"
+ile adres girilerek eklenir. Studio her adresin `surumler.json` dosyasını okur
+(ad, sürüm, depo, bağlı firmalar). Eski Template (çekirdek) sistemi kaldırıldı.
+
 ## Roller (2 tane)
 - **Yönetici** — her şeyi görür, onaylar
 - **Geliştirici** — sadece kendine atananları görür

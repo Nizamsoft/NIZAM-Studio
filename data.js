@@ -29,6 +29,10 @@ const DB = {
   hatalar: [],
   /* Claude'la yapılan işlerin kaydı (sql/52) — yalnız yöneticiye. */
   isKayitlari: [],
+  /* Ana programlar (sql/56 · v0.379.0). anaTabloVar: tablo kurulu mu —
+     değilse Studio koddaki eski adrese düşer. */
+  anaProgramlar: [],
+  anaTabloVar: false,
   /* Logolar private kovada; adres her oturumda yeniden üretilir. */
   logoAdres: {},
   /* Görsel yuvalarının imzalı adresleri: gorselAdres[projeId + '/' + no] */
@@ -59,6 +63,7 @@ const DB = {
     talepler: 'talepler',
     hata_bildirimleri: 'hatalar',
     is_kayitlari: 'isKayitlari',
+    ana_programlar: 'anaProgramlar',
     yedek_raporlari: 'yedekler',
   },
 
@@ -314,6 +319,7 @@ const DB = {
                           .order('gonderildi', { ascending: false })
                           .limit(200),
     /* Claude iş kayıtları (sql/52 · v0.351.0); son yüz yetiyor. */
+    anaProgramlar: db => db.from('ana_programlar').select('*').order('olusturuldu'),
     isKayitlari:  db => db.from('is_kayitlari').select('*')
                           .order('yapildi', { ascending: false })
                           .limit(100),
@@ -325,9 +331,10 @@ const DB = {
   },
 
   /* Tablosu henüz kurulmamış olabilecekler — hata verme, boş bırak. */
-  ISTEGE_BAGLI: ['sektorler', 'mesajlar', 'paketler', 'talepler', 'hatalar', 'yedekler', 'isKayitlari'],
+  ISTEGE_BAGLI: ['sektorler', 'mesajlar', 'paketler', 'talepler', 'hatalar', 'yedekler', 'isKayitlari', 'anaProgramlar'],
 
   yerlestir(ad, sonuc) {
+    if (ad === 'anaProgramlar') this.anaTabloVar = !sonuc.error;
     if (sonuc.error) {
       if (this.ISTEGE_BAGLI.includes(ad)) { this[ad] = []; return; }
       /* Hangi tablonun patladığı hataya yazılıyor; yoksa "tablolar kurulmamış"
@@ -395,7 +402,7 @@ const DB = {
       this.gorevler = []; this.hareketler = []; this.kisiler = []; this.kisilerHepsi = [];
       this.mesajlar = [];
       this.sektorler = []; this.paketler = []; this.talepler = []; this.hatalar = [];
-      this.isKayitlari = [];
+      this.isKayitlari = []; this.anaProgramlar = [];
       this.standartlar = []; this.gorevStandart = [];
       this.yuklendi = true;
       return;
@@ -421,6 +428,32 @@ const DB = {
     }
   },
 
+
+  /* ---------- Ana programlar (v0.379.0) ---------- */
+  async anaProgramEkle(site, ad) {
+    yazmaKontrol();
+    if (!this.anaTabloVar) throw new Error('Önce Supabase\'de sql/56-ana-programlar.sql çalıştırılmalı.');
+    const { error } = await AUTH.db.from('ana_programlar').insert({ site, ad: ad || '' });
+    if (error) {
+      if (/duplicate|unique/i.test(error.message || '')) throw new Error('Bu adres zaten listede.');
+      throw new Error(veriHatasi(error));
+    }
+    await this.tazele('anaProgramlar');
+  },
+
+  async anaProgramGuncelle(id, alanlar) {
+    yazmaKontrol();
+    const { error } = await AUTH.db.from('ana_programlar').update(alanlar).eq('id', id);
+    if (error) throw new Error(veriHatasi(error));
+    await this.tazele('anaProgramlar');
+  },
+
+  async anaProgramSil(id) {
+    yazmaKontrol();
+    const { error } = await AUTH.db.from('ana_programlar').delete().eq('id', id);
+    if (error) throw new Error(veriHatasi(error));
+    await this.tazele('anaProgramlar');
+  },
 
   proje(id)        { return this.projeler.find(p => p.id === id) || null; },
   modulleri(pid)   { return this.moduller.filter(m => m.proje_id === pid).sort(siraya); },

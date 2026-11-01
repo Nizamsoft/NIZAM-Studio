@@ -21,6 +21,13 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.379.0', tarih: '2026-11-01',
+    ozet: 'Ana programlar Atölye\'de',
+    maddeler: [
+      'Atölye › Şablonlar artık ana programları (ör. Muhasebe Modülü) gösteriyor; dokununca bağlı firmalar alttan açılıyor.',
+      'Yeni ana program Studio\'dan adresi yazılarak eklenebiliyor.',
+      'Eski "Template" bölümü kaldırıldı.',
+    ] },
   { surum: 'v0.378.1', tarih: '2026-11-01',
     ozet: 'Template kilidi açılabiliyor',
     maddeler: [

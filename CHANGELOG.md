@@ -1,5 +1,17 @@
 # Değişiklik Günlüğü
 
+## v0.379.0
+- Ana program = şablon program. `sql/56-ana-programlar.sql`: `ana_programlar` (site, ad, proje_id; okuma herkes,
+  yazma yönetici; Muhasebe Modülü adresi tohum). `SURUM_ANALAR` sabiti kalktı: `surumAnaSiteleri()` tablodan,
+  tablo yoksa eski adrese düşer; liste değişince takip yeniden okunur (`surumListesiDegistiMi`).
+- `sablonProgramlari()` artık sürüm takibindeki ana programlar (Studio projesi olmasa da); firma satırları
+  `anaFirmaSatirlari`. Atölye › Şablonlar sade kart (`atAnaKarti`) → alttan pencere (`altPencereAc`,
+  `anaProgramAc`): sürüm/firma/bekleyen, Yeni firmaya uyarla, Site, bağlı programlar (→ surum-detay),
+  "Studio'ya bağla" (`anaStudioyaBagla`: projeIceAktar + vitrin.ana + proje_id), Listeden çıkar.
+- "Ana program ekle" (`anaEkleAc`): adres → surumler.json önizleme → kayıt.
+- Eski Template (çekirdek) sistemi kaldırıldı: Templateler ekranı ve rotası, Ayarlar bağlantısı, template
+  sihirbazı (TS), template ayarları, template-* eylemleri. Veritabanındaki eski çekirdek projeler gizli kalır.
+
 ## v0.378.1
 - Template ayarlarına kilit anahtarı (`data-ta="kilit"`): temizlenen template kendiliğinden `palet.kilitli` oluyordu
   ama açacak yer yoktu (Kilitli projeler ekranı template'leri göstermiyor). Silme uyarısının metni de düzeltildi.
