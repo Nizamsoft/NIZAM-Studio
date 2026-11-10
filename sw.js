@@ -21,7 +21,7 @@
    Bir resim yeniden yüklenince eski kopya önbellekte kalırdı; uygulama
    `postMessage({ tip: 'unut', yol })` gönderiyor, o kayıt siliniyor. */
 
-const CACHE = 'nizam-studio-v0.380.0';
+const CACHE = 'nizam-studio-v0.381.0';
 
 /* Resimler AYRI ve SÜRÜMSÜZ bir önbellekte duruyor.
 
@@ -32,7 +32,7 @@ const CACHE = 'nizam-studio-v0.380.0';
    yok — kod değişince görsel bayatlamıyor. */
 const RESIM = 'nizam-studio-resim';
 const SHELL = [
-  './', './index.html', './style.css', './app.js', './config.js', './auth.js', './data.js', './prompt.js', './guncelle.js', './guvenlik-sozlesme.js', './guvenlik-veri.js', './guvenlik-motor.js', './guvenlik-ekran.js', './security.js', './security-test.js', './security-okuma.js', './security-yazma.js', './klon.js',
+  './', './index.html', './style.css', './app.js', './config.js', './auth.js', './data.js', './prompt.js', './guncelle.js', './guvenlik-sozlesme.js', './security.js', './security-test.js', './security-okuma.js', './security-yazma.js', './klon.js', './esitleme.js', './guvenlik-tarama.js',
   './vendor/supabase.js',
   './manifest.webmanifest', './icon-192.png', './icon-512.png', './icon-180.png',
   './logo.png', './ofis.webp',

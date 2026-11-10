@@ -1,5 +1,25 @@
 # Değişiklik Günlüğü
 
+## v0.381.0
+- Atölye › 🔄 Eşitleme rafı (`esitleme.js`, taslak yapilanlar-gorseller/studio-esitleme-guvenlik-taslak.png):
+  ana program ve firmaları akış olarak (firma → ANA → firma), her firma için iki yön satırı (al · getir);
+  satıra basınca paket penceresi (`esitlemePaketAc`): notlar Genel/Özel(üstü çizili)/SQL, korunacaklar,
+  otomatik kontrol listesi, talimat. `surumDetayAc` artık bu pencereyi açar; `surumPrompt` →
+  `esitlemeTalimati` (korunacaklar + ana programdaki `araclar/esitleme-kontrol.py` komutu + `kaynak`/`kontrol` alanları).
+- Ana programdaki not o firmadan geldiyse (`kaynak: "GK"` ya da özet "Güllüoğlu'ndan…") o firmaya "bekliyor"
+  sayılmaz (`esKaynakBu`, surumTakipYukle'de `asagi`).
+- Korunacaklar: `sql/57` `esitleme_korunacaklar` (firma_kod, yazı, iz); raftan ekle/sil.
+- Güvenlik kontrolü (`guvenlik-tarama.js`, #/guvenlik): programın `ns_studio_guvenlik(anahtar)` fonksiyonu
+  (ana 498 · ME 498 · GK GK-130; anahtar etkilesim_kapilari ile aynı) yalnız kilit bilgisini döndürür; Studio
+  bulguya çevirir: girişsiz fonksiyon (şifreli link fonksiyonları `GT_LINK` hariç), girişsiz tablo yetkisi,
+  RLS kapalı tablo, search_path'siz tam yetkili fonksiyon, açık kova, sitede service_role/sb_secret anahtar
+  (`gtSirTara` yayındaki betikleri tarar). Sonuç `guvenlik_taramalari`, "Bilerek açık" `guvenlik_kabuller` (sql/57).
+  Bulgu başına Claude talimatı. `pdGuvenlik` → `gtPdDurum`; sıfırdan projelerin Güvenlik durağı yeni özeti gösterir.
+- Eski güvenlik denetimi kaldırıldı: `guvenlik-veri.js`, `guvenlik-motor.js`, `guvenlik-ekran.js` ve app.js'teki
+  röntgen/manifest/matris/canlı tarama kartları ve `guvenlik-*` eylemleri (~1.050 satır). Menüde "Nizam Security"
+  yerine "Güvenlik". Security (Erişim Kuralları) ekranları menüden kalktı; Test kopyası kurulumu kullandığı için
+  `security*.js` ve `#/security` duruyor. `guvenlik-sozlesme.js` prompt.js'in sabitleri için duruyor.
+
 ## v0.380.0
 - Atölye › Şablonlar: ana programlar Vitrin tarzı afiş (`atAnaKarti` → `.at-afis`): görsel, ANA PROGRAM rozeti,
   firma simgeleri (logo varsa logo), durum (parlayan kırmızı bekleyen / yeşil güncel). İlki büyük.

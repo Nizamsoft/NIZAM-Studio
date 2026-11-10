@@ -72,6 +72,14 @@ Yeni firmalara uyarlanan programlar (ör. Muhasebe Modülü). Liste Supabase'de
 ile adres girilerek eklenir. Studio her adresin `surumler.json` dosyasını okur
 (ad, sürüm, depo, bağlı firmalar). Eski Template (çekirdek) sistemi kaldırıldı.
 
+## Eşitleme ve Güvenlik kontrolü (v0.381.0)
+- **Atölye › Eşitleme** (`esitleme.js`): sürüm takibinden iki yön (firma → ana · ana → firma), korunacaklar
+  (`esitleme_korunacaklar`, sql/57) ve talimat. Talimat, ana programdaki `araclar/esitleme-kontrol.py`'yi
+  çalıştırtır; sonuç nota `"kontrol"` olarak yazılır. Ana programda firmadan gelen notta `"kaynak": "GK"`.
+- **Güvenlik kontrolü** (`guvenlik-tarama.js`, `#/guvenlik`): programın `ns_studio_guvenlik` fonksiyonu
+  (ana 498) yalnız kilit bilgisini okur; sonuç `guvenlik_taramalari`, kabul `guvenlik_kabuller`.
+  Eski Nizam Security denetimi kaldırıldı; Security ekranları yalnız Test kopyası için duruyor.
+
 ## Roller (2 tane)
 - **Yönetici** — her şeyi görür, onaylar
 - **Geliştirici** — sadece kendine atananları görür

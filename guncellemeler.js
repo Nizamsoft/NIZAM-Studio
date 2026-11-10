@@ -21,6 +21,14 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.381.0', tarih: '2026-11-10',
+    ozet: 'Eşitleme sayfası ve yeni Güvenlik kontrolü',
+    maddeler: [
+      'Atölye › Eşitleme: hangi firmadan ana programa, ana programdan hangi firmaya kaç güncelleme beklediği tek ekranda; dokununca liste ve hazır talimat.',
+      'Korunacaklar listesi: firmaya özel özellikler eşitlemede kaybolmasın diye kontrol edilir.',
+      'Güvenlik kontrolü: "Şimdi tara" ile programda giriş yapmadan neye ulaşılabildiği tek tuşla görülür; her sorun için düzelt talimatı.',
+      'Eski Nizam Security denetim ekranları kaldırıldı.',
+    ] },
   { surum: 'v0.380.0', tarih: '2026-11-01',
     ozet: 'Ana programlar afiş oldu, görsel eklenebiliyor',
     maddeler: [
