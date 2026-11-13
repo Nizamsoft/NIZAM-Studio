@@ -21,6 +21,11 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.383.1', tarih: '2026-11-13',
+    ozet: 'Takvim etkinliklerinin açıklaması daha şık',
+    maddeler: [
+      'Açıklama artık emojili, madde madde ve boşluklu; garip işaretler ve görev numaraları yok.',
+    ] },
   { surum: 'v0.383.0', tarih: '2026-11-13',
     ozet: 'Görevlerini Google Takvim\'e aktaran takvim promptu',
     maddeler: [

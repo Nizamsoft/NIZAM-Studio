@@ -13498,7 +13498,7 @@ function gvTakvimPrompt(v) {
   const ad = (DB.kisiAdi(AUTH.user ? AUTH.user.id : '') || '').split(' ')[0];
   const gorevSatir = g => {
     const ac = String(g.aciklama || '').replace(/\s+/g, ' ').trim();
-    return '   - ' + (g.no ? 'NS-' + g.no + ' ' : '') + (g.baslik || '') +
+    return '   - ' + (g.baslik || '') +
       (ac ? ' — ' + (ac.length > 140 ? ac.slice(0, 140) + '…' : ac) : '');
   };
   let n = 0;
@@ -13511,7 +13511,16 @@ Yapacağımız iş: Google Takvim'deki "Nizam Soft" takviminde aşağıdaki işl
 Kurallar:
 - Her satır grubu TEK etkinlik (aynı gün + aynı firma).
 - Etkinlik başlığı: yalnız firmanın adı (ör. "${(v.tarihli[0] || v.tarihsiz[0] || { firma: 'Firma' }).firma}").
-- Etkinlik açıklaması: o gruptaki görevler alt alta, numaralarıyla.
+- Etkinlik açıklaması DÜZ YAZI olsun: HTML yok, <ol>, <li>, <br>, ** gibi hiçbir işaret ya da etiket kullanma; elle yazılmış gibi dursun. Görev numarası (NS-…) yazma. Biçim tam olarak şöyle (maddeler arasında bir boş satır, açıklama satırı 5 boşluk içeride; görevin açıklaması yoksa o satırı yazma):
+
+📌 Firma adı · 2 iş
+
+🔹 Birinci görevin başlığı
+     Kısa açıklaması
+
+🔹 İkinci görevin başlığı
+     Kısa açıklaması
+
 - Tarih: listede yazan gün. "Tarih belli değil" olanlar için bana gün sor.
 - Saat ve süreyi bilmiyorum diye varsayma: başlamadan önce HER etkinlik için saat ve süreyi bana sor. Hepsini tek mesajda, numaralı liste hâlinde sor; ben de tek seferde cevaplayayım.
 - Saat dilimi: Türkiye (Europe/Istanbul).

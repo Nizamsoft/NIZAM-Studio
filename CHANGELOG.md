@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## v0.383.1
+- Takvim promptu: etkinlik açıklaması düz yazı (HTML/işaret yasak), emojili, maddeler arası boş satır;
+  NS numaraları kaldırıldı. Prompta açıklamanın birebir örneği eklendi.
+
 ## v0.383.0
 - Görevler › tepede 📅 takvim düğmesi (`gv-takvim` → `gvTakvimAc`): bana verilen açık görevlerden ChatGPT
   promptu üretir. Aynı gün + aynı firma tek etkinlik (`gvTakvimVeri`), başlık firma adı, açıklamada görevler
