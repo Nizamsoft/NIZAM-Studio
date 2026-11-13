@@ -13524,6 +13524,7 @@ Kurallar:
 - Tarih: listede yazan gün. "Tarih belli değil" olanlar için bana gün sor.
 - Saat ve süreyi bilmiyorum diye varsayma: başlamadan önce HER etkinlik için saat ve süreyi bana sor. Hepsini tek mesajda, numaralı liste hâlinde sor; ben de tek seferde cevaplayayım.
 - Saat dilimi: Türkiye (Europe/Istanbul).
+- Etkinliğe hiç davetli ekleme (beni de ekleme), kimseye davet gönderme; etkinlik yalnız "Nizam Soft" takviminde dursun.
 - Cevaplarımı alınca önce kısa bir özet göster, "tamam" dersem oluştur.
 - Google Takvim bağlantın varsa etkinlikleri doğrudan "Nizam Soft" takvimine ekle ("Nizam Soft" takvimi yoksa bana söyle). Bağlantın yoksa hepsini tek bir .ics takvim dosyası olarak ver ve dosyayı nasıl ekleyeceğimi bir cümleyle anlat.
 

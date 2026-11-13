@@ -1,5 +1,8 @@
 # Değişiklik Günlüğü
 
+## v0.383.2
+- Takvim promptu: etkinliğe davetli eklenmez, davet gönderilmez kuralı.
+
 ## v0.383.1
 - Takvim promptu: etkinlik açıklaması düz yazı (HTML/işaret yasak), emojili, maddeler arası boş satır;
   NS numaraları kaldırıldı. Prompta açıklamanın birebir örneği eklendi.

@@ -21,6 +21,11 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.383.2', tarih: '2026-11-13',
+    ozet: 'Takvim etkinliklerine davetli eklenmiyor',
+    maddeler: [
+      'Takvim promptu artık etkinliğe kimseyi (seni de) davetli olarak eklemiyor.',
+    ] },
   { surum: 'v0.383.1', tarih: '2026-11-13',
     ozet: 'Takvim etkinliklerinin açıklaması daha şık',
     maddeler: [
