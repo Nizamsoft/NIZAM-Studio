@@ -1,5 +1,12 @@
 # Değişiklik Günlüğü
 
+## v0.383.0
+- Görevler › tepede 📅 takvim düğmesi (`gv-takvim` → `gvTakvimAc`): bana verilen açık görevlerden ChatGPT
+  promptu üretir. Aynı gün + aynı firma tek etkinlik (`gvTakvimVeri`), başlık firma adı, açıklamada görevler
+  (NS-no, başlık, kısa açıklama). ChatGPT saat/süreyi samimi dille topluca sorar, Google Takvim "Nizam Soft"
+  takvimine ekler; bağlantı yoksa .ics verir. Pencerede Kopyala ve "ChatGPT'yi aç" (önce kopyalar).
+- 420px altında sekmede "Ekip Görevleri" → "Ekip" (`.gv2-uz`), satır aralığı 8px: takvim düğmesine yer.
+
 ## v0.382.0
 - Panel › Görevler kartı: `p3Veri` artık bitmiş (final verilmiş / %100) projelerin açık görevlerini de sayar;
   yalnız arşivdeki projeler hariç. Kartta yeni çip: "X sana verilen" (`v.bana`).

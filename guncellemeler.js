@@ -21,6 +21,12 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.383.0', tarih: '2026-11-13',
+    ozet: 'Görevlerini Google Takvim\'e aktaran takvim promptu',
+    maddeler: [
+      'Görevler sayfasının tepesindeki takvim düğmesi, sana verilen görevlerden hazır bir metin çıkarır.',
+      'Metni ChatGPT\'ye yapıştırınca saatleri sorar, "Nizam Soft" takvimine firma adıyla etkinlik açar.',
+    ] },
   { surum: 'v0.382.0', tarih: '2026-11-13',
     ozet: 'Panelde kendi görevlerin ve kendine görev bildirimi',
     maddeler: [

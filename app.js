@@ -13450,10 +13450,12 @@ function gorevlerEkrani() {
     <div class="pjs-sat">
       <button type="button" class="gv2-fd ${fs ? 'on' : ''}" data-eylem="gv-filtre" aria-label="Filtre">
         <svg viewBox="0 0 24 24"><path d="M4 6h16M7 12h10M10 18h4"/></svg>${fs ? `<em>${fs}</em>` : ''}</button>
+      <button type="button" class="gv2-fd" data-eylem="gv-takvim" aria-label="Takvim promptu">
+        <svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4M8 14h2M12 14h2"/></svg></button>
       ${yon ? `<div class="pjs ${GV_SEKME === 'ekip' ? 'atolye' : ''}" role="tablist">
         <i class="pjs-hap" aria-hidden="true"></i>
         <button type="button" data-eylem="gv-sekme" data-id="ben">Görevlerim <u class="gv2-say">${acikSay(benim)}</u></button>
-        <button type="button" data-eylem="gv-sekme" data-id="ekip">Ekip Görevleri <u class="gv2-say">${acikSay(hepsi)}</u></button>
+        <button type="button" data-eylem="gv-sekme" data-id="ekip">Ekip<span class="gv2-uz">&nbsp;Görevleri</span> <u class="gv2-say">${acikSay(hepsi)}</u></button>
       </div>` : `<h1 class="gv2-h">Görevlerim</h1>`}
       <button class="pjs-yeni" type="button" data-eylem="gorev-ver" aria-label="Yeni görev">${svg(ICON.arti, 18)}</button>
     </div>
@@ -13464,6 +13466,96 @@ function gorevlerEkrani() {
     <div class="gv2-liste">${govde}</div>
   </div>`;
 }
+/* ---------- Takvim promptu (v0.383.0) ----------
+   Bana verilen açık görevlerden ChatGPT'ye yapıştırılacak bir metin üretir.
+   ChatGPT saatleri sorar, Google Takvim'deki "Nizam Soft" takvimine
+   etkinlik açar: aynı gün + aynı firma = tek etkinlik, başlık firma adı,
+   açıklamada görevler. Takvim bağlantısı yoksa .ics dosyası verir. */
+function gvTakvimFirma(g) {
+  const pr = g.proje_id ? DB.proje(g.proje_id) : null;
+  return pr ? basHarfleriBuyuk(pr.firma || projeAdi(pr)) : gorevKonuAdi(g);
+}
+function gvTakvimVeri() {
+  const ben = AUTH.user ? AUTH.user.id : '';
+  const liste = DB.gorevleri().filter(g => g.atanan === ben && g.durum !== 'onaylandi' && g.durum !== 'bitirdi');
+  const gruplar = new Map();
+  liste.forEach(g => {
+    const k = (g.bitis || '') + '|' + gvTakvimFirma(g);
+    if (!gruplar.has(k)) gruplar.set(k, { tarih: g.bitis || '', firma: gvTakvimFirma(g), gorevler: [] });
+    gruplar.get(k).gorevler.push(g);
+  });
+  const hepsi = [...gruplar.values()].sort((a, b) =>
+    (a.tarih || '9999').localeCompare(b.tarih || '9999') || a.firma.localeCompare(b.firma, 'tr'));
+  return { liste, tarihli: hepsi.filter(x => x.tarih), tarihsiz: hepsi.filter(x => !x.tarih) };
+}
+function gvTakvimGun(iso) {
+  const ay = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+  const gun = ['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi'];
+  const t = new Date(iso + 'T00:00:00');
+  return t.getDate() + ' ' + ay[t.getMonth()] + ' ' + t.getFullYear() + ' ' + gun[t.getDay()];
+}
+function gvTakvimPrompt(v) {
+  const ad = (DB.kisiAdi(AUTH.user ? AUTH.user.id : '') || '').split(' ')[0];
+  const gorevSatir = g => {
+    const ac = String(g.aciklama || '').replace(/\s+/g, ' ').trim();
+    return '   - ' + (g.no ? 'NS-' + g.no + ' ' : '') + (g.baslik || '') +
+      (ac ? ' — ' + (ac.length > 140 ? ac.slice(0, 140) + '…' : ac) : '');
+  };
+  let n = 0;
+  const blok = x => (++n) + ') ' + (x.tarih ? gvTakvimGun(x.tarih) : 'Tarih belli değil') + ' · ' + x.firma + '\n' +
+    x.gorevler.map(gorevSatir).join('\n');
+  return `Merhaba! Ben ${ad || 'Nizam Soft ekibinden biri'}, Nizam Soft'tan 👋 Takvimimi düzenlemem lazım; bana samimi, sıcak bir asistan gibi yardım et. Kısa ve sade konuş, emoji kullanabilirsin.
+
+Yapacağımız iş: Google Takvim'deki "Nizam Soft" takviminde aşağıdaki işler için etkinlik oluşturmak.
+
+Kurallar:
+- Her satır grubu TEK etkinlik (aynı gün + aynı firma).
+- Etkinlik başlığı: yalnız firmanın adı (ör. "${(v.tarihli[0] || v.tarihsiz[0] || { firma: 'Firma' }).firma}").
+- Etkinlik açıklaması: o gruptaki görevler alt alta, numaralarıyla.
+- Tarih: listede yazan gün. "Tarih belli değil" olanlar için bana gün sor.
+- Saat ve süreyi bilmiyorum diye varsayma: başlamadan önce HER etkinlik için saat ve süreyi bana sor. Hepsini tek mesajda, numaralı liste hâlinde sor; ben de tek seferde cevaplayayım.
+- Saat dilimi: Türkiye (Europe/Istanbul).
+- Cevaplarımı alınca önce kısa bir özet göster, "tamam" dersem oluştur.
+- Google Takvim bağlantın varsa etkinlikleri doğrudan "Nizam Soft" takvimine ekle ("Nizam Soft" takvimi yoksa bana söyle). Bağlantın yoksa hepsini tek bir .ics takvim dosyası olarak ver ve dosyayı nasıl ekleyeceğimi bir cümleyle anlat.
+
+Etkinlikler:
+${[...v.tarihli, ...v.tarihsiz].map(blok).join('\n\n')}`;
+}
+function gvTakvimAc() {
+  const v = gvTakvimVeri();
+  if (!v.liste.length) return toast('Sana verilmiş açık görev yok — takvime eklenecek bir şey yok.');
+  const metin = gvTakvimPrompt(v);
+  const tarihler = v.tarihli.map(x => x.tarih);
+  const kisa = iso => { const t = new Date(iso + 'T00:00:00'); return t.getDate() + ' ' +
+    ['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara'][t.getMonth()]; };
+  const aralik = tarihler.length ? (tarihler[0] === tarihler[tarihler.length - 1] ? kisa(tarihler[0])
+    : kisa(tarihler[0]) + ' – ' + kisa(tarihler[tarihler.length - 1])) : '';
+  const etk = v.tarihli.length + v.tarihsiz.length;
+  modalAc(`
+    <h3 class="modal-h">📅 Takvim promptu</h3>
+    <p class="tk-acik">Kopyala, ChatGPT'ye yapıştır. Saatleri o sana soracak, sonra Google Takvim'de
+      "Nizam Soft" takvimine ekleyecek.</p>
+    <div class="tk-ozet"><span>${v.liste.length} görev</span><span>${etk} etkinlik</span>
+      ${aralik ? `<span>${esc(aralik)}</span>` : ''}${v.tarihsiz.length ? `<span>${v.tarihsiz.length} tarihsiz</span>` : ''}</div>
+    <pre class="tk-metin">${esc(metin)}</pre>
+    <button class="tk-dug" type="button" data-tk="kopya">Kopyala</button>
+    <button class="tk-dug ikincil" type="button" data-tk="gpt">ChatGPT'yi aç ↗</button>
+    <p class="ipucu">ChatGPT'nin takvime kendisi eklemesi için ChatGPT'de Google Takvim bağlantısı açık
+      olmalı; değilse sana bir takvim dosyası verir, ona dokunman yeter.</p>
+    <div class="modal-alt"><button class="btn btn-ghost" data-tk="kapat" type="button">Kapat</button></div>`,
+  kutu => {
+    const kopya = async () => {
+      try { await navigator.clipboard.writeText(metin); toast('Kopyalandı · ChatGPT\'ye yapıştır 📅', 'basari'); return true; }
+      catch (h) { toast('Kopyalanamadı — metni basılı tutup seç.'); return false; }
+    };
+    $('[data-tk="kopya"]', kutu).addEventListener('click', kopya);
+    $('[data-tk="gpt"]', kutu).addEventListener('click', async () => {
+      await kopya(); window.open('https://chatgpt.com/', '_blank', 'noopener');
+    });
+    $('[data-tk="kapat"]', kutu).addEventListener('click', modalKapat);
+  });
+}
+
 function gvFiltreKapat() { $$('.gv2-fp').forEach(x => x.remove()); }
 function gvFiltreAc(el) {
   if ($('.gv2-fp')) return gvFiltreKapat();
@@ -15803,6 +15895,7 @@ async function eylemCalistir(el) {
   if (e === 'gv-sekme')  return gvSekmeSec(id);
   if (e === 'gv-suz')    { GV_SUZ = id; return render(); }
   if (e === 'gv-filtre') return gvFiltreAc(el);
+  if (e === 'gv-takvim') return gvTakvimAc();
   if (e === 'sohbet-gorevler') return gvKisiGoster(id);
   if (e === 'gv-temizle') { GV_SUZ = 'acik'; GV_KISI = null; GV_PROJE = null; return render(); }
   if (e === 'gorev-ac')   return gorevKartiAc(el.dataset.id);

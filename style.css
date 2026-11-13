@@ -13105,6 +13105,8 @@ html.pa-akis .vt-ik.kot::after, html.pa-akis .p3-uyari, html.pa-akis .pa2-dk.uy,
 @media (max-width: 420px) {
   .gv2 .pjs button { font-size: 13px; gap: 4px; }
   .gv2 .gv2-say { display: none; }
+  .gv2 .gv2-uz { display: none; }        /* v0.383.0: takvim düğmesine yer */
+  .gv2 .pjs-sat { gap: 8px; }
 }
 
 /* ==========================================================================
@@ -13961,3 +13963,15 @@ button.ap-bagla { cursor: pointer; }
 .gt-gec { display: flex; gap: 8px; align-items: baseline; font-size: 12.5px; padding: 6px 0; border-top: 1px solid #f2f2f4; }
 .gt-gec b { font-weight: 600; white-space: nowrap; } .gt-gec i { font-style: normal; color: var(--ink-soft); }
 .gt-durak { display: flex; gap: 10px; align-items: center; padding: 12px 14px; border: 1px solid #ededf0; border-radius: 12px; margin-bottom: 10px; background: #fff; font-size: 13.5px; }
+
+/* Takvim promptu (v0.383.0) */
+.tk-acik { margin: 0 0 10px; font-size: 13.5px; color: var(--metin-soft, #56565c); line-height: 1.45; }
+.tk-ozet { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.tk-ozet span { background: #f2f2f4; border-radius: 99px; padding: 5px 10px; font-size: 12px; color: #26262a; }
+.tk-metin { background: #f6f6f8; border: 1px solid #ededf0; border-radius: 8px; padding: 10px 12px; margin: 0 0 12px;
+  font: 11.5px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; color: #26262a; white-space: pre-wrap;
+  max-height: 34vh; overflow: auto; -webkit-overflow-scrolling: touch; }
+.tk-dug { display: block; width: 100%; padding: 12px; margin-bottom: 8px; border-radius: 8px; border: 1px solid #17171a;
+  background: #17171a; color: #fff; font: 600 14px var(--yazi-baslik, system-ui); cursor: pointer; }
+.tk-dug.ikincil { background: #fff; color: #26262a; border-color: #d6d6db; font-weight: 500; }
+.tk-dug:active { transform: translateY(1px); }
