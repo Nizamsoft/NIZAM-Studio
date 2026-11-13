@@ -21,6 +21,12 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.382.0', tarih: '2026-11-13',
+    ozet: 'Panelde kendi görevlerin ve kendine görev bildirimi',
+    maddeler: [
+      'Panel › Görevler kartı canlıdaki projelerin görevlerini de sayıyor; "sana verilen" sayısı eklendi.',
+      'Kendine görev verince de zilde ve telefonda bildirim görünüyor.',
+    ] },
   { surum: 'v0.381.0', tarih: '2026-11-10',
     ozet: 'Eşitleme sayfası ve yeni Güvenlik kontrolü',
     maddeler: [

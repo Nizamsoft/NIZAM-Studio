@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü
 
+## v0.382.0
+- Panel › Görevler kartı: `p3Veri` artık bitmiş (final verilmiş / %100) projelerin açık görevlerini de sayar;
+  yalnız arşivdeki projeler hariç. Kartta yeni çip: "X sana verilen" (`v.bana`).
+- Zil (`bildirimListesi`): kişi kendine görev verince "Kendine yeni bir görev verdin" görünür; açılıştaki
+  `olusturuldu`'nun hemen ardından gelen `atandi` ikinci kez yazılmaz (60 sn).
+- `supabase/functions/bildirim-gonder`: `olusturuldu`/`atandi` hareketinde görevi alan, işi yapan kişinin
+  kendisi olsa da telefon bildirimi alır. **Fonksiyon Supabase'e yeniden yüklenmeli.**
+
 ## v0.381.0
 - Atölye › 🔄 Eşitleme rafı (`esitleme.js`, taslak yapilanlar-gorseller/studio-esitleme-guvenlik-taslak.png):
   ana program ve firmaları akış olarak (firma → ANA → firma), her firma için iki yön satırı (al · getir);

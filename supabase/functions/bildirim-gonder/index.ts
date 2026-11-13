@@ -316,14 +316,15 @@ Deno.serve(async (istek) => {
     if (!g) return yanit({ gonderildi: 0 });
 
     /* Görev verildi haberi yalnız görevi alana; ötekiler alana ve verene.
-       Hareketi yapan kendine bildirim almaz. */
-    const alicilar = (h.tip === 'olusturuldu' || h.tip === 'atandi')
-      ? [g.atanan] : [g.atanan, g.olusturan];
+       Hareketi yapan kendine bildirim almaz — tek istisna: kendine görev
+       verdiyse o da gelir (v0.382.0). */
+    const verildi = h.tip === 'olusturuldu' || h.tip === 'atandi';
+    const alicilar = verildi ? [g.atanan] : [g.atanan, g.olusturan];
     const ad = (await adOku(ben)) || 'Biri';
     const gonderildi = await kisilereGonder(
-      alicilar.filter(k => k && k !== ben) as string[], 'gorev', async (kisi) => ({
+      [...new Set(alicilar.filter(k => k && (k !== ben || verildi)))] as string[], 'gorev', async (kisi) => ({
         tip: 'gorev', id: g.id,
-        baslik: ad + ' ' + GOREV_BASLIK[h.tip],
+        baslik: kisi === ben ? 'Kendine yeni bir görev verdin' : ad + ' ' + GOREV_BASLIK[h.tip],
         metin: kisalt((g.no ? 'NS-' + g.no + ' · ' : '') + String(g.baslik || ''), 200),
         adres: '#/gorevler/' + g.id, etiket: 'gorev-' + g.id, rozet: await rozetAl(kisi),
       }));

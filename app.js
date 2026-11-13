@@ -8276,8 +8276,16 @@ function bildirimListesi() {
   return (DB.hareketler || []).map(h => {
     const g = DB.gorev(h.gorev_id);
     if (!g || !DB.gorevGecerli(g)) return null;
-    if (h.kim === ben) return null;
     const bana = g.atanan === ben;
+    /* v0.382.0: kendine görev verince de zile düşer. Görev açılırken
+       "olusturuldu"nun hemen ardından gelen "atandi" ikinci kez yazılmaz. */
+    const kendine = h.kim === ben;
+    if (kendine) {
+      if (!bana) return null;
+      if (h.tip !== 'olusturuldu' && h.tip !== 'atandi') return null;
+      if (h.tip === 'atandi' && g.olusturuldu && h.olusturuldu &&
+          Math.abs(new Date(h.olusturuldu) - new Date(g.olusturuldu)) < 60000) return null;
+    }
     if (!bana && g.olusturan !== ben) return null;
     /* Görev verildi haberi yalnız görevi alana gider. */
     if ((h.tip === 'olusturuldu' || h.tip === 'atandi') && !bana) return null;
@@ -8287,7 +8295,7 @@ function bildirimListesi() {
     const pr = g.proje_id ? DB.proje(g.proje_id) : null;
     return {
       id: h.id, gorev: g.id, kim: h.kim,
-      baslik: (DB.kisiAdi(h.kim) || 'Biri') + ' ' + ne,
+      baslik: kendine ? 'Kendine yeni bir görev verdin' : (DB.kisiAdi(h.kim) || 'Biri') + ' ' + ne,
       alt: g.baslik || '',
       etiket: gorevKonuAdi(g),
       zaman: h.olusturuldu,
@@ -17542,10 +17550,13 @@ function panelSelam() {
    eklenir, yeniden çizimde kapanır. Panelde gölge bilerek serbest
    (CLAUDE.md istisnası). */
 function p3Veri(projeler) {
-  const devam = projeler.filter(p => !projeBittiMi(p));
-  const ids = new Set(devam.map(p => p.id));
+  /* v0.382.0: bitmiş (final verilmiş) projelerin görevleri de sayılır —
+     canlıdaki programlar geliştirilmeye devam ediyor. Yalnız arşiv hariç. */
+  const ids = new Set(projeler.filter(p => !p.arsiv).map(p => p.id));
+  const ben = AUTH.user ? AUTH.user.id : '';
   const acik = (DB.gorevler || []).filter(g =>
     g.durum !== 'onaylandi' && (!g.proje_id || ids.has(g.proje_id)));
+  const bana = acik.filter(g => ben && g.atanan === ben).length;
   const kontrol = acik.filter(g => g.durum === 'bitirdi')
     .sort((a, b) => (b.guncellendi || '').localeCompare(a.guncellendi || ''));
   /* Plan onayı bekleyenler de "onayını bekliyor" sayılır (v0.369.2). */
@@ -17566,7 +17577,7 @@ function p3Veri(projeler) {
     const dr = yedekDrive(sonYedekRaporu());
     if (dr && dr.dolu) drive = dr;
   }
-  return { acik, kontrol, planda, onay, yapilacak, gelisen, yakin, guv, yed, drive };
+  return { acik, bana, kontrol, planda, onay, yapilacak, gelisen, yakin, guv, yed, drive };
 }
 
 /* Kart ikonları (v0.350.0): ikili ton — ince çizgi + yarı saydam dolgu. */
@@ -17625,6 +17636,7 @@ function panelKartlar(projeler) {
       <span class="p3-bas">Görevler · ${yon ? 'onayını bekliyor' : 'onayda bekleyen'}</span>
       <span class="p3-cipler">
         <span><b>${v.acik.length}</b> açık görev</span>
+        <span><b>${v.bana}</b> sana verilen</span>
         ${ilkYazi ? `<span>En yakın bitiş <b>${esc(ilkYazi)}</b></span>` : ''}
       </span>
       <span class="p3-incele">İncele ›</span>
