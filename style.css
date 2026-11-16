@@ -13975,3 +13975,17 @@ button.ap-bagla { cursor: pointer; }
   background: #17171a; color: #fff; font: 600 14px var(--yazi-baslik, system-ui); cursor: pointer; }
 .tk-dug.ikincil { background: #fff; color: #26262a; border-color: #d6d6db; font-weight: 500; }
 .tk-dug:active { transform: translateY(1px); }
+
+/* Panel › Güvenlik ve yedek: toplu tarama (v0.384.0) */
+.p3-gt { display: flex; gap: 8px; margin: 2px 0 6px; }
+.p3-gt button { all: unset; box-sizing: border-box; flex: 1; text-align: center; padding: 11px 8px; border-radius: 8px;
+  font: 600 13.5px var(--yazi-baslik, system-ui); cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.p3-gt .p3-gt-a { background: #17171a; color: #fff; }
+.p3-gt .p3-gt-b { background: #fff; color: #26262a; border: 1px solid #d6d6db; }
+.p3-gt button:active { transform: translateY(1px); }
+.p3-gt button[disabled] { opacity: .55; cursor: default; }
+.p3-gc { flex-shrink: 0; min-width: 62px; text-align: center; font-size: 12px; padding: 3px 9px; border-radius: 99px;
+  background: #f2f2f4; color: #56565c; }
+.p3-gc.y { background: #e7f3ee; color: #2f7d5c; }
+.p3-gc.k, .p3-gc.h { background: #fbe9e7; color: #b4231b; }
+.p3-gc.b { background: #fbf3e2; color: #8a5f12; }

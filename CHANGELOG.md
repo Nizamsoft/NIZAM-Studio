@@ -1,5 +1,12 @@
 # Değişiklik Günlüğü
 
+## v0.384.0
+- Panel › Güvenlik ve yedek penceresi: bütün programlar listelenir (`gtProjeleri`, durum hapı Temiz/Sorun/Bak/
+  Kurulum/Hata · `gtSatirDurum`); üstte 🛡️ Hepsini tara (`gtHepsiniTara`, sırayla `gtTara(p, sessiz)`) ve
+  📋 Toplu talimat (`gtTopluTalimat`: her program deposuyla, bulgular + ortak kurallar; kurulmamışa 498 talimatı).
+- Toplu taramada sayfa yeniden çizilmez, açık pencere yerinde tazelenir (`GT.toplu`, `gtCiz`, `p3PopYenile`).
+  Tarama hataları programa göre `GT.hatalar`'da tutulur. `gtYukle` artık promise döndürür.
+
 ## v0.383.3
 - Güvenlik kontrolü: "tarama fonksiyonu yok" uyarısındaki Güllüoğlu göç numarası GK-130 → GK-192
   (GK-130 orada depo eşleştirme; güvenlik taraması Güllüoğlu'na GK-192 olarak eklendi).

@@ -17,7 +17,9 @@
    ========================================================================== */
 'use strict';
 
-const GT = { durum: 'bos', son: {}, kabul: {}, calisan: {}, hata: '' };
+const GT = { durum: 'bos', son: {}, kabul: {}, calisan: {}, hata: '', hatalar: {}, toplu: false };
+/* Toplu taramada (Panel › Güvenlik ve yedek) sayfa yeniden çizilmez; açık pencere tazelenir. */
+function gtCiz() { if (GT.toplu) { if (typeof p3PopYenile === 'function') p3PopYenile(); } else render(); }
 
 /* Giriş öncesi çalışması GEREKEN fonksiyonlar: şifreli linkler (sipariş,
    kasa, sayım, kritik stok, yönetim, zam), kurulum sorusu, Studio kapısı. */
@@ -27,7 +29,7 @@ function gtYukle(zorla) {
   if (!AUTH.yonetici || !AUTH.db) return;
   if (!zorla && GT.durum !== 'bos') return;
   GT.durum = 'yukleniyor';
-  Promise.all([
+  return Promise.all([
     AUTH.db.from('guvenlik_taramalari').select('*').order('zaman', { ascending: false }).limit(400),
     AUTH.db.from('guvenlik_kabuller').select('proje_id, anahtar'),
   ]).then(([t, k]) => {
@@ -45,8 +47,8 @@ function gtYukle(zorla) {
       (k.data || []).forEach(r => { (GT.kabul[r.proje_id] = GT.kabul[r.proje_id] || new Set()).add(r.anahtar); });
       GT.durum = 'tamam';
     }
-    render();
-  }, h => { GT.durum = 'hata'; GT.hata = String(h && h.message || h); render(); });
+    gtCiz();
+  }, h => { GT.durum = 'hata'; GT.hata = String(h && h.message || h); gtCiz(); });
 }
 
 /* Kabul edilenler çıkarılınca bulgunun kalan öğeleri. */
@@ -183,9 +185,9 @@ async function gtSirTara(site) {
   return { sir, sayi };
 }
 
-async function gtTara(p) {
+async function gtTara(p, sessiz) {
   if (GT.calisan[p.id]) return;
-  GT.calisan[p.id] = true; render();
+  GT.calisan[p.id] = true; gtCiz();
   try {
     const { data: k, error } = await AUTH.db.from('etkilesim_kapilari').select('*').eq('proje_id', p.id).maybeSingle();
     if (error) throw new Error('Studio kapı tablosu okunamadı: ' + error.message);
@@ -209,13 +211,94 @@ async function gtTara(p) {
     const d = gtDegerlendir(p.id, bulgular);
     const { error: e2 } = await AUTH.db.from('guvenlik_taramalari').insert({ proje_id: p.id, durum: d.durum, ozet: d.ozet, bulgular });
     if (e2) throw new Error('Sonuç kaydedilemedi: ' + e2.message);
-    toast(d.durum === 'temiz' ? 'Tarama bitti · sorun yok ✅' : 'Tarama bitti · ' + d.ozet, d.durum === 'sorun' ? 'uyari' : 'basari');
-    GT.durum = 'bos'; gtYukle(true);
+    delete GT.hatalar[p.id];
+    if (!sessiz) toast(d.durum === 'temiz' ? 'Tarama bitti · sorun yok ✅' : 'Tarama bitti · ' + d.ozet, d.durum === 'sorun' ? 'uyari' : 'basari');
+    GT.durum = 'bos'; await gtYukle(true);
   } catch (h) {
-    toast(h.message, 'hata');
+    GT.hatalar[p.id] = h.message;
+    if (!sessiz) toast(h.message, 'hata');
   } finally {
-    GT.calisan[p.id] = false; render();
+    GT.calisan[p.id] = false; gtCiz();
   }
+}
+
+/* ---------- Toplu (v0.384.0 · Panel › Güvenlik ve yedek) ----------
+   Hepsini tara: bütün programlar sırayla. Toplu talimat: bütün bulgular
+   tek metinde, her program kendi deposuyla; tek sohbete yapıştırılır. */
+async function gtHepsiniTara() {
+  if (GT.toplu) return;
+  const liste = gtProjeleri();
+  if (!liste.length) return toast('Taranacak program yok.');
+  GT.toplu = true; gtCiz();
+  try {
+    for (const p of liste) await gtTara(p, true);
+  } finally {
+    GT.toplu = false;
+  }
+  const d = gtTopluDurum();
+  toast(d.sorun || d.kurulum || d.hata
+    ? 'Tarama bitti · ' + [d.sorun && d.sorun + ' sorunlu', d.kurulum && d.kurulum + ' kurulum bekliyor', d.hata && d.hata + ' okunamadı'].filter(Boolean).join(' · ')
+    : 'Tarama bitti · hepsi temiz ✅', d.sorun ? 'uyari' : 'basari');
+  if ($('.p3-pop') && typeof p3PopYenile === 'function') p3PopYenile(); else render();
+}
+function gtSatirDurum(p) {
+  if (GT.calisan[p.id]) return { s: 'c', cip: '…', yazi: 'Taranıyor…' };
+  const h = GT.hatalar[p.id];
+  if (h) return /fonksiyonu yok/.test(h) ? { s: 'u', cip: 'Kurulum', yazi: 'Tarama fonksiyonu yok · SQL gerekli' }
+    : { s: 'h', cip: 'Hata', yazi: h };
+  const d = pdGuvenlik(p);
+  return { s: d.s, cip: { y: 'Temiz', k: 'Sorun', b: 'Bak' }[d.s] || d.kisa, yazi: d.yazi };
+}
+function gtTopluDurum() {
+  const d = { sorun: 0, kurulum: 0, hata: 0 };
+  gtProjeleri().forEach(p => { const x = gtSatirDurum(p);
+    if (x.s === 'k' || x.s === 'b') d.sorun++; else if (x.s === 'u') d.kurulum++; else if (x.s === 'h') d.hata++; });
+  return d;
+}
+function gtTopluTalimat() {
+  const parcalar = [];
+  gtProjeleri().forEach(p => {
+    const depo = (typeof depoSlug === 'function' && depoSlug(p.repo)) || p.repo || 'depo bilinmiyor';
+    const bas = '▸ ' + basHarfleriBuyuk(projeAdi(p)) + ' · depo: ' + depo;
+    const h = GT.hatalar[p.id];
+    if (h) {
+      parcalar.push(bas + '\n  ' + (/fonksiyonu yok/.test(h)
+        ? 'Tarama fonksiyonu kurulmamış: ana programdaki 498-studio-guvenlik-taramasi.sql\'in aynısını bu depoya sıradaki numarayla ekle, SQL\'i bana ver.'
+        : 'Tarama okunamadı: ' + h));
+      return;
+    }
+    const son = GT.son[p.id];
+    if (!son) { parcalar.push(bas + '\n  Henüz taranmadı.'); return; }
+    const satir = [];
+    (son.bulgular || []).forEach(b => {
+      if (b.onem === 'iyi') return;
+      const og = b.ogeler && b.ogeler.length ? gtKalan(p.id, b) : null;
+      if (og && !og.length) return;
+      satir.push('  ' + (og ? b.baslik.replace(/[0-9]+/, og.length) : b.baslik) + ' — ' + (GT_COZUM[b.kod] || 'Bulguyu kapat.'));
+      if (og) og.forEach(o => satir.push('    - ' + o.y));
+    });
+    if (satir.length) parcalar.push(bas + ' · tarama ' + pzZaman(son.zaman) + '\n' + satir.join('\n'));
+  });
+  if (!parcalar.length) return '';
+  return [
+    '[Güvenlik · toplu] ' + parcalar.length + ' programda yapılacak iş',
+    '',
+    parcalar.join('\n\n'),
+    '',
+    'Her program için:',
+    '1. O depoda yeni bir veritabanı göçü yaz (sıradaki numara, o deponun CLAUDE.md kuralına göre). Depoya erişimin yoksa bağlanmak için izin iste.',
+    '2. Yalnız giriş yapmamış kullanıcının (anon, PUBLIC) yetkisini kapat; giriş yapanların yetkisine dokunma.',
+    '3. Programı bozma: giriş ekranı ve şifreli linkler (sipariş, kasa, sayım…) çalışmaya devam etmeli. Koddan çağrıldığı için açık kalması gereken bir öğe görürsen dokunma, bana söyle (Studio\'da "Bilerek açık" denir).',
+    '4. Önce test veritabanında dene; canlı için yedek alınmasını hatırlat ve onay iste.',
+    '5. Sürüm notuna "sql" alanını yaz. Sonunda her programın SQL\'ini ayrı ayrı, hangi programın Supabase\'inde çalışacağını yazarak ver.',
+    '6. Bitince Studio › Panel › Güvenlik ve yedek › Hepsini tara.',
+  ].join('\n');
+}
+async function gtTopluKopyala() {
+  const m = gtTopluTalimat();
+  if (!m) return toast('Yapılacak iş yok · bütün programlar temiz ✅', 'basari');
+  try { await navigator.clipboard.writeText(m); toast('Toplu talimat kopyalandı · Claude Code\'a yapıştır ✨', 'basari'); }
+  catch (h) { toast('Kopyalanamadı.', 'hata'); }
 }
 
 /* ---------- Düzelt talimatı ---------- */
@@ -346,6 +429,8 @@ async function guvenlikTaramaEylem(e, el) {
   const p = el.dataset.id ? DB.proje(el.dataset.id) : null;
   if (e === 'gt-ac') { location.hash = '#/guvenlik/' + el.dataset.id; return true; }
   if (e === 'gt-tara') { if (p) await gtTara(p); return true; }
+  if (e === 'gt-hepsi') { await gtHepsiniTara(); return true; }
+  if (e === 'gt-toplu') { await gtTopluKopyala(); return true; }
   if (e === 'gt-liste') { const k = el.dataset.id + ':' + el.dataset.deger; GT_ACIK[k] = !GT_ACIK[k]; render(); return true; }
   if (e === 'gt-duzelt') {
     const son = p && GT.son[p.id];

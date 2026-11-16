@@ -21,6 +21,12 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.384.0', tarih: '2026-11-16',
+    ozet: 'Bütün programları tek düğmeyle güvenlik taraması',
+    maddeler: [
+      'Panel › Güvenlik ve yedek: "Hepsini tara" bütün programları sırayla tarar, her birinin durumu listede görünür.',
+      '"Toplu talimat" bütün bulguları tek metinde toplar; tek sohbete yapıştırıp hepsini birlikte düzelttirebilirsin.',
+    ] },
   { surum: 'v0.383.3', tarih: '2026-11-16',
     ozet: 'Güvenlik kontrolü uyarısında doğru dosya adı',
     maddeler: [

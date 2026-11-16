@@ -17825,12 +17825,17 @@ function p3Icerik(k) {
   if (k === 'guv') {
     const harf = p => `<span class="p3-harf">${esc(basHarf(p.firma || projeAdi(p)))}</span>`;
     let h = '';
-    h += bas('Güvenlik denetimi · ' + v.guv.length);
-    h += v.guv.length ? v.guv.map(p => p3Sat(harf(p), basHarfleriBuyuk(p.firma || projeAdi(p)),
-        [modulAdi(p), pdGuvenlik(p).yazi].filter(Boolean).join(' · '),
-        `<button type="button" class="p3-dug" data-eylem="pd-guvenlik" data-id="${p.id}">Başlat</button>`,
-        `data-eylem="proje-ac" data-id="${p.id}" role="button" tabindex="0"`)).join('')
-      : bos('Denetim bekleyen proje yok.');
+    /* v0.384.0: bütün programlar + Hepsini tara / Toplu talimat (onaylı taslak). */
+    const gp = typeof gtProjeleri === 'function' ? gtProjeleri() : [];
+    h += `<div class="p3-gt">
+      <button type="button" class="p3-gt-a" data-eylem="gt-hepsi" ${GT.toplu ? 'disabled' : ''}>🛡️ ${GT.toplu ? 'Taranıyor…' : 'Hepsini tara'}</button>
+      <button type="button" class="p3-gt-b" data-eylem="gt-toplu" ${GT.toplu ? 'disabled' : ''}>📋 Toplu talimat</button></div>`;
+    h += bas('Güvenlik · ' + gp.length + ' program');
+    h += gp.length ? gp.map(p => { const d = gtSatirDurum(p);
+      return p3Sat(harf(p), basHarfleriBuyuk(p.firma || projeAdi(p)), [modulAdi(p), d.yazi].filter(Boolean).join(' · '),
+        `<span class="p3-gc ${d.s}">${esc(d.cip)}</span>`,
+        `data-eylem="pd-guvenlik" data-id="${p.id}" role="button" tabindex="0"`); }).join('')
+      : bos('Veritabanı olan program yok.');
     h += bas('Yedek · ' + (v.yed.length + (v.drive ? 1 : 0)));
     h += v.yed.map(p => p3Sat(harf(p), basHarfleriBuyuk(p.firma || projeAdi(p)), pdYedek(p).yazi,
         `<button type="button" class="p3-dug" data-eylem="proje-ac" data-id="${p.id}">Bak</button>`,
@@ -17875,6 +17880,11 @@ function p3Ac(el) {
     pop.classList.add('gor');
     pop.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   });
+}
+/* Toplu güvenlik taraması sürerken açık pencereyi yerinde tazeler (v0.384.0). */
+function p3PopYenile() {
+  const pop = $('.p3-pop'), kart = $('.p3-kart.acik');
+  if (pop && kart) pop.innerHTML = p3Icerik(kart.dataset.id);
 }
 /* Pencerenin dışına basınca kapanır. */
 document.addEventListener('click', e => {
