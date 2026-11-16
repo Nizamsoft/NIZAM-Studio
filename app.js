@@ -16601,6 +16601,7 @@ async function eylemCalistir(el) {
   if (e === 'yedek-detay') return yedekDetayAc();
   if (e === 'pd-guvenlik') { location.hash = '#/guvenlik/' + el.dataset.id; return; }
   if (e === 'yedek-baslat') return yedekBaslatTikla(el);
+  if (e === 'yedek-drive-olc') return yedekDriveOlc(el);
   if (e === 'yedek-ayar') return yedekAyarAc();
   if (e === 'yedek-ac-kapa') return yedekAcKapa(el);
   if (e === 'yedek-baglan') return yedekBaglanAc(el.dataset.id);
@@ -17685,7 +17686,7 @@ function p3Veri(projeler) {
     const pj = projeler.filter(p => !p.arsiv && !PROJE_KOVASI.klon.sec(p) && sunuculuMu(p));
     guv = pj.filter(p => /^[kb]$/.test(pdGuvenlik(p).s));
     yed = pj.filter(p => /^[kb]$/.test(pdYedek(p).s));
-    const dr = yedekDrive(sonYedekRaporu());
+    const dr = yedekDrive(sonDriveRaporu());
     if (dr && dr.dolu) drive = dr;
   }
   return { acik, bana, kontrol, planda, onay, yapilacak, gelisen, yakin, guv, yed, drive };
@@ -18665,6 +18666,19 @@ function svKartRozeti(p) {
 function sonYedekRaporu() {
   return (DB.yedekler || []).find(r => r.tur === 'gece') || null;
 }
+/* Drive doluluğunun en yeni ölçümü (v0.387.0): gece raporu ya da 2 saatte bir
+   gelen 'drive' ölçümü — hangisi yeniyse. Liste zaten yeniden eskiye sıralı. */
+function sonDriveRaporu() {
+  return (DB.yedekler || []).find(r => (r.tur === 'gece' || r.tur === 'drive')
+    && r.ayrinti && Number(r.ayrinti.drive_toplam) > 0) || null;
+}
+/* "Şimdi ölç" basıldı ve ölçüm henüz gelmedi mi (en fazla 3 dk beklenir)? */
+function driveOlculuyor() {
+  const b = (DB.yedekler || []).find(r => r.tur === 'drive-elle');
+  if (!b || Date.now() - new Date(b.olusturuldu).getTime() > 180000) return false;
+  const s = sonDriveRaporu();
+  return !s || new Date(s.olusturuldu) < new Date(b.olusturuldu);
+}
 function sonDenemeRaporu() {
   return (DB.yedekler || []).find(r => r.tur === 'deneme') || null;
 }
@@ -18731,7 +18745,13 @@ function yedekDetayAc() {
       ${gh ? satir(gh.durum, 'GitHub repoları', sag(gh), gh.durum === 'hata', gh.durum === 'hata' ? gh.ayrinti : '') : ''}
       ${satir(drive === 'hata' ? 'hata' : drive === 'tamam' ? 'tamam' : 'kurulmadi', 'Google Drive',
         (drive === 'tamam' ? 'yüklendi' : drive === 'hata' ? 'yüklenemedi' : 'bağlı değil') +
-        (yedekDrive(r) ? ' · ' + yedekDrive(r).yazi : ''), drive === 'hata' || !!(yedekDrive(r) || {}).dolu)}
+        (yedekDrive(sonDriveRaporu()) ? ' · ' + yedekDrive(sonDriveRaporu()).yazi : ''), drive === 'hata' || !!(yedekDrive(sonDriveRaporu()) || {}).dolu)}
+      ${(() => {
+        const dr = sonDriveRaporu(), olc = driveOlculuyor();
+        return `<div class="yd-olc"><span>${olc ? 'Doluluk ölçülüyor… (yaklaşık 1 dakika)'
+          : dr ? 'Doluluk ' + pzZaman(dr.olusturuldu).replace(/^Bugün/, 'bugün').replace(/^Dün/, 'dün') + ' ölçüldü · 2 saatte bir yenilenir' : 'Doluluk henüz ölçülmedi'}</span>
+          <button type="button" class="yd-olc-dug" data-eylem="yedek-drive-olc" ${olc ? 'disabled' : ''}>${svg(ICON.yenile || ICON.saat, 13)} Şimdi ölç</button></div>`;
+      })()}
       ${d ? satir(d.durum === 'sorunlu' ? 'hata' : 'tamam', 'Aylık geri yükleme denemesi',
         tarihYaz(d.olusturuldu) + ' · ' + denemeSaglam + '/' + denemeKalem.length + ' sağlam', d.durum === 'sorunlu') : ''}`
       : '<div class="yd-bos">Gece yedeği sonucunu gönderince burada proje proje görünecek.</div>'}
@@ -18942,6 +18962,31 @@ async function yedekBagla(el) {
   } catch (h) {
     toast(h.message, 'hata');
     el.disabled = false; el.textContent = 'Bağla ve aç';
+  }
+}
+
+/* "Şimdi ölç" (v0.387.0): nizam-yedek'in Drive ölçümünü başlatır; sonuç ~1 dakikada
+   gelir. Pencere açıksa gelene kadar arada bir tazelenir. */
+async function yedekDriveOlc(el) {
+  if (el.disabled) return;
+  el.disabled = true;
+  try {
+    await DB.yedekIslem({ islem: 'drive-olc' });
+    toast('Drive ölçülüyor, yaklaşık 1 dakika.', 'basari');
+    await DB.tazele('yedekler');
+    if ($('.yd-modal')) yedekDetayAc();
+    let tur = 0;
+    const bekle = async () => {
+      if (++tur > 12 || !driveOlculuyor()) return;
+      await DB.tazele('yedekler');
+      if (!driveOlculuyor()) { if ($('.yd-modal')) yedekDetayAc(); render(); return; }
+      setTimeout(bekle, 15000);
+    };
+    setTimeout(bekle, 20000);
+  } catch (h) {
+    toast(/Bilinmeyen işlem/i.test(h.message || '')
+      ? 'Önce Supabase\'deki "yedek" fonksiyonu güncellenmeli (v0.387.0).' : (h.message || 'Ölçüm başlatılamadı.'), 'hata');
+    el.disabled = false;
   }
 }
 

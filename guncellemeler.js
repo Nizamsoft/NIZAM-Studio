@@ -21,6 +21,12 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.387.0', tarih: '2026-11-16',
+    ozet: 'Google Drive doluluğu doğru gösteriliyor',
+    maddeler: [
+      'Son Yedekleme\'deki Drive yüzdesi artık Google\'ın gösterdiğiyle aynı; 2 saatte bir yenileniyor.',
+      'Drive satırındaki "Şimdi ölç" ile yaklaşık 1 dakikada güncellenir; silinen eski yedekler artık çöpte yer kaplamıyor.',
+    ] },
   { surum: 'v0.386.0', tarih: '2026-11-16',
     ozet: 'GitHub yedekleri 2 haftada bire indi',
     maddeler: [

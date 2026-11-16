@@ -1,5 +1,14 @@
 # Değişiklik Günlüğü
 
+## v0.387.0
+- Drive doluluğu doğru ve güncel (nizam-yedek 5b271f1): ölçüm Google'ın sayısı (toplam − boş); eskiden kullanılan +
+  çöp + diğer toplanıyor, çöp iki kez sayılıp %100'ü aşıyordu. Silinen eski yedekler çöpe gitmiyor
+  (`RCLONE_DRIVE_USE_TRASH=false`). Yeni `drive-olcum.yml` 2 saatte bir ölçüp `tur='drive'` bildirir.
+- `sql/58-drive-olcumu.sql`: yedek_raporlari.tur'a 'drive' ve 'drive-elle'. `yedek` fonksiyonu: drive raporunda
+  yalnız son ölçüm tutulur, bildirim atılmaz; `islem='drive-olc'` ölçümü başlatır (1 dk aralık).
+- Studio: `sonDriveRaporu()` (gece ya da drive, hangisi yeniyse) Panel uyarısında ve Son Yedekleme'de;
+  Drive satırının altında "Doluluk … ölçüldü" + "Şimdi ölç" (`yedekDriveOlc`, sonuç gelene kadar tazeler).
+
 ## v0.386.0
 - Yedek planı (nizam-yedek 083869f): veritabanları her gece 03:00; GitHub repoları ayın 1'i ve 15'i (elle başlatma
   her zaman alır), Drive'da `GITHUB/kopyalar` son 3 kopya. Arada GITHUB kalemi `beklemede` ("2 haftada bir ·

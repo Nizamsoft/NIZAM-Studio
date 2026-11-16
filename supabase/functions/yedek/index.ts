@@ -14,6 +14,9 @@
 //
 //   3) LİSTE  · nizam-yedek gece başında hangi veritabanlarını yedekleyeceğini
 //              buradan okur (yedek_ayarlari · acik). YEDEK_ANAHTARI ile.
+//   5) DRIVE  · nizam-yedek'in drive-olcum işi 2 saatte bir doluluğu bildirir (tur='drive',
+//              yalnız sonuncusu tutulur); Studio'da "Şimdi ölç" (islem='drive-olc') o işi başlatır.
+//              sql/58 gerekir.
 //   4) AYARLAR· Studio'nun Son Yedekleme › Ayarlar sekmesi (yalnız yönetici):
 //              ayarlar · ayar-kaydet · baglan. "baglan" bağlantı adresini
 //              GitHub'ın açık anahtarıyla şifreleyip DB_<KOD> gizli ayarına
@@ -49,6 +52,7 @@ const hata = (mesaj: string, kod = 400) => yanit({ hata: mesaj }, kod);
 
 const GITHUB_REPO = 'Nizamsoft/nizam-yedek';
 const GITHUB_IS = 'gece-yedegi.yml';
+const GITHUB_DRIVE_IS = 'drive-olcum.yml';   // Drive doluluğu (v0.387.0 · sql/58)
 const EN_BUYUK = 64_000;
 
 /* Telefon bildirimi (Web Push) — hata-al ile aynı kod (tek dosya kurulduğu için kopya). */
@@ -193,7 +197,9 @@ Deno.serve(async (istek) => {
     const anahtar = Deno.env.get('YEDEK_ANAHTARI') ?? '';
     if (!anahtar || (istek.headers.get('x-yedek-anahtari') ?? '') !== anahtar) return hata('Yetkisiz.', 401);
 
-    const tur = ['gece', 'deneme'].includes(String(govde.tur)) ? String(govde.tur) : 'gece';
+    const tur = ['gece', 'deneme', 'drive'].includes(String(govde.tur)) ? String(govde.tur) : 'gece';
+    /* Drive ölçümü 2 saatte bir geliyor: yalnız en sonuncusu tutulur, gece raporlarını listeden itmesin. */
+    if (tur === 'drive') await db.from('yedek_raporlari').delete().in('tur', ['drive', 'drive-elle']);
     const durum = govde.durum === 'sorunlu' ? 'sorunlu' : 'tamam';
     const kalemler = (Array.isArray((govde.ayrinti as any)?.kalemler) ? (govde.ayrinti as any).kalemler : [])
       .slice(0, 80).map((k: any) => ({
@@ -214,7 +220,7 @@ Deno.serve(async (istek) => {
     const { error } = await db.from('yedek_raporlari').insert(satir);
     if (error) { console.error('yedek raporu yazılamadı', error.message); return hata('Kaydedilemedi.', 500); }
 
-    if (durum === 'sorunlu') {
+    if (durum === 'sorunlu' && tur !== 'drive') {
       try { await yoneticilereHaber(db, satir.ozet); }
       catch (h) { console.error('telefon bildirimi gitmedi', (h as Error).message); }
     }
@@ -319,6 +325,22 @@ Deno.serve(async (istek) => {
     await db.from('yedek_raporlari').insert({
       tur: 'elle', durum: 'basladi', ozet: 'Elle başlatıldı', kim: oturum.user.id,
     });
+    return yanit({ tamam: true });
+  }
+
+  // ---- DRIVE ÖLÇ · Studio'da "Şimdi ölç" (v0.387.0) ------------------------
+  if (govde.islem === 'drive-olc') {
+    const birDk = new Date(Date.now() - 60_000).toISOString();
+    const { data: son } = await db.from('yedek_raporlari').select('id')
+      .eq('tur', 'drive-elle').gte('olusturuldu', birDk).limit(1);
+    if (son && son.length) return hata('Ölçüm az önce başlatıldı; yaklaşık bir dakikada gelir.', 409);
+    if (!Deno.env.get('GH_YEDEK_TOKEN')) return hata('GitHub anahtarı (GH_YEDEK_TOKEN) kurulmamış.', 500);
+    const r = await gh('POST', `/repos/${GITHUB_REPO}/actions/workflows/${GITHUB_DRIVE_IS}/dispatches`, { ref: 'main' });
+    if (r.status !== 204) {
+      console.error('GitHub drive ölçümü', r.status, (await r.text()).slice(0, 300));
+      return hata('Ölçüm başlatılamadı (' + r.status + ').', 502);
+    }
+    await db.from('yedek_raporlari').insert({ tur: 'drive-elle', durum: 'basladi', ozet: 'Drive ölçümü başlatıldı', kim: oturum.user.id });
     return yanit({ tamam: true });
   }
 

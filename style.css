@@ -13989,3 +13989,17 @@ button.ap-bagla { cursor: pointer; }
 .p3-gc.y { background: #e7f3ee; color: #2f7d5c; }
 .p3-gc.k, .p3-gc.h { background: #fbe9e7; color: #b4231b; }
 .p3-gc.b { background: #fbf3e2; color: #8a5f12; }
+
+/* Son Yedekleme › Drive doluluğu satırı + "Şimdi ölç" (v0.387.0) */
+.yd-olc {
+  display: flex; align-items: center; gap: 10px; margin: -2px 0 6px 30px;
+  font-size: 12px; color: var(--ink-dim, #9a9aa2);
+}
+.yd-olc span { flex: 1; min-width: 0; }
+.yd-olc-dug {
+  flex-shrink: 0; display: inline-flex; align-items: center; gap: 5px; padding: 5px 10px; border-radius: 999px;
+  border: 1px solid #d6d6db; background: #fff; color: #26262a; cursor: pointer;
+  font: inherit; font-size: 12px; font-weight: 600;
+}
+.yd-olc-dug[disabled] { opacity: .5; cursor: default; }
+.yd-olc-dug svg { width: 13px; height: 13px; }
