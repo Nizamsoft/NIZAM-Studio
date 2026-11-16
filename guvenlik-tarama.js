@@ -76,6 +76,7 @@ function gtDegerlendir(pid, bulgular) {
 /* Proje durumundaki 🛡️ satırı. { s, kisa, yazi } · s = y | b | k | g */
 function gtPdDurum(p) {
   if (!sunuculuMu(p)) return { s: 'g', kisa: '–', yazi: 'Veritabanı yok' };
+  if (typeof anaProgramMi === 'function' && anaProgramMi(p)) return { s: 'g', kisa: '–', yazi: 'Ana program · gerek yok' };
   gtYukle();
   if (GT.durum === 'yukleniyor' || GT.durum === 'bos') return { s: 'g', kisa: '…', yazi: 'Okunuyor…' };
   if (GT.durum === 'kurulmadi') return { s: 'g', kisa: '–', yazi: 'Güvenlik kontrolü kurulmadı (Studio sql/57)' };
@@ -332,7 +333,8 @@ function gtDuzeltTalimati(p, b, ogeler) {
 /* ---------- Ekranlar ---------- */
 function gtProjeleri() {
   return (DB.projeler || []).filter(p => !p.arsiv && sunuculuMu(p) && !(typeof klonMi === 'function' && klonMi(p))
-    && !(typeof denemeMi === 'function' && denemeMi(p)));
+    && !(typeof denemeMi === 'function' && denemeMi(p))
+    && !(typeof anaProgramMi === 'function' && anaProgramMi(p)));   /* v0.385.0: şablon taranmaz */
 }
 
 function guvenlikTaramaEkrani() {

@@ -7377,6 +7377,7 @@ function pdYedekSatiri(p) {
 }
 function pdYedek(p) {
   if (!sunuculuMu(p)) return { s: 'g', kisa: '–', yazi: 'Veritabanı yok · yedek gerekmiyor' };
+  if (anaProgramMi(p)) return { s: 'g', kisa: '–', yazi: 'Ana program · gerek yok' };
   const r = sonYedekRaporu();
   if (!r) return { s: 'g', kisa: '–', yazi: 'Gece yedeği raporu henüz yok' };
   const x = pdYedekSatiri(p);
@@ -11276,6 +11277,13 @@ function anaProjesi(site, kayit) {
   if (p && !p.arsiv) return p;
   const h = pjHost(site);
   return (DB.projeler || []).find(x => !x.arsiv && !klonMi(x) && pjAdres(x) && pjAdres(x) === h) || null;
+}
+
+/* Bu proje bir ana programın (şablonun) Studio projesi mi (v0.385.0)?
+   Ana programda müşteri verisi yok: yedek ve güvenlik taraması gerekmez. */
+function anaProgramMi(p) {
+  if (!p) return false;
+  return (DB.anaProgramlar || []).some(k => k.proje_id === p.id || anaProjesi(k.site, k) === p);
 }
 
 /* Bir ana programın bağlı firmaları: sürüm takibindekiler + Studio'da

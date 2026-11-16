@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## v0.385.0
+- `anaProgramMi(p)`: proje bir ana programın (şablonun) Studio projesiyse (`ana_programlar.proje_id` ya da adres eşleşmesi).
+  Ana programda yedek ve güvenlik taraması gerekmez: `pdYedek` ve `gtPdDurum` gri "Ana program · gerek yok" döner,
+  `gtProjeleri` ana programı almaz (Hepsini tara, Toplu talimat, Panel güvenlik/yedek listeleri).
+
 ## v0.384.0
 - Panel › Güvenlik ve yedek penceresi: bütün programlar listelenir (`gtProjeleri`, durum hapı Temiz/Sorun/Bak/
   Kurulum/Hata · `gtSatirDurum`); üstte 🛡️ Hepsini tara (`gtHepsiniTara`, sırayla `gtTara(p, sessiz)`) ve

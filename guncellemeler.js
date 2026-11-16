@@ -21,6 +21,11 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.385.0', tarih: '2026-11-16',
+    ozet: 'Ana programlar yedek ve güvenlik listelerinden çıktı',
+    maddeler: [
+      'Ana program bir şablon olduğu için yedek ve güvenlik taraması istemiyor; listelerde görünmüyor, ikonları gri.',
+    ] },
   { surum: 'v0.384.0', tarih: '2026-11-16',
     ozet: 'Bütün programları tek düğmeyle güvenlik taraması',
     maddeler: [
