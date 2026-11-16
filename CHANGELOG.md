@@ -1,5 +1,10 @@
 # Değişiklik Günlüğü
 
+## v0.386.0
+- Yedek planı (nizam-yedek 083869f): veritabanları her gece 03:00; GitHub repoları ayın 1'i ve 15'i (elle başlatma
+  her zaman alır), Drive'da `GITHUB/kopyalar` son 3 kopya. Arada GITHUB kalemi `beklemede` ("2 haftada bir ·
+  sonraki: …") gelir: Son Yedekleme'de gri, sorun sayılmaz (`YEDEK_GRI`). Ayarlar satırı ve boş rapor yazısı güncellendi.
+
 ## v0.385.0
 - `anaProgramMi(p)`: proje bir ana programın (şablonun) Studio projesiyse (`ana_programlar.proje_id` ya da adres eşleşmesi).
   Ana programda yedek ve güvenlik taraması gerekmez: `pdYedek` ve `gtPdDurum` gri "Ana program · gerek yok" döner,

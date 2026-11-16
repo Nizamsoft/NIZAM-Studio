@@ -18699,6 +18699,8 @@ function yedekDrive(r) {
 }
 
 const YEDEK_DURUM_YAZI = { tamam: 'alındı', hata: 'alınamadı', kurulmadi: 'bağlı değil', kapali: 'kapalı' };
+/* GitHub repoları ayın 1'i ve 15'inde alınıyor (v0.381.0); arada "beklemede" gelir, sorun değildir. */
+const YEDEK_GRI = d => d === 'kurulmadi' || d === 'kapali' || d === 'beklemede';
 
 function yedekDetayAc() {
   modalHepsiniKapat();
@@ -18707,17 +18709,18 @@ function yedekDetayAc() {
   const suruyor = yedekSuruyor();
   const kalem = yedekKalemleri(r);
   const satir = (durum, ad, sag, kirmizi, ipucu) => `<div class="yd-satir">
-      <span class="yd-n ${durum === 'hata' ? 'k' : (durum === 'kurulmadi' || durum === 'kapali') ? 'g' : ''}">${durum === 'hata' ? '!' : (durum === 'kurulmadi' || durum === 'kapali') ? '–' : svg(ICON.tik, 11)}</span>
+      <span class="yd-n ${durum === 'hata' ? 'k' : YEDEK_GRI(durum) ? 'g' : ''}">${durum === 'hata' ? '!' : YEDEK_GRI(durum) ? '–' : svg(ICON.tik, 11)}</span>
       <b>${esc(ad)}</b><span class="${kirmizi ? 'kir' : ''}" ${ipucu ? `title="${esc(ipucu)}"` : ''}>${esc(sag)}</span></div>`;
   /* "48.120 satır · 6,1 MB" → sağda yalnız boyut; hatada sebebin kendisi. */
   const sag = k => k.durum === 'tamam' ? ((/·\s*([^·]+)$/.exec(k.ayrinti || '') || [])[1] || 'alındı').replace(/\s*\(.*\)\s*$/, '').trim()
+    : k.durum === 'beklemede' ? (k.ayrinti || '2 haftada bir')
     : (k.durum === 'hata' ? yedekHataKisa(k.ayrinti) : (YEDEK_DURUM_YAZI[k.durum] || k.ayrinti || k.durum));
   const vt = kalem.filter(k => k.kod !== 'GITHUB');
   const gh = kalem.find(k => k.kod === 'GITHUB');
   const drive = r && r.ayrinti && r.ayrinti.drive;
   const denemeKalem = yedekKalemleri(d);
   const denemeSaglam = denemeKalem.filter(k => k.durum === 'saglam').length;
-  const altBaslik = !r ? 'Henüz rapor gelmedi · gece yedeği her gün 03:00'
+  const altBaslik = !r ? 'Henüz rapor gelmedi · veritabanları her gece 03:00'
     : pzZaman(r.olusturuldu) + (r.durum === 'sorunlu' ? ' · sorun var' : ' · sonraki: 03:00');
   modalAc(`
     ${modalBaslik(ICON.kaydet, 'Son Yedekleme', altBaslik)}
@@ -18808,7 +18811,7 @@ function yedekAyarCiz() {
     ${s.map(satir).join('') || '<div class="yd-bos">Liste boş.</div>'}
     <div class="yd-baslik2">Diğer</div>
     ${(() => { const d = yedekRepoDurumu(); return `<div class="yd-ay-sat"><span class="yd-ay-o"><b>GitHub repoları</b>
-      <i class="${d.acik ? 'ok' : 'yok'}">${!d.acik ? 'Kapalı (yedeklenmiyor)' : d.hepsi.length ? d.acikSayi + ' / ' + d.hepsi.length + ' repo yedekleniyor · yeniler kendiliğinden' : 'Bütün repolar · yeniler kendiliğinden'}</i></span>
+      <i class="${d.acik ? 'ok' : 'yok'}">${!d.acik ? 'Kapalı (yedeklenmiyor)' : d.hepsi.length ? d.acikSayi + ' / ' + d.hepsi.length + ' repo · ayın 1\'i ve 15\'i · yeniler kendiliğinden' : 'Bütün repolar · ayın 1\'i ve 15\'i · yeniler kendiliğinden'}</i></span>
       <button type="button" class="yd-bag yd-degis" data-eylem="yedek-gh-sec">Seç ›</button>
       <button type="button" class="yd-anah ${d.acik ? 'acik' : ''}" data-eylem="yedek-gh-ac-kapa" aria-label="GitHub repoları"></button></div>`; })()}
     <div class="yd-not" style="text-align:left">Değişiklik bu geceki yedekten itibaren geçerli. Hemen denemek için Durum › “Şimdi yedek al”.</div>`;

@@ -21,6 +21,12 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.386.0', tarih: '2026-11-16',
+    ozet: 'GitHub yedekleri 2 haftada bire indi',
+    maddeler: [
+      'Veritabanları her gece yedeklenmeye devam ediyor; GitHub depoları artık ayın 1\'inde ve 15\'inde yedekleniyor, Drive\'da son 3 kopya kalıyor.',
+      'Son Yedekleme kutusunda GitHub satırı arada "2 haftada bir · sonraki: …" yazıyor.',
+    ] },
   { surum: 'v0.385.0', tarih: '2026-11-16',
     ozet: 'Ana programlar yedek ve güvenlik listelerinden çıktı',
     maddeler: [
