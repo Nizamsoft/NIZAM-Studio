@@ -21,6 +21,11 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.388.0', tarih: '2026-11-16',
+    ozet: 'Toplu eşitleme talimatı',
+    maddeler: [
+      'Atölye › Eşitleme\'de her ana programın yanında "Toplu eşitleme talimatı" var: bütün firmaları tek promptla, doğru sırayla eşitler.',
+    ] },
   { surum: 'v0.387.0', tarih: '2026-11-16',
     ozet: 'Google Drive doluluğu doğru gösteriliyor',
     maddeler: [

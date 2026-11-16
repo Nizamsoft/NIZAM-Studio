@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v0.388.0
+- Atölye › Eşitleme: her ana programın başlığında "📋 Toplu eşitleme talimatı" (`esTopluTalimat`, `es-toplu`).
+  Sıra: A) ana programa alınacak işi olan firmalar (esitlemeTalimati 'al'), B) bekleyen firmalara getirme
+  ('esitle'; A varsa bütün firmalar). Her firmadan sonra durup SQL ve kontrol sonucunu vermesi istenir.
+  Bekleyen iş yoksa düğme sönük "Hepsi güncel ✅".
+
 ## v0.387.0
 - Drive doluluğu doğru ve güncel (nizam-yedek 5b271f1): ölçüm Google'ın sayısı (toplam − boş); eskiden kullanılan +
   çöp + diğer toplanıyor, çöp iki kez sayılıp %100'ü aşıyordu. Silinen eski yedekler çöpe gitmiyor

@@ -117,8 +117,10 @@ function esAnaBlok(ana) {
     return esSatir('al', f.kod, `${ad} → Ana program`, alYazi, y.alSayi ? 'bek' : 'ok')
       + esSatir('getir', f.kod, `Ana program → ${ad}`, getirYazi, y.getir.length ? 'bek' : 'ok');
   }).join('');
+  const isVar = fl.some(x => x.y.alSayi || x.y.getir.length);
   return `<div class="es-blok">
-    <div class="es-bas"><b>🔄 ${esc(ana.ad)}</b><i>Sürüm ${esc(svKisa(ana.canli))} · ${fl.length} firma</i></div>
+    <div class="es-bas"><b>🔄 ${esc(ana.ad)}</b><i>Sürüm ${esc(svKisa(ana.canli))} · ${fl.length} firma</i>
+      <button type="button" class="es-toplu" data-eylem="es-toplu" data-id="${esc(ana.site)}" ${isVar ? '' : 'disabled'}>${isVar ? '📋 Toplu eşitleme talimatı' : 'Hepsi güncel ✅'}</button></div>
     ${akis}
     <div class="es-kutu">${satirlar || '<div class="at-bos ic">Bu programdan henüz firma yok.</div>'}</div>
   </div>`;
@@ -280,9 +282,61 @@ function esitlemeTalimati(tur, kod) {
   return '';
 }
 
+/* ---------- Toplu eşitleme talimatı (v0.388.0) ----------
+   Bir ana programın bütün firmaları için tek talimat, doğru sırayla:
+   1) firmalardaki genel güncellemeler ana programa alınır, 2) ana programın
+   yeni hâli güncelleme bekleyen bütün firmalara getirilir. Firma başına
+   ayrıntılar tek tek talimatlarla aynı (esitlemeTalimati). */
+function esTopluTalimat(site) {
+  const ana = (SURUM.analar || []).find(a => !a.hata && a.site === site);
+  if (!ana) return '';
+  const fl = (ana.firmalar || []).map(f => ({ f, y: esYonler(ana, f) }));
+  const alanlar = fl.filter(x => x.y.alSayi);
+  /* Ana programa yeni bir şey girecekse bütün firmalar sonunda o sürüme gelir. */
+  const getirenler = alanlar.length ? fl : fl.filter(x => x.y.getir.length);
+  if (!alanlar.length && !getirenler.length) return '';
+  const blok = (bas, metin) => bas + '\n' + metin.split('\n').map(l => '   ' + l).join('\n');
+  const s = [
+    `[Toplu eşitleme] ${ana.ad} · ${fl.length} firma`,
+    '',
+    `Ana program: ${ana.repo} · yayındaki sürüm ${ana.canli}`,
+    'Bu iş birden çok depoda yapılacak. Erişimin olmayan depo varsa önce bağlanmak için izin iste.',
+    '',
+    'GENEL KURALLAR',
+    '- Sıra önemli: önce A (firmalardan ana programa alma), sonra B (ana programdan firmalara getirme).',
+    '- Her firmadan sonra DUR: ne yaptığını, kontrol sonucunu ve çalıştırılacak SQL\'i (hangi firmanın Supabase\'inde) bana ver; onayımla sonrakine geç.',
+    '- Canlı veritabanına SQL uygulamadan önce yedek alınmasını hatırlat.',
+    '- Firmaya özel olan hiçbir şey başka firmaya ya da ana programa geçmez (korunacaklar aşağıda her firmada yazılı).',
+  ];
+  if (alanlar.length) {
+    s.push('', `A) FİRMALARDAN ANA PROGRAMA AL (${alanlar.length} firma · ana program deposunda)`, '');
+    alanlar.forEach((x, i) => s.push(blok(`A${i + 1}. ${x.f.ad}`, esitlemeTalimati('al', x.f.kod)), ''));
+  }
+  if (getirenler.length) {
+    s.push(`B) ANA PROGRAMDAN FİRMALARA GETİR (${getirenler.length} firma · her biri kendi deposunda)`);
+    if (alanlar.length) s.push('A bittikten sonra ana programın yeni sürümü esas alınır: aşağıdaki listelere A\'da eklenen güncellemeler de girer. Güncellemeyi getirdiğin firmanın kendi verdiği güncellemeyi ikinci kez uygulama.');
+    s.push('');
+    getirenler.forEach((x, i) => {
+      const t = esitlemeTalimati('esitle', x.f.kod)
+        || `[Eşitleme] Ana program → ${x.f.ad}\nFirma: ${x.f.repo} · A\'da ana programa giren güncellemeleri getir (yöntem diğer firmalardakiyle aynı).`;
+      s.push(blok(`B${i + 1}. ${x.f.ad}`, t), '');
+    });
+  }
+  s.push('SONUNDA: Her firmanın surumler.json\'u güncel olsun; Studio › Atölye › Eşitleme\'de "Yenile" deyince hepsi "güncel" görünmeli. Bana firma firma kısa bir özet ver.');
+  return s.join('\n');
+}
+
 /* ---------- Eylemler (app.js 'es-' önekiyle buraya yollar) ---------- */
 async function esitlemeEylem(e, el) {
   if (e === 'es-paket') { esitlemePaketAc(el.dataset.yon, el.dataset.id); return true; }
+  if (e === 'es-toplu') {
+    esKorYukle();
+    const m = esTopluTalimat(el.dataset.id);
+    if (!m) { toast('Bekleyen iş yok · bütün firmalar güncel ✅', 'basari'); return true; }
+    try { await navigator.clipboard.writeText(m); toast('Toplu eşitleme talimatı kopyalandı · Claude Code\'a yapıştır ✨', 'basari'); }
+    catch (h) { toast('Kopyalanamadı.', 'hata'); }
+    return true;
+  }
   if (e === 'es-yenile') { ESIT.korDurum = 'bos'; esKorYukle(true); surumTakipYukle(true); render(); return true; }
   if (e === 'es-kor-ac') { ESIT.ekleAcik = !ESIT.ekleAcik; render(); return true; }
   if (e === 'es-kor-kaydet') {
