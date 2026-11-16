@@ -1,5 +1,9 @@
 # Değişiklik Günlüğü
 
+## v0.383.3
+- Güvenlik kontrolü: "tarama fonksiyonu yok" uyarısındaki Güllüoğlu göç numarası GK-130 → GK-192
+  (GK-130 orada depo eşleştirme; güvenlik taraması Güllüoğlu'na GK-192 olarak eklendi).
+
 ## v0.383.2
 - Takvim promptu: etkinliğe davetli eklenmez, davet gönderilmez kuralı.
 

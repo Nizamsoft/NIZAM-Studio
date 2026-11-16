@@ -21,6 +21,11 @@
    ========================================================================== */
 
 const GUNCELLEMELER = [
+  { surum: 'v0.383.3', tarih: '2026-11-16',
+    ozet: 'Güvenlik kontrolü uyarısında doğru dosya adı',
+    maddeler: [
+      'Güllüoğlu için çalıştırılacak güvenlik taraması dosyasının adı düzeltildi (GK-192).',
+    ] },
   { surum: 'v0.383.2', tarih: '2026-11-13',
     ozet: 'Takvim etkinliklerine davetli eklenmiyor',
     maddeler: [

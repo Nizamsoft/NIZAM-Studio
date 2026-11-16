@@ -5,7 +5,7 @@
 
    "Şimdi tara":
      1. Programın veritabanındaki ns_studio_guvenlik(anahtar) fonksiyonu
-        (ana 498 · ME 498 · GK GK-130) yalnız KİLİT BİLGİSİNİ döndürür:
+        (ana 498 · ME 498 · GK GK-192) yalnız KİLİT BİLGİSİNİ döndürür:
         kim hangi fonksiyonu çalıştırabilir, hangi tabloya kimin yetkisi var,
         satır kilidi (RLS) açık mı, dosya kovaları. Veri dönmez, hiçbir şey
         değişmez. Anahtar Etkileşim geçmişiyle aynı (etkilesim_kapilari).
@@ -199,7 +199,7 @@ async function gtTara(p) {
     if (!r.ok) {
       const msj = (j && (j.message || j.hint)) || ('HTTP ' + r.status);
       if (r.status === 404 || /could not find|does not exist|schema cache/i.test(msj))
-        throw new Error('Programda tarama fonksiyonu yok · programın veritabanında güvenlik taraması SQL\'i (ana 498 / GK-130) çalıştırılmalı.');
+        throw new Error('Programda tarama fonksiyonu yok · programın veritabanında güvenlik taraması SQL\'i (ana 498 · Güllüoğlu GK-192) çalıştırılmalı.');
       if (/anahtar/i.test(msj)) throw new Error('Studio anahtarı programda geçersiz · Etkileşim geçmişindeki anahtarı yenile.');
       throw new Error('Tarama okunamadı: ' + msj);
     }
